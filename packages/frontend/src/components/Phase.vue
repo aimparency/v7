@@ -98,6 +98,9 @@ const handleKeydown = async (event: KeyboardEvent) => {
       event.stopPropagation()
       isInEditMode.value = false
       updateHints() // Update hints when exiting edit mode
+      // Focus back to the phase container
+      await nextTick()
+      phaseElement.value?.focus()
       break
     case 'j':
       event.preventDefault()
