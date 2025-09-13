@@ -16,8 +16,11 @@ export const useUIStore = defineStore('ui', {
     selectedPhaseIndex: 0,
     selectedRightPhaseIndex: 0,
     
-    // Phase edit state
-    selectedAimIndex: 0,
+    // Phase edit state - per column
+    leftColumnInEditMode: false,
+    rightColumnInEditMode: false,
+    leftSelectedAimIndex: 0,
+    rightSelectedAimIndex: 0,
     expandedAims: new Set<string>(),
     
     // Modal states
@@ -31,9 +34,10 @@ export const useUIStore = defineStore('ui', {
   getters: {
     isInProjectSelection: (state) => state.mode === 'project-selection',
     isInColumnNavigation: (state) => state.mode === 'column-navigation',
-    isInPhaseEdit: (state) => state.mode === 'phase-edit',
+    isInPhaseEdit: (state) => state.leftColumnInEditMode || state.rightColumnInEditMode,
     isInAimEdit: (state) => state.mode === 'aim-edit',
     isInAimAdding: (state) => state.mode === 'aim-adding',
+    selectedAimIndex: (state) => state.focusedColumn === 'left' ? state.leftSelectedAimIndex : state.rightSelectedAimIndex,
   },
   
   actions: {
@@ -90,12 +94,21 @@ export const useUIStore = defineStore('ui', {
     },
     
     enterPhaseEdit() {
-      this.mode = 'phase-edit'
-      this.selectedAimIndex = 0
+      if (this.focusedColumn === 'left') {
+        this.leftColumnInEditMode = true
+        this.leftSelectedAimIndex = 0
+      } else {
+        this.rightColumnInEditMode = true
+        this.rightSelectedAimIndex = 0
+      }
     },
     
     exitPhaseEdit() {
-      this.mode = 'column-navigation'
+      if (this.focusedColumn === 'left') {
+        this.leftColumnInEditMode = false
+      } else {
+        this.rightColumnInEditMode = false
+      }
     },
     
     // Phase creation actions
@@ -124,14 +137,26 @@ export const useUIStore = defineStore('ui', {
     
     // Aim navigation actions
     moveAimUp() {
-      if (this.selectedAimIndex > 0) {
-        this.selectedAimIndex--
+      if (this.focusedColumn === 'left') {
+        if (this.leftSelectedAimIndex > 0) {
+          this.leftSelectedAimIndex--
+        }
+      } else {
+        if (this.rightSelectedAimIndex > 0) {
+          this.rightSelectedAimIndex--
+        }
       }
     },
     
     moveAimDown(maxIndex: number) {
-      if (this.selectedAimIndex < maxIndex - 1) {
-        this.selectedAimIndex++
+      if (this.focusedColumn === 'left') {
+        if (this.leftSelectedAimIndex < maxIndex - 1) {
+          this.leftSelectedAimIndex++
+        }
+      } else {
+        if (this.rightSelectedAimIndex < maxIndex - 1) {
+          this.rightSelectedAimIndex++
+        }
       }
     },
     

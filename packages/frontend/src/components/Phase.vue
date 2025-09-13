@@ -22,26 +22,23 @@ const dataStore = useDataStore()
 
 
 const displayAims = computed(() => {
-  return props.columnType === 'left'
+  return true // Always display aims for both columns
 })
 
 const phaseAims = computed(() => {
-  if (props.columnType === 'left') {
-    return dataStore.currentPhaseAims
-  }
-  return []
+  return dataStore.getPhaseAims(props.phase.id)
 })
 
-// Load aims when this phase is selected (always for left column)
+// Load aims when this phase is selected (for both columns)
 watch(() => props.isSelected, async (newVal) => {
-  if (newVal && props.columnType === 'left') {
+  if (newVal) {
     await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
   }
 })
 
 // Load aims on mount if this phase is already selected
 onMounted(async () => {
-  if (props.isSelected && props.columnType === 'left') {
+  if (props.isSelected) {
     await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
   }
 })
@@ -59,7 +56,7 @@ onMounted(async () => {
       <div class="phase-name">{{ phase.name }}</div>
     </div>
     
-    <!-- Aims List (always shown for left column) -->
+    <!-- Aims List (always shown for both columns) -->
     <div v-if="displayAims" class="aims-container">
       <AimComponent
         v-for="(aim, index) in phaseAims"

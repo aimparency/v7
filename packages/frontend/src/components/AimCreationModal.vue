@@ -20,7 +20,10 @@ const performSearch = (query: string) => {
   }
   
   // Mock search results - filter existing aims by text match
-  const allAims = dataStore.currentPhaseAims
+  const currentPhases = uiStore.focusedColumn === 'left' ? dataStore.leftColumnPhases : dataStore.rightColumnPhases
+  const selectedIndex = uiStore.focusedColumn === 'left' ? uiStore.selectedPhaseIndex : uiStore.selectedRightPhaseIndex
+  const currentPhase = currentPhases[selectedIndex]
+  const allAims = currentPhase ? dataStore.getPhaseAims(currentPhase.id) : []
   searchResults.value = allAims.filter(aim => 
     aim.text.toLowerCase().includes(query.toLowerCase())
   ).slice(0, 5) // Limit to 5 results
@@ -53,7 +56,9 @@ const createAim = async () => {
     
     uiStore.closeAimModal()
     // Reload phase aims to show the new aim
-    const currentPhase = dataStore.leftColumnPhases[uiStore.selectedPhaseIndex]
+    const currentPhases = uiStore.focusedColumn === 'left' ? dataStore.leftColumnPhases : dataStore.rightColumnPhases
+    const selectedIndex = uiStore.focusedColumn === 'left' ? uiStore.selectedPhaseIndex : uiStore.selectedRightPhaseIndex
+    const currentPhase = currentPhases[selectedIndex]
     if (currentPhase) {
       await dataStore.loadPhaseAims(uiStore.projectPath, currentPhase.id)
     }

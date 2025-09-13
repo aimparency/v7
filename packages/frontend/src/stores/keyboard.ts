@@ -25,7 +25,7 @@ export const useKeyboardStore = defineStore('keyboard', {
         return []
       }
       
-      if (ui.isInColumnNavigation) {
+      if (ui.isInColumnNavigation && !ui.isInPhaseEdit) {
         actions.push(
           { key: 'h', description: 'move left', action: () => ui.moveFocusLeft() },
           { key: 'l', description: 'move right', action: () => ui.moveFocusRight() },
@@ -33,7 +33,9 @@ export const useKeyboardStore = defineStore('keyboard', {
           { key: 'k', description: 'move up', action: () => this.handleMoveUp() },
         )
         
-        if (ui.focusedColumn === 'left' && data.leftColumnPhases.length > 0) {
+        // Allow phase edit for both columns when they have phases
+        const currentPhases = ui.focusedColumn === 'left' ? data.leftColumnPhases : data.rightColumnPhases
+        if (currentPhases.length > 0) {
           actions.push({ key: 'i', description: 'enter phase', action: () => ui.enterPhaseEdit() })
         }
         
@@ -53,10 +55,16 @@ export const useKeyboardStore = defineStore('keyboard', {
           { key: 'O', description: 'add aim above', action: () => this.handleAddAimAbove() }
         )
         
+        // Get current phase aims based on focused column
+        const currentPhases = ui.focusedColumn === 'left' ? data.leftColumnPhases : data.rightColumnPhases
+        const selectedIndex = ui.focusedColumn === 'left' ? ui.selectedPhaseIndex : ui.selectedRightPhaseIndex
+        const currentPhase = currentPhases[selectedIndex]
+        const currentPhaseAims = currentPhase ? data.getPhaseAims(currentPhase.id) : []
+        
         // Only add aim navigation and editing actions if there are aims
-        if (data.currentPhaseAims.length > 0) {
+        if (currentPhaseAims.length > 0) {
           actions.push(
-            { key: 'j', description: 'next aim', action: () => ui.moveAimDown(data.currentPhaseAims.length) },
+            { key: 'j', description: 'next aim', action: () => ui.moveAimDown(currentPhaseAims.length) },
             { key: 'k', description: 'prev aim', action: () => ui.moveAimUp() },
             { key: 'l', description: 'expand aim', action: () => this.handleExpandAim() },
             { key: 'h', description: 'collapse aim', action: () => this.handleCollapseAim() },
@@ -67,7 +75,7 @@ export const useKeyboardStore = defineStore('keyboard', {
       
       if (ui.isInAimEdit) {
         actions.push(
-          { key: 'Escape', description: 'exit aim edit', action: () => ui.setMode('phase-edit') }
+          { key: 'Escape', description: 'exit aim edit', action: () => ui.enterPhaseEdit() }
         )
       }
       
@@ -133,8 +141,13 @@ export const useKeyboardStore = defineStore('keyboard', {
       const ui = useUIStore()
       const data = useDataStore()
       
-      if (data.currentPhaseAims.length > ui.selectedAimIndex) {
-        const aim = data.currentPhaseAims[ui.selectedAimIndex]
+      const currentPhases = ui.focusedColumn === 'left' ? data.leftColumnPhases : data.rightColumnPhases
+      const selectedIndex = ui.focusedColumn === 'left' ? ui.selectedPhaseIndex : ui.selectedRightPhaseIndex
+      const currentPhase = currentPhases[selectedIndex]
+      const currentPhaseAims = currentPhase ? data.getPhaseAims(currentPhase.id) : []
+      
+      if (currentPhaseAims.length > ui.selectedAimIndex) {
+        const aim = currentPhaseAims[ui.selectedAimIndex]
         if (aim.incoming.length > 0) {
           ui.toggleAimExpanded(aim.id)
         }
@@ -145,8 +158,13 @@ export const useKeyboardStore = defineStore('keyboard', {
       const ui = useUIStore()
       const data = useDataStore()
       
-      if (data.currentPhaseAims.length > ui.selectedAimIndex) {
-        const aim = data.currentPhaseAims[ui.selectedAimIndex]
+      const currentPhases = ui.focusedColumn === 'left' ? data.leftColumnPhases : data.rightColumnPhases
+      const selectedIndex = ui.focusedColumn === 'left' ? ui.selectedPhaseIndex : ui.selectedRightPhaseIndex
+      const currentPhase = currentPhases[selectedIndex]
+      const currentPhaseAims = currentPhase ? data.getPhaseAims(currentPhase.id) : []
+      
+      if (currentPhaseAims.length > ui.selectedAimIndex) {
+        const aim = currentPhaseAims[ui.selectedAimIndex]
         ui.toggleAimExpanded(aim.id)
       }
     },

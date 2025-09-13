@@ -29,7 +29,11 @@ const selectedIndex = computed(() => {
 })
 
 const isInEditMode = computed(() => {
-  return uiStore.isInPhaseEdit && props.columnType === 'left'
+  if (props.columnType === 'left') {
+    return uiStore.leftColumnInEditMode
+  } else {
+    return uiStore.rightColumnInEditMode
+  }
 })
 </script>
 

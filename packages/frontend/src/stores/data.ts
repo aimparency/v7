@@ -6,7 +6,7 @@ export const useDataStore = defineStore('data', {
   state: () => ({
     leftColumnPhases: [] as Phase[],
     rightColumnPhases: [] as Phase[],
-    currentPhaseAims: [] as Aim[],
+    phaseAims: {} as Record<string, Aim[]>,
     loading: false,
     error: null as string | null,
   }),
@@ -35,7 +35,7 @@ export const useDataStore = defineStore('data', {
           commitments: [] // Will be populated with uncommitted aims
         }
         
-        this.leftColumnPhases = [nullPhase, ...rootPhases]
+        this.leftColumnPhases = [nullPhase]
         
         // Load children of first selected phase for right column
         await this.loadRightColumn(projectPath, 0)
@@ -99,7 +99,7 @@ export const useDataStore = defineStore('data', {
         
         if (phaseId === 'null') {
           // For the Root phase, load aims with no outgoing relationships
-          this.currentPhaseAims = allAims.filter(aim => 
+          this.phaseAims[phaseId] = allAims.filter(aim => 
             aim.outgoing.length === 0
           )
         } else {
@@ -108,17 +108,21 @@ export const useDataStore = defineStore('data', {
                       this.rightColumnPhases.find(p => p.id === phaseId)
           
           if (phase) {
-            this.currentPhaseAims = allAims.filter(aim => 
+            this.phaseAims[phaseId] = allAims.filter(aim => 
               phase.commitments.includes(aim.id)
             )
           } else {
-            this.currentPhaseAims = []
+            this.phaseAims[phaseId] = []
           }
         }
       } catch (error) {
         console.error('Failed to load phase aims:', error)
-        this.currentPhaseAims = []
+        this.phaseAims[phaseId] = []
       }
+    },
+    
+    getPhaseAims(phaseId: string): Aim[] {
+      return this.phaseAims[phaseId] || []
     },
     
     async createAim(projectPath: string, aim: Omit<Aim, 'id'>) {
