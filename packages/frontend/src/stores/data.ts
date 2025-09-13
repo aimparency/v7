@@ -104,13 +104,13 @@ export const useDataStore = defineStore('data', {
           )
         } else {
           // For regular phases, load aims that are committed to this phase
-          const phase = this.leftColumnPhases.find(p => p.id === phaseId) || 
-                      this.rightColumnPhases.find(p => p.id === phaseId)
+          const phase = this.findPhase(phaseId)
           
           if (phase) {
-            this.phaseAims[phaseId] = allAims.filter(aim => 
-              phase.commitments.includes(aim.id)
-            )
+            // Preserve the order from phase.commitments array
+            this.phaseAims[phaseId] = phase.commitments.map(commitmentId => 
+              allAims.find(aim => aim.id === commitmentId)
+            ).filter(aim => aim !== undefined) // Remove any missing aims
           } else {
             this.phaseAims[phaseId] = []
           }
@@ -125,17 +125,63 @@ export const useDataStore = defineStore('data', {
       return this.phaseAims[phaseId] || []
     },
     
-    async createAim(projectPath: string, aim: Omit<Aim, 'id'>) {
+    // Helper method to find a phase in either column
+    findPhase(phaseId: string): Phase | undefined {
+      return this.leftColumnPhases.find(p => p.id === phaseId) || 
+             this.rightColumnPhases.find(p => p.id === phaseId)
+    },
+    
+    async createAim(projectPath: string, aim: Omit<Aim, 'id'>): Promise<{id: string}> {
       try {
-        await trpc.aim.create.mutate({
+        const result = await trpc.aim.create.mutate({
           projectPath,
           aim
         })
         
-        // Reload current phase aims if we're in phase edit mode
-        // This would need to be coordinated with UI store
+        return result // Returns { id: string }
       } catch (error) {
         console.error('Failed to create aim:', error)
+        throw error
+      }
+    },
+    
+    async commitAimToPhase(projectPath: string, aimId: string, phaseId: string, insertionIndex?: number) {
+      try {
+        // Get the current phase
+        const phase = await trpc.phase.get.query({
+          projectPath,
+          phaseId
+        })
+        
+        // Add the aim ID to the commitments array if it's not already there
+        if (!phase.commitments.includes(aimId)) {
+          let updatedCommitments: string[]
+          
+          if (insertionIndex !== undefined) {
+            // Insert at specific position
+            updatedCommitments = [...phase.commitments]
+            updatedCommitments.splice(insertionIndex, 0, aimId)
+          } else {
+            // Append to end
+            updatedCommitments = [...phase.commitments, aimId]
+          }
+          
+          await trpc.phase.update.mutate({
+            projectPath,
+            phaseId,
+            phase: {
+              commitments: updatedCommitments
+            }
+          })
+          
+          // Update the local phase data to reflect the new commitments
+          const phase = this.findPhase(phaseId)
+          if (phase) {
+            phase.commitments = updatedCommitments
+          }
+        }
+      } catch (error) {
+        console.error('Failed to commit aim to phase:', error)
         throw error
       }
     }

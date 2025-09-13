@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import type { Phase } from 'shared'
+import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import PhaseComponent from './Phase.vue'
 
@@ -14,36 +15,98 @@ const props = withDefaults(defineProps<Props>(), {
   isEmpty: false
 })
 
+const emit = defineEmits<{
+  phaseSelected: [phaseIndex: number, phase: Phase]
+  requestFocusLeft: []
+  requestFocusRight: []
+}>()
+
+const selectedIndex = ref(0)
+const dataStore = useDataStore()
 const uiStore = useUIStore()
 
-const isFocused = computed(() => {
-  return uiStore.focusedColumn === props.columnType
-})
-
-const selectedIndex = computed(() => {
-  if (props.columnType === 'left') {
-    return uiStore.selectedPhaseIndex
-  } else {
-    return uiStore.selectedRightPhaseIndex
+// When selection changes in left column, emit event to update right column
+watch(() => selectedIndex.value, (newIndex) => {
+  if (props.columnType === 'left' && props.phases[newIndex]) {
+    emit('phaseSelected', newIndex, props.phases[newIndex])
   }
 })
 
-const isInEditMode = computed(() => {
-  if (props.columnType === 'left') {
-    return uiStore.leftColumnInEditMode
-  } else {
-    return uiStore.rightColumnInEditMode
-  }
+// Focus the selected phase when this column gets focused
+const focusSelectedPhase = async () => {
+  await nextTick()
+  const selectedPhase = document.querySelector(
+    `.phase-column.${props.columnType} .phase-container:nth-child(${selectedIndex.value + 1})`
+  ) as HTMLElement
+  selectedPhase?.focus()
+}
+
+// Handle column focus event
+const handleFocus = () => {
+  // Set keyboard hints for column navigation
+  uiStore.setKeyboardHints([
+    'j/k navigate phases',
+    'h/l switch columns', 
+    'i enter phase',
+    'o create phase'
+  ])
+  
+  focusSelectedPhase()
+}
+
+// Expose methods for cross-column navigation
+defineExpose({
+  focusSelectedPhase
 })
+
+// Handle phase navigation within column
+const handleKeydown = async (event: KeyboardEvent) => {
+  switch (event.key) {
+    case 'j':
+      event.preventDefault()
+      if (selectedIndex.value < props.phases.length - 1) {
+        selectedIndex.value++
+      }
+      break
+    case 'k':
+      event.preventDefault()
+      if (selectedIndex.value > 0) {
+        selectedIndex.value--
+      }
+      break
+    case 'h':
+      event.preventDefault()
+      // Move focus to left column (if this is right column)
+      if (props.columnType === 'right') {
+        // Parent component will handle this
+        emit('requestFocusLeft')
+      }
+      break
+    case 'l':
+      event.preventDefault()
+      // Move focus to right column (if this is left column)
+      if (props.columnType === 'left') {
+        // Parent component will handle this
+        emit('requestFocusRight')
+      }
+      break
+    case 'o':
+    case 'O':
+      event.preventDefault()
+      // Open phase creation modal
+      uiStore.openPhaseModal()
+      break
+  }
+}
 </script>
 
 <template>
   <div 
-    class="phase-column" 
-    :class="{ 
-      focused: isFocused,
-      'in-edit-mode': isInEditMode 
-    }"
+    class="phase-column focusable"
+    :class="columnType"
+    tabindex="0"
+    @keydown="handleKeydown"
+    @focus="handleFocus"
   >
     <div v-if="isEmpty" class="empty-state">
       No child phases
@@ -55,7 +118,6 @@ const isInEditMode = computed(() => {
         :key="phase.id"
         :phase="phase"
         :is-selected="index === selectedIndex"
-        :is-in-edit-mode="isInEditMode && index === selectedIndex"
         :column-type="columnType"
       />
     </div>
@@ -65,21 +127,16 @@ const isInEditMode = computed(() => {
 <style scoped>
 .phase-column {
   flex: 1;
-  border-right: 1px solid #444;
+  border-right: 0.0625rem solid #444;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  
   &:last-child {
     border-right: none;
   }
   
-  &.focused {
+  &:focus {
     background: #252525;
-  }
-  
-  &.in-edit-mode {
-    opacity: 0.7;
   }
 }
 

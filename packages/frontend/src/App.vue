@@ -1,22 +1,21 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import type { Phase } from 'shared'
 import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
-import { useKeyboardStore } from './stores/keyboard'
 import PhaseColumn from './components/PhaseColumn.vue'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
-const keyboardStore = useKeyboardStore()
 
-// Initialize UI state from store
-if (uiStore.projectPath) {
-  uiStore.setMode('column-navigation')
-} else {
-  uiStore.setMode('project-selection')
-}
+// Template refs for column coordination
+const leftColumnRef = ref<InstanceType<typeof PhaseColumn>>()
+const rightColumnRef = ref<InstanceType<typeof PhaseColumn>>()
+
+// Track previously focused column
+const lastFocusedColumn = ref<'left' | 'right'>('left')
 
 const selectProject = async () => {
   const path = prompt('Enter project base folder path:')
@@ -32,30 +31,85 @@ const closeProject = () => {
   uiStore.setProjectPath('')
 }
 
-// Keyboard navigation using store
-const handleKeydown = async (event: KeyboardEvent) => {
-  if (uiStore.isInProjectSelection) return
-  
-  // Prevent default behavior for navigation keys
-  if (['h', 'j', 'k', 'l', 'i', 'o', 'O', 'Escape'].includes(event.key)) {
-    event.preventDefault()
-  }
-  
-  await keyboardStore.handleKeydown(event)
+// Handle left column phase selection to update right column
+const handlePhaseSelected = async (phaseIndex: number, phase: Phase) => {
+  await dataStore.loadRightColumn(uiStore.projectPath, phaseIndex)
 }
 
+// Handle cross-column navigation
+const handleRequestFocusLeft = () => {
+  lastFocusedColumn.value = 'left'
+  leftColumnRef.value?.focusSelectedPhase()
+}
+
+const handleRequestFocusRight = () => {
+  lastFocusedColumn.value = 'right'
+  rightColumnRef.value?.focusSelectedPhase()
+}
+
+// Set global unfocused hints
+const setGlobalHints = () => {
+  uiStore.setKeyboardHints([
+    'h/l focus columns',
+    'j/k/i focus last column'
+  ])
+}
+
+// Global keyboard handler for unfocused state
+const handleGlobalKeydown = (event: KeyboardEvent) => {
+  // Only handle if no element is focused (or body is focused)
+  const activeElement = document.activeElement
+  if (activeElement && activeElement !== document.body && activeElement.tagName !== 'BODY') {
+    return
+  }
+
+  // Set global hints if not already set
+  if (uiStore.keyboardHints.length === 0) {
+    setGlobalHints()
+  }
+
+  switch (event.key) {
+    case 'h':
+      event.preventDefault()
+      lastFocusedColumn.value = 'left'
+      leftColumnRef.value?.focusSelectedPhase()
+      break
+    case 'l':
+      event.preventDefault()
+      lastFocusedColumn.value = 'right'
+      rightColumnRef.value?.focusSelectedPhase()
+      break
+    case 'j':
+    case 'k':
+    case 'i':
+      event.preventDefault()
+      // Focus previously focused column
+      if (lastFocusedColumn.value === 'left') {
+        leftColumnRef.value?.focusSelectedPhase()
+      } else {
+        rightColumnRef.value?.focusSelectedPhase()
+      }
+      break
+  }
+}
 
 onMounted(async () => {
-  document.addEventListener('keydown', handleKeydown)
   if (uiStore.projectPath) {
     uiStore.setConnectionStatus('connecting')
     await dataStore.loadPhases(uiStore.projectPath)
     uiStore.setConnectionStatus('connected')
   }
+  
+  // Set initial global hints
+  setGlobalHints()
+  
+  // Add global keyboard listener
+  document.addEventListener('keydown', handleGlobalKeydown)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
+  // Remove global keyboard listener
+  document.removeEventListener('keydown', handleGlobalKeydown)
 })
 </script>
 
@@ -85,15 +139,20 @@ onUnmounted(() => {
       <div class="phase-columns">
         <!-- Left Column -->
         <PhaseColumn
+          ref="leftColumnRef"
           :phases="dataStore.leftColumnPhases"
           column-type="left"
+          @phase-selected="handlePhaseSelected"
+          @request-focus-right="handleRequestFocusRight"
         />
 
         <!-- Right Column -->
         <PhaseColumn
+          ref="rightColumnRef"
           :phases="dataStore.rightColumnPhases"
           column-type="right"
           :is-empty="dataStore.rightColumnPhases.length === 0"
+          @request-focus-left="handleRequestFocusLeft"
         />
       </div>
     </main>
@@ -107,10 +166,7 @@ onUnmounted(() => {
     <!-- Help Text -->
     <footer v-if="!uiStore.isInProjectSelection" class="help">
       <div class="help-keys">
-        <span v-for="help in keyboardStore.keyHelp" :key="help.description">
-          <kbd v-for="key in help.keys" :key="key">{{ key }}</kbd>
-          {{ help.description }}
-        </span>
+        <span v-for="hint in uiStore.keyboardHints" :key="hint">{{ hint }}</span>
       </div>
     </footer>
   </div>

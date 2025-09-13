@@ -1,22 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Aim } from 'shared'
-import { useUIStore } from '../stores/ui'
 
 interface Props {
   aim: Aim
-  isSelected?: boolean
   isExpanded?: boolean
   indentationLevel?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isSelected: false,
   isExpanded: false,
   indentationLevel: 0
 })
-
-const uiStore = useUIStore()
 
 const hasIncomingAims = computed(() => {
   return props.aim.incoming && props.aim.incoming.length > 0
@@ -54,20 +49,13 @@ const indentStyle = computed(() => {
     :style="indentStyle"
   >
     <div 
-      class="aim-item"
+      class="aim-item focusable"
       :class="{ 
-        selected: isSelected,
         'has-incoming': hasIncomingAims,
         expanded: isExpanded
       }"
+      tabindex="0"
     >
-      <!-- Expansion indicator -->
-      <div class="expansion-indicator">
-        <span v-if="hasIncomingAims" class="expansion-icon">
-          {{ isExpanded ? '▼' : '▶' }}
-        </span>
-      </div>
-      
       <!-- Aim content -->
       <div class="aim-content">
         <div class="aim-text">{{ aim.text }}</div>
@@ -87,7 +75,6 @@ const indentStyle = computed(() => {
     
     <!-- Expanded incoming aims (recursive) -->
     <div v-if="isExpanded && hasIncomingAims" class="incoming-aims">
-      <!-- TODO: Load and display incoming aims recursively -->
       <div class="incoming-placeholder">
         {{ aim.incoming.length }} incoming aims (not yet loaded)
       </div>
@@ -105,19 +92,11 @@ const indentStyle = computed(() => {
   display: flex;
   align-items: flex-start;
   gap: 0.25rem;
-  padding: 0.25rem;
-  border-radius: 3px;
-  border-left: 2px solid #444;
-  background: #2d2d2d;
-  transition: all 0.2s ease;
-  
-  &.selected {
-    background: #333;
-  }
-  
-  &:hover:not(.selected) {
-    background: #313131;
-  }
+  padding: 0.5rem;
+  margin-bottom: 0.25rem;
+  border-radius: 0.1875rem;
+  border-left: 0.125rem solid #444;
+  cursor: pointer;
   
   &.has-incoming {
     border-left-color: #666;
@@ -126,26 +105,6 @@ const indentStyle = computed(() => {
       border-left-color: #888;
     }
   }
-}
-
-.expansion-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 0.75rem;
-  height: 0.75rem;
-  margin-top: 0.125rem;
-  
-  .expansion-icon {
-    color: #888;
-    font-size: 0.75rem;
-    cursor: pointer;
-    
-    &:hover {
-      color: #007acc;
-    }
-  }
-  
 }
 
 .aim-content {

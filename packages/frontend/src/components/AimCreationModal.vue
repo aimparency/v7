@@ -19,11 +19,9 @@ const performSearch = (query: string) => {
     return
   }
   
-  // Mock search results - filter existing aims by text match
-  const currentPhases = uiStore.focusedColumn === 'left' ? dataStore.leftColumnPhases : dataStore.rightColumnPhases
-  const selectedIndex = uiStore.focusedColumn === 'left' ? uiStore.selectedPhaseIndex : uiStore.selectedRightPhaseIndex
-  const currentPhase = currentPhases[selectedIndex]
-  const allAims = currentPhase ? dataStore.getPhaseAims(currentPhase.id) : []
+  // Mock search results - filter existing aims by text match  
+  // For now, just use an empty array since we don't have current phase context
+  const allAims: any[] = []
   searchResults.value = allAims.filter(aim => 
     aim.text.toLowerCase().includes(query.toLowerCase())
   ).slice(0, 5) // Limit to 5 results
@@ -55,13 +53,7 @@ const createAim = async () => {
     }
     
     uiStore.closeAimModal()
-    // Reload phase aims to show the new aim
-    const currentPhases = uiStore.focusedColumn === 'left' ? dataStore.leftColumnPhases : dataStore.rightColumnPhases
-    const selectedIndex = uiStore.focusedColumn === 'left' ? uiStore.selectedPhaseIndex : uiStore.selectedRightPhaseIndex
-    const currentPhase = currentPhases[selectedIndex]
-    if (currentPhase) {
-      await dataStore.loadPhaseAims(uiStore.projectPath, currentPhase.id)
-    }
+    // Note: Phase aims will be reloaded automatically by the phase component
   } catch (error) {
     console.error('Failed to create aim:', error)
   }

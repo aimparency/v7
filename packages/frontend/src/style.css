@@ -12,3 +12,9 @@ body {
   color: #e0e0e0;
   overflow: hidden;
 }
+
+/* Global focusable element styling */
+.focusable:focus {
+  outline: 2px solid #007acc;
+  outline-offset: -2px;
+}
