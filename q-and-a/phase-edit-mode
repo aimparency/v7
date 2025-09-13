@@ -1,0 +1,14 @@
+ 1. the aims should always be visible inside a phase. initially each aim is collapsed. once in phase 
+  edit mode, aims can be expanded to show their incoming aims. Show status, comment and text like this: 
+  <div aim><span status/><div comment/><div text/></div> ( layout flex next to each other ). 
+  When expanded, the incoming aims show below the parent aim, with an indentation. Indentaion = (3rem / 
+  0.5 ** indentation level)
+  2. aims don't have commitment arrays. Root should simply contain all aims that have no outgoing aims. 
+  3. as described in CLAUDE.md: aim creation, when creating an aim we get an input field (no textarea). 
+  It's a hybrid search/create UI. When we select a search result, the existing aim will be referenced. 
+  When we hit enter without selecting a search result, an aim will be created with status open, '' 
+  comment and the text that we entered. 
+  4. The left and right column in phase edit should be the same vite component with a different set of 
+  phases but behave identical. If selected phase on the left side is parent to 0 phases, it's empty. 
+  Otherwise it shows phases that have the selected phase on the left one as parent. 
+  5. the columns shoud scroll but the phases should show all aims (no scrolling)

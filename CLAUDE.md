@@ -1,6 +1,5 @@
-
 # aimparency
-okay, let's initialize a new project. In general, it's for maintaining ideas/aims and reaching them by breaking them down. 
+In general, it's for maintaining ideas/aims and reaching them by breaking them down. 
 
 We have a server that's the backend (that can easily be run locally) and
 a web app as the UI, that uses the backend api. 
@@ -60,7 +59,11 @@ The column on the right side shows the children of the column on the left side. 
 
 Inside the columns we navigate the vertically arranged phases with j down and k up. 
 
-The phase contains the committed aims. 
+The phase contains the committed aims. Root phase contains all aims that have no outgoing aims. 
+
+Look and feel: in the dom we actually have one div for each column. When navigating we animate the move from one to the next column. Columns have a scroll position that we remember. But we actually for performance reasons hide columns that are not visible right now (only the 2 that are visible). 
+
+'o' or 'O' adds a new phase. the parent is the column left of the current column (we are adding siblings). Open a popup for entering name and choosing start and end date. Start and end date can only be within parent phase start and end(default). 
 
 i key enters a phase (phase edit mode). 
 
@@ -68,8 +71,10 @@ i key enters a phase (phase edit mode).
 Initially the first aim is focused
 esc key leaves the phase edit mode. 
 
+Phase aims are always fully visible without scrolling. Aims display status, comment, and text horizontally. Initially all aims are collapsed.
+
 in phase edit mode, j and k moves the focus of an aim (down and up). 
-l expands an aim (if it has incoming aims). h collapses an expanded aim. 
+l expands an aim (if it has incoming aims). h collapses an expanded aim. Expanded aims show incoming aims below with progressive indentation. 
 
 'o' creates a new aim below the currently selected, 'O' above. Aims are create on the same level. 
 
@@ -79,7 +84,7 @@ If an aim does not have incoming aims (can't be expanded), l creates an incoming
 input element for aim text. 
 When typing the aim, the system will search for existing aims that can be selected with ctrl+j and ctrl+k
 
-show search results below textarea
+show search results below input
 
 esc cancels, enter creates (new aim or selected search result)
 
@@ -106,6 +111,19 @@ server connection status ('connecting', 'no connection', 'connected to', name (i
 Use vite for the UI of the web app. The files should be git-compatible (so that you can check them in to your repository)
 Use vi.js for input elements. 
 
+Use Typescript for both components. 
+
+Use tRPC over websockets for client server communication. 
+Monorepo setup.
+
+### Frontend Architecture
+Use Vue 3 composition API with Pinia for state management. Component-based architecture:
+- Phase components are smart components that load their own data via tRPC
+- Aim components handle their own expansion/editing state  
+- PhaseColumn component is reusable for both left/right columns
+- Centralized keyboard navigation through Pinia stores
+- UI/Data/Keyboard stores for separation of concerns 
+
 ## Future Ideas (not relevant for implementation yet)
 ### Realtime collaboration
 Additionally to git interoperability: 
@@ -116,3 +134,8 @@ if an aim is selected and collapsed, h should show all outgoing aims in a popup.
 
 ### MCP API
 for interaction through LLMs
+
+## Answers to open questions
+
+#
+
