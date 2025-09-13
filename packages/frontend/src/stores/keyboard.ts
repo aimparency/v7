@@ -48,14 +48,26 @@ export const useKeyboardStore = defineStore('keyboard', {
       
       if (ui.isInPhaseEdit) {
         actions.push(
-          { key: 'Esc', description: 'exit phase', action: () => ui.exitPhaseEdit() },
-          { key: 'j', description: 'next aim', action: () => ui.moveAimDown(data.currentPhaseAims.length) },
-          { key: 'k', description: 'prev aim', action: () => ui.moveAimUp() },
-          { key: 'l', description: 'expand aim', action: () => this.handleExpandAim() },
-          { key: 'h', description: 'collapse aim', action: () => this.handleCollapseAim() },
+          { key: 'Escape', description: 'exit phase', action: () => ui.exitPhaseEdit() },
           { key: 'o', description: 'add aim below', action: () => this.handleAddAimBelow() },
-          { key: 'O', description: 'add aim above', action: () => this.handleAddAimAbove() },
-          { key: 'i', description: 'edit aim', action: () => this.handleEditAim() }
+          { key: 'O', description: 'add aim above', action: () => this.handleAddAimAbove() }
+        )
+        
+        // Only add aim navigation and editing actions if there are aims
+        if (data.currentPhaseAims.length > 0) {
+          actions.push(
+            { key: 'j', description: 'next aim', action: () => ui.moveAimDown(data.currentPhaseAims.length) },
+            { key: 'k', description: 'prev aim', action: () => ui.moveAimUp() },
+            { key: 'l', description: 'expand aim', action: () => this.handleExpandAim() },
+            { key: 'h', description: 'collapse aim', action: () => this.handleCollapseAim() },
+            { key: 'i', description: 'edit aim', action: () => this.handleEditAim() }
+          )
+        }
+      }
+      
+      if (ui.isInAimEdit) {
+        actions.push(
+          { key: 'Escape', description: 'exit aim edit', action: () => ui.setMode('phase-edit') }
         )
       }
       
@@ -140,13 +152,13 @@ export const useKeyboardStore = defineStore('keyboard', {
     },
     
     handleAddAimBelow() {
-      // TODO: Implement aim creation
-      console.log('Add aim below')
+      const ui = useUIStore()
+      ui.openAimModal()
     },
     
     handleAddAimAbove() {
-      // TODO: Implement aim creation
-      console.log('Add aim above')
+      const ui = useUIStore()
+      ui.openAimModal()
     },
     
     handleEditAim() {

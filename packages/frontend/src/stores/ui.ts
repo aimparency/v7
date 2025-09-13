@@ -25,6 +25,7 @@ export const useUIStore = defineStore('ui', {
     newPhaseName: '',
     newPhaseStartDate: '',
     newPhaseEndDate: '',
+    showAimModal: false,
   }),
   
   getters: {
@@ -110,6 +111,15 @@ export const useUIStore = defineStore('ui', {
       this.newPhaseName = ''
       this.newPhaseStartDate = ''
       this.newPhaseEndDate = ''
+    },
+    
+    // Aim creation actions
+    openAimModal() {
+      this.showAimModal = true
+    },
+    
+    closeAimModal() {
+      this.showAimModal = false
     },
     
     // Aim navigation actions

@@ -95,18 +95,25 @@ export const useDataStore = defineStore('data', {
     
     async loadPhaseAims(projectPath: string, phaseId: string) {
       try {
-        // TODO: Load aims that are committed to this phase
-        // For now, load all aims and filter by commitments
         const allAims = await trpc.aim.list.query({ projectPath })
-        const phase = this.leftColumnPhases.find(p => p.id === phaseId) || 
-                    this.rightColumnPhases.find(p => p.id === phaseId)
         
-        if (phase) {
+        if (phaseId === 'null') {
+          // For the Root phase, load aims with no outgoing relationships
           this.currentPhaseAims = allAims.filter(aim => 
-            phase.commitments.includes(aim.id)
+            aim.outgoing.length === 0
           )
         } else {
-          this.currentPhaseAims = []
+          // For regular phases, load aims that are committed to this phase
+          const phase = this.leftColumnPhases.find(p => p.id === phaseId) || 
+                      this.rightColumnPhases.find(p => p.id === phaseId)
+          
+          if (phase) {
+            this.currentPhaseAims = allAims.filter(aim => 
+              phase.commitments.includes(aim.id)
+            )
+          } else {
+            this.currentPhaseAims = []
+          }
         }
       } catch (error) {
         console.error('Failed to load phase aims:', error)
