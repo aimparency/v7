@@ -8,12 +8,9 @@ import PhaseComponent from './Phase.vue'
 interface Props {
   phases: Phase[]
   columnIndex: number
-  isEmpty?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  isEmpty: false
-})
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   phaseSelected: [{ phaseIndex: number, phase: Phase }]
@@ -36,7 +33,7 @@ watch(() => selectedIndex.value, (newIndex) => {
 const focusSelectedPhase = async () => {
   await nextTick()
   
-  if (props.isEmpty) {
+  if (props.phases.length === 0) {
     // Focus the empty state div
     const emptyState = document.querySelector(
       `.phase-column[data-column-index="${props.columnIndex}"] .empty-state`
@@ -60,7 +57,7 @@ const handleFocus = () => {
   ]
   
   // Add phase-specific hints only if phases exist
-  if (!props.isEmpty) {
+  if (props.phases.length > 0) {
     hints.unshift(
       { key: 'j/k', action: 'navigate phases' },
       { key: 'i', action: 'enter phase' }
@@ -156,17 +153,14 @@ const handleKeydown = async (event: KeyboardEvent) => {
       break
     case 'l':
       event.preventDefault()
-      // Navigate to next column (if current phase exists)
-      const currentPhase = props.phases[selectedIndex.value]
-      if (currentPhase) {
-        emit('requestNavigateRight')
-      }
+      // Always allow navigation to the right - there should always be at least one column to the right (empty column)
+      emit('requestNavigateRight')
       break
     case 'o':
     case 'O':
       event.preventDefault()
       // Open phase creation modal
-      uiStore.openPhaseModal()
+      uiStore.openPhaseModal(props.columnIndex)
       break
   }
 }
@@ -180,8 +174,8 @@ const handleKeydown = async (event: KeyboardEvent) => {
     @keydown="handleKeydown"
     @focus="handleFocus"
   >
-    <div v-if="isEmpty" class="empty-state" tabindex="0">
-      No sub phases
+    <div v-if="phases.length === 0" class="empty-state">
+      No sub phases, create one with o
     </div>
     
     <div v-else class="phase-list">

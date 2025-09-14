@@ -1,4 +1,17 @@
+sub aims implementation
+  - give Aim Component an indentation div below
+    - manage expansion
+      - bool: expanded
+    - variable selectedSubAim
+  - arrangement interaction: 
+    - shift + hl: change indent 
+    - shift + jk: move up down (on the same indent level)
+
+- 
+
 remove the vertical border
+
+- 
 
 If we enter phase edit mode via j/k from another phase, leaving it with j/k should disable edit mode for the phase that we're leaving.
 

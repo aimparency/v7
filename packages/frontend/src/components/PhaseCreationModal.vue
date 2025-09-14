@@ -13,10 +13,14 @@ const createPhase = async () => {
   
   let parentPhaseId = null
   
-  if (uiStore.focusedColumn === 'right' && dataStore.leftColumnPhases.length > 0) {
-    const selectedPhase = dataStore.leftColumnPhases[uiStore.selectedPhaseIndex]
-    // If we're creating a child of the null phase, parent should be null
-    parentPhaseId = selectedPhase.id === 'null' ? null : selectedPhase.id
+  // Get parent from the previous column (column to the left)
+  const parentColumnIndex = uiStore.phaseModalColumnIndex - 1
+  if (parentColumnIndex >= 0) {
+    const parentPhase = dataStore.getSelectedPhase(parentColumnIndex)
+    if (parentPhase) {
+      // If parent is the null phase, create a root phase (parent = null)
+      parentPhaseId = parentPhase.id === 'null' ? null : parentPhase.id
+    }
   }
   
   try {
@@ -31,6 +35,18 @@ const createPhase = async () => {
       parent: parentPhaseId,
       commitments: []
     })
+    
+    // Reload the column where we created the phase
+    const currentColumnIndex = uiStore.phaseModalColumnIndex
+    if (parentColumnIndex >= 0) {
+      const parentPhase = dataStore.getSelectedPhase(parentColumnIndex)
+      if (parentPhase) {
+        await dataStore.loadColumn(uiStore.projectPath, currentColumnIndex, parentPhase.id)
+      }
+    } else {
+      // Creating a root phase, reload the initial phases
+      await dataStore.loadPhases(uiStore.projectPath)
+    }
     
     uiStore.closePhaseModal()
   } catch (error) {

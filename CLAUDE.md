@@ -145,3 +145,4 @@ for interaction through LLMs
 
 #
 - dev servers are always running. no need to start them
+- dev servers are usually already running. don't try to start them.

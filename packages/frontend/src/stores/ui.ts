@@ -12,6 +12,7 @@ export const useUIStore = defineStore('ui', {
     newPhaseName: '',
     newPhaseStartDate: '',
     newPhaseEndDate: '',
+    phaseModalColumnIndex: 0, // Track which column the modal was opened from
     showAimModal: false,
     
     // Keyboard hints
@@ -37,11 +38,12 @@ export const useUIStore = defineStore('ui', {
     },
     
     // Phase creation actions
-    openPhaseModal() {
+    openPhaseModal(columnIndex: number = 0) {
       this.showPhaseModal = true
       this.newPhaseName = ''
       this.newPhaseStartDate = ''
       this.newPhaseEndDate = ''
+      this.phaseModalColumnIndex = columnIndex
     },
     
     closePhaseModal() {

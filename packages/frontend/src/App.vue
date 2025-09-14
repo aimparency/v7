@@ -52,22 +52,13 @@ const handleRequestNavigateLeft = async () => {
 }
 
 const handleRequestNavigateRight = async () => {
-  console.log('Before navigate right:', {
-    focusedColumnIndex: focusedColumnIndex.value,
-    viewportStart: dataStore.currentViewportStart,
-    columnsLength: dataStore.phaseColumns.length
-  })
-  
-  focusedColumnIndex.value++
-  adjustViewport()
-  
-  console.log('After navigate right:', {
-    focusedColumnIndex: focusedColumnIndex.value,
-    viewportStart: dataStore.currentViewportStart
-  })
-  
-  await nextTick()
-  focusColumn(focusedColumnIndex.value)
+  // Only navigate if there's a column to navigate to
+  if (focusedColumnIndex.value < dataStore.phaseColumns.length - 1) {
+    focusedColumnIndex.value++
+    adjustViewport()
+    await nextTick()
+    focusColumn(focusedColumnIndex.value)
+  }
 }
 
 const adjustViewport = () => {
@@ -75,16 +66,10 @@ const adjustViewport = () => {
   const start = dataStore.currentViewportStart
   const end = start + dataStore.visibleColumnCount - 1
   
-  console.log('adjustViewport:', { focused, start, end, visibleCount: dataStore.visibleColumnCount })
-  
   if (focused < start) {
-    console.log('Sliding left to show column', focused)
     dataStore.currentViewportStart = focused
   } else if (focused > end) {
-    console.log('Sliding right to show column', focused)
     dataStore.currentViewportStart = focused - dataStore.visibleColumnCount + 1
-  } else {
-    console.log('Column already visible, no sliding needed')
   }
 }
 
@@ -168,9 +153,9 @@ const containerOffset = computed(() => {
 // Check if column should be visible (within viewport + buffer)
 const isColumnVisible = (columnIndex: number) => {
   const start = dataStore.currentViewportStart
-  const end = start + dataStore.visibleColumnCount
-  // Show columns within viewport plus 1 buffer on each side
-  return columnIndex >= start - 1 && columnIndex <= end
+  const end = start + dataStore.visibleColumnCount - 1
+  // Show columns within viewport plus 1 buffer on each side for smooth scrolling
+  return columnIndex >= start - 1 && columnIndex <= end + 1
 }
 </script>
 
@@ -206,11 +191,11 @@ const isColumnVisible = (columnIndex: number) => {
           :ref="(el) => { if (el) columnRefs[index] = el as InstanceType<typeof PhaseColumn> }"
           :phases="column"
           :column-index="index"
-          :is-empty="column.length === 0"
           :style="{ width: columnWidth, height: '100%', position: 'absolute', left: `${index * (100 / dataStore.visibleColumnCount)}%` }"
           @phase-selected="handlePhaseSelected(index, $event.phaseIndex, $event.phase)"
           @request-navigate-left="handleRequestNavigateLeft"
           @request-navigate-right="handleRequestNavigateRight"
+          @focus="focusedColumnIndex = index"
         />
       </div>
     </main>

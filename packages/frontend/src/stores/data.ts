@@ -71,7 +71,7 @@ export const useDataStore = defineStore('data', {
     async loadColumn(projectPath: string, columnIndex: number, parentPhaseId: string | null) {
       try {
         let phases: Phase[]
-        
+
         if (parentPhaseId === 'null') {
           // For null phase, show all root phases (parent: null)
           phases = await trpc.phase.list.query({
@@ -85,17 +85,27 @@ export const useDataStore = defineStore('data', {
             parentPhaseId
           })
         }
-        
+
         // Initialize column data
         this.phaseColumns[columnIndex] = phases
         this.selectedPhaseIndices[columnIndex] = 0
         this.columnScrollPositions[columnIndex] = 0
-        
+
         // Clear any columns beyond this one
         this.phaseColumns.splice(columnIndex + 1)
         this.selectedPhaseIndices.splice(columnIndex + 1)
         this.columnScrollPositions.splice(columnIndex + 1)
-        
+
+        // Always ensure there's exactly one empty column after the last column with data
+        if (phases.length > 0) {
+          // If this column has phases, ensure next column exists as empty
+          const nextColumnIndex = columnIndex + 1
+          this.phaseColumns[nextColumnIndex] = []
+          this.selectedPhaseIndices[nextColumnIndex] = 0
+          this.columnScrollPositions[nextColumnIndex] = 0
+        }
+        // If phases.length === 0, we already cleared columns beyond, so this becomes the last empty column
+
       } catch (error) {
         console.error('Failed to load child phases:', error)
         this.phaseColumns[columnIndex] = []
