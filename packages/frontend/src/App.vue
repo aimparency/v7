@@ -222,6 +222,7 @@ onUnmounted(() => {
         :phases="rootPhases"
         :column-index="1"
         :column-depth="1"
+        :parent-phase="null"
         class="column-1"
         @request-navigate-left="handleNavigateLeft"
         @focus="uiStore.setFocusedColumn(1)"

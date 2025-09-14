@@ -13,6 +13,7 @@ export const useUIStore = defineStore('ui', {
     newPhaseStartDate: '',
     newPhaseEndDate: '',
     phaseModalColumnIndex: 0, // Track which column the modal was opened from
+    phaseModalParentPhase: null as any, // Track the parent phase for new phase creation
     showAimModal: false,
 
     // Column tracking for navigation
@@ -44,12 +45,13 @@ export const useUIStore = defineStore('ui', {
     },
     
     // Phase creation actions
-    openPhaseModal(columnIndex: number = 0) {
+    openPhaseModal(columnIndex: number = 0, parentPhase: any = null) {
       this.showPhaseModal = true
       this.newPhaseName = ''
       this.newPhaseStartDate = ''
       this.newPhaseEndDate = ''
       this.phaseModalColumnIndex = columnIndex
+      this.phaseModalParentPhase = parentPhase
     },
     
     closePhaseModal() {
@@ -57,6 +59,7 @@ export const useUIStore = defineStore('ui', {
       this.newPhaseName = ''
       this.newPhaseStartDate = ''
       this.newPhaseEndDate = ''
+      this.phaseModalParentPhase = null
     },
     
     // Aim creation actions

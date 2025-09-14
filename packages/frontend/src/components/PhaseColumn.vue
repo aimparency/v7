@@ -9,10 +9,12 @@ interface Props {
   phases: Phase[]
   columnIndex: number
   columnDepth?: number
+  parentPhase?: Phase | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  columnDepth: 1
+  columnDepth: 1,
+  parentPhase: null
 })
 
 const emit = defineEmits<{
@@ -23,6 +25,7 @@ const emit = defineEmits<{
 const selectedIndex = ref(0)
 const dataStore = useDataStore()
 const uiStore = useUIStore()
+const phaseRefs = ref<InstanceType<typeof PhaseComponent>[]>([])
 
 // Selection changes are now handled internally by Phase components via teleport
 
@@ -89,6 +92,35 @@ const handleFocus = () => {
   focusSelectedPhase()
 }
 
+// Handle empty state focus - similar to column focus but specific hints
+const handleEmptyStateFocus = () => {
+  console.log(`PhaseColumn ${props.columnIndex}: Empty state got focus`)
+  uiStore.setFocusedColumn(props.columnIndex)
+
+  const hints = [
+    { key: 'h', action: 'back to parent' },
+    { key: 'o/Enter', action: 'create phase' }
+  ]
+
+  uiStore.setKeyboardHints(hints)
+}
+
+// Handle empty state keydown - add Enter key for phase creation
+const handleEmptyStateKeydown = (event: KeyboardEvent) => {
+  switch (event.key) {
+    case 'o':
+    case 'O':
+    case 'Enter':
+      event.preventDefault()
+      // Open phase creation modal for this column
+      uiStore.openPhaseModal(props.columnIndex, props.parentPhase)
+      break
+    case 'h':
+      // Let this bubble up to global handler for navigation
+      break
+  }
+}
+
 // Handle phase click - update selection and focus
 const handlePhaseClick = async (clickedIndex: number) => {
   selectedIndex.value = clickedIndex
@@ -100,20 +132,10 @@ const handleRequestNextPhase = async (enterEditMode: boolean, aimIndex?: number)
   if (selectedIndex.value < props.phases.length - 1) {
     selectedIndex.value++
     await nextTick()
-    
-    if (enterEditMode) {
-      // Find the new phase component and enter edit mode
-      const newPhaseElement = document.querySelector(
-        `.phase-column[data-column-index="${props.columnIndex}"] .phase-container:nth-child(${selectedIndex.value + 1})`
-      ) as HTMLElement
-      
-      if (newPhaseElement) {
-        // Get Vue component instance - for now focus and simulate 'i' press
-        newPhaseElement.focus()
-        // Simulate entering edit mode - this is a bit hacky, but works
-        await nextTick()
-        newPhaseElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'i' }))
-      }
+
+    const targetPhase = phaseRefs.value[selectedIndex.value]
+    if (enterEditMode && targetPhase) {
+      await targetPhase.enterEditMode(aimIndex)
     } else {
       focusSelectedPhase()
     }
@@ -124,20 +146,10 @@ const handleRequestPreviousPhase = async (enterEditMode: boolean, aimIndex?: num
   if (selectedIndex.value > 0) {
     selectedIndex.value--
     await nextTick()
-    
-    if (enterEditMode) {
-      // Find the new phase component and enter edit mode
-      const newPhaseElement = document.querySelector(
-        `.phase-column[data-column-index="${props.columnIndex}"] .phase-container:nth-child(${selectedIndex.value + 1})`
-      ) as HTMLElement
-      
-      if (newPhaseElement) {
-        // Get Vue component instance - for now focus and simulate 'i' press
-        newPhaseElement.focus()
-        // Simulate entering edit mode - this is a bit hacky, but works
-        await nextTick()
-        newPhaseElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'i' }))
-      }
+
+    const targetPhase = phaseRefs.value[selectedIndex.value]
+    if (enterEditMode && targetPhase) {
+      await targetPhase.enterEditMode(aimIndex)
     } else {
       focusSelectedPhase()
     }
@@ -184,8 +196,8 @@ const handleKeydown = async (event: KeyboardEvent) => {
     case 'o':
     case 'O':
       event.preventDefault()
-      // Open phase creation modal
-      uiStore.openPhaseModal(props.columnIndex)
+      // Open phase creation modal with the parent phase
+      uiStore.openPhaseModal(props.columnIndex, props.parentPhase)
       break
   }
 }
@@ -199,7 +211,7 @@ const handleKeydown = async (event: KeyboardEvent) => {
     @keydown="handleKeydown"
     @focus="handleFocus"
   >
-    <div v-if="phases.length === 0" class="empty-state">
+    <div v-if="phases.length === 0" class="empty-state" tabindex="0" @focus="handleEmptyStateFocus" @keydown="handleEmptyStateKeydown">
       No sub phases, create one with o
     </div>
     
@@ -207,6 +219,7 @@ const handleKeydown = async (event: KeyboardEvent) => {
       <PhaseComponent
         v-for="(phase, index) in phases"
         :key="phase.id"
+        ref="phaseRefs"
         :phase="phase"
         :is-selected="index === selectedIndex"
         :column-index="columnIndex"

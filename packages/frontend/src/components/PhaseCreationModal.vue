@@ -10,44 +10,32 @@ const phaseNameInput = ref<HTMLInputElement>()
 
 const createPhase = async () => {
   if (!uiStore.newPhaseName.trim()) return
-  
+
   let parentPhaseId = null
-  
-  // Get parent from the previous column (column to the left)
-  const parentColumnIndex = uiStore.phaseModalColumnIndex - 1
-  if (parentColumnIndex >= 0) {
-    const parentPhase = dataStore.getSelectedPhase(parentColumnIndex)
-    if (parentPhase) {
-      // If parent is the null phase, create a root phase (parent = null)
-      parentPhaseId = parentPhase.id === 'null' ? null : parentPhase.id
-    }
+
+  // Use the stored parent phase from the UI store
+  if (uiStore.phaseModalParentPhase) {
+    // If parent is the null phase, create a root phase (parent = null)
+    parentPhaseId = uiStore.phaseModalParentPhase.id === 'null' ? null : uiStore.phaseModalParentPhase.id
   }
-  
+  // If no parent phase stored, it means we're creating a root phase (columnIndex = 1)
+
   try {
     await dataStore.createPhase(uiStore.projectPath, {
       name: uiStore.newPhaseName.trim(),
-      from: uiStore.newPhaseStartDate ? 
-        new Date(uiStore.newPhaseStartDate).getTime() : 
+      from: uiStore.newPhaseStartDate ?
+        new Date(uiStore.newPhaseStartDate).getTime() :
         Date.now(),
-      to: uiStore.newPhaseEndDate ? 
-        new Date(uiStore.newPhaseEndDate).getTime() : 
+      to: uiStore.newPhaseEndDate ?
+        new Date(uiStore.newPhaseEndDate).getTime() :
         Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days default
       parent: parentPhaseId,
       commitments: []
     })
-    
-    // Reload the column where we created the phase
-    const currentColumnIndex = uiStore.phaseModalColumnIndex
-    if (parentColumnIndex >= 0) {
-      const parentPhase = dataStore.getSelectedPhase(parentColumnIndex)
-      if (parentPhase) {
-        await dataStore.loadColumn(uiStore.projectPath, currentColumnIndex, parentPhase.id)
-      }
-    } else {
-      // Creating a root phase, reload the initial phases
-      await dataStore.loadPhases(uiStore.projectPath)
-    }
-    
+
+    // The phase creation is complete - the UI will automatically update
+    // because the teleported PhaseColumns will reload their data when their parent phase is selected
+
     uiStore.closePhaseModal()
   } catch (error) {
     console.error('Failed to create phase:', error)

@@ -194,7 +194,9 @@ const handleKeydown = async (event: KeyboardEvent) => {
         selectedAimIndex.value++
         await focusSelectedAim()
       } else {
-        // At last aim, request next phase and start at first aim
+        // At last aim, leaving this phase - exit edit mode
+        isInEditMode.value = false
+        // Request next phase and start at first aim
         emit('requestNextPhase', true, 0)
       }
       updateHints()
@@ -207,7 +209,9 @@ const handleKeydown = async (event: KeyboardEvent) => {
         selectedAimIndex.value--
         await focusSelectedAim()
       } else {
-        // At first aim, request previous phase and start at last aim
+        // At first aim, leaving this phase - exit edit mode
+        isInEditMode.value = false
+        // Request previous phase and start at last aim
         emit('requestPreviousPhase', true, -1)
       }
       updateHints()
@@ -496,6 +500,7 @@ onMounted(async () => {
       :phases="childPhases"
       :column-index="columnIndex + 1"
       :column-depth="columnDepth + 1"
+      :parent-phase="phase"
       :style="childColumnStyle"
       @request-navigate-left="handleNavigateFromChild"
       @request-navigate-right="handleNavigateToChild"

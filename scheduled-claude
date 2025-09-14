@@ -1,3 +1,4 @@
+remove console.logs. 
 
 - 
 
@@ -17,7 +18,10 @@ sub aims implementation
     - shift + hl: change indent 
     - shift + jk: move up down (on the same indent level)
 
-- 
+
+####################
+####### done #######
+####################
 
 remove the vertical border
 
@@ -25,14 +29,12 @@ remove the vertical border
 
 If we enter phase edit mode via j/k from another phase, leaving it with j/k should disable edit mode for the phase that we're leaving.
 
-
-####################
-####### done #######
-####################
+- 
 
 replace default scroll bars with decent ones. thin, darker colors. elegant. 
 
 - 
+
 
 on click does focus - so we should handle it. 
 E.g. on click on an aim should emit something like "i was clicked" to the parent so that we can set the modes accordingly. 
