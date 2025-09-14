@@ -45,19 +45,46 @@ const handlePhaseSelected = async (columnIndex: number, phaseIndex: number, phas
 const handleRequestNavigateLeft = async () => {
   if (focusedColumnIndex.value > 0) {
     focusedColumnIndex.value--
-    dataStore.navigateLeft()
+    adjustViewport()
     await nextTick()
     focusColumn(focusedColumnIndex.value)
   }
 }
 
 const handleRequestNavigateRight = async () => {
-  await dataStore.navigateRight(uiStore.projectPath)
-  const newFocusedIndex = dataStore.getCurrentFocusedColumnIndex()
-  if (newFocusedIndex > focusedColumnIndex.value) {
-    focusedColumnIndex.value = newFocusedIndex
-    await nextTick()
-    focusColumn(focusedColumnIndex.value)
+  console.log('Before navigate right:', {
+    focusedColumnIndex: focusedColumnIndex.value,
+    viewportStart: dataStore.currentViewportStart,
+    columnsLength: dataStore.phaseColumns.length
+  })
+  
+  focusedColumnIndex.value++
+  adjustViewport()
+  
+  console.log('After navigate right:', {
+    focusedColumnIndex: focusedColumnIndex.value,
+    viewportStart: dataStore.currentViewportStart
+  })
+  
+  await nextTick()
+  focusColumn(focusedColumnIndex.value)
+}
+
+const adjustViewport = () => {
+  const focused = focusedColumnIndex.value
+  const start = dataStore.currentViewportStart
+  const end = start + dataStore.visibleColumnCount - 1
+  
+  console.log('adjustViewport:', { focused, start, end, visibleCount: dataStore.visibleColumnCount })
+  
+  if (focused < start) {
+    console.log('Sliding left to show column', focused)
+    dataStore.currentViewportStart = focused
+  } else if (focused > end) {
+    console.log('Sliding right to show column', focused)
+    dataStore.currentViewportStart = focused - dataStore.visibleColumnCount + 1
+  } else {
+    console.log('Column already visible, no sliding needed')
   }
 }
 
@@ -180,7 +207,7 @@ const isColumnVisible = (columnIndex: number) => {
           :phases="column"
           :column-index="index"
           :is-empty="column.length === 0"
-          :style="{ width: columnWidth, position: 'absolute', left: `${index * (100 / dataStore.visibleColumnCount)}%` }"
+          :style="{ width: columnWidth, height: '100%', position: 'absolute', left: `${index * (100 / dataStore.visibleColumnCount)}%` }"
           @phase-selected="handlePhaseSelected(index, $event.phaseIndex, $event.phase)"
           @request-navigate-left="handleRequestNavigateLeft"
           @request-navigate-right="handleRequestNavigateRight"

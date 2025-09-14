@@ -161,38 +161,6 @@ export const useDataStore = defineStore('data', {
       return undefined
     },
     
-    // Navigation methods
-    async navigateRight(projectPath: string) {
-      const currentColumnIndex = this.getCurrentFocusedColumnIndex()
-      const selectedPhase = this.getSelectedPhase(currentColumnIndex)
-      
-      if (selectedPhase) {
-        const nextColumnIndex = currentColumnIndex + 1
-        await this.loadColumn(projectPath, nextColumnIndex, selectedPhase.id)
-        
-        // Only adjust viewport if we actually loaded phases
-        const hasPhases = this.phaseColumns[nextColumnIndex]?.length > 0
-        if (hasPhases && nextColumnIndex >= this.currentViewportStart + this.visibleColumnCount) {
-          this.currentViewportStart = nextColumnIndex - this.visibleColumnCount + 1
-        }
-      }
-    },
-    
-    navigateLeft() {
-      if (this.currentViewportStart > 0) {
-        this.currentViewportStart--
-      }
-    },
-    
-    // Get currently focused column index (rightmost visible column with data)
-    getCurrentFocusedColumnIndex(): number {
-      for (let i = this.phaseColumns.length - 1; i >= 0; i--) {
-        if (this.phaseColumns[i] && this.phaseColumns[i].length > 0) {
-          return i
-        }
-      }
-      return 0
-    },
     
     // Get selected phase from specific column
     getSelectedPhase(columnIndex: number): Phase | undefined {

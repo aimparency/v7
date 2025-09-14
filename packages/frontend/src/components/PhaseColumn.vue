@@ -35,22 +35,39 @@ watch(() => selectedIndex.value, (newIndex) => {
 // Focus the selected phase when this column gets focused
 const focusSelectedPhase = async () => {
   await nextTick()
-  const selectedPhase = document.querySelector(
-    `.phase-column[data-column-index="${props.columnIndex}"] .phase-container:nth-child(${selectedIndex.value + 1})`
-  ) as HTMLElement
-  selectedPhase?.focus()
+  
+  if (props.isEmpty) {
+    // Focus the empty state div
+    const emptyState = document.querySelector(
+      `.phase-column[data-column-index="${props.columnIndex}"] .empty-state`
+    ) as HTMLElement
+    emptyState?.focus()
+  } else {
+    // Focus the selected phase
+    const selectedPhase = document.querySelector(
+      `.phase-column[data-column-index="${props.columnIndex}"] .phase-container:nth-child(${selectedIndex.value + 1})`
+    ) as HTMLElement
+    selectedPhase?.focus()
+  }
 }
 
 // Handle column focus event
 const handleFocus = () => {
   // Set keyboard hints for column navigation
-  uiStore.setKeyboardHints([
-    { key: 'j/k', action: 'navigate phases' },
+  const hints = [
     { key: 'h/l', action: 'switch columns' },
-    { key: 'i', action: 'enter phase' },
     { key: 'o', action: 'create phase' }
-  ])
+  ]
   
+  // Add phase-specific hints only if phases exist
+  if (!props.isEmpty) {
+    hints.unshift(
+      { key: 'j/k', action: 'navigate phases' },
+      { key: 'i', action: 'enter phase' }
+    )
+  }
+  
+  uiStore.setKeyboardHints(hints)
   focusSelectedPhase()
 }
 
@@ -139,9 +156,9 @@ const handleKeydown = async (event: KeyboardEvent) => {
       break
     case 'l':
       event.preventDefault()
-      // Navigate to next column (if children exist)
+      // Navigate to next column (if current phase exists)
       const currentPhase = props.phases[selectedIndex.value]
-      if (currentPhase && !props.isEmpty) {
+      if (currentPhase) {
         emit('requestNavigateRight')
       }
       break
@@ -163,7 +180,7 @@ const handleKeydown = async (event: KeyboardEvent) => {
     @keydown="handleKeydown"
     @focus="handleFocus"
   >
-    <div v-if="isEmpty" class="empty-state">
+    <div v-if="isEmpty" class="empty-state" tabindex="0">
       No sub phases
     </div>
     
@@ -184,7 +201,7 @@ const handleKeydown = async (event: KeyboardEvent) => {
 
 <style scoped>
 .phase-column {
-  flex: 1;
+  height: 100%;
   border-right: 0.0625rem solid #444;
   display: flex;
   flex-direction: column;
