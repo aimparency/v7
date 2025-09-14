@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import type { Hint } from 'shared'
 
 export const useUIStore = defineStore('ui', {
   state: () => ({
@@ -14,7 +15,7 @@ export const useUIStore = defineStore('ui', {
     showAimModal: false,
     
     // Keyboard hints
-    keyboardHints: [] as string[],
+    keyboardHints: [] as Hint[],
   }),
   
   getters: {
@@ -60,7 +61,7 @@ export const useUIStore = defineStore('ui', {
     },
     
     // Keyboard hints actions
-    setKeyboardHints(hints: string[]) {
+    setKeyboardHints(hints: Hint[]) {
       this.keyboardHints = hints
     },
     

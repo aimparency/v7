@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import type { Phase } from 'shared'
+import type { Phase, Hint } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import AimComponent from './Aim.vue'
@@ -121,31 +121,31 @@ const clearConfirmationStates = () => {
 // Update hints based on current mode
 const updateHints = () => {
   if (isInEditMode.value) {
-    const hints = [
-      'j/k navigate aims',
-      'h/l expand/collapse',
-      'o create aim',
-      'd delete aim',
-      'Esc exit edit'
+    const hints: Hint[] = [
+      { key: 'j/k', action: 'navigate aims' },
+      { key: 'h/l', action: 'expand/collapse' },
+      { key: 'o', action: 'create aim' },
+      { key: 'd', action: 'delete aim' },
+      { key: 'Esc', action: 'exit edit' }
     ]
     
     // Only show remove option if not in null phase
     if (props.phase.id !== 'null') {
-      hints.splice(-1, 0, 'r remove aim')
+      hints.splice(-1, 0, { key: 'r', action: 'remove aim' })
     }
     
     if (aboutToDelete.value) {
-      hints.unshift('d confirm delete (red)')
+      hints.unshift({ key: 'd', action: 'confirm delete (red)' })
     } else if (aboutToRemove.value) {
-      hints.unshift('r confirm remove (orange)')
+      hints.unshift({ key: 'r', action: 'confirm remove (orange)' })
     }
     
     uiStore.setKeyboardHints(hints)
   } else if (props.isSelected) {
     uiStore.setKeyboardHints([
-      'i enter phase edit',
-      'j/k navigate phases',
-      'h/l switch columns'
+      { key: 'i', action: 'enter phase edit' },
+      { key: 'j/k', action: 'navigate phases' },
+      { key: 'h/l', action: 'switch columns' }
     ])
   }
 }
@@ -353,11 +353,11 @@ const createAim = async (insertionIndex?: number) => {
     // If this is not the Root phase, commit the aim to this phase at the specified position
     if (props.phase.id !== 'null') {
       await dataStore.commitAimToPhase(uiStore.projectPath, result.id, props.phase.id, insertionIndex)
-      
-      // Update selected aim index to the newly created aim
-      if (insertionIndex !== undefined) {
-        selectedAimIndex.value = insertionIndex
-      }
+    }
+    
+    // Update selected aim index to the newly created aim position
+    if (insertionIndex !== undefined) {
+      selectedAimIndex.value = insertionIndex
     }
     
     // Reload this phase's aims

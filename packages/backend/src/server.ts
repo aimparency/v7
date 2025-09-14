@@ -79,12 +79,26 @@ async function listPhases(projectPath: string, parentPhaseId?: string | null): P
 }
 
 // Helper function to add aim to phase's commitments and aim's committedIn
-async function commitAimToPhase(projectPath: string, aimId: string, phaseId: string): Promise<void> {
+async function commitAimToPhase(projectPath: string, aimId: string, phaseId: string, insertionIndex?: number): Promise<void> {
   // Update the phase
   const phase = await readPhase(projectPath, phaseId);
+  console.log(`commitAimToPhase: aimId=${aimId}, phaseId=${phaseId}, insertionIndex=${insertionIndex}`);
+  console.log(`Before: phase.commitments =`, phase.commitments);
+  
   if (!phase.commitments.includes(aimId)) {
-    phase.commitments.push(aimId);
+    if (insertionIndex !== undefined && insertionIndex <= phase.commitments.length) {
+      // Insert at specific position
+      console.log(`Inserting at index ${insertionIndex}`);
+      phase.commitments.splice(insertionIndex, 0, aimId);
+    } else {
+      // Append to end
+      console.log(`Appending to end (insertionIndex was ${insertionIndex})`);
+      phase.commitments.push(aimId);
+    }
+    console.log(`After: phase.commitments =`, phase.commitments);
     await writePhase(projectPath, phase);
+  } else {
+    console.log(`Aim ${aimId} already in phase commitments`);
   }
   
   // Update the aim
@@ -219,10 +233,11 @@ const appRouter = t.router({
       .input(z.object({
         projectPath: z.string(),
         aimId: z.string().uuid(),
-        phaseId: z.string().uuid()
+        phaseId: z.string().uuid(),
+        insertionIndex: z.number().optional()
       }))
       .mutation(async ({ input }) => {
-        await commitAimToPhase(input.projectPath, input.aimId, input.phaseId);
+        await commitAimToPhase(input.projectPath, input.aimId, input.phaseId, input.insertionIndex);
         return { success: true };
       }),
 

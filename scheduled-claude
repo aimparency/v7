@@ -1,3 +1,7 @@
+replace default scroll bars with decent ones. thin, darker colors. elegant. 
+
+- 
+
 on click does focus - so we should handle it. 
 E.g. on click on an aim should emit something like "i was clicked" to the parent so that we can set the modes accordingly. 
 
@@ -9,4 +13,5 @@ make padding in header and footer smaller.
 set fontsize to 0.8 in header and footer in general and remove overwrites in childrens. 
 Make background color darker. 
 
+# done
 

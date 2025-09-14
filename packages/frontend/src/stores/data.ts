@@ -162,13 +162,14 @@ export const useDataStore = defineStore('data', {
         await trpc.aim.commitToPhase.mutate({
           projectPath,
           aimId,
-          phaseId
+          phaseId,
+          insertionIndex
         })
         
         // Update the local phase data to reflect the new commitments
         const localPhase = this.findPhase(phaseId)
         if (localPhase && !localPhase.commitments.includes(aimId)) {
-          if (insertionIndex !== undefined) {
+          if (insertionIndex !== undefined && insertionIndex <= localPhase.commitments.length) {
             localPhase.commitments.splice(insertionIndex, 0, aimId)
           } else {
             localPhase.commitments.push(aimId)

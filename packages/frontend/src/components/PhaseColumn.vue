@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
-import type { Phase } from 'shared'
+import type { Phase, Hint } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import PhaseComponent from './Phase.vue'
@@ -45,10 +45,10 @@ const focusSelectedPhase = async () => {
 const handleFocus = () => {
   // Set keyboard hints for column navigation
   uiStore.setKeyboardHints([
-    'j/k navigate phases',
-    'h/l switch columns', 
-    'i enter phase',
-    'o create phase'
+    { key: 'j/k', action: 'navigate phases' },
+    { key: 'h/l', action: 'switch columns' },
+    { key: 'i', action: 'enter phase' },
+    { key: 'o', action: 'create phase' }
   ])
   
   focusSelectedPhase()
@@ -203,6 +203,28 @@ const handleKeydown = async (event: KeyboardEvent) => {
   flex: 1;
   overflow-y: auto;
   padding: 0.5rem;
+  
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #666;
+    }
+  }
+  
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: #555 #1a1a1a;
 }
 
 .empty-state {

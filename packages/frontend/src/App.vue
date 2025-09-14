@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import type { Phase } from 'shared'
+import type { Phase, Hint } from 'shared'
 import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
 import PhaseColumn from './components/PhaseColumn.vue'
@@ -50,8 +50,8 @@ const handleRequestFocusRight = () => {
 // Set global unfocused hints
 const setGlobalHints = () => {
   uiStore.setKeyboardHints([
-    'h/l focus columns',
-    'j/k/i focus last column'
+    { key: 'h/l', action: 'focus columns' },
+    { key: 'j/k/i', action: 'focus last column' }
   ])
 }
 
@@ -166,7 +166,10 @@ onUnmounted(() => {
     <!-- Help Text -->
     <footer v-if="!uiStore.isInProjectSelection" class="help">
       <div class="help-keys">
-        <span v-for="hint in uiStore.keyboardHints" :key="hint">{{ hint }}</span>
+        <div v-for="hint in uiStore.keyboardHints" :key="`${hint.key}-${hint.action}`" class="hint">
+          <span class="key">{{ hint.key }}</span>
+          <span class="action">{{ hint.action }}</span>
+        </div>
       </div>
     </footer>
   </div>
@@ -183,8 +186,9 @@ onUnmounted(() => {
 
 .header {
   background: #2d2d2d;
-  padding: 0.5rem 1rem;
+  padding: 0.25rem 1rem;
   border-bottom: 1px solid #444;
+  font-size: 0.8rem;
 }
 
 .status {
@@ -195,7 +199,6 @@ onUnmounted(() => {
 }
 
 .connection-status {
-  font-size: 0.8rem;
   opacity: 0.5;
 }
 
@@ -220,7 +223,6 @@ onUnmounted(() => {
   color: #888;
   text-decoration: underline;
   cursor: pointer;
-  font-size: 0.9rem;
 }
 
 .close-project:hover {
@@ -266,21 +268,30 @@ onUnmounted(() => {
 
 .help {
   background: #2d2d2d;
-  padding: 0.5rem 1rem;
+  padding: 0.25rem 1rem;
   border-top: 1px solid #444;
+  font-size: 0.8rem;
 }
 
 .help-keys {
-  display: flex;
-  gap: 2rem;
-  font-size: 0.9rem;
+  display: block;
   color: #888;
 }
 
-.help-keys span {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.hint {
+  display: inline-block;
+  margin-right: 2rem;
+  margin-bottom: 0.25rem;
+}
+
+.key {
+  color: #fff;
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+.action {
+  color: #888;
 }
 
 kbd {
