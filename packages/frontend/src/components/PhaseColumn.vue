@@ -53,12 +53,13 @@ onMounted(() => {
   console.log(`PhaseColumn ${props.columnIndex}: Mounted, phases=${props.phases.length}`)
 
   if (props.phases.length === 0) {
-    // If I am empty, I am the rightmost column (but report +1 because of root aims offset)
-    console.log(`PhaseColumn ${props.columnIndex}: Empty, setting rightmost=${props.columnIndex + 1}`)
-    uiStore.setRightmostColumn(props.columnIndex + 1)
+    // If I am empty, I am the definitive rightmost column
+    console.log(`PhaseColumn ${props.columnIndex}: Empty, setting rightmost=${props.columnIndex}`)
+    uiStore.setRightmostColumn(props.columnIndex)
   } else {
     // If I have phases, ensure rightmost is at least my potential child column index
-    const minRightmost = props.columnIndex + 2
+    // But don't override if an empty column has already set a definitive rightmost
+    const minRightmost = props.columnIndex + 1
     console.log(`PhaseColumn ${props.columnIndex}: Has phases, setting min rightmost=${minRightmost}`)
     uiStore.setMinRightmost(minRightmost)
   }
@@ -167,7 +168,18 @@ const handleKeydown = async (event: KeyboardEvent) => {
       // Don't prevent default - let this bubble up to global handler
       break
     case 'l':
-      // Don't prevent default - let this bubble up to global handler
+      event.preventDefault()
+      // Try to focus child column if it exists (teleported column)
+      const childColumnIndex = props.columnIndex + 1
+      const childColumn = document.querySelector(`[data-column-index="${childColumnIndex}"]`) as HTMLElement
+      if (childColumn) {
+        console.log(`PhaseColumn ${props.columnIndex}: Focusing child column ${childColumnIndex}`)
+        childColumn.focus()
+        // Also update the focused column in store
+        uiStore.setFocusedColumn(childColumnIndex)
+      } else {
+        console.log(`PhaseColumn ${props.columnIndex}: No child column found at index ${childColumnIndex}`)
+      }
       break
     case 'o':
     case 'O':
