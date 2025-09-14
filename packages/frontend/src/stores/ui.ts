@@ -78,6 +78,10 @@ export const useUIStore = defineStore('ui', {
       this.rightmostColumnIndex = columnIndex
     },
 
+    setMinRightmost(columnIndex: number) {
+      this.rightmostColumnIndex = Math.max(this.rightmostColumnIndex, columnIndex)
+    },
+
     setFocusedColumn(columnIndex: number) {
       this.focusedColumnIndex = columnIndex
     },

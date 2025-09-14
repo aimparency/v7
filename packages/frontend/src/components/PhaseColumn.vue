@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, watch, nextTick, onMounted } from 'vue'
 import type { Phase, Hint } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
@@ -28,31 +28,46 @@ const uiStore = useUIStore()
 
 // Focus the selected phase when this column gets focused
 const focusSelectedPhase = async () => {
+  console.log(`PhaseColumn ${props.columnIndex}: focusSelectedPhase called, phases=${props.phases.length}`)
   await nextTick()
-  
+
   if (props.phases.length === 0) {
     // Focus the empty state div
     const emptyState = document.querySelector(
       `.phase-column[data-column-index="${props.columnIndex}"] .empty-state`
     ) as HTMLElement
+    console.log(`PhaseColumn ${props.columnIndex}: Focusing empty state, found:`, !!emptyState)
     emptyState?.focus()
   } else {
     // Focus the selected phase
     const selectedPhase = document.querySelector(
       `.phase-column[data-column-index="${props.columnIndex}"] .phase-container:nth-child(${selectedIndex.value + 1})`
     ) as HTMLElement
+    console.log(`PhaseColumn ${props.columnIndex}: Focusing selected phase, found:`, !!selectedPhase)
     selectedPhase?.focus()
   }
 }
 
+// Set rightmost when column is mounted/rendered
+onMounted(() => {
+  console.log(`PhaseColumn ${props.columnIndex}: Mounted, phases=${props.phases.length}`)
+
+  if (props.phases.length === 0) {
+    // If I am empty, I am the rightmost column (but report +1 because of root aims offset)
+    console.log(`PhaseColumn ${props.columnIndex}: Empty, setting rightmost=${props.columnIndex + 1}`)
+    uiStore.setRightmostColumn(props.columnIndex + 1)
+  } else {
+    // If I have phases, ensure rightmost is at least my potential child column index
+    const minRightmost = props.columnIndex + 2
+    console.log(`PhaseColumn ${props.columnIndex}: Has phases, setting min rightmost=${minRightmost}`)
+    uiStore.setMinRightmost(minRightmost)
+  }
+})
+
 // Handle column focus event
 const handleFocus = () => {
+  console.log(`PhaseColumn ${props.columnIndex}: Got focus, phases=${props.phases.length}`)
   uiStore.setFocusedColumn(props.columnIndex)
-
-  // If I am empty, I am the rightmost column
-  if (props.phases.length === 0) {
-    uiStore.setRightmostColumn(props.columnIndex)
-  }
 
   // Set keyboard hints for column navigation
   const hints = [
@@ -149,14 +164,10 @@ const handleKeydown = async (event: KeyboardEvent) => {
       }
       break
     case 'h':
-      event.preventDefault()
-      // Navigate back to parent (handled by phase teleport system)
-      emit('requestNavigateLeft')
+      // Don't prevent default - let this bubble up to global handler
       break
     case 'l':
-      event.preventDefault()
-      // Request navigation to right (child columns)
-      emit('requestNavigateRight')
+      // Don't prevent default - let this bubble up to global handler
       break
     case 'o':
     case 'O':

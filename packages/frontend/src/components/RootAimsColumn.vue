@@ -23,20 +23,25 @@ const focusSelectedAim = async () => {
   await nextTick()
 
   if (rootAims.value.length === 0) {
-    // Focus the empty state div
+    // Focus the empty state div if no aims
     const emptyState = document.querySelector('.root-aims-column .empty-state') as HTMLElement
-    emptyState?.focus()
+    if (emptyState) {
+      emptyState.focus()
+    }
   } else {
-    // Focus the selected aim
+    // Focus the selected aim element directly
     const selectedAim = document.querySelector(
-      `.root-aims-column .aim-container:nth-child(${selectedIndex.value + 1})`
+      `.root-aims-column .aim-container:nth-child(${selectedIndex.value + 1}) .aim-item`
     ) as HTMLElement
-    selectedAim?.focus()
+    if (selectedAim) {
+      selectedAim.focus()
+    }
   }
 }
 
 // Handle column focus event
 const handleFocus = () => {
+  console.log('RootAims: Got focus, setting focused=0, rightmost=1')
   uiStore.setFocusedColumn(0)
 
   // The first PhaseColumn (column 1) is always available for navigation
@@ -68,23 +73,25 @@ const handleAimClick = async (clickedIndex: number) => {
 
 // Handle aim navigation within column
 const handleKeydown = async (event: KeyboardEvent) => {
+  console.log('RootAims: Key pressed:', event.key)
+
   switch (event.key) {
     case 'j':
       event.preventDefault()
       if (selectedIndex.value < rootAims.value.length - 1) {
         selectedIndex.value++
+        await focusSelectedAim()
       }
       break
     case 'k':
       event.preventDefault()
       if (selectedIndex.value > 0) {
         selectedIndex.value--
+        await focusSelectedAim()
       }
       break
     case 'l':
-      event.preventDefault()
-      // Navigate to phases column
-      emit('requestNavigateRight')
+      // Don't prevent default - let this bubble up to global handler
       break
     case 'o':
     case 'O':
@@ -121,8 +128,9 @@ defineExpose({
     tabindex="0"
     @keydown="handleKeydown"
     @focus="handleFocus"
+    @click="$event.target.focus()"
   >
-    <div v-if="rootAims.length === 0" class="empty-state">
+    <div v-if="rootAims.length === 0" class="empty-state" tabindex="0">
       No aims yet, create one with o
     </div>
 

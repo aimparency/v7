@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import type { Phase, Hint } from 'shared'
 import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
@@ -18,6 +18,29 @@ const firstPhaseColumnRef = ref<InstanceType<typeof PhaseColumn> | null>(null)
 
 // Root phases for the first phase column
 const rootPhases = ref<Phase[]>([])
+
+// Viewport management - show 2 columns at a time
+const viewportStart = ref(0)
+
+// Update viewport only when focused column goes beyond current viewport
+watch(() => uiStore.focusedColumnIndex, (focused) => {
+  const viewportEnd = viewportStart.value + 1
+
+  if (focused > viewportEnd) {
+    // Focused column is beyond right edge, shift viewport right
+    viewportStart.value = focused - 1
+  } else if (focused < viewportStart.value) {
+    // Focused column is beyond left edge, shift viewport left
+    viewportStart.value = focused
+  }
+})
+
+// Container offset based on viewport start
+const containerOffset = computed(() => {
+  const columnWidth = 50 // Each column is 50% wide
+  const offset = viewportStart.value * columnWidth
+  return `translateX(-${offset}%)`
+})
 
 const selectProject = async () => {
   const path = prompt('Enter project base folder path:')
@@ -67,14 +90,25 @@ const handleNavigateToAims = async () => {
 
 // Handle navigation from any column
 const handleNavigateLeft = async () => {
+  console.log('Navigate left:', {
+    focused: uiStore.focusedColumnIndex,
+    rightmost: uiStore.rightmostColumnIndex,
+    canNavigate: uiStore.canNavigateLeft
+  })
+
   if (uiStore.canNavigateLeft) {
     const newIndex = uiStore.focusedColumnIndex - 1
     uiStore.setFocusedColumn(newIndex)
     await nextTick()
 
+    console.log('Focusing column:', newIndex)
     if (newIndex === 0) {
+      // Focus the selected aim in the root aims column
+      console.log('rootAimsColumnRef.value:', !!rootAimsColumnRef.value)
       rootAimsColumnRef.value?.focusSelectedAim()
     } else if (newIndex === 1) {
+      // Focus the selected phase in the phase column
+      console.log('firstPhaseColumnRef.value:', !!firstPhaseColumnRef.value)
       firstPhaseColumnRef.value?.focusSelectedPhase()
     }
     // For teleported columns, they handle their own focus
@@ -82,12 +116,22 @@ const handleNavigateLeft = async () => {
 }
 
 const handleNavigateRight = async () => {
+  console.log('Navigate right:', {
+    focused: uiStore.focusedColumnIndex,
+    rightmost: uiStore.rightmostColumnIndex,
+    canNavigate: uiStore.canNavigateRight
+  })
+
   if (uiStore.canNavigateRight) {
     const newIndex = uiStore.focusedColumnIndex + 1
     uiStore.setFocusedColumn(newIndex)
     await nextTick()
 
+    console.log('Focusing column:', newIndex)
     if (newIndex === 1) {
+      // Focus the selected phase in the phase column
+      console.log('firstPhaseColumnRef.value:', !!firstPhaseColumnRef.value)
+      console.log('firstPhaseColumnRef.value.focusSelectedPhase:', !!firstPhaseColumnRef.value?.focusSelectedPhase)
       firstPhaseColumnRef.value?.focusSelectedPhase()
     }
     // For teleported columns, they handle their own focus
@@ -102,41 +146,15 @@ const setGlobalHints = () => {
   ])
 }
 
-// Global keyboard handler for unfocused state
+// Global keyboard handler for h/l navigation
 const handleGlobalKeydown = (event: KeyboardEvent) => {
-  // Only handle if no element is focused (or body is focused)
-  const activeElement = document.activeElement
-  if (activeElement && activeElement !== document.body && activeElement.tagName !== 'BODY') {
-    return
-  }
-
-  // Set global hints if not already set
-  if (uiStore.keyboardHints.length === 0) {
-    setGlobalHints()
-  }
-
-  switch (event.key) {
-    case 'h':
-      event.preventDefault()
-      handleNavigateLeft()
-      break
-    case 'l':
-      event.preventDefault()
-      handleNavigateRight()
-      break
-    case 'j':
-    case 'k':
-    case 'i':
-      event.preventDefault()
-      // Focus current column based on focused index
-      const focusedIndex = uiStore.focusedColumnIndex
-      if (focusedIndex === 0) {
-        rootAimsColumnRef.value?.focusSelectedAim()
-      } else if (focusedIndex === 1) {
-        firstPhaseColumnRef.value?.focusSelectedPhase()
-      }
-      // For teleported columns, they handle their own focus
-      break
+  // Only handle h/l for global navigation - let other keys be handled by focused components
+  if (event.key === 'h') {
+    event.preventDefault()
+    handleNavigateLeft()
+  } else if (event.key === 'l') {
+    event.preventDefault()
+    handleNavigateRight()
   }
 }
 
@@ -154,6 +172,10 @@ onMounted(async () => {
 
   // Add global keyboard listener
   document.addEventListener('keydown', handleGlobalKeydown)
+
+  // Ensure RootAimsColumn gets initial focus
+  await nextTick()
+  rootAimsColumnRef.value?.focusSelectedAim()
 })
 
 onUnmounted(() => {
@@ -185,7 +207,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Main Interface -->
-    <main v-else class="main">
+    <main v-else class="main" :style="{ transform: containerOffset }">
       <!-- Root Aims Column (Column 0) -->
       <RootAimsColumn
         ref="rootAimsColumnRef"
