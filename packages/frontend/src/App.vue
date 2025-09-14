@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import type { Phase, Hint } from 'shared'
 import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
+import { trpc } from './trpc'
+import RootAimsColumn from './components/RootAimsColumn.vue'
 import PhaseColumn from './components/PhaseColumn.vue'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
@@ -10,19 +12,34 @@ import AimCreationModal from './components/AimCreationModal.vue'
 const uiStore = useUIStore()
 const dataStore = useDataStore()
 
-// Template refs for dynamic columns
-const columnRefs = ref<InstanceType<typeof PhaseColumn>[]>([])
+// Template refs
+const rootAimsColumnRef = ref<InstanceType<typeof RootAimsColumn> | null>(null)
+const firstPhaseColumnRef = ref<InstanceType<typeof PhaseColumn> | null>(null)
 
-// Track currently focused column index
-const focusedColumnIndex = ref(0)
+// Root phases for the first phase column
+const rootPhases = ref<Phase[]>([])
 
 const selectProject = async () => {
   const path = prompt('Enter project base folder path:')
   if (path) {
     uiStore.setProjectPath(path)
     uiStore.setConnectionStatus('connecting')
-    await dataStore.loadPhases(path)
+    // Load root phases for first phase column
+    await loadRootPhases(path)
     uiStore.setConnectionStatus('connected')
+  }
+}
+
+const loadRootPhases = async (projectPath: string) => {
+  try {
+    const phases = await trpc.phase.list.query({
+      projectPath,
+      parentPhaseId: null
+    })
+    rootPhases.value = phases
+  } catch (error) {
+    console.error('Failed to load root phases:', error)
+    rootPhases.value = []
   }
 }
 
@@ -30,60 +47,58 @@ const closeProject = () => {
   uiStore.setProjectPath('')
 }
 
-// Handle phase selection in any column to load next column
-const handlePhaseSelected = async (columnIndex: number, phaseIndex: number, phase: Phase) => {
-  // Update selection in data store
-  dataStore.setSelectedPhaseIndex(columnIndex, phaseIndex)
-  
-  // Load next column with children of selected phase
-  if (phase) {
-    await dataStore.loadColumn(uiStore.projectPath, columnIndex + 1, phase.id)
-  }
-}
-
-// Handle cross-column navigation
-const handleRequestNavigateLeft = async () => {
-  if (focusedColumnIndex.value > 0) {
-    focusedColumnIndex.value--
-    adjustViewport()
+// Handle navigation from root aims column to first phase column
+const handleNavigateFromAims = async () => {
+  if (uiStore.canNavigateRight) {
+    uiStore.setFocusedColumn(1)
     await nextTick()
-    focusColumn(focusedColumnIndex.value)
+    firstPhaseColumnRef.value?.focusSelectedPhase()
   }
 }
 
-const handleRequestNavigateRight = async () => {
-  // Only navigate if there's a column to navigate to
-  if (focusedColumnIndex.value < dataStore.phaseColumns.length - 1) {
-    focusedColumnIndex.value++
-    adjustViewport()
+// Handle navigation from first phase column back to aims
+const handleNavigateToAims = async () => {
+  if (uiStore.canNavigateLeft) {
+    uiStore.setFocusedColumn(0)
     await nextTick()
-    focusColumn(focusedColumnIndex.value)
+    rootAimsColumnRef.value?.focusSelectedAim()
   }
 }
 
-const adjustViewport = () => {
-  const focused = focusedColumnIndex.value
-  const start = dataStore.currentViewportStart
-  const end = start + dataStore.visibleColumnCount - 1
-  
-  if (focused < start) {
-    dataStore.currentViewportStart = focused
-  } else if (focused > end) {
-    dataStore.currentViewportStart = focused - dataStore.visibleColumnCount + 1
+// Handle navigation from any column
+const handleNavigateLeft = async () => {
+  if (uiStore.canNavigateLeft) {
+    const newIndex = uiStore.focusedColumnIndex - 1
+    uiStore.setFocusedColumn(newIndex)
+    await nextTick()
+
+    if (newIndex === 0) {
+      rootAimsColumnRef.value?.focusSelectedAim()
+    } else if (newIndex === 1) {
+      firstPhaseColumnRef.value?.focusSelectedPhase()
+    }
+    // For teleported columns, they handle their own focus
   }
 }
 
-// Focus specific column
-const focusColumn = (columnIndex: number) => {
-  const column = columnRefs.value[columnIndex]
-  column?.focusSelectedPhase()
+const handleNavigateRight = async () => {
+  if (uiStore.canNavigateRight) {
+    const newIndex = uiStore.focusedColumnIndex + 1
+    uiStore.setFocusedColumn(newIndex)
+    await nextTick()
+
+    if (newIndex === 1) {
+      firstPhaseColumnRef.value?.focusSelectedPhase()
+    }
+    // For teleported columns, they handle their own focus
+  }
 }
 
 // Set global unfocused hints
 const setGlobalHints = () => {
   uiStore.setKeyboardHints([
-    { key: 'h/l', action: 'focus columns' },
-    { key: 'j/k/i', action: 'focus last column' }
+    { key: 'h/l', action: 'navigate columns' },
+    { key: 'j/k/i', action: 'focus current column' }
   ])
 }
 
@@ -103,35 +118,40 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
   switch (event.key) {
     case 'h':
       event.preventDefault()
-      handleRequestNavigateLeft()
+      handleNavigateLeft()
       break
     case 'l':
       event.preventDefault()
-      handleRequestNavigateRight()
+      handleNavigateRight()
       break
     case 'j':
     case 'k':
     case 'i':
       event.preventDefault()
-      // Focus current column
-      focusColumn(focusedColumnIndex.value)
+      // Focus current column based on focused index
+      const focusedIndex = uiStore.focusedColumnIndex
+      if (focusedIndex === 0) {
+        rootAimsColumnRef.value?.focusSelectedAim()
+      } else if (focusedIndex === 1) {
+        firstPhaseColumnRef.value?.focusSelectedPhase()
+      }
+      // For teleported columns, they handle their own focus
       break
   }
 }
 
 onMounted(async () => {
-  // Set default column count (flexible for future)
-  dataStore.setVisibleColumnCount(2)
-  
+  uiStore.setFocusedColumn(0) // Start focused on aims
+
   if (uiStore.projectPath) {
     uiStore.setConnectionStatus('connecting')
-    await dataStore.loadPhases(uiStore.projectPath)
+    await loadRootPhases(uiStore.projectPath)
     uiStore.setConnectionStatus('connected')
   }
-  
+
   // Set initial global hints
   setGlobalHints()
-  
+
   // Add global keyboard listener
   document.addEventListener('keydown', handleGlobalKeydown)
 })
@@ -141,22 +161,6 @@ onUnmounted(() => {
   document.removeEventListener('keydown', handleGlobalKeydown)
 })
 
-// Computed properties for rendering
-const columnWidth = computed(() => {
-  return `${100 / dataStore.visibleColumnCount}%`
-})
-
-const containerOffset = computed(() => {
-  return `translateX(-${dataStore.currentViewportStart * (100 / dataStore.visibleColumnCount)}%)`
-})
-
-// Check if column should be visible (within viewport + buffer)
-const isColumnVisible = (columnIndex: number) => {
-  const start = dataStore.currentViewportStart
-  const end = start + dataStore.visibleColumnCount - 1
-  // Show columns within viewport plus 1 buffer on each side for smooth scrolling
-  return columnIndex >= start - 1 && columnIndex <= end + 1
-}
 </script>
 
 <template>
@@ -182,22 +186,24 @@ const isColumnVisible = (columnIndex: number) => {
 
     <!-- Main Interface -->
     <main v-else class="main">
-      <div class="phase-columns-container" :style="{ transform: containerOffset }">
-        <!-- All Columns (one per tree level, show/hide based on viewport) -->
-        <PhaseColumn
-          v-for="(column, index) in dataStore.phaseColumns"
-          :key="index"
-          v-show="isColumnVisible(index)"
-          :ref="(el) => { if (el) columnRefs[index] = el as InstanceType<typeof PhaseColumn> }"
-          :phases="column"
-          :column-index="index"
-          :style="{ width: columnWidth, height: '100%', position: 'absolute', left: `${index * (100 / dataStore.visibleColumnCount)}%` }"
-          @phase-selected="handlePhaseSelected(index, $event.phaseIndex, $event.phase)"
-          @request-navigate-left="handleRequestNavigateLeft"
-          @request-navigate-right="handleRequestNavigateRight"
-          @focus="focusedColumnIndex = index"
-        />
-      </div>
+      <!-- Root Aims Column (Column 0) -->
+      <RootAimsColumn
+        ref="rootAimsColumnRef"
+        class="column-0"
+        @request-navigate-right="handleNavigateRight"
+        @focus="uiStore.setFocusedColumn(0)"
+      />
+
+      <!-- First Phase Column (Column 1) -->
+      <PhaseColumn
+        ref="firstPhaseColumnRef"
+        :phases="rootPhases"
+        :column-index="1"
+        :column-depth="1"
+        class="column-1"
+        @request-navigate-left="handleNavigateLeft"
+        @focus="uiStore.setFocusedColumn(1)"
+      />
     </main>
 
     <!-- Phase Creation Modal -->
@@ -300,15 +306,26 @@ const isColumnVisible = (columnIndex: number) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
-.phase-columns-container {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  transition: transform 0.3s ease;
-  width: 100%;
+/* Base column positioning */
+.column-0 {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  z-index: 1;
+}
+
+.column-1 {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  z-index: 1;
 }
 
 

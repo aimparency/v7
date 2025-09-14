@@ -8,12 +8,14 @@ import PhaseComponent from './Phase.vue'
 interface Props {
   phases: Phase[]
   columnIndex: number
+  columnDepth?: number
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  columnDepth: 1
+})
 
 const emit = defineEmits<{
-  phaseSelected: [{ phaseIndex: number, phase: Phase }]
   requestNavigateLeft: []
   requestNavigateRight: []
 }>()
@@ -22,12 +24,7 @@ const selectedIndex = ref(0)
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 
-// When selection changes, emit event to update next column
-watch(() => selectedIndex.value, (newIndex) => {
-  if (props.phases[newIndex]) {
-    emit('phaseSelected', { phaseIndex: newIndex, phase: props.phases[newIndex] })
-  }
-})
+// Selection changes are now handled internally by Phase components via teleport
 
 // Focus the selected phase when this column gets focused
 const focusSelectedPhase = async () => {
@@ -50,20 +47,28 @@ const focusSelectedPhase = async () => {
 
 // Handle column focus event
 const handleFocus = () => {
+  uiStore.setFocusedColumn(props.columnIndex)
+
+  // If I am empty, I am the rightmost column
+  if (props.phases.length === 0) {
+    uiStore.setRightmostColumn(props.columnIndex)
+  }
+
   // Set keyboard hints for column navigation
   const hints = [
-    { key: 'h/l', action: 'switch columns' },
+    { key: 'h', action: 'back to parent' },
     { key: 'o', action: 'create phase' }
   ]
-  
+
   // Add phase-specific hints only if phases exist
   if (props.phases.length > 0) {
     hints.unshift(
       { key: 'j/k', action: 'navigate phases' },
-      { key: 'i', action: 'enter phase' }
+      { key: 'i', action: 'enter phase' },
+      { key: 'l', action: 'to child phases' }
     )
   }
-  
+
   uiStore.setKeyboardHints(hints)
   focusSelectedPhase()
 }
@@ -72,9 +77,6 @@ const handleFocus = () => {
 const handlePhaseClick = async (clickedIndex: number) => {
   selectedIndex.value = clickedIndex
   await focusSelectedPhase()
-  
-  // Always emit phase selection for any column
-  emit('phaseSelected', { phaseIndex: clickedIndex, phase: props.phases[clickedIndex] })
 }
 
 // Handle requests from phases to navigate to next/previous phase
@@ -148,12 +150,12 @@ const handleKeydown = async (event: KeyboardEvent) => {
       break
     case 'h':
       event.preventDefault()
-      // Navigate to previous column
+      // Navigate back to parent (handled by phase teleport system)
       emit('requestNavigateLeft')
       break
     case 'l':
       event.preventDefault()
-      // Always allow navigation to the right - there should always be at least one column to the right (empty column)
+      // Request navigation to right (child columns)
       emit('requestNavigateRight')
       break
     case 'o':
@@ -185,6 +187,7 @@ const handleKeydown = async (event: KeyboardEvent) => {
         :phase="phase"
         :is-selected="index === selectedIndex"
         :column-index="columnIndex"
+        :column-depth="columnDepth"
         @request-next-phase="handleRequestNextPhase"
         @request-previous-phase="handleRequestPreviousPhase"
         @phase-clicked="handlePhaseClick(index)"
@@ -196,13 +199,9 @@ const handleKeydown = async (event: KeyboardEvent) => {
 <style scoped>
 .phase-column {
   height: 100%;
-  border-right: 0.0625rem solid #444;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  &:last-child {
-    border-right: none;
-  }
 }
 
 .phase-list {

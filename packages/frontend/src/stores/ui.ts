@@ -6,7 +6,7 @@ export const useUIStore = defineStore('ui', {
     // Project state
     projectPath: localStorage.getItem('aimparency-project-path') || '',
     connectionStatus: 'connecting' as 'connecting' | 'connected' | 'no connection',
-    
+
     // Modal states
     showPhaseModal: false,
     newPhaseName: '',
@@ -14,13 +14,19 @@ export const useUIStore = defineStore('ui', {
     newPhaseEndDate: '',
     phaseModalColumnIndex: 0, // Track which column the modal was opened from
     showAimModal: false,
-    
+
+    // Column tracking for navigation
+    rightmostColumnIndex: 1, // Track the rightmost (empty) column index
+    focusedColumnIndex: 0, // Track which column is currently focused
+
     // Keyboard hints
     keyboardHints: [] as Hint[],
   }),
   
   getters: {
     isInProjectSelection: (state) => !state.projectPath,
+    canNavigateRight: (state) => state.focusedColumnIndex < state.rightmostColumnIndex,
+    canNavigateLeft: (state) => state.focusedColumnIndex > 0,
   },
   
   actions: {
@@ -66,6 +72,15 @@ export const useUIStore = defineStore('ui', {
     setKeyboardHints(hints: Hint[]) {
       this.keyboardHints = hints
     },
-    
+
+    // Column tracking actions
+    setRightmostColumn(columnIndex: number) {
+      this.rightmostColumnIndex = columnIndex
+    },
+
+    setFocusedColumn(columnIndex: number) {
+      this.focusedColumnIndex = columnIndex
+    },
+
   }
 })

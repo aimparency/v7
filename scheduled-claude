@@ -1,3 +1,10 @@
+Let's clean up CLAUDE.md
+Remove redundancy, ask me for clarifying contradictions. 
+
+Then let's update the column UI thing according to the code. Succinct. 
+
+-
+
 sub aims implementation
   - give Aim Component an indentation div below
     - manage expansion

@@ -3,16 +3,20 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import type { Phase, Hint } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { trpc } from '../trpc'
 import AimComponent from './Aim.vue'
+import PhaseColumn from './PhaseColumn.vue'
 
 interface Props {
   phase: Phase
   isSelected?: boolean
   columnIndex: number
+  columnDepth?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isSelected: false
+  isSelected: false,
+  columnDepth: 1
 })
 
 const emit = defineEmits<{
@@ -27,6 +31,10 @@ const selectedAimIndex = ref(0)
 const expandedAims = ref<Set<string>>(new Set())
 const aboutToDelete = ref<string | null>(null)
 const aboutToRemove = ref<string | null>(null)
+
+// Child column state
+const childPhases = ref<Phase[]>([])
+const childColumnRef = ref<InstanceType<typeof PhaseColumn> | null>(null)
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -372,24 +380,80 @@ const createAim = async (insertionIndex?: number) => {
   }
 }
 
-// Load aims when this phase is selected
+// Load aims and child phases when this phase is selected
 watch(() => props.isSelected, async (newVal) => {
   if (newVal) {
     // Focus this element when selected
     await nextTick()
     phaseElement.value?.focus()
-    
+
+    // Load child phases for this phase
+    await loadChildPhases()
+
     // Update hints for selected phase
     updateHints()
+  }
+})
+
+// Load child phases for teleported column
+const loadChildPhases = async () => {
+  try {
+    const phases = await trpc.phase.list.query({
+      projectPath: uiStore.projectPath,
+      parentPhaseId: props.phase.id
+    })
+    childPhases.value = phases
+  } catch (error) {
+    console.error('Failed to load child phases:', error)
+    childPhases.value = []
+  }
+}
+
+// Handle navigation requests from child column
+const handleNavigateFromChild = async () => {
+  // Focus back to this phase
+  uiStore.setFocusedColumn(props.columnIndex)
+  await nextTick()
+  phaseElement.value?.focus()
+}
+
+// Handle navigation to child column
+const handleNavigateToChild = async () => {
+  if (childPhases.value.length > 0) {
+    // Navigate to child column with phases
+    const childColumnIndex = props.columnIndex + 1
+    uiStore.setFocusedColumn(childColumnIndex)
+    await nextTick()
+    // Child column will handle its own focus
+  }
+}
+
+// Calculate column positioning
+const childColumnStyle = computed(() => {
+  // Child column should be at (columnIndex + 1) * 50%
+  // columnIndex 0 = RootAimsColumn at 0%
+  // columnIndex 1 = First PhaseColumn at 50%
+  // columnIndex 2 = Child of first phase at 100%
+  // columnIndex 3 = Child of that phase at 150%, etc.
+  const childColumnIndex = props.columnIndex + 1
+  const leftOffset = childColumnIndex * 50
+  return {
+    position: 'absolute',
+    left: `${leftOffset}%`,
+    top: '0',
+    width: '50%',
+    height: '100%',
+    zIndex: childColumnIndex + 1 // Ensure child is above parent
   }
 })
 
 // Load aims on mount - always load aims immediately
 onMounted(async () => {
   await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
-  
-  // Update hints if this phase is initially selected
+
+  // Load child phases if initially selected
   if (props.isSelected) {
+    await loadChildPhases()
     updateHints()
   }
 })
@@ -424,6 +488,19 @@ onMounted(async () => {
       />
     </div>
   </div>
+
+  <!-- Teleport child column when this phase is selected -->
+  <Teleport to=".main" v-if="isSelected && childPhases.length >= 0">
+    <PhaseColumn
+      ref="childColumnRef"
+      :phases="childPhases"
+      :column-index="columnIndex + 1"
+      :column-depth="columnDepth + 1"
+      :style="childColumnStyle"
+      @request-navigate-left="handleNavigateFromChild"
+      @request-navigate-right="handleNavigateToChild"
+    />
+  </Teleport>
 </template>
 
 <style scoped>
