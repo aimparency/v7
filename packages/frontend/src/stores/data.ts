@@ -4,8 +4,13 @@ import { trpc } from '../trpc'
 
 export const useDataStore = defineStore('data', {
   state: () => ({
-    leftColumnPhases: [] as Phase[],
-    rightColumnPhases: [] as Phase[],
+    // Multi-column navigation system
+    phaseColumns: [] as Phase[][], // Array of column data
+    selectedPhaseIndices: [] as number[], // Selected phase index in each column
+    currentViewportStart: 0, // Index of leftmost visible column
+    visibleColumnCount: 2, // How many columns to show (responsive)
+    columnScrollPositions: [] as number[], // Scroll position for each column
+    
     phaseAims: {} as Record<string, Aim[]>,
     loading: false,
     error: null as string | null,
@@ -30,13 +35,13 @@ export const useDataStore = defineStore('data', {
           }
         }
         
-        // Load root phases (parent: null) for left column
-        const rootPhases = await trpc.phase.list.query({ 
-          projectPath,
-          parentPhaseId: null 
-        })
+        // Reset navigation state
+        this.phaseColumns = []
+        this.selectedPhaseIndices = []
+        this.currentViewportStart = 0
+        this.columnScrollPositions = []
         
-        // Always include the null phase as the first item
+        // Create null phase for first column
         const nullPhase = {
           id: 'null',
           name: 'Root',
@@ -46,45 +51,56 @@ export const useDataStore = defineStore('data', {
           commitments: [] // Will be populated with uncommitted aims
         }
         
-        this.leftColumnPhases = [nullPhase]
+        // Initialize first column with null phase
+        this.phaseColumns[0] = [nullPhase]
+        this.selectedPhaseIndices[0] = 0
+        this.columnScrollPositions[0] = 0
         
-        // Load children of first selected phase for right column
-        await this.loadRightColumn(projectPath, 0)
+        // Load children of null phase for second column
+        await this.loadColumn(projectPath, 1, 'null')
       } catch (error) {
         console.error('Failed to load phases:', error)
         this.error = 'Failed to load phases'
-        this.leftColumnPhases = []
-        this.rightColumnPhases = []
+        this.phaseColumns = []
+        this.selectedPhaseIndices = []
       } finally {
         this.loading = false
       }
     },
     
-    async loadRightColumn(projectPath: string, selectedPhaseIndex: number) {
-      if (selectedPhaseIndex < this.leftColumnPhases.length) {
-        const selectedPhase = this.leftColumnPhases[selectedPhaseIndex]
-        try {
-          if (selectedPhase.id === 'null') {
-            // For null phase, show all root phases (parent: null) on the right
-            const rootPhases = await trpc.phase.list.query({
-              projectPath,
-              parentPhaseId: null
-            })
-            this.rightColumnPhases = rootPhases
-          } else {
-            // For regular phases, show their children
-            const childPhases = await trpc.phase.list.query({
-              projectPath,
-              parentPhaseId: selectedPhase.id
-            })
-            this.rightColumnPhases = childPhases
-          }
-        } catch (error) {
-          console.error('Failed to load child phases:', error)
-          this.rightColumnPhases = []
+    async loadColumn(projectPath: string, columnIndex: number, parentPhaseId: string | null) {
+      try {
+        let phases: Phase[]
+        
+        if (parentPhaseId === 'null') {
+          // For null phase, show all root phases (parent: null)
+          phases = await trpc.phase.list.query({
+            projectPath,
+            parentPhaseId: null
+          })
+        } else {
+          // For regular phases, show their children
+          phases = await trpc.phase.list.query({
+            projectPath,
+            parentPhaseId
+          })
         }
-      } else {
-        this.rightColumnPhases = []
+        
+        // Initialize column data
+        this.phaseColumns[columnIndex] = phases
+        this.selectedPhaseIndices[columnIndex] = 0
+        this.columnScrollPositions[columnIndex] = 0
+        
+        // Clear any columns beyond this one
+        this.phaseColumns.splice(columnIndex + 1)
+        this.selectedPhaseIndices.splice(columnIndex + 1)
+        this.columnScrollPositions.splice(columnIndex + 1)
+        
+      } catch (error) {
+        console.error('Failed to load child phases:', error)
+        this.phaseColumns[columnIndex] = []
+        this.selectedPhaseIndices[columnIndex] = 0
+        this.columnScrollPositions[columnIndex] = 0
       }
     },
     
@@ -136,10 +152,65 @@ export const useDataStore = defineStore('data', {
       return this.phaseAims[phaseId] || []
     },
     
-    // Helper method to find a phase in either column
+    // Helper method to find a phase in any column
     findPhase(phaseId: string): Phase | undefined {
-      return this.leftColumnPhases.find(p => p.id === phaseId) || 
-             this.rightColumnPhases.find(p => p.id === phaseId)
+      for (const column of this.phaseColumns) {
+        const found = column.find(p => p.id === phaseId)
+        if (found) return found
+      }
+      return undefined
+    },
+    
+    // Navigation methods
+    async navigateRight(projectPath: string) {
+      const currentColumnIndex = this.getCurrentFocusedColumnIndex()
+      const selectedPhase = this.getSelectedPhase(currentColumnIndex)
+      
+      if (selectedPhase) {
+        const nextColumnIndex = currentColumnIndex + 1
+        await this.loadColumn(projectPath, nextColumnIndex, selectedPhase.id)
+        
+        // Only adjust viewport if we actually loaded phases
+        const hasPhases = this.phaseColumns[nextColumnIndex]?.length > 0
+        if (hasPhases && nextColumnIndex >= this.currentViewportStart + this.visibleColumnCount) {
+          this.currentViewportStart = nextColumnIndex - this.visibleColumnCount + 1
+        }
+      }
+    },
+    
+    navigateLeft() {
+      if (this.currentViewportStart > 0) {
+        this.currentViewportStart--
+      }
+    },
+    
+    // Get currently focused column index (rightmost visible column with data)
+    getCurrentFocusedColumnIndex(): number {
+      for (let i = this.phaseColumns.length - 1; i >= 0; i--) {
+        if (this.phaseColumns[i] && this.phaseColumns[i].length > 0) {
+          return i
+        }
+      }
+      return 0
+    },
+    
+    // Get selected phase from specific column
+    getSelectedPhase(columnIndex: number): Phase | undefined {
+      const column = this.phaseColumns[columnIndex]
+      const selectedIndex = this.selectedPhaseIndices[columnIndex]
+      return column?.[selectedIndex]
+    },
+    
+    // Update selection in specific column
+    setSelectedPhaseIndex(columnIndex: number, phaseIndex: number) {
+      if (this.selectedPhaseIndices[columnIndex] !== undefined) {
+        this.selectedPhaseIndices[columnIndex] = phaseIndex
+      }
+    },
+    
+    // Set responsive column count
+    setVisibleColumnCount(count: number) {
+      this.visibleColumnCount = Math.max(1, count)
     },
     
     async createAim(projectPath: string, aim: Omit<Aim, 'id'>): Promise<{id: string}> {

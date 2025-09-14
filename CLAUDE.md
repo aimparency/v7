@@ -50,18 +50,24 @@ Implement a vi-intuitive way of navigating:
 The UI is structured in Phases. There are two columns of phases. 
 
 ### Phase Columns 
-The root phase (null) is not really a phase. It contains all aims that are not commited inside any aims. The root phase is on the left. From there all phases that have null as parent are on the second column. The Web app always shows 2 columns of phases. On the right column the children of the phases on the left are shown. 
+The root phase (null) is not really a phase. It contains all aims that are not commited inside any aims. The root phase starts the hierarchy. Phase navigation supports infinite horizontal depth with flexible column count:
 
-One of both columns is always focused. We go right and left with l and h keys. If left column is focused and hit 'h', we go one column to the left (if possible = if left column isn't null already). we go right with 'l'. if right column is focused l we move one column to the right. 
+Navigation with h/l moves through hierarchy levels, while j/k moves within a column. When reaching phases with no children, show "No sub phases" state and prevent further navigation.
+We can't go beyond the root column to the left.
+And can't go beyond an empty column (no phases) on the right. 
 
-The columns may scroll vertically. 
-The column on the right side shows the children of the column on the left side. Remember scroll position and selected aim of the column on the right. 
+Each column shows child phases of the selected phase from the previous column.
+
+Smooth CSS transitions animate movement between hierarchy levels  
+Render only visible columns + 2 buffer columns for performance
+
+The columns may scroll vertically. Remember scroll position and selected phase for each column level when navigating back through the hierarchy.
 
 Inside the columns we navigate the vertically arranged phases with j down and k up. 
 
-The phase contains the committed aims. Root phase contains all aims that have no outgoing aims. 
+The phase contains the committed aims. Root phase contains all aims that have no committedIn phases and no outgoing aims. 
 
-Look and feel: in the dom we actually have one div for each column. When navigating we animate the move from one to the next column. Columns have a scroll position that we remember. But we actually for performance reasons hide columns that are not visible right now (only the 2 that are visible). 
+Performance: Columns are hidden when too far (> 1) off the n columns that are shown on the screen. Selection state and scroll positions are preserved when navigating back to previously visited hierarchy levels. 
 
 'o' or 'O' adds a new phase. the parent is the column left of the current column (we are adding siblings). Open a popup for entering name and choosing start and end date. Start and end date can only be within parent phase start and end(default). 
 

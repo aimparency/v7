@@ -7,7 +7,7 @@ import PhaseComponent from './Phase.vue'
 
 interface Props {
   phases: Phase[]
-  columnType: 'left' | 'right'
+  columnIndex: number
   isEmpty?: boolean
 }
 
@@ -16,19 +16,19 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  phaseSelected: [phaseIndex: number, phase: Phase]
-  requestFocusLeft: []
-  requestFocusRight: []
+  phaseSelected: [{ phaseIndex: number, phase: Phase }]
+  requestNavigateLeft: []
+  requestNavigateRight: []
 }>()
 
 const selectedIndex = ref(0)
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 
-// When selection changes in left column, emit event to update right column
+// When selection changes, emit event to update next column
 watch(() => selectedIndex.value, (newIndex) => {
-  if (props.columnType === 'left' && props.phases[newIndex]) {
-    emit('phaseSelected', newIndex, props.phases[newIndex])
+  if (props.phases[newIndex]) {
+    emit('phaseSelected', { phaseIndex: newIndex, phase: props.phases[newIndex] })
   }
 })
 
@@ -36,7 +36,7 @@ watch(() => selectedIndex.value, (newIndex) => {
 const focusSelectedPhase = async () => {
   await nextTick()
   const selectedPhase = document.querySelector(
-    `.phase-column.${props.columnType} .phase-container:nth-child(${selectedIndex.value + 1})`
+    `.phase-column[data-column-index="${props.columnIndex}"] .phase-container:nth-child(${selectedIndex.value + 1})`
   ) as HTMLElement
   selectedPhase?.focus()
 }
@@ -59,10 +59,8 @@ const handlePhaseClick = async (clickedIndex: number) => {
   selectedIndex.value = clickedIndex
   await focusSelectedPhase()
   
-  // If this is left column, update right column
-  if (props.columnType === 'left') {
-    emit('phaseSelected', clickedIndex, props.phases[clickedIndex])
-  }
+  // Always emit phase selection for any column
+  emit('phaseSelected', { phaseIndex: clickedIndex, phase: props.phases[clickedIndex] })
 }
 
 // Handle requests from phases to navigate to next/previous phase
@@ -74,7 +72,7 @@ const handleRequestNextPhase = async (enterEditMode: boolean, aimIndex?: number)
     if (enterEditMode) {
       // Find the new phase component and enter edit mode
       const newPhaseElement = document.querySelector(
-        `.phase-column.${props.columnType} .phase-container:nth-child(${selectedIndex.value + 1})`
+        `.phase-column[data-column-index="${props.columnIndex}"] .phase-container:nth-child(${selectedIndex.value + 1})`
       ) as HTMLElement
       
       if (newPhaseElement) {
@@ -98,7 +96,7 @@ const handleRequestPreviousPhase = async (enterEditMode: boolean, aimIndex?: num
     if (enterEditMode) {
       // Find the new phase component and enter edit mode
       const newPhaseElement = document.querySelector(
-        `.phase-column.${props.columnType} .phase-container:nth-child(${selectedIndex.value + 1})`
+        `.phase-column[data-column-index="${props.columnIndex}"] .phase-container:nth-child(${selectedIndex.value + 1})`
       ) as HTMLElement
       
       if (newPhaseElement) {
@@ -136,18 +134,15 @@ const handleKeydown = async (event: KeyboardEvent) => {
       break
     case 'h':
       event.preventDefault()
-      // Move focus to left column (if this is right column)
-      if (props.columnType === 'right') {
-        // Parent component will handle this
-        emit('requestFocusLeft')
-      }
+      // Navigate to previous column
+      emit('requestNavigateLeft')
       break
     case 'l':
       event.preventDefault()
-      // Move focus to right column (if this is left column)
-      if (props.columnType === 'left') {
-        // Parent component will handle this
-        emit('requestFocusRight')
+      // Navigate to next column (if children exist)
+      const currentPhase = props.phases[selectedIndex.value]
+      if (currentPhase && !props.isEmpty) {
+        emit('requestNavigateRight')
       }
       break
     case 'o':
@@ -163,13 +158,13 @@ const handleKeydown = async (event: KeyboardEvent) => {
 <template>
   <div 
     class="phase-column focusable"
-    :class="columnType"
+    :data-column-index="columnIndex"
     tabindex="0"
     @keydown="handleKeydown"
     @focus="handleFocus"
   >
     <div v-if="isEmpty" class="empty-state">
-      No child phases
+      No sub phases
     </div>
     
     <div v-else class="phase-list">
@@ -178,7 +173,7 @@ const handleKeydown = async (event: KeyboardEvent) => {
         :key="phase.id"
         :phase="phase"
         :is-selected="index === selectedIndex"
-        :column-type="columnType"
+        :column-index="columnIndex"
         @request-next-phase="handleRequestNextPhase"
         @request-previous-phase="handleRequestPreviousPhase"
         @phase-clicked="handlePhaseClick(index)"

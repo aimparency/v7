@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import type { Phase, Hint } from 'shared'
 import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
@@ -10,12 +10,11 @@ import AimCreationModal from './components/AimCreationModal.vue'
 const uiStore = useUIStore()
 const dataStore = useDataStore()
 
-// Template refs for column coordination
-const leftColumnRef = ref<InstanceType<typeof PhaseColumn>>()
-const rightColumnRef = ref<InstanceType<typeof PhaseColumn>>()
+// Template refs for dynamic columns
+const columnRefs = ref<InstanceType<typeof PhaseColumn>[]>([])
 
-// Track previously focused column
-const lastFocusedColumn = ref<'left' | 'right'>('left')
+// Track currently focused column index
+const focusedColumnIndex = ref(0)
 
 const selectProject = async () => {
   const path = prompt('Enter project base folder path:')
@@ -31,20 +30,41 @@ const closeProject = () => {
   uiStore.setProjectPath('')
 }
 
-// Handle left column phase selection to update right column
-const handlePhaseSelected = async (phaseIndex: number, phase: Phase) => {
-  await dataStore.loadRightColumn(uiStore.projectPath, phaseIndex)
+// Handle phase selection in any column to load next column
+const handlePhaseSelected = async (columnIndex: number, phaseIndex: number, phase: Phase) => {
+  // Update selection in data store
+  dataStore.setSelectedPhaseIndex(columnIndex, phaseIndex)
+  
+  // Load next column with children of selected phase
+  if (phase) {
+    await dataStore.loadColumn(uiStore.projectPath, columnIndex + 1, phase.id)
+  }
 }
 
 // Handle cross-column navigation
-const handleRequestFocusLeft = () => {
-  lastFocusedColumn.value = 'left'
-  leftColumnRef.value?.focusSelectedPhase()
+const handleRequestNavigateLeft = async () => {
+  if (focusedColumnIndex.value > 0) {
+    focusedColumnIndex.value--
+    dataStore.navigateLeft()
+    await nextTick()
+    focusColumn(focusedColumnIndex.value)
+  }
 }
 
-const handleRequestFocusRight = () => {
-  lastFocusedColumn.value = 'right'
-  rightColumnRef.value?.focusSelectedPhase()
+const handleRequestNavigateRight = async () => {
+  await dataStore.navigateRight(uiStore.projectPath)
+  const newFocusedIndex = dataStore.getCurrentFocusedColumnIndex()
+  if (newFocusedIndex > focusedColumnIndex.value) {
+    focusedColumnIndex.value = newFocusedIndex
+    await nextTick()
+    focusColumn(focusedColumnIndex.value)
+  }
+}
+
+// Focus specific column
+const focusColumn = (columnIndex: number) => {
+  const column = columnRefs.value[columnIndex]
+  column?.focusSelectedPhase()
 }
 
 // Set global unfocused hints
@@ -71,29 +91,26 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
   switch (event.key) {
     case 'h':
       event.preventDefault()
-      lastFocusedColumn.value = 'left'
-      leftColumnRef.value?.focusSelectedPhase()
+      handleRequestNavigateLeft()
       break
     case 'l':
       event.preventDefault()
-      lastFocusedColumn.value = 'right'
-      rightColumnRef.value?.focusSelectedPhase()
+      handleRequestNavigateRight()
       break
     case 'j':
     case 'k':
     case 'i':
       event.preventDefault()
-      // Focus previously focused column
-      if (lastFocusedColumn.value === 'left') {
-        leftColumnRef.value?.focusSelectedPhase()
-      } else {
-        rightColumnRef.value?.focusSelectedPhase()
-      }
+      // Focus current column
+      focusColumn(focusedColumnIndex.value)
       break
   }
 }
 
 onMounted(async () => {
+  // Set default column count (flexible for future)
+  dataStore.setVisibleColumnCount(2)
+  
   if (uiStore.projectPath) {
     uiStore.setConnectionStatus('connecting')
     await dataStore.loadPhases(uiStore.projectPath)
@@ -111,6 +128,23 @@ onUnmounted(() => {
   // Remove global keyboard listener
   document.removeEventListener('keydown', handleGlobalKeydown)
 })
+
+// Computed properties for rendering
+const columnWidth = computed(() => {
+  return `${100 / dataStore.visibleColumnCount}%`
+})
+
+const containerOffset = computed(() => {
+  return `translateX(-${dataStore.currentViewportStart * (100 / dataStore.visibleColumnCount)}%)`
+})
+
+// Check if column should be visible (within viewport + buffer)
+const isColumnVisible = (columnIndex: number) => {
+  const start = dataStore.currentViewportStart
+  const end = start + dataStore.visibleColumnCount
+  // Show columns within viewport plus 1 buffer on each side
+  return columnIndex >= start - 1 && columnIndex <= end
+}
 </script>
 
 <template>
@@ -136,23 +170,20 @@ onUnmounted(() => {
 
     <!-- Main Interface -->
     <main v-else class="main">
-      <div class="phase-columns">
-        <!-- Left Column -->
+      <div class="phase-columns-container" :style="{ transform: containerOffset }">
+        <!-- All Columns (one per tree level, show/hide based on viewport) -->
         <PhaseColumn
-          ref="leftColumnRef"
-          :phases="dataStore.leftColumnPhases"
-          column-type="left"
-          @phase-selected="handlePhaseSelected"
-          @request-focus-right="handleRequestFocusRight"
-        />
-
-        <!-- Right Column -->
-        <PhaseColumn
-          ref="rightColumnRef"
-          :phases="dataStore.rightColumnPhases"
-          column-type="right"
-          :is-empty="dataStore.rightColumnPhases.length === 0"
-          @request-focus-left="handleRequestFocusLeft"
+          v-for="(column, index) in dataStore.phaseColumns"
+          :key="index"
+          v-show="isColumnVisible(index)"
+          :ref="(el) => { if (el) columnRefs[index] = el as InstanceType<typeof PhaseColumn> }"
+          :phases="column"
+          :column-index="index"
+          :is-empty="column.length === 0"
+          :style="{ width: columnWidth, position: 'absolute', left: `${index * (100 / dataStore.visibleColumnCount)}%` }"
+          @phase-selected="handlePhaseSelected(index, $event.phaseIndex, $event.phase)"
+          @request-navigate-left="handleRequestNavigateLeft"
+          @request-navigate-right="handleRequestNavigateRight"
         />
       </div>
     </main>
@@ -259,10 +290,13 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.phase-columns {
+.phase-columns-container {
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
+  transition: transform 0.3s ease;
+  width: 100%;
 }
 
 

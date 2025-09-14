@@ -1,3 +1,10 @@
+If we enter phase edit mode via j/k from another phase, leaving it with j/k should disable edit mode for the phase that we're leaving.
+
+
+####################
+####### done #######
+####################
+
 replace default scroll bars with decent ones. thin, darker colors. elegant. 
 
 - 
@@ -13,5 +20,4 @@ make padding in header and footer smaller.
 set fontsize to 0.8 in header and footer in general and remove overwrites in childrens. 
 Make background color darker. 
 
-# done
 

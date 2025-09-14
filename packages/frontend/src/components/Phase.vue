@@ -8,7 +8,7 @@ import AimComponent from './Aim.vue'
 interface Props {
   phase: Phase
   isSelected?: boolean
-  columnType: 'left' | 'right'
+  columnIndex: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
