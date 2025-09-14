@@ -9,6 +9,7 @@ export const useDataStore = defineStore('data', {
     phaseAims: {} as Record<string, Aim[]>,
     loading: false,
     error: null as string | null,
+    migrated: false, // Track if we've run the migration
   }),
   
   actions: {
@@ -19,6 +20,16 @@ export const useDataStore = defineStore('data', {
       this.error = null
       
       try {
+        // Run migration once per session if not already done
+        if (!this.migrated) {
+          try {
+            await trpc.project.migrateCommittedIn.mutate({ projectPath })
+            this.migrated = true
+          } catch (error) {
+            console.warn('Migration failed, continuing anyway:', error)
+          }
+        }
+        
         // Load root phases (parent: null) for left column
         const rootPhases = await trpc.phase.list.query({ 
           projectPath,
@@ -98,9 +109,9 @@ export const useDataStore = defineStore('data', {
         const allAims = await trpc.aim.list.query({ projectPath })
         
         if (phaseId === 'null') {
-          // For the Root phase, load aims with no outgoing relationships
+          // For the Root phase, load aims that aren't committed to any phase
           this.phaseAims[phaseId] = allAims.filter(aim => 
-            aim.outgoing.length === 0
+            !aim.committedIn || aim.committedIn.length === 0
           )
         } else {
           // For regular phases, load aims that are committed to this phase
@@ -147,37 +158,20 @@ export const useDataStore = defineStore('data', {
     
     async commitAimToPhase(projectPath: string, aimId: string, phaseId: string, insertionIndex?: number) {
       try {
-        // Get the current phase
-        const phase = await trpc.phase.get.query({
+        // Use the new backend endpoint that maintains bidirectional relationship
+        await trpc.aim.commitToPhase.mutate({
           projectPath,
+          aimId,
           phaseId
         })
         
-        // Add the aim ID to the commitments array if it's not already there
-        if (!phase.commitments.includes(aimId)) {
-          let updatedCommitments: string[]
-          
+        // Update the local phase data to reflect the new commitments
+        const localPhase = this.findPhase(phaseId)
+        if (localPhase && !localPhase.commitments.includes(aimId)) {
           if (insertionIndex !== undefined) {
-            // Insert at specific position
-            updatedCommitments = [...phase.commitments]
-            updatedCommitments.splice(insertionIndex, 0, aimId)
+            localPhase.commitments.splice(insertionIndex, 0, aimId)
           } else {
-            // Append to end
-            updatedCommitments = [...phase.commitments, aimId]
-          }
-          
-          await trpc.phase.update.mutate({
-            projectPath,
-            phaseId,
-            phase: {
-              commitments: updatedCommitments
-            }
-          })
-          
-          // Update the local phase data to reflect the new commitments
-          const localPhase = this.findPhase(phaseId)
-          if (localPhase) {
-            localPhase.commitments = updatedCommitments
+            localPhase.commitments.push(aimId)
           }
         }
       } catch (error) {
@@ -200,27 +194,16 @@ export const useDataStore = defineStore('data', {
     
     async removeAimFromPhase(projectPath: string, aimId: string, phaseId: string) {
       try {
-        // Get the current phase
-        const phase = await trpc.phase.get.query({
+        await trpc.aim.removeFromPhase.mutate({
           projectPath,
+          aimId,
           phaseId
-        })
-        
-        // Remove the aim ID from the commitments array
-        const updatedCommitments = phase.commitments.filter(id => id !== aimId)
-        
-        await trpc.phase.update.mutate({
-          projectPath,
-          phaseId,
-          phase: {
-            commitments: updatedCommitments
-          }
         })
         
         // Update the local phase data to reflect the new commitments
         const localPhase = this.findPhase(phaseId)
         if (localPhase) {
-          localPhase.commitments = updatedCommitments
+          localPhase.commitments = localPhase.commitments.filter(id => id !== aimId)
         }
       } catch (error) {
         console.error('Failed to remove aim from phase:', error)

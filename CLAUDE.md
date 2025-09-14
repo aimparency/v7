@@ -138,4 +138,4 @@ for interaction through LLMs
 ## Answers to open questions
 
 #
-
+- dev servers are always running. no need to start them

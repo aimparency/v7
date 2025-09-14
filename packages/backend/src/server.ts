@@ -78,6 +78,68 @@ async function listPhases(projectPath: string, parentPhaseId?: string | null): P
   return phases;
 }
 
+// Helper function to add aim to phase's commitments and aim's committedIn
+async function commitAimToPhase(projectPath: string, aimId: string, phaseId: string): Promise<void> {
+  // Update the phase
+  const phase = await readPhase(projectPath, phaseId);
+  if (!phase.commitments.includes(aimId)) {
+    phase.commitments.push(aimId);
+    await writePhase(projectPath, phase);
+  }
+  
+  // Update the aim
+  const aim = await readAim(projectPath, aimId);
+  if (!aim.committedIn.includes(phaseId)) {
+    aim.committedIn.push(phaseId);
+    await writeAim(projectPath, aim);
+  }
+}
+
+// Helper function to remove aim from phase's commitments and aim's committedIn
+async function removeAimFromPhase(projectPath: string, aimId: string, phaseId: string): Promise<void> {
+  // Update the phase
+  const phase = await readPhase(projectPath, phaseId);
+  phase.commitments = phase.commitments.filter(id => id !== aimId);
+  await writePhase(projectPath, phase);
+  
+  // Update the aim
+  const aim = await readAim(projectPath, aimId);
+  aim.committedIn = (aim.committedIn || []).filter(id => id !== phaseId);
+  await writeAim(projectPath, aim);
+}
+
+// Migration function to populate committedIn field for existing aims
+async function migrateCommittedInField(projectPath: string): Promise<void> {
+  const allAims = await listAims(projectPath);
+  const allPhases = await listPhases(projectPath);
+  
+  // Create a map of aimId -> phaseIds that commit this aim
+  const aimCommitments: Record<string, string[]> = {};
+  
+  // Initialize all aims with empty arrays
+  for (const aim of allAims) {
+    aimCommitments[aim.id] = [];
+  }
+  
+  // Populate from phase commitments
+  for (const phase of allPhases) {
+    for (const aimId of phase.commitments) {
+      if (aimCommitments[aimId]) {
+        aimCommitments[aimId].push(phase.id);
+      }
+    }
+  }
+  
+  // Update all aims that don't have committedIn field or have incorrect data
+  for (const aim of allAims) {
+    const expectedCommittedIn = aimCommitments[aim.id] || [];
+    if (!aim.committedIn || JSON.stringify(aim.committedIn.sort()) !== JSON.stringify(expectedCommittedIn.sort())) {
+      aim.committedIn = expectedCommittedIn;
+      await writeAim(projectPath, aim);
+    }
+  }
+}
+
 // Create the actual tRPC router
 const appRouter = t.router({
   aim: t.router({
@@ -93,6 +155,7 @@ const appRouter = t.router({
           text: input.aim.text,
           incoming: input.aim.incoming || [],
           outgoing: input.aim.outgoing || [],
+          committedIn: input.aim.committedIn || [],
           status: input.aim.status || {
             state: 'open',
             comment: '',
@@ -140,8 +203,37 @@ const appRouter = t.router({
         aimId: z.string().uuid()
       }))
       .mutation(async ({ input }) => {
+        // First remove the aim from all phases where it's committed
+        const aim = await readAim(input.projectPath, input.aimId);
+        for (const phaseId of aim.committedIn) {
+          await removeAimFromPhase(input.projectPath, input.aimId, phaseId);
+        }
+        
+        // Then delete the aim file
         const aimPath = path.join(input.projectPath, 'aims', `${input.aimId}.json`);
         await fs.remove(aimPath);
+        return { success: true };
+      }),
+
+    commitToPhase: t.procedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        phaseId: z.string().uuid()
+      }))
+      .mutation(async ({ input }) => {
+        await commitAimToPhase(input.projectPath, input.aimId, input.phaseId);
+        return { success: true };
+      }),
+
+    removeFromPhase: t.procedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        phaseId: z.string().uuid()
+      }))
+      .mutation(async ({ input }) => {
+        await removeAimFromPhase(input.projectPath, input.aimId, input.phaseId);
         return { success: true };
       })
   }),
@@ -229,6 +321,15 @@ const appRouter = t.router({
         const metaPath = path.join(input.projectPath, 'meta.json');
         await fs.writeJson(metaPath, input.meta);
         return input.meta;
+      }),
+
+    migrateCommittedIn: t.procedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .mutation(async ({ input }) => {
+        await migrateCommittedInField(input.projectPath);
+        return { success: true };
       })
   })
 });

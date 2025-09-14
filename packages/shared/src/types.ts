@@ -11,6 +11,7 @@ export const AimSchema = z.object({
   text: z.string(),
   incoming: z.array(z.string().uuid()),
   outgoing: z.array(z.string().uuid()),
+  committedIn: z.array(z.string().uuid()),
   status: AimStatusSchema
 });
 

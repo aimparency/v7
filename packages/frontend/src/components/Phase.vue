@@ -288,8 +288,11 @@ const handleKeydown = async (event: KeyboardEvent) => {
             selectedAimIndex.value = Math.max(0, aims.length - 2)
           }
           
-          // Reload aims
+          // Reload aims for current phase
           await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
+          
+          // Also reload null phase in case the removed aim should appear there
+          await dataStore.loadPhaseAims(uiStore.projectPath, 'null')
           
           clearConfirmationStates()
           updateHints()
@@ -322,6 +325,7 @@ const createAim = async (insertionIndex?: number) => {
       text: aimText.trim(),
       incoming: [],
       outgoing: [],
+      committedIn: [],
       status: {
         state: 'open',
         comment: '',
