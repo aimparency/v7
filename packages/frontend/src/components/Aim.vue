@@ -52,6 +52,7 @@ const indentStyle = computed(() => {
         'pending-remove': pendingRemove
       }"
       tabindex="0"
+      @click="$emit('aim-clicked')"
     >
       <!-- Aim content -->
       <div class="aim-content">

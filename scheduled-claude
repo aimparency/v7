@@ -1,7 +1,7 @@
 on click does focus - so we should handle it. 
 E.g. on click on an aim should emit something like "i was clicked" to the parent so that we can set the modes accordingly. 
 
-after creating an aim, it should be focused (currently just internally, but not in dom). 
+after crweating an aim, it should be focused (currently just internally, but not in dom). 
 
 - 
 

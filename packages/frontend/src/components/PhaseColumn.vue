@@ -54,6 +54,17 @@ const handleFocus = () => {
   focusSelectedPhase()
 }
 
+// Handle phase click - update selection and focus
+const handlePhaseClick = async (clickedIndex: number) => {
+  selectedIndex.value = clickedIndex
+  await focusSelectedPhase()
+  
+  // If this is left column, update right column
+  if (props.columnType === 'left') {
+    emit('phaseSelected', clickedIndex, props.phases[clickedIndex])
+  }
+}
+
 // Handle requests from phases to navigate to next/previous phase
 const handleRequestNextPhase = async (enterEditMode: boolean, aimIndex?: number) => {
   if (selectedIndex.value < props.phases.length - 1) {
@@ -170,6 +181,7 @@ const handleKeydown = async (event: KeyboardEvent) => {
         :column-type="columnType"
         @request-next-phase="handleRequestNextPhase"
         @request-previous-phase="handleRequestPreviousPhase"
+        @phase-clicked="handlePhaseClick(index)"
       />
     </div>
   </div>

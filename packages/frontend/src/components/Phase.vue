@@ -18,6 +18,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   requestNextPhase: [enterEditMode: boolean, aimIndex?: number]
   requestPreviousPhase: [enterEditMode: boolean, aimIndex?: number]
+  phaseClicked: []
 }>()
 
 // Component's own UI state
@@ -40,7 +41,7 @@ const aimsContainerRef = ref<HTMLElement>()
 
 // Focus and scroll to the selected aim
 const focusSelectedAim = async () => {
-  if (!isInEditMode.value || !aimsContainerRef.value) return
+  if (!aimsContainerRef.value) return
   
   await nextTick()
   const aims = phaseAims.value
@@ -88,6 +89,22 @@ const handleFocus = async () => {
 const handleBlur = () => {
   clearConfirmationStates()
   updateHints()
+}
+
+// Handle aim click - update selection and enter edit mode
+const handleAimClick = async (clickedIndex: number) => {
+  selectedAimIndex.value = clickedIndex
+  clearConfirmationStates()
+  
+  if (!isInEditMode.value) {
+    isInEditMode.value = true
+  }
+  
+  updateHints()
+  await focusSelectedAim()
+  
+  // Let parent know this phase is now active
+  emit('phaseClicked')
 }
 
 // Expose methods for external access
@@ -345,6 +362,11 @@ const createAim = async (insertionIndex?: number) => {
     
     // Reload this phase's aims
     await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
+    
+    // Wait for DOM update then focus the newly created aim
+    await nextTick()
+    await nextTick() // Double nextTick to ensure aims are rendered
+    await focusSelectedAim()
   } catch (error) {
     console.error('Failed to create aim:', error)
   }
@@ -381,6 +403,7 @@ onMounted(async () => {
     @keydown="handleKeydown"
     @focus="handleFocus"
     @blur="handleBlur"
+    @click="emit('phaseClicked')"
   >
     <!-- Phase Header -->
     <div class="phase-header">
@@ -397,6 +420,7 @@ onMounted(async () => {
         :indentation-level="0"
         :pending-delete="aboutToDelete === aim.id"
         :pending-remove="aboutToRemove === aim.id"
+        @aim-clicked="handleAimClick(index)"
       />
     </div>
   </div>
