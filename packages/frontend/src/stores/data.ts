@@ -175,13 +175,55 @@ export const useDataStore = defineStore('data', {
           })
           
           // Update the local phase data to reflect the new commitments
-          const phase = this.findPhase(phaseId)
-          if (phase) {
-            phase.commitments = updatedCommitments
+          const localPhase = this.findPhase(phaseId)
+          if (localPhase) {
+            localPhase.commitments = updatedCommitments
           }
         }
       } catch (error) {
         console.error('Failed to commit aim to phase:', error)
+        throw error
+      }
+    },
+    
+    async deleteAim(projectPath: string, aimId: string) {
+      try {
+        await trpc.aim.delete.mutate({
+          projectPath,
+          aimId
+        })
+      } catch (error) {
+        console.error('Failed to delete aim:', error)
+        throw error
+      }
+    },
+    
+    async removeAimFromPhase(projectPath: string, aimId: string, phaseId: string) {
+      try {
+        // Get the current phase
+        const phase = await trpc.phase.get.query({
+          projectPath,
+          phaseId
+        })
+        
+        // Remove the aim ID from the commitments array
+        const updatedCommitments = phase.commitments.filter(id => id !== aimId)
+        
+        await trpc.phase.update.mutate({
+          projectPath,
+          phaseId,
+          phase: {
+            commitments: updatedCommitments
+          }
+        })
+        
+        // Update the local phase data to reflect the new commitments
+        const localPhase = this.findPhase(phaseId)
+        if (localPhase) {
+          localPhase.commitments = updatedCommitments
+        }
+      } catch (error) {
+        console.error('Failed to remove aim from phase:', error)
         throw error
       }
     }

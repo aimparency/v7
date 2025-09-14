@@ -15,10 +15,17 @@ const props = withDefaults(defineProps<Props>(), {
   isSelected: false
 })
 
+const emit = defineEmits<{
+  requestNextPhase: [enterEditMode: boolean, aimIndex?: number]
+  requestPreviousPhase: [enterEditMode: boolean, aimIndex?: number]
+}>()
+
 // Component's own UI state
 const isInEditMode = ref(false)
 const selectedAimIndex = ref(0)
 const expandedAims = ref<Set<string>>(new Set())
+const aboutToDelete = ref<string | null>(null)
+const aboutToRemove = ref<string | null>(null)
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -49,6 +56,26 @@ const focusSelectedAim = async () => {
   }
 }
 
+// Enter edit mode at specific aim index
+const enterEditMode = async (aimIndex?: number) => {
+  const aims = phaseAims.value
+  if (aims.length === 0) return
+  
+  isInEditMode.value = true
+  
+  // Set aim index: -1 means last aim, undefined/0 means first aim
+  if (aimIndex === -1) {
+    selectedAimIndex.value = aims.length - 1
+  } else if (aimIndex !== undefined) {
+    selectedAimIndex.value = Math.min(aimIndex, aims.length - 1)
+  } else {
+    selectedAimIndex.value = 0
+  }
+  
+  updateHints()
+  await focusSelectedAim()
+}
+
 // Handle focus event - when phase gets focused, focus the appropriate child element
 const handleFocus = async () => {
   if (isInEditMode.value) {
@@ -57,15 +84,46 @@ const handleFocus = async () => {
   }
 }
 
+// Handle blur event - clear confirmation states when focus is lost
+const handleBlur = () => {
+  clearConfirmationStates()
+  updateHints()
+}
+
+// Expose methods for external access
+defineExpose({
+  enterEditMode
+})
+
+// Clear confirmation states
+const clearConfirmationStates = () => {
+  aboutToDelete.value = null
+  aboutToRemove.value = null
+}
+
 // Update hints based on current mode
 const updateHints = () => {
   if (isInEditMode.value) {
-    uiStore.setKeyboardHints([
+    const hints = [
       'j/k navigate aims',
       'h/l expand/collapse',
       'o create aim',
+      'd delete aim',
       'Esc exit edit'
-    ])
+    ]
+    
+    // Only show remove option if not in null phase
+    if (props.phase.id !== 'null') {
+      hints.splice(-1, 0, 'r remove aim')
+    }
+    
+    if (aboutToDelete.value) {
+      hints.unshift('d confirm delete (red)')
+    } else if (aboutToRemove.value) {
+      hints.unshift('r confirm remove (orange)')
+    }
+    
+    uiStore.setKeyboardHints(hints)
   } else if (props.isSelected) {
     uiStore.setKeyboardHints([
       'i enter phase edit',
@@ -96,6 +154,7 @@ const handleKeydown = async (event: KeyboardEvent) => {
     case 'Escape':
       event.preventDefault()
       event.stopPropagation()
+      clearConfirmationStates()
       isInEditMode.value = false
       updateHints() // Update hints when exiting edit mode
       // Focus back to the phase container
@@ -105,21 +164,32 @@ const handleKeydown = async (event: KeyboardEvent) => {
     case 'j':
       event.preventDefault()
       event.stopPropagation()
+      clearConfirmationStates()
       if (selectedAimIndex.value < aims.length - 1) {
         selectedAimIndex.value++
         await focusSelectedAim()
+      } else {
+        // At last aim, request next phase and start at first aim
+        emit('requestNextPhase', true, 0)
       }
+      updateHints()
       break
     case 'k':
       event.preventDefault()
       event.stopPropagation()
+      clearConfirmationStates()
       if (selectedAimIndex.value > 0) {
         selectedAimIndex.value--
         await focusSelectedAim()
+      } else {
+        // At first aim, request previous phase and start at last aim
+        emit('requestPreviousPhase', true, -1)
       }
+      updateHints()
       break
     case 'l':
       event.preventDefault()
+      clearConfirmationStates()
       if (aims.length > selectedAimIndex.value) {
         const aim = aims[selectedAimIndex.value]
         if (aim.incoming.length > 0) {
@@ -128,9 +198,11 @@ const handleKeydown = async (event: KeyboardEvent) => {
         }
         // If no expansion happened, let it bubble up for cross-column navigation
       }
+      updateHints()
       break
     case 'h':
       event.preventDefault()
+      clearConfirmationStates()
       if (aims.length > selectedAimIndex.value) {
         const aim = aims[selectedAimIndex.value]
         if (expandedAims.value.has(aim.id)) {
@@ -139,20 +211,100 @@ const handleKeydown = async (event: KeyboardEvent) => {
         }
         // If no collapse happened, let it bubble up for cross-column navigation
       }
+      updateHints()
       break
     case 'o':
       event.preventDefault()
       event.stopPropagation()
+      clearConfirmationStates()
       // Create aim after current selection (or at index 0 if no aims)
       const afterIndex = aims.length > 0 ? selectedAimIndex.value + 1 : 0
       await createAim(afterIndex)
+      updateHints()
       break
     case 'O':
       event.preventDefault()
       event.stopPropagation()
+      clearConfirmationStates()
       // Create aim before current selection (or at index 0 if no aims)
       const beforeIndex = aims.length > 0 ? selectedAimIndex.value : 0
       await createAim(beforeIndex)
+      updateHints()
+      break
+    case 'd':
+      event.preventDefault()
+      event.stopPropagation()
+      if (aims.length === 0) break
+      
+      const currentAim = aims[selectedAimIndex.value]
+      if (!currentAim) break
+      
+      if (aboutToDelete.value === currentAim.id) {
+        // Confirm deletion
+        try {
+          await dataStore.deleteAim(uiStore.projectPath, currentAim.id)
+          
+          // Adjust selection after deletion
+          if (selectedAimIndex.value >= aims.length - 1) {
+            selectedAimIndex.value = Math.max(0, aims.length - 2)
+          }
+          
+          // Reload aims
+          await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
+          
+          clearConfirmationStates()
+          updateHints()
+          await focusSelectedAim()
+        } catch (error) {
+          console.error('Failed to delete aim:', error)
+          clearConfirmationStates()
+          updateHints()
+        }
+      } else {
+        // Mark for deletion
+        aboutToDelete.value = currentAim.id
+        aboutToRemove.value = null
+        updateHints()
+      }
+      break
+    case 'r':
+      event.preventDefault()
+      event.stopPropagation()
+      if (aims.length === 0) break
+      
+      // Don't allow removal from null phase (aims aren't actually in a phase)
+      if (props.phase.id === 'null') break
+      
+      const aimToRemove = aims[selectedAimIndex.value]
+      if (!aimToRemove) break
+      
+      if (aboutToRemove.value === aimToRemove.id) {
+        // Confirm removal
+        try {
+          await dataStore.removeAimFromPhase(uiStore.projectPath, aimToRemove.id, props.phase.id)
+          
+          // Adjust selection after removal
+          if (selectedAimIndex.value >= aims.length - 1) {
+            selectedAimIndex.value = Math.max(0, aims.length - 2)
+          }
+          
+          // Reload aims
+          await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
+          
+          clearConfirmationStates()
+          updateHints()
+          await focusSelectedAim()
+        } catch (error) {
+          console.error('Failed to remove aim from phase:', error)
+          clearConfirmationStates()
+          updateHints()
+        }
+      } else {
+        // Mark for removal
+        aboutToRemove.value = aimToRemove.id
+        aboutToDelete.value = null
+        updateHints()
+      }
       break
   }
 }
@@ -224,6 +376,7 @@ onMounted(async () => {
     tabindex="0"
     @keydown="handleKeydown"
     @focus="handleFocus"
+    @blur="handleBlur"
   >
     <!-- Phase Header -->
     <div class="phase-header">
@@ -238,6 +391,8 @@ onMounted(async () => {
         :aim="aim"
         :is-expanded="expandedAims.has(aim.id)"
         :indentation-level="0"
+        :pending-delete="aboutToDelete === aim.id"
+        :pending-remove="aboutToRemove === aim.id"
       />
     </div>
   </div>

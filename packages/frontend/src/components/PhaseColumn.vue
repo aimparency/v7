@@ -54,6 +54,55 @@ const handleFocus = () => {
   focusSelectedPhase()
 }
 
+// Handle requests from phases to navigate to next/previous phase
+const handleRequestNextPhase = async (enterEditMode: boolean, aimIndex?: number) => {
+  if (selectedIndex.value < props.phases.length - 1) {
+    selectedIndex.value++
+    await nextTick()
+    
+    if (enterEditMode) {
+      // Find the new phase component and enter edit mode
+      const newPhaseElement = document.querySelector(
+        `.phase-column.${props.columnType} .phase-container:nth-child(${selectedIndex.value + 1})`
+      ) as HTMLElement
+      
+      if (newPhaseElement) {
+        // Get Vue component instance - for now focus and simulate 'i' press
+        newPhaseElement.focus()
+        // Simulate entering edit mode - this is a bit hacky, but works
+        await nextTick()
+        newPhaseElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'i' }))
+      }
+    } else {
+      focusSelectedPhase()
+    }
+  }
+}
+
+const handleRequestPreviousPhase = async (enterEditMode: boolean, aimIndex?: number) => {
+  if (selectedIndex.value > 0) {
+    selectedIndex.value--
+    await nextTick()
+    
+    if (enterEditMode) {
+      // Find the new phase component and enter edit mode
+      const newPhaseElement = document.querySelector(
+        `.phase-column.${props.columnType} .phase-container:nth-child(${selectedIndex.value + 1})`
+      ) as HTMLElement
+      
+      if (newPhaseElement) {
+        // Get Vue component instance - for now focus and simulate 'i' press
+        newPhaseElement.focus()
+        // Simulate entering edit mode - this is a bit hacky, but works
+        await nextTick()
+        newPhaseElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'i' }))
+      }
+    } else {
+      focusSelectedPhase()
+    }
+  }
+}
+
 // Expose methods for cross-column navigation
 defineExpose({
   focusSelectedPhase
@@ -119,6 +168,8 @@ const handleKeydown = async (event: KeyboardEvent) => {
         :phase="phase"
         :is-selected="index === selectedIndex"
         :column-type="columnType"
+        @request-next-phase="handleRequestNextPhase"
+        @request-previous-phase="handleRequestPreviousPhase"
       />
     </div>
   </div>
@@ -133,10 +184,6 @@ const handleKeydown = async (event: KeyboardEvent) => {
   overflow: hidden;
   &:last-child {
     border-right: none;
-  }
-  
-  &:focus {
-    background: #252525;
   }
 }
 

@@ -6,28 +6,24 @@ interface Props {
   aim: Aim
   isExpanded?: boolean
   indentationLevel?: number
+  pendingDelete?: boolean
+  pendingRemove?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isExpanded: false,
-  indentationLevel: 0
+  indentationLevel: 0,
+  pendingDelete: false,
+  pendingRemove: false
 })
 
 const hasIncomingAims = computed(() => {
   return props.aim.incoming && props.aim.incoming.length > 0
 })
 
-const canExpand = computed(() => {
-  return hasIncomingAims.value && !props.isExpanded
-})
-
-const canCollapse = computed(() => {
-  return hasIncomingAims.value && props.isExpanded
-})
-
 const statusColor = computed(() => {
   switch (props.aim.status.state) {
-    case 'open': return '#ffa500'
+    case 'open': return '#87f'
     case 'done': return '#00ff00'
     case 'cancelled': return '#ff0000'
     case 'partially': return '#ffff00'
@@ -51,8 +47,9 @@ const indentStyle = computed(() => {
     <div 
       class="aim-item focusable"
       :class="{ 
-        'has-incoming': hasIncomingAims,
-        expanded: isExpanded
+        expanded: isExpanded,
+        'pending-delete': pendingDelete,
+        'pending-remove': pendingRemove
       }"
       tabindex="0"
     >
@@ -94,16 +91,14 @@ const indentStyle = computed(() => {
   gap: 0.25rem;
   padding: 0.5rem;
   margin-bottom: 0.25rem;
-  border-radius: 0.1875rem;
-  border-left: 0.125rem solid #444;
   cursor: pointer;
   
-  &.has-incoming {
-    border-left-color: #666;
-    
-    &.expanded {
-      border-left-color: #888;
-    }
+  &.pending-delete {
+    background-color: rgba(255, 0, 0, 0.2);
+  }
+  
+  &.pending-remove {
+    background-color: rgba(255, 165, 0, 0.2);
   }
 }
 

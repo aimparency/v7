@@ -177,7 +177,6 @@ onUnmounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #1a1a1a;
   color: #e0e0e0;
   font-family: 'Monaco', 'Menlo', monospace;
 }
@@ -285,7 +284,6 @@ onUnmounted(() => {
 }
 
 kbd {
-  background: #444;
   color: #fff;
   padding: 0.125rem 0.25rem;
   border-radius: 3px;
@@ -295,7 +293,6 @@ kbd {
 
 /* Global styles */
 kbd {
-  background: #444;
   color: #fff;
   padding: 0.125rem 0.25rem;
   border-radius: 3px;
