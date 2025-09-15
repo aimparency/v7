@@ -115,9 +115,25 @@ const handleAimClick = async (clickedIndex: number) => {
   emit('phaseClicked')
 }
 
+// Focus the child column if it exists
+const focusChildColumn = async () => {
+  if (childColumnRef.value) {
+    await nextTick()
+    childColumnRef.value.focusSelectedPhase()
+  }
+}
+
+// Focus this phase element
+const focus = async () => {
+  await nextTick()
+  phaseElement.value?.focus()
+}
+
 // Expose methods for external access
 defineExpose({
-  enterEditMode
+  enterEditMode,
+  focusChildColumn,
+  focus
 })
 
 // Clear confirmation states
@@ -219,13 +235,19 @@ const handleKeydown = async (event: KeyboardEvent) => {
     case 'l':
       event.preventDefault()
       clearConfirmationStates()
-      if (aims.length > selectedAimIndex.value) {
+
+      // If there's a child column, navigate to it
+      if (childPhases.value.length > 0) {
+        isInEditMode.value = false // Exit edit mode
+        await handleNavigateToChild() // Navigate to child column
+        event.stopPropagation()
+      } else if (aims.length > selectedAimIndex.value) {
+        // Otherwise try to expand aim
         const aim = aims[selectedAimIndex.value]
         if (aim.incoming.length > 0) {
           expandedAims.value.add(aim.id)
-          event.stopPropagation() // Only stop propagation if we handled the expansion
+          event.stopPropagation()
         }
-        // If no expansion happened, let it bubble up for cross-column navigation
       }
       updateHints()
       break
@@ -423,12 +445,12 @@ const handleNavigateFromChild = async () => {
 
 // Handle navigation to child column
 const handleNavigateToChild = async () => {
-  if (childPhases.value.length > 0) {
-    // Navigate to child column with phases
+  if (childColumnRef.value) {
     const childColumnIndex = props.columnIndex + 1
     uiStore.setFocusedColumn(childColumnIndex)
     await nextTick()
-    // Child column will handle its own focus
+    // Focus the child column - it will auto-focus its content
+    childColumnRef.value.$el?.focus()
   }
 }
 
@@ -494,7 +516,7 @@ onMounted(async () => {
   </div>
 
   <!-- Teleport child column when this phase is selected -->
-  <Teleport to=".main" v-if="isSelected && childPhases.length >= 0">
+  <Teleport to=".main" v-if="isSelected">
     <PhaseColumn
       ref="childColumnRef"
       :phases="childPhases"
@@ -504,6 +526,8 @@ onMounted(async () => {
       :style="childColumnStyle"
       @request-navigate-left="handleNavigateFromChild"
       @request-navigate-right="handleNavigateToChild"
+      @navigate-left="handleNavigateFromChild"
+      @navigate-right="handleNavigateToChild"
     />
   </Teleport>
 </template>
@@ -514,6 +538,12 @@ onMounted(async () => {
   margin-bottom: 0.25rem;
   border-radius: 0.1875rem;
   cursor: pointer;
+
+  &:focus {
+    outline: 2px solid #007acc;
+    outline-offset: -2px;
+    background: rgba(0, 122, 204, 0.1);
+  }
 }
 
 .phase-header {

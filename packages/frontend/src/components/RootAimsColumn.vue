@@ -7,6 +7,7 @@ import AimComponent from './Aim.vue'
 
 const emit = defineEmits<{
   requestNavigateRight: []
+  navigateRight: []
 }>()
 
 const selectedIndex = ref(0)
@@ -91,7 +92,8 @@ const handleKeydown = async (event: KeyboardEvent) => {
       }
       break
     case 'l':
-      // Don't prevent default - let this bubble up to global handler
+      event.preventDefault()
+      emit('navigate-right')
       break
     case 'o':
     case 'O':

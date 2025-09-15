@@ -20,12 +20,15 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   requestNavigateLeft: []
   requestNavigateRight: []
+  navigateLeft: []
+  navigateRight: []
 }>()
 
 const selectedIndex = ref(0)
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 const phaseRefs = ref<InstanceType<typeof PhaseComponent>[]>([])
+const emptyStateRef = ref<HTMLElement>()
 
 // Selection changes are now handled internally by Phase components via teleport
 
@@ -36,18 +39,15 @@ const focusSelectedPhase = async () => {
 
   if (props.phases.length === 0) {
     // Focus the empty state div
-    const emptyState = document.querySelector(
-      `.phase-column[data-column-index="${props.columnIndex}"] .empty-state`
-    ) as HTMLElement
-    console.log(`PhaseColumn ${props.columnIndex}: Focusing empty state, found:`, !!emptyState)
-    emptyState?.focus()
+    console.log(`PhaseColumn ${props.columnIndex}: Focusing empty state, found:`, !!emptyStateRef.value)
+    emptyStateRef.value?.focus()
   } else {
-    // Focus the selected phase
-    const selectedPhase = document.querySelector(
-      `.phase-column[data-column-index="${props.columnIndex}"] .phase-container:nth-child(${selectedIndex.value + 1})`
-    ) as HTMLElement
+    // Focus the selected phase using the ref array
+    const selectedPhase = phaseRefs.value[selectedIndex.value]
     console.log(`PhaseColumn ${props.columnIndex}: Focusing selected phase, found:`, !!selectedPhase)
-    selectedPhase?.focus()
+    if (selectedPhase) {
+      await selectedPhase.focus()
+    }
   }
 }
 
@@ -68,7 +68,7 @@ onMounted(() => {
   }
 })
 
-// Handle column focus event
+// Handle column focus event - automatically focus the appropriate child
 const handleFocus = () => {
   console.log(`PhaseColumn ${props.columnIndex}: Got focus, phases=${props.phases.length}`)
   uiStore.setFocusedColumn(props.columnIndex)
@@ -89,6 +89,8 @@ const handleFocus = () => {
   }
 
   uiStore.setKeyboardHints(hints)
+
+  // Automatically focus the selected phase or empty state
   focusSelectedPhase()
 }
 
@@ -156,9 +158,18 @@ const handleRequestPreviousPhase = async (enterEditMode: boolean, aimIndex?: num
   }
 }
 
+// Focus child column of the selected phase
+const focusSelectedPhaseChildColumn = async () => {
+  const selectedPhase = phaseRefs.value[selectedIndex.value]
+  if (selectedPhase) {
+    await selectedPhase.focusChildColumn()
+  }
+}
+
 // Expose methods for cross-column navigation
 defineExpose({
-  focusSelectedPhase
+  focusSelectedPhase,
+  focusSelectedPhaseChildColumn
 })
 
 // Handle phase navigation within column
@@ -177,21 +188,12 @@ const handleKeydown = async (event: KeyboardEvent) => {
       }
       break
     case 'h':
-      // Don't prevent default - let this bubble up to global handler
+      event.preventDefault()
+      emit('navigateLeft')
       break
     case 'l':
       event.preventDefault()
-      // Try to focus child column if it exists (teleported column)
-      const childColumnIndex = props.columnIndex + 1
-      const childColumn = document.querySelector(`[data-column-index="${childColumnIndex}"]`) as HTMLElement
-      if (childColumn) {
-        console.log(`PhaseColumn ${props.columnIndex}: Focusing child column ${childColumnIndex}`)
-        childColumn.focus()
-        // Also update the focused column in store
-        uiStore.setFocusedColumn(childColumnIndex)
-      } else {
-        console.log(`PhaseColumn ${props.columnIndex}: No child column found at index ${childColumnIndex}`)
-      }
+      emit('navigateRight')
       break
     case 'o':
     case 'O':
@@ -211,7 +213,7 @@ const handleKeydown = async (event: KeyboardEvent) => {
     @keydown="handleKeydown"
     @focus="handleFocus"
   >
-    <div v-if="phases.length === 0" class="empty-state" tabindex="0" @focus="handleEmptyStateFocus" @keydown="handleEmptyStateKeydown">
+    <div v-if="phases.length === 0" ref="emptyStateRef" class="empty-state" tabindex="0" @focus="handleEmptyStateFocus" @keydown="handleEmptyStateKeydown">
       No sub phases, create one with o
     </div>
     

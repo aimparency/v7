@@ -75,7 +75,8 @@ const handleNavigateFromAims = async () => {
   if (uiStore.canNavigateRight) {
     uiStore.setFocusedColumn(1)
     await nextTick()
-    firstPhaseColumnRef.value?.focusSelectedPhase()
+    // PhaseColumn will auto-focus when it receives focus event
+    firstPhaseColumnRef.value?.$el?.focus()
   }
 }
 
@@ -84,79 +85,44 @@ const handleNavigateToAims = async () => {
   if (uiStore.canNavigateLeft) {
     uiStore.setFocusedColumn(0)
     await nextTick()
-    rootAimsColumnRef.value?.focusSelectedAim()
+    rootAimsColumnRef.value?.$el?.focus()
   }
 }
 
-// Handle navigation from any column
+// Handle navigation events from components
 const handleNavigateLeft = async () => {
-  console.log('Navigate left:', {
-    focused: uiStore.focusedColumnIndex,
-    rightmost: uiStore.rightmostColumnIndex,
-    canNavigate: uiStore.canNavigateLeft
-  })
-
-  if (uiStore.canNavigateLeft) {
-    const newIndex = uiStore.focusedColumnIndex - 1
+  const currentIndex = uiStore.focusedColumnIndex
+  if (currentIndex > 0) {
+    const newIndex = currentIndex - 1
     uiStore.setFocusedColumn(newIndex)
     await nextTick()
 
-    console.log('Focusing column:', newIndex)
     if (newIndex === 0) {
-      // Focus the selected aim in the root aims column
-      console.log('rootAimsColumnRef.value:', !!rootAimsColumnRef.value)
-      rootAimsColumnRef.value?.focusSelectedAim()
+      rootAimsColumnRef.value?.$el?.focus()
     } else if (newIndex === 1) {
-      // Focus the selected phase in the phase column
-      console.log('firstPhaseColumnRef.value:', !!firstPhaseColumnRef.value)
-      firstPhaseColumnRef.value?.focusSelectedPhase()
+      firstPhaseColumnRef.value?.$el?.focus()
     }
-    // For teleported columns, they handle their own focus
+    // For deeper levels, the parent should handle focusing
   }
 }
 
 const handleNavigateRight = async () => {
-  console.log('Navigate right:', {
-    focused: uiStore.focusedColumnIndex,
-    rightmost: uiStore.rightmostColumnIndex,
-    canNavigate: uiStore.canNavigateRight
-  })
-
-  if (uiStore.canNavigateRight) {
-    const newIndex = uiStore.focusedColumnIndex + 1
+  const currentIndex = uiStore.focusedColumnIndex
+  if (currentIndex < uiStore.rightmostColumnIndex) {
+    const newIndex = currentIndex + 1
     uiStore.setFocusedColumn(newIndex)
     await nextTick()
 
-    console.log('Focusing column:', newIndex)
     if (newIndex === 1) {
-      // Focus the selected phase in the phase column
-      console.log('firstPhaseColumnRef.value:', !!firstPhaseColumnRef.value)
-      console.log('firstPhaseColumnRef.value.focusSelectedPhase:', !!firstPhaseColumnRef.value?.focusSelectedPhase)
-      firstPhaseColumnRef.value?.focusSelectedPhase()
+      firstPhaseColumnRef.value?.$el?.focus()
     }
-    // For teleported columns, they handle their own focus
+    // For deeper levels, need to find the target column
+    // This should be handled by the component that owns the child
   }
 }
 
-// Set global unfocused hints
-const setGlobalHints = () => {
-  uiStore.setKeyboardHints([
-    { key: 'h/l', action: 'navigate columns' },
-    { key: 'j/k/i', action: 'focus current column' }
-  ])
-}
 
-// Global keyboard handler for h/l navigation
-const handleGlobalKeydown = (event: KeyboardEvent) => {
-  // Only handle h/l for global navigation - let other keys be handled by focused components
-  if (event.key === 'h') {
-    event.preventDefault()
-    handleNavigateLeft()
-  } else if (event.key === 'l') {
-    event.preventDefault()
-    handleNavigateRight()
-  }
-}
+
 
 onMounted(async () => {
   uiStore.setFocusedColumn(0) // Start focused on aims
@@ -167,20 +133,9 @@ onMounted(async () => {
     uiStore.setConnectionStatus('connected')
   }
 
-  // Set initial global hints
-  setGlobalHints()
-
-  // Add global keyboard listener
-  document.addEventListener('keydown', handleGlobalKeydown)
-
   // Ensure RootAimsColumn gets initial focus
   await nextTick()
   rootAimsColumnRef.value?.focusSelectedAim()
-})
-
-onUnmounted(() => {
-  // Remove global keyboard listener
-  document.removeEventListener('keydown', handleGlobalKeydown)
 })
 
 </script>
@@ -213,7 +168,7 @@ onUnmounted(() => {
         ref="rootAimsColumnRef"
         class="column-0"
         @request-navigate-right="handleNavigateRight"
-        @focus="uiStore.setFocusedColumn(0)"
+        @navigate-right="handleNavigateRight"
       />
 
       <!-- First Phase Column (Column 1) -->
@@ -225,7 +180,8 @@ onUnmounted(() => {
         :parent-phase="null"
         class="column-1"
         @request-navigate-left="handleNavigateLeft"
-        @focus="uiStore.setFocusedColumn(1)"
+        @navigate-left="handleNavigateLeft"
+        @navigate-right="handleNavigateRight"
       />
     </main>
 
