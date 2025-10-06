@@ -29,6 +29,7 @@ const dataStore = useDataStore()
 const uiStore = useUIStore()
 const phaseRefs = ref<InstanceType<typeof PhaseComponent>[]>([])
 const emptyStateRef = ref<HTMLElement>()
+const columnElement = ref<HTMLElement>()
 
 // Selection changes are now handled internally by Phase components via teleport
 
@@ -67,6 +68,17 @@ onMounted(() => {
     uiStore.setMinRightmost(minRightmost)
   }
 })
+
+// Watch for focus changes - focus self when focusedColumnIndex matches this column
+watch(
+  () => uiStore.focusedColumnIndex,
+  async (newIndex) => {
+    if (newIndex === props.columnIndex) {
+      await nextTick()
+      columnElement.value?.focus()
+    }
+  }
+)
 
 // Handle column focus event - automatically focus the appropriate child
 const handleFocus = () => {
@@ -206,7 +218,8 @@ const handleKeydown = async (event: KeyboardEvent) => {
 </script>
 
 <template>
-  <div 
+  <div
+    ref="columnElement"
     class="phase-column focusable"
     :data-column-index="columnIndex"
     tabindex="0"

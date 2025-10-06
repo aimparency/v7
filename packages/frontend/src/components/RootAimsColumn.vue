@@ -118,6 +118,18 @@ onMounted(async () => {
   }
 })
 
+// Watch for focus changes - focus self when focusedColumnIndex becomes 0
+const columnElement = ref<HTMLElement>()
+watch(
+  () => uiStore.focusedColumnIndex,
+  async (newIndex) => {
+    if (newIndex === 0) {
+      await nextTick()
+      columnElement.value?.focus()
+    }
+  }
+)
+
 // Expose methods for cross-column navigation
 defineExpose({
   focusSelectedAim
@@ -126,6 +138,7 @@ defineExpose({
 
 <template>
   <div
+    ref="columnElement"
     class="root-aims-column focusable"
     tabindex="0"
     @keydown="handleKeydown"

@@ -20,20 +20,8 @@ const firstPhaseColumnRef = ref<InstanceType<typeof PhaseColumn> | null>(null)
 const rootPhases = ref<Phase[]>([])
 
 // Viewport management - show 2 columns at a time
+const VIEWPORT_SIZE = 2
 const viewportStart = ref(0)
-
-// Update viewport only when focused column goes beyond current viewport
-watch(() => uiStore.focusedColumnIndex, (focused) => {
-  const viewportEnd = viewportStart.value + 1
-
-  if (focused > viewportEnd) {
-    // Focused column is beyond right edge, shift viewport right
-    viewportStart.value = focused - 1
-  } else if (focused < viewportStart.value) {
-    // Focused column is beyond left edge, shift viewport left
-    viewportStart.value = focused
-  }
-})
 
 // Container offset based on viewport start
 const containerOffset = computed(() => {
@@ -70,55 +58,48 @@ const closeProject = () => {
   uiStore.setProjectPath('')
 }
 
-// Handle navigation from root aims column to first phase column
-const handleNavigateFromAims = async () => {
-  if (uiStore.canNavigateRight) {
-    uiStore.setFocusedColumn(1)
-    await nextTick()
-    // PhaseColumn will auto-focus when it receives focus event
-    firstPhaseColumnRef.value?.$el?.focus()
+// Navigation with edge-triggered viewport scrolling
+const navigateLeft = () => {
+  const currentIndex = uiStore.focusedColumnIndex
+
+  // Boundary check: can't go left of column 0
+  if (currentIndex === 0) return
+
+  // Edge-triggered viewport scroll
+  if (currentIndex === viewportStart.value && viewportStart.value > 0) {
+    viewportStart.value--
   }
+
+  // Move focus
+  uiStore.setFocusedColumn(currentIndex - 1)
 }
 
-// Handle navigation from first phase column back to aims
-const handleNavigateToAims = async () => {
-  if (uiStore.canNavigateLeft) {
-    uiStore.setFocusedColumn(0)
-    await nextTick()
-    rootAimsColumnRef.value?.$el?.focus()
+const navigateRight = () => {
+  const currentIndex = uiStore.focusedColumnIndex
+
+  // Boundary check: can't go right beyond empty column
+  if (currentIndex >= uiStore.rightmostColumnIndex) return
+
+  // Edge-triggered viewport scroll
+  const viewportEnd = viewportStart.value + VIEWPORT_SIZE - 1
+  if (currentIndex === viewportEnd) {
+    const maxViewportStart = Math.max(0, uiStore.rightmostColumnIndex - VIEWPORT_SIZE + 1)
+    if (viewportStart.value < maxViewportStart) {
+      viewportStart.value++
+    }
   }
+
+  // Move focus
+  uiStore.setFocusedColumn(currentIndex + 1)
 }
 
 // Handle navigation events from components
-const handleNavigateLeft = async () => {
-  const currentIndex = uiStore.focusedColumnIndex
-  if (currentIndex > 0) {
-    const newIndex = currentIndex - 1
-    uiStore.setFocusedColumn(newIndex)
-    await nextTick()
-
-    if (newIndex === 0) {
-      rootAimsColumnRef.value?.$el?.focus()
-    } else if (newIndex === 1) {
-      firstPhaseColumnRef.value?.$el?.focus()
-    }
-    // For deeper levels, the parent should handle focusing
-  }
+const handleNavigateLeft = () => {
+  navigateLeft()
 }
 
-const handleNavigateRight = async () => {
-  const currentIndex = uiStore.focusedColumnIndex
-  if (currentIndex < uiStore.rightmostColumnIndex) {
-    const newIndex = currentIndex + 1
-    uiStore.setFocusedColumn(newIndex)
-    await nextTick()
-
-    if (newIndex === 1) {
-      firstPhaseColumnRef.value?.$el?.focus()
-    }
-    // For deeper levels, need to find the target column
-    // This should be handled by the component that owns the child
-  }
+const handleNavigateRight = () => {
+  navigateRight()
 }
 
 
