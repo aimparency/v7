@@ -34,6 +34,7 @@ export const useUIStore = defineStore('ui', {
     // Phase selection by column
     selectedPhaseByColumn: {} as Record<number, number>, // columnIndex -> phaseIndex
     selectedPhaseIdByColumn: {} as Record<number, string>, // columnIndex -> phaseId
+    phaseCountByColumn: {} as Record<number, number>, // columnIndex -> total phase count
 
     // Aim selection (only set when in phase-edit or aim-edit mode)
     selectedAim: null as { phaseId: string, aimIndex: number } | null,
@@ -174,6 +175,14 @@ export const useUIStore = defineStore('ui', {
 
     getSelectedPhaseId(columnIndex: number): string | null {
       return this.selectedPhaseIdByColumn[columnIndex] ?? null
+    },
+
+    setPhaseCount(columnIndex: number, count: number) {
+      this.phaseCountByColumn[columnIndex] = count
+    },
+
+    getPhaseCount(columnIndex: number): number {
+      return this.phaseCountByColumn[columnIndex] ?? 0
     },
 
     setSelectedAim(phaseId: string | null, aimIndex: number | null) {

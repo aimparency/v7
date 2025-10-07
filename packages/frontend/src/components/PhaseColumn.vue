@@ -46,6 +46,11 @@ watch(() => [selectedPhase.value, props.selectedPhaseIndex] as const, ([phase, i
     uiStore.setSelectedPhase(props.columnIndex, index, phase.id)
   }
 }, { immediate: true })
+
+// Report phase count to store whenever phases change
+watch(() => props.phases, (phases) => {
+  uiStore.setPhaseCount(props.columnIndex, phases.length)
+}, { immediate: true })
 </script>
 
 <template>

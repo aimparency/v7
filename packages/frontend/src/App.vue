@@ -145,7 +145,9 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       uiStore.clearPendingDelete() // Navigation cancels pending delete
       const col = uiStore.selectedColumn
       const currentPhaseIndex = uiStore.getSelectedPhase(col)
-      const maxIndex = col === 0 ? (dataStore.getPhaseAims('null')?.length ?? 0) - 1 : (rootPhases.value.length - 1)
+      const maxIndex = col === 0
+        ? (dataStore.getPhaseAims('null')?.length ?? 0) - 1
+        : uiStore.getPhaseCount(col) - 1
       if (currentPhaseIndex < maxIndex) {
         uiStore.setSelectedPhase(col, currentPhaseIndex + 1)
         scrollIntoViewIfNeeded()
