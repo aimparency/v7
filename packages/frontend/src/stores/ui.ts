@@ -16,9 +16,23 @@ export const useUIStore = defineStore('ui', {
     phaseModalParentPhase: null as any, // Track the parent phase for new phase creation
     showAimModal: false,
 
+    // Navigation mode system
+    mode: 'column-navigation' as 'column-navigation' | 'phase-edit' | 'aim-edit',
+
     // Column tracking for navigation
     rightmostColumnIndex: 1, // Track the rightmost (empty) column index
-    focusedColumnIndex: 0, // Track which column is currently focused
+    focusedColumnIndex: 0, // Track which column is currently focused (deprecated - use selectedColumn)
+    selectedColumn: 0, // Currently selected column (visual selection)
+
+    // Phase selection by column
+    selectedPhaseByColumn: {} as Record<number, number>, // columnIndex -> phaseIndex
+
+    // Aim selection (only set when in phase-edit or aim-edit mode)
+    selectedAim: null as { phaseId: string, aimIndex: number } | null,
+
+    // Viewport for column scrolling
+    viewportStart: 0, // Left edge of visible window
+    viewportSize: 2, // Number of columns visible at once
 
     // Keyboard hints
     keyboardHints: [] as Hint[],
@@ -87,6 +101,70 @@ export const useUIStore = defineStore('ui', {
 
     setFocusedColumn(columnIndex: number) {
       this.focusedColumnIndex = columnIndex
+      this.selectedColumn = columnIndex
+    },
+
+    setSelectedColumn(columnIndex: number) {
+      this.selectedColumn = columnIndex
+      this.focusedColumnIndex = columnIndex
+    },
+
+    // Navigation mode actions
+    setMode(mode: 'column-navigation' | 'phase-edit' | 'aim-edit') {
+      this.mode = mode
+    },
+
+    setSelectedPhase(columnIndex: number, phaseIndex: number) {
+      this.selectedPhaseByColumn[columnIndex] = phaseIndex
+    },
+
+    getSelectedPhase(columnIndex: number): number {
+      return this.selectedPhaseByColumn[columnIndex] ?? 0
+    },
+
+    setSelectedAim(phaseId: string | null, aimIndex: number | null) {
+      if (phaseId === null || aimIndex === null) {
+        this.selectedAim = null
+      } else {
+        this.selectedAim = { phaseId, aimIndex }
+      }
+    },
+
+    // Navigation with edge-triggered viewport scrolling
+    navigateLeft() {
+      const currentIndex = this.selectedColumn
+
+      // Boundary check: can't go left of column 0
+      if (currentIndex === 0) return
+
+      // Edge-triggered viewport scroll
+      if (currentIndex === this.viewportStart && this.viewportStart > 0) {
+        this.viewportStart--
+      }
+
+      // Move selection
+      this.selectedColumn = currentIndex - 1
+      this.focusedColumnIndex = currentIndex - 1 // Keep in sync for now
+    },
+
+    navigateRight() {
+      const currentIndex = this.selectedColumn
+
+      // Boundary check: can't go right beyond empty column
+      if (currentIndex >= this.rightmostColumnIndex) return
+
+      // Edge-triggered viewport scroll
+      const viewportEnd = this.viewportStart + this.viewportSize - 1
+      if (currentIndex === viewportEnd) {
+        const maxViewportStart = Math.max(0, this.rightmostColumnIndex - this.viewportSize + 1)
+        if (this.viewportStart < maxViewportStart) {
+          this.viewportStart++
+        }
+      }
+
+      // Move selection
+      this.selectedColumn = currentIndex + 1
+      this.focusedColumnIndex = currentIndex + 1 // Keep in sync for now
     },
 
   }

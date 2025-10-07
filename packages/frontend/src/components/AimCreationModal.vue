@@ -44,6 +44,7 @@ const createAim = async () => {
         text: aimText.value.trim(),
         incoming: [],
         outgoing: [],
+        committedIn: [],
         status: {
           state: 'open',
           comment: '',
@@ -170,8 +171,8 @@ watch(() => uiStore.showAimModal, async (newVal) => {
 .modal {
   background: #2d2d2d;
   border: 1px solid #555;
-  border-radius: 5px;
-  width: 500px;
+  border-radius: 0.3125rem;
+  width: 31.25rem;
   max-width: 90vw;
   
   .modal-header {
@@ -201,7 +202,7 @@ watch(() => uiStore.showAimModal, async (newVal) => {
         padding: 0.5rem;
         background: #1a1a1a;
         border: 1px solid #555;
-        border-radius: 3px;
+        border-radius: 0.1875rem;
         color: #e0e0e0;
         font-family: monospace;
         
@@ -227,7 +228,7 @@ watch(() => uiStore.showAimModal, async (newVal) => {
     button {
       padding: 0.5rem 1rem;
       border: none;
-      border-radius: 3px;
+      border-radius: 0.1875rem;
       cursor: pointer;
       font-family: monospace;
       
@@ -259,10 +260,10 @@ watch(() => uiStore.showAimModal, async (newVal) => {
 }
 
 .search-results {
-  max-height: 200px;
+  max-height: 12.5rem;
   overflow-y: auto;
   border: 1px solid #555;
-  border-radius: 3px;
+  border-radius: 0.1875rem;
   background: #1a1a1a;
   
   .search-header {
@@ -322,7 +323,7 @@ watch(() => uiStore.showAimModal, async (newVal) => {
       background: #444;
       color: #fff;
       padding: 0.125rem 0.25rem;
-      border-radius: 3px;
+      border-radius: 0.1875rem;
       font-size: 0.7rem;
       font-family: monospace;
     }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue'
-import type { Phase, Hint } from 'shared'
+import { computed, watch, nextTick } from 'vue'
+import type { Phase } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import PhaseComponent from './Phase.vue'
@@ -10,6 +10,9 @@ interface Props {
   columnIndex: number
   columnDepth?: number
   parentPhase?: Phase | null
+  isSelected: boolean
+  isActive: boolean
+  selectedPhaseIndex: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -17,231 +20,48 @@ const props = withDefaults(defineProps<Props>(), {
   parentPhase: null
 })
 
-const emit = defineEmits<{
-  requestNavigateLeft: []
-  requestNavigateRight: []
-  navigateLeft: []
-  navigateRight: []
-}>()
-
-const selectedIndex = ref(0)
 const dataStore = useDataStore()
 const uiStore = useUIStore()
-const phaseRefs = ref<InstanceType<typeof PhaseComponent>[]>([])
-const emptyStateRef = ref<HTMLElement>()
-const columnElement = ref<HTMLElement>()
 
-// Selection changes are now handled internally by Phase components via teleport
-
-// Focus the selected phase when this column gets focused
-const focusSelectedPhase = async () => {
-  console.log(`PhaseColumn ${props.columnIndex}: focusSelectedPhase called, phases=${props.phases.length}`)
-  await nextTick()
-
-  if (props.phases.length === 0) {
-    // Focus the empty state div
-    console.log(`PhaseColumn ${props.columnIndex}: Focusing empty state, found:`, !!emptyStateRef.value)
-    emptyStateRef.value?.focus()
-  } else {
-    // Focus the selected phase using the ref array
-    const selectedPhase = phaseRefs.value[selectedIndex.value]
-    console.log(`PhaseColumn ${props.columnIndex}: Focusing selected phase, found:`, !!selectedPhase)
-    if (selectedPhase) {
-      await selectedPhase.focus()
-    }
-  }
-}
-
-// Set rightmost when column is mounted/rendered
-onMounted(() => {
-  console.log(`PhaseColumn ${props.columnIndex}: Mounted, phases=${props.phases.length}`)
-
-  if (props.phases.length === 0) {
-    // If I am empty, I am the definitive rightmost column
-    console.log(`PhaseColumn ${props.columnIndex}: Empty, setting rightmost=${props.columnIndex}`)
-    uiStore.setRightmostColumn(props.columnIndex)
-  } else {
-    // If I have phases, ensure rightmost is at least my potential child column index
-    // But don't override if an empty column has already set a definitive rightmost
-    const minRightmost = props.columnIndex + 1
-    console.log(`PhaseColumn ${props.columnIndex}: Has phases, setting min rightmost=${minRightmost}`)
-    uiStore.setMinRightmost(minRightmost)
-  }
+// Compute which phase in this column is visually selected
+const selectedPhase = computed(() => {
+  if (props.phases.length === 0) return null
+  return props.phases[props.selectedPhaseIndex] ?? props.phases[0]
 })
 
-// Watch for focus changes - focus self when focusedColumnIndex matches this column
-watch(
-  () => uiStore.focusedColumnIndex,
-  async (newIndex) => {
-    if (newIndex === props.columnIndex) {
-      await nextTick()
-      columnElement.value?.focus()
-    }
-  }
-)
-
-// Handle column focus event - automatically focus the appropriate child
-const handleFocus = () => {
-  console.log(`PhaseColumn ${props.columnIndex}: Got focus, phases=${props.phases.length}`)
-  uiStore.setFocusedColumn(props.columnIndex)
-
-  // Set keyboard hints for column navigation
-  const hints = [
-    { key: 'h', action: 'back to parent' },
-    { key: 'o', action: 'create phase' }
-  ]
-
-  // Add phase-specific hints only if phases exist
-  if (props.phases.length > 0) {
-    hints.unshift(
-      { key: 'j/k', action: 'navigate phases' },
-      { key: 'i', action: 'enter phase' },
-      { key: 'l', action: 'to child phases' }
-    )
-  }
-
-  uiStore.setKeyboardHints(hints)
-
-  // Automatically focus the selected phase or empty state
-  focusSelectedPhase()
-}
-
-// Handle empty state focus - similar to column focus but specific hints
-const handleEmptyStateFocus = () => {
-  console.log(`PhaseColumn ${props.columnIndex}: Empty state got focus`)
-  uiStore.setFocusedColumn(props.columnIndex)
-
-  const hints = [
-    { key: 'h', action: 'back to parent' },
-    { key: 'o/Enter', action: 'create phase' }
-  ]
-
-  uiStore.setKeyboardHints(hints)
-}
-
-// Handle empty state keydown - add Enter key for phase creation
-const handleEmptyStateKeydown = (event: KeyboardEvent) => {
-  switch (event.key) {
-    case 'o':
-    case 'O':
-    case 'Enter':
-      event.preventDefault()
-      // Open phase creation modal for this column
-      uiStore.openPhaseModal(props.columnIndex, props.parentPhase)
-      break
-    case 'h':
-      // Let this bubble up to global handler for navigation
-      break
-  }
-}
-
-// Handle phase click - update selection and focus
-const handlePhaseClick = async (clickedIndex: number) => {
-  selectedIndex.value = clickedIndex
-  await focusSelectedPhase()
-}
-
-// Handle requests from phases to navigate to next/previous phase
-const handleRequestNextPhase = async (enterEditMode: boolean, aimIndex?: number) => {
-  if (selectedIndex.value < props.phases.length - 1) {
-    selectedIndex.value++
-    await nextTick()
-
-    const targetPhase = phaseRefs.value[selectedIndex.value]
-    if (enterEditMode && targetPhase) {
-      await targetPhase.enterEditMode(aimIndex)
+// When this column becomes selected, ensure rightmost column tracking is updated
+watch(() => props.isSelected, (isSelected) => {
+  if (isSelected) {
+    if (props.phases.length === 0) {
+      uiStore.setRightmostColumn(props.columnIndex)
     } else {
-      focusSelectedPhase()
+      uiStore.setMinRightmost(props.columnIndex + 1)
     }
   }
-}
+}, { immediate: true })
 
-const handleRequestPreviousPhase = async (enterEditMode: boolean, aimIndex?: number) => {
-  if (selectedIndex.value > 0) {
-    selectedIndex.value--
-    await nextTick()
-
-    const targetPhase = phaseRefs.value[selectedIndex.value]
-    if (enterEditMode && targetPhase) {
-      await targetPhase.enterEditMode(aimIndex)
-    } else {
-      focusSelectedPhase()
-    }
-  }
-}
-
-// Focus child column of the selected phase
-const focusSelectedPhaseChildColumn = async () => {
-  const selectedPhase = phaseRefs.value[selectedIndex.value]
-  if (selectedPhase) {
-    await selectedPhase.focusChildColumn()
-  }
-}
-
-// Expose methods for cross-column navigation
-defineExpose({
-  focusSelectedPhase,
-  focusSelectedPhaseChildColumn
-})
-
-// Handle phase navigation within column
-const handleKeydown = async (event: KeyboardEvent) => {
-  switch (event.key) {
-    case 'j':
-      event.preventDefault()
-      if (selectedIndex.value < props.phases.length - 1) {
-        selectedIndex.value++
-      }
-      break
-    case 'k':
-      event.preventDefault()
-      if (selectedIndex.value > 0) {
-        selectedIndex.value--
-      }
-      break
-    case 'h':
-      event.preventDefault()
-      emit('navigateLeft')
-      break
-    case 'l':
-      event.preventDefault()
-      emit('navigateRight')
-      break
-    case 'o':
-    case 'O':
-      event.preventDefault()
-      // Open phase creation modal with the parent phase
-      uiStore.openPhaseModal(props.columnIndex, props.parentPhase)
-      break
-  }
-}
+// When selected phase changes, load its child phases
+watch(() => selectedPhase.value, async (phase) => {
+  if (!phase) return
+  // Child phases will be loaded by the Phase component via teleport
+}, { immediate: true })
 </script>
 
 <template>
-  <div
-    ref="columnElement"
-    class="phase-column focusable"
-    :data-column-index="columnIndex"
-    tabindex="0"
-    @keydown="handleKeydown"
-    @focus="handleFocus"
-  >
-    <div v-if="phases.length === 0" ref="emptyStateRef" class="empty-state" tabindex="0" @focus="handleEmptyStateFocus" @keydown="handleEmptyStateKeydown">
+  <div class="phase-column" :class="{ 'is-active': isActive, 'is-selected': isSelected && !isActive }">
+    <div v-if="phases.length === 0" class="empty-state">
       No sub phases, create one with o
     </div>
-    
+
     <div v-else class="phase-list">
       <PhaseComponent
         v-for="(phase, index) in phases"
         :key="phase.id"
-        ref="phaseRefs"
         :phase="phase"
-        :is-selected="index === selectedIndex"
+        :is-selected="index === selectedPhaseIndex"
+        :is-active="isActive && index === selectedPhaseIndex"
         :column-index="columnIndex"
         :column-depth="columnDepth"
-        @request-next-phase="handleRequestNextPhase"
-        @request-previous-phase="handleRequestPreviousPhase"
-        @phase-clicked="handlePhaseClick(index)"
       />
     </div>
   </div>
@@ -255,29 +75,37 @@ const handleKeydown = async (event: KeyboardEvent) => {
   overflow: hidden;
 }
 
+.phase-column.is-active {
+  outline: 0.15rem solid #007acc;
+}
+
+.phase-column.is-selected {
+  outline: 0.15rem solid #555;
+}
+
 .phase-list {
   flex: 1;
   overflow-y: auto;
   padding: 0.5rem;
-  
+
   /* Custom scrollbar */
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 0.375rem;
   }
-  
+
   &::-webkit-scrollbar-track {
     background: #1a1a1a;
   }
-  
+
   &::-webkit-scrollbar-thumb {
     background: #555;
-    border-radius: 3px;
-    
+    border-radius: 0.1875rem;
+
     &:hover {
       background: #666;
     }
   }
-  
+
   /* Firefox scrollbar */
   scrollbar-width: thin;
   scrollbar-color: #555 #1a1a1a;

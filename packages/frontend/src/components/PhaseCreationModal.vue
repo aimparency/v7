@@ -123,8 +123,8 @@ watch(() => uiStore.showPhaseModal, async (newVal) => {
 .modal {
   background: #2d2d2d;
   border: 1px solid #555;
-  border-radius: 5px;
-  width: 400px;
+  border-radius: 0.3125rem;
+  width: 25rem;
   max-width: 90vw;
   
   .modal-header {
@@ -154,7 +154,7 @@ watch(() => uiStore.showPhaseModal, async (newVal) => {
         padding: 0.5rem;
         background: #1a1a1a;
         border: 1px solid #555;
-        border-radius: 3px;
+        border-radius: 0.1875rem;
         color: #e0e0e0;
         font-family: monospace;
         

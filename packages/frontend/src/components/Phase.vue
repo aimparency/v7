@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import type { Phase, Hint } from 'shared'
+import { ref, computed, watch, onMounted } from 'vue'
+import type { Phase } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { trpc } from '../trpc'
@@ -9,416 +9,25 @@ import PhaseColumn from './PhaseColumn.vue'
 
 interface Props {
   phase: Phase
-  isSelected?: boolean
+  isSelected: boolean
+  isActive: boolean
   columnIndex: number
   columnDepth?: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isSelected: false,
   columnDepth: 1
 })
-
-const emit = defineEmits<{
-  requestNextPhase: [enterEditMode: boolean, aimIndex?: number]
-  requestPreviousPhase: [enterEditMode: boolean, aimIndex?: number]
-  phaseClicked: []
-}>()
-
-// Component's own UI state
-const isInEditMode = ref(false)
-const selectedAimIndex = ref(0)
-const expandedAims = ref<Set<string>>(new Set())
-const aboutToDelete = ref<string | null>(null)
-const aboutToRemove = ref<string | null>(null)
-
-// Child column state
-const childPhases = ref<Phase[]>([])
-const childColumnRef = ref<InstanceType<typeof PhaseColumn> | null>(null)
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 
+// Child column state
+const childPhases = ref<Phase[]>([])
+
+// Get aims for this phase
 const phaseAims = computed(() => {
   return dataStore.getPhaseAims(props.phase.id)
-})
-
-// DOM element reference for focus
-const phaseElement = ref<HTMLElement>()
-const aimsContainerRef = ref<HTMLElement>()
-
-// Focus and scroll to the selected aim
-const focusSelectedAim = async () => {
-  if (!aimsContainerRef.value) return
-  
-  await nextTick()
-  const aims = phaseAims.value
-  if (aims.length === 0 || selectedAimIndex.value >= aims.length) return
-  
-  // Find the aim element by index
-  const aimElements = aimsContainerRef.value.querySelectorAll('.aim-item.focusable')
-  const targetAim = aimElements[selectedAimIndex.value] as HTMLElement
-  
-  if (targetAim) {
-    targetAim.focus()
-    targetAim.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  }
-}
-
-// Enter edit mode at specific aim index
-const enterEditMode = async (aimIndex?: number) => {
-  const aims = phaseAims.value
-  if (aims.length === 0) return
-  
-  isInEditMode.value = true
-  
-  // Set aim index: -1 means last aim, undefined/0 means first aim
-  if (aimIndex === -1) {
-    selectedAimIndex.value = aims.length - 1
-  } else if (aimIndex !== undefined) {
-    selectedAimIndex.value = Math.min(aimIndex, aims.length - 1)
-  } else {
-    selectedAimIndex.value = 0
-  }
-  
-  updateHints()
-  await focusSelectedAim()
-}
-
-// Handle focus event - when phase gets focused, focus the appropriate child element
-const handleFocus = async () => {
-  if (isInEditMode.value) {
-    // If in edit mode, focus the selected aim instead
-    await focusSelectedAim()
-  }
-}
-
-// Handle blur event - clear confirmation states when focus is lost
-const handleBlur = () => {
-  clearConfirmationStates()
-  updateHints()
-}
-
-// Handle aim click - update selection and enter edit mode
-const handleAimClick = async (clickedIndex: number) => {
-  selectedAimIndex.value = clickedIndex
-  clearConfirmationStates()
-  
-  if (!isInEditMode.value) {
-    isInEditMode.value = true
-  }
-  
-  updateHints()
-  await focusSelectedAim()
-  
-  // Let parent know this phase is now active
-  emit('phaseClicked')
-}
-
-// Focus the child column if it exists
-const focusChildColumn = async () => {
-  if (childColumnRef.value) {
-    await nextTick()
-    childColumnRef.value.focusSelectedPhase()
-  }
-}
-
-// Focus this phase element
-const focus = async () => {
-  await nextTick()
-  phaseElement.value?.focus()
-}
-
-// Expose methods for external access
-defineExpose({
-  enterEditMode,
-  focusChildColumn,
-  focus
-})
-
-// Clear confirmation states
-const clearConfirmationStates = () => {
-  aboutToDelete.value = null
-  aboutToRemove.value = null
-}
-
-// Update hints based on current mode
-const updateHints = () => {
-  if (isInEditMode.value) {
-    const hints: Hint[] = [
-      { key: 'j/k', action: 'navigate aims' },
-      { key: 'h/l', action: 'expand/collapse' },
-      { key: 'o', action: 'create aim' },
-      { key: 'd', action: 'delete aim' },
-      { key: 'Esc', action: 'exit edit' }
-    ]
-    
-    // Only show remove option if not in null phase
-    if (props.phase.id !== 'null') {
-      hints.splice(-1, 0, { key: 'r', action: 'remove aim' })
-    }
-    
-    if (aboutToDelete.value) {
-      hints.unshift({ key: 'd', action: 'confirm delete (red)' })
-    } else if (aboutToRemove.value) {
-      hints.unshift({ key: 'r', action: 'confirm remove (orange)' })
-    }
-    
-    uiStore.setKeyboardHints(hints)
-  } else if (props.isSelected) {
-    uiStore.setKeyboardHints([
-      { key: 'i', action: 'enter phase edit' },
-      { key: 'j/k', action: 'navigate phases' },
-      { key: 'h/l', action: 'switch columns' }
-    ])
-  }
-}
-
-// Keyboard navigation
-const handleKeydown = async (event: KeyboardEvent) => {
-  if (!isInEditMode.value) {
-    // Column navigation mode
-    if (event.key === 'i') {
-      event.preventDefault()
-      isInEditMode.value = true
-      selectedAimIndex.value = 0
-      updateHints() // Update hints when entering edit mode
-      await focusSelectedAim() // Focus and scroll to first aim
-    }
-    return
-  }
-  
-  // Phase edit mode
-  const aims = phaseAims.value
-  
-  switch (event.key) {
-    case 'Escape':
-      event.preventDefault()
-      event.stopPropagation()
-      clearConfirmationStates()
-      isInEditMode.value = false
-      updateHints() // Update hints when exiting edit mode
-      // Focus back to the phase container
-      await nextTick()
-      phaseElement.value?.focus()
-      break
-    case 'j':
-      event.preventDefault()
-      event.stopPropagation()
-      clearConfirmationStates()
-      if (selectedAimIndex.value < aims.length - 1) {
-        selectedAimIndex.value++
-        await focusSelectedAim()
-      } else {
-        // At last aim, leaving this phase - exit edit mode
-        isInEditMode.value = false
-        // Request next phase and start at first aim
-        emit('requestNextPhase', true, 0)
-      }
-      updateHints()
-      break
-    case 'k':
-      event.preventDefault()
-      event.stopPropagation()
-      clearConfirmationStates()
-      if (selectedAimIndex.value > 0) {
-        selectedAimIndex.value--
-        await focusSelectedAim()
-      } else {
-        // At first aim, leaving this phase - exit edit mode
-        isInEditMode.value = false
-        // Request previous phase and start at last aim
-        emit('requestPreviousPhase', true, -1)
-      }
-      updateHints()
-      break
-    case 'l':
-      event.preventDefault()
-      clearConfirmationStates()
-
-      // If there's a child column, navigate to it
-      if (childPhases.value.length > 0) {
-        isInEditMode.value = false // Exit edit mode
-        await handleNavigateToChild() // Navigate to child column
-        event.stopPropagation()
-      } else if (aims.length > selectedAimIndex.value) {
-        // Otherwise try to expand aim
-        const aim = aims[selectedAimIndex.value]
-        if (aim.incoming.length > 0) {
-          expandedAims.value.add(aim.id)
-          event.stopPropagation()
-        }
-      }
-      updateHints()
-      break
-    case 'h':
-      event.preventDefault()
-      clearConfirmationStates()
-      if (aims.length > selectedAimIndex.value) {
-        const aim = aims[selectedAimIndex.value]
-        if (expandedAims.value.has(aim.id)) {
-          expandedAims.value.delete(aim.id)
-          event.stopPropagation() // Only stop propagation if we handled the collapse
-        }
-        // If no collapse happened, let it bubble up for cross-column navigation
-      }
-      updateHints()
-      break
-    case 'o':
-      event.preventDefault()
-      event.stopPropagation()
-      clearConfirmationStates()
-      // Create aim after current selection (or at index 0 if no aims)
-      const afterIndex = aims.length > 0 ? selectedAimIndex.value + 1 : 0
-      await createAim(afterIndex)
-      updateHints()
-      break
-    case 'O':
-      event.preventDefault()
-      event.stopPropagation()
-      clearConfirmationStates()
-      // Create aim before current selection (or at index 0 if no aims)
-      const beforeIndex = aims.length > 0 ? selectedAimIndex.value : 0
-      await createAim(beforeIndex)
-      updateHints()
-      break
-    case 'd':
-      event.preventDefault()
-      event.stopPropagation()
-      if (aims.length === 0) break
-      
-      const currentAim = aims[selectedAimIndex.value]
-      if (!currentAim) break
-      
-      if (aboutToDelete.value === currentAim.id) {
-        // Confirm deletion
-        try {
-          await dataStore.deleteAim(uiStore.projectPath, currentAim.id)
-          
-          // Adjust selection after deletion
-          if (selectedAimIndex.value >= aims.length - 1) {
-            selectedAimIndex.value = Math.max(0, aims.length - 2)
-          }
-          
-          // Reload aims
-          await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
-          
-          clearConfirmationStates()
-          updateHints()
-          await focusSelectedAim()
-        } catch (error) {
-          console.error('Failed to delete aim:', error)
-          clearConfirmationStates()
-          updateHints()
-        }
-      } else {
-        // Mark for deletion
-        aboutToDelete.value = currentAim.id
-        aboutToRemove.value = null
-        updateHints()
-      }
-      break
-    case 'r':
-      event.preventDefault()
-      event.stopPropagation()
-      if (aims.length === 0) break
-      
-      // Don't allow removal from null phase (aims aren't actually in a phase)
-      if (props.phase.id === 'null') break
-      
-      const aimToRemove = aims[selectedAimIndex.value]
-      if (!aimToRemove) break
-      
-      if (aboutToRemove.value === aimToRemove.id) {
-        // Confirm removal
-        try {
-          await dataStore.removeAimFromPhase(uiStore.projectPath, aimToRemove.id, props.phase.id)
-          
-          // Adjust selection after removal
-          if (selectedAimIndex.value >= aims.length - 1) {
-            selectedAimIndex.value = Math.max(0, aims.length - 2)
-          }
-          
-          // Reload aims for current phase
-          await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
-          
-          // Also reload null phase in case the removed aim should appear there
-          await dataStore.loadPhaseAims(uiStore.projectPath, 'null')
-          
-          clearConfirmationStates()
-          updateHints()
-          await focusSelectedAim()
-        } catch (error) {
-          console.error('Failed to remove aim from phase:', error)
-          clearConfirmationStates()
-          updateHints()
-        }
-      } else {
-        // Mark for removal
-        aboutToRemove.value = aimToRemove.id
-        aboutToDelete.value = null
-        updateHints()
-      }
-      break
-  }
-}
-
-// Create new aim at specified position
-const createAim = async (insertionIndex?: number) => {
-  const aimText = prompt('Enter aim text:')
-  if (!aimText?.trim()) return
-  
-  try {
-    const uiStore = useUIStore()
-    
-    // Create the aim first
-    const result = await dataStore.createAim(uiStore.projectPath, {
-      text: aimText.trim(),
-      incoming: [],
-      outgoing: [],
-      committedIn: [],
-      status: {
-        state: 'open',
-        comment: '',
-        date: Date.now()
-      }
-    })
-    
-    // If this is not the Root phase, commit the aim to this phase at the specified position
-    if (props.phase.id !== 'null') {
-      await dataStore.commitAimToPhase(uiStore.projectPath, result.id, props.phase.id, insertionIndex)
-    }
-    
-    // Update selected aim index to the newly created aim position
-    if (insertionIndex !== undefined) {
-      selectedAimIndex.value = insertionIndex
-    }
-    
-    // Reload this phase's aims
-    await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
-    
-    // Wait for DOM update then focus the newly created aim
-    await nextTick()
-    await nextTick() // Double nextTick to ensure aims are rendered
-    await focusSelectedAim()
-  } catch (error) {
-    console.error('Failed to create aim:', error)
-  }
-}
-
-// Load aims and child phases when this phase is selected
-watch(() => props.isSelected, async (newVal) => {
-  if (newVal) {
-    // Focus this element when selected
-    await nextTick()
-    phaseElement.value?.focus()
-
-    // Load child phases for this phase
-    await loadChildPhases()
-
-    // Update hints for selected phase
-    updateHints()
-  }
 })
 
 // Load child phases for teleported column
@@ -435,32 +44,15 @@ const loadChildPhases = async () => {
   }
 }
 
-// Handle navigation requests from child column
-const handleNavigateFromChild = async () => {
-  // Focus back to this phase
-  uiStore.setFocusedColumn(props.columnIndex)
-  await nextTick()
-  phaseElement.value?.focus()
-}
-
-// Handle navigation to child column
-const handleNavigateToChild = async () => {
-  if (childColumnRef.value) {
-    const childColumnIndex = props.columnIndex + 1
-    uiStore.setFocusedColumn(childColumnIndex)
-    await nextTick()
-    // Focus the child column - it will auto-focus its content
-    childColumnRef.value.$el?.focus()
+// Load child phases when this phase is selected
+watch(() => props.isSelected, async (isSelected) => {
+  if (isSelected) {
+    await loadChildPhases()
   }
-}
+}, { immediate: true })
 
-// Calculate column positioning
+// Calculate column positioning for child
 const childColumnStyle = computed(() => {
-  // Child column should be at (columnIndex + 1) * 50%
-  // columnIndex 0 = RootAimsColumn at 0%
-  // columnIndex 1 = First PhaseColumn at 50%
-  // columnIndex 2 = Child of first phase at 100%
-  // columnIndex 3 = Child of that phase at 150%, etc.
   const childColumnIndex = props.columnIndex + 1
   const leftOffset = childColumnIndex * 50
   return {
@@ -469,48 +61,32 @@ const childColumnStyle = computed(() => {
     top: '0',
     width: '50%',
     height: '100%',
-    zIndex: childColumnIndex + 1 // Ensure child is above parent
+    zIndex: childColumnIndex + 1
   }
 })
 
-// Load aims on mount - always load aims immediately
+// Load aims on mount
 onMounted(async () => {
   await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
-
-  // Load child phases if initially selected
-  if (props.isSelected) {
-    await loadChildPhases()
-    updateHints()
-  }
 })
 </script>
 
 <template>
-  <div 
-    ref="phaseElement"
-    class="phase-container focusable"
-    tabindex="0"
-    @keydown="handleKeydown"
-    @focus="handleFocus"
-    @blur="handleBlur"
-    @click="emit('phaseClicked')"
-  >
+  <div class="phase-container" :class="{ 'is-active': isActive, 'is-selected': isSelected && !isActive }">
     <!-- Phase Header -->
     <div class="phase-header">
       <div class="phase-name">{{ phase.name }}</div>
     </div>
-    
+
     <!-- Aims List -->
-    <div ref="aimsContainerRef" class="aims-container">
+    <div class="aims-container">
       <AimComponent
         v-for="(aim, index) in phaseAims"
         :key="aim.id"
         :aim="aim"
-        :is-expanded="expandedAims.has(aim.id)"
-        :indentation-level="0"
-        :pending-delete="aboutToDelete === aim.id"
-        :pending-remove="aboutToRemove === aim.id"
-        @aim-clicked="handleAimClick(index)"
+        :class="{
+          'is-selected-aim': uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index
+        }"
       />
     </div>
   </div>
@@ -518,16 +94,14 @@ onMounted(async () => {
   <!-- Teleport child column when this phase is selected -->
   <Teleport to=".main" v-if="isSelected">
     <PhaseColumn
-      ref="childColumnRef"
       :phases="childPhases"
       :column-index="columnIndex + 1"
       :column-depth="columnDepth + 1"
       :parent-phase="phase"
       :style="childColumnStyle"
-      @request-navigate-left="handleNavigateFromChild"
-      @request-navigate-right="handleNavigateToChild"
-      @navigate-left="handleNavigateFromChild"
-      @navigate-right="handleNavigateToChild"
+      :is-selected="uiStore.selectedColumn === columnIndex + 1"
+      :is-active="uiStore.selectedColumn === columnIndex + 1"
+      :selected-phase-index="uiStore.getSelectedPhase(columnIndex + 1)"
     />
   </Teleport>
 </template>
@@ -535,27 +109,41 @@ onMounted(async () => {
 <style scoped>
 .phase-container {
   padding: 0.5rem;
-  margin-bottom: 0.25rem;
-  border-radius: 0.1875rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #444;
+  border-radius: 0.25rem;
+  background: #2a2a2a;
   cursor: pointer;
+}
 
-  &:focus {
-    outline: 2px solid #007acc;
-    outline-offset: -2px;
-    background: rgba(0, 122, 204, 0.1);
-  }
+.phase-container.is-active {
+  background: #333;
+  outline: 0.15rem solid #007acc;
+}
+
+.phase-container.is-selected {
+  background: #2d2d2d;
+  outline: 0.15rem solid #555;
 }
 
 .phase-header {
-  .phase-name {
-    font-weight: bold;
-  }
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.phase-name {
+  font-weight: bold;
+  color: #e0e0e0;
 }
 
 .aims-container {
-  margin-top: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  padding-left: 1rem;
+}
+
+.is-selected-aim {
+  outline: 0.15rem solid #007acc;
+  border-radius: 0.25rem;
 }
 </style>
