@@ -6,6 +6,11 @@ export const useUIStore = defineStore('ui', {
     // Project state
     projectPath: localStorage.getItem('aimparency-project-path') || '',
     connectionStatus: 'connecting' as 'connecting' | 'connected' | 'no connection',
+    projectHistory: JSON.parse(localStorage.getItem('aimparency-project-history') || '[]') as Array<{
+      path: string
+      lastOpened: number
+      failedToLoad: boolean
+    }>,
 
     // Modal states
     showPhaseModal: false,
@@ -67,6 +72,45 @@ export const useUIStore = defineStore('ui', {
         localStorage.setItem('aimparency-project-path', path)
       } else {
         localStorage.removeItem('aimparency-project-path')
+      }
+    },
+
+    addProjectToHistory(path: string) {
+      // Remove existing occurrences of this path
+      this.projectHistory = this.projectHistory.filter(p => p.path !== path)
+
+      // Add to top
+      this.projectHistory.unshift({
+        path,
+        lastOpened: Date.now(),
+        failedToLoad: false
+      })
+
+      // Limit to 30 entries
+      this.projectHistory = this.projectHistory.slice(0, 30)
+
+      // Save to localStorage
+      localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
+    },
+
+    removeProjectFromHistory(path: string) {
+      this.projectHistory = this.projectHistory.filter(p => p.path !== path)
+      localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
+    },
+
+    markProjectAsFailed(path: string) {
+      const project = this.projectHistory.find(p => p.path === path)
+      if (project) {
+        project.failedToLoad = true
+        localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
+      }
+    },
+
+    clearProjectFailure(path: string) {
+      const project = this.projectHistory.find(p => p.path === path)
+      if (project) {
+        project.failedToLoad = false
+        localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
       }
     },
     

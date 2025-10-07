@@ -28,17 +28,20 @@ const rootAims = computed(() => {
       No aims yet, create one with o
     </div>
 
-    <div v-else class="aims-list">
-      <AimComponent
-        v-for="(aim, index) in rootAims"
-        :key="aim.id"
-        :aim="aim"
-        :class="{
-          'selected-outlined': index === selectedIndex || (uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index),
-          'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === 'null'
-        }"
-      />
-    </div>
+    <template v-else>
+      <div class=info >free floating aims</div>
+      <div  class="aims-list">
+        <AimComponent
+          v-for="(aim, index) in rootAims"
+          :key="aim.id"
+          :aim="aim"
+          :class="{
+            'selected-outlined': (isActive || isSelected) && (index === selectedIndex || (uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index)),
+            'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === 'null'
+          }"
+        />
+      </div>
+    </template>
   </div>
 </template>
 
@@ -87,5 +90,12 @@ const rootAims = computed(() => {
 
 .pending-delete {
   background: rgba(192, 64, 64, 0.5);
+}
+
+.info {
+  font-size: 0.8rem; 
+  color: #fff4; 
+  text-align: center;
+  margin-top: 0.5rem; 
 }
 </style>

@@ -16,6 +16,7 @@ const dataStore = useDataStore()
 const appRef = ref<HTMLDivElement | null>(null)
 const rootAimsColumnRef = ref<InstanceType<typeof RootAimsColumn> | null>(null)
 const firstPhaseColumnRef = ref<InstanceType<typeof PhaseColumn> | null>(null)
+const projectPathInput = ref('')
 
 // Root phases for the first phase column
 const rootPhases = ref<Phase[]>([])
@@ -28,14 +29,49 @@ const containerOffset = computed(() => {
 })
 
 const selectProject = async () => {
-  const path = prompt('Enter project base folder path:')
-  if (path) {
+  const path = projectPathInput.value.trim()
+  if (!path) return
+
+  try {
     uiStore.setProjectPath(path)
     uiStore.setConnectionStatus('connecting')
     // Load root phases for first phase column
     await loadRootPhases(path)
+    await dataStore.loadPhaseAims(path, 'null')
     uiStore.setConnectionStatus('connected')
+    // Success - add to history and clear any failure status
+    uiStore.addProjectToHistory(path)
+    uiStore.clearProjectFailure(path)
+  } catch (error) {
+    console.error('Failed to load project:', error)
+    uiStore.setConnectionStatus('no connection')
+    uiStore.markProjectAsFailed(path)
+    // Don't clear projectPath so user can see the error
   }
+}
+
+const openProjectFromHistory = async (path: string) => {
+  projectPathInput.value = path
+  await selectProject()
+}
+
+const removeFromHistory = (path: string, event: Event) => {
+  event.stopPropagation()
+  uiStore.removeProjectFromHistory(path)
+}
+
+const formatRelativeTime = (timestamp: number): string => {
+  const now = Date.now()
+  const diff = now - timestamp
+  const minutes = Math.floor(diff / (60 * 1000))
+  const hours = Math.floor(diff / (60 * 60 * 1000))
+  const days = Math.floor(diff / (24 * 60 * 60 * 1000))
+
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  if (hours < 24) return `${hours}h ago`
+  if (days < 30) return `${days}d ago`
+  return new Date(timestamp).toLocaleDateString()
 }
 
 const loadRootPhases = async (projectPath: string) => {
@@ -53,6 +89,8 @@ const loadRootPhases = async (projectPath: string) => {
 }
 
 const closeProject = () => {
+  // Clear root phases to unmount Phase components before clearing project path
+  rootPhases.value = []
   uiStore.setProjectPath('')
 }
 
@@ -497,7 +535,41 @@ onMounted(async () => {
     <div v-if="uiStore.isInProjectSelection" class="project-selection">
       <h1>Aimparency</h1>
       <p>Select a project base folder to get started</p>
-      <button @click="selectProject" class="select-project">Select Project Folder</button>
+
+      <div class="project-input-container">
+        <input
+          v-model="projectPathInput"
+          type="text"
+          placeholder="Enter project folder path..."
+          class="project-input"
+          @keydown.enter="selectProject"
+        />
+        <button @click="selectProject" class="select-project">Open Project</button>
+      </div>
+
+      <!-- Project History -->
+      <div v-if="uiStore.projectHistory.length > 0" class="project-history">
+        <h3>Recent Projects</h3>
+        <div class="history-list">
+          <div
+            v-for="project in uiStore.projectHistory"
+            :key="project.path"
+            class="history-item"
+            :class="{ failed: project.failedToLoad }"
+            @click="openProjectFromHistory(project.path)"
+          >
+            <div class="history-item-content">
+              <div class="history-path">{{ project.path }}</div>
+              <div class="history-time">{{ formatRelativeTime(project.lastOpened) }}</div>
+            </div>
+            <button
+              class="remove-button"
+              @click="removeFromHistory(project.path, $event)"
+              title="Remove from history"
+            >×</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Main Interface -->
@@ -602,6 +674,36 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   gap: 2rem;
+  padding: 2rem;
+  max-width: 50rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.project-input-container {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.project-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  border-radius: 0.3125rem;
+  color: #e0e0e0;
+  font-family: monospace;
+  font-size: 1rem;
+
+  &:focus {
+    outline: none;
+    border-color: #007acc;
+  }
+
+  &::placeholder {
+    color: #666;
+  }
 }
 
 .select-project {
@@ -611,11 +713,115 @@ onMounted(async () => {
   padding: 0.75rem 1.5rem;
   border-radius: 0.3125rem;
   cursor: pointer;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  white-space: nowrap;
 }
 
 .select-project:hover {
   background: #005a99;
+}
+
+.project-history {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #ccc;
+  }
+}
+
+.history-list {
+  max-height: 20rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 0.375rem;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #1a1a1a;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 0.1875rem;
+
+    &:hover {
+      background: #666;
+    }
+  }
+
+  scrollbar-width: thin;
+  scrollbar-color: #555 #1a1a1a;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: #2d2d2d;
+  border: 1px solid #444;
+  border-radius: 0.3125rem;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #333;
+  }
+
+  &.failed {
+    .history-path {
+      color: #ff6666;
+    }
+    border-color: #ff666644;
+  }
+}
+
+.history-item-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.history-path {
+  font-family: monospace;
+  color: #e0e0e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-time {
+  font-size: 0.8rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.remove-button {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  line-height: 1;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #ff6666;
+  }
 }
 
 .main {

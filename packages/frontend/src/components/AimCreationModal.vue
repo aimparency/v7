@@ -194,7 +194,7 @@ watch(() => uiStore.showAimModal, async (newVal) => {
         <div v-if="uiStore.aimModalMode === 'edit'">
           <div class="form-group">
             <label>Status</label>
-            <select v-model="selectedStatus" class="status-select">
+            <select v-model="selectedStatus" class="status-select" @keydown="handleInputKeydown">
               <option value="open">Open</option>
               <option value="done">Done</option>
               <option value="cancelled">Cancelled</option>
@@ -208,6 +208,7 @@ watch(() => uiStore.showAimModal, async (newVal) => {
               v-model="statusComment"
               type="text"
               placeholder="Add a comment about the status"
+              @keydown="handleInputKeydown"
             />
           </div>
         </div>
