@@ -2,12 +2,15 @@
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
+import { trpc } from '../trpc'
 import type { Aim } from 'shared'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 const aimText = ref('')
+const selectedStatus = ref<'open' | 'done' | 'cancelled' | 'partially' | 'failed'>('open')
+const statusComment = ref('')
 const searchResults = ref<Aim[]>([])
 const selectedSearchIndex = ref(0)
 const aimTextInput = ref<HTMLInputElement>()
@@ -72,10 +75,48 @@ const createAim = async () => {
   }
 }
 
+const updateAim = async () => {
+  if (!aimText.value.trim()) return
+  if (!uiStore.aimModalEditingAimId) return
+
+  try {
+    await trpc.aim.update.mutate({
+      projectPath: uiStore.projectPath,
+      aimId: uiStore.aimModalEditingAimId,
+      aim: {
+        text: aimText.value.trim(),
+        status: {
+          state: selectedStatus.value,
+          comment: statusComment.value,
+          date: Date.now()
+        }
+      }
+    })
+
+    // Reload phase aims
+    const phaseId = uiStore.aimModalPhaseId
+    if (phaseId) {
+      await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
+    }
+
+    uiStore.closeAimModal()
+  } catch (error) {
+    console.error('Failed to update aim:', error)
+  }
+}
+
+const handleSubmit = () => {
+  if (uiStore.aimModalMode === 'edit') {
+    updateAim()
+  } else {
+    createAim()
+  }
+}
+
 const handleInputKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     event.preventDefault()
-    createAim()
+    handleSubmit()
   } else if (event.key === 'Escape') {
     event.preventDefault()
     uiStore.closeAimModal()
@@ -98,14 +139,33 @@ watch(aimText, (newValue) => {
   selectedSearchIndex.value = 0
 })
 
-// Focus input when modal opens
+// Focus input when modal opens and load aim data for edit mode
 watch(() => uiStore.showAimModal, async (newVal) => {
   if (newVal) {
     await nextTick()
     aimTextInput.value?.focus()
-    aimText.value = ''
-    searchResults.value = []
-    selectedSearchIndex.value = 0
+
+    if (uiStore.aimModalMode === 'edit' && uiStore.aimModalEditingAimId) {
+      // Load aim data for editing
+      try {
+        const aim = await trpc.aim.get.query({
+          projectPath: uiStore.projectPath,
+          aimId: uiStore.aimModalEditingAimId
+        })
+        aimText.value = aim.text
+        selectedStatus.value = aim.status.state
+        statusComment.value = aim.status.comment
+      } catch (error) {
+        console.error('Failed to load aim for editing:', error)
+      }
+    } else {
+      // Reset for create mode
+      aimText.value = ''
+      selectedStatus.value = 'open'
+      statusComment.value = ''
+      searchResults.value = []
+      selectedSearchIndex.value = 0
+    }
   }
 })
 
@@ -115,23 +175,45 @@ watch(() => uiStore.showAimModal, async (newVal) => {
   <div v-if="uiStore.showAimModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h3>Add Aim</h3>
+        <h3>{{ uiStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim' }}</h3>
       </div>
-      
+
       <div class="modal-body">
         <div class="form-group">
           <label>Aim Text</label>
-          <input 
+          <input
             ref="aimTextInput"
-            v-model="aimText" 
-            type="text" 
+            v-model="aimText"
+            type="text"
             placeholder="Enter aim text"
             @keydown="handleInputKeydown"
           />
         </div>
-        
-        <!-- Search Results -->
-        <div v-if="searchResults.length > 0" class="search-results">
+
+        <!-- Status fields (edit mode only) -->
+        <div v-if="uiStore.aimModalMode === 'edit'">
+          <div class="form-group">
+            <label>Status</label>
+            <select v-model="selectedStatus" class="status-select">
+              <option value="open">Open</option>
+              <option value="done">Done</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="partially">Partially</option>
+              <option value="failed">Failed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status Comment (optional)</label>
+            <input
+              v-model="statusComment"
+              type="text"
+              placeholder="Add a comment about the status"
+            />
+          </div>
+        </div>
+
+        <!-- Search Results (create mode only) -->
+        <div v-if="uiStore.aimModalMode === 'create' && searchResults.length > 0" class="search-results">
           <div class="search-header">Existing aims:</div>
           <div 
             v-for="(result, index) in searchResults"
@@ -154,12 +236,12 @@ watch(() => uiStore.showAimModal, async (newVal) => {
         <button @click="uiStore.closeAimModal" class="btn-secondary">
           Cancel
         </button>
-        <button 
-          @click="createAim" 
-          class="btn-primary" 
+        <button
+          @click="handleSubmit"
+          class="btn-primary"
           :disabled="!aimText.trim() && !selectedSearchResult"
         >
-          {{ selectedSearchResult ? 'Link Existing' : 'Create New' }}
+          {{ uiStore.aimModalMode === 'edit' ? 'Update' : (selectedSearchResult ? 'Link Existing' : 'Create New') }}
         </button>
       </div>
     </div>
@@ -209,7 +291,7 @@ watch(() => uiStore.showAimModal, async (newVal) => {
         color: #ccc;
       }
       
-      input {
+      input, select {
         width: 100%;
         padding: 0.5rem;
         background: #1a1a1a;
@@ -217,15 +299,19 @@ watch(() => uiStore.showAimModal, async (newVal) => {
         border-radius: 0.1875rem;
         color: #e0e0e0;
         font-family: monospace;
-        
+
         &:focus {
           outline: none;
           border-color: #007acc;
         }
-        
+
         &::placeholder {
           color: #666;
         }
+      }
+
+      select {
+        cursor: pointer;
       }
     }
   }

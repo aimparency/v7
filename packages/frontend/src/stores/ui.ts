@@ -9,6 +9,8 @@ export const useUIStore = defineStore('ui', {
 
     // Modal states
     showPhaseModal: false,
+    phaseModalMode: 'create' as 'create' | 'edit',
+    phaseModalEditingPhaseId: null as string | null, // Track which phase is being edited
     newPhaseName: '',
     newPhaseStartDate: '',
     newPhaseEndDate: '',
@@ -16,6 +18,8 @@ export const useUIStore = defineStore('ui', {
     phaseModalParentPhase: null as any, // Track the parent phase for new phase creation
     phaseModalSelectedIndex: 0, // Track selected phase index for date calculation
     showAimModal: false,
+    aimModalMode: 'create' as 'create' | 'edit',
+    aimModalEditingAimId: null as string | null, // Track which aim is being edited
     aimModalPhaseId: null as string | null, // Track phase to add aim to
     aimModalInsertionIndex: 0, // Track where to insert the aim
 
@@ -69,9 +73,11 @@ export const useUIStore = defineStore('ui', {
       this.connectionStatus = status
     },
     
-    // Phase creation actions
+    // Phase creation/editing actions
     openPhaseModal(columnIndex: number = 0, parentPhase: any = null, selectedIndex: number = 0) {
       this.showPhaseModal = true
+      this.phaseModalMode = 'create'
+      this.phaseModalEditingPhaseId = null
       this.newPhaseName = ''
       this.newPhaseStartDate = ''
       this.newPhaseEndDate = ''
@@ -79,9 +85,21 @@ export const useUIStore = defineStore('ui', {
       this.phaseModalParentPhase = parentPhase
       this.phaseModalSelectedIndex = selectedIndex
     },
-    
+
+    openPhaseEditModal(phaseId: string, phaseName: string, phaseFrom: number, phaseTo: number, columnIndex: number = 0) {
+      this.showPhaseModal = true
+      this.phaseModalMode = 'edit'
+      this.phaseModalEditingPhaseId = phaseId
+      this.newPhaseName = phaseName
+      this.newPhaseStartDate = new Date(phaseFrom).toISOString().split('T')[0]
+      this.newPhaseEndDate = new Date(phaseTo).toISOString().split('T')[0]
+      this.phaseModalColumnIndex = columnIndex
+    },
+
     closePhaseModal() {
       this.showPhaseModal = false
+      this.phaseModalMode = 'create'
+      this.phaseModalEditingPhaseId = null
       this.newPhaseName = ''
       this.newPhaseStartDate = ''
       this.newPhaseEndDate = ''
@@ -89,15 +107,27 @@ export const useUIStore = defineStore('ui', {
       this.phaseModalSelectedIndex = 0
     },
     
-    // Aim creation actions
+    // Aim creation/editing actions
     openAimModal(phaseId: string | null = null, insertionIndex: number = 0) {
       this.showAimModal = true
+      this.aimModalMode = 'create'
+      this.aimModalEditingAimId = null
       this.aimModalPhaseId = phaseId
       this.aimModalInsertionIndex = insertionIndex
     },
 
+    openAimEditModal(aimId: string, phaseId: string, aimIndex: number) {
+      this.showAimModal = true
+      this.aimModalMode = 'edit'
+      this.aimModalEditingAimId = aimId
+      this.aimModalPhaseId = phaseId
+      this.aimModalInsertionIndex = aimIndex
+    },
+
     closeAimModal() {
       this.showAimModal = false
+      this.aimModalMode = 'create'
+      this.aimModalEditingAimId = null
       this.aimModalPhaseId = null
       this.aimModalInsertionIndex = 0
     },

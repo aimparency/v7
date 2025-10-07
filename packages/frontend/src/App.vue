@@ -183,6 +183,33 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       }
       break
     }
+    case 'e': {
+      event.preventDefault()
+      const col = uiStore.selectedColumn
+
+      // Can't edit in root aims column
+      if (col === 0) break
+
+      // Get selected phase ID and fetch phase data
+      const selectedPhaseId = uiStore.getSelectedPhaseId(col)
+      if (!selectedPhaseId) break
+
+      const selectedPhase = await trpc.phase.get.query({
+        projectPath: uiStore.projectPath,
+        phaseId: selectedPhaseId
+      })
+
+      if (!selectedPhase) break
+
+      uiStore.openPhaseEditModal(
+        selectedPhase.id,
+        selectedPhase.name,
+        selectedPhase.from,
+        selectedPhase.to,
+        col
+      )
+      break
+    }
     case 'o':
     case 'O':
       event.preventDefault()
@@ -322,6 +349,15 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
       }
       break
     }
+    case 'e': {
+      event.preventDefault()
+      // Get the selected aim
+      const aim = aims[selectedAim.aimIndex]
+      if (aim) {
+        uiStore.openAimEditModal(aim.id, selectedAim.phaseId, selectedAim.aimIndex)
+      }
+      break
+    }
     case 'd': {
       event.preventDefault()
       // Check if this is confirmation (second press)
@@ -390,12 +426,14 @@ watch(() => uiStore.mode, (mode) => {
       { key: 'h/l', action: 'switch columns' },
       { key: 'j/k', action: 'navigate phases/aims' },
       { key: 'i', action: 'enter edit mode' },
+      { key: 'e', action: 'edit phase' },
       { key: 'o', action: 'create phase/aim' }
     ])
   } else if (mode === 'phase-edit') {
     uiStore.setKeyboardHints([
       { key: 'j/k', action: 'navigate aims' },
       { key: 'h/l', action: 'collapse/expand' },
+      { key: 'e', action: 'edit aim' },
       { key: 'o/O', action: 'create aim below/above' },
       { key: 'Esc', action: 'exit edit mode' }
     ])
@@ -578,6 +616,7 @@ onMounted(async () => {
   flex-direction: column;
   overflow: visible;
   position: relative;
+  transition: transform 0.3s ease;
 }
 
 /* Base column positioning */

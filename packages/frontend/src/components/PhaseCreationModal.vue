@@ -44,18 +44,58 @@ const createPhase = async () => {
   }
 }
 
+const updatePhase = async () => {
+  if (!uiStore.newPhaseName.trim()) return
+  if (!uiStore.phaseModalEditingPhaseId) return
+
+  try {
+    await trpc.phase.update.mutate({
+      projectPath: uiStore.projectPath,
+      phaseId: uiStore.phaseModalEditingPhaseId,
+      phase: {
+        name: uiStore.newPhaseName.trim(),
+        from: uiStore.newPhaseStartDate ?
+          new Date(uiStore.newPhaseStartDate).getTime() :
+          Date.now(),
+        to: uiStore.newPhaseEndDate ?
+          new Date(uiStore.newPhaseEndDate).getTime() :
+          Date.now() + 30 * 24 * 60 * 60 * 1000,
+      }
+    })
+
+    // Emit event so parent can reload the appropriate phase list
+    const columnIndex = uiStore.phaseModalColumnIndex
+    emit('phaseCreated', columnIndex)
+
+    uiStore.closePhaseModal()
+  } catch (error) {
+    console.error('Failed to update phase:', error)
+  }
+}
+
+const handleSubmit = () => {
+  if (uiStore.phaseModalMode === 'edit') {
+    updatePhase()
+  } else {
+    createPhase()
+  }
+}
+
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
-    createPhase()
+    handleSubmit()
   } else if (event.key === 'Escape') {
     uiStore.closePhaseModal()
   }
 }
 
-// Calculate smart date ranges when modal opens
+// Calculate smart date ranges when modal opens (only for create mode)
 watch(() => uiStore.showPhaseModal, async (newVal) => {
-  if (newVal) {
+  if (newVal && uiStore.phaseModalMode === 'create') {
     await calculateDateRanges()
+    await nextTick()
+    phaseNameInput.value?.focus()
+  } else if (newVal && uiStore.phaseModalMode === 'edit') {
     await nextTick()
     phaseNameInput.value?.focus()
   }
@@ -143,7 +183,7 @@ const calculateDateRanges = async () => {
   <div v-if="uiStore.showPhaseModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h3>Create New Phase</h3>
+        <h3>{{ uiStore.phaseModalMode === 'edit' ? 'Edit Phase' : 'Create New Phase' }}</h3>
       </div>
       
       <div class="modal-body">
@@ -178,12 +218,12 @@ const calculateDateRanges = async () => {
         <button @click="uiStore.closePhaseModal" class="btn-secondary">
           Cancel
         </button>
-        <button 
-          @click="createPhase" 
-          class="btn-primary" 
+        <button
+          @click="handleSubmit"
+          class="btn-primary"
           :disabled="!uiStore.newPhaseName.trim()"
         >
-          Create
+          {{ uiStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
         </button>
       </div>
     </div>
