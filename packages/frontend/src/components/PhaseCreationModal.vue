@@ -8,17 +8,15 @@ const dataStore = useDataStore()
 
 const phaseNameInput = ref<HTMLInputElement>()
 
+const emit = defineEmits<{
+  phaseCreated: [columnIndex: number]
+}>()
+
 const createPhase = async () => {
   if (!uiStore.newPhaseName.trim()) return
 
-  let parentPhaseId = null
-
-  // Use the stored parent phase from the UI store
-  if (uiStore.phaseModalParentPhase) {
-    // If parent is the null phase, create a root phase (parent = null)
-    parentPhaseId = uiStore.phaseModalParentPhase.id === 'null' ? null : uiStore.phaseModalParentPhase.id
-  }
-  // If no parent phase stored, it means we're creating a root phase (columnIndex = 1)
+  // Use the parent phase ID directly from the UI store
+  const parentPhaseId = uiStore.phaseModalParentPhase
 
   try {
     await dataStore.createPhase(uiStore.projectPath, {
@@ -33,8 +31,9 @@ const createPhase = async () => {
       commitments: []
     })
 
-    // The phase creation is complete - the UI will automatically update
-    // because the teleported PhaseColumns will reload their data when their parent phase is selected
+    // Emit event so parent can reload the appropriate phase list
+    const columnIndex = uiStore.phaseModalColumnIndex
+    emit('phaseCreated', columnIndex)
 
     uiStore.closePhaseModal()
   } catch (error) {

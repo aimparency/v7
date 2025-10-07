@@ -44,8 +44,8 @@ const loadChildPhases = async () => {
   }
 }
 
-// Load child phases when this phase is selected
-watch(() => props.isSelected, async (isSelected) => {
+// Load child phases when this phase is selected or when force reload is triggered
+watch(() => [props.isSelected, uiStore.phaseReloadTrigger] as const, async ([isSelected]) => {
   if (isSelected) {
     await loadChildPhases()
   }

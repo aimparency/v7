@@ -34,6 +34,9 @@ export const useUIStore = defineStore('ui', {
     viewportStart: 0, // Left edge of visible window
     viewportSize: 2, // Number of columns visible at once
 
+    // Phase reload trigger (increment to force reload)
+    phaseReloadTrigger: 0,
+
     // Keyboard hints
     keyboardHints: [] as Hint[],
   }),
@@ -165,6 +168,10 @@ export const useUIStore = defineStore('ui', {
       // Move selection
       this.selectedColumn = currentIndex + 1
       this.focusedColumnIndex = currentIndex + 1 // Keep in sync for now
+    },
+
+    triggerPhaseReload() {
+      this.phaseReloadTrigger++
     },
 
   }

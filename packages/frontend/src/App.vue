@@ -13,6 +13,7 @@ const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 // Template refs
+const appRef = ref<HTMLDivElement | null>(null)
 const rootAimsColumnRef = ref<InstanceType<typeof RootAimsColumn> | null>(null)
 const firstPhaseColumnRef = ref<InstanceType<typeof PhaseColumn> | null>(null)
 
@@ -52,6 +53,18 @@ const loadRootPhases = async (projectPath: string) => {
 
 const closeProject = () => {
   uiStore.setProjectPath('')
+}
+
+const handlePhaseCreated = async (columnIndex: number) => {
+  // Reload the phase list for the column where the phase was created
+  if (columnIndex === 1) {
+    // Reload root phases for column 1
+    await loadRootPhases(uiStore.projectPath)
+  } else {
+    // For deeper columns (2+), trigger a global phase reload
+    // This will cause all Phase components to reload their child phases
+    uiStore.triggerPhaseReload()
+  }
 }
 
 // Scroll selected element into 1/4 to 3/4 viewport range
@@ -175,7 +188,25 @@ const handleColumnNavigationKeys = (event: KeyboardEvent) => {
       if (uiStore.selectedColumn === 0) {
         uiStore.openAimModal()
       } else {
-        uiStore.openPhaseModal(uiStore.selectedColumn, null)
+        // Determine parent phase based on selected column
+        const targetColumn = uiStore.selectedColumn
+        let parentPhaseId: string | null = null
+
+        if (targetColumn === 1) {
+          // Creating in column 1 -> parent is null (root phase)
+          parentPhaseId = null
+        } else {
+          // Creating in column 2+ -> parent is the selected phase in column to the left
+          const parentColumn = targetColumn - 1
+          if (parentColumn === 1) {
+            // Parent is in first phase column (rootPhases)
+            const selectedPhaseIndex = uiStore.getSelectedPhase(parentColumn)
+            parentPhaseId = rootPhases.value[selectedPhaseIndex]?.id ?? null
+          }
+          // TODO: Handle deeper nesting (column 3+)
+        }
+
+        uiStore.openPhaseModal(targetColumn, parentPhaseId)
       }
       break
   }
@@ -253,6 +284,15 @@ watch(() => uiStore.mode, (mode) => {
   }
 }, { immediate: true })
 
+// Watch for modal close and restore focus
+watch(() => [uiStore.showPhaseModal, uiStore.showAimModal], async () => {
+  // When both modals are closed, restore focus to app
+  if (!uiStore.showPhaseModal && !uiStore.showAimModal) {
+    await nextTick()
+    appRef.value?.focus()
+  }
+})
+
 onMounted(async () => {
   uiStore.setSelectedColumn(0)
   uiStore.setSelectedPhase(0, 0)
@@ -263,12 +303,16 @@ onMounted(async () => {
     await dataStore.loadPhaseAims(uiStore.projectPath, 'null')
     uiStore.setConnectionStatus('connected')
   }
+
+  // Auto-focus app element for keyboard navigation
+  await nextTick()
+  appRef.value?.focus()
 })
 
 </script>
 
 <template>
-  <div class="app" tabindex="0" @keydown="handleGlobalKeydown">
+  <div ref="appRef" class="app" tabindex="0" @keydown="handleGlobalKeydown">
     <!-- Header -->
     <header v-if="!uiStore.isInProjectSelection" class="header">
       <div class="status">
@@ -312,7 +356,7 @@ onMounted(async () => {
     </main>
 
     <!-- Phase Creation Modal -->
-    <PhaseCreationModal />
+    <PhaseCreationModal @phase-created="handlePhaseCreated" />
     
     <!-- Aim Creation Modal -->
     <AimCreationModal />
