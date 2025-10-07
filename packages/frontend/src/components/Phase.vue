@@ -121,6 +121,11 @@ const progressColor = computed(() => {
   return `rgb(${r}, ${g}, ${b})`
 })
 
+// Check if this phase is pending delete
+const isPendingDelete = computed(() => {
+  return uiStore.pendingDeletePhaseId === props.phase.id
+})
+
 // Load aims on mount
 onMounted(async () => {
   await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
@@ -128,7 +133,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="phase-container" :class="{ 'is-active': isActive, 'is-selected': isSelected && !isActive }">
+  <div class="phase-container" :class="{ 'is-active': isActive, 'is-selected': isSelected && !isActive, 'pending-delete': isPendingDelete }">
     <!-- Progress Bar -->
     <div class="progress-bar">
       <div class="progress-fill" :style="{ width: progressPercent + '%', background: progressColor }"></div>
@@ -144,12 +149,16 @@ onMounted(async () => {
 
     <!-- Aims List -->
     <div class="aims-container">
+      <div v-if="!phaseAims || phaseAims.length === 0" class="empty-hint">
+        No aims yet. Press o to create
+      </div>
       <AimComponent
         v-for="(aim, index) in phaseAims"
         :key="aim.id"
         :aim="aim"
         :class="{
-          'is-selected-aim': uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index
+          'is-selected-aim': uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
+          'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phase.id
         }"
       />
     </div>
@@ -203,6 +212,10 @@ onMounted(async () => {
   outline: 0.15rem solid #555;
 }
 
+.phase-container.pending-delete {
+  background: rgb(230, 102, 77);
+}
+
 .phase-header {
   display: flex;
   justify-content: space-between;
@@ -231,8 +244,19 @@ onMounted(async () => {
   padding-bottom: 0.5rem;
 }
 
+.empty-hint {
+  font-size: 0.7rem;
+  color: #666;
+  font-style: italic;
+  padding: 0.25rem 0;
+}
+
 .is-selected-aim {
   outline: 0.15rem solid #007acc;
   border-radius: 0.25rem;
+}
+
+.pending-delete {
+  background: rgb(230, 102, 77);
 }
 </style>

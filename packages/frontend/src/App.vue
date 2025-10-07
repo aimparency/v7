@@ -130,7 +130,7 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
 }
 
 // Column navigation mode: h/l = change column, j/k = navigate phases, i = enter edit
-const handleColumnNavigationKeys = (event: KeyboardEvent) => {
+const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
   switch (event.key) {
     case 'h':
       event.preventDefault()
@@ -142,6 +142,7 @@ const handleColumnNavigationKeys = (event: KeyboardEvent) => {
       break
     case 'j': {
       event.preventDefault()
+      uiStore.clearPendingDelete() // Navigation cancels pending delete
       const col = uiStore.selectedColumn
       const currentPhaseIndex = uiStore.getSelectedPhase(col)
       const maxIndex = col === 0 ? (dataStore.getPhaseAims('null')?.length ?? 0) - 1 : (rootPhases.value.length - 1)
@@ -153,6 +154,7 @@ const handleColumnNavigationKeys = (event: KeyboardEvent) => {
     }
     case 'k': {
       event.preventDefault()
+      uiStore.clearPendingDelete() // Navigation cancels pending delete
       const col = uiStore.selectedColumn
       const currentPhaseIndex = uiStore.getSelectedPhase(col)
       if (currentPhaseIndex > 0) {
@@ -211,25 +213,103 @@ const handleColumnNavigationKeys = (event: KeyboardEvent) => {
         uiStore.openPhaseModal(targetColumn, parentPhaseId, selectedIndex)
       }
       break
+    case 'd': {
+      event.preventDefault()
+      const col = uiStore.selectedColumn
+
+      // Only allow deleting phases (not root aims column)
+      if (col === 0) break
+
+      // Get selected phase
+      let selectedPhase: Phase | null = null
+      if (col === 1 && rootPhases.value.length > 0) {
+        selectedPhase = rootPhases.value[uiStore.getSelectedPhase(col)] ?? null
+      }
+      // TODO: Handle deeper columns
+
+      if (!selectedPhase) break
+
+      // Check if this is confirmation (second press)
+      if (uiStore.pendingDeletePhaseId === selectedPhase.id) {
+        // Confirm delete
+        await deletePhase(selectedPhase.id, selectedPhase.parent)
+        uiStore.clearPendingDelete()
+      } else {
+        // First press - mark for deletion
+        uiStore.setPendingDeletePhase(selectedPhase.id)
+      }
+      break
+    }
   }
 }
 
-// Phase edit mode: j/k = navigate aims, Esc = exit, h/l = expand/collapse
-const handlePhaseEditKeys = (event: KeyboardEvent) => {
+const deletePhase = async (phaseId: string, parentPhaseId: string | null) => {
+  try {
+    // Get child phases and update their parent
+    const childPhases = await trpc.phase.list.query({
+      projectPath: uiStore.projectPath,
+      parentPhaseId: phaseId
+    })
+
+    for (const child of childPhases) {
+      await trpc.phase.update.mutate({
+        projectPath: uiStore.projectPath,
+        phaseId: child.id,
+        phase: { parent: parentPhaseId }
+      })
+    }
+
+    // Delete the phase
+    await trpc.phase.delete.mutate({
+      projectPath: uiStore.projectPath,
+      phaseId: phaseId
+    })
+
+    // Reload phases
+    if (parentPhaseId === null) {
+      await loadRootPhases(uiStore.projectPath)
+    } else {
+      uiStore.triggerPhaseReload()
+    }
+  } catch (error) {
+    console.error('Failed to delete phase:', error)
+  }
+}
+
+// Phase edit mode: j/k = navigate aims, Esc = exit, h/l = expand/collapse, d = delete, o/O = create
+const handlePhaseEditKeys = async (event: KeyboardEvent) => {
   const selectedAim = uiStore.selectedAim
+
+  // Allow Escape even when no aims exist
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    uiStore.clearPendingDelete()
+    uiStore.setMode('column-navigation')
+    uiStore.setSelectedAim(null, null)
+    return
+  }
+
+  // Allow o/O even when no aims exist (for creating first aim)
+  if (event.key === 'o' || event.key === 'O') {
+    event.preventDefault()
+    if (!selectedAim) return
+    const aims = dataStore.getPhaseAims(selectedAim.phaseId)
+    const insertionIndex = (aims && aims.length > 0)
+      ? (event.key === 'o' ? selectedAim.aimIndex + 1 : selectedAim.aimIndex)
+      : 0
+    uiStore.openAimModal(selectedAim.phaseId, insertionIndex)
+    return
+  }
+
   if (!selectedAim) return
 
   const aims = dataStore.getPhaseAims(selectedAim.phaseId)
   if (!aims || aims.length === 0) return
 
   switch (event.key) {
-    case 'Escape':
-      event.preventDefault()
-      uiStore.setMode('column-navigation')
-      uiStore.setSelectedAim(null, null)
-      break
     case 'j': {
       event.preventDefault()
+      uiStore.clearPendingDelete() // Navigation cancels pending delete
       if (selectedAim.aimIndex < aims.length - 1) {
         uiStore.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex + 1)
         scrollIntoViewIfNeeded()
@@ -238,9 +318,23 @@ const handlePhaseEditKeys = (event: KeyboardEvent) => {
     }
     case 'k': {
       event.preventDefault()
+      uiStore.clearPendingDelete() // Navigation cancels pending delete
       if (selectedAim.aimIndex > 0) {
         uiStore.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex - 1)
         scrollIntoViewIfNeeded()
+      }
+      break
+    }
+    case 'd': {
+      event.preventDefault()
+      // Check if this is confirmation (second press)
+      if (uiStore.pendingDeleteAimIndex === selectedAim.aimIndex) {
+        // Confirm delete
+        await deleteAim(aims[selectedAim.aimIndex].id, selectedAim.phaseId)
+        uiStore.clearPendingDelete()
+      } else {
+        // First press - mark for deletion
+        uiStore.setPendingDeleteAim(selectedAim.aimIndex)
       }
       break
     }
@@ -252,6 +346,35 @@ const handlePhaseEditKeys = (event: KeyboardEvent) => {
       event.preventDefault()
       // TODO: Expand aim or navigate to child column
       break
+  }
+}
+
+const deleteAim = async (aimId: string, phaseId: string) => {
+  try {
+    // Remove aim from phase commitments
+    await trpc.aim.removeFromPhase.mutate({
+      projectPath: uiStore.projectPath,
+      aimId: aimId,
+      phaseId: phaseId
+    })
+
+    // Reload phase aims
+    await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
+
+    // Adjust selection if needed
+    if (uiStore.selectedAim) {
+      const aims = dataStore.getPhaseAims(phaseId)
+      if (aims.length === 0) {
+        // No more aims, exit phase-edit mode
+        uiStore.setMode('column-navigation')
+        uiStore.setSelectedAim(null, null)
+      } else if (uiStore.selectedAim.aimIndex >= aims.length) {
+        // Selected aim was last, move to previous
+        uiStore.setSelectedAim(phaseId, aims.length - 1)
+      }
+    }
+  } catch (error) {
+    console.error('Failed to delete aim:', error)
   }
 }
 
@@ -276,7 +399,7 @@ watch(() => uiStore.mode, (mode) => {
     uiStore.setKeyboardHints([
       { key: 'j/k', action: 'navigate aims' },
       { key: 'h/l', action: 'collapse/expand' },
-      { key: 'o', action: 'create aim' },
+      { key: 'o/O', action: 'create aim below/above' },
       { key: 'Esc', action: 'exit edit mode' }
     ])
   } else if (mode === 'aim-edit') {

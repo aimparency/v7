@@ -16,6 +16,8 @@ export const useUIStore = defineStore('ui', {
     phaseModalParentPhase: null as any, // Track the parent phase for new phase creation
     phaseModalSelectedIndex: 0, // Track selected phase index for date calculation
     showAimModal: false,
+    aimModalPhaseId: null as string | null, // Track phase to add aim to
+    aimModalInsertionIndex: 0, // Track where to insert the aim
 
     // Navigation mode system
     mode: 'column-navigation' as 'column-navigation' | 'phase-edit' | 'aim-edit',
@@ -37,6 +39,10 @@ export const useUIStore = defineStore('ui', {
 
     // Phase reload trigger (increment to force reload)
     phaseReloadTrigger: 0,
+
+    // Delete pending states
+    pendingDeletePhaseId: null as string | null,
+    pendingDeleteAimIndex: null as number | null,
 
     // Keyboard hints
     keyboardHints: [] as Hint[],
@@ -83,12 +89,16 @@ export const useUIStore = defineStore('ui', {
     },
     
     // Aim creation actions
-    openAimModal() {
+    openAimModal(phaseId: string | null = null, insertionIndex: number = 0) {
       this.showAimModal = true
+      this.aimModalPhaseId = phaseId
+      this.aimModalInsertionIndex = insertionIndex
     },
-    
+
     closeAimModal() {
       this.showAimModal = false
+      this.aimModalPhaseId = null
+      this.aimModalInsertionIndex = 0
     },
     
     // Keyboard hints actions
@@ -175,6 +185,19 @@ export const useUIStore = defineStore('ui', {
 
     triggerPhaseReload() {
       this.phaseReloadTrigger++
+    },
+
+    setPendingDeletePhase(phaseId: string | null) {
+      this.pendingDeletePhaseId = phaseId
+    },
+
+    setPendingDeleteAim(aimIndex: number | null) {
+      this.pendingDeleteAimIndex = aimIndex
+    },
+
+    clearPendingDelete() {
+      this.pendingDeletePhaseId = null
+      this.pendingDeleteAimIndex = null
     },
 
   }

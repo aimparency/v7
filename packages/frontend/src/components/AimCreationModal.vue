@@ -33,14 +33,16 @@ const selectedSearchResult = computed(() => {
 
 const createAim = async () => {
   if (!aimText.value.trim() && !selectedSearchResult.value) return
-  
+
   try {
+    let aimId: string
+
     if (selectedSearchResult.value) {
       // Use selected search result
-      console.log('Selected existing aim:', selectedSearchResult.value.text)
+      aimId = selectedSearchResult.value.id
     } else {
       // Create new aim
-      await dataStore.createAim(uiStore.projectPath, {
+      const result = await dataStore.createAim(uiStore.projectPath, {
         text: aimText.value.trim(),
         incoming: [],
         outgoing: [],
@@ -51,10 +53,20 @@ const createAim = async () => {
           date: Date.now()
         }
       })
+      aimId = result.id
     }
-    
+
+    // Commit aim to phase at the specified insertion index
+    const phaseId = uiStore.aimModalPhaseId
+    const insertionIndex = uiStore.aimModalInsertionIndex
+
+    if (phaseId) {
+      await dataStore.commitAimToPhase(uiStore.projectPath, aimId, phaseId, insertionIndex)
+      // Reload phase aims
+      await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
+    }
+
     uiStore.closeAimModal()
-    // Note: Phase aims will be reloaded automatically by the phase component
   } catch (error) {
     console.error('Failed to create aim:', error)
   }
