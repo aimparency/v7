@@ -185,7 +185,7 @@ onMounted(async () => {
   margin-bottom: 0.5rem;
   border: 1px solid #444;
   border-radius: 0.25rem;
-  background: #2a2a2a;
+  background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
   overflow: hidden;
 }
@@ -203,17 +203,17 @@ onMounted(async () => {
 }
 
 .phase-container.is-active {
-  background: #333;
+  background: rgba(255, 255, 255, 0.16);
   outline: 0.15rem solid #007acc;
 }
 
 .phase-container.is-selected {
-  background: #2d2d2d;
+  background: rgba(255, 255, 255, 0.13);
   outline: 0.15rem solid #555;
 }
 
 .phase-container.pending-delete {
-  background: rgb(230, 102, 77);
+  background: rgba(192, 64, 64, 0.5);
 }
 
 .phase-header {
@@ -257,6 +257,6 @@ onMounted(async () => {
 }
 
 .pending-delete {
-  background: rgb(230, 102, 77);
+  background: rgba(192, 64, 64, 0.5);
 }
 </style>

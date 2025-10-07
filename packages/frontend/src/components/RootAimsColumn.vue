@@ -35,7 +35,8 @@ const rootAims = computed(() => {
         :aim="aim"
         :class="{
           'selected': index === selectedIndex,
-          'is-selected-aim': uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index
+          'is-selected-aim': uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,
+          'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === 'null'
         }"
       />
     </div>
@@ -101,5 +102,9 @@ const rootAims = computed(() => {
 .is-selected-aim {
   outline: 0.15rem solid #007acc;
   border-radius: 0.25rem;
+}
+
+.pending-delete {
+  background: rgba(192, 64, 64, 0.5);
 }
 </style>
