@@ -172,12 +172,10 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       if (col === 0) {
         // Root aims column - use 'null' as phase ID
         phaseId = 'null'
-      } else if (col === 1 && rootPhases.value.length > 0) {
-        // First phase column
-        const selectedPhase = rootPhases.value[uiStore.getSelectedPhase(col)]
-        phaseId = selectedPhase?.id ?? null
+      } else {
+        // For all phase columns (1+), get the selected phase ID from store
+        phaseId = uiStore.getSelectedPhaseId(col)
       }
-      // TODO: Handle deeper columns
 
       if (phaseId) {
         uiStore.setMode('phase-edit')
@@ -202,12 +200,7 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
         } else {
           // Creating in column 2+ -> parent is the selected phase in column to the left
           const parentColumn = targetColumn - 1
-          if (parentColumn === 1) {
-            // Parent is in first phase column (rootPhases)
-            const selectedPhaseIndex = uiStore.getSelectedPhase(parentColumn)
-            parentPhaseId = rootPhases.value[selectedPhaseIndex]?.id ?? null
-          }
-          // TODO: Handle deeper nesting (column 3+)
+          parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
         }
 
         uiStore.openPhaseModal(targetColumn, parentPhaseId, selectedIndex)
@@ -220,12 +213,16 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       // Only allow deleting phases (not root aims column)
       if (col === 0) break
 
-      // Get selected phase
-      let selectedPhase: Phase | null = null
-      if (col === 1 && rootPhases.value.length > 0) {
-        selectedPhase = rootPhases.value[uiStore.getSelectedPhase(col)] ?? null
-      }
-      // TODO: Handle deeper columns
+      // Get selected phase ID from store
+      const selectedPhaseId = uiStore.getSelectedPhaseId(col)
+      if (!selectedPhaseId) break
+
+      // Get the actual phase object to access its parent
+      // We need to fetch it since we only have the ID
+      const selectedPhase = await trpc.phase.get.query({
+        projectPath: uiStore.projectPath,
+        phaseId: selectedPhaseId
+      })
 
       if (!selectedPhase) break
 

@@ -40,10 +40,11 @@ watch(() => props.isSelected, (isSelected) => {
   }
 }, { immediate: true })
 
-// When selected phase changes, load its child phases
-watch(() => selectedPhase.value, async (phase) => {
-  if (!phase) return
-  // Child phases will be loaded by the Phase component via teleport
+// When selected phase changes, report it to the store
+watch(() => [selectedPhase.value, props.selectedPhaseIndex] as const, ([phase, index]) => {
+  if (phase) {
+    uiStore.setSelectedPhase(props.columnIndex, index, phase.id)
+  }
 }, { immediate: true })
 </script>
 

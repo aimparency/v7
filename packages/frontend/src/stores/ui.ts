@@ -29,6 +29,7 @@ export const useUIStore = defineStore('ui', {
 
     // Phase selection by column
     selectedPhaseByColumn: {} as Record<number, number>, // columnIndex -> phaseIndex
+    selectedPhaseIdByColumn: {} as Record<number, string>, // columnIndex -> phaseId
 
     // Aim selection (only set when in phase-edit or aim-edit mode)
     selectedAim: null as { phaseId: string, aimIndex: number } | null,
@@ -130,12 +131,19 @@ export const useUIStore = defineStore('ui', {
       this.mode = mode
     },
 
-    setSelectedPhase(columnIndex: number, phaseIndex: number) {
+    setSelectedPhase(columnIndex: number, phaseIndex: number, phaseId?: string) {
       this.selectedPhaseByColumn[columnIndex] = phaseIndex
+      if (phaseId !== undefined) {
+        this.selectedPhaseIdByColumn[columnIndex] = phaseId
+      }
     },
 
     getSelectedPhase(columnIndex: number): number {
       return this.selectedPhaseByColumn[columnIndex] ?? 0
+    },
+
+    getSelectedPhaseId(columnIndex: number): string | null {
+      return this.selectedPhaseIdByColumn[columnIndex] ?? null
     },
 
     setSelectedAim(phaseId: string | null, aimIndex: number | null) {
