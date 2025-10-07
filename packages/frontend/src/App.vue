@@ -54,6 +54,51 @@ const closeProject = () => {
   uiStore.setProjectPath('')
 }
 
+// Scroll selected element into 1/4 to 3/4 viewport range
+const scrollIntoViewIfNeeded = async () => {
+  await nextTick()
+
+  // Find the active column's scrollable container
+  const container = document.querySelector('.is-active .phase-list, .is-active .aims-list') as HTMLElement
+  if (!container) return
+
+  // Find the selected element
+  const selected = container.querySelector('.phase-container.is-active, .is-selected-aim') as HTMLElement
+  if (!selected) return
+
+  const containerRect = container.getBoundingClientRect()
+  const selectedRect = selected.getBoundingClientRect()
+
+  const viewportHeight = window.innerHeight
+  const quarterMark = viewportHeight * 0.25
+  const threeQuarterMark = viewportHeight * 0.75
+
+  // Check if element is outside 1/4 to 3/4 range
+  const isAboveRange = selectedRect.top < quarterMark
+  const isBelowRange = selectedRect.bottom > threeQuarterMark
+
+  if (!isAboveRange && !isBelowRange) return
+
+  // Calculate target scroll position to keep element in range
+  let targetScroll = container.scrollTop
+
+  if (isBelowRange) {
+    // Scroll down: position element so its bottom is at 3/4 mark
+    const offset = selectedRect.bottom - threeQuarterMark
+    targetScroll += offset
+  } else if (isAboveRange) {
+    // Scroll up: position element so its top is at 1/4 mark
+    const offset = selectedRect.top - quarterMark
+    targetScroll += offset
+  }
+
+  // Clamp to valid scroll range
+  const maxScroll = container.scrollHeight - container.clientHeight
+  targetScroll = Math.max(0, Math.min(targetScroll, maxScroll))
+
+  container.scrollTo({ top: targetScroll, behavior: 'smooth' })
+}
+
 // Global keyboard handler - single source of truth for all navigation
 const handleGlobalKeydown = (event: KeyboardEvent) => {
   // Don't handle keys when modals are open
@@ -88,6 +133,7 @@ const handleColumnNavigationKeys = (event: KeyboardEvent) => {
       const maxIndex = col === 0 ? (dataStore.getPhaseAims('null')?.length ?? 0) - 1 : (rootPhases.value.length - 1)
       if (currentPhaseIndex < maxIndex) {
         uiStore.setSelectedPhase(col, currentPhaseIndex + 1)
+        scrollIntoViewIfNeeded()
       }
       break
     }
@@ -97,6 +143,7 @@ const handleColumnNavigationKeys = (event: KeyboardEvent) => {
       const currentPhaseIndex = uiStore.getSelectedPhase(col)
       if (currentPhaseIndex > 0) {
         uiStore.setSelectedPhase(col, currentPhaseIndex - 1)
+        scrollIntoViewIfNeeded()
       }
       break
     }
@@ -152,6 +199,7 @@ const handlePhaseEditKeys = (event: KeyboardEvent) => {
       event.preventDefault()
       if (selectedAim.aimIndex < aims.length - 1) {
         uiStore.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex + 1)
+        scrollIntoViewIfNeeded()
       }
       break
     }
@@ -159,6 +207,7 @@ const handlePhaseEditKeys = (event: KeyboardEvent) => {
       event.preventDefault()
       if (selectedAim.aimIndex > 0) {
         uiStore.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex - 1)
+        scrollIntoViewIfNeeded()
       }
       break
     }
