@@ -194,7 +194,6 @@ onMounted(async () => {
   height: 0.3rem;
   background: #333;
   width: 100%;
-  position: relative;
 }
 
 .progress-fill {

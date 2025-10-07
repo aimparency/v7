@@ -2,6 +2,10 @@
 import { computed } from 'vue'
 import type { Aim } from 'shared'
 
+defineOptions({
+  inheritAttrs: false
+})
+
 interface Props {
   aim: Aim
   isExpanded?: boolean
@@ -40,17 +44,17 @@ const indentStyle = computed(() => {
 </script>
 
 <template>
-  <div 
+  <div
     class="aim-container"
     :style="indentStyle"
   >
-    <div 
+    <div
       class="aim-item focusable"
-      :class="{ 
+      :class="[$attrs.class, {
         expanded: isExpanded,
         'pending-delete': pendingDelete,
         'pending-remove': pendingRemove
-      }"
+      }]"
       tabindex="0"
       @click="$emit('aim-clicked')"
     >

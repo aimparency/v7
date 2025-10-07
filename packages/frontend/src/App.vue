@@ -175,7 +175,13 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
         // Root aims column - use 'null' as phase ID
         phaseId = 'null'
       } else {
-        // For all phase columns (1+), get the selected phase ID from store
+        // For all phase columns (1+), check if there are any phases
+        const phaseCount = uiStore.getPhaseCount(col)
+        if (phaseCount === 0) {
+          // No phases to edit aims in
+          break
+        }
+        // Get the selected phase ID from store
         phaseId = uiStore.getSelectedPhaseId(col)
       }
 
