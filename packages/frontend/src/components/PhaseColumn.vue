@@ -54,7 +54,7 @@ watch(() => props.phases, (phases) => {
 </script>
 
 <template>
-  <div class="phase-column" :class="{ 'is-active': isActive, 'is-selected': isSelected && !isActive }">
+  <div class="phase-column" :class="{ 'selected-outlined': isActive || isSelected }">
     <div v-if="phases.length === 0" class="empty-state">
       No sub phases, create one with o
     </div>
@@ -79,14 +79,6 @@ watch(() => props.phases, (phases) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.phase-column.is-active {
-  outline: 0.15rem solid #007acc;
-}
-
-.phase-column.is-selected {
-  outline: 0.15rem solid #555;
 }
 
 .phase-list {

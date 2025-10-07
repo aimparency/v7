@@ -23,7 +23,7 @@ const rootAims = computed(() => {
 </script>
 
 <template>
-  <div class="root-aims-column" :class="{ 'is-active': isActive, 'is-selected': isSelected && !isActive }">
+  <div class="root-aims-column" :class="{ 'selected-outlined': isActive || isSelected }">
     <div v-if="rootAims.length === 0" class="empty-state">
       No aims yet, create one with o
     </div>
@@ -34,8 +34,7 @@ const rootAims = computed(() => {
         :key="aim.id"
         :aim="aim"
         :class="{
-          'selected': index === selectedIndex,
-          'is-selected-aim': uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,
+          'selected-outlined': index === selectedIndex || (uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index),
           'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === 'null'
         }"
       />
@@ -49,14 +48,6 @@ const rootAims = computed(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-}
-
-.root-aims-column.is-active {
-  outline: 0.15rem solid #007acc;
-}
-
-.root-aims-column.is-selected {
-  outline: 0.15rem solid #555;
 }
 
 .aims-list {
@@ -92,16 +83,6 @@ const rootAims = computed(() => {
   text-align: center;
   color: #666;
   font-style: italic;
-}
-
-.aim-container.selected .aim-item {
-  background: #333;
-  border-left: 3px solid #007acc;
-}
-
-.is-selected-aim {
-  outline: 0.15rem solid #007acc;
-  border-radius: 0.25rem;
 }
 
 .pending-delete {

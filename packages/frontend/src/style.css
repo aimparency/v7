@@ -18,8 +18,14 @@ body {
   background-color: #3333;
   border-radius: 0.3rem;
   &:focus {
-    background-color: #3594; 
-    outline: 0.1rem solid #007acc44; 
+    background-color: #3594;
+    outline: 0.1rem solid #007acc44;
     outline-offset: -2px;
   }
+}
+
+/* Selected element with inset outline */
+.selected-outlined {
+  outline: 0.15rem solid #007acc;
+  outline-offset: -0.15rem;
 }

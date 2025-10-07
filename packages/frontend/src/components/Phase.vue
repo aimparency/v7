@@ -133,7 +133,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="phase-container" :class="{ 'is-active': isActive, 'is-selected': isSelected && !isActive, 'pending-delete': isPendingDelete }">
+  <div class="phase-container" :class="{ 'selected-outlined': isActive || isSelected, 'pending-delete': isPendingDelete }">
     <!-- Progress Bar -->
     <div class="progress-bar">
       <div class="progress-fill" :style="{ width: progressPercent + '%', background: progressColor }"></div>
@@ -157,7 +157,7 @@ onMounted(async () => {
         :key="aim.id"
         :aim="aim"
         :class="{
-          'is-selected-aim': uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
+          'selected-outlined': uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
           'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phase.id
         }"
       />
@@ -202,16 +202,6 @@ onMounted(async () => {
   transition: width 0.3s ease, background 0.3s ease;
 }
 
-.phase-container.is-active {
-  background: rgba(255, 255, 255, 0.16);
-  outline: 0.15rem solid #007acc;
-}
-
-.phase-container.is-selected {
-  background: rgba(255, 255, 255, 0.13);
-  outline: 0.15rem solid #555;
-}
-
 .phase-container.pending-delete {
   background: rgba(192, 64, 64, 0.5);
 }
@@ -249,11 +239,6 @@ onMounted(async () => {
   color: #666;
   font-style: italic;
   padding: 0.25rem 0;
-}
-
-.is-selected-aim {
-  outline: 0.15rem solid #007acc;
-  border-radius: 0.25rem;
 }
 
 .pending-delete {
