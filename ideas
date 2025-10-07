@@ -1,1 +1,9 @@
-press g to go back between graph view and list view
+
+
+# phases
+- allow phases to overlap. discurage, but allow. 
+  - Order phases by progress. 
+- archive phases: they dont get shown anymore
+
+# visualization
+- press g to go back between graph view and list view

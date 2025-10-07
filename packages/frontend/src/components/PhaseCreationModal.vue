@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { ref, nextTick, watch } from 'vue'
+import type { Phase } from 'shared'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
+import { trpc } from '../trpc'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 const phaseNameInput = ref<HTMLInputElement>()
+const dateWarning = ref<string>('')
 
 const emit = defineEmits<{
   phaseCreated: [columnIndex: number]
@@ -49,13 +52,91 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
-// Focus input when modal opens
+// Calculate smart date ranges when modal opens
 watch(() => uiStore.showPhaseModal, async (newVal) => {
   if (newVal) {
+    await calculateDateRanges()
     await nextTick()
     phaseNameInput.value?.focus()
   }
 })
+
+const calculateDateRanges = async () => {
+  dateWarning.value = ''
+  const parentPhaseId = uiStore.phaseModalParentPhase
+
+  // Root phase: 9 years from today
+  if (parentPhaseId === null) {
+    const now = Date.now()
+    const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
+    uiStore.newPhaseStartDate = new Date(now).toISOString().split('T')[0]
+    uiStore.newPhaseEndDate = new Date(now + nineYears).toISOString().split('T')[0]
+    return
+  }
+
+  // Child phase: calculate based on parent and siblings
+  try {
+    // Get parent phase
+    const parentPhase = await trpc.phase.get.query({
+      projectPath: uiStore.projectPath,
+      phaseId: parentPhaseId
+    })
+
+    if (!parentPhase) {
+      // Fallback to default
+      const now = Date.now()
+      const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
+      uiStore.newPhaseStartDate = new Date(now).toISOString().split('T')[0]
+      uiStore.newPhaseEndDate = new Date(now + nineYears).toISOString().split('T')[0]
+      return
+    }
+
+    // Get sibling phases (sorted by 'from')
+    const siblings = await trpc.phase.list.query({
+      projectPath: uiStore.projectPath,
+      parentPhaseId: parentPhaseId
+    })
+    const sortedSiblings = siblings.sort((a, b) => a.from - b.from)
+
+    const parentDuration = parentPhase.to - parentPhase.from
+    const phaseDuration = parentDuration / 7
+
+    let startTime: number
+    let endTime: number
+
+    if (sortedSiblings.length === 0) {
+      // First child: start at parent start
+      startTime = parentPhase.from
+      endTime = Math.min(startTime + phaseDuration, parentPhase.to)
+    } else {
+      // Subsequent child: start after last sibling
+      const lastSibling = sortedSiblings[sortedSiblings.length - 1]
+      startTime = lastSibling.to
+      endTime = Math.min(startTime + phaseDuration, parentPhase.to)
+    }
+
+    // Clamp to parent range
+    if (endTime > parentPhase.to) {
+      endTime = parentPhase.to
+    }
+
+    // Warn if duration is 0
+    if (endTime <= startTime) {
+      dateWarning.value = 'Warning: No space left in parent phase for new phase!'
+      endTime = startTime // Set to same time to show the issue
+    }
+
+    uiStore.newPhaseStartDate = new Date(startTime).toISOString().split('T')[0]
+    uiStore.newPhaseEndDate = new Date(endTime).toISOString().split('T')[0]
+  } catch (error) {
+    console.error('Failed to calculate date ranges:', error)
+    // Fallback to default
+    const now = Date.now()
+    const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
+    uiStore.newPhaseStartDate = new Date(now).toISOString().split('T')[0]
+    uiStore.newPhaseEndDate = new Date(now + nineYears).toISOString().split('T')[0]
+  }
+}
 </script>
 
 <template>
@@ -86,6 +167,10 @@ watch(() => uiStore.showPhaseModal, async (newVal) => {
             <label>End Date</label>
             <input v-model="uiStore.newPhaseEndDate" type="date" />
           </div>
+        </div>
+
+        <div v-if="dateWarning" class="warning">
+          {{ dateWarning }}
         </div>
       </div>
       
@@ -171,10 +256,20 @@ watch(() => uiStore.showPhaseModal, async (newVal) => {
     .form-row {
       display: flex;
       gap: 1rem;
-      
+
       .form-group {
         flex: 1;
       }
+    }
+
+    .warning {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      background: #4a2400;
+      border: 1px solid #ffa566;
+      border-radius: 0.1875rem;
+      color: #ffa566;
+      font-size: 0.9rem;
     }
   }
   

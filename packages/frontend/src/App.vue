@@ -44,7 +44,8 @@ const loadRootPhases = async (projectPath: string) => {
       projectPath,
       parentPhaseId: null
     })
-    rootPhases.value = phases
+    // Sort phases by 'from' date ascending
+    rootPhases.value = phases.sort((a, b) => a.from - b.from)
   } catch (error) {
     console.error('Failed to load root phases:', error)
     rootPhases.value = []
@@ -191,6 +192,7 @@ const handleColumnNavigationKeys = (event: KeyboardEvent) => {
         // Determine parent phase based on selected column
         const targetColumn = uiStore.selectedColumn
         let parentPhaseId: string | null = null
+        const selectedIndex = uiStore.getSelectedPhase(targetColumn)
 
         if (targetColumn === 1) {
           // Creating in column 1 -> parent is null (root phase)
@@ -206,7 +208,7 @@ const handleColumnNavigationKeys = (event: KeyboardEvent) => {
           // TODO: Handle deeper nesting (column 3+)
         }
 
-        uiStore.openPhaseModal(targetColumn, parentPhaseId)
+        uiStore.openPhaseModal(targetColumn, parentPhaseId, selectedIndex)
       }
       break
   }
