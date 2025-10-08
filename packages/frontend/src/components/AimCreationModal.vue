@@ -1,9 +1,28 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import type { Aim } from 'shared'
+
+interface Props {
+  show: boolean
+  mode: 'create' | 'edit'
+  phaseId: string | null
+  insertionIndex?: number
+  editingAim?: Aim | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  insertionIndex: 0,
+  editingAim: null
+})
+
+const emit = defineEmits<{
+  close: []
+  created: []
+  updated: []
+}>()
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -21,11 +40,11 @@ const performSearch = (query: string) => {
     searchResults.value = []
     return
   }
-  
-  // Mock search results - filter existing aims by text match  
+
+  // Mock search results - filter existing aims by text match
   // For now, just use an empty array since we don't have current phase context
   const allAims: any[] = []
-  searchResults.value = allAims.filter(aim => 
+  searchResults.value = allAims.filter(aim =>
     aim.text.toLowerCase().includes(query.toLowerCase())
   ).slice(0, 5) // Limit to 5 results
 }
@@ -60,16 +79,14 @@ const createAim = async () => {
     }
 
     // Commit aim to phase at the specified insertion index
-    const phaseId = uiStore.aimModalPhaseId
-    const insertionIndex = uiStore.aimModalInsertionIndex
-
-    if (phaseId) {
-      await dataStore.commitAimToPhase(uiStore.projectPath, aimId, phaseId, insertionIndex)
+    if (props.phaseId) {
+      await dataStore.commitAimToPhase(uiStore.projectPath, aimId, props.phaseId, props.insertionIndex)
       // Reload phase aims
-      await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
+      await dataStore.loadPhaseAims(uiStore.projectPath, props.phaseId)
     }
 
-    uiStore.closeAimModal()
+    emit('created')
+    emit('close')
   } catch (error) {
     console.error('Failed to create aim:', error)
   }
@@ -77,12 +94,12 @@ const createAim = async () => {
 
 const updateAim = async () => {
   if (!aimText.value.trim()) return
-  if (!uiStore.aimModalEditingAimId) return
+  if (!props.editingAim) return
 
   try {
     await trpc.aim.update.mutate({
       projectPath: uiStore.projectPath,
-      aimId: uiStore.aimModalEditingAimId,
+      aimId: props.editingAim.id,
       aim: {
         text: aimText.value.trim(),
         status: {
@@ -94,19 +111,19 @@ const updateAim = async () => {
     })
 
     // Reload phase aims
-    const phaseId = uiStore.aimModalPhaseId
-    if (phaseId) {
-      await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
+    if (props.phaseId) {
+      await dataStore.loadPhaseAims(uiStore.projectPath, props.phaseId)
     }
 
-    uiStore.closeAimModal()
+    emit('updated')
+    emit('close')
   } catch (error) {
     console.error('Failed to update aim:', error)
   }
 }
 
 const handleSubmit = () => {
-  if (uiStore.aimModalMode === 'edit') {
+  if (props.mode === 'edit') {
     updateAim()
   } else {
     createAim()
@@ -119,7 +136,7 @@ const handleInputKeydown = (event: KeyboardEvent) => {
     handleSubmit()
   } else if (event.key === 'Escape') {
     event.preventDefault()
-    uiStore.closeAimModal()
+    emit('close')
   } else if (event.ctrlKey && event.key === 'j') {
     event.preventDefault()
     if (selectedSearchIndex.value < searchResults.value.length - 1) {
@@ -140,24 +157,16 @@ watch(aimText, (newValue) => {
 })
 
 // Focus input when modal opens and load aim data for edit mode
-watch(() => uiStore.showAimModal, async (newVal) => {
+watch(() => props.show, async (newVal) => {
   if (newVal) {
     await nextTick()
     aimTextInput.value?.focus()
 
-    if (uiStore.aimModalMode === 'edit' && uiStore.aimModalEditingAimId) {
+    if (props.mode === 'edit' && props.editingAim) {
       // Load aim data for editing
-      try {
-        const aim = await trpc.aim.get.query({
-          projectPath: uiStore.projectPath,
-          aimId: uiStore.aimModalEditingAimId
-        })
-        aimText.value = aim.text
-        selectedStatus.value = aim.status.state
-        statusComment.value = aim.status.comment
-      } catch (error) {
-        console.error('Failed to load aim for editing:', error)
-      }
+      aimText.value = props.editingAim.text
+      selectedStatus.value = props.editingAim.status.state
+      statusComment.value = props.editingAim.status.comment
     } else {
       // Reset for create mode
       aimText.value = ''
@@ -168,14 +177,13 @@ watch(() => uiStore.showAimModal, async (newVal) => {
     }
   }
 })
-
 </script>
 
 <template>
-  <div v-if="uiStore.showAimModal" class="modal-overlay">
+  <div v-if="show" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h3>{{ uiStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim' }}</h3>
+        <h3>{{ mode === 'edit' ? 'Edit Aim' : 'Add Aim' }}</h3>
       </div>
 
       <div class="modal-body">
@@ -191,7 +199,7 @@ watch(() => uiStore.showAimModal, async (newVal) => {
         </div>
 
         <!-- Status fields (edit mode only) -->
-        <div v-if="uiStore.aimModalMode === 'edit'">
+        <div v-if="mode === 'edit'">
           <div class="form-group">
             <label>Status</label>
             <select v-model="selectedStatus" class="status-select" @keydown="handleInputKeydown">
@@ -214,9 +222,9 @@ watch(() => uiStore.showAimModal, async (newVal) => {
         </div>
 
         <!-- Search Results (create mode only) -->
-        <div v-if="uiStore.aimModalMode === 'create' && searchResults.length > 0" class="search-results">
+        <div v-if="mode === 'create' && searchResults.length > 0" class="search-results">
           <div class="search-header">Existing aims:</div>
-          <div 
+          <div
             v-for="(result, index) in searchResults"
             :key="result.id"
             class="search-result"
@@ -232,9 +240,9 @@ watch(() => uiStore.showAimModal, async (newVal) => {
           </div>
         </div>
       </div>
-      
+
       <div class="modal-footer">
-        <button @click="uiStore.closeAimModal" class="btn-secondary">
+        <button @click="emit('close')" class="btn-secondary">
           Cancel
         </button>
         <button
@@ -242,7 +250,7 @@ watch(() => uiStore.showAimModal, async (newVal) => {
           class="btn-primary"
           :disabled="!aimText.trim() && !selectedSearchResult"
         >
-          {{ uiStore.aimModalMode === 'edit' ? 'Update' : (selectedSearchResult ? 'Link Existing' : 'Create New') }}
+          {{ mode === 'edit' ? 'Update' : (selectedSearchResult ? 'Link Existing' : 'Create New') }}
         </button>
       </div>
     </div>

@@ -1,6 +1,14 @@
 import { defineStore } from 'pinia'
-import type { Hint, KeyboardHints } from 'shared'
 import type { Ref } from 'vue'
+
+// Keyboard hint types (frontend-only)
+export interface Hint {
+  key: string;
+  action: string;
+}
+
+export type KeyboardHint = Record<string, string>
+export type KeyboardHints = KeyboardHint[]
 
 export const useUIStore = defineStore('ui', {
   state: () => ({

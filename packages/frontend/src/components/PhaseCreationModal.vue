@@ -1,9 +1,27 @@
 <script setup lang="ts">
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, watch, computed } from 'vue'
 import type { Phase } from 'shared'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
+
+interface Props {
+  show: boolean
+  mode: 'create' | 'edit'
+  parentPhaseId?: string | null
+  editingPhase?: Phase | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  parentPhaseId: null,
+  editingPhase: null
+})
+
+const emit = defineEmits<{
+  close: []
+  created: []
+  updated: []
+}>()
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -11,70 +29,64 @@ const dataStore = useDataStore()
 const phaseNameInput = ref<HTMLInputElement>()
 const dateWarning = ref<string>('')
 
-const emit = defineEmits<{
-  phaseCreated: [columnIndex: number]
-}>()
+// Local state for form fields
+const phaseName = ref('')
+const phaseStartDate = ref('')
+const phaseEndDate = ref('')
 
 const createPhase = async () => {
-  if (!uiStore.newPhaseName.trim()) return
-
-  // Use the parent phase ID directly from the UI store
-  const parentPhaseId = uiStore.phaseModalParentPhase
+  if (!phaseName.value.trim()) return
 
   try {
     await dataStore.createPhase(uiStore.projectPath, {
-      name: uiStore.newPhaseName.trim(),
-      from: uiStore.newPhaseStartDate ?
-        new Date(uiStore.newPhaseStartDate).getTime() :
+      name: phaseName.value.trim(),
+      from: phaseStartDate.value ?
+        new Date(phaseStartDate.value).getTime() :
         Date.now(),
-      to: uiStore.newPhaseEndDate ?
-        new Date(uiStore.newPhaseEndDate).getTime() :
+      to: phaseEndDate.value ?
+        new Date(phaseEndDate.value).getTime() :
         Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days default
-      parent: parentPhaseId,
+      parent: props.parentPhaseId,
       commitments: []
     })
 
-    // Emit event so parent can reload the appropriate phase list
-    const columnIndex = uiStore.phaseModalColumnIndex
-    emit('phaseCreated', columnIndex)
-
-    uiStore.closePhaseModal()
+    uiStore.triggerPhaseReload()
+    emit('created')
+    emit('close')
   } catch (error) {
     console.error('Failed to create phase:', error)
   }
 }
 
 const updatePhase = async () => {
-  if (!uiStore.newPhaseName.trim()) return
-  if (!uiStore.phaseModalEditingPhaseId) return
+  if (!phaseName.value.trim()) return
+  if (!props.editingPhase) return
 
   try {
     await trpc.phase.update.mutate({
       projectPath: uiStore.projectPath,
-      phaseId: uiStore.phaseModalEditingPhaseId,
+      phaseId: props.editingPhase.id,
       phase: {
-        name: uiStore.newPhaseName.trim(),
-        from: uiStore.newPhaseStartDate ?
-          new Date(uiStore.newPhaseStartDate).getTime() :
+        name: phaseName.value.trim(),
+        from: phaseStartDate.value ?
+          new Date(phaseStartDate.value).getTime() :
           Date.now(),
-        to: uiStore.newPhaseEndDate ?
-          new Date(uiStore.newPhaseEndDate).getTime() :
+        to: phaseEndDate.value ?
+          new Date(phaseEndDate.value).getTime() :
           Date.now() + 30 * 24 * 60 * 60 * 1000,
       }
     })
 
-    // Emit event so parent can reload the appropriate phase list
-    const columnIndex = uiStore.phaseModalColumnIndex
-    emit('phaseCreated', columnIndex)
-
-    uiStore.closePhaseModal()
+    uiStore.triggerPhaseReload()
+    emit('updated')
+    emit('close')
   } catch (error) {
     console.error('Failed to update phase:', error)
   }
 }
 
 const handleSubmit = () => {
-  if (uiStore.phaseModalMode === 'edit') {
+  if (props.mode === 'edit') {
     updatePhase()
   } else {
     createPhase()
@@ -85,17 +97,22 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     handleSubmit()
   } else if (event.key === 'Escape') {
-    uiStore.closePhaseModal()
+    emit('close')
   }
 }
 
 // Calculate smart date ranges when modal opens (only for create mode)
-watch(() => uiStore.showPhaseModal, async (newVal) => {
-  if (newVal && uiStore.phaseModalMode === 'create') {
+watch(() => props.show, async (newVal) => {
+  if (newVal && props.mode === 'create') {
     await calculateDateRanges()
+    phaseName.value = ''
     await nextTick()
     phaseNameInput.value?.focus()
-  } else if (newVal && uiStore.phaseModalMode === 'edit') {
+  } else if (newVal && props.mode === 'edit' && props.editingPhase) {
+    // Load existing phase data for editing
+    phaseName.value = props.editingPhase.name
+    phaseStartDate.value = new Date(props.editingPhase.from).toISOString().split('T')[0]
+    phaseEndDate.value = new Date(props.editingPhase.to).toISOString().split('T')[0]
     await nextTick()
     phaseNameInput.value?.focus()
   }
@@ -103,14 +120,13 @@ watch(() => uiStore.showPhaseModal, async (newVal) => {
 
 const calculateDateRanges = async () => {
   dateWarning.value = ''
-  const parentPhaseId = uiStore.phaseModalParentPhase
 
   // Root phase: 9 years from today
-  if (parentPhaseId === null) {
+  if (props.parentPhaseId === null) {
     const now = Date.now()
     const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
-    uiStore.newPhaseStartDate = new Date(now).toISOString().split('T')[0]
-    uiStore.newPhaseEndDate = new Date(now + nineYears).toISOString().split('T')[0]
+    phaseStartDate.value = new Date(now).toISOString().split('T')[0]
+    phaseEndDate.value = new Date(now + nineYears).toISOString().split('T')[0]
     return
   }
 
@@ -119,22 +135,22 @@ const calculateDateRanges = async () => {
     // Get parent phase
     const parentPhase = await trpc.phase.get.query({
       projectPath: uiStore.projectPath,
-      phaseId: parentPhaseId
+      phaseId: props.parentPhaseId
     })
 
     if (!parentPhase) {
       // Fallback to default
       const now = Date.now()
       const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
-      uiStore.newPhaseStartDate = new Date(now).toISOString().split('T')[0]
-      uiStore.newPhaseEndDate = new Date(now + nineYears).toISOString().split('T')[0]
+      phaseStartDate.value = new Date(now).toISOString().split('T')[0]
+      phaseEndDate.value = new Date(now + nineYears).toISOString().split('T')[0]
       return
     }
 
     // Get sibling phases (sorted by 'from')
     const siblings = await trpc.phase.list.query({
       projectPath: uiStore.projectPath,
-      parentPhaseId: parentPhaseId
+      parentPhaseId: props.parentPhaseId
     })
     const sortedSiblings = siblings.sort((a, b) => a.from - b.from)
 
@@ -166,46 +182,46 @@ const calculateDateRanges = async () => {
       endTime = startTime // Set to same time to show the issue
     }
 
-    uiStore.newPhaseStartDate = new Date(startTime).toISOString().split('T')[0]
-    uiStore.newPhaseEndDate = new Date(endTime).toISOString().split('T')[0]
+    phaseStartDate.value = new Date(startTime).toISOString().split('T')[0]
+    phaseEndDate.value = new Date(endTime).toISOString().split('T')[0]
   } catch (error) {
     console.error('Failed to calculate date ranges:', error)
     // Fallback to default
     const now = Date.now()
     const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
-    uiStore.newPhaseStartDate = new Date(now).toISOString().split('T')[0]
-    uiStore.newPhaseEndDate = new Date(now + nineYears).toISOString().split('T')[0]
+    phaseStartDate.value = new Date(now).toISOString().split('T')[0]
+    phaseEndDate.value = new Date(now + nineYears).toISOString().split('T')[0]
   }
 }
 </script>
 
 <template>
-  <div v-if="uiStore.showPhaseModal" class="modal-overlay">
+  <div v-if="show" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h3>{{ uiStore.phaseModalMode === 'edit' ? 'Edit Phase' : 'Create New Phase' }}</h3>
+        <h3>{{ mode === 'edit' ? 'Edit Phase' : 'Create New Phase' }}</h3>
       </div>
-      
+
       <div class="modal-body">
         <div class="form-group">
           <label>Phase Name</label>
-          <input 
+          <input
             ref="phaseNameInput"
-            v-model="uiStore.newPhaseName" 
-            type="text" 
+            v-model="phaseName"
+            type="text"
             placeholder="Enter phase name"
             @keydown="handleKeydown"
           />
         </div>
-        
+
         <div class="form-row">
           <div class="form-group">
             <label>Start Date</label>
-            <input v-model="uiStore.newPhaseStartDate" type="date" />
+            <input v-model="phaseStartDate" type="date" />
           </div>
           <div class="form-group">
             <label>End Date</label>
-            <input v-model="uiStore.newPhaseEndDate" type="date" />
+            <input v-model="phaseEndDate" type="date" />
           </div>
         </div>
 
@@ -213,17 +229,17 @@ const calculateDateRanges = async () => {
           {{ dateWarning }}
         </div>
       </div>
-      
+
       <div class="modal-footer">
-        <button @click="uiStore.closePhaseModal" class="btn-secondary">
+        <button @click="emit('close')" class="btn-secondary">
           Cancel
         </button>
         <button
           @click="handleSubmit"
           class="btn-primary"
-          :disabled="!uiStore.newPhaseName.trim()"
+          :disabled="!phaseName.trim()"
         >
-          {{ uiStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
+          {{ mode === 'edit' ? 'Update' : 'Create' }}
         </button>
       </div>
     </div>

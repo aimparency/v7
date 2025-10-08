@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
-import type { Phase, Hint } from 'shared'
-import { useUIStore } from './stores/ui'
+import { ref, onMounted, nextTick, computed } from 'vue'
+import type { Phase } from 'shared'
+import { useUIStore, type Hint } from './stores/ui'
 import { useDataStore } from './stores/data'
 import { trpc } from './trpc'
 import RootAimsColumn from './components/RootAimsColumn.vue'
@@ -13,7 +13,6 @@ const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 // Template refs
-const appRef = ref<HTMLDivElement | null>(null)
 const rootAimsColumnRef = ref<InstanceType<typeof RootAimsColumn> | null>(null)
 const firstPhaseColumnRef = ref<InstanceType<typeof PhaseColumn> | null>(null)
 const projectPathInput = ref('')
@@ -21,13 +20,34 @@ const projectPathInput = ref('')
 // Root phases for the first phase column
 const rootPhases = ref<Phase[]>([])
 
-// Container offset based on viewport start from store
+// Local viewport state
+const viewportStart = ref(0)
+const viewportSize = 2 // Number of columns visible at once
+const currentFocusedPage = ref(0) // Track which page/column is currently focused
+
+// Compute page range
+const pageFrom = computed(() => viewportStart.value)
+const pageTo = computed(() => viewportStart.value + viewportSize - 1)
+
+// Focus column by index
+const focusColumnByIndex = (columnIndex: number) => {
+  if (columnIndex === 0) {
+    rootAimsColumnRef.value?.focusByParent()
+  } else if (columnIndex === 1) {
+    firstPhaseColumnRef.value?.focusByParent()
+  }
+  // For deeper columns (2+), they handle their own focus via teleport
+  // when their parent phase receives focus
+}
+
+// Container offset for smooth scrolling
 const containerOffset = computed(() => {
   const columnWidth = 50 // Each column is 50% wide
-  const offset = uiStore.viewportStart * columnWidth
+  const offset = viewportStart.value * columnWidth
   return `translateX(-${offset}%)`
 })
 
+// Project management
 const selectProject = async () => {
   const path = projectPathInput.value.trim()
   if (!path) return
@@ -35,18 +55,20 @@ const selectProject = async () => {
   try {
     uiStore.setProjectPath(path)
     uiStore.setConnectionStatus('connecting')
-    // Load root phases for first phase column
     await loadRootPhases(path)
     await dataStore.loadPhaseAims(path, 'null')
     uiStore.setConnectionStatus('connected')
-    // Success - add to history and clear any failure status
     uiStore.addProjectToHistory(path)
     uiStore.clearProjectFailure(path)
+
+    // Focus first column after loading
+    currentFocusedPage.value = 0
+    await nextTick()
+    focusColumnByIndex(0)
   } catch (error) {
     console.error('Failed to load project:', error)
     uiStore.setConnectionStatus('no connection')
     uiStore.markProjectAsFailed(path)
-    // Don't clear projectPath so user can see the error
   }
 }
 
@@ -80,7 +102,6 @@ const loadRootPhases = async (projectPath: string) => {
       projectPath,
       parentPhaseId: null
     })
-    // Sort phases by 'from' date ascending
     rootPhases.value = phases.sort((a, b) => a.from - b.from)
   } catch (error) {
     console.error('Failed to load root phases:', error)
@@ -89,436 +110,58 @@ const loadRootPhases = async (projectPath: string) => {
 }
 
 const closeProject = () => {
-  // Clear root phases to unmount Phase components before clearing project path
   rootPhases.value = []
   uiStore.setProjectPath('')
+  viewportStart.value = 0
+  currentFocusedPage.value = 0
 }
 
-const handlePhaseCreated = async (columnIndex: number) => {
-  // Reload the phase list for the column where the phase was created
-  if (columnIndex === 1) {
-    // Reload root phases for column 1
-    await loadRootPhases(uiStore.projectPath)
-  } else {
-    // For deeper columns (2+), trigger a global phase reload
-    // This will cause all Phase components to reload their child phases
-    uiStore.triggerPhaseReload()
+// Page navigation handling
+const handlePageNavigation = async (delta: number) => {
+  const targetPage = currentFocusedPage.value + delta
+
+  // TODO: Track rightmost column dynamically
+  // For now, allow navigation but clamp to reasonable bounds
+  const maxPage = 10 // Arbitrary max for now
+  if (targetPage < 0 || targetPage > maxPage) return
+
+  // Edge-triggered viewport scrolling
+  const viewportEnd = viewportStart.value + viewportSize - 1
+
+  if (targetPage > viewportEnd) {
+    // Scroll right to include targetPage as the rightmost visible page
+    viewportStart.value = targetPage - viewportSize + 1
+  } else if (targetPage < viewportStart.value) {
+    // Scroll left to include targetPage as the leftmost visible page
+    viewportStart.value = targetPage
   }
-}
+  // If targetPage is within [viewportStart, viewportEnd], no scrolling needed
 
-// Scroll selected element into 1/4 to 3/4 viewport range
-const scrollIntoViewIfNeeded = async () => {
+  // Update current focused page
+  currentFocusedPage.value = targetPage
+
+  // Focus target column
   await nextTick()
-
-  // Find the active column's scrollable container
-  const container = document.querySelector('.is-active .phase-list, .is-active .aims-list') as HTMLElement
-  if (!container) return
-
-  // Find the selected element
-  const selected = container.querySelector('.phase-container.is-active, .is-selected-aim') as HTMLElement
-  if (!selected) return
-
-  const containerRect = container.getBoundingClientRect()
-  const selectedRect = selected.getBoundingClientRect()
-
-  const viewportHeight = window.innerHeight
-  const quarterMark = viewportHeight * 0.25
-  const threeQuarterMark = viewportHeight * 0.75
-
-  // Check if element is outside 1/4 to 3/4 range
-  const isAboveRange = selectedRect.top < quarterMark
-  const isBelowRange = selectedRect.bottom > threeQuarterMark
-
-  if (!isAboveRange && !isBelowRange) return
-
-  // Calculate target scroll position to keep element in range
-  let targetScroll = container.scrollTop
-
-  if (isBelowRange) {
-    // Scroll down: position element so its bottom is at 3/4 mark
-    const offset = selectedRect.bottom - threeQuarterMark
-    targetScroll += offset
-  } else if (isAboveRange) {
-    // Scroll up: position element so its top is at 1/4 mark
-    const offset = selectedRect.top - quarterMark
-    targetScroll += offset
-  }
-
-  // Clamp to valid scroll range
-  const maxScroll = container.scrollHeight - container.clientHeight
-  targetScroll = Math.max(0, Math.min(targetScroll, maxScroll))
-
-  container.scrollTo({ top: targetScroll, behavior: 'smooth' })
+  focusColumnByIndex(targetPage)
 }
-
-// Global keyboard handler - single source of truth for all navigation
-const handleGlobalKeydown = (event: KeyboardEvent) => {
-  // Don't handle keys when modals are open
-  if (uiStore.showPhaseModal || uiStore.showAimModal) return
-
-  const mode = uiStore.mode
-
-  if (mode === 'column-navigation') {
-    handleColumnNavigationKeys(event)
-  } else if (mode === 'phase-edit') {
-    handlePhaseEditKeys(event)
-  } else if (mode === 'aim-edit') {
-    handleAimEditKeys(event)
-  }
-}
-
-// Column navigation mode: h/l = change column, j/k = navigate phases, i = enter edit
-const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
-  switch (event.key) {
-    case 'h':
-      event.preventDefault()
-      uiStore.navigateLeft()
-      break
-    case 'l':
-      event.preventDefault()
-      uiStore.navigateRight()
-      break
-    case 'j': {
-      event.preventDefault()
-      uiStore.clearPendingDelete() // Navigation cancels pending delete
-      const col = uiStore.selectedColumn
-      const currentPhaseIndex = uiStore.getSelectedPhase(col)
-      const maxIndex = col === 0
-        ? (dataStore.getPhaseAims('null')?.length ?? 0) - 1
-        : uiStore.getPhaseCount(col) - 1
-      if (currentPhaseIndex < maxIndex) {
-        uiStore.setSelectedPhase(col, currentPhaseIndex + 1)
-        scrollIntoViewIfNeeded()
-      }
-      break
-    }
-    case 'k': {
-      event.preventDefault()
-      uiStore.clearPendingDelete() // Navigation cancels pending delete
-      const col = uiStore.selectedColumn
-      const currentPhaseIndex = uiStore.getSelectedPhase(col)
-      if (currentPhaseIndex > 0) {
-        uiStore.setSelectedPhase(col, currentPhaseIndex - 1)
-        scrollIntoViewIfNeeded()
-      }
-      break
-    }
-    case 'i': {
-      event.preventDefault()
-      // Get the selected phase to enter edit mode
-      const col = uiStore.selectedColumn
-      let phaseId: string | null = null
-
-      if (col === 0) {
-        // Root aims column - use 'null' as phase ID
-        phaseId = 'null'
-      } else {
-        // For all phase columns (1+), check if there are any phases
-        const phaseCount = uiStore.getPhaseCount(col)
-        if (phaseCount === 0) {
-          // No phases to edit aims in
-          break
-        }
-        // Get the selected phase ID from store
-        phaseId = uiStore.getSelectedPhaseId(col)
-      }
-
-      if (phaseId) {
-        uiStore.setMode('phase-edit')
-        uiStore.setSelectedAim(phaseId, 0)
-      }
-      break
-    }
-    case 'e': {
-      event.preventDefault()
-      const col = uiStore.selectedColumn
-
-      // Can't edit in root aims column
-      if (col === 0) break
-
-      // Get selected phase ID and fetch phase data
-      const selectedPhaseId = uiStore.getSelectedPhaseId(col)
-      if (!selectedPhaseId) break
-
-      const selectedPhase = await trpc.phase.get.query({
-        projectPath: uiStore.projectPath,
-        phaseId: selectedPhaseId
-      })
-
-      if (!selectedPhase) break
-
-      uiStore.openPhaseEditModal(
-        selectedPhase.id,
-        selectedPhase.name,
-        selectedPhase.from,
-        selectedPhase.to,
-        col
-      )
-      break
-    }
-    case 'o':
-    case 'O':
-      event.preventDefault()
-      if (uiStore.selectedColumn === 0) {
-        uiStore.openAimModal()
-      } else {
-        // Determine parent phase based on selected column
-        const targetColumn = uiStore.selectedColumn
-        let parentPhaseId: string | null = null
-        const selectedIndex = uiStore.getSelectedPhase(targetColumn)
-
-        if (targetColumn === 1) {
-          // Creating in column 1 -> parent is null (root phase)
-          parentPhaseId = null
-        } else {
-          // Creating in column 2+ -> parent is the selected phase in column to the left
-          const parentColumn = targetColumn - 1
-          parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
-        }
-
-        uiStore.openPhaseModal(targetColumn, parentPhaseId, selectedIndex)
-      }
-      break
-    case 'd': {
-      event.preventDefault()
-      const col = uiStore.selectedColumn
-
-      // Only allow deleting phases (not root aims column)
-      if (col === 0) break
-
-      // Get selected phase ID from store
-      const selectedPhaseId = uiStore.getSelectedPhaseId(col)
-      if (!selectedPhaseId) break
-
-      // Get the actual phase object to access its parent
-      // We need to fetch it since we only have the ID
-      const selectedPhase = await trpc.phase.get.query({
-        projectPath: uiStore.projectPath,
-        phaseId: selectedPhaseId
-      })
-
-      if (!selectedPhase) break
-
-      // Check if this is confirmation (second press)
-      if (uiStore.pendingDeletePhaseId === selectedPhase.id) {
-        // Confirm delete
-        await deletePhase(selectedPhase.id, selectedPhase.parent)
-        uiStore.clearPendingDelete()
-      } else {
-        // First press - mark for deletion
-        uiStore.setPendingDeletePhase(selectedPhase.id)
-      }
-      break
-    }
-  }
-}
-
-const deletePhase = async (phaseId: string, parentPhaseId: string | null) => {
-  try {
-    // Get child phases and update their parent
-    const childPhases = await trpc.phase.list.query({
-      projectPath: uiStore.projectPath,
-      parentPhaseId: phaseId
-    })
-
-    for (const child of childPhases) {
-      await trpc.phase.update.mutate({
-        projectPath: uiStore.projectPath,
-        phaseId: child.id,
-        phase: { parent: parentPhaseId }
-      })
-    }
-
-    // Delete the phase
-    await trpc.phase.delete.mutate({
-      projectPath: uiStore.projectPath,
-      phaseId: phaseId
-    })
-
-    // Reload phases
-    if (parentPhaseId === null) {
-      await loadRootPhases(uiStore.projectPath)
-    } else {
-      uiStore.triggerPhaseReload()
-    }
-  } catch (error) {
-    console.error('Failed to delete phase:', error)
-  }
-}
-
-// Phase edit mode: j/k = navigate aims, Esc = exit, h/l = expand/collapse, d = delete, o/O = create
-const handlePhaseEditKeys = async (event: KeyboardEvent) => {
-  const selectedAim = uiStore.selectedAim
-
-  // Allow Escape even when no aims exist
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    uiStore.clearPendingDelete()
-    uiStore.setMode('column-navigation')
-    uiStore.setSelectedAim(null, null)
-    return
-  }
-
-  // Allow o/O even when no aims exist (for creating first aim)
-  if (event.key === 'o' || event.key === 'O') {
-    event.preventDefault()
-    if (!selectedAim) return
-    const aims = dataStore.getPhaseAims(selectedAim.phaseId)
-    const insertionIndex = (aims && aims.length > 0)
-      ? (event.key === 'o' ? selectedAim.aimIndex + 1 : selectedAim.aimIndex)
-      : 0
-    uiStore.openAimModal(selectedAim.phaseId, insertionIndex)
-    return
-  }
-
-  if (!selectedAim) return
-
-  const aims = dataStore.getPhaseAims(selectedAim.phaseId)
-  if (!aims || aims.length === 0) return
-
-  switch (event.key) {
-    case 'j': {
-      event.preventDefault()
-      uiStore.clearPendingDelete() // Navigation cancels pending delete
-      if (selectedAim.aimIndex < aims.length - 1) {
-        uiStore.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex + 1)
-        scrollIntoViewIfNeeded()
-      }
-      break
-    }
-    case 'k': {
-      event.preventDefault()
-      uiStore.clearPendingDelete() // Navigation cancels pending delete
-      if (selectedAim.aimIndex > 0) {
-        uiStore.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex - 1)
-        scrollIntoViewIfNeeded()
-      }
-      break
-    }
-    case 'e': {
-      event.preventDefault()
-      // Get the selected aim
-      const aim = aims[selectedAim.aimIndex]
-      if (aim) {
-        uiStore.openAimEditModal(aim.id, selectedAim.phaseId, selectedAim.aimIndex)
-      }
-      break
-    }
-    case 'd': {
-      event.preventDefault()
-      // Check if this is confirmation (second press)
-      if (uiStore.pendingDeleteAimIndex === selectedAim.aimIndex) {
-        // Confirm delete
-        await deleteAim(aims[selectedAim.aimIndex].id, selectedAim.phaseId)
-        uiStore.clearPendingDelete()
-      } else {
-        // First press - mark for deletion
-        uiStore.setPendingDeleteAim(selectedAim.aimIndex)
-      }
-      break
-    }
-    case 'h':
-      event.preventDefault()
-      // TODO: Collapse aim
-      break
-    case 'l':
-      event.preventDefault()
-      // TODO: Expand aim or navigate to child column
-      break
-  }
-}
-
-const deleteAim = async (aimId: string, phaseId: string) => {
-  try {
-    // Remove aim from phase commitments
-    await trpc.aim.removeFromPhase.mutate({
-      projectPath: uiStore.projectPath,
-      aimId: aimId,
-      phaseId: phaseId
-    })
-
-    // Reload phase aims
-    await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
-
-    // Adjust selection if needed
-    if (uiStore.selectedAim) {
-      const aims = dataStore.getPhaseAims(phaseId)
-      if (aims.length === 0) {
-        // No more aims, exit phase-edit mode
-        uiStore.setMode('column-navigation')
-        uiStore.setSelectedAim(null, null)
-      } else if (uiStore.selectedAim.aimIndex >= aims.length) {
-        // Selected aim was last, move to previous
-        uiStore.setSelectedAim(phaseId, aims.length - 1)
-      }
-    }
-  } catch (error) {
-    console.error('Failed to delete aim:', error)
-  }
-}
-
-// Aim edit mode: field editing
-const handleAimEditKeys = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    uiStore.setMode('phase-edit')
-  }
-}
-
-// Update keyboard hints based on mode
-watch(() => uiStore.mode, (mode) => {
-  if (mode === 'column-navigation') {
-    uiStore.setKeyboardHints([
-      { key: 'h/l', action: 'switch columns' },
-      { key: 'j/k', action: 'navigate phases/aims' },
-      { key: 'i', action: 'enter edit mode' },
-      { key: 'e', action: 'edit phase' },
-      { key: 'o', action: 'create phase/aim' }
-    ])
-  } else if (mode === 'phase-edit') {
-    uiStore.setKeyboardHints([
-      { key: 'j/k', action: 'navigate aims' },
-      { key: 'h/l', action: 'collapse/expand' },
-      { key: 'e', action: 'edit aim' },
-      { key: 'o/O', action: 'create aim below/above' },
-      { key: 'Esc', action: 'exit edit mode' }
-    ])
-  } else if (mode === 'aim-edit') {
-    uiStore.setKeyboardHints([
-      { key: 'Esc', action: 'exit aim edit' }
-    ])
-  }
-}, { immediate: true })
-
-// Watch for modal close and restore focus
-watch(() => [uiStore.showPhaseModal, uiStore.showAimModal], async () => {
-  // When both modals are closed, restore focus to app
-  if (!uiStore.showPhaseModal && !uiStore.showAimModal) {
-    await nextTick()
-    appRef.value?.focus()
-  }
-})
 
 onMounted(async () => {
-  uiStore.setSelectedColumn(0)
-  uiStore.setSelectedPhase(0, 0)
-
   if (uiStore.projectPath) {
     uiStore.setConnectionStatus('connecting')
     await loadRootPhases(uiStore.projectPath)
     await dataStore.loadPhaseAims(uiStore.projectPath, 'null')
     uiStore.setConnectionStatus('connected')
+
+    // Focus first column
+    currentFocusedPage.value = 0
+    await nextTick()
+    focusColumnByIndex(0)
   }
-
-  // Auto-focus app element for keyboard navigation
-  await nextTick()
-  appRef.value?.focus()
 })
-
 </script>
 
 <template>
-  <div ref="appRef" class="app" tabindex="0" @keydown="handleGlobalKeydown">
+  <div class="app">
     <!-- Header -->
     <header v-if="!uiStore.isInProjectSelection" class="header">
       <div class="status">
@@ -573,38 +216,49 @@ onMounted(async () => {
     </div>
 
     <!-- Main Interface -->
-    <main v-else class="main" :style="{ transform: containerOffset }">
-      <!-- Root Aims Column (Column 0) -->
-      <RootAimsColumn
-        class="column-0"
-        :is-selected="uiStore.selectedColumn === 0"
-        :is-active="uiStore.selectedColumn === 0"
-        :selected-index="uiStore.getSelectedPhase(0)"
-      />
+    <main v-else class="main">
+      <div class="viewport" :style="{ transform: containerOffset }">
+        <!-- Root Aims Column (Column 0) -->
+        <RootAimsColumn
+          ref="rootAimsColumnRef"
+          class="column-0"
+          :page-from="pageFrom"
+          :page-to="pageTo"
+          @page-navigation="handlePageNavigation"
+        />
 
-      <!-- First Phase Column (Column 1) -->
-      <PhaseColumn
-        :phases="rootPhases"
-        :column-index="1"
-        :column-depth="1"
-        :parent-phase="null"
-        class="column-1"
-        :is-selected="uiStore.selectedColumn === 1"
-        :is-active="uiStore.selectedColumn === 1"
-        :selected-phase-index="uiStore.getSelectedPhase(1)"
-      />
+        <!-- First Phase Column (Column 1) -->
+        <PhaseColumn
+          ref="firstPhaseColumnRef"
+          :phases="rootPhases"
+          :column-index="1"
+          :column-depth="1"
+          :parent-phase="null"
+          :page-from="pageFrom"
+          :page-to="pageTo"
+          class="column-1"
+          @page-navigation="handlePageNavigation"
+        />
+      </div>
     </main>
 
     <!-- Phase Creation Modal -->
-    <PhaseCreationModal @phase-created="handlePhaseCreated" />
-    
+    <PhaseCreationModal
+      :show="false"
+      mode="create"
+    />
+
     <!-- Aim Creation Modal -->
-    <AimCreationModal />
+    <AimCreationModal
+      :show="false"
+      mode="create"
+      :phase-id="null"
+    />
 
     <!-- Help Text -->
     <footer v-if="!uiStore.isInProjectSelection" class="help">
       <div class="help-keys">
-        <div v-for="hint in uiStore.keyboardHints" :key="`${hint.key}-${hint.action}`" class="hint">
+        <div v-for="hint in uiStore.activeKeyboardHints" :key="`${hint.key}-${hint.action}`" class="hint">
           <span class="key">{{ hint.key }}</span>
           <span class="action">{{ hint.action }}</span>
         </div>
@@ -828,9 +482,17 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.viewport {
+  display: flex;
+  flex-direction: column;
   overflow: visible;
   position: relative;
   transition: transform 0.3s ease;
+  width: 200%; /* 2 columns * 100% each */
+  height: 100%;
 }
 
 /* Base column positioning */
@@ -851,7 +513,6 @@ onMounted(async () => {
   height: 100%;
   z-index: 1;
 }
-
 
 .help {
   background: #2d2d2d;
@@ -879,22 +540,5 @@ onMounted(async () => {
 
 .action {
   color: #888;
-}
-
-kbd {
-  color: #fff;
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.1875rem;
-  font-size: 0.8rem;
-  font-family: monospace;
-}
-
-/* Global styles */
-kbd {
-  color: #fff;
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.1875rem;
-  font-size: 0.8rem;
-  font-family: monospace;
 }
 </style>

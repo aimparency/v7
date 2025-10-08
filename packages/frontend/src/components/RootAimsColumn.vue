@@ -4,6 +4,7 @@ import type { Aim } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import AimComponent from './Aim.vue'
+import AimCreationModal from './AimCreationModal.vue'
 
 interface Props {
   pageFrom: number
@@ -124,10 +125,25 @@ const handleKeydown = (e: KeydownEvent) => {
   }
 }
 
+// Modal state
+const createModalMode = ref<'create' | 'edit'>('create')
+const editingAim = ref<Aim | null>(null)
+
 // Modal management
 const openCreateModal = () => {
+  createModalMode.value = 'create'
+  editingAim.value = null
   showCreateModal.value = true
-  // TODO: Implement modal integration in Phase 7
+}
+
+const openEditModal = (aim: Aim) => {
+  createModalMode.value = 'edit'
+  editingAim.value = aim
+  showCreateModal.value = true
+}
+
+const handleModalClose = () => {
+  showCreateModal.value = false
 }
 
 // Delete handling
@@ -261,6 +277,18 @@ defineExpose({
         />
       </div>
     </template>
+
+    <!-- Aim Creation/Edit Modal -->
+    <AimCreationModal
+      :show="showCreateModal"
+      :mode="createModalMode"
+      :phase-id="'null'"
+      :insertion-index="focusedAimIndex + 1"
+      :editing-aim="editingAim"
+      @close="handleModalClose"
+      @created="handleModalClose"
+      @updated="handleModalClose"
+    />
   </div>
 </template>
 
