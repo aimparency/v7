@@ -67,10 +67,6 @@ const focusByParent = () => {
   }
 }
 
-const focusChildColumn = () => {
-  childColumnRef.value?.focusByParent()
-}
-
 const blurByParent = () => {
   // Blur children first
   if (inAimEditMode.value) {
@@ -394,8 +390,7 @@ onUnmounted(() => {
 // Expose methods
 defineExpose({
   focusByParent,
-  blurByParent,
-  focusChildColumn
+  blurByParent
 })
 </script>
 

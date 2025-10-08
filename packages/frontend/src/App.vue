@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, computed } from 'vue'
 import type { Phase } from 'shared'
-import { useUIStore, type Hint } from './stores/ui'
+import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
 import { trpc } from './trpc'
 import RootAimsColumn from './components/RootAimsColumn.vue'
@@ -216,44 +216,35 @@ onMounted(async () => {
     </div>
 
     <!-- Main Interface -->
-    <main v-else class="main">
-      <div class="viewport" :style="{ transform: containerOffset }">
-        <!-- Root Aims Column (Column 0) -->
-        <RootAimsColumn
-          ref="rootAimsColumnRef"
-          class="column-0"
-          :page-from="pageFrom"
-          :page-to="pageTo"
-          @page-navigation="handlePageNavigation"
-        />
+    <main v-else class="main" :style="{ transform: containerOffset }">
+      <!-- Root Aims Column (Column 0) -->
+      <RootAimsColumn
+        ref="rootAimsColumnRef"
+        class="column-0"
+        :page-from="pageFrom"
+        :page-to="pageTo"
+        @page-navigation="handlePageNavigation"
+      />
 
-        <!-- First Phase Column (Column 1) -->
-        <PhaseColumn
-          ref="firstPhaseColumnRef"
-          :phases="rootPhases"
-          :column-index="1"
-          :column-depth="1"
-          :parent-phase="null"
-          :page-from="pageFrom"
-          :page-to="pageTo"
-          class="column-1"
-          @page-navigation="handlePageNavigation"
-        />
-      </div>
+      <!-- First Phase Column (Column 1) -->
+      <PhaseColumn
+        ref="firstPhaseColumnRef"
+        :phases="rootPhases"
+        :column-index="1"
+        :column-depth="1"
+        :parent-phase="null"
+        :page-from="pageFrom"
+        :page-to="pageTo"
+        class="column-1"
+        @page-navigation="handlePageNavigation"
+      />
     </main>
 
     <!-- Phase Creation Modal -->
-    <PhaseCreationModal
-      :show="false"
-      mode="create"
-    />
+    <PhaseCreationModal />
 
     <!-- Aim Creation Modal -->
-    <AimCreationModal
-      :show="false"
-      mode="create"
-      :phase-id="null"
-    />
+    <AimCreationModal />
 
     <!-- Help Text -->
     <footer v-if="!uiStore.isInProjectSelection" class="help">
@@ -482,17 +473,9 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-.viewport {
-  display: flex;
-  flex-direction: column;
   overflow: visible;
   position: relative;
   transition: transform 0.3s ease;
-  width: 200%; /* 2 columns * 100% each */
-  height: 100%;
 }
 
 /* Base column positioning */

@@ -110,13 +110,11 @@ const handleKeydown = (e: KeyboardEvent) => {
       break
     case 'l':
       e.preventDefault()
+      // Try to navigate to child column first
       const focusedPhase = phaseRefs.value[focusedPhaseIndex.value]
       if (focusedPhase) {
+        // Let the Phase handle it via its child column
         emit('pageNavigation', +1)
-        // After viewport scrolls, focus the child column
-        nextTick(() => {
-          focusedPhase.focusChildColumn()
-        })
       }
       break
     case 'o':

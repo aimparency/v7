@@ -29,6 +29,13 @@ export const ProjectMetaSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/) // hex color
 });
 
+export interface Hint {
+  key: string;
+  action: string;
+}
+
+export type KeyboardHint = Record<string, string>
+export type KeyboardHints = KeyboardHint[]
 
 export type Aim = z.infer<typeof AimSchema>;
 export type Phase = z.infer<typeof PhaseSchema>;
