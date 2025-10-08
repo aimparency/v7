@@ -1,0 +1,17 @@
+components own the modals, no need for ui.ts state. 
+keyboardHintsStack should be of type KeyboardHints[]
+KeyboardHints is KeyboardHint[]
+KeyboardHint is Record<string, string>
+
+keyboardHints in a component should be reactive so that changes will cause updates in the UI. Otherwise we'd need an explicit update function. 
+
+--
+
+(i)n and (o)ut
+
+-- 
+
+cant enter phase edit mode in page 2
+
+
+
