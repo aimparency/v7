@@ -1,3 +1,7 @@
+keyboard hints should not be in shared types, it's ui only
+
+--
+
 components own the modals, no need for ui.ts state. 
 keyboardHintsStack should be of type KeyboardHints[]
 KeyboardHints is KeyboardHint[]

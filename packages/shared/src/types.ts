@@ -34,6 +34,9 @@ export interface Hint {
   action: string;
 }
 
+export type KeyboardHint = Record<string, string>
+export type KeyboardHints = KeyboardHint[]
+
 export type Aim = z.infer<typeof AimSchema>;
 export type Phase = z.infer<typeof PhaseSchema>;
 export type AimStatus = z.infer<typeof AimStatusSchema>;

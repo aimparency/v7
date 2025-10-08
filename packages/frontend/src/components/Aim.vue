@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { Aim } from 'shared'
+import { useUIStore } from '../stores/ui'
 
 defineOptions({
   inheritAttrs: false
@@ -21,6 +22,82 @@ const props = withDefaults(defineProps<Props>(), {
   pendingRemove: false
 })
 
+const emit = defineEmits<{
+  focused: []
+}>()
+
+const uiStore = useUIStore()
+
+// Template refs
+const aimRef = ref<HTMLElement | null>(null)
+
+// Focus management
+const ignoreNextFocus = ref(false)
+
+// Focus methods
+const focusByParent = () => {
+  if (document.activeElement === aimRef.value) return // Already focused
+
+  ignoreNextFocus.value = true
+  aimRef.value?.focus()
+}
+
+const blurByParent = () => {
+  aimRef.value?.blur()
+}
+
+// Focus event handler
+const handleFocus = () => {
+  if (ignoreNextFocus.value) {
+    ignoreNextFocus.value = false
+    return
+  }
+
+  emit('focused')
+}
+
+// Keyboard handling
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'e') {
+    e.preventDefault()
+    openEditModal()
+  }
+  // j/k/d are handled by parent, let them bubble
+}
+
+// Modal state
+const showEditModal = ref(false)
+const aimModalPhaseId = ref<string | null>(null)
+const aimModalInsertionIndex = ref(0)
+
+const openEditModal = () => {
+  showEditModal.value = true
+  // Note: phaseId and aimIndex need to be passed as props from parent
+  // Will be implemented when integrating with Phase/RootAimsColumn
+}
+
+// Keyboard hints
+const keyboardHints = ref<Record<string, string>>({
+  'e': 'edit aim'
+})
+
+let unregisterHints: (() => void) | null = null
+
+onMounted(() => {
+  unregisterHints = uiStore.registerKeyboardHints(keyboardHints)
+})
+
+onUnmounted(() => {
+  unregisterHints?.()
+})
+
+// Expose methods for parent
+defineExpose({
+  focusByParent,
+  blurByParent
+})
+
+// Computed properties
 const hasIncomingAims = computed(() => {
   return props.aim.incoming && props.aim.incoming.length > 0
 })
@@ -49,6 +126,7 @@ const indentStyle = computed(() => {
     :style="indentStyle"
   >
     <div
+      ref="aimRef"
       class="aim-item focusable"
       :class="[$attrs.class, {
         expanded: isExpanded,
@@ -56,14 +134,15 @@ const indentStyle = computed(() => {
         'pending-remove': pendingRemove
       }]"
       tabindex="0"
-      @click="$emit('aim-clicked')"
+      @focus="handleFocus"
+      @keydown="handleKeydown"
     >
       <!-- Aim content -->
       <div class="aim-content">
         <div class="aim-text">{{ aim.text }}</div>
         <div class="aim-meta">
-          <div 
-            class="aim-status" 
+          <div
+            class="aim-status"
             :style="{ color: statusColor }"
           >
             {{ aim.status.state }}
@@ -74,7 +153,7 @@ const indentStyle = computed(() => {
         </div>
       </div>
     </div>
-    
+
     <!-- Expanded incoming aims (recursive) -->
     <div v-if="isExpanded && hasIncomingAims" class="incoming-aims">
       <div class="incoming-placeholder">
