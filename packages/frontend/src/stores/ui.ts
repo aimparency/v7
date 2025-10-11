@@ -18,7 +18,9 @@ export const useUIStore = defineStore('ui', {
     phaseModalEditingPhaseId: null as string | null, // Track which phase is being edited
     newPhaseName: '',
     newPhaseStartDate: '',
+    newPhaseStartTime: '',
     newPhaseEndDate: '',
+    newPhaseEndTime: '',
     phaseModalColumnIndex: 0, // Track which column the modal was opened from
     phaseModalParentPhase: null as any, // Track the parent phase for new phase creation
     phaseModalSelectedIndex: 0, // Track selected phase index for date calculation

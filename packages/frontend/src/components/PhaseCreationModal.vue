@@ -201,11 +201,13 @@ const calculateDateRanges = async () => {
         <div class="form-row">
           <div class="form-group">
             <label>Start Date</label>
-            <input v-model="uiStore.newPhaseStartDate" type="date" />
+            <input v-model="uiStore.newPhaseStartDate" type="date" @keydown="handleKeydown"/>
+            <input v-model="uiStore.newPhaseStartTime" type="time" @keydown="handleKeydown"/>
           </div>
           <div class="form-group">
             <label>End Date</label>
-            <input v-model="uiStore.newPhaseEndDate" type="date" />
+            <input v-model="uiStore.newPhaseEndDate" type="date" @keydown="handleKeydown"/>
+            <input v-model="uiStore.newPhaseEndTime" type="time" @keydown="handleKeydown"/>
           </div>
         </div>
 

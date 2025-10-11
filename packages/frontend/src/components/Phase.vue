@@ -69,7 +69,6 @@ const childColumnStyle = computed(() => {
 // Format date with appropriate granularity based on duration
 const formatDate = (timestamp: number, duration: number): string => {
   const date = new Date(timestamp)
-  const minutes = duration / (60 * 1000)
   const hours = duration / (60 * 60 * 1000)
   const days = duration / (24 * 60 * 60 * 1000)
   const months = days / 30
@@ -78,8 +77,8 @@ const formatDate = (timestamp: number, duration: number): string => {
     // < 6h: show HH:mm
     return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
   } else if (days < 7) {
-    // < 7d: show HH:mm
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+    // < 7d: show DD HH
+    return date.toLocaleTimeString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
   } else if (months < 6) {
     // < 6mo: show DD MMM (strip year)
     return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
