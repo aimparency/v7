@@ -15,6 +15,12 @@ const emit = defineEmits<{
   phaseCreated: [columnIndex: number]
 }>()
 
+const combineDateTime = (date: string, time: string): number => {
+  if (!date) return Date.now()
+  const dateTimeString = time ? `${date}T${time}` : date
+  return new Date(dateTimeString).getTime()
+}
+
 const createPhase = async () => {
   if (!uiStore.newPhaseName.trim()) return
 
@@ -24,12 +30,8 @@ const createPhase = async () => {
   try {
     await dataStore.createPhase(uiStore.projectPath, {
       name: uiStore.newPhaseName.trim(),
-      from: uiStore.newPhaseStartDate ?
-        new Date(uiStore.newPhaseStartDate).getTime() :
-        Date.now(),
-      to: uiStore.newPhaseEndDate ?
-        new Date(uiStore.newPhaseEndDate).getTime() :
-        Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days default
+      from: combineDateTime(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
+      to: combineDateTime(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime),
       parent: parentPhaseId,
       commitments: []
     })
@@ -54,12 +56,8 @@ const updatePhase = async () => {
       phaseId: uiStore.phaseModalEditingPhaseId,
       phase: {
         name: uiStore.newPhaseName.trim(),
-        from: uiStore.newPhaseStartDate ?
-          new Date(uiStore.newPhaseStartDate).getTime() :
-          Date.now(),
-        to: uiStore.newPhaseEndDate ?
-          new Date(uiStore.newPhaseEndDate).getTime() :
-          Date.now() + 30 * 24 * 60 * 60 * 1000,
+        from: combineDateTime(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
+        to: combineDateTime(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime),
       }
     })
 
@@ -110,7 +108,9 @@ const calculateDateRanges = async () => {
     const now = Date.now()
     const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
     uiStore.newPhaseStartDate = new Date(now).toISOString().split('T')[0]
+    uiStore.newPhaseStartTime = new Date(now).toISOString().split('T')[1].substring(0, 5)
     uiStore.newPhaseEndDate = new Date(now + nineYears).toISOString().split('T')[0]
+    uiStore.newPhaseEndTime = new Date(now + nineYears).toISOString().split('T')[1].substring(0, 5)
     return
   }
 
@@ -127,7 +127,9 @@ const calculateDateRanges = async () => {
       const now = Date.now()
       const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
       uiStore.newPhaseStartDate = new Date(now).toISOString().split('T')[0]
+      uiStore.newPhaseStartTime = new Date(now).toISOString().split('T')[1].substring(0, 5)
       uiStore.newPhaseEndDate = new Date(now + nineYears).toISOString().split('T')[0]
+      uiStore.newPhaseEndTime = new Date(now + nineYears).toISOString().split('T')[1].substring(0, 5)
       return
     }
 
@@ -167,14 +169,18 @@ const calculateDateRanges = async () => {
     }
 
     uiStore.newPhaseStartDate = new Date(startTime).toISOString().split('T')[0]
+    uiStore.newPhaseStartTime = new Date(startTime).toISOString().split('T')[1].substring(0, 5)
     uiStore.newPhaseEndDate = new Date(endTime).toISOString().split('T')[0]
+    uiStore.newPhaseEndTime = new Date(endTime).toISOString().split('T')[1].substring(0, 5)
   } catch (error) {
     console.error('Failed to calculate date ranges:', error)
     // Fallback to default
     const now = Date.now()
     const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
     uiStore.newPhaseStartDate = new Date(now).toISOString().split('T')[0]
+    uiStore.newPhaseStartTime = new Date(now).toISOString().split('T')[1].substring(0, 5)
     uiStore.newPhaseEndDate = new Date(now + nineYears).toISOString().split('T')[0]
+    uiStore.newPhaseEndTime = new Date(now + nineYears).toISOString().split('T')[1].substring(0, 5)
   }
 }
 </script>
@@ -209,6 +215,7 @@ const calculateDateRanges = async () => {
             <input v-model="uiStore.newPhaseEndDate" type="date" @keydown="handleKeydown"/>
             <input v-model="uiStore.newPhaseEndTime" type="time" @keydown="handleKeydown"/>
           </div>
+          time test: {{ uiStore.newPhaseStartTime }}
         </div>
 
         <div v-if="dateWarning" class="warning">

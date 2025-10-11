@@ -127,7 +127,9 @@ export const useUIStore = defineStore('ui', {
       this.phaseModalEditingPhaseId = null
       this.newPhaseName = ''
       this.newPhaseStartDate = ''
+      this.newPhaseStartTime = ''
       this.newPhaseEndDate = ''
+      this.newPhaseEndTime = ''
       this.phaseModalColumnIndex = columnIndex
       this.phaseModalParentPhase = parentPhase
       this.phaseModalSelectedIndex = selectedIndex
@@ -139,7 +141,9 @@ export const useUIStore = defineStore('ui', {
       this.phaseModalEditingPhaseId = phaseId
       this.newPhaseName = phaseName
       this.newPhaseStartDate = new Date(phaseFrom).toISOString().split('T')[0]
+      this.newPhaseStartTime = new Date(phaseFrom).toISOString().split('T')[1].substring(0, 5)
       this.newPhaseEndDate = new Date(phaseTo).toISOString().split('T')[0]
+      this.newPhaseEndTime = new Date(phaseTo).toISOString().split('T')[1].substring(0, 5)
       this.phaseModalColumnIndex = columnIndex
     },
 
@@ -149,7 +153,9 @@ export const useUIStore = defineStore('ui', {
       this.phaseModalEditingPhaseId = null
       this.newPhaseName = ''
       this.newPhaseStartDate = ''
+      this.newPhaseStartTime = ''
       this.newPhaseEndDate = ''
+      this.newPhaseEndTime = ''
       this.phaseModalParentPhase = null
       this.phaseModalSelectedIndex = 0
     },
