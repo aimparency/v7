@@ -106,15 +106,13 @@ const handleKeydown = (e: KeyboardEvent) => {
       break
     case 'h':
       e.preventDefault()
-      emit('pageNavigation', -1)
       break
     case 'l':
       e.preventDefault()
       // Try to navigate to child column first
       const focusedPhase = phaseRefs.value[focusedPhaseIndex.value]
       if (focusedPhase) {
-        // Let the Phase handle it via its child column
-        emit('pageNavigation', +1)
+
       }
       break
     case 'o':
