@@ -268,9 +268,9 @@ export const useUIStore = defineStore('ui', {
       this.selectedColumn = currentIndex - 1
       this.focusedColumnIndex = currentIndex - 1 // Keep in sync for now
 
-      // Initialize selectedAim for root aims column
-      if (this.selectedColumn === 0) {
-        this.setSelectedAim('null', 0)
+      // Clear selectedAim when leaving root aims column
+      if (this.selectedColumn !== 0) {
+        this.setSelectedAim(null, null)
       }
     },
 

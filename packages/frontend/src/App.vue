@@ -181,12 +181,14 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       const col = uiStore.selectedColumn
 
       if (col === 0) {
-        // Root aims column - navigate using selectedAim
-        const currentIndex = uiStore.selectedAim?.phaseId === 'null' ? uiStore.selectedAim.aimIndex : 0
-        const aims = dataStore.getPhaseAims('null') || []
-        if (currentIndex < aims.length - 1) {
-          uiStore.setSelectedAim('null', currentIndex + 1)
-          scrollIntoViewIfNeeded()
+        // Root aims column - navigate using selectedAim (only if aim is selected)
+        if (uiStore.selectedAim?.phaseId === 'null') {
+          const currentIndex = uiStore.selectedAim.aimIndex
+          const aims = dataStore.getPhaseAims('null') || []
+          if (currentIndex < aims.length - 1) {
+            uiStore.setSelectedAim('null', currentIndex + 1)
+            scrollIntoViewIfNeeded()
+          }
         }
       } else {
         // Phase columns - navigate using selectedPhase
@@ -205,11 +207,13 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       const col = uiStore.selectedColumn
 
       if (col === 0) {
-        // Root aims column - navigate using selectedAim
-        const currentIndex = uiStore.selectedAim?.phaseId === 'null' ? uiStore.selectedAim.aimIndex : 0
-        if (currentIndex > 0) {
-          uiStore.setSelectedAim('null', currentIndex - 1)
-          scrollIntoViewIfNeeded()
+        // Root aims column - navigate using selectedAim (only if aim is selected)
+        if (uiStore.selectedAim?.phaseId === 'null') {
+          const currentIndex = uiStore.selectedAim.aimIndex
+          if (currentIndex > 0) {
+            uiStore.setSelectedAim('null', currentIndex - 1)
+            scrollIntoViewIfNeeded()
+          }
         }
       } else {
         // Phase columns - navigate using selectedPhase
@@ -231,8 +235,10 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       if (col === 0) {
         // Root aims column - use 'null' as phase ID
         phaseId = 'null'
-        // Preserve current aim selection if it exists
-        if (uiStore.selectedAim?.phaseId === 'null') {
+        // If no aim is selected, select the first one
+        if (!uiStore.selectedAim || uiStore.selectedAim.phaseId !== 'null') {
+          aimIndex = 0
+        } else {
           aimIndex = uiStore.selectedAim.aimIndex
         }
       } else {
@@ -525,7 +531,11 @@ watch(() => [uiStore.mode, uiStore.selectedColumn], ([mode, selectedColumn]) => 
 
     if (selectedColumn === 0) {
       // Root aims column
-      hints.push({ key: 'd', action: 'delete aim' })
+      if (uiStore.selectedAim?.phaseId === 'null') {
+        hints.push({ key: 'd', action: 'delete aim' })
+      } else {
+        hints.push({ key: 'i', action: 'select aim' })
+      }
     } else {
       // Phase columns
       hints.push({ key: 'e', action: 'edit phase' })
@@ -560,7 +570,6 @@ watch(() => [uiStore.showPhaseModal, uiStore.showAimModal], async () => {
 onMounted(async () => {
   uiStore.setSelectedColumn(0)
   uiStore.setSelectedPhase(0, 0)
-  uiStore.setSelectedAim('null', 0) // Initialize selectedAim for root aims
 
   if (uiStore.projectPath) {
     uiStore.setConnectionStatus('connecting')
