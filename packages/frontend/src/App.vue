@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
-import type { Phase, Hint } from 'shared'
+import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import type { Phase } from 'shared'
 import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
 import { trpc } from './trpc'
@@ -14,8 +14,6 @@ const dataStore = useDataStore()
 
 // Template refs
 const appRef = ref<HTMLDivElement | null>(null)
-const rootAimsColumnRef = ref<InstanceType<typeof RootAimsColumn> | null>(null)
-const firstPhaseColumnRef = ref<InstanceType<typeof PhaseColumn> | null>(null)
 const projectPathInput = ref('')
 
 // Root phases for the first phase column
@@ -81,7 +79,7 @@ const loadRootPhases = async (projectPath: string) => {
       parentPhaseId: null
     })
     // Sort phases by 'from' date ascending
-    rootPhases.value = phases.sort((a, b) => a.from - b.from)
+    rootPhases.value = phases.sort((a: Phase, b: Phase) => a.from - b.from)
   } catch (error) {
     console.error('Failed to load root phases:', error)
     rootPhases.value = []
@@ -118,7 +116,6 @@ const scrollIntoViewIfNeeded = async () => {
   const selected = container.querySelector('.phase-container.is-active, .is-selected-aim') as HTMLElement
   if (!selected) return
 
-  const containerRect = container.getBoundingClientRect()
   const selectedRect = selected.getBoundingClientRect()
 
   const viewportHeight = window.innerHeight
@@ -430,11 +427,10 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
 
 const deleteAim = async (aimId: string, phaseId: string) => {
   try {
-    // Remove aim from phase commitments
-    await trpc.aim.removeFromPhase.mutate({
+    // Delete the aim entirely (removes from all phases and deletes the file)
+    await trpc.aim.delete.mutate({
       projectPath: uiStore.projectPath,
-      aimId: aimId,
-      phaseId: phaseId
+      aimId: aimId
     })
 
     // Reload phase aims
@@ -480,6 +476,7 @@ watch(() => uiStore.mode, (mode) => {
       { key: 'j/k', action: 'navigate aims' },
       { key: 'h/l', action: 'collapse/expand' },
       { key: 'e', action: 'edit aim' },
+      { key: 'd', action: 'delete aim' },
       { key: 'o/O', action: 'create aim below/above' },
       { key: 'Esc', action: 'exit edit mode' }
     ])
@@ -851,7 +848,6 @@ onMounted(async () => {
   height: 100%;
   z-index: 1;
 }
-
 
 .help {
   background: #2d2d2d;

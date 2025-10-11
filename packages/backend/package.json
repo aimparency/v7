@@ -2,7 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
@@ -17,15 +17,16 @@
     "@trpc/server": "^11.5.1",
     "express": "^5.1.0",
     "fs-extra": "^11.3.1",
+    "shared": "*",
     "uuid": "^13.0.0",
-    "ws": "^8.18.3",
-    "shared": "*"
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.3.2",
     "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.18.1",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }

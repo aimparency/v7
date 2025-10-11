@@ -1,5 +1,5 @@
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
-import type { AppRouter } from 'shared';
+import type { AppRouter } from '../../../backend/src/server.ts';
 
 // Create WebSocket client
 const wsClient = createWSClient({

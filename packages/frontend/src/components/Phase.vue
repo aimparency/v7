@@ -38,7 +38,7 @@ const loadChildPhases = async () => {
       parentPhaseId: props.phase.id
     })
     // Sort phases by 'from' date ascending
-    childPhases.value = phases.sort((a, b) => a.from - b.from)
+    childPhases.value = phases.sort((a: Phase, b: Phase) => a.from - b.from)
   } catch (error) {
     console.error('Failed to load child phases:', error)
     childPhases.value = []

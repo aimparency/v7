@@ -22,7 +22,8 @@
     "vue": "^3.5.18",
     "vue-router": "^4.5.1",
     "ws": "^8.18.3",
-    "shared": "*"
+    "shared": "*",
+    "backend": "*"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.1",

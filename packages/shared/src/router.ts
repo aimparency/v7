@@ -8,7 +8,6 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 export const appRouter = router({
-  // Aim operations
   aim: router({
     create: publicProcedure
       .input(z.object({
@@ -16,7 +15,6 @@ export const appRouter = router({
         aim: AimSchema.omit({ id: true })
       }))
       .mutation(async ({ input }) => {
-        // Implementation will be in backend
         throw new Error('Not implemented');
       }),
 
@@ -54,10 +52,30 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         throw new Error('Not implemented');
+      }),
+
+    commitToPhase: publicProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        phaseId: z.string().uuid(),
+        insertionIndex: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        throw new Error('Not implemented');
+      }),
+
+    removeFromPhase: publicProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        phaseId: z.string().uuid()
+      }))
+      .mutation(async ({ input }) => {
+        throw new Error('Not implemented');
       })
   }),
 
-  // Phase operations
   phase: router({
     create: publicProcedure
       .input(z.object({
@@ -106,7 +124,6 @@ export const appRouter = router({
       })
   }),
 
-  // Project operations
   project: router({
     getMeta: publicProcedure
       .input(z.object({
@@ -120,6 +137,14 @@ export const appRouter = router({
       .input(z.object({
         projectPath: z.string(),
         meta: ProjectMetaSchema
+      }))
+      .mutation(async ({ input }) => {
+        throw new Error('Not implemented');
+      }),
+
+    migrateCommittedIn: publicProcedure
+      .input(z.object({
+        projectPath: z.string()
       }))
       .mutation(async ({ input }) => {
         throw new Error('Not implemented');
