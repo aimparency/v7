@@ -58,6 +58,9 @@ export const useUIStore = defineStore('ui', {
     pendingDeletePhaseId: null as string | null,
     pendingDeleteAimIndex: null as number | null,
 
+    // Remember last selected aim index for root aims
+    lastSelectedRootAimIndex: 0,
+
     // Keyboard hints
     keyboardHints: [] as Hint[],
   }),
@@ -315,6 +318,10 @@ export const useUIStore = defineStore('ui', {
     },
 
     clearPendingDelete() {
+      // Remember last selected root aim index before clearing
+      if (this.selectedAim?.phaseId === 'null') {
+        this.lastSelectedRootAimIndex = this.selectedAim.aimIndex
+      }
       this.pendingDeletePhaseId = null
       this.pendingDeleteAimIndex = null
       this.selectedAim = null // Clear any temporary selectedAim used for pending delete

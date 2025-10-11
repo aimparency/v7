@@ -186,7 +186,9 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
           const currentIndex = uiStore.selectedAim.aimIndex
           const aims = dataStore.getPhaseAims('null') || []
           if (currentIndex < aims.length - 1) {
-            uiStore.setSelectedAim('null', currentIndex + 1)
+            const newIndex = currentIndex + 1
+            uiStore.setSelectedAim('null', newIndex)
+            uiStore.lastSelectedRootAimIndex = newIndex
             scrollIntoViewIfNeeded()
           }
         }
@@ -211,7 +213,9 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
         if (uiStore.selectedAim?.phaseId === 'null') {
           const currentIndex = uiStore.selectedAim.aimIndex
           if (currentIndex > 0) {
-            uiStore.setSelectedAim('null', currentIndex - 1)
+            const newIndex = currentIndex - 1
+            uiStore.setSelectedAim('null', newIndex)
+            uiStore.lastSelectedRootAimIndex = newIndex
             scrollIntoViewIfNeeded()
           }
         }
@@ -235,9 +239,9 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       if (col === 0) {
         // Root aims column - use 'null' as phase ID
         phaseId = 'null'
-        // If no aim is selected, select the first one
+        // If no aim is selected, select the last selected one
         if (!uiStore.selectedAim || uiStore.selectedAim.phaseId !== 'null') {
-          aimIndex = 0
+          aimIndex = uiStore.lastSelectedRootAimIndex
         } else {
           aimIndex = uiStore.selectedAim.aimIndex
         }
@@ -255,6 +259,9 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       if (phaseId) {
         uiStore.setMode('phase-edit')
         uiStore.setSelectedAim(phaseId, aimIndex)
+        if (phaseId === 'null') {
+          uiStore.lastSelectedRootAimIndex = aimIndex
+        }
       }
       break
     }
