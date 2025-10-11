@@ -189,16 +189,13 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       const col = uiStore.selectedColumn
 
       if (col === 0) {
-        // Root aims column - navigate using selectedAim (only if aim is selected)
-        if (uiStore.selectedAim?.phaseId === 'null') {
-          const currentIndex = uiStore.selectedAim.aimIndex
-          const aims = dataStore.getPhaseAims('null') || []
-          if (currentIndex < aims.length - 1) {
-            const newIndex = currentIndex + 1
-            uiStore.setSelectedAim('null', newIndex)
-            uiStore.lastSelectedRootAimIndex = newIndex
-            scrollIntoViewIfNeeded()
-          }
+        // Root aims column - navigate using selectedPhase (since no aim is selected in column-navigation mode)
+        const currentIndex = uiStore.getSelectedPhase(col)
+        const aims = dataStore.getPhaseAims('null') || []
+        if (aims.length > 0) {
+          const newIndex = Math.min(currentIndex + 1, aims.length - 1)
+          uiStore.setSelectedPhase(col, newIndex)
+          scrollIntoViewIfNeeded()
         }
       } else {
         // Phase columns - navigate using selectedPhase
@@ -217,15 +214,13 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       const col = uiStore.selectedColumn
 
       if (col === 0) {
-        // Root aims column - navigate using selectedAim (only if aim is selected)
-        if (uiStore.selectedAim?.phaseId === 'null') {
-          const currentIndex = uiStore.selectedAim.aimIndex
-          if (currentIndex > 0) {
-            const newIndex = currentIndex - 1
-            uiStore.setSelectedAim('null', newIndex)
-            uiStore.lastSelectedRootAimIndex = newIndex
-            scrollIntoViewIfNeeded()
-          }
+        // Root aims column - navigate using selectedPhase
+        const currentIndex = uiStore.getSelectedPhase(col)
+        const aims = dataStore.getPhaseAims('null') || []
+        if (aims.length > 0) {
+          const newIndex = Math.max(currentIndex - 1, 0)
+          uiStore.setSelectedPhase(col, newIndex)
+          scrollIntoViewIfNeeded()
         }
       } else {
         // Phase columns - navigate using selectedPhase
@@ -247,12 +242,8 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       if (col === 0) {
         // Root aims column - use 'null' as phase ID
         phaseId = 'null'
-        // If no aim is selected, select the last selected one
-        if (!uiStore.selectedAim || uiStore.selectedAim.phaseId !== 'null') {
-          aimIndex = uiStore.lastSelectedRootAimIndex
-        } else {
-          aimIndex = uiStore.selectedAim.aimIndex
-        }
+        // Use the currently selected phase (root aim) index
+        aimIndex = uiStore.getSelectedPhase(col)
       } else {
         // For all phase columns (1+), check if there are any phases
         const phaseCount = uiStore.getPhaseCount(col)
@@ -262,6 +253,14 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
         }
         // Get the selected phase ID from store
         phaseId = uiStore.getSelectedPhaseId(col)
+        if (phaseId) {
+          // If no aim is selected for this phase, select the last selected one
+          if (!uiStore.selectedAim || uiStore.selectedAim.phaseId !== phaseId) {
+            aimIndex = uiStore.lastSelectedAimIndexByPhase[phaseId] ?? 0
+          } else {
+            aimIndex = uiStore.selectedAim.aimIndex
+          }
+        }
       }
 
       if (phaseId) {
@@ -329,9 +328,7 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
 
       if (col === 0) {
         // Root aims column - delete aims
-        if (!uiStore.selectedAim || uiStore.selectedAim.phaseId !== 'null') break
-
-        const selectedIndex = uiStore.selectedAim.aimIndex
+        const selectedIndex = uiStore.getSelectedPhase(col)
         const aims = dataStore.getPhaseAims('null')
         if (!aims || selectedIndex >= aims.length) break
 
@@ -437,12 +434,31 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
   const aims = dataStore.getPhaseAims(selectedAim.phaseId)
   if (!aims || aims.length === 0) return
 
+  // Ensure selected index is valid
+  if (selectedAim.aimIndex >= aims.length) {
+    // Fix invalid selection
+    const validIndex = Math.min(selectedAim.aimIndex, aims.length - 1)
+    uiStore.setSelectedAim(selectedAim.phaseId, validIndex)
+    if (selectedAim.phaseId !== 'null') {
+      uiStore.lastSelectedAimIndexByPhase[selectedAim.phaseId] = validIndex
+    } else {
+      uiStore.lastSelectedRootAimIndex = validIndex
+    }
+    return
+  }
+
   switch (event.key) {
     case 'j': {
       event.preventDefault()
       uiStore.clearPendingDelete() // Navigation cancels pending delete
       if (selectedAim.aimIndex < aims.length - 1) {
-        uiStore.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex + 1)
+        const newIndex = selectedAim.aimIndex + 1
+        uiStore.setSelectedAim(selectedAim.phaseId, newIndex)
+        if (selectedAim.phaseId !== 'null') {
+          uiStore.lastSelectedAimIndexByPhase[selectedAim.phaseId] = newIndex
+        } else {
+          uiStore.lastSelectedRootAimIndex = newIndex
+        }
         scrollIntoViewIfNeeded()
       }
       break
@@ -451,7 +467,13 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
       event.preventDefault()
       uiStore.clearPendingDelete() // Navigation cancels pending delete
       if (selectedAim.aimIndex > 0) {
-        uiStore.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex - 1)
+        const newIndex = selectedAim.aimIndex - 1
+        uiStore.setSelectedAim(selectedAim.phaseId, newIndex)
+        if (selectedAim.phaseId !== 'null') {
+          uiStore.lastSelectedAimIndexByPhase[selectedAim.phaseId] = newIndex
+        } else {
+          uiStore.lastSelectedRootAimIndex = newIndex
+        }
         scrollIntoViewIfNeeded()
       }
       break
@@ -491,6 +513,11 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
 
 const deleteAim = async (aimId: string, phaseId: string) => {
   try {
+    // Store the index of the aim being deleted for selection adjustment
+    const deletedIndex = uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex !== undefined
+      ? uiStore.selectedAim.aimIndex
+      : -1
+
     if (phaseId === 'null') {
       // Root aims: delete entirely
       await trpc.aim.delete.mutate({
@@ -509,16 +536,31 @@ const deleteAim = async (aimId: string, phaseId: string) => {
     // Reload phase aims
     await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
 
+    // If we removed from a phase, also reload root aims in case the aim became orphaned
+    if (phaseId !== 'null') {
+      await dataStore.loadPhaseAims(uiStore.projectPath, 'null')
+    }
+
     // Adjust selection if needed
-    if (uiStore.selectedAim) {
-      const aims = dataStore.getPhaseAims(phaseId)
-      if (aims.length === 0) {
-        // No more aims, exit phase-edit mode
-        uiStore.setMode('column-navigation')
-        uiStore.setSelectedAim(null, null)
-      } else if (uiStore.selectedAim.aimIndex >= aims.length) {
-        // Selected aim was last, move to previous
-        uiStore.setSelectedAim(phaseId, aims.length - 1)
+    const aims = dataStore.getPhaseAims(phaseId)
+    if (aims.length === 0) {
+      // No more aims, exit phase-edit mode
+      uiStore.setMode('column-navigation')
+      uiStore.setSelectedAim(null, null)
+    } else if (uiStore.selectedAim?.phaseId === phaseId) {
+      // We were in this phase, adjust selection
+      if (deletedIndex !== -1 && deletedIndex < aims.length) {
+        // Deleted aim was not the last one, keep the same index
+        uiStore.setSelectedAim(phaseId, deletedIndex)
+      } else {
+        // Deleted aim was the last one or selection was invalid, move to last valid
+        uiStore.setSelectedAim(phaseId, Math.min(deletedIndex, aims.length - 1))
+      }
+      // Update last selected index
+      if (phaseId === 'null') {
+        uiStore.lastSelectedRootAimIndex = uiStore.selectedAim.aimIndex
+      } else {
+        uiStore.lastSelectedAimIndexByPhase[phaseId] = uiStore.selectedAim.aimIndex
       }
     }
   } catch (error) {
@@ -546,11 +588,7 @@ watch(() => [uiStore.mode, uiStore.selectedColumn], ([mode, selectedColumn]) => 
 
     if (selectedColumn === 0) {
       // Root aims column
-      if (uiStore.selectedAim?.phaseId === 'null') {
-        hints.push({ key: 'd', action: 'delete aim' })
-      } else {
-        hints.push({ key: 'i', action: 'select aim' })
-      }
+      hints.push({ key: 'd', action: 'delete aim' })
     } else {
       // Phase columns
       hints.push({ key: 'e', action: 'edit phase' })
