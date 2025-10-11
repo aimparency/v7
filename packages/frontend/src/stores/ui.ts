@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Hint } from 'shared'
+import { timestampToLocalDate, timestampToLocalTime } from 'shared'
 
 export const useUIStore = defineStore('ui', {
   state: () => ({
@@ -140,10 +141,13 @@ export const useUIStore = defineStore('ui', {
       this.phaseModalMode = 'edit'
       this.phaseModalEditingPhaseId = phaseId
       this.newPhaseName = phaseName
-      this.newPhaseStartDate = new Date(phaseFrom).toISOString().split('T')[0]
-      this.newPhaseStartTime = new Date(phaseFrom).toISOString().split('T')[1].substring(0, 5)
-      this.newPhaseEndDate = new Date(phaseTo).toISOString().split('T')[0]
-      this.newPhaseEndTime = new Date(phaseTo).toISOString().split('T')[1].substring(0, 5)
+
+      // Extract local date and time from timestamps
+      this.newPhaseStartDate = timestampToLocalDate(phaseFrom)
+      this.newPhaseStartTime = timestampToLocalTime(phaseFrom)
+      this.newPhaseEndDate = timestampToLocalDate(phaseTo)
+      this.newPhaseEndTime = timestampToLocalTime(phaseTo)
+
       this.phaseModalColumnIndex = columnIndex
     },
 
