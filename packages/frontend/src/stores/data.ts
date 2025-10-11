@@ -84,7 +84,24 @@ export const useDataStore = defineStore('data', {
           projectPath,
           aim
         })
-        
+
+        // Add to local state immediately for root aims
+        if (this.phaseAims['null']) {
+          const newAim: Aim = {
+            id: result.id,
+            text: aim.text,
+            incoming: aim.incoming || [],
+            outgoing: aim.outgoing || [],
+            committedIn: aim.committedIn || [],
+            status: aim.status || {
+              state: 'open',
+              comment: '',
+              date: Date.now()
+            }
+          }
+          this.phaseAims['null'].push(newAim)
+        }
+
         return result // Returns { id: string }
       } catch (error) {
         console.error('Failed to create aim:', error)
@@ -101,7 +118,12 @@ export const useDataStore = defineStore('data', {
           phaseId,
           insertionIndex
         })
-        
+
+        // Remove from root aims if it was there
+        if (this.phaseAims['null']) {
+          this.phaseAims['null'] = this.phaseAims['null'].filter(a => a.id !== aimId)
+        }
+
         // Local phase data updates are now handled by individual components
       } catch (error) {
         console.error('Failed to commit aim to phase:', error)
@@ -128,8 +150,21 @@ export const useDataStore = defineStore('data', {
           aimId,
           phaseId
         })
-        
-        // Local phase data updates are now handled by individual components
+
+        // Check if aim is now orphaned (no committedIn relationships)
+        const allAims = await trpc.aim.list.query({ projectPath })
+        const aim = allAims.find(a => a.id === aimId)
+        if (aim && (!aim.committedIn || aim.committedIn.length === 0)) {
+          // Add to root aims if not already there
+          if (this.phaseAims['null'] && !this.phaseAims['null'].find(a => a.id === aimId)) {
+            this.phaseAims['null'].push(aim)
+          }
+        }
+
+        // Remove from the phase's local state
+        if (this.phaseAims[phaseId]) {
+          this.phaseAims[phaseId] = this.phaseAims[phaseId].filter(a => a.id !== aimId)
+        }
       } catch (error) {
         console.error('Failed to remove aim from phase:', error)
         throw error

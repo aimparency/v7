@@ -179,13 +179,23 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       event.preventDefault()
       uiStore.clearPendingDelete() // Navigation cancels pending delete
       const col = uiStore.selectedColumn
-      const currentPhaseIndex = uiStore.getSelectedPhase(col)
-      const maxIndex = col === 0
-        ? (dataStore.getPhaseAims('null')?.length ?? 0) - 1
-        : uiStore.getPhaseCount(col) - 1
-      if (currentPhaseIndex < maxIndex) {
-        uiStore.setSelectedPhase(col, currentPhaseIndex + 1)
-        scrollIntoViewIfNeeded()
+
+      if (col === 0) {
+        // Root aims column - navigate using selectedAim
+        const currentIndex = uiStore.selectedAim?.phaseId === 'null' ? uiStore.selectedAim.aimIndex : 0
+        const aims = dataStore.getPhaseAims('null') || []
+        if (currentIndex < aims.length - 1) {
+          uiStore.setSelectedAim('null', currentIndex + 1)
+          scrollIntoViewIfNeeded()
+        }
+      } else {
+        // Phase columns - navigate using selectedPhase
+        const currentPhaseIndex = uiStore.getSelectedPhase(col)
+        const maxIndex = uiStore.getPhaseCount(col) - 1
+        if (currentPhaseIndex < maxIndex) {
+          uiStore.setSelectedPhase(col, currentPhaseIndex + 1)
+          scrollIntoViewIfNeeded()
+        }
       }
       break
     }
@@ -193,10 +203,21 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       event.preventDefault()
       uiStore.clearPendingDelete() // Navigation cancels pending delete
       const col = uiStore.selectedColumn
-      const currentPhaseIndex = uiStore.getSelectedPhase(col)
-      if (currentPhaseIndex > 0) {
-        uiStore.setSelectedPhase(col, currentPhaseIndex - 1)
-        scrollIntoViewIfNeeded()
+
+      if (col === 0) {
+        // Root aims column - navigate using selectedAim
+        const currentIndex = uiStore.selectedAim?.phaseId === 'null' ? uiStore.selectedAim.aimIndex : 0
+        if (currentIndex > 0) {
+          uiStore.setSelectedAim('null', currentIndex - 1)
+          scrollIntoViewIfNeeded()
+        }
+      } else {
+        // Phase columns - navigate using selectedPhase
+        const currentPhaseIndex = uiStore.getSelectedPhase(col)
+        if (currentPhaseIndex > 0) {
+          uiStore.setSelectedPhase(col, currentPhaseIndex - 1)
+          scrollIntoViewIfNeeded()
+        }
       }
       break
     }
@@ -205,10 +226,15 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       // Get the selected phase to enter edit mode
       const col = uiStore.selectedColumn
       let phaseId: string | null = null
+      let aimIndex = 0
 
       if (col === 0) {
         // Root aims column - use 'null' as phase ID
         phaseId = 'null'
+        // Preserve current aim selection if it exists
+        if (uiStore.selectedAim?.phaseId === 'null') {
+          aimIndex = uiStore.selectedAim.aimIndex
+        }
       } else {
         // For all phase columns (1+), check if there are any phases
         const phaseCount = uiStore.getPhaseCount(col)
@@ -222,7 +248,7 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
 
       if (phaseId) {
         uiStore.setMode('phase-edit')
-        uiStore.setSelectedAim(phaseId, 0)
+        uiStore.setSelectedAim(phaseId, aimIndex)
       }
       break
     }
@@ -280,30 +306,47 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       event.preventDefault()
       const col = uiStore.selectedColumn
 
-      // Only allow deleting phases (not root aims column)
-      if (col === 0) break
+      if (col === 0) {
+        // Root aims column - delete aims
+        if (!uiStore.selectedAim || uiStore.selectedAim.phaseId !== 'null') break
 
-      // Get selected phase ID from store
-      const selectedPhaseId = uiStore.getSelectedPhaseId(col)
-      if (!selectedPhaseId) break
+        const selectedIndex = uiStore.selectedAim.aimIndex
+        const aims = dataStore.getPhaseAims('null')
+        if (!aims || selectedIndex >= aims.length) break
 
-      // Get the actual phase object to access its parent
-      // We need to fetch it since we only have the ID
-      const selectedPhase = await trpc.phase.get.query({
-        projectPath: uiStore.projectPath,
-        phaseId: selectedPhaseId
-      })
-
-      if (!selectedPhase) break
-
-      // Check if this is confirmation (second press)
-      if (uiStore.pendingDeletePhaseId === selectedPhase.id) {
-        // Confirm delete
-        await deletePhase(selectedPhase.id, selectedPhase.parent)
-        uiStore.clearPendingDelete()
+        // Check if this is confirmation (second press)
+        if (uiStore.pendingDeleteAimIndex === selectedIndex) {
+          // Confirm delete
+          await deleteAim(aims[selectedIndex].id, 'null')
+          uiStore.clearPendingDelete()
+        } else {
+          // First press - mark for deletion
+          uiStore.setPendingDeleteAim(selectedIndex)
+        }
       } else {
-        // First press - mark for deletion
-        uiStore.setPendingDeletePhase(selectedPhase.id)
+        // Phase columns - delete phases
+        // Get selected phase ID from store
+        const selectedPhaseId = uiStore.getSelectedPhaseId(col)
+        if (!selectedPhaseId) break
+
+        // Get the actual phase object to access its parent
+        // We need to fetch it since we only have the ID
+        const selectedPhase = await trpc.phase.get.query({
+          projectPath: uiStore.projectPath,
+          phaseId: selectedPhaseId
+        })
+
+        if (!selectedPhase) break
+
+        // Check if this is confirmation (second press)
+        if (uiStore.pendingDeletePhaseId === selectedPhase.id) {
+          // Confirm delete
+          await deletePhase(selectedPhase.id, selectedPhase.parent)
+          uiStore.clearPendingDelete()
+        } else {
+          // First press - mark for deletion
+          uiStore.setPendingDeletePhase(selectedPhase.id)
+        }
       }
       break
     }
@@ -427,11 +470,20 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
 
 const deleteAim = async (aimId: string, phaseId: string) => {
   try {
-    // Delete the aim entirely (removes from all phases and deletes the file)
-    await trpc.aim.delete.mutate({
-      projectPath: uiStore.projectPath,
-      aimId: aimId
-    })
+    if (phaseId === 'null') {
+      // Root aims: delete entirely
+      await trpc.aim.delete.mutate({
+        projectPath: uiStore.projectPath,
+        aimId: aimId
+      })
+    } else {
+      // Phase aims: remove from phase only
+      await trpc.aim.removeFromPhase.mutate({
+        projectPath: uiStore.projectPath,
+        aimId: aimId,
+        phaseId: phaseId
+      })
+    }
 
     // Reload phase aims
     await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
@@ -461,16 +513,25 @@ const handleAimEditKeys = (event: KeyboardEvent) => {
   }
 }
 
-// Update keyboard hints based on mode
-watch(() => uiStore.mode, (mode) => {
+// Update keyboard hints based on mode and selected column
+watch(() => [uiStore.mode, uiStore.selectedColumn], ([mode, selectedColumn]) => {
   if (mode === 'column-navigation') {
-    uiStore.setKeyboardHints([
+    const hints = [
       { key: 'h/l', action: 'switch columns' },
       { key: 'j/k', action: 'navigate phases/aims' },
       { key: 'i', action: 'enter edit mode' },
-      { key: 'e', action: 'edit phase' },
       { key: 'o', action: 'create phase/aim' }
-    ])
+    ]
+
+    if (selectedColumn === 0) {
+      // Root aims column
+      hints.push({ key: 'd', action: 'delete aim' })
+    } else {
+      // Phase columns
+      hints.push({ key: 'e', action: 'edit phase' })
+    }
+
+    uiStore.setKeyboardHints(hints)
   } else if (mode === 'phase-edit') {
     uiStore.setKeyboardHints([
       { key: 'j/k', action: 'navigate aims' },
@@ -499,6 +560,7 @@ watch(() => [uiStore.showPhaseModal, uiStore.showAimModal], async () => {
 onMounted(async () => {
   uiStore.setSelectedColumn(0)
   uiStore.setSelectedPhase(0, 0)
+  uiStore.setSelectedAim('null', 0) // Initialize selectedAim for root aims
 
   if (uiStore.projectPath) {
     uiStore.setConnectionStatus('connecting')
@@ -576,7 +638,6 @@ onMounted(async () => {
         class="column-0"
         :is-selected="uiStore.selectedColumn === 0"
         :is-active="uiStore.selectedColumn === 0"
-        :selected-index="uiStore.getSelectedPhase(0)"
       />
 
       <!-- First Phase Column (Column 1) -->

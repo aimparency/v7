@@ -256,6 +256,9 @@ export const useUIStore = defineStore('ui', {
       // Boundary check: can't go left of column 0
       if (currentIndex === 0) return
 
+      // Clear pending delete when navigating
+      this.clearPendingDelete()
+
       // Edge-triggered viewport scroll
       if (currentIndex === this.viewportStart && this.viewportStart > 0) {
         this.viewportStart--
@@ -264,6 +267,11 @@ export const useUIStore = defineStore('ui', {
       // Move selection
       this.selectedColumn = currentIndex - 1
       this.focusedColumnIndex = currentIndex - 1 // Keep in sync for now
+
+      // Initialize selectedAim for root aims column
+      if (this.selectedColumn === 0) {
+        this.setSelectedAim('null', 0)
+      }
     },
 
     navigateRight() {
@@ -271,6 +279,9 @@ export const useUIStore = defineStore('ui', {
 
       // Boundary check: can't go right beyond empty column
       if (currentIndex >= this.rightmostColumnIndex) return
+
+      // Clear pending delete when navigating
+      this.clearPendingDelete()
 
       // Edge-triggered viewport scroll
       const viewportEnd = this.viewportStart + this.viewportSize - 1
@@ -284,6 +295,11 @@ export const useUIStore = defineStore('ui', {
       // Move selection
       this.selectedColumn = currentIndex + 1
       this.focusedColumnIndex = currentIndex + 1 // Keep in sync for now
+
+      // Clear selectedAim when leaving root aims column
+      if (this.selectedColumn !== 0) {
+        this.setSelectedAim(null, null)
+      }
     },
 
     triggerPhaseReload() {
@@ -301,6 +317,7 @@ export const useUIStore = defineStore('ui', {
     clearPendingDelete() {
       this.pendingDeletePhaseId = null
       this.pendingDeleteAimIndex = null
+      this.selectedAim = null // Clear any temporary selectedAim used for pending delete
     },
 
   }

@@ -8,7 +8,6 @@ import AimComponent from './Aim.vue'
 interface Props {
   isSelected: boolean
   isActive: boolean
-  selectedIndex: number
 }
 
 const props = defineProps<Props>()
@@ -36,7 +35,7 @@ const rootAims = computed(() => {
           :key="aim.id"
           :aim="aim"
           :class="{
-            'selected-outlined': (isActive || isSelected) && (index === selectedIndex || (uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index)),
+            'selected-outlined': (isActive || isSelected) && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,
             'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === 'null'
           }"
         />
