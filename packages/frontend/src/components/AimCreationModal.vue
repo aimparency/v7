@@ -67,6 +67,18 @@ const createAim = async () => {
       await dataStore.commitAimToPhase(uiStore.projectPath, aimId, phaseId, insertionIndex)
       // Reload phase aims
       await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
+      // Select the newly created aim
+      uiStore.setMode('phase-edit')
+      uiStore.setSelectedAim(phaseId, insertionIndex)
+    } else {
+      // Root aim - select it
+      uiStore.setMode('phase-edit')
+      const aims = dataStore.getPhaseAims('null')
+      const newAimIndex = aims.findIndex(aim => aim.id === aimId)
+      if (newAimIndex !== -1) {
+        uiStore.setSelectedAim('null', newAimIndex)
+        uiStore.lastSelectedRootAimIndex = newAimIndex
+      }
     }
 
     uiStore.closeAimModal()

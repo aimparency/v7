@@ -92,11 +92,19 @@ const closeProject = () => {
   uiStore.setProjectPath('')
 }
 
-const handlePhaseCreated = async (columnIndex: number) => {
+const handlePhaseCreated = async (columnIndex: number, newPhaseId?: string) => {
   // Reload the phase list for the column where the phase was created
   if (columnIndex === 1) {
     // Reload root phases for column 1
     await loadRootPhases(uiStore.projectPath)
+    // Select the newly created phase
+    if (newPhaseId) {
+      const phases = rootPhases.value
+      const newPhaseIndex = phases.findIndex(phase => phase.id === newPhaseId)
+      if (newPhaseIndex !== -1) {
+        uiStore.setSelectedPhase(1, newPhaseIndex, newPhaseId)
+      }
+    }
   } else {
     // For deeper columns (2+), trigger a global phase reload
     // This will cause all Phase components to reload their child phases

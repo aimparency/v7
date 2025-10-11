@@ -13,7 +13,7 @@ const phaseNameInput = ref<HTMLInputElement>()
 const dateWarning = ref<string>('')
 
 const emit = defineEmits<{
-  phaseCreated: [columnIndex: number]
+  phaseCreated: [columnIndex: number, newPhaseId?: string]
 }>()
 
 
@@ -24,7 +24,7 @@ const createPhase = async () => {
   const parentPhaseId = uiStore.phaseModalParentPhase
 
   try {
-    await dataStore.createPhase(uiStore.projectPath, {
+    const result = await dataStore.createPhase(uiStore.projectPath, {
       name: uiStore.newPhaseName.trim(),
       from: localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
       to: localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime),
@@ -32,9 +32,9 @@ const createPhase = async () => {
       commitments: []
     })
 
-    // Emit event so parent can reload the appropriate phase list
+    // Emit event so parent can reload the appropriate phase list and select the new phase
     const columnIndex = uiStore.phaseModalColumnIndex
-    emit('phaseCreated', columnIndex)
+    emit('phaseCreated', columnIndex, result?.id)
 
     uiStore.closePhaseModal()
   } catch (error) {

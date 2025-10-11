@@ -28,10 +28,11 @@ export const useDataStore = defineStore('data', {
     
     async createPhase(projectPath: string, phase: Omit<Phase, 'id'>) {
       try {
-        await trpc.phase.create.mutate({
+        const result = await trpc.phase.create.mutate({
           projectPath,
           phase
         })
+        return result // Returns { id: string }
       } catch (error) {
         console.error('Failed to create phase:', error)
         this.error = 'Failed to create phase'
