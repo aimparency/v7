@@ -331,7 +331,7 @@ export const useUIStore = defineStore('ui', {
       }
       this.pendingDeletePhaseId = null
       this.pendingDeleteAimIndex = null
-      this.selectedAim = null // Clear any temporary selectedAim used for pending delete
+      // Don't clear selectedAim here - only clear it when actually deleting or when leaving phase-edit mode
     },
 
   }

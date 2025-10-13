@@ -464,7 +464,6 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
   switch (event.key) {
     case 'j': {
       event.preventDefault()
-      uiStore.clearPendingDelete() // Navigation cancels pending delete
       if (selectedAim.aimIndex < aims.length - 1) {
         const newIndex = selectedAim.aimIndex + 1
         uiStore.setSelectedAim(selectedAim.phaseId, newIndex)
@@ -474,12 +473,15 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
           uiStore.lastSelectedRootAimIndex = newIndex
         }
         scrollIntoViewIfNeeded()
+      } else {
+        // Force scroll into view even when not moving
+        scrollIntoViewIfNeeded()
       }
+      uiStore.clearPendingDelete() // Navigation cancels pending delete
       break
     }
     case 'k': {
       event.preventDefault()
-      uiStore.clearPendingDelete() // Navigation cancels pending delete
       if (selectedAim.aimIndex > 0) {
         const newIndex = selectedAim.aimIndex - 1
         uiStore.setSelectedAim(selectedAim.phaseId, newIndex)
@@ -489,7 +491,11 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
           uiStore.lastSelectedRootAimIndex = newIndex
         }
         scrollIntoViewIfNeeded()
+      } else {
+        // Force scroll into view even when not moving
+        scrollIntoViewIfNeeded()
       }
+      uiStore.clearPendingDelete() // Navigation cancels pending delete
       break
     }
     case 'e': {
