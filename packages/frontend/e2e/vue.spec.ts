@@ -83,7 +83,7 @@ test('sub-phase selection persistence', async ({ page }) => {
     await page.keyboard.press('j'); // Select Sub A2
 
     // Verify Sub A2 is selected
-    await expect(page.locator('.column-2 .phase-container.selected-outlined')).toHaveText(/Sub A2/);
+    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub A2/);
 
     // Go back to root phases
     await page.keyboard.press('h'); // Go back to root
