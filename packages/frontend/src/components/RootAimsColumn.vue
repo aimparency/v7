@@ -22,7 +22,7 @@ const rootAims = computed(() => {
 </script>
 
 <template>
-  <div class="root-aims-column" :class="{ 'selected-outlined': isActive || isSelected }">
+  <div class="root-aims-column" :class="{ 'selected-outlined': isActive, 'selected': isSelected }">
     <div v-if="rootAims.length === 0" class="empty-state">
       No aims yet, create one with o
     </div>
@@ -35,7 +35,8 @@ const rootAims = computed(() => {
           :key="aim.id"
           :aim="aim"
           :class="{
-            'selected-outlined': (isActive || isSelected) && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,
+            'selected-outlined': isActive && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,
+            'selected': isSelected && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,
             'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === 'null'
           }"
         />
@@ -50,6 +51,14 @@ const rootAims = computed(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.root-aims-column.selected {
+  box-shadow: inset 0 0 0 1px #888;
+}
+
+.root-aims-column.selected-outlined {
+  box-shadow: inset 0 0 0 2px #007acc;
 }
 
 .aims-list {

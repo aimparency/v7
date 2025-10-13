@@ -82,7 +82,7 @@ test('sub-phase selection persistence', async ({ page }) => {
     // Select Sub A2 (should be index 1)
     await page.keyboard.press('j'); // Select Sub A2
 
-    // Verify Sub A2 is selected
+    // Verify Sub A2 is selected (active selection)
     await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub A2/);
 
     // Go back to root phases
@@ -103,8 +103,8 @@ test('sub-phase selection persistence', async ({ page }) => {
     // Select Sub B2 (should be index 1)
     await page.keyboard.press('j'); // Select Sub B2
 
-    // Verify Sub B2 is selected
-    await expect(page.locator('.column-2 .phase-container.selected-outlined')).toHaveText(/Sub B2/);
+    // Verify Sub B2 is selected (active selection)
+    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub B2/);
 
     // Go back to root phases
     await page.keyboard.press('h'); // Go back to root
@@ -118,11 +118,11 @@ test('sub-phase selection persistence', async ({ page }) => {
     // Enter Phase A's sub-phases - should select Sub A2 (remembered selection)
     await page.keyboard.press('l'); // Enter Phase A's sub-phases
 
-    // Verify we're in column 2
-    await expect(page.locator('.column-2')).toBeVisible();
+    // Verify we're in column 2 (teleported PhaseColumn)
+    await expect(page.locator('.main .phase-list').nth(1)).toBeVisible();
 
     // Check that Sub A2 is selected (the remembered selection for Phase A)
-    const selectedSubPhaseA = page.locator('.column-2 .phase-container.selected-outlined');
+    const selectedSubPhaseA = page.locator('.main .phase-container.selected-outlined');
     await expect(selectedSubPhaseA).toHaveText(/Sub A2/);
 
   } finally {

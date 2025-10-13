@@ -47,20 +47,16 @@ watch(() => [selectedPhase.value, props.selectedPhaseIndex] as const, ([phase, i
   }
 }, { immediate: true })
 
-// When this column becomes selected, restore the remembered sub-phase selection
-watch(() => props.isSelected, (isSelected) => {
-  if (isSelected && props.columnIndex > 1) {
+// When this column becomes selected or phases change, restore the remembered sub-phase selection
+watch(() => [props.isSelected, props.phases] as const, ([isSelected, phases]) => {
+  if (isSelected && props.columnIndex > 1 && phases.length > 0) {
     // This is a sub-phase column, try to restore the selection from the parent phase
-    const parentColumn = props.columnIndex - 1
-    const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
+    const parentPhaseId = props.parentPhase?.id
     if (parentPhaseId && uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] !== undefined) {
       const rememberedIndex = uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId]
       // Only restore if the index is valid for current phases
-      if (rememberedIndex >= 0 && rememberedIndex < props.phases.length) {
-        // Use nextTick to ensure the component has updated with the new phases
-        nextTick(() => {
-          uiStore.setSelectedPhase(props.columnIndex, rememberedIndex)
-        })
+      if (rememberedIndex >= 0 && rememberedIndex < phases.length) {
+        uiStore.setSelectedPhase(props.columnIndex, rememberedIndex)
       }
     }
     // If no remembered selection or invalid index, keep current selection (don't default to 0)
@@ -74,7 +70,7 @@ watch(() => props.phases, (phases) => {
 </script>
 
 <template>
-  <div class="phase-column" :class="{ 'selected-outlined': isActive || isSelected }">
+  <div class="phase-column" :class="{ 'selected-outlined': isActive, 'selected': isSelected }">
     <div v-if="phases.length === 0" class="empty-state">
       No sub phases, create one with o
     </div>
@@ -99,6 +95,14 @@ watch(() => props.phases, (phases) => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.phase-column.selected {
+  box-shadow: inset 0 0 0 1px #888;
+}
+
+.phase-column.selected-outlined {
+  box-shadow: inset 0 0 0 2px #007acc;
 }
 
 .phase-list {

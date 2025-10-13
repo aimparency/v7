@@ -132,7 +132,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="phase-container" :class="{ 'selected-outlined': isActive || isSelected, 'pending-delete': isPendingDelete }">
+  <div class="phase-container" :class="{ 'selected-outlined': isActive, 'selected': isSelected, 'pending-delete': isPendingDelete }">
     <!-- Progress Bar -->
     <div class="progress-bar">
       <div class="progress-fill" :style="{ width: progressPercent + '%', background: progressColor }"></div>
@@ -156,7 +156,8 @@ onMounted(async () => {
         :key="aim.id"
         :aim="aim"
         :class="{
-          'selected-outlined': uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
+          'selected-outlined': isActive && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
+          'selected': isSelected && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
           'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phase.id
         }"
       />
@@ -187,6 +188,14 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
   overflow: hidden;
+}
+
+.phase-container.selected {
+  outline: 1px solid #888;
+}
+
+.phase-container.selected-outlined {
+  outline: 2px solid #007acc;
 }
 
 .progress-bar {
