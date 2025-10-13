@@ -75,14 +75,10 @@ test('sub-phase selection persistence', async ({ page }) => {
 
     // Create first sub-phase for Phase A
     await createPhase(page, 'Sub A1');
+    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub A1/);
 
     // Create second sub-phase for Phase A
     await createPhase(page, 'Sub A2');
-
-    // Select Sub A2 (should be index 1)
-    await page.keyboard.press('j'); // Select Sub A2
-
-    // Verify Sub A2 is selected (active selection)
     await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub A2/);
 
     // Go back to root phases
@@ -97,14 +93,17 @@ test('sub-phase selection persistence', async ({ page }) => {
     // Create first sub-phase for Phase B
     await createPhase(page, 'Sub B1');
 
+    // Verify Sub B2 is selected (active selection)
+    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub B1/);
+
     // Create second sub-phase for Phase B
     await createPhase(page, 'Sub B2');
 
-    // Select Sub B2 (should be index 1)
-    await page.keyboard.press('j'); // Select Sub B2
-
     // Verify Sub B2 is selected (active selection)
     await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub B2/);
+
+    await page.keyboard.press('k'); // Select Phase A
+    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub B1/);
 
     // Go back to root phases
     await page.keyboard.press('h'); // Go back to root
@@ -120,10 +119,7 @@ test('sub-phase selection persistence', async ({ page }) => {
 
     // Verify we're in column 2 (teleported PhaseColumn)
     await expect(page.locator('.main .phase-list').nth(1)).toBeVisible();
-
-    // Check that Sub A2 is selected (the remembered selection for Phase A)
-    const selectedSubPhaseA = page.locator('.main .phase-container.selected-outlined');
-    await expect(selectedSubPhaseA).toHaveText(/Sub A2/);
+    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub A2/);
 
   } finally {
     // Clean up temporary directory
@@ -131,6 +127,7 @@ test('sub-phase selection persistence', async ({ page }) => {
       rmSync(tempDir, { recursive: true, force: true });
     } catch (error) {
       console.warn('Failed to clean up temp directory:', error);
+
     }
   }
 });
