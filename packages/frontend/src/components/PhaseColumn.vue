@@ -47,6 +47,35 @@ watch(() => [selectedPhase.value, props.selectedPhaseIndex] as const, ([phase, i
   }
 }, { immediate: true })
 
+// When this column becomes selected, restore the remembered sub-phase selection
+watch(() => props.isSelected, (isSelected) => {
+  if (isSelected && props.columnIndex > 1) {
+    // This is a sub-phase column, try to restore the selection from the parent phase
+    const parentColumn = props.columnIndex - 1
+    const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
+    if (parentPhaseId && uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] !== undefined) {
+      const rememberedIndex = uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId]
+      // Only restore if the index is valid for current phases
+      if (rememberedIndex >= 0 && rememberedIndex < props.phases.length) {
+        // Use nextTick to ensure the component has updated with the new phases
+        nextTick(() => {
+          // Only set if different from current selection to avoid unnecessary updates
+          if (uiStore.getSelectedPhase(props.columnIndex) !== rememberedIndex) {
+            uiStore.setSelectedPhase(props.columnIndex, rememberedIndex)
+          }
+        })
+      }
+    } else if (parentPhaseId && props.phases.length > 0) {
+      // No remembered selection, default to first phase
+      nextTick(() => {
+        if (uiStore.getSelectedPhase(props.columnIndex) !== 0) {
+          uiStore.setSelectedPhase(props.columnIndex, 0)
+        }
+      })
+    }
+  }
+}, { immediate: true })
+
 // Report phase count to store whenever phases change
 watch(() => props.phases, (phases) => {
   uiStore.setPhaseCount(props.columnIndex, phases.length)

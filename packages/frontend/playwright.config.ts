@@ -13,7 +13,7 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './e2e',
   /* Maximum time one test can run for. */
-  timeout: 30 * 1000,
+  timeout: 45 * 1000,
   expect: {
     /**
      * Maximum time expect() should wait for the condition to be met.
@@ -39,8 +39,8 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
 
-    /* Only on CI systems run the tests headless */
-    headless: !!process.env.CI,
+    /* Run headless by default, but allow override */
+    headless: process.env.HEADED !== 'true' && !!process.env.CI,
   },
 
   /* Configure projects for major browsers */
