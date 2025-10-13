@@ -195,6 +195,7 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
         if (aims.length > 0) {
           const newIndex = Math.min(currentIndex + 1, aims.length - 1)
           uiStore.setSelectedPhase(col, newIndex)
+          uiStore.lastSelectedRootAimIndex = newIndex
           scrollIntoViewIfNeeded()
         }
       } else {
@@ -220,6 +221,7 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
         if (aims.length > 0) {
           const newIndex = Math.max(currentIndex - 1, 0)
           uiStore.setSelectedPhase(col, newIndex)
+          uiStore.lastSelectedRootAimIndex = newIndex
           scrollIntoViewIfNeeded()
         }
       } else {
@@ -242,8 +244,10 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
       if (col === 0) {
         // Root aims column - use 'null' as phase ID
         phaseId = 'null'
-        // Use the currently selected phase (root aim) index
-        aimIndex = uiStore.getSelectedPhase(col)
+        // Use the currently selected phase (root aim) index, clamped to valid range
+        const aims = dataStore.getPhaseAims('null') || []
+        const selectedIndex = uiStore.getSelectedPhase(col)
+        aimIndex = Math.min(selectedIndex, Math.max(0, aims.length - 1))
       } else {
         // For all phase columns (1+), check if there are any phases
         const phaseCount = uiStore.getPhaseCount(col)
@@ -268,6 +272,10 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
         uiStore.setSelectedAim(phaseId, aimIndex)
         if (phaseId === 'null') {
           uiStore.lastSelectedRootAimIndex = aimIndex
+        }
+        // Also update selectedPhaseByColumn for consistency
+        if (phaseId === 'null') {
+          uiStore.setSelectedPhase(col, aimIndex)
         }
       }
       break
@@ -412,6 +420,12 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     event.preventDefault()
     uiStore.clearPendingDelete()
+
+    // Save last selected aim index for root aims
+    if (selectedAim?.phaseId === 'null') {
+      uiStore.setSelectedPhase(0, selectedAim.aimIndex)
+    }
+
     uiStore.setMode('column-navigation')
     uiStore.setSelectedAim(null, null)
     return
@@ -622,13 +636,20 @@ watch(() => [uiStore.showPhaseModal, uiStore.showAimModal], async () => {
 
 onMounted(async () => {
   uiStore.setSelectedColumn(0)
-  uiStore.setSelectedPhase(0, 0)
 
   if (uiStore.projectPath) {
     uiStore.setConnectionStatus('connecting')
     await loadRootPhases(uiStore.projectPath)
     await dataStore.loadPhaseAims(uiStore.projectPath, 'null')
     uiStore.setConnectionStatus('connected')
+
+    // Set initial root aim selection to last remembered position, clamped to valid range
+    const aims = dataStore.getPhaseAims('null') || []
+    const validIndex = Math.min(uiStore.lastSelectedRootAimIndex, Math.max(0, aims.length - 1))
+    uiStore.setSelectedPhase(0, validIndex)
+  } else {
+    // No project loaded, default to 0
+    uiStore.setSelectedPhase(0, 0)
   }
 
   // Auto-focus app element for keyboard navigation

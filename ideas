@@ -1,5 +1,5 @@
 - UI 
-  - implement undo system
+  - implement undo system (should use a existing sophisticated system maybe based on a store)
   - j/k keys on aim status
   - colon => command palette
     - commit 
