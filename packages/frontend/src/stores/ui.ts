@@ -133,13 +133,51 @@ export const useUIStore = defineStore('ui', {
       this.phaseModalMode = 'create'
       this.phaseModalEditingPhaseId = null
       this.newPhaseName = ''
-      this.newPhaseStartDate = ''
-      this.newPhaseStartTime = ''
-      this.newPhaseEndDate = ''
-      this.newPhaseEndTime = ''
       this.phaseModalColumnIndex = columnIndex
       this.phaseModalParentPhase = parentPhase
       this.phaseModalSelectedIndex = selectedIndex
+
+      // Set default dates based on context
+      const now = new Date()
+      const currentDate = now.toISOString().split('T')[0] // YYYY-MM-DD
+      const currentTime = now.toTimeString().slice(0, 5) // HH:MM
+
+      // Priority 1: Copy from currently selected phase
+      if (this.selectedColumn > 0) {
+        const selectedPhaseId = this.getSelectedPhaseId(this.selectedColumn)
+        if (selectedPhaseId) {
+          // We need to fetch the phase data to get its dates
+          // For now, set a placeholder - the modal component will handle this
+          this.newPhaseStartDate = currentDate
+          this.newPhaseStartTime = currentTime
+          this.newPhaseEndDate = currentDate
+          this.newPhaseEndTime = currentTime
+        }
+      }
+
+      // Priority 2: Copy from parent phase (one column to the left)
+      if (!this.newPhaseStartDate && columnIndex > 1) {
+        const parentColumn = columnIndex - 1
+        const parentPhaseId = this.getSelectedPhaseId(parentColumn)
+        if (parentPhaseId) {
+          // We need to fetch the parent phase data to get its dates
+          // For now, set a placeholder - the modal component will handle this
+          this.newPhaseStartDate = currentDate
+          this.newPhaseStartTime = currentTime
+          this.newPhaseEndDate = currentDate
+          this.newPhaseEndTime = currentTime
+        }
+      }
+
+      // Priority 3: Default for root phases (column 1, "very first phase" scenario)
+      if (!this.newPhaseStartDate) {
+        // Current date 00:00 to current date + 7 days 00:00
+        this.newPhaseStartDate = currentDate
+        this.newPhaseStartTime = '00:00'
+        const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+        this.newPhaseEndDate = sevenDaysLater.toISOString().split('T')[0]
+        this.newPhaseEndTime = '00:00'
+      }
     },
 
     openPhaseEditModal(phaseId: string, phaseName: string, phaseFrom: number, phaseTo: number, columnIndex: number = 0) {

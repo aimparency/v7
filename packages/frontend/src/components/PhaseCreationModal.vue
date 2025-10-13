@@ -86,7 +86,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 // Calculate smart date ranges when modal opens (only for create mode)
 watch(() => uiStore.showPhaseModal, async (newVal) => {
   if (newVal && uiStore.phaseModalMode === 'create') {
-    await calculateDateRanges()
+    await calculateSmartDateRanges()
     await nextTick()
     phaseNameInput.value?.focus()
   } else if (newVal && uiStore.phaseModalMode === 'edit') {
@@ -95,94 +95,63 @@ watch(() => uiStore.showPhaseModal, async (newVal) => {
   }
 })
 
-const calculateDateRanges = async () => {
+const calculateSmartDateRanges = async () => {
   dateWarning.value = ''
   const parentPhaseId = uiStore.phaseModalParentPhase
 
-  // Root phase: 9 years from today
-  if (parentPhaseId === null) {
-    const now = Date.now()
-    const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
-
-    uiStore.newPhaseStartDate = timestampToLocalDate(now)
-    uiStore.newPhaseStartTime = timestampToLocalTime(now)
-    uiStore.newPhaseEndDate = timestampToLocalDate(now + nineYears)
-    uiStore.newPhaseEndTime = timestampToLocalTime(now + nineYears)
-
-    return
+  // Priority 1: Copy from currently selected phase (if a phase is selected when pressing 'o')
+  if (uiStore.selectedColumn > 0) {
+    const selectedPhaseId = uiStore.getSelectedPhaseId(uiStore.selectedColumn)
+    if (selectedPhaseId) {
+      try {
+        const selectedPhase = await trpc.phase.get.query({
+          projectPath: uiStore.projectPath,
+          phaseId: selectedPhaseId
+        })
+        if (selectedPhase) {
+          uiStore.newPhaseStartDate = timestampToLocalDate(selectedPhase.from)
+          uiStore.newPhaseStartTime = timestampToLocalTime(selectedPhase.from)
+          uiStore.newPhaseEndDate = timestampToLocalDate(selectedPhase.to)
+          uiStore.newPhaseEndTime = timestampToLocalTime(selectedPhase.to)
+          return
+        }
+      } catch (error) {
+        console.error('Failed to get selected phase dates:', error)
+      }
+    }
   }
 
-  // Child phase: calculate based on parent and siblings
-  try {
-    // Get parent phase
-    const parentPhase = await trpc.phase.get.query({
-      projectPath: uiStore.projectPath,
-      phaseId: parentPhaseId
-    })
-
-    if (!parentPhase) {
-      // Fallback to default
-      const now = Date.now()
-      const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
-
-      uiStore.newPhaseStartDate = timestampToLocalDate(now)
-      uiStore.newPhaseStartTime = timestampToLocalTime(now)
-      uiStore.newPhaseEndDate = timestampToLocalDate(now + nineYears)
-      uiStore.newPhaseEndTime = timestampToLocalTime(now + nineYears)
-
-      return
+  // Priority 2: Copy from parent phase (one column to the left)
+  if (uiStore.phaseModalColumnIndex > 1) {
+    const parentColumn = uiStore.phaseModalColumnIndex - 1
+    const parentPhaseIdFromColumn = uiStore.getSelectedPhaseId(parentColumn)
+    if (parentPhaseIdFromColumn) {
+      try {
+        const parentPhase = await trpc.phase.get.query({
+          projectPath: uiStore.projectPath,
+          phaseId: parentPhaseIdFromColumn
+        })
+        if (parentPhase) {
+          uiStore.newPhaseStartDate = timestampToLocalDate(parentPhase.from)
+          uiStore.newPhaseStartTime = timestampToLocalTime(parentPhase.from)
+          uiStore.newPhaseEndDate = timestampToLocalDate(parentPhase.to)
+          uiStore.newPhaseEndTime = timestampToLocalTime(parentPhase.to)
+          return
+        }
+      } catch (error) {
+        console.error('Failed to get parent phase dates:', error)
+      }
     }
-
-    // Get sibling phases (sorted by 'from')
-    const siblings = await trpc.phase.list.query({
-      projectPath: uiStore.projectPath,
-      parentPhaseId: parentPhaseId
-    })
-    const sortedSiblings = siblings.sort((a, b) => a.from - b.from)
-
-    const parentDuration = parentPhase.to - parentPhase.from
-    const phaseDuration = parentDuration / 7
-
-    let startTime: number
-    let endTime: number
-
-    if (sortedSiblings.length === 0) {
-      // First child: start at parent start
-      startTime = parentPhase.from
-      endTime = Math.min(startTime + phaseDuration, parentPhase.to)
-    } else {
-      // Subsequent child: start after last sibling
-      const lastSibling = sortedSiblings[sortedSiblings.length - 1]
-      startTime = lastSibling.to
-      endTime = Math.min(startTime + phaseDuration, parentPhase.to)
-    }
-
-    // Clamp to parent range
-    if (endTime > parentPhase.to) {
-      endTime = parentPhase.to
-    }
-
-    // Warn if duration is 0
-    if (endTime <= startTime) {
-      dateWarning.value = 'Warning: No space left in parent phase for new phase!'
-      endTime = startTime // Set to same time to show the issue
-    }
-
-    uiStore.newPhaseStartDate = timestampToLocalDate(startTime)
-    uiStore.newPhaseStartTime = timestampToLocalTime(startTime)
-    uiStore.newPhaseEndDate = timestampToLocalDate(endTime)
-    uiStore.newPhaseEndTime = timestampToLocalTime(endTime)
-  } catch (error) {
-    console.error('Failed to calculate date ranges:', error)
-    // Fallback to default
-    const now = Date.now()
-    const nineYears = 9 * 365 * 24 * 60 * 60 * 1000
-
-    uiStore.newPhaseStartDate = timestampToLocalDate(now)
-    uiStore.newPhaseStartTime = timestampToLocalTime(now)
-    uiStore.newPhaseEndDate = timestampToLocalDate(now + nineYears)
-    uiStore.newPhaseEndTime = timestampToLocalTime(now + nineYears)
   }
+
+  // Priority 3: Default for root phases (column 1, "very first phase" scenario)
+  // Current date 00:00 to current date + 7 days 00:00
+  const now = new Date()
+  uiStore.newPhaseStartDate = now.toISOString().split('T')[0] // YYYY-MM-DD
+  uiStore.newPhaseStartTime = '00:00'
+  const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  uiStore.newPhaseEndDate = sevenDaysLater.toISOString().split('T')[0]
+  uiStore.newPhaseEndTime = '00:00'
 }
 </script>
 
