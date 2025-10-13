@@ -10,7 +10,7 @@ import { defineConfig, devices } from '@playwright/test'
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
-export default defineConfig({
+const baseConfig = {
   testDir: './e2e',
   /* Maximum time one test can run for. */
   timeout: 45 * 1000,
@@ -27,8 +27,6 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
@@ -38,9 +36,6 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-
-    /* Run headless by default, but allow override */
-    headless: process.env.HEADED !== 'true' && !!process.env.CI,
   },
 
   /* Configure projects for major browsers */
@@ -106,5 +101,16 @@ export default defineConfig({
     command: process.env.CI ? 'npm run preview' : 'npm run dev',
     port: process.env.CI ? 4173 : 5173,
     reuseExistingServer: !process.env.CI,
+  },
+}
+
+export default defineConfig({
+  ...baseConfig,
+  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+  reporter: 'html',
+  /* Only on CI systems run the tests headless */
+  use: {
+    ...baseConfig.use,
+    headless: process.env.HEADED !== 'true' && !!process.env.CI,
   },
 })

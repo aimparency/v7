@@ -59,20 +59,11 @@ watch(() => props.isSelected, (isSelected) => {
       if (rememberedIndex >= 0 && rememberedIndex < props.phases.length) {
         // Use nextTick to ensure the component has updated with the new phases
         nextTick(() => {
-          // Only set if different from current selection to avoid unnecessary updates
-          if (uiStore.getSelectedPhase(props.columnIndex) !== rememberedIndex) {
-            uiStore.setSelectedPhase(props.columnIndex, rememberedIndex)
-          }
+          uiStore.setSelectedPhase(props.columnIndex, rememberedIndex)
         })
       }
-    } else if (parentPhaseId && props.phases.length > 0) {
-      // No remembered selection, default to first phase
-      nextTick(() => {
-        if (uiStore.getSelectedPhase(props.columnIndex) !== 0) {
-          uiStore.setSelectedPhase(props.columnIndex, 0)
-        }
-      })
     }
+    // If no remembered selection or invalid index, keep current selection (don't default to 0)
   }
 }, { immediate: true })
 

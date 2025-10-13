@@ -110,6 +110,11 @@ const handlePhaseCreated = async (columnIndex: number, newPhaseId?: string) => {
     // This will cause all Phase components to reload their child phases
     uiStore.triggerPhaseReload()
   }
+
+  // Update rightmost column if we created a phase that enables deeper navigation
+  if (columnIndex >= uiStore.rightmostColumnIndex) {
+    uiStore.setMinRightmost(columnIndex + 1)
+  }
 }
 
 // Scroll selected element into 1/4 to 3/4 viewport range
@@ -446,7 +451,7 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
   if (!selectedAim) return
 
   const aims = dataStore.getPhaseAims(selectedAim.phaseId)
-  if (!aims || aims.length === 0) return
+  // Allow o/O even when no aims exist (for creating first sub-phase)
 
   // Ensure selected index is valid
   if (selectedAim.aimIndex >= aims.length) {
