@@ -54,11 +54,11 @@ const rootAims = computed(() => {
 }
 
 .root-aims-column.selected {
-  box-shadow: inset 0 0 0 1px #888;
+  outline: 2px solid #888;
 }
 
 .root-aims-column.selected-outlined {
-  box-shadow: inset 0 0 0 2px #007acc;
+  outline: 2px solid #007acc;
 }
 
 .aims-list {

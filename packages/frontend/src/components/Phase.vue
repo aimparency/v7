@@ -191,7 +191,7 @@ onMounted(async () => {
 }
 
 .phase-container.selected {
-  outline: 1px solid #888;
+  outline: 2px solid #888;
 }
 
 .phase-container.selected-outlined {
