@@ -117,11 +117,11 @@ const scrollIntoViewIfNeeded = async () => {
   await nextTick()
 
   // Find the active column's scrollable container
-  const container = document.querySelector('.is-active .phase-list, .is-active .aims-list') as HTMLElement
+  const container = document.querySelector('.selected-outlined .phase-list, .selected-outlined .aims-list') as HTMLElement
   if (!container) return
 
   // Find the selected element
-  const selected = container.querySelector('.phase-container.is-active, .is-selected-aim') as HTMLElement
+  const selected = container.querySelector('.phase-container.selected-outlined, .aim-item.selected-outlined') as HTMLElement
   if (!selected) return
 
   const selectedRect = selected.getBoundingClientRect()
