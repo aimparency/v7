@@ -792,6 +792,7 @@ onMounted(async () => {
         :is-selected="uiStore.selectedColumn === 1"
         :is-active="uiStore.selectedColumn === 1"
         :selected-phase-index="uiStore.getSelectedPhase(1)"
+        @phase-selected="handlePhaseSelected"
       />
     </main>
 

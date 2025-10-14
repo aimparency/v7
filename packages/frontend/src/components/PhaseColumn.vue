@@ -47,23 +47,6 @@ watch(() => [selectedPhase.value, props.selectedPhaseIndex] as const, ([phase, i
   }
 }, { immediate: true })
 
-// When the parent phase changes, restore the remembered sub-phase selection
-watch(() => props.parentPhase?.id, (newParentId, oldParentId) => {
-  if (newParentId && newParentId !== oldParentId && props.columnIndex > 1 && props.phases.length > 0) {
-    console.log(`Parent phase changed from ${oldParentId} to ${newParentId} for column ${props.columnIndex}`)
-    const rememberedIndex = uiStore.lastSelectedSubPhaseIndexByPhase[newParentId]
-    if (rememberedIndex !== undefined && rememberedIndex >= 0 && rememberedIndex < props.phases.length) {
-      console.log(`Restoring remembered index ${rememberedIndex} for new parent ${newParentId}`)
-      uiStore.setSelectedPhase(props.columnIndex, rememberedIndex)
-    } else {
-      // No remembered selection, set initial index 0 for new parent
-      console.log(`Setting initial index 0 for new parent ${newParentId}`)
-      uiStore.setSelectedPhase(props.columnIndex, 0)
-      // Store this as the initial selection
-      uiStore.lastSelectedSubPhaseIndexByPhase[newParentId] = 0
-    }
-  }
-}, { immediate: true })
 
 
 // Report phase count to store whenever phases change
