@@ -270,10 +270,29 @@ export const useUIStore = defineStore('ui', {
       if (phaseId !== undefined) {
         this.selectedPhaseIdByColumn[columnIndex] = phaseId
       }
+
+      // When a phase is selected, restore the selection for its child column.
+      if (phaseId) {
+        const childColumnIndex = columnIndex + 1
+        const restoredIndex = this.lastSelectedSubPhaseIndexByPhase[phaseId] ?? 0
+        this.selectedPhaseByColumn[childColumnIndex] = restoredIndex
+      }
     },
 
     getSelectedPhase(columnIndex: number): number {
-      return this.selectedPhaseByColumn[columnIndex] ?? 0
+      const index = this.selectedPhaseByColumn[columnIndex] ?? 0
+      const phaseCount = this.phaseCountByColumn[columnIndex] ?? 0
+
+      if (phaseCount === 0) {
+        return 0
+      }
+
+      // Default to 0 if index is out of bounds
+      if (index >= phaseCount) {
+        return 0
+      }
+
+      return index
     },
 
     getSelectedPhaseId(columnIndex: number): string | null {

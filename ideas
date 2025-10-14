@@ -1,3 +1,5 @@
+- refactor data model: phases in store
+
 - still same issue: 
   - does not remember the correct subphase selection
     - does not select newly created phase
