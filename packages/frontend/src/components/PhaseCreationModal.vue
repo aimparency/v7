@@ -36,6 +36,19 @@ const createPhase = async () => {
     const columnIndex = uiStore.phaseModalColumnIndex
     emit('phaseCreated', columnIndex, result?.id)
 
+    // For deeper columns, also select the newly created phase
+    if (columnIndex > 1 && result?.id) {
+      // Set the selected phase to the newly created one
+      // Since we don't know the index yet, we'll let the PhaseColumn handle it
+      // by setting the last selected index for this parent phase
+      const parentColumn = columnIndex - 1
+      const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
+      if (parentPhaseId) {
+        // We'll need to get the index of the new phase after reload
+        // For now, just trigger the reload and the PhaseColumn will handle selection
+      }
+    }
+
     uiStore.closePhaseModal()
   } catch (error) {
     console.error('Failed to create phase:', error)

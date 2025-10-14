@@ -1,10 +1,20 @@
-- focus created sub phases
+- still same issue: 
+  - does not remember the correct subphase selection
+    - does not select newly created phase
+
 - develop MCP 
 
 - remove the no space left comment 
 
 - D: when only one phase exists in a phase colum, it get's no selection outline
 
+- Current
+  - focus created sub phases
+  - sub phase index remembering
+  - additional tests: 
+    - aim creating
+    - aim navigating
+    - aim remembering
 - testing 
   - end to end tests (UI tests)
 

@@ -58,10 +58,13 @@ watch(() => [props.isSelected, props.phases] as const, ([isSelected, phases]) =>
       if (rememberedIndex >= 0 && rememberedIndex < phases.length) {
         uiStore.setSelectedPhase(props.columnIndex, rememberedIndex)
       }
+    } else {
+      // No remembered selection, select the last phase (newly created one)
+      uiStore.setSelectedPhase(props.columnIndex, phases.length - 1)
     }
-    // If no remembered selection or invalid index, keep current selection (don't default to 0)
   }
 }, { immediate: true })
+
 
 // Report phase count to store whenever phases change
 watch(() => props.phases, (phases) => {

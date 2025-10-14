@@ -91,19 +91,13 @@ test('sub-phase selection persistence', async ({ page }) => {
     await page.keyboard.press('l'); // Enter Phase B's sub-phases
 
     // Create first sub-phase for Phase B
-    await createPhase(page, 'Sub B1');
+    for(let i = 0; i < 3; i++) {
+      await createPhase(page, `Sub B${i + 1}`);
+      await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(new RegExp(`Sub B${i + 1}`));
+    }
 
-    // Verify Sub B2 is selected (active selection)
-    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub B1/);
-
-    // Create second sub-phase for Phase B
-    await createPhase(page, 'Sub B2');
-
-    // Verify Sub B2 is selected (active selection)
-    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub B2/);
-
-    await page.keyboard.press('k'); // Select Phase A
-    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub B1/);
+    await page.keyboard.press('k'); 
+    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub A2/);
 
     // Go back to root phases
     await page.keyboard.press('h'); // Go back to root

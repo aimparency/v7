@@ -1,3 +1,8 @@
 node_modules/
 package-lock.json
 .bowman
+
+.kilocode/
+focus-based-ui-bad.md
+packages/frontend/public/
+

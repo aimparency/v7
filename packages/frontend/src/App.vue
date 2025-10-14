@@ -109,6 +109,12 @@ const handlePhaseCreated = async (columnIndex: number, newPhaseId?: string) => {
     // For deeper columns (2+), trigger a global phase reload
     // This will cause all Phase components to reload their child phases
     uiStore.triggerPhaseReload()
+    // Set the selection to the last phase (newly created one) for the column
+    // Since the phase count hasn't been updated yet, we use the current count + 1
+    // But we need to wait for the reload to complete, so use setTimeout
+    setTimeout(() => {
+      uiStore.setSelectedPhase(columnIndex, uiStore.getPhaseCount(columnIndex))
+    }, 50)
   }
 
   // Update rightmost column if we created a phase that enables deeper navigation
