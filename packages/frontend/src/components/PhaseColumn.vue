@@ -47,20 +47,20 @@ watch(() => [selectedPhase.value, props.selectedPhaseIndex] as const, ([phase, i
   }
 }, { immediate: true })
 
-// When this column becomes selected or phases change, restore the remembered sub-phase selection
-watch(() => [props.isSelected, props.phases] as const, ([isSelected, phases]) => {
-  if (isSelected && props.columnIndex > 1 && phases.length > 0) {
-    // This is a sub-phase column, try to restore the selection from the parent phase
-    const parentPhaseId = props.parentPhase?.id
-    if (parentPhaseId && uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] !== undefined) {
-      const rememberedIndex = uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId]
-      // Only restore if the index is valid for current phases
-      if (rememberedIndex >= 0 && rememberedIndex < phases.length) {
-        uiStore.setSelectedPhase(props.columnIndex, rememberedIndex)
-      }
+// When the parent phase changes, restore the remembered sub-phase selection
+watch(() => props.parentPhase?.id, (newParentId, oldParentId) => {
+  if (newParentId && newParentId !== oldParentId && props.columnIndex > 1 && props.phases.length > 0) {
+    console.log(`Parent phase changed from ${oldParentId} to ${newParentId} for column ${props.columnIndex}`)
+    const rememberedIndex = uiStore.lastSelectedSubPhaseIndexByPhase[newParentId]
+    if (rememberedIndex !== undefined && rememberedIndex >= 0 && rememberedIndex < props.phases.length) {
+      console.log(`Restoring remembered index ${rememberedIndex} for new parent ${newParentId}`)
+      uiStore.setSelectedPhase(props.columnIndex, rememberedIndex)
     } else {
-      // No remembered selection, select the last phase (newly created one)
-      uiStore.setSelectedPhase(props.columnIndex, phases.length - 1)
+      // No remembered selection, set initial index 0 for new parent
+      console.log(`Setting initial index 0 for new parent ${newParentId}`)
+      uiStore.setSelectedPhase(props.columnIndex, 0)
+      // Store this as the initial selection
+      uiStore.lastSelectedSubPhaseIndexByPhase[newParentId] = 0
     }
   }
 }, { immediate: true })

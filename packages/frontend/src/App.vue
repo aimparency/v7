@@ -169,6 +169,8 @@ const scrollIntoViewIfNeeded = async () => {
 
 // Global keyboard handler - single source of truth for all navigation
 const handleGlobalKeydown = (event: KeyboardEvent) => {
+  console.log('Key pressed:', event.key, 'mode:', uiStore.mode, 'column:', uiStore.selectedColumn)
+
   // Don't handle keys when modals are open
   if (uiStore.showPhaseModal || uiStore.showAimModal) return
 
@@ -216,6 +218,16 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
         if (currentPhaseIndex < maxIndex) {
           uiStore.setSelectedPhase(col, currentPhaseIndex + 1)
           scrollIntoViewIfNeeded()
+
+          // Store sub-phase selection for persistence
+          if (col > 1) {
+            const parentColumn = col - 1
+            const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
+            if (parentPhaseId) {
+              console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${currentPhaseIndex + 1}`)
+              uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = currentPhaseIndex + 1
+            }
+          }
         }
       }
       break
@@ -241,6 +253,16 @@ const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
         if (currentPhaseIndex > 0) {
           uiStore.setSelectedPhase(col, currentPhaseIndex - 1)
           scrollIntoViewIfNeeded()
+
+          // Store sub-phase selection for persistence
+          if (col > 1) {
+            const parentColumn = col - 1
+            const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
+            if (parentPhaseId) {
+              console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${currentPhaseIndex - 1}`)
+              uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = currentPhaseIndex - 1
+            }
+          }
         }
       }
       break
@@ -489,6 +511,16 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
         scrollIntoViewIfNeeded()
       }
       uiStore.clearPendingDelete() // Navigation cancels pending delete
+
+      // Store sub-phase selection for persistence
+      if (uiStore.selectedColumn > 1) {
+        const parentColumn = uiStore.selectedColumn - 1
+        const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
+        if (parentPhaseId) {
+          console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${uiStore.getSelectedPhase(uiStore.selectedColumn)}`)
+          uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = uiStore.getSelectedPhase(uiStore.selectedColumn)
+        }
+      }
       break
     }
     case 'k': {
@@ -507,6 +539,16 @@ const handlePhaseEditKeys = async (event: KeyboardEvent) => {
         scrollIntoViewIfNeeded()
       }
       uiStore.clearPendingDelete() // Navigation cancels pending delete
+
+      // Store sub-phase selection for persistence
+      if (uiStore.selectedColumn > 1) {
+        const parentColumn = uiStore.selectedColumn - 1
+        const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
+        if (parentPhaseId) {
+          console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${uiStore.getSelectedPhase(uiStore.selectedColumn)}`)
+          uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = uiStore.getSelectedPhase(uiStore.selectedColumn)
+        }
+      }
       break
     }
     case 'e': {

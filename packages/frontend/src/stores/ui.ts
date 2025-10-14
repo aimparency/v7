@@ -266,27 +266,9 @@ export const useUIStore = defineStore('ui', {
     },
 
     setSelectedPhase(columnIndex: number, phaseIndex: number, phaseId?: string) {
-      // Remember the previous selection for this column (if it was a sub-phase selection)
-      if (columnIndex > 1 && this.selectedPhaseIdByColumn[columnIndex]) {
-        const parentColumn = columnIndex - 1
-        const parentPhaseId = this.selectedPhaseIdByColumn[parentColumn]
-        if (parentPhaseId) {
-          this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = this.selectedPhaseByColumn[columnIndex]
-        }
-      }
-
       this.selectedPhaseByColumn[columnIndex] = phaseIndex
       if (phaseId !== undefined) {
         this.selectedPhaseIdByColumn[columnIndex] = phaseId
-      }
-
-      // For sub-phase columns, also update the remembered selection for the current parent
-      if (columnIndex > 1) {
-        const parentColumn = columnIndex - 1
-        const parentPhaseId = this.selectedPhaseIdByColumn[parentColumn]
-        if (parentPhaseId) {
-          this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = phaseIndex
-        }
       }
     },
 
