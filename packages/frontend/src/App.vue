@@ -16,8 +16,8 @@ const dataStore = useDataStore()
 const appRef = ref<HTMLDivElement | null>(null)
 const projectPathInput = ref('')
 
-// Root phases for the first phase column
-const rootPhases = ref<Phase[]>([])
+// Get root phases from the store
+const rootPhases = computed(() => dataStore.getPhasesByParentId(null))
 
 // Container offset based on viewport start from store
 const containerOffset = computed(() => {
@@ -26,31 +26,35 @@ const containerOffset = computed(() => {
   return `translateX(-${offset}%)`
 })
 
-const selectProject = async () => {
-  const path = projectPathInput.value.trim()
+const selectProject = async (path: string) => {
   if (!path) return
 
   try {
     uiStore.setProjectPath(path)
     uiStore.setConnectionStatus('connecting')
-    // Load root phases for first phase column
-    await loadRootPhases(path)
-    await dataStore.loadPhaseAims(path, 'null')
+    
+    // Load all initial data from the stores
+    await dataStore.loadAllAims(path)
+    await dataStore.loadPhases(path, null) // Load root phases
+
     uiStore.setConnectionStatus('connected')
-    // Success - add to history and clear any failure status
     uiStore.addProjectToHistory(path)
     uiStore.clearProjectFailure(path)
   } catch (error) {
     console.error('Failed to load project:', error)
     uiStore.setConnectionStatus('no connection')
     uiStore.markProjectAsFailed(path)
-    // Don't clear projectPath so user can see the error
   }
+}
+
+const handleSelectProject = () => {
+  const path = projectPathInput.value.trim()
+  selectProject(path)
 }
 
 const openProjectFromHistory = async (path: string) => {
   projectPathInput.value = path
-  await selectProject()
+  await selectProject(path)
 }
 
 const removeFromHistory = (path: string, event: Event) => {
@@ -72,59 +76,16 @@ const formatRelativeTime = (timestamp: number): string => {
   return new Date(timestamp).toLocaleDateString()
 }
 
-const loadRootPhases = async (projectPath: string) => {
-  try {
-    const phases = await trpc.phase.list.query({
-      projectPath,
-      parentPhaseId: null
-    })
-    // Sort phases by 'from' date ascending
-    rootPhases.value = phases.sort((a: Phase, b: Phase) => a.from - b.from)
-  } catch (error) {
-    console.error('Failed to load root phases:', error)
-    rootPhases.value = []
-  }
-}
-
 const closeProject = () => {
-  // Clear root phases to unmount Phase components before clearing project path
-  rootPhases.value = []
+  // Just clearing the project path will reset the app state
   uiStore.setProjectPath('')
-}
-
-const handlePhaseCreated = async (columnIndex: number, newPhaseId?: string) => {
-  // Reload the phase list for the column where the phase was created
-  if (columnIndex === 1) {
-    // Reload root phases for column 1
-    await loadRootPhases(uiStore.projectPath)
-    // Select the newly created phase
-    if (newPhaseId) {
-      const phases = rootPhases.value
-      const newPhaseIndex = phases.findIndex(phase => phase.id === newPhaseId)
-      if (newPhaseIndex !== -1) {
-        uiStore.setSelectedPhase(1, newPhaseIndex, newPhaseId)
-      }
-    }
-  } else {
-    // For deeper columns (2+), trigger a global phase reload
-    // This will cause all Phase components to reload their child phases
-    uiStore.triggerPhaseReload()
-    // Set the selection to the last phase (newly created one) for the column
-    // Since the phase count hasn't been updated yet, we use the current count + 1
-    // But we need to wait for the reload to complete, so use setTimeout
-    setTimeout(() => {
-      uiStore.setSelectedPhase(columnIndex, uiStore.getPhaseCount(columnIndex))
-    }, 50)
-  }
-
-  // Update rightmost column if we created a phase that enables deeper navigation
-  if (columnIndex >= uiStore.rightmostColumnIndex) {
-    uiStore.setMinRightmost(columnIndex + 1)
-  }
 }
 
 const handlePhaseSelected = (columnIndex: number, phaseIndex: number, phaseId: string) => {
   uiStore.setSelectedPhase(columnIndex, phaseIndex, phaseId)
+
+  // When a phase is selected, lazy-load its children
+  dataStore.loadPhases(uiStore.projectPath, phaseId)
 
   // Handle sub-phase selection persistence
   if (columnIndex > 1) {
@@ -628,7 +589,7 @@ const deleteAim = async (aimId: string, phaseId: string) => {
     }
 
     // Adjust selection if needed
-    const aims = dataStore.getPhaseAims(phaseId)
+    const aims = dataStore.getAimsForPhase
     if (aims.length === 0) {
       // No more aims, exit phase-edit mode
       uiStore.setMode('column-navigation')
@@ -710,13 +671,10 @@ onMounted(async () => {
   uiStore.setSelectedColumn(0)
 
   if (uiStore.projectPath) {
-    uiStore.setConnectionStatus('connecting')
-    await loadRootPhases(uiStore.projectPath)
-    await dataStore.loadPhaseAims(uiStore.projectPath, 'null')
-    uiStore.setConnectionStatus('connected')
+    await selectProject(uiStore.projectPath)
 
     // Set initial root aim selection to last remembered position, clamped to valid range
-    const aims = dataStore.getPhaseAims('null') || []
+    const aims = dataStore.getAimsForPhase('null') || []
     const validIndex = Math.min(uiStore.lastSelectedRootAimIndex, Math.max(0, aims.length - 1))
     uiStore.setSelectedPhase(0, validIndex)
   } else {

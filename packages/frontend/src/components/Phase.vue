@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { computed, watch, onMounted } from 'vue'
 import type { Phase } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
-import { trpc } from '../trpc'
 import AimComponent from './Aim.vue'
 import PhaseColumn from './PhaseColumn.vue'
 
@@ -22,33 +21,14 @@ const props = withDefaults(defineProps<Props>(), {
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 
-// Child column state
-const childPhases = ref<Phase[]>([])
+// Get child phases and aims from the store
+const childPhases = computed(() => dataStore.getPhasesByParentId(props.phase.id))
+const phaseAims = computed(() => dataStore.getAimsForPhase(props.phase.id))
 
-// Get aims for this phase
-const phaseAims = computed(() => {
-  return dataStore.getPhaseAims(props.phase.id)
-})
-
-// Load child phases for teleported column
-const loadChildPhases = async () => {
-  try {
-    const phases = await trpc.phase.list.query({
-      projectPath: uiStore.projectPath,
-      parentPhaseId: props.phase.id
-    })
-    // Sort phases by 'from' date ascending
-    childPhases.value = phases.sort((a: Phase, b: Phase) => a.from - b.from)
-  } catch (error) {
-    console.error('Failed to load child phases:', error)
-    childPhases.value = []
-  }
-}
-
-// Load child phases when this phase is selected or when force reload is triggered
-watch(() => [props.isSelected, uiStore.phaseReloadTrigger] as const, async ([isSelected]) => {
+// Load child phases when this phase is selected
+watch(() => props.isSelected, (isSelected) => {
   if (isSelected) {
-    await loadChildPhases()
+    dataStore.loadPhases(uiStore.projectPath, props.phase.id)
   }
 }, { immediate: true })
 
@@ -127,7 +107,8 @@ const isPendingDelete = computed(() => {
 
 // Load aims on mount
 onMounted(async () => {
-  await dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
+  // Aims are now loaded centrally
+  await dataStore.loadAllAims(uiStore.projectPath)
 })
 </script>
 

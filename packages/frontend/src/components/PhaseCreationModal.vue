@@ -18,40 +18,23 @@ const emit = defineEmits<{
 
 
 const createPhase = async () => {
-  if (!uiStore.newPhaseName.trim()) return
-
-  // Use the parent phase ID directly from the UI store
-  const parentPhaseId = uiStore.phaseModalParentPhase
+  if (!uiStore.newPhaseName.trim()) return;
 
   try {
-    const result = await dataStore.createPhase(uiStore.projectPath, {
-      name: uiStore.newPhaseName.trim(),
-      from: localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
-      to: localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime),
-      parent: parentPhaseId,
-      commitments: []
-    })
-
-    // Emit event so parent can reload the appropriate phase list and select the new phase
-    const columnIndex = uiStore.phaseModalColumnIndex
-    emit('phaseCreated', columnIndex, result?.id)
-
-    // For deeper columns, also select the newly created phase
-    if (columnIndex > 1 && result?.id) {
-      // Set the selected phase to the newly created one
-      // Since we don't know the index yet, we'll let the PhaseColumn handle it
-      // by setting the last selected index for this parent phase
-      const parentColumn = columnIndex - 1
-      const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
-      if (parentPhaseId) {
-        // We'll need to get the index of the new phase after reload
-        // For now, just trigger the reload and the PhaseColumn will handle selection
-      }
-    }
-
-    uiStore.closePhaseModal()
+    await dataStore.createAndSelectPhase(
+      uiStore.projectPath,
+      {
+        name: uiStore.newPhaseName.trim(),
+        from: localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
+        to: localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime),
+        parent: uiStore.phaseModalParentPhase,
+        commitments: []
+      },
+      uiStore.phaseModalColumnIndex
+    );
+    uiStore.closePhaseModal();
   } catch (error) {
-    console.error('Failed to create phase:', error)
+    console.error('Failed to create phase:', error);
   }
 }
 

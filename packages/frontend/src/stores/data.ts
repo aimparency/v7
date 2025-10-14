@@ -1,15 +1,34 @@
 import { defineStore } from 'pinia'
 import type { Phase, Aim } from 'shared'
 import { trpc } from '../trpc'
+import { useUIStore } from './ui'
 
 export const useDataStore = defineStore('data', {
   state: () => ({
-    // Simplified state - no more multi-column management
-    phaseAims: {} as Record<string, Aim[]>,
+    phases: {} as Record<string, Phase>,
+    aims: {} as Record<string, Aim>,
+    childrenByParentId: {} as Record<string, string[]>,
     loading: false,
     error: null as string | null,
     migrated: false, // Track if we've run the migration
   }),
+
+  getters: {
+    getPhasesByParentId: (state) => (parentId: string | null) => {
+      const key = parentId ?? 'null'
+      const childIds = state.childrenByParentId[key] || []
+      return childIds.map(id => state.phases[id]).filter(Boolean).sort((a, b) => a.from - b.from)
+    },
+    getAimsForPhase: (state) => (phaseId: string) => {
+      if (phaseId === 'null') {
+        // Root aims are not directly stored, compute them
+        return Object.values(state.aims).filter(aim => !aim.committedIn || aim.committedIn.length === 0)
+      }
+      const phase = state.phases[phaseId]
+      if (!phase) return []
+      return phase.commitments.map(aimId => state.aims[aimId]).filter(Boolean)
+    },
+  },
   
   actions: {
     async runMigration(projectPath: string) {
@@ -24,58 +43,26 @@ export const useDataStore = defineStore('data', {
       }
     },
     
-    // Removed loadColumn - now handled by individual Phase components
-    
-    async createPhase(projectPath: string, phase: Omit<Phase, 'id'>) {
-      try {
-        const result = await trpc.phase.create.mutate({
-          projectPath,
-          phase
-        })
-        return result // Returns { id: string }
-      } catch (error) {
-        console.error('Failed to create phase:', error)
-        this.error = 'Failed to create phase'
-        throw error
+    async createAndSelectPhase(projectPath: string, phaseData: Omit<Phase, 'id'>, columnIndex: number) {
+      if (!projectPath) return;
+      
+      const { id: newPhaseId } = await trpc.phase.create.mutate({ projectPath, phase: phaseData });
+
+      await this.loadPhases(projectPath, phaseData.parent);
+
+      const uiStore = useUIStore();
+      const newPhases = this.getPhasesByParentId(phaseData.parent);
+      const newPhaseIndex = newPhases.findIndex(p => p.id === newPhaseId);
+
+      if (newPhaseIndex !== -1) {
+          uiStore.setSelectedPhase(columnIndex, newPhaseIndex, newPhaseId);
+      }
+
+      if (columnIndex >= uiStore.rightmostColumnIndex) {
+          uiStore.setMinRightmost(columnIndex + 1);
       }
     },
-    
-    async loadPhaseAims(projectPath: string, phaseId: string) {
-      try {
-        const allAims = await trpc.aim.list.query({ projectPath })
 
-        if (phaseId === 'null') {
-          // For the Root phase, load aims that aren't committed to any phase
-          this.phaseAims[phaseId] = allAims.filter(aim =>
-            !aim.committedIn || aim.committedIn.length === 0
-          )
-        } else {
-          // For regular phases, load the phase data and its committed aims
-          try {
-            const phase = await trpc.phase.get.query({ projectPath, phaseId })
-
-            if (phase) {
-              // Preserve the order from phase.commitments array
-              this.phaseAims[phaseId] = phase.commitments.map(commitmentId =>
-                allAims.find(aim => aim.id === commitmentId)
-              ).filter(aim => aim !== undefined) // Remove any missing aims
-            } else {
-              this.phaseAims[phaseId] = []
-            }
-          } catch (phaseError) {
-            console.error('Failed to load phase:', phaseError)
-            this.phaseAims[phaseId] = []
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load phase aims:', error)
-        this.phaseAims[phaseId] = []
-      }
-    },
-    
-    getPhaseAims(phaseId: string): Aim[] {
-      return this.phaseAims[phaseId] || []
-    },
     
     // Removed multi-column helper methods - now handled by teleport system
     
@@ -169,6 +156,44 @@ export const useDataStore = defineStore('data', {
       } catch (error) {
         console.error('Failed to remove aim from phase:', error)
         throw error
+      }
+    },
+
+    async loadPhases(projectPath: string, parentId: string | null) {
+      if (!projectPath) return;
+      this.loading = true;
+      try {
+        const phases = await trpc.phase.list.query({ projectPath, parentPhaseId: parentId });
+        const childIds: string[] = [];
+        for (const phase of phases) {
+          this.phases[phase.id] = phase;
+          childIds.push(phase.id);
+        }
+        this.childrenByParentId[parentId ?? 'null'] = childIds;
+      } catch (error) {
+        this.error = 'Failed to load phases';
+        console.error(this.error, error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async loadAllAims(projectPath: string) {
+      if (!projectPath) return;
+      // Avoid re-fetching if aims are already loaded
+      if (Object.keys(this.aims).length > 0) return;
+
+      this.loading = true;
+      try {
+        const allAims = await trpc.aim.list.query({ projectPath });
+        for (const aim of allAims) {
+          this.aims[aim.id] = aim;
+        }
+      } catch (error) {
+        this.error = 'Failed to load aims';
+        console.error(this.error, error);
+      } finally {
+        this.loading = false;
       }
     }
   }

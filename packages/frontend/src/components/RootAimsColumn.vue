@@ -17,7 +17,7 @@ const uiStore = useUIStore()
 
 // Load uncommitted aims
 const rootAims = computed(() => {
-  return dataStore.getPhaseAims('null') || []
+  return dataStore.getAimsForPhase('null') || []
 })
 </script>
 
