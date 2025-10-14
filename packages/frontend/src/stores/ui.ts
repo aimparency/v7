@@ -286,7 +286,7 @@ export const useUIStore = defineStore('ui', {
           if (col === 0) {
             // Root aims column - navigate using selectedPhase (since no aim is selected in column-navigation mode)
             const currentIndex = this.getSelectedPhase(col)
-            const aims = dataStore.getPhaseAims('null') || []
+            const aims = dataStore.getAimsForPhase('null') || []
             if (aims.length > 0) {
               const newIndex = Math.min(currentIndex + 1, aims.length - 1)
               this.setSelectedPhase(col, newIndex)

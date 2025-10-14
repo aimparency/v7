@@ -73,8 +73,8 @@ const createAim = async () => {
     } else {
       // Root aim - select it
       uiStore.setMode('phase-edit')
-      const aims = dataStore.getPhaseAims('null')
-      const newAimIndex = aims.findIndex(aim => aim.id === aimId)
+      const aims = dataStore.getAimsForPhase('null')
+      const newAimIndex = aims.findIndex((aim: Aim) => aim.id === aimId)
       if (newAimIndex !== -1) {
         uiStore.setSelectedAim('null', newAimIndex)
         uiStore.lastSelectedRootAimIndex = newAimIndex
