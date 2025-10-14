@@ -18,6 +18,8 @@ const props = withDefaults(defineProps<Props>(), {
   columnDepth: 1
 })
 
+const emit = defineEmits(['click'])
+
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 

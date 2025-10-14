@@ -589,7 +589,7 @@ const deleteAim = async (aimId: string, phaseId: string) => {
     }
 
     // Adjust selection if needed
-    const aims = dataStore.getAimsForPhase
+    const aims = dataStore.getAimsForPhase(phaseId)
     if (aims.length === 0) {
       // No more aims, exit phase-edit mode
       uiStore.setMode('column-navigation')
@@ -768,7 +768,7 @@ onMounted(async () => {
     </main>
 
     <!-- Phase Creation Modal -->
-    <PhaseCreationModal @phase-created="handlePhaseCreated" />
+    <PhaseCreationModal />
     
     <!-- Aim Creation Modal -->
     <AimCreationModal />
