@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
+import { nextTick } from 'vue'
 import type { Hint } from 'shared'
 import { timestampToLocalDate, timestampToLocalTime } from 'shared'
+import { trpc } from '../trpc'
 
 export const useUIStore = defineStore('ui', {
   state: () => ({
@@ -265,6 +267,233 @@ export const useUIStore = defineStore('ui', {
       this.mode = mode
     },
 
+    // Keyboard navigation handlers
+    async handleColumnNavigationKeys(event: KeyboardEvent, dataStore: any) {
+      switch (event.key) {
+        case 'h':
+          event.preventDefault()
+          this.navigateLeft()
+          break
+        case 'l':
+          event.preventDefault()
+          this.navigateRight()
+          break
+        case 'j': {
+          event.preventDefault()
+          this.clearPendingDelete() // Navigation cancels pending delete
+          const col = this.selectedColumn
+
+          if (col === 0) {
+            // Root aims column - navigate using selectedPhase (since no aim is selected in column-navigation mode)
+            const currentIndex = this.getSelectedPhase(col)
+            const aims = dataStore.getPhaseAims('null') || []
+            if (aims.length > 0) {
+              const newIndex = Math.min(currentIndex + 1, aims.length - 1)
+              this.setSelectedPhase(col, newIndex)
+              this.lastSelectedRootAimIndex = newIndex
+              await this.scrollIntoViewIfNeeded()
+            }
+          } else {
+            // Phase columns - navigate using selectedPhase
+            const currentPhaseIndex = this.getSelectedPhase(col)
+            const maxIndex = this.getPhaseCount(col) - 1
+            if (currentPhaseIndex < maxIndex) {
+              this.setSelectedPhase(col, currentPhaseIndex + 1)
+              await this.scrollIntoViewIfNeeded()
+
+              // Store sub-phase selection for persistence
+              if (col > 1) {
+                const parentColumn = col - 1
+                const parentPhaseId = this.getSelectedPhaseId(parentColumn)
+                if (parentPhaseId) {
+                  console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${currentPhaseIndex + 1}`)
+                  this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = currentPhaseIndex + 1
+                }
+              }
+            }
+          }
+          break
+        }
+        case 'k': {
+          event.preventDefault()
+          this.clearPendingDelete() // Navigation cancels pending delete
+          const col = this.selectedColumn
+
+          if (col === 0) {
+            // Root aims column - navigate using selectedPhase
+            const currentIndex = this.getSelectedPhase(col)
+            const aims = dataStore.getAimsForPhase('null') || []
+            if (aims.length > 0) {
+              const newIndex = Math.max(currentIndex - 1, 0)
+              this.setSelectedPhase(col, newIndex)
+              this.lastSelectedRootAimIndex = newIndex
+              await this.scrollIntoViewIfNeeded()
+            }
+          } else {
+            // Phase columns - navigate using selectedPhase
+            const currentPhaseIndex = this.getSelectedPhase(col)
+            if (currentPhaseIndex > 0) {
+              this.setSelectedPhase(col, currentPhaseIndex - 1)
+              await this.scrollIntoViewIfNeeded()
+
+              // Store sub-phase selection for persistence
+              if (col > 1) {
+                const parentColumn = col - 1
+                const parentPhaseId = this.getSelectedPhaseId(parentColumn)
+                if (parentPhaseId) {
+                  console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${currentPhaseIndex - 1}`)
+                  this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = currentPhaseIndex - 1
+                }
+              }
+            }
+          }
+          break
+        }
+        case 'i': {
+          event.preventDefault()
+          // Get the selected phase to enter edit mode
+          const col = this.selectedColumn
+          let phaseId: string | null = null
+          let aimIndex = 0
+
+          if (col === 0) {
+            // Root aims column - use 'null' as phase ID
+            phaseId = 'null'
+            // Use the currently selected phase (root aim) index, clamped to valid range
+            const aims = dataStore.getAimsForPhase('null') || []
+            const selectedIndex = this.getSelectedPhase(col)
+            aimIndex = Math.min(selectedIndex, Math.max(0, aims.length - 1))
+          } else {
+            // For all phase columns (1+), check if there are any phases
+            const phaseCount = this.getPhaseCount(col)
+            if (phaseCount === 0) {
+              // No phases to edit aims in
+              break
+            }
+            // Get the selected phase ID from store
+            phaseId = this.getSelectedPhaseId(col)
+            if (phaseId) {
+              // If no aim is selected for this phase, select the last selected one
+              if (!this.selectedAim || this.selectedAim.phaseId !== phaseId) {
+                aimIndex = this.lastSelectedAimIndexByPhase[phaseId] ?? 0
+              } else {
+                aimIndex = this.selectedAim.aimIndex
+              }
+            }
+          }
+
+          if (phaseId) {
+            this.setMode('phase-edit')
+            this.setSelectedAim(phaseId, aimIndex)
+            if (phaseId === 'null') {
+              this.lastSelectedRootAimIndex = aimIndex
+            }
+            // Also update selectedPhaseByColumn for consistency
+            if (phaseId === 'null') {
+              this.setSelectedPhase(col, aimIndex)
+            }
+          }
+          break
+        }
+        case 'e': {
+          event.preventDefault()
+          const col = this.selectedColumn
+
+          // Can't edit in root aims column
+          if (col === 0) break
+
+          // Get selected phase ID and fetch phase data
+          const selectedPhaseId = this.getSelectedPhaseId(col)
+          if (!selectedPhaseId) break
+
+          const selectedPhase = await trpc.phase.get.query({
+            projectPath: this.projectPath,
+            phaseId: selectedPhaseId
+          })
+
+          if (!selectedPhase) break
+
+          this.openPhaseEditModal(
+            selectedPhase.id,
+            selectedPhase.name,
+            selectedPhase.from,
+            selectedPhase.to,
+            col
+          )
+          break
+        }
+        case 'o':
+        case 'O':
+          event.preventDefault()
+          if (this.selectedColumn === 0) {
+            this.openAimModal()
+          } else {
+            // Determine parent phase based on selected column
+            const targetColumn = this.selectedColumn
+            let parentPhaseId: string | null = null
+            const selectedIndex = this.getSelectedPhase(targetColumn)
+
+            if (targetColumn === 1) {
+              // Creating in column 1 -> parent is null (root phase)
+              parentPhaseId = null
+            } else {
+              // Creating in column 2+ -> parent is the selected phase in column to the left
+              const parentColumn = targetColumn - 1
+              parentPhaseId = this.getSelectedPhaseId(parentColumn)
+            }
+
+            this.openPhaseModal(targetColumn, parentPhaseId, selectedIndex)
+          }
+          break
+        case 'd': {
+          event.preventDefault()
+          const col = this.selectedColumn
+
+          if (col === 0) {
+            // Root aims column - delete aims
+            const selectedIndex = this.getSelectedPhase(col)
+            const aims = dataStore.getAimsForPhase('null')
+            if (!aims || selectedIndex >= aims.length) break
+
+            // Check if this is confirmation (second press)
+            if (this.pendingDeleteAimIndex === selectedIndex) {
+              // Confirm delete
+              await dataStore.deleteAim(aims[selectedIndex].id, 'null')
+              this.clearPendingDelete()
+            } else {
+              // First press - mark for deletion
+              this.setPendingDeleteAim(selectedIndex)
+            }
+          } else {
+            // Phase columns - delete phases
+            // Get selected phase ID from store
+            const selectedPhaseId = this.getSelectedPhaseId(col)
+            if (!selectedPhaseId) break
+
+            // Get the actual phase object to access its parent
+            // We need to fetch it since we only have the ID
+            const selectedPhase = await trpc.phase.get.query({
+              projectPath: this.projectPath,
+              phaseId: selectedPhaseId
+            })
+
+            if (!selectedPhase) break
+
+            // Check if this is confirmation (second press)
+            if (this.pendingDeletePhaseId === selectedPhase.id) {
+              // Confirm delete
+              await dataStore.deletePhase(selectedPhase.id, selectedPhase.parent)
+              this.clearPendingDelete()
+            } else {
+              // First press - mark for deletion
+              this.setPendingDeletePhase(selectedPhase.id)
+            }
+          }
+          break
+        }
+      }
+    },
+
     setSelectedPhase(columnIndex: number, phaseIndex: number, phaseId?: string) {
       this.selectedPhaseByColumn[columnIndex] = phaseIndex
       if (phaseId !== undefined) {
@@ -392,6 +621,50 @@ export const useUIStore = defineStore('ui', {
       this.pendingDeletePhaseId = null
       this.pendingDeleteAimIndex = null
       // Don't clear selectedAim here - only clear it when actually deleting or when leaving phase-edit mode
+    },
+
+    // Scroll selected element into 1/4 to 3/4 viewport range
+    async scrollIntoViewIfNeeded() {
+      await nextTick()
+
+      // Find the active column's scrollable container
+      const container = document.querySelector('.selected-outlined .phase-list, .selected-outlined .aims-list') as HTMLElement
+      if (!container) return
+
+      // Find the selected element
+      const selected = container.querySelector('.phase-container.selected-outlined, .aim-item.selected-outlined') as HTMLElement
+      if (!selected) return
+
+      const selectedRect = selected.getBoundingClientRect()
+
+      const viewportHeight = window.innerHeight
+      const quarterMark = viewportHeight * 0.25
+      const threeQuarterMark = viewportHeight * 0.75
+
+      // Check if element is outside 1/4 to 3/4 range
+      const isAboveRange = selectedRect.top < quarterMark
+      const isBelowRange = selectedRect.bottom > threeQuarterMark
+
+      if (!isAboveRange && !isBelowRange) return
+
+      // Calculate target scroll position to keep element in range
+      let targetScroll = container.scrollTop
+
+      if (isBelowRange) {
+        // Scroll down: position element so its bottom is at 3/4 mark
+        const offset = selectedRect.bottom - threeQuarterMark
+        targetScroll += offset
+      } else if (isAboveRange) {
+        // Scroll up: position element so its top is at 1/4 mark
+        const offset = selectedRect.top - quarterMark
+        targetScroll += offset
+      }
+
+      // Clamp to valid scroll range
+      const maxScroll = container.scrollHeight - container.clientHeight
+      targetScroll = Math.max(0, Math.min(targetScroll, maxScroll))
+
+      container.scrollTo({ top: targetScroll, behavior: 'smooth' })
     },
 
   }
