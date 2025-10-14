@@ -70,6 +70,7 @@ watch(() => props.phases, (phases) => {
         :is-active="isActive && index === selectedPhaseIndex"
         :column-index="columnIndex"
         :column-depth="columnDepth"
+        @click="() => $emit('phase-selected', columnIndex, index, phase.id)"
       />
     </div>
   </div>

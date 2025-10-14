@@ -123,6 +123,19 @@ const handlePhaseCreated = async (columnIndex: number, newPhaseId?: string) => {
   }
 }
 
+const handlePhaseSelected = (columnIndex: number, phaseIndex: number, phaseId: string) => {
+  uiStore.setSelectedPhase(columnIndex, phaseIndex, phaseId)
+
+  // Handle sub-phase selection persistence
+  if (columnIndex > 1) {
+    const parentColumn = columnIndex - 1
+    const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
+    if (parentPhaseId) {
+      uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = phaseIndex
+    }
+  }
+}
+
 // Scroll selected element into 1/4 to 3/4 viewport range
 const scrollIntoViewIfNeeded = async () => {
   await nextTick()
