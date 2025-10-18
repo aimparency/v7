@@ -341,42 +341,9 @@ export const useUIStore = defineStore('ui', {
             const currentPhaseIndex = this.getSelectedPhase(col)
             const maxIndex = this.getPhaseCount(col) - 1
             if (currentPhaseIndex < maxIndex) {
-              // For column 1: store and restore child column selection when navigating parent phases
-              if (col === 1) {
-                // Store current child selection with current parent phase ID
-                const currentPhaseId = this.getSelectedPhaseId(col)
-                if (currentPhaseId) {
-                  const childSelection = this.selectedPhaseByColumn[col + 1] ?? 0
-                  console.log(`Storing sub-phase selection before navigating (j): parent ${currentPhaseId} -> index ${childSelection}`)
-                  this.lastSelectedSubPhaseIndexByPhase[currentPhaseId] = childSelection
-                }
-              }
-
-              // Update parent phase selection
+              // Update parent phase selection (this will handle child column restoration)
               this.setSelectedPhase(col, currentPhaseIndex + 1)
               this.scrollIntoViewIfNeeded()
-
-              // For column 1: restore child column's selection for new parent phase
-              if (col === 1) {
-                const newPhaseId = this.getSelectedPhaseId(col)
-                if (newPhaseId) {
-                  const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[newPhaseId] ?? 0
-                  console.log(`Restoring sub-phase selection after navigating (j): parent ${newPhaseId} -> index ${rememberedIndex}`)
-                  // Directly update selectedPhaseByColumn without updating phaseId (that will be set by PhaseColumn watcher)
-                  this.selectedPhaseByColumn[col + 1] = rememberedIndex
-                }
-              }
-
-              // Store sub-phase selection for persistence
-              // Only for col > 1 (columns with a parent phase in col-1)
-              if (col > 1) {
-                const parentColumn = col - 1
-                const parentPhaseId = this.getSelectedPhaseId(parentColumn)
-                if (parentPhaseId) {
-                  console.log(`Storing sub-phase selection (j): parent ${parentPhaseId} -> index ${currentPhaseIndex + 1}`)
-                  this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = currentPhaseIndex + 1
-                }
-              }
             }
           }
           break
@@ -400,42 +367,9 @@ export const useUIStore = defineStore('ui', {
             // Phase columns - navigate using selectedPhase
             const currentPhaseIndex = this.getSelectedPhase(col)
             if (currentPhaseIndex > 0) {
-              // For column 1: store and restore child column selection when navigating parent phases
-              if (col === 1) {
-                // Store current child selection with current parent phase ID
-                const currentPhaseId = this.getSelectedPhaseId(col)
-                if (currentPhaseId) {
-                  const childSelection = this.selectedPhaseByColumn[col + 1] ?? 0
-                  console.log(`Storing sub-phase selection before navigating (k): parent ${currentPhaseId} -> index ${childSelection}`)
-                  this.lastSelectedSubPhaseIndexByPhase[currentPhaseId] = childSelection
-                }
-              }
-
-              // Update parent phase selection
+              // Update parent phase selection (this will handle child column restoration)
               this.setSelectedPhase(col, currentPhaseIndex - 1)
               this.scrollIntoViewIfNeeded()
-
-              // For column 1: restore child column's selection for new parent phase
-              if (col === 1) {
-                const newPhaseId = this.getSelectedPhaseId(col)
-                if (newPhaseId) {
-                  const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[newPhaseId] ?? 0
-                  console.log(`Restoring sub-phase selection after navigating (k): parent ${newPhaseId} -> index ${rememberedIndex}`)
-                  // Directly update selectedPhaseByColumn without updating phaseId (that will be set by PhaseColumn watcher)
-                  this.selectedPhaseByColumn[col + 1] = rememberedIndex
-                }
-              }
-
-              // Store sub-phase selection for persistence
-              // Only for col > 1 (columns with a parent phase in col-1)
-              if (col > 1) {
-                const parentColumn = col - 1
-                const parentPhaseId = this.getSelectedPhaseId(parentColumn)
-                if (parentPhaseId) {
-                  console.log(`Storing sub-phase selection (k): parent ${parentPhaseId} -> index ${currentPhaseIndex - 1}`)
-                  this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = currentPhaseIndex - 1
-                }
-              }
             }
           }
           break
@@ -732,9 +666,27 @@ export const useUIStore = defineStore('ui', {
     },
 
     setSelectedPhase(columnIndex: number, phaseIndex: number, phaseId?: string) {
+      // Store the old phase ID before changing
+      const oldPhaseId = this.selectedPhaseIdByColumn[columnIndex]
+
+      // If we're changing phase in column 1+, store the current child column selection
+      if (columnIndex >= 1 && oldPhaseId && oldPhaseId !== phaseId) {
+        const childSelection = this.selectedPhaseByColumn[columnIndex + 1] ?? 0
+        console.log(`Storing child selection for parent ${oldPhaseId}: index ${childSelection}`)
+        this.lastSelectedSubPhaseIndexByPhase[oldPhaseId] = childSelection
+      }
+
+      // Update the selection
       this.selectedPhaseByColumn[columnIndex] = phaseIndex
       if (phaseId !== undefined) {
         this.selectedPhaseIdByColumn[columnIndex] = phaseId
+
+        // Restore the child column selection for the new phase
+        if (columnIndex >= 1) {
+          const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[phaseId] ?? 0
+          console.log(`Restoring child selection for parent ${phaseId}: index ${rememberedIndex}`)
+          this.selectedPhaseByColumn[columnIndex + 1] = rememberedIndex
+        }
       }
     },
 
