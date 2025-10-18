@@ -6,33 +6,34 @@ import { useUIStore } from '../stores/ui'
 import PhaseComponent from './Phase.vue'
 
 interface Props {
-  phases: Phase[]
+  parentPhaseId: string | null
   columnIndex: number
   columnDepth?: number
-  parentPhase?: Phase | null
   isSelected: boolean
   isActive: boolean
   selectedPhaseIndex: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  columnDepth: 1,
-  parentPhase: null
+  columnDepth: 1
 })
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 
+// Compute phases for this column based on parent phase ID
+const phases = computed(() => dataStore.getPhasesByParentId(props.parentPhaseId))
+
 // Compute which phase in this column is visually selected
 const selectedPhase = computed(() => {
-  if (props.phases.length === 0) return null
-  return props.phases[props.selectedPhaseIndex] ?? props.phases[0]
+  if (phases.value.length === 0) return null
+  return phases.value[props.selectedPhaseIndex] ?? phases.value[0]
 })
 
 // When this column becomes selected, update rightmost column tracking
 watch(() => props.isSelected, (isSelected) => {
   if (isSelected) {
-    if (props.phases.length === 0) {
+    if (phases.value.length === 0) {
       uiStore.setRightmostColumn(props.columnIndex)
     } else {
       uiStore.setMinRightmost(props.columnIndex + 1)
@@ -49,9 +50,16 @@ watch(() => [selectedPhase.value, props.selectedPhaseIndex] as const, ([phase, i
 
 
 
+// Load phases when parentPhaseId changes
+watch(() => props.parentPhaseId, (parentPhaseId) => {
+  if (parentPhaseId) {
+    dataStore.loadPhases(uiStore.projectPath, parentPhaseId)
+  }
+}, { immediate: true })
+
 // Report phase count to store whenever phases change
-watch(() => props.phases, (phases) => {
-  uiStore.setPhaseCount(props.columnIndex, phases.length)
+watch(() => phases.value, (phasesArray) => {
+  uiStore.setPhaseCount(props.columnIndex, phasesArray.length)
 }, { immediate: true })
 </script>
 
@@ -70,7 +78,7 @@ watch(() => props.phases, (phases) => {
         :is-active="isActive && index === selectedPhaseIndex"
         :column-index="columnIndex"
         :column-depth="columnDepth"
-        @click="() => $emit('phase-selected', columnIndex, index, phase.id)"
+        @click="() => uiStore.setSelectedPhase(columnIndex, index, phase.id)"
       />
     </div>
   </div>

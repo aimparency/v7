@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import type { Phase } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import AimComponent from './Aim.vue'
-import PhaseColumn from './PhaseColumn.vue'
 
 interface Props {
   phase: Phase
@@ -23,30 +22,8 @@ const emit = defineEmits(['click'])
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 
-// Get child phases and aims from the store
-const childPhases = computed(() => dataStore.getPhasesByParentId(props.phase.id))
+// Get aims from the store
 const phaseAims = computed(() => dataStore.getAimsForPhase(props.phase.id))
-
-// Load child phases when this phase is selected
-watch(() => props.isSelected, (isSelected) => {
-  if (isSelected) {
-    dataStore.loadPhases(uiStore.projectPath, props.phase.id)
-  }
-}, { immediate: true })
-
-// Calculate column positioning for child
-const childColumnStyle = computed(() => {
-  const childColumnIndex = props.columnIndex + 1
-  const leftOffset = childColumnIndex * 50
-  return {
-    position: 'absolute',
-    left: `${leftOffset}%`,
-    top: '0',
-    width: '50%',
-    height: '100%',
-    zIndex: childColumnIndex + 1
-  }
-})
 
 // Format date with appropriate granularity based on duration
 const formatDate = (timestamp: number, duration: number): string => {
@@ -146,20 +123,6 @@ onMounted(async () => {
       />
     </div>
   </div>
-
-  <!-- Teleport child column when this phase is selected -->
-  <Teleport to=".main" v-if="isSelected">
-    <PhaseColumn
-      :phases="childPhases"
-      :column-index="columnIndex + 1"
-      :column-depth="columnDepth + 1"
-      :parent-phase="phase"
-      :style="childColumnStyle"
-      :is-selected="uiStore.selectedColumn === columnIndex + 1"
-      :is-active="uiStore.selectedColumn === columnIndex + 1"
-      :selected-phase-index="uiStore.getSelectedPhase(columnIndex + 1)"
-    />
-  </Teleport>
 </template>
 
 <style scoped>

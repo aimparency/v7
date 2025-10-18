@@ -38,6 +38,7 @@ export const useUIStore = defineStore('ui', {
 
     // Column tracking for navigation
     rightmostColumnIndex: 1, // Track the rightmost (empty) column index
+    visibleColumnCount: 1, // Number of phase columns to render (excludes root aims column)
     focusedColumnIndex: 0, // Track which column is currently focused (deprecated - use selectedColumn)
     selectedColumn: 0, // Currently selected column (visual selection)
 
@@ -45,6 +46,7 @@ export const useUIStore = defineStore('ui', {
     selectedPhaseByColumn: {} as Record<number, number>, // columnIndex -> phaseIndex
     selectedPhaseIdByColumn: {} as Record<number, string>, // columnIndex -> phaseId
     phaseCountByColumn: {} as Record<number, number>, // columnIndex -> total phase count
+    columnParentPhaseId: { 0: null } as Record<number, string | null>, // columnIndex -> parent phase ID whose children this column shows (0 = root phases)
 
     // Aim selection (only set when in phase-edit or aim-edit mode)
     selectedAim: null as { phaseId: string, aimIndex: number } | null,
@@ -271,10 +273,14 @@ export const useUIStore = defineStore('ui', {
     // Column tracking actions
     setRightmostColumn(columnIndex: number) {
       this.rightmostColumnIndex = columnIndex
+      // Update visible column count (rightmost is the empty column, so visible count is rightmost index)
+      this.visibleColumnCount = Math.max(1, columnIndex)
     },
 
     setMinRightmost(columnIndex: number) {
       this.rightmostColumnIndex = Math.max(this.rightmostColumnIndex, columnIndex)
+      // Update visible column count
+      this.visibleColumnCount = Math.max(1, this.rightmostColumnIndex)
     },
 
     setFocusedColumn(columnIndex: number) {
@@ -668,9 +674,13 @@ export const useUIStore = defineStore('ui', {
     setSelectedPhase(columnIndex: number, phaseIndex: number, phaseId?: string) {
       // Store the old phase ID before changing
       const oldPhaseId = this.selectedPhaseIdByColumn[columnIndex]
+      const oldPhaseIndex = this.selectedPhaseByColumn[columnIndex]
 
-      // If we're changing phase in column 1+, store the current child column selection
-      if (columnIndex >= 1 && oldPhaseId && oldPhaseId !== phaseId) {
+      console.log(`setSelectedPhase(${columnIndex}, ${phaseIndex}, ${phaseId}) - old: ${oldPhaseId} @ ${oldPhaseIndex}`)
+
+      // If we're changing phase in column 0+, store the current child column selection
+      // Only store if we're actually changing to a different phase
+      if (columnIndex >= 0 && oldPhaseId && phaseId && oldPhaseId !== phaseId) {
         const childSelection = this.selectedPhaseByColumn[columnIndex + 1] ?? 0
         console.log(`Storing child selection for parent ${oldPhaseId}: index ${childSelection}`)
         this.lastSelectedSubPhaseIndexByPhase[oldPhaseId] = childSelection
@@ -681,8 +691,13 @@ export const useUIStore = defineStore('ui', {
       if (phaseId !== undefined) {
         this.selectedPhaseIdByColumn[columnIndex] = phaseId
 
+        // Set the parent phase ID for the child column
+        // Column N+1 shows children of the phase selected in column N
+        this.columnParentPhaseId[columnIndex + 1] = phaseId
+
         // Restore the child column selection for the new phase
-        if (columnIndex >= 1) {
+        // Only restore if we're actually changing to a different phase
+        if (columnIndex >= 0 && phaseId !== oldPhaseId) {
           const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[phaseId] ?? 0
           console.log(`Restoring child selection for parent ${phaseId}: index ${rememberedIndex}`)
           this.selectedPhaseByColumn[columnIndex + 1] = rememberedIndex
