@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, watch, nextTick } from 'vue'
-import type { Phase } from 'shared'
+import { computed } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import PhaseComponent from './Phase.vue'
@@ -23,44 +22,6 @@ const uiStore = useUIStore()
 
 // Compute phases for this column based on parent phase ID
 const phases = computed(() => dataStore.getPhasesByParentId(props.parentPhaseId))
-
-// Compute which phase in this column is visually selected
-const selectedPhase = computed(() => {
-  if (phases.value.length === 0) return null
-  return phases.value[props.selectedPhaseIndex] ?? phases.value[0]
-})
-
-// When this column becomes selected, update rightmost column tracking
-watch(() => props.isSelected, (isSelected) => {
-  if (isSelected) {
-    if (phases.value.length === 0) {
-      uiStore.setRightmostColumn(props.columnIndex)
-    } else {
-      uiStore.setMinRightmost(props.columnIndex + 1)
-    }
-  }
-}, { immediate: true })
-
-// When selected phase changes, report it to the store
-watch(() => [selectedPhase.value, props.selectedPhaseIndex] as const, ([phase, index]) => {
-  if (phase) {
-    uiStore.setSelectedPhase(props.columnIndex, index, phase.id)
-  }
-}, { immediate: true })
-
-
-
-// Load phases when parentPhaseId changes
-watch(() => props.parentPhaseId, (parentPhaseId) => {
-  if (parentPhaseId) {
-    dataStore.loadPhases(uiStore.projectPath, parentPhaseId)
-  }
-}, { immediate: true })
-
-// Report phase count to store whenever phases change
-watch(() => phases.value, (phasesArray) => {
-  uiStore.setPhaseCount(props.columnIndex, phasesArray.length)
-}, { immediate: true })
 </script>
 
 <template>
@@ -78,7 +39,7 @@ watch(() => phases.value, (phasesArray) => {
         :is-active="isActive && index === selectedPhaseIndex"
         :column-index="columnIndex"
         :column-depth="columnDepth"
-        @click="() => uiStore.setSelectedPhase(columnIndex, index, phase.id)"
+        @click="() => uiStore.selectPhase(columnIndex, index)"
       />
     </div>
   </div>

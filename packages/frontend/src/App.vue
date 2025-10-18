@@ -14,14 +14,15 @@ const dataStore = useDataStore()
 const appRef = ref<HTMLDivElement | null>(null)
 const projectPathInput = ref('')
 
-// Get root phases from the store
-const rootPhases = computed(() => dataStore.getPhasesByParentId(null))
-
 // Container offset based on viewport start from store
 const containerOffset = computed(() => {
-  const columnWidth = 50 // Each column is 50% wide
+  const columnWidth = 100 / uiStore.viewportSize
   const offset = uiStore.viewportStart * columnWidth
   return `translateX(-${offset}%)`
+})
+
+const columnWidth = computed(() => {
+  return `${100 / uiStore.viewportSize}%`
 })
 
 const handleSelectProject = async () => {
@@ -56,13 +57,6 @@ const formatRelativeTime = (timestamp: number): string => {
 const closeProject = () => {
   // Just clearing the project path will reset the app state
   uiStore.setProjectPath('')
-}
-
-const handlePhaseSelected = (columnIndex: number, phaseIndex: number, phaseId: string) => {
-  uiStore.setSelectedPhase(columnIndex, phaseIndex, phaseId)
-
-  // When a phase is selected, lazy-load its children
-  dataStore.loadPhases(uiStore.projectPath, phaseId)
 }
 
 // Update keyboard hints based on mode and selected column
@@ -110,23 +104,20 @@ watch(() => [uiStore.showPhaseModal, uiStore.showAimModal], async () => {
 })
 
 onMounted(async () => {
-  uiStore.setSelectedColumn(0)
+  // Set initial focus to the first phase column
+  uiStore.setSelectedColumn(0);
 
   if (uiStore.projectPath) {
-    await dataStore.loadProject(uiStore.projectPath)
+    // Load all project data first
+    await dataStore.loadProject(uiStore.projectPath);
 
-    // Set initial root aim selection to last remembered position, clamped to valid range
-    const aims = dataStore.getAimsForPhase('null') || []
-    const validIndex = Math.min(uiStore.lastSelectedRootAimIndex, Math.max(0, aims.length - 1))
-    uiStore.setSelectedPhase(0, validIndex)
-  } else {
-    // No project loaded, default to 0
-    uiStore.setSelectedPhase(0, 0)
+    // Then, select the first root phase (index 0 in column 0) to kick off the cascade
+    await uiStore.selectPhase(0, 0);
   }
 
   // Auto-focus app element for keyboard navigation
-  await nextTick()
-  appRef.value?.focus()
+  await nextTick();
+  appRef.value?.focus();
 })
 
 </script>
@@ -187,25 +178,22 @@ onMounted(async () => {
     </div>
 
     <!-- Main Interface -->
-    <main v-else class="main" :style="{ transform: containerOffset }">
-      <!-- Root Aims Column (Column 0) -->
+    <main v-else class="main" :style="{ transform: containerOffset, '--column-width': columnWidth }">
+      <!-- Root Aims Column (Column -1) -->
       <RootAimsColumn
-        class="column-0"
-        :is-selected="uiStore.selectedColumn === 0"
-        :is-active="uiStore.selectedColumn === 0"
+        class="column-aims"
       />
 
-      <!-- First Phase Column (Column 1) -->
+      <!-- Phase Columns (0, 1, 2...) -->
       <PhaseColumn
-        :phases="rootPhases"
-        :column-index="1"
-        :column-depth="1"
-        :parent-phase="null"
-        class="column-1"
-        :is-selected="uiStore.selectedColumn === 1"
-        :is-active="uiStore.selectedColumn === 1"
-        :selected-phase-index="uiStore.getSelectedPhase(1)"
-        @phase-selected="handlePhaseSelected"
+        v-for="colIndex in [...Array(uiStore.visibleColumnCount).keys()]"
+        :key="colIndex"
+        :column-index="colIndex"
+        :parent-phase-id="uiStore.columnParentPhaseId[colIndex]"
+        class="column"
+        :is-selected="uiStore.selectedColumn === colIndex"
+        :is-active="uiStore.selectedColumn === colIndex"
+        :selected-phase-index="uiStore.getSelectedPhase(colIndex)"
       />
     </main>
 
@@ -441,29 +429,18 @@ onMounted(async () => {
 .main {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   overflow: visible;
   position: relative;
   transition: transform 0.3s ease;
 }
 
-/* Base column positioning */
-.column-0 {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 50%;
+.column-aims,
+.column {
+  flex-basis: var(--column-width);
+  flex-shrink: 0;
   height: 100%;
-  z-index: 1;
-}
-
-.column-1 {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 50%;
-  height: 100%;
-  z-index: 1;
+  border-right: 1px solid #444;
 }
 
 .help {

@@ -83,12 +83,6 @@ const progressColor = computed(() => {
 const isPendingDelete = computed(() => {
   return uiStore.pendingDeletePhaseId === props.phase.id
 })
-
-// Load aims on mount
-onMounted(async () => {
-  // Aims are now loaded centrally
-  await dataStore.loadAllAims(uiStore.projectPath)
-})
 </script>
 
 <template>

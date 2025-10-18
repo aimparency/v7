@@ -1,19 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Aim } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import AimComponent from './Aim.vue'
 
-interface Props {
-  isSelected: boolean
-  isActive: boolean
-}
-
-const props = defineProps<Props>()
-
 const dataStore = useDataStore()
 const uiStore = useUIStore()
+
+const isSelected = computed(() => uiStore.selectedColumn === -1)
+const isActive = computed(() => uiStore.selectedColumn === -1)
 
 // Load uncommitted aims
 const rootAims = computed(() => {

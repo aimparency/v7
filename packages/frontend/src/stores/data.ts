@@ -143,8 +143,8 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async loadPhases(projectPath: string, parentId: string | null) {
-      if (!projectPath) return;
+    async loadPhases(projectPath: string, parentId: string | null): Promise<Phase[]> {
+      if (!projectPath) return [];
       this.loading = true;
       try {
         const phases = await trpc.phase.list.query({ projectPath, parentPhaseId: parentId });
@@ -154,9 +154,11 @@ export const useDataStore = defineStore('data', {
           childIds.push(phase.id);
         }
         this.childrenByParentId[parentId ?? 'null'] = childIds;
+        return phases;
       } catch (error) {
         this.error = 'Failed to load phases';
         console.error(this.error, error);
+        return [];
       } finally {
         this.loading = false;
       }
