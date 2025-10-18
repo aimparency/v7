@@ -507,8 +507,23 @@ export const useUIStore = defineStore('ui', {
             // Check if this is confirmation (second press)
             if (this.pendingDeletePhaseId === selectedPhase.id) {
               // Confirm delete
-              await dataStore.deletePhase(selectedPhase.id, selectedPhase.parent)
+              const col = this.selectedColumn;
+              const deletedIndex = this.getSelectedPhase(col);
+              const parentId = selectedPhase.parent; // The parent of the column we are in
+
+              await dataStore.deletePhase(selectedPhase.id, parentId)
               this.clearPendingDelete()
+
+              // After delete, reload the current column's data
+              await dataStore.loadPhases(this.projectPath, parentId);
+
+              // Get the new count and determine the new index to select
+              const newCount = dataStore.getPhasesByParentId(parentId).length;
+              const newIndex = Math.min(deletedIndex, Math.max(0, newCount - 1));
+
+              // Now, re-run the selection cascade from the current column with the new index
+              await this.selectPhase(col, newIndex);
+
             } else {
               // First press - mark for deletion
               this.setPendingDeletePhase(selectedPhase.id)

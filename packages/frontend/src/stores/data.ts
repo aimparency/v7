@@ -229,13 +229,6 @@ export const useDataStore = defineStore('data', {
           projectPath: uiStore.projectPath,
           phaseId: phaseId
         });
-
-        // Reload phases
-        if (parentPhaseId === null) {
-          await this.loadPhases(uiStore.projectPath, null);
-        } else {
-          uiStore.triggerPhaseReload();
-        }
       } catch (error) {
         console.error('Failed to delete phase:', error);
       }
