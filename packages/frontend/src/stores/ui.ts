@@ -53,7 +53,7 @@ export const useUIStore = defineStore('ui', {
     selectedAim: null as { phaseId: string, aimIndex: number } | null,
 
     // Viewport for column scrolling
-    viewportStart: 0, // Left edge of visible window
+    viewportStart: -1, // Left edge of visible window
     viewportSize: 3, // Number of columns visible at once
 
     // Phase reload trigger (increment to force reload)
@@ -343,7 +343,9 @@ export const useUIStore = defineStore('ui', {
             // Phase columns - navigate using selectedPhase
             const currentPhaseIndex = this.getSelectedPhase(col)
             const maxIndex = this.getPhaseCount(col) - 1
+            console.log('asd')
             if (currentPhaseIndex < maxIndex) {
+            console.log('asb')
               // Update parent phase selection (this will handle child column restoration)
               this.setSelection(col, currentPhaseIndex + 1)
               this.scrollIntoViewIfNeeded()
@@ -683,6 +685,7 @@ export const useUIStore = defineStore('ui', {
       // Get the actual phase ID from the data store
       const parentId = this.columnParentPhaseId[columnIndex] ?? null;
       const phases = dataStore.getPhasesByParentId(parentId);
+      this.phaseCountByColumn[columnIndex] = phases.length;
       const phase = phases[phaseIndex];
       const phaseId = phase?.id;
 
@@ -767,7 +770,7 @@ export const useUIStore = defineStore('ui', {
       this.clearPendingDelete()
 
       // Edge-triggered viewport scroll
-      if (currentIndex === this.viewportStart && this.viewportStart > 0) {
+      if (currentIndex === this.viewportStart && this.viewportStart > -1) {
         this.viewportStart--
       }
 

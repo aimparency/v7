@@ -17,7 +17,8 @@ const projectPathInput = ref('')
 // Container offset based on viewport start from store
 const containerOffset = computed(() => {
   const columnWidth = 100 / uiStore.viewportSize
-  const offset = uiStore.viewportStart * columnWidth
+  const columnsToShift = uiStore.viewportStart + 1
+  const offset = columnsToShift * columnWidth
   return `translateX(-${offset}%)`
 })
 
