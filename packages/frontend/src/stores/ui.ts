@@ -77,6 +77,31 @@ export const useUIStore = defineStore('ui', {
     isInProjectSelection: (state) => !state.projectPath,
     canNavigateRight: (state) => state.focusedColumnIndex < state.rightmostColumnIndex,
     canNavigateLeft: (state) => state.focusedColumnIndex > 0,
+
+    // Reactive phase selection getters
+    getSelectedPhase: (state) => (columnIndex: number): number => {
+      const index = state.selectedPhaseByColumn[columnIndex] ?? 0
+      const phaseCount = state.phaseCountByColumn[columnIndex] ?? 0
+
+      if (phaseCount === 0) {
+        return 0
+      }
+
+      // Default to 0 if index is out of bounds
+      if (index >= phaseCount) {
+        return 0
+      }
+
+      return index
+    },
+
+    getSelectedPhaseId: (state) => (columnIndex: number): string | null => {
+      return state.selectedPhaseIdByColumn[columnIndex] ?? null
+    },
+
+    getPhaseCount: (state) => (columnIndex: number): number => {
+      return state.phaseCountByColumn[columnIndex] ?? 0
+    },
   },
   
   actions: {
@@ -267,6 +292,24 @@ export const useUIStore = defineStore('ui', {
       this.mode = mode
     },
 
+    // Global keyboard handler - single source of truth for all navigation
+    async handleGlobalKeydown(event: KeyboardEvent, dataStore: any) {
+      console.log('Key pressed:', event.key, 'mode:', this.mode, 'column:', this.selectedColumn)
+
+      // Don't handle keys when modals are open
+      if (this.showPhaseModal || this.showAimModal) return
+
+      const mode = this.mode
+
+      if (mode === 'column-navigation') {
+        await this.handleColumnNavigationKeys(event, dataStore)
+      } else if (mode === 'phase-edit') {
+        await this.handlePhaseEditKeys(event, dataStore)
+      } else if (mode === 'aim-edit') {
+        this.handleAimEditKeys(event)
+      }
+    },
+
     // Keyboard navigation handlers
     async handleColumnNavigationKeys(event: KeyboardEvent, dataStore: any) {
       switch (event.key) {
@@ -291,22 +334,46 @@ export const useUIStore = defineStore('ui', {
               const newIndex = Math.min(currentIndex + 1, aims.length - 1)
               this.setSelectedPhase(col, newIndex)
               this.lastSelectedRootAimIndex = newIndex
-              await this.scrollIntoViewIfNeeded()
+              this.scrollIntoViewIfNeeded()
             }
           } else {
             // Phase columns - navigate using selectedPhase
             const currentPhaseIndex = this.getSelectedPhase(col)
             const maxIndex = this.getPhaseCount(col) - 1
             if (currentPhaseIndex < maxIndex) {
+              // For column 1: store and restore child column selection when navigating parent phases
+              if (col === 1) {
+                // Store current child selection with current parent phase ID
+                const currentPhaseId = this.getSelectedPhaseId(col)
+                if (currentPhaseId) {
+                  const childSelection = this.selectedPhaseByColumn[col + 1] ?? 0
+                  console.log(`Storing sub-phase selection before navigating (j): parent ${currentPhaseId} -> index ${childSelection}`)
+                  this.lastSelectedSubPhaseIndexByPhase[currentPhaseId] = childSelection
+                }
+              }
+
+              // Update parent phase selection
               this.setSelectedPhase(col, currentPhaseIndex + 1)
-              await this.scrollIntoViewIfNeeded()
+              this.scrollIntoViewIfNeeded()
+
+              // For column 1: restore child column's selection for new parent phase
+              if (col === 1) {
+                const newPhaseId = this.getSelectedPhaseId(col)
+                if (newPhaseId) {
+                  const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[newPhaseId] ?? 0
+                  console.log(`Restoring sub-phase selection after navigating (j): parent ${newPhaseId} -> index ${rememberedIndex}`)
+                  // Directly update selectedPhaseByColumn without updating phaseId (that will be set by PhaseColumn watcher)
+                  this.selectedPhaseByColumn[col + 1] = rememberedIndex
+                }
+              }
 
               // Store sub-phase selection for persistence
+              // Only for col > 1 (columns with a parent phase in col-1)
               if (col > 1) {
                 const parentColumn = col - 1
                 const parentPhaseId = this.getSelectedPhaseId(parentColumn)
                 if (parentPhaseId) {
-                  console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${currentPhaseIndex + 1}`)
+                  console.log(`Storing sub-phase selection (j): parent ${parentPhaseId} -> index ${currentPhaseIndex + 1}`)
                   this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = currentPhaseIndex + 1
                 }
               }
@@ -327,21 +394,45 @@ export const useUIStore = defineStore('ui', {
               const newIndex = Math.max(currentIndex - 1, 0)
               this.setSelectedPhase(col, newIndex)
               this.lastSelectedRootAimIndex = newIndex
-              await this.scrollIntoViewIfNeeded()
+              this.scrollIntoViewIfNeeded()
             }
           } else {
             // Phase columns - navigate using selectedPhase
             const currentPhaseIndex = this.getSelectedPhase(col)
             if (currentPhaseIndex > 0) {
+              // For column 1: store and restore child column selection when navigating parent phases
+              if (col === 1) {
+                // Store current child selection with current parent phase ID
+                const currentPhaseId = this.getSelectedPhaseId(col)
+                if (currentPhaseId) {
+                  const childSelection = this.selectedPhaseByColumn[col + 1] ?? 0
+                  console.log(`Storing sub-phase selection before navigating (k): parent ${currentPhaseId} -> index ${childSelection}`)
+                  this.lastSelectedSubPhaseIndexByPhase[currentPhaseId] = childSelection
+                }
+              }
+
+              // Update parent phase selection
               this.setSelectedPhase(col, currentPhaseIndex - 1)
-              await this.scrollIntoViewIfNeeded()
+              this.scrollIntoViewIfNeeded()
+
+              // For column 1: restore child column's selection for new parent phase
+              if (col === 1) {
+                const newPhaseId = this.getSelectedPhaseId(col)
+                if (newPhaseId) {
+                  const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[newPhaseId] ?? 0
+                  console.log(`Restoring sub-phase selection after navigating (k): parent ${newPhaseId} -> index ${rememberedIndex}`)
+                  // Directly update selectedPhaseByColumn without updating phaseId (that will be set by PhaseColumn watcher)
+                  this.selectedPhaseByColumn[col + 1] = rememberedIndex
+                }
+              }
 
               // Store sub-phase selection for persistence
+              // Only for col > 1 (columns with a parent phase in col-1)
               if (col > 1) {
                 const parentColumn = col - 1
                 const parentPhaseId = this.getSelectedPhaseId(parentColumn)
                 if (parentPhaseId) {
-                  console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${currentPhaseIndex - 1}`)
+                  console.log(`Storing sub-phase selection (k): parent ${parentPhaseId} -> index ${currentPhaseIndex - 1}`)
                   this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = currentPhaseIndex - 1
                 }
               }
@@ -494,46 +585,161 @@ export const useUIStore = defineStore('ui', {
       }
     },
 
+    // Phase edit mode: j/k = navigate aims, Esc = exit, h/l = expand/collapse, d = delete, o/O = create
+    async handlePhaseEditKeys(event: KeyboardEvent, dataStore: any) {
+      const selectedAim = this.selectedAim
+
+      // Allow Escape even when no aims exist
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        this.clearPendingDelete()
+
+        // Save last selected aim index for root aims
+        if (selectedAim?.phaseId === 'null') {
+          this.setSelectedPhase(0, selectedAim.aimIndex)
+        }
+
+        this.setMode('column-navigation')
+        this.setSelectedAim(null, null)
+        return
+      }
+
+      // Allow o/O even when no aims exist (for creating first aim)
+      if (event.key === 'o' || event.key === 'O') {
+        event.preventDefault()
+        if (!selectedAim) return
+        const aims = dataStore.getAimsForPhase(selectedAim.phaseId)
+        const insertionIndex = (aims && aims.length > 0)
+          ? (event.key === 'o' ? selectedAim.aimIndex + 1 : selectedAim.aimIndex)
+          : 0
+        this.openAimModal(selectedAim.phaseId, insertionIndex)
+        return
+      }
+
+      if (!selectedAim) return
+
+      const aims = dataStore.getAimsForPhase(selectedAim.phaseId)
+
+      // Ensure selected index is valid
+      if (selectedAim.aimIndex >= aims.length) {
+        // Fix invalid selection
+        const validIndex = Math.min(selectedAim.aimIndex, aims.length - 1)
+        this.setSelectedAim(selectedAim.phaseId, validIndex)
+        if (selectedAim.phaseId !== 'null') {
+          this.lastSelectedAimIndexByPhase[selectedAim.phaseId] = validIndex
+        } else {
+          this.lastSelectedRootAimIndex = validIndex
+        }
+        return
+      }
+
+      switch (event.key) {
+        case 'j': {
+          event.preventDefault()
+          if (selectedAim.aimIndex < aims.length - 1) {
+            const newIndex = selectedAim.aimIndex + 1
+            this.setSelectedAim(selectedAim.phaseId, newIndex)
+            if (selectedAim.phaseId !== 'null') {
+              this.lastSelectedAimIndexByPhase[selectedAim.phaseId] = newIndex
+            } else {
+              this.lastSelectedRootAimIndex = newIndex
+            }
+            this.scrollIntoViewIfNeeded()
+          } else {
+            // Force scroll into view even when not moving
+            this.scrollIntoViewIfNeeded()
+          }
+          this.clearPendingDelete() // Navigation cancels pending delete
+
+          // Store sub-phase selection for persistence
+          if (this.selectedColumn > 1) {
+            const parentColumn = this.selectedColumn - 1
+            const parentPhaseId = this.getSelectedPhaseId(parentColumn)
+            if (parentPhaseId) {
+              console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${this.getSelectedPhase(this.selectedColumn)}`)
+              this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = this.getSelectedPhase(this.selectedColumn)
+            }
+          }
+          break
+        }
+        case 'k': {
+          event.preventDefault()
+          if (selectedAim.aimIndex > 0) {
+            const newIndex = selectedAim.aimIndex - 1
+            this.setSelectedAim(selectedAim.phaseId, newIndex)
+            if (selectedAim.phaseId !== 'null') {
+              this.lastSelectedAimIndexByPhase[selectedAim.phaseId] = newIndex
+            } else {
+              this.lastSelectedRootAimIndex = newIndex
+            }
+            this.scrollIntoViewIfNeeded()
+          } else {
+            // Force scroll into view even when not moving
+            this.scrollIntoViewIfNeeded()
+          }
+          this.clearPendingDelete() // Navigation cancels pending delete
+
+          // Store sub-phase selection for persistence
+          if (this.selectedColumn > 1) {
+            const parentColumn = this.selectedColumn - 1
+            const parentPhaseId = this.getSelectedPhaseId(parentColumn)
+            if (parentPhaseId) {
+              console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${this.getSelectedPhase(this.selectedColumn)}`)
+              this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = this.getSelectedPhase(this.selectedColumn)
+            }
+          }
+          break
+        }
+        case 'e': {
+          event.preventDefault()
+          // Get the selected aim
+          const aim = aims[selectedAim.aimIndex]
+          if (aim) {
+            this.openAimEditModal(aim.id, selectedAim.phaseId, selectedAim.aimIndex)
+          }
+          break
+        }
+        case 'd': {
+          event.preventDefault()
+          // Check if this is confirmation (second press)
+          if (this.pendingDeleteAimIndex === selectedAim.aimIndex) {
+            // Confirm delete
+            await dataStore.deleteAim(aims[selectedAim.aimIndex].id, selectedAim.phaseId)
+            this.clearPendingDelete()
+          } else {
+            // First press - mark for deletion
+            this.setPendingDeleteAim(selectedAim.aimIndex)
+          }
+          break
+        }
+        case 'h':
+          event.preventDefault()
+          // TODO: Collapse aim
+          break
+        case 'l':
+          event.preventDefault()
+          // TODO: Expand aim or navigate to child column
+          break
+      }
+    },
+
+    // Aim edit mode: field editing
+    handleAimEditKeys(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        this.setMode('phase-edit')
+      }
+    },
+
     setSelectedPhase(columnIndex: number, phaseIndex: number, phaseId?: string) {
       this.selectedPhaseByColumn[columnIndex] = phaseIndex
       if (phaseId !== undefined) {
         this.selectedPhaseIdByColumn[columnIndex] = phaseId
       }
-
-      // When a phase is selected, restore the selection for its child column.
-      if (phaseId) {
-        const childColumnIndex = columnIndex + 1
-        const restoredIndex = this.lastSelectedSubPhaseIndexByPhase[phaseId] ?? 0
-        this.selectedPhaseByColumn[childColumnIndex] = restoredIndex
-      }
-    },
-
-    getSelectedPhase(columnIndex: number): number {
-      const index = this.selectedPhaseByColumn[columnIndex] ?? 0
-      const phaseCount = this.phaseCountByColumn[columnIndex] ?? 0
-
-      if (phaseCount === 0) {
-        return 0
-      }
-
-      // Default to 0 if index is out of bounds
-      if (index >= phaseCount) {
-        return 0
-      }
-
-      return index
-    },
-
-    getSelectedPhaseId(columnIndex: number): string | null {
-      return this.selectedPhaseIdByColumn[columnIndex] ?? null
     },
 
     setPhaseCount(columnIndex: number, count: number) {
       this.phaseCountByColumn[columnIndex] = count
-    },
-
-    getPhaseCount(columnIndex: number): number {
-      return this.phaseCountByColumn[columnIndex] ?? 0
     },
 
     setSelectedAim(phaseId: string | null, aimIndex: number | null) {

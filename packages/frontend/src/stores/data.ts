@@ -263,12 +263,24 @@ export const useDataStore = defineStore('data', {
           });
         }
 
-        // Reload phase aims
-        await this.loadPhaseAims(uiStore.projectPath, phaseId);
-
-        // Reload root aims in case the aim became orphaned
-        if (phaseId !== 'null') {
-          await this.loadPhaseAims(uiStore.projectPath, 'null');
+        // Reload aims and phases to reflect the deletion
+        // For root aims, we need to reload all aims to see the deletion
+        // For phase aims, we need to reload the phase to see the updated commitments
+        if (phaseId === 'null') {
+          // Force reload all aims by clearing cache first
+          delete this.aims[aimId]
+        } else {
+          // Reload the specific phase to get updated commitments
+          const phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId })
+          if (phase) {
+            this.phases[phaseId] = phase
+          }
+          // Also remove the aim from local aims cache if it became orphaned
+          const aim = this.aims[aimId]
+          if (aim && (!aim.committedIn || aim.committedIn.length === 0)) {
+            // This aim is now a root aim, keep it but mark as uncommitted
+            aim.committedIn = []
+          }
         }
 
         // Adjust selection if needed

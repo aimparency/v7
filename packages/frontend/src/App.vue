@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
-import type { Phase } from 'shared'
 import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
-import { trpc } from './trpc'
 import RootAimsColumn from './components/RootAimsColumn.vue'
 import PhaseColumn from './components/PhaseColumn.vue'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
@@ -26,18 +24,14 @@ const containerOffset = computed(() => {
   return `translateX(-${offset}%)`
 })
 
-const selectProject = async (path: string) => {
-  await dataStore.loadProject(path)
-}
-
-const handleSelectProject = () => {
+const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
-  selectProject(path)
+  dataStore.loadProject(path)
 }
 
 const openProjectFromHistory = async (path: string) => {
   projectPathInput.value = path
-  await selectProject(path)
+  await dataStore.loadProject(path)
 }
 
 const removeFromHistory = (path: string, event: Event) => {
@@ -69,182 +63,6 @@ const handlePhaseSelected = (columnIndex: number, phaseIndex: number, phaseId: s
 
   // When a phase is selected, lazy-load its children
   dataStore.loadPhases(uiStore.projectPath, phaseId)
-
-  // Handle sub-phase selection persistence
-  if (columnIndex > 1) {
-    const parentColumn = columnIndex - 1
-    const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
-    if (parentPhaseId) {
-      uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = phaseIndex
-    }
-  }
-}
-
-
-// Global keyboard handler - single source of truth for all navigation
-const handleGlobalKeydown = (event: KeyboardEvent) => {
-  console.log('Key pressed:', event.key, 'mode:', uiStore.mode, 'column:', uiStore.selectedColumn)
-
-  // Don't handle keys when modals are open
-  if (uiStore.showPhaseModal || uiStore.showAimModal) return
-
-  const mode = uiStore.mode
-
-  if (mode === 'column-navigation') {
-    handleColumnNavigationKeys(event)
-  } else if (mode === 'phase-edit') {
-    handlePhaseEditKeys(event)
-  } else if (mode === 'aim-edit') {
-    handleAimEditKeys(event)
-  }
-}
-
-// Column navigation mode: h/l = change column, j/k = navigate phases, i = enter edit
-const handleColumnNavigationKeys = async (event: KeyboardEvent) => {
-  await uiStore.handleColumnNavigationKeys(event, dataStore)
-}
-
-
-// Phase edit mode: j/k = navigate aims, Esc = exit, h/l = expand/collapse, d = delete, o/O = create
-const handlePhaseEditKeys = async (event: KeyboardEvent) => {
-  const selectedAim = uiStore.selectedAim
-
-  // Allow Escape even when no aims exist
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    uiStore.clearPendingDelete()
-
-    // Save last selected aim index for root aims
-    if (selectedAim?.phaseId === 'null') {
-      uiStore.setSelectedPhase(0, selectedAim.aimIndex)
-    }
-
-    uiStore.setMode('column-navigation')
-    uiStore.setSelectedAim(null, null)
-    return
-  }
-
-  // Allow o/O even when no aims exist (for creating first aim)
-  if (event.key === 'o' || event.key === 'O') {
-    event.preventDefault()
-    if (!selectedAim) return
-    const aims = dataStore.getAimsForPhase(selectedAim.phaseId)
-    const insertionIndex = (aims && aims.length > 0)
-      ? (event.key === 'o' ? selectedAim.aimIndex + 1 : selectedAim.aimIndex)
-      : 0
-    uiStore.openAimModal(selectedAim.phaseId, insertionIndex)
-    return
-  }
-
-  if (!selectedAim) return
-
-  const aims = dataStore.getAimsForPhase(selectedAim.phaseId)
-  // Allow o/O even when no aims exist (for creating first sub-phase)
-
-  // Ensure selected index is valid
-  if (selectedAim.aimIndex >= aims.length) {
-    // Fix invalid selection
-    const validIndex = Math.min(selectedAim.aimIndex, aims.length - 1)
-    uiStore.setSelectedAim(selectedAim.phaseId, validIndex)
-    if (selectedAim.phaseId !== 'null') {
-      uiStore.lastSelectedAimIndexByPhase[selectedAim.phaseId] = validIndex
-    } else {
-      uiStore.lastSelectedRootAimIndex = validIndex
-    }
-    return
-  }
-
-  switch (event.key) {
-    case 'j': {
-      event.preventDefault()
-      if (selectedAim.aimIndex < aims.length - 1) {
-        const newIndex = selectedAim.aimIndex + 1
-        uiStore.setSelectedAim(selectedAim.phaseId, newIndex)
-        if (selectedAim.phaseId !== 'null') {
-          uiStore.lastSelectedAimIndexByPhase[selectedAim.phaseId] = newIndex
-        } else {
-          uiStore.lastSelectedRootAimIndex = newIndex
-        }
-        await uiStore.scrollIntoViewIfNeeded()
-      }
-      uiStore.clearPendingDelete() // Navigation cancels pending delete
-
-      // Store sub-phase selection for persistence
-      if (uiStore.selectedColumn > 1) {
-        const parentColumn = uiStore.selectedColumn - 1
-        const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
-        if (parentPhaseId) {
-          console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${uiStore.getSelectedPhase(uiStore.selectedColumn)}`)
-          uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = uiStore.getSelectedPhase(uiStore.selectedColumn)
-        }
-      }
-      break
-    }
-    case 'k': {
-      event.preventDefault()
-      if (selectedAim.aimIndex > 0) {
-        const newIndex = selectedAim.aimIndex - 1
-        uiStore.setSelectedAim(selectedAim.phaseId, newIndex)
-        if (selectedAim.phaseId !== 'null') {
-          uiStore.lastSelectedAimIndexByPhase[selectedAim.phaseId] = newIndex
-        } else {
-          uiStore.lastSelectedRootAimIndex = newIndex
-        }
-        await uiStore.scrollIntoViewIfNeeded()
-      }
-      uiStore.clearPendingDelete() // Navigation cancels pending delete
-
-      // Store sub-phase selection for persistence
-      if (uiStore.selectedColumn > 1) {
-        const parentColumn = uiStore.selectedColumn - 1
-        const parentPhaseId = uiStore.getSelectedPhaseId(parentColumn)
-        if (parentPhaseId) {
-          console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${uiStore.getSelectedPhase(uiStore.selectedColumn)}`)
-          uiStore.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = uiStore.getSelectedPhase(uiStore.selectedColumn)
-        }
-      }
-      break
-    }
-    case 'e': {
-      event.preventDefault()
-      // Get the selected aim
-      const aim = aims[selectedAim.aimIndex]
-      if (aim) {
-        uiStore.openAimEditModal(aim.id, selectedAim.phaseId, selectedAim.aimIndex)
-      }
-      break
-    }
-    case 'd': {
-      event.preventDefault()
-      // Check if this is confirmation (second press)
-      if (uiStore.pendingDeleteAimIndex === selectedAim.aimIndex) {
-        // Confirm delete
-        await dataStore.deleteAim(aims[selectedAim.aimIndex].id, selectedAim.phaseId)
-        uiStore.clearPendingDelete()
-      } else {
-        // First press - mark for deletion
-        uiStore.setPendingDeleteAim(selectedAim.aimIndex)
-      }
-      break
-    }
-    case 'h':
-      event.preventDefault()
-      // TODO: Collapse aim
-      break
-    case 'l':
-      event.preventDefault()
-      // TODO: Expand aim or navigate to child column
-      break
-  }
-}
-
-
-// Aim edit mode: field editing
-const handleAimEditKeys = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    uiStore.setMode('phase-edit')
-  }
 }
 
 // Update keyboard hints based on mode and selected column
@@ -295,7 +113,7 @@ onMounted(async () => {
   uiStore.setSelectedColumn(0)
 
   if (uiStore.projectPath) {
-    await selectProject(uiStore.projectPath)
+    await dataStore.loadProject(uiStore.projectPath)
 
     // Set initial root aim selection to last remembered position, clamped to valid range
     const aims = dataStore.getAimsForPhase('null') || []
@@ -314,7 +132,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div ref="appRef" class="app" tabindex="0" @keydown="handleGlobalKeydown">
+  <div ref="appRef" class="app" tabindex="0" @keydown="(event) => uiStore.handleGlobalKeydown(event, dataStore)">
     <!-- Header -->
     <header v-if="!uiStore.isInProjectSelection" class="header">
       <div class="status">

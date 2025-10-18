@@ -29,7 +29,7 @@ const selectedPhase = computed(() => {
   return props.phases[props.selectedPhaseIndex] ?? props.phases[0]
 })
 
-// When this column becomes selected, ensure rightmost column tracking is updated
+// When this column becomes selected, update rightmost column tracking
 watch(() => props.isSelected, (isSelected) => {
   if (isSelected) {
     if (props.phases.length === 0) {

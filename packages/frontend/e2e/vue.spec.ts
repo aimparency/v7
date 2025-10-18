@@ -17,7 +17,7 @@ async function createPhase(page: Page, name: string) {
 // https://playwright.dev/docs/intro
 test('visits the app root url', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('h1')).toHaveText('You did it!');
+  await expect(page.locator('h1')).toHaveText('Aimparency');
 })
 
 test('sub-phase selection persistence', async ({ page }) => {
@@ -96,23 +96,27 @@ test('sub-phase selection persistence', async ({ page }) => {
       await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(new RegExp(`Sub B${i + 1}`));
     }
 
-    await page.keyboard.press('k'); 
-    await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub A2/);
+    // Navigate back: h (to column 1), k (to Phase A)
+    await page.keyboard.press('h'); // Go back to root phases (column 1)
 
-    // Go back to root phases
-    await page.keyboard.press('h'); // Go back to root
+    // Verify Phase B is selected (we're at column 1, Phase B is the last created phase, index 1)
+    await expect(page.locator('.column-1 .phase-container.selected-outlined')).toHaveText(/Phase B/);
 
-    // Navigate back to Phase A
-    await page.keyboard.press('k'); // Select Phase A
+    // Now select Phase A with k
+    await page.keyboard.press('k'); // Select Phase A (index 0)
 
-    // Verify Phase A is selected
+    // Verify Phase A is selected BEFORE entering its children
     await expect(page.locator('.column-1 .phase-container.selected-outlined')).toHaveText(/Phase A/);
 
-    // Enter Phase A's sub-phases - should select Sub A2 (remembered selection)
-    await page.keyboard.press('l'); // Enter Phase A's sub-phases
-
-    // Verify we're in column 2 (teleported PhaseColumn)
+    // Verify Sub A2 is already visible in column 2 (because column 2 is visible via teleport)
+    // Column 2 should show Phase A's children with Sub A2 selected
     await expect(page.locator('.main .phase-list').nth(1)).toBeVisible();
+    await expect(page.locator('.main .phase-list').nth(1).locator('.phase-container.selected')).toHaveText(/Sub A2/);
+
+    // Enter Phase A's sub-phases - this should focus column 2
+    await page.keyboard.press('l'); // Enter Phase A's sub-phases (column 2 becomes active)
+
+    // Verify Sub A2 is STILL selected AFTER entering the column (now with active state)
     await expect(page.locator('.main .phase-container.selected-outlined')).toHaveText(/Sub A2/);
 
   } finally {
