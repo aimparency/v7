@@ -561,7 +561,8 @@ export const useUIStore = defineStore('ui', {
         const insertionIndex = (aims && aims.length > 0)
           ? (event.key === 'o' ? selectedAim.aimIndex + 1 : selectedAim.aimIndex)
           : 0
-        this.openAimModal(selectedAim.phaseId, insertionIndex)
+        const phaseIdForModal = selectedAim.phaseId === 'null' ? null : selectedAim.phaseId;
+        this.openAimModal(phaseIdForModal, insertionIndex)
         return
       }
 
