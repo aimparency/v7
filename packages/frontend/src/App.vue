@@ -187,7 +187,7 @@ onMounted(async () => {
 
       <!-- Phase Columns (0, 1, 2...) -->
       <PhaseColumn
-        v-for="colIndex in [...Array(uiStore.visibleColumnCount).keys()]"
+        v-for="colIndex in [...Array(uiStore.rightmostColumnIndex + 1).keys()]"
         :key="colIndex"
         :column-index="colIndex"
         :parent-phase-id="uiStore.columnParentPhaseId[colIndex]"

@@ -39,7 +39,6 @@ export const useUIStore = defineStore('ui', {
 
     // Column tracking for navigation
     rightmostColumnIndex: 0, // Track the rightmost (empty) column index
-    visibleColumnCount: 1, // Number of phase columns to render (excludes root aims column)
     focusedColumnIndex: 0, // Track which column is currently focused (deprecated - use selectedColumn)
     selectedColumn: 0, // Currently selected column (visual selection)
 
@@ -272,14 +271,10 @@ export const useUIStore = defineStore('ui', {
     // Column tracking actions
     setRightmostColumn(columnIndex: number) {
       this.rightmostColumnIndex = columnIndex
-      // Update visible column count (rightmost is the empty column, so visible count is rightmost index)
-      this.visibleColumnCount = Math.max(1, columnIndex)
     },
 
     setMinRightmost(columnIndex: number) {
       this.rightmostColumnIndex = Math.max(this.rightmostColumnIndex, columnIndex)
-      // Update visible column count
-      this.visibleColumnCount = Math.max(1, this.rightmostColumnIndex)
     },
 
     setFocusedColumn(columnIndex: number) {
@@ -347,7 +342,7 @@ export const useUIStore = defineStore('ui', {
             if (currentPhaseIndex < maxIndex) {
             console.log('asb')
               // Update parent phase selection (this will handle child column restoration)
-              this.setSelection(col, currentPhaseIndex + 1)
+              this.selectPhase(col, currentPhaseIndex + 1)
               this.scrollIntoViewIfNeeded()
             }
           }
@@ -373,7 +368,7 @@ export const useUIStore = defineStore('ui', {
             const currentPhaseIndex = this.getSelectedPhase(col)
             if (currentPhaseIndex > 0) {
               // Update parent phase selection (this will handle child column restoration)
-              this.setSelection(col, currentPhaseIndex - 1)
+              this.selectPhase(col, currentPhaseIndex - 1)
               this.scrollIntoViewIfNeeded()
             }
           }
@@ -674,14 +669,6 @@ export const useUIStore = defineStore('ui', {
     async selectPhase(columnIndex: number, phaseIndex: number) {
       const dataStore = useDataStore();
 
-      // Clear selection for all deeper columns first
-      for (let i = columnIndex + 1; i <= this.rightmostColumnIndex; i++) {
-        delete this.selectedPhaseByColumn[i];
-        delete this.selectedPhaseIdByColumn[i];
-        delete this.phaseCountByColumn[i];
-        delete this.columnParentPhaseId[i];
-      }
-
       // Get the actual phase ID from the data store
       const parentId = this.columnParentPhaseId[columnIndex] ?? null;
       const phases = dataStore.getPhasesByParentId(parentId);
@@ -696,6 +683,15 @@ export const useUIStore = defineStore('ui', {
       } else {
         delete this.selectedPhaseIdByColumn[columnIndex];
       }
+
+      // Clear state for deeper columns to prevent showing stale data
+      // We set a non-existent parent ID to ensure they render as empty
+      for (let i = columnIndex + 1; i <= this.rightmostColumnIndex; i++) {
+        this.columnParentPhaseId[i] = 'cleared';
+        this.phaseCountByColumn[i] = 0;
+        this.selectedPhaseByColumn[i] = 0;
+        delete this.selectedPhaseIdByColumn[i];
+      }
       
       // If we are selecting a placeholder or an invalid index, stop the cascade.
       if (!phaseId) {
@@ -705,11 +701,14 @@ export const useUIStore = defineStore('ui', {
 
       // --- Start Cascade ---
 
+      // Set the parent for the *next* column immediately.
+      // The column will appear empty until the data is loaded.
+      this.columnParentPhaseId[columnIndex + 1] = phaseId;
+
       // 1. Load children for the next column
       const children = await dataStore.loadPhases(this.projectPath, phaseId);
       this.phaseCountByColumn[columnIndex + 1] = children.length;
-      this.columnParentPhaseId[columnIndex + 1] = phaseId;
-
+      
       // 2. Update column visibility
       this.setMinRightmost(columnIndex + 1);
 

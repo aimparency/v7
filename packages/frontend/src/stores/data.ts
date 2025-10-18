@@ -55,7 +55,7 @@ export const useDataStore = defineStore('data', {
       const newPhaseIndex = newPhases.findIndex(p => p.id === newPhaseId);
 
       if (newPhaseIndex !== -1) {
-          uiStore.setSelectedPhase(columnIndex, newPhaseIndex, newPhaseId);
+          uiStore.selectPhase(columnIndex, newPhaseIndex);
       }
 
       if (columnIndex >= uiStore.rightmostColumnIndex) {
