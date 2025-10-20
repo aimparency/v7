@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { Phase } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
@@ -17,13 +17,30 @@ const props = withDefaults(defineProps<Props>(), {
   columnDepth: 1
 })
 
-const emit = defineEmits(['click'])
+const emit = defineEmits<{
+  'click': []
+  'scroll-request': [element: HTMLElement]
+}>()
+
+const phaseContainerRef = ref<HTMLElement | null>(null)
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 
 // Get aims from the store
 const phaseAims = computed(() => dataStore.getAimsForPhase(props.phase.id))
+
+// Watch for selection and emit scroll request
+watch(() => props.isActive, (isActive) => {
+  if (isActive && phaseContainerRef.value) {
+    emit('scroll-request', phaseContainerRef.value)
+  }
+}, { flush: 'post' })
+
+// Pass through scroll requests from aims
+const handleAimScrollRequest = (element: HTMLElement) => {
+  emit('scroll-request', element)
+}
 
 // Format date with appropriate granularity based on duration
 const formatDate = (timestamp: number, duration: number): string => {
@@ -86,7 +103,7 @@ const isPendingDelete = computed(() => {
 </script>
 
 <template>
-  <div class="phase-container" :class="{ 'selected-outlined': isActive, 'selected': isSelected, 'pending-delete': isPendingDelete }">
+  <div ref="phaseContainerRef" class="phase-container" :class="{ 'selected-outlined': isActive, 'selected': isSelected, 'pending-delete': isPendingDelete }">
     <!-- Progress Bar -->
     <div class="progress-bar">
       <div class="progress-fill" :style="{ width: progressPercent + '%', background: progressColor }"></div>
@@ -109,11 +126,13 @@ const isPendingDelete = computed(() => {
         v-for="(aim, index) in phaseAims"
         :key="aim.id"
         :aim="aim"
+        :is-active="isActive && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index"
         :class="{
           'selected-outlined': isActive && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
           'selected': isSelected && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
           'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phase.id
         }"
+        @scroll-request="handleAimScrollRequest"
       />
     </div>
   </div>

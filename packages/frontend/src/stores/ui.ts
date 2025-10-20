@@ -332,7 +332,6 @@ export const useUIStore = defineStore('ui', {
               const newIndex = Math.min(currentIndex + 1, aims.length - 1)
               this.setSelection(col, newIndex)
               this.lastSelectedRootAimIndex = newIndex
-              this.scrollIntoViewIfNeeded()
             }
           } else {
             // Phase columns - navigate using selectedPhase
@@ -343,7 +342,6 @@ export const useUIStore = defineStore('ui', {
             console.log('asb')
               // Update parent phase selection (this will handle child column restoration)
               this.selectPhase(col, currentPhaseIndex + 1)
-              this.scrollIntoViewIfNeeded()
             }
           }
           break
@@ -361,7 +359,6 @@ export const useUIStore = defineStore('ui', {
               const newIndex = Math.max(currentIndex - 1, 0)
               this.setSelection(col, newIndex)
               this.lastSelectedRootAimIndex = newIndex
-              this.scrollIntoViewIfNeeded()
             }
           } else {
             // Phase columns - navigate using selectedPhase
@@ -369,7 +366,6 @@ export const useUIStore = defineStore('ui', {
             if (currentPhaseIndex > 0) {
               // Update parent phase selection (this will handle child column restoration)
               this.selectPhase(col, currentPhaseIndex - 1)
-              this.scrollIntoViewIfNeeded()
             }
           }
           break
@@ -594,10 +590,6 @@ export const useUIStore = defineStore('ui', {
             } else {
               this.lastSelectedRootAimIndex = newIndex
             }
-            this.scrollIntoViewIfNeeded()
-          } else {
-            // Force scroll into view even when not moving
-            this.scrollIntoViewIfNeeded()
           }
           this.clearPendingDelete() // Navigation cancels pending delete
 
@@ -622,10 +614,6 @@ export const useUIStore = defineStore('ui', {
             } else {
               this.lastSelectedRootAimIndex = newIndex
             }
-            this.scrollIntoViewIfNeeded()
-          } else {
-            // Force scroll into view even when not moving
-            this.scrollIntoViewIfNeeded()
           }
           this.clearPendingDelete() // Navigation cancels pending delete
 
@@ -849,72 +837,6 @@ export const useUIStore = defineStore('ui', {
       // Don't clear selectedAim here - only clear it when actually deleting or when leaving phase-edit mode
     },
 
-    // Helper: Scroll an element into view within a range
-    scrollElementIntoRange(
-      element: HTMLElement,
-      container: HTMLElement,
-      minY: number,
-      maxY: number
-    ) {
-      const elementRect = element.getBoundingClientRect()
-
-      // Check if element is outside the range
-      const isAboveRange = elementRect.top < minY
-      const isBelowRange = elementRect.bottom > maxY
-
-      if (!isAboveRange && !isBelowRange) return
-
-      // Calculate target scroll position to keep element in range
-      let targetScroll = container.scrollTop
-
-      if (isBelowRange) {
-        // Scroll down: position element so its bottom is at maxY
-        const offset = elementRect.bottom - maxY
-        targetScroll += offset
-      } else if (isAboveRange) {
-        // Scroll up: position element so its top is at minY
-        const offset = elementRect.top - minY
-        targetScroll += offset
-      }
-
-      // Clamp to valid scroll range
-      const maxScroll = container.scrollHeight - container.clientHeight
-      targetScroll = Math.max(0, Math.min(targetScroll, maxScroll))
-
-      container.scrollTo({ top: targetScroll, behavior: 'smooth' })
-    },
-
-    // Scroll selected element into 1/4 to 3/4 viewport range
-    async scrollIntoViewIfNeeded() {
-      await nextTick()
-
-      // Find container and calculate range
-      let elementToScroll: HTMLElement | null = null
-      let container: HTMLElement | null = null
-
-      if (this.mode === 'phase-edit' && this.selectedAim) {
-        // In phase-edit mode, scroll the selected aim
-        elementToScroll = document.querySelector('.aim-item.selected-outlined') as HTMLElement
-        if (elementToScroll) {
-          container = elementToScroll.closest('.phase-list') as HTMLElement
-        }
-      } else {
-        // In column-navigation mode, scroll the selected phase or root aim
-        elementToScroll = document.querySelector('.phase-container.selected-outlined, .aim-item.selected-outlined') as HTMLElement
-        if (elementToScroll) {
-          container = elementToScroll.closest('.phase-list, .aims-list') as HTMLElement
-        }
-      }
-
-      if (!elementToScroll || !container) return
-
-      // Calculate 1/4 to 3/4 range within the container
-      const containerRect = container.getBoundingClientRect()
-      const minY = containerRect.top + containerRect.height * 0.25
-      const maxY = containerRect.top + containerRect.height * 0.75
-
-      this.scrollElementIntoRange(elementToScroll, container, minY, maxY)
-    },
 
   }
 })

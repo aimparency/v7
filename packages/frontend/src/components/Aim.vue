@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch, useAttrs } from 'vue'
 import type { Aim } from 'shared'
 
 defineOptions({
@@ -12,14 +12,24 @@ interface Props {
   indentationLevel?: number
   pendingDelete?: boolean
   pendingRemove?: boolean
+  isActive?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isExpanded: false,
   indentationLevel: 0,
   pendingDelete: false,
-  pendingRemove: false
+  pendingRemove: false,
+  isActive: false
 })
+
+const emit = defineEmits<{
+  'aim-clicked': []
+  'scroll-request': [element: HTMLElement]
+}>()
+
+const attrs = useAttrs()
+const aimContainerRef = ref<HTMLElement | null>(null)
 
 const hasIncomingAims = computed(() => {
   return props.aim.incoming && props.aim.incoming.length > 0
@@ -41,16 +51,24 @@ const indentStyle = computed(() => {
     marginLeft: `${props.indentationLevel * 0.75}rem`
   }
 })
+
+// Watch for selection and emit scroll request
+watch(() => props.isActive, (isActive) => {
+  if (isActive && aimContainerRef.value) {
+    emit('scroll-request', aimContainerRef.value)
+  }
+}, { flush: 'post' })
 </script>
 
 <template>
   <div
+    ref="aimContainerRef"
     class="aim-container"
     :style="indentStyle"
   >
     <div
       class="aim-item focusable"
-      :class="[$attrs.class, {
+      :class="[attrs.class, {
         expanded: isExpanded,
         'pending-delete': pendingDelete,
         'pending-remove': pendingRemove

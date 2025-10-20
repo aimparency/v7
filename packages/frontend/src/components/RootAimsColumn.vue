@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import AimComponent from './Aim.vue'
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
+
+const aimsListRef = ref<HTMLElement | null>(null)
 
 const isSelected = computed(() => uiStore.selectedColumn === -1)
 const isActive = computed(() => uiStore.selectedColumn === -1)
@@ -14,6 +16,42 @@ const isActive = computed(() => uiStore.selectedColumn === -1)
 const rootAims = computed(() => {
   return dataStore.getAimsForPhase('null') || []
 })
+
+// Handle scroll requests from child components
+const handleScrollRequest = (element: HTMLElement) => {
+  if (!aimsListRef.value) return
+
+  const container = aimsListRef.value
+  const containerRect = container.getBoundingClientRect()
+  const elementRect = element.getBoundingClientRect()
+
+  // Calculate 1/4 to 3/4 range
+  const minY = containerRect.top + containerRect.height * 0.25
+  const maxY = containerRect.top + containerRect.height * 0.75
+
+  // Check if element is outside the range
+  const isAboveRange = elementRect.top < minY
+  const isBelowRange = elementRect.bottom > maxY
+
+  if (!isAboveRange && !isBelowRange) return
+
+  // Calculate target scroll position
+  let targetScroll = container.scrollTop
+
+  if (isBelowRange) {
+    const offset = elementRect.bottom - maxY
+    targetScroll += offset
+  } else if (isAboveRange) {
+    const offset = elementRect.top - minY
+    targetScroll += offset
+  }
+
+  // Clamp to valid scroll range
+  const maxScroll = container.scrollHeight - container.clientHeight
+  targetScroll = Math.max(0, Math.min(targetScroll, maxScroll))
+
+  container.scrollTo({ top: targetScroll, behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -24,16 +62,18 @@ const rootAims = computed(() => {
 
     <template v-else>
       <div class=info >free floating aims</div>
-      <div  class="aims-list">
+      <div ref="aimsListRef" class="aims-list">
         <AimComponent
           v-for="(aim, index) in rootAims"
           :key="aim.id"
           :aim="aim"
+          :is-active="isActive && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index"
           :class="{
             'selected-outlined': isActive && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,
             'selected': isSelected && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,
             'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === 'null'
           }"
+          @scroll-request="handleScrollRequest"
         />
       </div>
     </template>
