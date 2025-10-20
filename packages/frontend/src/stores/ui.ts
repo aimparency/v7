@@ -292,8 +292,6 @@ export const useUIStore = defineStore('ui', {
 
     // Global keyboard handler - single source of truth for all navigation
     async handleGlobalKeydown(event: KeyboardEvent, dataStore: any) {
-      console.log('Key pressed:', event.key, 'mode:', this.mode, 'column:', this.selectedColumn)
-
       // Don't handle keys when modals are open
       if (this.showPhaseModal || this.showAimModal) return
 
@@ -337,10 +335,7 @@ export const useUIStore = defineStore('ui', {
             // Phase columns - navigate using selectedPhase
             const currentPhaseIndex = this.getSelectedPhase(col)
             const maxIndex = this.getPhaseCount(col) - 1
-            console.log('asd')
             if (currentPhaseIndex < maxIndex) {
-            console.log('asb')
-              // Update parent phase selection (this will handle child column restoration)
               this.selectPhase(col, currentPhaseIndex + 1)
             }
           }
@@ -598,7 +593,6 @@ export const useUIStore = defineStore('ui', {
             const parentColumn = this.selectedColumn - 1
             const parentPhaseId = this.getSelectedPhaseId(parentColumn)
             if (parentPhaseId) {
-              console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${this.getSelectedPhase(this.selectedColumn)}`)
               this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = this.getSelectedPhase(this.selectedColumn)
             }
           }
@@ -622,7 +616,6 @@ export const useUIStore = defineStore('ui', {
             const parentColumn = this.selectedColumn - 1
             const parentPhaseId = this.getSelectedPhaseId(parentColumn)
             if (parentPhaseId) {
-              console.log(`Storing sub-phase selection: parent ${parentPhaseId} -> index ${this.getSelectedPhase(this.selectedColumn)}`)
               this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = this.getSelectedPhase(this.selectedColumn)
             }
           }
@@ -680,11 +673,10 @@ export const useUIStore = defineStore('ui', {
       const phase = phases[phaseIndex];
       const phaseId = phase?.id;
 
-      // STORE the current child column selection before changing parent
+      // Store child column selection when switching to a different parent phase
       const oldPhaseId = this.selectedPhaseIdByColumn[columnIndex];
       if (oldPhaseId && oldPhaseId !== phaseId && columnIndex >= 0) {
         const childSelection = this.selectedPhaseByColumn[columnIndex + 1] ?? 0;
-        console.log(`Storing child selection for parent ${oldPhaseId}: index ${childSelection}`);
         this.lastSelectedSubPhaseIndexByPhase[oldPhaseId] = childSelection;
       }
 
