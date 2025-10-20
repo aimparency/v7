@@ -68,6 +68,7 @@ const handleScrollRequest = (element: HTMLElement) => {
           :key="aim.id"
           :aim="aim"
           :is-active="isActive && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index"
+          :is-selected="isSelected && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index"
           :class="{
             'selected-outlined': isActive && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,
             'selected': isSelected && uiStore.selectedAim?.phaseId === 'null' && uiStore.selectedAim?.aimIndex === index,

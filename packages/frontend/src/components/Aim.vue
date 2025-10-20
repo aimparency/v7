@@ -13,6 +13,7 @@ interface Props {
   pendingDelete?: boolean
   pendingRemove?: boolean
   isActive?: boolean
+  isSelected?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -20,7 +21,8 @@ const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0,
   pendingDelete: false,
   pendingRemove: false,
-  isActive: false
+  isActive: false,
+  isSelected: false
 })
 
 const emit = defineEmits<{
@@ -52,9 +54,9 @@ const indentStyle = computed(() => {
   }
 })
 
-// Watch for selection and emit scroll request
-watch(() => props.isActive, (isActive) => {
-  if (isActive && aimContainerRef.value) {
+// Watch for selection (both active and non-active) and emit scroll request
+watch(() => props.isActive || props.isSelected, (shouldScroll) => {
+  if (shouldScroll && aimContainerRef.value) {
     emit('scroll-request', aimContainerRef.value)
   }
 }, { flush: 'post' })

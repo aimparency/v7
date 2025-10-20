@@ -30,9 +30,9 @@ const uiStore = useUIStore()
 // Get aims from the store
 const phaseAims = computed(() => dataStore.getAimsForPhase(props.phase.id))
 
-// Watch for selection and emit scroll request
-watch(() => props.isActive, (isActive) => {
-  if (isActive && phaseContainerRef.value) {
+// Watch for selection (both active and non-active) and emit scroll request
+watch(() => props.isActive || props.isSelected, (shouldScroll) => {
+  if (shouldScroll && phaseContainerRef.value) {
     emit('scroll-request', phaseContainerRef.value)
   }
 }, { flush: 'post' })
@@ -127,6 +127,7 @@ const isPendingDelete = computed(() => {
         :key="aim.id"
         :aim="aim"
         :is-active="isActive && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index"
+        :is-selected="isSelected && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index"
         :class="{
           'selected-outlined': isActive && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
           'selected': isSelected && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
