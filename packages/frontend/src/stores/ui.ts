@@ -268,28 +268,136 @@ export const useUIStore = defineStore('ui', {
       this.keyboardHints = hints
     },
 
-    // Helper to build a flat list of all visible aims (including expanded nested ones)
-    // Returns array of { aim, flatIndex } where flatIndex is the position in the flat list
-    buildFlatAimList(phaseId: string, dataStore: any): Array<{ aim: any, flatIndex: number }> {
+    // Helper to find next aim in depth-first traversal
+    // Returns { aimId, topLevelIndex, parentAimId, indexInParent } or null
+    findNextAimInTree(currentAimId: string, phaseId: string, dataStore: any): {aimId: string, topLevelIndex: number, parentAimId?: string, indexInParent?: number} | null {
       const topLevelAims = dataStore.getAimsForPhase(phaseId)
-      const flatList: Array<{ aim: any, flatIndex: number }> = []
+      const currentAim = dataStore.aims[currentAimId]
 
-      const addAimsRecursively = (aims: any[]) => {
-        for (const aim of aims) {
-          flatList.push({ aim, flatIndex: flatList.length })
+      // If current aim is expanded with incoming, dive into first child
+      if (currentAim?.expanded && currentAim.incoming?.length > 0) {
+        const firstIncomingId = currentAim.incoming[0]
+        const topLevelIndex = this.findTopLevelAncestorIndex(firstIncomingId, topLevelAims, dataStore)
+        return { aimId: firstIncomingId, topLevelIndex, parentAimId: currentAimId, indexInParent: 0 }
+      }
 
-          // If this aim is expanded, add its incoming aims recursively
-          if (aim.expanded && aim.incoming?.length > 0) {
-            const incomingAims = aim.incoming
-              .map((aimId: string) => dataStore.aims[aimId])
-              .filter(Boolean)
-            addAimsRecursively(incomingAims)
+      // Find current aim in tree and get next sibling or parent's next sibling
+      return this.findNextSiblingOrAncestorSibling(currentAimId, topLevelAims, dataStore, null, -1)
+    },
+
+    // Helper to find previous aim in depth-first traversal
+    findPreviousAimInTree(currentAimId: string, phaseId: string, dataStore: any): {aimId: string, topLevelIndex: number, parentAimId?: string, indexInParent?: number} | null {
+      const topLevelAims = dataStore.getAimsForPhase(phaseId)
+      return this.findPreviousSiblingOrAncestor(currentAimId, topLevelAims, dataStore, null, -1)
+    },
+
+    // Recursive helper to find next sibling or pop up to parent's next sibling
+    findNextSiblingOrAncestorSibling(aimId: string, aims: any[], dataStore: any, parentAimId: string | null, topLevelIndex: number): {aimId: string, topLevelIndex: number, parentAimId?: string, indexInParent?: number} | null {
+      for (let i = 0; i < aims.length; i++) {
+        const aim = aims[i]
+        const currentTopLevel = parentAimId === null ? i : topLevelIndex
+
+        if (aim.id === aimId) {
+          // Found current aim, try next sibling
+          if (i < aims.length - 1) {
+            const nextSibling = aims[i + 1]
+            return { aimId: nextSibling.id, topLevelIndex: currentTopLevel, parentAimId: parentAimId ?? undefined, indexInParent: i + 1 }
+          }
+          // No next sibling, return null (caller will pop up)
+          return null
+        }
+
+        // Check if aimId is nested in this aim's incoming
+        if (aim.expanded && aim.incoming?.length > 0) {
+          const incomingAims = aim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+          const result = this.findNextSiblingOrAncestorSibling(aimId, incomingAims, dataStore, aim.id, currentTopLevel)
+
+          if (result) return result
+
+          // If result is null, aimId was last in incoming, so next is this aim's next sibling
+          const wasInIncoming = incomingAims.some((a: any) => a.id === aimId || this.isAimInTree(aimId, a, dataStore))
+          if (wasInIncoming) {
+            if (i < aims.length - 1) {
+              const nextSibling = aims[i + 1]
+              return { aimId: nextSibling.id, topLevelIndex: currentTopLevel, parentAimId: parentAimId ?? undefined, indexInParent: i + 1 }
+            }
+            return null
           }
         }
       }
+      return null
+    },
 
-      addAimsRecursively(topLevelAims)
-      return flatList
+    // Recursive helper to find previous sibling (or its last descendant) or parent
+    findPreviousSiblingOrAncestor(aimId: string, aims: any[], dataStore: any, parentAimId: string | null, topLevelIndex: number): {aimId: string, topLevelIndex: number, parentAimId?: string, indexInParent?: number} | null {
+      for (let i = 0; i < aims.length; i++) {
+        const aim = aims[i]
+        const currentTopLevel = parentAimId === null ? i : topLevelIndex
+
+        if (aim.id === aimId) {
+          // Found current aim
+          if (i > 0) {
+            // Has previous sibling - get its last descendant or itself
+            const prevSibling = aims[i - 1]
+            const lastDescendant = this.findLastDescendant(prevSibling, dataStore)
+            return { aimId: lastDescendant.id, topLevelIndex: currentTopLevel, parentAimId: lastDescendant.parentId, indexInParent: lastDescendant.indexInParent }
+          }
+          // No previous sibling, return parent
+          if (parentAimId) {
+            const parentTopLevel = this.findTopLevelAncestorIndex(parentAimId, dataStore.getAimsForPhase(this.selectedAim?.phaseId || 'null'), dataStore)
+            return { aimId: parentAimId, topLevelIndex: parentTopLevel }
+          }
+          return null
+        }
+
+        // Check nested
+        if (aim.expanded && aim.incoming?.length > 0) {
+          const incomingAims = aim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+          const result = this.findPreviousSiblingOrAncestor(aimId, incomingAims, dataStore, aim.id, currentTopLevel)
+          if (result) return result
+        }
+      }
+      return null
+    },
+
+    // Find last descendant of an aim (itself if not expanded, or last child's last descendant)
+    findLastDescendant(aim: any, dataStore: any): {id: string, parentId?: string, indexInParent?: number} {
+      if (!aim.expanded || !aim.incoming || aim.incoming.length === 0) {
+        return { id: aim.id }
+      }
+      const lastIncomingId = aim.incoming[aim.incoming.length - 1]
+      const lastIncoming = dataStore.aims[lastIncomingId]
+      const descendant = this.findLastDescendant(lastIncoming, dataStore)
+      return { ...descendant, parentId: aim.id, indexInParent: aim.incoming.length - 1 }
+    },
+
+    // Find top-level ancestor index for a nested aim
+    findTopLevelAncestorIndex(aimId: string, topLevelAims: any[], dataStore: any): number {
+      // Check if it's already top-level
+      const directIndex = topLevelAims.findIndex(a => a.id === aimId)
+      if (directIndex >= 0) return directIndex
+
+      // Search recursively
+      for (let i = 0; i < topLevelAims.length; i++) {
+        if (this.isAimInTree(aimId, topLevelAims[i], dataStore)) {
+          return i
+        }
+      }
+      return -1
+    },
+
+    // Check if aimId exists anywhere in the tree rooted at rootAim
+    isAimInTree(aimId: string, rootAim: any, dataStore: any): boolean {
+      if (rootAim.id === aimId) return true
+      if (!rootAim.incoming || rootAim.incoming.length === 0) return false
+
+      for (const incomingId of rootAim.incoming) {
+        const incomingAim = dataStore.aims[incomingId]
+        if (incomingAim && this.isAimInTree(aimId, incomingAim, dataStore)) {
+          return true
+        }
+      }
+      return false
     },
 
     // Column tracking actions
@@ -619,31 +727,30 @@ export const useUIStore = defineStore('ui', {
           event.preventDefault()
           this.clearPendingDelete() // Navigation cancels pending delete
 
-          // Build flat list of all visible aims
-          const flatList = this.buildFlatAimList(selectedAim.phaseId, dataStore)
-
-          // Find current aim in flat list using aimId if available, otherwise use index
           const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
-          const currentFlatIndex = flatList.findIndex(item => item.aim.id === currentAimId)
+          if (!currentAimId) break
 
-          if (currentFlatIndex >= 0 && currentFlatIndex < flatList.length - 1) {
-            // Move to next aim in flat list
-            const nextAim = flatList[currentFlatIndex + 1].aim
+          const nextResult = this.findNextAimInTree(currentAimId, selectedAim.phaseId, dataStore)
+          if (nextResult) {
+            // Clear all selectedIncomingIndex
+            Object.values(dataStore.aims).forEach((aim: any) => {
+              aim.selectedIncomingIndex = undefined
+            })
 
-            // Find this aim's index in the top-level aims list
-            const topLevelIndex = aims.findIndex((a: any) => a.id === nextAim.id)
-
-            if (topLevelIndex >= 0) {
-              // It's a top-level aim
-              this.setSelectedAim(selectedAim.phaseId, topLevelIndex, nextAim.id)
-              if (selectedAim.phaseId !== 'null') {
-                this.lastSelectedAimIndexByPhase[selectedAim.phaseId] = topLevelIndex
-              } else {
-                this.lastSelectedRootAimIndex = topLevelIndex
+            // Set selectedIncomingIndex on parent if nested
+            if (nextResult.parentAimId) {
+              const parentAim = dataStore.aims[nextResult.parentAimId]
+              if (parentAim) {
+                parentAim.selectedIncomingIndex = nextResult.indexInParent
               }
+            }
+
+            // Update selection
+            this.setSelectedAim(selectedAim.phaseId, nextResult.topLevelIndex, nextResult.aimId)
+            if (selectedAim.phaseId !== 'null') {
+              this.lastSelectedAimIndexByPhase[selectedAim.phaseId] = nextResult.topLevelIndex
             } else {
-              // It's a nested aim - keep the same aimIndex but update aimId
-              this.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex, nextAim.id)
+              this.lastSelectedRootAimIndex = nextResult.topLevelIndex
             }
           }
 
@@ -661,31 +768,30 @@ export const useUIStore = defineStore('ui', {
           event.preventDefault()
           this.clearPendingDelete() // Navigation cancels pending delete
 
-          // Build flat list of all visible aims
-          const flatList = this.buildFlatAimList(selectedAim.phaseId, dataStore)
-
-          // Find current aim in flat list using aimId if available, otherwise use index
           const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
-          const currentFlatIndex = flatList.findIndex(item => item.aim.id === currentAimId)
+          if (!currentAimId) break
 
-          if (currentFlatIndex > 0) {
-            // Move to previous aim in flat list
-            const prevAim = flatList[currentFlatIndex - 1].aim
+          const prevResult = this.findPreviousAimInTree(currentAimId, selectedAim.phaseId, dataStore)
+          if (prevResult) {
+            // Clear all selectedIncomingIndex
+            Object.values(dataStore.aims).forEach((aim: any) => {
+              aim.selectedIncomingIndex = undefined
+            })
 
-            // Find this aim's index in the top-level aims list
-            const topLevelIndex = aims.findIndex((a: any) => a.id === prevAim.id)
-
-            if (topLevelIndex >= 0) {
-              // It's a top-level aim
-              this.setSelectedAim(selectedAim.phaseId, topLevelIndex, prevAim.id)
-              if (selectedAim.phaseId !== 'null') {
-                this.lastSelectedAimIndexByPhase[selectedAim.phaseId] = topLevelIndex
-              } else {
-                this.lastSelectedRootAimIndex = topLevelIndex
+            // Set selectedIncomingIndex on parent if nested
+            if (prevResult.parentAimId) {
+              const parentAim = dataStore.aims[prevResult.parentAimId]
+              if (parentAim) {
+                parentAim.selectedIncomingIndex = prevResult.indexInParent
               }
+            }
+
+            // Update selection
+            this.setSelectedAim(selectedAim.phaseId, prevResult.topLevelIndex, prevResult.aimId)
+            if (selectedAim.phaseId !== 'null') {
+              this.lastSelectedAimIndexByPhase[selectedAim.phaseId] = prevResult.topLevelIndex
             } else {
-              // It's a nested aim - keep the same aimIndex but update aimId
-              this.setSelectedAim(selectedAim.phaseId, selectedAim.aimIndex, prevAim.id)
+              this.lastSelectedRootAimIndex = prevResult.topLevelIndex
             }
           }
 
@@ -711,31 +817,34 @@ export const useUIStore = defineStore('ui', {
         case 'd': {
           event.preventDefault()
           // Check if this is confirmation (second press)
-          if (this.pendingDeleteAimIndex === selectedAim.aimIndex) {
+          const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
+          if (!currentAimId) break
+
+          if (this.pendingDeleteAimId === currentAimId) {
             // Confirm delete
-            await dataStore.deleteAim(aims[selectedAim.aimIndex].id, selectedAim.phaseId)
+            await dataStore.deleteAim(currentAimId, selectedAim.phaseId)
             this.clearPendingDelete()
           } else {
             // First press - mark for deletion
-            this.setPendingDeleteAim(selectedAim.aimIndex)
+            this.setPendingDeleteAim(currentAimId)
           }
           break
         }
         case 'h': {
           event.preventDefault()
           // Collapse the current aim
-          const aim = aims[selectedAim.aimIndex]
-          if (aim) {
-            dataStore.aims[aim.id].expanded = false
+          const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
+          if (currentAimId) {
+            dataStore.aims[currentAimId].expanded = false
           }
           break
         }
         case 'l': {
           event.preventDefault()
           // Expand the current aim (even if it has no incoming aims)
-          const aim = aims[selectedAim.aimIndex]
-          if (aim) {
-            dataStore.aims[aim.id].expanded = true
+          const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
+          if (currentAimId) {
+            dataStore.aims[currentAimId].expanded = true
           }
           break
         }
@@ -882,6 +991,11 @@ export const useUIStore = defineStore('ui', {
       const dataStore = useDataStore();
       const aims = dataStore.getAimsForPhase(phaseId)
 
+      // Clear all selectedIncomingIndex first
+      Object.values(dataStore.aims).forEach((aim: any) => {
+        aim.selectedIncomingIndex = undefined
+      })
+
       // Find the top-level aim index
       const topLevelIndex = aims.findIndex((a: any) => a.id === aimId)
 
@@ -889,51 +1003,72 @@ export const useUIStore = defineStore('ui', {
         // It's a top-level aim, use regular selectAim
         this.selectAim(columnIndex, phaseId, topLevelIndex)
       } else {
-        // It's a nested aim - find its parent via outgoing relationship
-        const aim = dataStore.aims[aimId]
-        if (aim && aim.outgoing && aim.outgoing.length > 0) {
-          // Find the top-level ancestor by walking up outgoing chain
-          let currentAim = aim
-          let parentAimIndex = -1
+        // It's a nested aim - find its path from top-level ancestor
+        const path = this.findPathToAim(aimId, aims, dataStore)
 
-          while (currentAim.outgoing && currentAim.outgoing.length > 0) {
-            const parentId = currentAim.outgoing[0] // Take first outgoing (parent)
-            const parentAim = dataStore.aims[parentId]
-
-            if (!parentAim) break
-
-            // Check if this parent is top-level
-            parentAimIndex = aims.findIndex((a: any) => a.id === parentId)
-            if (parentAimIndex >= 0) {
-              // Found top-level ancestor
-              break
+        if (path && path.length > 0) {
+          // Set selectedIncomingIndex on each parent in the path
+          for (let i = 0; i < path.length - 1; i++) {
+            const parentAim = dataStore.aims[path[i].aimId]
+            if (parentAim && path[i + 1].indexInParent !== undefined) {
+              parentAim.selectedIncomingIndex = path[i + 1].indexInParent
             }
-
-            // Continue walking up
-            currentAim = parentAim
           }
 
-          if (parentAimIndex >= 0) {
-            // Select with parent's index but child's ID
-            this.setSelectedColumn(columnIndex)
+          const topLevel = path[0]
+          const selectedAim = path[path.length - 1]
 
-            // For non-root aims, ensure the phase is selected
-            if (phaseId !== 'null' && columnIndex >= 0) {
-              const parentId = this.columnParentPhaseId[columnIndex] ?? null
-              const phases = dataStore.getPhasesByParentId(parentId)
-              const phaseIndex = phases.findIndex(p => p.id === phaseId)
+          // Select with top-level index but selected aim's ID
+          this.setSelectedColumn(columnIndex)
 
-              if (phaseIndex !== -1) {
-                this.selectedPhaseByColumn[columnIndex] = phaseIndex
-                this.selectedPhaseIdByColumn[columnIndex] = phaseId
-              }
+          // For non-root aims, ensure the phase is selected
+          if (phaseId !== 'null' && columnIndex >= 0) {
+            const parentId = this.columnParentPhaseId[columnIndex] ?? null
+            const phases = dataStore.getPhasesByParentId(parentId)
+            const phaseIndex = phases.findIndex(p => p.id === phaseId)
+
+            if (phaseIndex !== -1) {
+              this.selectedPhaseByColumn[columnIndex] = phaseIndex
+              this.selectedPhaseIdByColumn[columnIndex] = phaseId
             }
+          }
 
-            this.setMode('phase-edit')
-            this.setSelectedAim(phaseId, parentAimIndex, aimId)
+          this.setMode('phase-edit')
+          this.setSelectedAim(phaseId, topLevel.topLevelIndex, selectedAim.aimId)
+        }
+      }
+    },
+
+    // Helper to find path from top-level to target aim
+    // Returns array of {aimId, topLevelIndex, indexInParent} from root to target
+    findPathToAim(targetId: string, topLevelAims: any[], dataStore: any): Array<{aimId: string, topLevelIndex: number, indexInParent?: number}> | null {
+      for (let i = 0; i < topLevelAims.length; i++) {
+        const path = this.findPathInTree(targetId, topLevelAims[i], dataStore, i, undefined)
+        if (path) return path
+      }
+      return null
+    },
+
+    // Recursive helper to find path to aim in tree
+    findPathInTree(targetId: string, currentAim: any, dataStore: any, topLevelIndex: number, indexInParent: number | undefined): Array<{aimId: string, topLevelIndex: number, indexInParent?: number}> | null {
+      if (currentAim.id === targetId) {
+        return [{ aimId: currentAim.id, topLevelIndex, indexInParent }]
+      }
+
+      if (currentAim.incoming && currentAim.incoming.length > 0) {
+        for (let i = 0; i < currentAim.incoming.length; i++) {
+          const childId = currentAim.incoming[i]
+          const child = dataStore.aims[childId]
+          if (!child) continue
+
+          const childPath = this.findPathInTree(targetId, child, dataStore, topLevelIndex, i)
+          if (childPath) {
+            return [{ aimId: currentAim.id, topLevelIndex, indexInParent }, ...childPath]
           }
         }
       }
+
+      return null
     },
 
     // Click-to-select: focus an aim (set column, phase, mode, and aim)

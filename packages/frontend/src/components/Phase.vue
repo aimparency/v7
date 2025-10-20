@@ -15,7 +15,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'scroll-request': [element: HTMLElement]
-  'aim-clicked': [aimIndex: number]
+  'aim-clicked': [aimId: string]
   'phase-clicked': []
 }>()
 

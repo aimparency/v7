@@ -84,11 +84,11 @@ const handleScrollRequest = (element: HTMLElement) => {
         :aim="aim"
         :phase-id="phaseId"
         :indentation-level="indentationLevel"
-        :is-active="isActive && uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)"
-        :is-selected="isSelected && uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)"
+        :is-active="isActive"
+        :is-selected="isSelected"
         :class="{
-          'selected-outlined': isActive && (uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)),
-          'selected': isSelected && (uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)),
+          'selected-outlined': isActive && uiStore.selectedAim?.aimId === aim.id,
+          'selected': isSelected && uiStore.selectedAim?.aimId === aim.id,
           'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phaseId
         }"
         @scroll-request="handleScrollRequest"

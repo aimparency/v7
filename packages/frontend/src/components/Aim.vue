@@ -2,6 +2,7 @@
 import { computed, ref, watch, onMounted, useAttrs } from 'vue'
 import type { Aim } from '../stores/data'
 import { useDataStore } from '../stores/data'
+import { useUIStore } from '../stores/ui'
 import AimsList from './AimsList.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -32,6 +33,12 @@ const dataStore = useDataStore()
 const hasIncomingAims = computed(() => props.aim.incoming?.length > 0)
 const isExpanded = computed(() => props.aim.expanded || false)
 
+// Check if this specific aim is selected (by aimId)
+const uiStore = useUIStore()
+const isThisAimSelected = computed(() => {
+  return uiStore.selectedAim?.aimId === props.aim.id
+})
+
 // Get incoming aims from the data store
 const incomingAims = computed(() => {
   if (!hasIncomingAims.value) return []
@@ -55,16 +62,16 @@ const indentWidth = computed(() => {
   return indent
 })
 
-// Scroll into view when selected (active or not)
-watch(() => props.isActive || props.isSelected, (shouldScroll) => {
-  if (shouldScroll && aimContainerRef.value) {
+// Scroll into view when this aim becomes selected
+watch(() => isThisAimSelected.value, (isSelected) => {
+  if (isSelected && aimContainerRef.value) {
     emit('scroll-request', aimContainerRef.value)
   }
 }, { flush: 'post' })
 
 // Scroll on mount if already selected (for cascade restoration)
 onMounted(() => {
-  if ((props.isActive || props.isSelected) && aimContainerRef.value) {
+  if (isThisAimSelected.value && aimContainerRef.value) {
     emit('scroll-request', aimContainerRef.value)
   }
 })
