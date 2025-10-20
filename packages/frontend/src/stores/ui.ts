@@ -662,25 +662,25 @@ export const useUIStore = defineStore('ui', {
       }
     },
 
-    // Selects a phase and triggers the cascade of loading and selecting children.
+    // Select a phase and cascade: load children, restore their selection, repeat
     async selectPhase(columnIndex: number, phaseIndex: number) {
       const dataStore = useDataStore();
 
-      // Get the actual phase ID from the data store
+      // Get current column's data
       const parentId = this.columnParentPhaseId[columnIndex] ?? null;
       const phases = dataStore.getPhasesByParentId(parentId);
       this.phaseCountByColumn[columnIndex] = phases.length;
       const phase = phases[phaseIndex];
       const phaseId = phase?.id;
 
-      // Store child column selection when switching to a different parent phase
+      // Preserve child selection when switching parents
       const oldPhaseId = this.selectedPhaseIdByColumn[columnIndex];
       if (oldPhaseId && oldPhaseId !== phaseId && columnIndex >= 0) {
         const childSelection = this.selectedPhaseByColumn[columnIndex + 1] ?? 0;
         this.lastSelectedSubPhaseIndexByPhase[oldPhaseId] = childSelection;
       }
 
-      // Update selection for the current column
+      // Update current column selection
       this.selectedPhaseByColumn[columnIndex] = phaseIndex;
       if (phaseId) {
         this.selectedPhaseIdByColumn[columnIndex] = phaseId;
@@ -688,42 +688,34 @@ export const useUIStore = defineStore('ui', {
         delete this.selectedPhaseIdByColumn[columnIndex];
       }
 
-      // If we are selecting a placeholder or an invalid index, stop the cascade.
       if (!phaseId) {
         this.setRightmostColumn(columnIndex);
         return;
       }
 
-      // --- Start Cascade ---
-
-      // Calculate the remembered index
+      // Cascade: load children and restore their selection
       const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[phaseId] ?? 0;
-
-      // Load children FIRST, before updating any reactive state
       const children = await dataStore.loadPhases(this.projectPath, phaseId);
       this.phaseCountByColumn[columnIndex + 1] = children.length;
 
-      // If children exist, set up all state before rendering
       if (children.length > 0) {
         const childIndex = Math.min(rememberedIndex, children.length - 1);
 
-        // Set all state atomically (in the same tick) before triggering component creation
+        // Update all state atomically to prevent flicker
         this.columnParentPhaseId[columnIndex + 1] = phaseId;
         this.selectedPhaseByColumn[columnIndex + 1] = childIndex;
         this.selectedPhaseIdByColumn[columnIndex + 1] = children[childIndex].id;
-        this.setMinRightmost(columnIndex + 1); // This creates the column component
+        this.setMinRightmost(columnIndex + 1);
 
-        // Recursively call to continue the cascade
+        // Continue cascade
         await this.selectPhase(columnIndex + 1, childIndex);
       } else {
-        // No children, just update parent and visibility
         this.columnParentPhaseId[columnIndex + 1] = phaseId;
         this.setRightmostColumn(columnIndex + 1);
       }
     },
 
-    // Simply sets the selection for a column without triggering any loading.
-    // Used for up/down keyboard navigation.
+    // Set selection without loading (j/k navigation)
     setSelection(columnIndex: number, phaseIndex: number) {
       const dataStore = useDataStore();
       const parentId = this.columnParentPhaseId[columnIndex] ?? null;

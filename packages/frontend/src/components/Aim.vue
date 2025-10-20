@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch, useAttrs } from 'vue'
+import { computed, ref, watch, onMounted, useAttrs } from 'vue'
 import type { Aim } from 'shared'
 
-defineOptions({
-  inheritAttrs: false
-})
+defineOptions({ inheritAttrs: false })
 
 interface Props {
   aim: Aim
   isExpanded?: boolean
   indentationLevel?: number
-  pendingDelete?: boolean
-  pendingRemove?: boolean
   isActive?: boolean
   isSelected?: boolean
 }
@@ -19,8 +15,6 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isExpanded: false,
   indentationLevel: 0,
-  pendingDelete: false,
-  pendingRemove: false,
   isActive: false,
   isSelected: false
 })
@@ -33,33 +27,33 @@ const emit = defineEmits<{
 const attrs = useAttrs()
 const aimContainerRef = ref<HTMLElement | null>(null)
 
-const hasIncomingAims = computed(() => {
-  return props.aim.incoming && props.aim.incoming.length > 0
-})
+const hasIncomingAims = computed(() => props.aim.incoming?.length > 0)
 
-const statusColor = computed(() => {
-  switch (props.aim.status.state) {
-    case 'open': return '#87f'
-    case 'done': return '#00ff00'
-    case 'cancelled': return '#ff0000'
-    case 'partially': return '#ffff00'
-    case 'failed': return '#ff6666'
-    default: return '#888'
-  }
-})
+const statusColor = computed(() => ({
+  'open': '#87f',
+  'done': '#00ff00',
+  'cancelled': '#ff0000',
+  'partially': '#ffff00',
+  'failed': '#ff6666'
+}[props.aim.status.state] ?? '#888'))
 
-const indentStyle = computed(() => {
-  return {
-    marginLeft: `${props.indentationLevel * 0.75}rem`
-  }
-})
+const indentStyle = computed(() => ({
+  marginLeft: `${props.indentationLevel * 0.75}rem`
+}))
 
-// Watch for selection (both active and non-active) and emit scroll request
+// Scroll into view when selected (active or not)
 watch(() => props.isActive || props.isSelected, (shouldScroll) => {
   if (shouldScroll && aimContainerRef.value) {
     emit('scroll-request', aimContainerRef.value)
   }
 }, { flush: 'post' })
+
+// Scroll on mount if already selected (for cascade restoration)
+onMounted(() => {
+  if ((props.isActive || props.isSelected) && aimContainerRef.value) {
+    emit('scroll-request', aimContainerRef.value)
+  }
+})
 </script>
 
 <template>
@@ -70,11 +64,7 @@ watch(() => props.isActive || props.isSelected, (shouldScroll) => {
   >
     <div
       class="aim-item focusable"
-      :class="[attrs.class, {
-        expanded: isExpanded,
-        'pending-delete': pendingDelete,
-        'pending-remove': pendingRemove
-      }]"
+      :class="[attrs.class, { expanded: isExpanded }]"
       tabindex="0"
       @click="$emit('aim-clicked')"
     >

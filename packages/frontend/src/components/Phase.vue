@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import type { Phase } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
@@ -36,6 +36,13 @@ watch(() => props.isActive || props.isSelected, (shouldScroll) => {
     emit('scroll-request', phaseContainerRef.value)
   }
 }, { flush: 'post' })
+
+// Scroll on mount if already selected (for cascade restoration)
+onMounted(() => {
+  if ((props.isActive || props.isSelected) && phaseContainerRef.value) {
+    emit('scroll-request', phaseContainerRef.value)
+  }
+})
 
 // Pass through scroll requests from aims
 const handleAimScrollRequest = (element: HTMLElement) => {
