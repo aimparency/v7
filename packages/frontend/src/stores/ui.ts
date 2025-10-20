@@ -579,6 +579,18 @@ export const useUIStore = defineStore('ui', {
         event.preventDefault()
         if (!selectedAim) return
         const aims = dataStore.getAimsForPhase(selectedAim.phaseId)
+
+        // Special behavior for 'o' when aim is expanded: create sub-aim
+        if (event.key === 'o') {
+          const currentAim = aims[selectedAim.aimIndex]
+          if (currentAim && this.expandedAims.has(currentAim.id)) {
+            // Create sub-aim: establish parent-child relationship
+            this.createSubAim(selectedAim.phaseId, currentAim)
+            return
+          }
+        }
+
+        // Default behavior: create aim at same level
         const insertionIndex = (aims && aims.length > 0)
           ? (event.key === 'o' ? selectedAim.aimIndex + 1 : selectedAim.aimIndex)
           : 0
@@ -834,6 +846,37 @@ export const useUIStore = defineStore('ui', {
         this.selectedAim = null
       } else {
         this.selectedAim = { phaseId, aimIndex, aimId }
+      }
+    },
+
+    // Create a sub-aim (incoming aim) for an expanded aim
+    async createSubAim(phaseId: string, parentAim: any) {
+      const dataStore = useDataStore()
+
+      try {
+        // Create new aim with parent in outgoing array
+        const newAimResult = await dataStore.createAim(this.projectPath, {
+          text: '',
+          incoming: [],
+          outgoing: [parentAim.id],
+          committedIn: [],
+          status: {
+            state: 'open',
+            comment: '',
+            date: Date.now()
+          }
+        })
+
+        // Update parent aim to include new aim in incoming array (prepend to top)
+        const updatedIncoming = [newAimResult.id, ...parentAim.incoming]
+        await dataStore.updateAim(this.projectPath, parentAim.id, {
+          incoming: updatedIncoming
+        })
+
+        // Open modal to edit the new aim's text
+        this.openAimEditModal(newAimResult.id, phaseId, 0)
+      } catch (error) {
+        console.error('Failed to create sub-aim:', error)
       }
     },
 

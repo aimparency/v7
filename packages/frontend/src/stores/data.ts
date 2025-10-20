@@ -94,6 +94,22 @@ export const useDataStore = defineStore('data', {
         throw error
       }
     },
+
+    async updateAim(projectPath: string, aimId: string, updates: Partial<Omit<Aim, 'id'>>): Promise<void> {
+      try {
+        const updatedAim = await trpc.aim.update.mutate({
+          projectPath,
+          aimId,
+          aim: updates
+        })
+
+        // Update local state
+        this.aims[aimId] = updatedAim
+      } catch (error) {
+        console.error('Failed to update aim:', error)
+        throw error
+      }
+    },
     
     async commitAimToPhase(projectPath: string, aimId: string, phaseId: string, insertionIndex?: number) {
       try {
