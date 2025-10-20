@@ -1,0 +1,32 @@
+{
+  "name": "mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Aimparency - allows LLMs to interact with aims and phases",
+  "type": "module",
+  "bin": {
+    "aimparency-mcp": "./build/index.js"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "dev": "tsx watch src/index.ts"
+  },
+  "files": [
+    "build"
+  ],
+  "keywords": ["mcp", "aimparency", "goals", "aims"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@trpc/client": "^11.5.1",
+    "shared": "*",
+    "ws": "^8.18.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.2",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
