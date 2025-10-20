@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useScrollIntoView } from '../composables/useScrollIntoView'
 import PhaseComponent from './Phase.vue'
 
 interface Props {
@@ -23,40 +24,7 @@ const phaseListRef = ref<HTMLElement | null>(null)
 const phases = computed(() => dataStore.getPhasesByParentId(props.parentPhaseId))
 
 // Handle scroll requests from child components
-const handleScrollRequest = (element: HTMLElement) => {
-  if (!phaseListRef.value) return
-
-  const container = phaseListRef.value
-  const containerRect = container.getBoundingClientRect()
-  const elementRect = element.getBoundingClientRect()
-
-  // Calculate 1/4 to 3/4 range
-  const minY = containerRect.top + containerRect.height * 0.25
-  const maxY = containerRect.top + containerRect.height * 0.75
-
-  // Check if element is outside the range
-  const isAboveRange = elementRect.top < minY
-  const isBelowRange = elementRect.bottom > maxY
-
-  if (!isAboveRange && !isBelowRange) return
-
-  // Calculate target scroll position
-  let targetScroll = container.scrollTop
-
-  if (isBelowRange) {
-    const offset = elementRect.bottom - maxY
-    targetScroll += offset
-  } else if (isAboveRange) {
-    const offset = elementRect.top - minY
-    targetScroll += offset
-  }
-
-  // Clamp to valid scroll range
-  const maxScroll = container.scrollHeight - container.clientHeight
-  targetScroll = Math.max(0, Math.min(targetScroll, maxScroll))
-
-  container.scrollTo({ top: targetScroll, behavior: 'smooth' })
-}
+const { handleScrollRequest } = useScrollIntoView(phaseListRef)
 </script>
 
 <template>

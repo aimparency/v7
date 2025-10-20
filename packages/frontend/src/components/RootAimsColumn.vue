@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useScrollIntoView } from '../composables/useScrollIntoView'
 import AimsList from './AimsList.vue'
 
 const dataStore = useDataStore()
@@ -14,6 +15,11 @@ const isActive = computed(() => uiStore.selectedColumn === -1)
 const rootAims = computed(() => {
   return dataStore.getAimsForPhase('null') || []
 })
+
+const rootColumnRef = ref<HTMLElement | null>(null)
+
+// Handle scroll requests from child aims
+const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
 </script>
 
 <template>
@@ -22,7 +28,7 @@ const rootAims = computed(() => {
       No aims yet, create one with o
     </div>
 
-    <template v-else>
+    <div v-else ref="rootColumnRef" class="aims-container">
       <div class="info">free floating aims</div>
       <AimsList
         :aims="rootAims"
@@ -31,8 +37,9 @@ const rootAims = computed(() => {
         :is-active="isActive"
         :is-selected="isSelected"
         @aim-clicked="(aimId) => uiStore.selectAimById(-1, 'null', aimId)"
+        @scroll-request="handleScrollRequest"
       />
-    </template>
+    </div>
   </div>
 </template>
 
@@ -42,6 +49,15 @@ const rootAims = computed(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.aims-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
 }
 
 .root-aims-column.selected {
