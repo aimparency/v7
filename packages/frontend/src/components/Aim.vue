@@ -104,21 +104,19 @@ onMounted(() => {
 
     <!-- Expanded incoming aims (recursive) -->
     <div v-if="isExpanded" class="incoming-aims">
-      <div v-if="indentWidth > 0" class="indent-space" :style="{ width: `${indentWidth}rem` }">
+      <div class="indent-space" :style="{ width: `${2 * Math.pow(0.6, indentationLevel)}rem` }">
         <div class="indent-line"></div>
       </div>
-      <div class="incoming-content">
-        <AimsList
-          :aims="incomingAims"
-          :phase-id="phaseId"
-          :column-index="0"
-          :indentation-level="indentationLevel + 1"
-          :is-active="true"
-          :is-selected="true"
-          @scroll-request="$emit('scroll-request', $event)"
-          @aim-clicked="$emit('aim-clicked', $event)"
-        />
-      </div>
+      <AimsList
+        :aims="incomingAims"
+        :phase-id="phaseId"
+        :column-index="0"
+        :indentation-level="indentationLevel + 1"
+        :is-active="true"
+        :is-selected="true"
+        @scroll-request="$emit('scroll-request', $event)"
+        @aim-clicked="$emit('aim-clicked', $event)"
+      />
     </div>
   </div>
 </template>
@@ -177,24 +175,28 @@ onMounted(() => {
 .incoming-aims {
   display: flex;
   flex-direction: row;
+  flex: 1;
+  min-height: 0;
 
   .indent-space {
     position: relative;
     flex-shrink: 0;
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
 
     .indent-line {
-      width: 1px;
-      height: 100%;
+      width: min(0.4rem, 100%);
+      height: calc(100% - 1.5rem);
       min-height: 0.4rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
       background-color: #eee3;
       border-radius: 0.5rem;
     }
   }
 
-  .incoming-content {
+  .aims-list-wrapper {
     flex: 1;
     min-width: 0;
   }

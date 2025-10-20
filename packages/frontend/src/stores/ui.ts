@@ -60,7 +60,7 @@ export const useUIStore = defineStore('ui', {
 
     // Delete pending states
     pendingDeletePhaseId: null as string | null,
-    pendingDeleteAimIndex: null as number | null,
+    pendingDeleteAimId: null as string | null,
 
     // Remember last selected aim index for root aims
     lastSelectedRootAimIndex: 0,
@@ -606,14 +606,17 @@ export const useUIStore = defineStore('ui', {
             const aims = dataStore.getAimsForPhase('null')
             if (!aims || selectedIndex >= aims.length) break
 
+            const aimToDelete = aims[selectedIndex]
+            if (!aimToDelete) break
+
             // Check if this is confirmation (second press)
-            if (this.pendingDeleteAimIndex === selectedIndex) {
+            if (this.pendingDeleteAimId === aimToDelete.id) {
               // Confirm delete
-              await dataStore.deleteAim(aims[selectedIndex].id, 'null')
+              await dataStore.deleteAim(aimToDelete.id, 'null')
               this.clearPendingDelete()
             } else {
               // First press - mark for deletion
-              this.setPendingDeleteAim(selectedIndex)
+              this.setPendingDeleteAim(aimToDelete.id)
             }
           } else {
             // Phase columns - delete phases
@@ -687,11 +690,14 @@ export const useUIStore = defineStore('ui', {
 
         // Special behavior for 'o' when aim is expanded: create sub-aim
         if (event.key === 'o') {
-          const currentAim = aims[selectedAim.aimIndex]
-          if (currentAim && currentAim.expanded) {
-            // Create sub-aim: establish parent-child relationship
-            this.createSubAim(selectedAim.phaseId, currentAim)
-            return
+          const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
+          if (currentAimId) {
+            const currentAim = dataStore.aims[currentAimId]
+            if (currentAim && currentAim.expanded) {
+              // Create sub-aim: establish parent-child relationship
+              this.createSubAim(selectedAim.phaseId, currentAim)
+              return
+            }
           }
         }
 
@@ -808,9 +814,9 @@ export const useUIStore = defineStore('ui', {
         case 'e': {
           event.preventDefault()
           // Get the selected aim
-          const aim = aims[selectedAim.aimIndex]
-          if (aim) {
-            this.openAimEditModal(aim.id, selectedAim.phaseId, selectedAim.aimIndex)
+          const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
+          if (currentAimId) {
+            this.openAimEditModal(currentAimId, selectedAim.phaseId, selectedAim.aimIndex)
           }
           break
         }
@@ -1162,8 +1168,8 @@ export const useUIStore = defineStore('ui', {
       this.pendingDeletePhaseId = phaseId
     },
 
-    setPendingDeleteAim(aimIndex: number | null) {
-      this.pendingDeleteAimIndex = aimIndex
+    setPendingDeleteAim(aimId: string | null) {
+      this.pendingDeleteAimId = aimId
     },
 
     clearPendingDelete() {
@@ -1176,7 +1182,7 @@ export const useUIStore = defineStore('ui', {
         }
       }
       this.pendingDeletePhaseId = null
-      this.pendingDeleteAimIndex = null
+      this.pendingDeleteAimId = null
       // Don't clear selectedAim here - only clear it when actually deleting or when leaving phase-edit mode
     },
 

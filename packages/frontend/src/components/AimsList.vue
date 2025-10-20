@@ -17,13 +17,6 @@ const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0
 })
 
-// Exponential decay for indentation: 2rem, 1.2rem, 0.72rem, ...
-const indentWidth = computed(() => {
-  if (props.indentationLevel === 0) return 0
-  const indent = 2 * Math.pow(0.6, props.indentationLevel - 1)
-  return indent
-})
-
 const emit = defineEmits<{
   'aim-clicked': [aimId: string]
   'scroll-request': [element: HTMLElement]
@@ -71,9 +64,6 @@ const handleScrollRequest = (element: HTMLElement) => {
 
 <template>
   <div ref="aimsListRef" class="aims-list-wrapper">
-    <div v-if="indentWidth > 0" class="indent-space" :style="{ width: `${indentWidth}rem` }">
-      <div class="indent-line"></div>
-    </div>
     <div class="aims-list">
       <div v-if="aims.length === 0" class="empty-hint">
         No aims yet
@@ -89,7 +79,7 @@ const handleScrollRequest = (element: HTMLElement) => {
         :class="{
           'selected-outlined': isActive && uiStore.selectedAim?.aimId === aim.id,
           'selected': isSelected && uiStore.selectedAim?.aimId === aim.id,
-          'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phaseId
+          'pending-delete': uiStore.pendingDeleteAimId === aim.id
         }"
         @scroll-request="handleScrollRequest"
         @aim-clicked="$emit('aim-clicked', $event)"
@@ -104,24 +94,6 @@ const handleScrollRequest = (element: HTMLElement) => {
   flex-direction: row;
   flex: 1;
   min-height: 0;
-}
-
-.indent-space {
-  position: relative;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  .indent-line {
-    width: min(0.4rem, 100%);
-    height: calc(100% - 1.5rem);
-    min-height: 0.4rem;
-    margin-top: 0.5rem;
-    margin-bottom: 1rem;
-    background-color: #eee3;
-    border-radius: 0.5rem;
-  }
 }
 
 .aims-list {
