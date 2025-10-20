@@ -17,6 +17,13 @@ const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0
 })
 
+// Exponential decay for indentation: 2rem, 1.2rem, 0.72rem, ...
+const indentWidth = computed(() => {
+  if (props.indentationLevel === 0) return 0
+  const indent = 2 * Math.pow(0.6, props.indentationLevel - 1)
+  return indent
+})
+
 const emit = defineEmits<{
   'aim-clicked': [index: number]
   'scroll-request': [element: HTMLElement]
@@ -63,30 +70,60 @@ const handleScrollRequest = (element: HTMLElement) => {
 </script>
 
 <template>
-  <div ref="aimsListRef" class="aims-list">
-    <div v-if="aims.length === 0" class="empty-hint">
-      No aims yet
+  <div ref="aimsListRef" class="aims-list-wrapper">
+    <div v-if="indentWidth > 0" class="indent-space" :style="{ width: `${indentWidth}rem` }">
+      <div class="indent-line"></div>
     </div>
-    <AimComponent
-      v-for="(aim, index) in aims"
-      :key="aim.id"
-      :aim="aim"
-      :phase-id="phaseId"
-      :indentation-level="indentationLevel"
-      :is-active="isActive && uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)"
-      :is-selected="isSelected && uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)"
-      :class="{
-        'selected-outlined': isActive && (uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)),
-        'selected': isSelected && (uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)),
-        'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phaseId
-      }"
-      @scroll-request="handleScrollRequest"
-      @aim-clicked="$emit('aim-clicked', index)"
-    />
+    <div class="aims-list">
+      <div v-if="aims.length === 0" class="empty-hint">
+        No aims yet
+      </div>
+      <AimComponent
+        v-for="(aim, index) in aims"
+        :key="aim.id"
+        :aim="aim"
+        :phase-id="phaseId"
+        :indentation-level="indentationLevel"
+        :is-active="isActive && uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)"
+        :is-selected="isSelected && uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)"
+        :class="{
+          'selected-outlined': isActive && (uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)),
+          'selected': isSelected && (uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)),
+          'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phaseId
+        }"
+        @scroll-request="handleScrollRequest"
+        @aim-clicked="$emit('aim-clicked', index)"
+      />
+    </div>
   </div>
 </template>
 
 <style scoped>
+.aims-list-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+}
+
+.indent-space {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .indent-line {
+    width: min(0.4rem, 100%);
+    height: calc(100% - 1.5rem);
+    min-height: 0.4rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    background-color: #eee3;
+    border-radius: 0.5rem;
+  }
+}
+
 .aims-list {
   flex: 1;
   overflow-y: auto;

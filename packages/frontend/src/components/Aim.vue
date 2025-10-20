@@ -50,11 +50,11 @@ const statusColor = computed(() => ({
   'failed': '#ff6666'
 }[props.aim.status.state] ?? '#888'))
 
-// Exponential decay for indentation: 2rem, 1rem, 0.5rem, 0.25rem, ...
-const indentStyle = computed(() => {
-  if (props.indentationLevel === 0) return {}
-  const indent = 2 * Math.pow(0.5, props.indentationLevel - 1)
-  return { marginLeft: `${indent}rem` }
+// Exponential decay for indentation: 5rem, 3rem, 1.8rem, ...
+const indentWidth = computed(() => {
+  if (props.indentationLevel === 0) return 0
+  const indent = 5 * Math.pow(0.6, props.indentationLevel - 1)
+  return indent
 })
 
 // Scroll into view when selected (active or not)
@@ -96,17 +96,22 @@ onMounted(() => {
     </div>
 
     <!-- Expanded incoming aims (recursive) -->
-    <div v-if="isExpanded" class="incoming-aims" :style="indentStyle">
-      <AimsList
-        :aims="incomingAims"
-        :phase-id="phaseId"
-        :column-index="0"
-        :indentation-level="indentationLevel + 1"
-        :is-active="isActive"
-        :is-selected="isSelected"
-        @scroll-request="$emit('scroll-request', $event)"
-        @aim-clicked="$emit('aim-clicked')"
-      />
+    <div v-if="isExpanded" class="incoming-aims">
+      <div v-if="indentWidth > 0" class="indent-space" :style="{ width: `${indentWidth}rem` }">
+        <div class="indent-line"></div>
+      </div>
+      <div class="incoming-content">
+        <AimsList
+          :aims="incomingAims"
+          :phase-id="phaseId"
+          :column-index="0"
+          :indentation-level="indentationLevel + 1"
+          :is-active="isActive"
+          :is-selected="isSelected"
+          @scroll-request="$emit('scroll-request', $event)"
+          @aim-clicked="$emit('aim-clicked')"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -158,11 +163,28 @@ onMounted(() => {
 }
 
 .incoming-aims {
-  .incoming-placeholder {
-    color: #666;
-    font-style: italic;
-    font-size: 0.9rem;
-    padding: 0.5rem 0 0.5rem 2rem;
+  display: flex;
+  flex-direction: row;
+
+  .indent-space {
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+
+    .indent-line {
+      width: 1px;
+      height: 100%;
+      min-height: 0.4rem;
+      background-color: #eee3;
+      border-radius: 0.5rem;
+    }
+  }
+
+  .incoming-content {
+    flex: 1;
+    min-width: 0;
   }
 }
 </style>
