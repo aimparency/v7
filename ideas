@@ -1,3 +1,9 @@
+- support multi client 
+  - make backend sync changes in realtime: 
+  - when multiple clients are connected (could be MCP or web client)
+
+- store embedding for aims
+
 - develop MCP 
 
 - aims in rootaims not added in the right position - maybe reload after add?  
