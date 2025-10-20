@@ -7,15 +7,12 @@ import PhaseComponent from './Phase.vue'
 interface Props {
   parentPhaseId: string | null
   columnIndex: number
-  columnDepth?: number
   isSelected: boolean
   isActive: boolean
   selectedPhaseIndex: number
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  columnDepth: 1
-})
+const props = defineProps<Props>()
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -75,8 +72,6 @@ const handleScrollRequest = (element: HTMLElement) => {
         :phase="phase"
         :is-selected="index === selectedPhaseIndex"
         :is-active="isActive && index === selectedPhaseIndex"
-        :column-index="columnIndex"
-        :column-depth="columnDepth"
         @click="() => uiStore.selectPhase(columnIndex, index)"
         @scroll-request="handleScrollRequest"
       />

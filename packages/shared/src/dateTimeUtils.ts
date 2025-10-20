@@ -30,14 +30,3 @@ export function localDateTimeToTimestamp(date: string, time: string): number {
   return new Date(dateTimeString).getTime()
 }
 
-/**
- * Set date and time fields from a timestamp
- */
-export function setDateTimeFromTimestamp(
-  timestamp: number,
-  setDate: (date: string) => void,
-  setTime: (time: string) => void
-): void {
-  setDate(timestampToLocalDate(timestamp))
-  setTime(timestampToLocalTime(timestamp))
-}

@@ -9,16 +9,11 @@ interface Props {
   phase: Phase
   isSelected: boolean
   isActive: boolean
-  columnIndex: number
-  columnDepth?: number
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  columnDepth: 1
-})
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  'click': []
   'scroll-request': [element: HTMLElement]
 }>()
 
