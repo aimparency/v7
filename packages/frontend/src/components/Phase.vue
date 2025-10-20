@@ -123,11 +123,7 @@ const isPendingDelete = computed(() => {
 
     <!-- Aims List -->
     <div class="aims-container">
-      <div v-if="!phaseAims || phaseAims.length === 0" class="empty-hint">
-        No aims yet. Press o to create
-      </div>
       <AimsList
-        v-else
         :aims="phaseAims"
         :phase-id="phase.id"
         :column-index="0"
@@ -178,7 +174,6 @@ const isPendingDelete = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
   padding: 0.5rem;
   padding-top: 0.3rem;
 }

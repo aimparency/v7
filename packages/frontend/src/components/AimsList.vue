@@ -10,9 +10,12 @@ interface Props {
   columnIndex: number
   isActive: boolean
   isSelected: boolean
+  indentationLevel?: number
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  indentationLevel: 0
+})
 
 const emit = defineEmits<{
   'aim-clicked': [index: number]
@@ -61,15 +64,20 @@ const handleScrollRequest = (element: HTMLElement) => {
 
 <template>
   <div ref="aimsListRef" class="aims-list">
+    <div v-if="aims.length === 0" class="empty-hint">
+      No aims yet
+    </div>
     <AimComponent
       v-for="(aim, index) in aims"
       :key="aim.id"
       :aim="aim"
-      :is-active="isActive && uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index"
-      :is-selected="isSelected && uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index"
+      :phase-id="phaseId"
+      :indentation-level="indentationLevel"
+      :is-active="isActive && uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)"
+      :is-selected="isSelected && uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)"
       :class="{
-        'selected-outlined': isActive && uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index,
-        'selected': isSelected && uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index,
+        'selected-outlined': isActive && (uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)),
+        'selected': isSelected && (uiStore.selectedAim?.aimId ? uiStore.selectedAim.aimId === aim.id : (uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex === index)),
         'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phaseId
       }"
       @scroll-request="handleScrollRequest"
@@ -82,7 +90,7 @@ const handleScrollRequest = (element: HTMLElement) => {
 .aims-list {
   flex: 1;
   overflow-y: auto;
-  padding: 0.5rem;
+  padding: 0 0.5rem 0.5rem 0.5rem;
   min-height: 0;
 
   /* Custom scrollbar */
@@ -106,5 +114,12 @@ const handleScrollRequest = (element: HTMLElement) => {
   /* Firefox scrollbar */
   scrollbar-width: thin;
   scrollbar-color: #555 #1a1a1a;
+}
+
+.empty-hint {
+  font-size: 0.7rem;
+  color: #666;
+  font-style: italic;
+  padding: 0.25rem 0;
 }
 </style>
