@@ -3,7 +3,7 @@ import { computed, ref, watch, onMounted } from 'vue'
 import type { Phase } from 'shared'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
-import AimComponent from './Aim.vue'
+import AimsList from './AimsList.vue'
 
 interface Props {
   phase: Phase
@@ -15,6 +15,8 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'scroll-request': [element: HTMLElement]
+  'aim-clicked': [aimIndex: number]
+  'phase-clicked': []
 }>()
 
 const phaseContainerRef = ref<HTMLElement | null>(null)
@@ -38,11 +40,6 @@ onMounted(() => {
     emit('scroll-request', phaseContainerRef.value)
   }
 })
-
-// Pass through scroll requests from aims
-const handleAimScrollRequest = (element: HTMLElement) => {
-  emit('scroll-request', element)
-}
 
 // Format date with appropriate granularity based on duration
 const formatDate = (timestamp: number, duration: number): string => {
@@ -105,7 +102,12 @@ const isPendingDelete = computed(() => {
 </script>
 
 <template>
-  <div ref="phaseContainerRef" class="phase-container" :class="{ 'selected-outlined': isActive, 'selected': isSelected, 'pending-delete': isPendingDelete }">
+  <div
+    ref="phaseContainerRef"
+    class="phase-container"
+    :class="{ 'selected-outlined': isActive, 'selected': isSelected, 'pending-delete': isPendingDelete }"
+    @click="$emit('phase-clicked')"
+  >
     <!-- Progress Bar -->
     <div class="progress-bar">
       <div class="progress-fill" :style="{ width: progressPercent + '%', background: progressColor }"></div>
@@ -124,18 +126,15 @@ const isPendingDelete = computed(() => {
       <div v-if="!phaseAims || phaseAims.length === 0" class="empty-hint">
         No aims yet. Press o to create
       </div>
-      <AimComponent
-        v-for="(aim, index) in phaseAims"
-        :key="aim.id"
-        :aim="aim"
-        :is-active="isActive && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index"
-        :is-selected="isSelected && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index"
-        :class="{
-          'selected-outlined': isActive && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
-          'selected': isSelected && uiStore.selectedAim?.phaseId === phase.id && uiStore.selectedAim?.aimIndex === index,
-          'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phase.id
-        }"
-        @scroll-request="handleAimScrollRequest"
+      <AimsList
+        v-else
+        :aims="phaseAims"
+        :phase-id="phase.id"
+        :column-index="0"
+        :is-active="isActive"
+        :is-selected="isSelected"
+        @scroll-request="$emit('scroll-request', $event)"
+        @aim-clicked="$emit('aim-clicked', $event)"
       />
     </div>
   </div>
@@ -198,9 +197,10 @@ const isPendingDelete = computed(() => {
 }
 
 .aims-container {
-  padding-left: 1rem;
-  padding-right: 0.5rem;
-  padding-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 
 .empty-hint {

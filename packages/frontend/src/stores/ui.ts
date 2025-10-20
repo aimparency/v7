@@ -663,8 +663,14 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Select a phase and cascade: load children, restore their selection, repeat
-    async selectPhase(columnIndex: number, phaseIndex: number) {
+    async selectPhase(columnIndex: number, phaseIndex: number, isTopLevel = true) {
       const dataStore = useDataStore();
+
+      // Set column focus only at top level (not during cascade recursion)
+      if (isTopLevel) {
+        this.setSelectedColumn(columnIndex);
+        this.setSelectedAim(null, null); // Clear aim selection
+      }
 
       // Get current column's data
       const parentId = this.columnParentPhaseId[columnIndex] ?? null;
@@ -707,11 +713,16 @@ export const useUIStore = defineStore('ui', {
         this.selectedPhaseIdByColumn[columnIndex + 1] = children[childIndex].id;
         this.setMinRightmost(columnIndex + 1);
 
-        // Continue cascade
-        await this.selectPhase(columnIndex + 1, childIndex);
+        // Continue cascade (mark as not top level)
+        await this.selectPhase(columnIndex + 1, childIndex, false);
       } else {
         this.columnParentPhaseId[columnIndex + 1] = phaseId;
         this.setRightmostColumn(columnIndex + 1);
+      }
+
+      // Set mode to column-navigation only at top level
+      if (isTopLevel) {
+        this.setMode('column-navigation');
       }
     },
 
@@ -745,6 +756,34 @@ export const useUIStore = defineStore('ui', {
       } else {
         this.selectedAim = { phaseId, aimIndex }
       }
+    },
+
+    // Click-to-select: focus an aim (set column, phase, mode, and aim)
+    async selectAim(columnIndex: number, phaseId: string, aimIndex: number) {
+      const dataStore = useDataStore();
+
+      // Set column focus
+      this.setSelectedColumn(columnIndex);
+
+      // For non-root aims, ensure the phase is selected
+      if (phaseId !== 'null' && columnIndex >= 0) {
+        // Find the phase index
+        const parentId = this.columnParentPhaseId[columnIndex] ?? null;
+        const phases = dataStore.getPhasesByParentId(parentId);
+        const phaseIndex = phases.findIndex(p => p.id === phaseId);
+
+        if (phaseIndex !== -1) {
+          // Select the phase (but don't cascade - just set selection)
+          this.selectedPhaseByColumn[columnIndex] = phaseIndex;
+          this.selectedPhaseIdByColumn[columnIndex] = phaseId;
+        }
+      }
+
+      // Enter phase-edit mode
+      this.setMode('phase-edit');
+
+      // Set the selected aim
+      this.setSelectedAim(phaseId, aimIndex);
     },
 
     // Navigation with edge-triggered viewport scrolling

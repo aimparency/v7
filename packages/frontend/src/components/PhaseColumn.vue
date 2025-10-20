@@ -72,7 +72,8 @@ const handleScrollRequest = (element: HTMLElement) => {
         :phase="phase"
         :is-selected="index === selectedPhaseIndex"
         :is-active="isActive && index === selectedPhaseIndex"
-        @click="() => uiStore.selectPhase(columnIndex, index)"
+        @phase-clicked="() => uiStore.selectPhase(columnIndex, index)"
+        @aim-clicked="(aimIndex) => uiStore.selectAim(columnIndex, phase.id, aimIndex)"
         @scroll-request="handleScrollRequest"
       />
     </div>

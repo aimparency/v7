@@ -63,10 +63,9 @@ onMounted(() => {
     :style="indentStyle"
   >
     <div
-      class="aim-item focusable"
+      class="aim-item"
       :class="[attrs.class, { expanded: isExpanded }]"
-      tabindex="0"
-      @click="$emit('aim-clicked')"
+      @click.stop="$emit('aim-clicked')"
     >
       <!-- Aim content -->
       <div class="aim-content">
