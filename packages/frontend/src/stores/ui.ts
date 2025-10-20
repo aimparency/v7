@@ -704,25 +704,28 @@ export const useUIStore = defineStore('ui', {
 
       // --- Start Cascade ---
 
-      // Set the parent for the *next* column
-      this.columnParentPhaseId[columnIndex + 1] = phaseId;
+      // Calculate the remembered index
+      const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[phaseId] ?? 0;
 
-      // Load children for the next column
+      // Load children FIRST, before updating any reactive state
       const children = await dataStore.loadPhases(this.projectPath, phaseId);
       this.phaseCountByColumn[columnIndex + 1] = children.length;
 
-      // Update column visibility
-      this.setMinRightmost(columnIndex + 1);
-
-      // If children exist, restore remembered selection and continue cascade
+      // If children exist, set up all state before rendering
       if (children.length > 0) {
-        const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[phaseId] ?? 0;
         const childIndex = Math.min(rememberedIndex, children.length - 1);
+
+        // Set all state atomically (in the same tick) before triggering component creation
+        this.columnParentPhaseId[columnIndex + 1] = phaseId;
+        this.selectedPhaseByColumn[columnIndex + 1] = childIndex;
+        this.selectedPhaseIdByColumn[columnIndex + 1] = children[childIndex].id;
+        this.setMinRightmost(columnIndex + 1); // This creates the column component
 
         // Recursively call to continue the cascade
         await this.selectPhase(columnIndex + 1, childIndex);
       } else {
-        // No children, this is the end of the line
+        // No children, just update parent and visibility
+        this.columnParentPhaseId[columnIndex + 1] = phaseId;
         this.setRightmostColumn(columnIndex + 1);
       }
     },
