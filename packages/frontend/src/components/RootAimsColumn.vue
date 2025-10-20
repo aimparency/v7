@@ -30,7 +30,7 @@ const rootAims = computed(() => {
         :column-index="-1"
         :is-active="isActive"
         :is-selected="isSelected"
-        @aim-clicked="(index) => uiStore.selectAim(-1, 'null', index)"
+        @aim-clicked="(aimId) => uiStore.selectAimById(-1, 'null', aimId)"
       />
     </template>
   </div>

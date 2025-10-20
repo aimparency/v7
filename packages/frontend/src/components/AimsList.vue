@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Aim } from 'shared'
+import type { Aim } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import AimComponent from './Aim.vue'
 
@@ -25,7 +25,7 @@ const indentWidth = computed(() => {
 })
 
 const emit = defineEmits<{
-  'aim-clicked': [index: number]
+  'aim-clicked': [aimId: string]
   'scroll-request': [element: HTMLElement]
 }>()
 
@@ -92,7 +92,7 @@ const handleScrollRequest = (element: HTMLElement) => {
           'pending-delete': uiStore.pendingDeleteAimIndex === index && uiStore.selectedAim?.phaseId === phaseId
         }"
         @scroll-request="handleScrollRequest"
-        @aim-clicked="$emit('aim-clicked', index)"
+        @aim-clicked="$emit('aim-clicked', $event)"
       />
     </div>
   </div>

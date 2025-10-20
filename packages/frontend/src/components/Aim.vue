@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, useAttrs } from 'vue'
-import type { Aim } from 'shared'
-import { useUIStore } from '../stores/ui'
+import type { Aim } from '../stores/data'
 import { useDataStore } from '../stores/data'
 import AimsList from './AimsList.vue'
 
@@ -22,17 +21,16 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'aim-clicked': []
+  'aim-clicked': [aimId: string]
   'scroll-request': [element: HTMLElement]
 }>()
 
 const attrs = useAttrs()
 const aimContainerRef = ref<HTMLElement | null>(null)
-const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 const hasIncomingAims = computed(() => props.aim.incoming?.length > 0)
-const isExpanded = computed(() => uiStore.expandedAims.has(props.aim.id))
+const isExpanded = computed(() => props.aim.expanded || false)
 
 // Get incoming aims from the data store
 const incomingAims = computed(() => {
@@ -77,11 +75,13 @@ onMounted(() => {
     ref="aimContainerRef"
     class="aim-item"
     :class="[attrs.class, { expanded: isExpanded }]"
-    @click.stop="$emit('aim-clicked')"
+    @click.stop="$emit('aim-clicked', aim.id)"
   >
     <!-- Aim content -->
     <div class="aim-content">
-      <div class="aim-text">{{ aim.text }}</div>
+      <div class="aim-text" :class="{ 'untitled': !aim.text }">
+        {{ aim.text || '(untitled)' }}
+      </div>
       <div class="aim-meta">
         <div
           class="aim-status"
@@ -106,10 +106,10 @@ onMounted(() => {
           :phase-id="phaseId"
           :column-index="0"
           :indentation-level="indentationLevel + 1"
-          :is-active="isActive"
-          :is-selected="isSelected"
+          :is-active="true"
+          :is-selected="true"
           @scroll-request="$emit('scroll-request', $event)"
-          @aim-clicked="$emit('aim-clicked')"
+          @aim-clicked="$emit('aim-clicked', $event)"
         />
       </div>
     </div>
@@ -142,6 +142,11 @@ onMounted(() => {
   .aim-text {
     color: #e0e0e0;
     line-height: 1.4;
+
+    &.untitled {
+      color: #888;
+      font-style: italic;
+    }
   }
   
   .aim-meta {

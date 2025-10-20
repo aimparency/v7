@@ -51,9 +51,6 @@ export const useUIStore = defineStore('ui', {
     // Aim selection (only set when in phase-edit or aim-edit mode)
     selectedAim: null as { phaseId: string, aimIndex: number, aimId?: string } | null,
 
-    // Expanded aims tracking
-    expandedAims: new Set<string>(),
-
     // Viewport for column scrolling
     viewportStart: -1, // Left edge of visible window
     viewportSize: 3, // Number of columns visible at once
@@ -282,7 +279,7 @@ export const useUIStore = defineStore('ui', {
           flatList.push({ aim, flatIndex: flatList.length })
 
           // If this aim is expanded, add its incoming aims recursively
-          if (this.expandedAims.has(aim.id) && aim.incoming?.length > 0) {
+          if (aim.expanded && aim.incoming?.length > 0) {
             const incomingAims = aim.incoming
               .map((aimId: string) => dataStore.aims[aimId])
               .filter(Boolean)
@@ -583,7 +580,7 @@ export const useUIStore = defineStore('ui', {
         // Special behavior for 'o' when aim is expanded: create sub-aim
         if (event.key === 'o') {
           const currentAim = aims[selectedAim.aimIndex]
-          if (currentAim && this.expandedAims.has(currentAim.id)) {
+          if (currentAim && currentAim.expanded) {
             // Create sub-aim: establish parent-child relationship
             this.createSubAim(selectedAim.phaseId, currentAim)
             return
@@ -728,8 +725,8 @@ export const useUIStore = defineStore('ui', {
           event.preventDefault()
           // Collapse the current aim
           const aim = aims[selectedAim.aimIndex]
-          if (aim && this.expandedAims.has(aim.id)) {
-            this.expandedAims.delete(aim.id)
+          if (aim) {
+            dataStore.aims[aim.id].expanded = false
           }
           break
         }
@@ -738,7 +735,7 @@ export const useUIStore = defineStore('ui', {
           // Expand the current aim (even if it has no incoming aims)
           const aim = aims[selectedAim.aimIndex]
           if (aim) {
-            this.expandedAims.add(aim.id)
+            dataStore.aims[aim.id].expanded = true
           }
           break
         }
@@ -877,6 +874,65 @@ export const useUIStore = defineStore('ui', {
         this.openAimEditModal(newAimResult.id, phaseId, 0)
       } catch (error) {
         console.error('Failed to create sub-aim:', error)
+      }
+    },
+
+    // Click-to-select by aim ID (finds top-level index automatically)
+    async selectAimById(columnIndex: number, phaseId: string, aimId: string) {
+      const dataStore = useDataStore();
+      const aims = dataStore.getAimsForPhase(phaseId)
+
+      // Find the top-level aim index
+      const topLevelIndex = aims.findIndex((a: any) => a.id === aimId)
+
+      if (topLevelIndex >= 0) {
+        // It's a top-level aim, use regular selectAim
+        this.selectAim(columnIndex, phaseId, topLevelIndex)
+      } else {
+        // It's a nested aim - find its parent via outgoing relationship
+        const aim = dataStore.aims[aimId]
+        if (aim && aim.outgoing && aim.outgoing.length > 0) {
+          // Find the top-level ancestor by walking up outgoing chain
+          let currentAim = aim
+          let parentAimIndex = -1
+
+          while (currentAim.outgoing && currentAim.outgoing.length > 0) {
+            const parentId = currentAim.outgoing[0] // Take first outgoing (parent)
+            const parentAim = dataStore.aims[parentId]
+
+            if (!parentAim) break
+
+            // Check if this parent is top-level
+            parentAimIndex = aims.findIndex((a: any) => a.id === parentId)
+            if (parentAimIndex >= 0) {
+              // Found top-level ancestor
+              break
+            }
+
+            // Continue walking up
+            currentAim = parentAim
+          }
+
+          if (parentAimIndex >= 0) {
+            // Select with parent's index but child's ID
+            this.setSelectedColumn(columnIndex)
+
+            // For non-root aims, ensure the phase is selected
+            if (phaseId !== 'null' && columnIndex >= 0) {
+              const parentId = this.columnParentPhaseId[columnIndex] ?? null
+              const phases = dataStore.getPhasesByParentId(parentId)
+              const phaseIndex = phases.findIndex(p => p.id === phaseId)
+
+              if (phaseIndex !== -1) {
+                this.selectedPhaseByColumn[columnIndex] = phaseIndex
+                this.selectedPhaseIdByColumn[columnIndex] = phaseId
+              }
+            }
+
+            this.setMode('phase-edit')
+            this.setSelectedAim(phaseId, parentAimIndex, aimId)
+          }
+        }
       }
     },
 

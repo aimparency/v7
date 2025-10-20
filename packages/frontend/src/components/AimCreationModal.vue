@@ -131,6 +131,7 @@ const handleInputKeydown = (event: KeyboardEvent) => {
     handleSubmit()
   } else if (event.key === 'Escape') {
     event.preventDefault()
+    event.stopPropagation() // Prevent escape from bubbling to global handler
     uiStore.closeAimModal()
   } else if (event.ctrlKey && event.key === 'j') {
     event.preventDefault()

@@ -1,7 +1,13 @@
 import { defineStore } from 'pinia'
-import type { Phase, Aim } from 'shared'
+import type { Phase, Aim as BaseAim } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
+
+// Extend Aim type with UI-only properties
+export type Aim = BaseAim & {
+  expanded?: boolean
+  selectedIncomingIndex?: number
+}
 
 export const useDataStore = defineStore('data', {
   state: () => ({
