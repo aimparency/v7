@@ -692,6 +692,14 @@ export const useUIStore = defineStore('ui', {
       const phase = phases[phaseIndex];
       const phaseId = phase?.id;
 
+      // STORE the current child column selection before changing parent
+      const oldPhaseId = this.selectedPhaseIdByColumn[columnIndex];
+      if (oldPhaseId && oldPhaseId !== phaseId && columnIndex >= 0) {
+        const childSelection = this.selectedPhaseByColumn[columnIndex + 1] ?? 0;
+        console.log(`Storing child selection for parent ${oldPhaseId}: index ${childSelection}`);
+        this.lastSelectedSubPhaseIndexByPhase[oldPhaseId] = childSelection;
+      }
+
       // Update selection for the current column
       this.selectedPhaseByColumn[columnIndex] = phaseIndex;
       if (phaseId) {
@@ -700,15 +708,6 @@ export const useUIStore = defineStore('ui', {
         delete this.selectedPhaseIdByColumn[columnIndex];
       }
 
-      // Clear state for deeper columns to prevent showing stale data
-      // We set a non-existent parent ID to ensure they render as empty
-      for (let i = columnIndex + 1; i <= this.rightmostColumnIndex; i++) {
-        this.columnParentPhaseId[i] = 'cleared';
-        this.phaseCountByColumn[i] = 0;
-        this.selectedPhaseByColumn[i] = 0;
-        delete this.selectedPhaseIdByColumn[i];
-      }
-      
       // If we are selecting a placeholder or an invalid index, stop the cascade.
       if (!phaseId) {
         this.setRightmostColumn(columnIndex);
@@ -717,22 +716,21 @@ export const useUIStore = defineStore('ui', {
 
       // --- Start Cascade ---
 
-      // Set the parent for the *next* column immediately.
-      // The column will appear empty until the data is loaded.
+      // Set the parent for the *next* column
       this.columnParentPhaseId[columnIndex + 1] = phaseId;
 
-      // 1. Load children for the next column
+      // Load children for the next column
       const children = await dataStore.loadPhases(this.projectPath, phaseId);
       this.phaseCountByColumn[columnIndex + 1] = children.length;
-      
-      // 2. Update column visibility
+
+      // Update column visibility
       this.setMinRightmost(columnIndex + 1);
 
-      // 3. If children exist, select one and continue the cascade
+      // If children exist, restore remembered selection and continue cascade
       if (children.length > 0) {
         const rememberedIndex = this.lastSelectedSubPhaseIndexByPhase[phaseId] ?? 0;
         const childIndex = Math.min(rememberedIndex, children.length - 1);
-        
+
         // Recursively call to continue the cascade
         await this.selectPhase(columnIndex + 1, childIndex);
       } else {
