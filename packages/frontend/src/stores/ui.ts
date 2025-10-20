@@ -849,27 +849,18 @@ export const useUIStore = defineStore('ui', {
       // Don't clear selectedAim here - only clear it when actually deleting or when leaving phase-edit mode
     },
 
-    // Scroll selected element into 1/4 to 3/4 viewport range
-    async scrollIntoViewIfNeeded() {
-      await nextTick()
+    // Helper: Scroll an element into view within a range
+    scrollElementIntoRange(
+      element: HTMLElement,
+      container: HTMLElement,
+      minY: number,
+      maxY: number
+    ) {
+      const elementRect = element.getBoundingClientRect()
 
-      // Find the active column's scrollable container
-      const container = document.querySelector('.selected-outlined .phase-list, .selected-outlined .aims-list') as HTMLElement
-      if (!container) return
-
-      // Find the selected element
-      const selected = container.querySelector('.phase-container.selected-outlined, .aim-item.selected-outlined') as HTMLElement
-      if (!selected) return
-
-      const selectedRect = selected.getBoundingClientRect()
-
-      const viewportHeight = window.innerHeight
-      const quarterMark = viewportHeight * 0.25
-      const threeQuarterMark = viewportHeight * 0.75
-
-      // Check if element is outside 1/4 to 3/4 range
-      const isAboveRange = selectedRect.top < quarterMark
-      const isBelowRange = selectedRect.bottom > threeQuarterMark
+      // Check if element is outside the range
+      const isAboveRange = elementRect.top < minY
+      const isBelowRange = elementRect.bottom > maxY
 
       if (!isAboveRange && !isBelowRange) return
 
@@ -877,12 +868,12 @@ export const useUIStore = defineStore('ui', {
       let targetScroll = container.scrollTop
 
       if (isBelowRange) {
-        // Scroll down: position element so its bottom is at 3/4 mark
-        const offset = selectedRect.bottom - threeQuarterMark
+        // Scroll down: position element so its bottom is at maxY
+        const offset = elementRect.bottom - maxY
         targetScroll += offset
       } else if (isAboveRange) {
-        // Scroll up: position element so its top is at 1/4 mark
-        const offset = selectedRect.top - quarterMark
+        // Scroll up: position element so its top is at minY
+        const offset = elementRect.top - minY
         targetScroll += offset
       }
 
@@ -891,6 +882,38 @@ export const useUIStore = defineStore('ui', {
       targetScroll = Math.max(0, Math.min(targetScroll, maxScroll))
 
       container.scrollTo({ top: targetScroll, behavior: 'smooth' })
+    },
+
+    // Scroll selected element into 1/4 to 3/4 viewport range
+    async scrollIntoViewIfNeeded() {
+      await nextTick()
+
+      // Find container and calculate range
+      let elementToScroll: HTMLElement | null = null
+      let container: HTMLElement | null = null
+
+      if (this.mode === 'phase-edit' && this.selectedAim) {
+        // In phase-edit mode, scroll the selected aim
+        elementToScroll = document.querySelector('.aim-item.selected-outlined') as HTMLElement
+        if (elementToScroll) {
+          container = elementToScroll.closest('.phase-list') as HTMLElement
+        }
+      } else {
+        // In column-navigation mode, scroll the selected phase or root aim
+        elementToScroll = document.querySelector('.phase-container.selected-outlined, .aim-item.selected-outlined') as HTMLElement
+        if (elementToScroll) {
+          container = elementToScroll.closest('.phase-list, .aims-list') as HTMLElement
+        }
+      }
+
+      if (!elementToScroll || !container) return
+
+      // Calculate 1/4 to 3/4 range within the container
+      const containerRect = container.getBoundingClientRect()
+      const minY = containerRect.top + containerRect.height * 0.25
+      const maxY = containerRect.top + containerRect.height * 0.75
+
+      this.scrollElementIntoRange(elementToScroll, container, minY, maxY)
     },
 
   }

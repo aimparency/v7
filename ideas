@@ -1,3 +1,7 @@
+- flexible implementation of a peekBorder
+  - area on both sides that shows a little piece of the next out of view column page
+  - 
+
 - develop claude code plugin / hook for infinte work on aims
 
 - support multi client 

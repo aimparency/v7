@@ -431,9 +431,9 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   flex-direction: row;
-  overflow: visible;
   position: relative;
   transition: transform 0.3s ease;
+  min-height: 0;
 }
 
 .column-aims,
