@@ -378,19 +378,16 @@ export const useDataStore = defineStore('data', {
           uiStore.setMode('column-navigation');
           uiStore.setSelectedAim(null, null);
         } else if (uiStore.selectedAim?.phaseId === phaseId) {
-          // We were in this phase, adjust selection
-          if (deletedIndex !== -1 && deletedIndex < aims.length) {
-            // Deleted aim was not the last one, keep the same index
-            uiStore.setSelectedAim(phaseId, deletedIndex);
-          } else {
-            // Deleted aim was the last one or selection was invalid, move to last valid
-            uiStore.setSelectedAim(phaseId, Math.min(deletedIndex, aims.length - 1));
-          }
+          // Select aim: same index, or last if deleted was last
+          const newIndex = Math.min(deletedIndex, aims.length - 1);
+          const newAim = aims[newIndex];
+          uiStore.setSelectedAim(phaseId, newIndex, newAim?.id);
+
           // Update last selected index
           if (phaseId === 'null') {
-            uiStore.lastSelectedRootAimIndex = uiStore.selectedAim.aimIndex;
+            uiStore.lastSelectedRootAimIndex = newIndex;
           } else {
-            uiStore.lastSelectedAimIndexByPhase[phaseId] = uiStore.selectedAim.aimIndex;
+            uiStore.lastSelectedAimIndexByPhase[phaseId] = newIndex;
           }
         }
       } catch (error) {
