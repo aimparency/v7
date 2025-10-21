@@ -118,8 +118,7 @@ onMounted(() => {
 .aim-item {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem 0;
-  margin-bottom: 0.25rem;
+  padding: 0.25rem 0;
   cursor: pointer;
 
   &.selected-outlined {

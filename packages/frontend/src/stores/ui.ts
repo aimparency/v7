@@ -700,41 +700,53 @@ export const useUIStore = defineStore('ui', {
         if (!selectedAim) return
         const aims = dataStore.getAimsForPhase(selectedAim.phaseId)
 
-        // Special behavior for 'o':
-        // 1. If current aim is a sub-aim (has parent), create sibling sub-aim
-        // 2. If current aim is expanded, create child sub-aim
-        if (event.key === 'o') {
-          const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
-          if (currentAimId) {
-            const currentAim = dataStore.aims[currentAimId]
+        const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
+        if (!currentAimId) return
 
-            // Check if we're in a sub-aim (has outgoing = has parent)
-            if (currentAim && currentAim.outgoing && currentAim.outgoing.length > 0) {
-              // We're in a sub-aim - create sibling sub-aim with same parent
-              const parentAimId = currentAim.outgoing[0]
-              const parentAim = dataStore.aims[parentAimId]
-              if (parentAim) {
-                // Find current sub-aim's position in parent's incoming array
-                const currentIndexInParent = parentAim.incoming.indexOf(currentAimId)
-                const insertionIndex = event.key === 'o' ? currentIndexInParent + 1 : currentIndexInParent
-                this.createSubAim(selectedAim.phaseId, parentAim, insertionIndex)
-                return
-              }
-            } else if (currentAim && currentAim.expanded) {
-              // Top-level expanded aim - create child sub-aim at the beginning
+        const currentAim = dataStore.aims[currentAimId]
+        if (!currentAim) return
+
+        // Check if we're in a sub-aim (has parent)
+        const isSubAim = currentAim.outgoing && currentAim.outgoing.length > 0
+
+        if (isSubAim) {
+          // We're in a sub-aim - create sibling sub-aim
+          const parentAimId = currentAim.outgoing[0]!
+          const parentAim = dataStore.aims[parentAimId]
+          if (!parentAim) return
+
+          const currentIndexInParent = parentAim.incoming.indexOf(currentAimId)
+          if (currentIndexInParent === -1) return
+
+          if (event.key === 'O') {
+            // O: Create sibling at current index (above)
+            this.createSubAim(selectedAim.phaseId, parentAim, currentIndexInParent)
+          } else {
+            // o: If current aim is expanded, create child at 0; else create sibling below
+            if (currentAim.expanded) {
               this.createSubAim(selectedAim.phaseId, currentAim, 0)
-              return
+            } else {
+              this.createSubAim(selectedAim.phaseId, parentAim, currentIndexInParent + 1)
+            }
+          }
+        } else {
+          // We're at top level
+          if (event.key === 'O') {
+            // O: Create at current level at index aimIndex (above)
+            const insertionIndex = selectedAim.aimIndex
+            const phaseIdForModal = selectedAim.phaseId === 'null' ? null : selectedAim.phaseId
+            this.openAimModal(phaseIdForModal, insertionIndex)
+          } else {
+            // o: If expanded, create sub-aim at index 0; else create at aimIndex + 1
+            if (currentAim.expanded) {
+              this.createSubAim(selectedAim.phaseId, currentAim, 0)
+            } else {
+              const insertionIndex = selectedAim.aimIndex + 1
+              const phaseIdForModal = selectedAim.phaseId === 'null' ? null : selectedAim.phaseId
+              this.openAimModal(phaseIdForModal, insertionIndex)
             }
           }
         }
-
-        // Default behavior: create aim at same level
-        const insertionIndex = (aims && aims.length > 0)
-          ? (event.key === 'o' ? selectedAim.aimIndex + 1 : selectedAim.aimIndex)
-          : 0
-        console.log('[ui.ts o/O] selectedAim:', selectedAim, 'insertionIndex:', insertionIndex, 'aims.length:', aims?.length)
-        const phaseIdForModal = selectedAim.phaseId === 'null' ? null : selectedAim.phaseId;
-        this.openAimModal(phaseIdForModal, insertionIndex)
         return
       }
 

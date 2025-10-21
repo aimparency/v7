@@ -32,8 +32,11 @@ export const useDataStore = defineStore('data', {
     },
     getAimsForPhase: (state) => (phaseId: string) => {
       if (phaseId === 'null') {
-        // Root aims are not directly stored, compute them
-        return Object.values(state.aims).filter(aim => !aim.committedIn || aim.committedIn.length === 0)
+        // Root aims: uncommitted aims with no outgoing aims (not sub-aims)
+        return Object.values(state.aims).filter(aim =>
+          (!aim.committedIn || aim.committedIn.length === 0) &&
+          (!aim.outgoing || aim.outgoing.length === 0)
+        )
       }
       const phase = state.phases[phaseId]
       if (!phase) return []
