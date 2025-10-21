@@ -33,6 +33,7 @@ export const useUIStore = defineStore('ui', {
     aimModalEditingAimId: null as string | null, // Track which aim is being edited
     aimModalPhaseId: null as string | null, // Track phase to add aim to
     aimModalInsertionIndex: 0, // Track where to insert the aim
+    aimModalParentAimId: null as string | null, // Track parent aim for sub-aim creation
 
     // Navigation mode system
     mode: 'column-navigation' as 'column-navigation' | 'phase-edit' | 'aim-edit',
@@ -991,41 +992,15 @@ export const useUIStore = defineStore('ui', {
       }
     },
 
-    // Create a sub-aim (incoming aim) for an expanded aim
-    async createSubAim(phaseId: string, parentAim: any, insertionIndex: number = 0) {
-      const dataStore = useDataStore()
-
-      try {
-        // Create new aim with parent in outgoing array
-        const newAimResult = await dataStore.createAim(this.projectPath, {
-          text: '',
-          incoming: [],
-          outgoing: [parentAim.id],
-          committedIn: [],
-          status: {
-            state: 'open',
-            comment: '',
-            date: Date.now()
-          }
-        })
-
-        // Update parent aim to include new aim in incoming array at specified index
-        const wasExpanded = parentAim.expanded
-        const updatedIncoming = [...parentAim.incoming]
-        updatedIncoming.splice(insertionIndex, 0, newAimResult.id)
-        await dataStore.updateAim(this.projectPath, parentAim.id, {
-          incoming: updatedIncoming
-        })
-        // Restore expanded state (it's UI-only, not persisted)
-        if (wasExpanded) {
-          dataStore.aims[parentAim.id].expanded = true
-        }
-
-        // Open modal to edit the new aim's text
-        this.openAimEditModal(newAimResult.id, phaseId, insertionIndex)
-      } catch (error) {
-        console.error('Failed to create sub-aim:', error)
-      }
+    // Open modal to create a sub-aim (incoming aim) for an expanded aim
+    createSubAim(phaseId: string, parentAim: any, insertionIndex: number = 0) {
+      // Open modal with parent aim context - actual creation happens on modal confirm
+      this.showAimModal = true
+      this.aimModalMode = 'create'
+      this.aimModalEditingAimId = null
+      this.aimModalPhaseId = phaseId
+      this.aimModalInsertionIndex = insertionIndex
+      this.aimModalParentAimId = parentAim.id
     },
 
     // Click-to-select by aim ID (finds top-level index automatically)

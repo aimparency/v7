@@ -39,16 +39,17 @@ const createAim = async () => {
 
   try {
     let aimId: string
+    const parentAimId = uiStore.aimModalParentAimId
 
     if (selectedSearchResult.value) {
       // Use selected search result
       aimId = selectedSearchResult.value.id
     } else {
-      // Create new aim
+      // Create new aim (with optional parent relationship for sub-aims)
       const result = await dataStore.createAim(uiStore.projectPath, {
         text: aimText.value.trim(),
         incoming: [],
-        outgoing: [],
+        outgoing: parentAimId ? [parentAimId] : [],
         committedIn: [],
         status: {
           state: 'open',
@@ -59,38 +60,54 @@ const createAim = async () => {
       aimId = result.id
     }
 
-    // Commit aim to phase at the specified insertion index
     const phaseId = uiStore.aimModalPhaseId
     const insertionIndex = uiStore.aimModalInsertionIndex
 
-    console.log('[AimCreationModal] Committing aim:', aimId, 'to phase:', phaseId, 'at index:', insertionIndex)
-
-    if (phaseId) {
-      await dataStore.commitAimToPhase(uiStore.projectPath, aimId, phaseId, insertionIndex)
-
-      // Find the actual index of the newly created aim
-      const aims = dataStore.getAimsForPhase(phaseId)
-      console.log('[AimCreationModal] Phase aims after commit:', aims.map(a => ({id: a.id, text: a.text})))
-      const newAimIndex = aims.findIndex((aim: Aim) => aim.id === aimId)
-      console.log('[AimCreationModal] Found new aim at index:', newAimIndex, 'expected:', insertionIndex)
-
-      // Select the newly created aim
-      uiStore.setMode('phase-edit')
-      if (newAimIndex !== -1) {
-        uiStore.setSelectedAim(phaseId, newAimIndex, aimId)
-        // Update last selected index for this phase
-        if (phaseId !== 'null') {
-          uiStore.lastSelectedAimIndexByPhase[phaseId] = newAimIndex
+    // If creating a sub-aim, update parent's incoming array
+    if (parentAimId) {
+      const parentAim = dataStore.aims[parentAimId]
+      if (parentAim) {
+        const wasExpanded = parentAim.expanded
+        const updatedIncoming = [...parentAim.incoming]
+        updatedIncoming.splice(insertionIndex, 0, aimId)
+        await dataStore.updateAim(uiStore.projectPath, parentAimId, {
+          incoming: updatedIncoming
+        })
+        // Restore expanded state (UI-only, not persisted)
+        if (wasExpanded) {
+          dataStore.aims[parentAimId].expanded = true
         }
+
+        // Select the newly created sub-aim
+        uiStore.setMode('phase-edit')
+        const phaseIdForSelection = phaseId || 'null'
+        uiStore.setSelectedAim(phaseIdForSelection, insertionIndex, aimId)
       }
     } else {
-      // Root aim - select it
-      uiStore.setMode('phase-edit')
-      const aims = dataStore.getAimsForPhase('null')
-      const newAimIndex = aims.findIndex((aim: Aim) => aim.id === aimId)
-      if (newAimIndex !== -1) {
-        uiStore.setSelectedAim('null', newAimIndex)
-        uiStore.lastSelectedRootAimIndex = newAimIndex
+      // Top-level aim - commit to phase
+      if (phaseId) {
+        await dataStore.commitAimToPhase(uiStore.projectPath, aimId, phaseId, insertionIndex)
+
+        // Find the actual index of the newly created aim
+        const aims = dataStore.getAimsForPhase(phaseId)
+        const newAimIndex = aims.findIndex((aim: Aim) => aim.id === aimId)
+
+        // Select the newly created aim
+        uiStore.setMode('phase-edit')
+        if (newAimIndex !== -1) {
+          uiStore.setSelectedAim(phaseId, newAimIndex, aimId)
+          // Update last selected index for this phase
+          uiStore.lastSelectedAimIndexByPhase[phaseId] = newAimIndex
+        }
+      } else {
+        // Root aim - select it
+        uiStore.setMode('phase-edit')
+        const aims = dataStore.getAimsForPhase('null')
+        const newAimIndex = aims.findIndex((aim: Aim) => aim.id === aimId)
+        if (newAimIndex !== -1) {
+          uiStore.setSelectedAim('null', newAimIndex)
+          uiStore.lastSelectedRootAimIndex = newAimIndex
+        }
       }
     }
 
