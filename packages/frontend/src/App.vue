@@ -79,7 +79,7 @@ watch(() => [uiStore.mode, uiStore.selectedColumn], ([mode, selectedColumn]) => 
     }
 
     uiStore.setKeyboardHints(hints)
-  } else if (mode === 'phase-edit') {
+  } else if (mode === 'aims-edit') {
     uiStore.setKeyboardHints([
       { key: 'j/k', action: 'navigate aims' },
       { key: 'h/l', action: 'collapse/expand' },

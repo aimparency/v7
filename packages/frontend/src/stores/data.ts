@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia'
-import type { Phase, Aim as BaseAim } from 'shared'
+import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
+
+// Extend Phase type with UI-only properties
+export type Phase = BasePhase & {
+  selectedAimIndex?: number
+}
 
 // Extend Aim type with UI-only properties
 export type Aim = BaseAim & {
@@ -331,8 +336,27 @@ export const useDataStore = defineStore('data', {
 
         if (isSubAim) {
           // Sub-aim: recursively delete it and all its children
-          const parentAimId = aim.outgoing[0]
+          const parentAimId = aim.outgoing[0]!
+          const parentAim = this.aims[parentAimId]
+          const deletedSubIndex = parentAim?.incoming.indexOf(aimId) ?? -1
+
           await this.deleteSubAimRecursive(uiStore.projectPath, aimId, parentAimId)
+
+          // Adjust parent's selectedIncomingIndex to stay in valid range
+          const updatedParentAim = this.aims[parentAimId]
+          if (updatedParentAim && updatedParentAim.selectedIncomingIndex !== undefined) {
+            if (updatedParentAim.incoming.length > 0) {
+              // Clamp to valid range - this naturally selects next aim or previous if was last
+              updatedParentAim.selectedIncomingIndex = Math.min(
+                updatedParentAim.selectedIncomingIndex,
+                updatedParentAim.incoming.length - 1
+              )
+            } else {
+              // No sub-aims left, clear selection index
+              updatedParentAim.selectedIncomingIndex = undefined
+            }
+          }
+          return // Skip top-level selection logic
         } else if (phaseId === 'null') {
           // Root aims: delete entirely (including all sub-aims)
           // First recursively delete all incoming aims
@@ -374,7 +398,7 @@ export const useDataStore = defineStore('data', {
         // Adjust selection if needed
         const aims = this.getAimsForPhase(phaseId);
         if (aims.length === 0) {
-          // No more aims, exit phase-edit mode
+          // No more aims, exit aims-edit mode
           uiStore.setMode('column-navigation');
           uiStore.setSelectedAim(null, null);
         } else if (uiStore.selectedAim?.phaseId === phaseId) {

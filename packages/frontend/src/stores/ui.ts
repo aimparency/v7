@@ -36,7 +36,7 @@ export const useUIStore = defineStore('ui', {
     aimModalParentAimId: null as string | null, // Track parent aim for sub-aim creation
 
     // Navigation mode system
-    mode: 'column-navigation' as 'column-navigation' | 'phase-edit' | 'aim-edit',
+    mode: 'column-navigation' as 'column-navigation' | 'aims-edit' | 'aim-edit',
 
     // Column tracking for navigation
     rightmostColumnIndex: 0, // Track the rightmost (empty) column index
@@ -49,8 +49,8 @@ export const useUIStore = defineStore('ui', {
     phaseCountByColumn: {} as Record<number, number>, // columnIndex -> total phase count
     columnParentPhaseId: { 0: null } as Record<number, string | null>, // columnIndex -> parent phase ID whose children this column shows (0 = root phases)
 
-    // Aim selection (only set when in phase-edit or aim-edit mode)
-    selectedAim: null as { phaseId: string, aimIndex: number, aimId?: string } | null,
+    // Root aims selection (for column -1)
+    rootAimsSelectedIndex: 0,
 
     // Viewport for column scrolling
     viewportStart: -1, // Left edge of visible window
@@ -62,12 +62,6 @@ export const useUIStore = defineStore('ui', {
     // Delete pending states
     pendingDeletePhaseId: null as string | null,
     pendingDeleteAimId: null as string | null,
-
-    // Remember last selected aim index for root aims
-    lastSelectedRootAimIndex: 0,
-
-    // Remember last selected aim index per phase
-    lastSelectedAimIndexByPhase: {} as Record<string, number>,
 
     // Remember last selected sub-phase index per parent phase
     lastSelectedSubPhaseIndexByPhase: {} as Record<string, number>,
@@ -422,7 +416,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Navigation mode actions
-    setMode(mode: 'column-navigation' | 'phase-edit' | 'aim-edit') {
+    setMode(mode: 'column-navigation' | 'aims-edit' | 'aim-edit') {
       this.mode = mode
     },
 
@@ -437,8 +431,8 @@ export const useUIStore = defineStore('ui', {
 
       if (mode === 'column-navigation') {
         await this.handleColumnNavigationKeys(event, dataStore)
-      } else if (mode === 'phase-edit') {
-        await this.handlePhaseEditKeys(event, dataStore)
+      } else if (mode === 'aims-edit') {
+        await this.handleAimsEditKeys(event, dataStore)
       } else if (mode === 'aim-edit') {
         this.handleAimEditKeys(event)
       }
@@ -537,7 +531,7 @@ export const useUIStore = defineStore('ui', {
           }
 
           if (phaseId) {
-            this.setMode('phase-edit')
+            this.setMode('aims-edit')
             // Get the aim to store its ID
             const aims = dataStore.getAimsForPhase(phaseId)
             const aim = aims[aimIndex]
@@ -669,8 +663,8 @@ export const useUIStore = defineStore('ui', {
       }
     },
 
-    // Phase edit mode: j/k = navigate aims, Esc = exit, h/l = expand/collapse, d = delete, o/O = create
-    async handlePhaseEditKeys(event: KeyboardEvent, dataStore: any) {
+    // Aims edit mode: j/k = navigate aims, Esc = exit, h/l = expand/collapse, d = delete, o/O = create
+    async handleAimsEditKeys(event: KeyboardEvent, dataStore: any) {
       const selectedAim = this.selectedAim
 
       // Allow Escape even when no aims exist
@@ -913,7 +907,7 @@ export const useUIStore = defineStore('ui', {
     handleAimEditKeys(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.preventDefault()
-        this.setMode('phase-edit')
+        this.setMode('aims-edit')
       }
     },
 
@@ -1071,7 +1065,7 @@ export const useUIStore = defineStore('ui', {
             }
           }
 
-          this.setMode('phase-edit')
+          this.setMode('aims-edit')
           this.setSelectedAim(phaseId, topLevel.topLevelIndex, selectedAim.aimId)
         }
       }
@@ -1130,8 +1124,8 @@ export const useUIStore = defineStore('ui', {
         }
       }
 
-      // Enter phase-edit mode
-      this.setMode('phase-edit');
+      // Enter aims-edit mode
+      this.setMode('aims-edit');
 
       // Get the aim to store its ID
       const aims = dataStore.getAimsForPhase(phaseId)
