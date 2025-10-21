@@ -23,7 +23,12 @@ export const useDataStore = defineStore('data', {
     getPhasesByParentId: (state) => (parentId: string | null) => {
       const key = parentId ?? 'null'
       const childIds = state.childrenByParentId[key] || []
-      return childIds.map(id => state.phases[id]).filter(Boolean).sort((a, b) => a.from - b.from)
+      return childIds.map(id => state.phases[id]).filter(Boolean).sort((a, b) => {
+        // Sort by midpoint (average of start and end)
+        const aMid = (a.from + a.to) / 2
+        const bMid = (b.from + b.to) / 2
+        return aMid - bMid
+      })
     },
     getAimsForPhase: (state) => (phaseId: string) => {
       if (phaseId === 'null') {
@@ -127,9 +132,17 @@ export const useDataStore = defineStore('data', {
           insertionIndex
         })
 
-        // Update local state - reload the phase to get updated commitments
-        await this.loadPhases(projectPath, null); // Reload all phases to ensure commitments are updated
-        await this.loadAllAims(projectPath); // Reload all aims to ensure committedIn is updated
+        // Update local state - reload the specific phase to get updated commitments
+        const phase = await trpc.phase.get.query({ projectPath, phaseId })
+        if (phase) {
+          this.phases[phaseId] = phase
+        }
+
+        // Reload the aim to get updated committedIn field
+        const aim = await trpc.aim.get.query({ projectPath, aimId })
+        if (aim) {
+          this.aims[aimId] = aim
+        }
       } catch (error) {
         console.error('Failed to commit aim to phase:', error)
         throw error
@@ -256,6 +269,50 @@ export const useDataStore = defineStore('data', {
       }
     },
 
+    // Recursive helper to delete a sub-aim and all its children
+    async deleteSubAimRecursive(projectPath: string, aimId: string, parentAimId: string) {
+      const aim = this.aims[aimId]
+      if (!aim) return
+
+      // 1. Recursively delete all incoming aims (children) first
+      if (aim.incoming && aim.incoming.length > 0) {
+        for (const childAimId of [...aim.incoming]) {
+          await this.deleteSubAimRecursive(projectPath, childAimId, aimId)
+        }
+      }
+
+      // 2. Remove this aim from the parent's incoming array
+      const parentAim = this.aims[parentAimId]
+      if (parentAim) {
+        const wasExpanded = parentAim.expanded
+        const updatedIncoming = parentAim.incoming.filter(id => id !== aimId)
+        await this.updateAim(projectPath, parentAimId, {
+          incoming: updatedIncoming
+        })
+        // Restore expanded state (it's UI-only, not persisted)
+        if (wasExpanded) {
+          this.aims[parentAimId].expanded = true
+        }
+      }
+
+      // 3. Remove the parent from this aim's outgoing array
+      const updatedOutgoing = aim.outgoing.filter(id => id !== parentAimId)
+
+      // 4. If this aim has no other parents (outgoing connections), delete it completely
+      if (updatedOutgoing.length === 0) {
+        await trpc.aim.delete.mutate({
+          projectPath,
+          aimId: aimId
+        })
+        delete this.aims[aimId]
+      } else {
+        // Still has other parents, just update the outgoing array
+        await this.updateAim(projectPath, aimId, {
+          outgoing: updatedOutgoing
+        })
+      }
+    },
+
     async deleteAim(aimId: string, phaseId: string) {
       const uiStore = useUIStore();
 
@@ -265,12 +322,31 @@ export const useDataStore = defineStore('data', {
           ? uiStore.selectedAim.aimIndex
           : -1;
 
-        if (phaseId === 'null') {
-          // Root aims: delete entirely
+        // Get the aim to check if it's a sub-aim
+        const aim = this.aims[aimId]
+        const isSubAim = aim && aim.outgoing && aim.outgoing.length > 0
+
+        if (isSubAim) {
+          // Sub-aim: recursively delete it and all its children
+          const parentAimId = aim.outgoing[0]
+          await this.deleteSubAimRecursive(uiStore.projectPath, aimId, parentAimId)
+        } else if (phaseId === 'null') {
+          // Root aims: delete entirely (including all sub-aims)
+          // First recursively delete all incoming aims
+          if (aim && aim.incoming && aim.incoming.length > 0) {
+            for (const childAimId of [...aim.incoming]) {
+              await this.deleteSubAimRecursive(uiStore.projectPath, childAimId, aimId)
+            }
+          }
+
+          // Then delete the root aim itself
           await trpc.aim.delete.mutate({
             projectPath: uiStore.projectPath,
             aimId: aimId
           });
+
+          // Force reload all aims by clearing cache first
+          delete this.aims[aimId]
         } else {
           // Phase aims: remove from phase only
           await trpc.aim.removeFromPhase.mutate({
@@ -278,25 +354,17 @@ export const useDataStore = defineStore('data', {
             aimId: aimId,
             phaseId: phaseId
           });
-        }
 
-        // Reload aims and phases to reflect the deletion
-        // For root aims, we need to reload all aims to see the deletion
-        // For phase aims, we need to reload the phase to see the updated commitments
-        if (phaseId === 'null') {
-          // Force reload all aims by clearing cache first
-          delete this.aims[aimId]
-        } else {
           // Reload the specific phase to get updated commitments
           const phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId })
           if (phase) {
             this.phases[phaseId] = phase
           }
           // Also remove the aim from local aims cache if it became orphaned
-          const aim = this.aims[aimId]
-          if (aim && (!aim.committedIn || aim.committedIn.length === 0)) {
+          const updatedAim = this.aims[aimId]
+          if (updatedAim && (!updatedAim.committedIn || updatedAim.committedIn.length === 0)) {
             // This aim is now a root aim, keep it but mark as uncommitted
-            aim.committedIn = []
+            updatedAim.committedIn = []
           }
         }
 

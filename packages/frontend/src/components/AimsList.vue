@@ -68,7 +68,6 @@ const handleScrollRequest = (element: HTMLElement) => {
 
 .aims-list {
   flex: 1;
-  padding: 0 0.5rem 0.5rem 0.5rem;
   min-height: 0;
 }
 

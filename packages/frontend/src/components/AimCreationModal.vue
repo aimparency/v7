@@ -63,13 +63,26 @@ const createAim = async () => {
     const phaseId = uiStore.aimModalPhaseId
     const insertionIndex = uiStore.aimModalInsertionIndex
 
+    console.log('[AimCreationModal] Committing aim:', aimId, 'to phase:', phaseId, 'at index:', insertionIndex)
+
     if (phaseId) {
       await dataStore.commitAimToPhase(uiStore.projectPath, aimId, phaseId, insertionIndex)
-      // Reload phase aims
-      await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
+
+      // Find the actual index of the newly created aim
+      const aims = dataStore.getAimsForPhase(phaseId)
+      console.log('[AimCreationModal] Phase aims after commit:', aims.map(a => ({id: a.id, text: a.text})))
+      const newAimIndex = aims.findIndex((aim: Aim) => aim.id === aimId)
+      console.log('[AimCreationModal] Found new aim at index:', newAimIndex, 'expected:', insertionIndex)
+
       // Select the newly created aim
       uiStore.setMode('phase-edit')
-      uiStore.setSelectedAim(phaseId, insertionIndex)
+      if (newAimIndex !== -1) {
+        uiStore.setSelectedAim(phaseId, newAimIndex, aimId)
+        // Update last selected index for this phase
+        if (phaseId !== 'null') {
+          uiStore.lastSelectedAimIndexByPhase[phaseId] = newAimIndex
+        }
+      }
     } else {
       // Root aim - select it
       uiStore.setMode('phase-edit')
@@ -92,24 +105,14 @@ const updateAim = async () => {
   if (!uiStore.aimModalEditingAimId) return
 
   try {
-    await trpc.aim.update.mutate({
-      projectPath: uiStore.projectPath,
-      aimId: uiStore.aimModalEditingAimId,
-      aim: {
-        text: aimText.value.trim(),
-        status: {
-          state: selectedStatus.value,
-          comment: statusComment.value,
-          date: Date.now()
-        }
+    await dataStore.updateAim(uiStore.projectPath, uiStore.aimModalEditingAimId, {
+      text: aimText.value.trim(),
+      status: {
+        state: selectedStatus.value,
+        comment: statusComment.value,
+        date: Date.now()
       }
     })
-
-    // Reload phase aims
-    const phaseId = uiStore.aimModalPhaseId
-    if (phaseId) {
-      await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
-    }
 
     uiStore.closeAimModal()
   } catch (error) {

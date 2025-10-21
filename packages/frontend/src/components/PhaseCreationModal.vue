@@ -43,7 +43,7 @@ const updatePhase = async () => {
   if (!uiStore.phaseModalEditingPhaseId) return
 
   try {
-    await trpc.phase.update.mutate({
+    const updatedPhase = await trpc.phase.update.mutate({
       projectPath: uiStore.projectPath,
       phaseId: uiStore.phaseModalEditingPhaseId,
       phase: {
@@ -52,6 +52,11 @@ const updatePhase = async () => {
         to: localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime),
       }
     })
+
+    // Update the local store with the updated phase
+    if (updatedPhase) {
+      dataStore.phases[updatedPhase.id] = updatedPhase
+    }
 
     // Emit event so parent can reload the appropriate phase list
     const columnIndex = uiStore.phaseModalColumnIndex

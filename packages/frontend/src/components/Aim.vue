@@ -55,13 +55,6 @@ const statusColor = computed(() => ({
   'failed': '#ff6666'
 }[props.aim.status.state] ?? '#888'))
 
-// Exponential decay for indentation: 5rem, 3rem, 1.8rem, ...
-const indentWidth = computed(() => {
-  if (props.indentationLevel === 0) return 0
-  const indent = 5 * Math.pow(0.6, props.indentationLevel - 1)
-  return indent
-})
-
 // Scroll into view when this aim becomes selected
 watch(() => isThisAimSelected.value, (isSelected) => {
   if (isSelected && aimContainerRef.value) {
@@ -104,7 +97,7 @@ onMounted(() => {
 
     <!-- Expanded incoming aims (recursive) -->
     <div v-if="isExpanded" class="incoming-aims">
-      <div class="indent-space" :style="{ width: `${2 * Math.pow(0.6, indentationLevel)}rem` }">
+      <div class="indent-space" :style="{ width: `${2.3 * Math.pow(0.8, indentationLevel)}rem` }">
         <div class="indent-line"></div>
       </div>
       <AimsList
@@ -125,9 +118,18 @@ onMounted(() => {
 .aim-item {
   display: flex;
   flex-direction: column;
-  padding: 0.5rem;
+  padding: 0.5rem 0;
   margin-bottom: 0.25rem;
   cursor: pointer;
+
+  &.selected-outlined {
+    outline: 0.15rem solid #007acc;
+    outline-offset: -0.15rem;
+    margin-left: -0.5rem;
+    margin-right: -0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 
   &.pending-delete {
     background-color: rgba(255, 0, 0, 0.2);

@@ -196,6 +196,7 @@ const isPendingDelete = computed(() => {
   flex-direction: column;
   min-height: 0;
   flex: 1;
+  padding: 0 0.5rem 0.5rem 0.5rem;
 }
 
 .empty-hint {

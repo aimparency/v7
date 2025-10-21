@@ -339,8 +339,9 @@ export const useUIStore = defineStore('ui', {
           if (i > 0) {
             // Has previous sibling - get its last descendant or itself
             const prevSibling = aims[i - 1]
+            const prevSiblingTopLevel = parentAimId === null ? i - 1 : topLevelIndex
             const lastDescendant = this.findLastDescendant(prevSibling, dataStore)
-            return { aimId: lastDescendant.id, topLevelIndex: currentTopLevel, parentAimId: lastDescendant.parentId, indexInParent: lastDescendant.indexInParent }
+            return { aimId: lastDescendant.id, topLevelIndex: prevSiblingTopLevel, parentAimId: lastDescendant.parentId, indexInParent: lastDescendant.indexInParent }
           }
           // No previous sibling, return parent
           if (parentAimId) {
@@ -424,6 +425,8 @@ export const useUIStore = defineStore('ui', {
 
     // Global keyboard handler - single source of truth for all navigation
     async handleGlobalKeydown(event: KeyboardEvent, dataStore: any) {
+      console.log('[KEYDOWN]', event.key, 'mode:', this.mode, 'selectedAim:', this.selectedAim)
+
       // Don't handle keys when modals are open
       if (this.showPhaseModal || this.showAimModal) return
 
@@ -670,6 +673,14 @@ export const useUIStore = defineStore('ui', {
       // Allow Escape even when no aims exist
       if (event.key === 'Escape') {
         event.preventDefault()
+
+        // If delete mode is active, only cancel it
+        if (this.pendingDeleteAimId !== null) {
+          this.clearPendingDelete()
+          return
+        }
+
+        // Otherwise, exit phase-edit mode
         this.clearPendingDelete()
 
         // Save last selected aim index for root aims
@@ -688,14 +699,29 @@ export const useUIStore = defineStore('ui', {
         if (!selectedAim) return
         const aims = dataStore.getAimsForPhase(selectedAim.phaseId)
 
-        // Special behavior for 'o' when aim is expanded: create sub-aim
+        // Special behavior for 'o':
+        // 1. If current aim is a sub-aim (has parent), create sibling sub-aim
+        // 2. If current aim is expanded, create child sub-aim
         if (event.key === 'o') {
           const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
           if (currentAimId) {
             const currentAim = dataStore.aims[currentAimId]
-            if (currentAim && currentAim.expanded) {
-              // Create sub-aim: establish parent-child relationship
-              this.createSubAim(selectedAim.phaseId, currentAim)
+
+            // Check if we're in a sub-aim (has outgoing = has parent)
+            if (currentAim && currentAim.outgoing && currentAim.outgoing.length > 0) {
+              // We're in a sub-aim - create sibling sub-aim with same parent
+              const parentAimId = currentAim.outgoing[0]
+              const parentAim = dataStore.aims[parentAimId]
+              if (parentAim) {
+                // Find current sub-aim's position in parent's incoming array
+                const currentIndexInParent = parentAim.incoming.indexOf(currentAimId)
+                const insertionIndex = event.key === 'o' ? currentIndexInParent + 1 : currentIndexInParent
+                this.createSubAim(selectedAim.phaseId, parentAim, insertionIndex)
+                return
+              }
+            } else if (currentAim && currentAim.expanded) {
+              // Top-level expanded aim - create child sub-aim at the beginning
+              this.createSubAim(selectedAim.phaseId, currentAim, 0)
               return
             }
           }
@@ -705,6 +731,7 @@ export const useUIStore = defineStore('ui', {
         const insertionIndex = (aims && aims.length > 0)
           ? (event.key === 'o' ? selectedAim.aimIndex + 1 : selectedAim.aimIndex)
           : 0
+        console.log('[ui.ts o/O] selectedAim:', selectedAim, 'insertionIndex:', insertionIndex, 'aims.length:', aims?.length)
         const phaseIdForModal = selectedAim.phaseId === 'null' ? null : selectedAim.phaseId;
         this.openAimModal(phaseIdForModal, insertionIndex)
         return
@@ -775,9 +802,11 @@ export const useUIStore = defineStore('ui', {
           this.clearPendingDelete() // Navigation cancels pending delete
 
           const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
+          console.log('[k] currentAimId:', currentAimId, 'selectedAim.aimIndex:', selectedAim.aimIndex)
           if (!currentAimId) break
 
           const prevResult = this.findPreviousAimInTree(currentAimId, selectedAim.phaseId, dataStore)
+          console.log('[k] prevResult:', prevResult)
           if (prevResult) {
             // Clear all selectedIncomingIndex
             Object.values(dataStore.aims).forEach((aim: any) => {
@@ -793,6 +822,7 @@ export const useUIStore = defineStore('ui', {
             }
 
             // Update selection
+            console.log('[k] Setting selectedAim to index:', prevResult.topLevelIndex)
             this.setSelectedAim(selectedAim.phaseId, prevResult.topLevelIndex, prevResult.aimId)
             if (selectedAim.phaseId !== 'null') {
               this.lastSelectedAimIndexByPhase[selectedAim.phaseId] = prevResult.topLevelIndex
@@ -962,7 +992,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Create a sub-aim (incoming aim) for an expanded aim
-    async createSubAim(phaseId: string, parentAim: any) {
+    async createSubAim(phaseId: string, parentAim: any, insertionIndex: number = 0) {
       const dataStore = useDataStore()
 
       try {
@@ -979,14 +1009,20 @@ export const useUIStore = defineStore('ui', {
           }
         })
 
-        // Update parent aim to include new aim in incoming array (prepend to top)
-        const updatedIncoming = [newAimResult.id, ...parentAim.incoming]
+        // Update parent aim to include new aim in incoming array at specified index
+        const wasExpanded = parentAim.expanded
+        const updatedIncoming = [...parentAim.incoming]
+        updatedIncoming.splice(insertionIndex, 0, newAimResult.id)
         await dataStore.updateAim(this.projectPath, parentAim.id, {
           incoming: updatedIncoming
         })
+        // Restore expanded state (it's UI-only, not persisted)
+        if (wasExpanded) {
+          dataStore.aims[parentAim.id].expanded = true
+        }
 
         // Open modal to edit the new aim's text
-        this.openAimEditModal(newAimResult.id, phaseId, 0)
+        this.openAimEditModal(newAimResult.id, phaseId, insertionIndex)
       } catch (error) {
         console.error('Failed to create sub-aim:', error)
       }

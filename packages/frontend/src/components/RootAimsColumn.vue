@@ -58,6 +58,7 @@ const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
+  padding: 0 0.5rem 0.5rem 0.5rem;
 }
 
 .root-aims-column.selected {
