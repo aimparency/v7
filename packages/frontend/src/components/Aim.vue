@@ -187,7 +187,7 @@ onMounted(() => {
     justify-content: center;
 
     .indent-line {
-      width: min(0.4rem, 100%);
+      width: max(1px, 20%);
       height: calc(100% - 1.5rem);
       min-height: 0.4rem;
       margin-top: 0.5rem;

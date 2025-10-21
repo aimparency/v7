@@ -246,6 +246,7 @@ export const useUIStore = defineStore('ui', {
       this.aimModalEditingAimId = null
       this.aimModalPhaseId = phaseId
       this.aimModalInsertionIndex = insertionIndex
+      this.aimModalParentAimId = null
     },
 
     openAimEditModal(aimId: string, phaseId: string, aimIndex: number) {
@@ -262,6 +263,7 @@ export const useUIStore = defineStore('ui', {
       this.aimModalEditingAimId = null
       this.aimModalPhaseId = null
       this.aimModalInsertionIndex = 0
+      this.aimModalParentAimId = null
     },
     
     // Keyboard hints actions
@@ -699,6 +701,13 @@ export const useUIStore = defineStore('ui', {
         event.preventDefault()
         if (!selectedAim) return
         const aims = dataStore.getAimsForPhase(selectedAim.phaseId)
+
+        // Handle first aim creation
+        if (aims.length === 0) {
+          const phaseIdForModal = selectedAim.phaseId === 'null' ? null : selectedAim.phaseId
+          this.openAimModal(phaseIdForModal, 0)
+          return
+        }
 
         const currentAimId = selectedAim.aimId || aims[selectedAim.aimIndex]?.id
         if (!currentAimId) return
