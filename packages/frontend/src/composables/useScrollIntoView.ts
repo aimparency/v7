@@ -19,6 +19,11 @@ export function useScrollIntoView(containerRef: Ref<HTMLElement | null>) {
     const isAboveRange = elementRect.top < minY
     const isBelowRange = elementRect.bottom > maxY
 
+    // If element exceeds both thresholds (too large), don't scroll
+    if (isAboveRange && isBelowRange) {
+      return
+    }
+
     if (!isAboveRange && !isBelowRange) {
       return
     }
