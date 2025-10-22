@@ -60,9 +60,9 @@ const closeProject = () => {
   uiStore.setProjectPath('')
 }
 
-// Update keyboard hints based on mode and selected column
-watch(() => [uiStore.mode, uiStore.selectedColumn], ([mode, selectedColumn]) => {
-  if (mode === 'column-navigation') {
+// Update keyboard hints based on navigation state and selected column
+watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, selectedColumn]) => {
+  if (!navigatingAims) {
     const hints = [
       { key: 'h/l', action: 'switch columns' },
       { key: 'j/k', action: 'navigate phases/aims' },
@@ -79,7 +79,7 @@ watch(() => [uiStore.mode, uiStore.selectedColumn], ([mode, selectedColumn]) => 
     }
 
     uiStore.setKeyboardHints(hints)
-  } else if (mode === 'aims-edit') {
+  } else {
     uiStore.setKeyboardHints([
       { key: 'j/k', action: 'navigate aims' },
       { key: 'h/l', action: 'collapse/expand' },
@@ -87,10 +87,6 @@ watch(() => [uiStore.mode, uiStore.selectedColumn], ([mode, selectedColumn]) => 
       { key: 'd', action: 'delete aim' },
       { key: 'o/O', action: 'create aim below/above' },
       { key: 'Esc', action: 'exit edit mode' }
-    ])
-  } else if (mode === 'aim-edit') {
-    uiStore.setKeyboardHints([
-      { key: 'Esc', action: 'exit aim edit' }
     ])
   }
 }, { immediate: true })

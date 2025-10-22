@@ -23,12 +23,12 @@ const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
       <div class="info">free floating aims</div>
       <AimsList
         :aims="dataStore.floatingAims"
-        phase-id="null"
+        phase-id=""
         :column-index="-1"
         :is-active="isActive"
         :is-selected="isSelected"
         :selected-aim-index="uiStore.floatingAimIndex"
-        @aim-clicked="(aimId) => uiStore.selectAimById(-1, 'null', aimId)"
+        @aim-clicked="(aimId) => uiStore.selectAimById(-1, undefined, aimId)"
         @scroll-request="handleScrollRequest"
       />
     </div>

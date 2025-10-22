@@ -348,102 +348,90 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async deleteAim(aimId: string, phaseId: string) {
+    async deleteAim(aimId: string) {
       const uiStore = useUIStore();
 
       try {
-        // Get the deleted index based on current selection
-        let deletedIndex = -1
-        if (uiStore.mode === 'nav-aims') {
-          if (phaseId === 'null') {
-            deletedIndex = uiStore.floatingAimIndex
-          } else {
-            const phase = this.phases[phaseId]
-            deletedIndex = phase?.selectedAimIndex ?? -1
-          }
-        }
-
-        // Get the aim to check if it's a sub-aim
         const aim = this.aims[aimId]
-        const isSubAim = aim && aim.outgoing && aim.outgoing.length > 0
+        if (!aim) return
 
-        if (isSubAim) {
-          // Sub-aim: recursively delete it and all its children
-          const parentAimId = aim.outgoing[0]!
-          const parentAim = this.aims[parentAimId]
-          const deletedSubIndex = parentAim?.incoming.indexOf(aimId) ?? -1
+        // Get selection path to determine context
+        const path = uiStore.getSelectionPath(this)
 
-          await this.deleteSubAimRecursive(uiStore.projectPath, aimId, parentAimId)
+        // Determine deletion behavior based on selection path:
+        // - path.aims.length > 1: Sub-aim (remove from parent's incoming)
+        // - path.aims.length === 1 && phaseId exists: Committed aim (remove from phase)
+        // - path.aims.length === 1 && no phaseId: Floating aim (delete entirely)
+
+        if (path.aims.length > 1) {
+          // B) Sub-aim: remove from parent aim's incoming list
+          const parentAim = path.aims[path.aims.length - 2]
+          await this.deleteSubAimRecursive(uiStore.projectPath, aimId, parentAim.id)
 
           // Adjust parent's selectedIncomingIndex to stay in valid range
-          const updatedParentAim = this.aims[parentAimId]
+          const updatedParentAim = this.aims[parentAim.id]
           if (updatedParentAim && updatedParentAim.selectedIncomingIndex !== undefined) {
             if (updatedParentAim.incoming.length > 0) {
-              // Clamp to valid range - this naturally selects next aim or previous if was last
               updatedParentAim.selectedIncomingIndex = Math.min(
                 updatedParentAim.selectedIncomingIndex,
                 updatedParentAim.incoming.length - 1
               )
             } else {
-              // No sub-aims left, clear selection index
               updatedParentAim.selectedIncomingIndex = undefined
             }
           }
-          return // Skip top-level selection logic
-        } else if (phaseId === 'null') {
-          // Root aims: delete entirely (including all sub-aims)
-          // First recursively delete all incoming aims
-          if (aim && aim.incoming && aim.incoming.length > 0) {
+        } else if (path.phaseId) {
+          // A) Committed aim: remove from phase
+          await trpc.aim.removeFromPhase.mutate({
+            projectPath: uiStore.projectPath,
+            aimId: aimId,
+            phaseId: path.phaseId
+          });
+
+          // Reload the specific phase to get updated commitments
+          const phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId: path.phaseId })
+          if (phase) {
+            this.replacePhase(path.phaseId, phase)
+          }
+
+          // Update aim's committedIn array
+          const updatedAim = this.aims[aimId]
+          if (updatedAim) {
+            updatedAim.committedIn = updatedAim.committedIn?.filter(id => id !== path.phaseId) || []
+          }
+        } else {
+          // C) Floating aim: delete entirely (including all sub-aims)
+          // First recursively delete all sub-aims
+          if (aim.incoming && aim.incoming.length > 0) {
             for (const childAimId of [...aim.incoming]) {
               await this.deleteSubAimRecursive(uiStore.projectPath, childAimId, aimId)
             }
           }
 
-          // Then delete the root aim itself
+          // Then delete the aim itself
           await trpc.aim.delete.mutate({
             projectPath: uiStore.projectPath,
             aimId: aimId
           });
 
-          // Force reload all aims by clearing cache first
           delete this.aims[aimId]
-        } else {
-          // Phase aims: remove from phase only
-          await trpc.aim.removeFromPhase.mutate({
-            projectPath: uiStore.projectPath,
-            aimId: aimId,
-            phaseId: phaseId
-          });
-
-          // Reload the specific phase to get updated commitments
-          const phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId })
-          if (phase) {
-            this.replacePhase(phaseId, phase)
-          }
-          // Also remove the aim from local aims cache if it became orphaned
-          const updatedAim = this.aims[aimId]
-          if (updatedAim && (!updatedAim.committedIn || updatedAim.committedIn.length === 0)) {
-            // This aim is now a root aim, keep it but mark as uncommitted
-            updatedAim.committedIn = []
-          }
         }
 
         // Adjust selection if needed
-        const aims = this.getAimsForPhase(phaseId);
-        if (aims.length === 0) {
-          // No more aims, exit aims-edit mode
-          uiStore.setMode('column-navigation');
-        } else if (uiStore.mode === 'nav-aims' && deletedIndex !== -1) {
-          // Select aim: same index, or last if deleted was last
-          const newIndex = Math.min(deletedIndex, aims.length - 1);
+        if (uiStore.navigatingAims) {
+          const aims = path.phaseId ? this.getAimsForPhase(path.phaseId) : this.floatingAims
 
-          // Update the appropriate index
-          if (phaseId === 'null') {
-            uiStore.floatingAimIndex = newIndex;
+          if (aims.length === 0) {
+            uiStore.navigatingAims = false
           } else {
-            const phase = this.phases[phaseId]
-            if (phase) {
-              phase.selectedAimIndex = newIndex;
+            // Select next/previous aim at same level
+            if (!path.phaseId) {
+              uiStore.floatingAimIndex = Math.min(uiStore.floatingAimIndex, aims.length - 1)
+            } else {
+              const phase = this.phases[path.phaseId]
+              if (phase && phase.selectedAimIndex !== undefined) {
+                phase.selectedAimIndex = Math.min(phase.selectedAimIndex, aims.length - 1)
+              }
             }
           }
         }
