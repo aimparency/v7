@@ -490,15 +490,24 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Helper to get current aim context (replaces selectedAim)
-    getCurrentAim() {
+    getCurrentAim(): Aim | undefined {
       const dataStore = useDataStore()
-      if(this.selectedColumn === -1) {
-        if(this.in)
-        let aim = dataStore.getFloatingAimByIndex(this.floatingAimIndex)
-        return this.getSelectedSubAim(aim)
-      } else {
-
-      }
+      if(this.navigatingAims) {
+        if(this.selectedColumn === -1) {
+          let aim = dataStore.getFloatingAimByIndex(this.floatingAimIndex)
+          return this.getSelectedSubAim(aim)
+        } else {
+          let phaseId = this.getSelectedPhaseId(this.selectedColumn)
+          if(phaseId) {
+            let phase = dataStore.phases[phaseId]
+            let aims = dataStore.getAimsForPhase(phaseId)
+            if(phase.selectedAimIndex) {
+              let aim = aims[phase.selectedAimIndex]
+              return this.getSelectedSubAim(aim)
+            }
+          }
+        }
+      } 
     },
 
     getSelectedSubAim(aim: Aim): Aim {
@@ -508,26 +517,6 @@ export const useUIStore = defineStore('ui', {
         return this.getSelectedSubAim(dataStore.aims[selectedSubAimUUID])
       } else {
         return aim
-      }
-    },
-
-    getCurrentAimContext(dataStore: any): { phaseId: string, aim: any, aimIndex: number } | null {
-      if (this.mode !== 'nav-aims') return null
-
-      if (this.selectedColumn === -1) {
-        // Root aims
-        const aims = dataStore.getAimsForPhase('null')
-        const aim = aims[this.floatingAimIndex]
-        return aim ? { phaseId: 'null', aim, aimIndex: this.floatingAimIndex } : null
-      } else {
-        // Phase aims
-        const phaseId = this.getSelectedPhaseId(this.selectedColumn)
-        if (!phaseId) return null
-        const phase = dataStore.phases[phaseId]
-        const aims = dataStore.getAimsForPhase(phaseId)
-        const aimIndex = phase?.selectedAimIndex ?? 0
-        const aim = aims[aimIndex]
-        return aim ? { phaseId, aim, aimIndex } : null
       }
     },
 
@@ -548,7 +537,7 @@ export const useUIStore = defineStore('ui', {
 
     // Global keyboard handler - single source of truth for all navigation
     async handleGlobalKeydown(event: KeyboardEvent, dataStore: any) {
-      console.log('[KEYDOWN]', event.key, 'mode:', this.mode, 'context:', this.getCurrentAimContext(dataStore))
+      console.log('pressed', event.key) 
 
       // Don't handle keys when modals are open
       if (this.showPhaseModal || this.showAimModal) return
