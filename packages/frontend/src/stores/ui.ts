@@ -38,7 +38,7 @@ export const useUIStore = defineStore('ui', {
     aimModalMode: 'create' as 'create' | 'edit',
     // TODO: remove these things. place the new aim based on the selection path. determine position on creation time
     aimModalEditingAimId: null as string | null, // Track which aim is being edited
-    aimModalPhaseId: null as string | null, // Track phase to add aim to
+    aimModalPhaseId: undefined as string | undefined, // Track phase to add aim to
     aimModalInsertionIndex: 0, // Track where to insert the aim
     aimModalParentAimId: null as string | null, // Track parent aim for sub-aim creation
     // TODO: instead just save:
@@ -99,8 +99,8 @@ export const useUIStore = defineStore('ui', {
       return index
     },
 
-    getSelectedPhaseId: (state) => (columnIndex: number): string | null => {
-      return state.selectedPhaseIdByColumn[columnIndex] ?? null
+    getSelectedPhaseId: (state) => (columnIndex: number): string | undefined => {
+      return state.selectedPhaseIdByColumn[columnIndex]
     },
 
     getPhaseCount: (state) => (columnIndex: number): number => {
@@ -243,7 +243,7 @@ export const useUIStore = defineStore('ui', {
     },
     
     // Aim creation/editing actions
-    openAimModal(phaseId: string | null = null, insertionIndex: number = 0) {
+    openAimModal(phaseId?: string, insertionIndex: number = 0) {
       this.showAimModal = true
       this.aimModalMode = 'create'
       this.aimModalEditingAimId = null
@@ -252,7 +252,7 @@ export const useUIStore = defineStore('ui', {
       this.aimModalParentAimId = null
     },
 
-    openAimEditModal(aimId: string, phaseId: string, aimIndex: number) {
+    openAimEditModal(aimId: string, phaseId: string | undefined, aimIndex: number) {
       this.showAimModal = true
       this.aimModalMode = 'edit'
       this.aimModalEditingAimId = aimId
@@ -264,7 +264,7 @@ export const useUIStore = defineStore('ui', {
       this.showAimModal = false
       this.aimModalMode = 'create'
       this.aimModalEditingAimId = null
-      this.aimModalPhaseId = null
+      this.aimModalPhaseId = undefined
       this.aimModalInsertionIndex = 0
       this.aimModalParentAimId = null
     },
@@ -506,7 +506,7 @@ export const useUIStore = defineStore('ui', {
 
     getSelectedSubAim(aim: Aim): Aim {
       const dataStore = useDataStore()
-      if(aim.selectedIncomingIndex) {
+      if(aim.selectedIncomingIndex !== undefined) {
         const selectedSubAimUUID = aim.incoming[aim.selectedIncomingIndex]
         return this.getSelectedSubAim(dataStore.aims[selectedSubAimUUID])
       } else {
@@ -790,12 +790,11 @@ export const useUIStore = defineStore('ui', {
           } else {
             // Determine parent phase based on selected column
             const targetColumn = this.selectedColumn
-            let parentPhaseId: string | null = null
+            let parentPhaseId: string | undefined
             const selectedIndex = this.getSelectedPhase(targetColumn)
 
             if (targetColumn === 0) {
               // Creating in column 0 -> parent is null (root phase)
-              parentPhaseId = null
             } else {
               // Creating in column 1+ -> parent is the selected phase in column to the left
               const parentColumn = targetColumn - 1
@@ -912,7 +911,7 @@ export const useUIStore = defineStore('ui', {
 
         // Handle first aim creation - don't need current aim for empty phase
         if (aims.length === 0) {
-          this.openAimModal(phaseId ?? null, 0)
+          this.openAimModal(phaseId, 0)
           return
         }
 
@@ -950,13 +949,13 @@ export const useUIStore = defineStore('ui', {
           // We're at top level
           if (event.key === 'O') {
             // O: Create at current level at index aimIndex (above)
-            this.openAimModal(phaseId ?? null, aimIndex)
+            this.openAimModal(phaseId, aimIndex)
           } else {
             // o: If expanded, create sub-aim at index 0; else create at aimIndex + 1
             if (currentAim.expanded) {
               this.createSubAim(phaseId, currentAim, 0)
             } else {
-              this.openAimModal(phaseId ?? null, aimIndex + 1)
+              this.openAimModal(phaseId, aimIndex + 1)
             }
           }
         }
@@ -968,12 +967,6 @@ export const useUIStore = defineStore('ui', {
       const phaseId = this.selectedColumn === -1 ? undefined : this.getSelectedPhaseId(this.selectedColumn)
 
       const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
-      const aimIndex = aims.findIndex((a: any) => a.id === currentAim.id)
-
-      // Ensure selected index is valid
-      if (aimIndex === -1 || aimIndex >= aims.length) {
-        return
-      }
 
       switch (event.key) {
         case 'e': {
@@ -1007,8 +1000,13 @@ export const useUIStore = defineStore('ui', {
         }
         case 'l': {
           event.preventDefault()
-          // Expand the current aim (even if it has no incoming aims)
+          console.log('Expanding aim:', currentAim.id)
           currentAim.expanded = true
+          if(currentAim.incoming.length > 0) {
+            if(currentAim.selectedIncomingIndex === undefined) {
+              currentAim.selectedIncomingIndex = 0
+            }
+          }
           break
         }
       }
@@ -1098,7 +1096,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Open modal to create a sub-aim (incoming aim) for an expanded aim
-    createSubAim(phaseId: string, parentAim: any, insertionIndex: number = 0) {
+    createSubAim(phaseId: string | undefined, parentAim: Aim, insertionIndex: number = 0) {
       // Open modal with parent aim context - actual creation happens on modal confirm
       this.showAimModal = true
       this.aimModalMode = 'create'

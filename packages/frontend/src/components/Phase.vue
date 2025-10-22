@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from 'vue'
-import type { Phase } from 'shared'
-import { useDataStore } from '../stores/data'
+import { useDataStore, type Phase} from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import AimsList from './AimsList.vue'
 
@@ -127,8 +126,8 @@ const isPendingDelete = computed(() => {
         :aims="phaseAims"
         :phase-id="phase.id"
         :column-index="0"
-        :is-active="isActive"
-        :is-selected="isSelected"
+        :is-active="isActive && uiStore.navigatingAims"
+        :is-selected="isSelected && uiStore.navigatingAims"
         :selected-aim-index="phase.selectedAimIndex"
         @scroll-request="$emit('scroll-request', $event)"
         @aim-clicked="$emit('aim-clicked', $event)"

@@ -35,7 +35,7 @@ const baseConfig = {
     baseURL: process.env.CI ? 'http://localhost:4173' : 'http://localhost:5173',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: 'retry-with-trace' as const
   },
 
   /* Configure projects for major browsers */

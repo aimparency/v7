@@ -46,8 +46,8 @@ const handleScrollRequest = (element: HTMLElement) => {
         :aim="aim"
         :phase-id="phaseId"
         :indentation-level="indentationLevel"
-        :parentActive="isActive"
-        :parentSelected="isSelected"
+        :is-active="isActive"
+        :is-selected="isSelected"
         :is-this-aim-selected="selectedAimIndex === index"
         :class="{
           'selected-outlined': isActive && selectedAimIndex === index,
