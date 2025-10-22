@@ -11,11 +11,6 @@ const uiStore = useUIStore()
 const isSelected = computed(() => uiStore.selectedColumn === -1)
 const isActive = computed(() => uiStore.selectedColumn === -1)
 
-// Load uncommitted aims
-const rootAims = computed(() => {
-  return dataStore.getAimsForPhase('null') || []
-})
-
 const rootColumnRef = ref<HTMLElement | null>(null)
 
 // Handle scroll requests from child aims
@@ -24,19 +19,15 @@ const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
 
 <template>
   <div class="root-aims-column" :class="{ 'selected-outlined': isActive, 'selected': isSelected }">
-    <div v-if="rootAims.length === 0" class="empty-state">
-      No aims yet, create one with o
-    </div>
-
-    <div v-else ref="rootColumnRef" class="aims-container">
+    <div ref="rootColumnRef" class="aims-container">
       <div class="info">free floating aims</div>
       <AimsList
-        :aims="rootAims"
+        :aims="dataStore.floatingAims"
         phase-id="null"
         :column-index="-1"
         :is-active="isActive"
         :is-selected="isSelected"
-        :selected-aim-index="uiStore.rootAimsSelectedIndex"
+        :selected-aim-index="uiStore.floatingAimIndex"
         @aim-clicked="(aimId) => uiStore.selectAimById(-1, 'null', aimId)"
         @scroll-request="handleScrollRequest"
       />

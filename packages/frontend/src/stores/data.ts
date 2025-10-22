@@ -6,6 +6,7 @@ import { useUIStore } from './ui'
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
   selectedAimIndex?: number
+  lastSelectedSubPhaseIndex?: number
 }
 
 // Extend Aim type with UI-only properties
@@ -35,20 +36,22 @@ export const useDataStore = defineStore('data', {
         return aMid - bMid
       })
     },
+    floatingAims(state) {
+      return Object.values(state.aims).filter(aim =>
+        (!aim.committedIn || aim.committedIn.length === 0) &&
+        (!aim.outgoing || aim.outgoing.length === 0)
+      )
+    }, 
+    getFloatingAimByIndex() { 
+      return (index: number) => this.floatingAims[index]
+    }, 
     getAimsForPhase: (state) => (phaseId: string) => {
-      if (phaseId === 'null') {
-        // Root aims: uncommitted aims with no outgoing aims (not sub-aims)
-        return Object.values(state.aims).filter(aim =>
-          (!aim.committedIn || aim.committedIn.length === 0) &&
-          (!aim.outgoing || aim.outgoing.length === 0)
-        )
-      }
       const phase = state.phases[phaseId]
       if (!phase) return []
       return phase.commitments.map(aimId => state.aims[aimId]).filter(Boolean)
     },
   },
-  
+
   actions: {
     async runMigration(projectPath: string) {
       if (!projectPath || this.migrated) return
@@ -351,9 +354,9 @@ export const useDataStore = defineStore('data', {
       try {
         // Get the deleted index based on current selection
         let deletedIndex = -1
-        if (uiStore.mode === 'aims-edit') {
+        if (uiStore.mode === 'nav-aims') {
           if (phaseId === 'null') {
-            deletedIndex = uiStore.rootAimsSelectedIndex
+            deletedIndex = uiStore.floatingAimIndex
           } else {
             const phase = this.phases[phaseId]
             deletedIndex = phase?.selectedAimIndex ?? -1
@@ -430,13 +433,13 @@ export const useDataStore = defineStore('data', {
         if (aims.length === 0) {
           // No more aims, exit aims-edit mode
           uiStore.setMode('column-navigation');
-        } else if (uiStore.mode === 'aims-edit' && deletedIndex !== -1) {
+        } else if (uiStore.mode === 'nav-aims' && deletedIndex !== -1) {
           // Select aim: same index, or last if deleted was last
           const newIndex = Math.min(deletedIndex, aims.length - 1);
 
           // Update the appropriate index
           if (phaseId === 'null') {
-            uiStore.rootAimsSelectedIndex = newIndex;
+            uiStore.floatingAimIndex = newIndex;
           } else {
             const phase = this.phases[phaseId]
             if (phase) {
