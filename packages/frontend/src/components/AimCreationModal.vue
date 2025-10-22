@@ -38,80 +38,13 @@ const createAim = async () => {
   if (!aimText.value.trim() && !selectedSearchResult.value) return
 
   try {
-    let aimId: string
-    const parentAimId = uiStore.aimModalParentAimId
-
     if (selectedSearchResult.value) {
-      // Use selected search result
-      aimId = selectedSearchResult.value.id
-    } else {
-      // Create new aim (with optional parent relationship for sub-aims)
-      const result = await dataStore.createAim(uiStore.projectPath, {
-        text: aimText.value.trim(),
-        incoming: [],
-        outgoing: parentAimId ? [parentAimId] : [],
-        committedIn: [],
-        status: {
-          state: 'open',
-          comment: '',
-          date: Date.now()
-        }
-      })
-      aimId = result.id
+      // TODO: Handle selecting existing aim from search
+      console.warn('Search result selection not yet implemented')
+      return
     }
 
-    const phaseId = uiStore.aimModalPhaseId
-    const insertionIndex = uiStore.aimModalInsertionIndex
-
-    // If creating a sub-aim, update parent's incoming array
-    if (parentAimId) {
-      const parentAim = dataStore.aims[parentAimId]
-      if (parentAim) {
-        const wasExpanded = parentAim.expanded
-        const updatedIncoming = [...parentAim.incoming]
-        updatedIncoming.splice(insertionIndex, 0, aimId)
-        await dataStore.updateAim(uiStore.projectPath, parentAimId, {
-          incoming: updatedIncoming
-        })
-        // Restore expanded state (UI-only, not persisted)
-        if (wasExpanded) {
-          dataStore.aims[parentAimId].expanded = true
-        }
-
-        // Select the newly created sub-aim
-        uiStore.setMode('phase-edit')
-        const phaseIdForSelection = phaseId || 'null'
-        uiStore.setSelectedAim(phaseIdForSelection, insertionIndex, aimId)
-      }
-    } else {
-      // Top-level aim - commit to phase
-      if (phaseId) {
-        await dataStore.commitAimToPhase(uiStore.projectPath, aimId, phaseId, insertionIndex)
-
-        // Find the actual index of the newly created aim
-        const aims = dataStore.getAimsForPhase(phaseId)
-        const newAimIndex = aims.findIndex((aim: Aim) => aim.id === aimId)
-
-        // Select the newly created aim
-        uiStore.setMode('phase-edit')
-        if (newAimIndex !== -1) {
-          uiStore.setSelectedAim(phaseId, newAimIndex, aimId)
-          // Update last selected index for this phase
-          uiStore.lastSelectedAimIndexByPhase[phaseId] = newAimIndex
-        }
-      } else {
-        // Root aim - select it
-        uiStore.setMode('phase-edit')
-        const aims = dataStore.getAimsForPhase('null')
-        const newAimIndex = aims.findIndex((aim: Aim) => aim.id === aimId)
-        if (newAimIndex !== -1) {
-          uiStore.setSelectedAim('null', newAimIndex)
-          uiStore.lastSelectedRootAimIndex = newAimIndex
-        }
-      }
-    }
-
-    uiStore.closeAimModal()
+    await uiStore.createAim(aimText.value.trim(), dataStore)
   } catch (error) {
     console.error('Failed to create aim:', error)
   }

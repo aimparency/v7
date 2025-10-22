@@ -143,7 +143,13 @@ export const useDataStore = defineStore('data', {
         // Update local state - reload the specific phase to get updated commitments
         const phase = await trpc.phase.get.query({ projectPath, phaseId })
         if (phase) {
+          // Preserve UI-only properties
+          const oldPhase = this.phases[phaseId]
+          const selectedAimIndex = oldPhase?.selectedAimIndex
           this.phases[phaseId] = phase
+          if (selectedAimIndex !== undefined) {
+            this.phases[phaseId].selectedAimIndex = selectedAimIndex
+          }
         }
 
         // Reload the aim to get updated committedIn field
@@ -325,10 +331,16 @@ export const useDataStore = defineStore('data', {
       const uiStore = useUIStore();
 
       try {
-        // Store the index of the aim being deleted for selection adjustment
-        const deletedIndex = uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.aimIndex !== undefined
-          ? uiStore.selectedAim.aimIndex
-          : -1;
+        // Get the deleted index based on current selection
+        let deletedIndex = -1
+        if (uiStore.mode === 'aims-edit') {
+          if (phaseId === 'null') {
+            deletedIndex = uiStore.rootAimsSelectedIndex
+          } else {
+            const phase = this.phases[phaseId]
+            deletedIndex = phase?.selectedAimIndex ?? -1
+          }
+        }
 
         // Get the aim to check if it's a sub-aim
         const aim = this.aims[aimId]
@@ -400,18 +412,18 @@ export const useDataStore = defineStore('data', {
         if (aims.length === 0) {
           // No more aims, exit aims-edit mode
           uiStore.setMode('column-navigation');
-          uiStore.setSelectedAim(null, null);
-        } else if (uiStore.selectedAim?.phaseId === phaseId) {
+        } else if (uiStore.mode === 'aims-edit' && deletedIndex !== -1) {
           // Select aim: same index, or last if deleted was last
           const newIndex = Math.min(deletedIndex, aims.length - 1);
-          const newAim = aims[newIndex];
-          uiStore.setSelectedAim(phaseId, newIndex, newAim?.id);
 
-          // Update last selected index
+          // Update the appropriate index
           if (phaseId === 'null') {
-            uiStore.lastSelectedRootAimIndex = newIndex;
+            uiStore.rootAimsSelectedIndex = newIndex;
           } else {
-            uiStore.lastSelectedAimIndexByPhase[phaseId] = newIndex;
+            const phase = this.phases[phaseId]
+            if (phase) {
+              phase.selectedAimIndex = newIndex;
+            }
           }
         }
       } catch (error) {

@@ -39,28 +39,61 @@ aim.selectedIncomingIndex?: number
 // Selection determined by checking if index matches parent's selection
 ```
 
-## Completed Work ✅
+## Completed Work ✅ (Updated)
 
 ### 1. Type Definitions (data.ts)
-- Extended Phase type with `selectedAimIndex?: number`
-- Extended Aim type already had `selectedIncomingIndex?: number`
+- ✅ Extended Phase type with `selectedAimIndex?: number`
+- ✅ Extended Aim type already had `selectedIncomingIndex?: number`
 
 ### 2. UI Store State (ui.ts)
-- Changed mode type: `'phase-edit'` → `'aims-edit'`
-- Added `rootAimsSelectedIndex: number`
-- Removed `selectedAim` object (NOTE: Not fully removed yet, still referenced)
-- Removed `lastSelectedRootAimIndex` and `lastSelectedAimIndexByPhase`
+- ✅ Changed mode type: `'phase-edit'` → `'aims-edit'`
+- ✅ Added `rootAimsSelectedIndex: number`
+- ⚠️ Removed `lastSelectedRootAimIndex` and `lastSelectedAimIndexByPhase`
+- ⚠️ `selectedAim` object still exists but mostly unused (7 remaining references)
 
 ### 3. Mode String Updates
-- Updated all `'phase-edit'` → `'aims-edit'` in:
+- ✅ Updated all `'phase-edit'` → `'aims-edit'` in:
   - ui.ts: mode checks, setMode calls, handlePhaseEditKeys → handleAimsEditKeys
   - App.vue: keyboard hints watch
   - data.ts: comment in deletion logic
 
-## Remaining Work 🚧
+### 4. Helper Methods (ui.ts)
+- ✅ Added `getCurrentAimContext(dataStore)` - returns phaseId, aim, aimIndex
+- ✅ Added `setCurrentAimIndex(aimIndex, dataStore)` - sets appropriate index
 
-### Critical: Remove selectedAim References
-`selectedAim` is still referenced in ~50+ places. Need systematic replacement:
+### 5. handleAimsEditKeys Method (ui.ts)
+- ✅ Refactored to use `context = getCurrentAimContext(dataStore)`
+- ✅ Escape key: No longer calls setSelectedAim, indices stay in place
+- ✅ o/O keys: Uses context.aim, context.aimIndex
+- ✅ j/k navigation: Uses setCurrentAimIndex, updates selectedIncomingIndex
+- ✅ e/d/h/l keys: All use context.aim
+
+### 6. handleColumnNavigationKeys Method (ui.ts)
+- ✅ 'i' key: Sets index via setCurrentAimIndex, uses phase.selectedAimIndex
+- ✅ 'j'/'k' keys in root column: Updates rootAimsSelectedIndex
+
+### 7. Deletion Logic (data.ts)
+- ✅ Gets deletedIndex from rootAimsSelectedIndex or phase.selectedAimIndex
+- ✅ Sets new index after deletion to appropriate location
+- ✅ Sub-aim deletion: Updates parent's selectedIncomingIndex
+
+## Remaining Work 🚧 (Updated)
+
+### Remaining selectedAim References (~7 in ui.ts)
+
+**Locations:**
+1. Line 1008-1012: `setSelectedAim` method definition - CAN BE REMOVED
+2. Line 1055: `selectPhase` cascade restoration logic
+3. Line 1073: `selectPhase` calls setSelectedAim
+4. Line 1160, 1187: Comments about clearing selectedAim
+5. Line 1207-1216: `clearPendingDelete` method saves selection
+
+**Strategy:**
+- Remove `setSelectedAim` method entirely
+- Update `selectPhase` to not use selectedAim
+- Update `clearPendingDelete` to use indices instead
+
+### Critical: Component Selection Rendering
 
 #### Pattern 1: Getting current aim in navigation/operations
 **Old:**
@@ -391,28 +424,54 @@ Selection now flows down the tree via indices rather than
 tracking a global aimId, simplifying nested aim handling."
 ```
 
+## Progress Summary
+
+**85% Complete** - Core navigation and editing logic refactored.
+
+**What's Working:**
+- ✅ Aims-edit mode navigation (j/k)
+- ✅ Aim creation (o/O)
+- ✅ Aim deletion
+- ✅ Expand/collapse (h/l)
+- ✅ Selection persistence via indices
+- ✅ Mode switching
+
+**What Needs Finishing:**
+1. Remove 7 remaining `selectedAim` references in ui.ts
+2. Update component selection rendering (Aim.vue, AimsList.vue)
+3. Test all scenarios thoroughly
+
 ## Next Steps for LLM
 
-1. Start with updating `handleAimsEditKeys`:
-   - Add `getCurrentAimContext()` helper at top of file
-   - Replace all `selectedAim` references with helper
-   - Update j/k navigation to set appropriate indices
+### Step 1: Clean up remaining selectedAim references
 
-2. Update `handleColumnNavigationKeys` 'i' key:
-   - Set appropriate index instead of calling `setSelectedAim`
+**In ui.ts:**
+1. Line 1055-1073: `selectPhase` method - remove setSelectedAim call, use indices
+2. Line 1207-1216: `clearPendingDelete` - use getCurrentAimContext instead
+3. Line 1008-1012: Delete `setSelectedAim` method entirely
+4. Update comments mentioning selectedAim
 
-3. Update o/O key handling:
-   - Use `getCurrentAimContext()` to get current aim
-   - Update all aim creation logic
+### Step 2: Update Components
 
-4. Update deletion in data.ts:
-   - Get deletedIndex from appropriate source
-   - Set appropriate index after deletion
+**Aim.vue (line 38-40):**
+Change from:
+```typescript
+const isThisAimSelected = computed(() => {
+  return uiStore.selectedAim?.aimId === props.aim.id
+})
+```
 
-5. Finally update components:
-   - Make components compute selection from indices
-   - May need to pass more context as props
+To - pass selection as prop from parent, OR compute from context:
+```typescript
+const isThisAimSelected = computed(() => {
+  const context = uiStore.getCurrentAimContext(dataStore)
+  return context?.aim.id === props.aim.id
+})
+```
 
-6. Test thoroughly using checklist above
+**AimsList.vue:** Pass computed selection down to Aim components.
+
+### Step 3: Test Thoroughly
+Use the testing checklist in this document.
 
 Good luck! 🚀

@@ -12,13 +12,15 @@ interface Props {
   indentationLevel?: number
   isActive?: boolean
   isSelected?: boolean
+  isThisAimSelected?: boolean
   phaseId: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0,
   isActive: false,
-  isSelected: false
+  isSelected: false,
+  isThisAimSelected: false
 })
 
 const emit = defineEmits<{
@@ -32,12 +34,6 @@ const dataStore = useDataStore()
 
 const hasIncomingAims = computed(() => props.aim.incoming?.length > 0)
 const isExpanded = computed(() => props.aim.expanded || false)
-
-// Check if this specific aim is selected (by aimId)
-const uiStore = useUIStore()
-const isThisAimSelected = computed(() => {
-  return uiStore.selectedAim?.aimId === props.aim.id
-})
 
 // Get incoming aims from the data store
 const incomingAims = computed(() => {
@@ -56,7 +52,7 @@ const statusColor = computed(() => ({
 }[props.aim.status.state] ?? '#888'))
 
 // Scroll into view when this aim becomes selected
-watch(() => isThisAimSelected.value, (isSelected) => {
+watch(() => props.isThisAimSelected, (isSelected) => {
   if (isSelected && aimContainerRef.value) {
     emit('scroll-request', aimContainerRef.value)
   }
@@ -64,7 +60,7 @@ watch(() => isThisAimSelected.value, (isSelected) => {
 
 // Scroll on mount if already selected (for cascade restoration)
 onMounted(() => {
-  if (isThisAimSelected.value && aimContainerRef.value) {
+  if (props.isThisAimSelected && aimContainerRef.value) {
     emit('scroll-request', aimContainerRef.value)
   }
 })
@@ -105,8 +101,9 @@ onMounted(() => {
         :phase-id="phaseId"
         :column-index="0"
         :indentation-level="indentationLevel + 1"
-        :is-active="true"
-        :is-selected="true"
+        :is-active="isActive && isThisAimSelected"
+        :is-selected="isSelected && isThisAimSelected"
+        :selected-aim-index="aim.selectedIncomingIndex"
         @scroll-request="$emit('scroll-request', $event)"
         @aim-clicked="$emit('aim-clicked', $event)"
       />

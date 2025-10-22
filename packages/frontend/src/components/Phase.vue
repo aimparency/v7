@@ -129,6 +129,7 @@ const isPendingDelete = computed(() => {
         :column-index="0"
         :is-active="isActive"
         :is-selected="isSelected"
+        :selected-aim-index="phase.selectedAimIndex"
         @scroll-request="$emit('scroll-request', $event)"
         @aim-clicked="$emit('aim-clicked', $event)"
       />

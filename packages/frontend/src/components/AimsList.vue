@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import type { Aim } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import AimComponent from './Aim.vue'
@@ -11,10 +11,12 @@ interface Props {
   isActive: boolean
   isSelected: boolean
   indentationLevel?: number
+  selectedAimIndex?: number  // Index of selected aim in this list
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  indentationLevel: 0
+  indentationLevel: 0,
+  selectedAimIndex: undefined
 })
 
 const emit = defineEmits<{
@@ -46,9 +48,10 @@ const handleScrollRequest = (element: HTMLElement) => {
         :indentation-level="indentationLevel"
         :is-active="isActive"
         :is-selected="isSelected"
+        :is-this-aim-selected="selectedAimIndex === index"
         :class="{
-          'selected-outlined': isActive && uiStore.selectedAim?.aimId === aim.id,
-          'selected': isSelected && uiStore.selectedAim?.aimId === aim.id,
+          'selected-outlined': isActive && selectedAimIndex === index,
+          'selected': isSelected && selectedAimIndex === index,
           'pending-delete': uiStore.pendingDeleteAimId === aim.id
         }"
         @scroll-request="handleScrollRequest"
