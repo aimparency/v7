@@ -40,7 +40,6 @@ export const useUIStore = defineStore('ui', {
 
     // Column tracking for navigation
     rightmostColumnIndex: 0, // Track the rightmost (empty) column index
-    focusedColumnIndex: 0, // Track which column is currently focused (deprecated - use selectedColumn)
     selectedColumn: 0, // Currently selected column (visual selection)
 
     // Phase selection by column
@@ -523,6 +522,16 @@ export const useUIStore = defineStore('ui', {
       // Don't handle keys when modals are open
       if (this.showPhaseModal || this.showAimModal) return
 
+      // Handle j/k navigation universally based on selection path
+      if (event.key === 'j') {
+        await this.navigateDown(dataStore)
+        return
+      }
+      if (event.key === 'k') {
+        await this.navigateUp(dataStore)
+        return
+      }
+
       const mode = this.mode
 
       if (mode === 'column-navigation') {
@@ -532,6 +541,174 @@ export const useUIStore = defineStore('ui', {
       } else if (mode === 'aim-edit') {
         this.handleAimEditKeys(event)
       }
+    },
+
+    // Universal navigation down (j) - works on selection path
+    async navigateDown(dataStore: any) {
+      this.clearPendingDelete()
+
+      // Get selection path
+      const path = this.getSelectionPath(dataStore)
+
+      // Based on path length, determine what to navigate
+      if (path.aimIndices.length === 0) {
+        // Navigating phases in column
+        const col = this.selectedColumn
+        if (col === -1) {
+          // Root aims
+          const aims = dataStore.getAimsForPhase('null')
+          if (this.rootAimsSelectedIndex < aims.length - 1) {
+            this.rootAimsSelectedIndex++
+          }
+        } else {
+          // Phases
+          const currentIndex = this.getSelectedPhase(col)
+          const phaseCount = this.phaseCountByColumn[col] ?? 0
+          if (currentIndex < phaseCount - 1) {
+            await this.selectPhase(col, currentIndex + 1)
+          }
+        }
+      } else {
+        // Navigating aims - try to increase deepest index
+        const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
+        const deepestAim = path.aims[path.aims.length - 1]
+
+        // First try to dive into expanded children
+        if (deepestAim.expanded && deepestAim.incoming?.length > 0) {
+          deepestAim.selectedIncomingIndex = 0
+          return
+        }
+
+        // Try to increment current level
+        const parentAim = path.aims.length > 1 ? path.aims[path.aims.length - 2] : null
+        const siblings = parentAim
+          ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+          : dataStore.getAimsForPhase(path.phaseId)
+
+        if (deepestIdx < siblings.length - 1) {
+          if (parentAim) {
+            parentAim.selectedIncomingIndex = deepestIdx + 1
+          } else {
+            this.setCurrentAimIndex(deepestIdx + 1, dataStore)
+          }
+          return
+        }
+
+        // Can't increment, pop up to parent and try again
+        for (let i = path.aims.length - 2; i >= 0; i--) {
+          const aim = path.aims[i]
+          const idx = path.aimIndices[i]
+          const parent = i > 0 ? path.aims[i - 1] : null
+          const sibs = parent
+            ? parent.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+            : dataStore.getAimsForPhase(path.phaseId)
+
+          if (idx < sibs.length - 1) {
+            if (parent) {
+              parent.selectedIncomingIndex = idx + 1
+            } else {
+              this.setCurrentAimIndex(idx + 1, dataStore)
+            }
+            // Clear deeper selections
+            for (let j = i; j < path.aims.length; j++) {
+              path.aims[j].selectedIncomingIndex = undefined
+            }
+            return
+          }
+        }
+      }
+    },
+
+    // Universal navigation up (k) - works on selection path
+    async navigateUp(dataStore: any) {
+      this.clearPendingDelete()
+
+      const path = this.getSelectionPath(dataStore)
+
+      if (path.aimIndices.length === 0) {
+        // Navigating phases
+        const col = this.selectedColumn
+        if (col === -1) {
+          // Root aims
+          if (this.rootAimsSelectedIndex > 0) {
+            this.rootAimsSelectedIndex--
+          }
+        } else {
+          // Phases
+          const currentIndex = this.getSelectedPhase(col)
+          if (currentIndex > 0) {
+            await this.selectPhase(col, currentIndex - 1)
+          }
+        }
+      } else {
+        // Navigating aims
+        const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
+
+        if (deepestIdx > 0) {
+          // Move to previous sibling
+          const parentAim = path.aims.length > 1 ? path.aims[path.aims.length - 2] : null
+          const siblings = parentAim
+            ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+            : dataStore.getAimsForPhase(path.phaseId)
+
+          if (parentAim) {
+            parentAim.selectedIncomingIndex = deepestIdx - 1
+          } else {
+            this.setCurrentAimIndex(deepestIdx - 1, dataStore)
+          }
+
+          // Dive to last descendant of previous sibling
+          let target = siblings[deepestIdx - 1]
+          while (target.expanded && target.incoming?.length > 0) {
+            const lastIdx = target.incoming.length - 1
+            target.selectedIncomingIndex = lastIdx
+            target = dataStore.aims[target.incoming[lastIdx]]
+          }
+        } else {
+          // At first sibling, go to parent
+          if (path.aims.length > 1) {
+            path.aims[path.aims.length - 2].selectedIncomingIndex = undefined
+            path.aims[path.aims.length - 1].selectedIncomingIndex = undefined
+          }
+        }
+      }
+    },
+
+    // Get current selection path
+    getSelectionPath(dataStore: any): {phaseId: string, aimIndices: number[], aims: any[]} {
+      const context = this.getCurrentAimContext(dataStore)
+
+      if (!context) {
+        // No aim selected
+        const phaseId = this.selectedColumn === -1 ? 'null' : this.getSelectedPhaseId(this.selectedColumn) || 'null'
+        return { phaseId, aimIndices: [], aims: [] }
+      }
+
+      // Build path from root to current
+      const aimIndices: number[] = []
+      const aims: any[] = []
+      let currentAim = context.aim
+
+      while (currentAim) {
+        if (currentAim.outgoing?.length > 0) {
+          // Sub-aim
+          const parentId = currentAim.outgoing[0]
+          const parentAim = dataStore.aims[parentId]
+          if (parentAim) {
+            const idx = parentAim.incoming.indexOf(currentAim.id)
+            aimIndices.unshift(idx)
+            aims.unshift(currentAim)
+            currentAim = parentAim
+          } else break
+        } else {
+          // Top-level
+          aimIndices.unshift(context.aimIndex)
+          aims.unshift(currentAim)
+          break
+        }
+      }
+
+      return { phaseId: context.phaseId, aimIndices, aims }
     },
 
     // Keyboard navigation handlers
@@ -545,54 +722,6 @@ export const useUIStore = defineStore('ui', {
           event.preventDefault()
           this.navigateRight()
           break
-        case 'j': {
-          event.preventDefault()
-          this.clearPendingDelete() // Navigation cancels pending delete
-          const col = this.selectedColumn
-
-          if (col === -1) {
-            // Root aims column - navigate using selectedPhase (since no aim is selected in column-navigation mode)
-            const currentIndex = this.getSelectedPhase(col)
-            const aims = dataStore.getAimsForPhase('null') || []
-            if (aims.length > 0) {
-              const newIndex = Math.min(currentIndex + 1, aims.length - 1)
-              this.setSelection(col, newIndex)
-              this.rootAimsSelectedIndex = newIndex
-            }
-          } else {
-            // Phase columns - navigate using selectedPhase
-            const currentPhaseIndex = this.getSelectedPhase(col)
-            const maxIndex = this.getPhaseCount(col) - 1
-            if (currentPhaseIndex < maxIndex) {
-              this.selectPhase(col, currentPhaseIndex + 1)
-            }
-          }
-          break
-        }
-        case 'k': {
-          event.preventDefault()
-          this.clearPendingDelete() // Navigation cancels pending delete
-          const col = this.selectedColumn
-
-          if (col === -1) {
-            // Root aims column - navigate using selectedPhase
-            const currentIndex = this.getSelectedPhase(col)
-            const aims = dataStore.getAimsForPhase('null') || []
-            if (aims.length > 0) {
-              const newIndex = Math.max(currentIndex - 1, 0)
-              this.setSelection(col, newIndex)
-              this.rootAimsSelectedIndex = newIndex
-            }
-          } else {
-            // Phase columns - navigate using selectedPhase
-            const currentPhaseIndex = this.getSelectedPhase(col)
-            if (currentPhaseIndex > 0) {
-              // Update parent phase selection (this will handle child column restoration)
-              this.selectPhase(col, currentPhaseIndex - 1)
-            }
-          }
-          break
-        }
         case 'i': {
           event.preventDefault()
           // Get the selected phase to enter edit mode
@@ -858,86 +987,6 @@ export const useUIStore = defineStore('ui', {
       }
 
       switch (event.key) {
-        case 'j': {
-          event.preventDefault()
-          this.clearPendingDelete() // Navigation cancels pending delete
-
-          const currentAimId = context.aim.id
-          if (!currentAimId) break
-
-          const nextResult = this.findNextAimInTree(currentAimId, context.phaseId, dataStore)
-          console.log('[j] nextResult:', nextResult)
-          if (nextResult) {
-            // Clear all selectedIncomingIndex
-            Object.values(dataStore.aims).forEach((aim: any) => {
-              aim.selectedIncomingIndex = undefined
-            })
-
-            // Set selectedIncomingIndex on parent if nested
-            if (nextResult.parentAimId) {
-              const parentAim = dataStore.aims[nextResult.parentAimId]
-              if (parentAim) {
-                parentAim.selectedIncomingIndex = nextResult.indexInParent
-              }
-            }
-
-            // Update selection index
-            // For top-level aims, use indexInParent; for nested, use topLevelIndex
-            const newIndex = nextResult.parentAimId ? nextResult.topLevelIndex : (nextResult.indexInParent ?? nextResult.topLevelIndex)
-            this.setCurrentAimIndex(newIndex, dataStore)
-          }
-
-          // Store sub-phase selection for persistence
-          if (this.selectedColumn > 1) {
-            const parentColumn = this.selectedColumn - 1
-            const parentPhaseId = this.getSelectedPhaseId(parentColumn)
-            if (parentPhaseId) {
-              this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = this.getSelectedPhase(this.selectedColumn)
-            }
-          }
-          break
-        }
-        case 'k': {
-          event.preventDefault()
-          this.clearPendingDelete() // Navigation cancels pending delete
-
-          const currentAimId = context.aim.id
-          console.log('[k] currentAimId:', currentAimId, 'aimIndex:', context.aimIndex)
-          if (!currentAimId) break
-
-          const prevResult = this.findPreviousAimInTree(currentAimId, context.phaseId, dataStore)
-          console.log('[k] prevResult:', prevResult)
-          if (prevResult) {
-            // Clear all selectedIncomingIndex
-            Object.values(dataStore.aims).forEach((aim: any) => {
-              aim.selectedIncomingIndex = undefined
-            })
-
-            // Set selectedIncomingIndex on parent if nested
-            if (prevResult.parentAimId) {
-              const parentAim = dataStore.aims[prevResult.parentAimId]
-              if (parentAim) {
-                parentAim.selectedIncomingIndex = prevResult.indexInParent
-              }
-            }
-
-            // Update selection index
-            // For top-level aims, use indexInParent; for nested, use topLevelIndex
-            const newIndex = prevResult.parentAimId ? prevResult.topLevelIndex : (prevResult.indexInParent ?? prevResult.topLevelIndex)
-            console.log('[k] Setting index to:', newIndex)
-            this.setCurrentAimIndex(newIndex, dataStore)
-          }
-
-          // Store sub-phase selection for persistence
-          if (this.selectedColumn > 1) {
-            const parentColumn = this.selectedColumn - 1
-            const parentPhaseId = this.getSelectedPhaseId(parentColumn)
-            if (parentPhaseId) {
-              this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = this.getSelectedPhase(this.selectedColumn)
-            }
-          }
-          break
-        }
         case 'e': {
           event.preventDefault()
           // Get the selected aim

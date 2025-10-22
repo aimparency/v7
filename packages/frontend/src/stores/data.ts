@@ -82,9 +82,33 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    
+
     // Removed multi-column helper methods - now handled by teleport system
-    
+
+    // Helper to replace phase while preserving UI-only properties
+    replacePhase(phaseId: string, newPhase: BasePhase) {
+      const oldPhase = this.phases[phaseId]
+      const selectedAimIndex = oldPhase?.selectedAimIndex
+      this.phases[phaseId] = newPhase as Phase
+      if (selectedAimIndex !== undefined) {
+        this.phases[phaseId].selectedAimIndex = selectedAimIndex
+      }
+    },
+
+    // Helper to replace aim while preserving UI-only properties
+    replaceAim(aimId: string, newAim: BaseAim) {
+      const oldAim = this.aims[aimId]
+      const expanded = oldAim?.expanded
+      const selectedIncomingIndex = oldAim?.selectedIncomingIndex
+      this.aims[aimId] = newAim as Aim
+      if (expanded !== undefined) {
+        this.aims[aimId].expanded = expanded
+      }
+      if (selectedIncomingIndex !== undefined) {
+        this.aims[aimId].selectedIncomingIndex = selectedIncomingIndex
+      }
+    },
+
     async createAim(projectPath: string, aim: Omit<Aim, 'id'>): Promise<{id: string}> {
       try {
         const result = await trpc.aim.create.mutate({
@@ -123,7 +147,7 @@ export const useDataStore = defineStore('data', {
         })
 
         // Update local state
-        this.aims[aimId] = updatedAim
+        this.replaceAim(aimId, updatedAim)
       } catch (error) {
         console.error('Failed to update aim:', error)
         throw error
@@ -143,19 +167,13 @@ export const useDataStore = defineStore('data', {
         // Update local state - reload the specific phase to get updated commitments
         const phase = await trpc.phase.get.query({ projectPath, phaseId })
         if (phase) {
-          // Preserve UI-only properties
-          const oldPhase = this.phases[phaseId]
-          const selectedAimIndex = oldPhase?.selectedAimIndex
-          this.phases[phaseId] = phase
-          if (selectedAimIndex !== undefined) {
-            this.phases[phaseId].selectedAimIndex = selectedAimIndex
-          }
+          this.replacePhase(phaseId, phase)
         }
 
         // Reload the aim to get updated committedIn field
         const aim = await trpc.aim.get.query({ projectPath, aimId })
         if (aim) {
-          this.aims[aimId] = aim
+          this.replaceAim(aimId, aim)
         }
       } catch (error) {
         console.error('Failed to commit aim to phase:', error)
@@ -199,7 +217,7 @@ export const useDataStore = defineStore('data', {
         const phases = await trpc.phase.list.query({ projectPath, parentPhaseId: parentId });
         const childIds: string[] = [];
         for (const phase of phases) {
-          this.phases[phase.id] = phase;
+          this.replacePhase(phase.id, phase);
           childIds.push(phase.id);
         }
         this.childrenByParentId[parentId ?? 'null'] = childIds;
@@ -222,7 +240,7 @@ export const useDataStore = defineStore('data', {
       try {
         const allAims = await trpc.aim.list.query({ projectPath });
         for (const aim of allAims) {
-          this.aims[aim.id] = aim;
+          this.replaceAim(aim.id, aim);
         }
       } catch (error) {
         this.error = 'Failed to load aims';
@@ -397,7 +415,7 @@ export const useDataStore = defineStore('data', {
           // Reload the specific phase to get updated commitments
           const phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId })
           if (phase) {
-            this.phases[phaseId] = phase
+            this.replacePhase(phaseId, phase)
           }
           // Also remove the aim from local aims cache if it became orphaned
           const updatedAim = this.aims[aimId]
@@ -442,7 +460,7 @@ export const useDataStore = defineStore('data', {
           // Phase aims - load the specific phase to get commitments
           const phase = await trpc.phase.get.query({ projectPath, phaseId });
           if (phase) {
-            this.phases[phaseId] = phase;
+            this.replacePhase(phaseId, phase);
             // Aims are already loaded in loadAllAims, so commitments will work
           }
         }
