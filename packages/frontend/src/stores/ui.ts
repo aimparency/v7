@@ -3,6 +3,7 @@ import type { Hint } from 'shared'
 import { timestampToLocalDate, timestampToLocalTime } from 'shared'
 import { trpc } from '../trpc'
 import { useDataStore, type Aim, type Phase } from './data'
+import { text } from 'stream/consumers'
 
 type RelativePosition = 'before' | 'after' 
 
@@ -246,32 +247,61 @@ export const useUIStore = defineStore('ui', {
 
       const path = this.getSelectionPath()
 
+      const aimAttributes = {
+        text: aimText,
+        incoming: [], 
+        status: { state: 'open' as const, comment: '', date: Date.now() }
+      }
+
       if(path.aimIndices.length == 0){
         if(path.phaseId) {
           // create as first aim of phase
+          await dataStore.createAim(this.projectPath, {
+            ...aimAttributes,
+            outgoing: [],
+            committedIn: [path.phaseId],
+          })
         } else {
           // create as free floating aim 
+          await dataStore.createAim(this.projectPath, {
+            ...aimAttributes,
+            outgoing: [],
+            committedIn: [],
+          })
         }
       } else if (path.aimIndices.length > 0) {
         const currentAim = this.getCurrentAim()
         if(currentAim) {
           if(currentAim.expanded) {
             // create first sub aim of current aim
+            await dataStore.createAim(this.projectPath, {
+              ...aimAttributes,
+              outgoing: [currentAim.id],
+              committedIn: [],
+            })
           } else {
             // distinguish 3 cases: free floating, phase top-level, sub-aim
+            if(path.aimIndices.length > 1) {
+              // sub-aim
+              const parentAim = path.aims[path.aims.length - 2]
+              let targetIndex = parentAim.selectedIncomingIndex 
+              if(this.aimModalInsertPosition === 'after') {
+                targetIndex ++
+              }
+              await dataStore.createAim(this.projectPath, {
+                ...aimAttributes,
+                outgoing: [parentAim.id],
+                committedIn: [],
+              })
+            } else if(path.phaseId) {
+              // 
+            } else {
+              // free floating
+            }
           }
         }
       } 
 
-      // Create the aim in data store
-      const result = await dataStore.createAim(this.projectPath, {
-        text: aimText,
-        incoming: [],
-        outgoing: parentAimId ? [parentAimId] : [],
-        committedIn: [],
-        status: { state: 'open', comment: '', date: Date.now() }
-      })
-      const aimId = result.id
 
       // Handle sub-aim vs top-level aim
       if (parentAimId) {
@@ -540,7 +570,7 @@ export const useUIStore = defineStore('ui', {
 
       const col = this.selectedColumn
 
-      const path = this.getSelectionPath(dataStore)
+      const path = this.getSelectionPath()
       const lastIndex = path.aimIndices.length - 1
       if (path.aims[lastIndex].expanded && path.aims[lastIndex].incoming.length > 0 && !dontDescend) {
         // Dive into first child if expanded
@@ -586,7 +616,7 @@ export const useUIStore = defineStore('ui', {
     async navigateUp(dataStore: any) {
       this.pendingDeleteAimId = null
 
-      const path = this.getSelectionPath(dataStore)
+      const path = this.getSelectionPath()
       const col = this.selectedColumn
 
       if(this.navigatingAims) {
@@ -639,7 +669,8 @@ export const useUIStore = defineStore('ui', {
     }, 
 
     // Get current selection path
-    getSelectionPath(dataStore: any): {phaseId: string | undefined, aimIndices: number[], aims: Aim[]} {
+    getSelectionPath(): {phaseId: string | undefined, aimIndices: number[], aims: Aim[]} {
+      const dataStore = useDataStore()
       const currentAim = this.getCurrentAim()
       if (!currentAim) {
         const phaseId = this.selectedColumn === -1 ? undefined : this.getSelectedPhaseId(this.selectedColumn)

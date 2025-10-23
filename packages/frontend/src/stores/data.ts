@@ -356,7 +356,7 @@ export const useDataStore = defineStore('data', {
         if (!aim) return
 
         // Get selection path to determine context
-        const path = uiStore.getSelectionPath(this)
+        const path = uiStore.getSelectionPath()
 
         // Determine deletion behavior based on selection path:
         // - path.aims.length > 1: Sub-aim (remove from parent's incoming)
