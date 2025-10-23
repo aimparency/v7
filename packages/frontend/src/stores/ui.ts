@@ -26,22 +26,10 @@ export const useUIStore = defineStore('ui', {
     newPhaseStartTime: '',
     newPhaseEndDate: '',
     newPhaseEndTime: '',
-    // TODO: remove these things. place the new phase based on the selection path. determine position on creation time
-    phaseModalColumnIndex: 0, // Track which column the modal was opened from
-    phaseModalParentPhase: null as any, // Track the parent phase for new phase creation
-    phaseModalSelectedIndex: 0, // Track selected phase index for date calculation
-    // TODO: instead just save: 
     phaseModalInsertPosition: 'before' as RelativePosition, 
 
-  
     showAimModal: false,
     aimModalMode: 'create' as 'create' | 'edit',
-    // TODO: remove these things. place the new aim based on the selection path. determine position on creation time
-    aimModalEditingAimId: null as string | null, // Track which aim is being edited
-    aimModalPhaseId: undefined as string | undefined, // Track phase to add aim to
-    aimModalInsertionIndex: 0, // Track where to insert the aim
-    aimModalParentAimId: null as string | null, // Track parent aim for sub-aim creation
-    // TODO: instead just save:
     aimModalInsertPosition: 'before' as RelativePosition,
 
     // Navigation mode system
@@ -167,9 +155,6 @@ export const useUIStore = defineStore('ui', {
       this.phaseModalMode = 'create'
       this.phaseModalEditingPhaseId = null
       this.newPhaseName = ''
-      this.phaseModalColumnIndex = columnIndex
-      this.phaseModalParentPhase = parentPhase
-      this.phaseModalSelectedIndex = selectedIndex
 
       // Set default dates based on context
       const now = new Date()
@@ -226,7 +211,6 @@ export const useUIStore = defineStore('ui', {
       this.newPhaseEndDate = timestampToLocalDate(phaseTo)
       this.newPhaseEndTime = timestampToLocalTime(phaseTo)
 
-      this.phaseModalColumnIndex = columnIndex
     },
 
     closePhaseModal() {
@@ -238,42 +222,46 @@ export const useUIStore = defineStore('ui', {
       this.newPhaseStartTime = ''
       this.newPhaseEndDate = ''
       this.newPhaseEndTime = ''
-      this.phaseModalParentPhase = null
-      this.phaseModalSelectedIndex = 0
     },
     
     // Aim creation/editing actions
     openAimModal(phaseId?: string, insertionIndex: number = 0) {
       this.showAimModal = true
       this.aimModalMode = 'create'
-      this.aimModalEditingAimId = null
-      this.aimModalPhaseId = phaseId
-      this.aimModalInsertionIndex = insertionIndex
-      this.aimModalParentAimId = null
     },
 
-    openAimEditModal(aimId: string, phaseId: string | undefined, aimIndex: number) {
+    openAimEditModal() {
       this.showAimModal = true
       this.aimModalMode = 'edit'
-      this.aimModalEditingAimId = aimId
-      this.aimModalPhaseId = phaseId
-      this.aimModalInsertionIndex = aimIndex
     },
 
     closeAimModal() {
       this.showAimModal = false
       this.aimModalMode = 'create'
-      this.aimModalEditingAimId = null
-      this.aimModalPhaseId = undefined
-      this.aimModalInsertionIndex = 0
-      this.aimModalParentAimId = null
     },
 
     // Create aim and update selection
-    async createAim(aimText: string, dataStore: any) {
-      const phaseId = this.aimModalPhaseId
-      const insertionIndex = this.aimModalInsertionIndex
-      const parentAimId = this.aimModalParentAimId
+    async createAim(aimText: string) {
+      const dataStore = useDataStore()
+
+      const path = this.getSelectionPath()
+
+      if(path.aimIndices.length == 0){
+        if(path.phaseId) {
+          // create as first aim of phase
+        } else {
+          // create as free floating aim 
+        }
+      } else if (path.aimIndices.length > 0) {
+        const currentAim = this.getCurrentAim()
+        if(currentAim) {
+          if(currentAim.expanded) {
+            // create first sub aim of current aim
+          } else {
+            // distinguish 3 cases: free floating, phase top-level, sub-aim
+          }
+        }
+      } 
 
       // Create the aim in data store
       const result = await dataStore.createAim(this.projectPath, {
@@ -548,7 +536,7 @@ export const useUIStore = defineStore('ui', {
 
     // Universal navigation down (j) - works on selection path
     async navigateDown(dataStore: any, dontDescend: boolean = false) {
-      this.clearPendingDelete()
+      this.pendingDeleteAimId = null
 
       const col = this.selectedColumn
 
@@ -596,7 +584,7 @@ export const useUIStore = defineStore('ui', {
 
     // Universal navigation up (k) - works on selection path
     async navigateUp(dataStore: any) {
-      this.clearPendingDelete()
+      this.pendingDeleteAimId = null
 
       const path = this.getSelectionPath(dataStore)
       const col = this.selectedColumn
@@ -696,6 +684,11 @@ export const useUIStore = defineStore('ui', {
     async handleColumnNavigationKeys(event: KeyboardEvent, dataStore: any) {
       const col = this.selectedColumn
       switch (event.key) {
+        case 'Escape': 
+          if(this.pendingDeletePhaseId) {
+            this.pendingDeletePhaseId = null
+          }
+          break
         case 'j':
           if(col >= 0) {
             const currentIndex = this.getSelectedPhase(col)
@@ -716,7 +709,7 @@ export const useUIStore = defineStore('ui', {
         case 'h':
           event.preventDefault()
           if (col >= 0) {
-            this.clearPendingDelete()
+            this.pendingDeletePhaseId = null
             if (col === this.viewportStart && this.viewportStart > -1) {
               this.viewportStart--
             }
@@ -726,7 +719,7 @@ export const useUIStore = defineStore('ui', {
         case 'l':
           event.preventDefault()
           if (col < this.rightmostColumnIndex) {
-            this.clearPendingDelete()
+            this.pendingDeletePhaseId = null
             const viewportEnd = this.viewportStart + this.viewportSize - 1
             if (col === viewportEnd) {
               const maxViewportStart = Math.max(0, this.rightmostColumnIndex - this.viewportSize + 1)
@@ -828,7 +821,7 @@ export const useUIStore = defineStore('ui', {
             if (this.pendingDeleteAimId === aimToDelete.id) {
               // Confirm delete
               await dataStore.deleteAim(aimToDelete.id)
-              this.clearPendingDelete()
+              this.pendingDeleteAimId = null
             } else {
               // First press - mark for deletion
               this.setPendingDeleteAim(aimToDelete.id)
@@ -856,7 +849,7 @@ export const useUIStore = defineStore('ui', {
               const parentId = selectedPhase.parent; // The parent of the column we are in
 
               await dataStore.deletePhase(selectedPhase.id, parentId)
-              this.clearPendingDelete()
+              this.pendingDeleteAimId = null
 
               // After delete, reload the current column's data
               await dataStore.loadPhases(this.projectPath, parentId);
@@ -892,136 +885,79 @@ export const useUIStore = defineStore('ui', {
         return
       }
 
-      // Allow Escape even when no aims exist
-      if (event.key === 'Escape') {
-        event.preventDefault()
-
-        // If delete mode is active, only cancel it
-        if (this.pendingDeleteAimId !== null) {
-          this.clearPendingDelete()
-          return
-        }
-
-        this.clearPendingDelete()
-
-        // Indices stay in place (floatingAimIndex or phase.selectedAimIndex)
-        // For root aims, also update selection in column navigation
-        if (this.selectedColumn === -1 && currentAim) {
-          const aimIndex = dataStore.floatingAims.findIndex((a: any) => a.id === currentAim.id)
-          if (aimIndex !== -1) {
-            this.setSelection(-1, aimIndex)
-          }
-        }
-
-        this.navigatingAims = false
-        return
-      }
-
       // Allow o/O even when no aims exist (for creating first aim)
-      if (event.key === 'o' || event.key === 'O') {
-        event.preventDefault()
-
-        // Get phaseId first to check if we have empty aims
-        const phaseId = this.selectedColumn === -1 ? undefined : this.getSelectedPhaseId(this.selectedColumn)
-
-        const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
-
-        // Handle first aim creation - don't need current aim for empty phase
-        if (aims.length === 0) {
-          this.openAimModal(phaseId, 0)
-          return
-        }
-
-        // Now check if we have a current aim
-        if (!currentAim) return
-
-        // Get the current aim's index
-        const aimIndex = aims.findIndex((a: any) => a.id === currentAim.id)
-        if (aimIndex === -1) return
-
-        // Check if we're in a sub-aim (has parent)
-        const isSubAim = currentAim.outgoing && currentAim.outgoing.length > 0
-
-        if (isSubAim) {
-          // We're in a sub-aim - create sibling sub-aim
-          const parentAimId = currentAim.outgoing[0]!
-          const parentAim = dataStore.aims[parentAimId]
-          if (!parentAim) return
-
-          const currentIndexInParent = parentAim.incoming.indexOf(currentAim.id)
-          if (currentIndexInParent === -1) return
-
-          if (event.key === 'O') {
-            // O: Create sibling at current index (above)
-            this.createSubAim(phaseId, parentAim, currentIndexInParent)
-          } else {
-            // o: If current aim is expanded, create child at 0; else create sibling below
-            if (currentAim.expanded) {
-              this.createSubAim(phaseId, currentAim, 0)
-            } else {
-              this.createSubAim(phaseId, parentAim, currentIndexInParent + 1)
-            }
-          }
-        } else {
-          // We're at top level
-          if (event.key === 'O') {
-            // O: Create at current level at index aimIndex (above)
-            this.openAimModal(phaseId, aimIndex)
-          } else {
-            // o: If expanded, create sub-aim at index 0; else create at aimIndex + 1
-            if (currentAim.expanded) {
-              this.createSubAim(phaseId, currentAim, 0)
-            } else {
-              this.openAimModal(phaseId, aimIndex + 1)
-            }
-          }
-        }
-        return
+      let creationPos = undefined as RelativePosition | undefined
+      if (event.key === 'o') {
+        creationPos = 'after' as const
+      } else if(event.key === 'O') {
+        creationPos = 'before' as const
       }
-
-      if (!currentAim) return
-
-      const phaseId = this.selectedColumn === -1 ? undefined : this.getSelectedPhaseId(this.selectedColumn)
-
-      const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
+      if(creationPos !== undefined){
+        this.showAimModal = true
+        this.aimModalMode = 'create'
+        this.aimModalInsertPosition = creationPos
+      }
 
       switch (event.key) {
+        case 'Escape': 
+          event.preventDefault()
+
+          if(this.pendingDeleteAimId) {
+            this.pendingDeleteAimId = null
+          } else {
+            this.navigatingAims = false
+          }
+
+          // Indices stay in place (floatingAimIndex or phase.selectedAimIndex)
+          // For root aims, also update selection in column navigation
+          // if (this.selectedColumn === -1 && currentAim) {
+          //   const aimIndex = dataStore.floatingAims.findIndex((a: any) => a.id === currentAim.id)
+          //   if (aimIndex !== -1) {
+          //     this.setSelection(-1, aimIndex)
+          //   }
+          // }
+          break
         case 'e': {
           event.preventDefault()
           // Get the selected aim
-          if (currentAim.id) {
-            this.openAimEditModal(currentAim.id, phaseId, aimIndex)
+          if (currentAim) {
+            this.openAimEditModal()
           }
           break
         }
         case 'd': {
           event.preventDefault()
           // Check if this is confirmation (second press)
-          if (!currentAim.id) break
+          if (currentAim) {
 
-          if (this.pendingDeleteAimId === currentAim.id) {
-            // Confirm delete
-            await dataStore.deleteAim(currentAim.id)
-            this.clearPendingDelete()
-          } else {
-            // First press - mark for deletion
-            this.setPendingDeleteAim(currentAim.id)
+            if (this.pendingDeleteAimId === currentAim.id) {
+              // Confirm delete
+              await dataStore.deleteAim(currentAim.id)
+              this.pendingDeleteAimId = null
+            } else {
+              // First press - mark for deletion
+              this.setPendingDeleteAim(currentAim.id)
+            }
+            break
           }
-          break
         }
         case 'h': {
           event.preventDefault()
           // Collapse the current aim
-          currentAim.expanded = false
+          if(currentAim) {
+            currentAim.expanded = false
+          }
           break
         }
         case 'l': {
           event.preventDefault()
-          console.log('Expanding aim:', currentAim.id)
-          currentAim.expanded = true
-          if(currentAim.incoming.length > 0) {
-            if(currentAim.selectedIncomingIndex === undefined) {
-              currentAim.selectedIncomingIndex = 0
+          const currentAim = this.getCurrentAim()
+          if(currentAim) {
+            currentAim.expanded = true
+            if(currentAim.incoming.length > 0) {
+              if(currentAim.selectedIncomingIndex === undefined) {
+                currentAim.selectedIncomingIndex = 0
+              }
             }
           }
           break
@@ -1117,10 +1053,6 @@ export const useUIStore = defineStore('ui', {
       // Open modal with parent aim context - actual creation happens on modal confirm
       this.showAimModal = true
       this.aimModalMode = 'create'
-      this.aimModalEditingAimId = null
-      this.aimModalPhaseId = phaseId
-      this.aimModalInsertionIndex = insertionIndex
-      this.aimModalParentAimId = parentAim.id
     },
 
     // Click-to-select by aim ID (finds top-level index automatically)
@@ -1136,7 +1068,7 @@ export const useUIStore = defineStore('ui', {
         const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
         const aimIndex = aims.findIndex((a: any) => a.id === aimId)
         if (aimIndex !== -1) {
-          this.openAimEditModal(aimId, phaseId!, aimIndex)
+          this.openAimEditModal()
         }
         return
       }
@@ -1260,12 +1192,6 @@ export const useUIStore = defineStore('ui', {
 
     setPendingDeleteAim(aimId: string | null) {
       this.pendingDeleteAimId = aimId
-    },
-
-    clearPendingDelete() {
-      // No need to save them here
-      this.pendingDeletePhaseId = null
-      this.pendingDeleteAimId = null
     },
   }
 })
