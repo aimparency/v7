@@ -488,8 +488,11 @@ export const useUIStore = defineStore('ui', {
       const dataStore = useDataStore()
       if(this.navigatingAims) {
         if(this.selectedColumn === -1) {
-          let aim = dataStore.getFloatingAimByIndex(this.floatingAimIndex)
-          return this.getSelectedSubAim(aim)
+          const floatingAims = dataStore.floatingAims
+          if (floatingAims.length > 0) {
+            let aim = floatingAims[this.floatingAimIndex]
+            return this.getSelectedSubAim(aim)
+          }
         } else {
           let phaseId = this.getSelectedPhaseId(this.selectedColumn)
           if(phaseId) {
@@ -560,14 +563,18 @@ export const useUIStore = defineStore('ui', {
       // Get selection path
       const path = this.getSelectionPath(dataStore)
 
+      console.log('navigateDown path:', path)
       // Based on path length, determine what to navigate
       if (path.aimIndices.length === 0) {
         // Navigating phases in column
         const col = this.selectedColumn
         if (col === -1) {
           // Root aims
-          if (this.floatingAimIndex < dataStore.floatingAims.length - 1) {
-            this.floatingAimIndex++
+          console.log('navigating root aims, floatingAimIndex:', this.floatingAimIndex, ' total:', dataStore.floatingAims.length)
+          if (this.navigatingAims) {
+            if (this.floatingAimIndex < dataStore.floatingAims.length - 1) {
+              this.floatingAimIndex++
+            }
           }
         } else {
           // Phases
@@ -633,51 +640,50 @@ export const useUIStore = defineStore('ui', {
       this.clearPendingDelete()
 
       const path = this.getSelectionPath(dataStore)
+      const col = this.selectedColumn
 
-      if (path.aimIndices.length === 0) {
-        // Navigating phases
-        const col = this.selectedColumn
+      if(this.navigatingAims) {
         if (col === -1) {
-          // Root aims
           if (this.floatingAimIndex > 0) {
             this.floatingAimIndex--
           }
         } else {
+          const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
+
+          if (deepestIdx > 0) {
+            // Move to previous sibling
+            const parentAim = path.aims.length > 1 ? path.aims[path.aims.length - 2] : null
+            const siblings = parentAim
+              ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+              : dataStore.getAimsForPhase(path.phaseId)
+
+            if (parentAim) {
+              parentAim.selectedIncomingIndex = deepestIdx - 1
+            } else {
+              this.setCurrentAimIndex(deepestIdx - 1, dataStore)
+            }
+
+            // Dive to last descendant of previous sibling
+            let target = siblings[deepestIdx - 1]
+            while (target.expanded && target.incoming?.length > 0) {
+              const lastIdx = target.incoming.length - 1
+              target.selectedIncomingIndex = lastIdx
+              target = dataStore.aims[target.incoming[lastIdx]]
+            }
+          } else {
+            // At first sibling, go to parent
+            if (path.aims.length > 1) {
+              path.aims[path.aims.length - 2].selectedIncomingIndex = undefined
+              path.aims[path.aims.length - 1].selectedIncomingIndex = undefined
+            }
+          }
+        }
+      } else {
+        if(!(col<0)) {
           // Phases
           const currentIndex = this.getSelectedPhase(col)
           if (currentIndex > 0) {
             await this.selectPhase(col, currentIndex - 1)
-          }
-        }
-      } else {
-        // Navigating aims
-        const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
-
-        if (deepestIdx > 0) {
-          // Move to previous sibling
-          const parentAim = path.aims.length > 1 ? path.aims[path.aims.length - 2] : null
-          const siblings = parentAim
-            ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
-            : dataStore.getAimsForPhase(path.phaseId)
-
-          if (parentAim) {
-            parentAim.selectedIncomingIndex = deepestIdx - 1
-          } else {
-            this.setCurrentAimIndex(deepestIdx - 1, dataStore)
-          }
-
-          // Dive to last descendant of previous sibling
-          let target = siblings[deepestIdx - 1]
-          while (target.expanded && target.incoming?.length > 0) {
-            const lastIdx = target.incoming.length - 1
-            target.selectedIncomingIndex = lastIdx
-            target = dataStore.aims[target.incoming[lastIdx]]
-          }
-        } else {
-          // At first sibling, go to parent
-          if (path.aims.length > 1) {
-            path.aims[path.aims.length - 2].selectedIncomingIndex = undefined
-            path.aims[path.aims.length - 1].selectedIncomingIndex = undefined
           }
         }
       }
@@ -749,6 +755,12 @@ export const useUIStore = defineStore('ui', {
               if (phase && aims.length > 0 && phase.selectedAimIndex === undefined) {
                 phase.selectedAimIndex = 0
               }
+            }
+          } else {
+            // Initialize floating aim selection for root aims column
+            const floatingAims = dataStore.floatingAims
+            if (this.floatingAimIndex === undefined && floatingAims.length > 0) {
+              this.floatingAimIndex = 0
             }
           }
 
