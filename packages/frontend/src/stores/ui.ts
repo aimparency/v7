@@ -562,7 +562,9 @@ export const useUIStore = defineStore('ui', {
 
       const path = this.getSelectionPath()
       const lastIndex = path.aimIndices.length - 1
-      if (path.aims[lastIndex].expanded && path.aims[lastIndex].incoming.length > 0 && !dontDescend) {
+      const currentAim = this.getCurrentAim()
+      
+      if (currentAim !== undefined && currentAim.expanded && currentAim.incoming.length > 0 && !dontDescend) {
         // Dive into first child if expanded
         path.aims[0].selectedIncomingIndex = 0
       } else {
