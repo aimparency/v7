@@ -480,32 +480,34 @@ const server = createHTTPServer({
   createContext,
 });
 
-// Create WebSocket server
-const wss = new WebSocketServer({ port: 3001 });
-
-const handler = applyWSSHandler({
-  wss,
-  router: appRouter,
-  createContext,
-});
-
-wss.on('connection', (ws) => {
-  console.log(`WebSocket connection established (${wss.clients.size})`);
-  ws.once('close', () => {
-    console.log(`WebSocket connection closed (${wss.clients.size})`);
-  });
-});
-
-// Start servers
+// Start servers (only if not in test environment)
 const HTTP_PORT = 3000;
-server.listen(HTTP_PORT, () => {
-  console.log(`HTTP Server running on http://localhost:${HTTP_PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  // Create WebSocket server
+  const wss = new WebSocketServer({ port: 3001 });
 
-console.log(`WebSocket Server running on ws://localhost:3001`);
+  const handler = applyWSSHandler({
+    wss,
+    router: appRouter,
+    createContext,
+  });
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  server.close();
-  wss.close();
-});
+  wss.on('connection', (ws) => {
+    console.log(`WebSocket connection established (${wss.clients.size})`);
+    ws.once('close', () => {
+      console.log(`WebSocket connection closed (${wss.clients.size})`);
+    });
+  });
+
+  server.listen(HTTP_PORT, () => {
+    console.log(`HTTP Server running on http://localhost:${HTTP_PORT}`);
+  });
+
+  console.log(`WebSocket Server running on ws://localhost:3001`);
+
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close();
+    wss.close();
+  });
+}
