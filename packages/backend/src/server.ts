@@ -471,6 +471,7 @@ const appRouter = t.router({
   })
 });
 
+export { appRouter };
 export type AppRouter = typeof appRouter;
 
 // Create HTTP server
