@@ -536,23 +536,13 @@ export const useUIStore = defineStore('ui', {
     async handleGlobalKeydown(event: KeyboardEvent, dataStore: any) {
       console.log('pressed', event.key, '. nav aims? ', this.navigatingAims)
 
-      // Don't handle keys when modals are open
-      if (this.showPhaseModal || this.showAimModal) return
-
-      // Handle j/k navigation universally based on selection path
-      if (event.key === 'j') {
-        await this.navigateDown(dataStore)
-        return
-      }
-      if (event.key === 'k') {
-        await this.navigateUp(dataStore)
-        return
-      }
-
-      if(this.navigatingAims) {
-        await this.handleAimNavigationKeys(event, dataStore)
+      if (this.showPhaseModal || this.showAimModal) {
       } else {
-        await this.handleColumnNavigationKeys(event, dataStore)
+        if(this.navigatingAims) {
+          await this.handleAimNavigationKeys(event, dataStore)
+        } else {
+          await this.handleColumnNavigationKeys(event, dataStore)
+        }
       }
     },
 
@@ -617,15 +607,18 @@ export const useUIStore = defineStore('ui', {
             // previous floating aim
             if (this.floatingAimIndex > 0) {
               this.floatingAimIndex--
+              const target = dataStore.floatingAims[this.floatingAimIndex]
+              this.goToLastChildAim(target)
             }
           } else if (col >= 0) {
             // previous aim in phase
             const phaseId = path.phaseId
             if (phaseId) {
               const phase = dataStore.phases[phaseId]
-              const aims = dataStore.getAimsForPhase(phaseId)
               if (phase.selectedAimIndex !== undefined && phase.selectedAimIndex > 0) {
                 phase.selectedAimIndex--
+                const target = dataStore.getAimsForPhase(phaseId)[phase.selectedAimIndex]
+                this.goToLastChildAim(target)
               }
             }
           }
@@ -634,24 +627,28 @@ export const useUIStore = defineStore('ui', {
           const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
           const parentAim = path.aims[path.aims.length - 2]
 
-
           if(parentAim.selectedIncomingIndex == 0) {
             parentAim.selectedIncomingIndex = undefined
           } else {
-            const siblings = parentAim
-              ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
-              : dataStore.getAimsForPhase(path.phaseId) // remove
-            let target = siblings[deepestIdx - 1]
-            while (target.expanded && target.incoming?.length > 0) {
-              const lastIdx = target.incoming.length - 1
-              target.selectedIncomingIndex = lastIdx
-              target = dataStore.aims[target.incoming[lastIdx]]
-            }
+            parentAim.selectedIncomingIndex! --
+            const targetIndex = parentAim.incoming[parentAim.selectedIncomingIndex!]
+            const target = dataStore.aims[targetIndex]
+            this.goToLastChildAim(target)
           }
         }
       } else {
       }
     },
+
+    goToLastChildAim(target: Aim) {
+      console.log('going to last child of', target)
+      const dataStore = useDataStore()
+      while (target.expanded && target.incoming.length > 0) {
+        const lastIdx = target.incoming.length - 1
+        target.selectedIncomingIndex = lastIdx
+        target = dataStore.aims[target.incoming[lastIdx]]
+      }
+    }, 
 
     // Get current selection path
     getSelectionPath(dataStore: any): {phaseId: string | undefined, aimIndices: number[], aims: Aim[]} {
@@ -1251,13 +1248,6 @@ export const useUIStore = defineStore('ui', {
 
       // Set the current aim index
       this.setCurrentAimIndex(aimIndex, dataStore);
-    },
-
-    // Navigation with edge-triggered viewport scrolling
-    navigateLeft() {
-    },
-
-    navigateRight() {
     },
 
     triggerPhaseReload() {
