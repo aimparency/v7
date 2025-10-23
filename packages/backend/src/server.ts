@@ -115,11 +115,63 @@ async function removeAimFromPhase(projectPath: string, aimId: string, phaseId: s
   const phase = await readPhase(projectPath, phaseId);
   phase.commitments = phase.commitments.filter(id => id !== aimId);
   await writePhase(projectPath, phase);
-  
+
   // Update the aim
   const aim = await readAim(projectPath, aimId);
   aim.committedIn = (aim.committedIn || []).filter(id => id !== phaseId);
   await writeAim(projectPath, aim);
+}
+
+// Helper function to connect aims (reused by connectAims and createSubAim)
+async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentOutgoingIndex?: number, childIncomingIndex?: number): Promise<void> {
+  const parent = await readAim(projectPath, parentAimId);
+  const child = await readAim(projectPath, childAimId);
+
+  // Update parent's outgoing
+  let targetParentIndex = parentOutgoingIndex !== undefined ? parentOutgoingIndex : parent.outgoing.length;
+  const currentChildIndex = parent.outgoing.indexOf(childAimId);
+  if (currentChildIndex === targetParentIndex) {
+    // Already at the correct position
+  } else {
+    // Remove from current position if present
+    if (currentChildIndex !== -1) {
+      parent.outgoing.splice(currentChildIndex, 1);
+      // Adjust target index if it was after the removed position
+      if (targetParentIndex > currentChildIndex) {
+        targetParentIndex--;
+      }
+    }
+    // Insert at target position
+    if (targetParentIndex <= parent.outgoing.length) {
+      parent.outgoing.splice(targetParentIndex, 0, childAimId);
+    } else {
+      parent.outgoing.push(childAimId);
+    }
+  }
+  await writeAim(projectPath, parent);
+
+  // Update child's incoming
+  let targetChildIndex = childIncomingIndex !== undefined ? childIncomingIndex : child.incoming.length;
+  const currentParentIndex = child.incoming.indexOf(parentAimId);
+  if (currentParentIndex === targetChildIndex) {
+    // Already at the correct position
+  } else {
+    // Remove from current position if present
+    if (currentParentIndex !== -1) {
+      child.incoming.splice(currentParentIndex, 1);
+      // Adjust target index if it was after the removed position
+      if (targetChildIndex > currentParentIndex) {
+        targetChildIndex--;
+      }
+    }
+    // Insert at target position
+    if (targetChildIndex <= child.incoming.length) {
+      child.incoming.splice(targetChildIndex, 0, parentAimId);
+    } else {
+      child.incoming.push(parentAimId);
+    }
+  }
+  await writeAim(projectPath, child);
 }
 
 // Migration function to populate committedIn field for existing aims
@@ -250,6 +302,76 @@ const appRouter = t.router({
       .mutation(async ({ input }) => {
         await removeAimFromPhase(input.projectPath, input.aimId, input.phaseId);
         return { success: true };
+      }),
+
+    connectAims: t.procedure
+      .input(z.object({
+        projectPath: z.string(),
+        parentAimId: z.string().uuid(),
+        childAimId: z.string().uuid(),
+        parentOutgoingIndex: z.number().optional(),
+        childIncomingIndex: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentOutgoingIndex, input.childIncomingIndex);
+        return { success: true };
+      }),
+
+    createSubAim: t.procedure
+      .input(z.object({
+        projectPath: z.string(),
+        parentAimId: z.string().uuid(),
+        aim: AimSchema.omit({ id: true }),
+        parentOutgoingIndex: z.number().optional(),
+        childIncomingIndex: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const childAimId = uuidv4();
+        const childAim: Aim = {
+          id: childAimId,
+          text: input.aim.text,
+          incoming: [input.parentAimId], // Will be updated by connectAimsInternal
+          outgoing: [],
+          committedIn: input.aim.committedIn || [],
+          status: input.aim.status || {
+            state: 'open',
+            comment: '',
+            date: Date.now()
+          }
+        };
+
+        await writeAim(input.projectPath, childAim);
+        await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.parentOutgoingIndex, input.childIncomingIndex);
+
+        return { id: childAimId };
+      }),
+
+    createCommittedAim: t.procedure
+      .input(z.object({
+        projectPath: z.string(),
+        phaseId: z.string().uuid(),
+        aim: AimSchema.omit({ id: true }),
+        insertionIndex: z.number().optional()
+      }))
+      .mutation(async ({ input }) => {
+        const aimId = uuidv4();
+        const aim: Aim = {
+          id: aimId,
+          text: input.aim.text,
+          incoming: [],
+          outgoing: [],
+          committedIn: [input.phaseId], // Will be updated by commitAimToPhase
+          status: input.aim.status || {
+            state: 'open',
+            comment: '',
+            date: Date.now()
+          }
+        };
+
+        await writeAim(input.projectPath, aim);
+        await commitAimToPhase(input.projectPath, aimId, input.phaseId, input.insertionIndex);
+
+        return { id: aimId };
       })
   }),
 

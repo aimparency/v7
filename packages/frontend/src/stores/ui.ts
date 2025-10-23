@@ -3,7 +3,6 @@ import type { Hint } from 'shared'
 import { timestampToLocalDate, timestampToLocalTime } from 'shared'
 import { trpc } from '../trpc'
 import { useDataStore, type Aim, type Phase } from './data'
-import { text } from 'stream/consumers'
 
 type RelativePosition = 'before' | 'after' 
 
@@ -231,16 +230,6 @@ export const useUIStore = defineStore('ui', {
       this.aimModalMode = 'create'
     },
 
-    openAimEditModal() {
-      this.showAimModal = true
-      this.aimModalMode = 'edit'
-    },
-
-    closeAimModal() {
-      this.showAimModal = false
-      this.aimModalMode = 'create'
-    },
-
     // Create aim and update selection
     async createAim(aimText: string) {
       const dataStore = useDataStore()
@@ -303,46 +292,47 @@ export const useUIStore = defineStore('ui', {
       } 
 
 
-      // Handle sub-aim vs top-level aim
-      if (parentAimId) {
-        // Sub-aim: update parent's incoming array
-        const parentAim = dataStore.aims[parentAimId]
-        if (parentAim) {
-          const wasExpanded = parentAim.expanded
-          const updatedIncoming = [...parentAim.incoming]
-          updatedIncoming.splice(insertionIndex, 0, aimId)
-          await dataStore.updateAim(this.projectPath, parentAimId, { incoming: updatedIncoming })
+      ////// OLD CODE! /// 
+      // // Handle sub-aim vs top-level aim
+      // if (parentAimId) {
+      //   // Sub-aim: update parent's incoming array
+      //   const parentAim = dataStore.aims[parentAimId]
+      //   if (parentAim) {
+      //     const wasExpanded = parentAim.expanded
+      //     const updatedIncoming = [...parentAim.incoming]
+      //     updatedIncoming.splice(insertionIndex, 0, aimId)
+      //     await dataStore.updateAim(this.projectPath, parentAimId, { incoming: updatedIncoming })
 
-          if (wasExpanded) {
-            dataStore.aims[parentAimId].expanded = true
-          }
+      //     if (wasExpanded) {
+      //       dataStore.aims[parentAimId].expanded = true
+      //     }
 
-          // Select the newly created sub-aim
-          parentAim.selectedIncomingIndex = insertionIndex
-        }
-      } else {
-        // Top-level aim: commit to phase or root
-        if (phaseId) {
-          await dataStore.commitAimToPhase(this.projectPath, aimId, phaseId, insertionIndex)
-          const aims = dataStore.getAimsForPhase(phaseId)
-          const newAimIndex = aims.findIndex((aim: any) => aim.id === aimId)
+      //     // Select the newly created sub-aim
+      //     parentAim.selectedIncomingIndex = insertionIndex
+      //   }
+      // } else {
+      //   // Top-level aim: commit to phase or root
+      //   if (phaseId) {
+      //     await dataStore.commitAimToPhase(this.projectPath, aimId, phaseId, insertionIndex)
+      //     const aims = dataStore.getAimsForPhase(phaseId)
+      //     const newAimIndex = aims.findIndex((aim: any) => aim.id === aimId)
 
-          if (newAimIndex !== -1) {
-            const phase = dataStore.phases[phaseId]
-            if (phase) {
-              phase.selectedAimIndex = newAimIndex
-            }
-          }
-        } else {
-          // Root aim
-          const newAimIndex = dataStore.floatingAims.findIndex((aim: any) => aim.id === aimId)
-          if (newAimIndex !== -1) {
-            this.floatingAimIndex = newAimIndex
-          }
-        }
-      }
+      //     if (newAimIndex !== -1) {
+      //       const phase = dataStore.phases[phaseId]
+      //       if (phase) {
+      //         phase.selectedAimIndex = newAimIndex
+      //       }
+      //     }
+      //   } else {
+      //     // Root aim
+      //     const newAimIndex = dataStore.floatingAims.findIndex((aim: any) => aim.id === aimId)
+      //     if (newAimIndex !== -1) {
+      //       this.floatingAimIndex = newAimIndex
+      //     }
+      //   }
+      // }
 
-      this.closeAimModal()
+      this.showAimModal = false
     },
 
     // Keyboard hints actions
@@ -952,7 +942,8 @@ export const useUIStore = defineStore('ui', {
           event.preventDefault()
           // Get the selected aim
           if (currentAim) {
-            this.openAimEditModal()
+            this.showAimModal = true
+            this.aimModalMode = 'edit'
           }
           break
         }
@@ -1099,7 +1090,8 @@ export const useUIStore = defineStore('ui', {
         const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
         const aimIndex = aims.findIndex((a: any) => a.id === aimId)
         if (aimIndex !== -1) {
-          this.openAimEditModal()
+          this.showAimModal = true
+          this.aimModalMode = 'edit'
         }
         return
       }
