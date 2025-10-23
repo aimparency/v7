@@ -562,54 +562,43 @@ export const useUIStore = defineStore('ui', {
 
       const col = this.selectedColumn
 
-      if(this.navigatingAims) {
-        const path = this.getSelectionPath(dataStore)
-        const lastIndex = path.aimIndices.length - 1
-        if (path.aims[lastIndex].expanded && path.aims[lastIndex].incoming.length > 0 && !dontDescend) {
-          // Dive into first child if expanded
-          path.aims[0].selectedIncomingIndex = 0
-        } else {
-          if (path.aims.length === 1) { 
-          // At top level
-            if (col === -1) {
-              // next floating aim
-              if (this.floatingAimIndex < dataStore.floatingAims.length - 1) {
-                this.floatingAimIndex++
-              }
-            } else {
-              // next aim in phase
-              const phaseId = path.phaseId
-              if (phaseId) {
-                const phase = dataStore.phases[phaseId]
-                const aims = dataStore.getAimsForPhase(phaseId)
-                if (phase.selectedAimIndex !== undefined && phase.selectedAimIndex < aims.length - 1) {
-                  phase.selectedAimIndex++
-                }
-              }
+      const path = this.getSelectionPath(dataStore)
+      const lastIndex = path.aimIndices.length - 1
+      if (path.aims[lastIndex].expanded && path.aims[lastIndex].incoming.length > 0 && !dontDescend) {
+        // Dive into first child if expanded
+        path.aims[0].selectedIncomingIndex = 0
+      } else {
+        if (path.aims.length === 1) { 
+        // At top level
+          if (col === -1) {
+            // next floating aim
+            if (this.floatingAimIndex < dataStore.floatingAims.length - 1) {
+              this.floatingAimIndex++
             }
-          } else if (path.aims.length > 1) {
-            // Nested aims
-            const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
-            const parentAim = path.aims[path.aims.length - 2]
-            const siblings = parentAim
-              ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
-              : dataStore.getAimsForPhase(path.phaseId)
-
-            if (deepestIdx < siblings.length - 1) {
-              parentAim.selectedIncomingIndex = deepestIdx + 1
-            } else {
-              parentAim.selectedIncomingIndex = undefined
-              this.navigateDown(dataStore, true)
+          } else {
+            // next aim in phase
+            const phaseId = path.phaseId
+            if (phaseId) {
+              const phase = dataStore.phases[phaseId]
+              const aims = dataStore.getAimsForPhase(phaseId)
+              if (phase.selectedAimIndex !== undefined && phase.selectedAimIndex < aims.length - 1) {
+                phase.selectedAimIndex++
+              }
             }
           }
-        }
-      } else {
-        // Phases navigation
-        if(col >= 0) {
-          const currentIndex = this.getSelectedPhase(col)
-          const phaseCount = this.getPhaseCount(col)
-          if (currentIndex < phaseCount - 1) {
-            await this.selectPhase(col, currentIndex + 1)
+        } else if (path.aims.length > 1) {
+          // Nested aims
+          const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
+          const parentAim = path.aims[path.aims.length - 2]
+          const siblings = parentAim
+            ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+            : dataStore.getAimsForPhase(path.phaseId)
+
+          if (deepestIdx < siblings.length - 1) {
+            parentAim.selectedIncomingIndex = deepestIdx + 1
+          } else {
+            parentAim.selectedIncomingIndex = undefined
+            this.navigateDown(dataStore, true)
           }
         }
       }
@@ -623,49 +612,44 @@ export const useUIStore = defineStore('ui', {
       const col = this.selectedColumn
 
       if(this.navigatingAims) {
-        if (col === -1) {
-          if (this.floatingAimIndex > 0) {
-            this.floatingAimIndex--
+        if(path.aims.length === 1) {
+          if (col === -1) {
+            // previous floating aim
+            if (this.floatingAimIndex > 0) {
+              this.floatingAimIndex--
+            }
+          } else if (col >= 0) {
+            // previous aim in phase
+            const phaseId = path.phaseId
+            if (phaseId) {
+              const phase = dataStore.phases[phaseId]
+              const aims = dataStore.getAimsForPhase(phaseId)
+              if (phase.selectedAimIndex !== undefined && phase.selectedAimIndex > 0) {
+                phase.selectedAimIndex--
+              }
+            }
           }
-        } else {
+        } else if (path.aims.length > 1) {
+          // Nested aims
           const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
+          const parentAim = path.aims[path.aims.length - 2]
 
-          if (deepestIdx > 0) {
-            // Move to previous sibling
-            const parentAim = path.aims.length > 1 ? path.aims[path.aims.length - 2] : null
+
+          if(parentAim.selectedIncomingIndex == 0) {
+            parentAim.selectedIncomingIndex = undefined
+          } else {
             const siblings = parentAim
               ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
-              : dataStore.getAimsForPhase(path.phaseId)
-
-            if (parentAim) {
-              parentAim.selectedIncomingIndex = deepestIdx - 1
-            } else {
-              this.setCurrentAimIndex(deepestIdx - 1, dataStore)
-            }
-
-            // Dive to last descendant of previous sibling
+              : dataStore.getAimsForPhase(path.phaseId) // remove
             let target = siblings[deepestIdx - 1]
             while (target.expanded && target.incoming?.length > 0) {
               const lastIdx = target.incoming.length - 1
               target.selectedIncomingIndex = lastIdx
               target = dataStore.aims[target.incoming[lastIdx]]
             }
-          } else {
-            // At first sibling, go to parent
-            if (path.aims.length > 1) {
-              path.aims[path.aims.length - 2].selectedIncomingIndex = undefined
-              path.aims[path.aims.length - 1].selectedIncomingIndex = undefined
-            }
           }
         }
       } else {
-        if(!(col<0)) {
-          // Phases
-          const currentIndex = this.getSelectedPhase(col)
-          if (currentIndex > 0) {
-            await this.selectPhase(col, currentIndex - 1)
-          }
-        }
       }
     },
 
@@ -713,14 +697,48 @@ export const useUIStore = defineStore('ui', {
 
     // Keyboard navigation handlers
     async handleColumnNavigationKeys(event: KeyboardEvent, dataStore: any) {
+      const col = this.selectedColumn
       switch (event.key) {
+        case 'j':
+          if(col >= 0) {
+            const currentIndex = this.getSelectedPhase(col)
+            const phaseCount = this.getPhaseCount(col)
+            if (currentIndex < phaseCount - 1) {
+              await this.selectPhase(col, currentIndex + 1)
+            }
+          }
+          break
+        case 'k':
+          if(col >= 0) {
+            const currentIndex = this.getSelectedPhase(col)
+            if (currentIndex > 0) {
+              await this.selectPhase(col, currentIndex - 1)
+            }
+          }
+          break
         case 'h':
           event.preventDefault()
-          this.navigateLeft()
+          if (col >= 0) {
+            this.clearPendingDelete()
+            if (col === this.viewportStart && this.viewportStart > -1) {
+              this.viewportStart--
+            }
+            this.selectedColumn = col - 1
+          }
           break
         case 'l':
           event.preventDefault()
-          this.navigateRight()
+          if (col < this.rightmostColumnIndex) {
+            this.clearPendingDelete()
+            const viewportEnd = this.viewportStart + this.viewportSize - 1
+            if (col === viewportEnd) {
+              const maxViewportStart = Math.max(0, this.rightmostColumnIndex - this.viewportSize + 1)
+              if (this.viewportStart < maxViewportStart) {
+                this.viewportStart++
+              }
+            }
+            this.selectedColumn = col + 1
+          }
           break
         case 'i': {
           event.preventDefault()
@@ -866,6 +884,16 @@ export const useUIStore = defineStore('ui', {
     // Aims edit mode: j/k = navigate aims, Esc = exit, h/l = expand/collapse, d = delete, o/O = create
     async handleAimNavigationKeys(event: KeyboardEvent, dataStore: any) {
       const currentAim = this.getCurrentAim()
+
+      if (event.key === 'j') {
+        await this.navigateDown(dataStore)
+        return
+      }
+
+      if (event.key === 'k') {
+        await this.navigateUp(dataStore)
+        return
+      }
 
       // Allow Escape even when no aims exist
       if (event.key === 'Escape') {
@@ -1227,43 +1255,9 @@ export const useUIStore = defineStore('ui', {
 
     // Navigation with edge-triggered viewport scrolling
     navigateLeft() {
-      const currentIndex = this.selectedColumn
-
-      // Boundary check: can't go left of root aims column
-      if (currentIndex === -1) return
-
-      // Clear pending delete when navigating
-      this.clearPendingDelete()
-
-      // Edge-triggered viewport scroll
-      if (currentIndex === this.viewportStart && this.viewportStart > -1) {
-        this.viewportStart--
-      }
-
-      // Move selection
-      this.selectedColumn = currentIndex - 1
     },
 
     navigateRight() {
-      const currentIndex = this.selectedColumn
-
-      // Boundary check: can't go right beyond empty column
-      if (currentIndex >= this.rightmostColumnIndex) return
-
-      // Clear pending delete when navigating
-      this.clearPendingDelete()
-
-      // Edge-triggered viewport scroll
-      const viewportEnd = this.viewportStart + this.viewportSize - 1
-      if (currentIndex === viewportEnd) {
-        const maxViewportStart = Math.max(0, this.rightmostColumnIndex - this.viewportSize + 1)
-        if (this.viewportStart < maxViewportStart) {
-          this.viewportStart++
-        }
-      }
-
-      // Move selection
-      this.selectedColumn = currentIndex + 1
     },
 
     triggerPhaseReload() {
