@@ -557,79 +557,59 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Universal navigation down (j) - works on selection path
-    async navigateDown(dataStore: any) {
+    async navigateDown(dataStore: any, dontDescend: boolean = false) {
       this.clearPendingDelete()
 
-      // Get selection path
-      const path = this.getSelectionPath(dataStore)
+      const col = this.selectedColumn
 
-      console.log('navigateDown path:', path)
-      // Based on path length, determine what to navigate
-      if (path.aimIndices.length === 0) {
-        // Navigating phases in column
-        const col = this.selectedColumn
-        if (col === -1) {
-          // Root aims
-          console.log('navigating root aims, floatingAimIndex:', this.floatingAimIndex, ' total:', dataStore.floatingAims.length)
-          if (this.navigatingAims) {
-            if (this.floatingAimIndex < dataStore.floatingAims.length - 1) {
-              this.floatingAimIndex++
-            }
-          }
+      if(this.navigatingAims) {
+        const path = this.getSelectionPath(dataStore)
+        const lastIndex = path.aimIndices.length - 1
+        if (path.aims[lastIndex].expanded && path.aims[lastIndex].incoming.length > 0 && !dontDescend) {
+          // Dive into first child if expanded
+          path.aims[0].selectedIncomingIndex = 0
         } else {
-          // Phases
-          const currentIndex = this.getSelectedPhase(col)
-          const phaseCount = this.phaseCountByColumn[col] ?? 0
-          if (currentIndex < phaseCount - 1) {
-            await this.selectPhase(col, currentIndex + 1)
+          if (path.aims.length === 1) { 
+          // At top level
+            if (col === -1) {
+              // next floating aim
+              if (this.floatingAimIndex < dataStore.floatingAims.length - 1) {
+                this.floatingAimIndex++
+              }
+            } else {
+              // next aim in phase
+              const phaseId = path.phaseId
+              if (phaseId) {
+                const phase = dataStore.phases[phaseId]
+                const aims = dataStore.getAimsForPhase(phaseId)
+                if (phase.selectedAimIndex !== undefined && phase.selectedAimIndex < aims.length - 1) {
+                  phase.selectedAimIndex++
+                }
+              }
+            }
+          } else if (path.aims.length > 1) {
+            // Nested aims
+            const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
+            const parentAim = path.aims[path.aims.length - 2]
+            const siblings = parentAim
+              ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+              : dataStore.getAimsForPhase(path.phaseId)
+
+            if (deepestIdx < siblings.length - 1) {
+              parentAim.selectedIncomingIndex = deepestIdx + 1
+            } else {
+              parentAim.selectedIncomingIndex = undefined
+              this.navigateDown(dataStore, true)
+            }
           }
         }
       } else {
-        // Navigating aims - try to increase deepest index
-        const deepestIdx = path.aimIndices[path.aimIndices.length - 1]
-        const deepestAim = path.aims[path.aims.length - 1]
-
-        // First try to dive into expanded children
-        if (deepestAim.expanded && deepestAim.incoming?.length > 0) {
-          deepestAim.selectedIncomingIndex = 0
-          return
-        }
-
-        // Try to increment current level
-        const parentAim = path.aims.length > 1 ? path.aims[path.aims.length - 2] : null
-        const siblings = parentAim
-          ? parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
-          : dataStore.getAimsForPhase(path.phaseId)
-
-        if (deepestIdx < siblings.length - 1) {
-          if (parentAim) {
-            parentAim.selectedIncomingIndex = deepestIdx + 1
-          } else {
-            this.setCurrentAimIndex(deepestIdx + 1, dataStore)
-          }
-          return
-        }
-
-        // Can't increment, pop up to parent and try again
-        for (let i = path.aims.length - 2; i >= 0; i--) {
-          const aim = path.aims[i]
-          const idx = path.aimIndices[i]
-          const parent = i > 0 ? path.aims[i - 1] : null
-          const sibs = parent
-            ? parent.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
-            : dataStore.getAimsForPhase(path.phaseId)
-
-          if (idx < sibs.length - 1) {
-            if (parent) {
-              parent.selectedIncomingIndex = idx + 1
-            } else {
-              this.setCurrentAimIndex(idx + 1, dataStore)
-            }
-            // Clear deeper selections
-            for (let j = i; j < path.aims.length; j++) {
-              path.aims[j].selectedIncomingIndex = undefined
-            }
-            return
+        // Phases navigation
+        if(col >= 0) {
+          const currentIndex = this.getSelectedPhase(col)
+          const phaseCount = this.getPhaseCount(col)
+          if (currentIndex < phaseCount - 1) {
+            await this.selectPhase(col, currentIndex + 1)
           }
         }
       }
