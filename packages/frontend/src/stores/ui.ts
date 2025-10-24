@@ -256,19 +256,14 @@ export const useUIStore = defineStore('ui', {
 
       if(path.aims.length == 0){
         if(path.phase) {
-          // create as first aim of phase - use createCommittedAim
-          const result = await trpc.aim.createCommittedAim.mutate({
-            projectPath: this.projectPath,
-            phaseId: path.phase.id, 
-            aim: aimAttributes,
-            insertionIndex: 0
-          })
+          // create as first aim of phase - use createAimInPhase
+          const result = await dataStore.createCommittedAim(this.projectPath, path.phase.id, aimAttributes, 0)
           newAimId = result.id
 
           // Update local state
           await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
         } else {
-          // create as free floating aim - use regular create
+          // create as free floating aim - use createFloatingAim
           const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
           newAimId = result.id
         }
@@ -276,16 +271,11 @@ export const useUIStore = defineStore('ui', {
         const currentAim = path.aims[path.aims.length - 1]
         if(currentAim) {
           if(currentAim.expanded) {
-            // create first sub aim of current aim - use createSubAim
-            const result = await trpc.aim.createSubAim.mutate({
-              projectPath: this.projectPath,
-              parentAimId: currentAim.id,
-              aim: aimAttributes,
-              positionInParent: 0,
-            })
+            console.log('create first sub-aim of expanded aim', currentAim)
+
+            const result = await dataStore.createSubAim(this.projectPath, currentAim.id, aimAttributes, 0)
             newAimId = result.id
 
-            // Update local state
             const updatedParent = await trpc.aim.get.query({
               projectPath: this.projectPath,
               aimId: currentAim.id
@@ -294,18 +284,14 @@ export const useUIStore = defineStore('ui', {
           } else {
             // distinguish 3 cases: free floating, phase top-level, sub-aim
             if(path.aims.length > 1) {
-              // sub-aim - use createSubAim
+              console.log('create sub-aim of aim', currentAim)
+
               const parentAim = path.aims[path.aims.length - 2]
               let targetIndex = parentAim.selectedIncomingIndex ?? 0
               if(this.aimModalInsertPosition === 'after') {
                 targetIndex ++
               }
-              const result = await trpc.aim.createSubAim.mutate({
-                projectPath: this.projectPath,
-                parentAimId: parentAim.id,
-                aim: aimAttributes,
-                positionInParent: targetIndex
-              })
+              const result = await dataStore.createSubAim(this.projectPath, parentAim.id, aimAttributes, targetIndex)
               newAimId = result.id
 
               // Update local state
@@ -315,30 +301,20 @@ export const useUIStore = defineStore('ui', {
               })
               dataStore.replaceAim(parentAim.id, updatedParent)
             } else if(path.phase) {
-              // create as top-level aim in phase - use createCommittedAim with insertion index
+              console.log('create top-level aim in phase', path.phase)
               let insertionIndex = 0
               const phase = dataStore.phases[path.phase.id]
               if (phase && phase.selectedAimIndex !== undefined) {
                 insertionIndex = phase.selectedAimIndex + (this.aimModalInsertPosition === 'after' ? 1 : 0)
               }
-              const result = await trpc.aim.createCommittedAim.mutate({
-                projectPath: this.projectPath,
-                phaseId: path.phase.id,
-                aim: aimAttributes,
-                insertionIndex
-              })
+              const result = await dataStore.createCommittedAim(this.projectPath, path.phase.id, aimAttributes, insertionIndex)
               newAimId = result.id
 
               // Update local state
               await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
             } else {
-              // free floating - use regular create
-              const result = await dataStore.createFloatingAim(this.projectPath, {
-                ...aimAttributes,
-                incoming: [],
-                outgoing: [],
-                committedIn: [],
-              })
+              // free floating - use createFloatingAim
+              const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
               newAimId = result.id
             }
           }

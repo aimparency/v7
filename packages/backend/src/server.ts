@@ -124,6 +124,7 @@ async function removeAimFromPhase(projectPath: string, aimId: string, phaseId: s
 
 // Helper function to connect aims (reused by connectAims and createSubAim)
 async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentOutgoingIndex?: number, childIncomingIndex?: number): Promise<void> {
+  console.log('connectAimsInternal:', { parentAimId, childAimId, parentOutgoingIndex, childIncomingIndex });
   const parent = await readAim(projectPath, parentAimId);
   const child = await readAim(projectPath, childAimId);
 
@@ -171,6 +172,7 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
       child.incoming.push(parentAimId);
     }
   }
+  console.log(parent, child)
   await writeAim(projectPath, child);
 }
 
@@ -321,7 +323,7 @@ const appRouter = t.router({
       .input(z.object({
         projectPath: z.string(),
         parentAimId: z.string().uuid(),
-        aim: AimSchema.omit({ id: true }),
+        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true }),
         positionInParent: z.number().optional()
       }))
       .mutation(async ({ input }) => {
@@ -329,9 +331,9 @@ const appRouter = t.router({
         const childAim: Aim = {
           id: childAimId,
           text: input.aim.text,
-          incoming: [input.parentAimId], // Will be updated by connectAimsInternal
+          incoming: [], 
           outgoing: [],
-          committedIn: input.aim.committedIn || [],
+          committedIn: [],
           status: input.aim.status || {
             state: 'open',
             comment: '',
@@ -345,7 +347,7 @@ const appRouter = t.router({
         return childAim;
       }),
 
-    createCommittedAim: t.procedure
+    createCommitedAim: t.procedure
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid(),

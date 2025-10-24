@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
-import { create } from 'domain'
 
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
@@ -155,7 +154,7 @@ export const useDataStore = defineStore('data', {
 
     async createCommittedAim(projectPath: string, phaseId: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>, insertionIndex?: number): Promise<{id: string}> {
       try {
-        const newAim = await trpc.aim.createCommittedAim.mutate({
+        const newAim = await trpc.aim.createCommitedAim.mutate({
           projectPath,
           phaseId,
           aim,
@@ -168,12 +167,14 @@ export const useDataStore = defineStore('data', {
         const phase = await trpc.phase.get.query({ projectPath, phaseId })
         if (phase) {
           this.replacePhase(phaseId, phase)
-        } 
+        }
+
+        return newAim
       } catch (error) {
-        console.error('Failed to create committed aim:', error)
+        console.error('Failed to create aim in phase:', error)
         throw error
       }
-    }, 
+    },
 
     async updateAim(projectPath: string, aimId: string, updates: Partial<Omit<Aim, 'id'>>): Promise<void> {
       try {
@@ -432,7 +433,7 @@ export const useDataStore = defineStore('data', {
           // TODO implement aim removal server side, then reload parent aim/phase in client
           const updatedAim = this.aims[aimId]
           if (updatedAim) {
-            updatedAim.committedIn = updatedAim.committedIn?.filter(id => id !== path.phase.id) || []
+            updatedAim.committedIn = updatedAim.committedIn?.filter(id => id !== path.phase?.id) || []
           }
         } else {
           // C) Floating aim: delete entirely (including all sub-aims)
@@ -454,16 +455,16 @@ export const useDataStore = defineStore('data', {
 
         // Adjust selection if needed
         if (uiStore.navigatingAims) {
-          const aims = path.phaseId ? this.getAimsForPhase(path.phaseId) : this.floatingAims
+          const aims = path.phase ? this.getAimsForPhase(path.phase.id) : this.floatingAims
 
           if (aims.length === 0) {
             uiStore.navigatingAims = false
           } else {
             // Select next/previous aim at same level
-            if (!path.phaseId) {
+            if (!path.phase) {
               uiStore.floatingAimIndex = Math.min(uiStore.floatingAimIndex, aims.length - 1)
             } else {
-              const phase = this.phases[path.phaseId]
+              const phase = this.phases[path.phase.id]
               if (phase && phase.selectedAimIndex !== undefined) {
                 phase.selectedAimIndex = Math.min(phase.selectedAimIndex, aims.length - 1)
               }
