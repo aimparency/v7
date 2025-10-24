@@ -256,21 +256,21 @@ export const useUIStore = defineStore('ui', {
 
       if(path.aims.length == 0){
         if(path.phase) {
-          // create as first aim of phase - use createAimInPhase
+          console.log('create first top-level aim in phase', path.phase)
           const result = await dataStore.createCommittedAim(this.projectPath, path.phase.id, aimAttributes, 0)
           newAimId = result.id
 
           // Update local state
           await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
         } else {
-          // create as free floating aim - use createFloatingAim
+          console.log('create floating aim', aimAttributes)
           const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
           newAimId = result.id
         }
       } else if (path.aims.length > 0) {
         const currentAim = path.aims[path.aims.length - 1]
         if(currentAim) {
-          if(currentAim.expanded) {
+          if(currentAim.expanded && this.aimModalInsertPosition == 'after') {
             console.log('create first sub-aim of expanded aim', currentAim)
 
             const result = await dataStore.createSubAim(this.projectPath, currentAim.id, aimAttributes, 0)
@@ -287,11 +287,11 @@ export const useUIStore = defineStore('ui', {
               console.log('create sub-aim of aim', currentAim)
 
               const parentAim = path.aims[path.aims.length - 2]
-              let targetIndex = parentAim.selectedIncomingIndex ?? 0
+              let insertionIndex = parentAim.selectedIncomingIndex ?? 0
               if(this.aimModalInsertPosition === 'after') {
-                targetIndex ++
+                insertionIndex ++
               }
-              const result = await dataStore.createSubAim(this.projectPath, parentAim.id, aimAttributes, targetIndex)
+              const result = await dataStore.createSubAim(this.projectPath, parentAim.id, aimAttributes, insertionIndex)
               newAimId = result.id
 
               // Update local state
@@ -299,6 +299,8 @@ export const useUIStore = defineStore('ui', {
                 projectPath: this.projectPath,
                 aimId: parentAim.id
               })
+              console.log('parent selected index', parentAim.selectedIncomingIndex!, 'setting to', insertionIndex)
+              parentAim.selectedIncomingIndex = insertionIndex
               dataStore.replaceAim(parentAim.id, updatedParent)
             } else if(path.phase) {
               console.log('create top-level aim in phase', path.phase)
@@ -312,6 +314,7 @@ export const useUIStore = defineStore('ui', {
 
               // Update local state
               await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
+              path.phase.selectedAimIndex = insertionIndex
             } else {
               // free floating - use createFloatingAim
               const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
@@ -521,12 +524,12 @@ export const useUIStore = defineStore('ui', {
           if(phaseId) {
             let phase = dataStore.phases[phaseId]
             let aims = dataStore.getAimsForPhase(phaseId)
+            const aimPath: Aim[] = []
             if(phase.selectedAimIndex !== undefined) {
               let aim = aims[phase.selectedAimIndex]
-              const aimPath: Aim[] = []
               this.makeSelectedAimPath(aim, aimPath)
-              return { phase, aims: aimPath }
             }
+            return { phase, aims: aimPath }
           }
         }
       }
@@ -536,7 +539,7 @@ export const useUIStore = defineStore('ui', {
     makeSelectedAimPath(aim: Aim, path: Aim[]): Aim {
       const dataStore = useDataStore()
       path.push(aim)
-      if(aim.selectedIncomingIndex !== undefined) {
+      if(aim.expanded && aim.selectedIncomingIndex !== undefined) {
         const selectedSubAimUUID = aim.incoming[aim.selectedIncomingIndex]
         return this.makeSelectedAimPath(dataStore.aims[selectedSubAimUUID], path)
       } else {
@@ -582,11 +585,11 @@ export const useUIStore = defineStore('ui', {
       const col = this.selectedColumn
 
       const path = this.getSelectionPath()
-      const currentAim = this.getCurrentAim()
+      const currentAim = path.aims.length > 0 ? path.aims[path.aims.length - 1] : undefined
 
       if (currentAim !== undefined && currentAim.expanded && currentAim.incoming.length > 0 && !dontDescend) {
         // Dive into first child if expanded
-        path.aims[0].selectedIncomingIndex = 0
+        currentAim.selectedIncomingIndex = 0
       } else {
         if (path.aims.length === 1) {
         // At top level
@@ -598,23 +601,35 @@ export const useUIStore = defineStore('ui', {
           } else {
             // next aim in phase
             if (path.phase) {
-              const aims = dataStore.getAimsForPhase(path.phase.id)
-              if (path.phase.selectedAimIndex !== undefined && path.phase.selectedAimIndex < aims.length - 1) {
-                path.phase.selectedAimIndex++
+              if (path.phase.selectedAimIndex! < path.phase.commitments.length - 1 ) {
+                path.phase.selectedAimIndex!++
               }
             }
           }
         } else if (path.aims.length > 1) {
-          const parentAim = path.aims[path.aims.length - 2]
-          const siblings = parentAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
-
-          console.log('navigate don to next sibling of', currentAim, 'among', siblings, 'currently selected index in parent:', parentAim.selectedIncomingIndex)
-
-          if (parentAim.selectedIncomingIndex! < siblings.length - 1) {
-            parentAim.selectedIncomingIndex! ++ 
-          } else {
-            parentAim.selectedIncomingIndex = undefined
-            this.navigateDown(true)
+          let broke = false
+          for(let i = path.aims.length - 2; i >=0; i--) {
+            const ancestorAim = path.aims[i]
+            const siblings = ancestorAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+            
+            if (ancestorAim.selectedIncomingIndex! < ancestorAim.incoming.length - 1) {
+              ancestorAim.selectedIncomingIndex! ++
+              broke = true
+              break
+            } else {
+              ancestorAim.selectedIncomingIndex = undefined
+            }
+          }
+          if(!broke) {
+            if(path.phase) {
+              if(path.phase.selectedAimIndex! < path.phase.commitments.length - 1) {
+                path.phase.selectedAimIndex! ++
+              }
+            } else {
+              if(this.floatingAimIndex < dataStore.floatingAims.length - 1) {
+                this.floatingAimIndex++
+              }
+            }
           }
         }
       }
@@ -867,7 +882,8 @@ export const useUIStore = defineStore('ui', {
 
     // Aims edit mode: j/k = navigate aims, Esc = exit, h/l = expand/collapse, d = delete, o/O = create
     async handleAimNavigationKeys(event: KeyboardEvent, dataStore: any) {
-      const currentAim = this.getCurrentAim()
+      const path = this.getSelectionPath()
+      const currentAim = path.aims[path.aims.length - 1]
 
       if (event.key === 'j') {
         await this.navigateDown()
@@ -897,21 +913,11 @@ export const useUIStore = defineStore('ui', {
       switch (event.key) {
         case 'Escape': 
           event.preventDefault()
-
           if(this.pendingDeleteAimId) {
             this.pendingDeleteAimId = null
           } else {
             this.navigatingAims = false
           }
-
-          // Indices stay in place (floatingAimIndex or phase.selectedAimIndex)
-          // For root aims, also update selection in column navigation
-          // if (this.selectedColumn === -1 && currentAim) {
-          //   const aimIndex = dataStore.floatingAims.findIndex((a: any) => a.id === currentAim.id)
-          //   if (aimIndex !== -1) {
-          //     this.setSelection(-1, aimIndex)
-          //   }
-          // }
           break
         case 'e': {
           event.preventDefault()
@@ -942,7 +948,15 @@ export const useUIStore = defineStore('ui', {
           event.preventDefault()
           // Collapse the current aim
           if(currentAim) {
-            currentAim.expanded = false
+            if(currentAim.expanded) {
+              currentAim.expanded = false
+            } else if (path.aims.length > 1) {
+              // collapse parent aim
+              const parentAim = path.aims[path.aims.length - 2]
+              if (parentAim && parentAim.expanded) {
+                parentAim.expanded = false
+              }
+            }
           }
           break
         }
@@ -951,11 +965,11 @@ export const useUIStore = defineStore('ui', {
           const currentAim = this.getCurrentAim()
           if(currentAim) {
             currentAim.expanded = true
-            if(currentAim.incoming.length > 0) {
-              if(currentAim.selectedIncomingIndex === undefined) {
-                currentAim.selectedIncomingIndex = 0
-              }
-            }
+            // if(currentAim.incoming.length > 0) {
+            //   if(currentAim.selectedIncomingIndex === undefined) {
+            //     currentAim.selectedIncomingIndex = 0
+            //   }
+            // }
           }
           break
         }

@@ -100,16 +100,10 @@ export const useDataStore = defineStore('data', {
 
     // Helper to replace aim while preserving UI-only properties
     replaceAim(aimId: string, newAim: BaseAim) {
-      const oldAim = this.aims[aimId]
-      const expanded = oldAim?.expanded
-      const selectedIncomingIndex = oldAim?.selectedIncomingIndex
-      this.aims[aimId] = newAim as Aim
-      if (expanded !== undefined) {
-        this.aims[aimId].expanded = expanded
-      }
-      if (selectedIncomingIndex !== undefined) {
-        this.aims[aimId].selectedIncomingIndex = selectedIncomingIndex
-      }
+      this.aims[aimId] = Object.assign(this.aims[aimId] ?? {
+        expanded: false, 
+        selectedIncomingIndex: undefined
+      }, newAim) as Aim
     },
 
     async createFloatingAim(projectPath: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>): Promise<{id: string}> {
@@ -154,7 +148,7 @@ export const useDataStore = defineStore('data', {
 
     async createCommittedAim(projectPath: string, phaseId: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>, insertionIndex?: number): Promise<{id: string}> {
       try {
-        const newAim = await trpc.aim.createCommitedAim.mutate({
+        const newAim = await trpc.aim.createAimInPhase.mutate({
           projectPath,
           phaseId,
           aim,

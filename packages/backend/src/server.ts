@@ -123,53 +123,53 @@ async function removeAimFromPhase(projectPath: string, aimId: string, phaseId: s
 }
 
 // Helper function to connect aims (reused by connectAims and createSubAim)
-async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentOutgoingIndex?: number, childIncomingIndex?: number): Promise<void> {
-  console.log('connectAimsInternal:', { parentAimId, childAimId, parentOutgoingIndex, childIncomingIndex });
+async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childOutgoingIndex?: number): Promise<void> {
+  console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childOutgoingIndex });
   const parent = await readAim(projectPath, parentAimId);
   const child = await readAim(projectPath, childAimId);
 
-  // Update parent's outgoing
-  let targetParentIndex = parentOutgoingIndex !== undefined ? parentOutgoingIndex : parent.outgoing.length;
-  const currentChildIndex = parent.outgoing.indexOf(childAimId);
+  // Update parent's incoming (sub-aim goes into parent's incoming)
+  let targetParentIndex = parentIncomingIndex !== undefined ? parentIncomingIndex : parent.incoming.length;
+  const currentChildIndex = parent.incoming.indexOf(childAimId);
   if (currentChildIndex === targetParentIndex) {
     // Already at the correct position
   } else {
     // Remove from current position if present
     if (currentChildIndex !== -1) {
-      parent.outgoing.splice(currentChildIndex, 1);
+      parent.incoming.splice(currentChildIndex, 1);
       // Adjust target index if it was after the removed position
       if (targetParentIndex > currentChildIndex) {
         targetParentIndex--;
       }
     }
     // Insert at target position
-    if (targetParentIndex <= parent.outgoing.length) {
-      parent.outgoing.splice(targetParentIndex, 0, childAimId);
+    if (targetParentIndex <= parent.incoming.length) {
+      parent.incoming.splice(targetParentIndex, 0, childAimId);
     } else {
-      parent.outgoing.push(childAimId);
+      parent.incoming.push(childAimId);
     }
   }
   await writeAim(projectPath, parent);
 
-  // Update child's incoming
-  let targetChildIndex = childIncomingIndex !== undefined ? childIncomingIndex : child.incoming.length;
-  const currentParentIndex = child.incoming.indexOf(parentAimId);
+  // Update child's outgoing (parent goes into child's outgoing)
+  let targetChildIndex = childOutgoingIndex !== undefined ? childOutgoingIndex : child.outgoing.length;
+  const currentParentIndex = child.outgoing.indexOf(parentAimId);
   if (currentParentIndex === targetChildIndex) {
     // Already at the correct position
   } else {
     // Remove from current position if present
     if (currentParentIndex !== -1) {
-      child.incoming.splice(currentParentIndex, 1);
+      child.outgoing.splice(currentParentIndex, 1);
       // Adjust target index if it was after the removed position
       if (targetChildIndex > currentParentIndex) {
         targetChildIndex--;
       }
     }
     // Insert at target position
-    if (targetChildIndex <= child.incoming.length) {
-      child.incoming.splice(targetChildIndex, 0, parentAimId);
+    if (targetChildIndex <= child.outgoing.length) {
+      child.outgoing.splice(targetChildIndex, 0, parentAimId);
     } else {
-      child.incoming.push(parentAimId);
+      child.outgoing.push(parentAimId);
     }
   }
   console.log(parent, child)
@@ -287,11 +287,11 @@ const appRouter = t.router({
         projectPath: z.string(),
         parentAimId: z.string().uuid(),
         childAimId: z.string().uuid(),
-        parentOutgoingIndex: z.number().optional(),
-        childIncomingIndex: z.number().optional()
+        parentIncomingIndex: z.number().optional(),
+        childOutgoingIndex: z.number().optional()
       }))
       .mutation(async ({ input }) => {
-        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentOutgoingIndex, input.childIncomingIndex);
+        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childOutgoingIndex);
         return { success: true };
       }),
 
@@ -347,7 +347,7 @@ const appRouter = t.router({
         return childAim;
       }),
 
-    createCommitedAim: t.procedure
+    createAimInPhase: t.procedure
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid(),
