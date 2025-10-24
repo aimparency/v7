@@ -53,7 +53,7 @@ const statusColor = computed(() => ({
 
 // Scroll into view when this aim becomes selected
 watch(() => props.isThisAimSelected, (isSelected) => {
-  if (isSelected && aimContainerRef.value) {
+  if (isSelected && !(isExpanded && props.aim.selectedIncomingIndex) && aimContainerRef.value) {
     emit('scroll-request', aimContainerRef.value)
   }
 }, { flush: 'post' })

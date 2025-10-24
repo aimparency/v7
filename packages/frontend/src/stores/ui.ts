@@ -819,21 +819,24 @@ export const useUIStore = defineStore('ui', {
 
           if (col === -1) {
             // Root aims column - delete aims
-            const selectedIndex = this.getSelectedPhase(col)
-            const aims = dataStore.floatingAims
-            if (!aims || selectedIndex >= aims.length) break
+            if(this.navigatingAims) {
+              const selectedIndex = this.getSelectedPhase(col)
+              
+              const aims = dataStore.floatingAims
+              if (!aims || selectedIndex >= aims.length) break
 
-            const aimToDelete = aims[selectedIndex]
-            if (!aimToDelete) break
+              const aimToDelete = aims[selectedIndex]
+              if (!aimToDelete) break
 
-            // Check if this is confirmation (second press)
-            if (this.pendingDeleteAimId === aimToDelete.id) {
-              // Confirm delete
-              await dataStore.deleteAim(aimToDelete.id)
-              this.pendingDeleteAimId = null
-            } else {
-              // First press - mark for deletion
-              this.setPendingDeleteAim(aimToDelete.id)
+              // Check if this is confirmation (second press)
+              if (this.pendingDeleteAimId === aimToDelete.id) {
+                // Confirm delete
+                await dataStore.deleteAim(aimToDelete.id)
+                this.pendingDeleteAimId = null
+              } else {
+                // First press - mark for deletion
+                this.setPendingDeleteAim(aimToDelete.id)
+              }
             }
           } else {
             // Phase columns - delete phases
