@@ -249,9 +249,6 @@ export const useUIStore = defineStore('ui', {
 
       const aimAttributes = {
         text: aimText,
-        incoming: [],
-        outgoing: [],
-        committedIn: [],
         status: { state: 'open' as const, comment: '', date: Date.now() }
       }
 
@@ -272,12 +269,7 @@ export const useUIStore = defineStore('ui', {
           await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
         } else {
           // create as free floating aim - use regular create
-          const result = await dataStore.createAim(this.projectPath, {
-            ...aimAttributes,
-            incoming: [],
-            outgoing: [],
-            committedIn: [],
-          })
+          const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
           newAimId = result.id
         }
       } else if (path.aims.length > 0) {
@@ -341,7 +333,7 @@ export const useUIStore = defineStore('ui', {
               await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
             } else {
               // free floating - use regular create
-              const result = await dataStore.createAim(this.projectPath, {
+              const result = await dataStore.createFloatingAim(this.projectPath, {
                 ...aimAttributes,
                 incoming: [],
                 outgoing: [],
@@ -914,8 +906,10 @@ export const useUIStore = defineStore('ui', {
       // Allow o/O even when no aims exist (for creating first aim)
       let creationPos = undefined as RelativePosition | undefined
       if (event.key === 'o') {
+        event.preventDefault()
         creationPos = 'after' as const
       } else if(event.key === 'O') {
+        event.preventDefault()
         creationPos = 'before' as const
       }
       if(creationPos !== undefined){

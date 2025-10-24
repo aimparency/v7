@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
+import { create } from 'domain'
 
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
@@ -112,34 +113,67 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async createAim(projectPath: string, aim: Omit<Aim, 'id'>): Promise<{id: string}> {
+    async createFloatingAim(projectPath: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>): Promise<{id: string}> {
       try {
-        const result = await trpc.aim.create.mutate({
+        const newAim = await trpc.aim.createFloatingAim.mutate({
           projectPath,
           aim
         })
 
-        // Add to local state immediately
-        const newAim: Aim = {
-          id: result.id,
-          text: aim.text,
-          incoming: aim.incoming || [],
-          outgoing: aim.outgoing || [],
-          committedIn: aim.committedIn || [],
-          status: aim.status || {
-            state: 'open',
-            comment: '',
-            date: Date.now()
-          }
-        }
-        this.aims[result.id] = newAim
+        this.aims[newAim.id] = newAim
 
-        return result // Returns { id: string }
+        return newAim // Returns { id: string }
       } catch (error) {
         console.error('Failed to create aim:', error)
         throw error
       }
     },
+
+    async createSubAim(projectPath: string, parentAimId: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>, positionInParent?: number): Promise<{id: string}> {
+      try {
+        const newAim = await trpc.aim.createSubAim.mutate({
+          projectPath,
+          parentAimId,
+          aim,
+          positionInParent
+        })
+
+        this.aims[newAim.id] = newAim
+
+        // Reload parent aim to get updated connections
+        const parentAim = await trpc.aim.get.query({ projectPath, aimId: parentAimId })
+        if (parentAim) {
+          this.replaceAim(parentAimId, parentAim)
+        }
+
+        return newAim // Returns { id: string }
+      } catch (error) {
+        console.error('Failed to create sub-aim:', error)
+        throw error
+      }
+    }, 
+
+    async createCommittedAim(projectPath: string, phaseId: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>, insertionIndex?: number): Promise<{id: string}> {
+      try {
+        const newAim = await trpc.aim.createCommittedAim.mutate({
+          projectPath,
+          phaseId,
+          aim,
+          insertionIndex
+        })
+
+        this.aims[newAim.id] = newAim
+
+        // Reload the specific phase to get updated commitments
+        const phase = await trpc.phase.get.query({ projectPath, phaseId })
+        if (phase) {
+          this.replacePhase(phaseId, phase)
+        } 
+      } catch (error) {
+        console.error('Failed to create committed aim:', error)
+        throw error
+      }
+    }, 
 
     async updateAim(projectPath: string, aimId: string, updates: Partial<Omit<Aim, 'id'>>): Promise<void> {
       try {

@@ -209,30 +209,6 @@ async function migrateCommittedInField(projectPath: string): Promise<void> {
 // Create the actual tRPC router
 const appRouter = t.router({
   aim: t.router({
-    create: t.procedure
-      .input(z.object({
-        projectPath: z.string(),
-        aim: AimSchema.omit({ id: true })
-      }))
-      .mutation(async ({ input }) => {
-        const aimId = uuidv4();
-        const aim: Aim = {
-          id: aimId,
-          text: input.aim.text,
-          incoming: input.aim.incoming || [],
-          outgoing: input.aim.outgoing || [],
-          committedIn: input.aim.committedIn || [],
-          status: input.aim.status || {
-            state: 'open',
-            comment: '',
-            date: Date.now()
-          }
-        };
-        
-        await writeAim(input.projectPath, aim);
-        return { id: aimId };
-      }),
-
     get: t.procedure
       .input(z.object({
         projectPath: z.string(),
@@ -317,6 +293,30 @@ const appRouter = t.router({
         return { success: true };
       }),
 
+    createFloatingAim: t.procedure
+      .input(z.object({
+        projectPath: z.string(),
+        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true })
+      }))
+      .mutation(async ({ input }) => {
+        const aimId = uuidv4();
+        const aim: Aim = {
+          id: aimId,
+          text: input.aim.text,
+          incoming: [],
+          outgoing: [],
+          committedIn: [],
+          status: input.aim.status || {
+            state: 'open',
+            comment: '',
+            date: Date.now()
+          }
+        };
+        
+        await writeAim(input.projectPath, aim);
+        return aim;
+      }),
+
     createSubAim: t.procedure
       .input(z.object({
         projectPath: z.string(),
@@ -342,14 +342,14 @@ const appRouter = t.router({
         await writeAim(input.projectPath, childAim);
         await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0);
 
-        return { id: childAimId };
+        return childAim;
       }),
 
     createCommittedAim: t.procedure
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid(),
-        aim: AimSchema.omit({ id: true }),
+        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true }),
         insertionIndex: z.number().optional()
       }))
       .mutation(async ({ input }) => {
@@ -370,7 +370,7 @@ const appRouter = t.router({
         await writeAim(input.projectPath, aim);
         await commitAimToPhase(input.projectPath, aimId, input.phaseId, input.insertionIndex);
 
-        return { id: aimId };
+        return aim;
       })
   }),
 
