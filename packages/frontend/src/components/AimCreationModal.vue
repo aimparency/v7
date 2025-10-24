@@ -44,7 +44,7 @@ const createAim = async () => {
       return
     }
 
-    await uiStore.createAim(aimText.value.trim(), dataStore)
+    await uiStore.createAim(aimText.value.trim())
   } catch (error) {
     console.error('Failed to create aim:', error)
   }
