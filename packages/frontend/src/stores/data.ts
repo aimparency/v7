@@ -380,24 +380,25 @@ export const useDataStore = defineStore('data', {
               updatedParentAim.selectedIncomingIndex = undefined
             }
           }
-        } else if (path.phaseId) {
+        } else if (path.phase) {
           // A) Committed aim: remove from phase
           await trpc.aim.removeFromPhase.mutate({
             projectPath: uiStore.projectPath,
             aimId: aimId,
-            phaseId: path.phaseId
+            phaseId: path.phase.id
           });
 
           // Reload the specific phase to get updated commitments
-          const phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId: path.phaseId })
+          const phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId: path.phase.id })
           if (phase) {
-            this.replacePhase(path.phaseId, phase)
+            this.replacePhase(path.phase.id, phase)
           }
 
           // Update aim's committedIn array
+          // TODO implement aim removal server side, then reload parent aim/phase in client
           const updatedAim = this.aims[aimId]
           if (updatedAim) {
-            updatedAim.committedIn = updatedAim.committedIn?.filter(id => id !== path.phaseId) || []
+            updatedAim.committedIn = updatedAim.committedIn?.filter(id => id !== path.phase.id) || []
           }
         } else {
           // C) Floating aim: delete entirely (including all sub-aims)

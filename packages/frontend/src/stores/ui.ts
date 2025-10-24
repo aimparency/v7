@@ -281,7 +281,7 @@ export const useUIStore = defineStore('ui', {
           newAimId = result.id
         }
       } else if (path.aims.length > 0) {
-        const currentAim = this.getCurrentAim()
+        const currentAim = path.aims[path.aims.length - 1]
         if(currentAim) {
           if(currentAim.expanded) {
             // create first sub aim of current aim - use createSubAim
@@ -289,8 +289,7 @@ export const useUIStore = defineStore('ui', {
               projectPath: this.projectPath,
               parentAimId: currentAim.id,
               aim: aimAttributes,
-              parentOutgoingIndex: 0,
-              childIncomingIndex: 0
+              positionInParent: 0,
             })
             newAimId = result.id
 
@@ -313,8 +312,7 @@ export const useUIStore = defineStore('ui', {
                 projectPath: this.projectPath,
                 parentAimId: parentAim.id,
                 aim: aimAttributes,
-                parentOutgoingIndex: targetIndex,
-                childIncomingIndex: targetIndex
+                positionInParent: targetIndex
               })
               newAimId = result.id
 

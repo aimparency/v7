@@ -322,8 +322,7 @@ const appRouter = t.router({
         projectPath: z.string(),
         parentAimId: z.string().uuid(),
         aim: AimSchema.omit({ id: true }),
-        parentOutgoingIndex: z.number().optional(),
-        childIncomingIndex: z.number().optional()
+        positionInParent: z.number().optional()
       }))
       .mutation(async ({ input }) => {
         const childAimId = uuidv4();
@@ -341,7 +340,7 @@ const appRouter = t.router({
         };
 
         await writeAim(input.projectPath, childAim);
-        await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.parentOutgoingIndex, input.childIncomingIndex);
+        await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0);
 
         return { id: childAimId };
       }),
