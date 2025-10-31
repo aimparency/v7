@@ -51,11 +51,10 @@ const createAim = async () => {
 }
 
 const updateAim = async () => {
-  if (!aimText.value.trim()) return
-  if (!uiStore.aimModalEditingAimId) return
+  const aim = uiStore.getCurrentAim()
 
-  try {
-    await dataStore.updateAim(uiStore.projectPath, uiStore.aimModalEditingAimId, {
+  if(aim) {
+    await dataStore.updateAim(uiStore.projectPath, aim.id, {
       text: aimText.value.trim(),
       status: {
         state: selectedStatus.value,
@@ -65,8 +64,8 @@ const updateAim = async () => {
     })
 
     uiStore.closeAimModal()
-  } catch (error) {
-    console.error('Failed to update aim:', error)
+  } else {
+    console.error('Failed to update aim: no current aim')
   }
 }
 
@@ -105,40 +104,34 @@ watch(aimText, (newValue) => {
   selectedSearchIndex.value = 0
 })
 
-// Focus input when modal opens and load aim data for edit mode
-watch(() => uiStore.showAimModal, async (newVal) => {
-  if (newVal) {
-    await nextTick()
-    aimTextInput.value?.focus()
-
-    if (uiStore.aimModalMode === 'edit' && uiStore.aimModalEditingAimId) {
-      // Load aim data for editing
-      try {
-        const aim = await trpc.aim.get.query({
-          projectPath: uiStore.projectPath,
-          aimId: uiStore.aimModalEditingAimId
-        })
-        aimText.value = aim.text
-        selectedStatus.value = aim.status.state
-        statusComment.value = aim.status.comment
-      } catch (error) {
-        console.error('Failed to load aim for editing:', error)
-      }
-    } else {
-      // Reset for create mode
-      aimText.value = ''
-      selectedStatus.value = 'open'
-      statusComment.value = ''
-      searchResults.value = []
-      selectedSearchIndex.value = 0
-    }
+onMounted(async () => {
+  let aim
+  if (uiStore.aimModalMode === 'edit') {
+    aim = uiStore.getCurrentAim()
   }
+
+  console.log('Loaded aim for editing:', aim) 
+
+  if (aim) {
+    aimText.value = aim.text
+    selectedStatus.value = aim.status.state
+    statusComment.value = aim.status.comment
+  } else {
+    // Reset for create mode
+    aimText.value = ''
+    selectedStatus.value = 'open'
+    statusComment.value = ''
+    searchResults.value = []
+    selectedSearchIndex.value = 0
+  }
+  await nextTick()
+  aimTextInput.value?.focus()
 })
 
 </script>
 
 <template>
-  <div v-if="uiStore.showAimModal" class="modal-overlay">
+  <div class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
         <h3>{{ uiStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim' }}</h3>

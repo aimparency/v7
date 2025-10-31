@@ -35,7 +35,6 @@ export const useUIStore = defineStore('ui', {
     showAimModal: false,
     aimModalMode: 'create' as 'create' | 'edit',
     aimModalInsertPosition: 'before' as RelativePosition,
-    aimModalEditingAimId: null as string | null,
 
     // Navigation mode system
     navigatingAims: false, 
@@ -155,53 +154,12 @@ export const useUIStore = defineStore('ui', {
     },
     
     // Phase creation/editing actions
-    openPhaseModal(columnIndex: number = 0, parentPhase: any = null, selectedIndex: number = 0) {
+    openPhaseModal() {
       this.showPhaseModal = true
       this.phaseModalMode = 'create'
       this.phaseModalEditingPhaseId = null
       this.newPhaseName = ''
-
-      // Set default dates based on context
-      const now = new Date()
-      const currentDate = now.toISOString().split('T')[0] // YYYY-MM-DD
-      const currentTime = now.toTimeString().slice(0, 5) // HH:MM
-
-      // Priority 1: Copy from currently selected phase
-      if (this.selectedColumn >= 0) {
-        const selectedPhaseId = this.getSelectedPhaseId(this.selectedColumn)
-        if (selectedPhaseId) {
-          // We need to fetch the phase data to get its dates
-          // For now, set a placeholder - the modal component will handle this
-          this.newPhaseStartDate = currentDate
-          this.newPhaseStartTime = currentTime
-          this.newPhaseEndDate = currentDate
-          this.newPhaseEndTime = currentTime
-        }
-      }
-
-      // Priority 2: Copy from parent phase (one column to the left)
-      if (!this.newPhaseStartDate && columnIndex > 0) {
-        const parentColumn = columnIndex - 1
-        const parentPhaseId = this.getSelectedPhaseId(parentColumn)
-        if (parentPhaseId) {
-          // We need to fetch the parent phase data to get its dates
-          // For now, set a placeholder - the modal component will handle this
-          this.newPhaseStartDate = currentDate
-          this.newPhaseStartTime = currentTime
-          this.newPhaseEndDate = currentDate
-          this.newPhaseEndTime = currentTime
-        }
-      }
-
-      // Priority 3: Default for root phases (column 1, "very first phase" scenario)
-      if (!this.newPhaseStartDate) {
-        // Current date 00:00 to current date + 7 days 00:00
-        this.newPhaseStartDate = currentDate
-        this.newPhaseStartTime = '00:00'
-        const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-        this.newPhaseEndDate = sevenDaysLater.toISOString().split('T')[0]
-        this.newPhaseEndTime = '00:00'
-      }
+      // Date calculation will be handled by PhaseCreationModal component
     },
 
     openPhaseEditModal(phaseId: string, phaseName: string, phaseFrom: number, phaseTo: number, columnIndex: number = 0) {
@@ -227,6 +185,32 @@ export const useUIStore = defineStore('ui', {
       this.newPhaseStartTime = ''
       this.newPhaseEndDate = ''
       this.newPhaseEndTime = ''
+    },
+
+    // Create phase and update selection
+    async createPhase(phaseName: string, from: number, to: number) {
+      const dataStore = useDataStore()
+
+      // Determine column and parent from current selection
+      const columnIndex = this.selectedColumn
+      let parentPhaseId: string | null = null
+
+      if (columnIndex > 0) {
+        // Column 1+ -> parent is the selected phase from the previous column
+        const parentColumn = columnIndex - 1
+        parentPhaseId = this.getSelectedPhaseId(parentColumn) ?? null
+      }
+      // Column 0 -> parent is null (root phase)
+
+      const phaseData = {
+        name: phaseName,
+        from,
+        to,
+        parent: parentPhaseId,
+        commitments: []
+      }
+
+      await dataStore.createAndSelectPhase(this.projectPath, phaseData, columnIndex)
     },
 
     closeAimModal() {
@@ -744,7 +728,7 @@ export const useUIStore = defineStore('ui', {
           const dataStore = useDataStore()
 
           // Initialize aim selection if needed
-          if (this.selectedColumn !== -1) {
+          if (this.selectedColumn >= 0) {
             const phaseId = this.getSelectedPhaseId(this.selectedColumn)
             if (phaseId) {
               const phase = dataStore.phases[phaseId]
@@ -752,6 +736,7 @@ export const useUIStore = defineStore('ui', {
               if (phase && aims.length > 0 && phase.selectedAimIndex === undefined) {
                 phase.selectedAimIndex = 0
               }
+              this.navigatingAims = true
             }
           } else {
             // Initialize floating aim selection for root aims column
@@ -759,9 +744,8 @@ export const useUIStore = defineStore('ui', {
             if (this.floatingAimIndex === undefined && floatingAims.length > 0) {
               this.floatingAimIndex = 0
             }
+            this.navigatingAims = true
           }
-
-          this.navigatingAims = true
           break
         }
         case 'e': {

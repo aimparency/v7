@@ -198,7 +198,7 @@ onMounted(async () => {
     <PhaseCreationModal />
     
     <!-- Aim Creation Modal -->
-    <AimCreationModal />
+    <AimCreationModal v-if="uiStore.showAimModal" />
 
     <!-- Help Text -->
     <footer v-if="!uiStore.isInProjectSelection" class="help">

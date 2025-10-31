@@ -21,16 +21,10 @@ const createPhase = async () => {
   if (!uiStore.newPhaseName.trim()) return;
 
   try {
-    await dataStore.createAndSelectPhase(
-      uiStore.projectPath,
-      {
-        name: uiStore.newPhaseName.trim(),
-        from: localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
-        to: localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime),
-        parent: uiStore.phaseModalParentPhase,
-        commitments: []
-      },
-      uiStore.phaseModalColumnIndex
+    await uiStore.createPhase(
+      uiStore.newPhaseName.trim(),
+      localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
+      localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime)
     );
     uiStore.closePhaseModal();
   } catch (error) {
