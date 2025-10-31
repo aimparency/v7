@@ -592,18 +592,17 @@ export const useUIStore = defineStore('ui', {
           }
         } else if (path.aims.length > 1) {
           let broke = false
-          for(let i = path.aims.length - 2; i >=0; i--) {
+          
+          for(let i = path.aims.length - 2; i >= 0; i--) {
             const ancestorAim = path.aims[i]
-            const siblings = ancestorAim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
             
             if (ancestorAim.selectedIncomingIndex! < ancestorAim.incoming.length - 1) {
               ancestorAim.selectedIncomingIndex! ++
               broke = true
               break
-            } else {
-              ancestorAim.selectedIncomingIndex = undefined
-            }
+            }           
           }
+
           if(!broke) {
             if(path.phase) {
               if(path.phase.selectedAimIndex! < path.phase.commitments.length - 1) {
