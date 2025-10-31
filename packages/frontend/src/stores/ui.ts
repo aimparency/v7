@@ -781,20 +781,7 @@ export const useUIStore = defineStore('ui', {
           if (this.selectedColumn === -1) {
             this.openAimModal()
           } else {
-            // Determine parent phase based on selected column
-            const targetColumn = this.selectedColumn
-            let parentPhaseId: string | undefined
-            const selectedIndex = this.getSelectedPhase(targetColumn)
-
-            if (targetColumn === 0) {
-              // Creating in column 0 -> parent is null (root phase)
-            } else {
-              // Creating in column 1+ -> parent is the selected phase in column to the left
-              const parentColumn = targetColumn - 1
-              parentPhaseId = this.getSelectedPhaseId(parentColumn)
-            }
-
-            this.openPhaseModal(targetColumn, parentPhaseId, selectedIndex)
+            this.openPhaseModal()
           }
           break
         case 'd': {

@@ -12,9 +12,6 @@ const dataStore = useDataStore()
 const phaseNameInput = ref<HTMLInputElement>()
 const dateWarning = ref<string>('')
 
-const emit = defineEmits<{
-  phaseCreated: [columnIndex: number, newPhaseId?: string]
-}>()
 
 
 const createPhase = async () => {
@@ -51,10 +48,6 @@ const updatePhase = async () => {
     if (updatedPhase) {
       dataStore.phases[updatedPhase.id] = updatedPhase
     }
-
-    // Emit event so parent can reload the appropriate phase list
-    const columnIndex = uiStore.phaseModalColumnIndex
-    emit('phaseCreated', columnIndex)
 
     uiStore.closePhaseModal()
   } catch (error) {
@@ -117,8 +110,8 @@ const calculateSmartDateRanges = async () => {
   }
 
   // Priority 2: Copy from parent phase (one column to the left)
-  if (uiStore.phaseModalColumnIndex > 1) {
-    const parentColumn = uiStore.phaseModalColumnIndex - 1
+  if (uiStore.selectedColumn > 1) {
+    const parentColumn = uiStore.selectedColumn - 1
     const parentPhaseIdFromColumn = uiStore.getSelectedPhaseId(parentColumn)
     if (parentPhaseIdFromColumn) {
       try {

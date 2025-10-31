@@ -131,12 +131,17 @@ export const useDataStore = defineStore('data', {
           positionInParent
         })
 
-        this.aims[newAim.id] = newAim
-
         // Reload parent aim to get updated connections
         const parentAim = await trpc.aim.get.query({ projectPath, aimId: parentAimId })
         if (parentAim) {
           this.replaceAim(parentAimId, parentAim)
+        }
+
+        // Reload child aim to get updated outgoing array
+        // This ensures it doesn't appear in floating aims
+        const updatedChildAim = await trpc.aim.get.query({ projectPath, aimId: newAim.id })
+        if (updatedChildAim) {
+          this.replaceAim(newAim.id, updatedChildAim)
         }
 
         return newAim // Returns { id: string }
