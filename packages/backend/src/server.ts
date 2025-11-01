@@ -137,10 +137,6 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
     // Remove from current position if present
     if (currentChildIndex !== -1) {
       parent.incoming.splice(currentChildIndex, 1);
-      // Adjust target index if it was after the removed position
-      if (targetParentIndex > currentChildIndex) {
-        targetParentIndex--;
-      }
     }
     // Insert at target position
     if (targetParentIndex <= parent.incoming.length) {
@@ -160,10 +156,6 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
     // Remove from current position if present
     if (currentParentIndex !== -1) {
       child.outgoing.splice(currentParentIndex, 1);
-      // Adjust target index if it was after the removed position
-      if (targetChildIndex > currentParentIndex) {
-        targetChildIndex--;
-      }
     }
     // Insert at target position
     if (targetChildIndex <= child.outgoing.length) {
