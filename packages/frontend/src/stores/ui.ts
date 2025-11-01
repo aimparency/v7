@@ -680,18 +680,18 @@ export const useUIStore = defineStore('ui', {
       if (path.aims.length === 0) return
 
       const currentAim = path.aims[path.aims.length - 1]!
-      console.log('moveAimDown - currentAim:', currentAim.text, 'path.aims.length:', path.aims.length, 'phase:', path.phase?.name)
 
       if (path.aims.length > 1) {
         // Sub-aim: swap with next sibling in parent's incoming array
         const parentAim = path.aims[path.aims.length - 2]!
         const currentIndex = parentAim.selectedIncomingIndex!
-        console.log('Sub-aim move: currentIndex:', currentIndex, 'incoming.length:', parentAim.incoming.length)
 
         if (currentIndex < parentAim.incoming.length - 1) {
-          // Swap with next sibling
           const nextIndex = currentIndex + 1
-          console.log('Moving to nextIndex:', nextIndex)
+
+          // Update selection BEFORE mutation to prevent flickering
+          dataStore.aims[parentAim.id].selectedIncomingIndex = nextIndex
+
           await trpc.aim.connectAims.mutate({
             projectPath: this.projectPath,
             parentAimId: parentAim.id,
@@ -701,24 +701,26 @@ export const useUIStore = defineStore('ui', {
           })
 
           // Reload parent to get updated incoming array
-          parentAim.selectedIncomingIndex = nextIndex
           const updatedParent = await trpc.aim.get.query({
             projectPath: this.projectPath,
             aimId: parentAim.id
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
+
+          // Ensure selection is maintained after reload
+          dataStore.aims[parentAim.id].selectedIncomingIndex = nextIndex
         }
-        // TODO: At boundary, move to next phase
       } else if (path.phase) {
         // Top-level aim in phase: move within phase's commitments
         const phaseId = path.phase.id
         const currentIndex = path.phase.selectedAimIndex!
-        console.log('Phase aim move: currentIndex:', currentIndex, 'commitments.length:', path.phase.commitments.length)
 
         if (currentIndex < path.phase.commitments.length - 1) {
-          // Move to next position in same phase
           const nextIndex = currentIndex + 1
-          console.log('Moving to nextIndex:', nextIndex)
+
+          // Update selection BEFORE mutation to prevent flickering
+          dataStore.phases[phaseId]!.selectedAimIndex = nextIndex
+
           await trpc.aim.removeFromPhase.mutate({
             projectPath: this.projectPath,
             aimId: currentAim.id,
@@ -738,17 +740,9 @@ export const useUIStore = defineStore('ui', {
           })
           dataStore.replacePhase(phaseId, updatedPhase)
 
-          // Update selection on the phase object in dataStore
+          // Ensure selection is maintained after reload
           dataStore.phases[phaseId]!.selectedAimIndex = nextIndex
-          console.log('Updated selectedAimIndex to:', nextIndex)
-        } else {
-          console.log('At boundary, cannot move down')
         }
-        // TODO: At boundary, move to next phase
-      } else {
-        // Floating aim: cannot move (no defined order)
-        console.log('Floating aim, cannot move')
-        // TODO: Could implement reordering for floating aims
       }
     },
 
@@ -767,8 +761,11 @@ export const useUIStore = defineStore('ui', {
         const currentIndex = parentAim.selectedIncomingIndex!
 
         if (currentIndex > 0) {
-          // Swap with previous sibling
           const prevIndex = currentIndex - 1
+
+          // Update selection BEFORE mutation to prevent flickering
+          dataStore.aims[parentAim.id].selectedIncomingIndex = prevIndex
+
           await trpc.aim.connectAims.mutate({
             projectPath: this.projectPath,
             parentAimId: parentAim.id,
@@ -778,22 +775,26 @@ export const useUIStore = defineStore('ui', {
           })
 
           // Reload parent
-          parentAim.selectedIncomingIndex = prevIndex
           const updatedParent = await trpc.aim.get.query({
             projectPath: this.projectPath,
             aimId: parentAim.id
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
+
+          // Ensure selection is maintained after reload
+          dataStore.aims[parentAim.id].selectedIncomingIndex = prevIndex
         }
-        // TODO: At boundary, move to previous phase
       } else if (path.phase) {
         // Top-level aim in phase
         const phaseId = path.phase.id
         const currentIndex = path.phase.selectedAimIndex!
 
         if (currentIndex > 0) {
-          // Move to previous position in same phase
           const prevIndex = currentIndex - 1
+
+          // Update selection BEFORE mutation to prevent flickering
+          dataStore.phases[phaseId]!.selectedAimIndex = prevIndex
+
           await trpc.aim.removeFromPhase.mutate({
             projectPath: this.projectPath,
             aimId: currentAim.id,
@@ -813,12 +814,9 @@ export const useUIStore = defineStore('ui', {
           })
           dataStore.replacePhase(phaseId, updatedPhase)
 
-          // Update selection on the phase object in dataStore
+          // Ensure selection is maintained after reload
           dataStore.phases[phaseId]!.selectedAimIndex = prevIndex
         }
-        // TODO: At boundary, move to previous phase
-      } else {
-        // Floating aim: cannot move
       }
     },
 
@@ -849,12 +847,13 @@ export const useUIStore = defineStore('ui', {
         // Parent has a parent (grandparent) - add as grandparent's sub-aim
         const grandparentAim = path.aims[path.aims.length - 3]!
         const parentIndexInGrandparent = grandparentAim.selectedIncomingIndex!
+        const newIndex = parentIndexInGrandparent + 1
 
         await trpc.aim.connectAims.mutate({
           projectPath: this.projectPath,
           parentAimId: grandparentAim.id,
           childAimId: currentAim.id,
-          parentIncomingIndex: parentIndexInGrandparent + 1, // Insert after parent
+          parentIncomingIndex: newIndex, // Insert after parent
           childOutgoingIndex: 0
         })
 
@@ -864,15 +863,19 @@ export const useUIStore = defineStore('ui', {
           aimId: grandparentAim.id
         })
         dataStore.replaceAim(grandparentAim.id, updatedGrandparent)
+
+        // Update selection to follow the moved aim
+        dataStore.aims[grandparentAim.id].selectedIncomingIndex = newIndex
       } else if (path.phase) {
         // Parent is in a phase - add aim to same phase
         const parentIndex = path.phase.selectedAimIndex!
+        const newIndex = parentIndex + 1
 
         await trpc.aim.commitToPhase.mutate({
           projectPath: this.projectPath,
           aimId: currentAim.id,
           phaseId: path.phase.id,
-          insertionIndex: parentIndex + 1 // Insert after parent
+          insertionIndex: newIndex // Insert after parent
         })
 
         // Reload phase and aim
@@ -887,6 +890,9 @@ export const useUIStore = defineStore('ui', {
           aimId: currentAim.id
         })
         dataStore.replaceAim(currentAim.id, updatedAim)
+
+        // Update selection to follow the moved aim
+        dataStore.phases[path.phase.id]!.selectedAimIndex = newIndex
       } else {
         // Parent is floating - current aim becomes floating too
         // Already removed from parent, just reload the aim
@@ -895,18 +901,150 @@ export const useUIStore = defineStore('ui', {
           aimId: currentAim.id
         })
         dataStore.replaceAim(currentAim.id, updatedAim)
+
+        // Update selection to the newly floated aim
+        const floatingAims = dataStore.floatingAims
+        const newFloatingIndex = floatingAims.findIndex(a => a.id === currentAim.id)
+        if (newFloatingIndex !== -1) {
+          this.floatingAimIndex = newFloatingIndex
+        }
       }
 
-      // Adjust parent's selected index
+      // Adjust parent's selected index (parent loses a child)
       if (parentAim.selectedIncomingIndex !== undefined) {
-        if (parentAim.incoming.length > 0) {
-          parentAim.selectedIncomingIndex = Math.min(
+        if (updatedIncoming.length > 0) {
+          dataStore.aims[parentAim.id].selectedIncomingIndex = Math.min(
             parentAim.selectedIncomingIndex,
             updatedIncoming.length - 1
           )
         } else {
-          parentAim.selectedIncomingIndex = undefined
+          dataStore.aims[parentAim.id].selectedIncomingIndex = undefined
         }
+      }
+    },
+
+    // Move aim in (L) - make it a sub-aim of previous sibling
+    async moveAimIn() {
+      const dataStore = useDataStore()
+      const path = this.getSelectionPath()
+
+      if (path.aims.length === 0) return
+
+      const currentAim = path.aims[path.aims.length - 1]!
+      const currentAimId = currentAim.id
+
+      // Determine if there's a previous sibling
+      let previousSiblingId: string | undefined
+      let currentIndex: number
+
+      if (path.aims.length > 1) {
+        // Sub-aim: check for previous sibling in parent's incoming
+        const parentAim = path.aims[path.aims.length - 2]!
+        currentIndex = parentAim.selectedIncomingIndex!
+
+        if (currentIndex === 0) return // Can't indent first item
+
+        previousSiblingId = parentAim.incoming[currentIndex - 1]
+
+        // Disconnect from current parent
+        const updatedIncoming = parentAim.incoming.filter(id => id !== currentAimId)
+        await dataStore.updateAim(this.projectPath, parentAim.id, {
+          incoming: updatedIncoming
+        })
+
+        const updatedOutgoing = currentAim.outgoing.filter(id => id !== parentAim.id)
+        await dataStore.updateAim(this.projectPath, currentAimId, {
+          outgoing: updatedOutgoing
+        })
+
+        // Update parent's selection to previous sibling BEFORE reloading
+        dataStore.aims[parentAim.id].selectedIncomingIndex = currentIndex - 1
+      } else if (path.phase) {
+        // Top-level in phase: check for previous sibling in phase commitments
+        currentIndex = path.phase.selectedAimIndex!
+
+        if (currentIndex === 0) return // Can't indent first item
+
+        previousSiblingId = path.phase.commitments[currentIndex - 1]
+
+        // Remove from phase
+        await trpc.aim.removeFromPhase.mutate({
+          projectPath: this.projectPath,
+          aimId: currentAimId,
+          phaseId: path.phase.id
+        })
+
+        // Update phase selection to previous sibling BEFORE reloading
+        dataStore.phases[path.phase.id]!.selectedAimIndex = currentIndex - 1
+      } else {
+        // Floating aim: check for previous sibling in floating aims
+        currentIndex = this.floatingAimIndex
+
+        if (currentIndex === 0) return // Can't indent first item
+
+        previousSiblingId = dataStore.floatingAims[currentIndex - 1].id
+
+        // Don't update floatingAimIndex yet - wait until after the mutation
+        // The floating aim will automatically disappear from the list once it has an outgoing connection
+      }
+
+      if (!previousSiblingId) return
+
+      // Get insertion index before connecting
+      const previousSibling = dataStore.aims[previousSiblingId]
+      const insertionIndex = previousSibling.incoming.length
+
+      // IMMEDIATELY show the target state to prevent flickering
+      // Expand the new parent and select the moved aim's future position
+      const prevSiblingObj = dataStore.aims[previousSiblingId]
+      prevSiblingObj.expanded = true
+      prevSiblingObj.selectedIncomingIndex = insertionIndex
+
+      // For floating aims, also update the floatingAimIndex to the new parent's index
+      // (since the moved aim will no longer be in the floating list)
+      if (path.aims.length === 1 && !path.phase) {
+        // Find the previous sibling's index in the floating aims list
+        const newFloatingIndex = dataStore.floatingAims.findIndex(a => a.id === previousSiblingId)
+        if (newFloatingIndex !== -1) {
+          this.floatingAimIndex = newFloatingIndex
+        }
+      }
+
+      // Connect to new parent
+      await trpc.aim.connectAims.mutate({
+        projectPath: this.projectPath,
+        parentAimId: previousSiblingId,
+        childAimId: currentAimId,
+        parentIncomingIndex: insertionIndex,
+        childOutgoingIndex: 0
+      })
+
+      // Reload previous sibling with updated incoming array
+      const updatedPreviousSibling = await trpc.aim.get.query({
+        projectPath: this.projectPath,
+        aimId: previousSiblingId
+      })
+      dataStore.replaceAim(previousSiblingId, updatedPreviousSibling)
+
+      // Re-ensure selection is maintained after reload
+      dataStore.aims[previousSiblingId].expanded = true
+      dataStore.aims[previousSiblingId].selectedIncomingIndex = insertionIndex
+
+      // Reload the old parent if it was a sub-aim
+      if (path.aims.length > 1) {
+        const parentAim = path.aims[path.aims.length - 2]!
+        const updatedParent = await trpc.aim.get.query({
+          projectPath: this.projectPath,
+          aimId: parentAim.id
+        })
+        dataStore.replaceAim(parentAim.id, updatedParent)
+      } else if (path.phase) {
+        // Reload phase to reflect removed commitment
+        const updatedPhase = await trpc.phase.get.query({
+          projectPath: this.projectPath,
+          phaseId: path.phase.id
+        })
+        dataStore.replacePhase(path.phase.id, updatedPhase)
       }
     },
 
@@ -1121,6 +1259,12 @@ export const useUIStore = defineStore('ui', {
       if (event.key === 'H') {
         event.preventDefault()
         await this.moveAimOut()
+        return
+      }
+
+      if (event.key === 'L') {
+        event.preventDefault()
+        await this.moveAimIn()
         return
       }
 

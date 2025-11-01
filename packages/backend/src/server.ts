@@ -14,6 +14,18 @@ const createContext = () => ({});
 
 const t = initTRPC.context<typeof createContext>().create();
 
+// Middleware to add artificial delay for testing
+const DEV_DELAY_MS = process.env.DEV_DELAY === 'true' ? 300 : 0;
+const delayMiddleware = t.middleware(async ({ next }) => {
+  if (DEV_DELAY_MS > 0) {
+    await new Promise(resolve => setTimeout(resolve, DEV_DELAY_MS));
+  }
+  return next();
+});
+
+// Create procedures with delay middleware
+const delayedProcedure = t.procedure.use(delayMiddleware);
+
 // Utility functions for file operations
 async function ensureProjectStructure(projectPath: string) {
   await fs.ensureDir(path.join(projectPath, 'aims'));
@@ -203,7 +215,7 @@ async function migrateCommittedInField(projectPath: string): Promise<void> {
 // Create the actual tRPC router
 const appRouter = t.router({
   aim: t.router({
-    get: t.procedure
+    get: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         aimId: z.string().uuid()
@@ -212,7 +224,7 @@ const appRouter = t.router({
         return await readAim(input.projectPath, input.aimId);
       }),
 
-    list: t.procedure
+    list: delayedProcedure
       .input(z.object({
         projectPath: z.string()
       }))
@@ -220,7 +232,7 @@ const appRouter = t.router({
         return await listAims(input.projectPath);
       }),
 
-    update: t.procedure
+    update: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         aimId: z.string().uuid(),
@@ -233,7 +245,7 @@ const appRouter = t.router({
         return updatedAim;
       }),
 
-    delete: t.procedure
+    delete: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         aimId: z.string().uuid()
@@ -251,7 +263,7 @@ const appRouter = t.router({
         return { success: true };
       }),
 
-    commitToPhase: t.procedure
+    commitToPhase: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         aimId: z.string().uuid(),
@@ -263,7 +275,7 @@ const appRouter = t.router({
         return { success: true };
       }),
 
-    removeFromPhase: t.procedure
+    removeFromPhase: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         aimId: z.string().uuid(),
@@ -274,7 +286,7 @@ const appRouter = t.router({
         return { success: true };
       }),
 
-    connectAims: t.procedure
+    connectAims: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         parentAimId: z.string().uuid(),
@@ -287,7 +299,7 @@ const appRouter = t.router({
         return { success: true };
       }),
 
-    createFloatingAim: t.procedure
+    createFloatingAim: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true })
@@ -311,7 +323,7 @@ const appRouter = t.router({
         return aim;
       }),
 
-    createSubAim: t.procedure
+    createSubAim: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         parentAimId: z.string().uuid(),
@@ -339,7 +351,7 @@ const appRouter = t.router({
         return childAim;
       }),
 
-    createAimInPhase: t.procedure
+    createAimInPhase: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid(),
@@ -369,7 +381,7 @@ const appRouter = t.router({
   }),
 
   phase: t.router({
-    create: t.procedure
+    create: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         phase: PhaseSchema.omit({ id: true })
@@ -385,7 +397,7 @@ const appRouter = t.router({
         return { id: phaseId };
       }),
 
-    get: t.procedure
+    get: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid()
@@ -394,7 +406,7 @@ const appRouter = t.router({
         return await readPhase(input.projectPath, input.phaseId);
       }),
 
-    list: t.procedure
+    list: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         parentPhaseId: z.string().uuid().nullable().optional()
@@ -403,7 +415,7 @@ const appRouter = t.router({
         return await listPhases(input.projectPath, input.parentPhaseId);
       }),
 
-    update: t.procedure
+    update: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid(),
@@ -416,7 +428,7 @@ const appRouter = t.router({
         return updatedPhase;
       }),
 
-    delete: t.procedure
+    delete: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid()
@@ -429,7 +441,7 @@ const appRouter = t.router({
   }),
 
   project: t.router({
-    getMeta: t.procedure
+    getMeta: delayedProcedure
       .input(z.object({
         projectPath: z.string()
       }))
@@ -441,7 +453,7 @@ const appRouter = t.router({
         return null;
       }),
 
-    updateMeta: t.procedure
+    updateMeta: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         meta: ProjectMetaSchema
@@ -453,7 +465,7 @@ const appRouter = t.router({
         return input.meta;
       }),
 
-    migrateCommittedIn: t.procedure
+    migrateCommittedIn: delayedProcedure
       .input(z.object({
         projectPath: z.string()
       }))

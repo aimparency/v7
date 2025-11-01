@@ -7,9 +7,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev:backend": "npm run dev -w backend",
+    "dev:backend:delay": "npm run dev:delay -w backend",
     "dev:frontend": "npm run dev -w frontend",
     "dev": "npm run dev:backend & npm run dev:frontend",
+    "dev:delay": "npm run dev:backend:delay & npm run dev:frontend",
     "test": "npm run test -w backend"
   },
   "keywords": [],
