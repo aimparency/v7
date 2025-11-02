@@ -52,7 +52,8 @@ const handleScrollRequest = (element: HTMLElement) => {
         :class="{
           'selected-outlined': isActive && selectedAimIndex === index,
           'selected': isSelected && selectedAimIndex === index,
-          'pending-delete': uiStore.pendingDeleteAimId === aim.id
+          'pending-delete': uiStore.pendingDeleteAimId === aim.id,
+          'moving': uiStore.movingAimId === aim.id
         }"
         @scroll-request="handleScrollRequest"
         @aim-clicked="$emit('aim-clicked', $event)"

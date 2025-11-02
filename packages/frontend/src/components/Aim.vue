@@ -134,6 +134,38 @@ onMounted(() => {
   &.pending-remove {
     background-color: rgba(255, 165, 0, 0.2);
   }
+
+  &.moving {
+    position: relative;
+    outline: 0.15rem solid rgba(0, 122, 204, 0.4);
+    outline-offset: -0.15rem;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        45deg,
+        rgba(0, 122, 204, 0.04) 0px,
+        rgba(0, 122, 204, 0.04) 10px,
+        transparent 10px,
+        transparent 20px
+      );
+      background-size: 50px 50px;
+      animation: moving-stripes 1s linear infinite;
+      pointer-events: none;
+      border-radius: inherit;
+    }
+  }
+}
+
+@keyframes moving-stripes {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 50px 0;
+  }
 }
 
 .aim-content {
