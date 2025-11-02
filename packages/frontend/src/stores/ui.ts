@@ -693,9 +693,6 @@ export const useUIStore = defineStore('ui', {
         if (currentIndex < parentAim.incoming.length - 1) {
           const nextIndex = currentIndex + 1
 
-          // Update selection BEFORE mutation to prevent flickering
-          dataStore.aims[parentAim.id].selectedIncomingIndex = nextIndex
-
           // Set loading state
           this.movingAimId = currentAimId
 
@@ -714,7 +711,7 @@ export const useUIStore = defineStore('ui', {
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
 
-          // Ensure selection is maintained after reload
+          // Update selection AFTER reload confirms the move
           dataStore.aims[parentAim.id].selectedIncomingIndex = nextIndex
 
           // Clear loading state
@@ -727,9 +724,6 @@ export const useUIStore = defineStore('ui', {
 
         if (currentIndex < path.phase.commitments.length - 1) {
           const nextIndex = currentIndex + 1
-
-          // Update selection BEFORE mutation to prevent flickering
-          dataStore.phases[phaseId]!.selectedAimIndex = nextIndex
 
           // Set loading state
           this.movingAimId = currentAimId
@@ -753,7 +747,7 @@ export const useUIStore = defineStore('ui', {
           })
           dataStore.replacePhase(phaseId, updatedPhase)
 
-          // Ensure selection is maintained after reload
+          // Update selection AFTER reload confirms the move
           dataStore.phases[phaseId]!.selectedAimIndex = nextIndex
 
           // Clear loading state
@@ -780,9 +774,6 @@ export const useUIStore = defineStore('ui', {
         if (currentIndex > 0) {
           const prevIndex = currentIndex - 1
 
-          // Update selection BEFORE mutation to prevent flickering
-          dataStore.aims[parentAim.id].selectedIncomingIndex = prevIndex
-
           // Set loading state
           this.movingAimId = currentAimId
 
@@ -801,7 +792,7 @@ export const useUIStore = defineStore('ui', {
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
 
-          // Ensure selection is maintained after reload
+          // Update selection AFTER reload confirms the move
           dataStore.aims[parentAim.id].selectedIncomingIndex = prevIndex
 
           // Clear loading state
@@ -814,9 +805,6 @@ export const useUIStore = defineStore('ui', {
 
         if (currentIndex > 0) {
           const prevIndex = currentIndex - 1
-
-          // Update selection BEFORE mutation to prevent flickering
-          dataStore.phases[phaseId]!.selectedAimIndex = prevIndex
 
           // Set loading state
           this.movingAimId = currentAimId
@@ -840,7 +828,7 @@ export const useUIStore = defineStore('ui', {
           })
           dataStore.replacePhase(phaseId, updatedPhase)
 
-          // Ensure selection is maintained after reload
+          // Update selection AFTER reload confirms the move
           dataStore.phases[phaseId]!.selectedAimIndex = prevIndex
 
           // Clear loading state

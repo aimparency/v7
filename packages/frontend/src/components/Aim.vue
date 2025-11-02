@@ -143,7 +143,10 @@ onMounted(() => {
     &::before {
       content: '';
       position: absolute;
-      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background: repeating-linear-gradient(
         45deg,
         rgba(0, 122, 204, 0.04) 0px,
@@ -151,10 +154,11 @@ onMounted(() => {
         transparent 10px,
         transparent 20px
       );
-      background-size: 50px 50px;
+      background-size: 28.28px 28.28px;
       animation: moving-stripes 1s linear infinite;
       pointer-events: none;
       border-radius: inherit;
+      z-index: 1;
     }
   }
 }
@@ -164,7 +168,7 @@ onMounted(() => {
     background-position: 0 0;
   }
   100% {
-    background-position: 50px 0;
+    background-position: 28.28px 0;
   }
 }
 
