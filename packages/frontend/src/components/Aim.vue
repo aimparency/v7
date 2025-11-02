@@ -137,7 +137,7 @@ onMounted(() => {
 
   &.moving {
     position: relative;
-    outline: 0.15rem solid rgba(0, 122, 204, 0.4);
+    outline: 0.15rem solid #007acc;
     outline-offset: -0.15rem;
 
     &::before {
@@ -149,8 +149,8 @@ onMounted(() => {
       height: 100%;
       background: repeating-linear-gradient(
         45deg,
-        rgba(0, 122, 204, 0.04) 0px,
-        rgba(0, 122, 204, 0.04) 10px,
+        rgba(0, 122, 204, 0.2) 0px,
+        rgba(0, 122, 204, 0.2) 10px,
         transparent 10px,
         transparent 20px
       );
