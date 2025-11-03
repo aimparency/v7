@@ -10,10 +10,30 @@ type SelectionPath = {
   aims: Aim[]
 }
 
+// Helper to get project path with query parameter precedence
+function getInitialProjectPath(): string {
+  // Check URL query parameter first
+  const urlParams = new URLSearchParams(window.location.search)
+  const pathFromUrl = urlParams.get('path')
+
+  if (pathFromUrl) {
+    // Clean up the URL without reloading the page
+    const url = new URL(window.location.href)
+    url.searchParams.delete('path')
+    window.history.replaceState({}, '', url)
+
+    // Return the path from URL without persisting
+    return pathFromUrl
+  }
+
+  // Fall back to localStorage
+  return localStorage.getItem('aimparency-project-path') || ''
+}
+
 export const useUIStore = defineStore('ui', {
   state: () => ({
     // Project state
-    projectPath: localStorage.getItem('aimparency-project-path') || '',
+    projectPath: getInitialProjectPath(),
     connectionStatus: 'connecting' as 'connecting' | 'connected' | 'no connection',
     projectHistory: JSON.parse(localStorage.getItem('aimparency-project-history') || '[]') as Array<{
       path: string
