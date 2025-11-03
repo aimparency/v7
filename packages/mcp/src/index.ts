@@ -30,6 +30,7 @@ const server = new Server(
   {
     name: "aimparency",
     version: "1.0.0",
+    description: "MCP server for Aimparency project management. IMPORTANT: All resources and tools require 'projectPath' parameter - an absolute local filesystem path (e.g., /home/user/project/.bowman). For resources, pass as query parameter: aims://all?projectPath=/absolute/path. For tools, pass as a property in the arguments object.",
   },
   {
     capabilities: {
