@@ -17,6 +17,7 @@
   "dependencies": {
     "@trpc/server": "^11.5.1",
     "express": "^5.1.0",
+    "flexsearch": "^0.8.212",
     "fs-extra": "^11.3.1",
     "shared": "*",
     "uuid": "^13.0.0",

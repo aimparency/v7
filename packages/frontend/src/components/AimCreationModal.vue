@@ -15,19 +15,23 @@ const searchResults = ref<Aim[]>([])
 const selectedSearchIndex = ref(0)
 const aimTextInput = ref<HTMLInputElement>()
 
-// Mock search functionality
-const performSearch = (query: string) => {
+// Real search functionality
+const performSearch = async (query: string) => {
   if (!query.trim()) {
     searchResults.value = []
     return
   }
-  
-  // Mock search results - filter existing aims by text match  
-  // For now, just use an empty array since we don't have current phase context
-  const allAims: any[] = []
-  searchResults.value = allAims.filter(aim => 
-    aim.text.toLowerCase().includes(query.toLowerCase())
-  ).slice(0, 5) // Limit to 5 results
+
+  try {
+    const results = await trpc.aim.search.query({
+      projectPath: uiStore.projectPath,
+      query: query
+    })
+    searchResults.value = results.slice(0, 5) // Limit to 5 results
+  } catch (error) {
+    console.error('Failed to search aims:', error)
+    searchResults.value = []
+  }
 }
 
 const selectedSearchResult = computed(() => {

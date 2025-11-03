@@ -8,6 +8,7 @@ import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { AimSchema, PhaseSchema, ProjectMetaSchema } from 'shared';
 import type { Aim, Phase, ProjectMeta } from 'shared';
+import { Document } from 'flexsearch';
 
 // Create context for tRPC
 const createContext = () => ({});
@@ -377,6 +378,24 @@ const appRouter = t.router({
         await commitAimToPhase(input.projectPath, aimId, input.phaseId, input.insertionIndex);
 
         return aim;
+      }),
+
+    search: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        query: z.string()
+      }))
+      .query(async ({ input }) => {
+        const aims = await listAims(input.projectPath);
+        const normalizedQuery = input.query.toLowerCase().trim();
+
+        if (!normalizedQuery) {
+          return aims;
+        }
+
+        return aims.filter(aim =>
+          aim.text.toLowerCase().includes(normalizedQuery)
+        );
       })
   }),
 
@@ -437,6 +456,25 @@ const appRouter = t.router({
         const phasePath = path.join(input.projectPath, 'phases', `${input.phaseId}.json`);
         await fs.remove(phasePath);
         return { success: true };
+      }),
+
+    search: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        query: z.string(),
+        parentPhaseId: z.string().uuid().nullable().optional()
+      }))
+      .query(async ({ input }) => {
+        const phases = await listPhases(input.projectPath, input.parentPhaseId);
+        const normalizedQuery = input.query.toLowerCase().trim();
+
+        if (!normalizedQuery) {
+          return phases;
+        }
+
+        return phases.filter(phase =>
+          phase.name.toLowerCase().includes(normalizedQuery)
+        );
       })
   }),
 
