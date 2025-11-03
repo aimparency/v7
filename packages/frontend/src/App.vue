@@ -2,6 +2,7 @@
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
+import { trpc } from './trpc'
 import RootAimsColumn from './components/RootAimsColumn.vue'
 import PhaseColumn from './components/PhaseColumn.vue'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
@@ -107,6 +108,11 @@ onMounted(async () => {
   if (uiStore.projectPath) {
     // Load all project data first
     await dataStore.loadProject(uiStore.projectPath);
+
+    // Build search index
+    await trpc.project.buildSearchIndex.mutate({
+      projectPath: uiStore.projectPath
+    });
 
     // Then, select the first root phase (index 0 in column 0) to kick off the cascade
     await uiStore.selectPhase(0, 0);

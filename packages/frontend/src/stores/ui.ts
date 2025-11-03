@@ -17,12 +17,7 @@ function getInitialProjectPath(): string {
   const pathFromUrl = urlParams.get('path')
 
   if (pathFromUrl) {
-    // Clean up the URL without reloading the page
-    const url = new URL(window.location.href)
-    url.searchParams.delete('path')
-    window.history.replaceState({}, '', url)
-
-    // Return the path from URL without persisting
+    // Return the path from URL without persisting to localStorage
     return pathFromUrl
   }
 

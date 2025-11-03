@@ -8,7 +8,18 @@ import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { AimSchema, PhaseSchema, ProjectMetaSchema } from 'shared';
 import type { Aim, Phase, ProjectMeta } from 'shared';
-import { Document } from 'flexsearch';
+import {
+  indexAims,
+  indexPhases,
+  searchAims,
+  searchPhases,
+  addAimToIndex,
+  updateAimInIndex,
+  removeAimFromIndex,
+  addPhaseToIndex,
+  updatePhaseInIndex,
+  removePhaseFromIndex
+} from './search';
 
 // Create context for tRPC
 const createContext = () => ({});
@@ -243,6 +254,7 @@ const appRouter = t.router({
         const existingAim = await readAim(input.projectPath, input.aimId);
         const updatedAim = { ...existingAim, ...input.aim };
         await writeAim(input.projectPath, updatedAim);
+        updateAimInIndex(input.projectPath, updatedAim);
         return updatedAim;
       }),
 
@@ -257,10 +269,14 @@ const appRouter = t.router({
         for (const phaseId of aim.committedIn) {
           await removeAimFromPhase(input.projectPath, input.aimId, phaseId);
         }
-        
+
         // Then delete the aim file
         const aimPath = path.join(input.projectPath, 'aims', `${input.aimId}.json`);
         await fs.remove(aimPath);
+
+        // Remove from search index
+        removeAimFromIndex(input.projectPath, input.aimId);
+
         return { success: true };
       }),
 
@@ -319,8 +335,9 @@ const appRouter = t.router({
             date: Date.now()
           }
         };
-        
+
         await writeAim(input.projectPath, aim);
+        addAimToIndex(input.projectPath, aim);
         return aim;
       }),
 
@@ -336,7 +353,7 @@ const appRouter = t.router({
         const childAim: Aim = {
           id: childAimId,
           text: input.aim.text,
-          incoming: [], 
+          incoming: [],
           outgoing: [],
           committedIn: [],
           status: input.aim.status || {
@@ -347,6 +364,7 @@ const appRouter = t.router({
         };
 
         await writeAim(input.projectPath, childAim);
+        addAimToIndex(input.projectPath, childAim);
         await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0);
 
         return childAim;
@@ -375,6 +393,7 @@ const appRouter = t.router({
         };
 
         await writeAim(input.projectPath, aim);
+        addAimToIndex(input.projectPath, aim);
         await commitAimToPhase(input.projectPath, aimId, input.phaseId, input.insertionIndex);
 
         return aim;
@@ -387,15 +406,7 @@ const appRouter = t.router({
       }))
       .query(async ({ input }) => {
         const aims = await listAims(input.projectPath);
-        const normalizedQuery = input.query.toLowerCase().trim();
-
-        if (!normalizedQuery) {
-          return aims;
-        }
-
-        return aims.filter(aim =>
-          aim.text.toLowerCase().includes(normalizedQuery)
-        );
+        return await searchAims(input.projectPath, input.query, aims);
       })
   }),
 
@@ -411,8 +422,9 @@ const appRouter = t.router({
           id: phaseId,
           ...input.phase
         };
-        
+
         await writePhase(input.projectPath, phase);
+        addPhaseToIndex(input.projectPath, phase);
         return { id: phaseId };
       }),
 
@@ -444,6 +456,7 @@ const appRouter = t.router({
         const existingPhase = await readPhase(input.projectPath, input.phaseId);
         const updatedPhase = { ...existingPhase, ...input.phase };
         await writePhase(input.projectPath, updatedPhase);
+        updatePhaseInIndex(input.projectPath, updatedPhase);
         return updatedPhase;
       }),
 
@@ -455,6 +468,7 @@ const appRouter = t.router({
       .mutation(async ({ input }) => {
         const phasePath = path.join(input.projectPath, 'phases', `${input.phaseId}.json`);
         await fs.remove(phasePath);
+        removePhaseFromIndex(input.projectPath, input.phaseId);
         return { success: true };
       }),
 
@@ -466,15 +480,7 @@ const appRouter = t.router({
       }))
       .query(async ({ input }) => {
         const phases = await listPhases(input.projectPath, input.parentPhaseId);
-        const normalizedQuery = input.query.toLowerCase().trim();
-
-        if (!normalizedQuery) {
-          return phases;
-        }
-
-        return phases.filter(phase =>
-          phase.name.toLowerCase().includes(normalizedQuery)
-        );
+        return await searchPhases(input.projectPath, input.query, phases);
       })
   }),
 
@@ -489,6 +495,26 @@ const appRouter = t.router({
           return await fs.readJson(metaPath);
         }
         return null;
+      }),
+
+    buildSearchIndex: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .mutation(async ({ input }) => {
+        const aims = await listAims(input.projectPath);
+        const phases = await listPhases(input.projectPath);
+
+        indexAims(input.projectPath, aims);
+        indexPhases(input.projectPath, phases);
+
+        return {
+          success: true,
+          indexed: {
+            aims: aims.length,
+            phases: phases.length
+          }
+        };
       }),
 
     updateMeta: delayedProcedure
