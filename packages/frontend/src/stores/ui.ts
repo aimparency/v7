@@ -849,7 +849,7 @@ export const useUIStore = defineStore('ui', {
       const parentAim = path.aims[path.aims.length - 2]!
       const parentId = parentAim.id
 
-      // Calculate where the aim will end up
+      // Calculate where the aim will end up (read before mutations)
       const updatedIncoming = parentAim.incoming.filter(id => id !== currentAimId)
       const updatedOutgoing = currentAim.outgoing.filter(id => id !== parentId)
 
@@ -863,36 +863,11 @@ export const useUIStore = defineStore('ui', {
         grandparentId = grandparentAim.id
         const parentIndexInGrandparent = grandparentAim.selectedIncomingIndex!
         newIndex = parentIndexInGrandparent + 1
-
-        // OPTIMISTIC UPDATE: Show final state immediately
-        const grandparent = dataStore.aims[grandparentId]
-        grandparent.incoming = [...grandparent.incoming.slice(0, newIndex), currentAimId, ...grandparent.incoming.slice(newIndex)]
-        grandparent.selectedIncomingIndex = newIndex
       } else if (path.phase) {
         // Will become top-level in phase
         targetPhaseId = path.phase.id
         const parentIndex = path.phase.selectedAimIndex!
         newIndex = parentIndex + 1
-
-        // OPTIMISTIC UPDATE: Show final state immediately
-        const phase = dataStore.phases[targetPhaseId]!
-        phase.commitments = [...phase.commitments.slice(0, newIndex), currentAimId, ...phase.commitments.slice(newIndex)]
-        phase.selectedAimIndex = newIndex
-      } else {
-        // Will become floating - update outgoing locally
-        currentAim.outgoing = updatedOutgoing
-      }
-
-      // Update old parent locally
-      const oldParent = dataStore.aims[parentId]
-      oldParent.incoming = updatedIncoming
-      if (updatedIncoming.length > 0) {
-        oldParent.selectedIncomingIndex = Math.min(
-          parentAim.selectedIncomingIndex ?? 0,
-          updatedIncoming.length - 1
-        )
-      } else {
-        oldParent.selectedIncomingIndex = undefined
       }
 
       // Set loading state
@@ -1028,33 +1003,9 @@ export const useUIStore = defineStore('ui', {
 
       if (!previousSiblingId) return
 
-      // Get insertion index
+      // Get insertion index (read before mutations)
       const previousSibling = dataStore.aims[previousSiblingId]
       const insertionIndex = previousSibling.incoming.length
-
-      // OPTIMISTIC UPDATE: Immediately show final state
-      // 1. Add aim to new parent's incoming locally
-      const newParentObj = dataStore.aims[previousSiblingId]
-      newParentObj.incoming = [...newParentObj.incoming, currentAimId]
-      newParentObj.expanded = true
-      newParentObj.selectedIncomingIndex = insertionIndex
-
-      // 2. Remove from old parent's incoming locally (if sub-aim)
-      if (oldParentId) {
-        const oldParentObj = dataStore.aims[oldParentId]
-        oldParentObj.incoming = oldParentObj.incoming.filter(id => id !== currentAimId)
-        oldParentObj.selectedIncomingIndex = currentIndex - 1
-      }
-
-      // 3. Update selection for phase/floating
-      if (oldPhaseId) {
-        dataStore.phases[oldPhaseId]!.selectedAimIndex = currentIndex - 1
-      } else if (!oldParentId) {
-        const newFloatingIndex = dataStore.floatingAims.findIndex(a => a.id === previousSiblingId)
-        if (newFloatingIndex !== -1) {
-          this.floatingAimIndex = newFloatingIndex
-        }
-      }
 
       // Set loading state
       this.movingAimId = currentAimId
@@ -1062,11 +1013,14 @@ export const useUIStore = defineStore('ui', {
       // Perform backend mutations sequentially to avoid race conditions
       // First disconnect from old location
       if (oldParentId) {
-        // Manually update old parent's incoming to remove the child
+        // Get old parent's current incoming and filter out the child
+        const oldParent = dataStore.aims[oldParentId]
+        const updatedIncoming = oldParent.incoming.filter(id => id !== currentAimId)
+
         await trpc.aim.update.mutate({
           projectPath: this.projectPath,
           aimId: oldParentId,
-          aim: { incoming: oldParentObj.incoming }
+          aim: { incoming: updatedIncoming }
         })
         // Also update child's outgoing to remove old parent
         await trpc.aim.update.mutate({
