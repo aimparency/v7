@@ -4,6 +4,14 @@
   box-sizing: border-box;
 }
 
+:root {
+  --status-open: #87f;
+  --status-done: #00ff00;
+  --status-cancelled: #ff0000;
+  --status-partially: #ffff00;
+  --status-failed: #ff6666;
+}
+
 body {
   margin: 0;
   padding: 0;

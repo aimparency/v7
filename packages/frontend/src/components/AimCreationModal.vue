@@ -35,22 +35,28 @@ const performSearch = async (query: string) => {
 }
 
 const selectedSearchResult = computed(() => {
-  return searchResults.value[selectedSearchIndex.value] || null
+  // Index 0 is always "create new", so actual results start at index 1
+  if (selectedSearchIndex.value === 0) {
+    return null // "Create new" selected
+  }
+  return searchResults.value[selectedSearchIndex.value - 1] || null
 })
+
+const hasSearchText = computed(() => aimText.value.trim().length > 0)
 
 const createAim = async () => {
   if (!aimText.value.trim() && !selectedSearchResult.value) return
 
   try {
     if (selectedSearchResult.value) {
-      // TODO: Handle selecting existing aim from search
-      console.warn('Search result selection not yet implemented')
-      return
+      // Link existing aim
+      await uiStore.createAim(selectedSearchResult.value.id, true)
+    } else {
+      // Create new aim with text
+      await uiStore.createAim(aimText.value.trim(), false)
     }
-
-    await uiStore.createAim(aimText.value.trim())
   } catch (error) {
-    console.error('Failed to create aim:', error)
+    console.error('Failed to create/link aim:', error)
   }
 }
 
@@ -89,17 +95,34 @@ const handleInputKeydown = (event: KeyboardEvent) => {
     event.preventDefault()
     event.stopPropagation() // Prevent escape from bubbling to global handler
     uiStore.closeAimModal()
-  } else if (event.ctrlKey && event.key === 'j') {
+  }
+}
+
+const handleSearchResultsKeydown = (event: KeyboardEvent) => {
+  // In search results container: use J/K without Ctrl
+  if (event.key === 'j' || event.key === 'J') {
     event.preventDefault()
-    if (selectedSearchIndex.value < searchResults.value.length - 1) {
+    // Max index is searchResults.length (because index 0 is "create new")
+    if (selectedSearchIndex.value < searchResults.value.length) {
       selectedSearchIndex.value++
     }
-  } else if (event.ctrlKey && event.key === 'k') {
+  } else if (event.key === 'k' || event.key === 'K') {
     event.preventDefault()
     if (selectedSearchIndex.value > 0) {
       selectedSearchIndex.value--
     }
+  } else if (event.key === 'Enter') {
+    event.preventDefault()
+    handleSubmit()
+  } else if (event.key === 'Escape') {
+    event.preventDefault()
+    event.stopPropagation()
+    uiStore.closeAimModal()
   }
+}
+
+const selectSearchResult = (index: number) => {
+  selectedSearchIndex.value = index
 }
 
 // Watch for search text changes
@@ -177,21 +200,37 @@ onMounted(async () => {
         </div>
 
         <!-- Search Results (create mode only) -->
-        <div v-if="uiStore.aimModalMode === 'create' && searchResults.length > 0" class="search-results">
-          <div class="search-header">Existing aims:</div>
-          <div 
+        <div
+          v-if="uiStore.aimModalMode === 'create' && hasSearchText"
+          class="search-results"
+          tabindex="0"
+          @keydown="handleSearchResultsKeydown"
+        >
+          <!-- "Create new" entry (always first, index 0) -->
+          <div
+            class="search-result create-new"
+            :class="{ selected: selectedSearchIndex === 0 }"
+            @click="selectSearchResult(0)"
+          >
+            <div class="result-text">Create new: "{{ aimText }}"</div>
+          </div>
+
+          <!-- Existing aims (if any) -->
+          <div
             v-for="(result, index) in searchResults"
             :key="result.id"
-            class="search-result"
-            :class="{ selected: index === selectedSearchIndex }"
+            class="search-result existing-aim"
+            :class="{ selected: index + 1 === selectedSearchIndex }"
+            @click="selectSearchResult(index + 1)"
           >
             <div class="result-text">{{ result.text }}</div>
             <div class="result-status" :class="result.status.state">
               {{ result.status.state }}
             </div>
           </div>
+
           <div class="search-help">
-            Use <kbd>Ctrl+J</kbd>/<kbd>Ctrl+K</kbd> to navigate
+            Use <kbd>J</kbd>/<kbd>K</kbd> to navigate, <kbd>Tab</kbd> to buttons
           </div>
         </div>
       </div>
@@ -327,33 +366,30 @@ onMounted(async () => {
   border: 1px solid #555;
   border-radius: 0.1875rem;
   background: #1a1a1a;
-  
-  .search-header {
-    padding: 0.5rem;
-    background: #333;
-    font-size: 0.9rem;
-    color: #ccc;
-    border-bottom: 1px solid #555;
-  }
-  
+
   .search-result {
     padding: 0.5rem;
-    border-bottom: 1px solid #333;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    
+    margin: 0.25rem;
+    border-radius: 0.1875rem;
+
+    &.create-new {
+      border: 1px dotted #555;
+    }
+
+    &.existing-aim {
+      border: 1px solid #555;
+    }
+
     &.selected {
       background: #333;
     }
-    
+
     &:hover:not(.selected) {
       background: #2a2a2a;
-    }
-    
-    &:last-child {
-      border-bottom: none;
     }
     
     .result-text {
@@ -365,12 +401,12 @@ onMounted(async () => {
       font-size: 0.8rem;
       text-transform: uppercase;
       font-weight: bold;
-      
-      &.open { color: #ffa500; }
-      &.done { color: #00ff00; }
-      &.cancelled { color: #ff0000; }
-      &.partially { color: #ffff00; }
-      &.failed { color: #ff6666; }
+
+      &.open { color: var(--status-open); }
+      &.done { color: var(--status-done); }
+      &.cancelled { color: var(--status-cancelled); }
+      &.partially { color: var(--status-partially); }
+      &.failed { color: var(--status-failed); }
     }
   }
   

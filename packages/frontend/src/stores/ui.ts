@@ -244,13 +244,13 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Create aim and update selection
-    async createAim(aimText: string) {
+    async createAim(aimTextOrId: string, isExistingAim: boolean = false) {
       const dataStore = useDataStore()
 
       const path = this.getSelectionPath()
 
       const aimAttributes = {
-        text: aimText,
+        text: aimTextOrId,
         status: { state: 'open' as const, comment: '', date: Date.now() }
       }
 
@@ -258,13 +258,28 @@ export const useUIStore = defineStore('ui', {
 
       if(path.aims.length == 0){
         if(path.phase) {
-          console.log('create first top-level aim in phase', path.phase)
-          const result = await dataStore.createCommittedAim(this.projectPath, path.phase.id, aimAttributes, 0)
-          newAimId = result.id
+          console.log(isExistingAim ? 'link existing aim to phase' : 'create first top-level aim in phase', path.phase)
+          if (isExistingAim) {
+            await trpc.aim.commitToPhase.mutate({
+              projectPath: this.projectPath,
+              aimId: aimTextOrId,
+              phaseId: path.phase.id,
+              insertionIndex: 0
+            })
+            newAimId = aimTextOrId
+          } else {
+            const result = await dataStore.createCommittedAim(this.projectPath, path.phase.id, aimAttributes, 0)
+            newAimId = result.id
+          }
 
           // Update local state
           await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
         } else {
+          if (isExistingAim) {
+            console.warn('Cannot link existing aim as floating aim - ignoring')
+            this.showAimModal = false
+            return
+          }
           console.log('create floating aim', aimAttributes)
           const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
           newAimId = result.id
@@ -273,10 +288,20 @@ export const useUIStore = defineStore('ui', {
         const currentAim = path.aims[path.aims.length - 1]
         if(currentAim) {
           if(currentAim.expanded && this.aimModalInsertPosition == 'after') {
-            console.log('create first sub-aim of expanded aim', currentAim)
+            console.log(isExistingAim ? 'link existing aim as first sub-aim' : 'create first sub-aim of expanded aim', currentAim)
 
-            const result = await dataStore.createSubAim(this.projectPath, currentAim.id, aimAttributes, 0)
-            newAimId = result.id
+            if (isExistingAim) {
+              await trpc.aim.connectAims.mutate({
+                projectPath: this.projectPath,
+                parentAimId: currentAim.id,
+                childAimId: aimTextOrId,
+                parentIncomingIndex: 0
+              })
+              newAimId = aimTextOrId
+            } else {
+              const result = await dataStore.createSubAim(this.projectPath, currentAim.id, aimAttributes, 0)
+              newAimId = result.id
+            }
 
             const updatedParent = await trpc.aim.get.query({
               projectPath: this.projectPath,
@@ -286,15 +311,26 @@ export const useUIStore = defineStore('ui', {
           } else {
             // distinguish 3 cases: free floating, phase top-level, sub-aim
             if(path.aims.length > 1) {
-              console.log('create sub-aim of aim', currentAim)
+              console.log(isExistingAim ? 'link existing aim as sub-aim' : 'create sub-aim of aim', currentAim)
 
               const parentAim = path.aims[path.aims.length - 2]
               let insertionIndex = parentAim.selectedIncomingIndex ?? 0
               if(this.aimModalInsertPosition === 'after') {
                 insertionIndex ++
               }
-              const result = await dataStore.createSubAim(this.projectPath, parentAim.id, aimAttributes, insertionIndex)
-              newAimId = result.id
+
+              if (isExistingAim) {
+                await trpc.aim.connectAims.mutate({
+                  projectPath: this.projectPath,
+                  parentAimId: parentAim.id,
+                  childAimId: aimTextOrId,
+                  parentIncomingIndex: insertionIndex
+                })
+                newAimId = aimTextOrId
+              } else {
+                const result = await dataStore.createSubAim(this.projectPath, parentAim.id, aimAttributes, insertionIndex)
+                newAimId = result.id
+              }
 
               // Update local state
               const updatedParent = await trpc.aim.get.query({
@@ -305,19 +341,35 @@ export const useUIStore = defineStore('ui', {
               parentAim.selectedIncomingIndex = insertionIndex
               dataStore.replaceAim(parentAim.id, updatedParent)
             } else if(path.phase) {
-              console.log('create top-level aim in phase', path.phase)
+              console.log(isExistingAim ? 'link existing aim to phase (top-level)' : 'create top-level aim in phase', path.phase)
               let insertionIndex = 0
               const phase = dataStore.phases[path.phase.id]
               if (phase && phase.selectedAimIndex !== undefined) {
                 insertionIndex = phase.selectedAimIndex + (this.aimModalInsertPosition === 'after' ? 1 : 0)
               }
-              const result = await dataStore.createCommittedAim(this.projectPath, path.phase.id, aimAttributes, insertionIndex)
-              newAimId = result.id
+
+              if (isExistingAim) {
+                await trpc.aim.commitToPhase.mutate({
+                  projectPath: this.projectPath,
+                  aimId: aimTextOrId,
+                  phaseId: path.phase.id,
+                  insertionIndex
+                })
+                newAimId = aimTextOrId
+              } else {
+                const result = await dataStore.createCommittedAim(this.projectPath, path.phase.id, aimAttributes, insertionIndex)
+                newAimId = result.id
+              }
 
               // Update local state
               await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
               path.phase.selectedAimIndex = insertionIndex
             } else {
+              if (isExistingAim) {
+                console.warn('Cannot link existing aim as floating aim - ignoring')
+                this.showAimModal = false
+                return
+              }
               // free floating - use createFloatingAim
               const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
               newAimId = result.id
