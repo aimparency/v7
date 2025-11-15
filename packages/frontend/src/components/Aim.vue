@@ -140,8 +140,6 @@ onMounted(() => {
 
   &.moving {
     position: relative;
-    outline: 0.15rem solid #007acc;
-    outline-offset: -0.15rem;
 
     &::before {
       content: '';

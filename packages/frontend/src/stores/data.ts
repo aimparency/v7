@@ -91,19 +91,54 @@ export const useDataStore = defineStore('data', {
     // Helper to replace phase while preserving UI-only properties
     replacePhase(phaseId: string, newPhase: BasePhase) {
       const oldPhase = this.phases[phaseId]
-      const selectedAimIndex = oldPhase?.selectedAimIndex
+      const oldSelectedAimIndex = oldPhase?.selectedAimIndex
+      const oldSelectedSubPhaseIndex = oldPhase?.lastSelectedSubPhaseIndex
+
+      // Replace with new data
       this.phases[phaseId] = newPhase as Phase
-      if (selectedAimIndex !== undefined) {
-        this.phases[phaseId].selectedAimIndex = selectedAimIndex
+
+      // Restore validated UI state
+      if (oldSelectedAimIndex !== undefined && newPhase.commitments.length > 0) {
+        const maxIndex = newPhase.commitments.length - 1
+        if (oldSelectedAimIndex <= maxIndex) {
+          this.phases[phaseId].selectedAimIndex = oldSelectedAimIndex
+        } else {
+          // Index out of bounds - clamp to last valid index
+          console.warn(`Phase ${phaseId} selectedAimIndex ${oldSelectedAimIndex} out of bounds (max ${maxIndex}), clamping to ${maxIndex}`)
+          this.phases[phaseId].selectedAimIndex = maxIndex
+        }
+      }
+
+      if (oldSelectedSubPhaseIndex !== undefined) {
+        this.phases[phaseId].lastSelectedSubPhaseIndex = oldSelectedSubPhaseIndex
       }
     },
 
     // Helper to replace aim while preserving UI-only properties
     replaceAim(aimId: string, newAim: BaseAim) {
-      this.aims[aimId] = Object.assign(this.aims[aimId] ?? {
-        expanded: false, 
+      const oldAim = this.aims[aimId]
+      const oldExpanded = oldAim?.expanded ?? false
+      const oldSelectedIndex = oldAim?.selectedIncomingIndex
+
+      // Replace with new data
+      this.aims[aimId] = Object.assign({
+        expanded: false,
         selectedIncomingIndex: undefined
       }, newAim) as Aim
+
+      // Restore validated UI state
+      this.aims[aimId].expanded = oldExpanded
+
+      if (oldSelectedIndex !== undefined && newAim.incoming.length > 0) {
+        const maxIndex = newAim.incoming.length - 1
+        if (oldSelectedIndex <= maxIndex) {
+          this.aims[aimId].selectedIncomingIndex = oldSelectedIndex
+        } else {
+          // Index out of bounds - clamp to last valid index
+          console.warn(`Selection index ${oldSelectedIndex} out of bounds (max ${maxIndex}) for aim ${aimId}, clamping to ${maxIndex}`)
+          this.aims[aimId].selectedIncomingIndex = maxIndex
+        }
+      }
     },
 
     async createFloatingAim(projectPath: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>): Promise<{id: string}> {

@@ -953,7 +953,7 @@ export const useUIStore = defineStore('ui', {
         aim: { outgoing: updatedOutgoing }
       })
 
-      // Then connect to new location
+      // Connect to new location and set selection immediately to avoid flicker
       if (grandparentId) {
         await trpc.aim.connectAims.mutate({
           projectPath: this.projectPath,
@@ -962,6 +962,8 @@ export const useUIStore = defineStore('ui', {
           parentIncomingIndex: newIndex!,
           childOutgoingIndex: 0
         })
+        // Set selection immediately before reload
+        dataStore.aims[grandparentId].selectedIncomingIndex = newIndex!
       } else if (targetPhaseId) {
         await trpc.aim.commitToPhase.mutate({
           projectPath: this.projectPath,
@@ -969,6 +971,8 @@ export const useUIStore = defineStore('ui', {
           phaseId: targetPhaseId,
           insertionIndex: newIndex!
         })
+        // Set selection immediately before reload
+        dataStore.phases[targetPhaseId]!.selectedAimIndex = newIndex!
       }
 
       // Single reload pass - all in parallel
@@ -1017,13 +1021,6 @@ export const useUIStore = defineStore('ui', {
       }
 
       await Promise.all(reloads)
-
-      // Re-ensure selection
-      if (grandparentId) {
-        dataStore.aims[grandparentId].selectedIncomingIndex = newIndex!
-      } else if (targetPhaseId) {
-        dataStore.phases[targetPhaseId]!.selectedAimIndex = newIndex!
-      }
 
       // Clear loading state
       this.movingAimId = null
@@ -1104,7 +1101,7 @@ export const useUIStore = defineStore('ui', {
         })
       }
 
-      // Then connect to new parent (this updates both parent.incoming and child.outgoing)
+      // Connect to new parent and set selection immediately to avoid flicker
       await trpc.aim.connectAims.mutate({
         projectPath: this.projectPath,
         parentAimId: previousSiblingId,
@@ -1112,6 +1109,10 @@ export const useUIStore = defineStore('ui', {
         parentIncomingIndex: insertionIndex,
         childOutgoingIndex: 0
       })
+
+      // Set selection immediately before reload
+      dataStore.aims[previousSiblingId].expanded = true
+      dataStore.aims[previousSiblingId].selectedIncomingIndex = insertionIndex
 
       // Single reload pass - reload both parents in parallel
       const reloads = []
@@ -1140,10 +1141,6 @@ export const useUIStore = defineStore('ui', {
       }
 
       await Promise.all(reloads)
-
-      // Re-ensure selection after reload
-      dataStore.aims[previousSiblingId].expanded = true
-      dataStore.aims[previousSiblingId].selectedIncomingIndex = insertionIndex
 
       // Clear loading state
       this.movingAimId = null
