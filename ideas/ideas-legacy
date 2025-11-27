@@ -1,0 +1,55 @@
+- flexible implementation of a peekBorder
+  - area on both sides that shows a little piece of the next out of view column page
+  - 
+
+- develop claude code plugin / hook for infinte work on aims
+
+- support multi client 
+  - make backend sync changes in realtime: 
+  - when multiple clients are connected (could be MCP or web client)
+
+- store embedding for aims
+
+- develop MCP 
+
+- aims in rootaims not added in the right position - maybe reload after add?  
+
+- still same issue: 
+  - does not remember the correct subphase selection
+    - does not select newly created phase
+
+- Current
+  - focus created sub phases
+  - sub phase index remembering
+  - additional tests: 
+    - aim creating
+    - aim navigating
+    - aim remembering
+- testing 
+  - end to end tests (UI tests)
+
+- UI 
+  - implement undo system (should use a existing sophisticated system maybe based on a store)
+  - j/k keys on aim status
+  - colon => command palette
+    - commit 
+  - allow aim deletion in free floating aims
+  - select newly created phase
+  - restore scrolling
+
+- D(i think): remove the no space left comment 
+
+- D: when only one phase exists in a phase colum, it get's no selection outline
+
+- D: index for the tab move changed. 
+
+- D: refactor data model: phases in store
+
+# phases
+- allow phases to overlap. discurage, but allow. 
+  - Order phases by progress. 
+- archive phases: they dont get shown anymore
+
+# visualization
+- press g to go back between graph view and list view
+

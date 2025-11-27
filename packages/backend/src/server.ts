@@ -19,7 +19,7 @@ import {
   addPhaseToIndex,
   updatePhaseInIndex,
   removePhaseFromIndex
-} from './search';
+} from './search.js';
 
 // Create context for tRPC
 const createContext = () => ({});

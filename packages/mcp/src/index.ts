@@ -492,13 +492,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     switch (name) {
       case "create-aim": {
-        const result = await trpc.aim.create.mutate({
+        const result = await trpc.aim.createFloatingAim.mutate({
           projectPath: args.projectPath as string,
           aim: {
             text: args.text as string,
-            incoming: (args.incoming as string[]) || [],
-            outgoing: (args.outgoing as string[]) || [],
-            committedIn: [],
             status: (args.status as any) || {
               state: "open",
               comment: "",
@@ -506,6 +503,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             },
           },
         });
+
+        // Handle incoming connections (parents)
+        const incoming = (args.incoming as string[]) || [];
+        for (const parentId of incoming) {
+          await trpc.aim.connectAims.mutate({
+            projectPath: args.projectPath as string,
+            parentAimId: parentId,
+            childAimId: result.id,
+          });
+        }
+
+        // Handle outgoing connections (children)
+        const outgoing = (args.outgoing as string[]) || [];
+        for (const childId of outgoing) {
+          await trpc.aim.connectAims.mutate({
+            projectPath: args.projectPath as string,
+            parentAimId: result.id,
+            childAimId: childId,
+          });
+        }
 
         // If phaseId provided, commit to phase
         if (args.phaseId) {
