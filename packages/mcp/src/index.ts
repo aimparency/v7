@@ -291,6 +291,54 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
+        name: "list-aims",
+        description: "List all aims in the project",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: { type: "string" },
+          },
+          required: ["projectPath"],
+        },
+      },
+      {
+        name: "search-aims",
+        description: "Search aims by text or status (e.g. 'open', 'done')",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: { type: "string" },
+            query: { type: "string" },
+          },
+          required: ["projectPath", "query"],
+        },
+      },
+      {
+        name: "list-phases",
+        description: "List all phases in the project",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: { type: "string" },
+            parentPhaseId: { type: ["string", "null"], description: "Optional parent phase ID" },
+          },
+          required: ["projectPath"],
+        },
+      },
+      {
+        name: "search-phases",
+        description: "Search phases by name",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: { type: "string" },
+            query: { type: "string" },
+            parentPhaseId: { type: ["string", "null"], description: "Optional parent phase ID" },
+          },
+          required: ["projectPath", "query"],
+        },
+      },
+      {
         name: "create-aim",
         description: "Create a new aim. Date is set automatically. Optionally provide phaseId to commit to a phase in one step.",
         inputSchema: {
@@ -491,6 +539,66 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     switch (name) {
+      case "list-aims": {
+        const aims = await trpc.aim.list.query({
+          projectPath: args.projectPath as string,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(aims, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "search-aims": {
+        const aims = await trpc.aim.search.query({
+          projectPath: args.projectPath as string,
+          query: args.query as string,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(aims, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "list-phases": {
+        const phases = await trpc.phase.list.query({
+          projectPath: args.projectPath as string,
+          parentPhaseId: args.parentPhaseId as string | undefined,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(phases, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "search-phases": {
+        const phases = await trpc.phase.search.query({
+          projectPath: args.projectPath as string,
+          query: args.query as string,
+          parentPhaseId: args.parentPhaseId as string | undefined,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(phases, null, 2),
+            },
+          ],
+        };
+      }
+
       case "create-aim": {
         const result = await trpc.aim.createFloatingAim.mutate({
           projectPath: args.projectPath as string,

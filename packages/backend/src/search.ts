@@ -11,7 +11,7 @@ function getAimIndex(projectPath: string): Document<Aim> {
     const index = new Document<Aim>({
       document: {
         id: 'id',
-        index: ['text']
+        index: ['text', 'status.state'] as any
       },
       tokenize: 'forward',
       context: {

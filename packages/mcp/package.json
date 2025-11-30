@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "watch": "tsc -w",
     "dev": "tsx watch src/index.ts"
   },
   "files": [

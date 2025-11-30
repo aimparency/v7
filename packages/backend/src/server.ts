@@ -6,7 +6,7 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import { AimSchema, PhaseSchema, ProjectMetaSchema } from 'shared';
+import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema } from 'shared';
 import type { Aim, Phase, ProjectMeta } from 'shared';
 import {
   indexAims,
@@ -248,11 +248,29 @@ const appRouter = t.router({
       .input(z.object({
         projectPath: z.string(),
         aimId: z.string().uuid(),
-        aim: AimSchema.partial().omit({ id: true })
+        aim: AimSchema.partial().omit({ id: true }).extend({
+          status: AimStatusSchema.partial().optional()
+        })
       }))
       .mutation(async ({ input }) => {
         const existingAim = await readAim(input.projectPath, input.aimId);
-        const updatedAim = { ...existingAim, ...input.aim };
+        
+        // Handle status deep merge and date default
+        let status = existingAim.status;
+        if (input.aim.status) {
+          status = {
+            ...existingAim.status,
+            ...input.aim.status,
+            date: input.aim.status.date ?? Date.now()
+          };
+        }
+
+        const updatedAim = { 
+          ...existingAim, 
+          ...input.aim,
+          status
+        };
+        
         await writeAim(input.projectPath, updatedAim);
         updateAimInIndex(input.projectPath, updatedAim);
         return updatedAim;
