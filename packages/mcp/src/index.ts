@@ -314,6 +314,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "search-aims-semantic",
+        description: "Search aims by semantic meaning (embedding-based)",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: { type: "string" },
+            query: { type: "string" },
+            limit: { type: "number", description: "Max results (default 10)" },
+          },
+          required: ["projectPath", "query"],
+        },
+      },
+      {
         name: "list-phases",
         description: "List all phases in the project",
         inputSchema: {
@@ -557,6 +570,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const aims = await trpc.aim.search.query({
           projectPath: args.projectPath as string,
           query: args.query as string,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(aims, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "search-aims-semantic": {
+        const aims = await trpc.aim.searchSemantic.query({
+          projectPath: args.projectPath as string,
+          query: args.query as string,
+          limit: args.limit as number | undefined,
         });
         return {
           content: [

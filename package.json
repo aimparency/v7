@@ -10,7 +10,8 @@
     "dev:backend:delay": "npm run dev:delay -w backend",
     "dev:backend": "npm run dev -w backend",
     "dev:frontend": "npm run dev -w frontend",
-    "dev": "npm run dev:backend & npm run dev:frontend & npm run watch -w mcp",
+    "dev:embedder": "bash packages/embedder/start.sh",
+    "dev": "npm run dev:backend & npm run dev:frontend & npm run watch -w mcp & npm run dev:embedder",
     "dev:delay": "npm run dev:backend:delay & npm run dev:frontend",
     "test": "npm run test -w backend"
   },

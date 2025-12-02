@@ -5,3 +5,6 @@ package-lock.json
 focus-based-ui-bad.md
 packages/frontend/public/
 
+packages/embedder/venv/
+**/vectors.json
+

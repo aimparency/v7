@@ -20,6 +20,7 @@ import {
   updatePhaseInIndex,
   removePhaseFromIndex
 } from './search.js';
+import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors } from './embeddings.js';
 
 // Create context for tRPC
 const createContext = () => ({});
@@ -273,6 +274,12 @@ const appRouter = t.router({
         
         await writeAim(input.projectPath, updatedAim);
         updateAimInIndex(input.projectPath, updatedAim);
+
+        // Update embedding (async)
+        generateEmbedding(updatedAim.text).then(vector => {
+           if(vector) saveEmbedding(input.projectPath, input.aimId, vector);
+        });
+
         return updatedAim;
       }),
 
@@ -294,6 +301,7 @@ const appRouter = t.router({
 
         // Remove from search index
         removeAimFromIndex(input.projectPath, input.aimId);
+        await removeEmbedding(input.projectPath, input.aimId);
 
         return { success: true };
       }),
@@ -356,6 +364,11 @@ const appRouter = t.router({
 
         await writeAim(input.projectPath, aim);
         addAimToIndex(input.projectPath, aim);
+
+        generateEmbedding(aim.text).then(vector => {
+           if(vector) saveEmbedding(input.projectPath, aimId, vector);
+        });
+
         return aim;
       }),
 
@@ -383,6 +396,11 @@ const appRouter = t.router({
 
         await writeAim(input.projectPath, childAim);
         addAimToIndex(input.projectPath, childAim);
+
+        generateEmbedding(childAim.text).then(vector => {
+           if(vector) saveEmbedding(input.projectPath, childAimId, vector);
+        });
+
         await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0);
 
         return childAim;
@@ -412,6 +430,11 @@ const appRouter = t.router({
 
         await writeAim(input.projectPath, aim);
         addAimToIndex(input.projectPath, aim);
+
+        generateEmbedding(aim.text).then(vector => {
+           if(vector) saveEmbedding(input.projectPath, aimId, vector);
+        });
+
         await commitAimToPhase(input.projectPath, aimId, input.phaseId, input.insertionIndex);
 
         return aim;
@@ -425,6 +448,30 @@ const appRouter = t.router({
       .query(async ({ input }) => {
         const aims = await listAims(input.projectPath);
         return await searchAims(input.projectPath, input.query, aims);
+      }),
+
+    searchSemantic: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        query: z.string(),
+        limit: z.number().optional()
+      }))
+      .query(async ({ input }) => {
+        const queryVector = await generateEmbedding(input.query);
+        if (!queryVector) return [];
+        
+        const vectorResults = await searchVectors(input.projectPath, queryVector, input.limit || 10);
+        
+        const results = [];
+        for (const res of vectorResults) {
+            try {
+                const aim = await readAim(input.projectPath, res.id);
+                results.push({ ...aim, score: res.score });
+            } catch (e) {
+                // Ignore missing aims
+            }
+        }
+        return results;
       })
   }),
 
@@ -525,6 +572,18 @@ const appRouter = t.router({
 
         indexAims(input.projectPath, aims);
         indexPhases(input.projectPath, phases);
+
+        // Background embedding generation
+        (async () => {
+            console.log(`Starting embedding generation for ${aims.length} aims...`);
+            for (const aim of aims) {
+                const vector = await generateEmbedding(aim.text);
+                if (vector) {
+                    await saveEmbedding(input.projectPath, aim.id, vector);
+                }
+            }
+            console.log('Embedding generation complete.');
+        })().catch(console.error);
 
         return {
           success: true,
