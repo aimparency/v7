@@ -5,6 +5,8 @@ import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { initTRPC } from '@trpc/server';
+import { observable } from '@trpc/server/observable';
+import { EventEmitter } from 'events';
 import { z } from 'zod';
 import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema } from 'shared';
 import type { Aim, Phase, ProjectMeta } from 'shared';
@@ -26,6 +28,7 @@ import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors } from
 const createContext = () => ({});
 
 const t = initTRPC.context<typeof createContext>().create();
+const ee = new EventEmitter();
 
 // Middleware to add artificial delay for testing
 const DEV_DELAY_MS = process.env.DEV_DELAY === 'true' ? 300 : 0;
@@ -49,6 +52,7 @@ async function writeAim(projectPath: string, aim: Aim): Promise<void> {
   await ensureProjectStructure(projectPath);
   const aimPath = path.join(projectPath, 'aims', `${aim.id}.json`);
   await fs.writeJson(aimPath, aim);
+  ee.emit('change', { type: 'aim', id: aim.id, projectPath });
 }
 
 async function readAim(projectPath: string, aimId: string): Promise<Aim> {
@@ -77,6 +81,7 @@ async function writePhase(projectPath: string, phase: Phase): Promise<void> {
   await ensureProjectStructure(projectPath);
   const phasePath = path.join(projectPath, 'phases', `${phase.id}.json`);
   await fs.writeJson(phasePath, phase);
+  ee.emit('change', { type: 'phase', id: phase.id, projectPath });
 }
 
 async function readPhase(projectPath: string, phaseId: string): Promise<Phase> {
@@ -302,6 +307,8 @@ const appRouter = t.router({
         // Remove from search index
         removeAimFromIndex(input.projectPath, input.aimId);
         await removeEmbedding(input.projectPath, input.aimId);
+        
+        ee.emit('change', { type: 'aim', id: input.aimId, projectPath: input.projectPath });
 
         return { success: true };
       }),
@@ -534,6 +541,7 @@ const appRouter = t.router({
         const phasePath = path.join(input.projectPath, 'phases', `${input.phaseId}.json`);
         await fs.remove(phasePath);
         removePhaseFromIndex(input.projectPath, input.phaseId);
+        ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath });
         return { success: true };
       }),
 
@@ -550,6 +558,14 @@ const appRouter = t.router({
   }),
 
   project: t.router({
+    onUpdate: t.procedure.subscription(() => {
+      return observable<{ type: string, id: string, projectPath: string }>((emit) => {
+        const onChange = (data: any) => emit.next(data);
+        ee.on('change', onChange);
+        return () => ee.off('change', onChange);
+      });
+    }),
+
     getMeta: delayedProcedure
       .input(z.object({
         projectPath: z.string()

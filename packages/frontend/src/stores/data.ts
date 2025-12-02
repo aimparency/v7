@@ -23,6 +23,7 @@ export const useDataStore = defineStore('data', {
     loading: false,
     error: null as string | null,
     migrated: false, // Track if we've run the migration
+    subscription: null as { unsubscribe: () => void } | null,
   }),
 
   getters: {
@@ -331,6 +332,9 @@ export const useDataStore = defineStore('data', {
         uiStore.setProjectPath(projectPath);
         uiStore.setConnectionStatus('connecting');
 
+        // Start subscription
+        this.subscribeToUpdates(projectPath);
+
         // Load all initial data from the stores
         await this.loadAllAims(projectPath);
         await this.loadPhases(projectPath, null); // Load root phases
@@ -343,6 +347,37 @@ export const useDataStore = defineStore('data', {
         uiStore.setConnectionStatus('no connection');
         uiStore.markProjectAsFailed(projectPath);
       }
+    },
+
+    subscribeToUpdates(projectPath: string) {
+      if (this.subscription) {
+        this.subscription.unsubscribe();
+      }
+
+      // @ts-ignore - trpc subscription typing might differ
+      this.subscription = trpc.project.onUpdate.subscribe(undefined, {
+        onData: async (data: { type: string, id: string, projectPath: string }) => {
+          if (data.projectPath !== projectPath) return;
+
+          console.log('Received update:', data);
+          if (data.type === 'aim') {
+             try {
+               const aim = await trpc.aim.get.query({ projectPath, aimId: data.id });
+               this.replaceAim(aim.id, aim);
+             } catch (e) {
+               if (this.aims[data.id]) delete this.aims[data.id];
+             }
+          } else if (data.type === 'phase') {
+             try {
+               const phase = await trpc.phase.get.query({ projectPath, phaseId: data.id });
+               this.replacePhase(phase.id, phase);
+             } catch (e) {
+               if (this.phases[data.id]) delete this.phases[data.id];
+             }
+          }
+        },
+        onError: (err: any) => console.error('Subscription error:', err)
+      });
     },
 
     async deletePhase(phaseId: string, parentPhaseId: string | null) {
