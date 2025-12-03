@@ -1,0 +1,1 @@
+{"id":"ac0ea61a-288f-4659-b9ad-b38b9fa01312","text":"put two buttons in the title line: <div><button> - </button> columns <button> + </button> </div> for changing the amount of columns (min 1, make persistant in the browser somehow)","incoming":[],"outgoing":["d59d03c1-45dd-48db-98c2-49b61b481f07"],"committedIn":[],"status":{"state":"open","comment":"","date":1764783011315}}
