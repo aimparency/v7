@@ -69,7 +69,7 @@ export const useUIStore = defineStore('ui', {
 
     // Viewport for column scrolling
     viewportStart: -1, // Left edge of visible window
-    viewportSize: 3, // Number of columns visible at once
+    viewportSize: parseInt(localStorage.getItem('aimparency-viewport-size') || '3'), // Number of columns visible at once
 
     // Phase reload trigger (increment to force reload)
     phaseReloadTrigger: 0,
@@ -169,6 +169,12 @@ export const useUIStore = defineStore('ui', {
     
     setConnectionStatus(status: typeof this.connectionStatus) {
       this.connectionStatus = status
+    },
+
+    setViewportSize(size: number) {
+      const newSize = Math.max(1, Math.min(size, 10))
+      this.viewportSize = newSize
+      localStorage.setItem('aimparency-viewport-size', newSize.toString())
     },
     
     // Phase creation/editing actions
@@ -299,16 +305,23 @@ export const useUIStore = defineStore('ui', {
                 parentIncomingIndex: 0
               })
               newAimId = aimTextOrId
+              
+              // We need to reload parent manually here because connectAims doesn't do it via dataStore action
+              const updatedParent = await trpc.aim.get.query({
+                projectPath: this.projectPath,
+                aimId: currentAim.id
+              })
+              dataStore.replaceAim(currentAim.id, updatedParent)
             } else {
               const result = await dataStore.createSubAim(this.projectPath, currentAim.id, aimAttributes, 0)
               newAimId = result.id
             }
 
-            const updatedParent = await trpc.aim.get.query({
-              projectPath: this.projectPath,
-              aimId: currentAim.id
-            })
-            dataStore.replaceAim(currentAim.id, updatedParent)
+            // Update selection on the FRESH object in store
+            const freshParent = dataStore.aims[currentAim.id]
+            if (freshParent) {
+              freshParent.selectedIncomingIndex = 0
+            }
           } else {
             // distinguish 3 cases: free floating, phase top-level, sub-aim
             if(path.aims.length > 1) {
@@ -328,19 +341,24 @@ export const useUIStore = defineStore('ui', {
                   parentIncomingIndex: insertionIndex
                 })
                 newAimId = aimTextOrId
+
+                // Manually reload parent
+                const updatedParent = await trpc.aim.get.query({
+                  projectPath: this.projectPath,
+                  aimId: parentAim.id
+                })
+                dataStore.replaceAim(parentAim.id, updatedParent)
               } else {
                 const result = await dataStore.createSubAim(this.projectPath, parentAim.id, aimAttributes, insertionIndex)
                 newAimId = result.id
               }
 
-              // Update local state
-              const updatedParent = await trpc.aim.get.query({
-                projectPath: this.projectPath,
-                aimId: parentAim.id
-              })
-              console.log('parent selected index', parentAim.selectedIncomingIndex!, 'setting to', insertionIndex)
-              parentAim.selectedIncomingIndex = insertionIndex
-              dataStore.replaceAim(parentAim.id, updatedParent)
+              // Update selection on the FRESH object in store
+              console.log('parent selected index', insertionIndex)
+              const freshParent = dataStore.aims[parentAim.id]
+              if (freshParent) {
+                freshParent.selectedIncomingIndex = insertionIndex
+              }
             } else if(path.phase) {
               console.log(isExistingAim ? 'link existing aim to phase (top-level)' : 'create top-level aim in phase', path.phase)
               let insertionIndex = 0
@@ -357,14 +375,25 @@ export const useUIStore = defineStore('ui', {
                   insertionIndex
                 })
                 newAimId = aimTextOrId
+                
+                // Manually reload phase
+                const updatedPhase = await trpc.phase.get.query({
+                   projectPath: this.projectPath,
+                   phaseId: path.phase.id
+                })
+                dataStore.replacePhase(path.phase.id, updatedPhase)
               } else {
                 const result = await dataStore.createCommittedAim(this.projectPath, path.phase.id, aimAttributes, insertionIndex)
                 newAimId = result.id
               }
 
-              // Update local state
-              await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
-              path.phase.selectedAimIndex = insertionIndex
+              // Update local state - ensure aim is loaded if needed (createCommittedAim does it mostly)
+              // createCommittedAim reloads phase, so we just update selection
+              const freshPhase = dataStore.phases[path.phase.id]
+              if (freshPhase) {
+                freshPhase.selectedAimIndex = insertionIndex
+              }
+              // Also ensure the new aim is in the list (createCommittedAim adds it to aims map)
             } else {
               if (isExistingAim) {
                 console.warn('Cannot link existing aim as floating aim - ignoring')

@@ -134,6 +134,13 @@ onMounted(async () => {
           {{ uiStore.connectionStatus === 'connected' ? 'Connected to' : uiStore.connectionStatus }}
           {{ uiStore.connectionStatus === 'connected' ? 'aimparency server' : '' }}
         </span>
+        
+        <div class="column-controls">
+          <button @click="uiStore.setViewportSize(uiStore.viewportSize - 1)" class="icon-btn" title="Decrease columns">-</button>
+          <span>{{ uiStore.viewportSize }} columns</span>
+          <button @click="uiStore.setViewportSize(uiStore.viewportSize + 1)" class="icon-btn" title="Increase columns">+</button>
+        </div>
+
         <span class="project-path">{{ uiStore.projectPath }}</span>
         <a @click="closeProject" class="close-project">Close Project</a>
       </div>
@@ -255,6 +262,34 @@ onMounted(async () => {
 
 .connection-status.no-connection {
   color: #ff6666;
+}
+
+.column-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.icon-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  border-radius: 3px;
+  width: 1.2rem;
+  height: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: monospace;
+  line-height: 1;
+  padding: 0;
+  
+  &:hover {
+    background: #444;
+  }
 }
 
 .project-path {

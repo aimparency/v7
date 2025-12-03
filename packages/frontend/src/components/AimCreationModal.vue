@@ -139,9 +139,28 @@ const selectSearchResult = (index: number) => {
 }
 
 // Watch for search text changes
-watch(aimText, (newValue) => {
-  performSearch(newValue)
-  selectedSearchIndex.value = 0
+watch(aimText, async (newValue) => {
+  await performSearch(newValue)
+  selectedSearchIndex.value = 0 // Reset to 'create new' by default
+
+  const trimmedNewValue = newValue.trim().toLowerCase()
+
+  if (trimmedNewValue.length > 0) {
+    // Check for a perfect "starts with" match with 90% length threshold
+    const perfectMatchIndex = searchResults.value.findIndex(result => {
+      const resultTextLower = result.text.toLowerCase()
+      // Check if result text starts with new value (case-insensitive)
+      const startsWithMatch = resultTextLower.startsWith(trimmedNewValue)
+      // Check 90% length threshold
+      const lengthThresholdMet = trimmedNewValue.length >= (0.9 * resultTextLower.length)
+      
+      return startsWithMatch && lengthThresholdMet
+    })
+
+    if (perfectMatchIndex !== -1) {
+      selectedSearchIndex.value = perfectMatchIndex + 1 // +1 because index 0 is "create new"
+    }
+  }
 })
 
 onMounted(async () => {
