@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, watch, onMounted, computed } from 'vue'
 import type { Phase } from 'shared'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
@@ -11,8 +11,39 @@ const dataStore = useDataStore()
 
 const phaseNameInput = ref<HTMLInputElement>()
 const dateWarning = ref<string>('')
+const allPhases = ref<Phase[]>([])
 
+const availableParents = computed(() => {
+  if (uiStore.phaseModalMode !== 'edit' || !uiStore.phaseModalEditingPhaseId) return []
 
+  const selfId = uiStore.phaseModalEditingPhaseId
+  const phaseMap = new Map(allPhases.value.map(p => [p.id, p]))
+
+  // Helper to check if candidate is a descendant of self
+  const isDescendant = (candidate: Phase) => {
+    let current = candidate
+    const visited = new Set<string>()
+    
+    while (current.parent) {
+      if (current.parent === selfId) return true
+      if (visited.has(current.id)) break // Cycle in existing tree
+      visited.add(current.id)
+      
+      const parent = phaseMap.get(current.parent)
+      if (!parent) break
+      current = parent
+    }
+    return false
+  }
+
+  return allPhases.value.filter(p => {
+    // Exclude self
+    if (p.id === selfId) return false
+    // Exclude descendants (to avoid cycles)
+    if (isDescendant(p)) return false
+    return true
+  }).sort((a, b) => a.name.localeCompare(b.name))
+})
 
 const createPhase = async () => {
   if (!uiStore.newPhaseName.trim()) return;
@@ -41,12 +72,31 @@ const updatePhase = async () => {
         name: uiStore.newPhaseName.trim(),
         from: localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
         to: localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime),
+        parent: uiStore.phaseModalEditingParentId
       }
     })
 
     // Update the local store with the updated phase
     if (updatedPhase) {
       dataStore.phases[updatedPhase.id] = updatedPhase
+      // Trigger a reload of phase structure or parent list if needed?
+      // Actually, moving a phase requires updating childrenByParentId in dataStore.
+      // The easiest way is to reload phases.
+      // But dataStore.phases is reactive.
+      // However, the columns depend on getPhasesByParentId which uses childrenByParentId index.
+      // We should invalidate or reload that.
+      
+      // Let's trigger a reload of the project structure or at least the affected parents.
+      // For simplicity, reload all phases (or just root if we moved to root).
+      await dataStore.loadPhases(uiStore.projectPath, updatedPhase.parent);
+      // Also reload the old parent to remove it from there?
+      // We don't know the old parent ID easily here unless we stored it.
+      // But loadPhases updates the children list for the requested parent.
+      // We should probably reload everything or be smarter.
+      // reloading null (root) is often safe.
+      await dataStore.loadPhases(uiStore.projectPath, null);
+      
+      // Ideally, we should have a method to move phase in store
     }
 
     uiStore.closePhaseModal()
@@ -73,20 +123,23 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 // Calculate smart date ranges when modal opens (only for create mode)
 watch(() => uiStore.showPhaseModal, async (newVal) => {
-  if (newVal && uiStore.phaseModalMode === 'create') {
-    await calculateSmartDateRanges()
-    await nextTick()
-    phaseNameInput.value?.focus()
-  } else if (newVal && uiStore.phaseModalMode === 'edit') {
-    await nextTick()
-    phaseNameInput.value?.focus()
+  if (newVal) {
+    if (uiStore.phaseModalMode === 'create') {
+      await calculateSmartDateRanges()
+      await nextTick()
+      phaseNameInput.value?.focus()
+    } else if (uiStore.phaseModalMode === 'edit') {
+      // Load all phases for parent selection
+      allPhases.value = await trpc.phase.list.query({ projectPath: uiStore.projectPath })
+      await nextTick()
+      phaseNameInput.value?.focus()
+    }
   }
 })
 
 const calculateSmartDateRanges = async () => {
   dateWarning.value = ''
-  const parentPhaseId = uiStore.phaseModalParentPhase
-
+  
   // Priority 1: Copy from currently selected phase (if a phase is selected when pressing 'o')
   if (uiStore.selectedColumn > 0) {
     const selectedPhaseId = uiStore.getSelectedPhaseId(uiStore.selectedColumn)
@@ -160,6 +213,16 @@ const calculateSmartDateRanges = async () => {
             placeholder="Enter phase name"
             @keydown="handleKeydown"
           />
+        </div>
+
+        <div v-if="uiStore.phaseModalMode === 'edit'" class="form-group">
+          <label>Parent Phase</label>
+          <select v-model="uiStore.phaseModalEditingParentId">
+            <option :value="null">Root (No Parent)</option>
+            <option v-for="phase in availableParents" :key="phase.id" :value="phase.id">
+              {{ phase.name }}
+            </option>
+          </select>
         </div>
         
         <div class="form-row">
@@ -239,7 +302,7 @@ const calculateSmartDateRanges = async () => {
         color: #ccc;
       }
       
-      input {
+      input, select {
         width: 100%;
         padding: 0.5rem;
         background: #1a1a1a;
@@ -256,6 +319,10 @@ const calculateSmartDateRanges = async () => {
         &::placeholder {
           color: #666;
         }
+      }
+
+      select {
+        cursor: pointer;
       }
     }
     

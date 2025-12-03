@@ -40,6 +40,7 @@ export const useUIStore = defineStore('ui', {
     showPhaseModal: false,
     phaseModalMode: 'create' as 'create' | 'edit',
     phaseModalEditingPhaseId: null as string | null, // Track which phase is being edited
+    phaseModalEditingParentId: null as string | null, // Track parent of phase being edited
     newPhaseName: '',
     newPhaseStartDate: '',
     newPhaseStartTime: '',
@@ -182,14 +183,16 @@ export const useUIStore = defineStore('ui', {
       this.showPhaseModal = true
       this.phaseModalMode = 'create'
       this.phaseModalEditingPhaseId = null
+      this.phaseModalEditingParentId = null
       this.newPhaseName = ''
       // Date calculation will be handled by PhaseCreationModal component
     },
 
-    openPhaseEditModal(phaseId: string, phaseName: string, phaseFrom: number, phaseTo: number, columnIndex: number = 0) {
+    openPhaseEditModal(phaseId: string, phaseName: string, phaseFrom: number, phaseTo: number, parentPhaseId: string | null, columnIndex: number = 0) {
       this.showPhaseModal = true
       this.phaseModalMode = 'edit'
       this.phaseModalEditingPhaseId = phaseId
+      this.phaseModalEditingParentId = parentPhaseId
       this.newPhaseName = phaseName
 
       // Extract local date and time from timestamps
@@ -204,6 +207,7 @@ export const useUIStore = defineStore('ui', {
       this.showPhaseModal = false
       this.phaseModalMode = 'create'
       this.phaseModalEditingPhaseId = null
+      this.phaseModalEditingParentId = null
       this.newPhaseName = ''
       this.newPhaseStartDate = ''
       this.newPhaseStartTime = ''
@@ -1274,6 +1278,7 @@ export const useUIStore = defineStore('ui', {
             selectedPhase.name,
             selectedPhase.from,
             selectedPhase.to,
+            selectedPhase.parent,
             col
           )
           break
