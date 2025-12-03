@@ -35,6 +35,11 @@ const dataStore = useDataStore()
 const hasIncomingAims = computed(() => props.aim.incoming?.length > 0)
 const isExpanded = computed(() => props.aim.expanded || false)
 
+const subAimCount = computed(() => {
+  const count = props.aim.incoming?.length || 0
+  return count > 9 ? 'N' : count.toString()
+})
+
 // Get incoming aims from the data store
 const incomingAims = computed(() => {
   if (!hasIncomingAims.value) return []
@@ -78,9 +83,19 @@ onMounted(() => {
   >
     <!-- Aim content -->
     <div class="aim-content">
-      <div class="aim-text" :class="{ 'untitled': !aim.text }">
-        {{ aim.text || '(untitled)' }}
+      <div class="aim-title-row">
+        <div class="aim-text" :class="{ 'untitled': !aim.text }">
+          {{ aim.text || '(untitled)' }}
+        </div>
+        <div v-if="hasIncomingAims" class="sub-aim-count-bubble">
+          {{ subAimCount }}
+        </div>
       </div>
+      
+      <div v-if="isExpanded && aim.description" class="aim-description">
+        {{ aim.description }}
+      </div>
+
       <div class="aim-meta">
         <div
           class="aim-status"
@@ -178,6 +193,12 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+
+  .aim-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
   
   .aim-text {
     color: #e0e0e0;
@@ -187,6 +208,29 @@ onMounted(() => {
       color: #888;
       font-style: italic;
     }
+  }
+
+  .aim-description {
+    font-size: 0.9rem;
+    color: #bbb;
+    white-space: pre-wrap;
+    margin-bottom: 0.25rem;
+    padding-left: 0.25rem;
+    border-left: 2px solid #444;
+  }
+
+  .sub-aim-count-bubble {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.5);
+    color: #333;
+    font-weight: bold;
+    font-size: 0.8rem;
+    padding: 0 0.4rem;
   }
   
   .aim-meta {

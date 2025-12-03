@@ -244,13 +244,14 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Create aim and update selection
-    async createAim(aimTextOrId: string, isExistingAim: boolean = false) {
+    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string) {
       const dataStore = useDataStore()
 
       const path = this.getSelectionPath()
 
       const aimAttributes = {
         text: aimTextOrId,
+        description,
         status: { state: 'open' as const, comment: '', date: Date.now() }
       }
 

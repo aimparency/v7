@@ -9,6 +9,7 @@ export const AimStatusSchema = z.object({
 export const AimSchema = z.object({
   id: z.string().uuid(),
   text: z.string(),
+  description: z.string().optional(),
   incoming: z.array(z.string().uuid()),
   outgoing: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),

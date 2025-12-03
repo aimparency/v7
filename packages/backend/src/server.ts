@@ -359,6 +359,7 @@ const appRouter = t.router({
         const aim: Aim = {
           id: aimId,
           text: input.aim.text,
+          description: input.aim.description,
           incoming: [],
           outgoing: [],
           committedIn: [],
@@ -391,6 +392,7 @@ const appRouter = t.router({
         const childAim: Aim = {
           id: childAimId,
           text: input.aim.text,
+          description: input.aim.description,
           incoming: [],
           outgoing: [],
           committedIn: [],
@@ -425,6 +427,7 @@ const appRouter = t.router({
         const aim: Aim = {
           id: aimId,
           text: input.aim.text,
+          description: input.aim.description,
           incoming: [],
           outgoing: [],
           committedIn: [input.phaseId], // Will be updated by commitAimToPhase

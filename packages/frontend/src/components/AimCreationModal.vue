@@ -9,6 +9,7 @@ const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 const aimText = ref('')
+const aimDescription = ref('')
 const selectedStatus = ref<'open' | 'done' | 'cancelled' | 'partially' | 'failed'>('open')
 const statusComment = ref('')
 const searchResults = ref<Aim[]>([])
@@ -52,8 +53,8 @@ const createAim = async () => {
       // Link existing aim
       await uiStore.createAim(selectedSearchResult.value.id, true)
     } else {
-      // Create new aim with text
-      await uiStore.createAim(aimText.value.trim(), false)
+      // Create new aim with text and description
+      await uiStore.createAim(aimText.value.trim(), false, aimDescription.value.trim())
     }
   } catch (error) {
     console.error('Failed to create/link aim:', error)
@@ -66,6 +67,7 @@ const updateAim = async () => {
   if(aim) {
     await dataStore.updateAim(uiStore.projectPath, aim.id, {
       text: aimText.value.trim(),
+      description: aimDescription.value.trim(),
       status: {
         state: selectedStatus.value,
         comment: statusComment.value,
@@ -94,6 +96,17 @@ const handleInputKeydown = (event: KeyboardEvent) => {
   } else if (event.key === 'Escape') {
     event.preventDefault()
     event.stopPropagation() // Prevent escape from bubbling to global handler
+    uiStore.closeAimModal()
+  }
+}
+
+const handleTextareaKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+    event.preventDefault()
+    handleSubmit()
+  } else if (event.key === 'Escape') {
+    event.preventDefault()
+    event.stopPropagation()
     uiStore.closeAimModal()
   }
 }
@@ -141,11 +154,13 @@ onMounted(async () => {
 
   if (aim) {
     aimText.value = aim.text
+    aimDescription.value = aim.description || ''
     selectedStatus.value = aim.status.state
     statusComment.value = aim.status.comment
   } else {
     // Reset for create mode
     aimText.value = ''
+    aimDescription.value = ''
     selectedStatus.value = 'open'
     statusComment.value = ''
     searchResults.value = []
@@ -174,6 +189,16 @@ onMounted(async () => {
             placeholder="Enter aim text"
             @keydown="handleInputKeydown"
           />
+        </div>
+
+        <div class="form-group">
+          <label>Description (optional)</label>
+          <textarea
+            v-model="aimDescription"
+            placeholder="Enter aim description"
+            rows="3"
+            @keydown="handleTextareaKeydown"
+          ></textarea>
         </div>
 
         <!-- Status fields (edit mode only) -->
@@ -294,7 +319,7 @@ onMounted(async () => {
         color: #ccc;
       }
       
-      input, select {
+      input, select, textarea {
         width: 100%;
         padding: 0.5rem;
         background: #1a1a1a;
@@ -311,6 +336,10 @@ onMounted(async () => {
         &::placeholder {
           color: #666;
         }
+      }
+
+      textarea {
+        resize: vertical;
       }
 
       select {
