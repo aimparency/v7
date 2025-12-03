@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Aim from '../components/Aim.vue'
-import { v4 as uuidv4 } from 'uuid'
-import type { Aim as AimType } from '../../shared/src/types' // Corrected import path
+
+const uuidv4 = () => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)
 
 // Mock the useDataStore and useUIStore
 vi.mock('../stores/data', () => ({
@@ -71,5 +71,51 @@ describe('Aim.vue', () => {
     const bubble = wrapper.find('.sub-aim-count-bubble')
     expect(bubble.exists()).toBe(true)
     expect(bubble.text()).toBe('N')
+  })
+
+  it('displays description when expanded and description exists', () => {
+    const aim = createMockAim({
+      description: 'This is a description',
+      expanded: true
+    })
+    const wrapper = mount(Aim, {
+      props: {
+        aim,
+        phaseId: uuidv4()
+      }
+    })
+    const desc = wrapper.find('.aim-description')
+    expect(desc.exists()).toBe(true)
+    expect(desc.text()).toBe('This is a description')
+  })
+
+  it('does not display description when collapsed', () => {
+    const aim = createMockAim({
+      description: 'This is a description',
+      expanded: false
+    })
+    const wrapper = mount(Aim, {
+      props: {
+        aim,
+        phaseId: uuidv4()
+      }
+    })
+    const desc = wrapper.find('.aim-description')
+    expect(desc.exists()).toBe(false)
+  })
+
+  it('does not display description when expanded but description is empty', () => {
+    const aim = createMockAim({
+      description: '',
+      expanded: true
+    })
+    const wrapper = mount(Aim, {
+      props: {
+        aim,
+        phaseId: uuidv4()
+      }
+    })
+    const desc = wrapper.find('.aim-description')
+    expect(desc.exists()).toBe(false)
   })
 })
