@@ -42,10 +42,23 @@ const delayMiddleware = t.middleware(async ({ next }) => {
 // Create procedures with delay middleware
 const delayedProcedure = t.procedure.use(delayMiddleware);
 
+const GITIGNORE_CONTENT = 'vectors.json\n';
+
 // Utility functions for file operations
 async function ensureProjectStructure(projectPath: string) {
   await fs.ensureDir(path.join(projectPath, 'aims'));
   await fs.ensureDir(path.join(projectPath, 'phases'));
+  
+  const gitignorePath = path.join(projectPath, '.gitignore');
+  if (!(await fs.pathExists(gitignorePath))) {
+    await fs.writeFile(gitignorePath, GITIGNORE_CONTENT);
+  } else {
+    let currentContent = await fs.readFile(gitignorePath, 'utf8');
+    if (!currentContent.includes('vectors.json')) {
+      currentContent += '\n' + GITIGNORE_CONTENT;
+      await fs.writeFile(gitignorePath, currentContent);
+    }
+  }
 }
 
 async function writeAim(projectPath: string, aim: Aim): Promise<void> {

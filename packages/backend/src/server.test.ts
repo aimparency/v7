@@ -23,25 +23,19 @@ afterEach(async () => {
 test('connectAims - connects two existing aims', async () => {
 
   // Create parent aim
-  const parentResult = await caller.aim.create({
+  const parentResult = await caller.aim.createFloatingAim({
     projectPath: TEST_PROJECT_PATH,
     aim: {
       text: 'Parent Aim',
-      incoming: [],
-      outgoing: [],
-      committedIn: [],
       status: { state: 'open', comment: '', date: Date.now() }
     }
   });
 
   // Create child aim
-  const childResult = await caller.aim.create({
+  const childResult = await caller.aim.createFloatingAim({
     projectPath: TEST_PROJECT_PATH,
     aim: {
       text: 'Child Aim',
-      incoming: [],
-      outgoing: [],
-      committedIn: [],
       status: { state: 'open', comment: '', date: Date.now() }
     }
   });
@@ -51,8 +45,8 @@ test('connectAims - connects two existing aims', async () => {
     projectPath: TEST_PROJECT_PATH,
     parentAimId: parentResult.id,
     childAimId: childResult.id,
-    parentOutgoingIndex: 0,
-    childIncomingIndex: 0
+    parentIncomingIndex: 0, // Changed from parentOutgoingIndex
+    childOutgoingIndex: 0   // Changed from childIncomingIndex
   });
 
   // Verify connection
@@ -65,20 +59,17 @@ test('connectAims - connects two existing aims', async () => {
     aimId: childResult.id
   });
 
-  assert.deepEqual(updatedParent.outgoing, [childResult.id]);
-  assert.deepEqual(updatedChild.incoming, [parentResult.id]);
+  assert.deepEqual(updatedParent.incoming, [childResult.id]); // Changed from outgoing
+  assert.deepEqual(updatedChild.outgoing, [parentResult.id]); // Changed from incoming
 });
 
 test('createSubAim - creates and connects sub-aim', async () => {
 
   // Create parent aim
-  const parentResult = await caller.aim.create({
+  const parentResult = await caller.aim.createFloatingAim({
     projectPath: TEST_PROJECT_PATH,
     aim: {
       text: 'Parent Aim',
-      incoming: [],
-      outgoing: [],
-      committedIn: [],
       status: { state: 'open', comment: '', date: Date.now() }
     }
   });
@@ -89,13 +80,9 @@ test('createSubAim - creates and connects sub-aim', async () => {
     parentAimId: parentResult.id,
     aim: {
       text: 'Sub Aim',
-      incoming: [],
-      outgoing: [],
-      committedIn: [],
       status: { state: 'open', comment: '', date: Date.now() }
     },
-    parentOutgoingIndex: 0,
-    childIncomingIndex: 0
+    positionInParent: 0 // Changed from parentIncomingIndex
   });
 
   // Verify creation and connection
@@ -108,8 +95,8 @@ test('createSubAim - creates and connects sub-aim', async () => {
     aimId: subAimResult.id
   });
 
-  assert.deepEqual(updatedParent.outgoing, [subAimResult.id]);
-  assert.deepEqual(subAim.incoming, [parentResult.id]);
+  assert.deepEqual(updatedParent.incoming, [subAimResult.id]); // Changed from outgoing
+  assert.deepEqual(subAim.outgoing, [parentResult.id]);      // Changed from incoming
   assert.equal(subAim.text, 'Sub Aim');
 });
 
@@ -128,14 +115,11 @@ test('createCommittedAim - creates and commits aim to phase', async () => {
   });
 
   // Create committed aim
-  const aimResult = await caller.aim.createCommittedAim({
+  const aimResult = await caller.aim.createAimInPhase({ // Changed name
     projectPath: TEST_PROJECT_PATH,
     phaseId: phaseResult.id,
     aim: {
       text: 'Committed Aim',
-      incoming: [],
-      outgoing: [],
-      committedIn: [],
       status: { state: 'open', comment: '', date: Date.now() }
     },
     insertionIndex: 0
@@ -159,36 +143,27 @@ test('createCommittedAim - creates and commits aim to phase', async () => {
 test('connectAims - repositioning existing connections', async () => {
 
   // Create parent aim
-  const parentResult = await caller.aim.create({
+  const parentResult = await caller.aim.createFloatingAim({
     projectPath: TEST_PROJECT_PATH,
     aim: {
       text: 'Parent Aim',
-      incoming: [],
-      outgoing: [],
-      committedIn: [],
       status: { state: 'open', comment: '', date: Date.now() }
     }
   });
 
   // Create two child aims
-  const child1Result = await caller.aim.create({
+  const child1Result = await caller.aim.createFloatingAim({
     projectPath: TEST_PROJECT_PATH,
     aim: {
       text: 'Child 1',
-      incoming: [],
-      outgoing: [],
-      committedIn: [],
       status: { state: 'open', comment: '', date: Date.now() }
     }
   });
 
-  const child2Result = await caller.aim.create({
+  const child2Result = await caller.aim.createFloatingAim({
     projectPath: TEST_PROJECT_PATH,
     aim: {
       text: 'Child 2',
-      incoming: [],
-      outgoing: [],
-      committedIn: [],
       status: { state: 'open', comment: '', date: Date.now() }
     }
   });
@@ -198,8 +173,8 @@ test('connectAims - repositioning existing connections', async () => {
     projectPath: TEST_PROJECT_PATH,
     parentAimId: parentResult.id,
     childAimId: child1Result.id,
-    parentOutgoingIndex: 0,
-    childIncomingIndex: 0
+    parentIncomingIndex: 0, // Changed from parentOutgoingIndex
+    childOutgoingIndex: 0   // Changed from childIncomingIndex
   });
 
   // Connect second child at position 0 (should move first child to position 1)
@@ -207,8 +182,8 @@ test('connectAims - repositioning existing connections', async () => {
     projectPath: TEST_PROJECT_PATH,
     parentAimId: parentResult.id,
     childAimId: child2Result.id,
-    parentOutgoingIndex: 0,
-    childIncomingIndex: 0
+    parentIncomingIndex: 0, // Changed from parentOutgoingIndex
+    childOutgoingIndex: 0   // Changed from childIncomingIndex
   });
 
   // Verify repositioning
@@ -217,5 +192,5 @@ test('connectAims - repositioning existing connections', async () => {
     aimId: parentResult.id
   });
 
-  assert.deepEqual(updatedParent.outgoing, [child2Result.id, child1Result.id]);
+  assert.deepEqual(updatedParent.incoming, [child2Result.id, child1Result.id]); // Changed from outgoing
 });
