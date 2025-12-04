@@ -25,12 +25,28 @@ const trpc = createTRPCClient<AppRouter>({
   links: [wsLink({ client: wsClient })],
 });
 
+// Constants
+const AIM_STATES = ["open", "done", "cancelled", "partially", "failed"];
+const AIM_STATES_DESCRIPTION = `Current status of the aim. Options: ${AIM_STATES.join(", ")}`;
+const PROJECT_PATH_DESCRIPTION = "Absolute path to the project directory (usually ends with .bowman)";
+
+const PROJECT_PATH_TOOL_PROPERTY = {
+  type: "string",
+  description: PROJECT_PATH_DESCRIPTION
+};
+
+const PROJECT_PATH_PROMPT_ARGUMENT = {
+  name: "projectPath",
+  description: PROJECT_PATH_DESCRIPTION,
+  required: true
+};
+
 // Create MCP server
 const server = new Server(
   {
     name: "aimparency",
     version: "1.0.0",
-    description: "MCP server for Aimparency project management. IMPORTANT: All resources and tools require 'projectPath' parameter - an absolute local filesystem path (usually /path/to/repo/.bowman). For resources, pass as query parameter: aims://all?projectPath=/absolute/path. For tools, pass as a property in the arguments object.",
+    description: `MCP server for Aimparency project management. IMPORTANT: All resources and tools require 'projectPath' parameter - ${PROJECT_PATH_DESCRIPTION}. For resources, pass as query parameter: aims://all?projectPath=/absolute/path. For tools, pass as a property in the arguments object. Available Aim States: ${AIM_STATES.join(", ")}`,
   },
   {
     capabilities: {
@@ -296,7 +312,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
           },
           required: ["projectPath"],
         },
@@ -307,7 +323,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             query: { type: "string" },
           },
           required: ["projectPath", "query"],
@@ -319,7 +335,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             query: { type: "string" },
             limit: { type: "number", description: "Max results (default 10)" },
           },
@@ -332,7 +348,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             parentPhaseId: { type: ["string", "null"], description: "Optional parent phase ID" },
           },
           required: ["projectPath"],
@@ -344,7 +360,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             query: { type: "string" },
             parentPhaseId: { type: ["string", "null"], description: "Optional parent phase ID" },
           },
@@ -357,10 +373,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: {
-              type: "string",
-              description: "Absolute path to the project directory (usually ends with .bowman)",
-            },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             text: {
               type: "string",
               description: "The aim text/description",
@@ -370,8 +383,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               properties: {
                 state: {
                   type: "string",
-                  enum: ["open", "done", "cancelled", "partially", "failed"],
-                  description: "Current status of the aim",
+                  enum: AIM_STATES,
+                  description: AIM_STATES_DESCRIPTION,
                 },
                 comment: {
                   type: "string",
@@ -403,7 +416,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             aimId: { type: "string", description: "UUID of the aim to update" },
             text: { type: "string" },
             status: {
@@ -411,7 +424,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               properties: {
                 state: {
                   type: "string",
-                  enum: ["open", "done", "cancelled", "partially", "failed"],
+                  enum: AIM_STATES,
+                  description: AIM_STATES_DESCRIPTION,
                 },
                 comment: { type: "string" },
               },
@@ -434,7 +448,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             aimId: { type: "string", description: "UUID of the aim to delete" },
           },
           required: ["projectPath", "aimId"],
@@ -446,7 +460,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             name: { type: "string", description: "Phase name" },
             from: {
               type: "number",
@@ -470,7 +484,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             phaseId: { type: "string", description: "UUID of the phase to update" },
             name: { type: "string" },
             from: { type: "number" },
@@ -486,7 +500,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             phaseId: { type: "string", description: "UUID of the phase to delete" },
           },
           required: ["projectPath", "phaseId"],
@@ -498,7 +512,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             aimId: { type: "string", description: "UUID of the aim" },
             phaseId: { type: "string", description: "UUID of the phase" },
             insertionIndex: {
@@ -515,7 +529,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             aimId: { type: "string" },
             phaseId: { type: "string" },
           },
@@ -528,7 +542,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: "object",
           properties: {
-            projectPath: { type: "string", description: "Absolute path to the project directory (usually ends with .bowman)" },
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
             name: { type: "string", description: "Project name" },
             color: {
               type: "string",
@@ -851,11 +865,7 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
         name: "breakdown",
         description: "Break a complex aim into 3-5 smaller sub-aims and establish dependency relationships between them",
         arguments: [
-          {
-            name: "projectPath",
-            description: "Absolute path to the project (usually ends with .bowman)",
-            required: true,
-          },
+          PROJECT_PATH_PROMPT_ARGUMENT,
           {
             name: "aimId",
             description: "UUID of the aim to break down",
@@ -867,22 +877,14 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
         name: "analyze-dependencies",
         description: "Analyze aim relationships and suggest improvements",
         arguments: [
-          {
-            name: "projectPath",
-            description: "Absolute path to the project (usually ends with .bowman)",
-            required: true,
-          },
+          PROJECT_PATH_PROMPT_ARGUMENT,
         ],
       },
       {
         name: "plan-phase",
         description: "Help plan which aims to commit to a phase based on dependencies and status",
         arguments: [
-          {
-            name: "projectPath",
-            description: "Absolute path to the project (usually ends with .bowman)",
-            required: true,
-          },
+          PROJECT_PATH_PROMPT_ARGUMENT,
           {
             name: "phaseId",
             description: "UUID of the phase to plan",
@@ -894,11 +896,7 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
         name: "review-progress",
         description: "Review phase commitments vs aim statuses and suggest next actions",
         arguments: [
-          {
-            name: "projectPath",
-            description: "Absolute path to the project (usually ends with .bowman)",
-            required: true,
-          },
+          PROJECT_PATH_PROMPT_ARGUMENT,
           {
             name: "phaseId",
             description: "UUID of the phase to review",
@@ -910,11 +908,7 @@ server.setRequestHandler(ListPromptsRequestSchema, async () => {
         name: "hypothesis-test",
         description: "Structure an aim as a testable hypothesis with success criteria",
         arguments: [
-          {
-            name: "projectPath",
-            description: "Absolute path to the project (usually ends with .bowman)",
-            required: true,
-          },
+          PROJECT_PATH_PROMPT_ARGUMENT,
           {
             name: "aimId",
             description: "UUID of the aim to structure as hypothesis",
