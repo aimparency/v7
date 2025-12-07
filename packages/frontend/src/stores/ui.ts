@@ -50,6 +50,7 @@ export const useUIStore = defineStore('ui', {
 
     showAimModal: false,
     aimModalMode: 'create' as 'create' | 'edit',
+    aimModalEditingAimId: null as string | null,
     aimModalInsertPosition: 'before' as RelativePosition,
 
     // Navigation mode system
@@ -176,6 +177,20 @@ export const useUIStore = defineStore('ui', {
       const newSize = Math.max(1, Math.min(size, 10))
       this.viewportSize = newSize
       localStorage.setItem('aimparency-viewport-size', newSize.toString())
+      this.ensureSelectionVisible()
+    },
+
+    ensureSelectionVisible() {
+      const col = this.selectedColumn
+      const start = this.viewportStart
+      const size = this.viewportSize
+      const end = start + size - 1
+
+      if (col < start) {
+        this.viewportStart = col
+      } else if (col > end) {
+        this.viewportStart = col - size + 1
+      }
     },
     
     // Phase creation/editing actions
@@ -254,7 +269,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Create aim and update selection
-    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string) {
+    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[]) {
       const dataStore = useDataStore()
 
       const path = this.getSelectionPath()
@@ -262,6 +277,7 @@ export const useUIStore = defineStore('ui', {
       const aimAttributes = {
         text: aimTextOrId,
         description,
+        tags: tags || [],
         status: { state: 'open' as const, comment: '', date: Date.now() }
       }
 
@@ -626,10 +642,19 @@ export const useUIStore = defineStore('ui', {
 
     makeSelectedAimPath(aim: Aim, path: Aim[]): Aim {
       const dataStore = useDataStore()
+      if (!aim) return path[path.length - 1] // Should not happen, but safe guard
+      
       path.push(aim)
       if(aim.expanded && aim.selectedIncomingIndex !== undefined) {
         const selectedSubAimUUID = aim.incoming[aim.selectedIncomingIndex]
-        return this.makeSelectedAimPath(dataStore.aims[selectedSubAimUUID], path)
+        const subAim = dataStore.aims[selectedSubAimUUID]
+        if (subAim) {
+          return this.makeSelectedAimPath(subAim, path)
+        } else {
+          // Sub-aim not loaded yet - stop here
+          // Ideally we should trigger load, but for path construction we just stop
+          return aim
+        }
       } else {
         return aim
       }
@@ -1471,6 +1496,9 @@ export const useUIStore = defineStore('ui', {
           const currentAim = this.getCurrentAim()
           if(currentAim) {
             currentAim.expanded = true
+            if (currentAim.incoming.length > 0) {
+              dataStore.loadAims(this.projectPath, currentAim.incoming)
+            }
             // if(currentAim.incoming.length > 0) {
             //   if(currentAim.selectedIncomingIndex === undefined) {
             //     currentAim.selectedIncomingIndex = 0

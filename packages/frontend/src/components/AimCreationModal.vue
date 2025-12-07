@@ -4,12 +4,14 @@ import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import type { Aim } from 'shared'
+import TagInput from './TagInput.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 const aimText = ref('')
 const aimDescription = ref('')
+const aimTags = ref<string[]>([])
 const selectedStatus = ref<'open' | 'done' | 'cancelled' | 'partially' | 'failed'>('open')
 const statusComment = ref('')
 const searchResults = ref<Aim[]>([])
@@ -54,7 +56,7 @@ const createAim = async () => {
       await uiStore.createAim(selectedSearchResult.value.id, true)
     } else {
       // Create new aim with text and description
-      await uiStore.createAim(aimText.value.trim(), false, aimDescription.value.trim())
+      await uiStore.createAim(aimText.value.trim(), false, aimDescription.value.trim(), aimTags.value)
     }
   } catch (error) {
     console.error('Failed to create/link aim:', error)
@@ -68,6 +70,7 @@ const updateAim = async () => {
     await dataStore.updateAim(uiStore.projectPath, aim.id, {
       text: aimText.value.trim(),
       description: aimDescription.value.trim(),
+      tags: aimTags.value,
       status: {
         state: selectedStatus.value,
         comment: statusComment.value,
@@ -174,12 +177,14 @@ onMounted(async () => {
   if (aim) {
     aimText.value = aim.text
     aimDescription.value = aim.description || ''
+    aimTags.value = [...(aim.tags || [])]
     selectedStatus.value = aim.status.state
     statusComment.value = aim.status.comment
   } else {
     // Reset for create mode
     aimText.value = ''
     aimDescription.value = ''
+    aimTags.value = []
     selectedStatus.value = 'open'
     statusComment.value = ''
     searchResults.value = []
@@ -218,6 +223,10 @@ onMounted(async () => {
             rows="3"
             @keydown="handleTextareaKeydown"
           ></textarea>
+        </div>
+
+        <div class="form-group">
+          <TagInput v-model="aimTags" label="Tags" />
         </div>
 
         <!-- Status fields (edit mode only) -->

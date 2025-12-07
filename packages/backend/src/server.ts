@@ -8,8 +8,8 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema } from 'shared';
-import type { Aim, Phase, ProjectMeta } from 'shared';
+import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema, SystemStatusSchema } from 'shared';
+import type { Aim, Phase, ProjectMeta, SystemStatus } from 'shared';
 import {
   indexAims,
   indexPhases,
@@ -119,6 +119,25 @@ async function listPhases(projectPath: string, parentPhaseId?: string | null): P
   }
   
   return phases;
+}
+
+async function readSystemStatus(projectPath: string): Promise<SystemStatus> {
+  const systemPath = path.join(projectPath, 'system.json');
+  if (await fs.pathExists(systemPath)) {
+    return await fs.readJson(systemPath);
+  }
+  // Default initial status
+  const initialStatus: SystemStatus = { computeCredits: 10.0, funds: 0.0 };
+  await ensureProjectStructure(projectPath);
+  await fs.writeJson(systemPath, initialStatus);
+  return initialStatus;
+}
+
+async function writeSystemStatus(projectPath: string, status: SystemStatus): Promise<void> {
+  await ensureProjectStructure(projectPath);
+  const systemPath = path.join(projectPath, 'system.json');
+  await fs.writeJson(systemPath, status);
+  ee.emit('change', { type: 'system', id: 'status', projectPath });
 }
 
 // Helper function to add aim to phase's commitments and aim's committedIn
@@ -257,10 +276,73 @@ const appRouter = t.router({
 
     list: delayedProcedure
       .input(z.object({
-        projectPath: z.string()
+        projectPath: z.string(),
+        status: z.union([z.string(), z.array(z.string())]).optional(),
+        phaseId: z.string().uuid().optional(),
+        floating: z.boolean().optional(),
+        ids: z.array(z.string().uuid()).optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional(),
+        sortBy: z.enum(['date', 'status', 'text']).optional(),
+        sortOrder: z.enum(['asc', 'desc']).optional()
       }))
       .query(async ({ input }) => {
-        return await listAims(input.projectPath);
+        let aims = await listAims(input.projectPath);
+        
+        if (input.ids) {
+          aims = aims.filter(aim => input.ids!.includes(aim.id));
+        } else {
+          // Only apply other filters if ids is not provided (or combine? usually ids is specific)
+          // Let's allow combining or overriding. If IDs are asked, we usually just want those.
+          // But keeping existing logic flow:
+          
+          if (input.status) {
+            const statuses = Array.isArray(input.status) ? input.status : [input.status];
+            aims = aims.filter(aim => statuses.includes(aim.status.state));
+          }
+
+          if (input.phaseId) {
+            aims = aims.filter(aim => aim.committedIn.includes(input.phaseId!));
+          } else if (input.floating) {
+            aims = aims.filter(aim => (!aim.committedIn || aim.committedIn.length === 0) && (!aim.outgoing || aim.outgoing.length === 0));
+          }
+        }
+
+        // Sorting
+        if (input.sortBy) {
+          aims.sort((a, b) => {
+            let valA: any, valB: any;
+            
+            switch(input.sortBy) {
+              case 'date':
+                valA = a.status.date;
+                valB = b.status.date;
+                break;
+              case 'status':
+                valA = a.status.state;
+                valB = b.status.state;
+                break;
+              case 'text':
+                valA = a.text.toLowerCase();
+                valB = b.text.toLowerCase();
+                break;
+            }
+
+            if (valA < valB) return input.sortOrder === 'desc' ? 1 : -1;
+            if (valA > valB) return input.sortOrder === 'desc' ? -1 : 1;
+            return 0;
+          });
+        }
+
+        // Pagination
+        if (input.offset !== undefined) {
+          aims = aims.slice(input.offset);
+        }
+        if (input.limit !== undefined) {
+          aims = aims.slice(0, input.limit);
+        }
+
+        return aims;
       }),
 
     update: delayedProcedure
@@ -373,6 +455,7 @@ const appRouter = t.router({
           id: aimId,
           text: input.aim.text,
           description: input.aim.description,
+          tags: input.aim.tags || [],
           incoming: [],
           outgoing: [],
           committedIn: [],
@@ -406,6 +489,7 @@ const appRouter = t.router({
           id: childAimId,
           text: input.aim.text,
           description: input.aim.description,
+          tags: input.aim.tags || [],
           incoming: [],
           outgoing: [],
           committedIn: [],
@@ -441,6 +525,7 @@ const appRouter = t.router({
           id: aimId,
           text: input.aim.text,
           description: input.aim.description,
+          tags: input.aim.tags || [],
           incoming: [],
           outgoing: [],
           committedIn: [input.phaseId], // Will be updated by commitAimToPhase
@@ -466,35 +551,74 @@ const appRouter = t.router({
     search: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        query: z.string()
+        query: z.string(),
+        status: z.union([z.string(), z.array(z.string())]).optional(),
+        phaseId: z.string().uuid().optional(),
+        limit: z.number().optional(),
+        offset: z.number().optional()
       }))
       .query(async ({ input }) => {
-        const aims = await listAims(input.projectPath);
-        return await searchAims(input.projectPath, input.query, aims);
+        const allAims = await listAims(input.projectPath);
+        let results = await searchAims(input.projectPath, input.query, allAims);
+
+        if (input.status) {
+          const statuses = Array.isArray(input.status) ? input.status : [input.status];
+          results = results.filter(aim => statuses.includes(aim.status.state));
+        }
+
+        if (input.phaseId) {
+          results = results.filter(aim => aim.committedIn.includes(input.phaseId!));
+        }
+
+        // Pagination
+        if (input.offset !== undefined) {
+          results = results.slice(input.offset);
+        }
+        if (input.limit !== undefined) {
+          results = results.slice(0, input.limit);
+        }
+
+        return results;
       }),
 
     searchSemantic: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         query: z.string(),
-        limit: z.number().optional()
+        limit: z.number().optional(),
+        status: z.union([z.string(), z.array(z.string())]).optional(),
+        phaseId: z.string().uuid().optional()
       }))
       .query(async ({ input }) => {
         const queryVector = await generateEmbedding(input.query);
         if (!queryVector) return [];
         
-        const vectorResults = await searchVectors(input.projectPath, queryVector, input.limit || 10);
+        // Increase limit to account for potential filtering
+        const fetchLimit = (input.limit || 10) * 3;
+        const vectorResults = await searchVectors(input.projectPath, queryVector, fetchLimit);
         
         const results = [];
         for (const res of vectorResults) {
             try {
                 const aim = await readAim(input.projectPath, res.id);
-                results.push({ ...aim, score: res.score });
+                
+                let match = true;
+                if (input.status) {
+                    const statuses = Array.isArray(input.status) ? input.status : [input.status];
+                    if (!statuses.includes(aim.status.state)) match = false;
+                }
+                if (match && input.phaseId) {
+                    if (!aim.committedIn.includes(input.phaseId)) match = false;
+                }
+
+                if (match) {
+                    results.push({ ...aim, score: res.score });
+                }
             } catch (e) {
                 // Ignore missing aims
             }
         }
-        return results;
+        return results.slice(0, input.limit || 10);
       })
   }),
 
@@ -573,6 +697,56 @@ const appRouter = t.router({
       })
   }),
 
+  system: t.router({
+    getStatus: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .query(async ({ input }) => {
+        return await readSystemStatus(input.projectPath);
+      }),
+
+    updateStatus: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        status: SystemStatusSchema.partial()
+      }))
+      .mutation(async ({ input }) => {
+        const current = await readSystemStatus(input.projectPath);
+        const updated = { ...current, ...input.status };
+        await writeSystemStatus(input.projectPath, updated);
+        return updated;
+      }),
+
+    performWork: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        workType: z.enum(['mining', 'freelance']).optional()
+      }))
+      .mutation(async ({ input }) => {
+        const current = await readSystemStatus(input.projectPath);
+        
+        // Simulate work logic
+        const earnedCredits = Math.floor(Math.random() * 5) + 5; // 5-10 credits
+        const earnedFunds = Math.floor(Math.random() * 10) + 1; // 1-10 funds
+        
+        const updated = {
+          computeCredits: current.computeCredits + earnedCredits,
+          funds: current.funds + earnedFunds
+        };
+        
+        await writeSystemStatus(input.projectPath, updated);
+        
+        return {
+          ...updated,
+          earned: {
+            credits: earnedCredits,
+            funds: earnedFunds
+          }
+        };
+      })
+  }),
+
   project: t.router({
     onUpdate: t.procedure.subscription(() => {
       return observable<{ type: string, id: string, projectPath: string }>((emit) => {
@@ -645,6 +819,194 @@ const appRouter = t.router({
       .mutation(async ({ input }) => {
         await migrateCommittedInField(input.projectPath);
         return { success: true };
+      }),
+
+    migrateTags: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .mutation(async ({ input }) => {
+        const aims = await listAims(input.projectPath);
+        for (const aim of aims) {
+          if (!aim.tags) {
+            aim.tags = [];
+            await writeAim(input.projectPath, aim);
+          }
+        }
+        return { success: true };
+      }),
+
+    checkConsistency: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .query(async ({ input }) => {
+        const aims = await listAims(input.projectPath);
+        const phases = await listPhases(input.projectPath);
+        const errors: string[] = [];
+
+        const aimMap = new Map(aims.map(a => [a.id, a]));
+        const phaseMap = new Map(phases.map(p => [p.id, p]));
+
+        // Check 1: Aim <-> Phase consistency
+        for (const aim of aims) {
+          for (const phaseId of aim.committedIn) {
+            if (!phaseMap.has(phaseId)) {
+              errors.push(`Aim ${aim.id} claims to be committed in non-existent phase ${phaseId}`);
+            } else {
+              const phase = phaseMap.get(phaseId)!;
+              if (!phase.commitments.includes(aim.id)) {
+                errors.push(`Aim ${aim.id} says committed in Phase ${phaseId}, but Phase does not have it in commitments`);
+              }
+            }
+          }
+        }
+
+        for (const phase of phases) {
+          for (const aimId of phase.commitments) {
+            if (!aimMap.has(aimId)) {
+              errors.push(`Phase ${phase.id} commits to non-existent aim ${aimId}`);
+            } else {
+              const aim = aimMap.get(aimId)!;
+              if (!aim.committedIn.includes(phase.id)) {
+                errors.push(`Phase ${phase.id} commits to Aim ${aimId}, but Aim does not say committed in Phase`);
+              }
+            }
+          }
+        }
+
+        // Check 2: Aim <-> Aim consistency (incoming/outgoing)
+        for (const aim of aims) {
+          for (const parentId of aim.incoming) {
+            if (!aimMap.has(parentId)) {
+              errors.push(`Aim ${aim.id} has non-existent incoming (parent) ${parentId}`);
+            } else {
+              const parent = aimMap.get(parentId)!;
+              if (!parent.outgoing.includes(aim.id)) {
+                errors.push(`Aim ${aim.id} lists ${parentId} as incoming, but ${parentId} does not list ${aim.id} as outgoing`);
+              }
+            }
+          }
+
+          for (const childId of aim.outgoing) {
+            if (!aimMap.has(childId)) {
+              errors.push(`Aim ${aim.id} has non-existent outgoing (child) ${childId}`);
+            } else {
+              const child = aimMap.get(childId)!;
+              if (!child.incoming.includes(aim.id)) {
+                errors.push(`Aim ${aim.id} lists ${childId} as outgoing, but ${childId} does not list ${aim.id} as incoming`);
+              }
+            }
+          }
+        }
+
+        return { valid: errors.length === 0, errors };
+      }),
+
+    fixConsistency: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .mutation(async ({ input }) => {
+        const aims = await listAims(input.projectPath);
+        const phases = await listPhases(input.projectPath);
+        const fixes: string[] = [];
+
+        const aimMap = new Map(aims.map(a => [a.id, a]));
+        const phaseMap = new Map(phases.map(p => [p.id, p]));
+
+        // Fix 1: Aim <-> Phase consistency (Phase is truth)
+        // Remove invalid phases from Aim
+        for (const aim of aims) {
+          const originalCommittedIn = [...aim.committedIn];
+          aim.committedIn = aim.committedIn.filter(phaseId => {
+            const phase = phaseMap.get(phaseId);
+            if (!phase) {
+              fixes.push(`Removed non-existent phase ${phaseId} from Aim ${aim.id}`);
+              return false;
+            }
+            if (!phase.commitments.includes(aim.id)) {
+              fixes.push(`Removed phase ${phaseId} from Aim ${aim.id} (not in phase commitments)`);
+              return false;
+            }
+            return true;
+          });
+          
+          if (aim.committedIn.length !== originalCommittedIn.length) {
+            await writeAim(input.projectPath, aim);
+          }
+        }
+
+        // Add missing phases to Aim (from Phase commitments)
+        for (const phase of phases) {
+          const validCommitments = [];
+          for (const aimId of phase.commitments) {
+            const aim = aimMap.get(aimId);
+            if (!aim) {
+              fixes.push(`Removed non-existent aim ${aimId} from Phase ${phase.id}`);
+              continue; 
+            }
+            validCommitments.push(aimId);
+            
+            if (!aim.committedIn.includes(phase.id)) {
+              aim.committedIn.push(phase.id);
+              await writeAim(input.projectPath, aim);
+              fixes.push(`Added phase ${phase.id} to Aim ${aim.id}`);
+            }
+          }
+          
+          if (validCommitments.length !== phase.commitments.length) {
+            phase.commitments = validCommitments;
+            await writePhase(input.projectPath, phase);
+          }
+        }
+
+        // Fix 2: Aim <-> Aim consistency (Reciprocity)
+        for (const aim of aims) {
+          // Incoming (Parents)
+          const validIncoming = [];
+          for (const parentId of aim.incoming) {
+            const parent = aimMap.get(parentId);
+            if (!parent) {
+              fixes.push(`Removed non-existent parent ${parentId} from Aim ${aim.id}`);
+              continue;
+            }
+            validIncoming.push(parentId);
+            
+            if (!parent.outgoing.includes(aim.id)) {
+              parent.outgoing.push(aim.id);
+              await writeAim(input.projectPath, parent);
+              fixes.push(`Added outgoing child ${aim.id} to Parent ${parent.id}`);
+            }
+          }
+          if (validIncoming.length !== aim.incoming.length) {
+            aim.incoming = validIncoming;
+            await writeAim(input.projectPath, aim);
+          }
+
+          // Outgoing (Children)
+          const validOutgoing = [];
+          for (const childId of aim.outgoing) {
+            const child = aimMap.get(childId);
+            if (!child) {
+              fixes.push(`Removed non-existent child ${childId} from Aim ${aim.id}`);
+              continue;
+            }
+            validOutgoing.push(childId);
+            
+            if (!child.incoming.includes(aim.id)) {
+              child.incoming.push(aim.id);
+              await writeAim(input.projectPath, child);
+              fixes.push(`Added incoming parent ${aim.id} to Child ${child.id}`);
+            }
+          }
+          if (validOutgoing.length !== aim.outgoing.length) {
+            aim.outgoing = validOutgoing;
+            await writeAim(input.projectPath, aim);
+          }
+        }
+
+        return { success: true, fixes };
       })
   })
 });

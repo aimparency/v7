@@ -31,6 +31,7 @@ const emit = defineEmits<{
 const attrs = useAttrs()
 const aimContainerRef = ref<HTMLElement | null>(null)
 const dataStore = useDataStore()
+const uiStore = useUIStore()
 
 const hasIncomingAims = computed(() => props.aim.incoming?.length > 0)
 const isExpanded = computed(() => props.aim.expanded || false)
@@ -66,6 +67,13 @@ watch(() => props.isThisAimSelected, (isSelected) => {
   }
 }, { flush: 'post' })
 
+// Ensure sub-aims are loaded when expanded
+watch(isExpanded, (newVal) => {
+  if (newVal && props.aim.incoming.length > 0) {
+    dataStore.loadAims(uiStore.projectPath, props.aim.incoming)
+  }
+}, { immediate: true })
+
 // Scroll on mount if already selected (for cascade restoration)
 onMounted(() => {
   if (props.isThisAimSelected && aimContainerRef.value) {
@@ -94,6 +102,10 @@ onMounted(() => {
       
       <div v-if="isExpanded && aim.description" class="aim-description">
         {{ aim.description }}
+      </div>
+
+      <div v-if="isExpanded && aim.tags && aim.tags.length > 0" class="aim-tags">
+        <span v-for="tag in aim.tags" :key="tag" class="tag">#{{ tag }}</span>
       </div>
 
       <div class="aim-meta">
@@ -201,6 +213,7 @@ onMounted(() => {
   }
   
   .aim-text {
+    flex: 1;
     color: #e0e0e0;
     line-height: 1.4;
 
@@ -217,6 +230,22 @@ onMounted(() => {
     margin-bottom: 0.25rem;
     padding-left: 0.25rem;
     border-left: 2px solid #444;
+  }
+
+  .aim-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    padding-left: 0.25rem;
+
+    .tag {
+      font-size: 0.75rem;
+      color: #88ccff;
+      background: rgba(0, 122, 204, 0.1);
+      padding: 0.1rem 0.3rem;
+      border-radius: 0.2rem;
+    }
   }
 
   .sub-aim-count-bubble {

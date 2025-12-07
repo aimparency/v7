@@ -1,0 +1,1 @@
+{"id":"5a0ca937-9951-40de-b647-809a2cadcf95","text":"Implement Stripe Integration (Mock first) for 'perform-work'","incoming":[],"outgoing":["b9596362-3fab-4b4b-8834-df81f48930cc"],"committedIn":[],"status":{"state":"done","comment":"Implemented Stripe Mock in subdev/revenue/payment-gateway. functionality for subscriptions and revenue calculation.","date":1765017081922}}

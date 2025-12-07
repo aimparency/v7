@@ -24,6 +24,14 @@ export const useDataStore = defineStore('data', {
     error: null as string | null,
     migrated: false, // Track if we've run the migration
     subscription: null as { unsubscribe: () => void } | null,
+    
+    // Pagination state for floating aims
+    floatingAimsIds: [] as string[],
+    floatingAimsPagination: {
+      offset: 0,
+      limit: 20,
+      hasMore: true
+    }
   }),
 
   getters: {
@@ -38,10 +46,7 @@ export const useDataStore = defineStore('data', {
       })
     },
     floatingAims(state) {
-      return Object.values(state.aims).filter(aim =>
-        (!aim.committedIn || aim.committedIn.length === 0) &&
-        (!aim.outgoing || aim.outgoing.length === 0)
-      )
+      return state.floatingAimsIds.map(id => state.aims[id]).filter(Boolean);
     }, 
     getFloatingAimByIndex() { 
       return (index: number) => this.floatingAims[index]
@@ -54,6 +59,45 @@ export const useDataStore = defineStore('data', {
   },
 
   actions: {
+    async loadFloatingAims(projectPath: string, reset: boolean = false) {
+      if (!projectPath) return;
+      
+      if (reset) {
+        this.floatingAimsIds = [];
+        this.floatingAimsPagination.offset = 0;
+        this.floatingAimsPagination.hasMore = true;
+      }
+
+      if (!this.floatingAimsPagination.hasMore) return;
+
+      this.loading = true;
+      try {
+        const aims = await trpc.aim.list.query({
+          projectPath,
+          floating: true,
+          limit: this.floatingAimsPagination.limit,
+          offset: this.floatingAimsPagination.offset
+        });
+
+        for (const aim of aims) {
+          this.replaceAim(aim.id, aim);
+          if (!this.floatingAimsIds.includes(aim.id)) {
+            this.floatingAimsIds.push(aim.id);
+          }
+        }
+
+        if (aims.length < this.floatingAimsPagination.limit) {
+          this.floatingAimsPagination.hasMore = false;
+        } else {
+          this.floatingAimsPagination.offset += this.floatingAimsPagination.limit;
+        }
+      } catch (error) {
+        console.error('Failed to load floating aims:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async runMigration(projectPath: string) {
       if (!projectPath || this.migrated) return
 
@@ -150,6 +194,14 @@ export const useDataStore = defineStore('data', {
         })
 
         this.aims[newAim.id] = newAim
+        
+        // Add to floating list if it matches criteria (it should)
+        // Add to START of list (if sorted by date desc?) or END? 
+        // list-aims default sort is probably filesystem order or date? 
+        // Let's prepend for now as "newest".
+        if (!this.floatingAimsIds.includes(newAim.id)) {
+          this.floatingAimsIds.unshift(newAim.id);
+        }
 
         return newAim // Returns { id: string }
       } catch (error) {
@@ -305,22 +357,11 @@ export const useDataStore = defineStore('data', {
     },
 
     async loadAllAims(projectPath: string) {
-      if (!projectPath) return;
-      // Avoid re-fetching if aims are already loaded
-      if (Object.keys(this.aims).length > 0) return;
-
-      this.loading = true;
-      try {
-        const allAims = await trpc.aim.list.query({ projectPath });
-        for (const aim of allAims) {
-          this.replaceAim(aim.id, aim);
-        }
-      } catch (error) {
-        this.error = 'Failed to load aims';
-        console.error(this.error, error);
-      } finally {
-        this.loading = false;
-      }
+      // Deprecated: Prefer on-demand loading. 
+      // Currently only used to pre-populate cache if needed, but floating aims are now paginated.
+      // We will leave it as no-op or load only phases if we want to ensure commitments are valid?
+      // For now, let's just return.
+      return; 
     },
 
     async loadProject(projectPath: string) {
@@ -335,10 +376,21 @@ export const useDataStore = defineStore('data', {
         // Start subscription
         this.subscribeToUpdates(projectPath);
 
-        // Load all initial data from the stores
-        await this.loadAllAims(projectPath);
+        // Load initial data
+        await this.loadFloatingAims(projectPath, true);
         await this.loadPhases(projectPath, null); // Load root phases
 
+        // We also need to load aims for visible phases? 
+        // Phase.vue calls loadPhaseAims implicitly? No, Phase.vue just computes from store.
+        // We need to ensure aims for visible phases are loaded.
+        // Since we don't load all aims anymore, we rely on:
+        // 1. Root phases are loaded.
+        // 2. When a phase is rendered, it needs its aims.
+        // Ideally, Phase component should trigger load.
+        
+        // For now, let's trigger load for root phases' aims to avoid empty view on start
+        // But root phases list is async.
+        
         uiStore.setConnectionStatus('connected');
         uiStore.addProjectToHistory(projectPath);
         uiStore.clearProjectFailure(projectPath);
@@ -520,6 +572,7 @@ export const useDataStore = defineStore('data', {
           });
 
           delete this.aims[aimId]
+          this.floatingAimsIds = this.floatingAimsIds.filter(id => id !== aimId)
         }
 
         // Adjust selection if needed
@@ -550,18 +603,52 @@ export const useDataStore = defineStore('data', {
 
       try {
         if (phaseId === 'null') {
-          // Root aims - load all aims and filter
-          await this.loadAllAims(projectPath);
+          // Root aims should use loadFloatingAims, this branch might be unused now but kept for safety
+          await this.loadFloatingAims(projectPath, true);
         } else {
           // Phase aims - load the specific phase to get commitments
           const phase = await trpc.phase.get.query({ projectPath, phaseId });
           if (phase) {
             this.replacePhase(phaseId, phase);
-            // Aims are already loaded in loadAllAims, so commitments will work
+            
+            // NEW: Actually fetch the aims content for this phase!
+            // We can fetch specifically aims committed to this phase
+            const phaseAims = await trpc.aim.list.query({ 
+              projectPath, 
+              phaseId: phaseId 
+            });
+            
+            for (const aim of phaseAims) {
+              this.replaceAim(aim.id, aim);
+            }
           }
         }
       } catch (error) {
         console.error('Failed to load phase aims:', error);
+      }
+    },
+
+    async loadAims(projectPath: string, aimIds: string[]) {
+      if (!projectPath || aimIds.length === 0) return;
+      
+      // Filter out aims we already have loaded to save bandwidth?
+      // Or just reload to be safe/fresh?
+      // Let's check which ones are missing.
+      const missingIds = aimIds.filter(id => !this.aims[id]);
+      
+      if (missingIds.length === 0) return;
+
+      try {
+        const aims = await trpc.aim.list.query({
+          projectPath,
+          ids: missingIds
+        });
+
+        for (const aim of aims) {
+          this.replaceAim(aim.id, aim);
+        }
+      } catch (error) {
+        console.error('Failed to load specific aims:', error);
       }
     }
   }

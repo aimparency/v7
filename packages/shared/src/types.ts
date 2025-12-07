@@ -10,6 +10,7 @@ export const AimSchema = z.object({
   id: z.string().uuid(),
   text: z.string(),
   description: z.string().optional(),
+  tags: z.array(z.string()).default([]),
   incoming: z.array(z.string().uuid()),
   outgoing: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
@@ -30,6 +31,11 @@ export const ProjectMetaSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/) // hex color
 });
 
+export const SystemStatusSchema = z.object({
+  computeCredits: z.number(),
+  funds: z.number()
+});
+
 export interface Hint {
   key: string;
   action: string;
@@ -39,3 +45,4 @@ export type Aim = z.infer<typeof AimSchema>;
 export type Phase = z.infer<typeof PhaseSchema>;
 export type AimStatus = z.infer<typeof AimStatusSchema>;
 export type ProjectMeta = z.infer<typeof ProjectMetaSchema>;
+export type SystemStatus = z.infer<typeof SystemStatusSchema>;

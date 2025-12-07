@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import Aim from '../components/Aim.vue'
+import type { Aim as AimType } from '../stores/data'
 
 const uuidv4 = () => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)
 
@@ -27,6 +28,7 @@ vi.mock('../stores/ui', () => ({
 const createMockAim = (overrides?: Partial<AimType>): AimType => ({
   id: uuidv4(),
   text: 'Test Aim',
+  tags: [],
   incoming: [],
   outgoing: [],
   committedIn: [],

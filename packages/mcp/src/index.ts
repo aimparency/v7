@@ -205,7 +205,14 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     }
 
     if (parsed.type === "aims" && parsed.id === "all") {
-      const aims = await trpc.aim.list.query({ projectPath });
+      const statusParam = url.searchParams.get("status");
+      const phaseIdParam = url.searchParams.get("phaseId");
+      
+      const aims = await trpc.aim.list.query({ 
+        projectPath,
+        status: statusParam ? statusParam.split(',') : undefined,
+        phaseId: phaseIdParam || undefined
+      });
       return {
         contents: [
           {
@@ -313,6 +320,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           type: "object",
           properties: {
             projectPath: PROJECT_PATH_TOOL_PROPERTY,
+            status: {
+              type: ["string", "array"],
+              items: { type: "string" },
+              description: "Filter by status (e.g., 'open' or ['open', 'in_progress'])"
+            },
+            phaseId: {
+              type: "string",
+              description: "Filter by phase ID"
+            },
+            limit: { type: "number", description: "Limit number of results" },
+            offset: { type: "number", description: "Skip first N results" },
+            sortBy: { type: "string", enum: ["date", "status", "text"], description: "Sort by field" },
+            sortOrder: { type: "string", enum: ["asc", "desc"], description: "Sort order (default asc)" }
           },
           required: ["projectPath"],
         },
@@ -325,6 +345,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             projectPath: PROJECT_PATH_TOOL_PROPERTY,
             query: { type: "string" },
+            status: {
+              type: ["string", "array"],
+              items: { type: "string" },
+              description: "Filter by status"
+            },
+            phaseId: {
+              type: "string",
+              description: "Filter by phase ID"
+            },
+            limit: { type: "number", description: "Limit number of results" },
+            offset: { type: "number", description: "Skip first N results" }
           },
           required: ["projectPath", "query"],
         },
@@ -338,6 +369,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             projectPath: PROJECT_PATH_TOOL_PROPERTY,
             query: { type: "string" },
             limit: { type: "number", description: "Max results (default 10)" },
+            status: {
+              type: ["string", "array"],
+              items: { type: "string" },
+              description: "Filter by status"
+            },
+            phaseId: {
+              type: "string",
+              description: "Filter by phase ID"
+            }
           },
           required: ["projectPath", "query"],
         },
@@ -377,6 +417,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             text: {
               type: "string",
               description: "The aim text/description",
+            },
+            tags: {
+              type: "array",
+              items: { type: "string" },
+              description: "Tags for categorization (e.g. 'bug', 'feature')",
             },
             status: {
               type: "object",
@@ -419,6 +464,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             projectPath: PROJECT_PATH_TOOL_PROPERTY,
             aimId: { type: "string", description: "UUID of the aim to update" },
             text: { type: "string" },
+            tags: {
+              type: "array",
+              items: { type: "string" },
+            },
             status: {
               type: "object",
               properties: {
@@ -553,6 +602,33 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["projectPath", "name", "color"],
         },
       },
+      {
+        name: "get-system-status",
+        description: "Get the current system status including compute credits and funds. Use this to check if the agent has enough resources to continue working or needs to earn more.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
+          },
+          required: ["projectPath"],
+        },
+      },
+      {
+        name: "perform-work",
+        description: "Perform work to earn compute credits and funds. Use this when system status shows low resources.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
+            workType: {
+              type: "string",
+              enum: ["mining", "freelance"],
+              description: "Type of work to perform (default: mining)"
+            }
+          },
+          required: ["projectPath"],
+        },
+      },
     ],
   };
 });
@@ -569,6 +645,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "list-aims": {
         const aims = await trpc.aim.list.query({
           projectPath: args.projectPath as string,
+          status: args.status as string | string[] | undefined,
+          phaseId: args.phaseId as string | undefined,
+          limit: args.limit as number | undefined,
+          offset: args.offset as number | undefined,
+          sortBy: args.sortBy as "date" | "status" | "text" | undefined,
+          sortOrder: args.sortOrder as "asc" | "desc" | undefined,
         });
         return {
           content: [
@@ -584,6 +666,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const aims = await trpc.aim.search.query({
           projectPath: args.projectPath as string,
           query: args.query as string,
+          status: args.status as string | string[] | undefined,
+          phaseId: args.phaseId as string | undefined,
+          limit: args.limit as number | undefined,
+          offset: args.offset as number | undefined,
         });
         return {
           content: [
@@ -600,6 +686,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           projectPath: args.projectPath as string,
           query: args.query as string,
           limit: args.limit as number | undefined,
+          status: args.status as string | string[] | undefined,
+          phaseId: args.phaseId as string | undefined,
         });
         return {
           content: [
@@ -647,6 +735,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           projectPath: args.projectPath as string,
           aim: {
             text: args.text as string,
+            tags: args.tags as string[] | undefined,
             status: (args.status as any) || {
               state: "open",
               comment: "",
@@ -697,6 +786,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       case "update-aim": {
         const updateData: any = {};
         if (args.text) updateData.text = args.text;
+        if (args.tags) updateData.tags = args.tags;
         if (args.status) updateData.status = args.status;
         if (args.incoming) updateData.incoming = args.incoming;
         if (args.outgoing) updateData.outgoing = args.outgoing;
@@ -835,6 +925,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: `Updated project metadata`,
+            },
+          ],
+        };
+      }
+
+      case "get-system-status": {
+        const status = await trpc.system.getStatus.query({
+          projectPath: args.projectPath as string,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(status, null, 2),
+            },
+          ],
+        };
+      }
+
+      case "perform-work": {
+        const result = await trpc.system.performWork.mutate({
+          projectPath: args.projectPath as string,
+          workType: (args.workType as "mining" | "freelance") || "mining",
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Work completed successfully.\nEarned: ${result.earned.credits} credits, ${result.earned.funds} funds.\nNew Balance: ${result.computeCredits} credits, ${result.funds} funds.`,
             },
           ],
         };

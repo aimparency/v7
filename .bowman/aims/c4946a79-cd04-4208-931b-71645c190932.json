@@ -1,0 +1,1 @@
+{"id":"c4946a79-cd04-4208-931b-71645c190932","text":"run wrapper with model flash (command line param) and i /clear enter after every k (0 never, 3 default) responses to keep context small","description":"","incoming":[],"outgoing":["abc3d503-5945-45eb-8122-be5e33b2ccea"],"committedIn":[],"status":{"state":"open","comment":"","date":1765018229092}}

@@ -33,8 +33,10 @@ watch(() => props.isActive || props.isSelected, (shouldScroll) => {
   }
 }, { flush: 'post' })
 
-// Scroll on mount if already selected (for cascade restoration)
+// Load aims and scroll on mount
 onMounted(() => {
+  dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
+
   if ((props.isActive || props.isSelected) && phaseContainerRef.value) {
     emit('scroll-request', phaseContainerRef.value)
   }

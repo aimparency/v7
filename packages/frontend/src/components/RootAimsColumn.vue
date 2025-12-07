@@ -15,11 +15,22 @@ const rootColumnRef = ref<HTMLElement | null>(null)
 
 // Handle scroll requests from child aims
 const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
+
+const handleScroll = async (event: Event) => {
+  const target = event.target as HTMLElement
+  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 50) {
+    await dataStore.loadFloatingAims(uiStore.projectPath)
+  }
+}
 </script>
 
 <template>
   <div class="root-aims-column" :class="{ 'selected-outlined': isActive, 'selected': isSelected }">
-    <div ref="rootColumnRef" class="aims-container">
+    <div 
+      ref="rootColumnRef" 
+      class="aims-container"
+      @scroll="handleScroll"
+    >
       <div class="info">free floating aims</div>
       <AimsList
         :aims="dataStore.floatingAims"

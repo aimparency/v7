@@ -116,6 +116,7 @@ onMounted(async () => {
 
     // Then, select the first root phase (index 0 in column 0) to kick off the cascade
     await uiStore.selectPhase(0, 0);
+    uiStore.ensureSelectionVisible();
   }
 
   // Auto-focus app element for keyboard navigation
