@@ -613,17 +613,13 @@ export const useDataStore = defineStore('data', {
     async loadAims(projectPath: string, aimIds: string[]) {
       if (!projectPath || aimIds.length === 0) return;
       
-      // Filter out aims we already have loaded to save bandwidth?
-      // Or just reload to be safe/fresh?
-      // Let's check which ones are missing.
-      const missingIds = aimIds.filter(id => !this.aims[id]);
-      
-      if (missingIds.length === 0) return;
+      // Always reload to ensure freshness, especially for deep path expansion
+      // where we need the latest 'incoming' arrays.
 
       try {
         const aims = await trpc.aim.list.query({
           projectPath,
-          ids: missingIds
+          ids: aimIds
         });
 
         for (const aim of aims) {

@@ -252,3 +252,32 @@ test('list - filters aims by status and phase', async () => {
   });
   assert.equal(filteredAims.length, 1);
 });
+
+test('search - matches aims using search index', async () => {
+  // Create test aims
+  await caller.aim.createFloatingAim({
+    projectPath: TEST_PROJECT_PATH,
+    aim: { text: 'Apple Pie', status: { state: 'open', comment: '', date: Date.now() } }
+  });
+  await caller.aim.createFloatingAim({
+    projectPath: TEST_PROJECT_PATH,
+    aim: { text: 'Banana Split', status: { state: 'open', comment: '', date: Date.now() } }
+  });
+  await caller.aim.createFloatingAim({
+    projectPath: TEST_PROJECT_PATH,
+    aim: { text: 'Apple Cider', status: { state: 'open', comment: '', date: Date.now() } }
+  });
+
+  // Build index (usually happens on project load, but we can trigger it or trust createFloatingAim updates it)
+  // createFloatingAim calls addAimToIndex, so it should be immediate.
+  
+  // Search for "Apple"
+  const results = await caller.aim.search({
+    projectPath: TEST_PROJECT_PATH,
+    query: 'Apple'
+  });
+
+  assert.equal(results.length, 2);
+  const texts = results.map(r => r.text).sort();
+  assert.deepEqual(texts, ['Apple Cider', 'Apple Pie']);
+});

@@ -10,6 +10,11 @@ type SelectionPath = {
   aims: Aim[]
 }
 
+export type AimPath = {
+  phaseId?: string
+  aims: Aim[] // Root to Leaf
+}
+
 // Helper to get project path with query parameter precedence
 function getInitialProjectPath(): string {
   // Check URL query parameter first
@@ -52,6 +57,8 @@ export const useUIStore = defineStore('ui', {
     aimModalMode: 'create' as 'create' | 'edit',
     aimModalEditingAimId: null as string | null,
     aimModalInsertPosition: 'before' as RelativePosition,
+
+    showAimSearch: false,
 
     // Navigation mode system
     navigatingAims: false, 
@@ -266,6 +273,14 @@ export const useUIStore = defineStore('ui', {
     openAimModal(phaseId?: string, insertionIndex: number = 0) {
       this.showAimModal = true
       this.aimModalMode = 'create'
+    },
+
+    openAimSearch() {
+      this.showAimSearch = true
+    },
+
+    closeAimSearch() {
+      this.showAimSearch = false
     },
 
     // Create aim and update selection
@@ -679,8 +694,17 @@ export const useUIStore = defineStore('ui', {
     async handleGlobalKeydown(event: KeyboardEvent, dataStore: any) {
       console.log('pressed', event.key, '. nav aims? ', this.navigatingAims)
 
-      if (this.showPhaseModal || this.showAimModal) {
+      if (this.showPhaseModal || this.showAimModal || this.showAimSearch) {
+        // Modals handle their own keys (including Escape).
+        // We do nothing here to avoid conflicts.
+        return
       } else {
+        if (event.key === '/') {
+          event.preventDefault()
+          this.openAimSearch()
+          return
+        }
+
         if(this.navigatingAims) {
           await this.handleAimNavigationKeys(event, dataStore)
         } else {
@@ -1732,5 +1756,154 @@ export const useUIStore = defineStore('ui', {
     setPendingDeleteAim(aimId: string | null) {
       this.pendingDeleteAimId = aimId
     },
+
+    async calculateAimPaths(aimId: string): Promise<AimPath[]> {
+      const paths: AimPath[] = []
+      const visited = new Set<string>()
+      
+      const trace = async (currentId: string, pathAcc: Aim[]) => {
+        if (visited.has(currentId)) return
+        visited.add(currentId)
+        
+        // Load aim if not in store
+        let aim = useDataStore().aims[currentId]
+        if (!aim) {
+             aim = await trpc.aim.get.query({ projectPath: this.projectPath, aimId: currentId })
+             useDataStore().replaceAim(aim.id, aim)
+        }
+        
+        const newPath = [aim, ...pathAcc]
+        
+        let isRoot = true
+
+        // 1. Is it a root of a phase?
+        if (aim.committedIn && aim.committedIn.length > 0) {
+            isRoot = false
+            for (const phaseId of aim.committedIn) {
+                paths.push({ phaseId, aims: newPath })
+            }
+        }
+        
+        // 2. Does it have parents?
+        if (aim.outgoing && aim.outgoing.length > 0) {
+            isRoot = false
+            for (const parentId of aim.outgoing) {
+                await trace(parentId, newPath) 
+            }
+        }
+        
+        // 3. Is it a floating root? (No parents, not in phase)
+        if (isRoot) {
+            paths.push({ phaseId: undefined, aims: newPath })
+        }
+        
+        visited.delete(currentId) // Backtracking
+      }
+      
+      await trace(aimId, [])
+      return paths
+    },
+
+    async prepareNavigation(aimId: string): Promise<AimPath[]> {
+      return await this.calculateAimPaths(aimId)
+    },
+
+    async executeNavigation(path: AimPath) {
+      const dataStore = useDataStore()
+      
+      const rootAim = path.aims[0]
+      const phaseId = path.phaseId
+
+      // 1. Setup Columns (Phases)
+      if (phaseId) {
+        // It's in a phase. Need to find phase path.
+        const phasePath: Phase[] = []
+        let currentPhase = await trpc.phase.get.query({ projectPath: this.projectPath, phaseId })
+        
+        while (currentPhase) {
+          dataStore.replacePhase(currentPhase.id, currentPhase)
+          phasePath.unshift(dataStore.phases[currentPhase.id])
+          
+          if (currentPhase.parent) {
+            currentPhase = await trpc.phase.get.query({ projectPath: this.projectPath, phaseId: currentPhase.parent })
+          } else {
+            break
+          }
+        }
+
+        // Select Phases
+        for (let i = 0; i < phasePath.length; i++) {
+          const p = phasePath[i]
+          const parentId = p.parent
+          // We need the index of p in parent's list
+          await dataStore.loadPhases(this.projectPath, parentId)
+          const siblings = dataStore.getPhasesByParentId(parentId)
+          const index = siblings.findIndex(x => x.id === p.id)
+          if (index !== -1) {
+            this.setSelection(i, index)
+            // Load next level children for next iteration
+            if (i < phasePath.length - 1) {
+              await dataStore.loadPhases(this.projectPath, p.id)
+            }
+          }
+        }
+        
+        // Set focus to the last phase column
+        this.selectedColumn = phasePath.length - 1
+        
+        // Load aims for the specific phase
+        await dataStore.loadPhaseAims(this.projectPath, phaseId)
+        
+      } else {
+        // Floating
+        this.selectedColumn = -1
+        await dataStore.loadFloatingAims(this.projectPath)
+      }
+
+      // 2. Select Root Aim
+      const contextAims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
+      const rootIndex = contextAims.findIndex(a => a.id === rootAim.id)
+      
+      if (rootIndex !== -1) {
+        if (phaseId) {
+          const phase = dataStore.phases[phaseId]
+          if (phase) phase.selectedAimIndex = rootIndex
+        } else {
+          this.floatingAimIndex = rootIndex
+        }
+      }
+
+      // 3. Expand path to target
+      for (let i = 0; i < path.aims.length - 1; i++) {
+        const parentId = path.aims[i].id
+        // Re-fetch parent from store to ensure we have latest reference
+        const parent = dataStore.aims[parentId]
+        const child = path.aims[i + 1]
+        
+        if (parent) {
+            parent.expanded = true
+            // Load children for this parent
+            if (parent.incoming.length > 0) {
+               await dataStore.loadAims(this.projectPath, parent.incoming)
+            }
+            
+            const childIndex = parent.incoming.indexOf(child.id)
+            if (childIndex !== -1) {
+              parent.selectedIncomingIndex = childIndex
+            }
+        }
+      }
+
+      this.navigatingAims = true
+      this.ensureSelectionVisible()
+    },
+
+    async navigateToAim(aimId: string) {
+        // Wrapper for backward compatibility or if we want auto-selection here
+        const paths = await this.prepareNavigation(aimId)
+        if (paths.length > 0) {
+            await this.executeNavigation(paths[0])
+        }
+    }
   }
 })

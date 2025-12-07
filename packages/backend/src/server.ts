@@ -376,9 +376,11 @@ const appRouter = t.router({
         updateAimInIndex(input.projectPath, updatedAim);
 
         // Update embedding (async)
-        generateEmbedding(updatedAim.text).then(vector => {
-           if(vector) saveEmbedding(input.projectPath, input.aimId, vector);
-        });
+        if (process.env.NODE_ENV !== 'test') {
+          generateEmbedding(updatedAim.text).then(vector => {
+             if(vector) saveEmbedding(input.projectPath, input.aimId, vector);
+          });
+        }
 
         return updatedAim;
       }),
@@ -401,7 +403,10 @@ const appRouter = t.router({
 
         // Remove from search index
         removeAimFromIndex(input.projectPath, input.aimId);
-        await removeEmbedding(input.projectPath, input.aimId);
+        
+        if (process.env.NODE_ENV !== 'test') {
+          await removeEmbedding(input.projectPath, input.aimId);
+        }
         
         ee.emit('change', { type: 'aim', id: input.aimId, projectPath: input.projectPath });
 
@@ -469,9 +474,11 @@ const appRouter = t.router({
         await writeAim(input.projectPath, aim);
         addAimToIndex(input.projectPath, aim);
 
-        generateEmbedding(aim.text).then(vector => {
-           if(vector) saveEmbedding(input.projectPath, aimId, vector);
-        });
+        if (process.env.NODE_ENV !== 'test') {
+          generateEmbedding(aim.text).then(vector => {
+             if(vector) saveEmbedding(input.projectPath, aimId, vector);
+          });
+        }
 
         return aim;
       }),
@@ -503,9 +510,11 @@ const appRouter = t.router({
         await writeAim(input.projectPath, childAim);
         addAimToIndex(input.projectPath, childAim);
 
-        generateEmbedding(childAim.text).then(vector => {
-           if(vector) saveEmbedding(input.projectPath, childAimId, vector);
-        });
+        if (process.env.NODE_ENV !== 'test') {
+          generateEmbedding(childAim.text).then(vector => {
+             if(vector) saveEmbedding(input.projectPath, childAimId, vector);
+          });
+        }
 
         await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0);
 
@@ -539,9 +548,11 @@ const appRouter = t.router({
         await writeAim(input.projectPath, aim);
         addAimToIndex(input.projectPath, aim);
 
-        generateEmbedding(aim.text).then(vector => {
-           if(vector) saveEmbedding(input.projectPath, aimId, vector);
-        });
+        if (process.env.NODE_ENV !== 'test') {
+          generateEmbedding(aim.text).then(vector => {
+             if(vector) saveEmbedding(input.projectPath, aimId, vector);
+          });
+        }
 
         await commitAimToPhase(input.projectPath, aimId, input.phaseId, input.insertionIndex);
 
@@ -561,8 +572,20 @@ const appRouter = t.router({
         const allAims = await listAims(input.projectPath);
         console.log(`[Search] Query: "${input.query}" | Total Aims: ${allAims.length}`);
         
+        // Primary: FlexSearch
         let results = await searchAims(input.projectPath, input.query, allAims);
-        console.log(`[Search] Search results (before filter): ${results.length}`);
+        
+        // Fallback/Augment: Simple text matching if FlexSearch misses obvious ones
+        if (results.length === 0 && input.query.trim().length > 0) {
+          const lowerQuery = input.query.toLowerCase();
+          const fallbackResults = allAims.filter(aim => 
+            aim.text.toLowerCase().includes(lowerQuery) && 
+            !results.some(r => r.id === aim.id)
+          );
+          results = [...results, ...fallbackResults];
+        }
+
+        console.log(`[Search] Search results (after fallback): ${results.length}`);
 
         if (input.status) {
           const statuses = Array.isArray(input.status) ? input.status : [input.status];
@@ -784,16 +807,18 @@ const appRouter = t.router({
         indexPhases(input.projectPath, phases);
 
         // Background embedding generation
-        (async () => {
-            console.log(`Starting embedding generation for ${aims.length} aims...`);
-            for (const aim of aims) {
-                const vector = await generateEmbedding(aim.text);
-                if (vector) {
-                    await saveEmbedding(input.projectPath, aim.id, vector);
-                }
-            }
-            console.log('Embedding generation complete.');
-        })().catch(console.error);
+        if (process.env.NODE_ENV !== 'test') {
+          (async () => {
+              console.log(`Starting embedding generation for ${aims.length} aims...`);
+              for (const aim of aims) {
+                  const vector = await generateEmbedding(aim.text);
+                  if (vector) {
+                      await saveEmbedding(input.projectPath, aim.id, vector);
+                  }
+              }
+              console.log('Embedding generation complete.');
+          })().catch(console.error);
+        }
 
         return {
           success: true,

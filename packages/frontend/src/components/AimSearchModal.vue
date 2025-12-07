@@ -1,0 +1,464 @@
+<script setup lang="ts">
+import { ref, watch, nextTick, onMounted } from 'vue'
+import { useUIStore, type AimPath } from '../stores/ui'
+import { useDataStore } from '../stores/data'
+import { trpc } from '../trpc'
+import type { SearchAimResult } from 'shared'
+
+const uiStore = useUIStore()
+const dataStore = useDataStore()
+
+const searchQuery = ref('')
+const searchResults = ref<SearchAimResult[]>([])
+const selectedIndex = ref(0) // Visual selection
+const focusedResultIndex = ref(-1) // Actual DOM focus index for results, -1 means input is focused
+const searchInput = ref<HTMLInputElement>()
+const resultsListRef = ref<HTMLDivElement>()
+const loading = ref(false)
+
+// Path selection state
+const pathSelectionMode = ref(false)
+const availablePaths = ref<(AimPath & { label: string })[]>([])
+const selectedAimText = ref('')
+
+const performSearch = async (query: string) => {
+  if (!query.trim()) {
+    searchResults.value = []
+    return
+  }
+
+  loading.value = true
+  try {
+    const [flexSearchResults, semanticSearchResults] = await Promise.all([
+      trpc.aim.search.query({
+        projectPath: uiStore.projectPath,
+        query: query,
+        limit: 10
+      }),
+      trpc.aim.searchSemantic.query({
+        projectPath: uiStore.projectPath,
+        query: query,
+        limit: 30 // Fetch more semantic results to allow for better ranking after deduplication
+      })
+    ])
+
+    const combinedResultsMap = new Map<string, SearchAimResult>()
+
+    // Add semantic results first, including their score
+    semanticSearchResults.forEach(aim => {
+      combinedResultsMap.set(aim.id, aim)
+    })
+
+    // Add FlexSearch results, but only if not already present from semantic search
+    flexSearchResults.forEach(aim => {
+      if (!combinedResultsMap.has(aim.id)) {
+        combinedResultsMap.set(aim.id, { ...aim, score: 0 }) // Assign a default score
+      }
+    })
+
+    // Convert map to array and sort: semantic results by score (desc), then FlexSearch order (implicit)
+    const sortedResults = Array.from(combinedResultsMap.values())
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, 10) // Limit to top 10 overall results
+
+    searchResults.value = sortedResults
+    selectedIndex.value = 0 // Top result always selected
+    focusedResultIndex.value = -1 // Reset focus to input when results change
+  } catch (error) {
+    console.error('Search failed:', error)
+    searchResults.value = []
+  }
+  finally {
+    loading.value = false
+  }
+}
+
+// Debounce search
+let searchTimeout: NodeJS.Timeout
+watch(searchQuery, (newVal) => {
+  if (pathSelectionMode.value) return // Don't search while selecting path
+
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    performSearch(newVal)
+  }, 150)
+})
+
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    e.stopPropagation()
+    if (pathSelectionMode.value) {
+      // Go back to search results
+      pathSelectionMode.value = false
+      selectedIndex.value = 0
+      focusedResultIndex.value = -1
+      nextTick(() => searchInput.value?.focus())
+    } else {
+      close()
+    }
+    return
+  }
+
+  const listLength = pathSelectionMode.value ? availablePaths.value.length : searchResults.value.length
+  if (listLength === 0) {
+    return // Only Escape is handled if no results
+  }
+
+  const isInputFocused = (document.activeElement === searchInput.value)
+
+  // Allow typing j/k in input (only in search mode)
+  if (!pathSelectionMode.value && isInputFocused && (e.key === 'j' || e.key === 'k')) {
+    return
+  }
+
+  switch(e.key) {
+    case 'ArrowDown':
+    case 'j': // Vim style for navigation
+      e.preventDefault()
+      e.stopPropagation()
+      if (isInputFocused) {
+        if (e.key === 'ArrowDown' && listLength > 0) {
+           // ArrowDown from input goes to list
+           focusedResultIndex.value = selectedIndex.value
+           nextTick(() => {
+            const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
+            if (el) {
+              el.focus()
+              el.scrollIntoView({ block: 'nearest' })
+            }
+           })
+        }
+        // j from input types (handled by pre-check)
+      } else {
+        // Navigate list
+        if (focusedResultIndex.value < listLength - 1) {
+          focusedResultIndex.value++
+          selectedIndex.value = focusedResultIndex.value
+          nextTick(() => {
+            const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
+            if (el) {
+              el.focus()
+              el.scrollIntoView({ block: 'nearest' })
+            }
+          })
+        }
+      }
+      break
+    case 'ArrowUp':
+    case 'k': // Vim style for navigation
+      e.preventDefault()
+      e.stopPropagation()
+      if (!isInputFocused) {
+        // Navigate list, stop at top
+        if (focusedResultIndex.value > 0) {
+          focusedResultIndex.value--
+          selectedIndex.value = focusedResultIndex.value
+          nextTick(() => {
+            const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
+            if (el) {
+              el.focus()
+              el.scrollIntoView({ block: 'nearest' })
+            }
+          })
+        }
+      }
+      break
+    case 'Enter':
+      e.preventDefault()
+      e.stopPropagation()
+      if (pathSelectionMode.value) {
+        if (availablePaths.value[selectedIndex.value]) {
+          selectPath(availablePaths.value[selectedIndex.value])
+        }
+      }
+      else {
+        if (searchResults.value[selectedIndex.value]) {
+          selectAim(searchResults.value[selectedIndex.value])
+        }
+      }
+      break
+    case 'Tab':
+      e.preventDefault()
+      e.stopPropagation()
+      if (isInputFocused) {
+        // Switch to Results List (focus selected item)
+        if (listLength > 0) {
+           focusedResultIndex.value = selectedIndex.value
+           nextTick(() => {
+             const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
+             if (el) {
+               el.focus()
+               el.scrollIntoView({ block: 'nearest' })
+             }
+           })
+        }
+      } else {
+        // Switch to Input
+        focusedResultIndex.value = -1
+        searchInput.value?.focus()
+      }
+      break
+  }
+}
+
+const selectAim = async (aim: SearchAimResult) => {
+  loading.value = true
+  try {
+    const paths = await uiStore.prepareNavigation(aim.id)
+    
+    if (paths.length === 0) {
+      console.warn('No paths found for aim', aim.id)
+      uiStore.closeAimSearch()
+    } else if (paths.length === 1) {
+      await uiStore.executeNavigation(paths[0])
+      uiStore.closeAimSearch()
+    } else {
+      // Multiple paths found, present selection
+      selectedAimText.value = aim.text.length > 50 ? aim.text.substring(0, 50) + '...' : aim.text
+      
+      const enrichedPaths = await Promise.all(paths.map(async p => {
+        let label = ''
+        if (p.phaseId) {
+            let phase = dataStore.phases[p.phaseId]
+            if (!phase) {
+                try { phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId: p.phaseId }) } catch {}
+            }
+            label = phase ? phase.name : 'Unknown Phase'
+        } else {
+            label = 'Floating'
+        }
+        
+        // Construct trail: root > parent > ... (excluding target aim itself)
+        const trail = p.aims.slice(0, -1).map(a => a.text).join(' > ')
+        if (trail) label += ' > ' + trail
+        
+        return { ...p, label }
+      }))
+      
+      availablePaths.value = enrichedPaths
+      pathSelectionMode.value = true
+      selectedIndex.value = 0
+      focusedResultIndex.value = 0 // Focus first path immediately? Or keep input focused?
+      // Requirements: "The path list should be like the result list... in place of results list"
+      // Let's focus the list immediately for better UX since typing isn't useful here
+      nextTick(() => {
+        if (resultsListRef.value?.children[0]) {
+            (resultsListRef.value.children[0] as HTMLElement).focus()
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Error preparing navigation:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const selectPath = async (path: AimPath) => {
+  loading.value = true
+  try {
+    await uiStore.executeNavigation(path)
+    uiStore.closeAimSearch()
+  } finally {
+    loading.value = false
+  }
+}
+
+const close = () => {
+  searchQuery.value = ''
+  searchResults.value = []
+  selectedIndex.value = 0
+  focusedResultIndex.value = -1
+  pathSelectionMode.value = false
+  availablePaths.value = []
+  uiStore.closeAimSearch()
+}
+
+onMounted(() => {
+  // Ensure input is focused when modal opens
+  nextTick(() => searchInput.value?.focus())
+})
+</script>
+
+<template>
+  <div class="search-overlay" @click.self="close" @keydown="handleKeydown">
+    <div class="search-modal">
+      <div class="search-input-wrapper">
+        <span class="search-icon">/</span>
+        <!-- Search Input -->
+        <input 
+          v-if="!pathSelectionMode"
+          ref="searchInput"
+          v-model="searchQuery" 
+          type="text" 
+          placeholder="Go to aim..." 
+          @focus="focusedResultIndex = -1"
+        />
+        <!-- Path Selection Header -->
+        <div v-else class="path-selection-header">
+          Select path to aim: <strong>"{{ selectedAimText }}"</strong>
+        </div>
+        <div v-if="loading" class="loader">...</div>
+      </div>
+      
+      <!-- Search Results -->
+      <div v-if="!pathSelectionMode" ref="resultsListRef" class="results-list" >
+        <div v-if="searchResults.length > 0">
+          <div 
+            v-for="(result, index) in searchResults" 
+            :key="result.id"
+            class="result-item"
+            :class="{ selected: index === selectedIndex }"
+            @click="selectAim(result)"
+            :tabindex="index === focusedResultIndex ? 0 : -1"
+            @focus="focusedResultIndex = index; selectedIndex = index"
+          >
+            <div class="result-text">
+              <span class="aim-text">{{ result.text }}</span>
+              <span class="aim-status" :class="result.status.state">{{ result.status.state }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="searchQuery && !loading" class="no-results">
+          No aims found.
+        </div>
+      </div>
+
+      <!-- Path Selection List -->
+      <div v-else ref="resultsListRef" class="results-list">
+        <div 
+          v-for="(path, index) in availablePaths" 
+          :key="index"
+          class="result-item"
+          :class="{ selected: index === selectedIndex }"
+          @click="selectPath(path)"
+          @mouseover="selectedIndex = index"
+          :tabindex="index === focusedResultIndex ? 0 : -1"
+          @focus="focusedResultIndex = index; selectedIndex = index"
+        >
+          <div class="result-text">
+            <span class="path-text">{{ path.label }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.search-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999; /* Increase z-index */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 20vh;
+}
+
+.search-modal {
+  width: 600px;
+  max-width: 90vw;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #333;
+  background: #1e1e1e;
+  min-height: 3rem;
+}
+
+.path-selection-header {
+  flex: 1;
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.search-icon {
+  color: #888;
+  font-family: monospace;
+  font-weight: bold;
+  margin-right: 10px;
+  font-size: 1.2em;
+}
+
+input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.1em;
+  outline: none;
+  font-family: sans-serif;
+}
+
+.results-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.result-item {
+  padding: 10px 16px;
+  border-bottom: 1px solid #2d2d2d;
+  cursor: pointer;
+}
+
+.result-item.selected {
+  background: #094771; /* VS Code selection blue */
+}
+
+.result-item:focus {
+  outline: none;
+  border: 1px solid #007acc; /* Custom focus border for accessibility */
+  margin: -1px; /* Offset border to not increase size and cause layout shift */
+}
+
+.result-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.aim-text {
+  font-weight: 500;
+}
+
+.path-text {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.aim-status {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #333;
+  color: #aaa;
+}
+
+.aim-status.open { color: var(--status-open); }
+.aim-status.done { color: var(--status-done); }
+.aim-status.cancelled { color: var(--status-cancelled); }
+.aim-status.partially { color: var(--status-partially); }
+.aim-status.failed { color: var(--status-failed); }
+
+.no-results {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+}
+</style>

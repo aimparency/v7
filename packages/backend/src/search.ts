@@ -13,12 +13,8 @@ function getAimIndex(projectPath: string): Document<Aim> {
         id: 'id',
         index: ['text', 'status.state'] as any
       },
-      tokenize: 'forward',
-      context: {
-        resolution: 9,
-        depth: 3,
-        bidirectional: true
-      }
+      tokenize: 'full',
+      cache: true
     });
     aimIndices.set(projectPath, index);
   }

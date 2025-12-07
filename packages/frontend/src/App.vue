@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { useUIStore } from './stores/ui'
 import { useDataStore } from './stores/data'
 import { trpc } from './trpc'
@@ -7,12 +7,12 @@ import RootAimsColumn from './components/RootAimsColumn.vue'
 import PhaseColumn from './components/PhaseColumn.vue'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
+import AimSearchModal from './components/AimSearchModal.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 // Template refs
-const appRef = ref<HTMLDivElement | null>(null)
 const projectPathInput = ref('')
 
 // Container offset based on viewport start from store
@@ -61,10 +61,25 @@ const closeProject = () => {
   uiStore.setProjectPath('')
 }
 
+// Global keydown handler
+const handleGlobalKeydown = (event: KeyboardEvent) => {
+  // Ignore if in project selection screen
+  if (uiStore.isInProjectSelection) return
+
+  // Ignore if user is typing in an input (except Escape which might be needed to close modals/search)
+  const target = event.target as HTMLElement
+  const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+  
+  if (isInput) return
+
+  uiStore.handleGlobalKeydown(event, dataStore)
+}
+
 // Update keyboard hints based on navigation state and selected column
 watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, selectedColumn]) => {
   if (!navigatingAims) {
     const hints = [
+      { key: '/', action: 'search' },
       { key: 'h/l', action: 'switch columns' },
       { key: 'j/k', action: 'navigate phases/aims' },
       { key: 'i', action: 'enter edit mode' },
@@ -82,6 +97,7 @@ watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, 
     uiStore.setKeyboardHints(hints)
   } else {
     uiStore.setKeyboardHints([
+      { key: '/', action: 'search' },
       { key: 'j/k', action: 'navigate aims' },
       { key: 'h/l', action: 'collapse/expand' },
       { key: 'e', action: 'edit aim' },
@@ -92,16 +108,16 @@ watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, 
   }
 }, { immediate: true })
 
-// Watch for modal close and restore focus
+// Watch for modal close
 watch(() => [uiStore.showPhaseModal, uiStore.showAimModal], async () => {
-  // When both modals are closed, restore focus to app
-  if (!uiStore.showPhaseModal && !uiStore.showAimModal) {
-    await nextTick()
-    appRef.value?.focus()
-  }
+  // When both modals are closed, we don't need to manually restore focus 
+  // because we use window listener now.
 })
 
 onMounted(async () => {
+  // Register global keydown listener
+  window.addEventListener('keydown', handleGlobalKeydown)
+
   // Set initial focus to the first phase column
   uiStore.setSelectedColumn(0);
 
@@ -118,16 +134,16 @@ onMounted(async () => {
     await uiStore.selectPhase(0, 0);
     uiStore.ensureSelectionVisible();
   }
+})
 
-  // Auto-focus app element for keyboard navigation
-  await nextTick();
-  appRef.value?.focus();
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleGlobalKeydown)
 })
 
 </script>
 
 <template>
-  <div ref="appRef" class="app" tabindex="0" @keydown="(event) => uiStore.handleGlobalKeydown(event, dataStore)">
+  <div class="app">
     <!-- Header -->
     <header v-if="!uiStore.isInProjectSelection" class="header">
       <div class="status">
@@ -213,6 +229,9 @@ onMounted(async () => {
     
     <!-- Aim Creation Modal -->
     <AimCreationModal v-if="uiStore.showAimModal" />
+
+    <!-- Aim Search Modal -->
+    <AimSearchModal v-if="uiStore.showAimSearch" />
 
     <!-- Help Text -->
     <footer v-if="!uiStore.isInProjectSelection" class="help">

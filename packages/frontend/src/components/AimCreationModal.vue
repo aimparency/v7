@@ -20,6 +20,7 @@ const aimTextInput = ref<HTMLInputElement>()
 
 // Real search functionality
 const performSearch = async (query: string) => {
+  console.log('Performing search for:', query)
   if (!query.trim()) {
     searchResults.value = []
     return
@@ -30,6 +31,7 @@ const performSearch = async (query: string) => {
       projectPath: uiStore.projectPath,
       query: query
     })
+    console.log('Search results:', results.length)
     searchResults.value = results.slice(0, 5) // Limit to 5 results
   } catch (error) {
     console.error('Failed to search aims:', error)
