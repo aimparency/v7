@@ -1,1 +1,16 @@
-{"id":"0c7c85ee-8c27-4659-81fc-900cfe510314","text":"implement playwright test for UI navigation and aim moving and so on","incoming":["f22edd57-9c0a-47f7-87dc-5ebf27f830c5"],"outgoing":["d59d03c1-45dd-48db-98c2-49b61b481f07"],"committedIn":[],"status":{"state":"open","comment":"","date":1764661815396}}
+{
+  "id": "0c7c85ee-8c27-4659-81fc-900cfe510314",
+  "text": "implement playwright test for UI navigation and aim moving and so on",
+  "incoming": [
+    "f22edd57-9c0a-47f7-87dc-5ebf27f830c5"
+  ],
+  "outgoing": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented e2e tests in packages/frontend/e2e/navigation.spec.ts covering mode switching, j/k navigation, and hierarchy expansion. Fixed a bug in App.vue where initial selection was not set.",
+    "date": 1765133822838
+  }
+}

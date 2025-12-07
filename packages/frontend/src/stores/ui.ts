@@ -694,6 +694,9 @@ export const useUIStore = defineStore('ui', {
     async handleGlobalKeydown(event: KeyboardEvent, dataStore: any) {
       console.log('pressed', event.key, '. nav aims? ', this.navigatingAims)
 
+      // Ignore if Ctrl or Meta is pressed (allow browser defaults)
+      if (event.ctrlKey || event.metaKey) return
+
       if (this.showPhaseModal || this.showAimModal || this.showAimSearch) {
         // Modals handle their own keys (including Escape).
         // We do nothing here to avoid conflicts.
@@ -1844,12 +1847,14 @@ export const useUIStore = defineStore('ui', {
             // Load next level children for next iteration
             if (i < phasePath.length - 1) {
               await dataStore.loadPhases(this.projectPath, p.id)
+              this.columnParentPhaseId[i + 1] = p.id
             }
           }
         }
         
         // Set focus to the last phase column
         this.selectedColumn = phasePath.length - 1
+        this.setRightmostColumn(phasePath.length)
         
         // Load aims for the specific phase
         await dataStore.loadPhaseAims(this.projectPath, phaseId)

@@ -1,11 +1,11 @@
 import { Document } from 'flexsearch';
-import type { Aim, Phase } from 'shared';
+import type { Aim, Phase, SearchAimResult } from 'shared';
 
 // FlexSearch indices per project
 const aimIndices = new Map<string, Document<Aim>>();
 const phaseIndices = new Map<string, Document<Phase>>();
 
-// Create or get FlexSearch index for aims
+// ... existing getAimIndex ...
 function getAimIndex(projectPath: string): Document<Aim> {
   if (!aimIndices.has(projectPath)) {
     const index = new Document<Aim>({
@@ -21,7 +21,7 @@ function getAimIndex(projectPath: string): Document<Aim> {
   return aimIndices.get(projectPath)!;
 }
 
-// Create or get FlexSearch index for phases
+// ... existing getPhaseIndex ...
 function getPhaseIndex(projectPath: string): Document<Phase> {
   if (!phaseIndices.has(projectPath)) {
     const index = new Document<Phase>({
@@ -41,76 +41,53 @@ function getPhaseIndex(projectPath: string): Document<Phase> {
   return phaseIndices.get(projectPath)!;
 }
 
-// Build/rebuild aim index from aims array
+// ... existing index/update/remove functions ...
 export function indexAims(projectPath: string, aims: Aim[]): void {
   const index = getAimIndex(projectPath);
-
-  // Clear existing index
-  for (const aim of aims) {
-    index.remove(aim.id);
-  }
-
-  // Add all aims
-  for (const aim of aims) {
-    index.add(aim);
-  }
+  for (const aim of aims) index.remove(aim.id);
+  for (const aim of aims) index.add(aim);
 }
 
-// Build/rebuild phase index from phases array
 export function indexPhases(projectPath: string, phases: Phase[]): void {
   const index = getPhaseIndex(projectPath);
-
-  // Clear existing index
-  for (const phase of phases) {
-    index.remove(phase.id);
-  }
-
-  // Add all phases
-  for (const phase of phases) {
-    index.add(phase);
-  }
+  for (const phase of phases) index.remove(phase.id);
+  for (const phase of phases) index.add(phase);
 }
 
-// Add single aim to index
 export function addAimToIndex(projectPath: string, aim: Aim): void {
   const index = getAimIndex(projectPath);
   index.add(aim);
 }
 
-// Update aim in index
 export function updateAimInIndex(projectPath: string, aim: Aim): void {
   const index = getAimIndex(projectPath);
   index.update(aim);
 }
 
-// Remove aim from index
 export function removeAimFromIndex(projectPath: string, aimId: string): void {
   const index = getAimIndex(projectPath);
   index.remove(aimId);
 }
 
-// Add single phase to index
 export function addPhaseToIndex(projectPath: string, phase: Phase): void {
   const index = getPhaseIndex(projectPath);
   index.add(phase);
 }
 
-// Update phase in index
 export function updatePhaseInIndex(projectPath: string, phase: Phase): void {
   const index = getPhaseIndex(projectPath);
   index.update(phase);
 }
 
-// Remove phase from index
 export function removePhaseFromIndex(projectPath: string, phaseId: string): void {
   const index = getPhaseIndex(projectPath);
   index.remove(phaseId);
 }
 
 // Search aims by text (FlexSearch)
-export async function searchAims(projectPath: string, query: string, allAims: Aim[]): Promise<Aim[]> {
+export async function searchAims(projectPath: string, query: string, allAims: Aim[]): Promise<SearchAimResult[]> {
   if (!query.trim()) {
-    return allAims;
+    return []; // Return empty if no query, consistent with search behavior
   }
 
   const index = getAimIndex(projectPath);
@@ -118,14 +95,32 @@ export async function searchAims(projectPath: string, query: string, allAims: Ai
 
   // FlexSearch returns array of results with field name
   const aimIds = new Set<string>();
+  const scores = new Map<string, number>();
+  
+  // Aggregate results and assign scores based on rank
+  let rank = 0;
   for (const result of results) {
     if (Array.isArray(result.result)) {
-      result.result.forEach(id => aimIds.add(id as string));
+      result.result.forEach(id => {
+        const aimId = id as string;
+        if (!aimIds.has(aimId)) {
+          aimIds.add(aimId);
+          // Synthetic score: 1.0 for top result, decaying by 0.05
+          scores.set(aimId, Math.max(0.1, 1.0 - (rank * 0.05)));
+          rank++;
+        }
+      });
     }
   }
 
-  // Return aims in order of search results
-  return allAims.filter(aim => aimIds.has(aim.id));
+  // Return aims in order of search results with scores
+  return allAims
+    .filter(aim => aimIds.has(aim.id))
+    .map(aim => ({
+      ...aim,
+      score: scores.get(aim.id)
+    }))
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
 }
 
 // Search phases by name (FlexSearch)
@@ -155,8 +150,3 @@ export function clearIndices(projectPath: string): void {
   phaseIndices.delete(projectPath);
 }
 
-// TODO: Embedding-based search
-// - Store embeddings for aim text + description
-// - Embed search queries
-// - Find similar aims by cosine similarity
-// - Combine with FlexSearch results

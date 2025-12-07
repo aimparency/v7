@@ -64,7 +64,7 @@ async function ensureProjectStructure(projectPath: string) {
 async function writeAim(projectPath: string, aim: Aim): Promise<void> {
   await ensureProjectStructure(projectPath);
   const aimPath = path.join(projectPath, 'aims', `${aim.id}.json`);
-  await fs.writeJson(aimPath, aim);
+  await fs.writeJson(aimPath, aim, { spaces: 2 });
   ee.emit('change', { type: 'aim', id: aim.id, projectPath });
 }
 
@@ -93,7 +93,7 @@ async function listAims(projectPath: string): Promise<Aim[]> {
 async function writePhase(projectPath: string, phase: Phase): Promise<void> {
   await ensureProjectStructure(projectPath);
   const phasePath = path.join(projectPath, 'phases', `${phase.id}.json`);
-  await fs.writeJson(phasePath, phase);
+  await fs.writeJson(phasePath, phase, { spaces: 2 });
   ee.emit('change', { type: 'phase', id: phase.id, projectPath });
 }
 
@@ -129,14 +129,14 @@ async function readSystemStatus(projectPath: string): Promise<SystemStatus> {
   // Default initial status
   const initialStatus: SystemStatus = { computeCredits: 10.0, funds: 0.0 };
   await ensureProjectStructure(projectPath);
-  await fs.writeJson(systemPath, initialStatus);
+  await fs.writeJson(systemPath, initialStatus, { spaces: 2 });
   return initialStatus;
 }
 
 async function writeSystemStatus(projectPath: string, status: SystemStatus): Promise<void> {
   await ensureProjectStructure(projectPath);
   const systemPath = path.join(projectPath, 'system.json');
-  await fs.writeJson(systemPath, status);
+  await fs.writeJson(systemPath, status, { spaces: 2 });
   ee.emit('change', { type: 'system', id: 'status', projectPath });
 }
 
@@ -572,16 +572,17 @@ const appRouter = t.router({
         const allAims = await listAims(input.projectPath);
         console.log(`[Search] Query: "${input.query}" | Total Aims: ${allAims.length}`);
         
-        // Primary: FlexSearch
+        // Primary: FlexSearch (returns SearchAimResult[])
         let results = await searchAims(input.projectPath, input.query, allAims);
         
         // Fallback/Augment: Simple text matching if FlexSearch misses obvious ones
-        if (results.length === 0 && input.query.trim().length > 0) {
+        if (input.query.trim().length > 0) {
           const lowerQuery = input.query.toLowerCase();
           const fallbackResults = allAims.filter(aim => 
             aim.text.toLowerCase().includes(lowerQuery) && 
             !results.some(r => r.id === aim.id)
-          );
+          ).map(aim => ({ ...aim, score: 0.05 })); // Assign low score to fallback matches
+          
           results = [...results, ...fallbackResults];
         }
 
@@ -595,6 +596,9 @@ const appRouter = t.router({
         if (input.phaseId) {
           results = results.filter(aim => aim.committedIn.includes(input.phaseId!));
         }
+
+        // Sort by score (descending) before pagination
+        results.sort((a, b) => (b.score || 0) - (a.score || 0));
 
         // Pagination
         if (input.offset !== undefined) {
@@ -837,7 +841,7 @@ const appRouter = t.router({
       .mutation(async ({ input }) => {
         await ensureProjectStructure(input.projectPath);
         const metaPath = path.join(input.projectPath, 'meta.json');
-        await fs.writeJson(metaPath, input.meta);
+        await fs.writeJson(metaPath, input.meta, { spaces: 2 });
         return input.meta;
       }),
 
@@ -1032,6 +1036,17 @@ const appRouter = t.router({
           if (validOutgoing.length !== aim.outgoing.length) {
             aim.outgoing = validOutgoing;
             await writeAim(input.projectPath, aim);
+          }
+        }
+
+        // Fix 3: Phase parent consistency
+        for (const phase of phases) {
+          if (phase.parent) {
+            if (!phaseMap.has(phase.parent)) {
+              fixes.push(`Removed non-existent parent phase ${phase.parent} from Phase ${phase.id}`);
+              phase.parent = null;
+              await writePhase(input.projectPath, phase);
+            }
           }
         }
 

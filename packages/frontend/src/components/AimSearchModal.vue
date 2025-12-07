@@ -44,19 +44,28 @@ const performSearch = async (query: string) => {
 
     const combinedResultsMap = new Map<string, SearchAimResult>()
 
-    // Add semantic results first, including their score
+    // Process Semantic Results first
     semanticSearchResults.forEach(aim => {
-      combinedResultsMap.set(aim.id, aim)
+      combinedResultsMap.set(aim.id, { ...aim })
     })
 
-    // Add FlexSearch results, but only if not already present from semantic search
+    // Process Keyword Results (FlexSearch)
     flexSearchResults.forEach(aim => {
-      if (!combinedResultsMap.has(aim.id)) {
-        combinedResultsMap.set(aim.id, { ...aim, score: 0 }) // Assign a default score
+      const existing = combinedResultsMap.get(aim.id)
+      if (existing) {
+        // Found in both: Boost score!
+        const semanticScore = existing.score || 0
+        const keywordScore = aim.score || 0
+        
+        // Take the stronger signal and add a bonus for confirmation
+        existing.score = Math.max(semanticScore, keywordScore) + 0.2
+      } else {
+        // Found only in keyword search
+        combinedResultsMap.set(aim.id, { ...aim })
       }
     })
 
-    // Convert map to array and sort: semantic results by score (desc), then FlexSearch order (implicit)
+    // Convert map to array and sort by score (desc)
     const sortedResults = Array.from(combinedResultsMap.values())
       .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, 10) // Limit to top 10 overall results
@@ -121,8 +130,9 @@ const handleKeydown = (e: KeyboardEvent) => {
         if (e.key === 'ArrowDown' && listLength > 0) {
            // ArrowDown from input goes to list
            focusedResultIndex.value = selectedIndex.value
-           nextTick(() => {
-            const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
+          nextTick(() => {
+            const items = resultsListRef.value?.querySelectorAll('.result-item')
+            const el = items?.[focusedResultIndex.value] as HTMLElement
             if (el) {
               el.focus()
               el.scrollIntoView({ block: 'nearest' })
@@ -136,7 +146,8 @@ const handleKeydown = (e: KeyboardEvent) => {
           focusedResultIndex.value++
           selectedIndex.value = focusedResultIndex.value
           nextTick(() => {
-            const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
+            const items = resultsListRef.value?.querySelectorAll('.result-item')
+            const el = items?.[focusedResultIndex.value] as HTMLElement
             if (el) {
               el.focus()
               el.scrollIntoView({ block: 'nearest' })
@@ -155,7 +166,8 @@ const handleKeydown = (e: KeyboardEvent) => {
           focusedResultIndex.value--
           selectedIndex.value = focusedResultIndex.value
           nextTick(() => {
-            const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
+            const items = resultsListRef.value?.querySelectorAll('.result-item')
+            const el = items?.[focusedResultIndex.value] as HTMLElement
             if (el) {
               el.focus()
               el.scrollIntoView({ block: 'nearest' })

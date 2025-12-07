@@ -1,1 +1,16 @@
-{"id":"c1f59d0d-8a9e-48b3-b612-7e0688128099","text":"combine trigram & semantic search. score threshold","incoming":["b5c6fda9-4c32-4b3a-94f0-31d0f2760040"],"outgoing":["b5c6fda9-4c32-4b3a-94f0-31d0f2760040"],"committedIn":[],"status":{"state":"open","comment":"","date":1762175891339}}
+{
+  "id": "c1f59d0d-8a9e-48b3-b612-7e0688128099",
+  "text": "combine trigram & semantic search. score threshold",
+  "incoming": [
+    "b5c6fda9-4c32-4b3a-94f0-31d0f2760040"
+  ],
+  "outgoing": [
+    "b5c6fda9-4c32-4b3a-94f0-31d0f2760040"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented in AimSearchModal.vue by merging results from FlexSearch and Semantic Search with a boosting strategy.",
+    "date": 1765134198132
+  }
+}

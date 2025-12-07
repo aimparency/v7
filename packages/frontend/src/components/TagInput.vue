@@ -8,6 +8,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', tags: string[]): void
+  (e: 'next-field'): void
+  (e: 'prev-field'): void
 }>()
 
 const input = ref('')
@@ -45,6 +47,37 @@ function ensureMaxLength() {
   }
 }
 
+function handleKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    addTag()
+    return
+  }
+
+  if (e.key === 'Tab') {
+    if (e.shiftKey) {
+      if (input.value === '') {
+        e.preventDefault()
+        emit('prev-field')
+      }
+    } else {
+      if (input.value !== '') {
+        e.preventDefault()
+        addTag()
+      } else {
+        e.preventDefault()
+        emit('next-field')
+      }
+    }
+    return
+  }
+
+  if (e.key === 'Backspace') {
+    removePreviousIfEmpty()
+    return
+  }
+}
+
 // Handle t() replacement simply for now
 const t = (key: string) => key === 'common.add' ? 'Add' : key
 
@@ -62,9 +95,7 @@ const t = (key: string) => key === 'common.add' ? 'Add' : key
         ref="inputElement"
         @input="ensureMaxLength"
         type="text" v-model="input"  
-        @keydown.enter.prevent="addTag" 
-        @keydown.tab.prevent="addTag" 
-        @keydown.backspace="removePreviousIfEmpty" 
+        @keydown="handleKeydown"
       />
       <button @click="addTag" class="add">{{ t('common.add') }}</button>
     </div>

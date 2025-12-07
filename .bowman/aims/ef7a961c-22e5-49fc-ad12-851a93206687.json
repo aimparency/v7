@@ -1,1 +1,14 @@
-{"id":"ef7a961c-22e5-49fc-ad12-851a93206687","text":"create in memory index for aims when opening project.","incoming":[],"outgoing":["b5c6fda9-4c32-4b3a-94f0-31d0f2760040"],"committedIn":[],"status":{"state":"open","comment":"","date":1762175755337}}
+{
+  "id": "ef7a961c-22e5-49fc-ad12-851a93206687",
+  "text": "create in memory index for aims when opening project.",
+  "incoming": [],
+  "outgoing": [
+    "b5c6fda9-4c32-4b3a-94f0-31d0f2760040"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented in backend/src/search.ts and server.ts via project.buildSearchIndex",
+    "date": 1765134154855
+  }
+}

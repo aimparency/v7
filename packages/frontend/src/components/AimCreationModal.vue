@@ -17,6 +17,9 @@ const statusComment = ref('')
 const searchResults = ref<Aim[]>([])
 const selectedSearchIndex = ref(0)
 const aimTextInput = ref<HTMLInputElement>()
+const descriptionInput = ref<HTMLTextAreaElement>()
+const statusSelect = ref<HTMLSelectElement>()
+const submitBtn = ref<HTMLButtonElement>()
 
 // Real search functionality
 const performSearch = async (query: string) => {
@@ -139,6 +142,18 @@ const handleSearchResultsKeydown = (event: KeyboardEvent) => {
   }
 }
 
+const handleTagPrev = () => {
+  descriptionInput.value?.focus()
+}
+
+const handleTagNext = () => {
+  if (uiStore.aimModalMode === 'edit') {
+    statusSelect.value?.focus()
+  } else {
+    submitBtn.value?.focus()
+  }
+}
+
 const selectSearchResult = (index: number) => {
   selectedSearchIndex.value = index
 }
@@ -220,6 +235,7 @@ onMounted(async () => {
         <div class="form-group">
           <label>Description (optional)</label>
           <textarea
+            ref="descriptionInput"
             v-model="aimDescription"
             placeholder="Enter aim description"
             rows="3"
@@ -228,14 +244,24 @@ onMounted(async () => {
         </div>
 
         <div class="form-group">
-          <TagInput v-model="aimTags" label="Tags" />
+          <TagInput 
+            v-model="aimTags" 
+            label="Tags" 
+            @next-field="handleTagNext"
+            @prev-field="handleTagPrev"
+          />
         </div>
 
         <!-- Status fields (edit mode only) -->
         <div v-if="uiStore.aimModalMode === 'edit'">
           <div class="form-group">
             <label>Status</label>
-            <select v-model="selectedStatus" class="status-select" @keydown="handleInputKeydown">
+            <select 
+              ref="statusSelect"
+              v-model="selectedStatus" 
+              class="status-select" 
+              @keydown="handleInputKeydown"
+            >
               <option value="open">Open</option>
               <option value="done">Done</option>
               <option value="cancelled">Cancelled</option>
@@ -295,6 +321,7 @@ onMounted(async () => {
           Cancel
         </button>
         <button
+          ref="submitBtn"
           @click="handleSubmit"
           class="btn-primary"
           :disabled="!aimText.trim() && !selectedSearchResult"

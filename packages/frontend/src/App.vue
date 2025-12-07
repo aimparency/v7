@@ -29,12 +29,22 @@ const columnWidth = computed(() => {
 
 const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
-  dataStore.loadProject(path)
+  await dataStore.loadProject(path)
+  await trpc.project.buildSearchIndex.mutate({
+    projectPath: path
+  });
+  await uiStore.selectPhase(0, 0)
+  uiStore.ensureSelectionVisible()
 }
 
 const openProjectFromHistory = async (path: string) => {
   projectPathInput.value = path
   await dataStore.loadProject(path)
+  await trpc.project.buildSearchIndex.mutate({
+    projectPath: path
+  });
+  await uiStore.selectPhase(0, 0)
+  uiStore.ensureSelectionVisible()
 }
 
 const removeFromHistory = (path: string, event: Event) => {

@@ -1,1 +1,18 @@
-{"id":"cb27ceaf-e220-4926-b5db-b2b21dbf26a3","text":"shift in tags: if at the end of tags (no current new tag input) shift should jump to the next input field. shift tab in tags should jump to the previous input field","description":"the tag input should just emit those two events. \nthe add aim modal should know how to handle it.","tags":["sdisa"],"incoming":[],"outgoing":["d59d03c1-45dd-48db-98c2-49b61b481f07"],"committedIn":[],"status":{"state":"open","comment":"","date":1765103642685}}
+{
+  "id": "cb27ceaf-e220-4926-b5db-b2b21dbf26a3",
+  "text": "shift in tags: if at the end of tags (no current new tag input) shift should jump to the next input field. shift tab in tags should jump to the previous input field",
+  "description": "the tag input should just emit those two events. \nthe add aim modal should know how to handle it.",
+  "tags": [
+    "sdisa"
+  ],
+  "incoming": [],
+  "outgoing": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1765133269690
+  }
+}
