@@ -25,13 +25,8 @@ export const useDataStore = defineStore('data', {
     migrated: false, // Track if we've run the migration
     subscription: null as { unsubscribe: () => void } | null,
     
-    // Pagination state for floating aims
+    // Floating aims
     floatingAimsIds: [] as string[],
-    floatingAimsPagination: {
-      offset: 0,
-      limit: 20,
-      hasMore: true
-    }
   }),
 
   getters: {
@@ -59,37 +54,24 @@ export const useDataStore = defineStore('data', {
   },
 
   actions: {
-    async loadFloatingAims(projectPath: string, reset: boolean = false) {
+    async loadFloatingAims(projectPath: string) {
       if (!projectPath) return;
       
-      if (reset) {
-        this.floatingAimsIds = [];
-        this.floatingAimsPagination.offset = 0;
-        this.floatingAimsPagination.hasMore = true;
-      }
-
-      if (!this.floatingAimsPagination.hasMore) return;
-
+      // Only load if not loaded? Or always reload to be fresh?
+      // Let's reload to be safe, but we can check if we have them.
+      // For now, simple reload of all floating aims.
+      
       this.loading = true;
       try {
         const aims = await trpc.aim.list.query({
           projectPath,
-          floating: true,
-          limit: this.floatingAimsPagination.limit,
-          offset: this.floatingAimsPagination.offset
+          floating: true
         });
 
+        this.floatingAimsIds = [];
         for (const aim of aims) {
           this.replaceAim(aim.id, aim);
-          if (!this.floatingAimsIds.includes(aim.id)) {
-            this.floatingAimsIds.push(aim.id);
-          }
-        }
-
-        if (aims.length < this.floatingAimsPagination.limit) {
-          this.floatingAimsPagination.hasMore = false;
-        } else {
-          this.floatingAimsPagination.offset += this.floatingAimsPagination.limit;
+          this.floatingAimsIds.push(aim.id);
         }
       } catch (error) {
         console.error('Failed to load floating aims:', error);
@@ -377,7 +359,7 @@ export const useDataStore = defineStore('data', {
         this.subscribeToUpdates(projectPath);
 
         // Load initial data
-        await this.loadFloatingAims(projectPath, true);
+        await this.loadFloatingAims(projectPath);
         await this.loadPhases(projectPath, null); // Load root phases
 
         // We also need to load aims for visible phases? 
@@ -604,7 +586,7 @@ export const useDataStore = defineStore('data', {
       try {
         if (phaseId === 'null') {
           // Root aims should use loadFloatingAims, this branch might be unused now but kept for safety
-          await this.loadFloatingAims(projectPath, true);
+          await this.loadFloatingAims(projectPath);
         } else {
           // Phase aims - load the specific phase to get commitments
           const phase = await trpc.phase.get.query({ projectPath, phaseId });

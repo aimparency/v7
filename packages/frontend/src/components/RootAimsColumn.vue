@@ -15,13 +15,6 @@ const rootColumnRef = ref<HTMLElement | null>(null)
 
 // Handle scroll requests from child aims
 const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
-
-const handleScroll = async (event: Event) => {
-  const target = event.target as HTMLElement
-  if (target.scrollTop + target.clientHeight >= target.scrollHeight - 50) {
-    await dataStore.loadFloatingAims(uiStore.projectPath)
-  }
-}
 </script>
 
 <template>
@@ -29,7 +22,6 @@ const handleScroll = async (event: Event) => {
     <div 
       ref="rootColumnRef" 
       class="aims-container"
-      @scroll="handleScroll"
     >
       <div class="info">free floating aims</div>
       <AimsList
