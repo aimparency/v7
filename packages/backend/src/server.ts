@@ -559,7 +559,10 @@ const appRouter = t.router({
       }))
       .query(async ({ input }) => {
         const allAims = await listAims(input.projectPath);
+        console.log(`[Search] Query: "${input.query}" | Total Aims: ${allAims.length}`);
+        
         let results = await searchAims(input.projectPath, input.query, allAims);
+        console.log(`[Search] Search results (before filter): ${results.length}`);
 
         if (input.status) {
           const statuses = Array.isArray(input.status) ? input.status : [input.status];
@@ -577,7 +580,8 @@ const appRouter = t.router({
         if (input.limit !== undefined) {
           results = results.slice(0, input.limit);
         }
-
+        
+        console.log(`[Search] Final results: ${results.length}`);
         return results;
       }),
 

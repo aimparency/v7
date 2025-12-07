@@ -54,12 +54,20 @@ export async function loadVectorStore(projectPath: string): Promise<VectorStore>
 }
 
 export async function saveEmbedding(projectPath: string, aimId: string, vector: number[]) {
-  const store = await loadVectorStore(projectPath);
-  store[aimId] = vector;
-  // Cache is updated by reference
-  
-  const storePath = await getVectorStorePath(projectPath);
-  await fs.writeJson(storePath, store);
+  try {
+    const store = await loadVectorStore(projectPath);
+    store[aimId] = vector;
+    // Cache is updated by reference
+    
+    const storePath = await getVectorStorePath(projectPath);
+    await fs.writeJson(storePath, store);
+  } catch (error: any) {
+    if (error.code === 'ENOENT') {
+      console.warn(`Failed to save embedding: Project directory might have been deleted (${projectPath})`);
+    } else {
+      console.error('Error saving embedding:', error);
+    }
+  }
 }
 
 export async function removeEmbedding(projectPath: string, aimId: string) {

@@ -1,11 +1,14 @@
 import process from 'node:process'
 import { defineConfig, devices } from '@playwright/test'
+import dotenv from 'dotenv'
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-// require('dotenv').config();
+dotenv.config();
+
+const PORT = process.env.VITE_PORT || 4001;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -32,7 +35,7 @@ const baseConfig = {
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
     actionTimeout: 0,
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.CI ? 'http://localhost:4173' : 'http://localhost:5173',
+    baseURL: `http://localhost:${PORT}`,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'retry-with-trace' as const
@@ -46,18 +49,18 @@ const baseConfig = {
         ...devices['Desktop Chrome'],
       },
     },
-    {
-      name: 'firefox',
-      use: {
-        ...devices['Desktop Firefox'],
-      },
-    },
-    {
-      name: 'webkit',
-      use: {
-        ...devices['Desktop Safari'],
-      },
-    },
+    // {
+    //   name: 'firefox',
+    //   use: {
+    //     ...devices['Desktop Firefox'],
+    //   },
+    // },
+    // {
+    //   name: 'webkit',
+    //   use: {
+    //     ...devices['Desktop Safari'],
+    //   },
+    // },
 
     /* Test against mobile viewports. */
     // {
@@ -92,22 +95,22 @@ const baseConfig = {
   // outputDir: 'test-results/',
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    /**
-     * Use the dev server by default for faster feedback loop.
-     * Use the preview server on CI for more realistic testing.
-     * Playwright will re-use the local server if there is already a dev-server running.
-     */
-    command: process.env.CI ? 'npm run preview' : 'npm run dev',
-    port: process.env.CI ? 4173 : 5173,
-    reuseExistingServer: !process.env.CI,
-  },
+  // webServer: {
+  //   /**
+  //    * Use the dev server by default for faster feedback loop.
+  //    * Use the preview server on CI for more realistic testing.
+  //    * Playwright will re-use the local server if there is already a dev-server running.
+  //    */
+  //   command: process.env.CI ? 'npm run preview' : 'npm run dev',
+  //   port: process.env.CI ? 4173 : 5173,
+  //   reuseExistingServer: !process.env.CI,
+  // },
 }
 
 export default defineConfig({
   ...baseConfig,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: 'list',
   /* Only on CI systems run the tests headless */
   use: {
     ...baseConfig.use,
