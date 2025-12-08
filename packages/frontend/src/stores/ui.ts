@@ -702,6 +702,11 @@ export const useUIStore = defineStore('ui', {
         // We do nothing here to avoid conflicts.
         return
       } else {
+        // Ignore modifiers (Ctrl, Alt, Meta) to allow browser shortcuts
+        if (event.ctrlKey || event.metaKey || event.altKey) {
+          return
+        }
+
         if (event.key === '/') {
           event.preventDefault()
           this.openAimSearch()

@@ -572,11 +572,13 @@ const appRouter = t.router({
         const allAims = await listAims(input.projectPath);
         console.log(`[Search] Query: "${input.query}" | Total Aims: ${allAims.length}`);
         
-        // Primary: FlexSearch (returns SearchAimResult[])
-        let results = await searchAims(input.projectPath, input.query, allAims);
-        
-        // Fallback/Augment: Simple text matching if FlexSearch misses obvious ones
-        if (input.query.trim().length > 0) {
+        let results: SearchAimResult[] = [];
+
+        if (input.query && input.query.trim().length > 0) {
+          // Primary: FlexSearch (returns SearchAimResult[])
+          results = await searchAims(input.projectPath, input.query, allAims);
+          
+          // Fallback/Augment: Simple text matching if FlexSearch misses obvious ones
           const lowerQuery = input.query.toLowerCase();
           const fallbackResults = allAims.filter(aim => 
             aim.text.toLowerCase().includes(lowerQuery) && 
@@ -584,9 +586,12 @@ const appRouter = t.router({
           ).map(aim => ({ ...aim, score: 0.05 })); // Assign low score to fallback matches
           
           results = [...results, ...fallbackResults];
+        } else {
+          // No query provided: start with all aims
+          results = allAims;
         }
 
-        console.log(`[Search] Search results (after fallback): ${results.length}`);
+        console.log(`[Search] Search results (after fallback/init): ${results.length}`);
 
         if (input.status) {
           const statuses = Array.isArray(input.status) ? input.status : [input.status];

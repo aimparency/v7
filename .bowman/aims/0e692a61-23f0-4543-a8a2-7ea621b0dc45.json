@@ -1,0 +1,16 @@
+{
+  "id": "0e692a61-23f0-4543-a8a2-7ea621b0dc45",
+  "text": "when pressing i to enter aim navigation in a phase, we also have to bring into view the selected aim. reuse the existing function.",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented in packages/frontend/src/components/Aim.vue by watching isActive prop.",
+    "date": 1765211601379
+  }
+}

@@ -60,9 +60,10 @@ const statusColor = computed(() => {
   return colorMap[props.aim.status.state] ?? '#888'
 })
 
-// Scroll into view when this aim becomes selected
-watch(() => props.isThisAimSelected, (isSelected) => {
-  if (isSelected && !(isExpanded && props.aim.selectedIncomingIndex) && aimContainerRef.value) {
+// Scroll into view when this aim becomes selected or active
+watch(() => [props.isThisAimSelected, props.isActive], ([isSelected, isActive]) => {
+  const hasSelectedChild = isExpanded.value && props.aim.selectedIncomingIndex !== undefined
+  if (isSelected && isActive && !hasSelectedChild && aimContainerRef.value) {
     emit('scroll-request', aimContainerRef.value)
   }
 }, { flush: 'post' })

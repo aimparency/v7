@@ -15,3 +15,5 @@
     - This 'structure.md' file explains how the folder's contents should be treated 
 4. Context Protocol: On startup, I will analyze './subdev' by recursively inspecting 'structure.md' files to understand the project layout, and also read 'structure.md' files of the 3 most recently modified project folders within './subdev' for current active context. I look at the direcory contents (ls) of subdev and the 3 most recent subdirs. 
 - if you need to look at files outside the project dir, use system tools ls and cp to bring them into a temporary folder tmpread inside the project dir so that you can examine them.
+- prefer working test driven: for any feature, define a test case and then implement the functionality. This way, any feature will be protected against regression. 
+
