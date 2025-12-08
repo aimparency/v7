@@ -1,0 +1,16 @@
+{
+  "id": "b9863b21-a641-4efa-93dd-b1e3ef4a09f4",
+  "text": "in edit phases when focused on parent, esc should close the modal",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765212496321
+  }
+}

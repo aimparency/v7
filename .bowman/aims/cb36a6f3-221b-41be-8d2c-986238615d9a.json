@@ -1,0 +1,16 @@
+{
+  "id": "cb36a6f3-221b-41be-8d2c-986238615d9a",
+  "text": "phase creation is not reflected in ui in realtime yet. should be.",
+  "description": "maybe some related phase operations also need synchroization.",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765212615644
+  }
+}

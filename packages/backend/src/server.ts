@@ -121,6 +121,41 @@ async function listPhases(projectPath: string, parentPhaseId?: string | null): P
   return phases;
 }
 
+async function cleanupCommitments(projectPath: string, specificPhaseId?: string): Promise<number> {
+  const aims = await listAims(projectPath);
+  let changedCount = 0;
+  let validPhaseIds: Set<string> | null = null;
+
+  if (!specificPhaseId) {
+    const phases = await listPhases(projectPath);
+    validPhaseIds = new Set(phases.map(p => p.id));
+  }
+
+  for (const aim of aims) {
+    let changed = false;
+    if (specificPhaseId) {
+      if (aim.committedIn && aim.committedIn.includes(specificPhaseId)) {
+        aim.committedIn = aim.committedIn.filter(id => id !== specificPhaseId);
+        changed = true;
+      }
+    } else if (validPhaseIds) {
+       if (aim.committedIn) {
+         const originalLength = aim.committedIn.length;
+         aim.committedIn = aim.committedIn.filter(id => validPhaseIds!.has(id));
+         if (aim.committedIn.length !== originalLength) {
+           changed = true;
+         }
+       }
+    }
+
+    if (changed) {
+      await writeAim(projectPath, aim);
+      changedCount++;
+    }
+  }
+  return changedCount;
+}
+
 async function readSystemStatus(projectPath: string): Promise<SystemStatus> {
   const systemPath = path.join(projectPath, 'system.json');
   if (await fs.pathExists(systemPath)) {
@@ -716,6 +751,9 @@ const appRouter = t.router({
       .mutation(async ({ input }) => {
         const phasePath = path.join(input.projectPath, 'phases', `${input.phaseId}.json`);
         await fs.remove(phasePath);
+        
+        await cleanupCommitments(input.projectPath, input.phaseId);
+
         removePhaseFromIndex(input.projectPath, input.phaseId);
         ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath });
         return { success: true };
@@ -872,6 +910,15 @@ const appRouter = t.router({
           }
         }
         return { success: true };
+      }),
+
+    repair: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .mutation(async ({ input }) => {
+        const count = await cleanupCommitments(input.projectPath);
+        return { fixedAims: count };
       }),
 
     checkConsistency: delayedProcedure

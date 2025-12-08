@@ -1,0 +1,16 @@
+{
+  "id": "00048145-64e9-4476-8870-aaeb2bab9975",
+  "text": "support multiple concurrent watchdogs for different projects",
+  "description": "use a new port and pass the port as get param when you open the tab.",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "abc3d503-5945-45eb-8122-be5e33b2ccea"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765212046947
+  }
+}

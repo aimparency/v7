@@ -355,6 +355,9 @@ export const useDataStore = defineStore('data', {
         uiStore.setProjectPath(projectPath);
         uiStore.setConnectionStatus('connecting');
 
+        // Repair project state (clean up invalid commitments)
+        await trpc.project.repair.mutate({ projectPath });
+
         // Start subscription
         this.subscribeToUpdates(projectPath);
 
