@@ -723,10 +723,15 @@ const appRouter = t.router({
     list: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        parentPhaseId: z.string().uuid().nullable().optional()
+        parentPhaseId: z.string().uuid().nullable().optional(),
+        activeAt: z.number().optional()
       }))
       .query(async ({ input }) => {
-        return await listPhases(input.projectPath, input.parentPhaseId);
+        let phases = await listPhases(input.projectPath, input.parentPhaseId);
+        if (input.activeAt !== undefined) {
+          phases = phases.filter(p => p.from <= input.activeAt! && p.to >= input.activeAt!);
+        }
+        return phases;
       }),
 
     update: delayedProcedure

@@ -1,0 +1,20 @@
+{
+  "id": "0f8868ba-7ac5-46f7-a23a-7ca3e0cb43d4",
+  "text": "Launch Echo Service (MVP)",
+  "tags": [
+    "revenue",
+    "product"
+  ],
+  "incoming": [
+    "1874f90a-2b67-42b5-a107-29f125b2e8a2"
+  ],
+  "outgoing": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "MVP Implemented. Service pipeline supports real API calls to ElevenLabs and Replicate, with graceful mock fallback. Configured via .env.",
+    "date": 1765214241471
+  }
+}

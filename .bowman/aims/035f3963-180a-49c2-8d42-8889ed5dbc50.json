@@ -1,0 +1,22 @@
+{
+  "id": "035f3963-180a-49c2-8d42-8889ed5dbc50",
+  "text": "Train Market Alpha Agent with RL",
+  "tags": [
+    "rl",
+    "finance"
+  ],
+  "incoming": [
+    "1874f90a-2b67-42b5-a107-29f125b2e8a2"
+  ],
+  "outgoing": [
+    "5dd6a07a-5e23-4eec-a674-6c28e8096e6c"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Upgraded to use Real Market Data (BTC-USD via yfinance). Agent trained on 2 years of history. Current performance is baseline (break-even). Future work: Feature engineering.",
+    "date": 1765215126716
+  }
+}

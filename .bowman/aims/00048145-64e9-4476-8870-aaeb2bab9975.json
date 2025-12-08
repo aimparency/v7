@@ -9,8 +9,8 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765212046947
+    "state": "done",
+    "comment": "Implemented dynamic port selection in watchdog/src/index.ts. It now finds the first available port starting from 4011.",
+    "date": 1765213308704
   }
 }

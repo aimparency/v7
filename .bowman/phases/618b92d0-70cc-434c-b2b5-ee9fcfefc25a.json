@@ -4,7 +4,12 @@
   "to": 1774915200000,
   "parent": "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5",
   "commitments": [
-    "0cefe646-447b-412a-b4f6-53167668b0ee"
+    "0cefe646-447b-412a-b4f6-53167668b0ee",
+    "0d6d4f9c-cc6c-4072-9765-996aac58cd22",
+    "0f8868ba-7ac5-46f7-a23a-7ca3e0cb43d4",
+    "035f3963-180a-49c2-8d42-8889ed5dbc50",
+    "ad4776b8-7dfe-47f5-8bc6-54a4f9d39d68",
+    "5dd6a07a-5e23-4eec-a674-6c28e8096e6c"
   ],
   "name": "Q1 2026: Scale Experience Mining"
 }

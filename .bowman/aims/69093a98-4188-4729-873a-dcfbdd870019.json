@@ -1,1 +1,14 @@
-{"id":"69093a98-4188-4729-873a-dcfbdd870019","text":"Establish Social Media Feedback Loop","incoming":[],"outgoing":["c858c337-506e-494b-bfe3-c32e4db02aaf"],"committedIn":["f51f8930-c937-4c66-9db8-d4d313e6d286"],"status":{"state":"done","comment":"Implemented social media publishing loop (mock X/Insta API, publisher script, analytics stub). Pipeline is fully functional in subdev/experience-mining/social-media.","date":1765016693801}}
+{
+  "id": "69093a98-4188-4729-873a-dcfbdd870019",
+  "text": "Establish Social Media Feedback Loop",
+  "incoming": [],
+  "outgoing": [
+    "c858c337-506e-494b-bfe3-c32e4db02aaf"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented social media publishing loop (mock X/Insta API, publisher script, analytics stub). Pipeline is fully functional in subdev/experience-mining/social-media.",
+    "date": 1765016693801
+  }
+}

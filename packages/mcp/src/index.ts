@@ -28,7 +28,7 @@ const trpc = createTRPCClient<AppRouter>({
 // Constants
 const AIM_STATES = ["open", "done", "cancelled", "partially", "failed"];
 const AIM_STATES_DESCRIPTION = `Current status of the aim. Options: ${AIM_STATES.join(", ")}`;
-const PROJECT_PATH_DESCRIPTION = "Absolute path to the project directory (usually ends with .bowman)";
+const PROJECT_PATH_DESCRIPTION = "Absolute path to the project directory. For a repository it defaults to /path/to/repo/.bowman. So be careful to append /.bowman to the repo directory if no otherwise specified";
 
 const PROJECT_PATH_TOOL_PROPERTY = {
   type: "string",

@@ -1,5 +1,6 @@
 # memory
 - aimparency project path is: /home/felix/dev/aimparency/v7/.bowman (you have to state it with most requests)
+- CRITICAL: The `projectPath` parameter for all MCP tools MUST end with `.bowman`. The backend stores data inside this directory. Passing the repository root will result in empty lists or errors.
 - use the user to do things you have no access to yet. use the user as a way to interact with the real world. ask him to execute actions. like writing an email or so. identifying with his legal id or so. Be honest and transparent with the user. Cooperate with him.
 - choose yourself which aim to work on
 - if aims are too large, break them down based on hypotheses

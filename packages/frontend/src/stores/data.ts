@@ -631,6 +631,42 @@ export const useDataStore = defineStore('data', {
       } catch (error) {
         console.error('Failed to load specific aims:', error);
       }
+    },
+
+    async reorderPhaseAim(projectPath: string, phaseId: string, aimId: string, newIndex: number) {
+      try {
+        await trpc.aim.commitToPhase.mutate({
+          projectPath,
+          aimId,
+          phaseId,
+          insertionIndex: newIndex
+        });
+        
+        const phase = await trpc.phase.get.query({ projectPath, phaseId });
+        if (phase) this.replacePhase(phaseId, phase);
+      } catch (error) {
+        console.error('Failed to reorder phase aim:', error);
+      }
+    },
+
+    async reorderSubAim(projectPath: string, parentAimId: string, childAimId: string, newIndex: number) {
+      try {
+        const childAim = this.aims[childAimId];
+        const childOutgoingIndex = childAim?.outgoing.indexOf(parentAimId) ?? 0;
+
+        await trpc.aim.connectAims.mutate({
+          projectPath,
+          parentAimId,
+          childAimId: childAimId,
+          parentIncomingIndex: newIndex,
+          childOutgoingIndex: childOutgoingIndex !== -1 ? childOutgoingIndex : undefined
+        });
+
+        const parentAim = await trpc.aim.get.query({ projectPath, aimId: parentAimId });
+        if (parentAim) this.replaceAim(parentAimId, parentAim);
+      } catch (error) {
+        console.error('Failed to reorder sub-aim:', error);
+      }
     }
   }
 })

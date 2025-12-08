@@ -130,6 +130,7 @@ onMounted(() => {
       <AimsList
         :aims="incomingAims"
         :phase-id="phaseId"
+        :parent-aim-id="aim.id"
         :column-index="0"
         :indentation-level="indentationLevel + 1"
         :is-active="isActive && isThisAimSelected"

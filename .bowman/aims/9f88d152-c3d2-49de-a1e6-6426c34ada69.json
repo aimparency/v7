@@ -1,1 +1,15 @@
-{"id":"9f88d152-c3d2-49de-a1e6-6426c34ada69","text":"add aim description everywhere. open aim details/edit modal after creating.","incoming":[],"outgoing":["ad34dc5b-054e-4765-b251-edbc971af27e"],"committedIn":["f51f8930-c937-4c66-9db8-d4d313e6d286"],"status":{"state":"done","comment":"Added description field to Aim schema, UI modal, and display component. Open edit/details modal is integrated into the creation flow (description available on creation).","date":1764799875276}}
+{
+  "id": "9f88d152-c3d2-49de-a1e6-6426c34ada69",
+  "text": "add aim description everywhere. open aim details/edit modal after creating.",
+  "incoming": [],
+  "outgoing": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c",
+    "ad34dc5b-054e-4765-b251-edbc971af27e"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Added description field to Aim schema, UI modal, and display component. Open edit/details modal is integrated into the creation flow (description available on creation).",
+    "date": 1764799875276
+  }
+}

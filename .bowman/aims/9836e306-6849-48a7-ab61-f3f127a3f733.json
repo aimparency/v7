@@ -1,1 +1,14 @@
-{"id":"9836e306-6849-48a7-ab61-f3f127a3f733","text":"Implement Content Generation Pipeline (Text -> Video/Voice)","incoming":[],"outgoing":["c858c337-506e-494b-bfe3-c32e4db02aaf"],"committedIn":["f51f8930-c937-4c66-9db8-d4d313e6d286"],"status":{"state":"done","comment":"Implemented content generation pipeline (parsing -> audio/video generation). Currently using mock generators, ready to be swapped with real APIs (Veo/ElevenLabs). Pipeline successfully processes scripts_v1.md.","date":1765016592778}}
+{
+  "id": "9836e306-6849-48a7-ab61-f3f127a3f733",
+  "text": "Implement Content Generation Pipeline (Text -> Video/Voice)",
+  "incoming": [],
+  "outgoing": [
+    "c858c337-506e-494b-bfe3-c32e4db02aaf"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented content generation pipeline (parsing -> audio/video generation). Currently using mock generators, ready to be swapped with real APIs (Veo/ElevenLabs). Pipeline successfully processes scripts_v1.md.",
+    "date": 1765016592778
+  }
+}

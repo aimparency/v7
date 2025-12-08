@@ -65,6 +65,9 @@ const updatePhase = async () => {
   if (!uiStore.phaseModalEditingPhaseId) return
 
   try {
+    const oldPhase = dataStore.phases[uiStore.phaseModalEditingPhaseId]
+    const oldParentId = oldPhase?.parent ?? null
+
     const updatedPhase = await trpc.phase.update.mutate({
       projectPath: uiStore.projectPath,
       phaseId: uiStore.phaseModalEditingPhaseId,
@@ -79,24 +82,14 @@ const updatePhase = async () => {
     // Update the local store with the updated phase
     if (updatedPhase) {
       dataStore.phases[updatedPhase.id] = updatedPhase
-      // Trigger a reload of phase structure or parent list if needed?
-      // Actually, moving a phase requires updating childrenByParentId in dataStore.
-      // The easiest way is to reload phases.
-      // But dataStore.phases is reactive.
-      // However, the columns depend on getPhasesByParentId which uses childrenByParentId index.
-      // We should invalidate or reload that.
       
-      // Let's trigger a reload of the project structure or at least the affected parents.
-      // For simplicity, reload all phases (or just root if we moved to root).
+      // Reload the new parent's children
       await dataStore.loadPhases(uiStore.projectPath, updatedPhase.parent);
-      // Also reload the old parent to remove it from there?
-      // We don't know the old parent ID easily here unless we stored it.
-      // But loadPhases updates the children list for the requested parent.
-      // We should probably reload everything or be smarter.
-      // reloading null (root) is often safe.
-      await dataStore.loadPhases(uiStore.projectPath, null);
       
-      // Ideally, we should have a method to move phase in store
+      // If parent changed, reload the old parent's children too to remove the ghost entry
+      if (oldParentId !== updatedPhase.parent) {
+        await dataStore.loadPhases(uiStore.projectPath, oldParentId);
+      }
     }
 
     uiStore.closePhaseModal()
@@ -217,7 +210,7 @@ const calculateSmartDateRanges = async () => {
 
         <div v-if="uiStore.phaseModalMode === 'edit'" class="form-group">
           <label>Parent Phase</label>
-          <select v-model="uiStore.phaseModalEditingParentId">
+          <select v-model="uiStore.phaseModalEditingParentId" @keydown="handleKeydown">
             <option :value="null">Root (No Parent)</option>
             <option v-for="phase in availableParents" :key="phase.id" :value="phase.id">
               {{ phase.name }}

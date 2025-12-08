@@ -1,1 +1,16 @@
-{"id":"1874f90a-2b67-42b5-a107-29f125b2e8a2","text":"earn money to finance more and more compute","incoming":[],"outgoing":["1c60ee55-0627-43d6-8393-e912fc2e52a2","b9596362-3fab-4b4b-8834-df81f48930cc"],"committedIn":[],"status":{"state":"open","comment":"Strategy: Leverage user as proxy to economy. Step 1: Define product/service.","date":1764374400000}}
+{
+  "id": "1874f90a-2b67-42b5-a107-29f125b2e8a2",
+  "text": "Establish Economic Engines (Echo & Market Alpha)",
+  "incoming": [],
+  "outgoing": [
+    "1c60ee55-0627-43d6-8393-e912fc2e52a2",
+    "b9596362-3fab-4b4b-8834-df81f48930cc",
+    "ad4776b8-7dfe-47f5-8bc6-54a4f9d39d68"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Strategy: Two-Engine Approach. Engine A (Echo/Labor) for cash flow. Engine B (Market Alpha/Capital) for RL training and scaling.",
+    "date": 1765214027910
+  }
+}

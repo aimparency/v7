@@ -9,8 +9,8 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765212615644
+    "state": "done",
+    "comment": "Fixed phase update synchronization in PhaseCreationModal.vue by reloading both old and new parent phase lists. Creation logic in createAndSelectPhase already seemed correct.",
+    "date": 1765213247687
   }
 }
