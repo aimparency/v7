@@ -1,0 +1,13 @@
+{
+  "id": "81812958-054f-4da1-b6fa-62c930b7014d",
+  "text": "Improve MCP documentation and fix phase synchronization across clients",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Updated MCP description to encourage adding aims to phases. Fixed phase synchronization in frontend store to ensure new phases appear in lists across clients. Verified with type-check.",
+    "date": 1765316000000
+  }
+}

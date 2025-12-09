@@ -1,0 +1,18 @@
+{
+  "id": "a5e7f295-fe97-474a-a0e3-93c7201ce511",
+  "text": "Implement 'Experience Automation' Pipeline (Journal -> Social Post) using Gemini CLI",
+  "tags": [
+    "automation",
+    "social-media"
+  ],
+  "incoming": [],
+  "outgoing": [],
+  "committedIn": [
+    "ab939925-1be6-43fc-b7a9-958b49b2c66a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765230413224
+  }
+}

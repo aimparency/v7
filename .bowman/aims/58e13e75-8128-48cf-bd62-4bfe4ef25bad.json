@@ -1,0 +1,18 @@
+{
+  "id": "58e13e75-8128-48cf-bd62-4bfe4ef25bad",
+  "text": "Build Ingestion & Thought Extraction (Journal -> Thoughts) using Gemini CLI",
+  "tags": [
+    "ingestion",
+    "ai"
+  ],
+  "incoming": [],
+  "outgoing": [],
+  "committedIn": [
+    "ab939925-1be6-43fc-b7a9-958b49b2c66a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765230414614
+  }
+}

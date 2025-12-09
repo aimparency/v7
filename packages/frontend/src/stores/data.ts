@@ -401,13 +401,58 @@ export const useDataStore = defineStore('data', {
              try {
                const aim = await trpc.aim.get.query({ projectPath, aimId: data.id });
                this.replaceAim(aim.id, aim);
+
+               // Logic to update floating aims list
+               // A floating aim has no commitments AND no outgoing connections (is not a parent)
+               // Note: 'outgoing' contains IDs of aims that depend on this aim (children? no, depends on definition)
+               // In aimparency: outgoing = children (sub-aims). Wait, let's verify.
+               // connectAimsInternal: parent.incoming.push(child), child.outgoing.push(parent).
+               // So outgoing = PARENTS. incoming = CHILDREN.
+               // So a root aim has NO PARENTS (no outgoing). Correct.
+               const isFloating = (!aim.committedIn || aim.committedIn.length === 0) && (!aim.outgoing || aim.outgoing.length === 0);
+               
+               if (isFloating) {
+                 if (!this.floatingAimsIds.includes(aim.id)) {
+                   this.floatingAimsIds.unshift(aim.id);
+                 }
+               } else {
+                 const index = this.floatingAimsIds.indexOf(aim.id);
+                 if (index !== -1) {
+                   this.floatingAimsIds.splice(index, 1);
+                 }
+               }
              } catch (e) {
                if (this.aims[data.id]) delete this.aims[data.id];
+               
+               // Also remove from floating list if deleted/error
+               const index = this.floatingAimsIds.indexOf(data.id);
+               if (index !== -1) {
+                 this.floatingAimsIds.splice(index, 1);
+               }
              }
           } else if (data.type === 'phase') {
              try {
                const phase = await trpc.phase.get.query({ projectPath, phaseId: data.id });
                this.replacePhase(phase.id, phase);
+
+               // Update childrenByParentId to ensure list consistency
+               const parentId = phase.parent ?? 'null';
+               if (!this.childrenByParentId[parentId]) {
+                 this.childrenByParentId[parentId] = [];
+               }
+               if (!this.childrenByParentId[parentId].includes(phase.id)) {
+                 this.childrenByParentId[parentId].push(phase.id);
+                 
+                 // Re-sort the list by time
+                 this.childrenByParentId[parentId].sort((aId, bId) => {
+                    const a = this.phases[aId];
+                    const b = this.phases[bId];
+                    if (!a || !b) return 0;
+                    const aMid = (a.from + a.to) / 2;
+                    const bMid = (b.from + b.to) / 2;
+                    return aMid - bMid;
+                 });
+               }
              } catch (e) {
                if (this.phases[data.id]) delete this.phases[data.id];
              }

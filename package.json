@@ -13,7 +13,8 @@
     "dev:embedder": "bash packages/embedder/start.sh",
     "dev": "npm run dev:backend & npm run dev:frontend & npm run watch -w mcp & npm run dev:embedder",
     "dev:delay": "npm run dev:backend:delay & npm run dev:frontend",
-    "test": "npm run test -w backend"
+    "test": "npm run test -w backend",
+    "ncu-upgrade": "npx npm-check-updates -u --deep && npm install"
   },
   "keywords": [],
   "author": "",
@@ -21,22 +22,22 @@
   "main": "index.js",
   "dependencies": {
     "backend": "^1.0.0",
-    "csstype": "^3.1.3",
-    "entities": "^4.5.0",
-    "estree-walker": "^2.0.2",
-    "frontend": "^0.0.0",
-    "magic-string": "^0.30.19",
-    "nanoid": "^3.3.11",
+    "csstype": "^3.2.3",
+    "entities": "^7.0.0",
+    "estree-walker": "^3.0.3",
+    "frontend": "^1.0.3",
+    "magic-string": "^0.30.21",
+    "nanoid": "^5.1.6",
     "picocolors": "^1.1.1",
     "postcss": "^8.5.6",
     "remove-accents": "^0.5.0",
     "shared": "^1.0.0",
     "source-map-js": "^1.2.1",
-    "typescript": "^5.9.2",
-    "undici-types": "^7.14.0",
-    "vue": "^3.5.21",
+    "typescript": "^5.9.3",
+    "undici-types": "^7.16.0",
+    "vue": "^3.5.25",
     "vue-demi": "^0.14.10",
-    "zod": "^3.25.76"
+    "zod": "^4.1.13"
   },
   "devDependencies": {},
   "repository": {

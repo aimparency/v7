@@ -46,7 +46,7 @@ const server = new Server(
   {
     name: "aimparency",
     version: "1.0.0",
-    description: `MCP server for Aimparency project management. IMPORTANT: All resources and tools require 'projectPath' parameter - ${PROJECT_PATH_DESCRIPTION}. For resources, pass as query parameter: aims://all?projectPath=/absolute/path. For tools, pass as a property in the arguments object. Available Aim States: ${AIM_STATES.join(", ")}`,
+    description: `MCP server for Aimparency project management. IMPORTANT: All resources and tools require 'projectPath' parameter - ${PROJECT_PATH_DESCRIPTION}. For resources, pass as query parameter: aims://all?projectPath=/absolute/path. For tools, pass as a property in the arguments object. Available Aim States: ${AIM_STATES.join(", ")}. Aims should generally be committed to a phase using 'create-aim' with 'phaseId' or 'commit-aim-to-phase'.`,
   },
   {
     capabilities: {

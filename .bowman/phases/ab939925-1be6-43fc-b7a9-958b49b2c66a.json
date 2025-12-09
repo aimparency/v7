@@ -1,0 +1,13 @@
+{
+  "id": "ab939925-1be6-43fc-b7a9-958b49b2c66a",
+  "from": 1765238400000,
+  "to": 1765843200000,
+  "parent": "f51f8930-c937-4c66-9db8-d4d313e6d286",
+  "commitments": [
+    "a5e7f295-fe97-474a-a0e3-93c7201ce511",
+    "58e13e75-8128-48cf-bd62-4bfe4ef25bad",
+    "9eefe00c-46f8-47a6-96f3-c4b7b5bd2b8c",
+    "c0c5b78c-4742-4677-b944-274e45b36eb2"
+  ],
+  "name": "Social Automation Sprint"
+}

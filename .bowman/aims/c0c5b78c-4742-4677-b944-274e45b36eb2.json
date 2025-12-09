@@ -1,0 +1,18 @@
+{
+  "id": "c0c5b78c-4742-4677-b944-274e45b36eb2",
+  "text": "Implement Automated Publishing (X & Instagram)",
+  "tags": [
+    "publishing",
+    "infrastructure"
+  ],
+  "incoming": [],
+  "outgoing": [],
+  "committedIn": [
+    "ab939925-1be6-43fc-b7a9-958b49b2c66a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765230415645
+  }
+}

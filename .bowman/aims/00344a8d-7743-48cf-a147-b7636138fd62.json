@@ -1,0 +1,16 @@
+{
+  "id": "00344a8d-7743-48cf-a147-b7636138fd62",
+  "text": "Build Ingestion & Thought Extraction (Journal -> Thoughts)",
+  "tags": [
+    "ingestion",
+    "ai"
+  ],
+  "incoming": [],
+  "outgoing": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765230131119
+  }
+}

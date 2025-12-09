@@ -1,0 +1,13 @@
+{
+  "id": "726a6360-6e93-4a0f-95b6-1863af2600e5",
+  "text": "Add automated dependency upgrade script",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Added 'ncu-upgrade' script to root package.json for recursive dependency updates using npm-check-updates.",
+    "date": 1765316000000
+  }
+}

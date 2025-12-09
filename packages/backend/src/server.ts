@@ -9,7 +9,7 @@ import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
 import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema, SystemStatusSchema } from 'shared';
-import type { Aim, Phase, ProjectMeta, SystemStatus } from 'shared';
+import type { Aim, Phase, ProjectMeta, SystemStatus, SearchAimResult } from 'shared';
 import {
   indexAims,
   indexPhases,
