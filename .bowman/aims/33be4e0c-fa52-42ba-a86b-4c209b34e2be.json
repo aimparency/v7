@@ -1,0 +1,18 @@
+{
+  "id": "33be4e0c-fa52-42ba-a86b-4c209b34e2be",
+  "text": "bugfixes",
+  "description": "",
+  "tags": [],
+  "incoming": [
+    "1e645e7f-a4a9-4e17-a4c7-71c158c516e0"
+  ],
+  "outgoing": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765402481463
+  }
+}

@@ -314,6 +314,7 @@ const appRouter = t.router({
         projectPath: z.string(),
         status: z.union([z.string(), z.array(z.string())]).optional(),
         phaseId: z.string().uuid().optional(),
+        parentAimId: z.string().uuid().optional(),
         floating: z.boolean().optional(),
         ids: z.array(z.string().uuid()).optional(),
         limit: z.number().optional(),
@@ -338,6 +339,8 @@ const appRouter = t.router({
 
           if (input.phaseId) {
             aims = aims.filter(aim => aim.committedIn.includes(input.phaseId!));
+          } else if (input.parentAimId) {
+            aims = aims.filter(aim => aim.outgoing.includes(input.parentAimId!));
           } else if (input.floating) {
             aims = aims.filter(aim => (!aim.committedIn || aim.committedIn.length === 0) && (!aim.outgoing || aim.outgoing.length === 0));
           }

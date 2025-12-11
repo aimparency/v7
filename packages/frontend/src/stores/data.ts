@@ -282,6 +282,12 @@ export const useDataStore = defineStore('data', {
         if (aim) {
           this.replaceAim(aimId, aim)
         }
+        
+        // Remove from floating aims if present
+        const index = this.floatingAimsIds.indexOf(aimId)
+        if (index !== -1) {
+            this.floatingAimsIds.splice(index, 1)
+        }
       } catch (error) {
         console.error('Failed to commit aim to phase:', error)
         throw error
@@ -311,6 +317,16 @@ export const useDataStore = defineStore('data', {
         // Update local state - reload data to ensure consistency
         await this.loadAllAims(projectPath);
         await this.loadPhases(projectPath, null);
+
+        // Check if it needs to be added to floating
+        const aim = await trpc.aim.get.query({ projectPath, aimId })
+        if (aim) {
+            this.replaceAim(aimId, aim)
+            const isFloating = (!aim.committedIn || aim.committedIn.length === 0) && (!aim.outgoing || aim.outgoing.length === 0);
+            if (isFloating && !this.floatingAimsIds.includes(aimId)) {
+                this.floatingAimsIds.unshift(aimId)
+            }
+        }
       } catch (error) {
         console.error('Failed to remove aim from phase:', error)
         throw error

@@ -314,12 +314,29 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
+        name: "get-aim",
+        description: "Get a single aim by its ID",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
+            aimId: { type: "string", description: "UUID of the aim" }
+          },
+          required: ["projectPath", "aimId"],
+        },
+      },
+      {
         name: "list-aims",
         description: "List all aims in the project",
         inputSchema: {
           type: "object",
           properties: {
             projectPath: PROJECT_PATH_TOOL_PROPERTY,
+            ids: { 
+              type: "array", 
+              items: { type: "string" }, 
+              description: "Filter by specific aim IDs" 
+            },
             status: {
               type: ["string", "array"],
               items: { type: "string" },
@@ -328,6 +345,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             phaseId: {
               type: "string",
               description: "Filter by phase ID"
+            },
+            parentAimId: {
+              type: "string",
+              description: "Filter by parent aim ID (get sub-aims)"
+            },
+            floating: {
+              type: "boolean",
+              description: "Filter for aims that are not committed to any phase and have no parents"
             },
             limit: { type: "number", description: "Limit number of results" },
             offset: { type: "number", description: "Skip first N results" },
@@ -630,6 +655,52 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["projectPath"],
         },
       },
+      {
+        name: "build-search-index",
+        description: "Rebuild the search index and generate embeddings for all aims. Use this if search results seem outdated or missing.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
+          },
+          required: ["projectPath"],
+        },
+      },
+      {
+        name: "check-consistency",
+        description: "Check for data inconsistencies between aims, phases, and relationships (e.g. broken links, missing parents/children). Returns a list of errors if any found.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
+          },
+          required: ["projectPath"],
+        },
+      },
+      {
+        name: "fix-consistency",
+        description: "Automatically fix data inconsistencies found by check-consistency. Use with caution as it may remove invalid relationships.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
+          },
+          required: ["projectPath"],
+        },
+      },
+      {
+        name: "update-system-status",
+        description: "Manually update system status (compute credits, funds). Primarily for administrative use or manual adjustments.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
+            computeCredits: { type: "number", description: "New compute credits balance" },
+            funds: { type: "number", description: "New funds balance" }
+          },
+          required: ["projectPath"],
+        },
+      },
     ],
   };
 });
@@ -643,11 +714,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     switch (name) {
+      case "get-aim": {
+        const aim = await trpc.aim.get.query({
+          projectPath: args.projectPath as string,
+          aimId: args.aimId as string,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(aim, null, 2),
+            },
+          ],
+        };
+      }
+
       case "list-aims": {
         const aims = await trpc.aim.list.query({
           projectPath: args.projectPath as string,
+          ids: args.ids as string[] | undefined,
           status: args.status as string | string[] | undefined,
           phaseId: args.phaseId as string | undefined,
+          parentAimId: args.parentAimId as string | undefined,
+          floating: args.floating as boolean | undefined,
           limit: args.limit as number | undefined,
           offset: args.offset as number | undefined,
           sortBy: args.sortBy as "date" | "status" | "text" | undefined,
@@ -956,6 +1045,71 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: `Work completed successfully.\nEarned: ${result.earned.credits} credits, ${result.earned.funds} funds.\nNew Balance: ${result.computeCredits} credits, ${result.funds} funds.`,
+            },
+          ],
+        };
+      }
+
+      case "build-search-index": {
+        const result = await trpc.project.buildSearchIndex.mutate({
+          projectPath: args.projectPath as string,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Search index rebuild initiated.\nIndexed: ${result.indexed.aims} aims, ${result.indexed.phases} phases.\nEmbeddings are generating in the background.`,
+            },
+          ],
+        };
+      }
+
+      case "check-consistency": {
+        const result = await trpc.project.checkConsistency.query({
+          projectPath: args.projectPath as string,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: result.valid 
+                ? "Data consistency check passed. No errors found." 
+                : `Data consistency check FAILED.\nErrors found:\n${result.errors.map(e => `- ${e}`).join('\n')}`,
+            },
+          ],
+        };
+      }
+
+      case "fix-consistency": {
+        const result = await trpc.project.fixConsistency.mutate({
+          projectPath: args.projectPath as string,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: result.fixes.length > 0
+                ? `Consistency repairs completed.\nFixes applied:\n${result.fixes.map(f => `- ${f}`).join('\n')}`
+                : "No inconsistencies found to fix.",
+            },
+          ],
+        };
+      }
+
+      case "update-system-status": {
+        const statusUpdate: any = {};
+        if (args.computeCredits !== undefined) statusUpdate.computeCredits = args.computeCredits;
+        if (args.funds !== undefined) statusUpdate.funds = args.funds;
+
+        const result = await trpc.system.updateStatus.mutate({
+          projectPath: args.projectPath as string,
+          status: statusUpdate,
+        });
+        return {
+          content: [
+            {
+              type: "text",
+              text: `System status updated.\nNew Balance: ${result.computeCredits} credits, ${result.funds} funds.`,
             },
           ],
         };

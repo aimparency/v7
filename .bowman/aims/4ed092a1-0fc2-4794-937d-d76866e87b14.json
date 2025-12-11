@@ -1,0 +1,16 @@
+{
+  "id": "4ed092a1-0fc2-4794-937d-d76866e87b14",
+  "text": "pressing tab from the tag input jumps directly to the buttons instead of to the search result list focus. fix that",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented focus shift to search results when tabbing from tag input in AimCreationModal.",
+    "date": 1765401402496
+  }
+}

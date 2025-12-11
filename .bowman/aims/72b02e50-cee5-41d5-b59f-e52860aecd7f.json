@@ -1,0 +1,16 @@
+{
+  "id": "72b02e50-cee5-41d5-b59f-e52860aecd7f",
+  "text": "implement multi client testing",
+  "description": "with playwright (2 instances maybe) and an mcp client.",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "f7ff7398-1288-44d7-9e97-ad12d975ac87"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765402571164
+  }
+}

@@ -20,6 +20,7 @@ const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
 const statusSelect = ref<HTMLSelectElement>()
 const submitBtn = ref<HTMLButtonElement>()
+const searchResultsContainer = ref<HTMLDivElement>()
 
 // Real search functionality
 const performSearch = async (query: string) => {
@@ -150,7 +151,11 @@ const handleTagNext = () => {
   if (uiStore.aimModalMode === 'edit') {
     statusSelect.value?.focus()
   } else {
-    submitBtn.value?.focus()
+    if (hasSearchText.value && searchResultsContainer.value) {
+      searchResultsContainer.value.focus()
+    } else {
+      submitBtn.value?.focus()
+    }
   }
 }
 
@@ -283,6 +288,7 @@ onMounted(async () => {
         <!-- Search Results (create mode only) -->
         <div
           v-if="uiStore.aimModalMode === 'create' && hasSearchText"
+          ref="searchResultsContainer"
           class="search-results"
           tabindex="0"
           @keydown="handleSearchResultsKeydown"

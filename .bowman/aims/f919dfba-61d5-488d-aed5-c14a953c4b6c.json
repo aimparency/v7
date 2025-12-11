@@ -1,0 +1,16 @@
+{
+  "id": "f919dfba-61d5-488d-aed5-c14a953c4b6c",
+  "text": "implement a get sub aims",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "97d2e473-64b4-4de8-99c8-d8a7a064ee43"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented via 'list-aims' tool with 'parentAimId' parameter in MCP and backend support.",
+    "date": 1765401625091
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "id": "5ad6c3f8-a7ed-4e18-9bf0-321d033515bf",
+  "text": "adding a free floating aim to a phase leaves it in free floating colum, but it should disappear if its not freefloating (no parent aim, no phase) anymore",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Fixed in data store: commitAimToPhase now removes from floating list, and removeAimFromPhase adds to floating list if applicable.",
+    "date": 1765401353980
+  }
+}

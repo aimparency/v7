@@ -1,0 +1,18 @@
+{
+  "id": "f7ff7398-1288-44d7-9e97-ad12d975ac87",
+  "text": "write tests for that",
+  "description": "",
+  "tags": [],
+  "incoming": [
+    "72b02e50-cee5-41d5-b59f-e52860aecd7f"
+  ],
+  "outgoing": [
+    "1e645e7f-a4a9-4e17-a4c7-71c158c516e0"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765402585739
+  }
+}
