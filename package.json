@@ -11,10 +11,11 @@
     "dev:backend": "npm run dev -w backend",
     "dev:frontend": "npm run dev -w frontend",
     "dev:embedder": "bash packages/embedder/start.sh",
-    "dev": "npm run dev:backend & npm run dev:frontend & npm run watch -w mcp & npm run dev:embedder",
+    "dev": "npm run dev:backend & npm run dev:frontend & npm run watch -w mcp & npm run watch -w watchdog & npm run dev:embedder",
     "dev:delay": "npm run dev:backend:delay & npm run dev:frontend",
     "test": "npm run test -w backend",
-    "ncu-upgrade": "npx npm-check-updates -u --deep && npm install"
+    "ncu-upgrade": "npx npm-check-updates -u --deep && npm install",
+    "build": "npm run build --workspaces"
   },
   "keywords": [],
   "author": "",

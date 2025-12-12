@@ -720,6 +720,15 @@ export const useUIStore = defineStore('ui', {
           return
         }
 
+        if (event.key === 'g') {
+          event.preventDefault()
+          this.currentView = this.currentView === 'columns' ? 'graph' : 'columns'
+          if (this.currentView === 'columns') {
+            this.ensureSelectionVisible()
+          }
+          return
+        }
+
         if(this.navigatingAims) {
           await this.handleAimNavigationKeys(event, dataStore)
         } else {

@@ -1,0 +1,17 @@
+{
+  "id": "b439cf5f-d9b8-4406-a73b-65236c321c91",
+  "text": "data model augmentation (for graph layout + relevance calc)",
+  "description": "in order to have the same graph UI in aimparency v7 than in the reference implementation ./packages/frontend/graph-ui-reference-readonly, we need to update the datamodel, specifically the connections: \n- relative position\n- relevance (default 1) [0, infinity] -> the actual relevance is calculated by adding up all relevances of all incoming aims and then dividing individual connection relevances by that sum. \nActually, the weights should be stored at the aim where the connection points (the supported aim, let's call it). Because the supported aim has the competence to tell how relevant a supporting aim is. \nMaybe we can also store the relative position in the supported aim. So in the data model, an aim uses a simple reference for the supported aims and a list of Connections instead of the incoming aims. incomingaims should be named: supportingConnections and should be an array of Connection {\n  aimId: string, \n  relativePosition: [number, number], \n  weight: number, // default 1\n}\n\nAims should receive a new field: \n- costs (in energy - the only real currency)\n\n\nThe aim is to capable to automatically calculate the priority of an aim in order to decide what to work on (usefulness / cost) = priority\n\nIt's kind of a return of invest thought.",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "535d5d5a-883a-434f-892f-856f144482bb",
+    "2781474b-a068-4614-978f-96428f9686f2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765557071818
+  }
+}

@@ -1,6 +1,10 @@
 import { spawn, type ChildProcess } from 'child_process';
 import path from 'path';
 import * as net from 'net';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface WatchdogInstance {
   process: ChildProcess;
@@ -61,7 +65,7 @@ export const WatchdogManager = {
     // Target: .../watchdog/dist/index.js
     
     const rootDir = path.resolve(__dirname, '../../..'); // Up to project root
-    const watchdogScript = path.join(rootDir, 'watchdog/dist/index.js');
+    const watchdogScript = path.join(rootDir, 'packages/watchdog/dist/index.js');
 
     console.log(`[WatchdogManager] Spawning watchdog on port ${port} for ${projectPath}`);
     console.log(`[WatchdogManager] Script: ${watchdogScript}`);

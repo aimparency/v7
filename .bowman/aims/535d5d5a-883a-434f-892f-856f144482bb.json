@@ -1,0 +1,18 @@
+{
+  "id": "535d5d5a-883a-434f-892f-856f144482bb",
+  "text": "calculation of value flows",
+  "description": "because graph can be cyclic, do many iterations in order to calculate the value and priority value/cost until it converges.",
+  "tags": [],
+  "incoming": [
+    "b439cf5f-d9b8-4406-a73b-65236c321c91"
+  ],
+  "outgoing": [
+    "1d0dcba3-11da-44c9-a66d-ed80ac100ea5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765556689359
+  }
+}

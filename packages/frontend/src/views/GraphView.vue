@@ -37,7 +37,8 @@ import {
     type: string
   }
   
-  const svgRef = ref<SVGSVGElement>()const contentRef = ref<SVGGElement>()
+  const svgRef = ref<SVGSVGElement>()
+const contentRef = ref<SVGGElement>()
 const width = ref(0)
 const height = ref(0)
 
@@ -74,8 +75,8 @@ watch(() => uiStore.getCurrentAim(), (aim) => {
         const scale = 1.5 // Zoom level
         // transform.x = width/2 - node.x * scale
         // transform.y = height/2 - node.y * scale
-        const x = width.value / 2 - node.x * scale
-        const y = height.value / 2 - node.y * scale
+        const x = width.value / 2 - (node.x ?? 0) * scale
+        const y = height.value / 2 - (node.y ?? 0) * scale
         const transform = zoomIdentity.translate(x, y).scale(scale)
         
         select(svgRef.value).transition().duration(750).call(zoomBehavior.transform, transform)

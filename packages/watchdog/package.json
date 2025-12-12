@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "build:webui": "cd webui && npm run build",
+    "watch": "tsc -w",
     "start:server": "node dist/index.js",
     "start": "npm run build && npm run build:webui && npm run start:server",
     "dev": "npm run build && concurrently \"npm run start:server\" \"cd webui && npm run dev -- --force\"",

@@ -1,0 +1,16 @@
+{
+  "id": "496cec8e-0587-41cd-8512-a7a92fb003eb",
+  "text": "collapse whitespace when pasting the \"situation\" from the main agent session in the watchdog session prompt",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "abc3d503-5945-45eb-8122-be5e33b2ccea"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765554280939
+  }
+}
