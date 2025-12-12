@@ -1,0 +1,18 @@
+{
+  "id": "2694247d-43d6-4402-86f6-2b787e51f9a3",
+  "text": "Update Frontend Logic for supportingConnections",
+  "tags": [
+    "frontend",
+    "refactor"
+  ],
+  "incoming": [],
+  "outgoing": [
+    "b439cf5f-d9b8-4406-a73b-65236c321c91"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765557158892
+  }
+}

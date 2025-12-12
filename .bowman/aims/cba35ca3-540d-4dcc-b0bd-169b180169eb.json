@@ -1,0 +1,18 @@
+{
+  "id": "cba35ca3-540d-4dcc-b0bd-169b180169eb",
+  "text": "Graph Interaction: Edit Relative Positions & Weights",
+  "tags": [
+    "graph",
+    "ui"
+  ],
+  "incoming": [],
+  "outgoing": [
+    "b439cf5f-d9b8-4406-a73b-65236c321c91"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765557160740
+  }
+}

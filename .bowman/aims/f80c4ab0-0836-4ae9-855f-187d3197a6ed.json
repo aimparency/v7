@@ -1,0 +1,18 @@
+{
+  "id": "f80c4ab0-0836-4ae9-855f-187d3197a6ed",
+  "text": "Implement Reference Graph Layout Engine",
+  "tags": [
+    "graph",
+    "layout"
+  ],
+  "incoming": [],
+  "outgoing": [
+    "b439cf5f-d9b8-4406-a73b-65236c321c91"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765557159827
+  }
+}
