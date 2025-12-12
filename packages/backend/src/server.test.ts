@@ -45,8 +45,8 @@ test('connectAims - connects two existing aims', async () => {
     projectPath: TEST_PROJECT_PATH,
     parentAimId: parentResult.id,
     childAimId: childResult.id,
-    parentIncomingIndex: 0, // Changed from parentOutgoingIndex
-    childOutgoingIndex: 0   // Changed from childIncomingIndex
+    parentIncomingIndex: 0, 
+    childOutgoingIndex: 0
   });
 
   // Verify connection
@@ -59,8 +59,9 @@ test('connectAims - connects two existing aims', async () => {
     aimId: childResult.id
   });
 
-  assert.deepEqual(updatedParent.incoming, [childResult.id]); // Changed from outgoing
-  assert.deepEqual(updatedChild.outgoing, [parentResult.id]); // Changed from incoming
+  assert.equal(updatedParent.supportingConnections.length, 1);
+  assert.equal(updatedParent.supportingConnections[0].aimId, childResult.id);
+  assert.deepEqual(updatedChild.outgoing, [parentResult.id]);
 });
 
 test('createSubAim - creates and connects sub-aim', async () => {
@@ -82,7 +83,7 @@ test('createSubAim - creates and connects sub-aim', async () => {
       text: 'Sub Aim',
       status: { state: 'open', comment: '', date: Date.now() }
     },
-    positionInParent: 0 // Changed from parentIncomingIndex
+    positionInParent: 0 
   });
 
   // Verify creation and connection
@@ -95,8 +96,9 @@ test('createSubAim - creates and connects sub-aim', async () => {
     aimId: subAimResult.id
   });
 
-  assert.deepEqual(updatedParent.incoming, [subAimResult.id]); // Changed from outgoing
-  assert.deepEqual(subAim.outgoing, [parentResult.id]);      // Changed from incoming
+  assert.equal(updatedParent.supportingConnections.length, 1);
+  assert.equal(updatedParent.supportingConnections[0].aimId, subAimResult.id);
+  assert.deepEqual(subAim.outgoing, [parentResult.id]);
   assert.equal(subAim.text, 'Sub Aim');
 });
 
@@ -115,7 +117,7 @@ test('createCommittedAim - creates and commits aim to phase', async () => {
   });
 
   // Create committed aim
-  const aimResult = await caller.aim.createAimInPhase({ // Changed name
+  const aimResult = await caller.aim.createAimInPhase({
     projectPath: TEST_PROJECT_PATH,
     phaseId: phaseResult.id,
     aim: {
@@ -173,8 +175,8 @@ test('connectAims - repositioning existing connections', async () => {
     projectPath: TEST_PROJECT_PATH,
     parentAimId: parentResult.id,
     childAimId: child1Result.id,
-    parentIncomingIndex: 0, // Changed from parentOutgoingIndex
-    childOutgoingIndex: 0   // Changed from childIncomingIndex
+    parentIncomingIndex: 0,
+    childOutgoingIndex: 0
   });
 
   // Connect second child at position 0 (should move first child to position 1)
@@ -182,8 +184,8 @@ test('connectAims - repositioning existing connections', async () => {
     projectPath: TEST_PROJECT_PATH,
     parentAimId: parentResult.id,
     childAimId: child2Result.id,
-    parentIncomingIndex: 0, // Changed from parentOutgoingIndex
-    childOutgoingIndex: 0   // Changed from childIncomingIndex
+    parentIncomingIndex: 0, 
+    childOutgoingIndex: 0
   });
 
   // Verify repositioning
@@ -192,8 +194,9 @@ test('connectAims - repositioning existing connections', async () => {
     aimId: parentResult.id
   });
 
-
-  assert.deepEqual(updatedParent.incoming, [child2Result.id, child1Result.id]); // Changed from outgoing
+  assert.equal(updatedParent.supportingConnections.length, 2);
+  assert.equal(updatedParent.supportingConnections[0].aimId, child2Result.id);
+  assert.equal(updatedParent.supportingConnections[1].aimId, child1Result.id);
 });
 
 test('list - filters aims by status and phase', async () => {

@@ -6,12 +6,20 @@ export const AimStatusSchema = z.object({
   date: z.number() // Date.now() timestamp
 });
 
+export const ConnectionSchema = z.object({
+  aimId: z.string().uuid(),
+  relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
+  weight: z.number().default(1)
+});
+
+export type Connection = z.infer<typeof ConnectionSchema>;
+
 export const AimSchema = z.object({
   id: z.string().uuid(),
   text: z.string(),
   description: z.string().optional(),
   tags: z.array(z.string()).default([]),
-  incoming: z.array(z.string().uuid()),
+  supportingConnections: z.array(ConnectionSchema).default([]),
   outgoing: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
   status: AimStatusSchema

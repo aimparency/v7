@@ -3,46 +3,45 @@ import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useDataStore } from '../stores/data'
 import { 
   forceSimulation, 
-  forceLink, 
-    forceManyBody,
-    forceCenter,
-    forceCollide,
-    forceY,
-    type Simulation,
-    type SimulationNodeDatum,
-    type SimulationLinkDatum
-  } from 'd3-force'
-  import { zoom, zoomIdentity, zoomTransform, type ZoomBehavior } from 'd3-zoom'
-  import { select } from 'd3-selection'
-  import 'd3-transition'
-  import GraphNodeComponent from '../components/GraphNode.vue'
-  import GraphLinkComponent from '../components/GraphLink.vue'
-  import { useUIStore } from '../stores/ui'
-  
-  const dataStore = useDataStore()
-  const uiStore = useUIStore()
-  
-  // Types for our graph data
-  interface GraphNode extends SimulationNodeDatum {
-    id: string
-    text: string
-    status: string
-    r: number
-    depth: number
-  }
-  
-  interface GraphLink extends SimulationLinkDatum<GraphNode> {
-    source: string | GraphNode
-    target: string | GraphNode
-    type: string
-  }
-  
-  const svgRef = ref<SVGSVGElement>()
+  forceManyBody,
+  forceCenter,
+  forceCollide,
+  type Simulation,
+  type SimulationNodeDatum,
+  type SimulationLinkDatum
+} from 'd3-force'
+import { zoom, zoomIdentity, zoomTransform, type ZoomBehavior } from 'd3-zoom'
+import { select } from 'd3-selection'
+import 'd3-transition'
+import GraphNodeComponent from '../components/GraphNode.vue'
+import GraphLinkComponent from '../components/GraphLink.vue'
+import { useUIStore } from '../stores/ui'
+
+const dataStore = useDataStore()
+const uiStore = useUIStore()
+
+// Types for our graph data
+interface GraphNode extends SimulationNodeDatum {
+  id: string
+  text: string
+  status: string
+  r: number
+  depth: number
+}
+
+interface GraphLink extends SimulationLinkDatum<GraphNode> {
+  source: string | GraphNode
+  target: string | GraphNode
+  type: string
+  relativePosition?: [number, number]
+}
+
+const svgRef = ref<SVGSVGElement>()
 const contentRef = ref<SVGGElement>()
 const width = ref(0)
 const height = ref(0)
 
-// Local state for simulation to preserve positions
+// Local state for simulation
 const nodes = ref<GraphNode[]>([])
 const links = ref<GraphLink[]>([])
 
@@ -71,14 +70,10 @@ watch(() => uiStore.getCurrentAim(), (aim) => {
   if (aim && svgRef.value && width.value > 0) {
       const node = nodes.value.find(n => n.id === aim.id)
       if (node && zoomBehavior) {
-        // Center view on node
-        const scale = 1.5 // Zoom level
-        // transform.x = width/2 - node.x * scale
-        // transform.y = height/2 - node.y * scale
+        const scale = 1.5
         const x = width.value / 2 - (node.x ?? 0) * scale
         const y = height.value / 2 - (node.y ?? 0) * scale
         const transform = zoomIdentity.translate(x, y).scale(scale)
-        
         select(svgRef.value).transition().duration(750).call(zoomBehavior.transform, transform)
       }
   }
@@ -87,56 +82,90 @@ watch(() => uiStore.getCurrentAim(), (aim) => {
 const updateSimulationData = () => {
   const { nodes: newNodes, links: newLinks } = dataStore.graphData
   
-  // Merge new nodes with existing ones to preserve state (x, y, vx, vy)
+  // Merge nodes to preserve state
   const nodeMap = new Map(nodes.value.map(n => [n.id, n]))
-  
   const mergedNodes = newNodes.map(n => {
     const existing = nodeMap.get(n.id)
     if (existing) {
-      // Update properties but keep position data
       return { ...existing, text: n.text, status: n.status, depth: n.depth }
     }
-    return { ...n, r: 20 } as GraphNode // Default radius
+    return { ...n, r: 25 } as GraphNode
   })
   
   nodes.value = mergedNodes
-  
-  // Links are simpler, just replace them (D3 handles object references)
-  // We need to map source/target to IDs if they are objects, but d3 expects objects or IDs.
-  // Since we replace links, d3 will re-initialize them.
-  // To avoid jitter, we might want to preserve them too, but links usually don't store much state.
   links.value = newLinks.map(l => ({ ...l })) as GraphLink[]
 
   if (simulation) {
     simulation.nodes(nodes.value)
-    const linkForce = simulation.force('link') as any
-    if (linkForce) {
-      linkForce.links(links.value)
-    }
+    // No standard link force to update
     simulation.alpha(1).restart()
   }
 }
 
+// Custom Force: Relative Position
+const forceRelativePosition = (alpha: number) => {
+  // Strength factor - tune this
+  const k = 0.5 * alpha 
+  
+  links.value.forEach((link) => {
+    const source = link.source as GraphNode
+    const target = link.target as GraphNode
+    
+    // Check if d3 has resolved references
+    if (!source || !target || typeof source !== 'object' || typeof target !== 'object') return
+
+    // source = Parent, target = Child
+    // relativePosition = [dx, dy] (Child relative to Parent? Or Parent relative to Child?)
+    // In server/shared: relativePosition is stored on Parent->Child connection.
+    // Let's assume standard vector math: Target = Source + Delta
+    // So Delta = Target - Source.
+    // If relativePosition is [1, 0], Target is to the right of Source.
+    
+    const rSum = (source.r || 25) + (target.r || 25) + 50 // + spacing
+    const relPos = link.relativePosition || [0, 0]
+    
+    // Calculate desired position for Target (Child) relative to Source (Parent)
+    // Note: If relativePosition is [0,0] (default), they overlap? 
+    // If [0,0], we might want standard repulsion to handle it.
+    // But if we want to enforce structure, we should use [0, 1] (child below parent) as default?
+    // For now, respect the data.
+    
+    const targetX = source.x! + relPos[0] * rSum
+    const targetY = source.y! + relPos[1] * rSum
+    
+    // Error vector
+    const dx = targetX - target.x!
+    const dy = targetY - target.y!
+    
+    // Apply forces
+    // Move Target towards desired position
+    // Move Source towards consistent position (reciprocal)
+    
+    const w = 0.5 // Equal weight
+    
+    if (!target.fx) {
+      target.vx! += dx * k * w
+      target.vy! += dy * k * w
+    }
+    if (!source.fx) {
+      source.vx! -= dx * k * w
+      source.vy! -= dy * k * w
+    }
+  })
+}
+
 onMounted(() => {
-  // Initialize simulation
+  // Initialize simulation with custom force
   simulation = forceSimulation<GraphNode>(nodes.value)
-    .force('link', forceLink<GraphNode, GraphLink>(links.value).id(d => d.id).distance(100))
-    .force('charge', forceManyBody().strength(-300))
-    .force('collide', forceCollide().radius(d => (d as GraphNode).r + 5))
-    .force('center', forceCenter(width.value / 2, height.value / 2))
-    .force('y', forceY<GraphNode>(d => height.value/4 + d.depth * 150).strength(0.3))
+    .force('charge', forceManyBody().strength(-300)) // Repulsion
+    .force('collide', forceCollide().radius(d => (d as GraphNode).r + 10).strength(0.8))
+    .force('center', forceCenter(width.value / 2, height.value / 2).strength(0.05))
+    // Add custom force
+    .force('relative', forceRelativePosition) 
     .on('tick', () => {
-      // Trigger Vue reactivity for position updates?
-      // For performance with many nodes, we might want to avoid this 
-      // and update DOM directly, but for < 500 nodes Vue 3 is usually fast enough.
-      // However, we need to make sure 'nodes' ref is triggered.
-      // D3 modifies the objects *inside* the array in place.
-      // Vue's reactive proxy might intercept this, but deep watch is expensive.
-      // A simpler way is to use a trigger ref.
       trigger.value++ 
     })
 
-  // Initialize Zoom
   if (svgRef.value) {
     zoomBehavior = zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
@@ -145,17 +174,13 @@ onMounted(() => {
            contentRef.value.setAttribute('transform', event.transform.toString())
          }
       })
-    
     select(svgRef.value).call(zoomBehavior)
   }
 
   window.addEventListener('resize', updateDimensions)
   updateDimensions()
-  
-  // Initial data load
   updateSimulationData()
   
-  // Ensure we have all data
   if (uiStore.projectPath) {
     dataStore.loadAllAims(uiStore.projectPath)
   }
@@ -166,30 +191,19 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateDimensions)
 })
 
-// Watch for store changes
 watch(() => dataStore.graphData, updateSimulationData, { deep: true })
 
-// Trigger for template updates
 const trigger = ref(0)
+const renderNodes = computed(() => { trigger.value; return nodes.value })
+const renderLinks = computed(() => { trigger.value; return links.value })
 
-// Computed helpers that depend on trigger to force re-render
-const renderNodes = computed(() => {
-  trigger.value // dependency
-  return nodes.value
-})
-
-const renderLinks = computed(() => {
-  trigger.value // dependency
-  return links.value
-})
-
-// Drag behavior (simple implementation)
+// Drag logic
 const draggedNode = ref<GraphNode | null>(null)
 const isDragging = ref(false)
 
 const startDrag = (event: MouseEvent | TouchEvent, node: GraphNode) => {
-  event.preventDefault() // Prevent text selection/scroll
-  event.stopPropagation() // Prevent zoom triggering
+  event.preventDefault()
+  event.stopPropagation()
   if (!simulation) return
   simulation.alphaTarget(0.3).restart()
   node.fx = node.x
@@ -197,7 +211,6 @@ const startDrag = (event: MouseEvent | TouchEvent, node: GraphNode) => {
   draggedNode.value = node
   isDragging.value = false
   
-  // Global listeners for drag move/end
   document.addEventListener('mousemove', onDragMove)
   document.addEventListener('mouseup', onDragEnd)
   document.addEventListener('touchmove', onTouchMove, { passive: false })
@@ -209,14 +222,8 @@ const onDragMove = (event: MouseEvent) => {
   if (node && svgRef.value) {
     isDragging.value = true
     const rect = svgRef.value.getBoundingClientRect()
-    // Mouse relative to SVG container
-    const mouseX = event.clientX - rect.left
-    const mouseY = event.clientY - rect.top
-    
-    // Apply inverse transform
     const transform = zoomTransform(svgRef.value)
-    const [simX, simY] = transform.invert([mouseX, mouseY])
-    
+    const [simX, simY] = transform.invert([event.clientX - rect.left, event.clientY - rect.top])
     node.fx = simX
     node.fy = simY
   }
@@ -229,12 +236,8 @@ const onTouchMove = (event: TouchEvent) => {
   if (node && svgRef.value && touch) {
     isDragging.value = true
     const rect = svgRef.value.getBoundingClientRect()
-    const touchX = touch.clientX - rect.left
-    const touchY = touch.clientY - rect.top
-    
     const transform = zoomTransform(svgRef.value)
-    const [simX, simY] = transform.invert([touchX, touchY])
-    
+    const [simX, simY] = transform.invert([touch.clientX - rect.left, touch.clientY - rect.top])
     node.fx = simX
     node.fy = simY
   }
@@ -243,12 +246,45 @@ const onTouchMove = (event: TouchEvent) => {
 const onDragEnd = () => {
   if (!simulation) return
   simulation.alphaTarget(0)
-  if (draggedNode.value) {
-    if (!isDragging.value) {
-        onNodeClick(draggedNode.value)
+  
+  const node = draggedNode.value
+  if (node) {
+    if (isDragging.value) {
+        // Calculate and save new relative positions for all parents
+        links.value.forEach(link => {
+            const target = link.target as GraphNode
+            const source = link.source as GraphNode
+            
+            if (target.id === node.id) {
+                // This link is Parent (source) -> Child (node)
+                // Update relativePosition on Parent
+                
+                // Use consistent radius/spacing logic
+                const rSum = (source.r || 25) + (target.r || 25) + 50 
+                
+                const deltaX = node.x! - source.x!
+                const deltaY = node.y! - source.y!
+                
+                const relX = deltaX / rSum
+                const relY = deltaY / rSum
+                
+                // Update store
+                dataStore.updateConnectionPosition(
+                    uiStore.projectPath, 
+                    source.id, 
+                    node.id, 
+                    [relX, relY]
+                )
+                
+                // Update local link state immediately for smoothness
+                link.relativePosition = [relX, relY]
+            }
+        })
+    } else {
+        onNodeClick(node)
     }
-    draggedNode.value.fx = null
-    draggedNode.value.fy = null
+    node.fx = null
+    node.fy = null
     draggedNode.value = null
   }
   document.removeEventListener('mousemove', onDragMove)
@@ -256,7 +292,6 @@ const onDragEnd = () => {
   document.removeEventListener('touchmove', onTouchMove)
   document.removeEventListener('touchend', onDragEnd)
 }
-
 </script>
 
 <template>
@@ -264,6 +299,7 @@ const onDragEnd = () => {
     <svg ref="svgRef" width="100%" height="100%">
       <g ref="contentRef">
         <g class="links">
+          <!-- TODO: Update GraphLink to support custom relative path rendering if needed -->
           <GraphLinkComponent 
             v-for="link in renderLinks" 
             :key="link.index"
@@ -290,17 +326,5 @@ const onDragEnd = () => {
   height: 100%;
   background: #1e1e1e;
   overflow: hidden;
-}
-
-.node-group {
-  cursor: grab;
-}
-
-.node-group:active {
-  cursor: grabbing;
-}
-
-.node-circle {
-  transition: fill 0.3s;
 }
 </style>

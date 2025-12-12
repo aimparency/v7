@@ -102,16 +102,25 @@ export const useDataStore = defineStore('data', {
         fy: null as number | null
       }))
 
-      const links: { source: string, target: string, type: 'hierarchy' }[] = []
+      const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number }[] = []
 
       aims.forEach(aim => {
-        // Draw links from Parent (aim) to Child (incoming)
-        aim.incoming.forEach(childId => {
-          // Verify child exists to avoid broken links
-          if (state.aims[childId]) {
-            links.push({ source: aim.id, target: childId, type: 'hierarchy' })
-          }
-        })
+        // Draw links from Parent (aim) to Child (supportingConnections)
+        if (aim.supportingConnections) {
+            aim.supportingConnections.forEach(conn => {
+            const childId = conn.aimId
+            // Verify child exists to avoid broken links
+            if (state.aims[childId]) {
+                links.push({ 
+                  source: aim.id, 
+                  target: childId, 
+                  type: 'hierarchy',
+                  relativePosition: conn.relativePosition,
+                  weight: conn.weight
+                })
+            }
+            })
+        }
       })
 
       return { nodes, links }

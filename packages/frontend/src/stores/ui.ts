@@ -485,9 +485,9 @@ export const useUIStore = defineStore('ui', {
       const topLevelAims = dataStore.getAimsForPhase(phaseId)
       const currentAim = dataStore.aims[currentAimId]
 
-      // If current aim is expanded with incoming, dive into first child
-      if (currentAim?.expanded && currentAim.incoming?.length > 0) {
-        const firstIncomingId = currentAim.incoming[0]
+      // If current aim is expanded with supportingConnections, dive into first child
+      if (currentAim?.expanded && currentAim.supportingConnections?.length > 0) {
+        const firstIncomingId = currentAim.supportingConnections[0].aimId
         const topLevelIndex = this.findTopLevelAncestorIndex(firstIncomingId, topLevelAims, dataStore)
         return { aimId: firstIncomingId, topLevelIndex, parentAimId: currentAimId, indexInParent: 0 }
       }
@@ -518,14 +518,14 @@ export const useUIStore = defineStore('ui', {
           return null
         }
 
-        // Check if aimId is nested in this aim's incoming
-        if (aim.expanded && aim.incoming?.length > 0) {
-          const incomingAims = aim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+        // Check if aimId is nested in this aim's supportingConnections
+        if (aim.expanded && aim.supportingConnections?.length > 0) {
+          const incomingAims = aim.supportingConnections.map((c: any) => dataStore.aims[c.aimId]).filter(Boolean)
           const result = this.findNextSiblingOrAncestorSibling(aimId, incomingAims, dataStore, aim.id, currentTopLevel)
 
           if (result) return result
 
-          // If result is null, aimId was last in incoming, so next is this aim's next sibling
+          // If result is null, aimId was last in supportingConnections, so next is this aim's next sibling
           const wasInIncoming = incomingAims.some((a: any) => a.id === aimId || this.isAimInTree(aimId, a, dataStore))
           if (wasInIncoming) {
             if (i < aims.length - 1) {
@@ -563,8 +563,8 @@ export const useUIStore = defineStore('ui', {
         }
 
         // Check nested
-        if (aim.expanded && aim.incoming?.length > 0) {
-          const incomingAims = aim.incoming.map((id: string) => dataStore.aims[id]).filter(Boolean)
+        if (aim.expanded && aim.supportingConnections?.length > 0) {
+          const incomingAims = aim.supportingConnections.map((c: any) => dataStore.aims[c.aimId]).filter(Boolean)
           const result = this.findPreviousSiblingOrAncestor(aimId, incomingAims, dataStore, aim.id, currentTopLevel)
           if (result) return result
         }
@@ -574,13 +574,13 @@ export const useUIStore = defineStore('ui', {
 
     // Find last descendant of an aim (itself if not expanded, or last child's last descendant)
     findLastDescendant(aim: any, dataStore: any): {id: string, parentId?: string, indexInParent?: number} {
-      if (!aim.expanded || !aim.incoming || aim.incoming.length === 0) {
+      if (!aim.expanded || !aim.supportingConnections || aim.supportingConnections.length === 0) {
         return { id: aim.id }
       }
-      const lastIncomingId = aim.incoming[aim.incoming.length - 1]
+      const lastIncomingId = aim.supportingConnections[aim.supportingConnections.length - 1].aimId
       const lastIncoming = dataStore.aims[lastIncomingId]
       const descendant = this.findLastDescendant(lastIncoming, dataStore)
-      return { ...descendant, parentId: aim.id, indexInParent: aim.incoming.length - 1 }
+      return { ...descendant, parentId: aim.id, indexInParent: aim.supportingConnections.length - 1 }
     },
 
     // Find top-level ancestor index for a nested aim
@@ -601,10 +601,10 @@ export const useUIStore = defineStore('ui', {
     // Check if aimId exists anywhere in the tree rooted at rootAim
     isAimInTree(aimId: string, rootAim: any, dataStore: any): boolean {
       if (rootAim.id === aimId) return true
-      if (!rootAim.incoming || rootAim.incoming.length === 0) return false
+      if (!rootAim.supportingConnections || rootAim.supportingConnections.length === 0) return false
 
-      for (const incomingId of rootAim.incoming) {
-        const incomingAim = dataStore.aims[incomingId]
+      for (const conn of rootAim.supportingConnections) {
+        const incomingAim = dataStore.aims[conn.aimId]
         if (incomingAim && this.isAimInTree(aimId, incomingAim, dataStore)) {
           return true
         }

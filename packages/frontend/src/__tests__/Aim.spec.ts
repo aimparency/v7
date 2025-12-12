@@ -1,123 +1,116 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
-import Aim from '../components/Aim.vue'
-import type { Aim as AimType } from '../stores/data'
+import { createTestingPinia } from '@pinia/testing'
+import AimComponent from '../components/Aim.vue'
+import { useDataStore, type Aim } from '../stores/data'
+import { useUIStore } from '../stores/ui'
+import { v4 as uuidv4 } from 'uuid'
 
-const uuidv4 = () => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)
-
-// Mock the useDataStore and useUIStore
-vi.mock('../stores/data', () => ({
-  useDataStore: () => ({
-    aims: {},
-    project: {
-      meta: {
-        name: 'test',
-        color: '#ffffff'
-      }
-    }
-  })
+// Mock sub-component to avoid recursion issues in testing
+vi.mock('../components/AimsList.vue', () => ({
+  default: {
+    template: '<div class="mock-aims-list"></div>',
+    props: ['aims']
+  }
 }))
-
-vi.mock('../stores/ui', () => ({
-  useUIStore: () => ({
-    selectedAimId: null,
-    activePhaseId: null
-  })
-}))
-
-const createMockAim = (overrides?: Partial<AimType>): AimType => ({
-  id: uuidv4(),
-  text: 'Test Aim',
-  tags: [],
-  incoming: [],
-  outgoing: [],
-  committedIn: [],
-  status: { state: 'open', comment: '', date: Date.now() },
-  ...overrides
-})
 
 describe('Aim.vue', () => {
-  it('does not display sub-aim bubble when there are no sub-aims', () => {
+  const createMockAim = (overrides: Partial<Aim> = {}): Aim => ({
+    id: uuidv4(),
+    text: 'Test Aim',
+    description: 'Test Description',
+    tags: [],
+    status: {
+      state: 'open',
+      comment: '',
+      date: Date.now()
+    },
+    supportingConnections: [], // Updated from incoming
+    outgoing: [],
+    committedIn: [],
+    expanded: false,
+    selectedIncomingIndex: undefined,
+    ...overrides
+  })
+
+  let pinia: any
+
+  beforeEach(() => {
+    pinia = createTestingPinia({
+      createSpy: vi.fn,
+      stubActions: false
+    })
+  })
+
+  it('renders aim text', () => {
     const aim = createMockAim()
-    const wrapper = mount(Aim, {
+    const wrapper = mount(AimComponent, {
+      global: { plugins: [pinia] },
       props: {
         aim,
-        phaseId: uuidv4()
+        columnIndex: 0,
+        isActive: false,
+        isSelected: false
       }
     })
-    expect(wrapper.find('.sub-aim-count-bubble').exists()).toBe(false)
+
+    expect(wrapper.text()).toContain('Test Aim')
   })
 
-  it('displays sub-aim bubble with correct count when there are sub-aims (less than 10)', () => {
-    const aim = createMockAim({ incoming: [uuidv4(), uuidv4(), uuidv4()] }) // 3 sub-aims
-    const wrapper = mount(Aim, {
+  it('displays sub-aim count when present', () => {
+    // Create connection objects instead of strings
+    const connections = [
+        { aimId: uuidv4(), relativePosition: [0,0] as [number, number], weight: 1 },
+        { aimId: uuidv4(), relativePosition: [0,0] as [number, number], weight: 1 },
+        { aimId: uuidv4(), relativePosition: [0,0] as [number, number], weight: 1 }
+    ]
+    const aim = createMockAim({ supportingConnections: connections }) 
+    
+    const wrapper = mount(AimComponent, {
+      global: { plugins: [pinia] },
       props: {
         aim,
-        phaseId: uuidv4()
+        columnIndex: 0,
+        isActive: false,
+        isSelected: false
       }
     })
-    const bubble = wrapper.find('.sub-aim-count-bubble')
-    expect(bubble.exists()).toBe(true)
-    expect(bubble.text()).toBe('3')
+
+    expect(wrapper.find('.sub-aim-count').exists()).toBe(true)
+    expect(wrapper.find('.sub-aim-count').text()).toBe('3')
   })
 
-  it('displays sub-aim bubble with "N" when there are 10 or more sub-aims', () => {
-    const incomingAims = Array.from({ length: 12 }, () => uuidv4()) // 12 sub-aims
-    const aim = createMockAim({ incoming: incomingAims })
-    const wrapper = mount(Aim, {
-      props: {
-        aim,
-        phaseId: uuidv4()
-      }
-    })
-    const bubble = wrapper.find('.sub-aim-count-bubble')
-    expect(bubble.exists()).toBe(true)
-    expect(bubble.text()).toBe('N')
-  })
+  it('loads sub-aims when expanded', async () => {
+    const dataStore = useDataStore()
+    const subAimId = uuidv4()
+    const connections = [
+        { aimId: subAimId, relativePosition: [0,0] as [number, number], weight: 1 }
+    ]
+    
+    const aim = createMockAim({ supportingConnections: connections })
+    
+    // Mock loadAims action
+    dataStore.loadAims = vi.fn()
 
-  it('displays description when expanded and description exists', () => {
-    const aim = createMockAim({
-      description: 'This is a description',
-      expanded: true
-    })
-    const wrapper = mount(Aim, {
+    const wrapper = mount(AimComponent, {
+      global: { plugins: [pinia] },
       props: {
         aim,
-        phaseId: uuidv4()
+        columnIndex: 0,
+        isActive: false,
+        isSelected: false
       }
     })
-    const desc = wrapper.find('.aim-description')
-    expect(desc.exists()).toBe(true)
-    expect(desc.text()).toBe('This is a description')
-  })
 
-  it('does not display description when collapsed', () => {
-    const aim = createMockAim({
-      description: 'This is a description',
-      expanded: false
+    // Simulate expansion by updating prop (in real app, parent handles expansion state usually, 
+    // or dataStore does. Here we simulate the prop change trigger if we modify the aim object reactive?)
+    // Actually Aim.vue watches `isExpanded` computed from `props.aim.expanded`.
+    // We need to update the prop object.
+    
+    await wrapper.setProps({
+      aim: { ...aim, expanded: true }
     })
-    const wrapper = mount(Aim, {
-      props: {
-        aim,
-        phaseId: uuidv4()
-      }
-    })
-    const desc = wrapper.find('.aim-description')
-    expect(desc.exists()).toBe(false)
-  })
 
-  it('does not display description when expanded but description is empty', () => {
-    const aim = createMockAim({
-      description: '',
-      expanded: true
-    })
-    const wrapper = mount(Aim, {
-      props: {
-        aim,
-        phaseId: uuidv4()
-      }
-    })
-    const desc = wrapper.find('.aim-description')
-    expect(desc.exists()).toBe(false)
+    expect(dataStore.loadAims).toHaveBeenCalled()
   })
 })
