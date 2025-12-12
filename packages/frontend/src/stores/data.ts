@@ -51,6 +51,35 @@ export const useDataStore = defineStore('data', {
       if (!phase) return []
       return phase.commitments.map(aimId => state.aims[aimId]).filter(Boolean)
     },
+
+    graphData(state) {
+      const nodes = Object.values(state.aims).map(aim => ({
+        id: aim.id,
+        text: aim.text,
+        status: aim.status.state,
+        // Properties for force layout (mutable)
+        x: 0, 
+        y: 0, 
+        vx: 0, 
+        vy: 0,
+        fx: null as number | null, // Fixed position
+        fy: null as number | null
+      }))
+
+      const links: { source: string, target: string, type: 'hierarchy' }[] = []
+
+      Object.values(state.aims).forEach(aim => {
+        // Draw links from Parent (aim) to Child (incoming)
+        aim.incoming.forEach(childId => {
+          // Verify child exists to avoid broken links
+          if (state.aims[childId]) {
+            links.push({ source: aim.id, target: childId, type: 'hierarchy' })
+          }
+        })
+      })
+
+      return { nodes, links }
+    }
   },
 
   actions: {

@@ -8,6 +8,7 @@ import PhaseColumn from './components/PhaseColumn.vue'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
 import AimSearchModal from './components/AimSearchModal.vue'
+import GraphView from './views/GraphView.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -162,10 +163,23 @@ onUnmounted(() => {
           {{ uiStore.connectionStatus === 'connected' ? 'aimparency server' : '' }}
         </span>
         
-        <div class="column-controls">
+        <div class="column-controls" v-if="uiStore.currentView === 'columns'">
           <button @click="uiStore.setViewportSize(uiStore.viewportSize - 1)" class="icon-btn" title="Decrease columns">-</button>
           <span>{{ uiStore.viewportSize }} columns</span>
           <button @click="uiStore.setViewportSize(uiStore.viewportSize + 1)" class="icon-btn" title="Increase columns">+</button>
+        </div>
+
+        <div class="view-controls">
+          <button 
+            @click="uiStore.setView('columns')" 
+            :class="{ active: uiStore.currentView === 'columns' }"
+            class="view-btn"
+          >Columns</button>
+          <button 
+            @click="uiStore.setView('graph')" 
+            :class="{ active: uiStore.currentView === 'graph' }"
+            class="view-btn"
+          >Graph</button>
         </div>
 
         <span class="project-path">{{ uiStore.projectPath }}</span>
@@ -215,23 +229,33 @@ onUnmounted(() => {
     </div>
 
     <!-- Main Interface -->
-    <main v-else class="main" :style="{ transform: containerOffset, '--column-width': columnWidth }">
-      <!-- Root Aims Column (Column -1) -->
-      <RootAimsColumn
-        class="column-aims"
-      />
+    <main v-else class="content-area">
+      <!-- Columns View -->
+      <div 
+        v-if="uiStore.currentView === 'columns'"
+        class="columns-layout" 
+        :style="{ transform: containerOffset, '--column-width': columnWidth }"
+      >
+        <!-- Root Aims Column (Column -1) -->
+        <RootAimsColumn
+          class="column-aims"
+        />
 
-      <!-- Phase Columns (0, 1, 2...) -->
-      <PhaseColumn
-        v-for="colIndex in [...Array(uiStore.rightmostColumnIndex + 1).keys()]"
-        :key="colIndex"
-        :column-index="colIndex"
-        :parent-phase-id="uiStore.columnParentPhaseId[colIndex]"
-        class="column"
-        :is-selected="uiStore.selectedColumn === colIndex"
-        :is-active="uiStore.selectedColumn === colIndex"
-        :selected-phase-index="uiStore.getSelectedPhase(colIndex)"
-      />
+        <!-- Phase Columns (0, 1, 2...) -->
+        <PhaseColumn
+          v-for="colIndex in [...Array(uiStore.rightmostColumnIndex + 1).keys()]"
+          :key="colIndex"
+          :column-index="colIndex"
+          :parent-phase-id="uiStore.columnParentPhaseId[colIndex]"
+          class="column"
+          :is-selected="uiStore.selectedColumn === colIndex"
+          :is-active="uiStore.selectedColumn === colIndex"
+          :selected-phase-index="uiStore.getSelectedPhase(colIndex)"
+        />
+      </div>
+
+      <!-- Graph View -->
+      <GraphView v-else-if="uiStore.currentView === 'graph'" />
     </main>
 
     <!-- Phase Creation Modal -->
@@ -494,13 +518,23 @@ onUnmounted(() => {
   }
 }
 
-.main {
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.columns-layout {
   flex: 1;
   display: flex;
   flex-direction: row;
   position: relative;
   transition: transform 0.3s ease;
   min-height: 0;
+  width: 100%;
 }
 
 .column-aims,
@@ -521,6 +555,35 @@ onUnmounted(() => {
 .help-keys {
   display: block;
   color: #888;
+}
+
+.view-controls {
+  display: flex;
+  gap: 0;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.view-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 0.8rem;
+  
+  &:hover {
+    background: #333;
+    color: #ccc;
+  }
+  
+  &.active {
+    background: #444;
+    color: #fff;
+  }
 }
 
 .hint {

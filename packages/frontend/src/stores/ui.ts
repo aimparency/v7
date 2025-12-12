@@ -90,6 +90,9 @@ export const useUIStore = defineStore('ui', {
     // Moving aim state (for loading animation)
     movingAimId: null as string | null,
 
+    // View state
+    currentView: 'columns' as 'columns' | 'graph',
+
     // Remember last selected sub-phase index per parent phase
     // TODO: remove this store selected sub phase in phase object 
     lastSelectedSubPhaseIndexByPhase: {} as Record<string, number>,
@@ -185,6 +188,10 @@ export const useUIStore = defineStore('ui', {
       this.viewportSize = newSize
       localStorage.setItem('aimparency-viewport-size', newSize.toString())
       this.ensureSelectionVisible()
+    },
+
+    setView(view: 'columns' | 'graph') {
+      this.currentView = view
     },
 
     ensureSelectionVisible() {
@@ -1416,6 +1423,13 @@ export const useUIStore = defineStore('ui', {
           }
           break
         }
+        case 'g':
+          event.preventDefault()
+          this.currentView = this.currentView === 'columns' ? 'graph' : 'columns'
+          if (this.currentView === 'columns') {
+            this.ensureSelectionVisible()
+          }
+          break
       }
     },
 

@@ -1,0 +1,15 @@
+{
+  "id": "ef50d400-ddbc-41f1-82e3-24de68d69e09",
+  "text": "Port Layout Engine",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765534111363
+  }
+}

@@ -9,8 +9,8 @@
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765463829099
+    "state": "done",
+    "comment": "Implemented generic 'stop' action with 'reason' field in Watchdog (TUI and WebUI). Supervisor now uses this for 'everything-completed'. WebUI displays the stop reason in orange. Verified with user.",
+    "date": 1765533772135
   }
 }

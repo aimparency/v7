@@ -490,10 +490,20 @@ const appRouter = t.router({
     createFloatingAim: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true })
+        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true, status: true }).extend({
+          status: AimStatusSchema.omit({ date: true }).extend({ date: z.number().optional() }).optional()
+        })
       }))
       .mutation(async ({ input }) => {
         const aimId = uuidv4();
+        const status = input.aim.status 
+          ? { 
+              state: input.aim.status.state || 'open', 
+              comment: input.aim.status.comment || '', 
+              date: input.aim.status.date || Date.now() 
+            }
+          : { state: 'open' as const, comment: '', date: Date.now() };
+
         const aim: Aim = {
           id: aimId,
           text: input.aim.text,
@@ -502,11 +512,7 @@ const appRouter = t.router({
           incoming: [],
           outgoing: [],
           committedIn: [],
-          status: input.aim.status || {
-            state: 'open',
-            comment: '',
-            date: Date.now()
-          }
+          status
         };
 
         await writeAim(input.projectPath, aim);
@@ -525,11 +531,21 @@ const appRouter = t.router({
       .input(z.object({
         projectPath: z.string(),
         parentAimId: z.string().uuid(),
-        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true }),
+        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true, status: true }).extend({
+          status: AimStatusSchema.omit({ date: true }).extend({ date: z.number().optional() }).optional()
+        }),
         positionInParent: z.number().optional()
       }))
       .mutation(async ({ input }) => {
         const childAimId = uuidv4();
+        const status = input.aim.status 
+          ? { 
+              state: input.aim.status.state || 'open', 
+              comment: input.aim.status.comment || '', 
+              date: input.aim.status.date || Date.now() 
+            }
+          : { state: 'open' as const, comment: '', date: Date.now() };
+
         const childAim: Aim = {
           id: childAimId,
           text: input.aim.text,
@@ -538,11 +554,7 @@ const appRouter = t.router({
           incoming: [],
           outgoing: [],
           committedIn: [],
-          status: input.aim.status || {
-            state: 'open',
-            comment: '',
-            date: Date.now()
-          }
+          status
         };
 
         await writeAim(input.projectPath, childAim);
@@ -563,11 +575,21 @@ const appRouter = t.router({
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid(),
-        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true }),
+        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true, status: true }).extend({
+          status: AimStatusSchema.omit({ date: true }).extend({ date: z.number().optional() }).optional()
+        }),
         insertionIndex: z.number().optional()
       }))
       .mutation(async ({ input }) => {
         const aimId = uuidv4();
+        const status = input.aim.status 
+          ? { 
+              state: input.aim.status.state || 'open', 
+              comment: input.aim.status.comment || '', 
+              date: input.aim.status.date || Date.now() 
+            }
+          : { state: 'open' as const, comment: '', date: Date.now() };
+
         const aim: Aim = {
           id: aimId,
           text: input.aim.text,
@@ -576,11 +598,7 @@ const appRouter = t.router({
           incoming: [],
           outgoing: [],
           committedIn: [input.phaseId], // Will be updated by commitAimToPhase
-          status: input.aim.status || {
-            state: 'open',
-            comment: '',
-            date: Date.now()
-          }
+          status
         };
 
         await writeAim(input.projectPath, aim);

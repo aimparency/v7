@@ -1,0 +1,15 @@
+{
+  "id": "35a2e9e1-a3f3-4eae-8174-cf951f33f142",
+  "text": "Scaffold GraphView component and route",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented view switching infrastructure in App.vue and uiStore. Created scaffold GraphView.vue. Verified via type-check.",
+    "date": 1765534301982
+  }
+}

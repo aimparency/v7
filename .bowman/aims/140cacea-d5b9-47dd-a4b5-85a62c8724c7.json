@@ -1,0 +1,15 @@
+{
+  "id": "140cacea-d5b9-47dd-a4b5-85a62c8724c7",
+  "text": "Implement AimSVG and FlowSVG components",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765534125394
+  }
+}

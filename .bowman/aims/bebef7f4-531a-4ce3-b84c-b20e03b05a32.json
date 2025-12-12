@@ -1,0 +1,16 @@
+{
+  "id": "bebef7f4-531a-4ce3-b84c-b20e03b05a32",
+  "text": "'g' toggles between graph and list view",
+  "description": "keep aim selection. navigate to selected aim on switch (both directoin when grpah => list and when list => graph, use the focus aim camera movement function that should already be there in the reference implementation.",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765533507757
+  }
+}
