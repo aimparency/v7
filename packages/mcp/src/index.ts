@@ -519,7 +519,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "delete-aim",
-        description: "Delete an aim permanently. Automatically removes it from all phases it's committed to.",
+        description: "Delete an aim permanently. Automatically removes it from all phases it's committed to. Prefer updating aim status to 'cancelled' instead. Use deletion only for duplicates or errors.",
         inputSchema: {
           type: "object",
           properties: {

@@ -53,10 +53,46 @@ export const useDataStore = defineStore('data', {
     },
 
     graphData(state) {
-      const nodes = Object.values(state.aims).map(aim => ({
+      const aims = Object.values(state.aims)
+      const depthMap = new Map<string, number>()
+      
+      // Calculate depths (BFS)
+      const queue: { id: string, depth: number }[] = []
+      
+      // Find roots (no parents)
+      aims.forEach(aim => {
+        if (!aim.outgoing || aim.outgoing.length === 0) {
+          depthMap.set(aim.id, 0)
+          queue.push({ id: aim.id, depth: 0 })
+        }
+      })
+      
+      // Traverse down
+      let visited = new Set<string>() // Prevent cycles
+      while(queue.length > 0) {
+        const { id, depth } = queue.shift()!
+        if(visited.has(id)) continue
+        visited.add(id)
+        
+        const aim = state.aims[id]
+        if (aim && aim.incoming) {
+          aim.incoming.forEach(childId => {
+            // Assign max depth if multi-parent? For tree view, depth+1 is fine.
+            // If already visited, we might update depth if we want longest path?
+            // For now simple BFS is okay.
+            if (!depthMap.has(childId)) {
+              depthMap.set(childId, depth + 1)
+              queue.push({ id: childId, depth: depth + 1 })
+            }
+          })
+        }
+      }
+
+      const nodes = aims.map(aim => ({
         id: aim.id,
         text: aim.text,
         status: aim.status.state,
+        depth: depthMap.get(aim.id) ?? 0,
         // Properties for force layout (mutable)
         x: 0, 
         y: 0, 
@@ -68,7 +104,7 @@ export const useDataStore = defineStore('data', {
 
       const links: { source: string, target: string, type: 'hierarchy' }[] = []
 
-      Object.values(state.aims).forEach(aim => {
+      aims.forEach(aim => {
         // Draw links from Parent (aim) to Child (incoming)
         aim.incoming.forEach(childId => {
           // Verify child exists to avoid broken links
@@ -384,11 +420,18 @@ export const useDataStore = defineStore('data', {
     },
 
     async loadAllAims(projectPath: string) {
-      // Deprecated: Prefer on-demand loading. 
-      // Currently only used to pre-populate cache if needed, but floating aims are now paginated.
-      // We will leave it as no-op or load only phases if we want to ensure commitments are valid?
-      // For now, let's just return.
-      return; 
+      if (!projectPath) return;
+      this.loading = true;
+      try {
+        const aims = await trpc.aim.list.query({ projectPath });
+        for (const aim of aims) {
+          this.replaceAim(aim.id, aim);
+        }
+      } catch (error) {
+        console.error('Failed to load all aims:', error);
+      } finally {
+        this.loading = false;
+      }
     },
 
     async loadProject(projectPath: string) {

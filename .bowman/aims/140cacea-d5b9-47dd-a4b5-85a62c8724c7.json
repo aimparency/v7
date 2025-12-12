@@ -8,8 +8,8 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765534125394
+    "state": "done",
+    "comment": "Implemented GraphNode.vue and GraphLink.vue components. Refactored GraphView.vue to use them. Styles encapsulated. Verified with type-check.",
+    "date": 1765540863147
   }
 }

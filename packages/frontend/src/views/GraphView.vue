@@ -4,38 +4,40 @@ import { useDataStore } from '../stores/data'
 import { 
   forceSimulation, 
   forceLink, 
-  forceManyBody, 
-  forceCenter,
-  forceCollide,
-  type Simulation,
-  type SimulationNodeDatum,
-  type SimulationLinkDatum
-} from 'd3-force'
-import { zoom, zoomIdentity, zoomTransform, type ZoomBehavior } from 'd3-zoom'
-import { select } from 'd3-selection'
-import GraphNodeComponent from '../components/GraphNode.vue'
-import GraphLinkComponent from '../components/GraphLink.vue'
-import { useUIStore } from '../stores/ui'
-
-const dataStore = useDataStore()
-const uiStore = useUIStore()
-
-// Types for our graph data
-interface GraphNode extends SimulationNodeDatum {
-  id: string
-  text: string
-  status: string
-  r: number
-}
-
-interface GraphLink extends SimulationLinkDatum<GraphNode> {
-  source: string | GraphNode
-  target: string | GraphNode
-  type: string
-}
-
-const svgRef = ref<SVGSVGElement>()
-const contentRef = ref<SVGGElement>()
+    forceManyBody,
+    forceCenter,
+    forceCollide,
+    forceY,
+    type Simulation,
+    type SimulationNodeDatum,
+    type SimulationLinkDatum
+  } from 'd3-force'
+  import { zoom, zoomIdentity, zoomTransform, type ZoomBehavior } from 'd3-zoom'
+  import { select } from 'd3-selection'
+  import 'd3-transition'
+  import GraphNodeComponent from '../components/GraphNode.vue'
+  import GraphLinkComponent from '../components/GraphLink.vue'
+  import { useUIStore } from '../stores/ui'
+  
+  const dataStore = useDataStore()
+  const uiStore = useUIStore()
+  
+  // Types for our graph data
+  interface GraphNode extends SimulationNodeDatum {
+    id: string
+    text: string
+    status: string
+    r: number
+    depth: number
+  }
+  
+  interface GraphLink extends SimulationLinkDatum<GraphNode> {
+    source: string | GraphNode
+    target: string | GraphNode
+    type: string
+  }
+  
+  const svgRef = ref<SVGSVGElement>()const contentRef = ref<SVGGElement>()
 const width = ref(0)
 const height = ref(0)
 
@@ -91,7 +93,7 @@ const updateSimulationData = () => {
     const existing = nodeMap.get(n.id)
     if (existing) {
       // Update properties but keep position data
-      return { ...existing, text: n.text, status: n.status }
+      return { ...existing, text: n.text, status: n.status, depth: n.depth }
     }
     return { ...n, r: 20 } as GraphNode // Default radius
   })
@@ -121,6 +123,7 @@ onMounted(() => {
     .force('charge', forceManyBody().strength(-300))
     .force('collide', forceCollide().radius(d => (d as GraphNode).r + 5))
     .force('center', forceCenter(width.value / 2, height.value / 2))
+    .force('y', forceY<GraphNode>(d => height.value/4 + d.depth * 150).strength(0.3))
     .on('tick', () => {
       // Trigger Vue reactivity for position updates?
       // For performance with many nodes, we might want to avoid this 
@@ -150,6 +153,11 @@ onMounted(() => {
   
   // Initial data load
   updateSimulationData()
+  
+  // Ensure we have all data
+  if (uiStore.projectPath) {
+    dataStore.loadAllAims(uiStore.projectPath)
+  }
 })
 
 onUnmounted(() => {

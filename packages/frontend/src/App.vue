@@ -9,9 +9,13 @@ import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
 import AimSearchModal from './components/AimSearchModal.vue'
 import GraphView from './views/GraphView.vue'
+import WatchdogPanel from './components/WatchdogPanel.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
+
+// Local UI state
+const showWatchdog = ref(false)
 
 // Template refs
 const projectPathInput = ref('')
@@ -82,6 +86,12 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
   const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
   
   if (isInput) return
+
+  // Watchdog toggle
+  if (event.key === 'w' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    showWatchdog.value = !showWatchdog.value
+    return
+  }
 
   uiStore.handleGlobalKeydown(event, dataStore)
 }
@@ -182,6 +192,16 @@ onUnmounted(() => {
           >Graph</button>
         </div>
 
+        <button 
+          @click="showWatchdog = !showWatchdog" 
+          class="icon-btn" 
+          style="width: auto; padding: 0 0.5rem;"
+          :style="{ background: showWatchdog ? '#444' : 'transparent' }"
+          title="Toggle Watchdog Panel"
+        >
+          Watchdog
+        </button>
+
         <span class="project-path">{{ uiStore.projectPath }}</span>
         <a @click="closeProject" class="close-project">Close Project</a>
       </div>
@@ -229,34 +249,41 @@ onUnmounted(() => {
     </div>
 
     <!-- Main Interface -->
-    <main v-else class="content-area">
-      <!-- Columns View -->
-      <div 
-        v-if="uiStore.currentView === 'columns'"
-        class="columns-layout" 
-        :style="{ transform: containerOffset, '--column-width': columnWidth }"
-      >
-        <!-- Root Aims Column (Column -1) -->
-        <RootAimsColumn
-          class="column-aims"
-        />
+    <div v-else class="main-split">
+      <main class="content-area">
+        <!-- Columns View -->
+        <div 
+          v-if="uiStore.currentView === 'columns'"
+          class="columns-layout" 
+          :style="{ transform: containerOffset, '--column-width': columnWidth }"
+        >
+          <!-- Root Aims Column (Column -1) -->
+          <RootAimsColumn
+            class="column-aims"
+          />
 
-        <!-- Phase Columns (0, 1, 2...) -->
-        <PhaseColumn
-          v-for="colIndex in [...Array(uiStore.rightmostColumnIndex + 1).keys()]"
-          :key="colIndex"
-          :column-index="colIndex"
-          :parent-phase-id="uiStore.columnParentPhaseId[colIndex]"
-          class="column"
-          :is-selected="uiStore.selectedColumn === colIndex"
-          :is-active="uiStore.selectedColumn === colIndex"
-          :selected-phase-index="uiStore.getSelectedPhase(colIndex)"
-        />
+          <!-- Phase Columns (0, 1, 2...) -->
+          <PhaseColumn
+            v-for="colIndex in [...Array(uiStore.rightmostColumnIndex + 1).keys()]"
+            :key="colIndex"
+            :column-index="colIndex"
+            :parent-phase-id="uiStore.columnParentPhaseId[colIndex]"
+            class="column"
+            :is-selected="uiStore.selectedColumn === colIndex"
+            :is-active="uiStore.selectedColumn === colIndex"
+            :selected-phase-index="uiStore.getSelectedPhase(colIndex)"
+          />
+        </div>
+
+        <!-- Graph View -->
+        <GraphView v-else-if="uiStore.currentView === 'graph'" />
+      </main>
+
+      <!-- Watchdog Panel -->
+      <div v-if="showWatchdog" class="watchdog-container">
+        <WatchdogPanel />
       </div>
-
-      <!-- Graph View -->
-      <GraphView v-else-if="uiStore.currentView === 'graph'" />
-    </main>
+    </div>
 
     <!-- Phase Creation Modal -->
     <PhaseCreationModal />
@@ -516,6 +543,20 @@ onUnmounted(() => {
   &:hover {
     color: #ff6666;
   }
+}
+
+.main-split {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+
+.watchdog-container {
+  height: 300px;
+  flex-shrink: 0;
+  border-top: 1px solid #444;
 }
 
 .content-area {

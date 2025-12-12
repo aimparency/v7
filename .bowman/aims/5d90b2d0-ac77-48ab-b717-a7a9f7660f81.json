@@ -8,8 +8,8 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765534139401
+    "state": "done",
+    "comment": "Implemented Pan & Zoom interactions in GraphView.vue using d3-zoom. The graph is now navigable and interactive. Verified build.",
+    "date": 1765540877158
   }
 }

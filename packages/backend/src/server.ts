@@ -23,6 +23,7 @@ import {
   removePhaseFromIndex
 } from './search.js';
 import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors } from './embeddings.js';
+import { WatchdogManager } from './watchdog-manager.js';
 
 // Create context for tRPC
 const createContext = () => ({});
@@ -387,8 +388,18 @@ const appRouter = t.router({
       .input(z.object({
         projectPath: z.string(),
         aimId: z.string().uuid(),
-        aim: AimSchema.partial().omit({ id: true }).extend({
-          status: AimStatusSchema.partial().optional()
+        aim: z.object({
+          text: z.string().optional(),
+          description: z.string().optional(),
+          tags: z.array(z.string()).optional(),
+          status: z.object({
+            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
+            comment: z.string().optional(),
+            date: z.number().optional()
+          }).optional(),
+          incoming: z.array(z.string()).optional(),
+          outgoing: z.array(z.string()).optional(),
+          committedIn: z.array(z.string()).optional()
         })
       }))
       .mutation(async ({ input }) => {
@@ -414,7 +425,7 @@ const appRouter = t.router({
         updateAimInIndex(input.projectPath, updatedAim);
 
         // Update embedding (async)
-        if (process.env.NODE_ENV !== 'test') {
+        if (process.env.NODE_ENV !== 'test' && updatedAim.text) {
           generateEmbedding(updatedAim.text).then(vector => {
              if(vector) saveEmbedding(input.projectPath, input.aimId, vector);
           });
@@ -490,8 +501,15 @@ const appRouter = t.router({
     createFloatingAim: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true, status: true }).extend({
-          status: AimStatusSchema.omit({ date: true }).extend({ date: z.number().optional() }).optional()
+        aim: z.object({
+          text: z.string(),
+          description: z.string().optional(),
+          tags: z.array(z.string()).optional(),
+          status: z.object({
+            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
+            comment: z.string().optional(),
+            date: z.number().optional()
+          }).optional()
         })
       }))
       .mutation(async ({ input }) => {
@@ -531,8 +549,15 @@ const appRouter = t.router({
       .input(z.object({
         projectPath: z.string(),
         parentAimId: z.string().uuid(),
-        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true, status: true }).extend({
-          status: AimStatusSchema.omit({ date: true }).extend({ date: z.number().optional() }).optional()
+        aim: z.object({
+          text: z.string(),
+          description: z.string().optional(),
+          tags: z.array(z.string()).optional(),
+          status: z.object({
+            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
+            comment: z.string().optional(),
+            date: z.number().optional()
+          }).optional()
         }),
         positionInParent: z.number().optional()
       }))
@@ -575,8 +600,15 @@ const appRouter = t.router({
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid(),
-        aim: AimSchema.omit({ id: true, incoming: true, outgoing: true, committedIn: true, status: true }).extend({
-          status: AimStatusSchema.omit({ date: true }).extend({ date: z.number().optional() }).optional()
+        aim: z.object({
+          text: z.string(),
+          description: z.string().optional(),
+          tags: z.array(z.string()).optional(),
+          status: z.object({
+            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
+            comment: z.string().optional(),
+            date: z.number().optional()
+          }).optional()
         }),
         insertionIndex: z.number().optional()
       }))
@@ -718,13 +750,23 @@ const appRouter = t.router({
     create: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        phase: PhaseSchema.omit({ id: true })
+        phase: z.object({
+          name: z.string(),
+          from: z.number(),
+          to: z.number(),
+          parent: z.string().nullable().optional(),
+          commitments: z.array(z.string()).optional()
+        })
       }))
       .mutation(async ({ input }) => {
         const phaseId = uuidv4();
         const phase: Phase = {
           id: phaseId,
-          ...input.phase
+          name: input.phase.name,
+          from: input.phase.from,
+          to: input.phase.to,
+          parent: input.phase.parent ?? null,
+          commitments: input.phase.commitments || []
         };
 
         await writePhase(input.projectPath, phase);
@@ -759,11 +801,27 @@ const appRouter = t.router({
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid(),
-        phase: PhaseSchema.partial().omit({ id: true })
+        phase: z.object({
+          name: z.string().optional(),
+          from: z.number().optional(),
+          to: z.number().optional(),
+          parent: z.string().nullable().optional(),
+          commitments: z.array(z.string()).optional()
+        })
       }))
       .mutation(async ({ input }) => {
         const existingPhase = await readPhase(input.projectPath, input.phaseId);
-        const updatedPhase = { ...existingPhase, ...input.phase };
+        
+        // Manual merge to satisfy type checker
+        const updatedPhase: Phase = {
+            ...existingPhase,
+            ...(input.phase.name !== undefined ? { name: input.phase.name } : {}),
+            ...(input.phase.from !== undefined ? { from: input.phase.from } : {}),
+            ...(input.phase.to !== undefined ? { to: input.phase.to } : {}),
+            ...(input.phase.parent !== undefined ? { parent: input.phase.parent } : {}),
+            ...(input.phase.commitments !== undefined ? { commitments: input.phase.commitments } : {})
+        };
+
         await writePhase(input.projectPath, updatedPhase);
         updatePhaseInIndex(input.projectPath, updatedPhase);
         return updatedPhase;
@@ -809,11 +867,18 @@ const appRouter = t.router({
     updateStatus: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        status: SystemStatusSchema.partial()
+        status: z.object({
+          computeCredits: z.number().optional(),
+          funds: z.number().optional()
+        })
       }))
       .mutation(async ({ input }) => {
         const current = await readSystemStatus(input.projectPath);
-        const updated = { ...current, ...input.status };
+        const updated = { 
+            ...current, 
+            ...(input.status.computeCredits !== undefined ? { computeCredits: input.status.computeCredits } : {}),
+            ...(input.status.funds !== undefined ? { funds: input.status.funds } : {})
+        };
         await writeSystemStatus(input.projectPath, updated);
         return updated;
       }),
@@ -844,6 +909,26 @@ const appRouter = t.router({
             funds: earnedFunds
           }
         };
+      })
+  }),
+
+  watchdog: t.router({
+    start: delayedProcedure
+      .input(z.object({ projectPath: z.string() }))
+      .mutation(async ({ input }) => {
+         const result = await WatchdogManager.start(input.projectPath);
+         return result;
+      }),
+    stop: delayedProcedure
+      .input(z.object({ projectPath: z.string() }))
+      .mutation(async ({ input }) => {
+         const success = WatchdogManager.stop(input.projectPath);
+         return { success };
+      }),
+    getStatus: delayedProcedure
+      .input(z.object({ projectPath: z.string() }))
+      .query(async ({ input }) => {
+         return WatchdogManager.getStatus(input.projectPath);
       })
   }),
 
