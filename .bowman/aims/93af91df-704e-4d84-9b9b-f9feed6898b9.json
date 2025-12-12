@@ -1,0 +1,13 @@
+{
+  "id": "93af91df-704e-4d84-9b9b-f9feed6898b9",
+  "text": "Fix empty Graph View by ensuring all aims are loaded",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented loadAllAims in dataStore and integrated it into GraphView.vue mount hook. This ensures the graph is fully populated when switched to. Verified with type-check.",
+    "date": 1765541030774
+  }
+}

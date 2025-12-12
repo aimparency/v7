@@ -1,0 +1,16 @@
+{
+  "id": "8ec66787-4156-4bba-9610-bf305dbd23e4",
+  "text": "detect when no client needs a watchdog for a specific project (when it's not necessary anymore) then close the spun up process.",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "ca93615f-6364-4b90-aa3a-1e78c9939e55"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765543711322
+  }
+}

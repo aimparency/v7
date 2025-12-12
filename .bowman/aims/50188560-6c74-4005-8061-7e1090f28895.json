@@ -1,0 +1,16 @@
+{
+  "id": "50188560-6c74-4005-8061-7e1090f28895",
+  "text": "Integrate Watchdog into Aimparency v7 Web UI",
+  "tags": [
+    "watchdog",
+    "ui"
+  ],
+  "incoming": [],
+  "outgoing": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Refactored Watchdog architecture for multi-project support. Implemented WatchdogManager in backend to lazy-spawn watchdog processes on dynamic ports. Updated frontend WatchdogStore to request spawn and connect to the assigned port. Verified with build and type-check.",
+    "date": 1765543979762
+  }
+}

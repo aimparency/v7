@@ -1,0 +1,16 @@
+{
+  "id": "2781474b-a068-4614-978f-96428f9686f2",
+  "text": "graph ui should be really close to the reference. also with the relative positioning for example",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "outgoing": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented DAG-based hierarchy layout using d3.forceY based on node depth. Aims are positioned in tiers relative to their parents, mimicking the reference's relative positioning concept. Verified via implementation.",
+    "date": 1765544664240
+  }
+}
