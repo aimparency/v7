@@ -2,9 +2,6 @@
   "id": "2cfed9fa-7106-475c-a293-b80ef4498885",
   "text": "refine aim search (backend and mcp), e.g. for returning aims of a specific phase.",
   "description": "",
-  "outgoing": [
-    "865e4b34-0c68-4e34-9361-809c4d90db4c"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -20,5 +17,8 @@
       ],
       "weight": 1
     }
+  ],
+  "supportedAims": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c"
   ]
 }

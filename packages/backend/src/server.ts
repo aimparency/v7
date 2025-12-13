@@ -79,9 +79,6 @@ async function readAim(projectPath: string, aimId: string): Promise<Aim> {
       aim.supportingConnections = [];
     }
     
-    // We want to prepend the legacy incoming aims because they are "older" than any new ones 
-    // that might have been added to supportingConnections recently. 
-    // But we must also avoid duplicates.
     const newConnections = [];
     for (const incomingId of aim.incoming) {
       if (!aim.supportingConnections.some((c: any) => c.aimId === incomingId)) {
@@ -96,14 +93,28 @@ async function readAim(projectPath: string, aimId: string): Promise<Aim> {
     if (newConnections.length > 0 || aim.incoming.length > 0) {
        aim.supportingConnections = [...newConnections, ...aim.supportingConnections];
        delete aim.incoming;
-       // Persist the migrated aim immediately
        await writeAim(projectPath, aim);
     }
   }
 
+  // Lazy Migration: Rename 'outgoing' to 'supportedAims'
+  if (aim.outgoing && Array.isArray(aim.outgoing)) {
+    if (!aim.supportedAims) {
+        aim.supportedAims = [];
+    }
+    // Merge outgoing into supportedAims
+    for (const parentId of aim.outgoing) {
+        if (!aim.supportedAims.includes(parentId)) {
+            aim.supportedAims.push(parentId);
+        }
+    }
+    delete aim.outgoing;
+    await writeAim(projectPath, aim);
+  }
+
   // Ensure default array values
   if (!aim.supportingConnections) aim.supportingConnections = [];
-  if (!aim.outgoing) aim.outgoing = [];
+  if (!aim.supportedAims) aim.supportedAims = [];
   if (!aim.committedIn) aim.committedIn = [];
   
   return aim;
@@ -119,7 +130,6 @@ async function listAims(projectPath: string): Promise<Aim[]> {
   for (const file of files) {
     if (file.endsWith('.json')) {
       const aimId = path.basename(file, '.json');
-      // Using readAim ensures lazy migration logic runs for every aim loaded
       const aim = await readAim(projectPath, aimId);
       aims.push(aim);
     }
@@ -258,8 +268,8 @@ async function removeAimFromPhase(projectPath: string, aimId: string, phaseId: s
 }
 
 // Helper function to connect aims (reused by connectAims and createSubAim)
-async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childOutgoingIndex?: number): Promise<void> {
-  console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childOutgoingIndex });
+async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number): Promise<void> {
+  console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childSupportedAimsIndex });
   const parent = await readAim(projectPath, parentAimId);
   const child = await readAim(projectPath, childAimId);
 
@@ -289,21 +299,21 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
   }
   await writeAim(projectPath, parent);
 
-  // Update child's outgoing (parent goes into child's outgoing)
-  let targetChildIndex = childOutgoingIndex !== undefined ? childOutgoingIndex : child.outgoing.length;
-  const currentParentIndex = child.outgoing.indexOf(parentAimId);
+  // Update child's supportedAims (parent goes into child's supportedAims)
+  let targetChildIndex = childSupportedAimsIndex !== undefined ? childSupportedAimsIndex : child.supportedAims.length;
+  const currentParentIndex = child.supportedAims.indexOf(parentAimId);
   if (currentParentIndex === targetChildIndex) {
     // Already at the correct position
   } else {
     // Remove from current position if present
     if (currentParentIndex !== -1) {
-      child.outgoing.splice(currentParentIndex, 1);
+      child.supportedAims.splice(currentParentIndex, 1);
     }
     // Insert at target position
-    if (targetChildIndex <= child.outgoing.length) {
-      child.outgoing.splice(targetChildIndex, 0, parentAimId);
+    if (targetChildIndex <= child.supportedAims.length) {
+      child.supportedAims.splice(targetChildIndex, 0, parentAimId);
     } else {
-      child.outgoing.push(parentAimId);
+      child.supportedAims.push(parentAimId);
     }
   }
   console.log(parent, child)
@@ -381,9 +391,9 @@ const appRouter = t.router({
           if (input.phaseId) {
             aims = aims.filter(aim => aim.committedIn.includes(input.phaseId!));
           } else if (input.parentAimId) {
-            aims = aims.filter(aim => aim.outgoing.includes(input.parentAimId!));
+            aims = aims.filter(aim => aim.supportedAims.includes(input.parentAimId!));
           } else if (input.floating) {
-            aims = aims.filter(aim => (!aim.committedIn || aim.committedIn.length === 0) && (!aim.outgoing || aim.outgoing.length === 0));
+            aims = aims.filter(aim => (!aim.committedIn || aim.committedIn.length === 0) && (!aim.supportedAims || aim.supportedAims.length === 0));
           }
         }
 
@@ -475,7 +485,7 @@ const appRouter = t.router({
             date: z.number().optional()
           }).optional(),
           incoming: z.array(z.string()).optional(),
-          outgoing: z.array(z.string()).optional(),
+          supportedAims: z.array(z.string()).optional(),
           committedIn: z.array(z.string()).optional(),
           supportingConnections: z.array(z.object({
             aimId: z.string().uuid(),
@@ -502,7 +512,7 @@ const appRouter = t.router({
         // For now, if provided, we replace (simpler for updates).
         // But need to ensure relativePosition/weight defaults if partial?
         // Zod schema above handles basic types.
-        // Assuming input is full connection object or we map it.
+        // Assuming input is full connection object or we map it. 
         
         let supportingConnections = existingAim.supportingConnections;
         if (input.aim.supportingConnections) {
@@ -590,10 +600,10 @@ const appRouter = t.router({
         parentAimId: z.string().uuid(),
         childAimId: z.string().uuid(),
         parentIncomingIndex: z.number().optional(),
-        childOutgoingIndex: z.number().optional()
+        childSupportedAimsIndex: z.number().optional()
       }))
       .mutation(async ({ input }) => {
-        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childOutgoingIndex);
+        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex);
         return { success: true };
       }),
 
@@ -628,7 +638,7 @@ const appRouter = t.router({
           description: input.aim.description,
           tags: input.aim.tags || [],
           supportingConnections: [],
-          outgoing: [],
+          supportedAims: [],
           committedIn: [],
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0
@@ -679,7 +689,7 @@ const appRouter = t.router({
           description: input.aim.description,
           tags: input.aim.tags || [],
           supportingConnections: [],
-          outgoing: [],
+          supportedAims: [],
           committedIn: [],
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0
@@ -732,7 +742,7 @@ const appRouter = t.router({
           description: input.aim.description,
           tags: input.aim.tags || [],
           supportingConnections: [],
-          outgoing: [],
+          supportedAims: [],
           committedIn: [input.phaseId], // Will be updated by commitAimToPhase
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0
@@ -1200,7 +1210,7 @@ const appRouter = t.router({
           }
         }
 
-        // Check 2: Aim <-> Aim consistency (supportingConnections/outgoing)
+        // Check 2: Aim <-> Aim consistency (supportingConnections/supportedAims)
         for (const aim of aims) {
           // supportingConnections (Children)
           if (aim.supportingConnections) {
@@ -1210,22 +1220,22 @@ const appRouter = t.router({
                 errors.push(`Aim ${aim.id} has non-existent supporting connection (child) ${childId}`);
                 } else {
                 const child = aimMap.get(childId)!;
-                if (!child.outgoing.includes(aim.id)) {
-                    errors.push(`Aim ${aim.id} lists ${childId} as supporting, but ${childId} does not list ${aim.id} as outgoing`);
+                if (!child.supportedAims.includes(aim.id)) {
+                    errors.push(`Aim ${aim.id} lists ${childId} as supporting, but ${childId} does not list ${aim.id} as supportedAims`);
                 }
                 }
             }
           }
 
-          // Outgoing (Parents)
-          for (const parentId of aim.outgoing) {
+          // supportedAims (Parents)
+          for (const parentId of aim.supportedAims) {
             if (!aimMap.has(parentId)) {
-              errors.push(`Aim ${aim.id} has non-existent outgoing (parent) ${parentId}`);
+              errors.push(`Aim ${aim.id} has non-existent supportedAims (parent) ${parentId}`);
             } else {
               const parent = aimMap.get(parentId)!;
               const parentHasConnection = parent.supportingConnections?.some(c => c.aimId === aim.id);
               if (!parentHasConnection) {
-                errors.push(`Aim ${aim.id} lists ${parentId} as outgoing, but ${parentId} does not list ${aim.id} in supportingConnections`);
+                errors.push(`Aim ${aim.id} lists ${parentId} as supportedAims, but ${parentId} does not list ${aim.id} in supportingConnections`);
               }
             }
           }
@@ -1304,10 +1314,10 @@ const appRouter = t.router({
                 }
                 validConnections.push(conn);
                 
-                if (!child.outgoing.includes(aim.id)) {
-                child.outgoing.push(aim.id);
+                if (!child.supportedAims.includes(aim.id)) {
+                child.supportedAims.push(aim.id);
                 await writeAim(input.projectPath, child);
-                fixes.push(`Added outgoing parent ${aim.id} to Child ${child.id}`);
+                fixes.push(`Added supportedAims parent ${aim.id} to Child ${child.id}`);
                 }
             }
             if (validConnections.length !== aim.supportingConnections.length) {
@@ -1316,15 +1326,15 @@ const appRouter = t.router({
             }
           }
 
-          // Outgoing (Parents)
-          const validOutgoing = [];
-          for (const parentId of aim.outgoing) {
+          // supportedAims (Parents)
+          const validSupportedAims = [];
+          for (const parentId of aim.supportedAims) {
             const parent = aimMap.get(parentId);
             if (!parent) {
               fixes.push(`Removed non-existent parent ${parentId} from Aim ${aim.id}`);
               continue;
             }
-            validOutgoing.push(parentId);
+            validSupportedAims.push(parentId);
             
             if (!parent.supportingConnections) parent.supportingConnections = [];
             if (!parent.supportingConnections.some(c => c.aimId === aim.id)) {
@@ -1333,8 +1343,8 @@ const appRouter = t.router({
               fixes.push(`Added supporting connection ${aim.id} to Parent ${parent.id}`);
             }
           }
-          if (validOutgoing.length !== aim.outgoing.length) {
-            aim.outgoing = validOutgoing;
+          if (validSupportedAims.length !== aim.supportedAims.length) {
+            aim.supportedAims = validSupportedAims;
             await writeAim(input.projectPath, aim);
           }
         }

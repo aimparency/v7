@@ -1,9 +1,6 @@
 {
   "id": "71ad0cd7-ac9d-4df7-abb9-101ead31f118",
   "text": "develop hypothesis (create sub aims, evaluate)",
-  "outgoing": [
-    "1c60ee55-0627-43d6-8393-e912fc2e52a2"
-  ],
   "committedIn": [],
   "status": {
     "state": "open",
@@ -19,5 +16,8 @@
       ],
       "weight": 1
     }
+  ],
+  "supportedAims": [
+    "1c60ee55-0627-43d6-8393-e912fc2e52a2"
   ]
 }

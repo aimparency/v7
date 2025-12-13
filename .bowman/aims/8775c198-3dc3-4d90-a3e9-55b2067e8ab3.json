@@ -4,13 +4,14 @@
   "description": "",
   "tags": [],
   "incoming": [],
-  "outgoing": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
-  ],
   "committedIn": [],
   "status": {
     "state": "open",
     "comment": "",
     "date": 1765463884336
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ]
 }

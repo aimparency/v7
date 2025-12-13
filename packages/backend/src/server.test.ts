@@ -48,7 +48,7 @@ test('connectAims - connects two existing aims', async () => {
     parentAimId: parentResult.id,
     childAimId: childResult.id,
     parentIncomingIndex: 0, 
-    childOutgoingIndex: 0
+    childSupportedAimsIndex: 0
   });
 
   // Verify connection
@@ -63,7 +63,7 @@ test('connectAims - connects two existing aims', async () => {
 
   assert.equal(updatedParent.supportingConnections.length, 1);
   assert.equal(updatedParent.supportingConnections[0].aimId, childResult.id);
-  assert.deepEqual(updatedChild.outgoing, [parentResult.id]);
+  assert.deepEqual(updatedChild.supportedAims, [parentResult.id]);
 });
 
 test('createSubAim - creates and connects sub-aim', async () => {
@@ -100,7 +100,7 @@ test('createSubAim - creates and connects sub-aim', async () => {
 
   assert.equal(updatedParent.supportingConnections.length, 1);
   assert.equal(updatedParent.supportingConnections[0].aimId, subAimResult.id);
-  assert.deepEqual(subAim.outgoing, [parentResult.id]);
+  assert.deepEqual(subAim.supportedAims, [parentResult.id]);
   assert.equal(subAim.text, 'Sub Aim');
 });
 
@@ -178,7 +178,7 @@ test('connectAims - repositioning existing connections', async () => {
     parentAimId: parentResult.id,
     childAimId: child1Result.id,
     parentIncomingIndex: 0,
-    childOutgoingIndex: 0
+    childSupportedAimsIndex: 0
   });
 
   // Connect second child at position 0 (should move first child to position 1)
@@ -187,7 +187,7 @@ test('connectAims - repositioning existing connections', async () => {
     parentAimId: parentResult.id,
     childAimId: child2Result.id,
     parentIncomingIndex: 0, 
-    childOutgoingIndex: 0
+    childSupportedAimsIndex: 0
   });
 
   // Verify repositioning
@@ -362,4 +362,37 @@ test('readAim - performs lazy migration of incoming array', async () => {
   const persistedAim = await fs.readJson(path.join(TEST_PROJECT_PATH, 'aims', `${aimId}.json`));
   assert.equal(persistedAim.supportingConnections.length, 3);
   assert.equal(persistedAim.incoming, undefined);
+});
+
+test('readAim - performs lazy migration of outgoing array', async () => {
+  const aimId = uuidv4();
+  const parent1Id = uuidv4();
+  const parent2Id = uuidv4();
+
+  const legacyAim = {
+    id: aimId,
+    text: 'Legacy Aim',
+    status: { state: 'open', comment: '', date: Date.now() },
+    supportingConnections: [],
+    outgoing: [parent1Id, parent2Id], // Legacy field
+    committedIn: []
+  };
+
+  await fs.ensureDir(path.join(TEST_PROJECT_PATH, 'aims'));
+  await fs.writeJson(path.join(TEST_PROJECT_PATH, 'aims', `${aimId}.json`), legacyAim);
+
+  // Read the aim (should trigger migration)
+  const migratedAim = await caller.aim.get({
+    projectPath: TEST_PROJECT_PATH,
+    aimId: aimId
+  });
+
+  // Verify in-memory result
+  assert.deepEqual(migratedAim.supportedAims, [parent1Id, parent2Id]);
+  assert.equal((migratedAim as any).outgoing, undefined);
+
+  // Verify persistence
+  const persistedAim = await fs.readJson(path.join(TEST_PROJECT_PATH, 'aims', `${aimId}.json`));
+  assert.deepEqual(persistedAim.supportedAims, [parent1Id, parent2Id]);
+  assert.equal(persistedAim.outgoing, undefined);
 });

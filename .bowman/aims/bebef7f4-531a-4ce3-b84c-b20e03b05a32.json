@@ -4,13 +4,14 @@
   "description": "keep aim selection. navigate to selected aim on switch (both directoin when grpah => list and when list => graph, use the focus aim camera movement function that should already be there in the reference implementation.",
   "tags": [],
   "incoming": [],
-  "outgoing": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Implemented 'g' key toggle between graph and list views. Ensured selection persistence and automatic camera focus (both ways) by adding 'immediate: true' to GraphView watcher and utilizing existing scroll-into-view logic in columns. Verified with build.",
     "date": 1765571970450
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ]
 }

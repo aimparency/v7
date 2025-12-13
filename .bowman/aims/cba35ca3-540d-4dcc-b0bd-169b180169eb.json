@@ -6,14 +6,15 @@
     "ui"
   ],
   "incoming": [],
-  "outgoing": [
-    "b439cf5f-d9b8-4406-a73b-65236c321c91"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Ported reference visual logic (make-circular-path) to frontend. Updated GraphLink.vue to render beautiful curved arrows instead of straight lines. Implemented vec2 utilities. Builds successful. Visual gap addressed.",
     "date": 1765572978952
   },
-  "description": ""
+  "description": "",
+  "supportingConnections": [],
+  "supportedAims": [
+    "b439cf5f-d9b8-4406-a73b-65236c321c91"
+  ]
 }

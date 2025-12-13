@@ -1,1 +1,15 @@
-{"id":"f59d60b6-4fa8-44eb-bc4b-2b03eaaff304","text":"store embedding for aim title + description on create and on change. Do the embedding async on the backend. Copy /home/felix/dev/graphics/avonx/platform/backend/embedder as a start","incoming":[],"outgoing":["b5c6fda9-4c32-4b3a-94f0-31d0f2760040"],"committedIn":[],"status":{"state":"done","comment":"Backend integration complete. Embedder service (Python) running. MCP tool 'search-aims-semantic' exposed.","date":1764374400000}}
+{
+  "id": "f59d60b6-4fa8-44eb-bc4b-2b03eaaff304",
+  "text": "store embedding for aim title + description on create and on change. Do the embedding async on the backend. Copy /home/felix/dev/graphics/avonx/platform/backend/embedder as a start",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Backend integration complete. Embedder service (Python) running. MCP tool 'search-aims-semantic' exposed.",
+    "date": 1764374400000
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "b5c6fda9-4c32-4b3a-94f0-31d0f2760040"
+  ]
+}

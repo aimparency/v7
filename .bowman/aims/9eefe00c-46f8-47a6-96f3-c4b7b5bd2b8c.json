@@ -6,7 +6,6 @@
     "content"
   ],
   "incoming": [],
-  "outgoing": [],
   "committedIn": [
     "ab939925-1be6-43fc-b7a9-958b49b2c66a"
   ],
@@ -14,5 +13,7 @@
     "state": "open",
     "comment": "",
     "date": 1765230415352
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": []
 }

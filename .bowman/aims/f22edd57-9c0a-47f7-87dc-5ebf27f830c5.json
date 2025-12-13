@@ -3,13 +3,14 @@
   "text": "analyze the navigation and aim movement carefully. it was quite hard to get it function well, and we need to keep it working just like it is working. e.g. the selection restoration everywhere",
   "description": "",
   "incoming": [],
-  "outgoing": [
-    "0c7c85ee-8c27-4659-81fc-900cfe510314"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Analyzed navigation logic in ui.ts and App.vue. Verified behavior with new regression tests. Found and fixed initialization bug.",
     "date": 1765133832843
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "0c7c85ee-8c27-4659-81fc-900cfe510314"
+  ]
 }

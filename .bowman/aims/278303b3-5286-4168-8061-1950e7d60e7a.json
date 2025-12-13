@@ -1,1 +1,15 @@
-{"id":"278303b3-5286-4168-8061-1950e7d60e7a","text":"increase the wait time after a watchdog message (before analyzing the situation again)","incoming":[],"outgoing":["abc3d503-5945-45eb-8122-be5e33b2ccea"],"committedIn":[],"status":{"state":"done","comment":"Implemented STARTUP_GRACE_PERIOD (20s) in watchdog.ts.","date":1764374400000}}
+{
+  "id": "278303b3-5286-4168-8061-1950e7d60e7a",
+  "text": "increase the wait time after a watchdog message (before analyzing the situation again)",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented STARTUP_GRACE_PERIOD (20s) in watchdog.ts.",
+    "date": 1764374400000
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "abc3d503-5945-45eb-8122-be5e33b2ccea"
+  ]
+}

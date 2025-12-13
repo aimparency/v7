@@ -4,13 +4,14 @@
   "description": "maybe some related phase operations also need synchroization.",
   "tags": [],
   "incoming": [],
-  "outgoing": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Fixed phase update synchronization in PhaseCreationModal.vue by reloading both old and new parent phase lists. Creation logic in createAndSelectPhase already seemed correct.",
     "date": 1765213247687
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ]
 }

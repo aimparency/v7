@@ -1,1 +1,15 @@
-{"id":"602b8c5c-4846-449a-8427-bb86030f7eab","text":"Implement Data Consistency Check endpoint (bidirectional links)","incoming":[],"outgoing":["865e4b34-0c68-4e34-9361-809c4d90db4c"],"committedIn":[],"status":{"state":"done","comment":"Implemented 'checkConsistency' and 'fixConsistency' endpoints in backend. They handle validation and repair of bidirectional links (Aim<->Phase, Aim<->Aim). Verified with build.","date":1765018713374}}
+{
+  "id": "602b8c5c-4846-449a-8427-bb86030f7eab",
+  "text": "Implement Data Consistency Check endpoint (bidirectional links)",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented 'checkConsistency' and 'fixConsistency' endpoints in backend. They handle validation and repair of bidirectional links (Aim<->Phase, Aim<->Aim). Verified with build.",
+    "date": 1765018713374
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c"
+  ]
+}

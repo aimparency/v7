@@ -4,13 +4,14 @@
   "description": "The MCP description should advise to prefer aim status update and use deletion only in rare cases like when removing duplicates.",
   "tags": [],
   "incoming": [],
-  "outgoing": [
-    "865e4b34-0c68-4e34-9361-809c4d90db4c"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Updated MCP tool description for 'delete-aim' to advise against deletion in favor of status updates, except for duplicates/errors. Verified build.",
     "date": 1765544462086
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c"
+  ]
 }

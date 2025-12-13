@@ -6,11 +6,12 @@
     "infrastructure"
   ],
   "incoming": [],
-  "outgoing": [],
   "committedIn": [],
   "status": {
     "state": "open",
     "comment": "",
     "date": 1765230132830
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": []
 }

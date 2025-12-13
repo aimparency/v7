@@ -4,13 +4,14 @@
   "description": "",
   "tags": [],
   "incoming": [],
-  "outgoing": [
-    "97d2e473-64b4-4de8-99c8-d8a7a064ee43"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Implemented via 'list-aims' tool with 'phaseId' parameter in MCP.",
     "date": 1765401637103
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "97d2e473-64b4-4de8-99c8-d8a7a064ee43"
+  ]
 }

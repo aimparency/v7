@@ -1,1 +1,15 @@
-{"id":"01dc0462-0e5f-4586-83e3-63def76dafe0","text":"auto scroll refinement: if the scroll-to-element box is higher than the \"srcoll-into-area\"(i think its 1/5 to 4/5 or so), then scroll only so far that the edge that is closer lies on the 1/5 or 4/5. in other words: \"scroll as little as possibel so that the entire \"scroll-into-area\" is filled with the element.","incoming":[],"outgoing":["d59d03c1-45dd-48db-98c2-49b61b481f07"],"committedIn":[],"status":{"state":"done","comment":"Implemented 20%/80% scroll threshold and optimized scrolling for large elements. Verified with unit tests.","date":1764798341815}}
+{
+  "id": "01dc0462-0e5f-4586-83e3-63def76dafe0",
+  "text": "auto scroll refinement: if the scroll-to-element box is higher than the \"srcoll-into-area\"(i think its 1/5 to 4/5 or so), then scroll only so far that the edge that is closer lies on the 1/5 or 4/5. in other words: \"scroll as little as possibel so that the entire \"scroll-into-area\" is filled with the element.",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented 20%/80% scroll threshold and optimized scrolling for large elements. Verified with unit tests.",
+    "date": 1764798341815
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ]
+}

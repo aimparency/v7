@@ -62,7 +62,7 @@ export const useDataStore = defineStore('data', {
       
       // Find roots (no parents)
       aims.forEach(aim => {
-        if (!aim.outgoing || aim.outgoing.length === 0) {
+        if (!aim.supportedAims || aim.supportedAims.length === 0) {
           depthMap.set(aim.id, 0)
           queue.push({ id: aim.id, depth: 0 })
         }
@@ -256,7 +256,7 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async createFloatingAim(projectPath: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>): Promise<{id: string}> {
+    async createFloatingAim(projectPath: string, aim: Omit<Aim, 'id' | 'incoming' | 'supportedAims' | 'committedIn'>): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createFloatingAim.mutate({
           projectPath,
@@ -280,7 +280,7 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async createSubAim(projectPath: string, parentAimId: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>, positionInParent?: number): Promise<{id: string}> {
+    async createSubAim(projectPath: string, parentAimId: string, aim: Omit<Aim, 'id' | 'incoming' | 'supportedAims' | 'committedIn'>, positionInParent?: number): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createSubAim.mutate({
           projectPath,
@@ -295,7 +295,7 @@ export const useDataStore = defineStore('data', {
           this.replaceAim(parentAimId, parentAim)
         }
 
-        // Reload child aim to get updated outgoing array
+        // Reload child aim to get updated supportedAims array
         // This ensures it doesn't appear in floating aims
         const updatedChildAim = await trpc.aim.get.query({ projectPath, aimId: newAim.id })
         if (updatedChildAim) {
@@ -309,7 +309,7 @@ export const useDataStore = defineStore('data', {
       }
     }, 
 
-    async createCommittedAim(projectPath: string, phaseId: string, aim: Omit<Aim, 'id' | 'incoming' | 'outgoing' | 'committedIn'>, insertionIndex?: number): Promise<{id: string}> {
+    async createCommittedAim(projectPath: string, phaseId: string, aim: Omit<Aim, 'id' | 'incoming' | 'supportedAims' | 'committedIn'>, insertionIndex?: number): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createAimInPhase.mutate({
           projectPath,
@@ -410,7 +410,7 @@ export const useDataStore = defineStore('data', {
         const aim = await trpc.aim.get.query({ projectPath, aimId })
         if (aim) {
             this.replaceAim(aimId, aim)
-            const isFloating = (!aim.committedIn || aim.committedIn.length === 0) && (!aim.outgoing || aim.outgoing.length === 0);
+            const isFloating = (!aim.committedIn || aim.committedIn.length === 0) && (!aim.supportedAims || aim.supportedAims.length === 0);
             if (isFloating && !this.floatingAimsIds.includes(aimId)) {
                 this.floatingAimsIds.unshift(aimId)
             }
@@ -520,7 +520,7 @@ export const useDataStore = defineStore('data', {
                // connectAimsInternal: parent.incoming.push(child), child.outgoing.push(parent).
                // So outgoing = PARENTS. incoming = CHILDREN.
                // So a root aim has NO PARENTS (no outgoing). Correct.
-               const isFloating = (!aim.committedIn || aim.committedIn.length === 0) && (!aim.outgoing || aim.outgoing.length === 0);
+               const isFloating = (!aim.committedIn || aim.committedIn.length === 0) && (!aim.supportedAims || aim.supportedAims.length === 0);
                
                if (isFloating) {
                  if (!this.floatingAimsIds.includes(aim.id)) {
@@ -627,20 +627,20 @@ export const useDataStore = defineStore('data', {
         }
       }
 
-      // 3. Remove the parent from this aim's outgoing array
-      const updatedOutgoing = aim.outgoing.filter(id => id !== parentAimId)
+      // 3. Remove the parent from this aim's supportedAims array
+      const updatedSupportedAims = aim.supportedAims.filter(id => id !== parentAimId)
 
-      // 4. If this aim has no other parents (outgoing connections), delete it completely
-      if (updatedOutgoing.length === 0) {
+      // 4. If this aim has no other parents (supportedAims connections), delete it completely
+      if (updatedSupportedAims.length === 0) {
         await trpc.aim.delete.mutate({
           projectPath,
           aimId: aimId
         })
         delete this.aims[aimId]
       } else {
-        // Still has other parents, just update the outgoing array
+        // Still has other parents, just update the supportedAims array
         await this.updateAim(projectPath, aimId, {
-          outgoing: updatedOutgoing
+          supportedAims: updatedSupportedAims
         })
       }
     },
@@ -810,14 +810,14 @@ export const useDataStore = defineStore('data', {
     async reorderSubAim(projectPath: string, parentAimId: string, childAimId: string, newIndex: number) {
       try {
         const childAim = this.aims[childAimId];
-        const childOutgoingIndex = childAim?.outgoing.indexOf(parentAimId) ?? 0;
+        const childSupportedAimsIndex = childAim?.supportedAims.indexOf(parentAimId) ?? 0;
 
         await trpc.aim.connectAims.mutate({
           projectPath,
           parentAimId,
           childAimId: childAimId,
           parentIncomingIndex: newIndex,
-          childOutgoingIndex: childOutgoingIndex !== -1 ? childOutgoingIndex : undefined
+          childSupportedAimsIndex: childSupportedAimsIndex !== -1 ? childSupportedAimsIndex : undefined
         });
 
         const parentAim = await trpc.aim.get.query({ projectPath, aimId: parentAimId });

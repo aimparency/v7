@@ -1,1 +1,15 @@
-{"id":"4c7e75f1-1421-4909-9116-0ad831d95033","text":"add a bubble with a number on the right side of the aim title if an aim has sub aims. the number (bold dark grey on 50% alpha white circle) is the number of sub aims if > 9 => \"N\" instead of number","incoming":[],"outgoing":["d59d03c1-45dd-48db-98c2-49b61b481f07"],"committedIn":[],"status":{"state":"done","comment":"Implemented sub-aim count bubble next to aim titles. Displays number or \"N\" for counts > 9. Verified with unit tests.","date":1764798786929}}
+{
+  "id": "4c7e75f1-1421-4909-9116-0ad831d95033",
+  "text": "add a bubble with a number on the right side of the aim title if an aim has sub aims. the number (bold dark grey on 50% alpha white circle) is the number of sub aims if > 9 => \"N\" instead of number",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented sub-aim count bubble next to aim titles. Displays number or \"N\" for counts > 9. Verified with unit tests.",
+    "date": 1764798786929
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ]
+}

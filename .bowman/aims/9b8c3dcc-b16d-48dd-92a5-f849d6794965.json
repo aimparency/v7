@@ -1,1 +1,16 @@
-{"id":"9b8c3dcc-b16d-48dd-92a5-f849d6794965","text":"Display and Edit Tags in Aim Component and Modals","tags":[],"incoming":[],"outgoing":["865e4b34-0c68-4e34-9361-809c4d90db4c"],"committedIn":[],"status":{"state":"done","comment":"Implemented tags display in Aim.vue and tags input in AimCreationModal.vue. Updated data store and UI store to handle tags. Verified with build.","date":1765018968445}}
+{
+  "id": "9b8c3dcc-b16d-48dd-92a5-f849d6794965",
+  "text": "Display and Edit Tags in Aim Component and Modals",
+  "tags": [],
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented tags display in Aim.vue and tags input in AimCreationModal.vue. Updated data store and UI store to handle tags. Verified with build.",
+    "date": 1765018968445
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c"
+  ]
+}

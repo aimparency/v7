@@ -8,8 +8,25 @@ import 'd3-transition'
 import GraphNodeComponent from '../components/GraphNode.vue'
 import GraphLinkComponent from '../components/GraphLink.vue'
 import * as vec2 from '../utils/vec2'
-// @ts-ignore
-import boxIntersect from 'box-intersect'
+import { loadAllPositions, savePositions } from '../utils/db'
+
+// Naive implementation to avoid 'box-intersect' dependency issues in browser (Buffer undefined)
+function naiveBoxIntersect(boxes: number[][]) {
+  const results = []
+  for (let i = 0; i < boxes.length; i++) {
+    for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i]
+      const b = boxes[j]
+      // Check overlap: max(ax_min, bx_min) < min(ax_max, bx_max) ...
+      // If no overlap: a_max < b_min OR b_max < a_min
+      // Overlap if: a[2] >= b[0] && a[0] <= b[2] && a[3] >= b[1] && a[1] <= b[3]
+      if (a[2] >= b[0] && a[0] <= b[2] && a[3] >= b[1] && a[1] <= b[3]) {
+        results.push([i, j])
+      }
+    }
+  }
+  return results
+}
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -43,9 +60,11 @@ const nodes = shallowRef<GraphNode[]>([])
 const links = shallowRef<GraphLink[]>([])
 // Map for fast lookup
 const nodeMap = new Map<string, GraphNode>()
+const persistedPositions = new Map<string, {x: number, y: number}>()
 
 let zoomBehavior: ZoomBehavior<SVGSVGElement, unknown>
 let animFrameId: number | null = null
+let saveIntervalId: number | null = null
 
 // --- Reference Constants ---
 const OUTER_MARGIN_FACTOR = 2
@@ -128,7 +147,7 @@ const layout = () => {
   }
 
   // 3. Collisions (Box Intersect)
-  const intersections = boxIntersect(boxes)
+  const intersections = naiveBoxIntersect(boxes)
   const ab = vec2.create()
   
   for (const [iA, iB] of intersections) {
@@ -214,12 +233,15 @@ const updateGraphData = () => {
   rawNodes.forEach(raw => {
     let existing = nodeMap.get(raw.id)
     if (!existing) {
+      // Check persistence
+      const persisted = persistedPositions.get(raw.id)
+      
       existing = {
         id: raw.id,
         text: raw.text,
         status: raw.status,
         r: NODE_RADIUS_BASE,
-        pos: [Math.random() * 100 - 50, Math.random() * 100 - 50],
+        pos: persisted ? [persisted.x, persisted.y] : [Math.random() * 100 - 50, Math.random() * 100 - 50],
         shift: [0, 0],
         color: undefined
       }
@@ -376,7 +398,15 @@ const updateDimensions = () => {
 }
 
 // --- Lifecycle ---
-onMounted(() => {
+onMounted(async () => {
+  // Load persisted positions first
+  try {
+    const loaded = await loadAllPositions()
+    loaded.forEach((val, key) => persistedPositions.set(key, val))
+  } catch (e) {
+    console.warn('Failed to load graph positions from DB', e)
+  }
+
   if (svgRef.value) {
     zoomBehavior = zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
@@ -399,10 +429,23 @@ onMounted(() => {
   }
   
   updateGraphData()
+
+  // Setup periodic save
+  saveIntervalId = window.setInterval(() => {
+    const positionsToSave = nodes.value.map(n => ({
+      id: n.id,
+      x: n.pos[0],
+      y: n.pos[1]
+    }))
+    if (positionsToSave.length > 0) {
+      savePositions(positionsToSave).catch(e => console.warn('Failed to save positions', e))
+    }
+  }, 2000)
 })
 
 onUnmounted(() => {
   if (animFrameId) cancelAnimationFrame(animFrameId)
+  if (saveIntervalId) clearInterval(saveIntervalId)
   window.removeEventListener('resize', updateDimensions)
 })
 

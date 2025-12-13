@@ -1,9 +1,6 @@
 {
   "id": "d59d03c1-45dd-48db-98c2-49b61b481f07",
   "text": "maintain a nice ui (vim inspired)",
-  "outgoing": [
-    "0f577668-ca34-4e7a-a7a8-9f97bc91454e"
-  ],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
@@ -157,5 +154,8 @@
       ],
       "weight": 1
     }
+  ],
+  "supportedAims": [
+    "0f577668-ca34-4e7a-a7a8-9f97bc91454e"
   ]
 }

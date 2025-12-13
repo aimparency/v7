@@ -4,13 +4,14 @@
   "description": "",
   "tags": [],
   "incoming": [],
-  "outgoing": [
-    "ca93615f-6364-4b90-aa3a-1e78c9939e55"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Implemented 'Relaunch' button in WatchdogPanel and 'relaunch' action in WatchdogStore. This stops the backend process and spawns a new one. Verified with type-check.",
     "date": 1765544170440
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "ca93615f-6364-4b90-aa3a-1e78c9939e55"
+  ]
 }

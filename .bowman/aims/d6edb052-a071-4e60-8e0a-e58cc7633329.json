@@ -1,1 +1,16 @@
-{"id":"d6edb052-a071-4e60-8e0a-e58cc7633329","text":"Integrate Real-time Analytics Dashboard","tags":[],"incoming":[],"outgoing":["0cefe646-447b-412a-b4f6-53167668b0ee"],"committedIn":[],"status":{"state":"done","comment":"Implemented Analytics Dashboard (Express server + HTML/JS frontend). Aggregates real data from 'social-media/published.json' and mocks growth/engagement/optimization metrics. Runs on port 3003.","date":1765114135673}}
+{
+  "id": "d6edb052-a071-4e60-8e0a-e58cc7633329",
+  "text": "Integrate Real-time Analytics Dashboard",
+  "tags": [],
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented Analytics Dashboard (Express server + HTML/JS frontend). Aggregates real data from 'social-media/published.json' and mocks growth/engagement/optimization metrics. Runs on port 3003.",
+    "date": 1765114135673
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "0cefe646-447b-412a-b4f6-53167668b0ee"
+  ]
+}

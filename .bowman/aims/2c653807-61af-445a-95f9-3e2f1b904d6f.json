@@ -3,13 +3,14 @@
   "text": "Adapt Data Store for Graph",
   "tags": [],
   "incoming": [],
-  "outgoing": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Implemented graphData getter in dataStore to transform Aims/Relationships into Nodes/Links for the graph view.",
     "date": 1765534357998
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ]
 }

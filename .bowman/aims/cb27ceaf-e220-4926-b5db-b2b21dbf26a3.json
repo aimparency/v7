@@ -6,13 +6,14 @@
     "sdisa"
   ],
   "incoming": [],
-  "outgoing": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "",
     "date": 1765133269690
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ]
 }

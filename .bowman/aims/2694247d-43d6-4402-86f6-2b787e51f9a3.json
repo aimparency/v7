@@ -6,13 +6,14 @@
     "refactor"
   ],
   "incoming": [],
-  "outgoing": [
-    "b439cf5f-d9b8-4406-a73b-65236c321c91"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Updated frontend logic (stores/data.ts, components/Aim.vue) to use 'supportingConnections'. Implemented fallback for backward compatibility during migration.",
     "date": 1765571840292
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "b439cf5f-d9b8-4406-a73b-65236c321c91"
+  ]
 }

@@ -7,13 +7,14 @@
     "shared"
   ],
   "incoming": [],
-  "outgoing": [
-    "b439cf5f-d9b8-4406-a73b-65236c321c91"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Completed deep refactoring of data model from 'incoming' to 'supportingConnections'. Updated shared types, backend server, and frontend store. Migration script provided.",
     "date": 1765571835149
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "b439cf5f-d9b8-4406-a73b-65236c321c91"
+  ]
 }

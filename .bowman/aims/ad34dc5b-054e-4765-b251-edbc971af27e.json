@@ -1,9 +1,6 @@
 {
   "id": "ad34dc5b-054e-4765-b251-edbc971af27e",
   "text": "show aim description between title and status when aim is expanded.",
-  "outgoing": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -19,5 +16,8 @@
       ],
       "weight": 1
     }
+  ],
+  "supportedAims": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
   ]
 }

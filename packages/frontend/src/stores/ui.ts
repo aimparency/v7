@@ -975,9 +975,9 @@ export const useUIStore = defineStore('ui', {
         }
         
         // 2. Does it have parents?
-        if (aim.outgoing && aim.outgoing.length > 0) {
+        if (aim.supportedAims && aim.supportedAims.length > 0) {
             isRoot = false
-            for (const parentId of aim.outgoing) {
+            for (const parentId of aim.supportedAims) {
                 await trace(parentId, newPath) 
             }
         }
@@ -1312,7 +1312,7 @@ export const useUIStore = defineStore('ui', {
                 parentAimId: parentAim.id,
                 childAimId: currentAim.id,
                 parentIncomingIndex: nextIndex,
-                childOutgoingIndex: currentAim.outgoing.indexOf(parentAim.id)
+                childSupportedAimsIndex: currentAim.supportedAims.indexOf(parentAim.id)
             })
 
             // Reload parent to get updated incoming array
@@ -1401,7 +1401,7 @@ export const useUIStore = defineStore('ui', {
                 parentAimId: parentAim.id,
                 childAimId: currentAim.id,
                 parentIncomingIndex: prevIndex,
-                childOutgoingIndex: currentAim.outgoing.indexOf(parentAim.id)
+                childSupportedAimsIndex: currentAim.supportedAims.indexOf(parentAim.id)
             })
 
             // Reload parent
@@ -1481,7 +1481,7 @@ export const useUIStore = defineStore('ui', {
       // We need to filter out the connection that points to currentAimId.
       const updatedConnections = parentConnections.filter(c => c.aimId !== currentAimId)
       
-      const updatedOutgoing = currentAim.outgoing.filter(id => id !== parentId)
+      const updatedSupportedAims = currentAim.supportedAims.filter(id => id !== parentId)
 
       let grandparentId: string | undefined
       let newIndex: number | undefined
@@ -1513,7 +1513,7 @@ export const useUIStore = defineStore('ui', {
       await trpc.aim.update.mutate({
         projectPath: this.projectPath,
         aimId: currentAimId,
-        aim: { outgoing: updatedOutgoing }
+        aim: { supportedAims: updatedSupportedAims }
       })
 
       // Connect to new location and set selection immediately to avoid flicker
@@ -1523,7 +1523,7 @@ export const useUIStore = defineStore('ui', {
           parentAimId: grandparentId,
           childAimId: currentAimId,
           parentIncomingIndex: newIndex!,
-          childOutgoingIndex: 0
+          childSupportedAimsIndex: 0
         })
         // Set selection immediately before reload
         const gp = dataStore.aims[grandparentId]
@@ -1663,11 +1663,11 @@ export const useUIStore = defineStore('ui', {
             aim: { supportingConnections: updatedConnections }
             })
         }
-        // Also update child's outgoing to remove old parent
+        // Also update child's supportedAims to remove old parent
         await trpc.aim.update.mutate({
           projectPath: this.projectPath,
           aimId: currentAimId,
-          aim: { outgoing: currentAim.outgoing.filter(id => id !== oldParentId) }
+          aim: { supportedAims: currentAim.supportedAims.filter(id => id !== oldParentId) }
         })
       } else if (oldPhaseId) {
         // Remove from phase
@@ -1684,7 +1684,7 @@ export const useUIStore = defineStore('ui', {
         parentAimId: previousSiblingId,
         childAimId: currentAimId,
         parentIncomingIndex: insertionIndex,
-        childOutgoingIndex: 0
+        childSupportedAimsIndex: 0
       })
 
       // Set selection immediately before reload

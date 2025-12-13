@@ -1,1 +1,15 @@
-{"id":"6168c984-6372-4128-bad6-2e969506b09d","text":"messages pasted in main session (or even in watchdog session), sometimes do not get sent but just stay in the input field. Fix that.","incoming":[],"outgoing":["abc3d503-5945-45eb-8122-be5e33b2ccea"],"committedIn":[],"status":{"state":"done","comment":"Changed input terminator to \\r\\n and added 300ms delay before sending to Worker PTY.","date":1764374400000}}
+{
+  "id": "6168c984-6372-4128-bad6-2e969506b09d",
+  "text": "messages pasted in main session (or even in watchdog session), sometimes do not get sent but just stay in the input field. Fix that.",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Changed input terminator to \\r\\n and added 300ms delay before sending to Worker PTY.",
+    "date": 1764374400000
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "abc3d503-5945-45eb-8122-be5e33b2ccea"
+  ]
+}

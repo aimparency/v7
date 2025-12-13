@@ -6,7 +6,6 @@
     "strategy"
   ],
   "incoming": [],
-  "outgoing": [],
   "committedIn": [
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
@@ -14,5 +13,7 @@
     "state": "open",
     "comment": "",
     "date": 1765212626780
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": []
 }

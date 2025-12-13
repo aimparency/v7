@@ -82,15 +82,15 @@ server.setRequestHandler(ListResourcesRequestSchema, async () => {
         mimeType: "application/json",
       },
       {
-        uri: "aim://{uuid}/incoming?projectPath=/absolute/path",
-        name: "Aim dependencies",
-        description: "Get all aims that this aim depends on (prerequisites)",
+        uri: "aim://{uuid}/supporting-connections?projectPath=/absolute/path",
+        name: "Supporting connections (Children)",
+        description: "Get all aims that support this aim (dependencies/prerequisites)",
         mimeType: "application/json",
       },
       {
-        uri: "aim://{uuid}/outgoing?projectPath=/absolute/path",
-        name: "Dependent aims",
-        description: "Get all aims that depend on this aim (blocked by this aim)",
+        uri: "aim://{uuid}/supported-aims?projectPath=/absolute/path",
+        name: "Supported aims (Parents)",
+        description: "Get all aims that this aim supports (aims that depend on this aim)",
         mimeType: "application/json",
       },
       {
@@ -162,32 +162,33 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 
       const aim = await trpc.aim.get.query({ projectPath, aimId: parsed.id! });
 
-      if (parsed.subpath === "incoming") {
-        const incoming = aim.incoming || [];
-        const incomingAims = await Promise.all(
-          incoming.map((id) => trpc.aim.get.query({ projectPath, aimId: id }))
+      if (parsed.subpath === "supporting-connections") {
+        const connections = aim.supportingConnections || [];
+        const supportingAims = await Promise.all(
+          connections.map((conn) => trpc.aim.get.query({ projectPath, aimId: conn.aimId }))
         );
         return {
           contents: [
             {
               uri,
               mimeType: "application/json",
-              text: JSON.stringify(incomingAims, null, 2),
+              text: JSON.stringify(supportingAims, null, 2),
             },
           ],
         };
       }
 
-      if (parsed.subpath === "outgoing") {
-        const outgoingAims = await Promise.all(
-          aim.outgoing.map((id) => trpc.aim.get.query({ projectPath, aimId: id }))
+      if (parsed.subpath === "supported-aims") {
+        const supported = aim.supportedAims || [];
+        const supportedAims = await Promise.all(
+          supported.map((id) => trpc.aim.get.query({ projectPath, aimId: id }))
         );
         return {
           contents: [
             {
               uri,
               mimeType: "application/json",
-              text: JSON.stringify(outgoingAims, null, 2),
+              text: JSON.stringify(supportedAims, null, 2),
             },
           ],
         };
@@ -463,15 +464,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 },
               },
             },
-            incoming: {
+            supportingConnections: {
               type: "array",
               items: { type: "string" },
-              description: "UUIDs of aims this aim depends on",
+              description: "UUIDs of aims that support this aim (children/dependencies)",
             },
-            outgoing: {
+            supportedAims: {
               type: "array",
               items: { type: "string" },
-              description: "UUIDs of aims that depend on this aim",
+              description: "UUIDs of aims that this aim supports (parents)",
             },
             phaseId: {
               type: "string",
@@ -505,13 +506,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
                 comment: { type: "string" },
               },
             },
-            incoming: {
+            supportingConnections: {
               type: "array",
               items: { type: "string" },
+              description: "UUIDs of aims that support this aim (children/dependencies)",
             },
-            outgoing: {
+            supportedAims: {
               type: "array",
               items: { type: "string" },
+              description: "UUIDs of aims that this aim supports (parents)",
             },
           },
           required: ["projectPath", "aimId"],
@@ -835,23 +838,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           },
         });
 
-        // Handle incoming connections (parents)
-        const incoming = (args.incoming as string[]) || [];
-        for (const parentId of incoming) {
-          await trpc.aim.connectAims.mutate({
-            projectPath: args.projectPath as string,
-            parentAimId: parentId,
-            childAimId: result.id,
-          });
-        }
-
-        // Handle outgoing connections (children)
-        const outgoing = (args.outgoing as string[]) || [];
-        for (const childId of outgoing) {
+        // Handle supportingConnections (children)
+        // These aims support the new aim (dependencies).
+        // Wait, supportingConnections = "Aims that support this aim" (Children).
+        // If Child supports Parent.
+        // Then Child -> Parent.
+        // So Parent depends on Child.
+        // If I create X, and Y supports X.
+        // Y is Child, X is Parent.
+        // Link X (Parent) -> Y (Child).
+        // connectAims(parent=X, child=Y).
+        const children = (args.supportingConnections as string[]) || [];
+        for (const childId of children) {
           await trpc.aim.connectAims.mutate({
             projectPath: args.projectPath as string,
             parentAimId: result.id,
             childAimId: childId,
+          });
+        }
+
+        // Handle supportedAims (parents)
+        // These aims are supported by the new aim.
+        // If X supports Z.
+        // X is Child, Z is Parent.
+        // Link Z (Parent) -> X (Child).
+        // connectAims(parent=Z, child=X).
+        const parents = (args.supportedAims as string[]) || [];
+        for (const parentId of parents) {
+          await trpc.aim.connectAims.mutate({
+            projectPath: args.projectPath as string,
+            parentAimId: parentId,
+            childAimId: result.id,
           });
         }
 
@@ -879,8 +896,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         if (args.text) updateData.text = args.text;
         if (args.tags) updateData.tags = args.tags;
         if (args.status) updateData.status = args.status;
-        if (args.incoming) updateData.incoming = args.incoming;
-        if (args.outgoing) updateData.outgoing = args.outgoing;
+        
+        if (args.supportingConnections) {
+            updateData.supportingConnections = (args.supportingConnections as string[]).map(id => ({
+                aimId: id,
+                weight: 1,
+                relativePosition: [0,0]
+            }));
+        }
+        if (args.supportedAims) updateData.supportedAims = args.supportedAims;
 
         await trpc.aim.update.mutate({
           projectPath: args.projectPath as string,
@@ -1234,11 +1258,11 @@ server.setRequestHandler(GetPromptRequestSchema, async (request) => {
 
 **Instructions:**
 1. Analyze the aim and identify 3-5 logical sub-aims that together accomplish the parent aim
-2. For each sub-aim, determine if it depends on other sub-aims (create incoming/outgoing relationships)
+2. For each sub-aim, determine if it depends on other sub-aims (create supportingConnections/supportedAims relationships)
 3. Create each sub-aim using the create-aim tool
 4. Link each sub-aim to the parent aim by:
-   - Adding the parent aim's ID to the sub-aim's outgoing array
-   - Adding the sub-aim's ID to the parent aim's incoming array (use update-aim)
+   - Adding the parent aim's ID to the sub-aim's supportedAims array
+   - Adding the sub-aim's ID to the parent aim's supportingConnections array (use update-aim)
 5. Explain the breakdown strategy and dependency reasoning
 
 Project path: ${projectPath}`,
@@ -1264,7 +1288,7 @@ Project path: ${projectPath}`,
 
 **Instructions:**
 1. Use the aims://all?projectPath=${projectPath} resource to get all aims
-2. For each aim, check its incoming and outgoing relationships
+2. For each aim, check its supportingConnections (children) and supportedAims (parents) relationships
 3. Identify:
    - Circular dependencies (if any)
    - Aims with no dependencies that could be worked on now

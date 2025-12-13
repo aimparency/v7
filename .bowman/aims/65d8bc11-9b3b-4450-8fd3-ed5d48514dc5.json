@@ -1,1 +1,16 @@
-{"id":"65d8bc11-9b3b-4450-8fd3-ed5d48514dc5","text":"Integrate new backend features into Frontend (Tags, Pagination)","tags":[],"incoming":[],"outgoing":["865e4b34-0c68-4e34-9361-809c4d90db4c"],"committedIn":[],"status":{"state":"done","comment":"Fixed sub-aim navigation crash by handling undefined sub-aims in recursion. Ensured sub-aims are loaded on expansion (in Aim.vue watcher and ui store handler) using new `loadAims` store action and backend `ids` filter. Verified with build.","date":1765102905150}}
+{
+  "id": "65d8bc11-9b3b-4450-8fd3-ed5d48514dc5",
+  "text": "Integrate new backend features into Frontend (Tags, Pagination)",
+  "tags": [],
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Fixed sub-aim navigation crash by handling undefined sub-aims in recursion. Ensured sub-aims are loaded on expansion (in Aim.vue watcher and ui store handler) using new `loadAims` store action and backend `ids` filter. Verified with build.",
+    "date": 1765102905150
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c"
+  ]
+}

@@ -3,13 +3,14 @@
   "text": "Implement AimSVG and FlowSVG components",
   "tags": [],
   "incoming": [],
-  "outgoing": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Implemented GraphNode.vue and GraphLink.vue components. Refactored GraphView.vue to use them. Styles encapsulated. Verified with type-check.",
     "date": 1765540863147
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ]
 }

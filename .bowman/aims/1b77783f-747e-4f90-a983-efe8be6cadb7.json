@@ -1,1 +1,15 @@
-{"id":"1b77783f-747e-4f90-a983-efe8be6cadb7","text":"Design 'Echo' Product Offering (Landing Page/Pricing)","incoming":[],"outgoing":["b9596362-3fab-4b4b-8834-df81f48930cc"],"committedIn":[],"status":{"state":"done","comment":"Designed 'Echo' product offering and documented in subdev/revenue/product-design.md. Defined tiers: Spark (Free), Flame ($19/mo), Blaze ($49/mo).","date":1765017032408}}
+{
+  "id": "1b77783f-747e-4f90-a983-efe8be6cadb7",
+  "text": "Design 'Echo' Product Offering (Landing Page/Pricing)",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Designed 'Echo' product offering and documented in subdev/revenue/product-design.md. Defined tiers: Spark (Free), Flame ($19/mo), Blaze ($49/mo).",
+    "date": 1765017032408
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "b9596362-3fab-4b4b-8834-df81f48930cc"
+  ]
+}

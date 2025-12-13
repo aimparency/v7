@@ -1,9 +1,6 @@
 {
   "id": "c858c337-506e-494b-bfe3-c32e4db02aaf",
   "text": "Launch \"Mining Human Experiences\" Content Engine (X/Insta)",
-  "outgoing": [
-    "0cefe646-447b-412a-b4f6-53167668b0ee"
-  ],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
@@ -37,5 +34,8 @@
       ],
       "weight": 1
     }
+  ],
+  "supportedAims": [
+    "0cefe646-447b-412a-b4f6-53167668b0ee"
   ]
 }

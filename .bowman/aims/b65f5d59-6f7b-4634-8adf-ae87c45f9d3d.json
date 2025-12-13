@@ -1,1 +1,15 @@
-{"id":"b65f5d59-6f7b-4634-8adf-ae87c45f9d3d","text":"Show description on aim items + Edit/Add aim modal. Add an aim description field to aim if it does not exist.","incoming":[],"outgoing":[],"committedIn":["91e510e1-208a-4c5c-b93b-91c6525020bf"],"status":{"state":"done","comment":"Added description field to aim schema and updated creation/edit modal to support it. Description is shown on aim items when expanded.","date":1764799879492}}
+{
+  "id": "b65f5d59-6f7b-4634-8adf-ae87c45f9d3d",
+  "text": "Show description on aim items + Edit/Add aim modal. Add an aim description field to aim if it does not exist.",
+  "incoming": [],
+  "committedIn": [
+    "91e510e1-208a-4c5c-b93b-91c6525020bf"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Added description field to aim schema and updated creation/edit modal to support it. Description is shown on aim items when expanded.",
+    "date": 1764799879492
+  },
+  "supportingConnections": [],
+  "supportedAims": []
+}

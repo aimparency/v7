@@ -1,1 +1,16 @@
-{"id":"183a5586-f523-4d2d-9cab-59eb10991ca1","text":"Implement Pagination/Infinite Scroll for Aim Lists","tags":[],"incoming":[],"outgoing":["865e4b34-0c68-4e34-9361-809c4d90db4c"],"committedIn":[],"status":{"state":"done","comment":"Implemented pagination/infinite scroll for floating aims in RootAimsColumn. Updated data store to manage floating aims pagination. Phase aims now load on demand in Phase component. Verified with build.","date":1765019462815}}
+{
+  "id": "183a5586-f523-4d2d-9cab-59eb10991ca1",
+  "text": "Implement Pagination/Infinite Scroll for Aim Lists",
+  "tags": [],
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented pagination/infinite scroll for floating aims in RootAimsColumn. Updated data store to manage floating aims pagination. Phase aims now load on demand in Phase component. Verified with build.",
+    "date": 1765019462815
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c"
+  ]
+}

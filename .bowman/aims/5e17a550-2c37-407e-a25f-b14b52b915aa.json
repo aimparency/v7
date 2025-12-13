@@ -1,1 +1,15 @@
-{"id":"5e17a550-2c37-407e-a25f-b14b52b915aa","text":"Add 'tags' to Aim data model and API","incoming":[],"outgoing":["865e4b34-0c68-4e34-9361-809c4d90db4c"],"committedIn":[],"status":{"state":"done","comment":"Added 'tags' field to Aim data model (types.ts), backend logic (server.ts), and MCP tools (create-aim, update-aim). Included migration procedure.","date":1765018497303}}
+{
+  "id": "5e17a550-2c37-407e-a25f-b14b52b915aa",
+  "text": "Add 'tags' to Aim data model and API",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Added 'tags' field to Aim data model (types.ts), backend logic (server.ts), and MCP tools (create-aim, update-aim). Included migration procedure.",
+    "date": 1765018497303
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c"
+  ]
+}

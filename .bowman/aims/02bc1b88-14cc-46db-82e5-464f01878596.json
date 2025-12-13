@@ -1,1 +1,15 @@
-{"id":"02bc1b88-14cc-46db-82e5-464f01878596","text":"Implement Pagination and Sorting for aim lists","incoming":[],"outgoing":["865e4b34-0c68-4e34-9361-809c4d90db4c"],"committedIn":[],"status":{"state":"done","comment":"Implemented 'limit', 'offset', 'sortBy', and 'sortOrder' parameters for list-aims query. Implemented 'limit' and 'offset' for search-aims query. Updated backend logic and MCP tool definitions. Verified with build.","date":1765018626344}}
+{
+  "id": "02bc1b88-14cc-46db-82e5-464f01878596",
+  "text": "Implement Pagination and Sorting for aim lists",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented 'limit', 'offset', 'sortBy', and 'sortOrder' parameters for list-aims query. Implemented 'limit' and 'offset' for search-aims query. Updated backend logic and MCP tool definitions. Verified with build.",
+    "date": 1765018626344
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c"
+  ]
+}

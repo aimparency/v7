@@ -5,9 +5,6 @@
     "rl",
     "finance"
   ],
-  "outgoing": [
-    "5dd6a07a-5e23-4eec-a674-6c28e8096e6c"
-  ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
@@ -25,5 +22,8 @@
       ],
       "weight": 1
     }
+  ],
+  "supportedAims": [
+    "5dd6a07a-5e23-4eec-a674-6c28e8096e6c"
   ]
 }

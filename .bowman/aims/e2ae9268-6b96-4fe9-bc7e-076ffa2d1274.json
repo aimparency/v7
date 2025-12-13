@@ -1,1 +1,15 @@
-{"id":"e2ae9268-6b96-4fe9-bc7e-076ffa2d1274","text":"sometimes it takes very long after the watchdog has responded with json until the json is parsed. can you check the waiting logic? it should check for no spinner + no \"esc to cancel\" and then check another 5 times with 100ms delay. same function as the idle checker for the main agnet","incoming":[],"outgoing":["abc3d503-5945-45eb-8122-be5e33b2ccea"],"committedIn":[],"status":{"state":"done","comment":"Implemented robust idle check in watchdog: waits for 5 consecutive checks (100ms interval) of no-spinner state before parsing JSON response.","date":1764800690215}}
+{
+  "id": "e2ae9268-6b96-4fe9-bc7e-076ffa2d1274",
+  "text": "sometimes it takes very long after the watchdog has responded with json until the json is parsed. can you check the waiting logic? it should check for no spinner + no \"esc to cancel\" and then check another 5 times with 100ms delay. same function as the idle checker for the main agnet",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented robust idle check in watchdog: waits for 5 consecutive checks (100ms interval) of no-spinner state before parsing JSON response.",
+    "date": 1764800690215
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "abc3d503-5945-45eb-8122-be5e33b2ccea"
+  ]
+}

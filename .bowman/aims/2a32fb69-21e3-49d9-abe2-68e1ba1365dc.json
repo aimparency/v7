@@ -4,11 +4,12 @@
   "description": "",
   "tags": [],
   "incoming": [],
-  "outgoing": [],
   "committedIn": [],
   "status": {
     "state": "open",
     "comment": "",
     "date": 1765399742663
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": []
 }

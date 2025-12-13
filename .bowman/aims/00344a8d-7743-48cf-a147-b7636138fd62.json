@@ -6,11 +6,12 @@
     "ai"
   ],
   "incoming": [],
-  "outgoing": [],
   "committedIn": [],
   "status": {
     "state": "open",
     "comment": "",
     "date": 1765230131119
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": []
 }

@@ -1,9 +1,6 @@
 {
   "id": "f86a45b5-f303-41ea-a006-4ce82da77890",
   "text": "Link 'Experience Mining' pipeline to 'Echo' service",
-  "outgoing": [
-    "b9596362-3fab-4b4b-8834-df81f48930cc"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -19,5 +16,8 @@
       ],
       "weight": 1
     }
+  ],
+  "supportedAims": [
+    "b9596362-3fab-4b4b-8834-df81f48930cc"
   ]
 }

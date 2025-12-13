@@ -1,1 +1,16 @@
-{"id":"53534c06-6704-44b2-b2aa-d3acc3fac7e5","text":"Automate Social Media Engagement (Bot Swarm)","tags":[],"incoming":[],"outgoing":["0cefe646-447b-412a-b4f6-53167668b0ee"],"committedIn":[],"status":{"state":"done","comment":"Implemented Bot Swarm logic in subdev/experience-mining/engagement. Includes Agent class, diverse Strategies (Philosopher, Hype Man, Questioner), and a Swarm orchestrator. Verified functionality with swarm.ts script.","date":1765113890168}}
+{
+  "id": "53534c06-6704-44b2-b2aa-d3acc3fac7e5",
+  "text": "Automate Social Media Engagement (Bot Swarm)",
+  "tags": [],
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented Bot Swarm logic in subdev/experience-mining/engagement. Includes Agent class, diverse Strategies (Philosopher, Hype Man, Questioner), and a Swarm orchestrator. Verified functionality with swarm.ts script.",
+    "date": 1765113890168
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "0cefe646-447b-412a-b4f6-53167668b0ee"
+  ]
+}

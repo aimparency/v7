@@ -2,9 +2,6 @@
   "id": "c4946a79-cd04-4208-931b-71645c190932",
   "text": "run wrapper with model flash (command line param) and [i /clear enter] after each response to keep context small",
   "description": "",
-  "outgoing": [
-    "abc3d503-5945-45eb-8122-be5e33b2ccea"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -21,5 +18,8 @@
       ],
       "weight": 1
     }
+  ],
+  "supportedAims": [
+    "abc3d503-5945-45eb-8122-be5e33b2ccea"
   ]
 }

@@ -21,7 +21,7 @@ export const AimSchema = z.object({
   tags: z.array(z.string()).default([]),
   supportingConnections: z.array(ConnectionSchema).default([]),
   incoming: z.array(z.string().uuid()).optional(), // Deprecated: use supportingConnections
-  outgoing: z.array(z.string().uuid()),
+  supportedAims: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
   status: AimStatusSchema,
   intrinsicValue: z.number().default(0)

@@ -1,1 +1,16 @@
-{"id":"fd7239bf-ee73-4b9e-a3c8-fb8db491fa67","text":"initially or when changing number of column pages, make sure, to select a visible page if selection would be outside","description":"","incoming":[],"outgoing":["d59d03c1-45dd-48db-98c2-49b61b481f07"],"committedIn":[],"status":{"state":"done","comment":"Implemented ensureSelectionVisible in uiStore and called it during viewport resize and initialization.","date":1765015767530}}
+{
+  "id": "fd7239bf-ee73-4b9e-a3c8-fb8db491fa67",
+  "text": "initially or when changing number of column pages, make sure, to select a visible page if selection would be outside",
+  "description": "",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented ensureSelectionVisible in uiStore and called it during viewport resize and initialization.",
+    "date": 1765015767530
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ]
+}

@@ -1,9 +1,6 @@
 {
   "id": "b5c6fda9-4c32-4b3a-94f0-31d0f2760040",
   "text": "implement search for phases and aims",
-  "outgoing": [
-    "c1f59d0d-8a9e-48b3-b612-7e0688128099"
-  ],
   "committedIn": [
     "e9bea540-bbd9-4eae-848a-da99ed6101a0",
     "91e510e1-208a-4c5c-b93b-91c6525020bf"
@@ -38,5 +35,8 @@
       ],
       "weight": 1
     }
+  ],
+  "supportedAims": [
+    "c1f59d0d-8a9e-48b3-b612-7e0688128099"
   ]
 }

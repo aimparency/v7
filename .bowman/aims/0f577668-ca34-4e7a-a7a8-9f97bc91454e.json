@@ -5,7 +5,6 @@
     "ui",
     "feature"
   ],
-  "outgoing": [],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
@@ -23,5 +22,6 @@
       ],
       "weight": 1
     }
-  ]
+  ],
+  "supportedAims": []
 }

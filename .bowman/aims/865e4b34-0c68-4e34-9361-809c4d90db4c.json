@@ -2,7 +2,6 @@
   "id": "865e4b34-0c68-4e34-9361-809c4d90db4c",
   "text": "Improve backend api and data model",
   "description": "",
-  "outgoing": [],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
@@ -84,5 +83,6 @@
       ],
       "weight": 1
     }
-  ]
+  ],
+  "supportedAims": []
 }

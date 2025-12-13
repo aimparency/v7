@@ -1,1 +1,17 @@
-{"id":"cde08d79-e6d7-4ba3-8649-7f0c58b9486d","text":"run main agent gemini cli with model 'pro'","description":"","tags":[],"incoming":[],"outgoing":["c4946a79-cd04-4208-931b-71645c190932"],"committedIn":[],"status":{"state":"done","comment":"Implemented default model 'gemini-2.0-pro-exp' for worker in watchdog.","date":1765132516982}}
+{
+  "id": "cde08d79-e6d7-4ba3-8649-7f0c58b9486d",
+  "text": "run main agent gemini cli with model 'pro'",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented default model 'gemini-2.0-pro-exp' for worker in watchdog.",
+    "date": 1765132516982
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "c4946a79-cd04-4208-931b-71645c190932"
+  ]
+}

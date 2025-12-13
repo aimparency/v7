@@ -4,13 +4,14 @@
   "description": "use a new port and pass the port as get param when you open the tab.",
   "tags": [],
   "incoming": [],
-  "outgoing": [
-    "abc3d503-5945-45eb-8122-be5e33b2ccea"
-  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Implemented dynamic port selection in watchdog/src/index.ts. It now finds the first available port starting from 4011.",
     "date": 1765213308704
-  }
+  },
+  "supportingConnections": [],
+  "supportedAims": [
+    "abc3d503-5945-45eb-8122-be5e33b2ccea"
+  ]
 }
