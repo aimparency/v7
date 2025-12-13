@@ -160,7 +160,10 @@ export const useDataStore = defineStore('data', {
       if (!projectPath || this.migrated) return
 
       try {
-        await trpc.project.migrateCommittedIn.mutate({ projectPath })
+        await Promise.all([
+            trpc.project.migrateCommittedIn.mutate({ projectPath }),
+            trpc.project.migrateIncoming.mutate({ projectPath })
+        ])
         this.migrated = true
       } catch (error) {
         console.warn('Migration failed, continuing anyway:', error)

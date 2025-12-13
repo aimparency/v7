@@ -23,7 +23,8 @@ export const AimSchema = z.object({
   incoming: z.array(z.string().uuid()).optional(), // Deprecated: use supportingConnections
   outgoing: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
-  status: AimStatusSchema
+  status: AimStatusSchema,
+  intrinsicValue: z.number().default(0)
 });
 
 export const PhaseSchema = z.object({
