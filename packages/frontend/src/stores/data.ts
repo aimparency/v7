@@ -30,26 +30,27 @@ export const useDataStore = defineStore('data', {
   }),
 
   getters: {
-    getPhasesByParentId: (state) => (parentId: string | null) => {
+    getPhasesByParentId: (state) => (parentId: string | null): Phase[] => {
       const key = parentId ?? 'null'
       const childIds = state.childrenByParentId[key] || []
-      return childIds.map(id => state.phases[id]).filter(Boolean).sort((a, b) => {
+      return childIds.map(id => state.phases[id]).filter((p): p is Phase => !!p).sort((a, b) => {
         // Sort by midpoint (average of start and end)
+        if (!a || !b) return 0
         const aMid = (a.from + a.to) / 2
         const bMid = (b.from + b.to) / 2
         return aMid - bMid
       })
     },
-    floatingAims(state) {
-      return state.floatingAimsIds.map(id => state.aims[id]).filter(Boolean);
+    floatingAims(state): Aim[] {
+      return state.floatingAimsIds.map(id => state.aims[id]).filter((a): a is Aim => !!a);
     }, 
     getFloatingAimByIndex() { 
       return (index: number) => this.floatingAims[index]
     }, 
-    getAimsForPhase: (state) => (phaseId: string) => {
+    getAimsForPhase: (state) => (phaseId: string): Aim[] => {
       const phase = state.phases[phaseId]
       if (!phase) return []
-      return phase.commitments.map(aimId => state.aims[aimId]).filter(Boolean)
+      return phase.commitments.map(aimId => state.aims[aimId]).filter((a): a is Aim => !!a)
     },
 
     graphData(state) {
@@ -75,8 +76,9 @@ export const useDataStore = defineStore('data', {
         visited.add(id)
         
         const aim = state.aims[id]
-        if (aim && aim.incoming) {
-          aim.incoming.forEach(childId => {
+        if (aim) {
+          const incoming = aim.incoming || []
+          incoming.forEach(childId => {
             // Assign max depth if multi-parent? For tree view, depth+1 is fine.
             // If already visited, we might update depth if we want longest path?
             // For now simple BFS is okay.
@@ -175,7 +177,7 @@ export const useDataStore = defineStore('data', {
 
       const uiStore = useUIStore();
       const newPhases = this.getPhasesByParentId(phaseData.parent);
-      const newPhaseIndex = newPhases.findIndex(p => p.id === newPhaseId);
+      const newPhaseIndex = newPhases.findIndex(p => p && p.id === newPhaseId);
 
       if (newPhaseIndex !== -1) {
           uiStore.selectPhase(columnIndex, newPhaseIndex);
@@ -221,6 +223,15 @@ export const useDataStore = defineStore('data', {
       const oldExpanded = oldAim?.expanded ?? false
       const oldSelectedIndex = oldAim?.selectedIncomingIndex
 
+      // NORMALIZE: Ensure supportingConnections exists if incoming is present (server backward compatibility)
+      if (!newAim.supportingConnections && newAim.incoming) {
+        newAim.supportingConnections = newAim.incoming.map(id => ({ 
+            aimId: id, 
+            weight: 1, 
+            relativePosition: [0, 0] as [number, number] 
+        }))
+      }
+
       // Replace with new data
       this.aims[aimId] = Object.assign({
         expanded: false,
@@ -230,8 +241,8 @@ export const useDataStore = defineStore('data', {
       // Restore validated UI state
       this.aims[aimId].expanded = oldExpanded
 
-      if (oldSelectedIndex !== undefined && newAim.incoming.length > 0) {
-        const maxIndex = newAim.incoming.length - 1
+      if (oldSelectedIndex !== undefined && newAim.supportingConnections && newAim.supportingConnections.length > 0) {
+        const maxIndex = newAim.supportingConnections.length - 1
         if (oldSelectedIndex <= maxIndex) {
           this.aims[aimId].selectedIncomingIndex = oldSelectedIndex
         } else {
@@ -601,14 +612,14 @@ export const useDataStore = defineStore('data', {
 
       // 2. Remove this aim from the parent's incoming array
       const parentAim = this.aims[parentAimId]
-      if (parentAim) {
+      if (parentAim && parentAim.incoming) {
         const wasExpanded = parentAim.expanded
         const updatedIncoming = parentAim.incoming.filter(id => id !== aimId)
         await this.updateAim(projectPath, parentAimId, {
           incoming: updatedIncoming
         })
         // Restore expanded state (it's UI-only, not persisted)
-        if (wasExpanded) {
+        if (wasExpanded && this.aims[parentAimId]) {
           this.aims[parentAimId].expanded = true
         }
       }
@@ -649,18 +660,20 @@ export const useDataStore = defineStore('data', {
         if (path.aims.length > 1) {
           // B) Sub-aim: remove from parent aim's incoming list
           const parentAim = path.aims[path.aims.length - 2]
-          await this.deleteSubAimRecursive(uiStore.projectPath, aimId, parentAim.id)
+          if (parentAim) {
+            await this.deleteSubAimRecursive(uiStore.projectPath, aimId, parentAim.id)
 
-          // Adjust parent's selectedIncomingIndex to stay in valid range
-          const updatedParentAim = this.aims[parentAim.id]
-          if (updatedParentAim && updatedParentAim.selectedIncomingIndex !== undefined) {
-            if (updatedParentAim.incoming.length > 0) {
-              updatedParentAim.selectedIncomingIndex = Math.min(
-                updatedParentAim.selectedIncomingIndex,
-                updatedParentAim.incoming.length - 1
-              )
-            } else {
-              updatedParentAim.selectedIncomingIndex = undefined
+            // Adjust parent's selectedIncomingIndex to stay in valid range
+            const updatedParentAim = this.aims[parentAim.id]
+            if (updatedParentAim && updatedParentAim.selectedIncomingIndex !== undefined && updatedParentAim.incoming) {
+                if (updatedParentAim.incoming.length > 0) {
+                updatedParentAim.selectedIncomingIndex = Math.min(
+                    updatedParentAim.selectedIncomingIndex,
+                    updatedParentAim.incoming.length - 1
+                )
+                } else {
+                updatedParentAim.selectedIncomingIndex = undefined
+                }
             }
           }
         } else if (path.phase) {

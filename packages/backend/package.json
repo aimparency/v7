@@ -15,21 +15,21 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@trpc/server": "^11.5.1",
-    "express": "^5.1.0",
+    "@trpc/server": "^11.7.2",
+    "express": "^5.2.1",
     "flexsearch": "^0.8.212",
-    "fs-extra": "^11.3.1",
+    "fs-extra": "^11.3.2",
     "shared": "*",
     "uuid": "^13.0.0",
     "ws": "^8.18.3"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
+    "@types/express": "^5.0.6",
     "@types/fs-extra": "^11.0.4",
-    "@types/node": "^24.3.2",
-    "@types/uuid": "^10.0.0",
+    "@types/node": "^25.0.1",
+    "@types/uuid": "^11.0.0",
     "@types/ws": "^8.18.1",
-    "tsx": "^4.20.5",
-    "typescript": "^5.9.2"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

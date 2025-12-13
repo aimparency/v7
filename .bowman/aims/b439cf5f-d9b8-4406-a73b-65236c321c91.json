@@ -15,8 +15,8 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765557071818
+    "state": "done",
+    "comment": "Data model augmented with 'supportingConnections', 'relativePosition', and 'weight'. All sub-tasks (refactor, frontend update, layout engine, interactions) completed.",
+    "date": 1765571869126
   }
 }

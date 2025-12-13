@@ -48,6 +48,7 @@ describe('Aim.vue', () => {
       global: { plugins: [pinia] },
       props: {
         aim,
+        phaseId: 'test-phase',
         columnIndex: 0,
         isActive: false,
         isSelected: false
@@ -70,6 +71,7 @@ describe('Aim.vue', () => {
       global: { plugins: [pinia] },
       props: {
         aim,
+        phaseId: 'test-phase',
         columnIndex: 0,
         isActive: false,
         isSelected: false
@@ -96,6 +98,7 @@ describe('Aim.vue', () => {
       global: { plugins: [pinia] },
       props: {
         aim,
+        phaseId: 'test-phase',
         columnIndex: 0,
         isActive: false,
         isSelected: false

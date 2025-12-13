@@ -336,10 +336,6 @@ const appRouter = t.router({
         if (input.ids) {
           aims = aims.filter(aim => input.ids!.includes(aim.id));
         } else {
-          // Only apply other filters if ids is not provided (or combine? usually ids is specific)
-          // Let's allow combining or overriding. If IDs are asked, we usually just want those.
-          // But keeping existing logic flow:
-          
           if (input.status) {
             const statuses = Array.isArray(input.status) ? input.status : [input.status];
             aims = aims.filter(aim => statuses.includes(aim.status.state));
@@ -389,6 +385,43 @@ const appRouter = t.router({
         }
 
         return aims;
+      }),
+
+    getRecursive: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        phaseId: z.string().uuid()
+      }))
+      .query(async ({ input }) => {
+        const allAims = await listAims(input.projectPath);
+        const aimMap = new Map(allAims.map(a => [a.id, a]));
+        const result = new Set<Aim>();
+        
+        // Get phase root commitments
+        const phase = await readPhase(input.projectPath, input.phaseId);
+        const queue = [...phase.commitments];
+        
+        while (queue.length > 0) {
+            const aimId = queue.shift()!;
+            if (result.has(aimMap.get(aimId)!)) continue;
+            
+            const aim = aimMap.get(aimId);
+            if (aim) {
+                // Filter by open status (as requested)
+                if (aim.status.state === 'open') {
+                    result.add(aim);
+                }
+                
+                // Add children to queue (support both structures during migration)
+                const connections = aim.supportingConnections || (aim as any).incoming || [];
+                for (const conn of connections) {
+                    const childId = typeof conn === 'string' ? conn : conn.aimId;
+                    queue.push(childId);
+                }
+            }
+        }
+        
+        return Array.from(result);
       }),
 
     update: delayedProcedure

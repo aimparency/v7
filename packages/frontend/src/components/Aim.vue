@@ -14,6 +14,7 @@ interface Props {
   isSelected?: boolean
   isThisAimSelected?: boolean
   phaseId: string
+  columnIndex: number
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -33,20 +34,20 @@ const aimContainerRef = ref<HTMLElement | null>(null)
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 
-const hasIncomingAims = computed(() => props.aim.incoming?.length > 0)
+const hasIncomingAims = computed(() => props.aim.supportingConnections && props.aim.supportingConnections.length > 0)
 const isExpanded = computed(() => props.aim.expanded || false)
 
 const subAimCount = computed(() => {
-  const count = props.aim.incoming?.length || 0
+  const count = props.aim.supportingConnections?.length || 0
   return count > 9 ? 'N' : count.toString()
 })
 
 // Get incoming aims from the data store
 const incomingAims = computed(() => {
-  if (!hasIncomingAims.value) return []
-  return props.aim.incoming
-    .map(aimId => dataStore.aims[aimId])
-    .filter(Boolean)
+  if (!hasIncomingAims.value || !props.aim.supportingConnections) return []
+  return props.aim.supportingConnections
+    .map(conn => dataStore.aims[conn.aimId])
+    .filter((a): a is Aim => !!a)
 })
 
 const statusColor = computed(() => {
@@ -70,8 +71,8 @@ watch(() => [props.isThisAimSelected, props.isActive], ([isSelected, isActive]) 
 
 // Ensure sub-aims are loaded when expanded
 watch(isExpanded, (newVal) => {
-  if (newVal && props.aim.incoming.length > 0) {
-    dataStore.loadAims(uiStore.projectPath, props.aim.incoming)
+  if (newVal && props.aim.supportingConnections && props.aim.supportingConnections.length > 0) {
+    dataStore.loadAims(uiStore.projectPath, props.aim.supportingConnections.map(c => c.aimId))
   }
 }, { immediate: true })
 
@@ -131,7 +132,7 @@ onMounted(() => {
         :aims="incomingAims"
         :phase-id="phaseId"
         :parent-aim-id="aim.id"
-        :column-index="0"
+        :column-index="columnIndex"
         :indentation-level="indentationLevel + 1"
         :is-active="isActive && isThisAimSelected"
         :is-selected="isSelected && isThisAimSelected"

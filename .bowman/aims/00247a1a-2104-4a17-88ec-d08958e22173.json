@@ -1,0 +1,14 @@
+{
+  "id": "00247a1a-2104-4a17-88ec-d08958e22173",
+  "text": "the last line of main agent in watchdog ui (standalon npm run start web app) is cut off/ not fully visible",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "outgoing": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765572309857
+  }
+}

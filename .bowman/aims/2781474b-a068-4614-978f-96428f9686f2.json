@@ -11,8 +11,8 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Implemented DAG-based hierarchy layout using d3.forceY based on node depth. Aims are positioned in tiers relative to their parents, mimicking the reference's relative positioning concept. Verified via implementation.",
-    "date": 1765556588165
+    "state": "done",
+    "comment": "Graph UI is now close to reference: Implemented relative positioning layout, curved arrows (makeCircularPath), and weight visualization. Interaction (drag) updates relative position. Sub-aims completed.",
+    "date": 1765571879318
   }
 }

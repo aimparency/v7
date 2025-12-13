@@ -72,6 +72,7 @@ const handleScrollRequest = (element: HTMLElement) => {
           :key="aim.id"
           :aim="aim"
           :phase-id="phaseId"
+          :column-index="columnIndex"
           :indentation-level="indentationLevel"
           :is-active="isActive"
           :is-selected="isSelected"

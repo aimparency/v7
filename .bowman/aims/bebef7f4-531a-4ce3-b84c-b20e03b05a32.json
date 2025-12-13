@@ -9,8 +9,8 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765533507757
+    "state": "done",
+    "comment": "Implemented 'g' key toggle between graph and list views. Ensured selection persistence and automatic camera focus (both ways) by adding 'immediate: true' to GraphView watcher and utilizing existing scroll-into-view logic in columns. Verified with build.",
+    "date": 1765571970450
   }
 }

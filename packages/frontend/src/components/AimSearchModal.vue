@@ -180,13 +180,15 @@ const handleKeydown = (e: KeyboardEvent) => {
       e.preventDefault()
       e.stopPropagation()
       if (pathSelectionMode.value) {
-        if (availablePaths.value[selectedIndex.value]) {
-          selectPath(availablePaths.value[selectedIndex.value])
+        const path = availablePaths.value[selectedIndex.value]
+        if (path) {
+          selectPath(path)
         }
       }
       else {
-        if (searchResults.value[selectedIndex.value]) {
-          selectAim(searchResults.value[selectedIndex.value])
+        const result = searchResults.value[selectedIndex.value]
+        if (result) {
+          selectAim(result)
         }
       }
       break
@@ -222,7 +224,7 @@ const selectAim = async (aim: SearchAimResult) => {
     if (paths.length === 0) {
       console.warn('No paths found for aim', aim.id)
       uiStore.closeAimSearch()
-    } else if (paths.length === 1) {
+    } else if (paths.length === 1 && paths[0]) {
       await uiStore.executeNavigation(paths[0])
       uiStore.closeAimSearch()
     } else {

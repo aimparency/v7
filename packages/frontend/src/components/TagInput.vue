@@ -36,7 +36,10 @@ function removeTag(tag: string) {
 
 function removePreviousIfEmpty() {
   if (input.value === '' && props.modelValue.length > 0) {
-    removeTag(props.modelValue[props.modelValue.length - 1])
+    const lastTag = props.modelValue[props.modelValue.length - 1]
+    if (lastTag) {
+      removeTag(lastTag)
+    }
   }
 }
 

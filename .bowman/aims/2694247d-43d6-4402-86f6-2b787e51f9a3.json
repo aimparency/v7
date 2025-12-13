@@ -11,8 +11,8 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765557158892
+    "state": "done",
+    "comment": "Updated frontend logic (stores/data.ts, components/Aim.vue) to use 'supportingConnections'. Implemented fallback for backward compatibility during migration.",
+    "date": 1765571840292
   }
 }

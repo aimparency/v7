@@ -34,16 +34,17 @@ const { handleScrollRequest } = useScrollIntoView(phaseListRef)
     </div>
 
     <div v-else ref="phaseListRef" class="phase-list">
-      <PhaseComponent
-        v-for="(phase, index) in phases"
-        :key="phase.id"
-        :phase="phase"
-        :is-selected="index === selectedPhaseIndex"
-        :is-active="isActive && index === selectedPhaseIndex"
-        @phase-clicked="() => uiStore.selectPhase(columnIndex, index)"
-        @aim-clicked="(aimId) => uiStore.selectAimById(columnIndex, phase.id, aimId)"
-        @scroll-request="handleScrollRequest"
-      />
+      <template v-for="(phase, index) in phases" :key="phase.id">
+        <PhaseComponent
+          v-if="phase"
+          :phase="phase"
+          :is-selected="index === selectedPhaseIndex"
+          :is-active="index === selectedPhaseIndex && uiStore.selectedColumn === columnIndex"
+          @phase-clicked="() => uiStore.selectPhase(columnIndex, index)"
+          @aim-clicked="(aimId) => uiStore.selectAimById(columnIndex, phase.id, aimId)"
+          @scroll-request="handleScrollRequest"
+        />
+      </template>
     </div>
   </div>
 </template>

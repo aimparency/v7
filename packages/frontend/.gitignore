@@ -34,4 +34,4 @@ playwright-report/
 
 .env
 
-graph-ui-reference-readonly/
+# graph-ui-reference-readonly/

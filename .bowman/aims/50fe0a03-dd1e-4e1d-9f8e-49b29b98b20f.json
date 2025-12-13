@@ -12,8 +12,8 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765557157643
+    "state": "done",
+    "comment": "Completed deep refactoring of data model from 'incoming' to 'supportingConnections'. Updated shared types, backend server, and frontend store. Migration script provided.",
+    "date": 1765571835149
   }
 }

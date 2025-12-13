@@ -15,7 +15,8 @@
     "dev:delay": "npm run dev:backend:delay & npm run dev:frontend",
     "test": "npm run test -w backend",
     "ncu-upgrade": "npx npm-check-updates -u --deep && npm install",
-    "build": "npm run build --workspaces"
+    "dev:mcp": "npm run dev -w packages/mcp",
+    "rec-install": "npm install && cd packages/shared && npm install && cd ../backend && npm install && cd ../frontend && npm install && cd ../mcp && npm install"
   },
   "keywords": [],
   "author": "",

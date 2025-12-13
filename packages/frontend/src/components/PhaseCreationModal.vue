@@ -143,10 +143,11 @@ const calculateSmartDateRanges = async () => {
           phaseId: selectedPhaseId
         })
         if (selectedPhase) {
-          uiStore.newPhaseStartDate = timestampToLocalDate(selectedPhase.from)
-          uiStore.newPhaseStartTime = timestampToLocalTime(selectedPhase.from)
-          uiStore.newPhaseEndDate = timestampToLocalDate(selectedPhase.to)
-          uiStore.newPhaseEndTime = timestampToLocalTime(selectedPhase.to)
+          // Extract local date and time from timestamps
+          uiStore.newPhaseStartDate = timestampToLocalDate(selectedPhase.from) || ''
+          uiStore.newPhaseStartTime = timestampToLocalTime(selectedPhase.from) || ''
+          uiStore.newPhaseEndDate = timestampToLocalDate(selectedPhase.to) || ''
+          uiStore.newPhaseEndTime = timestampToLocalTime(selectedPhase.to) || ''
           return
         }
       } catch (error) {
@@ -181,10 +182,10 @@ const calculateSmartDateRanges = async () => {
   // Priority 3: Default for root phases (column 1, "very first phase" scenario)
   // Current date 00:00 to current date + 7 days 00:00
   const now = new Date()
-  uiStore.newPhaseStartDate = now.toISOString().split('T')[0] // YYYY-MM-DD
+  uiStore.newPhaseStartDate = now.toISOString().split('T')[0] || '' // YYYY-MM-DD
   uiStore.newPhaseStartTime = '00:00'
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-  uiStore.newPhaseEndDate = sevenDaysLater.toISOString().split('T')[0]
+  uiStore.newPhaseEndDate = sevenDaysLater.toISOString().split('T')[0] || ''
   uiStore.newPhaseEndTime = '00:00'
 }
 </script>
