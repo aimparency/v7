@@ -24,7 +24,8 @@ export const AimSchema = z.object({
   supportedAims: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
   status: AimStatusSchema,
-  intrinsicValue: z.number().default(0)
+  intrinsicValue: z.number().default(0),
+  loopWeight: z.number().default(0)
 });
 
 export const PhaseSchema = z.object({

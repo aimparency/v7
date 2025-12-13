@@ -1,0 +1,17 @@
+{
+  "id": "e8dbdd91-2516-4786-9c1b-392ae960d95e",
+  "text": "Add loopWeight to Data Model",
+  "tags": [
+    "backend",
+    "schema"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765644967689
+  },
+  "intrinsicValue": 0
+}

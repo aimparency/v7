@@ -1,0 +1,20 @@
+{
+  "id": "b4903845-c07b-482a-a6c6-a5c9fdf3de71",
+  "text": "Implement Value Flow System",
+  "tags": [
+    "feature",
+    "graph",
+    "value"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Starting implementation of value flow system",
+    "date": 1765644947084
+  },
+  "intrinsicValue": 0
+}
