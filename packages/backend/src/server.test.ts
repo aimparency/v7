@@ -284,3 +284,38 @@ test('search - matches aims using search index', async () => {
   const texts = results.map(r => r.text).sort();
   assert.deepEqual(texts, ['Apple Cider', 'Apple Pie']);
 });
+
+test('createFloatingAim - sets and persists intrinsicValue', async () => {
+  const aimResult = await caller.aim.createFloatingAim({
+    projectPath: TEST_PROJECT_PATH,
+    aim: {
+      text: 'Valuable Aim',
+      status: { state: 'open', comment: '', date: Date.now() },
+      intrinsicValue: 42
+    }
+  });
+
+  const aim = await caller.aim.get({
+    projectPath: TEST_PROJECT_PATH,
+    aimId: aimResult.id
+  });
+
+  assert.equal(aim.intrinsicValue, 42);
+});
+
+test('createFloatingAim - defaults intrinsicValue to 0', async () => {
+  const aimResult = await caller.aim.createFloatingAim({
+    projectPath: TEST_PROJECT_PATH,
+    aim: {
+      text: 'Default Value Aim',
+      status: { state: 'open', comment: '', date: Date.now() }
+    }
+  });
+
+  const aim = await caller.aim.get({
+    projectPath: TEST_PROJECT_PATH,
+    aimId: aimResult.id
+  });
+
+  assert.equal(aim.intrinsicValue, 0);
+});

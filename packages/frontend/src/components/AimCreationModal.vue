@@ -11,6 +11,7 @@ const dataStore = useDataStore()
 
 const aimText = ref('')
 const aimDescription = ref('')
+const aimIntrinsicValue = ref(0)
 const aimTags = ref<string[]>([])
 const selectedStatus = ref<'open' | 'done' | 'cancelled' | 'partially' | 'failed'>('open')
 const statusComment = ref('')
@@ -18,6 +19,7 @@ const searchResults = ref<Aim[]>([])
 const selectedSearchIndex = ref(0)
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
+const intrinsicValueInput = ref<HTMLInputElement>()
 const statusSelect = ref<HTMLSelectElement>()
 const submitBtn = ref<HTMLButtonElement>()
 const searchResultsContainer = ref<HTMLDivElement>()
@@ -62,7 +64,7 @@ const createAim = async () => {
       await uiStore.createAim(selectedSearchResult.value.id, true)
     } else {
       // Create new aim with text and description
-      await uiStore.createAim(aimText.value.trim(), false, aimDescription.value.trim(), aimTags.value)
+      await uiStore.createAim(aimText.value.trim(), false, aimDescription.value.trim(), aimTags.value, aimIntrinsicValue.value)
     }
   } catch (error) {
     console.error('Failed to create/link aim:', error)
@@ -81,7 +83,8 @@ const updateAim = async () => {
         state: selectedStatus.value,
         comment: statusComment.value,
         date: Date.now()
-      }
+      },
+      intrinsicValue: aimIntrinsicValue.value
     })
 
     uiStore.closeAimModal()
@@ -144,7 +147,7 @@ const handleSearchResultsKeydown = (event: KeyboardEvent) => {
 }
 
 const handleTagPrev = () => {
-  descriptionInput.value?.focus()
+  intrinsicValueInput.value?.focus()
 }
 
 const handleTagNext = () => {
@@ -200,6 +203,7 @@ onMounted(async () => {
     aimText.value = aim.text
     aimDescription.value = aim.description || ''
     aimTags.value = [...(aim.tags || [])]
+    aimIntrinsicValue.value = aim.intrinsicValue ?? 0
     selectedStatus.value = aim.status.state
     statusComment.value = aim.status.comment
   } else {
@@ -207,6 +211,7 @@ onMounted(async () => {
     aimText.value = ''
     aimDescription.value = ''
     aimTags.value = []
+    aimIntrinsicValue.value = 0
     selectedStatus.value = 'open'
     statusComment.value = ''
     searchResults.value = []
@@ -246,6 +251,17 @@ onMounted(async () => {
             rows="3"
             @keydown="handleTextareaKeydown"
           ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Intrinsic Value</label>
+          <input
+            ref="intrinsicValueInput"
+            v-model.number="aimIntrinsicValue"
+            type="number"
+            placeholder="0"
+            @keydown="handleInputKeydown"
+          />
         </div>
 
         <div class="form-group">

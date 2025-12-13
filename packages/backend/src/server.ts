@@ -71,7 +71,14 @@ async function writeAim(projectPath: string, aim: Aim): Promise<void> {
 
 async function readAim(projectPath: string, aimId: string): Promise<Aim> {
   const aimPath = path.join(projectPath, 'aims', `${aimId}.json`);
-  return await fs.readJson(aimPath);
+  const aim = await fs.readJson(aimPath);
+  
+  // Ensure default array values
+  if (!aim.supportingConnections) aim.supportingConnections = [];
+  if (!aim.outgoing) aim.outgoing = [];
+  if (!aim.committedIn) aim.committedIn = [];
+  
+  return aim;
 }
 
 async function listAims(projectPath: string): Promise<Aim[]> {
@@ -444,7 +451,8 @@ const appRouter = t.router({
             aimId: z.string().uuid(),
             relativePosition: z.tuple([z.number(), z.number()]).optional(),
             weight: z.number().optional()
-          })).optional()
+          })).optional(),
+          intrinsicValue: z.number().optional()
         })
       }))
       .mutation(async ({ input }) => {
@@ -570,7 +578,8 @@ const appRouter = t.router({
             state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
             comment: z.string().optional(),
             date: z.number().optional()
-          }).optional()
+          }).optional(),
+          intrinsicValue: z.number().optional()
         })
       }))
       .mutation(async ({ input }) => {
@@ -591,7 +600,8 @@ const appRouter = t.router({
           supportingConnections: [],
           outgoing: [],
           committedIn: [],
-          status
+          status,
+          intrinsicValue: input.aim.intrinsicValue ?? 0
         };
 
         await writeAim(input.projectPath, aim);
@@ -618,7 +628,8 @@ const appRouter = t.router({
             state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
             comment: z.string().optional(),
             date: z.number().optional()
-          }).optional()
+          }).optional(),
+          intrinsicValue: z.number().optional()
         }),
         positionInParent: z.number().optional()
       }))
@@ -640,7 +651,8 @@ const appRouter = t.router({
           supportingConnections: [],
           outgoing: [],
           committedIn: [],
-          status
+          status,
+          intrinsicValue: input.aim.intrinsicValue ?? 0
         };
 
         await writeAim(input.projectPath, childAim);
@@ -669,7 +681,8 @@ const appRouter = t.router({
             state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
             comment: z.string().optional(),
             date: z.number().optional()
-          }).optional()
+          }).optional(),
+          intrinsicValue: z.number().optional()
         }),
         insertionIndex: z.number().optional()
       }))
@@ -691,7 +704,8 @@ const appRouter = t.router({
           supportingConnections: [],
           outgoing: [],
           committedIn: [input.phaseId], // Will be updated by commitAimToPhase
-          status
+          status,
+          intrinsicValue: input.aim.intrinsicValue ?? 0
         };
 
         await writeAim(input.projectPath, aim);
