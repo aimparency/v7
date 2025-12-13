@@ -1,11 +1,6 @@
 {
   "id": "b5c6fda9-4c32-4b3a-94f0-31d0f2760040",
   "text": "implement search for phases and aims",
-  "incoming": [
-    "ef7a961c-22e5-49fc-ad12-851a93206687",
-    "f59d60b6-4fa8-44eb-bc4b-2b03eaaff304",
-    "c1f59d0d-8a9e-48b3-b612-7e0688128099"
-  ],
   "outgoing": [
     "c1f59d0d-8a9e-48b3-b612-7e0688128099"
   ],
@@ -17,5 +12,31 @@
     "state": "done",
     "comment": "Implemented Aim search with both backend endpoints and frontend integration. Phase search is implemented in backend.",
     "date": 1765134196965
-  }
+  },
+  "supportingConnections": [
+    {
+      "aimId": "ef7a961c-22e5-49fc-ad12-851a93206687",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "f59d60b6-4fa8-44eb-bc4b-2b03eaaff304",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c1f59d0d-8a9e-48b3-b612-7e0688128099",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
 }

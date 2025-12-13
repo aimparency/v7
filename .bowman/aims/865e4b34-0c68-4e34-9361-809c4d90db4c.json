@@ -2,17 +2,6 @@
   "id": "865e4b34-0c68-4e34-9361-809c4d90db4c",
   "text": "Improve backend api and data model",
   "description": "",
-  "incoming": [
-    "2cfed9fa-7106-475c-a293-b80ef4498885",
-    "5e17a550-2c37-407e-a25f-b14b52b915aa",
-    "02bc1b88-14cc-46db-82e5-464f01878596",
-    "602b8c5c-4846-449a-8427-bb86030f7eab",
-    "65d8bc11-9b3b-4450-8fd3-ed5d48514dc5",
-    "9b8c3dcc-b16d-48dd-92a5-f849d6794965",
-    "183a5586-f523-4d2d-9cab-59eb10991ca1",
-    "9f88d152-c3d2-49de-a1e6-6426c34ada69",
-    "bd798495-12e4-4584-9192-666e654d9940"
-  ],
   "outgoing": [],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
@@ -21,5 +10,79 @@
     "state": "done",
     "comment": "Implemented extensive regression tests (e2e/regression.spec.ts) covering: Nesting, Linking (search+attach), Reordering (J/K), Indenting/Outdenting (L/H). Fixed search reliability by adding a fallback simple-text filter in backend (server.ts) to cover for FlexSearch indexing race/failure on transient seeded data. All tests passed.",
     "date": 1765113163499
-  }
+  },
+  "supportingConnections": [
+    {
+      "aimId": "2cfed9fa-7106-475c-a293-b80ef4498885",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "5e17a550-2c37-407e-a25f-b14b52b915aa",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "02bc1b88-14cc-46db-82e5-464f01878596",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "602b8c5c-4846-449a-8427-bb86030f7eab",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "65d8bc11-9b3b-4450-8fd3-ed5d48514dc5",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9b8c3dcc-b16d-48dd-92a5-f849d6794965",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "183a5586-f523-4d2d-9cab-59eb10991ca1",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9f88d152-c3d2-49de-a1e6-6426c34ada69",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "bd798495-12e4-4584-9192-666e654d9940",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
 }

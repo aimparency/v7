@@ -1,1 +1,23 @@
-{"id":"ad34dc5b-054e-4765-b251-edbc971af27e","text":"show aim description between title and status when aim is expanded.","incoming":["9f88d152-c3d2-49de-a1e6-6426c34ada69"],"outgoing":["d59d03c1-45dd-48db-98c2-49b61b481f07"],"committedIn":[],"status":{"state":"done","comment":"Implemented description display between title and status when aim is expanded. Verified with tests.","date":1764799875307}}
+{
+  "id": "ad34dc5b-054e-4765-b251-edbc971af27e",
+  "text": "show aim description between title and status when aim is expanded.",
+  "outgoing": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented description display between title and status when aim is expanded. Verified with tests.",
+    "date": 1764799875307
+  },
+  "supportingConnections": [
+    {
+      "aimId": "9f88d152-c3d2-49de-a1e6-6426c34ada69",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
+}

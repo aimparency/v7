@@ -3,10 +3,6 @@
   "text": "implement getting aims (single or list of aim ids) and add MCP endpoint for that too",
   "description": "",
   "tags": [],
-  "incoming": [
-    "f919dfba-61d5-488d-aed5-c14a953c4b6c",
-    "b113c653-1dbb-47d0-97b8-67aab75379e5"
-  ],
   "outgoing": [],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
@@ -15,5 +11,23 @@
     "state": "done",
     "comment": "Implemented 'get-aim' tool for single aim retrieval and updated 'list-aims' tool to support 'ids' list and 'parentAimId' for sub-aims. Backend updated to support 'parentAimId' filter.",
     "date": 1765401652104
-  }
+  },
+  "supportingConnections": [
+    {
+      "aimId": "f919dfba-61d5-488d-aed5-c14a953c4b6c",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b113c653-1dbb-47d0-97b8-67aab75379e5",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
 }

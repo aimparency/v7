@@ -3,9 +3,6 @@
   "text": "graph ui should be really close to the reference. also with the relative positioning for example",
   "description": "",
   "tags": [],
-  "incoming": [
-    "b439cf5f-d9b8-4406-a73b-65236c321c91"
-  ],
   "outgoing": [
     "6bbb740c-2281-4dbb-83c8-a391e626312a"
   ],
@@ -14,5 +11,15 @@
     "state": "done",
     "comment": "Graph UI is now close to reference: Implemented relative positioning layout, curved arrows (makeCircularPath), and weight visualization. Interaction (drag) updates relative position. Sub-aims completed.",
     "date": 1765571879318
-  }
+  },
+  "supportingConnections": [
+    {
+      "aimId": "b439cf5f-d9b8-4406-a73b-65236c321c91",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
 }

@@ -1,26 +1,6 @@
 {
   "id": "d59d03c1-45dd-48db-98c2-49b61b481f07",
   "text": "maintain a nice ui (vim inspired)",
-  "incoming": [
-    "cb36a6f3-221b-41be-8d2c-986238615d9a",
-    "8c9cfbad-4870-422f-b542-468bb5b1b750",
-    "2de0871d-2538-49b2-96fc-9ef58ef847df",
-    "0099a9de-5995-49d8-a766-e0b1f438c40e",
-    "0c7c85ee-8c27-4659-81fc-900cfe510314",
-    "cb27ceaf-e220-4926-b5db-b2b21dbf26a3",
-    "2cb56abb-df7d-41cc-92be-3569015ba667",
-    "ac0ea61a-288f-4659-b9ad-b38b9fa01312",
-    "ad34dc5b-054e-4765-b251-edbc971af27e",
-    "06119986-08c5-4283-a0ab-c6af2478e327",
-    "4c7e75f1-1421-4909-9116-0ad831d95033",
-    "01dc0462-0e5f-4586-83e3-63def76dafe0",
-    "fd7239bf-ee73-4b9e-a3c8-fb8db491fa67",
-    "0e692a61-23f0-4543-a8a2-7ea621b0dc45",
-    "b9863b21-a641-4efa-93dd-b1e3ef4a09f4",
-    "4ed092a1-0fc2-4794-937d-d76866e87b14",
-    "5ad6c3f8-a7ed-4e18-9bf0-321d033515bf",
-    "74092436-5beb-40cc-aa24-1de57f74726b"
-  ],
   "outgoing": [
     "0f577668-ca34-4e7a-a7a8-9f97bc91454e"
   ],
@@ -31,5 +11,151 @@
     "state": "done",
     "comment": "All sub-aims completed. UI has been significantly improved with Vim-like navigation, search, and refined visual details.",
     "date": 1765401691120
-  }
+  },
+  "supportingConnections": [
+    {
+      "aimId": "cb36a6f3-221b-41be-8d2c-986238615d9a",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "8c9cfbad-4870-422f-b542-468bb5b1b750",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "2de0871d-2538-49b2-96fc-9ef58ef847df",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0099a9de-5995-49d8-a766-e0b1f438c40e",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0c7c85ee-8c27-4659-81fc-900cfe510314",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "cb27ceaf-e220-4926-b5db-b2b21dbf26a3",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "2cb56abb-df7d-41cc-92be-3569015ba667",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ac0ea61a-288f-4659-b9ad-b38b9fa01312",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ad34dc5b-054e-4765-b251-edbc971af27e",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "06119986-08c5-4283-a0ab-c6af2478e327",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "4c7e75f1-1421-4909-9116-0ad831d95033",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "01dc0462-0e5f-4586-83e3-63def76dafe0",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "fd7239bf-ee73-4b9e-a3c8-fb8db491fa67",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0e692a61-23f0-4543-a8a2-7ea621b0dc45",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b9863b21-a641-4efa-93dd-b1e3ef4a09f4",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "4ed092a1-0fc2-4794-937d-d76866e87b14",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "5ad6c3f8-a7ed-4e18-9bf0-321d033515bf",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "74092436-5beb-40cc-aa24-1de57f74726b",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
 }

@@ -5,9 +5,6 @@
     "rl",
     "finance"
   ],
-  "incoming": [
-    "035f3963-180a-49c2-8d42-8889ed5dbc50"
-  ],
   "outgoing": [],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
@@ -16,5 +13,15 @@
     "state": "done",
     "comment": "Implemented RSI calculation and state discretization in subdev/market-alpha/agents/q_learning.py. Retrained on real BTC data. Agent still conservative ($0 profit), but feature pipeline is established.",
     "date": 1765216027671
-  }
+  },
+  "supportingConnections": [
+    {
+      "aimId": "035f3963-180a-49c2-8d42-8889ed5dbc50",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
 }

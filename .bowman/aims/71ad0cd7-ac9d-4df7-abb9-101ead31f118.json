@@ -1,1 +1,23 @@
-{"id":"71ad0cd7-ac9d-4df7-abb9-101ead31f118","text":"develop hypothesis (create sub aims, evaluate)","incoming":["f82641a4-21e4-42ef-9d82-129233b14640"],"outgoing":["1c60ee55-0627-43d6-8393-e912fc2e52a2"],"committedIn":[],"status":{"state":"open","comment":"","date":1764286525464}}
+{
+  "id": "71ad0cd7-ac9d-4df7-abb9-101ead31f118",
+  "text": "develop hypothesis (create sub aims, evaluate)",
+  "outgoing": [
+    "1c60ee55-0627-43d6-8393-e912fc2e52a2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1764286525464
+  },
+  "supportingConnections": [
+    {
+      "aimId": "f82641a4-21e4-42ef-9d82-129233b14640",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
+}

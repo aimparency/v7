@@ -1,0 +1,17 @@
+{
+  "id": "420e94fd-2447-4a58-98ac-e506780adbf0",
+  "text": "when calculating the actual values of the aims, for visualization add 0.1 * average value to the display radii",
+  "description": "because otherwise aims which are not connected in any way would be invisible with radius 0. \nBut the value that will be written as info on the aims in the list for example, that value should not include the 0.1 addition. The 0.1 * average addition is just for the visualization radius in the graph *thumbs up*",
+  "tags": [],
+  "supportingConnections": [],
+  "outgoing": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765625943897
+  },
+  "intrinsicValue": 0
+}

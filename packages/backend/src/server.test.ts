@@ -4,6 +4,8 @@ import fs from 'fs-extra';
 import path from 'path';
 import { appRouter } from './server';
 
+import { v4 as uuidv4 } from 'uuid';
+
 // Create a test caller
 const caller = appRouter.createCaller({});
 
@@ -318,4 +320,46 @@ test('createFloatingAim - defaults intrinsicValue to 0', async () => {
   });
 
   assert.equal(aim.intrinsicValue, 0);
+});
+
+test('readAim - performs lazy migration of incoming array', async () => {
+  // Manually create a file with legacy structure
+  const aimId = uuidv4();
+  const child1Id = uuidv4();
+  const child2Id = uuidv4();
+  const newChildId = uuidv4();
+
+  const legacyAim = {
+    id: aimId,
+    text: 'Legacy Aim',
+    status: { state: 'open', comment: '', date: Date.now() },
+    incoming: [child1Id, child2Id], // Legacy field
+    supportingConnections: [
+      { aimId: newChildId, relativePosition: [0, 0], weight: 1 } // New field existing
+    ],
+    outgoing: [],
+    committedIn: []
+  };
+
+  await fs.ensureDir(path.join(TEST_PROJECT_PATH, 'aims'));
+  await fs.writeJson(path.join(TEST_PROJECT_PATH, 'aims', `${aimId}.json`), legacyAim);
+
+  // Read the aim (should trigger migration)
+  const migratedAim = await caller.aim.get({
+    projectPath: TEST_PROJECT_PATH,
+    aimId: aimId
+  });
+
+  // Verify in-memory result
+  assert.equal(migratedAim.supportingConnections.length, 3);
+  // Order: legacy (prepended) then existing
+  assert.equal(migratedAim.supportingConnections[0].aimId, child1Id);
+  assert.equal(migratedAim.supportingConnections[1].aimId, child2Id);
+  assert.equal(migratedAim.supportingConnections[2].aimId, newChildId);
+  assert.equal((migratedAim as any).incoming, undefined);
+
+  // Verify persistence
+  const persistedAim = await fs.readJson(path.join(TEST_PROJECT_PATH, 'aims', `${aimId}.json`));
+  assert.equal(persistedAim.supportingConnections.length, 3);
+  assert.equal(persistedAim.incoming, undefined);
 });

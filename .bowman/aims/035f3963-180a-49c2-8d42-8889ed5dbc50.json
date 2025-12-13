@@ -5,9 +5,6 @@
     "rl",
     "finance"
   ],
-  "incoming": [
-    "1874f90a-2b67-42b5-a107-29f125b2e8a2"
-  ],
   "outgoing": [
     "5dd6a07a-5e23-4eec-a674-6c28e8096e6c"
   ],
@@ -18,5 +15,15 @@
     "state": "done",
     "comment": "Upgraded to use Real Market Data (BTC-USD via yfinance). Agent trained on 2 years of history. Current performance is baseline (break-even). Future work: Feature engineering.",
     "date": 1765215126716
-  }
+  },
+  "supportingConnections": [
+    {
+      "aimId": "1874f90a-2b67-42b5-a107-29f125b2e8a2",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
 }

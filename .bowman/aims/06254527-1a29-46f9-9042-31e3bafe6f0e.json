@@ -1,1 +1,23 @@
-{"id":"06254527-1a29-46f9-9042-31e3bafe6f0e","text":"vi mode for text input","incoming":["05a4cbf3-5165-4a4a-926a-69a83133cac9"],"outgoing":[],"committedIn":["91e510e1-208a-4c5c-b93b-91c6525020bf"],"status":{"state":"cancelled","comment":"Vi mode for text inputs is no longer desired as the current input handling is sufficient and less complex.","date":1764800441939}}
+{
+  "id": "06254527-1a29-46f9-9042-31e3bafe6f0e",
+  "text": "vi mode for text input",
+  "outgoing": [],
+  "committedIn": [
+    "91e510e1-208a-4c5c-b93b-91c6525020bf"
+  ],
+  "status": {
+    "state": "cancelled",
+    "comment": "Vi mode for text inputs is no longer desired as the current input handling is sufficient and less complex.",
+    "date": 1764800441939
+  },
+  "supportingConnections": [
+    {
+      "aimId": "05a4cbf3-5165-4a4a-926a-69a83133cac9",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
+}

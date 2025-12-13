@@ -1,11 +1,6 @@
 {
   "id": "c858c337-506e-494b-bfe3-c32e4db02aaf",
   "text": "Launch \"Mining Human Experiences\" Content Engine (X/Insta)",
-  "incoming": [
-    "18c6e892-f33c-47ec-add0-7759c6a5e0bd",
-    "9836e306-6849-48a7-ab61-f3f127a3f733",
-    "69093a98-4188-4729-873a-dcfbdd870019"
-  ],
   "outgoing": [
     "0cefe646-447b-412a-b4f6-53167668b0ee"
   ],
@@ -16,5 +11,31 @@
     "state": "done",
     "comment": "Launched the Content Engine! All components (Design, Generation Pipeline, Social Media Loop) are implemented and verified (mock mode). Dependency graph corrected to reflect proper hierarchy.",
     "date": 1765016735815
-  }
+  },
+  "supportingConnections": [
+    {
+      "aimId": "18c6e892-f33c-47ec-add0-7759c6a5e0bd",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9836e306-6849-48a7-ab61-f3f127a3f733",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "69093a98-4188-4729-873a-dcfbdd870019",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
 }

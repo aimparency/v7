@@ -73,6 +73,34 @@ async function readAim(projectPath: string, aimId: string): Promise<Aim> {
   const aimPath = path.join(projectPath, 'aims', `${aimId}.json`);
   const aim = await fs.readJson(aimPath);
   
+  // Lazy Migration: Integrate 'incoming' into 'supportingConnections'
+  if (aim.incoming && Array.isArray(aim.incoming)) {
+    if (!aim.supportingConnections) {
+      aim.supportingConnections = [];
+    }
+    
+    // We want to prepend the legacy incoming aims because they are "older" than any new ones 
+    // that might have been added to supportingConnections recently. 
+    // But we must also avoid duplicates.
+    const newConnections = [];
+    for (const incomingId of aim.incoming) {
+      if (!aim.supportingConnections.some((c: any) => c.aimId === incomingId)) {
+        newConnections.push({
+          aimId: incomingId,
+          relativePosition: [0, 0] as [number, number],
+          weight: 1
+        });
+      }
+    }
+
+    if (newConnections.length > 0 || aim.incoming.length > 0) {
+       aim.supportingConnections = [...newConnections, ...aim.supportingConnections];
+       delete aim.incoming;
+       // Persist the migrated aim immediately
+       await writeAim(projectPath, aim);
+    }
+  }
+
   // Ensure default array values
   if (!aim.supportingConnections) aim.supportingConnections = [];
   if (!aim.outgoing) aim.outgoing = [];
@@ -90,7 +118,9 @@ async function listAims(projectPath: string): Promise<Aim[]> {
   
   for (const file of files) {
     if (file.endsWith('.json')) {
-      const aim = await fs.readJson(path.join(aimsDir, file));
+      const aimId = path.basename(file, '.json');
+      // Using readAim ensures lazy migration logic runs for every aim loaded
+      const aim = await readAim(projectPath, aimId);
       aims.push(aim);
     }
   }

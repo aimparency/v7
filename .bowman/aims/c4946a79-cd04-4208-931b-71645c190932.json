@@ -1,1 +1,25 @@
-{"id":"c4946a79-cd04-4208-931b-71645c190932","text":"run wrapper with model flash (command line param) and [i /clear enter] after each response to keep context small","description":"","incoming":["cde08d79-e6d7-4ba3-8649-7f0c58b9486d"],"outgoing":["abc3d503-5945-45eb-8122-be5e33b2ccea"],"committedIn":[],"status":{"state":"done","comment":"Implemented --model flag for watchdog (defaults to flash), --worker-model, and --clear-every context clearing logic.","date":1765132526987},"tags":[]}
+{
+  "id": "c4946a79-cd04-4208-931b-71645c190932",
+  "text": "run wrapper with model flash (command line param) and [i /clear enter] after each response to keep context small",
+  "description": "",
+  "outgoing": [
+    "abc3d503-5945-45eb-8122-be5e33b2ccea"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented --model flag for watchdog (defaults to flash), --worker-model, and --clear-every context clearing logic.",
+    "date": 1765132526987
+  },
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "cde08d79-e6d7-4ba3-8649-7f0c58b9486d",
+      "relativePosition": [
+        0,
+        0
+      ],
+      "weight": 1
+    }
+  ]
+}
