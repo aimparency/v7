@@ -7,12 +7,14 @@
     "ux"
   ],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "220bc09e-72d7-4772-998f-c4d465d5eb80"
+  ],
   "committedIn": [],
   "status": {
-    "state": "open",
+    "state": "done",
     "comment": "",
-    "date": 1765644969586
+    "date": 1765701019882
   },
   "intrinsicValue": 0
 }

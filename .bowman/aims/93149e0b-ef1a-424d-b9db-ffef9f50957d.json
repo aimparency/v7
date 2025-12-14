@@ -1,0 +1,18 @@
+{
+  "id": "93149e0b-ef1a-424d-b9db-ffef9f50957d",
+  "text": "build a conversational voice interface to aimparency v7",
+  "description": "should work on mobile, mobile app. simple => cross platform but no apple build right now because we're developing on linux",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765739657869
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

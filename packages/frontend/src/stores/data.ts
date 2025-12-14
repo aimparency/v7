@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
+import { calculateAimValues } from '../utils/value-calculation'
 
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
@@ -27,6 +28,10 @@ export const useDataStore = defineStore('data', {
     
     // Floating aims
     floatingAimsIds: [] as string[],
+    
+    // Calculated values
+    calculatedValues: new Map<string, number>(),
+    totalIntrinsicValue: 0,
   }),
 
   getters: {
@@ -51,6 +56,11 @@ export const useDataStore = defineStore('data', {
       const phase = state.phases[phaseId]
       if (!phase) return []
       return phase.commitments.map(aimId => state.aims[aimId]).filter((a): a is Aim => !!a)
+    },
+
+    getAimValue: (state) => (aimId: string): number => {
+      const normalized = state.calculatedValues.get(aimId) || 0
+      return normalized * state.totalIntrinsicValue
     },
 
     graphData(state) {
@@ -101,7 +111,8 @@ export const useDataStore = defineStore('data', {
         vx: 0, 
         vy: 0,
         fx: null as number | null, // Fixed position
-        fy: null as number | null
+        fy: null as number | null,
+        value: state.calculatedValues.get(aim.id) || 0 // Add value here for graph
       }))
 
       const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number }[] = []
@@ -130,6 +141,13 @@ export const useDataStore = defineStore('data', {
   },
 
   actions: {
+    recalculateValues() {
+        const allAims = Object.values(this.aims) as Aim[];
+        const result = calculateAimValues(allAims);
+        this.calculatedValues = result.values;
+        this.totalIntrinsicValue = result.totalIntrinsic;
+    },
+
     async loadFloatingAims(projectPath: string) {
       if (!projectPath) return;
       
@@ -149,6 +167,7 @@ export const useDataStore = defineStore('data', {
           this.replaceAim(aim.id, aim);
           this.floatingAimsIds.push(aim.id);
         }
+        this.recalculateValues();
       } catch (error) {
         console.error('Failed to load floating aims:', error);
       } finally {
@@ -272,6 +291,8 @@ export const useDataStore = defineStore('data', {
         if (!this.floatingAimsIds.includes(newAim.id)) {
           this.floatingAimsIds.unshift(newAim.id);
         }
+        
+        this.recalculateValues();
 
         return newAim // Returns { id: string }
       } catch (error) {
@@ -301,6 +322,8 @@ export const useDataStore = defineStore('data', {
         if (updatedChildAim) {
           this.replaceAim(newAim.id, updatedChildAim)
         }
+        
+        this.recalculateValues();
 
         return newAim // Returns { id: string }
       } catch (error) {
@@ -325,6 +348,8 @@ export const useDataStore = defineStore('data', {
         if (phase) {
           this.replacePhase(phaseId, phase)
         }
+        
+        this.recalculateValues();
 
         return newAim
       } catch (error) {
@@ -343,9 +368,34 @@ export const useDataStore = defineStore('data', {
 
         // Update local state
         this.replaceAim(aimId, updatedAim)
+        this.recalculateValues();
       } catch (error) {
         console.error('Failed to update aim:', error)
         throw error
+      }
+    },
+
+    async updateConnectionPosition(projectPath: string, parentId: string, childAimId: string, newRelativePosition: [number, number]) {
+      const parent = this.aims[parentId]
+      if (!parent) return
+
+      const connections = parent.supportingConnections || []
+      const connectionIndex = connections.findIndex(c => c.aimId === childAimId)
+      
+      if (connectionIndex !== -1) {
+        // Create new array with updated connection
+        const updatedConnections = [...connections]
+        const oldConn = updatedConnections[connectionIndex]!
+        updatedConnections[connectionIndex] = {
+          aimId: oldConn.aimId,
+          weight: oldConn.weight,
+          relativePosition: newRelativePosition
+        }
+        
+        // Backend update
+        await this.updateAim(projectPath, parentId, {
+          supportingConnections: updatedConnections
+        })
       }
     },
     
@@ -376,6 +426,7 @@ export const useDataStore = defineStore('data', {
         if (index !== -1) {
             this.floatingAimsIds.splice(index, 1)
         }
+        this.recalculateValues();
       } catch (error) {
         console.error('Failed to commit aim to phase:', error)
         throw error
@@ -388,6 +439,7 @@ export const useDataStore = defineStore('data', {
           projectPath,
           aimId
         })
+        this.recalculateValues();
       } catch (error) {
         console.error('Failed to delete aim:', error)
         throw error
@@ -415,6 +467,7 @@ export const useDataStore = defineStore('data', {
                 this.floatingAimsIds.unshift(aimId)
             }
         }
+        this.recalculateValues();
       } catch (error) {
         console.error('Failed to remove aim from phase:', error)
         throw error
@@ -450,6 +503,7 @@ export const useDataStore = defineStore('data', {
         for (const aim of aims) {
           this.replaceAim(aim.id, aim);
         }
+        this.recalculateValues();
       } catch (error) {
         console.error('Failed to load all aims:', error);
       } finally {
@@ -532,6 +586,7 @@ export const useDataStore = defineStore('data', {
                    this.floatingAimsIds.splice(index, 1);
                  }
                }
+               this.recalculateValues();
              } catch (e) {
                if (this.aims[data.id]) delete this.aims[data.id];
                
@@ -540,6 +595,7 @@ export const useDataStore = defineStore('data', {
                if (index !== -1) {
                  this.floatingAimsIds.splice(index, 1);
                }
+               this.recalculateValues();
              }
           } else if (data.type === 'phase') {
              try {
@@ -736,6 +792,7 @@ export const useDataStore = defineStore('data', {
             }
           }
         }
+        this.recalculateValues();
       } catch (error) {
         console.error('Failed to delete aim:', error);
       }
@@ -764,6 +821,7 @@ export const useDataStore = defineStore('data', {
             for (const aim of phaseAims) {
               this.replaceAim(aim.id, aim);
             }
+            this.recalculateValues();
           }
         }
       } catch (error) {
@@ -786,6 +844,7 @@ export const useDataStore = defineStore('data', {
         for (const aim of aims) {
           this.replaceAim(aim.id, aim);
         }
+        this.recalculateValues();
       } catch (error) {
         console.error('Failed to load specific aims:', error);
       }
@@ -822,6 +881,7 @@ export const useDataStore = defineStore('data', {
 
         const parentAim = await trpc.aim.get.query({ projectPath, aimId: parentAimId });
         if (parentAim) this.replaceAim(parentAimId, parentAim);
+        this.recalculateValues();
       } catch (error) {
         console.error('Failed to reorder sub-aim:', error);
       }

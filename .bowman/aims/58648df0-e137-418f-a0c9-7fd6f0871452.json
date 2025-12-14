@@ -1,0 +1,18 @@
+{
+  "id": "58648df0-e137-418f-a0c9-7fd6f0871452",
+  "text": "when moving aims the free floating aim list flickers - maybe adding the aim there for a split second. Fix without destorying anything else",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765728395834
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

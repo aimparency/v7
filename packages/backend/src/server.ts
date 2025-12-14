@@ -112,8 +112,22 @@ async function readAim(projectPath: string, aimId: string): Promise<Aim> {
     await writeAim(projectPath, aim);
   }
 
-  // Ensure default array values
-  if (!aim.supportingConnections) aim.supportingConnections = [];
+  // Ensure default array values and fix [0,0] positions
+  if (!aim.supportingConnections) {
+    aim.supportingConnections = [];
+  } else {
+    // Check for [0,0] relative positions and fix them
+    let changed = false;
+    for (const conn of aim.supportingConnections) {
+        if (conn.relativePosition && conn.relativePosition[0] === 0 && conn.relativePosition[1] === 0) {
+            conn.relativePosition = getRandomRelativePosition();
+            changed = true;
+        }
+    }
+    if (changed) {
+        await writeAim(projectPath, aim);
+    }
+  }
   if (!aim.supportedAims) aim.supportedAims = [];
   if (!aim.committedIn) aim.committedIn = [];
   
@@ -267,6 +281,13 @@ async function removeAimFromPhase(projectPath: string, aimId: string, phaseId: s
   await writeAim(projectPath, aim);
 }
 
+// Helper to generate random relative position
+function getRandomRelativePosition(): [number, number] {
+  const angle = Math.random() * 2 * Math.PI;
+  const length = 2.5;
+  return [Math.cos(angle) * length, Math.sin(angle) * length];
+}
+
 // Helper function to connect aims (reused by connectAims and createSubAim)
 async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number): Promise<void> {
   console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childSupportedAimsIndex });
@@ -289,7 +310,7 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
       }
     }
     // Insert at target position
-    const newConnection = { aimId: childAimId, relativePosition: [0, 0] as [number, number], weight: 1 };
+    const newConnection = { aimId: childAimId, relativePosition: getRandomRelativePosition(), weight: 1 };
     
     if (targetParentIndex <= parent.supportingConnections.length) {
       parent.supportingConnections.splice(targetParentIndex, 0, newConnection);
@@ -492,7 +513,8 @@ const appRouter = t.router({
             relativePosition: z.tuple([z.number(), z.number()]).optional(),
             weight: z.number().optional()
           })).optional(),
-          intrinsicValue: z.number().optional()
+          intrinsicValue: z.number().optional(),
+          loopWeight: z.number().optional()
         })
       }))
       .mutation(async ({ input }) => {
@@ -619,7 +641,8 @@ const appRouter = t.router({
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
-          intrinsicValue: z.number().optional()
+          intrinsicValue: z.number().optional(),
+          loopWeight: z.number().optional()
         })
       }))
       .mutation(async ({ input }) => {
@@ -641,7 +664,8 @@ const appRouter = t.router({
           supportedAims: [],
           committedIn: [],
           status,
-          intrinsicValue: input.aim.intrinsicValue ?? 0
+          intrinsicValue: input.aim.intrinsicValue ?? 0,
+          loopWeight: input.aim.loopWeight ?? 0
         };
 
         await writeAim(input.projectPath, aim);
@@ -669,7 +693,8 @@ const appRouter = t.router({
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
-          intrinsicValue: z.number().optional()
+          intrinsicValue: z.number().optional(),
+          loopWeight: z.number().optional()
         }),
         positionInParent: z.number().optional()
       }))
@@ -692,7 +717,8 @@ const appRouter = t.router({
           supportedAims: [],
           committedIn: [],
           status,
-          intrinsicValue: input.aim.intrinsicValue ?? 0
+          intrinsicValue: input.aim.intrinsicValue ?? 0,
+          loopWeight: input.aim.loopWeight ?? 0
         };
 
         await writeAim(input.projectPath, childAim);
@@ -722,7 +748,8 @@ const appRouter = t.router({
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
-          intrinsicValue: z.number().optional()
+          intrinsicValue: z.number().optional(),
+          loopWeight: z.number().optional()
         }),
         insertionIndex: z.number().optional()
       }))
@@ -745,7 +772,8 @@ const appRouter = t.router({
           supportedAims: [],
           committedIn: [input.phaseId], // Will be updated by commitAimToPhase
           status,
-          intrinsicValue: input.aim.intrinsicValue ?? 0
+          intrinsicValue: input.aim.intrinsicValue ?? 0,
+          loopWeight: input.aim.loopWeight ?? 0
         };
 
         await writeAim(input.projectPath, aim);

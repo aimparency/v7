@@ -9,17 +9,35 @@
   "status": {
     "state": "open",
     "comment": "",
-    "date": 1765463852004
+    "date": 1765728608600
   },
   "supportingConnections": [
     {
       "aimId": "8775c198-3dc3-4d90-a3e9-55b2067e8ab3",
       "relativePosition": [
-        0,
-        0
+        -2.4932480514777335,
+        0.1836141437974884
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "58648df0-e137-418f-a0c9-7fd6f0871452",
+      "relativePosition": [
+        -2.2620934202273144,
+        -1.0643934226423473
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "8fe1aa4e-d89d-4bc0-b9ab-8fd412d24d3b",
+      "relativePosition": [
+        -0.192030909588875,
+        -2.492613915102471
       ],
       "weight": 1
     }
   ],
-  "supportedAims": []
+  "supportedAims": [],
+  "intrinsicValue": 50,
+  "loopWeight": 1
 }

@@ -13,32 +13,32 @@
     {
       "aimId": "c858c337-506e-494b-bfe3-c32e4db02aaf",
       "relativePosition": [
-        0,
-        0
+        -1.9018931688816112,
+        1.6225912529535782
       ],
       "weight": 1
     },
     {
       "aimId": "53534c06-6704-44b2-b2aa-d3acc3fac7e5",
       "relativePosition": [
-        0,
-        0
+        2.0837544948176436,
+        1.3812918610225964
       ],
       "weight": 1
     },
     {
       "aimId": "407adf61-aaa1-42ae-bae3-99a439d5fd9d",
       "relativePosition": [
-        0,
-        0
+        2.000915803766403,
+        -1.4987781511077112
       ],
       "weight": 1
     },
     {
       "aimId": "d6edb052-a071-4e60-8e0a-e58cc7633329",
       "relativePosition": [
-        0,
-        0
+        -2.4803464827447423,
+        0.31285991359678217
       ],
       "weight": 1
     }

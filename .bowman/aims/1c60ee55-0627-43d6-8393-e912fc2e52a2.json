@@ -15,48 +15,48 @@
     {
       "aimId": "1874f90a-2b67-42b5-a107-29f125b2e8a2",
       "relativePosition": [
-        0,
-        0
+        -0.017723500286942043,
+        -2.4999371747181125
       ],
       "weight": 1
     },
     {
       "aimId": "71ad0cd7-ac9d-4df7-abb9-101ead31f118",
       "relativePosition": [
-        0,
-        0
+        0.8935628616336583,
+        2.33485447347561
       ],
       "weight": 1
     },
     {
       "aimId": "e2bf3e0d-c9e5-41fe-9023-cf5a31ef0acf",
       "relativePosition": [
-        0,
-        0
+        -2.452293597152914,
+        0.486061841088994
       ],
       "weight": 1
     },
     {
       "aimId": "58dc1284-a226-4ec6-993d-1ef1031d476d",
       "relativePosition": [
-        0,
-        0
+        1.4956952325043584,
+        -2.003221348594242
       ],
       "weight": 1
     },
     {
       "aimId": "5df8b913-629b-462e-ae4d-199f4d8e5003",
       "relativePosition": [
-        0,
-        0
+        -2.4533745273556464,
+        0.48057614227347845
       ],
       "weight": 1
     },
     {
       "aimId": "b9596362-3fab-4b4b-8834-df81f48930cc",
       "relativePosition": [
-        0,
-        0
+        2.0646643450816855,
+        -1.4096670323691392
       ],
       "weight": 1
     }

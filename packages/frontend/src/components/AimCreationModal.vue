@@ -12,6 +12,7 @@ const dataStore = useDataStore()
 const aimText = ref('')
 const aimDescription = ref('')
 const aimIntrinsicValue = ref(0)
+const aimLoopWeight = ref(0)
 const aimTags = ref<string[]>([])
 const selectedStatus = ref<'open' | 'done' | 'cancelled' | 'partially' | 'failed'>('open')
 const statusComment = ref('')
@@ -20,6 +21,7 @@ const selectedSearchIndex = ref(0)
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
 const intrinsicValueInput = ref<HTMLInputElement>()
+const loopWeightInput = ref<HTMLInputElement>()
 const statusSelect = ref<HTMLSelectElement>()
 const submitBtn = ref<HTMLButtonElement>()
 const searchResultsContainer = ref<HTMLDivElement>()
@@ -64,7 +66,7 @@ const createAim = async () => {
       await uiStore.createAim(selectedSearchResult.value.id, true)
     } else {
       // Create new aim with text and description
-      await uiStore.createAim(aimText.value.trim(), false, aimDescription.value.trim(), aimTags.value, aimIntrinsicValue.value)
+      await uiStore.createAim(aimText.value.trim(), false, aimDescription.value.trim(), aimTags.value, aimIntrinsicValue.value, aimLoopWeight.value)
     }
   } catch (error) {
     console.error('Failed to create/link aim:', error)
@@ -84,7 +86,8 @@ const updateAim = async () => {
         comment: statusComment.value,
         date: Date.now()
       },
-      intrinsicValue: aimIntrinsicValue.value
+      intrinsicValue: aimIntrinsicValue.value,
+      loopWeight: aimLoopWeight.value
     })
 
     uiStore.closeAimModal()
@@ -147,7 +150,7 @@ const handleSearchResultsKeydown = (event: KeyboardEvent) => {
 }
 
 const handleTagPrev = () => {
-  intrinsicValueInput.value?.focus()
+  loopWeightInput.value?.focus()
 }
 
 const handleTagNext = () => {
@@ -204,6 +207,7 @@ onMounted(async () => {
     aimDescription.value = aim.description || ''
     aimTags.value = [...(aim.tags || [])]
     aimIntrinsicValue.value = aim.intrinsicValue ?? 0
+    aimLoopWeight.value = aim.loopWeight ?? 0
     selectedStatus.value = aim.status.state
     statusComment.value = aim.status.comment
   } else {
@@ -212,6 +216,7 @@ onMounted(async () => {
     aimDescription.value = ''
     aimTags.value = []
     aimIntrinsicValue.value = 0
+    aimLoopWeight.value = 0
     selectedStatus.value = 'open'
     statusComment.value = ''
     searchResults.value = []
@@ -258,6 +263,17 @@ onMounted(async () => {
           <input
             ref="intrinsicValueInput"
             v-model.number="aimIntrinsicValue"
+            type="number"
+            placeholder="0"
+            @keydown="handleInputKeydown"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Loop Weight</label>
+          <input
+            ref="loopWeightInput"
+            v-model.number="aimLoopWeight"
             type="number"
             placeholder="0"
             @keydown="handleInputKeydown"

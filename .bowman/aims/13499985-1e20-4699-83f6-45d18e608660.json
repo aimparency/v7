@@ -1,0 +1,18 @@
+{
+  "id": "13499985-1e20-4699-83f6-45d18e608660",
+  "text": "make sure, we're not rerunning the embedding generation",
+  "description": "but instead persist embedding when create or on title / description change",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765740035017
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

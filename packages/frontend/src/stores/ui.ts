@@ -290,7 +290,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Create aim and update selection
-    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = 0) {
+    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = 0, loopWeight: number = 0) {
       const dataStore = useDataStore()
 
       const path = this.getSelectionPath()
@@ -301,7 +301,8 @@ export const useUIStore = defineStore('ui', {
         tags: tags || [],
         status: { state: 'open' as const, comment: '', date: Date.now() },
         supportingConnections: [],
-        intrinsicValue
+        intrinsicValue,
+        loopWeight
       }
 
       let newAimId: string | undefined

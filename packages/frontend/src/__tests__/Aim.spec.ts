@@ -26,10 +26,12 @@ describe('Aim.vue', () => {
       date: Date.now()
     },
     supportingConnections: [], // Updated from incoming
-    outgoing: [],
+    supportedAims: [],
     committedIn: [],
     expanded: false,
     selectedIncomingIndex: undefined,
+    intrinsicValue: 0,
+    loopWeight: 0,
     ...overrides
   })
 
@@ -78,8 +80,8 @@ describe('Aim.vue', () => {
       }
     })
 
-    expect(wrapper.find('.sub-aim-count').exists()).toBe(true)
-    expect(wrapper.find('.sub-aim-count').text()).toBe('3')
+    expect(wrapper.find('.stat-count').exists()).toBe(true)
+    expect(wrapper.find('.stat-count').text()).toBe('3')
   })
 
   it('loads sub-aims when expanded', async () => {

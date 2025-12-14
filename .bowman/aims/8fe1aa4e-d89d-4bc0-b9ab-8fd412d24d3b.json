@@ -1,0 +1,18 @@
+{
+  "id": "8fe1aa4e-d89d-4bc0-b9ab-8fd412d24d3b",
+  "text": "put the aim search results in add aim directly beneath aim text and bfore description.",
+  "description": "Reason, it's faster to tab there when indending to find an existing aim and otherwise it's good to be reminded that we're about to create a new aim",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765728546488
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

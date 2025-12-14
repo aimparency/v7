@@ -1,0 +1,18 @@
+{
+  "id": "a932a82c-b926-468b-9512-99d6a2097a11",
+  "text": "check watchdog answer parsing",
+  "description": "there was a situation where the watchdog read just an \"i\" from the \"what shall we do about this situation\"-answer. can you check that we take the last 30 lines and search the last closing bracket and from there backwards to identify the answer json object?",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765739975367
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

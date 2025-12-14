@@ -38,9 +38,14 @@ const hasIncomingAims = computed(() => props.aim.supportingConnections && props.
 const isExpanded = computed(() => props.aim.expanded || false)
 
 const subAimCount = computed(() => {
-  const count = props.aim.supportingConnections?.length || 0
-  return count > 9 ? 'N' : count.toString()
+  return props.aim.supportingConnections?.length || 0
 })
+
+const aimValue = computed(() => {
+  return Math.round(dataStore.getAimValue(props.aim.id))
+})
+
+const hasStats = computed(() => aimValue.value > 0 || subAimCount.value > 0)
 
 // Get incoming aims from the data store
 const incomingAims = computed(() => {
@@ -93,30 +98,31 @@ onMounted(() => {
   >
     <!-- Aim content -->
     <div class="aim-content">
-      <div class="aim-title-row">
-        <div class="aim-text" :class="{ 'untitled': !aim.text }">
-          {{ aim.text || '(untitled)' }}
+      <div class="aim-header">
+        <div class="aim-main">
+          <div class="aim-text" :class="{ 'untitled': !aim.text }">
+            {{ aim.text || '(untitled)' }}
+          </div>
+          <div class="aim-status" :style="{ color: statusColor }">
+            {{ aim.status.state }}
+          </div>
         </div>
-        <div v-if="hasIncomingAims" class="sub-aim-count-bubble">
-          {{ subAimCount }}
+        
+        <div v-if="hasStats" class="stats-box">
+          <div class="stat-value" :title="`Value: ${aimValue}`">{{ aimValue }}</div>
+          <div v-if="subAimCount > 0" class="stat-count" :title="`Sub-aims: ${subAimCount}`">{{ subAimCount }}</div>
         </div>
       </div>
       
-      <div v-if="isExpanded && aim.description" class="aim-description">
-        {{ aim.description }}
-      </div>
-
-      <div v-if="isExpanded && aim.tags && aim.tags.length > 0" class="aim-tags">
-        <span v-for="tag in aim.tags" :key="tag" class="tag">#{{ tag }}</span>
-      </div>
-
-      <div class="aim-meta">
-        <div
-          class="aim-status"
-          :style="{ color: statusColor }"
-        >
-          {{ aim.status.state }}
+      <div v-if="isExpanded" class="aim-details">
+        <div v-if="aim.description" class="aim-description">
+          {{ aim.description }}
         </div>
+
+        <div v-if="aim.tags && aim.tags.length > 0" class="aim-tags">
+          <span v-for="tag in aim.tags" :key="tag" class="tag">#{{ tag }}</span>
+        </div>
+
         <div v-if="aim.status.comment" class="aim-comment">
           {{ aim.status.comment }}
         </div>
@@ -209,16 +215,25 @@ onMounted(() => {
   flex-direction: column;
   gap: 0.25rem;
 
-  .aim-title-row {
+  .aim-header {
     display: flex;
-    align-items: center;
+    justify-content: space-between;
+    align-items: flex-start;
     gap: 0.5rem;
+  }
+
+  .aim-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
   }
   
   .aim-text {
-    flex: 1;
     color: #e0e0e0;
     line-height: 1.4;
+    word-break: break-word;
 
     &.untitled {
       color: #888;
@@ -226,11 +241,22 @@ onMounted(() => {
     }
   }
 
+  .aim-status {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+
+  .aim-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
   .aim-description {
     font-size: 0.9rem;
     color: #bbb;
     white-space: pre-wrap;
-    margin-bottom: 0.25rem;
     padding-left: 0.25rem;
     border-left: 2px solid #444;
   }
@@ -239,7 +265,6 @@ onMounted(() => {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
-    margin-bottom: 0.25rem;
     padding-left: 0.25rem;
 
     .tag {
@@ -251,35 +276,43 @@ onMounted(() => {
     }
   }
 
-  .sub-aim-count-bubble {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.5);
-    color: #333;
-    font-weight: bold;
+  .aim-comment {
     font-size: 0.8rem;
-    padding: 0 0.4rem;
+    color: #888;
+    font-style: italic;
+    padding-left: 0.25rem;
   }
-  
-  .aim-meta {
+
+  .stats-box {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.8rem;
-    
-    .aim-status {
-      text-transform: uppercase;
-      font-weight: bold;
-    }
-    
-    .aim-comment {
-      color: #888;
-      font-style: italic;
-    }
+    flex-direction: column;
+    min-width: 1.8rem;
+    border-radius: 0.2rem;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+    /* No margin-right requested. Left margin handled by gap in parent. */
+  }
+
+  .stat-value {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.3rem;
+    text-align: center;
+    line-height: 1.1;
+    background-color: rgba(0, 122, 204, 0.3);
+    color: #fff;
+    font-weight: bold;
+  }
+
+  .stat-count {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.3rem;
+    text-align: center;
+    line-height: 1.1;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ccc;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 }
 

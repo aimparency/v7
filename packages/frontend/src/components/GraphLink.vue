@@ -53,11 +53,14 @@ const opacity = computed(() => {
 
 <style scoped>
 .graph-link {
-  transition: fill-opacity 0.3s;
+  transition: fill-opacity 0.3s, stroke 0.2s ease;
   cursor: pointer;
+  mix-blend-mode: lighten;
+  stroke: transparent;
 }
 .graph-link:hover {
   fill-opacity: 0.8 !important;
-  fill: #fff;
+  stroke: #ffff;
+  stroke-width: 1px;
 }
 </style>

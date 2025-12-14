@@ -1,0 +1,43 @@
+{
+  "id": "220bc09e-72d7-4772-998f-c4d465d5eb80",
+  "text": "adaption based on reference",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "0c3c3ff6-47c1-49d6-9024-59fddc092c9d",
+      "relativePosition": [
+        -0.05595436478001815,
+        2.4993737433729404
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "464798af-2b88-4f32-8ea8-a53f839f2d2c",
+      "relativePosition": [
+        -2.160597409060874,
+        1.2577037950008096
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "a699b962-74d9-40fd-b56c-124d51a18296",
+      "relativePosition": [
+        1.7917449323360577,
+        -1.7434592330903687
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765728433991
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

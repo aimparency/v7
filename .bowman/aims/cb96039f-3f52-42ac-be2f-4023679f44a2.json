@@ -1,0 +1,18 @@
+{
+  "id": "cb96039f-3f52-42ac-be2f-4023679f44a2",
+  "text": "Implement Drag-to-Connect and Visuals",
+  "tags": [
+    "graph",
+    "interaction"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1765728884952
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

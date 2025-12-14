@@ -1,0 +1,18 @@
+{
+  "id": "c4a9ed05-3fd6-4662-a584-8cbdb2cab8c8",
+  "text": "vim mode in description. tab leads to next input field",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765738992321
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

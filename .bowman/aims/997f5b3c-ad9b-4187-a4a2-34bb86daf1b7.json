@@ -1,0 +1,18 @@
+{
+  "id": "997f5b3c-ad9b-4187-a4a2-34bb86daf1b7",
+  "text": "Port Flow Visualization (Curved Arrows)",
+  "tags": [
+    "graph",
+    "ui"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1765729209075
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

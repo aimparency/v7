@@ -2,13 +2,11 @@
 import { ref, onMounted, onUnmounted, watch, computed, shallowRef } from 'vue'
 import { useDataStore, type Aim } from '../stores/data'
 import { useUIStore } from '../stores/ui'
-import { zoom, zoomIdentity, zoomTransform, type ZoomBehavior } from 'd3-zoom'
-import { select } from 'd3-selection'
-import 'd3-transition'
+import { useMapStore, type MapNode, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphNodeComponent from '../components/GraphNode.vue'
 import GraphLinkComponent from '../components/GraphLink.vue'
+import GraphConnector from '../components/GraphConnector.vue'
 import * as vec2 from '../utils/vec2'
-import { loadAllPositions, savePositions } from '../utils/db'
 
 // Naive implementation to avoid 'box-intersect' dependency issues in browser (Buffer undefined)
 function naiveBoxIntersect(boxes: number[][]) {
@@ -17,10 +15,7 @@ function naiveBoxIntersect(boxes: number[][]) {
     for (let j = i + 1; j < boxes.length; j++) {
       const a = boxes[i]
       const b = boxes[j]
-      // Check overlap: max(ax_min, bx_min) < min(ax_max, bx_max) ...
-      // If no overlap: a_max < b_min OR b_max < a_min
-      // Overlap if: a[2] >= b[0] && a[0] <= b[2] && a[3] >= b[1] && a[1] <= b[3]
-      if (a[2] >= b[0] && a[0] <= b[2] && a[3] >= b[1] && a[1] <= b[3]) {
+      if (a && b && a[2]! >= b[0]! && a[0]! <= b[2]! && a[3]! >= b[1]! && a[1]! <= b[3]!) {
         results.push([i, j])
       }
     }
@@ -30,15 +25,14 @@ function naiveBoxIntersect(boxes: number[][]) {
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
+const mapStore = useMapStore()
 
 // Types matching Reference Logic
-interface GraphNode {
-  id: string
+interface GraphNode extends MapNode {
   text: string
   status: string
-  r: number
+  value: number
   // Physics state
-  pos: vec2.T
   shift: vec2.T
   color?: string
 }
@@ -51,29 +45,319 @@ interface GraphLink {
 }
 
 const svgRef = ref<SVGSVGElement>()
-const contentRef = ref<SVGGElement>()
 const width = ref(0)
 const height = ref(0)
 
 // Physics State
 const nodes = shallowRef<GraphNode[]>([])
 const links = shallowRef<GraphLink[]>([])
-// Map for fast lookup
 const nodeMap = new Map<string, GraphNode>()
-const persistedPositions = new Map<string, {x: number, y: number}>()
 
-let zoomBehavior: ZoomBehavior<SVGSVGElement, unknown>
 let animFrameId: number | null = null
 let saveIntervalId: number | null = null
 
-// --- Reference Constants ---
+// --- Constants ---
 const OUTER_MARGIN_FACTOR = 2
 const FLOW_FORCE = 0.5
 const GLOBAL_FORCE = 0.14
-const LOGICAL_HALF_SIDE = 100 // Reference default?
-const NODE_RADIUS_BASE = 25 // Visual size
 
-// --- Layout Engine (Ported from Map.vue) ---
+// --- Map / Interaction Logic ---
+
+const updateHalfSide = () => {
+  if (!svgRef.value) return
+  let w = svgRef.value.clientWidth 
+  let h = svgRef.value.clientHeight
+  width.value = w
+  height.value = h
+  if(w > h) {
+    mapStore.clientOffset = [ (w - h) / 2, 0 ]
+    mapStore.halfSide = h / 2
+    mapStore.xratio = w/h
+    mapStore.yratio = 1
+  } else {
+    mapStore.clientOffset = [ 0, (h - w) / 2 ]
+    mapStore.halfSide = w / 2
+    mapStore.xratio = 1
+    mapStore.yratio = h/w
+  }
+}
+
+const updatePan = (d: vec2.T) => {
+  const pb = mapStore.panBeginning; 
+  if(pb !== undefined) {
+    // d is in physical coords
+    // Convert to logical scale
+    // Scale factor: LOGICAL_HALF_SIDE / (halfSide * scale)
+    const s = LOGICAL_HALF_SIDE / (mapStore.halfSide * mapStore.scale)
+    const scaledD = vec2.crScale(d, s)
+    
+    const offset = vec2.clone(pb.offset)
+    vec2.sub(offset, offset, scaledD)
+    mapStore.offset = offset  
+  }
+}
+
+const updateDrag = (d: vec2.T) => {
+  const db = mapStore.dragBeginning;
+  const node = mapStore.dragCandidate as GraphNode; 
+  if(db && node) {
+    const s = LOGICAL_HALF_SIDE / (mapStore.halfSide * mapStore.scale)
+    const scaledD = vec2.crScale(d, s)
+    
+    const pos = vec2.clone(db.pos)
+    vec2.sub(pos, pos, scaledD) 
+    node.pos = pos
+  }
+}
+
+const beginWhatever = (mouse: vec2.T) => {
+  mapStore.isTracking = false
+  mapStore.updateMouse(mouse) 
+  mapStore.mousePhysBegin = vec2.clone(mouse)
+  
+  if(mapStore.dragCandidate) {
+    mapStore.dragBeginning = {
+      pos: vec2.clone(mapStore.dragCandidate.pos) 
+    }
+  } else {
+    mapStore.panBeginning = {
+      offset: vec2.clone(mapStore.offset)
+    }
+  } 
+}
+
+const endWhatever = () => {
+  if(mapStore.panBeginning) {
+    mapStore.panBeginning = undefined
+  } else if (mapStore.dragBeginning) {
+    // If dragged, update relative position for all links pointing to this node
+    const node = mapStore.dragCandidate as GraphNode
+    if (node && links.value) {
+       links.value.forEach(link => {
+            if (link.target === node) {
+                const parent = link.source
+                
+                const deltaX = node.pos[0] - parent.pos[0]
+                const deltaY = node.pos[1] - parent.pos[1]
+                const rSum = parent.r + node.r 
+                
+                const relX = deltaX / rSum
+                const relY = deltaY / rSum
+                
+                // Update Store
+                ;(dataStore as any).updateConnectionPosition(
+                    uiStore.projectPath,
+                    parent.id,
+                    node.id,
+                    [relX, relY]
+                )
+                link.relativePosition = [relX, relY]
+            }
+        })
+    }
+    
+    mapStore.dragBeginning = undefined
+    mapStore.dragCandidate = undefined
+  }
+  
+  setTimeout(() => { mapStore.cursorMoved = false })
+}
+
+const updateWhatever = (mouse: vec2.T) => {
+  mapStore.updateMouse(mouse)
+  const d = vec2.crSub(mapStore.mousePhysBegin, mouse)
+  
+  if(vec2.len2(d) > 25 || mapStore.cursorMoved) {
+    let actionOngoing = true
+    if(mapStore.panBeginning) {
+      updatePan(d); 
+    } else if (mapStore.dragBeginning) {
+      updateDrag(d); 
+    } else {
+      actionOngoing = false
+    }
+    if(actionOngoing) {
+      mapStore.cursorMoved = true
+      mapStore.stopAnim()
+    }
+  }
+}
+
+// Helper to get local coordinates
+const getLocalPos = (clientX: number, clientY: number) => {
+  if (!svgRef.value) return vec2.fromValues(0, 0)
+  const rect = svgRef.value.getBoundingClientRect()
+  return vec2.fromValues(clientX - rect.left, clientY - rect.top)
+}
+
+// Event Handlers
+const onMouseMove = (e: MouseEvent) => {
+  updateWhatever(getLocalPos(e.clientX, e.clientY))
+}
+const onMouseDown = (e: MouseEvent) => {
+  const mouse = getLocalPos(e.clientX, e.clientY)
+  beginWhatever(mouse)
+}
+const onMouseUp = () => endWhatever()
+const onWheel = (e: WheelEvent) => {
+  e.preventDefault()
+  const mouse = getLocalPos(e.clientX, e.clientY)
+  const f = Math.pow(1.1, -e.deltaY / 150)
+  mapStore.zoom(f, mouse)
+}
+
+// Touch Handling
+let touchState = {
+  currentCount: 0, 
+  dragFingerId: 0, 
+}
+let pinchBeginning: undefined | {
+  first: number, 
+  second: number, 
+  mLogical: vec2.T, 
+  distancePage: number, 
+  offset: vec2.T, 
+  scale: number, 
+};
+
+const onTouchStart = (e: TouchEvent) => {
+  if(e.touches.length > 0) {
+    if(e.touches.length > 1) {
+      // 2 or more touches         
+      if(touchState.currentCount < 2) {
+        mapStore.connectFrom = undefined
+        touchState.currentCount = 2
+        
+        const t1 = e.touches[0]!
+        const t2 = e.touches[1]!
+        
+        // page coordinates
+        let firstPage = getLocalPos(t1.clientX, t1.clientY)
+        let secondPage = getLocalPos(t2.clientX, t2.clientY)
+        let mPhysical = vec2.clone(firstPage) 
+        vec2.add(mPhysical, mPhysical, secondPage) 
+        vec2.scale(mPhysical, mPhysical, 0.5) 
+        let mLogical = mapStore.physicalToLogicalCoord(mPhysical) 
+        // model/svg coordinates
+        pinchBeginning = {
+          first: t1.identifier, 
+          second: t2.identifier, 
+          mLogical, 
+          distancePage: vec2.dist(firstPage, secondPage), 
+          offset: vec2.clone(mapStore.offset), 
+          scale: mapStore.scale
+        }
+      } 
+    } else {
+      // 1 touch
+      if(touchState.currentCount == 0) {
+        // new touch 
+        touchState.currentCount = 1
+        const t = e.touches[0]!
+        touchState.dragFingerId = t.identifier
+        let mouse = getLocalPos(t.clientX, t.clientY)
+        beginWhatever(mouse)
+      } else if (touchState.currentCount > 1) {
+        // from 2 or more to 1
+        pinchBeginning = undefined // end pinch
+      }
+    }
+  }
+}
+
+const onTouchMove = (e: TouchEvent) => {
+  e.preventDefault()
+  if(touchState.currentCount == 1) {
+    // Check if we have at least one touch
+    if (e.touches.length > 0) {
+        const t = e.touches[0]!
+        let mouse = getLocalPos(t.clientX, t.clientY)
+        updateWhatever(mouse)
+    }
+  } else if (touchState.currentCount > 1) {
+    if(pinchBeginning && e.touches.length > 1) {
+      // update pinch
+      const t1 = e.touches[0]!
+      const t2 = e.touches[1]!
+      
+      let firstPage = getLocalPos(t1.clientX, t1.clientY)
+      let secondPage = getLocalPos(t2.clientX, t2.clientY)
+      let distancePage = vec2.dist(firstPage, secondPage)
+
+      let mPhysical = vec2.clone(firstPage) 
+      vec2.add(mPhysical, mPhysical, secondPage) 
+      vec2.scale(mPhysical, mPhysical, 0.5) 
+      let mLogical = mapStore.physicalToLogicalCoord(mPhysical) 
+
+      // 
+      let scaleChange = distancePage / pinchBeginning.distancePage 
+      mapStore.scale = pinchBeginning.scale * scaleChange
+
+      vec2.sub(mLogical, mLogical, pinchBeginning.mLogical) 
+
+      vec2.add(mapStore.offset, mapStore.offset, mLogical) 
+    }
+  }
+}
+
+const onTouchEnd = (e: TouchEvent) => {
+  if(touchState.currentCount > 1) {
+    pinchBeginning = undefined
+  } 
+  if(touchState.currentCount > 0) {
+    endWhatever()
+  }
+  touchState.currentCount = 0
+}
+
+import { trpc } from '../trpc'
+
+// ...
+
+// Node Interaction
+const onNodeDown = (e: MouseEvent | TouchEvent, node: GraphNode) => {
+  const currentAim = uiStore.getCurrentAim()
+  if (currentAim && currentAim.id === node.id) {
+    // Already selected -> start connecting
+    mapStore.startConnecting(node)
+  } else {
+    // Not selected -> start dragging
+    mapStore.startDragging(node)
+  }
+}
+
+const onNodeUp = async (node: GraphNode) => {
+  if (mapStore.connecting && mapStore.connectFrom) {
+    if (mapStore.connectFrom.id !== node.id) {
+      // Create connection
+      try {
+        await trpc.aim.connectAims.mutate({
+            projectPath: uiStore.projectPath,
+            parentAimId: mapStore.connectFrom.id,
+            childAimId: node.id,
+            // Indexes default
+        })
+        // Reload parent to update UI
+        const updatedParent = await trpc.aim.get.query({
+            projectPath: uiStore.projectPath,
+            aimId: mapStore.connectFrom.id
+        })
+        dataStore.replaceAim(mapStore.connectFrom.id, updatedParent)
+        dataStore.recalculateValues()
+      } catch (e) {
+        console.error('Failed to connect aims:', e)
+      }
+    }
+  }
+}
+
+const onNodeClick = (node: GraphNode) => {
+  if (!mapStore.cursorMoved) {
+    uiStore.navigateToAim(node.id)
+  }
+}
+
+// --- Layout ---
 const reusable = {
   r: [] as number[],
   pos: [] as vec2.T[],
@@ -83,124 +367,147 @@ const reusable = {
 const hShift = vec2.create()
 
 const layout = () => {
+  if (mapStore.anim.update) {
+    mapStore.anim.update()
+  }
+
+  // Camera Smooth Pan (User requested ease out)
+  // If not interacting and no active anim
+  if (!mapStore.panBeginning && !mapStore.dragBeginning && !mapStore.anim.update && mapStore.isTracking) {
+     const currentAim = uiStore.getCurrentAim()
+     if (currentAim) {
+       const node = nodeMap.get(currentAim.id)
+       if (node) {
+         // Target: center node. Offset = -node.pos
+         const targetX = -node.pos[0]
+         const targetY = -node.pos[1]
+         
+         const dx = targetX - mapStore.offset[0]
+         const dy = targetY - mapStore.offset[1]
+         
+         // Threshold to stop micro-movements
+         if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+             mapStore.offset[0] += dx * 0.1
+             mapStore.offset[1] += dy * 0.1
+         }
+         
+         // Target scale? Keep current or default?
+         // mapStore.scale += (1 - mapStore.scale) * 0.1
+       }
+     }
+  }
+
   const currentNodes = nodes.value
   const currentLinks = links.value
   const count = currentNodes.length
   
-  if (count === 0) return
+  if (count > 0) {
+      // 1. Prepare Arrays
+      const r = reusable.r
+      const positions = reusable.pos
+      const boxes = reusable.boxes
+      
+      if (r.length < count) {
+        r.length = count
+        positions.length = count
+        boxes.length = count
+      }
 
-  // 1. Prepare Arrays
-  const r = reusable.r
-  const positions = reusable.pos
-  const boxes = reusable.boxes
-  
-  // Resize arrays if needed
-  if (r.length < count) {
-    r.length = count
-    positions.length = count
-    boxes.length = count
-  }
+      for (let i = 0; i < count; i++) {
+        const n = currentNodes[i]!
+        r[i] = n.r
+        positions[i] = n.pos
+        vec2.scale(n.shift, n.shift, 0)
+        
+        const br = n.r * OUTER_MARGIN_FACTOR
+        boxes[i] = [n.pos[0] - br, n.pos[1] - br, n.pos[0] + br, n.pos[1] + br]
+      }
 
-  // Reset shifts and fill physics arrays
-  for (let i = 0; i < count; i++) {
-    const n = currentNodes[i]!
-    r[i] = n.r
-    positions[i] = n.pos
-    vec2.scale(n.shift, n.shift, 0) // Reset shift (inplace)
-    
-    // Bounding box for collision
-    const br = n.r * OUTER_MARGIN_FACTOR
-    boxes[i] = [n.pos[0] - br, n.pos[1] - br, n.pos[0] + br, n.pos[1] + br]
-  }
+      // 2. Flow Forces
+      const delta = vec2.create()
+      const targetPos = vec2.create()
+      const targetShift = vec2.create()
 
-  // 2. Flow Forces (Relative Position)
-  const delta = vec2.create()
-  const targetPos = vec2.create()
-  const targetShift = vec2.create()
+      for (const link of currentLinks) {
+        const from = link.source
+        const into = link.target
+        const rSum = from.r + into.r
+        
+        vec2.scale(delta, link.relativePosition, rSum)
+        
+        // Force on Into
+        vec2.add(targetPos, from.pos, delta)
+        vec2.sub(targetShift, targetPos, into.pos)
+        vec2.scale(targetShift, targetShift, from.r / rSum)
+        vec2.add(into.shift, into.shift, targetShift)
+        
+        // Force on From
+        vec2.sub(targetPos, into.pos, delta)
+        vec2.sub(targetShift, targetPos, from.pos)
+        vec2.scale(targetShift, targetShift, into.r / rSum)
+        vec2.add(from.shift, from.shift, targetShift)
+      }
 
-  for (const link of currentLinks) {
-    const from = link.source
-    const into = link.target
-    
-    const rSum = from.r + into.r
-    
-    // Calculate desired delta based on relativePosition and radii
-    vec2.scale(delta, link.relativePosition, rSum)
-    
-    // Force on Into (Child/Target)
-    vec2.add(targetPos, from.pos, delta)
-    vec2.sub(targetShift, targetPos, into.pos)
-    vec2.scale(targetShift, targetShift, from.r / rSum) // Weight by From radius
-    vec2.add(into.shift, into.shift, targetShift)
-    
-    // Force on From (Parent/Source)
-    vec2.sub(targetPos, into.pos, delta)
-    vec2.sub(targetShift, targetPos, from.pos)
-    vec2.scale(targetShift, targetShift, into.r / rSum) // Weight by Into radius
-    vec2.add(from.shift, from.shift, targetShift)
-  }
+      for (let i = 0; i < count; i++) {
+        const n = currentNodes[i]!
+        vec2.scale(n.shift, n.shift, FLOW_FORCE)
+      }
 
-  // Apply Flow Force Strength
-  for (let i = 0; i < count; i++) {
-    const n = currentNodes[i]!
-    vec2.scale(n.shift, n.shift, FLOW_FORCE)
-  }
-
-  // 3. Collisions (Box Intersect)
-  const intersections = naiveBoxIntersect(boxes)
-  const ab = vec2.create()
-  
+      // 3. Collisions
+      const intersections = naiveBoxIntersect(boxes)
+      const ab = vec2.create()
+      
   for (const [iA, iB] of intersections) {
+    if (iA === undefined || iB === undefined) continue
     // Only check if valid indices
     if (iA >= count || iB >= count) continue
 
-    const nA = currentNodes[iA]!
-    const nB = currentNodes[iB]!
+    const nA = currentNodes[iA]
+    const nB = currentNodes[iB]
+    
+    if (!nA || !nB) continue
     
     // Vector from A to B
-    vec2.sub(ab, nB.pos, nA.pos)
-    const rSum = nA.r + nB.r
-    let d = vec2.len(ab)
-    
-    if (d === 0) {
-      // Jitter if exact overlap
-      const x = Math.random() * 2 - 1
-      const y = Math.sqrt(1 - x * x) * (Math.random() > 0.5 ? 1 : -1)
-      ab[0] = x * rSum; ab[1] = y * rSum
-      d = rSum
-    }
-    
-    // Hard collision (inner)
-    if (d < rSum) {
-      calcShiftAndApply(1, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
-    }
-    // Soft collision (outer margin)
-    if (d < rSum * OUTER_MARGIN_FACTOR) {
-      calcShiftAndApply(OUTER_MARGIN_FACTOR, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
-    }
-  }
+        const rSum = nA.r + nB.r
+        let d = vec2.len(ab)
+        
+        if (d === 0) {
+          const x = Math.random() * 2 - 1
+          const y = Math.sqrt(1 - x * x) * (Math.random() > 0.5 ? 1 : -1)
+          ab[0] = x * rSum; ab[1] = y * rSum
+          d = rSum
+        }
+        
+        if (d < rSum) {
+          calcShiftAndApply(1, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
+        }
+        if (d < rSum * OUTER_MARGIN_FACTOR) {
+          calcShiftAndApply(OUTER_MARGIN_FACTOR, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
+        }
+      }
 
-  // 4. Global Force (Damping/Centering) & Apply Shifts
-  let totalMovement = 0
-  
-  for (let i = 0; i < count; i++) {
-    const n = currentNodes[i]!
-    // Apply global force
-    vec2.scale(n.shift, n.shift, GLOBAL_FORCE)
-    
-    // Check if dragging (pinned)
-    if (draggedNode.value && draggedNode.value.id === n.id) {
-       // Don't move dragged node via physics
-       vec2.scale(n.shift, n.shift, 0)
-    } else {
-       vec2.add(n.pos, n.pos, n.shift)
-       totalMovement += Math.abs(n.shift[0]) + Math.abs(n.shift[1])
-    }
+      // 4. Global Force & Apply
+      const viewMinShift = 0.1 * (LOGICAL_HALF_SIDE / mapStore.halfSide) / mapStore.scale
+
+      for (let i = 0; i < count; i++) {
+        const n = currentNodes[i]!
+        vec2.scale(n.shift, n.shift, GLOBAL_FORCE)
+        
+        const minShift = Math.max(viewMinShift, n.r * 0.001)
+
+        // Check dragging
+        if (n === mapStore.dragCandidate && mapStore.dragBeginning) {
+           // Do not move via physics
+        } else {
+           if (Math.abs(n.shift[0]) > minShift || Math.abs(n.shift[1]) > minShift) {
+               vec2.add(n.pos, n.pos, n.shift)
+           }
+        }
+      }
   }
   
-  // Trigger Vue update
+  // Trigger update
   trigger.value++
-  
   animFrameId = requestAnimationFrame(layout)
 }
 
@@ -215,10 +522,8 @@ const calcShiftAndApply = (
   shiftB: vec2.T
 ) => {
   const amount = (marginFactor - d / rSum) / rSum 
-
   vec2.scale(hShift, ab, -rB * amount) 
   vec2.add(shiftA, shiftA, hShift)
-
   vec2.scale(hShift, ab, +rA * amount) 
   vec2.add(shiftB, shiftB, hShift)
 }
@@ -227,21 +532,27 @@ const calcShiftAndApply = (
 const updateGraphData = () => {
   const { nodes: rawNodes, links: rawLinks } = dataStore.graphData
   
-  // Resolve/Merge Nodes
-  const newNodes: GraphNode[] = []
+  let totalValue = 0
+  for (const n of rawNodes) {
+    totalValue += n.value || 0
+  }
+  const avgValue = rawNodes.length > 0 ? totalValue / rawNodes.length : 0
   
+  const newNodes: GraphNode[] = []
   rawNodes.forEach(raw => {
     let existing = nodeMap.get(raw.id)
+    const val = raw.value || 0
+    // r = Math.sqrt(val + 0.1 * avgValue) * 1000
+    const radius = Math.sqrt(val + 0.1 * avgValue) * 1000
+
     if (!existing) {
-      // Check persistence
-      const persisted = persistedPositions.get(raw.id)
-      
       existing = {
         id: raw.id,
         text: raw.text,
         status: raw.status,
-        r: NODE_RADIUS_BASE,
-        pos: persisted ? [persisted.x, persisted.y] : [Math.random() * 100 - 50, Math.random() * 100 - 50],
+        r: radius,
+        value: val,
+        pos: [Math.random() * 100 - 50, Math.random() * 100 - 50],
         shift: [0, 0],
         color: undefined
       }
@@ -249,11 +560,12 @@ const updateGraphData = () => {
     } else {
       existing.text = raw.text
       existing.status = raw.status
+      existing.value = val
+      existing.r = radius
     }
     newNodes.push(existing)
   })
   
-  // Prune map
   if (nodeMap.size > newNodes.length) {
     const newIds = new Set(newNodes.map(n => n.id))
     for (const id of nodeMap.keys()) {
@@ -263,7 +575,6 @@ const updateGraphData = () => {
   
   nodes.value = newNodes
   
-  // Resolve Links
   const newLinks: GraphLink[] = []
   rawLinks.forEach(l => {
     const source = nodeMap.get(l.source)
@@ -278,181 +589,60 @@ const updateGraphData = () => {
     }
   })
   links.value = newLinks
-  
-  // Restart layout loop
-  if (!animFrameId) layout()
-}
-
-// --- Interaction ---
-const draggedNode = ref<GraphNode | null>(null)
-const isDragging = ref(false)
-const isUserInteracting = ref(false)
-
-const startDrag = (event: MouseEvent | TouchEvent, node: GraphNode) => {
-  event.preventDefault()
-  event.stopPropagation()
-  isDragging.value = false
-  draggedNode.value = node
-  
-  document.addEventListener('mousemove', onDragMove)
-  document.addEventListener('mouseup', onDragEnd)
-  document.addEventListener('touchmove', onTouchMove, { passive: false })
-  document.addEventListener('touchend', onDragEnd)
-}
-
-const onDragMove = (event: MouseEvent) => {
-  const node = draggedNode.value
-  if (node && svgRef.value) {
-    isDragging.value = true
-    isUserInteracting.value = true
-    
-    const rect = svgRef.value.getBoundingClientRect()
-    const transform = zoomTransform(svgRef.value)
-    const [x, y] = transform.invert([event.clientX - rect.left, event.clientY - rect.top])
-    
-    node.pos[0] = x
-    node.pos[1] = y
-  }
-}
-
-const onTouchMove = (event: TouchEvent) => {
-  event.preventDefault()
-  const node = draggedNode.value
-  const touch = event.touches[0]
-  if (node && svgRef.value && touch) {
-    isDragging.value = true
-    isUserInteracting.value = true
-    
-    const rect = svgRef.value.getBoundingClientRect()
-    const transform = zoomTransform(svgRef.value)
-    const [x, y] = transform.invert([touch.clientX - rect.left, touch.clientY - rect.top])
-    
-    node.pos[0] = x
-    node.pos[1] = y
-  }
-}
-
-const onDragEnd = () => {
-  const node = draggedNode.value
-  if (node) {
-    if (isDragging.value) {
-        // Drag finished
-        links.value.forEach(link => {
-            if (link.target === node) {
-                const parent = link.source
-                
-                const deltaX = node.pos[0] - parent.pos[0]
-                const deltaY = node.pos[1] - parent.pos[1]
-                const rSum = parent.r + node.r 
-                
-                const relX = deltaX / rSum
-                const relY = deltaY / rSum
-                
-                // Cast store to any to avoid type check error
-                ;(dataStore as any).updateConnectionPosition(
-                    uiStore.projectPath,
-                    parent.id,
-                    node.id,
-                    [relX, relY]
-                )
-                link.relativePosition = [relX, relY]
-            }
-        })
-    } else {
-        onNodeClick(node)
-    }
-    draggedNode.value = null
-  }
-  document.removeEventListener('mousemove', onDragMove)
-  document.removeEventListener('mouseup', onDragEnd)
-  document.removeEventListener('touchmove', onTouchMove)
-  document.removeEventListener('touchend', onDragEnd)
-}
-
-const onNodeClick = (node: GraphNode) => {
-  uiStore.navigateToAim(node.id)
-}
-
-// Camera Logic
-watch(() => uiStore.getCurrentAim(), (aim) => {
-  if (aim && svgRef.value && width.value > 0) {
-      isUserInteracting.value = false 
-      
-      const node = nodeMap.get(aim.id)
-      if (node && zoomBehavior) {
-        const scale = 1.5
-        const x = width.value / 2 - node.pos[0] * scale
-        const y = height.value / 2 - node.pos[1] * scale
-        const transform = zoomIdentity.translate(x, y).scale(scale)
-        select(svgRef.value).transition().duration(750).call(zoomBehavior.transform, transform)
-      }
-  }
-}, { immediate: true })
-
-const updateDimensions = () => {
-  if (svgRef.value) {
-    const rect = svgRef.value.getBoundingClientRect()
-    width.value = rect.width
-    height.value = rect.height
-  }
 }
 
 // --- Lifecycle ---
 onMounted(async () => {
-  // Load persisted positions first
-  try {
-    const loaded = await loadAllPositions()
-    loaded.forEach((val, key) => persistedPositions.set(key, val))
-  } catch (e) {
-    console.warn('Failed to load graph positions from DB', e)
-  }
-
+  window.addEventListener('resize', updateHalfSide)
   if (svgRef.value) {
-    zoomBehavior = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 4])
-      .on('zoom', (event) => {
-         if (event.sourceEvent) isUserInteracting.value = true
-         if (contentRef.value) {
-           contentRef.value.setAttribute('transform', event.transform.toString())
-         }
-      })
-    select(svgRef.value).call(zoomBehavior)
+      // Manual event listeners instead of D3
+      svgRef.value.addEventListener("mousemove", onMouseMove)
+      svgRef.value.addEventListener("mousedown", onMouseDown)
+      svgRef.value.addEventListener("mouseup", onMouseUp)
+      svgRef.value.addEventListener("wheel", onWheel, { passive: false })
+      svgRef.value.addEventListener("touchstart", onTouchStart, { passive: false })
+      svgRef.value.addEventListener("touchmove", onTouchMove, { passive: false })
+      svgRef.value.addEventListener("touchend", onTouchEnd)
+      svgRef.value.addEventListener("touchcancel", onTouchEnd)
   }
-
-  window.addEventListener('resize', updateDimensions)
-  updateDimensions()
-  
+  updateHalfSide()
   layout()
   
   if (uiStore.projectPath) {
     dataStore.loadAllAims(uiStore.projectPath)
   }
-  
   updateGraphData()
-
-  // Setup periodic save
-  saveIntervalId = window.setInterval(() => {
-    const positionsToSave = nodes.value.map(n => ({
-      id: n.id,
-      x: n.pos[0],
-      y: n.pos[1]
-    }))
-    if (positionsToSave.length > 0) {
-      savePositions(positionsToSave).catch(e => console.warn('Failed to save positions', e))
-    }
-  }, 2000)
 })
 
 onUnmounted(() => {
   if (animFrameId) cancelAnimationFrame(animFrameId)
-  if (saveIntervalId) clearInterval(saveIntervalId)
-  window.removeEventListener('resize', updateDimensions)
+  window.removeEventListener('resize', updateHalfSide)
+  if (svgRef.value) {
+      svgRef.value.removeEventListener("mousemove", onMouseMove)
+      svgRef.value.removeEventListener("mousedown", onMouseDown)
+      svgRef.value.removeEventListener("mouseup", onMouseUp)
+      svgRef.value.removeEventListener("wheel", onWheel)
+      svgRef.value.removeEventListener("touchstart", onTouchStart)
+      svgRef.value.removeEventListener("touchmove", onTouchMove)
+      svgRef.value.removeEventListener("touchend", onTouchEnd)
+      svgRef.value.removeEventListener("touchcancel", onTouchEnd)
+  }
 })
 
 watch(() => dataStore.graphData, updateGraphData, { deep: true })
 
-// Template Helpers
+watch(() => uiStore.getCurrentAim(), (newAim) => {
+  if (newAim) {
+    mapStore.isTracking = true
+  }
+}, { deep: true, immediate: true })
+
 const trigger = ref(0)
+const transform = computed(() => {
+    trigger.value // dependency
+    return `scale(${mapStore.scale}) translate(${mapStore.offset[0]}, ${mapStore.offset[1]})`
+})
+
 const renderNodes = computed(() => { 
     trigger.value; 
     return nodes.value.map(n => ({
@@ -474,7 +664,7 @@ const renderLinks = computed(() => {
 <template>
   <div class="graph-view">
     <svg ref="svgRef" width="100%" height="100%">
-      <g ref="contentRef">
+      <g :transform="transform">
         <g class="links">
           <GraphLinkComponent 
             v-for="(link, i) in renderLinks" 
@@ -482,13 +672,17 @@ const renderLinks = computed(() => {
             :link="link" 
           />
         </g>
+        <GraphConnector />
         <g class="nodes">
           <GraphNodeComponent 
             v-for="node in renderNodes" 
             :key="node.id" 
             :node="node"
-            @mousedown="startDrag($event, node as any)"
-            @touchstart="startDrag($event, node as any)"
+            @mousedown.stop="onNodeDown($event, node as any)"
+            @touchstart.stop="onNodeDown($event, node as any)"
+            @mouseup="onNodeUp(node as any)"
+            @touchend="onNodeUp(node as any)"
+            @click.stop="onNodeClick(node as any)"
           />
         </g>
       </g>
