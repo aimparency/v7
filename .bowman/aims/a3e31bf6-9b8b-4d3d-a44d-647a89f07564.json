@@ -1,0 +1,18 @@
+{
+  "id": "a3e31bf6-9b8b-4d3d-a44d-647a89f07564",
+  "text": "also cache connection flow values during value calculation",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "71627e32-84ec-4969-b552-679cc04ca254"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765742311900
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

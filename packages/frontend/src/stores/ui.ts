@@ -90,6 +90,9 @@ export const useUIStore = defineStore('ui', {
     // Moving aim state (for loading animation)
     movingAimId: null as string | null,
 
+    // Selected Link (Flow)
+    selectedLink: null as { parentId: string, childId: string } | null,
+
     // View state
     currentView: 'columns' as 'columns' | 'graph',
 
@@ -941,6 +944,18 @@ export const useUIStore = defineStore('ui', {
 
     setPendingDeleteAim(aimId: string | null) {
       this.pendingDeleteAimId = aimId
+    },
+
+    selectLink(parentId: string, childId: string) {
+      this.selectedLink = { parentId, childId }
+      // Deselect aim if link is selected (Reference behavior: selectFlow sets selectedAim = undefined)
+      // But here `selectedColumn` / `floatingAimIndex` tracks aim selection.
+      // We might want to keep aim selection separate or clear it.
+      // For now, just set selectedLink.
+    },
+
+    deselectLink() {
+      this.selectedLink = null
     },
 
     async calculateAimPaths(aimId: string): Promise<AimPath[]> {

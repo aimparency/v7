@@ -32,23 +32,25 @@ const label = computed(() => {
 
 <template>
   <g :transform="`translate(${node.x},${node.y})`" class="graph-node">
-    <circle 
-      :r="node.r" 
-      :fill="fillColor" 
-      stroke="#fff" 
-      stroke-width="1.5"
-      class="node-circle"
-    />
-    <text 
-      dy="0" 
-      alignment-baseline="middle"
-      text-anchor="middle" 
-      fill="#fff" 
-      font-size="12" 
-      class="node-label"
-    >
-      {{ label }}
-    </text>
+    <g :transform="`scale(${node.r})`">
+      <circle 
+        r="1" 
+        :fill="fillColor" 
+        stroke="#fff" 
+        stroke-width="0.075"
+        class="node-circle"
+      />
+      <text 
+        dy="0" 
+        dominant-baseline="central"
+        text-anchor="middle" 
+        fill="#fff" 
+        font-size="0.25" 
+        class="node-label"
+      >
+        {{ label }}
+      </text>
+    </g>
   </g>
 </template>
 
@@ -63,13 +65,13 @@ const label = computed(() => {
 }
 
 .node-circle {
-  transition: fill 0.3s, r 0.3s;
+  transition: stroke 0.2s ease-in-out;
   cursor: pointer;
+  stroke: #ccc0;
 }
 
 .node-circle:hover {
-  stroke: #ffff00;
-  stroke-width: 2px;
+  stroke: #cccf;
 }
 
 .node-label {

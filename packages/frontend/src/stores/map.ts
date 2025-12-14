@@ -10,6 +10,13 @@ export interface MapNode {
   r: number
 }
 
+export interface LayoutCandidate {
+  fromWeight: number
+  start: vec2.T
+  dScale: number
+  link: any // Avoid circular dependency with GraphLink
+}
+
 export const useMapStore = defineStore('map', {
   state: () => ({
     scale: 1, 
@@ -24,6 +31,8 @@ export const useMapStore = defineStore('map', {
     mousePhysBegin: vec2.create(), 
     panBeginning: undefined as undefined | { offset: vec2.T },
     dragBeginning: undefined as undefined | { pos: vec2.T },
+    layouting: false,
+    layoutCandidate: undefined as undefined | LayoutCandidate,
     connecting: false, 
     cursorMoved: false,
     clientOffset: vec2.create(),
@@ -64,6 +73,10 @@ export const useMapStore = defineStore('map', {
     startConnecting(node: MapNode) {
       this.connectFrom = node
       this.connecting = true
+    },
+    startLayouting(candidate: LayoutCandidate) {
+      this.layoutCandidate = candidate
+      this.layouting = true
     },
     stopAnim() {
       this.anim.update = undefined

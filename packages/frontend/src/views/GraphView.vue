@@ -6,6 +6,7 @@ import { useMapStore, type MapNode, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphNodeComponent from '../components/GraphNode.vue'
 import GraphLinkComponent from '../components/GraphLink.vue'
 import GraphConnector from '../components/GraphConnector.vue'
+import GraphFlowHandle from '../components/GraphFlowHandle.vue'
 import * as vec2 from '../utils/vec2'
 
 // Naive implementation to avoid 'box-intersect' dependency issues in browser (Buffer undefined)
@@ -52,6 +53,9 @@ const height = ref(0)
 const nodes = shallowRef<GraphNode[]>([])
 const links = shallowRef<GraphLink[]>([])
 const nodeMap = new Map<string, GraphNode>()
+
+// Layouting State
+const layoutingHandlePos = vec2.create()
 
 let animFrameId: number | null = null
 let saveIntervalId: number | null = null
@@ -110,6 +114,32 @@ const updateDrag = (d: vec2.T) => {
   }
 }
 
+const updateLayout = (d: vec2.T) => {
+  const lc = mapStore.layoutCandidate
+  if(lc) {
+    const s = LOGICAL_HALF_SIDE / (mapStore.halfSide * mapStore.scale)
+    const scaledD = vec2.crScale(d, s)
+    vec2.sub(layoutingHandlePos, lc.start, scaledD)
+    
+    updateRelativeDeltaWhileLayouting()
+  }
+}
+
+const updateRelativeDeltaWhileLayouting = () => {
+  const lc = mapStore.layoutCandidate
+  if (mapStore.layouting && lc) {
+    const link = lc.link as GraphLink
+    const M = vec2.crMix(
+      link.source.pos, 
+      link.target.pos, 
+      lc.fromWeight
+    )
+    const arm = vec2.crSub(layoutingHandlePos, M) 
+    // lc.flow.backupRelativeData() // Not implementing backup/undo yet
+    vec2.scale(link.relativePosition, arm, lc.dScale)
+  }
+}
+
 const beginWhatever = (mouse: vec2.T) => {
   mapStore.isTracking = false
   mapStore.updateMouse(mouse) 
@@ -119,6 +149,8 @@ const beginWhatever = (mouse: vec2.T) => {
     mapStore.dragBeginning = {
       pos: vec2.clone(mapStore.dragCandidate.pos) 
     }
+  } else if (mapStore.layoutCandidate) {
+    updateLayout(vec2.create())
   } else {
     mapStore.panBeginning = {
       offset: vec2.clone(mapStore.offset)
@@ -158,6 +190,20 @@ const endWhatever = () => {
     
     mapStore.dragBeginning = undefined
     mapStore.dragCandidate = undefined
+  } else if (mapStore.layouting) {
+    const lc = mapStore.layoutCandidate
+    if (lc) {
+      const link = lc.link as GraphLink
+      // Persist change
+      ;(dataStore as any).updateConnectionPosition(
+          uiStore.projectPath,
+          link.source.id,
+          link.target.id,
+          [link.relativePosition[0], link.relativePosition[1]]
+      )
+    }
+    mapStore.layouting = false
+    mapStore.layoutCandidate = undefined
   }
   
   setTimeout(() => { mapStore.cursorMoved = false })
@@ -173,6 +219,8 @@ const updateWhatever = (mouse: vec2.T) => {
       updatePan(d); 
     } else if (mapStore.dragBeginning) {
       updateDrag(d); 
+    } else if (mapStore.layouting) {
+      updateLayout(d);
     } else {
       actionOngoing = false
     }
@@ -355,6 +403,7 @@ const onNodeUp = async (node: GraphNode) => {
 const onNodeClick = (node: GraphNode) => {
   if (!mapStore.cursorMoved) {
     uiStore.navigateToAim(node.id)
+    uiStore.deselectLink()
   }
 }
 
@@ -367,18 +416,7 @@ const reusable = {
 
 const hShift = vec2.create()
 
-let lastTime = 0
-
 const layout = () => {
-  const now = performance.now()
-  let dt = (now - lastTime) / 1000
-  lastTime = now
-  
-  if (dt > 0.1) dt = 0.1 // Cap dt to avoid explosion
-  
-  // Normalize forces to 60fps
-  const fpsFactor = dt * 60
-  
   if (mapStore.anim.update) {
     mapStore.anim.update()
   }
@@ -399,12 +437,9 @@ const layout = () => {
          
          // Threshold to stop micro-movements
          if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
-             mapStore.offset[0] += dx * 0.1 * fpsFactor
-             mapStore.offset[1] += dy * 0.1 * fpsFactor
+             mapStore.offset[0] += dx * 0.1
+             mapStore.offset[1] += dy * 0.1
          }
-         
-         // Target scale? Keep current or default?
-         // mapStore.scale += (1 - mapStore.scale) * 0.1
        }
      }
   }
@@ -439,8 +474,6 @@ const layout = () => {
       const delta = vec2.create()
       const targetPos = vec2.create()
       const targetShift = vec2.create()
-      
-      const flowForce = FLOW_FORCE * fpsFactor
 
       for (const link of currentLinks) {
         const from = link.source
@@ -464,7 +497,7 @@ const layout = () => {
 
       for (let i = 0; i < count; i++) {
         const n = currentNodes[i]!
-        vec2.scale(n.shift, n.shift, flowForce)
+        vec2.scale(n.shift, n.shift, FLOW_FORCE)
       }
 
       // 3. Collisions
@@ -482,17 +515,19 @@ const layout = () => {
     if (!nA || !nB) continue
     
     // Vector from A to B
-        const rSum = nA.r + nB.r
-        let d = vec2.len(ab)
-        
-        if (d === 0) {
-          const x = Math.random() * 2 - 1
-          const y = Math.sqrt(1 - x * x) * (Math.random() > 0.5 ? 1 : -1)
-          ab[0] = x * rSum; ab[1] = y * rSum
-          d = rSum
-        }
-        
-        if (d < rSum) {
+    vec2.sub(ab, nB.pos, nA.pos) // Fix: Calculate vector between nodes
+    
+    const rSum = nA.r + nB.r
+    let d = vec2.len(ab)
+    
+    if (d === 0) {
+      const x = Math.random() * 2 - 1
+      const y = Math.sqrt(1 - x * x) * (Math.random() > 0.5 ? 1 : -1)
+      ab[0] = x * rSum; ab[1] = y * rSum
+      // d remains 0 to trigger correct force calculation
+    }
+    
+    if (d < rSum) {
           calcShiftAndApply(1, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
         }
         if (d < rSum * OUTER_MARGIN_FACTOR) {
@@ -502,11 +537,10 @@ const layout = () => {
 
       // 4. Global Force & Apply
       const viewMinShift = 0.1 * (LOGICAL_HALF_SIDE / mapStore.halfSide) / mapStore.scale
-      const globalForce = GLOBAL_FORCE * fpsFactor
 
       for (let i = 0; i < count; i++) {
         const n = currentNodes[i]!
-        vec2.scale(n.shift, n.shift, globalForce)
+        vec2.scale(n.shift, n.shift, GLOBAL_FORCE)
         
         const minShift = Math.max(viewMinShift, n.r * 0.001)
 
@@ -558,7 +592,7 @@ const updateGraphData = () => {
     let existing = nodeMap.get(raw.id)
     const val = raw.value || 0
     // r = Math.sqrt(val + 0.1 * avgValue) * 1000
-    const radius = Math.sqrt(val + 0.1 * avgValue) * 1000
+    const radius = Math.sqrt((val / (avgValue || 1)) + 0.1) * 150
 
     if (!existing) {
       existing = {
@@ -621,7 +655,6 @@ onMounted(async () => {
       svgRef.value.addEventListener("touchcancel", onTouchEnd)
   }
   updateHalfSide()
-  lastTime = performance.now()
   layout()
   
   if (uiStore.projectPath) {
@@ -662,6 +695,14 @@ const transform = computed(() => {
     return `translate(${cx}, ${cy}) scale(${s}) translate(${mapStore.offset[0]}, ${mapStore.offset[1]})`
 })
 
+const selectedLinkData = computed(() => {
+  if (!uiStore.selectedLink) return null
+  return links.value.find(l => 
+    l.source.id === uiStore.selectedLink!.parentId && 
+    l.target.id === uiStore.selectedLink!.childId
+  )
+})
+
 const renderNodes = computed(() => { 
     trigger.value; 
     return nodes.value.map(n => ({
@@ -691,6 +732,10 @@ const renderLinks = computed(() => {
             :link="link" 
           />
         </g>
+        <GraphFlowHandle 
+          v-if="selectedLinkData" 
+          :link="selectedLinkData"
+        />
         <GraphConnector />
         <g class="nodes">
           <GraphNodeComponent 

@@ -1,26 +1,39 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useMapStore } from '../stores/map'
+import makeCircularPath from '../utils/make-circular-path'
 
 const mapStore = useMapStore()
+
+const path = computed(() => {
+  if (!mapStore.connectFrom) return ''
+  return makeCircularPath(
+    {
+      pos: mapStore.connectFrom.pos,
+      r: mapStore.connectFrom.r
+    }, 
+    0.5 * mapStore.connectFrom.r,
+    {
+      pos: mapStore.mouse.logical,
+      r: 0
+    }
+  )
+})
 </script>
 
 <template>
-  <line 
+  <path
     v-if="mapStore.connectFrom"
     class="connector"
-    :x1="mapStore.connectFrom.pos[0]" 
-    :y1="mapStore.connectFrom.pos[1]" 
-    :x2="mapStore.mouse.logical[0]" 
-    :y2="mapStore.mouse.logical[1]" 
-    stroke="#88ccff" 
-    stroke-width="2" 
-    stroke-dasharray="5,5"
+    fill="white"
+    :d="path"
+    :stroke-width="mapStore.connectFrom.r"
   />
 </template>
 
 <style scoped>
-.connector {
+.connector{
+  fill: #bbb; 
   pointer-events: none;
-  opacity: 0.8;
 }
 </style>

@@ -1,0 +1,27 @@
+{
+  "id": "71627e32-84ec-4969-b552-679cc04ca254",
+  "text": "in the reference implemenation there is this beautiful idea that arrows are as large as the value that flows from the supported aim to the supporting",
+  "description": "let's restore that. \nMeaning, if an aim supports only 1 parent and has no intrinsic value, the connection width will be equal to the radius. \nMaybe calculations also need to store calculated flow values (normalized, too)",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "a3e31bf6-9b8b-4d3d-a44d-647a89f07564",
+      "relativePosition": [
+        2.4030344371911094,
+        -0.6895110540619404
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765742295792
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}
