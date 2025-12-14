@@ -35,7 +35,7 @@ const d = computed(() => {
   // Calculate width based on weight
   // Reference: 0.2 * this.flow.into.r * this.flow.share
   const weight = props.link.weight || 1
-  const width = 0.2 * intoR * Math.min(1, weight * 0.5) // Scaling factor
+  const width = 0.2 * intoR * Math.min(1, weight) // Scaling factor
   
   return makeCircularPath(
     { pos: [source.x, source.y], r: fromR },

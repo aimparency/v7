@@ -58,6 +58,7 @@ const nodeMap = new Map<string, GraphNode>()
 // Layouting State
 const layoutingHandlePos = vec2.create()
 const loadedPositions = new Map<string, { x: number, y: number }>()
+let ignoreNextTracking = false
 
 let animFrameId: number | null = null
 let saveIntervalId: number | null = null
@@ -404,6 +405,7 @@ const onNodeUp = async (node: GraphNode) => {
 
 const onNodeClick = (node: GraphNode) => {
   if (!mapStore.cursorMoved) {
+    ignoreNextTracking = true
     uiStore.navigateToAim(node.id)
     uiStore.deselectLink()
   }
@@ -708,6 +710,10 @@ onUnmounted(() => {
 watch(() => dataStore.graphData, updateGraphData, { deep: true })
 
 watch(() => uiStore.getCurrentAim(), (newAim) => {
+  if (ignoreNextTracking) {
+    ignoreNextTracking = false
+    return
+  }
   if (newAim) {
     mapStore.isTracking = true
   }
@@ -728,6 +734,18 @@ const selectedLinkData = computed(() => {
     l.source.id === uiStore.selectedLink!.parentId && 
     l.target.id === uiStore.selectedLink!.childId
   )
+})
+
+const selectedLinkVisuals = computed(() => {
+  trigger.value // dependency for animation
+  const link = selectedLinkData.value
+  if (!link) return null
+  return {
+    sourcePos: [link.source.pos[0], link.source.pos[1]] as vec2.T,
+    targetPos: [link.target.pos[0], link.target.pos[1]] as vec2.T,
+    sourceR: link.source.r || 25,
+    targetR: link.target.r || 25
+  }
 })
 
 const renderNodes = computed(() => { 
@@ -759,11 +777,6 @@ const renderLinks = computed(() => {
             :link="link" 
           />
         </g>
-        <GraphFlowHandle 
-          v-if="selectedLinkData" 
-          :link="selectedLinkData"
-        />
-        <GraphConnector />
         <g class="nodes">
           <GraphNodeComponent 
             v-for="node in renderNodes" 
@@ -776,6 +789,14 @@ const renderLinks = computed(() => {
             @click.stop="onNodeClick(node as any)"
           />
         </g>
+        <GraphFlowHandle 
+          v-if="selectedLinkData && selectedLinkVisuals" 
+          :link="selectedLinkData"
+          :source-pos="selectedLinkVisuals.sourcePos"
+          :target-pos="selectedLinkVisuals.targetPos"
+          :source-r="selectedLinkVisuals.sourceR"
+          :target-r="selectedLinkVisuals.targetR"
+        />
       </g>
     </svg>
   </div>
