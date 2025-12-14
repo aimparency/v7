@@ -40,10 +40,11 @@ const label = computed(() => {
       class="node-circle"
     />
     <text 
-      dy="30" 
+      dy="0" 
+      alignment-baseline="middle"
       text-anchor="middle" 
-      fill="#ccc" 
-      font-size="10" 
+      fill="#fff" 
+      font-size="12" 
       class="node-label"
     >
       {{ label }}
@@ -74,6 +75,5 @@ const label = computed(() => {
 .node-label {
   pointer-events: none;
   user-select: none;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
 </style>

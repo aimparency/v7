@@ -201,6 +201,7 @@ const onMouseDown = (e: MouseEvent) => {
 const onMouseUp = () => endWhatever()
 const onWheel = (e: WheelEvent) => {
   e.preventDefault()
+  mapStore.isTracking = false
   const mouse = getLocalPos(e.clientX, e.clientY)
   const f = Math.pow(1.1, -e.deltaY / 150)
   mapStore.zoom(f, mouse)
@@ -366,7 +367,18 @@ const reusable = {
 
 const hShift = vec2.create()
 
+let lastTime = 0
+
 const layout = () => {
+  const now = performance.now()
+  let dt = (now - lastTime) / 1000
+  lastTime = now
+  
+  if (dt > 0.1) dt = 0.1 // Cap dt to avoid explosion
+  
+  // Normalize forces to 60fps
+  const fpsFactor = dt * 60
+  
   if (mapStore.anim.update) {
     mapStore.anim.update()
   }
@@ -387,8 +399,8 @@ const layout = () => {
          
          // Threshold to stop micro-movements
          if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
-             mapStore.offset[0] += dx * 0.1
-             mapStore.offset[1] += dy * 0.1
+             mapStore.offset[0] += dx * 0.1 * fpsFactor
+             mapStore.offset[1] += dy * 0.1 * fpsFactor
          }
          
          // Target scale? Keep current or default?
@@ -427,6 +439,8 @@ const layout = () => {
       const delta = vec2.create()
       const targetPos = vec2.create()
       const targetShift = vec2.create()
+      
+      const flowForce = FLOW_FORCE * fpsFactor
 
       for (const link of currentLinks) {
         const from = link.source
@@ -450,7 +464,7 @@ const layout = () => {
 
       for (let i = 0; i < count; i++) {
         const n = currentNodes[i]!
-        vec2.scale(n.shift, n.shift, FLOW_FORCE)
+        vec2.scale(n.shift, n.shift, flowForce)
       }
 
       // 3. Collisions
@@ -488,10 +502,11 @@ const layout = () => {
 
       // 4. Global Force & Apply
       const viewMinShift = 0.1 * (LOGICAL_HALF_SIDE / mapStore.halfSide) / mapStore.scale
+      const globalForce = GLOBAL_FORCE * fpsFactor
 
       for (let i = 0; i < count; i++) {
         const n = currentNodes[i]!
-        vec2.scale(n.shift, n.shift, GLOBAL_FORCE)
+        vec2.scale(n.shift, n.shift, globalForce)
         
         const minShift = Math.max(viewMinShift, n.r * 0.001)
 
@@ -606,6 +621,7 @@ onMounted(async () => {
       svgRef.value.addEventListener("touchcancel", onTouchEnd)
   }
   updateHalfSide()
+  lastTime = performance.now()
   layout()
   
   if (uiStore.projectPath) {
@@ -640,7 +656,10 @@ watch(() => uiStore.getCurrentAim(), (newAim) => {
 const trigger = ref(0)
 const transform = computed(() => {
     trigger.value // dependency
-    return `scale(${mapStore.scale}) translate(${mapStore.offset[0]}, ${mapStore.offset[1]})`
+    const cx = mapStore.clientOffset[0] + mapStore.halfSide
+    const cy = mapStore.clientOffset[1] + mapStore.halfSide
+    const s = mapStore.scale * mapStore.halfSide / LOGICAL_HALF_SIDE
+    return `translate(${cx}, ${cy}) scale(${s}) translate(${mapStore.offset[0]}, ${mapStore.offset[1]})`
 })
 
 const renderNodes = computed(() => { 

@@ -3,7 +3,16 @@
   "text": "put the aim search results in add aim directly beneath aim text and bfore description.",
   "description": "Reason, it's faster to tab there when indending to find an existing aim and otherwise it's good to be reminded that we're about to create a new aim",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "00247a1a-2104-4a17-88ec-d08958e22173",
+      "relativePosition": [
+        1.3731946049430346,
+        2.0890994655485753
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
