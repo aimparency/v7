@@ -8,6 +8,7 @@ import GraphLinkComponent from '../components/GraphLink.vue'
 import GraphConnector from '../components/GraphConnector.vue'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
 import * as vec2 from '../utils/vec2'
+import { loadAllPositions, savePositions } from '../utils/db'
 
 // Naive implementation to avoid 'box-intersect' dependency issues in browser (Buffer undefined)
 function naiveBoxIntersect(boxes: number[][]) {
@@ -56,6 +57,7 @@ const nodeMap = new Map<string, GraphNode>()
 
 // Layouting State
 const layoutingHandlePos = vec2.create()
+const loadedPositions = new Map<string, { x: number, y: number }>()
 
 let animFrameId: number | null = null
 let saveIntervalId: number | null = null
@@ -595,13 +597,14 @@ const updateGraphData = () => {
     const radius = Math.sqrt((val / (avgValue || 1)) + 0.1) * 150
 
     if (!existing) {
+      const loaded = loadedPositions.get(raw.id)
       existing = {
         id: raw.id,
         text: raw.text,
         status: raw.status,
         r: radius,
         value: val,
-        pos: [Math.random() * 100 - 50, Math.random() * 100 - 50],
+        pos: loaded ? [loaded.x, loaded.y] : [Math.random() * 100 - 50, Math.random() * 100 - 50],
         shift: [0, 0],
         color: undefined
       }
@@ -657,6 +660,29 @@ onMounted(async () => {
   updateHalfSide()
   layout()
   
+  // Load positions
+  try {
+    const positions = await loadAllPositions()
+    positions.forEach((v, k) => loadedPositions.set(k, v))
+    // Apply to existing
+    for (const [id, pos] of positions) {
+      const node = nodeMap.get(id)
+      if (node) {
+        node.pos = [pos.x, pos.y]
+      }
+    }
+  } catch (e) {
+    console.error("Failed to load positions", e)
+  }
+
+  // Save interval
+  saveIntervalId = setInterval(async () => {
+    if (nodes.value.length > 0) {
+        const toSave = nodes.value.map(n => ({ id: n.id, x: n.pos[0], y: n.pos[1] }))
+        await savePositions(toSave)
+    }
+  }, 2000) as any // Cast to any to avoid Node vs Browser timer type issues
+  
   if (uiStore.projectPath) {
     dataStore.loadAllAims(uiStore.projectPath)
   }
@@ -665,6 +691,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (animFrameId) cancelAnimationFrame(animFrameId)
+  if (saveIntervalId) clearInterval(saveIntervalId)
   window.removeEventListener('resize', updateHalfSide)
   if (svgRef.value) {
       svgRef.value.removeEventListener("mousemove", onMouseMove)
