@@ -1,0 +1,27 @@
+{
+  "id": "58adf3ac-acf1-41d3-8200-8cae1ab97f5d",
+  "text": "sort aims by highest priority",
+  "description": "useful in combination with limit",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "e3ae6eb2-f4c2-4227-b91a-82e2991ebed8",
+      "relativePosition": [
+        -0.5314181410538062,
+        2.4428660952575596
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "f545d42a-0b43-4587-97f2-67eede424f99"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765820113643
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

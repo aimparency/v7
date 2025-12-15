@@ -1,0 +1,18 @@
+{
+  "id": "34a64bbf-69ed-468b-8361-a8720bc6c469",
+  "text": "add extensive MCP testing",
+  "description": "test cases that cover all tools and ressources",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "dec42d50-03ca-4dce-9e1f-31f6c20a7b52"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765819705750
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

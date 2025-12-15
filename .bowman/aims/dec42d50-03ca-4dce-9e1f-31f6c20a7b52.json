@@ -1,0 +1,35 @@
+{
+  "id": "dec42d50-03ca-4dce-9e1f-31f6c20a7b52",
+  "text": "resolve overlap between mcp resources and tool handlers",
+  "description": "keep the more verbose description. we basically need to explain the whole concept of aimparency in the tool explanations.\nEverything that returns ressources is rather a ressource, i would say. everything with a side effect should be a tool (changes, creations, etc.).",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "a99a3d2c-9aef-475a-b13b-b88ac23cfa03",
+      "relativePosition": [
+        0.6475129404975344,
+        -2.4146898334751477
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "34a64bbf-69ed-468b-8361-a8720bc6c469",
+      "relativePosition": [
+        -2.3485871749013163,
+        0.8568186983773486
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765819643477
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

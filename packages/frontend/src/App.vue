@@ -16,8 +16,13 @@ const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 // Local UI state
-const showWatchdog = ref(false)
+const showWatchdog = ref(localStorage.getItem('aimparency-show-watchdog') === 'true')
 const showConsistencyModal = ref(false)
+
+// Persist watchdog visibility
+watch(showWatchdog, (val) => {
+  localStorage.setItem('aimparency-show-watchdog', String(val))
+})
 
 // Template refs
 const projectPathInput = ref('')

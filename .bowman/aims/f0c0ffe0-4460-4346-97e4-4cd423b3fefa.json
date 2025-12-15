@@ -1,0 +1,18 @@
+{
+  "id": "f0c0ffe0-4460-4346-97e4-4cd423b3fefa",
+  "text": "add a \"consolidate\" GetPromptRequestSchema that helps looking at all aims and finds duplicates or creates connections where aims are related",
+  "description": "can be executed multiple times. Does not reduce information. Just consolidates and connects aims.",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765820041808
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

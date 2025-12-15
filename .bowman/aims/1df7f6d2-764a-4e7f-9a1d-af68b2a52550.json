@@ -1,0 +1,18 @@
+{
+  "id": "1df7f6d2-764a-4e7f-9a1d-af68b2a52550",
+  "text": "handle connections to archived aims",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "802342cf-de8f-4614-8915-74e7a0800980"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765819027599
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

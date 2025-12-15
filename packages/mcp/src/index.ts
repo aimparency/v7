@@ -28,7 +28,9 @@ const trpc = createTRPCClient<AppRouter>({
 // Constants
 const AIM_STATES = ["open", "done", "cancelled", "partially", "failed"];
 const AIM_STATES_DESCRIPTION = `Current status of the aim. Options: ${AIM_STATES.join(", ")}`;
-const PROJECT_PATH_DESCRIPTION = "Absolute path to the project directory. For a repository it defaults to /path/to/repo/.bowman. So be careful to append /.bowman to the repo directory if no otherwise specified";
+
+const SUBDIR_NAME = ".bowman"
+const PROJECT_PATH_DESCRIPTION = `Absolute path to the project directory. For a repository it defaults to /path/to/repo/${SUBDIR_NAME}. So be careful to append /${SUBDIR_NAME} to the repo directory if no otherwise specified`
 
 const PROJECT_PATH_TOOL_PROPERTY = {
   type: "string",
@@ -71,68 +73,71 @@ function parseResourceUri(uri: string): { type: string; id?: string; subpath?: s
   };
 }
 
+const PROJECT_PATH_PARAMETER = `projectPath=/abs/path/${SUBDIR_NAME}`
+
 // Register resource handlers
 server.setRequestHandler(ListResourcesRequestSchema, async () => {
   return {
     resources: [
       {
-        uri: "aim://{uuid}?projectPath=/absolute/path",
+        uri: `aim://{uuid}?${PROJECT_PATH_PARAMETER}`,
         name: "Single aim",
-        description: "Get a specific aim's text, status, and relationships. Replace {uuid} with actual aim ID.",
+        description: "Get a specific aim's text, status, and relationships. Replace {uuid} with actual aim ID. It's advised to know an aims supported aims recursively to fully understand it. Aims can have different states",
         mimeType: "application/json",
       },
       {
-        uri: "aim://{uuid}/supporting-connections?projectPath=/absolute/path",
-        name: "Supporting connections (Children)",
-        description: "Get all aims that support this aim (dependencies/prerequisites)",
-        mimeType: "application/json",
+        uri: `aim://{uuid}/supporting-connections?${PROJECT_PATH_PARAMETER}`,
+        name: `Supporting connections (Children)`,
+        description: `Get all aims that support this aim (dependencies/prerequisites)`,
+        mimeType: `application/json`,
       },
       {
-        uri: "aim://{uuid}/supported-aims?projectPath=/absolute/path",
-        name: "Supported aims (Parents)",
-        description: "Get all aims that this aim supports (aims that depend on this aim)",
-        mimeType: "application/json",
+        uri: `aim://{uuid}/supported-aims?${PROJECT_PATH_PARAMETER}`,
+        name: `Supported aims (Parents)`,
+        description: `Get all aims that this aim supports (aims that depend on this aim)`,
+        mimeType: `application/json`,
       },
       {
-        uri: "aims://all?projectPath=/absolute/path",
-        name: "All aims",
-        description: "List all aims in the project with their full details",
-        mimeType: "application/json",
+        uri: `aims://all?${PROJECT_PATH_PARAMETER}`,
+        name: `All aims`,
+        description: `List all aims in the project with their full details`,
+        mimeType: `application/json`,
       },
       {
-        uri: "phase://{uuid}?projectPath=/absolute/path",
-        name: "Single phase",
-        description: "Get a phase's name, date range, parent, and committed aims. Replace {uuid} with actual phase ID.",
-        mimeType: "application/json",
+        uri: `phase://{uuid}?${PROJECT_PATH_PARAMETER}`,
+        name: `Single phase`,
+        description: `Get a phase's name, date range, parent, and committed aims. Replace {uuid} with actual phase ID. A phase is a temporal window in which aims can be focused. Phases can have subphases, think YEAR>MONTHS>WEEKS for example. Phases help to focus on a set of aims in a given frame of time. Phases on the same level (siblings) are rather sequential.`,
+        mimeType: `application/json`,
       },
       {
-        uri: "phase://{uuid}/aims?projectPath=/absolute/path",
-        name: "Phase aims",
-        description: "Get full details of all aims committed to this phase",
-        mimeType: "application/json",
+        uri: `phase://{uuid}/aims?${PROJECT_PATH_PARAMETER}`,
+        name: `Phase aims`,
+        description: `Get full details of all aims committed to this phase`,
+        mimeType: `application/json`,
       },
       {
-        uri: "phases://all?projectPath=/absolute/path",
-        name: "All phases",
-        description: "List all phases in the project (root and sub-phases)",
-        mimeType: "application/json",
+        uri: `phases://all?${PROJECT_PATH_PARAMETER}`,
+        name: `All phases`,
+        description: `List all phases in the project (root and sub-phases)`,
+        mimeType: `application/json`,
       },
       {
-        uri: "phases://{parent-uuid}/children?projectPath=/absolute/path",
-        name: "Sub-phases",
-        description: "List all child phases of a specific parent phase",
-        mimeType: "application/json",
+        uri: `phases://{parent-uuid}/children?${PROJECT_PATH_PARAMETER}`,
+        name: `Sub-phases`,
+        description: `List all child phases of a specific parent phase`,
+        mimeType: `application/json`,
       },
       {
-        uri: "project://meta?projectPath=/absolute/path",
-        name: "Project info",
-        description: "Get project name and color",
-        mimeType: "application/json",
+        uri: `project://meta?${PROJECT_PATH_PARAMETER}`,
+        name: `Project info`,
+        description: `Get project name and color`,
+        mimeType: `application/json`,
       },
     ],
   };
 });
 
+const PROJECT_PATH_MISSING_ERROR = `projectPath query parameter is required (e.g., aim://uuid?projectPath=/path/to/project/${SUBDIR_NAME})`
 server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
   const { uri } = request.params;
   const parsed = parseResourceUri(uri);
@@ -143,7 +148,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const projectPath = url.searchParams.get("projectPath");
 
     if (!projectPath) {
-      throw new Error("projectPath query parameter is required (e.g., aim://uuid?projectPath=/path/to/project)");
+      throw new Error(PROJECT_PATH_MISSING_ERROR);
     }
 
     if (parsed.type === "aim") {
@@ -303,7 +308,7 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
         {
           uri,
           mimeType: "text/plain",
-          text: `Error reading resource: ${errorMessage}\n\nMake sure to include projectPath as a query parameter, e.g.:\naim://uuid?projectPath=/path/to/project`,
+          text: `Error reading resource: ${errorMessage}\n\nMake sure to include projectPath as a query parameter, e.g.:\naim://uuid?projectPath=/abs/path/to/project/${SUBDIR_NAME}`,
         },
       ],
     };

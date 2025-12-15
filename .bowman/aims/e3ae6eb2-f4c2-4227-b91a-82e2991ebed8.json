@@ -1,0 +1,18 @@
+{
+  "id": "e3ae6eb2-f4c2-4227-b91a-82e2991ebed8",
+  "text": "value calculation in backend, cache in sqlitedb",
+  "description": "put the value calculation into shared. \nIt has to be the same code for ui and server",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "58adf3ac-acf1-41d3-8200-8cae1ab97f5d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765820192747
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

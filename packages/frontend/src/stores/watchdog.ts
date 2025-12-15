@@ -14,6 +14,35 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   // Terminal buffers
   const workerOutput = ref('')
   const watchdogOutput = ref('')
+  
+  let keepaliveTimer: number | NodeJS.Timeout | null = null
+
+  function startKeepalive() {
+    stopKeepalive()
+    const uiStore = useUIStore()
+    
+    // Initial call
+    if (uiStore.projectPath) {
+        trpc.watchdog.keepalive.mutate({ projectPath: uiStore.projectPath }).catch(console.error)
+    }
+
+    keepaliveTimer = setInterval(async () => {
+       if (uiStore.projectPath) {
+         try {
+           await trpc.watchdog.keepalive.mutate({ projectPath: uiStore.projectPath });
+         } catch (e) {
+           console.warn("Watchdog keepalive failed", e);
+         }
+       }
+    }, 30 * 1000); // 30s
+  }
+
+  function stopKeepalive() {
+    if (keepaliveTimer) {
+        clearInterval(keepaliveTimer)
+        keepaliveTimer = null
+    }
+  }
 
   async function connect() {
     if (socket.value) return
@@ -28,6 +57,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         // Lazy spawn via backend
         const { port } = await trpc.watchdog.start.mutate({ projectPath: uiStore.projectPath })
         
+        startKeepalive() // Start keepalive loop
+
         const watchdogUrl = `http://localhost:${port}` 
 
         socket.value = io(watchdogUrl, {
@@ -101,6 +132,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   async function relaunch() {
     const uiStore = useUIStore()
     if (!uiStore.projectPath) return
+
+    stopKeepalive()
 
     if (socket.value) {
         socket.value.disconnect()

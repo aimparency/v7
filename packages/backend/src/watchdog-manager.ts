@@ -10,9 +10,12 @@ interface WatchdogInstance {
   process: ChildProcess;
   port: number;
   projectPath: string;
+  lastKeepalive: number;
+  checkInterval: NodeJS.Timeout;
 }
 
 const instances = new Map<string, WatchdogInstance>();
+const KEEPALIVE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
 // Utility to find a free port
 function findAvailablePort(startPort: number): Promise<number> {
@@ -40,9 +43,12 @@ export const WatchdogManager = {
     const existing = instances.get(projectPath);
     if (existing) {
       if (existing.process.exitCode === null) {
+        // Update keepalive since we are requesting it
+        existing.lastKeepalive = Date.now();
         return { port: existing.port, pid: existing.process.pid! };
       } else {
         // Clean up dead process
+        clearInterval(existing.checkInterval);
         instances.delete(projectPath);
       }
     }
@@ -70,21 +76,46 @@ export const WatchdogManager = {
     console.log(`[WatchdogManager] Spawning watchdog on port ${port} for ${projectPath}`);
     console.log(`[WatchdogManager] Script: ${watchdogScript}`);
 
-    const child = spawn('node', [watchdogScript, '--port', String(port), projectPath], {
+    // Ensure we pass the PROJECT ROOT to the watchdog, not the .bowman dir
+    // The watchdog script uses this path as the CWD for the worker (Gemini agent).
+    // Gemini agent expects to run in the project root.
+    const projectRoot = projectPath.endsWith('.bowman') || projectPath.endsWith('.bowman/')
+        ? path.dirname(projectPath) 
+        : projectPath;
+
+    const child = spawn('node', [watchdogScript, '--port', String(port), projectRoot], {
       cwd: rootDir,
       stdio: 'inherit', // Pipe logs to main backend logs for now
       env: { ...process.env }
     });
 
+    const checkInterval = setInterval(() => {
+      const instance = instances.get(projectPath);
+      if (instance) {
+        if (Date.now() - instance.lastKeepalive > KEEPALIVE_TIMEOUT) {
+          console.log(`[WatchdogManager] Timeout for ${projectPath}, killing process.`);
+          instance.process.kill();
+          clearInterval(instance.checkInterval);
+          instances.delete(projectPath);
+        }
+      } else {
+        clearInterval(checkInterval);
+      }
+    }, 30 * 1000); // Check every 30 seconds
+
     instances.set(projectPath, {
       process: child,
       port,
-      projectPath
+      projectPath,
+      lastKeepalive: Date.now(),
+      checkInterval
     });
 
     child.on('exit', (code) => {
       console.log(`[WatchdogManager] Watchdog for ${projectPath} exited with code ${code}`);
-      if (instances.get(projectPath)?.process === child) {
+      const instance = instances.get(projectPath);
+      if (instance?.process === child) {
+        clearInterval(instance.checkInterval);
         instances.delete(projectPath);
       }
     });
@@ -96,7 +127,17 @@ export const WatchdogManager = {
     const instance = instances.get(projectPath);
     if (instance && instance.process.exitCode === null) {
       instance.process.kill();
+      clearInterval(instance.checkInterval);
       instances.delete(projectPath);
+      return true;
+    }
+    return false;
+  },
+
+  keepalive(projectPath: string): boolean {
+    const instance = instances.get(projectPath);
+    if (instance && instance.process.exitCode === null) {
+      instance.lastKeepalive = Date.now();
       return true;
     }
     return false;
@@ -105,6 +146,10 @@ export const WatchdogManager = {
   getStatus(projectPath: string): { running: boolean, port?: number } {
     const instance = instances.get(projectPath);
     if (instance && instance.process.exitCode === null) {
+      // Status check also acts as a keepalive? 
+      // User said "frontend should send keepalive every 30s".
+      // Let's assume explicit keepalive is preferred, but status might imply interest.
+      // For now, let's keep getStatus read-only regarding keepalive to avoid accidental keeps.
       return { running: true, port: instance.port };
     }
     return { running: false };

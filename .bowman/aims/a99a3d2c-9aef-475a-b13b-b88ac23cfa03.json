@@ -1,0 +1,18 @@
+{
+  "id": "a99a3d2c-9aef-475a-b13b-b88ac23cfa03",
+  "text": "split mcp into more manageable files",
+  "description": "ts",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "dec42d50-03ca-4dce-9e1f-31f6c20a7b52"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765819671933
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

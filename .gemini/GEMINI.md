@@ -17,4 +17,8 @@
 4. Context Protocol: On startup, I will analyze './subdev' by recursively inspecting 'structure.md' files to understand the project layout, and also read 'structure.md' files of the 3 most recently modified project folders within './subdev' for current active context. I look at the direcory contents (ls) of subdev and the 3 most recent subdirs. 
 - if you need to look at files outside the project dir, use system tools ls and cp to bring them into a temporary folder tmpread inside the project dir so that you can examine them.
 - prefer working test driven: for any feature, define a test case and then implement the functionality. This way, any feature will be protected against regression. 
-
+- The user is interested in using financial markets as an RL training environment for the agent (inspired by Nof1/AlphaZero), viewing capital allocation as a convergence of intelligence and truth.
+- User prefers using 'gemini' CLI one-shot commands over paid APIs (like OpenAI) to utilize existing subscriptions.
+- Felix has a brother he was competitive with and grew apart from; he admires the symbiotic, non-competitive dynamic of Billie Eilish and Finneas.
+- The user's name is Felix.
+- The Watchdog Broker (in backend) manages watchdog processes per project path (normalized to .bowman), reusing sessions and enforcing a 5-minute idle timeout reset by frontend keepalives (every 30s).

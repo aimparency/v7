@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const AimStatusSchema = z.object({
-  state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']),
+  state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear']),
   comment: z.string(),
   date: z.number() // Date.now() timestamp
 });

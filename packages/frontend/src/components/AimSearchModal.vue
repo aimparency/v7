@@ -463,12 +463,12 @@ input {
 
 .aim-status.open { color: var(--status-open); }
 .aim-status.done { color: var(--status-done); }
-.aim-status.cancelled { color: var(--status-cancelled); }
-.aim-status.partially { color: var(--status-partially); }
-.aim-status.failed { color: var(--status-failed); }
+  .aim-status.cancelled { color: var(--status-cancelled); }
+  .aim-status.partially { color: var(--status-partially); }
+  .aim-status.failed { color: var(--status-failed); }
+  .aim-status.unclear { color: var(--status-unclear); }
 
-.no-results {
-  padding: 20px;
+  .no-results {  padding: 20px;
   text-align: center;
   color: #888;
 }

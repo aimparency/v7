@@ -1,0 +1,18 @@
+{
+  "id": "5619ff4e-999d-4908-a2d6-09cb730bfa41",
+  "text": "cycles should not be reported as inconsistencies in the consistency check - they are perfectly fine",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765816103537
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

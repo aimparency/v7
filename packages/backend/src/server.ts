@@ -1075,19 +1075,29 @@ const appRouter = t.router({
     start: delayedProcedure
       .input(z.object({ projectPath: z.string() }))
       .mutation(async ({ input }) => {
-         const result = await WatchdogManager.start(input.projectPath);
+         const p = normalizeProjectPath(input.projectPath);
+         const result = await WatchdogManager.start(p);
          return result;
       }),
     stop: delayedProcedure
       .input(z.object({ projectPath: z.string() }))
       .mutation(async ({ input }) => {
-         const success = WatchdogManager.stop(input.projectPath);
+         const p = normalizeProjectPath(input.projectPath);
+         const success = WatchdogManager.stop(p);
          return { success };
       }),
     getStatus: delayedProcedure
       .input(z.object({ projectPath: z.string() }))
       .query(async ({ input }) => {
-         return WatchdogManager.getStatus(input.projectPath);
+         const p = normalizeProjectPath(input.projectPath);
+         return WatchdogManager.getStatus(p);
+      }),
+    keepalive: delayedProcedure
+      .input(z.object({ projectPath: z.string() }))
+      .mutation(async ({ input }) => {
+         const p = normalizeProjectPath(input.projectPath);
+         const success = WatchdogManager.keepalive(p);
+         return { success };
       })
   }),
 

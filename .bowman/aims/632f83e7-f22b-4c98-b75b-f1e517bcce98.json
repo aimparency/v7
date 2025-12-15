@@ -1,0 +1,18 @@
+{
+  "id": "632f83e7-f22b-4c98-b75b-f1e517bcce98",
+  "text": "prevent shift + tab on first input field of add/edit aim and phase modal",
+  "description": "focus should stay inside modal",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765819080453
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

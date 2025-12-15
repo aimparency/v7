@@ -1,0 +1,18 @@
+{
+  "id": "49f7f19a-9513-476f-87e8-b53e1e8ea7a4",
+  "text": "option \"search archived aims\" for aim search",
+  "description": "archived search results have a different color pale lila and it \"unarchive: \" postfix. Clicking them unarchives them and then selects them, wherever they might appear.",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "802342cf-de8f-4614-8915-74e7a0800980"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765819016565
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

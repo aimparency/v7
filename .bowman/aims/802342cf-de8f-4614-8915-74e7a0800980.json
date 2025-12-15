@@ -1,0 +1,35 @@
+{
+  "id": "802342cf-de8f-4614-8915-74e7a0800980",
+  "text": "specific 'archived' state of aims that makes them disappear from UI and search and everything. moves them into a separate folder .bowman/archived-aims",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "49f7f19a-9513-476f-87e8-b53e1e8ea7a4",
+      "relativePosition": [
+        2.4905118995673834,
+        -0.2176016500701778
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "1df7f6d2-764a-4e7f-9a1d-af68b2a52550",
+      "relativePosition": [
+        2.410658953289492,
+        -0.6623619938713352
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765818882649
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

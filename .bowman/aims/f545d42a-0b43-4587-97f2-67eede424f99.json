@@ -1,0 +1,27 @@
+{
+  "id": "f545d42a-0b43-4587-97f2-67eede424f99",
+  "text": "value based search tools",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "58adf3ac-acf1-41d3-8200-8cae1ab97f5d",
+      "relativePosition": [
+        0.7725889103765403,
+        -2.3776262060221303
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765820049398
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

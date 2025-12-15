@@ -1,0 +1,18 @@
+{
+  "id": "b3b7e429-581e-4642-b9ee-d3aaf89213c3",
+  "text": "project meta settings",
+  "description": ".bowman/meta.json\nthings like aim states. \nInitialize with defaults on absence or initialization.",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "36794f88-d947-45bb-a6b6-5f8da034ed0f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765817835280
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

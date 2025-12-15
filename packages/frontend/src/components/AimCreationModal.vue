@@ -293,21 +293,21 @@ onMounted(async () => {
         <div v-if="uiStore.aimModalMode === 'edit'">
           <div class="form-group">
             <label>Status</label>
-            <select 
-              ref="statusSelect"
-              v-model="selectedStatus" 
-              class="status-select" 
-              @keydown="handleInputKeydown"
-            >
-              <option value="open">Open</option>
-              <option value="done">Done</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="partially">Partially</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Status Comment (optional)</label>
+                      <select
+                        ref="statusSelect"
+                        v-model="selectedStatus"
+                        class="status-select"
+                        @keydown="handleInputKeydown"
+                      >
+                        <option value="open">Open</option>
+                        <option value="done">Done</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="partially">Partially</option>
+                        <option value="failed">Failed</option>
+                        <option value="unclear">Unclear</option>
+                      </select>
+                    </div>
+                    <div class="form-group">            <label>Status Comment (optional)</label>
             <input
               v-model="statusComment"
               type="text"
@@ -529,6 +529,7 @@ onMounted(async () => {
       &.cancelled { color: var(--status-cancelled); }
       &.partially { color: var(--status-partially); }
       &.failed { color: var(--status-failed); }
+      &.unclear { color: var(--status-unclear); }
     }
   }
   

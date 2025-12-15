@@ -20,6 +20,7 @@ const fillColor = computed(() => {
     case 'cancelled': return '#ff0000'
     case 'failed': return '#ff6666'
     case 'partially': return '#aaaa00'
+    case 'unclear': return '#ffa500'
     default: return '#555'
   }
 })
