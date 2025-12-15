@@ -958,6 +958,10 @@ export const useUIStore = defineStore('ui', {
       this.selectedLink = null
     },
 
+    deselectAim() {
+      this.navigatingAims = false
+    },
+
     async calculateAimPaths(aimId: string): Promise<AimPath[]> {
       const paths: AimPath[] = []
       const visited = new Set<string>()

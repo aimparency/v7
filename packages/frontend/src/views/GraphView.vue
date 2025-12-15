@@ -419,6 +419,13 @@ const onNodeClick = async (node: GraphNode) => {
   }
 }
 
+const onBackgroundClick = () => {
+  if (!mapStore.cursorMoved) {
+    uiStore.deselectLink()
+    uiStore.deselectAim()
+  }
+}
+
 // --- Layout ---
 const reusable = {
   r: [] as number[],
@@ -777,7 +784,7 @@ const renderLinks = computed(() => {
 
 <template>
   <div class="graph-view">
-    <svg ref="svgRef" width="100%" height="100%">
+    <svg ref="svgRef" width="100%" height="100%" @click="onBackgroundClick">
       <g :transform="transform">
         <g class="links">
           <GraphLinkComponent 
@@ -792,8 +799,8 @@ const renderLinks = computed(() => {
             :key="node.id" 
             :node="node"
             :selected="node.selected"
-            @mousedown.stop="onNodeDown($event, node as any)"
-            @touchstart.stop="onNodeDown($event, node as any)"
+            @mousedown="onNodeDown($event, node as any)"
+            @touchstart="onNodeDown($event, node as any)"
             @mouseup="onNodeUp(node as any)"
             @touchend="onNodeUp(node as any)"
             @click.stop="onNodeClick(node as any)"
