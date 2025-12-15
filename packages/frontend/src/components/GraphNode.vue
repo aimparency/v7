@@ -24,10 +24,30 @@ const fillColor = computed(() => {
   }
 })
 
-const label = computed(() => {
-  return props.node.text.length > 20 
-    ? props.node.text.substring(0, 18) + '...' 
-    : props.node.text
+const titleLines = computed(() => {
+  const words = props.node.text.split(' ')
+  const lines: string[] = []
+  let currentLine = words[0] || ''
+  
+  // Heuristic: 12 chars per line
+  const maxChars = 12
+  
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i]
+    if (currentLine.length + 1 + word.length <= maxChars) {
+      currentLine += ' ' + word
+    } else {
+      lines.push(currentLine)
+      currentLine = word
+    }
+  }
+  lines.push(currentLine)
+  
+  if (lines.length > 4) {
+    lines.length = 3
+    lines[2] += '...'
+  }
+  return lines
 })
 </script>
 
@@ -43,14 +63,20 @@ const label = computed(() => {
         :class="{ selected }"
       />
       <text 
-        dy="0" 
         dominant-baseline="central"
         text-anchor="middle" 
         fill="#fff" 
         font-size="0.25" 
         class="node-label"
       >
-        {{ label }}
+        <tspan 
+          v-for="(line, i) in titleLines" 
+          :key="i"
+          x="0"
+          :dy="i === 0 ? (-0.3 * (titleLines.length - 1) / 2) + 'em' : '1.2em'"
+        >
+          {{ line }}
+        </tspan>
       </text>
     </g>
   </g>

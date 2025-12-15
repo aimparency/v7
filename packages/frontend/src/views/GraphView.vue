@@ -370,7 +370,10 @@ import { trpc } from '../trpc'
 // ...
 
 // Node Interaction
-const onNodeDown = (e: MouseEvent | TouchEvent, node: GraphNode) => {
+const onNodeDown = (e: MouseEvent | TouchEvent, nodeCopy: GraphNode) => {
+  const node = nodeMap.get(nodeCopy.id)
+  if (!node) return
+
   const currentAim = uiStore.getCurrentAim()
   if (currentAim && currentAim.id === node.id) {
     // Already selected -> start connecting
@@ -564,7 +567,7 @@ const layout = () => {
         const minShift = Math.max(viewMinShift, n.r * 0.001)
 
         // Check dragging
-        if (n === mapStore.dragCandidate && mapStore.dragBeginning) {
+        if (n.id === mapStore.dragCandidate?.id && mapStore.dragBeginning) {
            // Do not move via physics
         } else {
            if (Math.abs(n.shift[0]) > minShift || Math.abs(n.shift[1]) > minShift) {

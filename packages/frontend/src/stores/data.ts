@@ -32,6 +32,10 @@ export const useDataStore = defineStore('data', {
     // Calculated values
     calculatedValues: new Map<string, number>(),
     totalIntrinsicValue: 0,
+
+    // Persistence Debounce
+    saveTimeout: null as any,
+    pendingUpdates: new Set<string>(),
   }),
 
   getters: {
@@ -383,7 +387,7 @@ export const useDataStore = defineStore('data', {
       const connectionIndex = connections.findIndex(c => c.aimId === childAimId)
       
       if (connectionIndex !== -1) {
-        // Create new array with updated connection
+        // 1. Update local state immediately
         const updatedConnections = [...connections]
         const oldConn = updatedConnections[connectionIndex]!
         updatedConnections[connectionIndex] = {
@@ -391,11 +395,35 @@ export const useDataStore = defineStore('data', {
           weight: oldConn.weight,
           relativePosition: newRelativePosition
         }
+        parent.supportingConnections = updatedConnections
+
+        // 2. Queue for persistence
+        this.pendingUpdates.add(parentId)
         
-        // Backend update
-        await this.updateAim(projectPath, parentId, {
-          supportingConnections: updatedConnections
-        })
+        // 3. Debounce save
+        if (this.saveTimeout) clearTimeout(this.saveTimeout)
+        
+        this.saveTimeout = setTimeout(() => {
+          this.flushUpdates(projectPath)
+        }, 5000)
+      }
+    },
+
+    async flushUpdates(projectPath: string) {
+      const updates = Array.from(this.pendingUpdates)
+      this.pendingUpdates.clear()
+      this.saveTimeout = null
+
+      try {
+        await Promise.all(updates.map(aimId => {
+          const aim = this.aims[aimId]
+          if (!aim) return Promise.resolve()
+          return this.updateAim(projectPath, aimId, {
+            supportingConnections: aim.supportingConnections
+          })
+        }))
+      } catch (e) {
+        console.error("Failed to flush updates", e)
       }
     },
     
