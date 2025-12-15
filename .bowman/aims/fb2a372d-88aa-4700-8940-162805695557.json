@@ -1,6 +1,6 @@
 {
-  "id": "75400fc5-783f-4c78-a439-45a1c5dca7b1",
-  "text": "watchdog area should be resizable (drag up and down)",
+  "id": "fb2a372d-88aa-4700-8940-162805695557",
+  "text": "MCP function \"get all aims from the the lowest current phase with priorities\"",
   "description": "",
   "tags": [],
   "supportingConnections": [],
@@ -9,9 +9,9 @@
     "4c960ff4-05ba-4ff8-b523-1a104d750503"
   ],
   "status": {
-    "state": "done",
+    "state": "open",
     "comment": "",
-    "date": 1765829536838
+    "date": 1765829364676
   },
   "intrinsicValue": 0,
   "loopWeight": 0

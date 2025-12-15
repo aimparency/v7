@@ -26,6 +26,7 @@ export const AimSchema = z.object({
   committedIn: z.array(z.string().uuid()),
   status: AimStatusSchema,
   intrinsicValue: z.number().default(0),
+  cost: z.number().default(0),
   loopWeight: z.number().default(0)
 });
 
