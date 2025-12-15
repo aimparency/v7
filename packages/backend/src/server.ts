@@ -1270,6 +1270,48 @@ const appRouter = t.router({
           }
         }
 
+        // Check 3: Cycle Detection
+        const visited = new Set<string>();
+        const recStack = new Set<string>();
+
+        // Limit recursion depth to avoid stack overflow on massive graphs (though unlikely with visited set)
+        const detectCycle = (aimId: string, path: string[]) => {
+            if (recStack.has(aimId)) {
+                // Cycle found
+                // Only report if it's a new cycle?
+                // The path shows the cycle.
+                // We format the error to show the relevant part of the path
+                const cycleStartIndex = path.indexOf(aimId);
+                const cyclePath = path.slice(cycleStartIndex);
+                errors.push(`Cycle detected: ${cyclePath.map(id => aimMap.get(id)?.text || id).join(' -> ')} -> ${aimMap.get(aimId)?.text || aimId}`);
+                return;
+            }
+            if (visited.has(aimId)) return;
+
+            visited.add(aimId);
+            recStack.add(aimId);
+            path.push(aimId);
+
+            const aim = aimMap.get(aimId);
+            if (aim && aim.supportingConnections) {
+                for (const conn of aim.supportingConnections) {
+                    // Only recurse if child exists (broken links handled by Check 2)
+                    if (aimMap.has(conn.aimId)) {
+                        detectCycle(conn.aimId, path);
+                    }
+                }
+            }
+
+            path.pop();
+            recStack.delete(aimId);
+        };
+
+        for (const aim of aims) {
+            if (!visited.has(aim.id)) {
+                detectCycle(aim.id, []);
+            }
+        }
+
         return { valid: errors.length === 0, errors };
       }),
 

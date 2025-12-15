@@ -11,11 +11,15 @@ const uiStore = useUIStore()
 const isFixing = ref(false)
 const fixesApplied = ref<string[]>([])
 
+const hasAutoFixableErrors = computed(() => {
+    return dataStore.consistencyErrors.some(e => !e.startsWith('Cycle detected'))
+})
+
 const handleFix = async () => {
   isFixing.value = true
   try {
     const fixes = await dataStore.fixConsistency(uiStore.projectPath)
-    if (fixes) {
+    if (fixes && fixes.length > 0) {
         fixesApplied.value = fixes
     }
   } catch (e) {
@@ -35,38 +39,41 @@ const close = () => {
     <div class="modal-content">
       <h2>Data Inconsistencies</h2>
       
-      <div v-if="fixesApplied.length > 0" class="success-message">
-        <h3>Fixed Successfully!</h3>
-        <ul>
-            <li v-for="(fix, i) in fixesApplied" :key="i">{{ fix }}</li>
-        </ul>
-        <div class="actions">
-            <button class="primary-btn" @click="close">Close</button>
+      <div class="scroll-area">
+        <!-- Fixes Report -->
+        <div v-if="fixesApplied.length > 0" class="section success">
+            <h3>✅ Fixed {{ fixesApplied.length }} Issues</h3>
+            <ul>
+                <li v-for="(fix, i) in fixesApplied" :key="i">{{ fix }}</li>
+            </ul>
+        </div>
+
+        <!-- Errors -->
+        <div v-if="dataStore.consistencyErrors.length > 0" class="section">
+            <h3 v-if="fixesApplied.length > 0" class="warning-header">⚠️ Remaining Issues (Manual Fix Required)</h3>
+            <div class="error-list">
+                <div v-for="(error, i) in dataStore.consistencyErrors" :key="i" class="error-item">
+                    <span class="icon">⚠️</span>
+                    <span class="text">{{ error }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="dataStore.consistencyErrors.length === 0 && fixesApplied.length === 0" class="no-errors">
+            No inconsistencies found.
         </div>
       </div>
 
-      <div v-else>
-          <div class="error-list">
-            <div v-for="(error, i) in dataStore.consistencyErrors" :key="i" class="error-item">
-                <span class="icon">⚠️</span>
-                <span class="text">{{ error }}</span>
-            </div>
-            <div v-if="dataStore.consistencyErrors.length === 0" class="no-errors">
-                No inconsistencies found.
-            </div>
-          </div>
-
-          <div class="actions">
-            <button class="secondary-btn" @click="close">Cancel</button>
-            <button 
-                v-if="dataStore.consistencyErrors.length > 0"
-                class="primary-btn danger" 
-                @click="handleFix" 
-                :disabled="isFixing"
-            >
-                {{ isFixing ? 'Fixing...' : 'Fix All Issues' }}
-            </button>
-          </div>
+      <div class="actions">
+        <button class="secondary-btn" @click="close">{{ dataStore.consistencyErrors.length === 0 ? 'Close' : 'Cancel' }}</button>
+        <button 
+            v-if="hasAutoFixableErrors"
+            class="primary-btn danger" 
+            @click="handleFix" 
+            :disabled="isFixing"
+        >
+            {{ isFixing ? 'Fixing...' : 'Fix Auto-fixable Issues' }}
+        </button>
       </div>
     </div>
   </div>
@@ -91,12 +98,19 @@ const close = () => {
   padding: 2rem;
   border-radius: 8px;
   width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
+  max-width: 700px;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   border: 1px solid #444;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 1.5rem;
+    padding-right: 0.5rem;
 }
 
 h2 {
@@ -107,13 +121,30 @@ h2 {
 
 h3 {
     margin-top: 0;
+    margin-bottom: 0.5rem;
     color: #4CAF50;
+    font-size: 1rem;
+}
+
+.warning-header {
+    color: #ffaa00;
+    margin-top: 1.5rem;
+}
+
+.section {
+    margin-bottom: 1rem;
+}
+
+.section.success ul {
+    background: #1a1a1a;
+    padding: 1rem 2rem;
+    border-radius: 4px;
+    color: #ccc;
+    font-size: 0.9rem;
+    margin: 0;
 }
 
 .error-list {
-  flex: 1;
-  overflow-y: auto;
-  margin-bottom: 2rem;
   background: #1a1a1a;
   border: 1px solid #333;
   border-radius: 4px;
@@ -144,20 +175,12 @@ h3 {
     padding: 1rem;
 }
 
-.success-message ul {
-    background: #1a1a1a;
-    padding: 1rem 2rem;
-    border-radius: 4px;
-    max-height: 300px;
-    overflow-y: auto;
-    color: #ccc;
-    font-size: 0.9rem;
-}
-
 .actions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+  border-top: 1px solid #333;
+  padding-top: 1rem;
 }
 
 button {

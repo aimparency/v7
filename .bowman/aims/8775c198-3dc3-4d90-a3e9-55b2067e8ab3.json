@@ -13,5 +13,7 @@
   "supportingConnections": [],
   "supportedAims": [
     "f2337265-ffc6-4ae8-a421-d6e4d5540210"
-  ]
+  ],
+  "intrinsicValue": 0,
+  "loopWeight": 1
 }

@@ -59,19 +59,6 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
       const childrenWeights = validConnections.reduce((sum: number, c: any) => sum + (c.weight || 1), 0);
       const totalWeight = loopWeight + childrenWeights;
 
-      if (parent.id === '8fe1aa4e-d89d-4bc0-b9ab-8fd412d24d3b' && iter === 0) {
-        console.log(`[ValueDebug] Aim ${parent.text} (${parent.id})`);
-        console.log(`- Parent Value: ${parentValue}`);
-        console.log(`- Loop Weight: ${loopWeight}`);
-        console.log(`- Total Children Weight: ${childrenWeights}`);
-        console.log(`- Total Weight: ${totalWeight}`);
-        console.log(`- Valid Connections: ${validConnections.length}`);
-        validConnections.forEach(c => console.log(`  -> ${c.aimId} (w=${c.weight})`));
-        const allConnections = parent.supportingConnections || [];
-        console.log(`- ALL Connections: ${allConnections.length}`);
-        allConnections.forEach(c => console.log(`  -> ${c.aimId} (w=${c.weight}) [Exists: ${aimMap.has(c.aimId)}]`));
-      }
-
       if (totalWeight > 0) {
         // Distribute to Self (Loop)
         if (loopWeight > 0) {
@@ -90,6 +77,11 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
             }
           }
         }
+      } else {
+        // Special case: Total weight 0 (Loop=0, Children=0)
+        // Treat as 100% retention to prevent value destruction at leafs
+        const flow = parentValue * 1.0;
+        nextValues.set(parent.id, (nextValues.get(parent.id) || 0) + flow);
       }
     }
 

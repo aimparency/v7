@@ -38,11 +38,21 @@ const editedExplanation = ref('')
 const editedWeight = ref(1)
 const isConfirmingDelete = ref(false)
 
+const editedIntrinsicValue = ref(0)
+const editedLoopWeight = ref(0)
+
 watch(selectedLink, (newVal) => {
     if (newVal) {
         editedExplanation.value = newVal.connection.explanation || ''
         editedWeight.value = newVal.connection.weight
         isConfirmingDelete.value = false
+    }
+}, { immediate: true })
+
+watch(selectedAim, (newVal) => {
+    if (newVal) {
+        editedIntrinsicValue.value = newVal.intrinsicValue || 0
+        editedLoopWeight.value = newVal.loopWeight ?? 0
     }
 }, { immediate: true })
 
@@ -52,6 +62,32 @@ const focusAim = (aimId: string) => {
         uiStore.setGraphSelection(aimId)
         uiStore.deselectLink()
         mapStore.centerOnNode(node)
+    }
+}
+
+const updateAimAttributes = async () => {
+    if (!selectedAim.value) return
+    const aimId = selectedAim.value.id
+    
+    // Optimistic Update
+    const updates = {
+        intrinsicValue: editedIntrinsicValue.value,
+        loopWeight: editedLoopWeight.value
+    }
+    
+    const updatedAim = { ...selectedAim.value, ...updates }
+    dataStore.replaceAim(aimId, updatedAim)
+    dataStore.recalculateValues()
+    
+    // Persist
+    try {
+        await trpc.aim.update.mutate({
+            projectPath: uiStore.projectPath,
+            aimId,
+            aim: updates
+        })
+    } catch (e) {
+        console.error('Failed to update aim attributes', e)
     }
 }
 
@@ -241,11 +277,24 @@ const stopResize = () => {
             <div class="metrics-row">
                 <div class="metric">
                     <span class="label">Intrinsic</span>
-                    <span class="value">{{ selectedAim.intrinsicValue ?? 0 }}</span>
+                    <input 
+                        type="number" 
+                        v-model.number="editedIntrinsicValue" 
+                        @change="updateAimAttributes" 
+                        class="value-input" 
+                        step="0.1" 
+                    />
                 </div>
                 <div class="metric">
                     <span class="label">Loop</span>
-                    <span class="value">{{ selectedAim.loopWeight ?? 0 }}</span>
+                    <input 
+                        type="number" 
+                        v-model.number="editedLoopWeight" 
+                        @change="updateAimAttributes" 
+                        class="value-input" 
+                        step="0.1" 
+                        min="0" 
+                    />
                 </div>
                 <div class="metric">
                     <span class="label">Total</span>
@@ -354,6 +403,38 @@ const stopResize = () => {
     font-family: monospace;
     font-size: 0.9em;
     color: #eee;
+}
+
+.metric .value-input {
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #eee;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: 1px solid #444;
+    width: 4rem;
+    text-align: center;
+    padding: 0.1rem;
+}
+
+.metric .value-input:focus {
+    border-color: #007acc;
+    outline: none;
+    background: #333;
+}
+
+/* Hide number spinners */
+.metric .value-input::-webkit-outer-spin-button,
+.metric .value-input::-webkit-inner-spin-button,
+.input-field::-webkit-outer-spin-button,
+.input-field::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.metric .value-input[type=number],
+.input-field[type=number] {
+  -moz-appearance: textfield;
 }
 
 .metric .value.highlight {
