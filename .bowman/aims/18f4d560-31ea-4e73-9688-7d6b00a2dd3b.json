@@ -1,0 +1,18 @@
+{
+  "id": "18f4d560-31ea-4e73-9688-7d6b00a2dd3b",
+  "text": "graph ui should compare cached data with server data on initial load.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765801727445
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

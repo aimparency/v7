@@ -597,7 +597,13 @@ export const useDataStore = defineStore('data', {
       // @ts-ignore - trpc subscription typing might differ
       this.subscription = trpc.project.onUpdate.subscribe(undefined, {
         onData: async (data: { type: string, id: string, projectPath: string }) => {
-          if (data.projectPath !== projectPath) return;
+          // Normalize paths for comparison (handle .bowman suffix mismatch)
+          // Use .replace to strip trailing slash just in case before appending, or robust check
+          // Simple robust check:
+          const eventPath = data.projectPath.replace(/\/?\.bowman$/, '');
+          const myPath = projectPath.replace(/\/?\.bowman$/, '');
+          
+          if (eventPath !== myPath) return;
 
           console.log('Received update:', data);
           if (data.type === 'aim') {

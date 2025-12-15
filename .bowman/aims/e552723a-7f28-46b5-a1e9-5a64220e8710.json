@@ -1,0 +1,27 @@
+{
+  "id": "e552723a-7f28-46b5-a1e9-5a64220e8710",
+  "text": "add an mpc function: get highest priority aims for current phases",
+  "description": "priority = value / effort",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "df416e38-a104-4846-a13f-bd47d7f9e676",
+      "relativePosition": [
+        -1.669074985461543,
+        -1.8612331108452131
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765801889628
+  },
+  "intrinsicValue": 10,
+  "loopWeight": 0
+}

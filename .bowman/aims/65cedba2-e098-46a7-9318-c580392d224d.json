@@ -1,0 +1,18 @@
+{
+  "id": "65cedba2-e098-46a7-9318-c580392d224d",
+  "text": "sidepanel opacity 1 after click in graph ui",
+  "description": "I think it would be a good thing if the sidepanel opacity get's set to 1 when an aim or connection is selected. When the user starts zoom or pan the opacity is low again if not hovering.",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765801776778
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

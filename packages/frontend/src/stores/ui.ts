@@ -137,21 +137,24 @@ export const useUIStore = defineStore('ui', {
   
   actions: {
     setProjectPath(path: string) {
-      this.projectPath = path
-      if (path) {
-        localStorage.setItem('aimparency-project-path', path)
+      // Normalize: strip trailing /.bowman or .bowman
+      const cleanPath = path.replace(/\/?\.bowman$/, '');
+      this.projectPath = cleanPath
+      if (cleanPath) {
+        localStorage.setItem('aimparency-project-path', cleanPath)
       } else {
         localStorage.removeItem('aimparency-project-path')
       }
     },
 
     addProjectToHistory(path: string) {
+      const cleanPath = path.replace(/\/?\.bowman$/, '');
       // Remove existing occurrences of this path
-      this.projectHistory = this.projectHistory.filter(p => p.path !== path)
+      this.projectHistory = this.projectHistory.filter(p => p.path !== cleanPath)
 
       // Add to top
       this.projectHistory.unshift({
-        path,
+        path: cleanPath,
         lastOpened: Date.now(),
         failedToLoad: false
       })
@@ -164,12 +167,14 @@ export const useUIStore = defineStore('ui', {
     },
 
     removeProjectFromHistory(path: string) {
-      this.projectHistory = this.projectHistory.filter(p => p.path !== path)
+      const cleanPath = path.replace(/\/?\.bowman$/, '');
+      this.projectHistory = this.projectHistory.filter(p => p.path !== cleanPath)
       localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
     },
 
     markProjectAsFailed(path: string) {
-      const project = this.projectHistory.find(p => p.path === path)
+      const cleanPath = path.replace(/\/?\.bowman$/, '');
+      const project = this.projectHistory.find(p => p.path === cleanPath)
       if (project) {
         project.failedToLoad = true
         localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
@@ -177,7 +182,8 @@ export const useUIStore = defineStore('ui', {
     },
 
     clearProjectFailure(path: string) {
-      const project = this.projectHistory.find(p => p.path === path)
+      const cleanPath = path.replace(/\/?\.bowman$/, '');
+      const project = this.projectHistory.find(p => p.path === cleanPath)
       if (project) {
         project.failedToLoad = false
         localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))

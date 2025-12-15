@@ -1,0 +1,18 @@
+{
+  "id": "df416e38-a104-4846-a13f-bd47d7f9e676",
+  "text": "add \"cost\" to aim data model",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e552723a-7f28-46b5-a1e9-5a64220e8710"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765801907796
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

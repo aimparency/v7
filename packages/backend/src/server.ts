@@ -45,8 +45,14 @@ const delayedProcedure = t.procedure.use(delayMiddleware);
 
 const GITIGNORE_CONTENT = 'vectors.json\n';
 
+function normalizeProjectPath(p: string): string {
+  if (!p) return p;
+  return p.endsWith('.bowman') ? p : path.join(p, '.bowman');
+}
+
 // Utility functions for file operations
-async function ensureProjectStructure(projectPath: string) {
+async function ensureProjectStructure(rawProjectPath: string) {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   await fs.ensureDir(path.join(projectPath, 'aims'));
   await fs.ensureDir(path.join(projectPath, 'phases'));
   
@@ -62,14 +68,16 @@ async function ensureProjectStructure(projectPath: string) {
   }
 }
 
-async function writeAim(projectPath: string, aim: Aim): Promise<void> {
+async function writeAim(rawProjectPath: string, aim: Aim): Promise<void> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   const aimPath = path.join(projectPath, 'aims', `${aim.id}.json`);
   await fs.writeJson(aimPath, aim, { spaces: 2 });
   ee.emit('change', { type: 'aim', id: aim.id, projectPath });
 }
 
-async function readAim(projectPath: string, aimId: string): Promise<Aim> {
+async function readAim(rawProjectPath: string, aimId: string): Promise<Aim> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const aimPath = path.join(projectPath, 'aims', `${aimId}.json`);
   const aim = await fs.readJson(aimPath);
   
@@ -134,7 +142,8 @@ async function readAim(projectPath: string, aimId: string): Promise<Aim> {
   return aim;
 }
 
-async function listAims(projectPath: string): Promise<Aim[]> {
+async function listAims(rawProjectPath: string): Promise<Aim[]> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const aimsDir = path.join(projectPath, 'aims');
   if (!await fs.pathExists(aimsDir)) return [];
   
@@ -152,19 +161,22 @@ async function listAims(projectPath: string): Promise<Aim[]> {
   return aims;
 }
 
-async function writePhase(projectPath: string, phase: Phase): Promise<void> {
+async function writePhase(rawProjectPath: string, phase: Phase): Promise<void> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   const phasePath = path.join(projectPath, 'phases', `${phase.id}.json`);
   await fs.writeJson(phasePath, phase, { spaces: 2 });
   ee.emit('change', { type: 'phase', id: phase.id, projectPath });
 }
 
-async function readPhase(projectPath: string, phaseId: string): Promise<Phase> {
+async function readPhase(rawProjectPath: string, phaseId: string): Promise<Phase> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const phasePath = path.join(projectPath, 'phases', `${phaseId}.json`);
   return await fs.readJson(phasePath);
 }
 
-async function listPhases(projectPath: string, parentPhaseId?: string | null): Promise<Phase[]> {
+async function listPhases(rawProjectPath: string, parentPhaseId?: string | null): Promise<Phase[]> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const phasesDir = path.join(projectPath, 'phases');
   if (!await fs.pathExists(phasesDir)) return [];
   
@@ -183,7 +195,8 @@ async function listPhases(projectPath: string, parentPhaseId?: string | null): P
   return phases;
 }
 
-async function cleanupCommitments(projectPath: string, specificPhaseId?: string): Promise<number> {
+async function cleanupCommitments(rawProjectPath: string, specificPhaseId?: string): Promise<number> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const aims = await listAims(projectPath);
   let changedCount = 0;
   let validPhaseIds: Set<string> | null = null;
@@ -218,7 +231,8 @@ async function cleanupCommitments(projectPath: string, specificPhaseId?: string)
   return changedCount;
 }
 
-async function readSystemStatus(projectPath: string): Promise<SystemStatus> {
+async function readSystemStatus(rawProjectPath: string): Promise<SystemStatus> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const systemPath = path.join(projectPath, 'system.json');
   if (await fs.pathExists(systemPath)) {
     return await fs.readJson(systemPath);
@@ -230,7 +244,8 @@ async function readSystemStatus(projectPath: string): Promise<SystemStatus> {
   return initialStatus;
 }
 
-async function writeSystemStatus(projectPath: string, status: SystemStatus): Promise<void> {
+async function writeSystemStatus(rawProjectPath: string, status: SystemStatus): Promise<void> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   const systemPath = path.join(projectPath, 'system.json');
   await fs.writeJson(systemPath, status, { spaces: 2 });

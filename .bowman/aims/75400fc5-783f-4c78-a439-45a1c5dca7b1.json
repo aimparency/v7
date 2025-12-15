@@ -1,0 +1,18 @@
+{
+  "id": "75400fc5-783f-4c78-a439-45a1c5dca7b1",
+  "text": "watchdog area should be resizable (drag up and down)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765801747627
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

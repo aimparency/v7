@@ -68,8 +68,10 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
 
   // 3. Iterate
   const iterations = 100;
-  // Epsilon for normalized values. Average is 1/N. 0.001 * (1/N).
-  const epsilon = 0.001 * (1.0 / aims.length); 
+  // Epsilon for normalized values. Average is 1/N. 
+  // Use 0.001 relative to average value for high precision.
+  const epsilon = 0.001 * (1.0 / (aims.length || 1)); 
+  console.log(`[ValueCalc] Starting calculation. Nodes: ${aims.length}. Threshold: ${epsilon.toExponential(2)}`);
 
   for (let iter = 0; iter < iterations; iter++) {
     const nextValues = new Map<string, number>();
@@ -117,7 +119,10 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
     }
 
     if (maxChange < epsilon) {
+      console.log(`[ValueCalc] Converged in ${iter + 1} iterations. Max Change: ${maxChange.toExponential(2)}`);
       break;
+    } else if (iter === iterations - 1) {
+      console.warn(`[ValueCalc] Reached max iterations (${iterations}). Final Max Change: ${maxChange.toExponential(2)}`);
     }
   }
 
