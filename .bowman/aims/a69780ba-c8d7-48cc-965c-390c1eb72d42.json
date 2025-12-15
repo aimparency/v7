@@ -1,0 +1,19 @@
+{
+  "id": "a69780ba-c8d7-48cc-965c-390c1eb72d42",
+  "text": "costs should add up from bottomt to top",
+  "description": "so aims have \"intrinsic cost\". \nWhen A has to supporting aims B and C. A has intrinsic cost 5 A: 3 B: 2 then A has actual cost 5 + 3 + 2 = 10. \nBy the way: if an aim supports multiple parent aims, it's costs get added on each path (not splitted).",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765836398336
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

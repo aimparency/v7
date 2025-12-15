@@ -22,7 +22,7 @@ import {
   updatePhaseInIndex,
   removePhaseFromIndex
 } from './search.js';
-import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors } from './embeddings.js';
+import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
 import { WatchdogManager } from './watchdog-manager.js';
 
 // Create context for tRPC
@@ -529,6 +529,7 @@ const appRouter = t.router({
             weight: z.number().optional()
           })).optional(),
           intrinsicValue: z.number().optional(),
+          cost: z.number().optional(),
           loopWeight: z.number().optional()
         })
       }))
@@ -658,6 +659,7 @@ const appRouter = t.router({
             date: z.number().optional()
           }).optional(),
           intrinsicValue: z.number().optional(),
+          cost: z.number().optional(),
           loopWeight: z.number().optional()
         })
       }))
@@ -681,6 +683,7 @@ const appRouter = t.router({
           committedIn: [],
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0,
+          cost: input.aim.cost ?? 1,
           loopWeight: input.aim.loopWeight ?? 0
         };
 
@@ -710,6 +713,7 @@ const appRouter = t.router({
             date: z.number().optional()
           }).optional(),
           intrinsicValue: z.number().optional(),
+          cost: z.number().optional(),
           loopWeight: z.number().optional()
         }),
         positionInParent: z.number().optional()
@@ -734,6 +738,7 @@ const appRouter = t.router({
           committedIn: [],
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0,
+          cost: input.aim.cost ?? 1,
           loopWeight: input.aim.loopWeight ?? 0
         };
 
@@ -765,6 +770,7 @@ const appRouter = t.router({
             date: z.number().optional()
           }).optional(),
           intrinsicValue: z.number().optional(),
+          cost: z.number().optional(),
           loopWeight: z.number().optional()
         }),
         insertionIndex: z.number().optional()
@@ -789,6 +795,7 @@ const appRouter = t.router({
           committedIn: [input.phaseId], // Will be updated by commitAimToPhase
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0,
+          cost: input.aim.cost ?? 1,
           loopWeight: input.aim.loopWeight ?? 0
         };
 
@@ -1136,14 +1143,21 @@ const appRouter = t.router({
         // Background embedding generation
         if (process.env.NODE_ENV !== 'test') {
           (async () => {
-              console.log(`Starting embedding generation for ${aims.length} aims...`);
-              for (const aim of aims) {
-                  const vector = await generateEmbedding(aim.text);
-                  if (vector) {
-                      await saveEmbedding(input.projectPath, aim.id, vector);
+              const vectorStore = await loadVectorStore(input.projectPath);
+              const aimsToEmbed = aims.filter(aim => !vectorStore[aim.id]);
+
+              if (aimsToEmbed.length > 0) {
+                  console.log(`Starting embedding generation for ${aimsToEmbed.length} aims (skipped ${aims.length - aimsToEmbed.length} existing)...`);
+                  for (const aim of aimsToEmbed) {
+                      const vector = await generateEmbedding(aim.text);
+                      if (vector) {
+                          await saveEmbedding(input.projectPath, aim.id, vector);
+                      }
                   }
+                  console.log('Embedding generation complete.');
+              } else {
+                  console.log(`Embeddings up to date (checked ${aims.length} aims).`);
               }
-              console.log('Embedding generation complete.');
           })().catch(console.error);
         }
 

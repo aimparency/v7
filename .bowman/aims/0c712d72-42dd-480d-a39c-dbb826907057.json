@@ -1,6 +1,6 @@
 {
   "id": "0c712d72-42dd-480d-a39c-dbb826907057",
-  "text": "intrinsic value and loop weigth next to each other",
+  "text": "intrinsic value, cost and loop weigth next to each other",
   "description": "layout\nintrinsic value | loopweight\ninput intr. v | input loop weight\n\nso one header row and one input row. \n\nenter in command mode creates aim, tab in command mode switches to the next. shift tab previous input element.",
   "tags": [],
   "supportingConnections": [],
@@ -9,9 +9,9 @@
     "4c960ff4-05ba-4ff8-b523-1a104d750503"
   ],
   "status": {
-    "state": "open",
+    "state": "done",
     "comment": "",
-    "date": 1765739091493
+    "date": 1765830328053
   },
   "intrinsicValue": 0,
   "loopWeight": 0

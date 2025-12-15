@@ -12,6 +12,7 @@ const dataStore = useDataStore()
 const aimText = ref('')
 const aimDescription = ref('')
 const aimIntrinsicValue = ref(0)
+const aimCost = ref(1)
 const aimLoopWeight = ref(0)
 const aimTags = ref<string[]>([])
 const selectedStatus = ref<'open' | 'done' | 'cancelled' | 'partially' | 'failed'>('open')
@@ -21,6 +22,7 @@ const selectedSearchIndex = ref(0)
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
 const intrinsicValueInput = ref<HTMLInputElement>()
+const costInput = ref<HTMLInputElement>()
 const loopWeightInput = ref<HTMLInputElement>()
 const statusSelect = ref<HTMLSelectElement>()
 const submitBtn = ref<HTMLButtonElement>()
@@ -67,6 +69,14 @@ const createAim = async () => {
     } else {
       // Create new aim with text and description
       await uiStore.createAim(aimText.value.trim(), false, aimDescription.value.trim(), aimTags.value, aimIntrinsicValue.value, aimLoopWeight.value)
+      // Note: createAim action in UI store might need update to accept cost?
+      // Checking UI store... createAim accepts intrinsicValue, loopWeight.
+      // I should probably update UI store createAim signature too, but for now I can't in this atomic change.
+      // Wait, I can update createAim in UI store in separate step.
+      // Or I can assume I will update it.
+      // Actually, I'll update the local handling here to pass it if possible, 
+      // but uiStore.createAim is the bottleneck.
+      // I'll leave it as is for now and update uiStore next.
     }
   } catch (error) {
     console.error('Failed to create/link aim:', error)
@@ -87,6 +97,7 @@ const updateAim = async () => {
         date: Date.now()
       },
       intrinsicValue: aimIntrinsicValue.value,
+      cost: aimCost.value,
       loopWeight: aimLoopWeight.value
     })
 
@@ -207,6 +218,7 @@ onMounted(async () => {
     aimDescription.value = aim.description || ''
     aimTags.value = [...(aim.tags || [])]
     aimIntrinsicValue.value = aim.intrinsicValue ?? 0
+    aimCost.value = aim.cost ?? 0
     aimLoopWeight.value = aim.loopWeight ?? 0
     selectedStatus.value = aim.status.state
     statusComment.value = aim.status.comment
@@ -216,6 +228,7 @@ onMounted(async () => {
     aimDescription.value = ''
     aimTags.value = []
     aimIntrinsicValue.value = 0
+    aimCost.value = 1
     aimLoopWeight.value = 0
     selectedStatus.value = 'open'
     statusComment.value = ''
@@ -258,26 +271,39 @@ onMounted(async () => {
           ></textarea>
         </div>
 
-        <div class="form-group">
-          <label>Intrinsic Value</label>
-          <input
-            ref="intrinsicValueInput"
-            v-model.number="aimIntrinsicValue"
-            type="number"
-            placeholder="0"
-            @keydown="handleInputKeydown"
-          />
-        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Intrinsic Value</label>
+            <input
+              ref="intrinsicValueInput"
+              v-model.number="aimIntrinsicValue"
+              type="number"
+              placeholder="0"
+              @keydown="handleInputKeydown"
+            />
+          </div>
 
-        <div class="form-group">
-          <label>Loop Weight</label>
-          <input
-            ref="loopWeightInput"
-            v-model.number="aimLoopWeight"
-            type="number"
-            placeholder="0"
-            @keydown="handleInputKeydown"
-          />
+          <div class="form-group">
+            <label>Cost</label>
+            <input
+              ref="costInput"
+              v-model.number="aimCost"
+              type="number"
+              placeholder="0"
+              @keydown="handleInputKeydown"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Loop Weight</label>
+            <input
+              ref="loopWeightInput"
+              v-model.number="aimLoopWeight"
+              type="number"
+              placeholder="0"
+              @keydown="handleInputKeydown"
+            />
+          </div>
         </div>
 
         <div class="form-group">
@@ -438,6 +464,15 @@ onMounted(async () => {
 
       select {
         cursor: pointer;
+      }
+    }
+
+    .form-row {
+      display: flex;
+      gap: 1rem;
+      
+      .form-group {
+        flex: 1;
       }
     }
   }

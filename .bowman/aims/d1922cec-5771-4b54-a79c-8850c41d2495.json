@@ -1,0 +1,19 @@
+{
+  "id": "d1922cec-5771-4b54-a79c-8850c41d2495",
+  "text": "percentage of done calculation",
+  "description": "based on the total cost vs. costs of undone aims. \nimplement recursive aggregators that return done cost, open cost. Maybe there is a percentage of done, too: \nintrinsic cost, percentage of done, calculated percentage of done. 3 values - just like the three values for value. \nCost and value. beautiful. \n\naim status",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765836657570
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

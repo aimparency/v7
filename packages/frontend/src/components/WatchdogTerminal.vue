@@ -16,6 +16,11 @@ const props = defineProps<{
 const terminalContainer = ref<HTMLElement | null>(null);
 let term: Terminal;
 let fitAddon: FitAddon;
+let resizeObserver: ResizeObserver;
+
+const emit = defineEmits<{
+  (e: 'resize', dimensions: { cols: number, rows: number }): void
+}>();
 
 const write = (data: string) => {
   term?.write(data);
@@ -35,6 +40,10 @@ onMounted(() => {
   if (terminalContainer.value) {
     term.open(terminalContainer.value);
     fitAddon.fit();
+    
+    // Observer container resize
+    resizeObserver = new ResizeObserver(() => fit());
+    resizeObserver.observe(terminalContainer.value);
   }
 
   if (props.initialContent) {
@@ -45,7 +54,6 @@ onMounted(() => {
     term.onData(props.onData);
   }
 
-  window.addEventListener('resize', fit);
   // Fit initially after a tick
   setTimeout(fit, 100);
 });
@@ -54,6 +62,9 @@ const fit = () => {
   if (fitAddon) {
     try {
         fitAddon.fit();
+        if (term) {
+            emit('resize', { cols: term.cols, rows: term.rows });
+        }
     } catch(e) {
         // sizing errors can happen if container is hidden
     }
@@ -61,7 +72,7 @@ const fit = () => {
 }
 
 onUnmounted(() => {
-  window.removeEventListener('resize', fit);
+  resizeObserver?.disconnect();
   term?.dispose();
 });
 

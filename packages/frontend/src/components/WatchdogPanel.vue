@@ -84,12 +84,14 @@ const toggle = () => {
         <WatchdogTerminal 
           ref="workerTerm" 
           :onData="handleWorkerInput"
+          @resize="(dims) => store.socket?.emit('resize-worker', dims)"
         />
       </div>
       <div class="term-col">
         <div class="term-label">Watchdog (Brain)</div>
         <WatchdogTerminal 
           ref="watchdogTerm" 
+          @resize="(dims) => store.socket?.emit('resize-watchdog', dims)"
         />
       </div>
     </div>

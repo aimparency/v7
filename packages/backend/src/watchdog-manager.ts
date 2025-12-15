@@ -2,12 +2,14 @@ import { spawn, type ChildProcess } from 'child_process';
 import path from 'path';
 import * as net from 'net';
 import { fileURLToPath } from 'url';
+import fs from 'fs-extra';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 interface WatchdogInstance {
-  process: ChildProcess;
+  process?: ChildProcess;
+  pid: number;
   port: number;
   projectPath: string;
   lastKeepalive: number;
@@ -16,6 +18,93 @@ interface WatchdogInstance {
 
 const instances = new Map<string, WatchdogInstance>();
 const KEEPALIVE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const SESSIONS_FILE = path.join(__dirname, '../../watchdog-sessions.json');
+
+// Persistence Helpers
+function saveSessions() {
+  const data = Array.from(instances.values()).map(i => ({
+    pid: i.pid,
+    port: i.port,
+    projectPath: i.projectPath,
+    lastKeepalive: i.lastKeepalive
+  }));
+  try {
+    fs.writeJsonSync(SESSIONS_FILE, data);
+  } catch (e) {
+    console.error('[WatchdogManager] Failed to save sessions:', e);
+  }
+}
+
+function killInstance(instance: WatchdogInstance) {
+  console.log(`[WatchdogManager] Killing instance for ${instance.projectPath} (PID ${instance.pid})`);
+  try {
+    if (instance.process) {
+      instance.process.kill();
+    } else {
+      process.kill(instance.pid);
+    }
+  } catch(e) {
+    // Ignore error if already dead
+  }
+  
+  clearInterval(instance.checkInterval);
+  instances.delete(instance.projectPath);
+  saveSessions();
+}
+
+function checkTimeout(projectPath: string) {
+  const instance = instances.get(projectPath);
+  if (instance) {
+    if (Date.now() - instance.lastKeepalive > KEEPALIVE_TIMEOUT) {
+      console.log(`[WatchdogManager] Timeout for ${projectPath}, killing process.`);
+      killInstance(instance);
+    }
+  }
+}
+
+function loadSessions() {
+  try {
+    if (fs.existsSync(SESSIONS_FILE)) {
+      const data = fs.readJsonSync(SESSIONS_FILE);
+      console.log(`[WatchdogManager] Loading ${data.length} sessions from file.`);
+      
+      data.forEach((s: any) => {
+        // Check if alive
+        try {
+          process.kill(s.pid, 0);
+          
+          // Check if timed out while we were away
+          if (Date.now() - s.lastKeepalive > KEEPALIVE_TIMEOUT) {
+             console.log(`[WatchdogManager] Reclaimed session for ${s.projectPath} (PID ${s.pid}) is expired. Killing.`);
+             try { process.kill(s.pid); } catch(e){}
+             return;
+          }
+
+          console.log(`[WatchdogManager] Reclaiming session for ${s.projectPath} (PID ${s.pid})`);
+          
+          const checkInterval = setInterval(() => {
+            checkTimeout(s.projectPath);
+          }, 30 * 1000);
+
+          instances.set(s.projectPath, {
+            pid: s.pid,
+            port: s.port,
+            projectPath: s.projectPath,
+            lastKeepalive: s.lastKeepalive,
+            checkInterval
+          });
+        } catch (e) {
+          console.log(`[WatchdogManager] Session for ${s.projectPath} (PID ${s.pid}) is dead.`);
+        }
+      });
+    }
+  } catch (e) {
+    console.error('[WatchdogManager] Failed to load sessions:', e);
+  }
+}
+
+// Load on startup
+loadSessions();
 
 // Utility to find a free port
 function findAvailablePort(startPort: number): Promise<number> {
@@ -42,15 +131,21 @@ export const WatchdogManager = {
     // Check if already running
     const existing = instances.get(projectPath);
     if (existing) {
-      if (existing.process.exitCode === null) {
-        // Update keepalive since we are requesting it
-        existing.lastKeepalive = Date.now();
-        return { port: existing.port, pid: existing.process.pid! };
-      } else {
-        // Clean up dead process
-        clearInterval(existing.checkInterval);
-        instances.delete(projectPath);
-      }
+        // Verify liveness
+        try {
+            if (existing.process) {
+                if (existing.process.exitCode !== null) throw new Error("Exited");
+            } else {
+                process.kill(existing.pid, 0);
+            }
+            
+            existing.lastKeepalive = Date.now();
+            saveSessions();
+            return { port: existing.port, pid: existing.pid };
+        } catch (e) {
+            console.log(`[WatchdogManager] Existing instance dead, cleaning up.`);
+            killInstance(existing);
+        }
     }
 
     // Find free port starting from 4100
@@ -90,26 +185,19 @@ export const WatchdogManager = {
     });
 
     const checkInterval = setInterval(() => {
-      const instance = instances.get(projectPath);
-      if (instance) {
-        if (Date.now() - instance.lastKeepalive > KEEPALIVE_TIMEOUT) {
-          console.log(`[WatchdogManager] Timeout for ${projectPath}, killing process.`);
-          instance.process.kill();
-          clearInterval(instance.checkInterval);
-          instances.delete(projectPath);
-        }
-      } else {
-        clearInterval(checkInterval);
-      }
+        checkTimeout(projectPath);
     }, 30 * 1000); // Check every 30 seconds
 
     instances.set(projectPath, {
       process: child,
+      pid: child.pid!,
       port,
       projectPath,
       lastKeepalive: Date.now(),
       checkInterval
     });
+    
+    saveSessions();
 
     child.on('exit', (code) => {
       console.log(`[WatchdogManager] Watchdog for ${projectPath} exited with code ${code}`);
@@ -117,6 +205,7 @@ export const WatchdogManager = {
       if (instance?.process === child) {
         clearInterval(instance.checkInterval);
         instances.delete(projectPath);
+        saveSessions();
       }
     });
 
@@ -125,10 +214,8 @@ export const WatchdogManager = {
 
   stop(projectPath: string): boolean {
     const instance = instances.get(projectPath);
-    if (instance && instance.process.exitCode === null) {
-      instance.process.kill();
-      clearInterval(instance.checkInterval);
-      instances.delete(projectPath);
+    if (instance) {
+      killInstance(instance);
       return true;
     }
     return false;
@@ -136,8 +223,10 @@ export const WatchdogManager = {
 
   keepalive(projectPath: string): boolean {
     const instance = instances.get(projectPath);
-    if (instance && instance.process.exitCode === null) {
+    if (instance) {
+      // Check liveness first? No, simple update is fine, checkTimeout handles liveness.
       instance.lastKeepalive = Date.now();
+      saveSessions(); // Persist keepalive update? Optional but safe.
       return true;
     }
     return false;
@@ -145,12 +234,21 @@ export const WatchdogManager = {
 
   getStatus(projectPath: string): { running: boolean, port?: number } {
     const instance = instances.get(projectPath);
-    if (instance && instance.process.exitCode === null) {
-      // Status check also acts as a keepalive? 
-      // User said "frontend should send keepalive every 30s".
-      // Let's assume explicit keepalive is preferred, but status might imply interest.
-      // For now, let's keep getStatus read-only regarding keepalive to avoid accidental keeps.
-      return { running: true, port: instance.port };
+    if (instance) {
+        // Verify liveness on status check
+        try {
+            if (instance.process) {
+                if (instance.process.exitCode !== null) {
+                    killInstance(instance);
+                    return { running: false };
+                }
+            } else {
+                process.kill(instance.pid, 0);
+            }
+            return { running: true, port: instance.port };
+        } catch(e) {
+            killInstance(instance);
+        }
     }
     return { running: false };
   }

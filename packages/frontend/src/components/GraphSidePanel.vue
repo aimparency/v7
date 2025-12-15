@@ -214,6 +214,29 @@ const stopResize = () => {
     window.removeEventListener('mouseup', stopResize)
 }
 
+// Interaction tracking for opacity
+const hasInteracted = ref(false)
+
+watch([selectedAim, selectedLink], () => {
+    hasInteracted.value = false
+})
+
+watch(() => [
+    mapStore.panBeginning,
+    mapStore.dragBeginning,
+    mapStore.layouting,
+    mapStore.connecting,
+    mapStore.scale
+], ([pan, drag, layout, connect, scale], [oldPan, oldDrag, oldLayout, oldConnect, oldScale]) => {
+    const isInteracting = !!pan || !!drag || layout || connect
+    const isZooming = scale !== oldScale
+    if (isInteracting || isZooming) {
+        hasInteracted.value = true
+    }
+})
+
+const isOpaque = computed(() => !hasInteracted.value)
+
 </script>
 
 <template>
@@ -221,6 +244,7 @@ const stopResize = () => {
         class="side-panel" 
         v-if="selectedAim || selectedLink"
         :style="{ width: panelWidth + 'px' }"
+        :class="{ opaque: isOpaque }"
     >
         <div class="resize-handle" @mousedown="startResize"></div>
 
@@ -357,7 +381,7 @@ const stopResize = () => {
     overflow: hidden; 
 }
 
-.side-panel:hover, .side-panel:focus-within, .side-panel:active {
+.side-panel:hover, .side-panel:focus-within, .side-panel:active, .side-panel.opaque {
     opacity: 1;
 }
 

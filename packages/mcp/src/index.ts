@@ -709,6 +709,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           required: ["projectPath"],
         },
       },
+      {
+        name: "get-prioritized-aims",
+        description: "Get all aims from the lowest (deepest) active phase, prioritized by value/cost ratio.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            projectPath: PROJECT_PATH_TOOL_PROPERTY,
+            limit: { type: "number", description: "Limit number of results (default 10)" },
+          },
+          required: ["projectPath"],
+        },
+      },
     ],
   };
 });
@@ -1139,6 +1151,80 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: `System status updated.\nNew Balance: ${result.computeCredits} credits, ${result.funds} funds.`,
+            },
+          ],
+        };
+      }
+
+      case "get-prioritized-aims": {
+        const now = Date.now();
+        const phases = await trpc.phase.list.query({ 
+            projectPath: args.projectPath as string, 
+            activeAt: now 
+        });
+
+        if (phases.length === 0) {
+             return { content: [{ type: "text", text: "No active phases found." }] };
+        }
+
+        // Find phases with no active children (leaves)
+        // Map parent -> children
+        const parentMap = new Map<string, string[]>();
+        phases.forEach(p => {
+            if (p.parent) {
+                if (!parentMap.has(p.parent)) parentMap.set(p.parent, []);
+                parentMap.get(p.parent)!.push(p.id);
+            }
+        });
+
+        // Filter for active leaves
+        const leaves = phases.filter(p => {
+            const children = parentMap.get(p.id);
+            // If no children, it's a leaf. 
+            // If children exist, check if any are in the active 'phases' list
+            if (!children) return true;
+            return !children.some(childId => phases.some(active => active.id === childId));
+        });
+
+        // If multiple leaves, pick the one ending soonest
+        leaves.sort((a, b) => a.to - b.to);
+        const targetPhase = leaves[0];
+
+        if (!targetPhase) {
+             return { content: [{ type: "text", text: "No active leaf phases found." }] };
+        }
+
+        // Get aims
+        const aimIds = targetPhase.commitments;
+        const aims = await Promise.all(aimIds.map(id => trpc.aim.get.query({ 
+            projectPath: args.projectPath as string, 
+            aimId: id 
+        })));
+
+        // Prioritize
+        const prioritized = aims
+            .filter(a => a.status.state === 'open') // Only open aims
+            .map(a => {
+                const cost = (a.cost && a.cost > 0) ? a.cost : 0.1; // Avoid div by zero
+                const priority = (a.intrinsicValue || 0) / cost;
+                return { ...a, priority };
+            })
+            .sort((a, b) => b.priority - a.priority)
+            .slice(0, (args.limit as number) || 10);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                  phase: targetPhase.name,
+                  aims: prioritized.map(a => ({
+                      text: a.text,
+                      priority: a.priority.toFixed(2),
+                      value: a.intrinsicValue,
+                      cost: a.cost
+                  }))
+              }, null, 2),
             },
           ],
         };

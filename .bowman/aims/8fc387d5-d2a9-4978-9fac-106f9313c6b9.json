@@ -1,0 +1,19 @@
+{
+  "id": "8fc387d5-d2a9-4978-9fac-106f9313c6b9",
+  "text": "after the frontend reloads, it fails to connect to an existing watchdog instance, although the instance is still running",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765829892372
+  },
+  "intrinsicValue": 0,
+  "cost": 0,
+  "loopWeight": 0
+}
