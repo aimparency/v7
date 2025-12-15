@@ -58,7 +58,7 @@ const nodeMap = new Map<string, GraphNode>()
 // Layouting State
 const layoutingHandlePos = vec2.create()
 const loadedPositions = new Map<string, { x: number, y: number }>()
-let ignoreNextTracking = false
+let isNavigatingFromClick = false
 
 let animFrameId: number | null = null
 let saveIntervalId: number | null = null
@@ -207,6 +207,9 @@ const endWhatever = () => {
     }
     mapStore.layouting = false
     mapStore.layoutCandidate = undefined
+  } else if (mapStore.connecting) {
+    mapStore.connecting = false
+    mapStore.connectFrom = undefined
   }
   
   setTimeout(() => { mapStore.cursorMoved = false })
@@ -403,11 +406,16 @@ const onNodeUp = async (node: GraphNode) => {
   }
 }
 
-const onNodeClick = (node: GraphNode) => {
+const onNodeClick = async (node: GraphNode) => {
   if (!mapStore.cursorMoved) {
-    ignoreNextTracking = true
-    uiStore.navigateToAim(node.id)
-    uiStore.deselectLink()
+    isNavigatingFromClick = true
+    try {
+      await uiStore.navigateToAim(node.id)
+      uiStore.deselectLink()
+    } finally {
+      // Small delay to ensure watchers have fired
+      setTimeout(() => { isNavigatingFromClick = false }, 100)
+    }
   }
 }
 
@@ -710,8 +718,7 @@ onUnmounted(() => {
 watch(() => dataStore.graphData, updateGraphData, { deep: true })
 
 watch(() => uiStore.getCurrentAim(), (newAim) => {
-  if (ignoreNextTracking) {
-    ignoreNextTracking = false
+  if (isNavigatingFromClick) {
     return
   }
   if (newAim) {
@@ -750,10 +757,12 @@ const selectedLinkVisuals = computed(() => {
 
 const renderNodes = computed(() => { 
     trigger.value; 
+    const currentAimId = uiStore.getCurrentAim()?.id
     return nodes.value.map(n => ({
         ...n,
         x: n.pos[0],
-        y: n.pos[1]
+        y: n.pos[1],
+        selected: n.id === currentAimId
     })) 
 })
 const renderLinks = computed(() => { 
@@ -782,6 +791,7 @@ const renderLinks = computed(() => {
             v-for="node in renderNodes" 
             :key="node.id" 
             :node="node"
+            :selected="node.selected"
             @mousedown.stop="onNodeDown($event, node as any)"
             @touchstart.stop="onNodeDown($event, node as any)"
             @mouseup="onNodeUp(node as any)"

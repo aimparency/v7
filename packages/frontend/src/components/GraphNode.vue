@@ -9,7 +9,8 @@ const props = defineProps<{
     r: number
     x: number
     y: number
-  }
+  },
+  selected?: boolean
 }>()
 
 const fillColor = computed(() => {
@@ -39,6 +40,7 @@ const label = computed(() => {
         stroke="#fff" 
         stroke-width="0.075"
         class="node-circle"
+        :class="{ selected }"
       />
       <text 
         dy="0" 
@@ -72,6 +74,11 @@ const label = computed(() => {
 
 .node-circle:hover {
   stroke: #cccf;
+}
+
+.node-circle.selected {
+  stroke: #fff;
+  stroke-width: 0.15;
 }
 
 .node-label {
