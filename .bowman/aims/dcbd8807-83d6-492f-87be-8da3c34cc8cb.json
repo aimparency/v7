@@ -1,0 +1,18 @@
+{
+  "id": "dcbd8807-83d6-492f-87be-8da3c34cc8cb",
+  "text": "fix the scroll issue. if scrolled up all the way for 0.2s, scroll down all the way, reset timer",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "ca93615f-6364-4b90-aa3a-1e78c9939e55"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765823218746
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

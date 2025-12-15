@@ -4,11 +4,13 @@
   "description": "",
   "tags": [],
   "incoming": [],
-  "committedIn": [],
+  "committedIn": [
+    "ab939925-1be6-43fc-b7a9-958b49b2c66a"
+  ],
   "status": {
-    "state": "open",
+    "state": "done",
     "comment": "",
-    "date": 1765399742663
+    "date": 1765828769781
   },
   "supportingConnections": [],
   "supportedAims": []

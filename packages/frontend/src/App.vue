@@ -17,12 +17,34 @@ const dataStore = useDataStore()
 
 // Local UI state
 const showWatchdog = ref(localStorage.getItem('aimparency-show-watchdog') === 'true')
+const watchdogHeight = ref(parseInt(localStorage.getItem('aimparency-watchdog-height') || '300'))
 const showConsistencyModal = ref(false)
+const isResizingWatchdog = ref(false)
 
 // Persist watchdog visibility
 watch(showWatchdog, (val) => {
   localStorage.setItem('aimparency-show-watchdog', String(val))
 })
+
+const startResizeWatchdog = (e: MouseEvent) => {
+  e.preventDefault()
+  isResizingWatchdog.value = true
+  window.addEventListener('mousemove', resizeWatchdog)
+  window.addEventListener('mouseup', stopResizeWatchdog)
+}
+
+const resizeWatchdog = (e: MouseEvent) => {
+  if (!isResizingWatchdog.value) return
+  const newHeight = window.innerHeight - e.clientY
+  watchdogHeight.value = Math.max(100, Math.min(newHeight, window.innerHeight - 100))
+}
+
+const stopResizeWatchdog = () => {
+  isResizingWatchdog.value = false
+  localStorage.setItem('aimparency-watchdog-height', String(watchdogHeight.value))
+  window.removeEventListener('mousemove', resizeWatchdog)
+  window.removeEventListener('mouseup', stopResizeWatchdog)
+}
 
 // Template refs
 const projectPathInput = ref('')
@@ -300,7 +322,8 @@ onUnmounted(() => {
       </main>
 
       <!-- Watchdog Panel -->
-      <div v-if="showWatchdog" class="watchdog-container">
+      <div v-if="showWatchdog" class="watchdog-container" :style="{ height: watchdogHeight + 'px' }">
+        <div class="resize-handle" @mousedown="startResizeWatchdog"></div>
         <WatchdogPanel />
       </div>
     </div>
@@ -610,9 +633,26 @@ onUnmounted(() => {
 }
 
 .watchdog-container {
-  height: 300px;
   flex-shrink: 0;
   border-top: 1px solid #444;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.resize-handle {
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  cursor: ns-resize;
+  z-index: 10;
+  background: transparent;
+}
+
+.resize-handle:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .content-area {

@@ -3,7 +3,9 @@
   "text": "Fix real-time synchronization for floating aims so they appear automatically in the web client",
   "tags": [],
   "incoming": [],
-  "committedIn": [],
+  "committedIn": [
+    "ab939925-1be6-43fc-b7a9-958b49b2c66a"
+  ],
   "status": {
     "state": "done",
     "comment": "Modified packages/frontend/src/stores/data.ts to update floatingAimsIds when a new aim event is received via WebSocket. Also fixed a missing type import in packages/backend/src/server.ts. Verified with type-check.",

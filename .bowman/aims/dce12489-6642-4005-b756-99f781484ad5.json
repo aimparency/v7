@@ -6,12 +6,39 @@
     "social-media"
   ],
   "incoming": [],
-  "committedIn": [],
+  "committedIn": [
+    "ab939925-1be6-43fc-b7a9-958b49b2c66a"
+  ],
   "status": {
     "state": "open",
     "comment": "",
     "date": 1765230130719
   },
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "00344a8d-7743-48cf-a147-b7636138fd62",
+      "relativePosition": [
+        0.4802072597016816,
+        2.4534467566527303
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ad3e7a2a-65aa-4486-804e-c4a99d1c9f7d",
+      "relativePosition": [
+        1.8134689034976061,
+        -1.720851689149065
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c609d23e-1f69-4cde-8972-11f6ecac63a3",
+      "relativePosition": [
+        1.9866532770383725,
+        -1.5176326158964482
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": []
 }
