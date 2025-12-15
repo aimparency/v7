@@ -10,12 +10,14 @@ import AimCreationModal from './components/AimCreationModal.vue'
 import AimSearchModal from './components/AimSearchModal.vue'
 import GraphView from './views/GraphView.vue'
 import WatchdogPanel from './components/WatchdogPanel.vue'
+import ConsistencyModal from './components/ConsistencyModal.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 // Local UI state
 const showWatchdog = ref(false)
+const showConsistencyModal = ref(false)
 
 // Template refs
 const projectPathInput = ref('')
@@ -202,7 +204,20 @@ onUnmounted(() => {
           Watchdog
         </button>
 
-        <span class="project-path">{{ uiStore.projectPath }}</span>
+        <div class="project-info">
+          <span class="project-path">{{ uiStore.projectPath }}</span>
+
+          <button 
+            v-if="uiStore.projectPath"
+            class="consistency-btn"
+            :class="{ 'has-errors': dataStore.consistencyErrors.length > 0 }"
+            @click="showConsistencyModal = true"
+            :title="dataStore.consistencyErrors.length > 0 ? 'Data Inconsistencies Found' : 'Data is Consistent'"
+          >
+            {{ dataStore.consistencyErrors.length > 0 ? '×' : '✓' }}
+          </button>
+        </div>
+
         <a @click="closeProject" class="close-project">Close Project</a>
       </div>
     </header>
@@ -294,6 +309,12 @@ onUnmounted(() => {
     <!-- Aim Search Modal -->
     <AimSearchModal v-if="uiStore.showAimSearch" />
 
+    <!-- Consistency Modal -->
+    <ConsistencyModal 
+        v-if="showConsistencyModal" 
+        @close="showConsistencyModal = false" 
+    />
+
     <!-- Help Text -->
     <footer v-if="!uiStore.isInProjectSelection" class="help">
       <div class="help-keys">
@@ -365,10 +386,17 @@ onUnmounted(() => {
   cursor: pointer;
   line-height: 1;
   padding: 0;
+}
   
-  &:hover {
-    background: #444;
-  }
+.icon-btn:hover {
+  background: #444;
+}
+
+.project-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem; /* Reduced gap */
+  white-space: nowrap; /* Prevent wrapping */
 }
 
 .project-path {
@@ -383,6 +411,34 @@ onUnmounted(() => {
 
 .close-project:hover {
   color: #ccc;
+}
+
+.consistency-btn {
+  width: 20px; 
+  height: 20px; 
+  background: #007acc; 
+  color: white; 
+  border-radius: 0.15rem; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-weight: bold; 
+  cursor: pointer; 
+  border: none;
+  font-size: 14px;
+  /* Margins handled by parent flex gap */
+}
+
+.consistency-btn:hover {
+  background: #005a99;
+}
+
+.consistency-btn.has-errors {
+  background: #ff4444;
+}
+
+.consistency-btn.has-errors:hover {
+  background: #ff6666;
 }
 
 .project-selection {

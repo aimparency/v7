@@ -6,7 +6,16 @@
     "graph",
     "value"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "e8dbdd91-2516-4786-9c1b-392ae960d95e",
+      "relativePosition": [
+        -2.3974750072237434,
+        -0.7085997387365522
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"

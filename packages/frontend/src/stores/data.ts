@@ -37,6 +37,9 @@ export const useDataStore = defineStore('data', {
     // Persistence Debounce
     saveTimeout: null as any,
     pendingUpdates: new Set<string>(),
+
+    // Consistency
+    consistencyErrors: [] as string[],
   }),
 
   getters: {
@@ -562,6 +565,9 @@ export const useDataStore = defineStore('data', {
         await this.loadFloatingAims(projectPath);
         await this.loadPhases(projectPath, null); // Load root phases
 
+        // Check consistency
+        this.checkConsistency(projectPath);
+
         // We also need to load aims for visible phases? 
         // Phase.vue calls loadPhaseAims implicitly? No, Phase.vue just computes from store.
         // We need to ensure aims for visible phases are loaded.
@@ -917,6 +923,32 @@ export const useDataStore = defineStore('data', {
       } catch (error) {
         console.error('Failed to reorder sub-aim:', error);
       }
+    },
+
+    async checkConsistency(projectPath: string) {
+        if (!projectPath) return;
+        try {
+            // @ts-ignore - checkConsistency is in project router
+            const result = await trpc.project.checkConsistency.query({ projectPath });
+            this.consistencyErrors = result.errors;
+        } catch (e) {
+            console.error('Failed to check consistency', e);
+        }
+    },
+
+    async fixConsistency(projectPath: string) {
+        if (!projectPath) return;
+        try {
+            // @ts-ignore - fixConsistency is in project router
+            const result = await trpc.project.fixConsistency.mutate({ projectPath });
+            // Reload everything after fix
+            await this.loadProject(projectPath);
+            this.consistencyErrors = [];
+            return result.fixes;
+        } catch (e) {
+            console.error('Failed to fix consistency', e);
+            throw e;
+        }
     }
   }
 })

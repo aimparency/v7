@@ -54,8 +54,23 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
       const parentValue = currentValues.get(parent.id) || 0;
       
       const loopWeight = parent.loopWeight ?? 1;
-      const childrenWeights = parent.supportingConnections?.reduce((sum: number, c: any) => sum + (c.weight || 1), 0) || 0;
+      // Only count children that actually exist in the aimMap
+      const validConnections = parent.supportingConnections?.filter(c => aimMap.has(c.aimId)) || [];
+      const childrenWeights = validConnections.reduce((sum: number, c: any) => sum + (c.weight || 1), 0);
       const totalWeight = loopWeight + childrenWeights;
+
+      if (parent.id === '8fe1aa4e-d89d-4bc0-b9ab-8fd412d24d3b' && iter === 0) {
+        console.log(`[ValueDebug] Aim ${parent.text} (${parent.id})`);
+        console.log(`- Parent Value: ${parentValue}`);
+        console.log(`- Loop Weight: ${loopWeight}`);
+        console.log(`- Total Children Weight: ${childrenWeights}`);
+        console.log(`- Total Weight: ${totalWeight}`);
+        console.log(`- Valid Connections: ${validConnections.length}`);
+        validConnections.forEach(c => console.log(`  -> ${c.aimId} (w=${c.weight})`));
+        const allConnections = parent.supportingConnections || [];
+        console.log(`- ALL Connections: ${allConnections.length}`);
+        allConnections.forEach(c => console.log(`  -> ${c.aimId} (w=${c.weight}) [Exists: ${aimMap.has(c.aimId)}]`));
+      }
 
       if (totalWeight > 0) {
         // Distribute to Self (Loop)
