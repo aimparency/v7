@@ -427,25 +427,27 @@ const onNodeUp = async (node: GraphNode) => {
 }
 
 const onNodeClick = async (node: GraphNode) => {
-  // Debug Logging
-  console.log(`Node Selected: ${node.text} (${node.id})`)
-  console.log(`- Radius: ${node.r}`)
-  console.log(`- Value: ${node.value}`)
-  
-  const connectedLinks = links.value.filter(l => l.source.id === node.id || l.target.id === node.id)
-  console.log(`- Links (${connectedLinks.length}):`)
-  connectedLinks.forEach(l => {
-    const isSource = l.source.id === node.id
-    const other = isSource ? l.target : l.source
-    const width = 1.0 * (l.target.r || 25) * (l.share || 0)
-    console.log(`  * ${isSource ? '->' : '<-'} ${other.text} (${other.id})`)
-    console.log(`    - Share: ${l.share?.toFixed(3)}`)
-    console.log(`    - Weight: ${l.weight}`)
-    console.log(`    - Target R: ${l.target.r}`)
-    console.log(`    - Width: ${width.toFixed(1)}`)
-  })
-
   if (!mapStore.cursorMoved) {
+    // Debug Logging
+    console.log(`Node Selected: ${node.text} (${node.id})`)
+    const aim = dataStore.aims[node.id]
+    console.log(`- Radius: ${node.r}`)
+    console.log(`- Value: ${node.value}`)
+    console.log(`- Loop Weight: ${aim?.loopWeight}`)
+    
+    const connectedLinks = links.value.filter(l => l.source.id === node.id || l.target.id === node.id)
+    console.log(`- Links (${connectedLinks.length}):`)
+    connectedLinks.forEach(l => {
+      const isSource = l.source.id === node.id
+      const other = isSource ? l.target : l.source
+      const width = 1.0 * (l.target.r || 25) * (l.share || 0)
+      console.log(`  * ${isSource ? '->' : '<-'} ${other.text} (${other.id})`)
+      console.log(`    - Share: ${l.share?.toFixed(3)}`)
+      console.log(`    - Weight: ${l.weight}`)
+      console.log(`    - Target R: ${l.target.r}`)
+      console.log(`    - Width: ${width.toFixed(1)}`)
+    })
+
     uiStore.setGraphSelection(node.id)
     uiStore.deselectLink()
   }

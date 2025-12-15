@@ -13,7 +13,7 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
 
   // Calculate Flow Shares
   for (const parent of aims) {
-    const loopWeight = parent.loopWeight ?? 0;
+    const loopWeight = parent.loopWeight ?? 1;
     const childrenWeights = parent.supportingConnections?.reduce((sum: number, c: any) => sum + (c.weight || 1), 0) || 0;
     const totalWeight = loopWeight + childrenWeights;
 
@@ -53,7 +53,7 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
     for (const parent of aims) {
       const parentValue = currentValues.get(parent.id) || 0;
       
-      const loopWeight = parent.loopWeight ?? 0;
+      const loopWeight = parent.loopWeight ?? 1;
       const childrenWeights = parent.supportingConnections?.reduce((sum: number, c: any) => sum + (c.weight || 1), 0) || 0;
       const totalWeight = loopWeight + childrenWeights;
 
