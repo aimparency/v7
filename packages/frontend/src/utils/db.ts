@@ -50,6 +50,40 @@ export async function savePositions(positions: Position[]) {
   });
 }
 
+export async function saveCamera(offset: {x: number, y: number}, scale: number) {
+  const db = await getDB();
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    
+    // Store camera with special ID
+    store.put({ id: '__CAMERA__', x: offset.x, y: offset.y, scale });
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+export async function loadCamera(): Promise<{x: number, y: number, scale: number} | null> {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, 'readonly');
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get('__CAMERA__');
+
+    request.onsuccess = () => {
+      const result = request.result;
+      if (result) {
+        resolve({ x: result.x, y: result.y, scale: result.scale });
+      } else {
+        resolve(null);
+      }
+    };
+
+    request.onerror = () => reject(request.error);
+  });
+}
+
 export async function loadAllPositions(): Promise<Map<string, { x: number; y: number }>> {
   const db = await getDB();
   return new Promise((resolve, reject) => {
@@ -58,8 +92,13 @@ export async function loadAllPositions(): Promise<Map<string, { x: number; y: nu
     const request = store.getAll();
 
     request.onsuccess = () => {
-      const positions = request.result as Position[];
-      const map = new Map(positions.map(p => [p.id, { x: p.x, y: p.y }]));
+      const positions = request.result as any[];
+      const map = new Map<string, { x: number, y: number }>();
+      positions.forEach(p => {
+        if (p.id !== '__CAMERA__') {
+            map.set(p.id, { x: p.x, y: p.y });
+        }
+      });
       resolve(map);
     };
 

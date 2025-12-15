@@ -7,8 +7,9 @@ import GraphNodeComponent from '../components/GraphNode.vue'
 import GraphLinkComponent from '../components/GraphLink.vue'
 import GraphConnector from '../components/GraphConnector.vue'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
+import GraphSidePanel from '../components/GraphSidePanel.vue'
 import * as vec2 from '../utils/vec2'
-import { loadAllPositions, savePositions } from '../utils/db'
+import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
 
 // Naive implementation to avoid 'box-intersect' dependency issues in browser (Buffer undefined)
 function naiveBoxIntersect(boxes: number[][]) {
@@ -44,6 +45,7 @@ interface GraphLink {
   target: GraphNode
   relativePosition: vec2.T
   weight: number
+  share: number
 }
 
 const svgRef = ref<SVGSVGElement>()
@@ -228,6 +230,8 @@ const updateWhatever = (mouse: vec2.T) => {
       updateDrag(d); 
     } else if (mapStore.layouting) {
       updateLayout(d);
+    } else if (mapStore.connecting) {
+      // Just update mouse pos (already done), but keep actionOngoing true
     } else {
       actionOngoing = false
     }
@@ -388,20 +392,32 @@ const onNodeDown = (e: MouseEvent | TouchEvent, nodeCopy: GraphNode) => {
 const onNodeUp = async (node: GraphNode) => {
   if (mapStore.connecting && mapStore.connectFrom) {
     if (mapStore.connectFrom.id !== node.id) {
+      // Calculate relative position
+      // DragFrom = Child (Supporting), DragTo = Parent (Supported)
+      const child = mapStore.connectFrom
+      const parent = node
+      
+      // Vector from Parent to Child (as expected by backend/store)
+      const deltaX = child.pos[0] - parent.pos[0]
+      const deltaY = child.pos[1] - parent.pos[1]
+      const rSum = parent.r + child.r
+      const relativePosition: [number, number] = [deltaX / rSum, deltaY / rSum]
+
       // Create connection
       try {
         await trpc.aim.connectAims.mutate({
             projectPath: uiStore.projectPath,
-            parentAimId: mapStore.connectFrom.id,
-            childAimId: node.id,
+            parentAimId: parent.id,
+            childAimId: child.id,
+            relativePosition,
             // Indexes default
         })
-        // Reload parent to update UI
+        // Reload parent (node) to update UI
         const updatedParent = await trpc.aim.get.query({
             projectPath: uiStore.projectPath,
-            aimId: mapStore.connectFrom.id
+            aimId: parent.id
         })
-        dataStore.replaceAim(mapStore.connectFrom.id, updatedParent)
+        dataStore.replaceAim(parent.id, updatedParent)
         dataStore.recalculateValues()
       } catch (e) {
         console.error('Failed to connect aims:', e)
@@ -411,6 +427,24 @@ const onNodeUp = async (node: GraphNode) => {
 }
 
 const onNodeClick = async (node: GraphNode) => {
+  // Debug Logging
+  console.log(`Node Selected: ${node.text} (${node.id})`)
+  console.log(`- Radius: ${node.r}`)
+  console.log(`- Value: ${node.value}`)
+  
+  const connectedLinks = links.value.filter(l => l.source.id === node.id || l.target.id === node.id)
+  console.log(`- Links (${connectedLinks.length}):`)
+  connectedLinks.forEach(l => {
+    const isSource = l.source.id === node.id
+    const other = isSource ? l.target : l.source
+    const width = 1.0 * (l.target.r || 25) * (l.share || 0)
+    console.log(`  * ${isSource ? '->' : '<-'} ${other.text} (${other.id})`)
+    console.log(`    - Share: ${l.share?.toFixed(3)}`)
+    console.log(`    - Weight: ${l.weight}`)
+    console.log(`    - Target R: ${l.target.r}`)
+    console.log(`    - Width: ${width.toFixed(1)}`)
+  })
+
   if (!mapStore.cursorMoved) {
     uiStore.setGraphSelection(node.id)
     uiStore.deselectLink()
@@ -418,7 +452,7 @@ const onNodeClick = async (node: GraphNode) => {
 }
 
 const onBackgroundClick = () => {
-  if (!mapStore.cursorMoved) {
+  if (!mapStore.cursorMoved && !mapStore.connecting) {
     uiStore.deselectLink()
     uiStore.setGraphSelection(null)
   }
@@ -436,6 +470,11 @@ const hShift = vec2.create()
 const layout = () => {
   if (mapStore.anim.update) {
     mapStore.anim.update()
+  }
+  
+  // Continuously update relative position if layouting (handle drag) is active
+  if (mapStore.layouting) {
+    updateRelativeDeltaWhileLayouting()
   }
 
   // Camera Smooth Pan (User requested ease out)
@@ -651,7 +690,8 @@ const updateGraphData = () => {
         source,
         target,
         relativePosition: l.relativePosition || [0, 0],
-        weight: l.weight || 1
+        weight: l.weight || 1,
+        share: l.share || 0
       })
     }
   })
@@ -660,6 +700,8 @@ const updateGraphData = () => {
 
 // --- Lifecycle ---
 onMounted(async () => {
+  mapStore.setNodeGetter((id) => nodeMap.get(id))
+
   window.addEventListener('resize', updateHalfSide)
   if (svgRef.value) {
       // Manual event listeners instead of D3
@@ -686,6 +728,13 @@ onMounted(async () => {
         node.pos = [pos.x, pos.y]
       }
     }
+    
+    // Load Camera
+    const camera = await loadCamera()
+    if (camera) {
+      mapStore.offset = vec2.fromValues(camera.x, camera.y)
+      mapStore.scale = camera.scale
+    }
   } catch (e) {
     console.error("Failed to load positions", e)
   }
@@ -695,6 +744,7 @@ onMounted(async () => {
     if (nodes.value.length > 0) {
         const toSave = nodes.value.map(n => ({ id: n.id, x: n.pos[0], y: n.pos[1] }))
         await savePositions(toSave)
+        await saveCamera({ x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
     }
   }, 2000) as any // Cast to any to avoid Node vs Browser timer type issues
   
@@ -742,8 +792,8 @@ const transform = computed(() => {
 const selectedLinkData = computed(() => {
   if (!uiStore.selectedLink) return null
   return links.value.find(l => 
-    l.source.id === uiStore.selectedLink!.parentId && 
-    l.target.id === uiStore.selectedLink!.childId
+    l.source.id === uiStore.selectedLink!.childId && 
+    l.target.id === uiStore.selectedLink!.parentId
   )
 })
 
@@ -774,7 +824,8 @@ const renderLinks = computed(() => {
     return links.value.map(l => ({
         source: { ...l.source, x: l.source.pos[0], y: l.source.pos[1] },
         target: { ...l.target, x: l.target.pos[0], y: l.target.pos[1] },
-        weight: l.weight
+        weight: l.weight,
+        share: l.share
     })) 
 })
 </script>
@@ -814,6 +865,7 @@ const renderLinks = computed(() => {
         />
       </g>
     </svg>
+    <GraphSidePanel />
   </div>
 </template>
 

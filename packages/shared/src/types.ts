@@ -9,7 +9,8 @@ export const AimStatusSchema = z.object({
 export const ConnectionSchema = z.object({
   aimId: z.string().uuid(),
   relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
-  weight: z.number().default(1)
+  weight: z.number().default(1),
+  explanation: z.string().optional()
 });
 
 export type Connection = z.infer<typeof ConnectionSchema>;

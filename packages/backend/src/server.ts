@@ -289,8 +289,8 @@ function getRandomRelativePosition(): [number, number] {
 }
 
 // Helper function to connect aims (reused by connectAims and createSubAim)
-async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number): Promise<void> {
-  console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childSupportedAimsIndex });
+async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number, relativePosition?: [number, number]): Promise<void> {
+  console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childSupportedAimsIndex, relativePosition });
   const parent = await readAim(projectPath, parentAimId);
   const child = await readAim(projectPath, childAimId);
 
@@ -310,7 +310,7 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
       }
     }
     // Insert at target position
-    const newConnection = { aimId: childAimId, relativePosition: getRandomRelativePosition(), weight: 1 };
+    const newConnection = { aimId: childAimId, relativePosition: relativePosition || getRandomRelativePosition(), weight: 1 };
     
     if (targetParentIndex <= parent.supportingConnections.length) {
       parent.supportingConnections.splice(targetParentIndex, 0, newConnection);
@@ -622,10 +622,11 @@ const appRouter = t.router({
         parentAimId: z.string().uuid(),
         childAimId: z.string().uuid(),
         parentIncomingIndex: z.number().optional(),
-        childSupportedAimsIndex: z.number().optional()
+        childSupportedAimsIndex: z.number().optional(),
+        relativePosition: z.tuple([z.number(), z.number()]).optional()
       }))
       .mutation(async ({ input }) => {
-        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex);
+        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex, input.relativePosition);
         return { success: true };
       }),
 

@@ -396,3 +396,44 @@ test('readAim - performs lazy migration of outgoing array', async () => {
   assert.deepEqual(persistedAim.supportedAims, [parent1Id, parent2Id]);
   assert.equal(persistedAim.outgoing, undefined);
 });
+
+test('connectAims - connects with relative position', async () => {
+
+  // Create parent aim
+  const parentResult = await caller.aim.createFloatingAim({
+    projectPath: TEST_PROJECT_PATH,
+    aim: {
+      text: 'Parent Aim',
+      status: { state: 'open', comment: '', date: Date.now() }
+    }
+  });
+
+  // Create child aim
+  const childResult = await caller.aim.createFloatingAim({
+    projectPath: TEST_PROJECT_PATH,
+    aim: {
+      text: 'Child Aim',
+      status: { state: 'open', comment: '', date: Date.now() }
+    }
+  });
+
+  const relativePosition: [number, number] = [0.5, 0.8];
+
+  // Connect them
+  await caller.aim.connectAims({
+    projectPath: TEST_PROJECT_PATH,
+    parentAimId: parentResult.id,
+    childAimId: childResult.id,
+    relativePosition: relativePosition
+  });
+
+  // Verify connection
+  const updatedParent = await caller.aim.get({
+    projectPath: TEST_PROJECT_PATH,
+    aimId: parentResult.id
+  });
+
+  assert.equal(updatedParent.supportingConnections.length, 1);
+  assert.equal(updatedParent.supportingConnections[0].aimId, childResult.id);
+  assert.deepEqual(updatedParent.supportingConnections[0].relativePosition, relativePosition);
+});

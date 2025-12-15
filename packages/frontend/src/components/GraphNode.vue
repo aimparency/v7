@@ -34,8 +34,10 @@ const titleLines = computed(() => {
   
   for (let i = 1; i < words.length; i++) {
     const word = words[i]
+    if (word === undefined) continue
+    
     if (currentLine.length + 1 + word.length <= maxChars) {
-      currentLine += ' ' + word
+      currentLine += (currentLine.length > 0 ? ' ' : '') + word
     } else {
       lines.push(currentLine)
       currentLine = word
@@ -57,8 +59,6 @@ const titleLines = computed(() => {
       <circle 
         r="1" 
         :fill="fillColor" 
-        stroke="#fff" 
-        stroke-width="0.075"
         class="node-circle"
         :class="{ selected }"
       />
@@ -93,17 +93,18 @@ const titleLines = computed(() => {
 }
 
 .node-circle {
-  transition: stroke 0.2s ease-in-out;
+  transition: stroke-width 0.2s ease-in-out;
   cursor: pointer;
-  stroke: #ccc0;
+  stroke: #ffffff;
+  stroke-width: 0;
+  paint-order: stroke;
 }
 
 .node-circle:hover {
-  stroke: #cccf;
+  stroke-width: 0.15;
 }
 
 .node-circle.selected {
-  stroke: #fff;
   stroke-width: 0.15;
 }
 

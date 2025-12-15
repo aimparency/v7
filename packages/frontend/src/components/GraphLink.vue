@@ -9,6 +9,7 @@ const props = defineProps<{
     source: { id: string, x: number, y: number, r?: number, color?: string }
     target: { id: string, x: number, y: number, r?: number }
     weight?: number
+    share?: number
   }
 }>()
 
@@ -32,10 +33,9 @@ const d = computed(() => {
   const fromR = source.r || 25
   const intoR = target.r || 25
   
-  // Calculate width based on weight
-  // Reference: 0.2 * this.flow.into.r * this.flow.share
-  const weight = props.link.weight || 1
-  const width = 0.2 * intoR * Math.min(1, weight) // Scaling factor
+  // Calculate width based on share (relative weight)
+  const share = props.link.share || 0
+  const width = 1.0 * intoR * share 
   
   return makeCircularPath(
     { pos: [source.x, source.y], r: fromR },
@@ -54,7 +54,7 @@ const opacity = computed(() => {
 })
 
 const select = () => {
-  uiStore.selectLink(props.link.source.id, props.link.target.id)
+  uiStore.selectLink(props.link.target.id, props.link.source.id)
 }
 </script>
 

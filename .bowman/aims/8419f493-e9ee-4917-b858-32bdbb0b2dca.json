@@ -9,6 +9,15 @@
     "comment": "Modified packages/frontend/src/stores/data.ts to update floatingAimsIds when a new aim event is received via WebSocket. Also fixed a missing type import in packages/backend/src/server.ts. Verified with type-check.",
     "date": 1765316000000
   },
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "a857ae19-b7eb-48f8-a3bf-7faa69f5dd3a",
+      "relativePosition": [
+        4.365279705617022,
+        -2.9828799723045676
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": []
 }

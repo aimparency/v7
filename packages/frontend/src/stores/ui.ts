@@ -97,7 +97,7 @@ export const useUIStore = defineStore('ui', {
     graphSelectedAimId: null as string | null,
 
     // View state
-    currentView: 'columns' as 'columns' | 'graph',
+    currentView: (localStorage.getItem('aimparency-current-view') || 'columns') as 'columns' | 'graph',
 
     // Remember last selected sub-phase index per parent phase
     lastSelectedSubPhaseIndexByPhase: {} as Record<string, number>,
@@ -207,6 +207,7 @@ export const useUIStore = defineStore('ui', {
         }
       }
       this.currentView = view
+      localStorage.setItem('aimparency-current-view', view)
     },
 
     ensureSelectionVisible() {
@@ -306,7 +307,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Create aim and update selection
-    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = 0, loopWeight: number = 0) {
+    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = 0, loopWeight: number = 1) {
       const dataStore = useDataStore()
 
       const path = this.getSelectionPath()
@@ -1168,10 +1169,7 @@ export const useUIStore = defineStore('ui', {
 
         if (event.key === 'g') {
           event.preventDefault()
-          this.currentView = this.currentView === 'columns' ? 'graph' : 'columns'
-          if (this.currentView === 'columns') {
-            this.ensureSelectionVisible()
-          }
+          this.setView(this.currentView === 'columns' ? 'graph' : 'columns')
           return
         }
 
@@ -1944,10 +1942,7 @@ export const useUIStore = defineStore('ui', {
         }
         case 'g':
           event.preventDefault()
-          this.currentView = this.currentView === 'columns' ? 'graph' : 'columns'
-          if (this.currentView === 'columns') {
-            this.ensureSelectionVisible()
-          }
+          this.setView(this.currentView === 'columns' ? 'graph' : 'columns')
           break
       }
     },

@@ -31,6 +31,7 @@ export const useDataStore = defineStore('data', {
     
     // Calculated values
     calculatedValues: new Map<string, number>(),
+    flowShares: new Map<string, number>(),
     totalIntrinsicValue: 0,
 
     // Persistence Debounce
@@ -119,7 +120,7 @@ export const useDataStore = defineStore('data', {
         value: state.calculatedValues.get(aim.id) || 0 // Add value here for graph
       }))
 
-      const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number }[] = []
+      const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number, share: number }[] = []
 
       aims.forEach(aim => {
         // Draw links from Parent (aim) to Child (supportingConnections)
@@ -128,12 +129,14 @@ export const useDataStore = defineStore('data', {
             const childId = conn.aimId
             // Verify child exists to avoid broken links
             if (state.aims[childId]) {
+                const share = state.flowShares.get(`${aim.id}->${childId}`) || 0
                 links.push({ 
-                  source: aim.id, 
-                  target: childId, 
+                  source: childId, 
+                  target: aim.id, 
                   type: 'hierarchy',
-                  relativePosition: conn.relativePosition,
-                  weight: conn.weight
+                  relativePosition: [-conn.relativePosition[0], -conn.relativePosition[1]],
+                  weight: conn.weight,
+                  share
                 })
             }
             })
@@ -149,6 +152,7 @@ export const useDataStore = defineStore('data', {
         const allAims = Object.values(this.aims) as Aim[];
         const result = calculateAimValues(allAims);
         this.calculatedValues = result.values;
+        this.flowShares = result.flowShares;
         this.totalIntrinsicValue = result.totalIntrinsic;
     },
 

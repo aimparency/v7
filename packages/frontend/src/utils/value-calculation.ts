@@ -1,13 +1,30 @@
-import type { Aim } from 'shared';
+import type { Aim } from 'shared/src/types';
 
-export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, totalIntrinsic: number } {
+export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, totalIntrinsic: number, flowShares: Map<string, number> } {
   const aimMap = new Map<string, Aim>();
   const currentValues = new Map<string, number>();
+  const flowShares = new Map<string, number>();
   let totalIntrinsic = 0;
 
   for (const aim of aims) {
     aimMap.set(aim.id, aim);
     totalIntrinsic += (aim.intrinsicValue ?? 0);
+  }
+
+  // Calculate Flow Shares
+  for (const parent of aims) {
+    const loopWeight = parent.loopWeight ?? 0;
+    const childrenWeights = parent.supportingConnections?.reduce((sum: number, c: any) => sum + (c.weight || 1), 0) || 0;
+    const totalWeight = loopWeight + childrenWeights;
+
+    if (totalWeight > 0) {
+      if (parent.supportingConnections) {
+        for (const conn of parent.supportingConnections) {
+          const share = (conn.weight || 1) / totalWeight;
+          flowShares.set(`${parent.id}->${conn.aimId}`, share);
+        }
+      }
+    }
   }
 
   // Initialize values (normalized)
@@ -17,7 +34,7 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
   }
 
   if (totalIntrinsic === 0) {
-    return { values: currentValues, totalIntrinsic: 0 };
+    return { values: currentValues, totalIntrinsic: 0, flowShares };
   }
 
   const iterations = 100;
@@ -37,7 +54,7 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
       const parentValue = currentValues.get(parent.id) || 0;
       
       const loopWeight = parent.loopWeight ?? 0;
-      const childrenWeights = parent.supportingConnections?.reduce((sum, c) => sum + (c.weight || 1), 0) || 0;
+      const childrenWeights = parent.supportingConnections?.reduce((sum: number, c: any) => sum + (c.weight || 1), 0) || 0;
       const totalWeight = loopWeight + childrenWeights;
 
       if (totalWeight > 0) {
@@ -92,5 +109,5 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
     }
   }
 
-  return { values: currentValues, totalIntrinsic };
+  return { values: currentValues, totalIntrinsic, flowShares };
 }

@@ -84,18 +84,49 @@ export const useMapStore = defineStore('map', {
     stopAnim() {
       this.anim.update = undefined
     },
-    centerOnNode(node: MapNode, duration = 1000) {
-      const offset0 = vec2.clone(this.offset) 
+    // Dependency injection for node lookup
+    getNode: (id: string) => undefined as MapNode | undefined,
+    setNodeGetter(fn: (id: string) => MapNode | undefined) {
+      this.getNode = fn
+    },
+    centerOnConnection(idA: string, idB: string, duration = 1000) {
+      const nodeA = this.getNode(idA)
+      const nodeB = this.getNode(idB)
+      if (!nodeA || !nodeB) return
+
+      const minX = Math.min(nodeA.pos[0], nodeB.pos[0])
+      const maxX = Math.max(nodeA.pos[0], nodeB.pos[0])
+      const minY = Math.min(nodeA.pos[1], nodeB.pos[1])
+      const maxY = Math.max(nodeA.pos[1], nodeB.pos[1])
+
+      const w = Math.max(maxX - minX, 100) // Ensure non-zero
+      const h = Math.max(maxY - minY, 100)
+      
+      const centerX = (minX + maxX) / 2
+      const centerY = (minY + maxY) / 2
+      
+      // Target: center on (centerX, centerY)
+      // offset = -center
+      const targetOffset = vec2.fromValues(-centerX, -centerY)
+      
+      // Target scale: 30% of viewport
+      // ViewLogicalSize = (Physical / halfSide) * (LOGICAL / scale)
+      // We want: BoxSize / ViewLogicalSize = 0.3
+      // BoxSize = 0.3 * (2 * ratio) * (LOGICAL / scale)
+      // scale = 0.6 * ratio * LOGICAL / BoxSize
+      
+      const scaleX = (0.6 * this.xratio * LOGICAL_HALF_SIDE) / w
+      const scaleY = (0.6 * this.yratio * LOGICAL_HALF_SIDE) / h
+      const targetScale = Math.min(scaleX, scaleY)
+
+      this.animateCamera(targetOffset, targetScale, duration)
+    },
+    animateCamera(targetOffset: vec2.T, targetScale: number, duration: number) {
+      const offset0 = vec2.clone(this.offset)
       const scale0 = this.scale
+      
       this.anim.t0 = Date.now()
-      this.anim.duration = duration / 1000 // Seconds? Logic uses / duration / this.anim.duration.
-      // Reference logic: let progress = (Date.now() - this.anim.t0) / duration / this.anim.duration 
-      // If duration is passed as ms, and this.anim.duration is 0.5 (default).
-      // Wait, reference: anim.duration = 0.5. centerOnAim(..., duration=1000).
-      // progress = (...) / 1000 / 0.5.
-      // If 500ms passed: 500 / 1000 / 0.5 = 1.
-      // So transition takes duration * anim.duration ms?
-      // I'll assume duration is total ms.
+      this.anim.duration = duration
       
       this.anim.update = () => {
         let progress = (Date.now() - this.anim.t0) / duration
@@ -103,22 +134,17 @@ export const useMapStore = defineStore('map', {
           progress = 1
           this.anim.update = undefined
         } else {
-          // Ease out (cos)
           progress = (1 - Math.cos(progress * Math.PI)) / 2
         }
-        // vec2.add(this.offset, vec2.crScale(offset0, 1 - progress), vec2.crScale(aim.pos, -progress))
-        // Target offset is -aim.pos.
-        // Interpolate offset
-        const targetOffset = vec2.crScale(node.pos, -1)
-        vec2.mix(this.offset, targetOffset, offset0, progress)
         
-        // this.scale = scale0 * (1 - progress) + 200 / aim.r * progress
-        // Target scale? Reference uses 200 / aim.r. 
-        // 200 is 2 * LOGICAL_HALF_SIDE? No, 1000.
-        // Maybe it wants aim to be a certain size on screen.
-        const targetScale = 200 / node.r // Heuristic
+        vec2.mix(this.offset, targetOffset, offset0, progress)
         this.scale = scale0 * (1 - progress) + targetScale * progress
       }
+    },
+    centerOnNode(node: MapNode, duration = 1000) {
+      const targetOffset = vec2.crScale(node.pos, -1)
+      const targetScale = 200 / node.r // Heuristic
+      this.animateCamera(targetOffset, targetScale, duration)
     }
   }
 })
