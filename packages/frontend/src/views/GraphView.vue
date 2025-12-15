@@ -154,6 +154,8 @@ const beginWhatever = (mouse: vec2.T) => {
     }
   } else if (mapStore.layoutCandidate) {
     updateLayout(vec2.create())
+  } else if (mapStore.connectFrom) {
+    // connecting - just let updateWhatever update mouse pos
   } else {
     mapStore.panBeginning = {
       offset: vec2.clone(mapStore.offset)
@@ -796,6 +798,7 @@ const renderLinks = computed(() => {
             :link="link" 
           />
         </g>
+        <GraphConnector />
         <g class="nodes">
           <GraphNodeComponent 
             v-for="node in renderNodes" 

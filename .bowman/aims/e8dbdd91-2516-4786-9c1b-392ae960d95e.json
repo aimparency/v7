@@ -5,7 +5,40 @@
     "backend",
     "schema"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "220bc09e-72d7-4772-998f-c4d465d5eb80",
+      "relativePosition": [
+        -2.4984178817563727,
+        -0.08892743176320786
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b439cf5f-d9b8-4406-a73b-65236c321c91",
+      "relativePosition": [
+        1.859845319988126,
+        1.670621257412423
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "35a2e9e1-a3f3-4eae-8174-cf951f33f142",
+      "relativePosition": [
+        -2.4953667707010783,
+        0.15213375588893188
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "6bbb740c-2281-4dbb-83c8-a391e626312a",
+      "relativePosition": [
+        2.1426183965563874,
+        -1.607516995883999
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [],
   "committedIn": [],
   "status": {

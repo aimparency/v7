@@ -69,10 +69,13 @@ export const useMapStore = defineStore('map', {
     },
     startDragging(node: MapNode) {
       this.dragCandidate = node
+      this.connecting = false
+      this.connectFrom = undefined
     },
     startConnecting(node: MapNode) {
       this.connectFrom = node
       this.connecting = true
+      this.dragCandidate = undefined
     },
     startLayouting(candidate: LayoutCandidate) {
       this.layoutCandidate = candidate

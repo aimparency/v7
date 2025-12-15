@@ -73,7 +73,7 @@ const titleLines = computed(() => {
           v-for="(line, i) in titleLines" 
           :key="i"
           x="0"
-          :dy="i === 0 ? (-0.3 * (titleLines.length - 1) / 2) + 'em' : '1.2em'"
+          :dy="i === 0 ? (-(titleLines.length - 1) * 0.6) + 'em' : '1.2em'"
         >
           {{ line }}
         </tspan>
