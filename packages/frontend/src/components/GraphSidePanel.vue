@@ -39,6 +39,7 @@ const editedWeight = ref(1)
 const isConfirmingDelete = ref(false)
 
 const editedIntrinsicValue = ref(0)
+const editedCost = ref(0)
 const editedLoopWeight = ref(0)
 
 watch(selectedLink, (newVal) => {
@@ -52,6 +53,7 @@ watch(selectedLink, (newVal) => {
 watch(selectedAim, (newVal) => {
     if (newVal) {
         editedIntrinsicValue.value = newVal.intrinsicValue || 0
+        editedCost.value = newVal.cost ?? 0
         editedLoopWeight.value = newVal.loopWeight ?? 0
     }
 }, { immediate: true })
@@ -72,6 +74,7 @@ const updateAimAttributes = async () => {
     // Optimistic Update
     const updates = {
         intrinsicValue: editedIntrinsicValue.value,
+        cost: editedCost.value,
         loopWeight: editedLoopWeight.value
     }
     
@@ -321,8 +324,29 @@ const isOpaque = computed(() => !hasInteracted.value)
                     />
                 </div>
                 <div class="metric">
-                    <span class="label">Total</span>
+                    <span class="label">Total Val</span>
                     <span class="value highlight">{{ dataStore.getAimValue(selectedAim.id).toFixed(2) }}</span>
+                </div>
+            </div>
+
+            <div class="metrics-row">
+                <div class="metric">
+                    <span class="label">Cost</span>
+                    <input 
+                        type="number" 
+                        v-model.number="editedCost" 
+                        @change="updateAimAttributes" 
+                        class="value-input" 
+                        step="0.1" 
+                    />
+                </div>
+                <div class="metric">
+                    <span class="label">Total Cost</span>
+                    <span class="value">{{ dataStore.getAimCost(selectedAim.id).toFixed(1) }}</span>
+                </div>
+                <div class="metric">
+                    <span class="label">Progress</span>
+                    <span class="value">{{ dataStore.getAimProgress(selectedAim.id).toFixed(0) }}%</span>
                 </div>
             </div>
             

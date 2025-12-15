@@ -126,5 +126,86 @@ export function calculateAimValues(aims: Aim[]): { values: Map<string, number>, 
     }
   }
 
-  return { values: currentValues, totalIntrinsic, flowShares };
+  const costs = calculateCosts(aims, aimMap);
+  const doneCosts = calculateDoneCosts(aims, aimMap, costs);
+  return { values: currentValues, totalIntrinsic, flowShares, costs, doneCosts };
+}
+
+function calculateCosts(aims: Aim[], aimMap: Map<string, Aim>): Map<string, number> {
+  const costs = new Map<string, number>();
+  const calculating = new Set<string>();
+
+  function getCost(aimId: string): number {
+    if (costs.has(aimId)) return costs.get(aimId)!;
+    if (calculating.has(aimId)) return 0; // Cycle breaking
+    
+    calculating.add(aimId);
+    const aim = aimMap.get(aimId);
+    if (!aim) {
+        calculating.delete(aimId);
+        return 0;
+    }
+
+    let childCost = 0;
+    if (aim.supportingConnections) {
+        for (const conn of aim.supportingConnections) {
+            childCost += getCost(conn.aimId);
+        }
+    }
+
+    const total = (aim.cost ?? 0) + childCost;
+    costs.set(aimId, total);
+    calculating.delete(aimId);
+    return total;
+  }
+
+  for (const aim of aims) {
+    getCost(aim.id);
+  }
+  
+  return costs;
+}
+
+function calculateDoneCosts(aims: Aim[], aimMap: Map<string, Aim>, totalCosts: Map<string, number>): Map<string, number> {
+  const doneCosts = new Map<string, number>();
+  const calculating = new Set<string>();
+
+  function getDoneCost(aimId: string): number {
+    if (doneCosts.has(aimId)) return doneCosts.get(aimId)!;
+    if (calculating.has(aimId)) return 0;
+    
+    calculating.add(aimId);
+    const aim = aimMap.get(aimId);
+    if (!aim) {
+        calculating.delete(aimId);
+        return 0;
+    }
+
+    if (aim.status.state === 'done') {
+        // If done, entire subtree cost is considered done (or just this node?)
+        // If a node is done, its children might not be marked done, but the effort is "done" from parent perspective.
+        // Let's assume Done implies 100% progress.
+        const total = totalCosts.get(aimId) || 0;
+        doneCosts.set(aimId, total);
+        calculating.delete(aimId);
+        return total;
+    }
+
+    let childDone = 0;
+    if (aim.supportingConnections) {
+        for (const conn of aim.supportingConnections) {
+            childDone += getDoneCost(conn.aimId);
+        }
+    }
+    
+    doneCosts.set(aimId, childDone);
+    calculating.delete(aimId);
+    return childDone;
+  }
+
+  for (const aim of aims) {
+    getDoneCost(aim.id);
+  }
+  
+  return doneCosts;
 }

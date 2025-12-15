@@ -31,6 +31,8 @@ export const useDataStore = defineStore('data', {
     
     // Calculated values
     calculatedValues: new Map<string, number>(),
+    calculatedCosts: new Map<string, number>(),
+    calculatedDoneCosts: new Map<string, number>(),
     flowShares: new Map<string, number>(),
     totalIntrinsicValue: 0,
 
@@ -68,6 +70,19 @@ export const useDataStore = defineStore('data', {
 
     getAimValue: (state) => (aimId: string): number => {
       const normalized = state.calculatedValues.get(aimId) || 0
+      return normalized * state.totalIntrinsicValue
+    },
+
+    getAimCost: (state) => (aimId: string): number => {
+      return state.calculatedCosts.get(aimId) || 0
+    },
+
+    getAimProgress: (state) => (aimId: string): number => {
+      const total = state.calculatedCosts.get(aimId) || 0
+      if (total === 0) return 0
+      const done = state.calculatedDoneCosts.get(aimId) || 0
+      return Math.min(100, Math.max(0, (done / total) * 100))
+    },
       return normalized * state.totalIntrinsicValue
     },
 
@@ -155,6 +170,8 @@ export const useDataStore = defineStore('data', {
         const allAims = Object.values(this.aims) as Aim[];
         const result = calculateAimValues(allAims);
         this.calculatedValues = result.values;
+        this.calculatedCosts = result.costs;
+        this.calculatedDoneCosts = result.doneCosts;
         this.flowShares = result.flowShares;
         this.totalIntrinsicValue = result.totalIntrinsic;
     },
