@@ -152,7 +152,6 @@ input, .tag, .add {
       color: #e0e0e0;
       outline: none;
       flex-grow: 1;
-      font-family: monospace;
     }
   }
   .tag {

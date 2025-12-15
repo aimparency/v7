@@ -402,7 +402,6 @@ onMounted(() => {
 
 .search-icon {
   color: #888;
-  font-family: monospace;
   font-weight: bold;
   margin-right: 10px;
   font-size: 1.2em;
@@ -415,7 +414,6 @@ input {
   color: #fff;
   font-size: 1.1em;
   outline: none;
-  font-family: sans-serif;
 }
 
 .results-list {
@@ -450,7 +448,6 @@ input {
 }
 
 .path-text {
-  font-family: monospace;
   font-size: 0.9rem;
   color: #ccc;
 }

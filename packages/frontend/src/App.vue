@@ -312,7 +312,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   color: #e0e0e0;
-  font-family: 'Monaco', 'Menlo', monospace;
 }
 
 .header {
@@ -364,7 +363,6 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-family: monospace;
   line-height: 1;
   padding: 0;
   
@@ -374,7 +372,6 @@ onUnmounted(() => {
 }
 
 .project-path {
-  font-family: monospace;
   color: #888;
 }
 
@@ -414,7 +411,6 @@ onUnmounted(() => {
   border: 1px solid #555;
   border-radius: 0.3125rem;
   color: #e0e0e0;
-  font-family: monospace;
   font-size: 1rem;
 
   &:focus {
@@ -517,7 +513,6 @@ onUnmounted(() => {
 }
 
 .history-path {
-  font-family: monospace;
   color: #e0e0e0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -613,7 +608,6 @@ onUnmounted(() => {
   color: #888;
   padding: 0.2rem 0.6rem;
   cursor: pointer;
-  font-family: monospace;
   font-size: 0.8rem;
   
   &:hover {
@@ -648,7 +642,6 @@ kbd {
   padding: 0.125rem 0.25rem;
   border-radius: 0.1875rem;
   font-size: 0.8rem;
-  font-family: monospace;
 }
 
 /* Global styles */
@@ -657,6 +650,5 @@ kbd {
   padding: 0.125rem 0.25rem;
   border-radius: 0.1875rem;
   font-size: 0.8rem;
-  font-family: monospace;
 }
 </style>

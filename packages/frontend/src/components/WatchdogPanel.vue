@@ -152,7 +152,6 @@ const toggle = () => {
   padding: 0.25rem 0.75rem;
   border-radius: 3px;
   cursor: pointer;
-  font-family: monospace;
   font-size: 0.8rem;
 }
 
@@ -172,7 +171,6 @@ const toggle = () => {
   padding: 0.25rem 0.75rem;
   border-radius: 3px;
   cursor: pointer;
-  font-family: monospace;
   font-size: 0.8rem;
 }
 

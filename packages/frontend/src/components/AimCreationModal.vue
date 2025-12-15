@@ -421,7 +421,6 @@ onMounted(async () => {
         border: 1px solid #555;
         border-radius: 0.1875rem;
         color: #e0e0e0;
-        font-family: monospace;
 
         &:focus {
           outline: none;
@@ -455,7 +454,6 @@ onMounted(async () => {
       border: none;
       border-radius: 0.1875rem;
       cursor: pointer;
-      font-family: monospace;
       
       &.btn-primary {
         background: #007acc;
@@ -547,7 +545,6 @@ onMounted(async () => {
       padding: 0.125rem 0.25rem;
       border-radius: 0.1875rem;
       font-size: 0.7rem;
-      font-family: monospace;
     }
   }
 }

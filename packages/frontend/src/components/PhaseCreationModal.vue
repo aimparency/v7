@@ -303,7 +303,6 @@ const calculateSmartDateRanges = async () => {
         border: 1px solid #555;
         border-radius: 0.1875rem;
         color: #e0e0e0;
-        font-family: monospace;
         
         &:focus {
           outline: none;
@@ -352,7 +351,6 @@ const calculateSmartDateRanges = async () => {
       border: none;
       border-radius: 3px;
       cursor: pointer;
-      font-family: monospace;
       
       &.btn-primary {
         background: #007acc;
