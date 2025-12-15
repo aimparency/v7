@@ -93,6 +93,9 @@ export const useUIStore = defineStore('ui', {
     // Selected Link (Flow)
     selectedLink: null as { parentId: string, childId: string } | null,
 
+    // Graph specific selection
+    graphSelectedAimId: null as string | null,
+
     // View state
     currentView: 'columns' as 'columns' | 'graph',
 
@@ -193,6 +196,16 @@ export const useUIStore = defineStore('ui', {
     },
 
     setView(view: 'columns' | 'graph') {
+      if (view === 'graph') {
+        // Sync List -> Graph
+        const current = this.getCurrentAim()
+        this.graphSelectedAimId = current ? current.id : null
+      } else if (view === 'columns') {
+        // Sync Graph -> List
+        if (this.graphSelectedAimId) {
+          this.navigateToAim(this.graphSelectedAimId)
+        }
+      }
       this.currentView = view
     },
 
@@ -960,6 +973,10 @@ export const useUIStore = defineStore('ui', {
 
     deselectAim() {
       this.navigatingAims = false
+    },
+
+    setGraphSelection(aimId: string | null) {
+      this.graphSelectedAimId = aimId
     },
 
     async calculateAimPaths(aimId: string): Promise<AimPath[]> {

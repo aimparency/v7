@@ -20,9 +20,9 @@ const selected = computed(() => {
 })
 
 const aimSelected = computed(() => {
-  const currentAim = uiStore.getCurrentAim()
-  return currentAim?.id === props.link.source.id || 
-         currentAim?.id === props.link.target.id
+  const currentAimId = uiStore.graphSelectedAimId
+  return currentAimId === props.link.source.id || 
+         currentAimId === props.link.target.id
 })
 
 const d = computed(() => {

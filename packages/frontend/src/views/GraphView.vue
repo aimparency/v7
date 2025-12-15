@@ -58,7 +58,6 @@ const nodeMap = new Map<string, GraphNode>()
 // Layouting State
 const layoutingHandlePos = vec2.create()
 const loadedPositions = new Map<string, { x: number, y: number }>()
-let isNavigatingFromClick = false
 
 let animFrameId: number | null = null
 let saveIntervalId: number | null = null
@@ -376,8 +375,8 @@ const onNodeDown = (e: MouseEvent | TouchEvent, nodeCopy: GraphNode) => {
   const node = nodeMap.get(nodeCopy.id)
   if (!node) return
 
-  const currentAim = uiStore.getCurrentAim()
-  if (currentAim && currentAim.id === node.id) {
+  const selectedId = uiStore.graphSelectedAimId
+  if (selectedId && selectedId === node.id) {
     // Already selected -> start connecting
     mapStore.startConnecting(node)
   } else {
@@ -413,21 +412,15 @@ const onNodeUp = async (node: GraphNode) => {
 
 const onNodeClick = async (node: GraphNode) => {
   if (!mapStore.cursorMoved) {
-    isNavigatingFromClick = true
-    try {
-      await uiStore.navigateToAim(node.id)
-      uiStore.deselectLink()
-    } finally {
-      // Small delay to ensure watchers have fired
-      setTimeout(() => { isNavigatingFromClick = false }, 100)
-    }
+    uiStore.setGraphSelection(node.id)
+    uiStore.deselectLink()
   }
 }
 
 const onBackgroundClick = () => {
   if (!mapStore.cursorMoved) {
     uiStore.deselectLink()
-    uiStore.deselectAim()
+    uiStore.setGraphSelection(null)
   }
 }
 
@@ -448,9 +441,9 @@ const layout = () => {
   // Camera Smooth Pan (User requested ease out)
   // If not interacting and no active anim
   if (!mapStore.panBeginning && !mapStore.dragBeginning && !mapStore.anim.update && mapStore.isTracking) {
-     const currentAim = uiStore.getCurrentAim()
-     if (currentAim) {
-       const node = nodeMap.get(currentAim.id)
+     const currentAimId = uiStore.graphSelectedAimId
+     if (currentAimId) {
+       const node = nodeMap.get(currentAimId)
        if (node) {
          // Target: center node. Offset = -node.pos
          const targetX = -node.pos[0]
@@ -730,10 +723,9 @@ onUnmounted(() => {
 watch(() => dataStore.graphData, updateGraphData, { deep: true })
 
 watch(() => uiStore.getCurrentAim(), (newAim) => {
-  if (isNavigatingFromClick) {
-    return
-  }
   if (newAim) {
+    // Sync Tree -> Graph (e.g. keyboard nav)
+    uiStore.setGraphSelection(newAim.id)
     mapStore.isTracking = true
   }
 }, { deep: true, immediate: true })
@@ -769,7 +761,7 @@ const selectedLinkVisuals = computed(() => {
 
 const renderNodes = computed(() => { 
     trigger.value; 
-    const currentAimId = uiStore.getCurrentAim()?.id
+    const currentAimId = uiStore.graphSelectedAimId
     return nodes.value.map(n => ({
         ...n,
         x: n.pos[0],
