@@ -262,6 +262,42 @@ onMounted(async () => {
           />
         </div>
 
+        <!-- Search Results (create mode only) -->
+        <div
+          v-if="uiStore.aimModalMode === 'create' && hasSearchText"
+          ref="searchResultsContainer"
+          class="search-results"
+          tabindex="0"
+          @keydown="handleSearchResultsKeydown"
+        >
+          <!-- "Create new" entry (always first, index 0) -->
+          <div
+            class="search-result create-new"
+            :class="{ selected: selectedSearchIndex === 0 }"
+            @click="selectSearchResult(0)"
+          >
+            <div class="result-text">Create new: "{{ aimText }}"</div>
+          </div>
+
+          <!-- Existing aims (if any) -->
+          <div
+            v-for="(result, index) in searchResults"
+            :key="result.id"
+            class="search-result existing-aim"
+            :class="{ selected: index + 1 === selectedSearchIndex }"
+            @click="selectSearchResult(index + 1)"
+          >
+            <div class="result-text">{{ result.text }}</div>
+            <div class="result-status" :class="result.status.state">
+              {{ result.status.state }}
+            </div>
+          </div>
+
+          <div class="search-help">
+            Use <kbd>J</kbd>/<kbd>K</kbd> to navigate, <kbd>Tab</kbd> to continue
+          </div>
+        </div>
+
         <div class="form-group">
           <label>Description (optional)</label>
           <textarea
@@ -345,41 +381,7 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Search Results (create mode only) -->
-        <div
-          v-if="uiStore.aimModalMode === 'create' && hasSearchText"
-          ref="searchResultsContainer"
-          class="search-results"
-          tabindex="0"
-          @keydown="handleSearchResultsKeydown"
-        >
-          <!-- "Create new" entry (always first, index 0) -->
-          <div
-            class="search-result create-new"
-            :class="{ selected: selectedSearchIndex === 0 }"
-            @click="selectSearchResult(0)"
-          >
-            <div class="result-text">Create new: "{{ aimText }}"</div>
-          </div>
 
-          <!-- Existing aims (if any) -->
-          <div
-            v-for="(result, index) in searchResults"
-            :key="result.id"
-            class="search-result existing-aim"
-            :class="{ selected: index + 1 === selectedSearchIndex }"
-            @click="selectSearchResult(index + 1)"
-          >
-            <div class="result-text">{{ result.text }}</div>
-            <div class="result-status" :class="result.status.state">
-              {{ result.status.state }}
-            </div>
-          </div>
-
-          <div class="search-help">
-            Use <kbd>J</kbd>/<kbd>K</kbd> to navigate, <kbd>Tab</kbd> to buttons
-          </div>
-        </div>
       </div>
       
       <div class="modal-footer">
@@ -526,6 +528,7 @@ onMounted(async () => {
   border: 1px solid #555;
   border-radius: 0.1875rem;
   background: #1a1a1a;
+  margin-bottom: 1rem;
 
   .search-result {
     padding: 0.5rem;
