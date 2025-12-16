@@ -69,6 +69,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         socket.value.on('connect', () => {
           console.log('Connected to Watchdog')
           isConnected.value = true
+          localStorage.setItem('aimparency-watchdog-should-connect', 'true')
         })
 
         socket.value.on('disconnect', () => {
@@ -119,6 +120,16 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
+  function disconnect() {
+    if (socket.value) {
+      socket.value.disconnect()
+      socket.value = null
+    }
+    isConnected.value = false
+    localStorage.setItem('aimparency-watchdog-should-connect', 'false')
+    stopKeepalive()
+  }
+
   function toggle() {
     if (!socket.value) return
     const newState = !isEnabled.value
@@ -159,6 +170,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     workerOutput,
     watchdogOutput,
     connect,
+    disconnect,
     toggle,
     sendWorkerInput,
     relaunch

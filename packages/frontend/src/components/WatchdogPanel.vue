@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
 import WatchdogTerminal from './WatchdogTerminal.vue'
 
@@ -7,38 +7,32 @@ const store = useWatchdogStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 
-onMounted(() => {
-  store.connect()
-  
-  // Watch for incoming data and write to terminals
-  // Note: store buffers accumulate, but we only want *new* data if we stream it.
-  // Actually, the store appends to a string. Watching the string for changes might be inefficient for large logs.
-  // Ideally, the store would emit events or we'd hook directly into the socket handlers.
-  // BUT, to keep store simple, let's watch the buffer length?
-  // Or better: pass the raw data handling to the component?
-  // The store already has listeners. We can modify the store to provide an event hook?
-  // OR just assume we re-render or append.
-  // The 'watch' approach on a string is bad for performance.
-  
-  // Let's hook into the socket events directly in this component?
-  // Or make the store expose an event emitter?
-  // Or just polling?
-  
-  // Let's modify the store to expose a "lastChunk" ref that updates?
-  // Actually, let's stick to the store having the socket, and we listen to the socket in the component?
-  // But we want the store to manage connection state.
-  // Let's use the store's socket reference.
-});
+const onWorkerData = (data: string) => workerTerm.value?.write(data)
+const onWatchdogData = (data: string) => watchdogTerm.value?.write(data)
 
-// Watch for socket availability to hook up listeners for TERMINAL streaming (bypassing the store string buffer for display)
-watch(() => store.socket, (socket) => {
+// Manage socket listeners manually to prevent leaks and ensure data flow to terminals
+watch(() => store.socket, (socket, oldSocket) => {
+  if (oldSocket) {
+    oldSocket.off('worker-data', onWorkerData)
+    oldSocket.off('watchdog-data', onWatchdogData)
+  }
   if (socket) {
-    socket.on('worker-data', (data: string) => {
-      workerTerm.value?.write(data)
-    })
-    socket.on('watchdog-data', (data: string) => {
-      watchdogTerm.value?.write(data)
-    })
+    socket.on('worker-data', onWorkerData)
+    socket.on('watchdog-data', onWatchdogData)
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  const shouldConnect = localStorage.getItem('aimparency-watchdog-should-connect')
+  if (shouldConnect !== 'false') {
+    store.connect()
+  }
+})
+
+onUnmounted(() => {
+  if (store.socket) {
+    store.socket.off('worker-data', onWorkerData)
+    store.socket.off('watchdog-data', onWatchdogData)
   }
 })
 
@@ -57,6 +51,18 @@ const toggle = () => {
       <div class="status-indicator">
         <span class="dot" :class="{ connected: store.isConnected }"></span>
         <span class="status-text">{{ store.isConnected ? 'Connected' : 'Disconnected' }}</span>
+        <button 
+          v-if="store.isConnected" 
+          @click="store.disconnect()" 
+          class="link-btn" 
+          title="Disconnect from backend"
+        >(Disconnect)</button>
+        <button 
+          v-else 
+          @click="store.connect()" 
+          class="link-btn" 
+          title="Connect to backend"
+        >(Connect)</button>
       </div>
       <div class="controls">
         <span v-if="store.stopReason" class="stop-reason">{{ store.stopReason }}</span>
@@ -145,6 +151,21 @@ const toggle = () => {
   color: #fa0;
   font-weight: bold;
   font-size: 0.8rem;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  padding: 0;
+  margin-left: 0.5rem;
+}
+
+.link-btn:hover {
+  color: #aaa;
 }
 
 .toggle-btn {
