@@ -1384,11 +1384,6 @@ export const useUIStore = defineStore('ui', {
           // Set loading state
           this.movingAimId = currentAimId
 
-          await trpc.aim.removeFromPhase.mutate({
-            projectPath: this.projectPath,
-            aimId: currentAim.id,
-            phaseId: phaseId
-          })
           await trpc.aim.commitToPhase.mutate({
             projectPath: this.projectPath,
             aimId: currentAim.id,
@@ -1473,11 +1468,6 @@ export const useUIStore = defineStore('ui', {
           // Set loading state
           this.movingAimId = currentAimId
 
-          await trpc.aim.removeFromPhase.mutate({
-            projectPath: this.projectPath,
-            aimId: currentAim.id,
-            phaseId: phaseId
-          })
           await trpc.aim.commitToPhase.mutate({
             projectPath: this.projectPath,
             aimId: currentAim.id,

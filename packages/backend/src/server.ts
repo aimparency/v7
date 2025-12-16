@@ -257,22 +257,37 @@ async function commitAimToPhase(projectPath: string, aimId: string, phaseId: str
   // Update the phase
   const phase = await readPhase(projectPath, phaseId);
   console.log(`commitAimToPhase: aimId=${aimId}, phaseId=${phaseId}, insertionIndex=${insertionIndex}`);
-  console.log(`Before: phase.commitments =`, phase.commitments);
   
   if (!phase.commitments.includes(aimId)) {
     if (insertionIndex !== undefined && insertionIndex <= phase.commitments.length) {
-      // Insert at specific position
-      console.log(`Inserting at index ${insertionIndex}`);
       phase.commitments.splice(insertionIndex, 0, aimId);
     } else {
-      // Append to end
-      console.log(`Appending to end (insertionIndex was ${insertionIndex})`);
       phase.commitments.push(aimId);
     }
-    console.log(`After: phase.commitments =`, phase.commitments);
     await writePhase(projectPath, phase);
   } else {
-    console.log(`Aim ${aimId} already in phase commitments`);
+    // Reorder if index provided
+    if (insertionIndex !== undefined) {
+       const currentIndex = phase.commitments.indexOf(aimId);
+       if (currentIndex !== -1 && currentIndex !== insertionIndex) {
+           phase.commitments.splice(currentIndex, 1);
+           // Insert at target index (relative to the array after removal)
+           // If insertionIndex was calculated based on the original array,
+           // and we are moving DOWN (insertion > current), we might need to adjust?
+           // Frontend sends `currentIndex + 1` for move down.
+           // [A, B]. Move A(0) to 1.
+           // Remove A -> [B]. Insert at 1 -> [B, A]. Correct.
+           // [A, B]. Move B(1) to 0.
+           // Remove B -> [A]. Insert at 0 -> [B, A]. Correct.
+           
+           // Ensure index is within bounds of the *new* array (length - 1 + 1 = length)
+           const maxIndex = phase.commitments.length;
+           const targetIndex = Math.min(insertionIndex, maxIndex);
+           
+           phase.commitments.splice(targetIndex, 0, aimId);
+           await writePhase(projectPath, phase);
+       }
+    }
   }
   
   // Update the aim
