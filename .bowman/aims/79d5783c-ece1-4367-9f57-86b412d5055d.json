@@ -1,0 +1,22 @@
+{
+  "id": "79d5783c-ece1-4367-9f57-86b412d5055d",
+  "text": "Build minimal website for Physical Penetration Testing business (<100kb, WebGL particles)",
+  "tags": [
+    "website",
+    "webgl",
+    "business"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "501c8098-2757-434d-b3fe-f0a3358408c2"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1765866473213
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
