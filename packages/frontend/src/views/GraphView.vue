@@ -37,6 +37,7 @@ interface GraphNode extends MapNode {
   value: number
   // Physics state
   shift: vec2.T
+  freezeFactor: number
   color?: string
 }
 
@@ -60,6 +61,7 @@ const nodeMap = new Map<string, GraphNode>()
 // Layouting State
 const layoutingHandlePos = vec2.create()
 const loadedPositions = new Map<string, { x: number, y: number }>()
+const freezings = new Map<string, number>() // aimId -> releaseTime (ms)
 
 let animFrameId: number | null = null
 let saveIntervalId: number | null = null
@@ -223,6 +225,11 @@ const endWhatever = () => {
     
     mapStore.dragBeginning = undefined
     mapStore.dragCandidate = undefined
+    
+    // Add freezing
+    if (node) {
+        freezings.set(node.id, Date.now())
+    }
   } else if (mapStore.layouting) {
     const lc = mapStore.layoutCandidate
     if (lc) {
@@ -626,10 +633,36 @@ const layout = () => {
 
       // 4. Global Force & Apply
       const viewMinShift = 0.1 * (LOGICAL_HALF_SIDE / mapStore.halfSide) / mapStore.scale
+      const now = Date.now()
+      const FREEZE_DURATION = 10000
 
       for (let i = 0; i < count; i++) {
         const n = currentNodes[i]!
         vec2.scale(n.shift, n.shift, GLOBAL_FORCE)
+        
+        // Apply Freezing Decay
+        const releaseTime = freezings.get(n.id)
+        if (releaseTime !== undefined) {
+            const elapsed = now - releaseTime
+            if (elapsed < FREEZE_DURATION) {
+                const freezeFactor = 1 - (elapsed / FREEZE_DURATION)
+                // (1 - freezePosition) where freezePosition is 1 at start, 0 at end?
+                // User said: "(1 - freezePosition) * shift". 
+                // "decay from 1 to 0". So freeze starts at 1 (full freeze).
+                // So factor should be (1 - (1 - elapsed/duration)) = elapsed/duration?
+                // Let's re-read: "1 to 0 that gets multiplied with graph force movements: (1 - freezePosition) * shift"
+                // If "decay" is the freezePosition (starts at 1, goes to 0).
+                // Then (1 - 1) * shift = 0 (Frozen).
+                // Then (1 - 0) * shift = shift (Free).
+                
+                const currentFreeze = 1 - (elapsed / FREEZE_DURATION)
+                const moveFactor = 1 - currentFreeze
+                
+                vec2.scale(n.shift, n.shift, moveFactor)
+            } else {
+                freezings.delete(n.id)
+            }
+        }
         
         const minShift = Math.max(viewMinShift, n.r * 0.001)
 
@@ -693,6 +726,7 @@ const updateGraphData = () => {
         value: val,
         pos: loaded ? [loaded.x, loaded.y] : [Math.random() * 100 - 50, Math.random() * 100 - 50],
         shift: [0, 0],
+        freezeFactor: 0,
         color: undefined
       }
       nodeMap.set(raw.id, existing)
