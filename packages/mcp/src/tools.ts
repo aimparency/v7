@@ -178,7 +178,7 @@ export function registerTools(server: Server) {
         },
         {
           name: "update-aim",
-          description: "Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships",
+          description: "Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships. It's recommended, to update aims before using git add for the code changes and .bowman, in order to commit code and related aim changes at the same time.",
           inputSchema: {
             type: "object",
             properties: {

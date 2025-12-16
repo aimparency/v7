@@ -1,0 +1,19 @@
+{
+  "id": "0b63290f-d42e-44c5-b0ba-e92a37fc67cb",
+  "text": "don't resize xterm.js when worker panel not showing",
+  "description": "when pressing 'w' for hiding worker the content should not be cleared because the area is 0",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Added check in WatchdogTerminal.vue fit() function to return early if container width or height is 0. Prevents xterm resize errors and content clearing when panel is hidden.",
+    "date": 1765910092946
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

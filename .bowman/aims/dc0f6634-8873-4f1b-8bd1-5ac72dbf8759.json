@@ -1,0 +1,19 @@
+{
+  "id": "dc0f6634-8873-4f1b-8bd1-5ac72dbf8759",
+  "text": "mcp function for getting current phases should default to current date if not specified. also add that to tool descripion",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Implemented default Date.now() for activeAt in list-phases tool and added 'all' parameter to list all phases.",
+    "date": 1765908933734
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

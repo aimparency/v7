@@ -9,9 +9,9 @@
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765816103537
+    "state": "done",
+    "comment": "Disabled cycle detection in backend/src/server.ts checkConsistency procedure. Cycles are now permitted.",
+    "date": 1765909809811
   },
   "intrinsicValue": 0,
   "loopWeight": 0

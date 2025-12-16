@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765728395834
+    "state": "done",
+    "comment": "Modified backend commitToPhase to support reordering. Updated frontend moveAimDown/moveAimUp to use atomic commitToPhase instead of remove+commit sequence, preventing aims from momentarily appearing as floating.",
+    "date": 1765911185504
   },
   "intrinsicValue": 0,
   "loopWeight": 1

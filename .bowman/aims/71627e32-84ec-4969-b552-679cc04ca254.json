@@ -18,9 +18,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765742295792
+    "state": "done",
+    "comment": "Verified implementation in GraphLink.vue. Arrow width is calculated as `intoR * share`, which means it scales with the value flow share relative to the target radius. Matches requirement.",
+    "date": 1765910793329
   },
   "intrinsicValue": 0,
   "loopWeight": 0

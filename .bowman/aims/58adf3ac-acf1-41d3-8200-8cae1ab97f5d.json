@@ -18,9 +18,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765820113643
+    "state": "done",
+    "comment": "Implemented 'priority' option in sortBy for list-aims. Calculates priority as intrinsicValue / cost. Updated backend and MCP schema.",
+    "date": 1765910579199
   },
   "intrinsicValue": 0,
   "loopWeight": 0

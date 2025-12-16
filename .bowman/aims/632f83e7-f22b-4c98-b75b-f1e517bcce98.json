@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765819080453
+    "state": "done",
+    "comment": "Implemented focus trap in AimCreationModal and PhaseCreationModal. Tab wraps from last to first, Shift+Tab wraps from first to last. Focus stays inside modal.",
+    "date": 1765909176850
   },
   "intrinsicValue": 0,
   "loopWeight": 0

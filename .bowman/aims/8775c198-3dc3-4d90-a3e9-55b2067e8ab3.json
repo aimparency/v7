@@ -6,9 +6,9 @@
   "incoming": [],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765463884336
+    "state": "done",
+    "comment": "Verified that status comment is only displayed within the .aim-details block in Aim.vue, which is conditional on v-if='isExpanded'. Behavior matches requirement.",
+    "date": 1765909080799
   },
   "supportingConnections": [],
   "supportedAims": [

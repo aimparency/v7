@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765819671933
+    "state": "done",
+    "comment": "Refactored MCP server into client.ts, constants.ts, resources.ts, tools.ts, and prompts.ts. Main index.ts now simply imports and registers handlers. Verified build.",
+    "date": 1765910358593
   },
   "intrinsicValue": 0,
   "loopWeight": 0

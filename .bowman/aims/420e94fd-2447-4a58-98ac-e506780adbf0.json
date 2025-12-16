@@ -6,9 +6,9 @@
   "supportingConnections": [],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765625943897
+    "state": "done",
+    "comment": "Verified and cleaned up implementation in GraphView.vue. Radius calculation includes `+ 0.1` relative to average value inside the square root, ensuring visibility for zero-value aims.",
+    "date": 1765909649152
   },
   "intrinsicValue": 0,
   "supportedAims": [

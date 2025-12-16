@@ -9,9 +9,9 @@
     "4c960ff4-05ba-4ff8-b523-1a104d750503"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765738992321
+    "state": "done",
+    "comment": "Modified AimCreationModal to blur description textarea on Escape (supporting Vim-mode extensions) instead of closing modal. Tab behavior is standard (next field).",
+    "date": 1765909052285
   },
   "intrinsicValue": 0,
   "loopWeight": 0

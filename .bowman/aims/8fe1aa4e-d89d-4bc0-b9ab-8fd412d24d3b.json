@@ -18,9 +18,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765801811821
+    "state": "done",
+    "comment": "Moved search results container to be between Aim Text input and Description textarea. Updated help text to reflect tab navigation flow.",
+    "date": 1765909485121
   },
   "intrinsicValue": 10,
   "loopWeight": 0

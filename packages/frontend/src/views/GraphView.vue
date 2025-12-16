@@ -713,7 +713,6 @@ const updateGraphData = () => {
   rawNodes.forEach(raw => {
     let existing = nodeMap.get(raw.id)
     const val = raw.value || 0
-    // r = Math.sqrt(val + 0.1 * avgValue) * 1000
     const radius = Math.sqrt((val / (avgValue || 1)) + 0.1) * 150
 
     if (!existing) {
