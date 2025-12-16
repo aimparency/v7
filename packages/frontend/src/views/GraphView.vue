@@ -430,9 +430,9 @@ const onNodeUp = async (node: GraphNode) => {
   if (mapStore.connecting && mapStore.connectFrom) {
     if (mapStore.connectFrom.id !== node.id) {
       // Calculate relative position
-      // DragFrom = Child (Supporting), DragTo = Parent (Supported)
-      const child = mapStore.connectFrom
-      const parent = node
+      // DragFrom = Parent (Supported), DragTo = Child (Supporting)
+      const parent = mapStore.connectFrom as GraphNode
+      const child = node
       
       // Vector Child -> Parent (as expected by backend/store)
       // Parent = Child + RelPos => RelPos = Parent - Child
