@@ -79,11 +79,9 @@ export const useDataStore = defineStore('data', {
 
     getAimProgress: (state) => (aimId: string): number => {
       const total = state.calculatedCosts.get(aimId) || 0
-      if (total === 0) return 0
+      if (total === 0) return 0 // should never happen
       const done = state.calculatedDoneCosts.get(aimId) || 0
-      return Math.min(100, Math.max(0, (done / total) * 100))
-    },
-      return normalized * state.totalIntrinsicValue
+      return done / total * 100
     },
 
     graphData(state) {

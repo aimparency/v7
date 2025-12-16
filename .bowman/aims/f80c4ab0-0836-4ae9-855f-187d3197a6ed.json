@@ -12,24 +12,7 @@
     "comment": "Implemented reference graph layout engine in GraphView.vue using custom D3 force with 'relativePosition' logic.",
     "date": 1765571855716
   },
-  "supportingConnections": [
-    {
-      "aimId": "cba35ca3-540d-4dcc-b0bd-169b180169eb",
-      "relativePosition": [
-        -1.153278572793169,
-        -3.073558688997173
-      ],
-      "weight": 1
-    },
-    {
-      "aimId": "5d90b2d0-ac77-48ab-b717-a7a9f7660f81",
-      "relativePosition": [
-        4.437171450356298,
-        -1.2250231452640588
-      ],
-      "weight": 1
-    }
-  ],
+  "supportingConnections": [],
   "supportedAims": [
     "b439cf5f-d9b8-4406-a73b-65236c321c91"
   ]

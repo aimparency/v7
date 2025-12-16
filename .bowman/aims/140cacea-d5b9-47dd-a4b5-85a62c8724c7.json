@@ -9,26 +9,8 @@
     "comment": "Implemented GraphNode.vue and GraphLink.vue components. Refactored GraphView.vue to use them. Styles encapsulated. Verified with type-check.",
     "date": 1765540863147
   },
-  "supportingConnections": [
-    {
-      "aimId": "6bbb740c-2281-4dbb-83c8-a391e626312a",
-      "relativePosition": [
-        -1.1100524072830986,
-        2.2444853342122735
-      ],
-      "weight": 1
-    },
-    {
-      "aimId": "2c653807-61af-445a-95f9-3e2f1b904d6f",
-      "relativePosition": [
-        1.82151855257443,
-        2.1285438539356045
-      ],
-      "weight": 1
-    }
-  ],
+  "supportingConnections": [],
   "supportedAims": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a",
-    "420e94fd-2447-4a58-98ac-e506780adbf0"
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
   ]
 }
