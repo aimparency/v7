@@ -415,13 +415,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "list-phases",
-        description: "List phases in the project. Use this to find the currently active phase (via 'activeAt' timestamp) to prioritize work. Phases define the temporal context and priority.",
+        description: "List phases in the project. Defaults to listing currently active phases (at current time) unless 'all' is set to true. Use this to find the active context to prioritize work.",
         inputSchema: {
           type: "object",
           properties: {
             projectPath: PROJECT_PATH_TOOL_PROPERTY,
             parentPhaseId: { type: ["string", "null"], description: "Optional parent phase ID" },
-            activeAt: { type: "number", description: "Optional timestamp (ms) to filter active phases (from <= activeAt <= to)." }
+            activeAt: { type: "number", description: "Optional timestamp (ms) to filter active phases. Defaults to current time if not provided and 'all' is false." },
+            all: { type: "boolean", description: "Set to true to list all phases regardless of time." }
           },
           required: ["projectPath"],
         },
@@ -810,10 +811,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case "list-phases": {
+        const all = args.all as boolean | undefined;
+        let activeAt = args.activeAt as number | undefined;
+
+        if (!all && activeAt === undefined) {
+            activeAt = Date.now();
+        }
+
         const phases = await trpc.phase.list.query({
           projectPath: args.projectPath as string,
           parentPhaseId: args.parentPhaseId as string | undefined,
-          activeAt: args.activeAt as number | undefined,
+          activeAt: activeAt,
         });
         return {
           content: [
