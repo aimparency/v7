@@ -50,7 +50,7 @@ export function registerTools(server: Server) {
               },
               limit: { type: "number", description: "Limit number of results" },
               offset: { type: "number", description: "Skip first N results" },
-              sortBy: { type: "string", enum: ["date", "status", "text"], description: "Sort by field" },
+              sortBy: { type: "string", enum: ["date", "status", "text", "priority"], description: "Sort by field" },
               sortOrder: { type: "string", enum: ["asc", "desc"], description: "Sort order (default asc)" }
             },
             required: ["projectPath"],

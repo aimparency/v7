@@ -410,7 +410,7 @@ const appRouter = t.router({
         ids: z.array(z.string().uuid()).optional(),
         limit: z.number().optional(),
         offset: z.number().optional(),
-        sortBy: z.enum(['date', 'status', 'text']).optional(),
+        sortBy: z.enum(['date', 'status', 'text', 'priority']).optional(),
         sortOrder: z.enum(['asc', 'desc']).optional()
       }))
       .query(async ({ input }) => {
@@ -450,6 +450,12 @@ const appRouter = t.router({
               case 'text':
                 valA = a.text.toLowerCase();
                 valB = b.text.toLowerCase();
+                break;
+              case 'priority':
+                const costA = (a.cost && a.cost > 0) ? a.cost : 0.1;
+                const costB = (b.cost && b.cost > 0) ? b.cost : 0.1;
+                valA = (a.intrinsicValue || 0) / costA;
+                valB = (b.intrinsicValue || 0) / costB;
                 break;
             }
 
