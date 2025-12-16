@@ -131,9 +131,10 @@ const handleTextareaKeydown = (event: KeyboardEvent) => {
     event.preventDefault()
     handleSubmit()
   } else if (event.key === 'Escape') {
+    // Vim-friendly: Esc blurs the field (exits "insert mode") instead of closing modal
     event.preventDefault()
     event.stopPropagation()
-    uiStore.closeAimModal()
+    descriptionInput.value?.blur()
   }
 }
 
