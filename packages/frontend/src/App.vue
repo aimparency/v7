@@ -11,6 +11,7 @@ import AimSearchModal from './components/AimSearchModal.vue'
 import GraphView from './views/GraphView.vue'
 import WatchdogPanel from './components/WatchdogPanel.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
+import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -234,6 +235,10 @@ onUnmounted(() => {
         <div class="project-info">
           <span class="project-path">{{ uiStore.projectPath }}</span>
 
+          <button @click="uiStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
+            ⚙️
+          </button>
+
           <button 
             v-if="uiStore.projectPath"
             class="consistency-btn"
@@ -342,6 +347,8 @@ onUnmounted(() => {
         v-if="showConsistencyModal" 
         @close="showConsistencyModal = false" 
     />
+
+    <ProjectSettingsModal />
 
     <!-- Help Text -->
     <footer v-if="!uiStore.isInProjectSelection" class="help">

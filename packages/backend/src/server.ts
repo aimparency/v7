@@ -1147,7 +1147,22 @@ const appRouter = t.router({
         if (await fs.pathExists(metaPath)) {
           return await fs.readJson(metaPath);
         }
-        return null;
+        
+        // Initialize with defaults if missing
+        const projectDir = input.projectPath.replace(/(\\|\/)\.bowman\/?$/, '');
+        const defaultMeta: ProjectMeta = {
+            name: path.basename(projectDir) || 'Project',
+            color: '#007acc'
+        };
+        
+        try {
+            await ensureProjectStructure(input.projectPath);
+            await fs.writeJson(metaPath, defaultMeta, { spaces: 2 });
+        } catch (e) {
+            console.error("Failed to initialize meta.json", e);
+        }
+        
+        return defaultMeta;
       }),
 
     buildSearchIndex: delayedProcedure

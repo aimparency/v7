@@ -59,6 +59,7 @@ export const useUIStore = defineStore('ui', {
     aimModalInsertPosition: 'before' as RelativePosition,
 
     showAimSearch: false,
+    showSettingsModal: false,
 
     // Navigation mode system
     navigatingAims: false, 
@@ -310,6 +311,14 @@ export const useUIStore = defineStore('ui', {
 
     closeAimSearch() {
       this.showAimSearch = false
+    },
+
+    openSettingsModal() {
+      this.showSettingsModal = true
+    },
+
+    closeSettingsModal() {
+      this.showSettingsModal = false
     },
 
     // Create aim and update selection
