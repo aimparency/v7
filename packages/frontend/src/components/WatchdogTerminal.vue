@@ -59,6 +59,9 @@ onMounted(() => {
 });
 
 const fit = () => {
+  if (!terminalContainer.value) return;
+  if (terminalContainer.value.clientWidth === 0 || terminalContainer.value.clientHeight === 0) return;
+
   if (fitAddon) {
     try {
         fitAddon.fit();
