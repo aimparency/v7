@@ -10,6 +10,7 @@ const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 const phaseNameInput = ref<HTMLInputElement>()
+const submitBtn = ref<HTMLButtonElement>()
 const dateWarning = ref<string>('')
 const allPhases = ref<Phase[]>([])
 
@@ -205,7 +206,9 @@ const calculateSmartDateRanges = async () => {
             v-model="uiStore.newPhaseName" 
             type="text" 
             placeholder="Enter phase name"
-            @keydown="handleKeydown"
+            @keydown.enter="handleKeydown"
+            @keydown.esc="handleKeydown"
+            @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
           />
         </div>
 
@@ -242,9 +245,11 @@ const calculateSmartDateRanges = async () => {
           Cancel
         </button>
         <button
+          ref="submitBtn"
           @click="handleSubmit"
           class="btn-primary"
           :disabled="!uiStore.newPhaseName.trim()"
+          @keydown.tab.exact.prevent="phaseNameInput?.focus()"
         >
           {{ uiStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
         </button>

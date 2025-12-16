@@ -258,6 +258,7 @@ onMounted(async () => {
             type="text"
             placeholder="Enter aim text"
             @keydown="handleInputKeydown"
+            @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
           />
         </div>
 
@@ -390,6 +391,7 @@ onMounted(async () => {
           @click="handleSubmit"
           class="btn-primary"
           :disabled="!aimText.trim() && !selectedSearchResult"
+          @keydown.tab.exact.prevent="aimTextInput?.focus()"
         >
           {{ uiStore.aimModalMode === 'edit' ? 'Update' : (selectedSearchResult ? 'Link Existing' : 'Create New') }}
         </button>
