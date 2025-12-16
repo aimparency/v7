@@ -150,7 +150,7 @@ export const useDataStore = defineStore('data', {
                   source: childId, 
                   target: aim.id, 
                   type: 'hierarchy',
-                  relativePosition: [-conn.relativePosition[0], -conn.relativePosition[1]],
+                  relativePosition: [conn.relativePosition[0], conn.relativePosition[1]],
                   weight: conn.weight,
                   share
                 })
@@ -427,7 +427,7 @@ export const useDataStore = defineStore('data', {
         
         this.saveTimeout = setTimeout(() => {
           this.flushUpdates(projectPath)
-        }, 5000)
+        }, 500)
       }
     },
 

@@ -29,11 +29,11 @@ const M = computed(() => {
 })
 
 const intoHandlePos = computed(() => {
-  return vec2.crAdd(M.value, vec2.crScale(props.link.relativePosition, props.sourceR))
+  return vec2.crSub(M.value, vec2.crScale(props.link.relativePosition, props.sourceR))
 })
 
 const fromHandlePos = computed(() => {
-  return vec2.crSub(M.value, vec2.crScale(props.link.relativePosition, props.targetR))
+  return vec2.crAdd(M.value, vec2.crScale(props.link.relativePosition, props.targetR))
 })
 
 const startLayouting = (from: boolean) => {
@@ -41,7 +41,7 @@ const startLayouting = (from: boolean) => {
   mapStore.startLayouting({
     fromWeight: props.sourceR / rSum,
     start: from ? fromHandlePos.value : intoHandlePos.value,
-    dScale: from ? -1 / props.targetR : 1 / props.sourceR,
+    dScale: from ? 1 / props.targetR : -1 / props.sourceR,
     link: props.link 
   })
 }

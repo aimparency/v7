@@ -168,27 +168,54 @@ const endWhatever = () => {
   if(mapStore.panBeginning) {
     mapStore.panBeginning = undefined
   } else if (mapStore.dragBeginning) {
-    // If dragged, update relative position for all links pointing to this node
+    // If dragged, update relative position for all links connected to this node
     const node = mapStore.dragCandidate as GraphNode
     if (node && links.value) {
        links.value.forEach(link => {
+            // Case 1: Node is Parent (Target) -> Update connection to Child (Source)
             if (link.target === node) {
-                const parent = link.source
+                const child = link.source
+                const parent = node
                 
-                const deltaX = node.pos[0] - parent.pos[0]
-                const deltaY = node.pos[1] - parent.pos[1]
-                const rSum = parent.r + node.r 
+                // Vector P -> C
+                const deltaX = child.pos[0] - parent.pos[0]
+                const deltaY = child.pos[1] - parent.pos[1]
+                const rSum = parent.r + child.r 
                 
                 const relX = deltaX / rSum
                 const relY = deltaY / rSum
                 
-                // Update Store
+                // Update Store (Parent -> Child)
                 ;(dataStore as any).updateConnectionPosition(
                     uiStore.projectPath,
                     parent.id,
-                    node.id,
+                    child.id,
                     [relX, relY]
                 )
+                // Update local link (Child -> Parent, so inverted)
+                link.relativePosition = [relX, relY]
+            }
+            // Case 2: Node is Child (Source) -> Update connection from Parent (Target)
+            else if (link.source === node) {
+                const child = node
+                const parent = link.target
+                
+                // Vector P -> C
+                const deltaX = child.pos[0] - parent.pos[0]
+                const deltaY = child.pos[1] - parent.pos[1]
+                const rSum = parent.r + child.r 
+                
+                const relX = deltaX / rSum
+                const relY = deltaY / rSum
+                
+                // Update Store (Parent -> Child)
+                ;(dataStore as any).updateConnectionPosition(
+                    uiStore.projectPath,
+                    parent.id,
+                    child.id,
+                    [relX, relY]
+                )
+                // Update local link (Child -> Parent, so inverted)
                 link.relativePosition = [relX, relY]
             }
         })
@@ -201,10 +228,13 @@ const endWhatever = () => {
     if (lc) {
       const link = lc.link as GraphLink
       // Persist change
+      // link.target is Parent, link.source is Child (per dataStore.graphData)
+      // dataStore.updateConnectionPosition(path, parentId, childId, relPos)
+      // relPos needs NO negation because we want coherent vectors
       ;(dataStore as any).updateConnectionPosition(
           uiStore.projectPath,
-          link.source.id,
           link.target.id,
+          link.source.id,
           [link.relativePosition[0], link.relativePosition[1]]
       )
     }
@@ -397,7 +427,8 @@ const onNodeUp = async (node: GraphNode) => {
       const child = mapStore.connectFrom
       const parent = node
       
-      // Vector from Parent to Child (as expected by backend/store)
+      // Vector Child -> Parent (as expected by backend/store)
+      // Parent = Child + RelPos => RelPos = Parent - Child
       const deltaX = child.pos[0] - parent.pos[0]
       const deltaY = child.pos[1] - parent.pos[1]
       const rSum = parent.r + child.r
@@ -540,14 +571,14 @@ const layout = () => {
         
         vec2.scale(delta, link.relativePosition, rSum)
         
-        // Force on Into
-        vec2.add(targetPos, from.pos, delta)
+        // Force on Into (Parent)
+        vec2.sub(targetPos, from.pos, delta)
         vec2.sub(targetShift, targetPos, into.pos)
         vec2.scale(targetShift, targetShift, from.r / rSum)
         vec2.add(into.shift, into.shift, targetShift)
         
-        // Force on From
-        vec2.sub(targetPos, into.pos, delta)
+        // Force on From (Child)
+        vec2.add(targetPos, into.pos, delta)
         vec2.sub(targetShift, targetPos, from.pos)
         vec2.scale(targetShift, targetShift, into.r / rSum)
         vec2.add(from.shift, from.shift, targetShift)
@@ -868,6 +899,13 @@ const renderLinks = computed(() => {
       </g>
     </svg>
     <GraphSidePanel />
+    <button class="reload-btn" @click="dataStore.loadAllAims(uiStore.projectPath)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 4v6h-6"></path>
+        <path d="M1 20v-6h6"></path>
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -877,5 +915,23 @@ const renderLinks = computed(() => {
   height: 100%;
   background: #1e1e1e;
   overflow: hidden;
+  position: relative;
+}
+
+.reload-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: none;
+  border: none;
+  color: #fff;
+  opacity: 0.3;
+  cursor: pointer;
+  z-index: 100;
+  transition: opacity 0.2s;
+}
+
+.reload-btn:hover {
+  opacity: 1;
 }
 </style>

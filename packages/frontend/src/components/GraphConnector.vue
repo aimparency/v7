@@ -9,13 +9,13 @@ const path = computed(() => {
   if (!mapStore.connectFrom) return ''
   return makeCircularPath(
     {
-      pos: mapStore.connectFrom.pos,
-      r: mapStore.connectFrom.r
+      pos: mapStore.mouse.logical,
+      r: 0
     }, 
     0.5 * mapStore.connectFrom.r,
     {
-      pos: mapStore.mouse.logical,
-      r: 0
+      pos: mapStore.connectFrom.pos,
+      r: mapStore.connectFrom.r
     }
   )
 })
