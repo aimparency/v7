@@ -1309,7 +1309,8 @@ const appRouter = t.router({
           }
         }
 
-        // Check 3: Cycle Detection
+        // Check 3: Cycle Detection - Disabled as cycles are allowed (Value Loops)
+        /*
         const visited = new Set<string>();
         const recStack = new Set<string>();
 
@@ -1350,6 +1351,7 @@ const appRouter = t.router({
                 detectCycle(aim.id, []);
             }
         }
+        */
 
         return { valid: errors.length === 0, errors };
       }),
