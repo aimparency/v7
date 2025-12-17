@@ -334,19 +334,14 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
     // Remove from current position if present
     if (currentChildIndex !== -1) {
       parent.supportingConnections.splice(currentChildIndex, 1);
-      // Adjust target index if removal affected it
-      if (currentChildIndex < targetParentIndex) {
-        targetParentIndex--;
-      }
+      // No decrement needed for reordering logic from frontend
+      const maxIndex = parent.supportingConnections.length;
+      targetParentIndex = Math.min(targetParentIndex, maxIndex);
     }
     // Insert at target position
     const newConnection = { aimId: childAimId, relativePosition: relativePosition || getRandomRelativePosition(), weight: 1 };
     
-    if (targetParentIndex <= parent.supportingConnections.length) {
-      parent.supportingConnections.splice(targetParentIndex, 0, newConnection);
-    } else {
-      parent.supportingConnections.push(newConnection);
-    }
+    parent.supportingConnections.splice(targetParentIndex, 0, newConnection);
   }
   await writeAim(projectPath, parent);
 

@@ -1,0 +1,19 @@
+{
+  "id": "7d390089-8573-4c99-b580-c602daee5c55",
+  "text": "when watchdog was minimized the xterm.js terminals are empty, can we fix that? like an initial redraw of the lines after a resize or something?",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765960654307
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

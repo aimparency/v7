@@ -1689,7 +1689,17 @@ export const useUIStore = defineStore('ui', {
       this.movingAimId = currentAimId
 
       // Perform backend mutations sequentially to avoid race conditions
-      // First disconnect from old location
+      
+      // 1. Connect to new parent FIRST (prevents aim from becoming floating/orphan)
+      await trpc.aim.connectAims.mutate({
+        projectPath: this.projectPath,
+        parentAimId: previousSiblingId,
+        childAimId: currentAimId,
+        parentIncomingIndex: insertionIndex,
+        childSupportedAimsIndex: 0
+      })
+
+      // 2. Then disconnect from old location
       if (oldParentId) {
         // Get old parent's current incoming and filter out the child
         const oldParent = dataStore.aims[oldParentId]
@@ -1718,20 +1728,37 @@ export const useUIStore = defineStore('ui', {
         })
       }
 
-      // Connect to new parent and set selection immediately to avoid flicker
-      await trpc.aim.connectAims.mutate({
-        projectPath: this.projectPath,
-        parentAimId: previousSiblingId,
-        childAimId: currentAimId,
-        parentIncomingIndex: insertionIndex,
-        childSupportedAimsIndex: 0
-      })
-
       // Set selection immediately before reload
+      // 1. Configure New Parent
       const prev = dataStore.aims[previousSiblingId]
       if (prev) {
         prev.expanded = true
         prev.selectedIncomingIndex = insertionIndex
+      }
+
+      // 2. Adjust Phase Selection (if moved from top level)
+      if (oldPhaseId) {
+          const phase = dataStore.phases[oldPhaseId]
+          // We moved index 'currentIndex' into 'currentIndex - 1'.
+          // So the item at 'currentIndex - 1' (the new parent) should be selected.
+          if (phase) {
+              phase.selectedAimIndex = Math.max(0, currentIndex - 1)
+          }
+      }
+      
+      // 3. Adjust Old Parent Selection (if moved from sub-aim)
+      if (oldParentId) {
+          const oldP = dataStore.aims[oldParentId]
+          if (oldP && oldP.selectedIncomingIndex !== undefined) {
+              // We moved index 'currentIndex' into 'currentIndex - 1'.
+              // Item at 'currentIndex - 1' is new parent.
+              oldP.selectedIncomingIndex = Math.max(0, currentIndex - 1)
+          }
+      }
+      
+      // 4. Adjust Floating Selection
+      if (!oldPhaseId && !oldParentId) {
+          this.floatingAimIndex = Math.max(0, currentIndex - 1)
       }
 
       // Single reload pass - reload both parents in parallel

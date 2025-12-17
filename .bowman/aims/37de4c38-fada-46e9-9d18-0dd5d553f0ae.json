@@ -1,0 +1,19 @@
+{
+  "id": "37de4c38-fada-46e9-9d18-0dd5d553f0ae",
+  "text": "watchdog relaunch should trigger a realaunch of the watchdog backend.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765960581914
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
