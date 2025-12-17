@@ -68,15 +68,15 @@ const createAim = async () => {
       await uiStore.createAim(selectedSearchResult.value.id, true)
     } else {
       // Create new aim with text and description
-      await uiStore.createAim(aimText.value.trim(), false, aimDescription.value.trim(), aimTags.value, aimIntrinsicValue.value, aimLoopWeight.value)
-      // Note: createAim action in UI store might need update to accept cost?
-      // Checking UI store... createAim accepts intrinsicValue, loopWeight.
-      // I should probably update UI store createAim signature too, but for now I can't in this atomic change.
-      // Wait, I can update createAim in UI store in separate step.
-      // Or I can assume I will update it.
-      // Actually, I'll update the local handling here to pass it if possible, 
-      // but uiStore.createAim is the bottleneck.
-      // I'll leave it as is for now and update uiStore next.
+      await uiStore.createAim(
+        aimText.value.trim(), 
+        false, 
+        aimDescription.value.trim(), 
+        aimTags.value, 
+        aimIntrinsicValue.value, 
+        aimLoopWeight.value,
+        aimCost.value
+      )
     }
   } catch (error) {
     console.error('Failed to create/link aim:', error)
