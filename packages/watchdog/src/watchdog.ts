@@ -231,9 +231,12 @@ export class WatchdogService {
     this.retryCount = 0;
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST; 
     
-    const rawContext = this.worker.getLines(40);
-    // Flatten context to avoid newline issues in terminal input
-    const context = rawContext.replace(/[\r\n]+/g, ' ');
+    // Get lines and strip ANSI to clean up formatting tokens
+    const rawContext = stripAnsi(this.worker.getLines(40));
+
+    // Normalize whitespace: collapse all whitespace sequences (newlines, tabs, multiple spaces) to a single space
+    // and trim edges.
+    const context = rawContext.replace(/\s+/g, ' ').trim();
     
     const question = `
 You are observing a code assistant cli. 
@@ -252,7 +255,7 @@ ${PROMPT_MARKER}
 `;
     
     // Ensure the entire prompt is a single line
-    const singleLineQuestion = question.replace(/[\r\n]+/g, ' ');
+    const singleLineQuestion = question.replace(/\s+/g, ' ').trim();
     
     await this.post(this.watchdog, singleLineQuestion);
   }

@@ -1,0 +1,28 @@
+{
+  "id": "49258e32-69a4-4b61-9cc4-a54bac439d32",
+  "text": "improved formatting for MCP output",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "88b84303-cb64-4c05-a62d-56dc03d7e532",
+      "relativePosition": [
+        2.1422395203021254,
+        -1.288724112312531
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765962180468
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
