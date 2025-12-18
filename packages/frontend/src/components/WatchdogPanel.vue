@@ -40,6 +40,10 @@ const handleWorkerInput = (data: string) => {
   store.sendWorkerInput(data)
 }
 
+const handleWatchdogInput = (data: string) => {
+  store.sendWatchdogInput(data)
+}
+
 const toggle = () => {
   store.toggle()
 }
@@ -97,6 +101,7 @@ const toggle = () => {
         <div class="term-label">Watchdog (Brain)</div>
         <WatchdogTerminal 
           ref="watchdogTerm" 
+          :onData="handleWatchdogInput"
           @resize="(dims) => store.socket?.emit('resize-watchdog', dims)"
         />
       </div>

@@ -140,6 +140,10 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     socket.value?.emit('worker-input', data)
   }
 
+  function sendWatchdogInput(data: string) {
+    socket.value?.emit('watchdog-input', data)
+  }
+
   async function relaunch() {
     const uiStore = useUIStore()
     if (!uiStore.projectPath) return
@@ -173,6 +177,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     disconnect,
     toggle,
     sendWorkerInput,
+    sendWatchdogInput,
     relaunch
   }
 })

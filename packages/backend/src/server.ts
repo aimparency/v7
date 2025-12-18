@@ -24,6 +24,7 @@ import {
 } from './search.js';
 import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
 import { WatchdogManager } from './watchdog-manager.js';
+import { chatWithGemini } from './voice-agent.js';
 
 // Create context for tRPC
 const createContext = () => ({});
@@ -1121,6 +1122,18 @@ const appRouter = t.router({
          const p = normalizeProjectPath(input.projectPath);
          const success = WatchdogManager.keepalive(p);
          return { success };
+      })
+  }),
+
+  voice: t.router({
+    chat: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        transcript: z.string()
+      }))
+      .mutation(async ({ input }) => {
+        const response = await chatWithGemini(input.transcript, input.projectPath);
+        return { response };
       })
   }),
 

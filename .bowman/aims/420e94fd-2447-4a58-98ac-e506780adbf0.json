@@ -13,5 +13,7 @@
   "intrinsicValue": 0,
   "supportedAims": [
     "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ]
+  ],
+  "cost": 10,
+  "loopWeight": 0
 }

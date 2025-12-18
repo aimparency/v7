@@ -12,5 +12,8 @@
   "supportingConnections": [],
   "supportedAims": [
     "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ]
+  ],
+  "intrinsicValue": 0,
+  "cost": 5,
+  "loopWeight": 0
 }

@@ -517,7 +517,7 @@ const layout = () => {
     updateRelativeDeltaWhileLayouting()
   }
 
-  // Camera Smooth Pan (User requested ease out)
+  // Camera Smooth Pan & Zoom (User requested ease out)
   // If not interacting and no active anim
   if (!mapStore.panBeginning && !mapStore.dragBeginning && !mapStore.anim.update && mapStore.isTracking) {
      const currentAimId = uiStore.graphSelectedAimId
@@ -535,6 +535,15 @@ const layout = () => {
          if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
              mapStore.offset[0] += dx * 0.1
              mapStore.offset[1] += dy * 0.1
+         }
+
+         // Target Scale: Fit node comfortably (e.g., 1/3 of half side)
+         // Avoid division by zero or extreme zooms for tiny nodes
+         const targetScale = LOGICAL_HALF_SIDE / (3 * Math.max(node.r, 10))
+         const dScale = targetScale - mapStore.scale
+
+         if (Math.abs(dScale) > 0.001) {
+             mapStore.scale += dScale * 0.1
          }
        }
      }
@@ -838,13 +847,13 @@ onUnmounted(() => {
 
 watch(() => dataStore.graphData, updateGraphData, { deep: true })
 
-watch(() => uiStore.getCurrentAim(), (newAim) => {
-  if (newAim) {
+watch(() => uiStore.getCurrentAim()?.id, (newAimId) => {
+  if (newAimId) {
     // Sync Tree -> Graph (e.g. keyboard nav)
-    uiStore.setGraphSelection(newAim.id)
+    uiStore.setGraphSelection(newAimId)
     mapStore.isTracking = true
   }
-}, { deep: true, immediate: true })
+}, { immediate: true })
 
 const trigger = ref(0)
 const transform = computed(() => {

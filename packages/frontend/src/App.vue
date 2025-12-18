@@ -9,6 +9,7 @@ import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
 import AimSearchModal from './components/AimSearchModal.vue'
 import GraphView from './views/GraphView.vue'
+import VoiceView from './views/VoiceView.vue'
 import WatchdogPanel from './components/WatchdogPanel.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
@@ -247,6 +248,11 @@ onUnmounted(() => {
             :class="{ active: uiStore.currentView === 'graph' }"
             class="view-btn"
           >Graph</button>
+          <button 
+            @click="uiStore.setView('voice')" 
+            :class="{ active: uiStore.currentView === 'voice' }"
+            class="view-btn"
+          >Voice</button>
         </div>
 
         <button 
@@ -351,6 +357,9 @@ onUnmounted(() => {
 
         <!-- Graph View -->
         <GraphView v-else-if="uiStore.currentView === 'graph'" />
+
+        <!-- Voice View -->
+        <VoiceView v-else-if="uiStore.currentView === 'voice'" />
       </main>
 
       <!-- Watchdog Panel -->

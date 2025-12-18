@@ -48,9 +48,8 @@ const args = process.argv.slice(2);
 
 let projectRootPath = path.resolve(__dirname, '../../../../');
 
-let workerModel = 'pro'; // 'gemini-3-pro-preview';
-
-let watchdogModel = 'auto'; // 'gemini-2.5-flash';
+let workerModel = 'Auto (Gemini 3)'; 
+let watchdogModel = 'Auto (Gemini 3)'; 
 
 let clearEvery = 20;
 

@@ -98,7 +98,7 @@ export const useUIStore = defineStore('ui', {
     graphSelectedAimId: null as string | null,
 
     // View state
-    currentView: (localStorage.getItem('aimparency-current-view') || 'columns') as 'columns' | 'graph',
+    currentView: (localStorage.getItem('aimparency-current-view') || 'columns') as 'columns' | 'graph' | 'voice',
 
     // Remember last selected sub-phase index per parent phase
     lastSelectedSubPhaseIndexByPhase: JSON.parse(localStorage.getItem('aimparency-last-sub-phase-index') || '{}') as Record<string, number>,
@@ -202,7 +202,7 @@ export const useUIStore = defineStore('ui', {
       this.ensureSelectionVisible()
     },
 
-    setView(view: 'columns' | 'graph') {
+    setView(view: 'columns' | 'graph' | 'voice') {
       if (view === 'graph') {
         // Sync List -> Graph
         const current = this.getCurrentAim()

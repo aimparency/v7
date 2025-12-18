@@ -26,6 +26,10 @@ const write = (data: string) => {
   term?.write(data);
 };
 
+const focus = () => {
+  term?.focus();
+};
+
 onMounted(() => {
   term = new Terminal({
     cursorBlink: true,
@@ -86,7 +90,7 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="terminalContainer" class="terminal-container"></div>
+  <div ref="terminalContainer" class="terminal-container" @click="focus"></div>
 </template>
 
 <style scoped>
