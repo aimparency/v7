@@ -39,6 +39,10 @@ export const useDataStore = defineStore('data', {
     // Persistence Debounce
     saveTimeout: null as any,
     pendingUpdates: new Set<string>(),
+    deletedAims: new Set<string>(),
+
+    // Value Recalculation Debounce
+    recalculateTimeout: null as any,
 
     // Consistency
     consistencyErrors: [] as string[],
@@ -165,13 +169,18 @@ export const useDataStore = defineStore('data', {
 
   actions: {
     recalculateValues() {
-        const allAims = Object.values(this.aims) as Aim[];
-        const result = calculateAimValues(allAims);
-        this.calculatedValues = result.values;
-        this.calculatedCosts = result.costs;
-        this.calculatedDoneCosts = result.doneCosts;
-        this.flowShares = result.flowShares;
-        this.totalIntrinsicValue = result.totalIntrinsic;
+        if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout)
+        
+        this.recalculateTimeout = setTimeout(() => {
+            const allAims = Object.values(this.aims) as Aim[];
+            const result = calculateAimValues(allAims);
+            this.calculatedValues = result.values;
+            this.calculatedCosts = result.costs;
+            this.calculatedDoneCosts = result.doneCosts;
+            this.flowShares = result.flowShares;
+            this.totalIntrinsicValue = result.totalIntrinsic;
+            this.recalculateTimeout = null;
+        }, 50)
     },
 
     async loadFloatingAims(projectPath: string) {
@@ -622,6 +631,7 @@ export const useDataStore = defineStore('data', {
 
           console.log('Received update:', data);
           if (data.type === 'aim') {
+             if (this.deletedAims.has(data.id)) return;
              try {
                const aim = await trpc.aim.get.query({ projectPath, aimId: data.id });
                this.replaceAim(aim.id, aim);
@@ -824,6 +834,7 @@ export const useDataStore = defineStore('data', {
           }
 
           // Then delete the aim itself
+          this.deletedAims.add(aimId)
           await trpc.aim.delete.mutate({
             projectPath: uiStore.projectPath,
             aimId: aimId
@@ -853,6 +864,7 @@ export const useDataStore = defineStore('data', {
         }
         this.recalculateValues();
       } catch (error) {
+        this.deletedAims.delete(aimId);
         console.error('Failed to delete aim:', error);
       }
     },

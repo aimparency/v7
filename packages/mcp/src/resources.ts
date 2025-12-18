@@ -29,13 +29,13 @@ export function registerResources(server: Server) {
           mimeType: "application/json",
         },
         {
-          uri: `aim://{uuid}/supporting-connections?${PROJECT_PATH_PARAMETER}`,
+          uri: `aim://{uuid}/supporting_connections?${PROJECT_PATH_PARAMETER}`,
           name: `Supporting connections (Children)`,
           description: `Get all aims that support this aim (dependencies/prerequisites)`,
           mimeType: `application/json`,
         },
         {
-          uri: `aim://{uuid}/supported-aims?${PROJECT_PATH_PARAMETER}`,
+          uri: `aim://{uuid}/supported_aims?${PROJECT_PATH_PARAMETER}`,
           name: `Supported aims (Parents)`,
           description: `Get all aims that this aim supports (aims that depend on this aim)`,
           mimeType: `application/json`,
@@ -109,7 +109,7 @@ export function registerResources(server: Server) {
 
         const aim = await trpc.aim.get.query({ projectPath, aimId: parsed.id! });
 
-        if (parsed.subpath === "supporting-connections") {
+        if (parsed.subpath === "supporting_connections") {
           const connections = aim.supportingConnections || [];
           const supportingAims = await Promise.all(
             connections.map((conn) => trpc.aim.get.query({ projectPath, aimId: conn.aimId }))
@@ -125,7 +125,7 @@ export function registerResources(server: Server) {
           };
         }
 
-        if (parsed.subpath === "supported-aims") {
+        if (parsed.subpath === "supported_aims") {
           const supported = aim.supportedAims || [];
           const supportedAims = await Promise.all(
             supported.map((id) => trpc.aim.get.query({ projectPath, aimId: id }))
@@ -156,7 +156,7 @@ export function registerResources(server: Server) {
         const statusParam = url.searchParams.get("status");
         const phaseIdParam = url.searchParams.get("phaseId");
         
-        const aims = await trpc.aim.list.query({ 
+        const aims = await trpc.aim.list.query({
           projectPath,
           status: statusParam ? statusParam.split(',') : undefined,
           phaseId: phaseIdParam || undefined

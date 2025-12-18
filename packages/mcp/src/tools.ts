@@ -8,7 +8,7 @@ export function registerTools(server: Server) {
     return {
       tools: [
         {
-          name: "get-aim",
+          name: "get_aim",
           description: "Get a single aim by its ID",
           inputSchema: {
             type: "object",
@@ -20,16 +20,16 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "list-aims",
+          name: "list_aims",
           description: "List all aims in the project",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              ids: { 
-                type: "array", 
-                items: { type: "string" }, 
-                description: "Filter by specific aim IDs" 
+              ids: {
+                type: "array",
+                items: { type: "string" },
+                description: "Filter by specific aim IDs"
               },
               status: {
                 type: ["string", "array"],
@@ -57,7 +57,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "search-aims",
+          name: "search_aims",
           description: "Search aims by text or status (e.g. 'open', 'done')",
           inputSchema: {
             type: "object",
@@ -80,7 +80,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "search-aims-semantic",
+          name: "search_aims_semantic",
           description: "Search aims by semantic meaning (embedding-based)",
           inputSchema: {
             type: "object",
@@ -102,7 +102,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "list-phases",
+          name: "list_phases",
           description: "List phases in the project. Defaults to listing currently active phases (at current time) unless 'all' is set to true. Use this to find the active context to prioritize work.",
           inputSchema: {
             type: "object",
@@ -116,7 +116,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "search-phases",
+          name: "search_phases",
           description: "Search phases by name",
           inputSchema: {
             type: "object",
@@ -129,7 +129,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "create-aim",
+          name: "create_aim",
           description: "Create a new aim. Date is set automatically. Optionally provide phaseId to commit to a phase in one step.",
           inputSchema: {
             type: "object",
@@ -177,7 +177,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "update-aim",
+          name: "update_aim",
           description: "Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships. It's recommended, to update aims before using git add for the code changes and .bowman, in order to commit code and related aim changes at the same time.",
           inputSchema: {
             type: "object",
@@ -215,7 +215,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "delete-aim",
+          name: "delete_aim",
           description: "Delete an aim permanently. Automatically removes it from all phases it's committed to. Prefer updating aim status to 'cancelled' instead. Use deletion only for duplicates or errors.",
           inputSchema: {
             type: "object",
@@ -227,7 +227,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "create-phase",
+          name: "create_phase",
           description: "Create a time-boxed phase. Provide dates as Unix timestamps (milliseconds). Set parent to null for root phase or a phase UUID for sub-phase.",
           inputSchema: {
             type: "object",
@@ -251,7 +251,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "update-phase",
+          name: "update_phase",
           description: "Update a phase's name, time range, or parent phase",
           inputSchema: {
             type: "object",
@@ -267,7 +267,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "delete-phase",
+          name: "delete_phase",
           description: "Delete a phase. Aims are NOT deleted, only uncommitted from this phase.",
           inputSchema: {
             type: "object",
@@ -279,7 +279,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "commit-aim-to-phase",
+          name: "commit_aim_to_phase",
           description: "Commit an existing aim to a phase. Optionally specify insertionIndex for ordering.",
           inputSchema: {
             type: "object",
@@ -296,7 +296,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "remove-aim-from-phase",
+          name: "remove_aim_from_phase",
           description: "Remove an aim from a phase. The aim itself is not deleted.",
           inputSchema: {
             type: "object",
@@ -309,7 +309,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "update-project-meta",
+          name: "update_project_meta",
           description: "Update project name and color. Color must be hex format (#RRGGBB).",
           inputSchema: {
             type: "object",
@@ -326,7 +326,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "get-system-status",
+          name: "get_system_status",
           description: "Get the current system status including compute credits and funds. Use this to check if the agent has enough resources to continue working or needs to earn more.",
           inputSchema: {
             type: "object",
@@ -337,7 +337,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "perform-work",
+          name: "perform_work",
           description: "Perform work to earn compute credits and funds. Use this when system status shows low resources.",
           inputSchema: {
             type: "object",
@@ -353,7 +353,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "build-search-index",
+          name: "build_search_index",
           description: "Rebuild the search index and generate embeddings for all aims. Use this if search results seem outdated or missing.",
           inputSchema: {
             type: "object",
@@ -364,7 +364,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "check-consistency",
+          name: "check_consistency",
           description: "Check for data inconsistencies between aims, phases, and relationships (e.g. broken links, missing parents/children). Returns a list of errors if any found.",
           inputSchema: {
             type: "object",
@@ -375,7 +375,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "fix-consistency",
+          name: "fix_consistency",
           description: "Automatically fix data inconsistencies found by check-consistency. Use with caution as it may remove invalid relationships.",
           inputSchema: {
             type: "object",
@@ -386,7 +386,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "update-system-status",
+          name: "update_system_status",
           description: "Manually update system status (compute credits, funds). Primarily for administrative use or manual adjustments.",
           inputSchema: {
             type: "object",
@@ -399,7 +399,7 @@ export function registerTools(server: Server) {
           },
         },
         {
-          name: "get-prioritized-aims",
+          name: "get_prioritized_aims",
           description: "Get all aims from the lowest (deepest) active phase, prioritized by value/cost ratio.",
           inputSchema: {
             type: "object",
@@ -423,7 +423,7 @@ export function registerTools(server: Server) {
       }
 
       switch (name) {
-        case "get-aim": {
+        case "get_aim": {
           const aim = await trpc.aim.get.query({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
@@ -438,7 +438,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "list-aims": {
+        case "list_aims": {
           const aims = await trpc.aim.list.query({
             projectPath: args.projectPath as string,
             ids: args.ids as string[] | undefined,
@@ -461,7 +461,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "search-aims": {
+        case "search_aims": {
           const aims = await trpc.aim.search.query({
             projectPath: args.projectPath as string,
             query: args.query as string,
@@ -480,7 +480,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "search-aims-semantic": {
+        case "search_aims_semantic": {
           const aims = await trpc.aim.searchSemantic.query({
             projectPath: args.projectPath as string,
             query: args.query as string,
@@ -498,7 +498,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "list-phases": {
+        case "list_phases": {
           const all = args.all as boolean | undefined;
           let activeAt = args.activeAt as number | undefined;
           
@@ -521,7 +521,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "search-phases": {
+        case "search_phases": {
           const phases = await trpc.phase.search.query({
             projectPath: args.projectPath as string,
             query: args.query as string,
@@ -537,7 +537,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "create-aim": {
+        case "create_aim": {
           const result = await trpc.aim.createFloatingAim.mutate({
             projectPath: args.projectPath as string,
             aim: {
@@ -590,7 +590,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "update-aim": {
+        case "update_aim": {
           const updateData: any = {};
           if (args.text) updateData.text = args.text;
           if (args.tags) updateData.tags = args.tags;
@@ -620,7 +620,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "delete-aim": {
+        case "delete_aim": {
           await trpc.aim.delete.mutate({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
@@ -635,7 +635,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "create-phase": {
+        case "create_phase": {
           const result = await trpc.phase.create.mutate({
             projectPath: args.projectPath as string,
             phase: {
@@ -656,7 +656,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "update-phase": {
+        case "update_phase": {
           const updateData: any = {};
           if (args.name !== undefined) updateData.name = args.name;
           if (args.from !== undefined) updateData.from = args.from;
@@ -678,7 +678,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "delete-phase": {
+        case "delete_phase": {
           await trpc.phase.delete.mutate({
             projectPath: args.projectPath as string,
             phaseId: args.phaseId as string,
@@ -693,7 +693,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "commit-aim-to-phase": {
+        case "commit_aim_to_phase": {
           await trpc.aim.commitToPhase.mutate({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
@@ -710,7 +710,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "remove-aim-from-phase": {
+        case "remove_aim_from_phase": {
           await trpc.aim.removeFromPhase.mutate({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
@@ -726,7 +726,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "update-project-meta": {
+        case "update_project_meta": {
           await trpc.project.updateMeta.mutate({
             projectPath: args.projectPath as string,
             meta: {
@@ -744,7 +744,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "get-system-status": {
+        case "get_system_status": {
           const status = await trpc.system.getStatus.query({
             projectPath: args.projectPath as string,
           });
@@ -758,7 +758,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "perform-work": {
+        case "perform_work": {
           const result = await trpc.system.performWork.mutate({
             projectPath: args.projectPath as string,
             workType: (args.workType as "mining" | "freelance") || "mining",
@@ -767,13 +767,13 @@ export function registerTools(server: Server) {
             content: [
               {
                 type: "text",
-                text: `Work completed successfully.\nEarned: ${result.earned.credits} credits, ${result.earned.funds} funds.\nNew Balance: ${result.computeCredits} credits, ${result.funds} funds.`, 
+                text: `Work completed successfully.\nEarned: ${result.earned.credits} credits, ${result.earned.funds} funds.\nNew Balance: ${result.computeCredits} credits, ${result.funds} funds.`,
               },
             ],
           };
         }
 
-        case "build-search-index": {
+        case "build_search_index": {
           const result = await trpc.project.buildSearchIndex.mutate({
             projectPath: args.projectPath as string,
           });
@@ -787,7 +787,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "check-consistency": {
+        case "check_consistency": {
           const result = await trpc.project.checkConsistency.query({
             projectPath: args.projectPath as string,
           });
@@ -796,14 +796,14 @@ export function registerTools(server: Server) {
               {
                 type: "text",
                 text: result.valid 
-                  ? "Data consistency check passed. No errors found." 
+                  ? "Data consistency check passed. No errors found."
                   : `Data consistency check FAILED.\nErrors found:\n${result.errors.map(e => `- ${e}`).join('\n')}`,
               },
             ],
           };
         }
 
-        case "fix-consistency": {
+        case "fix_consistency": {
           const result = await trpc.project.fixConsistency.mutate({
             projectPath: args.projectPath as string,
           });
@@ -819,7 +819,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "update-system-status": {
+        case "update_system_status": {
           const statusUpdate: any = {};
           if (args.computeCredits !== undefined) statusUpdate.computeCredits = args.computeCredits;
           if (args.funds !== undefined) statusUpdate.funds = args.funds;
@@ -838,7 +838,7 @@ export function registerTools(server: Server) {
           };
         }
 
-        case "get-prioritized-aims": {
+        case "get_prioritized_aims": {
           const now = Date.now();
           const phases = await trpc.phase.list.query({ 
               projectPath: args.projectPath as string, 

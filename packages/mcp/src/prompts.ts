@@ -20,14 +20,14 @@ export function registerPrompts(server: Server) {
           ],
         },
         {
-          name: "analyze-dependencies",
+          name: "analyze_dependencies",
           description: "Analyze aim relationships and suggest improvements",
           arguments: [
             PROJECT_PATH_PROMPT_ARGUMENT,
           ],
         },
         {
-          name: "plan-phase",
+          name: "plan_phase",
           description: "Help plan which aims to commit to a phase based on dependencies and status",
           arguments: [
             PROJECT_PATH_PROMPT_ARGUMENT,
@@ -39,7 +39,7 @@ export function registerPrompts(server: Server) {
           ],
         },
         {
-          name: "review-progress",
+          name: "review_progress",
           description: "Review phase commitments vs aim statuses and suggest next actions",
           arguments: [
             PROJECT_PATH_PROMPT_ARGUMENT,
@@ -51,7 +51,7 @@ export function registerPrompts(server: Server) {
           ],
         },
         {
-          name: "hypothesis-test",
+          name: "hypothesis_test",
           description: "Structure an aim as a testable hypothesis with success criteria",
           arguments: [
             PROJECT_PATH_PROMPT_ARGUMENT,
@@ -87,7 +87,6 @@ export function registerPrompts(server: Server) {
           }
 
           const aim = await trpc.aim.get.query({ projectPath, aimId });
-          // const allAims = await trpc.aim.list.query({ projectPath }); // Unused in original code? Keeping it out if unused.
 
           return {
             description: `Break down aim "${aim.text}" into smaller sub-aims`,
@@ -106,10 +105,10 @@ export function registerPrompts(server: Server) {
 **Instructions:**
 1. Analyze the aim and identify 3-5 logical sub-aims that together accomplish the parent aim
 2. For each sub-aim, determine if it depends on other sub-aims (create supportingConnections/supportedAims relationships)
-3. Create each sub-aim using the create-aim tool
+3. Create each sub-aim using the create_aim tool
 4. Link each sub-aim to the parent aim by:
    - Adding the parent aim's ID to the sub-aim's supportedAims array
-   - Adding the sub-aim's ID to the parent aim's supportingConnections array (use update-aim)
+   - Adding the sub-aim's ID to the parent aim's supportingConnections array (use update_aim)
 5. Explain the breakdown strategy and dependency reasoning
 
 Project path: ${projectPath}`,
@@ -119,7 +118,7 @@ Project path: ${projectPath}`,
           };
         }
 
-        case "analyze-dependencies": {
+        case "analyze_dependencies": {
           const aims = await trpc.aim.list.query({ projectPath });
 
           return {
@@ -151,14 +150,13 @@ Project path: ${projectPath}`,
           };
         }
 
-        case "plan-phase": {
+        case "plan_phase": {
           const phaseId = args.phaseId as string;
           if (!phaseId) {
             throw new Error("phaseId argument is required");
           }
 
           const phase = await trpc.phase.get.query({ projectPath, phaseId });
-          // const allAims = await trpc.aim.list.query({ projectPath });
 
           return {
             description: `Help plan commitments for phase "${phase.name}"`,
@@ -181,7 +179,7 @@ Project path: ${projectPath}`,
    - Current aim statuses (prioritize 'open' aims)
    - Phase duration (is there enough time?)
    - Already committed aims in this phase
-3. Suggest which aims to commit using the commit-aim-to-phase tool
+3. Suggest which aims to commit using the commit_aim_to_phase tool
 4. Explain the reasoning for each suggestion
 
 Project path: ${projectPath}
@@ -192,7 +190,7 @@ Phase ID: ${phaseId}`,
           };
         }
 
-        case "review-progress": {
+        case "review_progress": {
           const phaseId = args.phaseId as string;
           if (!phaseId) {
             throw new Error("phaseId argument is required");
@@ -235,7 +233,7 @@ Phase ID: ${phaseId}`,
           };
         }
 
-        case "hypothesis-test": {
+        case "hypothesis_test": {
           const aimId = args.aimId as string;
           if (!aimId) {
             throw new Error("aimId argument is required");
@@ -261,7 +259,7 @@ Phase ID: ${phaseId}`,
 2. Define 3-5 concrete, measurable success criteria
 3. Identify what evidence would prove/disprove the hypothesis
 4. Suggest sub-aims that represent experiments or tests
-5. Update the aim's text and status.comment to reflect this structure using update-aim
+5. Update the aim's text and status.comment to reflect this structure using update_aim
 
 Use this format:
 **Hypothesis:** [Clear, testable statement]

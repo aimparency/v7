@@ -165,14 +165,34 @@ watch(() => [uiStore.showPhaseModal, uiStore.showAimModal], async () => {
   // because we use window listener now.
 })
 
+// Persist selection state
+watch(() => [
+  uiStore.selectedColumn,
+  uiStore.selectedPhaseByColumn,
+  uiStore.selectedPhaseIdByColumn,
+  uiStore.columnParentPhaseId,
+  uiStore.floatingAimIndex,
+  uiStore.viewportStart,
+  uiStore.lastSelectedSubPhaseIndexByPhase
+], () => {
+  localStorage.setItem('aimparency-selected-column', uiStore.selectedColumn.toString())
+  localStorage.setItem('aimparency-selected-phases', JSON.stringify(uiStore.selectedPhaseByColumn))
+  localStorage.setItem('aimparency-selected-phase-ids', JSON.stringify(uiStore.selectedPhaseIdByColumn))
+  localStorage.setItem('aimparency-column-parents', JSON.stringify(uiStore.columnParentPhaseId))
+  localStorage.setItem('aimparency-floating-index', uiStore.floatingAimIndex.toString())
+  localStorage.setItem('aimparency-viewport-start', uiStore.viewportStart.toString())
+  localStorage.setItem('aimparency-last-sub-phase-index', JSON.stringify(uiStore.lastSelectedSubPhaseIndexByPhase))
+}, { deep: true })
+
 onMounted(async () => {
   // Register global keydown listener
   window.addEventListener('keydown', handleGlobalKeydown)
 
-  // Set initial focus to the first phase column
-  uiStore.setSelectedColumn(0);
-
   if (uiStore.projectPath) {
+    // Save restored column because selectPhase(0) resets it
+    const restoredColumn = uiStore.selectedColumn
+    const rootIndex = uiStore.selectedPhaseByColumn[0] ?? 0
+
     // Load all project data first
     await dataStore.loadProject(uiStore.projectPath);
 
@@ -182,8 +202,15 @@ onMounted(async () => {
     });
 
     // Then, select the first root phase (index 0 in column 0) to kick off the cascade
-    await uiStore.selectPhase(0, 0);
+    await uiStore.selectPhase(0, rootIndex);
+    
+    // Restore column focus
+    uiStore.setSelectedColumn(restoredColumn);
+    
     uiStore.ensureSelectionVisible();
+  } else {
+    // Set initial focus to the first phase column
+    uiStore.setSelectedColumn(0);
   }
 })
 
