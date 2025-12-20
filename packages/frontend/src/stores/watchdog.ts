@@ -15,24 +15,27 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const workerOutput = ref('')
   const watchdogOutput = ref('')
   
+  interface WatchdogSession {
+    projectPath: string
+    pid: number
+    port: number
+    lastKeepalive: number
+  }
+  const sessions = ref<WatchdogSession[]>([])
+
   let keepaliveTimer: number | NodeJS.Timeout | null = null
 
-  function startKeepalive() {
+  function startKeepalive(projectPath: string) {
     stopKeepalive()
-    const uiStore = useUIStore()
     
     // Initial call
-    if (uiStore.projectPath) {
-        trpc.watchdog.keepalive.mutate({ projectPath: uiStore.projectPath }).catch(console.error)
-    }
+    trpc.watchdog.keepalive.mutate({ projectPath }).catch(console.error)
 
     keepaliveTimer = setInterval(async () => {
-       if (uiStore.projectPath) {
-         try {
-           await trpc.watchdog.keepalive.mutate({ projectPath: uiStore.projectPath });
-         } catch (e) {
-           console.warn("Watchdog keepalive failed", e);
-         }
+       try {
+         await trpc.watchdog.keepalive.mutate({ projectPath });
+       } catch (e) {
+         console.warn("Watchdog keepalive failed", e);
        }
     }, 30 * 1000); // 30s
   }
@@ -44,20 +47,30 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
-  async function connect() {
+  async function fetchSessions() {
+    try {
+      sessions.value = await trpc.watchdog.list.query()
+    } catch (e) {
+      console.error('Failed to fetch watchdog sessions', e)
+    }
+  }
+
+  async function connect(overridePath?: string) {
     if (socket.value) return
 
     const uiStore = useUIStore()
-    if (!uiStore.projectPath) {
+    const targetPath = overridePath || uiStore.projectPath
+
+    if (!targetPath) {
         console.warn('Cannot connect watchdog: No project path')
         return
     }
 
     try {
         // Lazy spawn via backend
-        const { port } = await trpc.watchdog.start.mutate({ projectPath: uiStore.projectPath })
+        const { port } = await trpc.watchdog.start.mutate({ projectPath: targetPath })
         
-        startKeepalive() // Start keepalive loop
+        startKeepalive(targetPath) // Start keepalive loop
 
         const watchdogUrl = `http://localhost:${port}` 
 
@@ -111,7 +124,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     try {
         const { port } = await trpc.watchdog.relaunch.mutate({ projectPath: uiStore.projectPath })
         
-        startKeepalive()
+        startKeepalive(uiStore.projectPath)
 
         const watchdogUrl = `http://localhost:${port}`
         socket.value = io(watchdogUrl, {
@@ -191,6 +204,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     stopReason,
     workerOutput,
     watchdogOutput,
+    sessions,
+    fetchSessions,
     connect,
     disconnect,
     toggle,

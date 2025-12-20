@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
+import { calculateAimValues } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
-import { calculateAimValues } from '../utils/value-calculation'
 import { loadAllAimsCache, saveAims } from '../utils/db'
 
 // Extend Phase type with UI-only properties
@@ -298,6 +298,17 @@ export const useDataStore = defineStore('data', {
 
       // Restore validated UI state
       this.aims[aimId].expanded = oldExpanded
+
+      // Initialize calculated values from backend injection (Optimistic Display)
+      if (newAim.calculatedValue !== undefined) {
+        this.calculatedValues.set(aimId, newAim.calculatedValue)
+      }
+      if (newAim.calculatedCost !== undefined) {
+        this.calculatedCosts.set(aimId, newAim.calculatedCost)
+      }
+      if (newAim.calculatedDoneCost !== undefined) {
+        this.calculatedDoneCosts.set(aimId, newAim.calculatedDoneCost)
+      }
 
       if (oldSelectedIndex !== undefined && newAim.supportingConnections && newAim.supportingConnections.length > 0) {
         const maxIndex = newAim.supportingConnections.length - 1

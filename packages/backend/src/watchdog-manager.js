@@ -236,5 +236,13 @@ export const WatchdogManager = {
         // Wait a bit for the old process to potentially free up ports/resources
         await new Promise(resolve => setTimeout(resolve, 500));
         return this.start(projectPath);
+    },
+    list() {
+        return Array.from(instances.values()).map(i => ({
+            projectPath: i.projectPath,
+            pid: i.pid,
+            port: i.port,
+            lastKeepalive: i.lastKeepalive
+        }));
     }
 };

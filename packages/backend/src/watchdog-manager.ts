@@ -290,6 +290,15 @@ export const WatchdogManager = {
 
       return this.start(projectPath);
 
+    },
+
+    list(): Array<{ projectPath: string, pid: number, port: number, lastKeepalive: number }> {
+      return Array.from(instances.values()).map(i => ({
+        projectPath: i.projectPath,
+        pid: i.pid,
+        port: i.port,
+        lastKeepalive: i.lastKeepalive
+      }));
     }
 
   };

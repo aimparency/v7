@@ -13,7 +13,7 @@ import { indexAims, indexPhases, searchAims, searchPhases, addAimToIndex, update
 import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
 import { WatchdogManager } from './watchdog-manager.js';
 import { chatWithGemini } from './voice-agent.js';
-import { calculateAimValues } from './value-calculation.js';
+import { calculateAimValues } from 'shared';
 import { saveAimValues, getAimValues } from './db.js';
 // Create context for tRPC
 const createContext = () => ({});
@@ -204,6 +204,7 @@ function populateAimValues(projectPath, aims) {
             if (data) {
                 aim.calculatedValue = data.value;
                 aim.calculatedCost = data.cost;
+                aim.calculatedDoneCost = data.doneCost;
             }
         }
     }
@@ -1088,6 +1089,10 @@ const appRouter = t.router({
             const p = normalizeProjectPath(input.projectPath);
             const success = WatchdogManager.keepalive(p);
             return { success };
+        }),
+        list: delayedProcedure
+            .query(async () => {
+            return WatchdogManager.list();
         })
     }),
     voice: t.router({
