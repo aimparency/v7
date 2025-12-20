@@ -1,17 +1,26 @@
 {
   "id": "93149e0b-ef1a-424d-b9db-ffef9f50957d",
-  "text": "build a conversational voice interface to aimparency v7",
+  "text": "build a conversational voice interface (Native Android) to aimparency v7",
   "description": "should work on mobile, mobile app. simple => cross platform but no apple build right now because we're developing on linux",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "47406994-18c9-4650-bdda-46662d960b2d",
+      "relativePosition": [
+        -1.929451708488107,
+        1.5897220211761312
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [],
   "committedIn": [
     "4c960ff4-05ba-4ff8-b523-1a104d750503"
   ],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1765739657869
+    "comment": "User requested this to be a native Android application. The current web implementation is a prototype. Re-opening to address native mobile requirement.",
+    "date": 1766052562641
   },
   "intrinsicValue": 0,
   "loopWeight": 0

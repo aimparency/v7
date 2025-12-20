@@ -22,8 +22,9 @@ export interface MockPhase {
 }
 
 export function seedProject(projectPath: string, data: { phases?: MockPhase[], aims?: MockAim[] }) {
-  mkdirSync(join(projectPath, 'aims'), { recursive: true });
-  mkdirSync(join(projectPath, 'phases'), { recursive: true });
+  const bowmanPath = join(projectPath, '.bowman');
+  mkdirSync(join(bowmanPath, 'aims'), { recursive: true });
+  mkdirSync(join(bowmanPath, 'phases'), { recursive: true });
 
   // Write Meta
   writeFileSync(join(projectPath, 'meta.json'), JSON.stringify({
@@ -47,7 +48,7 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
       commitments: p.commitments || []
     };
     
-    writeFileSync(join(projectPath, 'phases', `${id}.json`), JSON.stringify(phase, null, 2));
+    writeFileSync(join(bowmanPath, 'phases', `${id}.json`), JSON.stringify(phase, null, 2));
   });
 
   // Write Aims
@@ -63,11 +64,15 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
         comment: '',
         date: Date.now()
       },
-      incoming: a.incoming || [],
-      outgoing: a.outgoing || [],
+      supportingConnections: (a.incoming || []).map(childId => ({ 
+        aimId: childId, 
+        weight: 1, 
+        relativePosition: [0, 0] 
+      })),
+      supportedAims: a.outgoing || [],
       committedIn: a.committedIn || []
     };
 
-    writeFileSync(join(projectPath, 'aims', `${id}.json`), JSON.stringify(aim, null, 2));
+    writeFileSync(join(bowmanPath, 'aims', `${id}.json`), JSON.stringify(aim, null, 2));
   });
 }

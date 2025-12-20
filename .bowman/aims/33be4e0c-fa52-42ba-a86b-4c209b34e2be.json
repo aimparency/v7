@@ -13,6 +13,14 @@
   },
   "supportingConnections": [
     {
+      "aimId": "a119c802-f7a4-4eec-b4d7-c6242dc82aed",
+      "relativePosition": [
+        -2.4774465360650115,
+        -0.33505023644145415
+      ],
+      "weight": 1
+    },
+    {
       "aimId": "1e645e7f-a4a9-4e17-a4c7-71c158c516e0",
       "relativePosition": [
         -0.6128628092286849,

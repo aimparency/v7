@@ -9,9 +9,9 @@
     "4c960ff4-05ba-4ff8-b523-1a104d750503"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765960581914
+    "state": "done",
+    "comment": "Implemented dedicated backend 'relaunch' procedure in WatchdogManager and server.ts. Added SIGTERM/SIGINT handlers to the watchdog server (packages/watchdog/src/index.ts) to ensure agents are killed on exit. Refactored frontend store to use the new atomic relaunch flow.",
+    "date": 1766052802285
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -9,9 +9,9 @@
     "4c960ff4-05ba-4ff8-b523-1a104d750503"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765960654307
+    "state": "done",
+    "comment": "Passed store.workerOutput and store.watchdogOutput as initial-content to WatchdogTerminal components to restore state on remount. Also added requestAnimationFrame debouncing to ResizeObserver and forced term.refresh() after fit.",
+    "date": 1766052654222
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -1,6 +1,6 @@
 {
   "id": "77383b31-f45d-4994-be03-d3aed0f16f1c",
-  "text": "watchdog disconnect from backend button",
+  "text": "Watchdog disconnect from backend button (stops keepalive and closes terminal)",
   "description": "",
   "tags": [],
   "supportingConnections": [],

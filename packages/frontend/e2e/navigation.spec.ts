@@ -49,7 +49,7 @@ test.describe('Navigation Tests', () => {
     await projectInput.fill(tempDir);
     await projectInput.press('Enter');
 
-    await page.waitForSelector('.main', { timeout: 20000 });
+    await page.waitForSelector('.main-split', { timeout: 20000 });
     await page.waitForTimeout(1000); 
     await page.focus('.app');
   });
@@ -72,12 +72,9 @@ test.describe('Navigation Tests', () => {
     await expect(page.locator('.phase-column').first()).toHaveClass(/selected-outlined/);
     
     // Aims should NOT be selected-outlined yet
-    const aim1 = page.locator('.phase-column .aim-text', { hasText: 'Aim 1' }).locator('..').locator('..').locator('..'); 
-    // .aim-text -> .aim-title-row -> .aim-content -> .aim-item
-    // Better selector:
     const getAimItem = (text: string) => 
       page.locator('.aim-item').filter({ 
-        has: page.locator('> .aim-content > .aim-title-row > .aim-text', { hasText: text, exact: true }) 
+        has: page.locator('> .aim-content .aim-text', { hasText: text, exact: true }) 
       });
 
     await expect(getAimItem('Aim 1')).not.toHaveClass(/selected-outlined/);
@@ -119,7 +116,7 @@ test.describe('Navigation Tests', () => {
   test('Expansion and Hierarchy Navigation (l/h)', async ({ page }) => {
     const getAimItem = (text: string) => 
       page.locator('.aim-item').filter({ 
-        has: page.locator('> .aim-content > .aim-title-row > .aim-text', { hasText: text, exact: true }) 
+        has: page.locator('> .aim-content .aim-text', { hasText: text, exact: true }) 
       });
 
     // Enter Aim Mode

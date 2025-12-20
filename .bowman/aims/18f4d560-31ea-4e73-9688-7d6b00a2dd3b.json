@@ -4,7 +4,9 @@
   "description": "",
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
   "committedIn": [
     "4c960ff4-05ba-4ff8-b523-1a104d750503"
   ],

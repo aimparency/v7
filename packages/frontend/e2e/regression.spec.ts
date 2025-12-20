@@ -92,7 +92,7 @@ test.describe('Regression Tests', () => {
     await projectInput.fill(tempDir);
     await projectInput.press('Enter');
 
-    await page.waitForSelector('.main', { timeout: 20000 });
+    await page.waitForSelector('.main-split', { timeout: 20000 });
     await page.waitForTimeout(2000); 
     await page.focus('.app');
   });
@@ -197,7 +197,7 @@ test.describe('Regression Tests', () => {
     
     // Reset interaction
     await page.reload(); 
-    await page.waitForSelector('.main');
+    await page.waitForSelector('.main-split');
     
     await page.locator('.phase-column .aim-text', { hasText: 'Link Target' }).click();
     await page.keyboard.press('l'); // Expand (even if empty)
@@ -233,7 +233,7 @@ test.describe('Regression Tests', () => {
     await page.keyboard.press('K');
     await page.waitForTimeout(500); // Wait for sync
 
-    const aimsAfterUp = await page.locator('.phase-column > .phase-list > .phase-container > .aims-container > .aims-list-wrapper > .aims-list > .aim-item > .aim-content > .aim-title-row > .aim-text').allTextContents();
+    const aimsAfterUp = await page.locator('.phase-column .aim-text').allTextContents();
     // Filter to just our move aims
     const moveAimsUp = aimsAfterUp.filter(t => t.includes('Move'));
     // Should be 2, 1, 3
@@ -245,7 +245,7 @@ test.describe('Regression Tests', () => {
     await page.keyboard.press('J');
     await page.waitForTimeout(500);
 
-    const aimsAfterDown = await page.locator('.phase-column > .phase-list > .phase-container > .aims-container > .aims-list-wrapper > .aims-list > .aim-item > .aim-content > .aim-title-row > .aim-text').allTextContents();
+    const aimsAfterDown = await page.locator('.phase-column .aim-text').allTextContents();
     const moveAimsDown = aimsAfterDown.filter(t => t.includes('Move'));
     expect(moveAimsDown[0]).toBe('Move 1');
     expect(moveAimsDown[1]).toBe('Move 2');

@@ -1,0 +1,19 @@
+{
+  "id": "c71bb0e6-9822-49a3-83dd-d6e6d0649433",
+  "text": "configure e2e tests to run headless",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Configured playwright.config.ts to run headless by default (unless HEADED=true). Verified with test run.",
+    "date": 1766145000000
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

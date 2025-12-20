@@ -114,6 +114,6 @@ export default defineConfig({
   /* Only on CI systems run the tests headless */
   use: {
     ...baseConfig.use,
-    headless: process.env.HEADED !== 'true' && !!process.env.CI,
+    headless: process.env.HEADED !== 'true',
   },
 })

@@ -124,6 +124,12 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
     return
   }
 
+  // Voice view toggle
+  if (event.key === 'v' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    uiStore.setView(uiStore.currentView === 'voice' ? 'columns' : 'voice')
+    return
+  }
+
   uiStore.handleGlobalKeydown(event, dataStore)
 }
 
@@ -135,7 +141,8 @@ watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, 
       { key: 'h/l', action: 'switch columns' },
       { key: 'j/k', action: 'navigate phases/aims' },
       { key: 'i', action: 'enter edit mode' },
-      { key: 'o', action: 'create phase/aim' }
+      { key: 'o', action: 'create phase/aim' },
+      { key: 'v', action: 'voice mode' }
     ]
 
     if (selectedColumn === 0) {

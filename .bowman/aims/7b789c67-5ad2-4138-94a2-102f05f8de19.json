@@ -1,19 +1,19 @@
 {
-  "id": "1df7f6d2-764a-4e7f-9a1d-af68b2a52550",
-  "text": "handle connections to archived aims",
+  "id": "7b789c67-5ad2-4138-94a2-102f05f8de19",
+  "text": "new aim",
   "description": "",
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
-    "802342cf-de8f-4614-8915-74e7a0800980"
+    "b4903845-c07b-482a-a6c6-a5c9fdf3de71"
   ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "",
-    "date": 1766114606287
+    "date": 1766050997233
   },
   "intrinsicValue": 0,
-  "loopWeight": 0,
-  "cost": 10
+  "cost": 1,
+  "loopWeight": 0
 }

@@ -1,0 +1,19 @@
+{
+  "id": "6793c1e4-c479-436a-9957-d1db0a81455c",
+  "text": "if there are no open aims in current phases or open subaims of current phases, the watchdog should also have an option \"wait\" with duration parameter that makes the process wait the specified amount of time and then ask \"some time passed. recheck for open aims in current phases\"",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1766114233560
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

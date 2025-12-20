@@ -44,7 +44,7 @@ test('create first aim in empty phase shows modal and creates aim', async ({ pag
     await projectInput.press('Enter');
 
     // Wait for the project to load
-    await page.waitForSelector('.main', { timeout: 10000 });
+    await page.waitForSelector('.main-split', { timeout: 10000 });
     await page.waitForTimeout(1000);
 
     // Focus the app

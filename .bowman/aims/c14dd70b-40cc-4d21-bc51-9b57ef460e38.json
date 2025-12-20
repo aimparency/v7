@@ -1,17 +1,17 @@
 {
-  "id": "88b84303-cb64-4c05-a62d-56dc03d7e532",
-  "text": "remove relative position from the aim output",
+  "id": "c14dd70b-40cc-4d21-bc51-9b57ef460e38",
+  "text": "currently deleting sub aims does not work. fix that",
   "description": "",
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
-    "49258e32-69a4-4b61-9cc4-a54bac439d32"
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
   "committedIn": [],
   "status": {
-    "state": "done",
+    "state": "open",
     "comment": "",
-    "date": 1766114361635
+    "date": 1766051523426
   },
   "intrinsicValue": 0,
   "cost": 1,

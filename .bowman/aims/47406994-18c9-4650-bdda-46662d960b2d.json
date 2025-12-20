@@ -1,18 +1,19 @@
 {
-  "id": "df416e38-a104-4846-a13f-bd47d7f9e676",
-  "text": "add \"cost\" to aim data model",
+  "id": "47406994-18c9-4650-bdda-46662d960b2d",
+  "text": "native android project setup",
   "description": "",
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
-    "e552723a-7f28-46b5-a1e9-5a64220e8710"
+    "93149e0b-ef1a-424d-b9db-ffef9f50957d"
   ],
   "committedIn": [],
   "status": {
-    "state": "done",
+    "state": "open",
     "comment": "",
-    "date": 1766114046461
+    "date": 1766058642659
   },
   "intrinsicValue": 0,
+  "cost": 1,
   "loopWeight": 0
 }

@@ -9,9 +9,9 @@
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765820041808
+    "state": "done",
+    "comment": "Implemented 'consolidate_aims' prompt in packages/mcp/src/prompts.ts. It fetches all aims and provides instructions for merging/linking/pruning. Rebuilt MCP package.",
+    "date": 1766053317534
   },
   "intrinsicValue": 0,
   "loopWeight": 0

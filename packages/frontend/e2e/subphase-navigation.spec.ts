@@ -52,7 +52,7 @@ test.describe('Sub-phase Navigation', () => {
     await projectInput.fill(tempDir);
     await projectInput.press('Enter');
 
-    await page.waitForSelector('.main', { timeout: 20000 });
+    await page.waitForSelector('.main-split', { timeout: 20000 });
     await page.focus('.app');
   });
 

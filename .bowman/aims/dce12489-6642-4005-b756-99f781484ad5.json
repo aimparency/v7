@@ -1,6 +1,6 @@
 {
   "id": "dce12489-6642-4005-b756-99f781484ad5",
-  "text": "Implement 'Experience Automation' Pipeline (Journal -> Social Post)",
+  "text": "Implement 'Experience Automation' Pipeline (Journal -> Social Post) using Gemini CLI",
   "tags": [
     "automation",
     "social-media"

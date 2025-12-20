@@ -1116,7 +1116,9 @@ export const useUIStore = defineStore('ui', {
         if (rootIndex !== -1) {
             if (phaseId) {
             const phase = dataStore.phases[phaseId]
-            if (phase) phase.selectedAimIndex = rootIndex
+            if (phase) {
+                phase.selectedAimIndex = rootIndex
+            }
             } else {
             this.floatingAimIndex = rootIndex
             }
@@ -1357,8 +1359,8 @@ export const useUIStore = defineStore('ui', {
 
                 // Optimistic Update
                 if (parentAim.supportingConnections) {
-                    const temp = parentAim.supportingConnections[currentIndex]
-                    parentAim.supportingConnections[currentIndex] = parentAim.supportingConnections[nextIndex]
+                    const temp = parentAim.supportingConnections[currentIndex]!
+                    parentAim.supportingConnections[currentIndex] = parentAim.supportingConnections[nextIndex]!
                     parentAim.supportingConnections[nextIndex] = temp
                 }
                 parentAim.selectedIncomingIndex = nextIndex
@@ -1400,8 +1402,8 @@ export const useUIStore = defineStore('ui', {
           // Optimistic Update
           const ph = dataStore.phases[phaseId]
           if (ph && ph.commitments) {
-              const temp = ph.commitments[currentIndex]
-              ph.commitments[currentIndex] = ph.commitments[nextIndex]
+              const temp = ph.commitments[currentIndex]!
+              ph.commitments[currentIndex] = ph.commitments[nextIndex]!
               ph.commitments[nextIndex] = temp
               ph.selectedAimIndex = nextIndex
           }
@@ -1454,8 +1456,8 @@ export const useUIStore = defineStore('ui', {
 
                 // Optimistic Update
                 if (parentAim.supportingConnections) {
-                    const temp = parentAim.supportingConnections[currentIndex]
-                    parentAim.supportingConnections[currentIndex] = parentAim.supportingConnections[prevIndex]
+                    const temp = parentAim.supportingConnections[currentIndex]!
+                    parentAim.supportingConnections[currentIndex] = parentAim.supportingConnections[prevIndex]!
                     parentAim.supportingConnections[prevIndex] = temp
                 }
                 parentAim.selectedIncomingIndex = prevIndex
@@ -1497,8 +1499,8 @@ export const useUIStore = defineStore('ui', {
           // Optimistic Update
           const ph = dataStore.phases[phaseId]
           if (ph && ph.commitments) {
-              const temp = ph.commitments[currentIndex]
-              ph.commitments[currentIndex] = ph.commitments[prevIndex]
+              const temp = ph.commitments[currentIndex]!
+              ph.commitments[currentIndex] = ph.commitments[prevIndex]!
               ph.commitments[prevIndex] = temp
               ph.selectedAimIndex = prevIndex
           }

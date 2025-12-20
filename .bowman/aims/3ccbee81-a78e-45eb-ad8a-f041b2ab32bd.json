@@ -1,0 +1,36 @@
+{
+  "id": "3ccbee81-a78e-45eb-ad8a-f041b2ab32bd",
+  "text": "watchdog options",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "15869b9f-fe24-4ea1-8120-d90cbe7d22d5",
+      "relativePosition": [
+        -2.2275934057258877,
+        -1.1348249286857162
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ca79c4a6-f077-422b-a1ca-609f95e5cc0d",
+      "relativePosition": [
+        2.4502095358619433,
+        -0.496460703753277
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766234459599
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,0 +1,19 @@
+{
+  "id": "db5d5014-30b7-4362-b84f-57983f38fc8b",
+  "text": "let's refactor the aim list entering. first l expands, second l enters subaim selection",
+  "description": "when in subaim selection, esc should do the same as h: end subaim selection. keeping the parent aim expanded and selected.",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766233286114
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

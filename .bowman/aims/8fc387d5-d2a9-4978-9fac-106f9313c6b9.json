@@ -9,9 +9,9 @@
     "4c960ff4-05ba-4ff8-b523-1a104d750503"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765829892372
+    "state": "done",
+    "comment": "Fixed CORS issue in watchdog server (packages/watchdog/src/index.ts) which was preventing the frontend (port 5173) from connecting to the watchdog (port 4200+) after a reload. Also added connection error logging to frontend store.",
+    "date": 1766052534647
   },
   "intrinsicValue": 0,
   "cost": 0,

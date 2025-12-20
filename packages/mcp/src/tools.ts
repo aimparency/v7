@@ -3,6 +3,20 @@ import { trpc } from "./client.js";
 import { AIM_STATES, AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 
+function formatAim(aim: any) {
+  if (aim.supportingConnections) {
+    aim.supportingConnections = aim.supportingConnections.map((conn: any) => {
+      const { relativePosition, ...rest } = conn;
+      return rest;
+    });
+  }
+  return aim;
+}
+
+function formatAims(aims: any[]) {
+  return aims.map(formatAim);
+}
+
 export function registerTools(server: Server) {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
@@ -48,12 +62,33 @@ export function registerTools(server: Server) {
                 type: "boolean",
                 description: "Filter for aims that are not committed to any phase and have no parents"
               },
+              archived: {
+                type: "boolean",
+                description: "If true, list only archived aims. If false/omitted, list only active aims."
+              },
               limit: { type: "number", description: "Limit number of results" },
               offset: { type: "number", description: "Skip first N results" },
               sortBy: { type: "string", enum: ["date", "status", "text", "priority"], description: "Sort by field" },
               sortOrder: { type: "string", enum: ["asc", "desc"], description: "Sort order (default asc)" }
             },
             required: ["projectPath"],
+          },
+        },
+        {
+          name: "list_phase_aims_recursive",
+          description: "List all open aims and sub-aims recursively for a given phase.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              phaseId: { type: "string", description: "UUID of the phase" },
+              status: {
+                  type: ["string", "array"],
+                  items: { type: "string" },
+                  description: "Filter by status (default: ['open'])"
+              }
+            },
+            required: ["projectPath", "phaseId"],
           },
         },
         {
@@ -72,6 +107,10 @@ export function registerTools(server: Server) {
               phaseId: {
                 type: "string",
                 description: "Filter by phase ID"
+              },
+              archived: {
+                type: "boolean",
+                description: "If true, search only archived aims."
               },
               limit: { type: "number", description: "Limit number of results" },
               offset: { type: "number", description: "Skip first N results" }
@@ -432,7 +471,7 @@ export function registerTools(server: Server) {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(aim, null, 2),
+                text: JSON.stringify(formatAim(aim), null, 2),
               },
             ],
           };
@@ -446,6 +485,7 @@ export function registerTools(server: Server) {
             phaseId: args.phaseId as string | undefined,
             parentAimId: args.parentAimId as string | undefined,
             floating: args.floating as boolean | undefined,
+            archived: args.archived as boolean | undefined,
             limit: args.limit as number | undefined,
             offset: args.offset as number | undefined,
             sortBy: args.sortBy as "date" | "status" | "text" | undefined,
@@ -455,10 +495,75 @@ export function registerTools(server: Server) {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(aims, null, 2),
+                text: JSON.stringify(formatAims(aims), null, 2),
               },
             ],
           };
+        }
+
+        case "list_phase_aims_recursive": {
+            // 1. Get all aims (cache them)
+            const allAims = await trpc.aim.list.query({
+                projectPath: args.projectPath as string,
+            });
+            const aimMap = new Map(allAims.map(a => [a.id, a]));
+
+            // 2. Get the phase to find roots
+            const phases = await trpc.phase.list.query({
+                projectPath: args.projectPath as string,
+                all: true
+            });
+            const phase = phases.find(p => p.id === args.phaseId);
+            if (!phase) throw new Error(`Phase ${args.phaseId} not found`);
+
+            const roots = phase.commitments;
+            
+            // 3. Traverse
+            const visited = new Set<string>();
+            const result: any[] = [];
+            const allowedStatuses = args.status 
+                ? (Array.isArray(args.status) ? args.status : [args.status])
+                : ['open'];
+
+            function buildTree(aimId: string): any | null {
+                if (visited.has(aimId)) return null; // Cycle detection
+                visited.add(aimId);
+
+                const aim = aimMap.get(aimId);
+                if (!aim) return null;
+
+                const children = (aim.supportingConnections || [])
+                    .map((conn: any) => buildTree(typeof conn === 'string' ? conn : conn.aimId))
+                    .filter((c: any) => c !== null);
+
+                const node = {
+                    id: aim.id,
+                    text: aim.text,
+                    status: aim.status.state,
+                    children: children
+                };
+
+                const isOpen = allowedStatuses.includes(aim.status.state);
+                const hasOpenChildren = children.length > 0;
+
+                // Keep if open OR has open children (so we can see the path to the open child)
+                if (isOpen || hasOpenChildren) {
+                    return node;
+                }
+                return null;
+            }
+
+            for (const rootId of roots) {
+                const tree = buildTree(rootId);
+                if (tree) result.push(tree);
+            }
+
+            return {
+                content: [{
+                    type: "text",
+                    text: JSON.stringify(result, null, 2)
+                }]
+            };
         }
 
         case "search_aims": {
@@ -467,6 +572,7 @@ export function registerTools(server: Server) {
             query: args.query as string,
             status: args.status as string | string[] | undefined,
             phaseId: args.phaseId as string | undefined,
+            archived: args.archived as boolean | undefined,
             limit: args.limit as number | undefined,
             offset: args.offset as number | undefined,
           });
@@ -474,7 +580,7 @@ export function registerTools(server: Server) {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(aims, null, 2),
+                text: JSON.stringify(formatAims(aims), null, 2),
               },
             ],
           };
@@ -492,7 +598,7 @@ export function registerTools(server: Server) {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(aims, null, 2),
+                text: JSON.stringify(formatAims(aims), null, 2),
               },
             ],
           };

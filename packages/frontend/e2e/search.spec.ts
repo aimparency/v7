@@ -46,7 +46,7 @@ test('search finds deep nested aim and expands path', async ({ page }) => {
   await expect(page.locator('.project-path')).toHaveText(PROJECT_PATH);
   
   // Wait for main UI
-  await page.waitForSelector('.main', { timeout: 10000 });
+  await page.waitForSelector('.main-split', { timeout: 10000 });
   await page.focus('.app');
 
   // 2. Create Phase A and Phase B
@@ -105,13 +105,17 @@ test('search finds deep nested aim and expands path', async ({ page }) => {
   
   // Select it (Enter)
   await page.keyboard.press('Enter');
+  await page.waitForSelector('.search-overlay', { state: 'hidden' });
+  await page.waitForTimeout(200);
 
   // 9. Verify visibility and expansion
-  const targetAim = page.locator('.aim-text', { hasText: 'target aim' });
+  const targetAim = page.locator('.aim-text', { hasText: 'target aim' }).last();
   await expect(targetAim).toBeVisible();
   
   // Check if it's selected
-  const targetAimItem = page.locator('.aim-item', { has: page.locator('.aim-text', { hasText: /^target aim$/ }) }).last();
+  const targetAimItem = page.locator('.aim-item').filter({ 
+    has: page.locator('> .aim-content .aim-text', { hasText: /^target aim$/ }) 
+  });
   await expect(targetAimItem).toHaveClass(/selected-outlined/);
 });
 
@@ -121,7 +125,7 @@ test('search finds deep nested aim after reload', async ({ page }) => {
   await page.getByPlaceholder('Enter project folder path...').fill(PROJECT_PATH);
   await page.getByRole('button', { name: 'Open Project' }).click();
   
-  await page.waitForSelector('.main', { timeout: 10000 });
+  await page.waitForSelector('.main-split', { timeout: 10000 });
   await page.focus('.app');
 
   // Create Phases
@@ -158,7 +162,7 @@ test('search finds deep nested aim after reload', async ({ page }) => {
   await page.reload();
   
   await expect(page.locator('.project-path')).toHaveText(PROJECT_PATH);
-  await page.waitForSelector('.main', { timeout: 10000 });
+  await page.waitForSelector('.main-split', { timeout: 10000 });
   await page.focus('.app');
   
   // 3. Search for 'target aim'
@@ -167,11 +171,15 @@ test('search finds deep nested aim after reload', async ({ page }) => {
   
   await expect(page.locator('.result-item').first()).toContainText('target aim');
   await page.keyboard.press('Enter');
+  await page.waitForSelector('.search-overlay', { state: 'hidden' });
+  await page.waitForTimeout(200);
 
   // 4. Verify
-  const targetAim = page.locator('.aim-text', { hasText: 'target aim' });
+  const targetAim = page.locator('.aim-text', { hasText: 'target aim' }).last();
   await expect(targetAim).toBeVisible();
   
-  const targetAimItem = page.locator('.aim-item', { has: page.locator('.aim-text', { hasText: /^target aim$/ }) }).last();
+  const targetAimItem = page.locator('.aim-item').filter({ 
+    has: page.locator('> .aim-content .aim-text', { hasText: /^target aim$/ }) 
+  }).last();
   await expect(targetAimItem).toHaveClass(/selected-outlined/);
 });
