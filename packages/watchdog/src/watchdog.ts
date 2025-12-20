@@ -23,11 +23,11 @@ export class WatchdogService {
   
   clearEvery: number;
   turnCount: number = 0;
-  expectedModel: string;
+  expectedModel: string | undefined;
 
   private nextCheckTime = 0;
 
-  constructor(worker: Agent, watchdog: Agent, expectedModel: string, clearEvery: number = 1) {
+  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, clearEvery: number = 1) {
     this.worker = worker;
     this.watchdog = watchdog;
     this.expectedModel = expectedModel;
@@ -249,7 +249,7 @@ ${context}
 
 What shall we do about this situation?
 
-Check the model that is being used in the main agent: it's usually the last word of the context. It MUST be '${this.expectedModel}'. If it is not, return { "action": { "type": "stop", "reason": "model-switch" } }. 
+Check the model that is being used in the main agent: it's usually the last word of the context. If it changed to a inferior model, return { "action": { "type": "stop", "reason": "model-switch" } }. 
 
 ${PROMPT_MARKER}
 `;
@@ -320,6 +320,12 @@ ${PROMPT_MARKER}
     } else if (action.type === 'stop') {
         const reason = action.reason || 'Requested by Supervisor';
         this.stop(reason);
+    } else if (action.type === 'wait') {
+        const duration = action.duration || 30000;
+        this.log(`Waiting for ${duration}ms...`);
+        this.nextCheckTime = Date.now() + duration;
+        // Return early to skip the default cooldown
+        return; 
     }
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
   }

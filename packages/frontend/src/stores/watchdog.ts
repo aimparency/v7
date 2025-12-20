@@ -66,55 +66,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
           autoConnect: true
         })
 
-        socket.value.on('connect', () => {
-          console.log('Connected to Watchdog')
-          isConnected.value = true
-          localStorage.setItem('aimparency-watchdog-should-connect', 'true')
-        })
-
-        socket.value.on('disconnect', () => {
-          console.log('Disconnected from Watchdog')
-          isConnected.value = false
-        })
-
-        socket.value.on('watchdog-state', (enabled: boolean) => {
-          isEnabled.value = enabled
-          if (enabled) {
-            stopReason.value = ''
-            isEmergencyStopped.value = false
-          }
-        })
-
-        socket.value.on('emergency-state', (stopped: boolean) => {
-          isEmergencyStopped.value = stopped
-          if (stopped && !stopReason.value) stopReason.value = 'Emergency Stop'
-        })
-
-        socket.value.on('emergency-stop', () => {
-          isEmergencyStopped.value = true
-          isEnabled.value = false
-          stopReason.value = 'Emergency Stop'
-        })
-
-        socket.value.on('watchdog-stop-reason', (reason: string) => {
-          stopReason.value = reason
-        })
-
-        // Data handling
-        socket.value.on('worker-data', (data: string) => {
-          workerOutput.value += data
-          // Trim buffer if too long?
-          if (workerOutput.value.length > 100000) {
-            workerOutput.value = workerOutput.value.slice(-100000)
-          }
-        })
-
-        socket.value.on('watchdog-data', (data: string) => {
-          watchdogOutput.value += data
-          if (watchdogOutput.value.length > 100000) {
-            watchdogOutput.value = watchdogOutput.value.slice(-100000)
-          }
-        })
+        setupSocketListeners()
     } catch (e) {
         console.error('Failed to spawn/connect watchdog:', e)
     }
@@ -157,12 +109,78 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
 
     try {
-        await trpc.watchdog.stop.mutate({ projectPath: uiStore.projectPath })
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        await connect()
+        const { port } = await trpc.watchdog.relaunch.mutate({ projectPath: uiStore.projectPath })
+        
+        startKeepalive()
+
+        const watchdogUrl = `http://localhost:${port}`
+        socket.value = io(watchdogUrl, {
+          transports: ['websocket'],
+          autoConnect: true
+        })
+
+        setupSocketListeners()
+        
     } catch (e) {
         console.error('Failed to relaunch watchdog:', e)
     }
+  }
+
+  function setupSocketListeners() {
+    if (!socket.value) return
+
+    socket.value.on('connect', () => {
+      console.log('Connected to Watchdog')
+      isConnected.value = true
+      localStorage.setItem('aimparency-watchdog-should-connect', 'true')
+    })
+
+    socket.value.on('connect_error', (err) => {
+      console.error('Watchdog connection error:', err)
+    })
+
+    socket.value.on('disconnect', () => {
+      console.log('Disconnected from Watchdog')
+      isConnected.value = false
+    })
+
+    socket.value.on('watchdog-state', (enabled: boolean) => {
+      isEnabled.value = enabled
+      if (enabled) {
+        stopReason.value = ''
+        isEmergencyStopped.value = false
+      }
+    })
+
+    socket.value.on('emergency-state', (stopped: boolean) => {
+      isEmergencyStopped.value = stopped
+      if (stopped && !stopReason.value) stopReason.value = 'Emergency Stop'
+    })
+
+    socket.value.on('emergency-stop', () => {
+      isEmergencyStopped.value = true
+      isEnabled.value = false
+      stopReason.value = 'Emergency Stop'
+    })
+
+    socket.value.on('watchdog-stop-reason', (reason: string) => {
+      stopReason.value = reason
+    })
+
+    // Data handling
+    socket.value.on('worker-data', (data: string) => {
+      workerOutput.value += data
+      if (workerOutput.value.length > 100000) {
+        workerOutput.value = workerOutput.value.slice(-100000)
+      }
+    })
+
+    socket.value.on('watchdog-data', (data: string) => {
+      watchdogOutput.value += data
+      if (watchdogOutput.value.length > 100000) {
+        watchdogOutput.value = watchdogOutput.value.slice(-100000)
+      }
+    })
   }
 
   return {

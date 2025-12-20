@@ -55,8 +55,9 @@ function killInstance(instance: WatchdogInstance) {
 function checkTimeout(projectPath: string) {
   const instance = instances.get(projectPath);
   if (instance) {
-    if (Date.now() - instance.lastKeepalive > KEEPALIVE_TIMEOUT) {
-      console.log(`[WatchdogManager] Timeout for ${projectPath}, killing process.`);
+    const elapsed = Date.now() - instance.lastKeepalive;
+    if (elapsed > KEEPALIVE_TIMEOUT) {
+      console.log(`[WatchdogManager] Timeout for ${projectPath}. Elapsed: ${elapsed}ms > Limit: ${KEEPALIVE_TIMEOUT}ms. Killing process.`);
       killInstance(instance);
     }
   }
@@ -226,30 +227,71 @@ export const WatchdogManager = {
     if (instance) {
       // Check liveness first? No, simple update is fine, checkTimeout handles liveness.
       instance.lastKeepalive = Date.now();
+      // Only log every 10th keepalive to avoid spam, or log if it was close to timeout?
+      // console.log(`[WatchdogManager] Keepalive received for ${projectPath}`);
       saveSessions(); // Persist keepalive update? Optional but safe.
       return true;
     }
+    console.warn(`[WatchdogManager] Keepalive failed: No instance found for ${projectPath}`);
     return false;
   },
 
-  getStatus(projectPath: string): { running: boolean, port?: number } {
-    const instance = instances.get(projectPath);
-    if (instance) {
-        // Verify liveness on status check
-        try {
-            if (instance.process) {
-                if (instance.process.exitCode !== null) {
-                    killInstance(instance);
-                    return { running: false };
-                }
-            } else {
-                process.kill(instance.pid, 0);
-            }
-            return { running: true, port: instance.port };
-        } catch(e) {
-            killInstance(instance);
-        }
+    getStatus(projectPath: string): { running: boolean, port?: number } {
+
+      const instance = instances.get(projectPath);
+
+      if (instance) {
+
+          // Verify liveness on status check
+
+          try {
+
+              if (instance.process) {
+
+                  if (instance.process.exitCode !== null) {
+
+                      killInstance(instance);
+
+                      return { running: false };
+
+                  }
+
+              } else {
+
+                  process.kill(instance.pid, 0);
+
+              }
+
+              return { running: true, port: instance.port };
+
+          } catch(e) {
+
+              killInstance(instance);
+
+          }
+
+      }
+
+      return { running: false };
+
+    },
+
+  
+
+    async relaunch(projectPath: string): Promise<{ port: number, pid: number }> {
+
+      console.log(`[WatchdogManager] Relaunching for ${projectPath}`);
+
+      this.stop(projectPath);
+
+      // Wait a bit for the old process to potentially free up ports/resources
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      return this.start(projectPath);
+
     }
-    return { running: false };
-  }
-};
+
+  };
+
+  

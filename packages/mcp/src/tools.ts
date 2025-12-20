@@ -17,7 +17,7 @@ function formatAims(aims: any[]) {
   return aims.map(formatAim);
 }
 
-export function registerTools(server: Server) {
+export function registerTools(server: Server, trpcClient = trpc) {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [
@@ -463,7 +463,7 @@ export function registerTools(server: Server) {
 
       switch (name) {
         case "get_aim": {
-          const aim = await trpc.aim.get.query({
+          const aim = await trpcClient.aim.get.query({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
           });
@@ -478,7 +478,7 @@ export function registerTools(server: Server) {
         }
 
         case "list_aims": {
-          const aims = await trpc.aim.list.query({
+          const aims = await trpcClient.aim.list.query({
             projectPath: args.projectPath as string,
             ids: args.ids as string[] | undefined,
             status: args.status as string | string[] | undefined,
@@ -503,15 +503,14 @@ export function registerTools(server: Server) {
 
         case "list_phase_aims_recursive": {
             // 1. Get all aims (cache them)
-            const allAims = await trpc.aim.list.query({
+            const allAims = await trpcClient.aim.list.query({
                 projectPath: args.projectPath as string,
             });
             const aimMap = new Map(allAims.map(a => [a.id, a]));
 
             // 2. Get the phase to find roots
-            const phases = await trpc.phase.list.query({
-                projectPath: args.projectPath as string,
-                all: true
+            const phases = await trpcClient.phase.list.query({
+                projectPath: args.projectPath as string
             });
             const phase = phases.find(p => p.id === args.phaseId);
             if (!phase) throw new Error(`Phase ${args.phaseId} not found`);
@@ -567,7 +566,7 @@ export function registerTools(server: Server) {
         }
 
         case "search_aims": {
-          const aims = await trpc.aim.search.query({
+          const aims = await trpcClient.aim.search.query({
             projectPath: args.projectPath as string,
             query: args.query as string,
             status: args.status as string | string[] | undefined,
@@ -587,7 +586,7 @@ export function registerTools(server: Server) {
         }
 
         case "search_aims_semantic": {
-          const aims = await trpc.aim.searchSemantic.query({
+          const aims = await trpcClient.aim.searchSemantic.query({
             projectPath: args.projectPath as string,
             query: args.query as string,
             limit: args.limit as number | undefined,
@@ -612,7 +611,7 @@ export function registerTools(server: Server) {
               activeAt = Date.now();
           }
 
-          const phases = await trpc.phase.list.query({
+          const phases = await trpcClient.phase.list.query({
             projectPath: args.projectPath as string,
             parentPhaseId: args.parentPhaseId as string | undefined,
             activeAt: activeAt,
@@ -628,7 +627,7 @@ export function registerTools(server: Server) {
         }
 
         case "search_phases": {
-          const phases = await trpc.phase.search.query({
+          const phases = await trpcClient.phase.search.query({
             projectPath: args.projectPath as string,
             query: args.query as string,
             parentPhaseId: args.parentPhaseId as string | undefined,
@@ -644,7 +643,7 @@ export function registerTools(server: Server) {
         }
 
         case "create_aim": {
-          const result = await trpc.aim.createFloatingAim.mutate({
+          const result = await trpcClient.aim.createFloatingAim.mutate({
             projectPath: args.projectPath as string,
             aim: {
               text: args.text as string,
@@ -660,7 +659,7 @@ export function registerTools(server: Server) {
           // Handle supportingConnections (children)
           const children = (args.supportingConnections as string[]) || [];
           for (const childId of children) {
-            await trpc.aim.connectAims.mutate({
+            await trpcClient.aim.connectAims.mutate({
               projectPath: args.projectPath as string,
               parentAimId: result.id,
               childAimId: childId,
@@ -670,7 +669,7 @@ export function registerTools(server: Server) {
           // Handle supportedAims (parents)
           const parents = (args.supportedAims as string[]) || [];
           for (const parentId of parents) {
-            await trpc.aim.connectAims.mutate({
+            await trpcClient.aim.connectAims.mutate({
               projectPath: args.projectPath as string,
               parentAimId: parentId,
               childAimId: result.id,
@@ -679,7 +678,7 @@ export function registerTools(server: Server) {
 
           // If phaseId provided, commit to phase
           if (args.phaseId) {
-            await trpc.aim.commitToPhase.mutate({
+            await trpcClient.aim.commitToPhase.mutate({
               projectPath: args.projectPath as string,
               aimId: result.id,
               phaseId: args.phaseId as string,
@@ -711,7 +710,7 @@ export function registerTools(server: Server) {
           }
           if (args.supportedAims) updateData.supportedAims = args.supportedAims;
 
-          await trpc.aim.update.mutate({
+          await trpcClient.aim.update.mutate({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
             aim: updateData,
@@ -727,7 +726,7 @@ export function registerTools(server: Server) {
         }
 
         case "delete_aim": {
-          await trpc.aim.delete.mutate({
+          await trpcClient.aim.delete.mutate({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
           });
@@ -742,7 +741,7 @@ export function registerTools(server: Server) {
         }
 
         case "create_phase": {
-          const result = await trpc.phase.create.mutate({
+          const result = await trpcClient.phase.create.mutate({
             projectPath: args.projectPath as string,
             phase: {
               name: args.name as string,
@@ -769,7 +768,7 @@ export function registerTools(server: Server) {
           if (args.to !== undefined) updateData.to = args.to;
           if (args.parent !== undefined) updateData.parent = args.parent;
 
-          await trpc.phase.update.mutate({
+          await trpcClient.phase.update.mutate({
             projectPath: args.projectPath as string,
             phaseId: args.phaseId as string,
             phase: updateData,
@@ -785,7 +784,7 @@ export function registerTools(server: Server) {
         }
 
         case "delete_phase": {
-          await trpc.phase.delete.mutate({
+          await trpcClient.phase.delete.mutate({
             projectPath: args.projectPath as string,
             phaseId: args.phaseId as string,
           });
@@ -800,7 +799,7 @@ export function registerTools(server: Server) {
         }
 
         case "commit_aim_to_phase": {
-          await trpc.aim.commitToPhase.mutate({
+          await trpcClient.aim.commitToPhase.mutate({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
             phaseId: args.phaseId as string,
@@ -817,7 +816,7 @@ export function registerTools(server: Server) {
         }
 
         case "remove_aim_from_phase": {
-          await trpc.aim.removeFromPhase.mutate({
+          await trpcClient.aim.removeFromPhase.mutate({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
             phaseId: args.phaseId as string,
@@ -833,7 +832,7 @@ export function registerTools(server: Server) {
         }
 
         case "update_project_meta": {
-          await trpc.project.updateMeta.mutate({
+          await trpcClient.project.updateMeta.mutate({
             projectPath: args.projectPath as string,
             meta: {
               name: args.name as string,
@@ -851,7 +850,7 @@ export function registerTools(server: Server) {
         }
 
         case "get_system_status": {
-          const status = await trpc.system.getStatus.query({
+          const status = await trpcClient.system.getStatus.query({
             projectPath: args.projectPath as string,
           });
           return {
@@ -865,7 +864,7 @@ export function registerTools(server: Server) {
         }
 
         case "perform_work": {
-          const result = await trpc.system.performWork.mutate({
+          const result = await trpcClient.system.performWork.mutate({
             projectPath: args.projectPath as string,
             workType: (args.workType as "mining" | "freelance") || "mining",
           });
@@ -880,7 +879,7 @@ export function registerTools(server: Server) {
         }
 
         case "build_search_index": {
-          const result = await trpc.project.buildSearchIndex.mutate({
+          const result = await trpcClient.project.buildSearchIndex.mutate({
             projectPath: args.projectPath as string,
           });
           return {
@@ -894,7 +893,7 @@ export function registerTools(server: Server) {
         }
 
         case "check_consistency": {
-          const result = await trpc.project.checkConsistency.query({
+          const result = await trpcClient.project.checkConsistency.query({
             projectPath: args.projectPath as string,
           });
           return {
@@ -910,7 +909,7 @@ export function registerTools(server: Server) {
         }
 
         case "fix_consistency": {
-          const result = await trpc.project.fixConsistency.mutate({
+          const result = await trpcClient.project.fixConsistency.mutate({
             projectPath: args.projectPath as string,
           });
           return {
@@ -930,7 +929,7 @@ export function registerTools(server: Server) {
           if (args.computeCredits !== undefined) statusUpdate.computeCredits = args.computeCredits;
           if (args.funds !== undefined) statusUpdate.funds = args.funds;
 
-          const result = await trpc.system.updateStatus.mutate({
+          const result = await trpcClient.system.updateStatus.mutate({
             projectPath: args.projectPath as string,
             status: statusUpdate,
           });
@@ -946,7 +945,7 @@ export function registerTools(server: Server) {
 
         case "get_prioritized_aims": {
           const now = Date.now();
-          const phases = await trpc.phase.list.query({ 
+          const phases = await trpcClient.phase.list.query({ 
               projectPath: args.projectPath as string, 
               activeAt: now 
           });
@@ -984,7 +983,7 @@ export function registerTools(server: Server) {
 
           // Get aims
           const aimIds = targetPhase.commitments;
-          const aims = await Promise.all(aimIds.map(id => trpc.aim.get.query({ 
+          const aims = await Promise.all(aimIds.map(id => trpcClient.aim.get.query({ 
               projectPath: args.projectPath as string, 
               aimId: id 
           })));

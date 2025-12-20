@@ -3,6 +3,20 @@ import { trpc } from "./client.js";
 import { PROJECT_PATH_PARAMETER, PROJECT_PATH_MISSING_ERROR, SUBDIR_NAME } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 
+function formatAim(aim: any) {
+  if (aim.supportingConnections) {
+    aim.supportingConnections = aim.supportingConnections.map((conn: any) => {
+      const { relativePosition, ...rest } = conn;
+      return rest;
+    });
+  }
+  return aim;
+}
+
+function formatAims(aims: any[]) {
+  return aims.map(formatAim);
+}
+
 // Helper to parse resource URIs
 function parseResourceUri(uri: string): { type: string; id?: string; subpath?: string } {
   // Remove query parameters before parsing
@@ -101,7 +115,7 @@ export function registerResources(server: Server) {
               {
                 uri,
                 mimeType: "application/json",
-                text: JSON.stringify(aims, null, 2),
+                text: JSON.stringify(formatAims(aims), null, 2),
               },
             ],
           };
@@ -119,7 +133,7 @@ export function registerResources(server: Server) {
               {
                 uri,
                 mimeType: "application/json",
-                text: JSON.stringify(supportingAims, null, 2),
+                text: JSON.stringify(formatAims(supportingAims), null, 2),
               },
             ],
           };
@@ -135,7 +149,7 @@ export function registerResources(server: Server) {
               {
                 uri,
                 mimeType: "application/json",
-                text: JSON.stringify(supportedAims, null, 2),
+                text: JSON.stringify(formatAims(supportedAims), null, 2),
               },
             ],
           };
@@ -146,7 +160,7 @@ export function registerResources(server: Server) {
             {
               uri,
               mimeType: "application/json",
-              text: JSON.stringify(aim, null, 2),
+              text: JSON.stringify(formatAim(aim), null, 2),
             },
           ],
         };
@@ -166,8 +180,7 @@ export function registerResources(server: Server) {
             {
               uri,
               mimeType: "application/json",
-              text: JSON.stringify(aims, null, 2),
-            },
+                              text: JSON.stringify(formatAims(aims), null, 2),            },
           ],
         };
       }
@@ -184,8 +197,7 @@ export function registerResources(server: Server) {
               {
                 uri,
                 mimeType: "application/json",
-                text: JSON.stringify(aims, null, 2),
-              },
+                                text: JSON.stringify(formatAims(aims), null, 2),              },
             ],
           };
         }

@@ -3,12 +3,20 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import * as path from 'path';
 import * as net from 'net';
+import cors from 'cors';
 import { Agent } from './agent';
 import { WatchdogService } from './watchdog';
 
 const app = express();
+app.use(cors());
+
 const httpServer = createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 function findAvailablePort(startPort: number): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -48,8 +56,8 @@ const args = process.argv.slice(2);
 
 let projectRootPath = path.resolve(__dirname, '../../../../');
 
-let workerModel = 'Auto (Gemini 3)'; 
-let watchdogModel = 'Auto (Gemini 3)'; 
+let workerModel: string | undefined; // 'gemini-3-pro'; 
+let watchdogModel: string | undefined; // 'gemini-3-flash'; 
 
 let clearEvery = 20;
 
@@ -135,15 +143,19 @@ console.log("Starting Agents Immediately...");
 
 console.log(`Worker Project Root: ${PROJECT_ROOT}`);
 
-console.log(`Worker Model: ${workerModel}`);
+console.log(`Worker Model: ${workerModel ?? "default"}`);
 
-console.log(`Watchdog Model: ${watchdogModel}`);
+console.log(`Watchdog Model: ${watchdogModel ?? "default"}`);
 
 console.log(`Clear Context Every: ${clearEvery} turns`);
 
 
+const geminiArgs = ['--resume', 'latest', '--approval-mode', 'auto_edit']
+if(workerModel !== undefined) {
+  geminiArgs.push('--model', workerModel)
+}
 
-const worker = new Agent(PROJECT_ROOT, ['--resume', 'latest', '--approval-mode', 'auto_edit', '--model', workerModel], (data) => {
+const worker = new Agent(PROJECT_ROOT, geminiArgs, (data) => {
 
   io.emit('worker-data', data);
 
@@ -155,7 +167,12 @@ const worker = new Agent(PROJECT_ROOT, ['--resume', 'latest', '--approval-mode',
 
 // Renamed from supervisor to watchdog
 
-const watchdog = new Agent(KENNEL_PATH, ['--model', watchdogModel], (data) => {
+const geminiWatchdogArgs: string[] = []
+if(watchdogModel !== undefined) {
+  geminiArgs.push('--model', watchdogModel)
+}
+
+const watchdog = new Agent(KENNEL_PATH, geminiWatchdogArgs, (data) => {
 
   io.emit('watchdog-data', data); // Changed event name to watchdog-data
 
@@ -236,6 +253,27 @@ setInterval(() => {
   watchdogService.tick();
 
 }, 500);
+
+
+
+const cleanup = () => {
+  console.log('[Watchdog] Received termination signal. Killing agents and closing server...');
+  worker.kill();
+  watchdog.kill();
+  httpServer.close(() => {
+    console.log('[Watchdog] Server closed. Exiting.');
+    process.exit(0);
+  });
+  
+  // Fallback exit if server.close takes too long
+  setTimeout(() => {
+    console.log('[Watchdog] Server close timed out. Forcing exit.');
+    process.exit(1);
+  }, 2000);
+};
+
+process.on('SIGTERM', cleanup);
+process.on('SIGINT', cleanup);
 
 
 

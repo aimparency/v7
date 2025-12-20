@@ -62,6 +62,13 @@ export function registerPrompts(server: Server) {
             },
           ],
         },
+        {
+          name: "consolidate_aims",
+          description: "Analyze all aims to find duplicates and suggest consolidations",
+          arguments: [
+            PROJECT_PATH_PROMPT_ARGUMENT,
+          ],
+        },
       ],
     };
   });
@@ -274,6 +281,40 @@ Use this format:
 
 Project path: ${projectPath}
 Aim ID: ${aimId}`,
+                },
+              },
+            ],
+          };
+        }
+
+        case "consolidate_aims": {
+          const aims = await trpc.aim.list.query({ projectPath });
+
+          return {
+            description: "Analyze all aims to find duplicates and suggest consolidations",
+            messages: [
+              {
+                role: "user",
+                content: {
+                  type: "text",
+                  text: `Please analyze the entire aim database to find duplicates or highly related aims that should be consolidated:
+
+**Total Aims:** ${aims.length}
+
+**Instructions:**
+1. Use the aims://all?projectPath=${projectPath} resource to get the full list of aims (if not already in context)
+2. Identify groups of aims that are:
+   - Duplicates (same or very similar text)
+   - Highly related (e.g., "Implement X" and "Add X feature")
+   - Fragmented (multiple small aims that should be sub-aims of a larger one)
+3. For each group, propose a consolidation strategy:
+   - **Merge:** Create a new parent aim or select the best existing one as the master.
+   - **Link:** Connect related aims using supportingConnections/supportedAims.
+   - **Prune:** Delete or cancel redundant aims.
+4. Execute the consolidation plan using the available tools (create_aim, update_aim, delete_aim, connect_aims).
+5. Explain your actions and the reasoning behind each consolidation.
+
+Project path: ${projectPath}`,
                 },
               },
             ],

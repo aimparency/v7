@@ -1,0 +1,19 @@
+{
+  "id": "eb334eee-a1c9-4a4b-95d9-4334bb34b829",
+  "text": "watchdog should be able to trigger (type) \"/compress\" in the main agent after a large portion has been implemented and build and tests are running fine to compress the context window as a preparation to work on the next aims/tasks",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "ca93615f-6364-4b90-aa3a-1e78c9939e55"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766234959188
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

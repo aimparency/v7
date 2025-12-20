@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const AimStatusSchema = z.object({
-  state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear']),
+  state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']),
   comment: z.string(),
   date: z.number() // Date.now() timestamp
 });
@@ -27,7 +27,9 @@ export const AimSchema = z.object({
   status: AimStatusSchema,
   intrinsicValue: z.number().default(0),
   cost: z.number().default(1),
-  loopWeight: z.number().default(0)
+  loopWeight: z.number().default(0),
+  calculatedValue: z.number().optional(),
+  calculatedCost: z.number().optional()
 });
 
 export const PhaseSchema = z.object({

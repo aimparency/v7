@@ -1,0 +1,19 @@
+{
+  "id": "9b8f49d4-4dd6-42f6-962f-73df36d9e6c9",
+  "text": "when opening watchdog panel, focus on main agent xterm.js",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3ccbee81-a78e-45eb-ad8a-f041b2ab32bd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766234656877
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

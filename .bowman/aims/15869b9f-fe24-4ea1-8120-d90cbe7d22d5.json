@@ -1,18 +1,19 @@
 {
   "id": "15869b9f-fe24-4ea1-8120-d90cbe7d22d5",
-  "text": "can we somehow capture ctrl+space and make it hide the watchdog terminals panel? Otherwise I always have to use the mouse because w will be interpreted as input to the terminal. I think there is a way to handle mousevents from outside in event listeners (bubble down instead of bubble up) - maybe that's a good way to look for this specific case \"ctrl+space in when watchdog panel open\"?",
+  "text": "can we somehow capture ctrl+space and make it open watchdog actions overlay in watchdog panel? Otherwise I always have to use the mouse because w will be interpreted as input to the terminal. I think there is a way to handle mousevents from outside in event listeners (bubble down instead of bubble up) - maybe that's a good way to look for this specific case \"ctrl+space in when watchdog panel open\"?",
   "description": "",
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
     "ca79c4a6-f077-422b-a1ca-609f95e5cc0d",
-    "3ccbee81-a78e-45eb-ad8a-f041b2ab32bd"
+    "3ccbee81-a78e-45eb-ad8a-f041b2ab32bd",
+    "ca93615f-6364-4b90-aa3a-1e78c9939e55"
   ],
   "committedIn": [],
   "status": {
     "state": "open",
     "comment": "",
-    "date": 1766233625519
+    "date": 1766234804251
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -25,6 +25,8 @@ import {
 import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
 import { WatchdogManager } from './watchdog-manager.js';
 import { chatWithGemini } from './voice-agent.js';
+import { calculateAimValues } from './value-calculation.js';
+import { saveAimValues, getAimValues } from './db.js';
 
 // Create context for tRPC
 const createContext = () => ({});
@@ -51,10 +53,45 @@ function normalizeProjectPath(p: string): string {
   return p.endsWith('.bowman') ? p : path.join(p, '.bowman');
 }
 
+// Recalculation Queue
+const recalculateTimers = new Map<string, NodeJS.Timeout>();
+
+function triggerRecalculation(projectPath: string) {
+  if (recalculateTimers.has(projectPath)) {
+    clearTimeout(recalculateTimers.get(projectPath)!);
+  }
+  recalculateTimers.set(projectPath, setTimeout(async () => {
+    try {
+        const aims = await listAims(projectPath);
+        const result = calculateAimValues(aims);
+        
+        const map = new Map();
+        for (const [id, value] of result.values.entries()) {
+            map.set(id, {
+                value,
+                cost: result.costs.get(id) || 0,
+                doneCost: result.doneCosts.get(id) || 0
+            });
+        }
+        saveAimValues(projectPath, map);
+        // console.log(`[ValueCalc] Updated values for ${projectPath}`);
+    } catch (e) {
+        console.error(`[ValueCalc] Failed to recalculate for ${projectPath}`, e);
+    }
+  }, 1000));
+}
+
+ee.on('change', ({ type, projectPath }) => {
+    if (type === 'aim' || type === 'phase') {
+        triggerRecalculation(projectPath);
+    }
+});
+
 // Utility functions for file operations
 async function ensureProjectStructure(rawProjectPath: string) {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await fs.ensureDir(path.join(projectPath, 'aims'));
+  await fs.ensureDir(path.join(projectPath, 'archived-aims'));
   await fs.ensureDir(path.join(projectPath, 'phases'));
   
   const gitignorePath = path.join(projectPath, '.gitignore');
@@ -72,14 +109,37 @@ async function ensureProjectStructure(rawProjectPath: string) {
 async function writeAim(rawProjectPath: string, aim: Aim): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
-  const aimPath = path.join(projectPath, 'aims', `${aim.id}.json`);
-  await fs.writeJson(aimPath, aim, { spaces: 2 });
+  
+  const isArchived = aim.status.state === 'archived';
+  const targetDir = isArchived ? 'archived-aims' : 'aims';
+  const sourceDir = isArchived ? 'aims' : 'archived-aims';
+  
+  const aimPath = path.join(projectPath, targetDir, `${aim.id}.json`);
+  const oldPath = path.join(projectPath, sourceDir, `${aim.id}.json`);
+  
+  // Strip calculated values before saving
+  const { calculatedValue, calculatedCost, ...aimToSave } = aim;
+
+  await fs.writeJson(aimPath, aimToSave, { spaces: 2 });
+  
+  // Clean up if it was in the other location
+  if (await fs.pathExists(oldPath)) {
+    await fs.remove(oldPath);
+  }
+
   ee.emit('change', { type: 'aim', id: aim.id, projectPath });
 }
 
 async function readAim(rawProjectPath: string, aimId: string): Promise<Aim> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  const aimPath = path.join(projectPath, 'aims', `${aimId}.json`);
+  
+  // Try active aims first
+  let aimPath = path.join(projectPath, 'aims', `${aimId}.json`);
+  if (!(await fs.pathExists(aimPath))) {
+    // Try archived aims
+    aimPath = path.join(projectPath, 'archived-aims', `${aimId}.json`);
+  }
+  
   const aim = await fs.readJson(aimPath);
   
   // Lazy Migration: Integrate 'incoming' into 'supportingConnections'
@@ -143,9 +203,11 @@ async function readAim(rawProjectPath: string, aimId: string): Promise<Aim> {
   return aim;
 }
 
-async function listAims(rawProjectPath: string): Promise<Aim[]> {
+async function listAims(rawProjectPath: string, archived: boolean = false): Promise<Aim[]> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  const aimsDir = path.join(projectPath, 'aims');
+  const dirName = archived ? 'archived-aims' : 'aims';
+  const aimsDir = path.join(projectPath, dirName);
+  
   if (!await fs.pathExists(aimsDir)) return [];
   
   const files = await fs.readdir(aimsDir);
@@ -154,12 +216,37 @@ async function listAims(rawProjectPath: string): Promise<Aim[]> {
   for (const file of files) {
     if (file.endsWith('.json')) {
       const aimId = path.basename(file, '.json');
-      const aim = await readAim(projectPath, aimId);
-      aims.push(aim);
+      // For listing, we can just read directly from the dir we are in to avoid double check overhead of readAim
+      // BUT readAim has migration logic. So we should use readAim.
+      // readAim checks 'aims' first. 
+      // If we are listing archived, readAim will check 'aims' (fail) then 'archived-aims' (success).
+      // If we are listing active, readAim will check 'aims' (success).
+      // So it works.
+      try {
+        const aim = await readAim(projectPath, aimId);
+        aims.push(aim);
+      } catch (e) {
+        console.error(`Failed to read aim ${aimId}`, e);
+      }
     }
   }
   
   return aims;
+}
+
+function populateAimValues(projectPath: string, aims: Aim[]) {
+    try {
+        const values = getAimValues(projectPath);
+        for (const aim of aims) {
+            const data = values.get(aim.id);
+            if (data) {
+                aim.calculatedValue = data.value;
+                aim.calculatedCost = data.cost;
+            }
+        }
+    } catch (e) {
+        // Ignore DB errors (missing DB, locked, etc)
+    }
 }
 
 async function writePhase(rawProjectPath: string, phase: Phase): Promise<void> {
@@ -418,6 +505,7 @@ const appRouter = t.router({
         phaseId: z.string().uuid().optional(),
         parentAimId: z.string().uuid().optional(),
         floating: z.boolean().optional(),
+        archived: z.boolean().optional(),
         ids: z.array(z.string().uuid()).optional(),
         limit: z.number().optional(),
         offset: z.number().optional(),
@@ -425,7 +513,7 @@ const appRouter = t.router({
         sortOrder: z.enum(['asc', 'desc']).optional()
       }))
       .query(async ({ input }) => {
-        let aims = await listAims(input.projectPath);
+        let aims = await listAims(input.projectPath, input.archived);
         
         if (input.ids) {
           aims = aims.filter(aim => input.ids!.includes(aim.id));
@@ -533,7 +621,7 @@ const appRouter = t.router({
           description: z.string().optional(),
           tags: z.array(z.string()).optional(),
           status: z.object({
-            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
+            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']).optional(),
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
@@ -611,7 +699,9 @@ const appRouter = t.router({
         }
 
         // Then delete the aim file
-        const aimPath = path.join(input.projectPath, 'aims', `${input.aimId}.json`);
+        const isArchived = aim.status.state === 'archived';
+        const dirName = isArchived ? 'archived-aims' : 'aims';
+        const aimPath = path.join(input.projectPath, dirName, `${input.aimId}.json`);
         await fs.remove(aimPath);
 
         // Remove from search index
@@ -671,7 +761,7 @@ const appRouter = t.router({
           description: z.string().optional(),
           tags: z.array(z.string()).optional(),
           status: z.object({
-            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
+            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']).optional(),
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
@@ -725,7 +815,7 @@ const appRouter = t.router({
           description: z.string().optional(),
           tags: z.array(z.string()).optional(),
           status: z.object({
-            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
+            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']).optional(),
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
@@ -782,7 +872,7 @@ const appRouter = t.router({
           description: z.string().optional(),
           tags: z.array(z.string()).optional(),
           status: z.object({
-            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed']).optional(),
+            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']).optional(),
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
@@ -837,11 +927,12 @@ const appRouter = t.router({
         status: z.union([z.string(), z.array(z.string())]).optional(),
         phaseId: z.string().uuid().optional(),
         limit: z.number().optional(),
-        offset: z.number().optional()
+        offset: z.number().optional(),
+        archived: z.boolean().optional()
       }))
       .query(async ({ input }) => {
-        const allAims = await listAims(input.projectPath);
-        console.log(`[Search] Query: "${input.query}" | Total Aims: ${allAims.length}`);
+        const allAims = await listAims(input.projectPath, input.archived);
+        console.log(`[Search] Query: "${input.query}" | Total Aims: ${allAims.length} | Archived: ${input.archived}`);
         
         let results: SearchAimResult[] = [];
 
@@ -1109,6 +1200,12 @@ const appRouter = t.router({
          const p = normalizeProjectPath(input.projectPath);
          const success = WatchdogManager.stop(p);
          return { success };
+      }),
+    relaunch: delayedProcedure
+      .input(z.object({ projectPath: z.string() }))
+      .mutation(async ({ input }) => {
+         const p = normalizeProjectPath(input.projectPath);
+         return await WatchdogManager.relaunch(p);
       }),
     getStatus: delayedProcedure
       .input(z.object({ projectPath: z.string() }))

@@ -1,6 +1,6 @@
 {
   "id": "3ccbee81-a78e-45eb-ad8a-f041b2ab32bd",
-  "text": "watchdog options",
+  "text": "watchdog panel improvements",
   "description": "",
   "tags": [],
   "supportingConnections": [
@@ -19,6 +19,14 @@
         -0.496460703753277
       ],
       "weight": 1
+    },
+    {
+      "aimId": "9b8f49d4-4dd6-42f6-962f-73df36d9e6c9",
+      "relativePosition": [
+        -2.103761046885977,
+        -1.350625580094357
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -28,7 +36,7 @@
   "status": {
     "state": "open",
     "comment": "",
-    "date": 1766234459599
+    "date": 1766234593007
   },
   "intrinsicValue": 0,
   "cost": 1,

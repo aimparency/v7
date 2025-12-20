@@ -9,7 +9,8 @@
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "watch": "tsc -w",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "test": "NODE_ENV=test tsx --test src/**/*.test.ts"
   },
   "files": [
     "build"

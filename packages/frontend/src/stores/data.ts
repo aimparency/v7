@@ -3,6 +3,7 @@ import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
 import { calculateAimValues } from '../utils/value-calculation'
+import { loadAllAimsCache, saveAims } from '../utils/db'
 
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
@@ -558,11 +559,37 @@ export const useDataStore = defineStore('data', {
       if (!projectPath) return;
       this.loading = true;
       try {
+        // 1. Try cache first
+        const cachedAims = await loadAllAimsCache(projectPath);
+        if (cachedAims && cachedAims.length > 0) {
+            console.log(`[DataStore] Loaded ${cachedAims.length} aims from cache`);
+            for (const aim of cachedAims) {
+                this.replaceAim(aim.id, aim);
+            }
+            this.recalculateValues();
+        }
+
+        // 2. Fetch from server
         const aims = await trpc.aim.list.query({ projectPath });
+        console.log(`[DataStore] Fetched ${aims.length} aims from server`);
+        
+        const serverAimIds = new Set(aims.map(a => a.id));
+        
+        // Remove stale aims
+        for (const id in this.aims) {
+            if (!serverAimIds.has(id)) {
+                delete this.aims[id];
+            }
+        }
+
         for (const aim of aims) {
           this.replaceAim(aim.id, aim);
         }
         this.recalculateValues();
+        
+        // 3. Update cache
+        saveAims(projectPath, aims);
+        
       } catch (error) {
         console.error('Failed to load all aims:', error);
       } finally {

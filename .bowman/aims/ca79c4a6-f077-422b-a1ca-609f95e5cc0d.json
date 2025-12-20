@@ -1,7 +1,7 @@
 {
   "id": "ca79c4a6-f077-422b-a1ca-609f95e5cc0d",
-  "text": "update shortcut hints. w to open watchdog panel, ctrl+space to show watchdog options",
-  "description": "",
+  "text": "implement several options for the watchdog options modal (buttons and key shortcuts when open)",
+  "description": "opened with ctrl+space when watchdog panel open. \noptions in the pannel (buttons + key shortcuts)\n- w: closes watchdog panel\n- r: reloads \n- c: connects\n- s: switches focus from one xterm.js to the other xterm.js\n- d: disable watchdog\n- a: activate watchdog",
   "tags": [],
   "supportingConnections": [
     {
@@ -20,7 +20,7 @@
   "status": {
     "state": "open",
     "comment": "",
-    "date": 1766234453582
+    "date": 1766234843862
   },
   "intrinsicValue": 0,
   "cost": 1,

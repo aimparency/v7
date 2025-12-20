@@ -1,15 +1,13 @@
-import type { Aim } from 'shared/src/types';
+import type { Aim } from 'shared';
 
 export function calculateAimValues(aims: Aim[]): { 
   values: Map<string, number>, 
   totalIntrinsic: number, 
-  flowShares: Map<string, number>,
   costs: Map<string, number>,
   doneCosts: Map<string, number>
 } {
   const aimMap = new Map<string, Aim>();
   const currentValues = new Map<string, number>();
-  const flowShares = new Map<string, number>();
   let totalIntrinsic = 0;
 
   // 1. Initialize and Pre-calculate Topology
@@ -54,8 +52,6 @@ export function calculateAimValues(aims: Aim[]): {
         const share = (conn.weight || 1) / totalWeight;
         if (share > 0) {
             distributions.push({ target: conn.aimId, share });
-            // Store for UI visualization
-            flowShares.set(`${parent.id}->${conn.aimId}`, share);
         }
     }
     
@@ -71,15 +67,12 @@ export function calculateAimValues(aims: Aim[]): {
   if (totalIntrinsic === 0) {
     const costs = calculateCosts(aims, aimMap);
     const doneCosts = calculateDoneCosts(aims, aimMap, costs);
-    return { values: currentValues, totalIntrinsic: 0, flowShares, costs, doneCosts };
+    return { values: currentValues, totalIntrinsic: 0, costs, doneCosts };
   }
 
   // 3. Iterate
   const iterations = 100;
-  // Epsilon for normalized values. Average is 1/N. 
-  // Use 0.001 relative to average value for high precision.
   const epsilon = 0.001 * (1.0 / (aims.length || 1)); 
-  console.log(`[ValueCalc] Starting calculation. Nodes: ${aims.length}. Threshold: ${epsilon.toExponential(2)}`);
 
   for (let iter = 0; iter < iterations; iter++) {
     const nextValues = new Map<string, number>();
@@ -127,16 +120,13 @@ export function calculateAimValues(aims: Aim[]): {
     }
 
     if (maxChange < epsilon) {
-      console.log(`[ValueCalc] Converged in ${iter + 1} iterations. Max Change: ${maxChange.toExponential(2)}`);
       break;
-    } else if (iter === iterations - 1) {
-      console.warn(`[ValueCalc] Reached max iterations (${iterations}). Final Max Change: ${maxChange.toExponential(2)}`);
     }
   }
 
   const costs = calculateCosts(aims, aimMap);
   const doneCosts = calculateDoneCosts(aims, aimMap, costs);
-  return { values: currentValues, totalIntrinsic, flowShares, costs, doneCosts };
+  return { values: currentValues, totalIntrinsic, costs, doneCosts };
 }
 
 function calculateCosts(aims: Aim[], aimMap: Map<string, Aim>): Map<string, number> {
@@ -190,9 +180,6 @@ function calculateDoneCosts(aims: Aim[], aimMap: Map<string, Aim>, totalCosts: M
     }
 
     if (aim.status.state === 'done') {
-        // If done, entire subtree cost is considered done (or just this node?)
-        // If a node is done, its children might not be marked done, but the effort is "done" from parent perspective.
-        // Let's assume Done implies 100% progress.
         const total = totalCosts.get(aimId) || 0;
         doneCosts.set(aimId, total);
         calculating.delete(aimId);

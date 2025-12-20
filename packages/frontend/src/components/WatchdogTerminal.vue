@@ -46,7 +46,7 @@ onMounted(() => {
     fitAddon.fit();
     
     // Observer container resize
-    resizeObserver = new ResizeObserver(() => fit());
+    resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => fit()));
     resizeObserver.observe(terminalContainer.value);
   }
 
@@ -71,6 +71,7 @@ const fit = () => {
         fitAddon.fit();
         if (term) {
             emit('resize', { cols: term.cols, rows: term.rows });
+            term.refresh(0, term.rows - 1);
         }
     } catch(e) {
         // sizing errors can happen if container is hidden

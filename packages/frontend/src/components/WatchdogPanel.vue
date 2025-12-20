@@ -93,6 +93,7 @@ const toggle = () => {
         <div class="term-label">Worker (Main Agent)</div>
         <WatchdogTerminal 
           ref="workerTerm" 
+          :initial-content="store.workerOutput"
           :onData="handleWorkerInput"
           @resize="(dims) => store.socket?.emit('resize-worker', dims)"
         />
@@ -101,6 +102,7 @@ const toggle = () => {
         <div class="term-label">Watchdog (Brain)</div>
         <WatchdogTerminal 
           ref="watchdogTerm" 
+          :initial-content="store.watchdogOutput"
           :onData="handleWatchdogInput"
           @resize="(dims) => store.socket?.emit('resize-watchdog', dims)"
         />

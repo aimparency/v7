@@ -31,6 +31,7 @@ describe('Aim.vue', () => {
     expanded: false,
     selectedIncomingIndex: undefined,
     intrinsicValue: 0,
+    cost: 1,
     loopWeight: 0,
     ...overrides
   })

@@ -1,4 +1,4 @@
-export const AIM_STATES = ["open", "done", "cancelled", "partially", "failed"];
+export const AIM_STATES = ["open", "done", "cancelled", "partially", "failed", "archived"];
 export const AIM_STATES_DESCRIPTION = `Current status of the aim. Options: ${AIM_STATES.join(", ")}`;
 
 export const SUBDIR_NAME = ".bowman"
