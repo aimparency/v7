@@ -25,6 +25,7 @@ const intrinsicValueInput = ref<HTMLInputElement>()
 const costInput = ref<HTMLInputElement>()
 const loopWeightInput = ref<HTMLInputElement>()
 const statusSelect = ref<HTMLSelectElement>()
+const statusCommentInput = ref<HTMLInputElement>()
 const submitBtn = ref<HTMLButtonElement>()
 const searchResultsContainer = ref<HTMLDivElement>()
 
@@ -162,18 +163,37 @@ const handleSearchResultsKeydown = (event: KeyboardEvent) => {
 }
 
 const handleTagPrev = () => {
-  loopWeightInput.value?.focus()
+  if (uiStore.aimModalMode === 'edit') {
+    statusCommentInput.value?.focus()
+  } else {
+    loopWeightInput.value?.focus()
+  }
 }
 
 const handleTagNext = () => {
-  if (uiStore.aimModalMode === 'edit') {
-    statusSelect.value?.focus()
-  } else {
-    if (hasSearchText.value && searchResultsContainer.value) {
-      searchResultsContainer.value.focus()
+  submitBtn.value?.focus()
+}
+
+const handleLoopWeightNext = (event: KeyboardEvent) => {
+  if (event.key === 'Tab' && !event.shiftKey) {
+    event.preventDefault()
+    if (uiStore.aimModalMode === 'edit') {
+      statusSelect.value?.focus()
     } else {
-      submitBtn.value?.focus()
+      // Tags? TagInput doesn't have a focus method easily accessible here 
+      // but I can try to find the input inside it.
+      // Better: let's just use the @next-field logic if I can.
+      // For now, I'll just let default tab work if I don't prevent it?
+      // But I want consistent control.
+      document.querySelector<HTMLElement>('.tag-input-container input')?.focus()
     }
+  }
+}
+
+const handleStatusCommentNext = (event: KeyboardEvent) => {
+  if (event.key === 'Tab' && !event.shiftKey) {
+    event.preventDefault()
+    document.querySelector<HTMLElement>('.tag-input-container input')?.focus()
   }
 }
 
@@ -340,17 +360,9 @@ onMounted(async () => {
               type="number"
               placeholder="0"
               @keydown="handleInputKeydown"
+              @keydown.tab.exact="handleLoopWeightNext"
             />
           </div>
-        </div>
-
-        <div class="form-group">
-          <TagInput 
-            v-model="aimTags" 
-            label="Tags" 
-            @next-field="handleTagNext"
-            @prev-field="handleTagPrev"
-          />
         </div>
 
         <!-- Status fields (edit mode only) -->
@@ -373,12 +385,23 @@ onMounted(async () => {
                     </div>
                     <div class="form-group">            <label>Status Comment (optional)</label>
             <input
+              ref="statusCommentInput"
               v-model="statusComment"
               type="text"
               placeholder="Add a comment about the status"
               @keydown="handleInputKeydown"
+              @keydown.tab.exact="handleStatusCommentNext"
             />
           </div>
+        </div>
+
+        <div class="form-group">
+          <TagInput 
+            v-model="aimTags" 
+            label="Tags" 
+            @next-field="handleTagNext"
+            @prev-field="handleTagPrev"
+          />
         </div>
 
 
