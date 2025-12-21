@@ -726,6 +726,12 @@ export const useDataStore = defineStore('data', {
                const phase = await trpc.phase.get.query({ projectPath, phaseId: data.id });
                this.replacePhase(phase.id, phase);
 
+               // Ensure all committed aims are loaded
+               const missingAimIds = phase.commitments.filter(id => !this.aims[id]);
+               if (missingAimIds.length > 0) {
+                 await this.loadAims(projectPath, missingAimIds);
+               }
+
                // Update childrenByParentId to ensure list consistency
                const parentId = phase.parent ?? 'null';
                if (!this.childrenByParentId[parentId]) {

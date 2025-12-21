@@ -32,9 +32,56 @@ async function main() {
     }
   });
 
+  function printConnectionInfo(url: string) {
+    const username = process.env.MCP_USERNAME;
+    const password = process.env.MCP_PASSWORD;
+    
+    let authUrl = url;
+    if (username && password) {
+        // Inject auth into URL: https://user:pass@host...
+        authUrl = url.replace('https://', `https://${username}:${password}@`);
+    }
+
+    console.log('\n✨ MCP Server Exposed! ✨');
+    console.log(`\n🔗 Public SSE Endpoint: ${authUrl}/sse`);
+    
+    if (username) {
+        console.log(`🔒 Basic Auth Enabled: ${username}:******`);
+    }
+
+    console.log(`\nTo connect a remote agent, use this URL configuration:`);
+    console.log(JSON.stringify({
+        mcpServers: {
+            aimparency: {
+                url: `${authUrl}/sse`,
+                transport: "sse"
+            }
+        }
+    }, null, 2));
+    console.log('\nPress Ctrl+C to stop.');
+  }
+
   function startNgrok() {
     console.log('🌐 Starting ngrok tunnel...');
-    const ngrok = spawn('ngrok', ['http', String(MCP_PORT), '--log', 'stdout'], {
+    
+    if (process.env.NGROK_AUTHTOKEN) {
+        console.log('🔑 Using NGROK_AUTHTOKEN from environment');
+    } else {
+        console.log('⚠️ NGROK_AUTHTOKEN not found in environment, relying on global config');
+    }
+
+    const ngrokArgs = ['http', String(MCP_PORT), '--log', 'stdout'];
+    if (process.env.NGROK_AUTHTOKEN) {
+        ngrokArgs.push('--authtoken', process.env.NGROK_AUTHTOKEN.trim());
+    }
+    
+    // Add Basic Auth if provided
+    if (process.env.MCP_USERNAME && process.env.MCP_PASSWORD) {
+        ngrokArgs.push(`--basic-auth=${process.env.MCP_USERNAME}:${process.env.MCP_PASSWORD}`);
+        console.log('🔒 Enabling Basic Auth');
+    }
+
+    const ngrok = spawn('ngrok', ngrokArgs, {
         stdio: ['ignore', 'pipe', 'pipe'] // Capture both stdout and stderr
     });
 
@@ -43,19 +90,7 @@ async function main() {
       // Look for url=https://...
       const match = msg.match(/url=(https:\/\/[^ ]+)/);
       if (match) {
-        const url = match[1];
-        console.log('\n✨ MCP Server Exposed! ✨');
-        console.log(`\n🔗 Public SSE Endpoint: ${url}/sse`);
-        console.log(`\nTo connect a remote agent, use this URL configuration:`);
-        console.log(JSON.stringify({
-            mcpServers: {
-                aimparency: {
-                    url: `${url}/sse`,
-                    transport: "sse"
-                }
-            }
-        }, null, 2));
-        console.log('\nPress Ctrl+C to stop.');
+        printConnectionInfo(match[1]);
       }
     });
 

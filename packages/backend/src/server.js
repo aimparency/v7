@@ -8,7 +8,7 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { ProjectMetaSchema } from 'shared';
+import { AimSchema, PhaseSchema, AIMPARENCY_DIR_NAME } from 'shared';
 import { indexAims, indexPhases, searchAims, searchPhases, addAimToIndex, updateAimInIndex, removeAimFromIndex, addPhaseToIndex, updatePhaseInIndex, removePhaseFromIndex } from './search.js';
 import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
 import { chatWithGemini } from './voice-agent.js';
@@ -32,7 +32,21 @@ const GITIGNORE_CONTENT = 'vectors.json\n';
 function normalizeProjectPath(p) {
     if (!p)
         return p;
-    return p.endsWith('.bowman') ? p : path.join(p, '.bowman');
+    return p.endsWith(AIMPARENCY_DIR_NAME) ? p : path.join(p, AIMPARENCY_DIR_NAME);
+}
+const indexedProjects = new Set();
+async function ensureSearchIndex(projectPath) {
+    // Normalize path for consistent cache key
+    const normalizedPath = normalizeProjectPath(projectPath);
+    if (indexedProjects.has(normalizedPath))
+        return;
+    console.log(`[Search] Building index for ${normalizedPath}...`);
+    // Pass raw projectPath to list functions (they normalize internally) but use normalized for map key
+    const aims = await listAims(normalizedPath);
+    const phases = await listPhases(normalizedPath);
+    indexAims(normalizedPath, aims);
+    indexPhases(normalizedPath, phases);
+    indexedProjects.add(normalizedPath);
 }
 // Recalculation Queue
 const recalculateTimers = new Map();
@@ -61,6 +75,8 @@ function triggerRecalculation(projectPath) {
     }, 1000));
 }
 ee.on('change', ({ type, projectPath }) => {
+    if (process.env.NODE_ENV === 'test')
+        return;
     if (type === 'aim' || type === 'phase') {
         triggerRecalculation(projectPath);
     }
@@ -165,7 +181,7 @@ async function readAim(rawProjectPath, aimId) {
         aim.supportedAims = [];
     if (!aim.committedIn)
         aim.committedIn = [];
-    return aim;
+    return AimSchema.parse(aim);
 }
 async function listAims(rawProjectPath, archived = false) {
     const projectPath = normalizeProjectPath(rawProjectPath);
@@ -221,7 +237,8 @@ async function writePhase(rawProjectPath, phase) {
 async function readPhase(rawProjectPath, phaseId) {
     const projectPath = normalizeProjectPath(rawProjectPath);
     const phasePath = path.join(projectPath, 'phases', `${phaseId}.json`);
-    return await fs.readJson(phasePath);
+    const data = await fs.readJson(phasePath);
+    return PhaseSchema.parse(data);
 }
 async function listPhases(rawProjectPath, parentPhaseId) {
     const projectPath = normalizeProjectPath(rawProjectPath);
@@ -621,9 +638,10 @@ const appRouter = t.router({
                 await removeAimFromPhase(input.projectPath, input.aimId, phaseId);
             }
             // Then delete the aim file
+            const projectPath = normalizeProjectPath(input.projectPath);
             const isArchived = aim.status.state === 'archived';
             const dirName = isArchived ? 'archived-aims' : 'aims';
-            const aimPath = path.join(input.projectPath, dirName, `${input.aimId}.json`);
+            const aimPath = path.join(projectPath, dirName, `${input.aimId}.json`);
             await fs.remove(aimPath);
             // Remove from search index
             removeAimFromIndex(input.projectPath, input.aimId);
@@ -831,6 +849,7 @@ const appRouter = t.router({
             archived: z.boolean().optional()
         }))
             .query(async ({ input }) => {
+            await ensureSearchIndex(input.projectPath);
             const allAims = await listAims(input.projectPath, input.archived);
             console.log(`[Search] Query: "${input.query}" | Total Aims: ${allAims.length} | Archived: ${input.archived}`);
             let results = [];
@@ -876,6 +895,7 @@ const appRouter = t.router({
             phaseId: z.string().uuid().optional()
         }))
             .query(async ({ input }) => {
+            await ensureSearchIndex(input.projectPath);
             const queryVector = await generateEmbedding(input.query);
             if (!queryVector)
                 return [];
@@ -987,7 +1007,8 @@ const appRouter = t.router({
             phaseId: z.string().uuid()
         }))
             .mutation(async ({ input }) => {
-            const phasePath = path.join(input.projectPath, 'phases', `${input.phaseId}.json`);
+            const projectPath = normalizeProjectPath(input.projectPath);
+            const phasePath = path.join(projectPath, 'phases', `${input.phaseId}.json`);
             await fs.remove(phasePath);
             await cleanupCommitments(input.projectPath, input.phaseId);
             removePhaseFromIndex(input.projectPath, input.phaseId);
@@ -1001,6 +1022,7 @@ const appRouter = t.router({
             parentPhaseId: z.string().uuid().nullable().optional()
         }))
             .query(async ({ input }) => {
+            await ensureSearchIndex(input.projectPath);
             const phases = await listPhases(input.projectPath, input.parentPhaseId);
             return await searchPhases(input.projectPath, input.query, phases);
         })
@@ -1079,18 +1101,26 @@ const appRouter = t.router({
             projectPath: z.string()
         }))
             .query(async ({ input }) => {
-            const metaPath = path.join(input.projectPath, 'meta.json');
+            const projectPath = normalizeProjectPath(input.projectPath);
+            const metaPath = path.join(projectPath, 'meta.json');
             if (await fs.pathExists(metaPath)) {
                 return await fs.readJson(metaPath);
             }
             // Initialize with defaults if missing
-            const projectDir = input.projectPath.replace(/(\\|\/)\.bowman\/?$/, '');
+            const projectDir = path.basename(projectPath); // Use normalized path which ends in .bowman's parent (if we normalize it correctly)
+            // Wait, normalizeProjectPath returns /path/to/.bowman.
+            // So basename is .bowman?
+            // No, normalizeProjectPath appends .bowman if missing.
+            // So projectPath is /.../.bowman
+            // We want the parent dir name as project name
+            const parentDir = path.dirname(projectPath);
+            const name = path.basename(parentDir) || 'Project';
             const defaultMeta = {
-                name: path.basename(projectDir) || 'Project',
+                name,
                 color: '#007acc'
             };
             try {
-                await ensureProjectStructure(input.projectPath);
+                await ensureProjectStructure(projectPath);
                 await fs.writeJson(metaPath, defaultMeta, { spaces: 2 });
             }
             catch (e) {
@@ -1138,11 +1168,15 @@ const appRouter = t.router({
         updateMeta: delayedProcedure
             .input(z.object({
             projectPath: z.string(),
-            meta: ProjectMetaSchema
+            meta: z.object({
+                name: z.string(),
+                color: z.string().regex(/^#[0-9a-fA-F]{6}$/)
+            })
         }))
             .mutation(async ({ input }) => {
-            await ensureProjectStructure(input.projectPath);
-            const metaPath = path.join(input.projectPath, 'meta.json');
+            const projectPath = normalizeProjectPath(input.projectPath);
+            await ensureProjectStructure(projectPath);
+            const metaPath = path.join(projectPath, 'meta.json');
             await fs.writeJson(metaPath, input.meta, { spaces: 2 });
             return input.meta;
         }),
@@ -1429,10 +1463,11 @@ const server = createHTTPServer({
     createContext,
 });
 // Start servers (only if not in test environment)
-const HTTP_PORT = 3000;
+const HTTP_PORT = parseInt(process.env.PORT_BACKEND_HTTP || '3000');
+const WS_PORT = parseInt(process.env.PORT_BACKEND_WS || '3001');
 if (process.env.NODE_ENV !== 'test') {
     // Create WebSocket server
-    const wss = new WebSocketServer({ port: 3001 });
+    const wss = new WebSocketServer({ port: WS_PORT });
     const handler = applyWSSHandler({
         wss,
         router: appRouter,
@@ -1447,7 +1482,7 @@ if (process.env.NODE_ENV !== 'test') {
     server.listen(HTTP_PORT, () => {
         console.log(`HTTP Server running on http://localhost:${HTTP_PORT}`);
     });
-    console.log(`WebSocket Server running on ws://localhost:3001`);
+    console.log(`WebSocket Server running on ws://localhost:${WS_PORT}`);
     process.on('SIGTERM', () => {
         console.log('SIGTERM signal received: closing HTTP server');
         server.close();

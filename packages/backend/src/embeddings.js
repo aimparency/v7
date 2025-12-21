@@ -1,6 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
-const EMBEDDER_URL = 'http://127.0.0.1:3002/embed';
+const PORT = process.env.PORT_EMBEDDER || '3003';
+const EMBEDDER_URL = `http://127.0.0.1:${PORT}/embed`;
 export async function generateEmbedding(text) {
     try {
         // Basic retry logic could go here, but for now fail fast

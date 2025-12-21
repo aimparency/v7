@@ -20,6 +20,7 @@
     "test": "npm run test -w backend",
     "ncu-upgrade": "npx npm-check-updates -u --deep && npm install",
     "dev:mcp": "dotenv -e .env -- npm run dev -w mcp",
+    "expose:mcp": "dotenv -e .env -- npm run expose -w mcp",
     "rec-install": "npm install && cd packages/shared && npm install && cd ../backend && npm install && cd ../frontend && npm install && cd ../mcp && npm install"
   },
   "keywords": [],

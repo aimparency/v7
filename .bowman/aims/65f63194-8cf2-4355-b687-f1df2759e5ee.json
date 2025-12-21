@@ -1,0 +1,19 @@
+{
+  "id": "65f63194-8cf2-4355-b687-f1df2759e5ee",
+  "text": "retry on high demand",
+  "description": "sometimes the main agent stops like this: \nWe are currently experiencing high demand.                                                                                      │\n│ We apologize and appreciate your patience.                                                                                      │\n│ /model to switch models.                                                                                                        │\n│                                                                                                                                 │\n│                                                                                                                                 │\n│ ● 1. Keep trying                                                                                                                │\n│   2. Stop          \n\n<end of snippet>\n\nif this is the case, we should wait 30 seconds then retry, if we hit again, wait another 60 seconds then 120 seconds and so on * 2 always until it continues (stops on something different) - in this case: we reset to 30 seconds.\n\nWe need a separate action besides \"stop\" and \"text-prompt\" or \"option\"  for detecting the high demand situation: \"cooldown\"\n\nso we should add that in kennel/.gemini/GEMINI.md",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1766343265251
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
