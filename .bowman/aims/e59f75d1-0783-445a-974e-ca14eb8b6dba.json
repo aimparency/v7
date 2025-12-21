@@ -1,0 +1,18 @@
+{
+  "id": "e59f75d1-0783-445a-974e-ca14eb8b6dba",
+  "text": "Implement Autonomy Metrics Collector",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "71ad0cd7-ac9d-4df7-abb9-101ead31f118"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766359680672
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -3,15 +3,6 @@
   "text": "graph view",
   "description": "aims make up a graph with their connections. \nit should be possible to visualize that. \nI have placed a reference in /home/felix/dev/aimparency/v7/packages/frontend/graph-ui-reference-readonly\n\nYou can heavily draw from the ui graph implementation. \nIgnore the Side panel. Ignore the data model from that reference.",
   "tags": [],
-  "committedIn": [
-    "f51f8930-c937-4c66-9db8-d4d313e6d286"
-  ],
-  "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765625696310
-  },
-  "intrinsicValue": 50,
   "supportingConnections": [
     {
       "aimId": "bebef7f4-531a-4ce3-b84c-b20e03b05a32",
@@ -95,6 +86,15 @@
     }
   ],
   "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1766359620124
+  },
+  "intrinsicValue": 50,
   "cost": 0,
   "loopWeight": 0
 }

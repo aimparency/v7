@@ -1,0 +1,18 @@
+{
+  "id": "fb40a390-6a63-46e7-97fa-91ca8282e266",
+  "text": "Define Success Metrics for Economic Autonomy",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "71ad0cd7-ac9d-4df7-abb9-101ead31f118"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Defined in subdev/autonomy/metrics.md",
+    "date": 1766359669158
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

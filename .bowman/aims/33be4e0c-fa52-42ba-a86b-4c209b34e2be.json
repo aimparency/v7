@@ -3,14 +3,6 @@
   "text": "bugfixes",
   "description": "",
   "tags": [],
-  "committedIn": [
-    "f51f8930-c937-4c66-9db8-d4d313e6d286"
-  ],
-  "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765402481463
-  },
   "supportingConnections": [
     {
       "aimId": "a119c802-f7a4-4eec-b4d7-c6242dc82aed",
@@ -29,5 +21,16 @@
       "weight": 1
     }
   ],
-  "supportedAims": []
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1766359611115
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }
