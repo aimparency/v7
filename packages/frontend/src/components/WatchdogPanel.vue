@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
 import WatchdogTerminal from './WatchdogTerminal.vue'
+import WatchdogActionsOverlay from './WatchdogActionsOverlay.vue'
 
 const store = useWatchdogStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
@@ -9,6 +10,14 @@ const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 
 const onWorkerData = (data: string) => workerTerm.value?.write(data)
 const onWatchdogData = (data: string) => watchdogTerm.value?.write(data)
+
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.ctrlKey && e.code === 'Space') {
+    e.preventDefault()
+    e.stopPropagation()
+    store.showActionsOverlay = !store.showActionsOverlay
+  }
+}
 
 // Manage socket listeners manually to prevent leaks and ensure data flow to terminals
 watch(() => store.socket, (socket, oldSocket) => {
@@ -28,6 +37,7 @@ onMounted(() => {
   if (shouldConnect !== 'false') {
     store.connect()
   }
+  window.addEventListener('keydown', handleKeyDown, true) // Capture phase
 })
 
 onUnmounted(() => {
@@ -35,6 +45,7 @@ onUnmounted(() => {
     store.socket.off('worker-data', onWorkerData)
     store.socket.off('watchdog-data', onWatchdogData)
   }
+  window.removeEventListener('keydown', handleKeyDown, true)
 })
 
 const handleWorkerInput = (data: string) => {
@@ -117,6 +128,9 @@ defineExpose({
         />
       </div>
     </div>
+
+    <!-- Actions Overlay -->
+    <WatchdogActionsOverlay v-if="store.showActionsOverlay" />
   </div>
 </template>
 

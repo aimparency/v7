@@ -10,6 +10,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const isEnabled = ref(false)
   const isEmergencyStopped = ref(false)
   const stopReason = ref('')
+  const showActionsOverlay = ref(false)
   
   // Terminal buffers
   const workerOutput = ref('')
