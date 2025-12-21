@@ -8,9 +8,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766359680672
+    "state": "done",
+    "comment": "Implemented in subdev/autonomy/scripts/collect_metrics.ts and verified with wallet.json from Market Alpha.",
+    "date": 1766359980895
   },
   "intrinsicValue": 0,
   "cost": 1,
