@@ -164,7 +164,7 @@ export const WatchdogManager = {
     }
 
     // Find free port starting from process start port
-    const startPort = parseInt(process.env.PORT_PROCESS_START || '6000');
+    const startPort = parseInt(process.env.PORT_PROCESS_START || '7000');
     const port = await findAvailablePort(startPort);
 
     // Resolve path to watchdog executable

@@ -2,33 +2,10 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
 import WatchdogTerminal from './WatchdogTerminal.vue'
-import { AIMPARENCY_DIR_NAME } from 'shared'
 
 const store = useWatchdogStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
-
-const selectedSession = ref('')
-const isCreating = ref(false)
-const newProjectPath = ref('')
-
-const onSessionSelect = () => {
-    if (selectedSession.value === '__new__') {
-        isCreating.value = true
-        selectedSession.value = ''
-    } else if (selectedSession.value) {
-        store.connect(selectedSession.value)
-        selectedSession.value = ''
-    }
-}
-
-const connectNew = () => {
-    if (newProjectPath.value) {
-        store.connect(newProjectPath.value)
-        isCreating.value = false
-        newProjectPath.value = ''
-    }
-}
 
 const onWorkerData = (data: string) => workerTerm.value?.write(data)
 const onWatchdogData = (data: string) => watchdogTerm.value?.write(data)
@@ -79,32 +56,18 @@ const toggle = () => {
       <div class="status-indicator">
         <span class="dot" :class="{ connected: store.isConnected }"></span>
         <span class="status-text">{{ store.isConnected ? 'Connected' : 'Disconnected' }}</span>
-        
-        <div class="connection-control" v-if="!store.isConnected">
-            <select v-model="selectedSession" @change="onSessionSelect" class="session-select">
-                <option value="" disabled selected>Select Session...</option>
-                <option v-for="s in store.sessions" :key="s.projectPath" :value="s.projectPath">
-                    {{ s.projectPath.split('/').pop() === AIMPARENCY_DIR_NAME ? s.projectPath.split('/').slice(-2, -1)[0] : s.projectPath.split('/').pop() }} ({{ s.pid }})
-                </option>
-                <option value="__new__">+ New Session...</option>
-            </select>
-            <input 
-                v-if="isCreating" 
-                v-model="newProjectPath" 
-                @keyup.enter="connectNew"
-                placeholder="Project Path" 
-                class="path-input"
-            />
-            <button v-if="isCreating" @click="connectNew" class="link-btn">Go</button>
-            <button v-else @click="store.connect()" class="link-btn" title="Connect to current project">(Current)</button>
-            <button @click="store.fetchSessions()" class="refresh-btn" title="Refresh Sessions">↻</button>
-        </div>
         <button 
-          v-else 
+          v-if="store.isConnected" 
           @click="store.disconnect()" 
           class="link-btn" 
           title="Disconnect from backend"
         >(Disconnect)</button>
+        <button 
+          v-else 
+          @click="store.connect()" 
+          class="link-btn" 
+          title="Connect to backend"
+        >(Connect)</button>
       </div>
       <div class="controls">
         <span v-if="store.stopReason" class="stop-reason">{{ store.stopReason }}</span>
@@ -173,44 +136,6 @@ const toggle = () => {
   gap: 0.5rem;
   font-size: 0.8rem;
   color: #ccc;
-}
-
-.connection-control {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.session-select {
-    background: #333;
-    color: #ccc;
-    border: 1px solid #555;
-    border-radius: 3px;
-    padding: 0.1rem 0.3rem;
-    font-size: 0.8rem;
-    max-width: 150px;
-}
-
-.path-input {
-    background: #333;
-    color: #ccc;
-    border: 1px solid #555;
-    border-radius: 3px;
-    padding: 0.1rem 0.3rem;
-    font-size: 0.8rem;
-    width: 200px;
-}
-
-.refresh-btn {
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    font-size: 1rem;
-    line-height: 1;
-}
-.refresh-btn:hover {
-    color: #fff;
 }
 
 .dot {

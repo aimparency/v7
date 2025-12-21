@@ -10,7 +10,7 @@ export default defineConfig({
     port: 5002, // Unique port for client dev
     proxy: {
       '/socket.io': {
-        target: 'http://localhost:6000', // Default process start
+        target: 'http://localhost:7000', // Default process start
         ws: true
       }
     }

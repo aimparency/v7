@@ -155,15 +155,39 @@ if(workerModel !== undefined) {
   geminiArgs.push('--model', workerModel)
 }
 
-const worker = new Agent(PROJECT_ROOT, geminiArgs, (data) => {
+let worker: Agent;
 
-  io.emit('worker-data', data);
+function startWorker(resume: boolean) {
+    if (worker) {
+        try { worker.kill(); } catch(e) {}
+    }
 
-  watchdogService.onWorkerData(data);
+    const currentArgs = [...geminiArgs];
+    if (!resume) {
+        const idx = currentArgs.indexOf('--resume');
+        if (idx !== -1) {
+            currentArgs.splice(idx, 2);
+        }
+    }
 
-});
+    console.log(`Starting worker (Resume: ${resume})...`);
 
+    worker = new Agent(PROJECT_ROOT, currentArgs, (data) => {
+        // Detect session resume failure
+        if (resume && data.includes("No previous sessions found")) {
+            console.warn("[Worker] Resume failed (no session). Restarting fresh...");
+            startWorker(false);
+            if (watchdogService) watchdogService.worker = worker;
+            return;
+        }
 
+        io.emit('worker-data', data);
+        // Only forward to watchdog service if initialized
+        if (watchdogService) watchdogService.onWorkerData(data);
+    });
+}
+
+startWorker(true);
 
 // Renamed from supervisor to watchdog
 
@@ -182,7 +206,7 @@ const watchdog = new Agent(KENNEL_PATH, geminiWatchdogArgs, (data) => {
 
 
 
-const watchdogService = new WatchdogService(worker, watchdog, workerModel, clearEvery);
+const watchdogService = new WatchdogService(worker!, watchdog, workerModel, clearEvery);
 
 
 
