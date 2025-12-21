@@ -173,10 +173,24 @@ const calculateSmartDateRanges = async () => {
           phaseId: parentPhaseIdFromColumn
         })
         if (parentPhase) {
-          uiStore.newPhaseStartDate = timestampToLocalDate(parentPhase.from)
-          uiStore.newPhaseStartTime = timestampToLocalTime(parentPhase.from)
-          uiStore.newPhaseEndDate = timestampToLocalDate(parentPhase.to)
-          uiStore.newPhaseEndTime = timestampToLocalTime(parentPhase.to)
+          // Check if this is the first sub-phase of its parent
+          const existingChildren = dataStore.getPhasesByParentId(parentPhase.id)
+          
+          if (existingChildren.length === 0) {
+            // First sub-phase: start = parent start, length = 1/6 of parent
+            const duration = (parentPhase.to - parentPhase.from) / 6
+            const subTo = parentPhase.from + duration
+            
+            uiStore.newPhaseStartDate = timestampToLocalDate(parentPhase.from)
+            uiStore.newPhaseStartTime = timestampToLocalTime(parentPhase.from)
+            uiStore.newPhaseEndDate = timestampToLocalDate(subTo)
+            uiStore.newPhaseEndTime = timestampToLocalTime(subTo)
+          } else {
+            uiStore.newPhaseStartDate = timestampToLocalDate(parentPhase.from)
+            uiStore.newPhaseStartTime = timestampToLocalTime(parentPhase.from)
+            uiStore.newPhaseEndDate = timestampToLocalDate(parentPhase.to)
+            uiStore.newPhaseEndTime = timestampToLocalTime(parentPhase.to)
+          }
           return
         }
       } catch (error) {
