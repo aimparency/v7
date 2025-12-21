@@ -11,8 +11,9 @@
   "status": {
     "state": "done",
     "comment": "",
-    "date": 1766342497872
+    "date": 1766346312819
   },
   "intrinsicValue": 0,
+  "cost": 1,
   "loopWeight": 0
 }

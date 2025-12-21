@@ -2,6 +2,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import { trpc } from "./client.js";
 import { AIM_STATES, AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { AIMPARENCY_DIR_NAME } from "shared";
 
 function formatAim(aim: any) {
   if (aim.supportingConnections) {
@@ -218,7 +219,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "update_aim",
-          description: `Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships. It's recommended, to update aims before using git add for the code changes and ${SUBDIR_NAME}, in order to commit code and related aim changes at the same time.`,
+          description: `Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships. It's recommended, to update aims before using git add for the code changes and ${AIMPARENCY_DIR_NAME}, in order to commit code and related aim changes at the same time.`,
           inputSchema: {
             type: "object",
             properties: {
@@ -504,10 +505,10 @@ export function registerTools(server: Server, clientOverride?: any) {
 
         case "list_phase_aims_recursive": {
             // 1. Get all aims (cache them)
-            const allAims = await trpcClient.aim.list.query({
+            const allAims: any[] = await trpcClient.aim.list.query({
                 projectPath: args.projectPath as string,
             });
-            const aimMap = new Map(allAims.map(a => [a.id, a]));
+            const aimMap = new Map(allAims.map((a: any) => [a.id, a]));
 
             // 2. Get the phase to find roots
             const phases = await trpcClient.phase.list.query({
@@ -616,6 +617,7 @@ export function registerTools(server: Server, clientOverride?: any) {
             projectPath: args.projectPath as string,
             parentPhaseId: args.parentPhaseId as string | undefined,
             activeAt: activeAt,
+            all: all
           });
           return {
             content: [
@@ -903,7 +905,7 @@ export function registerTools(server: Server, clientOverride?: any) {
                 type: "text",
                 text: result.valid 
                   ? "Data consistency check passed. No errors found."
-                  : `Data consistency check FAILED.\nErrors found:\n${result.errors.map(e => `- ${e}`).join('\n')}`,
+                  : `Data consistency check FAILED.\nErrors found:\n${result.errors.map((e: any) => `- ${e}`).join('\n')}`,
               },
             ],
           };
@@ -918,7 +920,7 @@ export function registerTools(server: Server, clientOverride?: any) {
               {
                 type: "text",
                 text: result.fixes.length > 0
-                  ? `Consistency repairs completed.\nFixes applied:\n${result.fixes.map(f => `- ${f}`).join('\n')}`
+                  ? `Consistency repairs completed.\nFixes applied:\n${result.fixes.map((f: any) => `- ${f}`).join('\n')}`
                   : "No inconsistencies found to fix.",
               },
             ],
@@ -958,7 +960,7 @@ export function registerTools(server: Server, clientOverride?: any) {
           // Find phases with no active children (leaves)
           // Map parent -> children
           const parentMap = new Map<string, string[]>();
-          phases.forEach(p => {
+          phases.forEach((p: any) => {
               if (p.parent) {
                   if (!parentMap.has(p.parent)) parentMap.set(p.parent, []);
                   parentMap.get(p.parent)!.push(p.id);
@@ -966,16 +968,16 @@ export function registerTools(server: Server, clientOverride?: any) {
           });
 
           // Filter for active leaves
-          const leaves = phases.filter(p => {
+          const leaves = phases.filter((p: any) => {
               const children = parentMap.get(p.id);
               // If no children, it's a leaf. 
               // If children exist, check if any are in the active 'phases' list
               if (!children) return true;
-              return !children.some(childId => phases.some(active => active.id === childId));
+              return !children.some((childId: string) => phases.some((active: any) => active.id === childId));
           });
 
           // If multiple leaves, pick the one ending soonest
-          leaves.sort((a, b) => a.to - b.to);
+          leaves.sort((a: any, b: any) => a.to - b.to);
           const targetPhase = leaves[0];
 
           if (!targetPhase) {
@@ -984,20 +986,20 @@ export function registerTools(server: Server, clientOverride?: any) {
 
           // Get aims
           const aimIds = targetPhase.commitments;
-          const aims = await Promise.all(aimIds.map(id => trpcClient.aim.get.query({ 
+          const aims = await Promise.all(aimIds.map((id: string) => trpcClient.aim.get.query({ 
               projectPath: args.projectPath as string, 
               aimId: id 
           })));
 
           // Prioritize
           const prioritized = aims
-              .filter(a => a.status.state === 'open') // Only open aims
-              .map(a => {
+              .filter((a: any) => a.status.state === 'open') // Only open aims
+              .map((a: any) => {
                   const cost = (a.cost && a.cost > 0) ? a.cost : 0.1; // Avoid div by zero
                   const priority = (a.intrinsicValue || 0) / cost;
                   return { ...a, priority };
               })
-              .sort((a, b) => b.priority - a.priority)
+              .sort((a: any, b: any) => b.priority - a.priority)
               .slice(0, (args.limit as number) || 10);
 
           return {
@@ -1006,7 +1008,7 @@ export function registerTools(server: Server, clientOverride?: any) {
                 type: "text",
                 text: JSON.stringify({
                     phase: targetPhase.name,
-                    aims: prioritized.map(a => ({
+                    aims: prioritized.map((a: any) => ({
                         text: a.text,
                         priority: a.priority.toFixed(2),
                         value: a.intrinsicValue,
