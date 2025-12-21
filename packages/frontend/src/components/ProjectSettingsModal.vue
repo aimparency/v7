@@ -2,20 +2,24 @@
 import { ref, watch } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { trpc } from '../trpc'
+import { DEFAULT_STATUSES } from 'shared'
 
 const uiStore = useUIStore()
+const dataStore = useDataStore()
 const name = ref('')
 const color = ref('#007acc')
+const statuses = ref<Array<{ key: string, color: string }>>([])
 const loading = ref(false)
 
 watch(() => uiStore.showSettingsModal, async (val) => {
   if (val) {
     loading.value = true
     try {
-      const meta = await trpc.project.getMeta.query({ projectPath: uiStore.projectPath })
+      const meta = dataStore.meta || await trpc.project.getMeta.query({ projectPath: uiStore.projectPath })
       if (meta) {
           name.value = meta.name
           color.value = meta.color
+          statuses.value = JSON.parse(JSON.stringify(meta.statuses || DEFAULT_STATUSES))
       }
     } catch (e) {
       console.error(e)
@@ -27,14 +31,24 @@ watch(() => uiStore.showSettingsModal, async (val) => {
 
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') uiStore.closeSettingsModal()
-  if (e.key === 'Enter') save()
+  // Disable enter to save because it conflicts with status editing?
+  // Or just allow it if not in an input.
+}
+
+const addStatus = () => {
+  statuses.value.push({ key: 'new-status', color: '#888888' })
+}
+
+const removeStatus = (index: number) => {
+  statuses.value.splice(index, 1)
 }
 
 const save = async () => {
     try {
-        await trpc.project.updateMeta.mutate({
-            projectPath: uiStore.projectPath,
-            meta: { name: name.value, color: color.value }
+        await dataStore.updateProjectMeta(uiStore.projectPath, { 
+          name: name.value, 
+          color: color.value,
+          statuses: statuses.value 
         })
         uiStore.closeSettingsModal()
     } catch (e) {
@@ -73,9 +87,31 @@ const save = async () => {
                 v-model="color" 
                 type="text" 
                 placeholder="#RRGGBB"
-                @keydown="handleKeydown"
+                @keydown.enter="save"
             />
           </div>
+        </div>
+
+        <div class="form-group">
+          <label>Aim Statuses</label>
+          <div class="status-list">
+            <div v-for="(status, index) in statuses" :key="index" class="status-row">
+              <input 
+                v-model="status.color" 
+                type="color" 
+                class="status-color-input"
+              />
+              <input 
+                v-model="status.key" 
+                type="text" 
+                placeholder="key"
+                class="status-key-input"
+                @input="status.key = status.key.toLowerCase().replace(/\s+/g, '-')"
+              />
+              <button @click="removeStatus(index)" class="delete-btn" title="Remove Status">×</button>
+            </div>
+          </div>
+          <button @click="addStatus" class="add-btn">+ Add Status</button>
         </div>
       </div>
       
@@ -157,6 +193,67 @@ const save = async () => {
             cursor: pointer;
             background: none;
         }
+      }
+    }
+
+    .status-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      max-height: 12rem;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .status-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+
+      .status-color-input {
+        width: 2.5rem;
+        height: 2rem;
+        padding: 0;
+        border: none;
+        cursor: pointer;
+        background: none;
+        flex-shrink: 0;
+      }
+
+      .status-key-input {
+        flex: 1;
+      }
+
+      .delete-btn {
+        background: transparent;
+        border: none;
+        color: #ff6666;
+        font-size: 1.5rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 0.25rem;
+        
+        &:hover {
+          color: #ff4444;
+        }
+      }
+    }
+
+    .add-btn {
+      width: 100%;
+      padding: 0.4rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px dashed #555;
+      color: #888;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.85rem;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ccc;
+        border-color: #777;
       }
     }
   }

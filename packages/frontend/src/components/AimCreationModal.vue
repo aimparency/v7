@@ -15,9 +15,12 @@ const aimIntrinsicValue = ref(0)
 const aimCost = ref(1)
 const aimLoopWeight = ref(0)
 const aimTags = ref<string[]>([])
-const selectedStatus = ref<'open' | 'done' | 'cancelled' | 'partially' | 'failed' | 'unclear' | 'archived'>('open')
+const selectedStatus = ref<string>('open')
 const statusComment = ref('')
 const searchResults = ref<Aim[]>([])
+
+const availableStatuses = computed(() => dataStore.getStatuses)
+
 const selectedSearchIndex = ref(0)
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
@@ -375,12 +378,9 @@ onMounted(async () => {
                         class="status-select"
                         @keydown="handleInputKeydown"
                       >
-                        <option value="open">Open</option>
-                        <option value="done">Done</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="partially">Partially</option>
-                        <option value="failed">Failed</option>
-                        <option value="unclear">Unclear</option>
+                        <option v-for="status in availableStatuses" :key="status.key" :value="status.key">
+                          {{ status.key }}
+                        </option>
                       </select>
                     </div>
                     <div class="form-group">            <label>Status Comment (optional)</label>

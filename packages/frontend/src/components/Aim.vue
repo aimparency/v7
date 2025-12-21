@@ -60,14 +60,10 @@ const incomingAims = computed(() => {
 })
 
   const statusColor = computed(() => {
-    const colorMap: Record<string, string> = {
-      'open': 'var(--status-open)',
-      'done': 'var(--status-done)',
-      'cancelled': 'var(--status-cancelled)',
-      'partially': 'var(--status-partially)',
-      'failed': 'var(--status-failed)',
-      'unclear': 'var(--status-unclear)'
-    }
+    const colorMap: Record<string, string> = {}
+    dataStore.getStatuses.forEach((s: any) => {
+      colorMap[s.key] = s.color
+    })
     return colorMap[props.aim.status.state] ?? '#888'
   })
 // Scroll into view when this aim becomes selected or active

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
-import { calculateAimValues, AIMPARENCY_DIR_NAME } from 'shared'
+import { calculateAimValues, AIMPARENCY_DIR_NAME, DEFAULT_STATUSES } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
 import { loadAllAimsCache, saveAims } from '../utils/db'
@@ -48,6 +48,9 @@ export const useDataStore = defineStore('data', {
 
     // Consistency
     consistencyErrors: [] as string[],
+
+    // Project Meta
+    meta: null as BaseAim['status'] | any | null, // ProjectMeta
   }),
 
   getters: {
@@ -88,6 +91,10 @@ export const useDataStore = defineStore('data', {
       if (total === 0) return 0 // should never happen
       const done = state.calculatedDoneCosts.get(aimId) || 0
       return done / total * 100
+    },
+
+    getStatuses: (state) => {
+      return state.meta?.statuses || DEFAULT_STATUSES
     },
 
     graphData(state) {
@@ -622,7 +629,12 @@ export const useDataStore = defineStore('data', {
         uiStore.setConnectionStatus('connecting');
 
         // Repair project state (clean up invalid commitments)
-        await trpc.project.repair.mutate({ projectPath });
+        const [meta] = await Promise.all([
+          trpc.project.getMeta.query({ projectPath }),
+          trpc.project.repair.mutate({ projectPath })
+        ]);
+
+        this.meta = meta;
 
         // Start subscription
         this.subscribeToUpdates(projectPath);
@@ -634,17 +646,6 @@ export const useDataStore = defineStore('data', {
         // Check consistency
         this.checkConsistency(projectPath);
 
-        // We also need to load aims for visible phases? 
-        // Phase.vue calls loadPhaseAims implicitly? No, Phase.vue just computes from store.
-        // We need to ensure aims for visible phases are loaded.
-        // Since we don't load all aims anymore, we rely on:
-        // 1. Root phases are loaded.
-        // 2. When a phase is rendered, it needs its aims.
-        // Ideally, Phase component should trigger load.
-        
-        // For now, let's trigger load for root phases' aims to avoid empty view on start
-        // But root phases list is async.
-        
         uiStore.setConnectionStatus('connected');
         uiStore.addProjectToHistory(projectPath);
         uiStore.clearProjectFailure(projectPath);
@@ -652,6 +653,19 @@ export const useDataStore = defineStore('data', {
         console.error('Failed to load project:', error);
         uiStore.setConnectionStatus('no connection');
         uiStore.markProjectAsFailed(projectPath);
+      }
+    },
+
+    async updateProjectMeta(projectPath: string, meta: any) {
+      try {
+        const updated = await trpc.project.updateMeta.mutate({
+          projectPath,
+          meta
+        });
+        this.meta = updated;
+      } catch (error) {
+        console.error('Failed to update project meta:', error);
+        throw error
       }
     },
 
