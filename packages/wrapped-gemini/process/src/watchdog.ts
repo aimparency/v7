@@ -76,12 +76,8 @@ export class WatchdogService {
   }
 
   onWorkerData(data: string) {
-    // Check for quota/model switch messages
-    // Removed 'switch.*model' as it causes false positives (e.g. user text). 
-    // We rely on the active LLM check for model verification.
-    if (/(quota.*exceeded|insufficient.*quota)/i.test(data)) {
-        this.triggerEmergencyStop();
-    }
+    // Regex check removed to avoid false positives (LLM outputting the text).
+    // We rely on the Supervisor (Watchdog Agent) to detect errors in the context.
 
     if (this.enabled && !this.waitingForResponse) {
         this.nextCheckTime = Math.max(this.nextCheckTime, Date.now() + IDLE_CHECK_INTERVAL);
@@ -249,7 +245,8 @@ ${context}
 
 What shall we do about this situation?
 
-Check the model that is being used in the main agent: it's usually the last word of the context. If it changed to a inferior model, return { "action": { "type": "stop", "reason": "model-switch" } }. 
+1. Check the model that is being used in the main agent: it's usually the last word of the context. If it changed to a inferior model, return { "action": { "type": "stop", "reason": "model-switch" } }. 
+2. Check for "Quota exceeded" or "High demand" errors. If found, return { "action": { "type": "cooldown", "duration": 30000 } }.
 
 ${PROMPT_MARKER}
 `;
@@ -324,8 +321,18 @@ ${PROMPT_MARKER}
         const duration = action.duration || 30000;
         this.log(`Waiting for ${duration}ms...`);
         this.nextCheckTime = Date.now() + duration;
-        // Return early to skip the default cooldown
         return; 
+    } else if (action.type === 'cooldown') {
+        const duration = action.duration || 30000;
+        this.log(`Cooldown for ${duration}ms (High Demand/Quota)...`);
+        this.nextCheckTime = Date.now() + duration;
+        // Optionally send a retry prompt after cooldown? 
+        // For now, just wait. Next tick will check context again.
+        // If the error persists on screen, we might loop?
+        // We probably want to send "1" (Keep trying) if it's an option menu?
+        // But the prompt says "wait then retry".
+        // The supervisor should see the menu and select option next time?
+        return;
     }
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
   }
