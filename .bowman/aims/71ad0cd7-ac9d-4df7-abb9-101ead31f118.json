@@ -1,12 +1,7 @@
 {
   "id": "71ad0cd7-ac9d-4df7-abb9-101ead31f118",
   "text": "develop hypothesis (create sub aims, evaluate)",
-  "committedIn": [],
-  "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1764286525464
-  },
+  "tags": [],
   "supportingConnections": [
     {
       "aimId": "f82641a4-21e4-42ef-9d82-129233b14640",
@@ -15,9 +10,50 @@
         0.36407743021590616
       ],
       "weight": 1
+    },
+    {
+      "aimId": "fb40a390-6a63-46e7-97fa-91ca8282e266",
+      "relativePosition": [
+        -0.9689655865021687,
+        -2.3045836266394213
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "97bc147e-481b-4253-9d7b-c486a444dd42",
+      "relativePosition": [
+        0.3438098822016055,
+        -2.4762461034599363
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0b9b98f9-fc05-4409-88b7-cae2c5709b84",
+      "relativePosition": [
+        -2.386996820566552,
+        -0.7431326790050169
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "e59f75d1-0783-445a-974e-ca14eb8b6dba",
+      "relativePosition": [
+        0.7135846966037597,
+        -2.3959960101746662
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
     "1c60ee55-0627-43d6-8393-e912fc2e52a2"
-  ]
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Hypothesis validated via simulation. Cycle is functional.",
+    "date": 1766360403704
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }

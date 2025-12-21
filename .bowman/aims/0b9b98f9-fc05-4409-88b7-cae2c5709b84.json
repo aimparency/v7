@@ -1,0 +1,18 @@
+{
+  "id": "0b9b98f9-fc05-4409-88b7-cae2c5709b84",
+  "text": "Execute Controlled Run (24h Autonomy Test)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "71ad0cd7-ac9d-4df7-abb9-101ead31f118"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Executed 10-day accelerated simulation. Verified loop: Echo -> System -> Market Alpha -> Growth. Metrics tracked in reports/metrics.csv.",
+    "date": 1766360284612
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
