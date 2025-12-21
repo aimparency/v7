@@ -768,20 +768,20 @@ export const useDataStore = defineStore('data', {
       const aim = this.aims[aimId]
       if (!aim) return
 
-      // 1. Recursively delete all incoming aims (children) first
-      if (aim.incoming && aim.incoming.length > 0) {
-        for (const childAimId of [...aim.incoming]) {
-          await this.deleteSubAimRecursive(projectPath, childAimId, aimId)
+      // 1. Recursively delete all children first
+      if (aim.supportingConnections && aim.supportingConnections.length > 0) {
+        for (const conn of [...aim.supportingConnections]) {
+          await this.deleteSubAimRecursive(projectPath, conn.aimId, aimId)
         }
       }
 
-      // 2. Remove this aim from the parent's incoming array
+      // 2. Remove this aim from the parent's supportingConnections array
       const parentAim = this.aims[parentAimId]
-      if (parentAim && parentAim.incoming) {
+      if (parentAim && parentAim.supportingConnections) {
         const wasExpanded = parentAim.expanded
-        const updatedIncoming = parentAim.incoming.filter(id => id !== aimId)
+        const updatedConnections = parentAim.supportingConnections.filter(c => c.aimId !== aimId)
         await this.updateAim(projectPath, parentAimId, {
-          incoming: updatedIncoming
+          supportingConnections: updatedConnections
         })
         // Restore expanded state (it's UI-only, not persisted)
         if (wasExpanded && this.aims[parentAimId]) {
@@ -823,18 +823,18 @@ export const useDataStore = defineStore('data', {
         // - path.aims.length === 1 && no phaseId: Floating aim (delete entirely)
 
         if (path.aims.length > 1) {
-          // B) Sub-aim: remove from parent aim's incoming list
+          // B) Sub-aim: remove from parent aim's supporting list
           const parentAim = path.aims[path.aims.length - 2]
           if (parentAim) {
             await this.deleteSubAimRecursive(uiStore.projectPath, aimId, parentAim.id)
 
             // Adjust parent's selectedIncomingIndex to stay in valid range
             const updatedParentAim = this.aims[parentAim.id]
-            if (updatedParentAim && updatedParentAim.selectedIncomingIndex !== undefined && updatedParentAim.incoming) {
-                if (updatedParentAim.incoming.length > 0) {
+            if (updatedParentAim && updatedParentAim.selectedIncomingIndex !== undefined && updatedParentAim.supportingConnections) {
+                if (updatedParentAim.supportingConnections.length > 0) {
                 updatedParentAim.selectedIncomingIndex = Math.min(
                     updatedParentAim.selectedIncomingIndex,
-                    updatedParentAim.incoming.length - 1
+                    updatedParentAim.supportingConnections.length - 1
                 )
                 } else {
                 updatedParentAim.selectedIncomingIndex = undefined
@@ -864,9 +864,9 @@ export const useDataStore = defineStore('data', {
         } else {
           // C) Floating aim: delete entirely (including all sub-aims)
           // First recursively delete all sub-aims
-          if (aim.incoming && aim.incoming.length > 0) {
-            for (const childAimId of [...aim.incoming]) {
-              await this.deleteSubAimRecursive(uiStore.projectPath, childAimId, aimId)
+          if (aim.supportingConnections && aim.supportingConnections.length > 0) {
+            for (const conn of [...aim.supportingConnections]) {
+              await this.deleteSubAimRecursive(uiStore.projectPath, conn.aimId, aimId)
             }
           }
 
