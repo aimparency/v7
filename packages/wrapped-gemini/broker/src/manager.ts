@@ -21,11 +21,10 @@ interface WatchdogInstance {
 const instances = new Map<string, WatchdogInstance>();
 const KEEPALIVE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
-// Location: packages/wrapped-gemini/broker/dist/manager.js (or src)
-// Root is 4 levels up: ../../../../
-const ROOT_DIR = path.resolve(__dirname, '../../../../'); 
-// Sessions file is in packages/ (3 levels up)
-const SESSIONS_FILE = path.resolve(__dirname, '../../../watchdog-sessions.json');
+// Location: packages/wrapped-gemini/broker/src/manager.ts
+// WRAPPER_DIR: packages/wrapped-gemini (2 levels up from src)
+const WRAPPER_DIR = path.resolve(__dirname, '../../');
+const SESSIONS_FILE = path.join(WRAPPER_DIR, 'watchdog-sessions.json');
 
 function normalizeProjectPath(p: string): string {
   if (!p) return p;
@@ -53,13 +52,19 @@ function saveSessions() {
 function killInstance(instance: WatchdogInstance) {
   console.log(`[WatchdogBroker] Killing instance for ${instance.projectPath} (PID ${instance.pid})`);
   try {
-    if (instance.process) {
-      instance.process.kill();
-    } else {
-      process.kill(instance.pid);
-    }
+    // Kill the entire process group because we spawned with 'detached: true'
+    process.kill(-instance.pid, 'SIGTERM');
   } catch(e) {
-    // Ignore error if already dead
+    // Fallback to single process kill if group kill fails
+    try {
+      if (instance.process) {
+        instance.process.kill();
+      } else {
+        process.kill(instance.pid);
+      }
+    } catch(e2) {
+      // Ignore if already dead
+    }
   }
   
   clearInterval(instance.checkInterval);
@@ -170,12 +175,8 @@ export const WatchdogManager = {
     const startPort = parseInt(process.env.PORT_PROCESS_START || '7000');
     const port = await findAvailablePort(startPort);
 
-    // Resolve path to watchdog executable
-    // We are at packages/wrapped-gemini/broker/src (or dist)
-    // Worker is at packages/wrapped-gemini/backend
-    
     // Path to Worker entry point:
-    const workerScript = path.join(ROOT_DIR, 'packages/wrapped-gemini/process/dist/index.js');
+    const workerScript = path.join(WRAPPER_DIR, 'process/dist/index.js');
 
     console.log(`[WatchdogBroker] Spawning worker on port ${port} for ${projectPath}`);
     console.log(`[WatchdogBroker] Script: ${workerScript}`);
@@ -184,13 +185,21 @@ export const WatchdogManager = {
     const projectRoot = path.dirname(projectPath);
 
     // Prepare logs
-    const logDir = path.join(ROOT_DIR, 'logs', 'watchdog', String(port));
+    const logDir = path.join(WRAPPER_DIR, 'logs', String(port));
     fs.ensureDirSync(logDir);
     const out = fs.openSync(path.join(logDir, 'out.log'), 'a');
     const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
 
     const child = spawn('node', [workerScript, '--port', String(port), projectRoot], {
-      cwd: ROOT_DIR,
+      // cwd: ROOT_DIR, // Keep running from root if needed for deps, or WRAPPER_DIR? 
+      // User diff removed ROOT_DIR usage for workerScript but didn't change CWD explicitly in diff view.
+      // But ROOT_DIR definition was removed.
+      // Let's use WRAPPER_DIR or process.cwd()?
+      // The child process needs to find node_modules.
+      // If we run from WRAPPER_DIR, we are in packages/wrapped-gemini.
+      // It has its own package.json? No, it's a workspace.
+      // Let's use WRAPPER_DIR for CWD.
+      cwd: WRAPPER_DIR,
       detached: true,
       stdio: ['ignore', out, err],
       env: { ...process.env }
