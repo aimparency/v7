@@ -257,8 +257,6 @@ onMounted(() => {
     font-size: 0.9rem;
     color: #bbb;
     white-space: pre-wrap;
-    padding-left: 0.25rem;
-    border-left: 2px solid #444;
   }
 
   .aim-tags {
