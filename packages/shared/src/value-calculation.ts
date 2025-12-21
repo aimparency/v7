@@ -4,12 +4,14 @@ export function calculateAimValues(aims: Aim[]): {
   values: Map<string, number>, 
   totalIntrinsic: number, 
   flowShares: Map<string, number>,
+  flowValues: Map<string, number>,
   costs: Map<string, number>,
   doneCosts: Map<string, number>
 } {
   const aimMap = new Map<string, Aim>();
   const currentValues = new Map<string, number>();
   const flowShares = new Map<string, number>();
+  const flowValues = new Map<string, number>();
   let totalIntrinsic = 0;
 
   // 1. Initialize and Pre-calculate Topology
@@ -71,7 +73,7 @@ export function calculateAimValues(aims: Aim[]): {
   if (totalIntrinsic === 0) {
     const costs = calculateCosts(aims, aimMap);
     const doneCosts = calculateDoneCosts(aims, aimMap, costs);
-    return { values: currentValues, totalIntrinsic: 0, flowShares, costs, doneCosts };
+    return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, costs, doneCosts };
   }
 
   // 3. Iterate
@@ -134,9 +136,18 @@ export function calculateAimValues(aims: Aim[]): {
     }
   }
 
+  // 4. Calculate Final Flow Values
+  for (const parent of aims) {
+      const parentValue = currentValues.get(parent.id) || 0;
+      const distributions = flowMatrix.get(parent.id) || [];
+      for (const dist of distributions) {
+          flowValues.set(`${parent.id}->${dist.target}`, parentValue * dist.share);
+      }
+  }
+
   const costs = calculateCosts(aims, aimMap);
   const doneCosts = calculateDoneCosts(aims, aimMap, costs);
-  return { values: currentValues, totalIntrinsic, flowShares, costs, doneCosts };
+  return { values: currentValues, totalIntrinsic, flowShares, flowValues, costs, doneCosts };
 }
 
 function calculateCosts(aims: Aim[], aimMap: Map<string, Aim>): Map<string, number> {
