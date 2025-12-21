@@ -48,6 +48,14 @@ const handleWatchdogInput = (data: string) => {
 const toggle = () => {
   store.toggle()
 }
+
+const focusWorker = () => {
+  workerTerm.value?.focus()
+}
+
+defineExpose({
+  focusWorker
+})
 </script>
 
 <template>

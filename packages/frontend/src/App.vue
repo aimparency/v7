@@ -20,12 +20,18 @@ const dataStore = useDataStore()
 // Local UI state
 const showWatchdog = ref(localStorage.getItem('aimparency-show-watchdog') === 'true')
 const watchdogHeight = ref(parseInt(localStorage.getItem('aimparency-watchdog-height') || '300'))
+const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
 const showConsistencyModal = ref(false)
 const isResizingWatchdog = ref(false)
 
-// Persist watchdog visibility
+// Persist watchdog visibility and handle focus
 watch(showWatchdog, (val) => {
   localStorage.setItem('aimparency-show-watchdog', String(val))
+  if (val) {
+    nextTick(() => {
+      watchdogRef.value?.focusWorker()
+    })
+  }
 })
 
 const startResizeWatchdog = (e: MouseEvent) => {
@@ -372,7 +378,7 @@ onUnmounted(() => {
       <!-- Watchdog Panel -->
       <div v-if="showWatchdog" class="watchdog-container" :style="{ height: watchdogHeight + 'px' }">
         <div class="resize-handle" @mousedown="startResizeWatchdog"></div>
-        <WatchdogPanel />
+        <WatchdogPanel ref="watchdogRef" />
       </div>
     </div>
 
