@@ -98,7 +98,8 @@ export const appRouter = router({
     list: publicProcedure
       .input(z.object({
         projectPath: z.string(),
-        parentPhaseId: z.string().uuid().nullable().optional()
+        parentPhaseId: z.string().uuid().nullable().optional(),
+        all: z.boolean().optional()
       }))
       .query(async ({ input }) => {
         throw new Error('Not implemented');

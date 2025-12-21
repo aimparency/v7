@@ -122,6 +122,10 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         isConnected.value = false
     }
 
+    // Clear buffers for fresh start
+    workerOutput.value = ''
+    watchdogOutput.value = ''
+
     try {
         const { port } = await trpcWatchdog.watchdog.relaunch.mutate({ projectPath: uiStore.projectPath })
         

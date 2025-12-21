@@ -1,7 +1,8 @@
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { trpc } from "./client.js";
-import { PROJECT_PATH_PARAMETER, PROJECT_PATH_MISSING_ERROR, SUBDIR_NAME } from "./constants.js";
+import { PROJECT_PATH_PARAMETER, PROJECT_PATH_MISSING_ERROR } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { AIMPARENCY_DIR_NAME } from "shared";
 
 function formatAim(aim: any) {
   if (aim.supportingConnections) {
@@ -262,7 +263,7 @@ export function registerResources(server: Server, caller: any) {
           {
             uri,
             mimeType: "text/plain",
-            text: `Error reading resource: ${errorMessage}\n\nMake sure to include projectPath as a query parameter, e.g.:\naim://uuid?projectPath=/abs/path/to/project/${SUBDIR_NAME}`,
+            text: `Error reading resource: ${errorMessage}\n\nMake sure to include projectPath as a query parameter, e.g.:\naim://uuid?projectPath=/abs/path/to/project/${AIMPARENCY_DIR_NAME}`,
           },
         ],
       };

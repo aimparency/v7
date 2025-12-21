@@ -7,7 +7,7 @@
     "aimparency-mcp": "./build/index.js"
   },
   "scripts": {
-    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "build": "rm -rf build && tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "watch": "tsc -w",
     "dev": "tsx watch src/index.ts",
     "expose": "tsx scripts/expose.ts",

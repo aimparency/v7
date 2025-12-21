@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useUIStore } from '../stores/ui'
+import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import { DEFAULT_STATUSES } from 'shared'
 
