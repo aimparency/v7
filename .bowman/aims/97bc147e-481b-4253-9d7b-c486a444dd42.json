@@ -1,0 +1,18 @@
+{
+  "id": "97bc147e-481b-4253-9d7b-c486a444dd42",
+  "text": "Connect Echo Revenue to Market Alpha Capital",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "71ad0cd7-ac9d-4df7-abb9-101ead31f118"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented via StripeMock update (writes to system.json) and CapitalAllocator script (transfers system.funds to wallet.json). Verified flow.",
+    "date": 1766360165017
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
