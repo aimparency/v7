@@ -11,10 +11,11 @@
     "4c960ff4-05ba-4ff8-b523-1a104d750503"
   ],
   "status": {
-    "state": "open",
+    "state": "done",
     "comment": "",
-    "date": 1765801727445
+    "date": 1766359426425
   },
   "intrinsicValue": 0,
+  "cost": 1,
   "loopWeight": 0
 }
