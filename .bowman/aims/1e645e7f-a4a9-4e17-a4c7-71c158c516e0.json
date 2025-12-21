@@ -3,12 +3,6 @@
   "text": "when a free floating aim is added to a phase by another client (mcp e.g.) it disappears from free floating aims but does not show up in phase in other client.",
   "description": "",
   "tags": [],
-  "committedIn": [],
-  "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765402541078
-  },
   "supportingConnections": [
     {
       "aimId": "f7ff7398-1288-44d7-9e97-ad12d975ac87",
@@ -21,5 +15,14 @@
   ],
   "supportedAims": [
     "33be4e0c-fa52-42ba-a86b-4c209b34e2be"
-  ]
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1766358686911
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }

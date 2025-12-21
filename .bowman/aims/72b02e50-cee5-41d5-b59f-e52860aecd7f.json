@@ -3,15 +3,18 @@
   "text": "implement multi client testing",
   "description": "with playwright (2 instances maybe) and an mcp client.",
   "tags": [],
-  "incoming": [],
-  "committedIn": [],
-  "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765402571164
-  },
   "supportingConnections": [],
+  "incoming": [],
   "supportedAims": [
     "f7ff7398-1288-44d7-9e97-ad12d975ac87"
-  ]
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1766358667394
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }
