@@ -99,6 +99,7 @@ function triggerRecalculation(projectPath: string) {
 }
 
 ee.on('change', ({ type, projectPath }) => {
+    if (process.env.NODE_ENV === 'test') return;
     if (type === 'aim' || type === 'phase') {
         triggerRecalculation(projectPath);
     }

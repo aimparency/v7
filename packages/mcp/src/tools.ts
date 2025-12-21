@@ -17,7 +17,8 @@ function formatAims(aims: any[]) {
   return aims.map(formatAim);
 }
 
-export function registerTools(server: Server, trpcClient = trpc) {
+export function registerTools(server: Server, clientOverride?: any) {
+  const trpcClient = clientOverride || trpc;
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [
@@ -512,7 +513,7 @@ export function registerTools(server: Server, trpcClient = trpc) {
             const phases = await trpcClient.phase.list.query({
                 projectPath: args.projectPath as string
             });
-            const phase = phases.find(p => p.id === args.phaseId);
+            const phase = phases.find((p: any) => p.id === args.phaseId);
             if (!phase) throw new Error(`Phase ${args.phaseId} not found`);
 
             const roots = phase.commitments;
@@ -542,7 +543,7 @@ export function registerTools(server: Server, trpcClient = trpc) {
                     children: children
                 };
 
-                const isOpen = allowedStatuses.includes(aim.status.state);
+                const isOpen = (allowedStatuses as string[]).includes(aim.status.state);
                 const hasOpenChildren = children.length > 0;
 
                 // Keep if open OR has open children (so we can see the path to the open child)

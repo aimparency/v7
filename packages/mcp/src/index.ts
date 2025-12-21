@@ -5,6 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { registerResources } from "./resources.js";
 import { registerTools } from "./tools.js";
 import { registerPrompts } from "./prompts.js";
+import { trpc } from "./client.js";
 
 // Create MCP server
 const server = new Server(
@@ -22,9 +23,9 @@ const server = new Server(
 );
 
 // Register handlers
-registerResources(server);
-registerTools(server);
-registerPrompts(server);
+registerResources(server, trpc);
+registerTools(server, trpc);
+registerPrompts(server, trpc);
 
 // Start server
 async function main() {

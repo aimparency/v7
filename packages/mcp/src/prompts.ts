@@ -3,7 +3,7 @@ import { trpc } from "./client.js";
 import { PROJECT_PATH_PROMPT_ARGUMENT } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 
-export function registerPrompts(server: Server) {
+export function registerPrompts(server: Server, caller: any) {
   server.setRequestHandler(ListPromptsRequestSchema, async () => {
     return {
       prompts: [
@@ -93,7 +93,7 @@ export function registerPrompts(server: Server) {
             throw new Error("aimId argument is required");
           }
 
-          const aim = await trpc.aim.get.query({ projectPath, aimId });
+          const aim = await caller.aim.get.query({ projectPath, aimId });
 
           return {
             description: `Break down aim "${aim.text}" into smaller sub-aims`,
@@ -126,7 +126,7 @@ Project path: ${projectPath}`,
         }
 
         case "analyze_dependencies": {
-          const aims = await trpc.aim.list.query({ projectPath });
+          const aims = await caller.aim.list.query({ projectPath });
 
           return {
             description: "Analyze aim dependencies and suggest improvements",
@@ -163,7 +163,7 @@ Project path: ${projectPath}`,
             throw new Error("phaseId argument is required");
           }
 
-          const phase = await trpc.phase.get.query({ projectPath, phaseId });
+          const phase = await caller.phase.get.query({ projectPath, phaseId });
 
           return {
             description: `Help plan commitments for phase "${phase.name}"`,
@@ -203,7 +203,7 @@ Phase ID: ${phaseId}`,
             throw new Error("phaseId argument is required");
           }
 
-          const phase = await trpc.phase.get.query({ projectPath, phaseId });
+          const phase = await caller.phase.get.query({ projectPath, phaseId });
 
           return {
             description: `Review progress for phase "${phase.name}"`,
@@ -246,7 +246,7 @@ Phase ID: ${phaseId}`,
             throw new Error("aimId argument is required");
           }
 
-          const aim = await trpc.aim.get.query({ projectPath, aimId });
+          const aim = await caller.aim.get.query({ projectPath, aimId });
 
           return {
             description: `Structure aim "${aim.text}" as a testable hypothesis`,
@@ -288,7 +288,7 @@ Aim ID: ${aimId}`,
         }
 
         case "consolidate_aims": {
-          const aims = await trpc.aim.list.query({ projectPath });
+          const aims = await caller.aim.list.query({ projectPath });
 
           return {
             description: "Analyze all aims to find duplicates and suggest consolidations",

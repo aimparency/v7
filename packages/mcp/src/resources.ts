@@ -32,7 +32,7 @@ function parseResourceUri(uri: string): { type: string; id?: string; subpath?: s
   };
 }
 
-export function registerResources(server: Server) {
+export function registerResources(server: Server, caller: any) {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
       resources: [
@@ -109,7 +109,7 @@ export function registerResources(server: Server) {
 
       if (parsed.type === "aim") {
         if (parsed.id === "all") {
-          const aims = await trpc.aim.list.query({ projectPath });
+          const aims = await caller.aim.list.query({ projectPath });
           return {
             contents: [
               {
@@ -121,12 +121,12 @@ export function registerResources(server: Server) {
           };
         }
 
-        const aim = await trpc.aim.get.query({ projectPath, aimId: parsed.id! });
+        const aim = await caller.aim.get.query({ projectPath, aimId: parsed.id! });
 
         if (parsed.subpath === "supporting_connections") {
           const connections = aim.supportingConnections || [];
           const supportingAims = await Promise.all(
-            connections.map((conn) => trpc.aim.get.query({ projectPath, aimId: conn.aimId }))
+            connections.map((conn: any) => caller.aim.get.query({ projectPath, aimId: conn.aimId }))
           );
           return {
             contents: [
@@ -142,7 +142,7 @@ export function registerResources(server: Server) {
         if (parsed.subpath === "supported_aims") {
           const supported = aim.supportedAims || [];
           const supportedAims = await Promise.all(
-            supported.map((id) => trpc.aim.get.query({ projectPath, aimId: id }))
+            supported.map((id: string) => caller.aim.get.query({ projectPath, aimId: id }))
           );
           return {
             contents: [
@@ -170,7 +170,7 @@ export function registerResources(server: Server) {
         const statusParam = url.searchParams.get("status");
         const phaseIdParam = url.searchParams.get("phaseId");
         
-        const aims = await trpc.aim.list.query({
+        const aims = await caller.aim.list.query({
           projectPath,
           status: statusParam ? statusParam.split(',') : undefined,
           phaseId: phaseIdParam || undefined
@@ -186,11 +186,11 @@ export function registerResources(server: Server) {
       }
 
       if (parsed.type === "phase") {
-        const phase = await trpc.phase.get.query({ projectPath, phaseId: parsed.id! });
+        const phase = await caller.phase.get.query({ projectPath, phaseId: parsed.id! });
 
         if (parsed.subpath === "aims") {
           const aims = await Promise.all(
-            phase.commitments.map((id) => trpc.aim.get.query({ projectPath, aimId: id }))
+            phase.commitments.map((id: string) => caller.aim.get.query({ projectPath, aimId: id }))
           );
           return {
             contents: [
@@ -215,7 +215,7 @@ export function registerResources(server: Server) {
 
       if (parsed.type === "phases") {
         if (parsed.id === "all") {
-          const phases = await trpc.phase.list.query({ projectPath });
+          const phases = await caller.phase.list.query({ projectPath });
           return {
             contents: [
               {
@@ -228,7 +228,7 @@ export function registerResources(server: Server) {
         }
 
         if (parsed.subpath === "children") {
-          const phases = await trpc.phase.list.query({ projectPath, parentPhaseId: parsed.id });
+          const phases = await caller.phase.list.query({ projectPath, parentPhaseId: parsed.id });
           return {
             contents: [
               {
@@ -242,7 +242,7 @@ export function registerResources(server: Server) {
       }
 
       if (parsed.type === "project" && parsed.id === "meta") {
-        const meta = await trpc.project.getMeta.query({ projectPath });
+        const meta = await caller.project.getMeta.query({ projectPath });
         return {
           contents: [
             {
