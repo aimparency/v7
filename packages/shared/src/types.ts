@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const AimStatusSchema = z.object({
-  state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']),
+  state: z.string(),
   comment: z.string(),
   date: z.number() // Date.now() timestamp
 });
@@ -42,9 +42,15 @@ export const PhaseSchema = z.object({
   name: z.string()
 });
 
+export const CustomStatusSchema = z.object({
+  key: z.string().regex(/^[a-z0-9-]+$/),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/)
+});
+
 export const ProjectMetaSchema = z.object({
   name: z.string(),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/) // hex color
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/), // hex color
+  statuses: z.array(CustomStatusSchema).optional()
 });
 
 export const SystemStatusSchema = z.object({

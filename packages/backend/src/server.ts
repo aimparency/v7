@@ -1244,11 +1244,18 @@ const appRouter = t.router({
         }
         
         // Initialize with defaults if missing
-        // const projectDir = projectPath.replace(/(\\|\/)\.bowman\/?$/, ''); // Legacy regex
-        const projectDir = projectPath.endsWith(AIMPARENCY_DIR_NAME) ? path.dirname(projectPath) : projectPath;
+        const projectDir = path.basename(projectPath); // Use normalized path which ends in .bowman's parent (if we normalize it correctly)
+        // Wait, normalizeProjectPath returns /path/to/.bowman.
+        // So basename is .bowman?
+        // No, normalizeProjectPath appends .bowman if missing.
+        // So projectPath is /.../.bowman
+        
+        // We want the parent dir name as project name
+        const parentDir = path.dirname(projectPath);
+        const name = path.basename(parentDir) || 'Project';
         
         const defaultMeta: ProjectMeta = {
-            name: path.basename(projectDir) || 'Project',
+            name,
             color: '#007acc'
         };
         
