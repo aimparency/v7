@@ -560,7 +560,7 @@ export const useDataStore = defineStore('data', {
       if (!projectPath) return [];
       this.loading = true;
       try {
-        const phases = await trpc.phase.list.query({ projectPath, parentPhaseId: parentId });
+        const phases = await trpc.phase.list.query({ projectPath, parentPhaseId: parentId, all: true });
         const childIds: string[] = [];
         for (const phase of phases) {
           this.replacePhase(phase.id, phase);
