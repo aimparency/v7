@@ -45,7 +45,11 @@ const aimValue = computed(() => {
   return Math.round(dataStore.getAimValue(props.aim.id))
 })
 
-const hasStats = computed(() => aimValue.value > 0 || subAimCount.value > 0)
+const aimCost = computed(() => {
+  return Math.round(dataStore.getAimCost(props.aim.id))
+})
+
+const hasStats = computed(() => aimValue.value > 0 || aimCost.value > 0 || subAimCount.value > 0)
 
 // Get incoming aims from the data store
 const incomingAims = computed(() => {
@@ -110,6 +114,7 @@ onMounted(() => {
         
         <div v-if="hasStats" class="stats-box">
           <div class="stat-value" :title="`Value: ${aimValue}`">{{ aimValue }}</div>
+          <div class="stat-cost" :title="`Cost: ${aimCost}`">{{ aimCost }}</div>
           <div v-if="subAimCount > 0" class="stat-count" :title="`Sub-aims: ${subAimCount}`">{{ subAimCount }}</div>
         </div>
       </div>
@@ -301,6 +306,16 @@ onMounted(() => {
     background-color: rgba(0, 122, 204, 0.3);
     color: #fff;
     font-weight: bold;
+  }
+
+  .stat-cost {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.3rem;
+    text-align: center;
+    line-height: 1.1;
+    background-color: rgba(255, 165, 0, 0.15);
+    color: #ffcc80;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .stat-count {
