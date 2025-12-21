@@ -100,5 +100,7 @@ defineExpose({
   height: 100%;
   background: #1e1e1e;
   overflow: hidden;
+  padding: 0.5rem;
+  box-sizing: border-box;
 }
 </style>
