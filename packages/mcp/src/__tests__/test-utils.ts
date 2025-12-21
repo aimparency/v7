@@ -6,26 +6,9 @@ import { closeDb } from '../../../backend/src/db.js';
 import { AIMPARENCY_DIR_NAME } from 'shared';
 import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
+import { v4 as uuidv4 } from 'uuid';
+
 export const caller = appRouter.createCaller({});
-export const TEST_PROJECT_PATH = path.join(process.cwd(), 'test-mcp-project', AIMPARENCY_DIR_NAME);
-
-export function createCallerProxy(target: any): any {
-  if (target === undefined || target === null) return target;
-
-  return new Proxy(target, {
-    get(t, prop) {
-      if (prop === 'query' || prop === 'mutate' || prop === 'subscription') {
-        return (...args: any[]) => {
-            console.log(`[Proxy] Call ${String(prop)} on procedure`);
-            return typeof t === 'function' ? t.apply(undefined, args) : undefined;
-        };
-      }
-      
-      const value = t[prop];
-      return createCallerProxy(value);
-    }
-  });
-}
 
 export class MockServer {
   handlers = new Map();
@@ -69,18 +52,48 @@ export class MockServer {
   }
 }
 
-export const setupTestEnv = async () => {
-  await fs.remove(TEST_PROJECT_PATH);
-  await fs.ensureDir(TEST_PROJECT_PATH);
-};
+export function createCallerProxy(target: any): any {
+  if (target === undefined || target === null) return target;
 
-export const teardownTestEnv = async () => {
-  console.log("Teardown start");
-  try {
-      closeDb(TEST_PROJECT_PATH);
-  } catch(e) {
-      console.error("Error closing DB:", e);
-  }
-  await fs.remove(TEST_PROJECT_PATH);
-  console.log("Teardown end");
+  return new Proxy(target, {
+    get(t, prop) {
+      if (prop === 'query' || prop === 'mutate' || prop === 'subscription') {
+        return (...args: any[]) => {
+            return typeof t === 'function' ? t.apply(undefined, args) : undefined;
+        };
+      }
+      
+      const value = t[prop];
+      return createCallerProxy(value);
+    }
+  });
+}
+
+export const createTestContext = () => {
+  const id = uuidv4();
+  const projectPath = path.join(process.cwd(), `test-mcp-project-${id}`, AIMPARENCY_DIR_NAME);
+  
+  return {
+    projectPath,
+    setup: async () => {
+      await fs.remove(projectPath);
+      await fs.ensureDir(projectPath);
+    },
+    teardown: async () => {
+      try {
+          closeDb(projectPath);
+      } catch(e) {
+          console.error("Error closing DB:", e);
+      }
+      // Retry removal if ENOTEMPTY (Windows/Race condition issue)
+      for(let i=0; i<3; i++) {
+          try {
+            await fs.remove(projectPath);
+            break;
+          } catch(e) {
+            await new Promise(r => setTimeout(r, 100));
+          }
+      }
+    }
+  };
 };

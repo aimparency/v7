@@ -218,7 +218,7 @@ async function readAim(rawProjectPath: string, aimId: string): Promise<Aim> {
   if (!aim.supportedAims) aim.supportedAims = [];
   if (!aim.committedIn) aim.committedIn = [];
   
-  return aim;
+  return AimSchema.parse(aim);
 }
 
 async function listAims(rawProjectPath: string, archived: boolean = false): Promise<Aim[]> {
@@ -279,7 +279,8 @@ async function writePhase(rawProjectPath: string, phase: Phase): Promise<void> {
 async function readPhase(rawProjectPath: string, phaseId: string): Promise<Phase> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const phasePath = path.join(projectPath, 'phases', `${phaseId}.json`);
-  return await fs.readJson(phasePath);
+  const data = await fs.readJson(phasePath);
+  return PhaseSchema.parse(data);
 }
 
 async function listPhases(rawProjectPath: string, parentPhaseId?: string | null): Promise<Phase[]> {
@@ -1305,7 +1306,10 @@ const appRouter = t.router({
     updateMeta: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        meta: ProjectMetaSchema
+        meta: z.object({
+          name: z.string(),
+          color: z.string().regex(/^#[0-9a-fA-F]{6}$/)
+        })
       }))
       .mutation(async ({ input }) => {
         const projectPath = normalizeProjectPath(input.projectPath);

@@ -1,54 +1,59 @@
-import { test, beforeEach, afterEach } from 'node:test';
+import { test, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert';
 import { registerTools } from '../tools.js';
-import { MockServer, caller, createCallerProxy, TEST_PROJECT_PATH, setupTestEnv, teardownTestEnv } from './test-utils.js';
+import { MockServer, caller, createCallerProxy, createTestContext } from './test-utils.js';
 
-beforeEach(setupTestEnv);
-afterEach(teardownTestEnv);
+let ctx: ReturnType<typeof createTestContext>;
+
+beforeEach(async () => {
+  ctx = createTestContext();
+  await ctx.setup();
+});
+
+afterEach(async () => {
+  await ctx.teardown();
+});
+
+after(() => process.exit(0));
 
 test('MCP Tools - Aims CRUD', async (t) => {
-  try {
   const server = new MockServer();
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
   // 1. Create
   await server.callTool('create_aim', { 
-    projectPath: TEST_PROJECT_PATH, 
+    projectPath: ctx.projectPath, 
     text: 'MCP Aim',
     tags: ['test']
   });
 
-  let aims = await caller.aim.list({ projectPath: TEST_PROJECT_PATH });
+  let aims = await caller.aim.list({ projectPath: ctx.projectPath });
   assert.equal(aims.length, 1);
   const aimId = aims[0].id;
   assert.equal(aims[0].text, 'MCP Aim');
 
   // 2. Update
   await server.callTool('update_aim', {
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: ctx.projectPath,
     aimId: aimId,
     text: 'Updated MCP Aim',
     status: { state: 'done' }
   });
 
-  const updatedAim = await caller.aim.get({ projectPath: TEST_PROJECT_PATH, aimId });
+  const updatedAim = await caller.aim.get({ projectPath: ctx.projectPath, aimId });
   assert.equal(updatedAim.text, 'Updated MCP Aim');
   assert.equal(updatedAim.status.state, 'done');
 
   // 3. Get
-  const getResult = await server.callTool('get_aim', { projectPath: TEST_PROJECT_PATH, aimId });
+  const getResult = await server.callTool('get_aim', { projectPath: ctx.projectPath, aimId });
   const fetchedAim = JSON.parse(getResult.content[0].text);
   assert.equal(fetchedAim.id, aimId);
 
   // 4. Delete
-  await server.callTool('delete_aim', { projectPath: TEST_PROJECT_PATH, aimId });
-  aims = await caller.aim.list({ projectPath: TEST_PROJECT_PATH });
+  await server.callTool('delete_aim', { projectPath: ctx.projectPath, aimId });
+  aims = await caller.aim.list({ projectPath: ctx.projectPath });
   assert.equal(aims.length, 0);
-  } catch (e) {
-      console.error("Test Failed:", e);
-      throw e;
-  }
 });
 
 test('MCP Tools - list_phase_aims_recursive', async () => {
@@ -57,26 +62,26 @@ test('MCP Tools - list_phase_aims_recursive', async () => {
   registerTools(server as any, callerProxy as any);
 
   const phase = await caller.phase.create({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: ctx.projectPath,
     phase: { name: 'P1', from: 0, to: 1000 }
   });
 
   const parent = await caller.aim.createAimInPhase({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: ctx.projectPath,
     phaseId: phase.id,
     aim: { text: 'Parent', status: { state: 'open', comment: '', date: Date.now() } },
     insertionIndex: 0
   });
 
   await caller.aim.createSubAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: ctx.projectPath,
     parentAimId: parent.id,
     aim: { text: 'Child', status: { state: 'open', comment: '', date: Date.now() } },
     positionInParent: 0
   });
 
   const result = await server.callTool('list_phase_aims_recursive', { 
-    projectPath: TEST_PROJECT_PATH, 
+    projectPath: ctx.projectPath, 
     phaseId: phase.id 
   });
   
