@@ -27,7 +27,7 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
   mkdirSync(join(bowmanPath, 'phases'), { recursive: true });
 
   // Write Meta
-  writeFileSync(join(projectPath, 'meta.json'), JSON.stringify({
+  writeFileSync(join(bowmanPath, 'meta.json'), JSON.stringify({
     name: 'Test Project',
     color: '#ff0000'
   }, null, 2));

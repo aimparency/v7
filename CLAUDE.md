@@ -27,9 +27,9 @@ Phase {
 }
 ```
 
-- basefolder/aims/<aim-uuid> (one file per aim)
-- basefolder/phases/<phase-uuid> (one file per phase)
-- basefolder/meta.json: { name: string, color: string }
+- path/to/project/.bowman/aims/<aim-uuid> (one file per aim)
+- path/to/project/.bowman/phases/<phase-uuid> (one file per phase)
+- path/to/project/.bowman/meta.json: { name: string, color: string }
 
 ## UI
 Vi-intuitive navigation with infinite horizontal depth, flexible column count.

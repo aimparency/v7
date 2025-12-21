@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
 import { ref } from 'vue'
-import { trpc } from '../trpc'
+import { trpcWatchdog } from '../trpc-watchdog'
 import { useUIStore } from './ui'
 
 export const useWatchdogStore = defineStore('watchdog', () => {
@@ -29,11 +29,11 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     stopKeepalive()
     
     // Initial call
-    trpc.watchdog.keepalive.mutate({ projectPath }).catch(console.error)
+    trpcWatchdog.watchdog.keepalive.mutate({ projectPath }).catch(console.error)
 
     keepaliveTimer = setInterval(async () => {
        try {
-         await trpc.watchdog.keepalive.mutate({ projectPath });
+         await trpcWatchdog.watchdog.keepalive.mutate({ projectPath });
        } catch (e) {
          console.warn("Watchdog keepalive failed", e);
        }
@@ -49,7 +49,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
   async function fetchSessions() {
     try {
-      sessions.value = await trpc.watchdog.list.query()
+      sessions.value = await trpcWatchdog.watchdog.list.query()
     } catch (e) {
       console.error('Failed to fetch watchdog sessions', e)
     }
@@ -68,7 +68,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     try {
         // Lazy spawn via backend
-        const { port } = await trpc.watchdog.start.mutate({ projectPath: targetPath })
+        const { port } = await trpcWatchdog.watchdog.start.mutate({ projectPath: targetPath })
         
         startKeepalive(targetPath) // Start keepalive loop
 
@@ -122,7 +122,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
 
     try {
-        const { port } = await trpc.watchdog.relaunch.mutate({ projectPath: uiStore.projectPath })
+        const { port } = await trpcWatchdog.watchdog.relaunch.mutate({ projectPath: uiStore.projectPath })
         
         startKeepalive(uiStore.projectPath)
 

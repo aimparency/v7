@@ -11,7 +11,6 @@ import { z } from 'zod';
 import { ProjectMetaSchema } from 'shared';
 import { indexAims, indexPhases, searchAims, searchPhases, addAimToIndex, updateAimInIndex, removeAimFromIndex, addPhaseToIndex, updatePhaseInIndex, removePhaseFromIndex } from './search.js';
 import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
-import { WatchdogManager } from './watchdog-manager.js';
 import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues } from 'shared';
 import { saveAimValues, getAimValues } from './db.js';
@@ -1054,45 +1053,6 @@ const appRouter = t.router({
                     funds: earnedFunds
                 }
             };
-        })
-    }),
-    watchdog: t.router({
-        start: delayedProcedure
-            .input(z.object({ projectPath: z.string() }))
-            .mutation(async ({ input }) => {
-            const p = normalizeProjectPath(input.projectPath);
-            const result = await WatchdogManager.start(p);
-            return result;
-        }),
-        stop: delayedProcedure
-            .input(z.object({ projectPath: z.string() }))
-            .mutation(async ({ input }) => {
-            const p = normalizeProjectPath(input.projectPath);
-            const success = WatchdogManager.stop(p);
-            return { success };
-        }),
-        relaunch: delayedProcedure
-            .input(z.object({ projectPath: z.string() }))
-            .mutation(async ({ input }) => {
-            const p = normalizeProjectPath(input.projectPath);
-            return await WatchdogManager.relaunch(p);
-        }),
-        getStatus: delayedProcedure
-            .input(z.object({ projectPath: z.string() }))
-            .query(async ({ input }) => {
-            const p = normalizeProjectPath(input.projectPath);
-            return WatchdogManager.getStatus(p);
-        }),
-        keepalive: delayedProcedure
-            .input(z.object({ projectPath: z.string() }))
-            .mutation(async ({ input }) => {
-            const p = normalizeProjectPath(input.projectPath);
-            const success = WatchdogManager.keepalive(p);
-            return { success };
-        }),
-        list: delayedProcedure
-            .query(async () => {
-            return WatchdogManager.list();
         })
     }),
     voice: t.router({

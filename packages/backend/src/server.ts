@@ -23,7 +23,6 @@ import {
   removePhaseFromIndex
 } from './search.js';
 import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
-import { WatchdogManager } from './watchdog-manager.js';
 import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues } from 'shared';
 import { saveAimValues, getAimValues } from './db.js';
@@ -1187,46 +1186,6 @@ const appRouter = t.router({
       })
   }),
 
-  watchdog: t.router({
-    start: delayedProcedure
-      .input(z.object({ projectPath: z.string() }))
-      .mutation(async ({ input }) => {
-         const p = normalizeProjectPath(input.projectPath);
-         const result = await WatchdogManager.start(p);
-         return result;
-      }),
-    stop: delayedProcedure
-      .input(z.object({ projectPath: z.string() }))
-      .mutation(async ({ input }) => {
-         const p = normalizeProjectPath(input.projectPath);
-         const success = WatchdogManager.stop(p);
-         return { success };
-      }),
-    relaunch: delayedProcedure
-      .input(z.object({ projectPath: z.string() }))
-      .mutation(async ({ input }) => {
-         const p = normalizeProjectPath(input.projectPath);
-         return await WatchdogManager.relaunch(p);
-      }),
-    getStatus: delayedProcedure
-      .input(z.object({ projectPath: z.string() }))
-      .query(async ({ input }) => {
-         const p = normalizeProjectPath(input.projectPath);
-         return WatchdogManager.getStatus(p);
-      }),
-    keepalive: delayedProcedure
-      .input(z.object({ projectPath: z.string() }))
-      .mutation(async ({ input }) => {
-         const p = normalizeProjectPath(input.projectPath);
-         const success = WatchdogManager.keepalive(p);
-         return { success };
-      }),
-    list: delayedProcedure
-      .query(async () => {
-         return WatchdogManager.list();
-      })
-  }),
-
   voice: t.router({
     chat: delayedProcedure
       .input(z.object({
@@ -1253,20 +1212,21 @@ const appRouter = t.router({
         projectPath: z.string()
       }))
       .query(async ({ input }) => {
-        const metaPath = path.join(input.projectPath, 'meta.json');
+        const projectPath = normalizeProjectPath(input.projectPath);
+        const metaPath = path.join(projectPath, 'meta.json');
         if (await fs.pathExists(metaPath)) {
           return await fs.readJson(metaPath);
         }
         
         // Initialize with defaults if missing
-        const projectDir = input.projectPath.replace(/(\\|\/)\.bowman\/?$/, '');
+        const projectDir = projectPath.replace(/(\\|\/)\.bowman\/?$/, '');
         const defaultMeta: ProjectMeta = {
             name: path.basename(projectDir) || 'Project',
             color: '#007acc'
         };
         
         try {
-            await ensureProjectStructure(input.projectPath);
+            await ensureProjectStructure(projectPath);
             await fs.writeJson(metaPath, defaultMeta, { spaces: 2 });
         } catch (e) {
             console.error("Failed to initialize meta.json", e);
@@ -1322,8 +1282,9 @@ const appRouter = t.router({
         meta: ProjectMetaSchema
       }))
       .mutation(async ({ input }) => {
-        await ensureProjectStructure(input.projectPath);
-        const metaPath = path.join(input.projectPath, 'meta.json');
+        const projectPath = normalizeProjectPath(input.projectPath);
+        await ensureProjectStructure(projectPath);
+        const metaPath = path.join(projectPath, 'meta.json');
         await fs.writeJson(metaPath, input.meta, { spaces: 2 });
         return input.meta;
       }),
@@ -1633,10 +1594,12 @@ const server = createHTTPServer({
 });
 
 // Start servers (only if not in test environment)
-const HTTP_PORT = 3000;
+const HTTP_PORT = parseInt(process.env.PORT_BACKEND_HTTP || '3000');
+const WS_PORT = parseInt(process.env.PORT_BACKEND_WS || '3001');
+
 if (process.env.NODE_ENV !== 'test') {
   // Create WebSocket server
-  const wss = new WebSocketServer({ port: 3001 });
+  const wss = new WebSocketServer({ port: WS_PORT });
 
   const handler = applyWSSHandler({
     wss,
@@ -1655,7 +1618,7 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`HTTP Server running on http://localhost:${HTTP_PORT}`);
   });
 
-  console.log(`WebSocket Server running on ws://localhost:3001`);
+  console.log(`WebSocket Server running on ws://localhost:${WS_PORT}`);
 
   process.on('SIGTERM', () => {
     console.log('SIGTERM signal received: closing HTTP server');

@@ -8,3 +8,5 @@ packages/frontend/public/
 packages/embedder/venv/
 **/vectors.json
 
+.env
+logs

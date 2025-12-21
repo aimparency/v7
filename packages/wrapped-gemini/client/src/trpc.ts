@@ -1,9 +1,9 @@
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
-import type { AppRouter } from 'backend';
+import type { AppRouter } from 'wrapped-gemini-broker';
 
-// Create WebSocket client
+// Create WebSocket client for Watchdog Broker
 const wsClient = createWSClient({
-  url: `ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
+  url: `ws://localhost:${process.env.PORT_BROKER_WS || '5001'}`,
 });
 
 // Create tRPC client with WebSocket

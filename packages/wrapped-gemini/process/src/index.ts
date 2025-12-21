@@ -37,7 +37,7 @@ function findAvailablePort(startPort: number): Promise<number> {
   });
 }
 
-app.use(express.static(path.join(__dirname, '../webui/dist')));
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // Centralized error handling
 process.on('uncaughtException', (err) => {

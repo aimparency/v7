@@ -18,7 +18,12 @@ interface WatchdogInstance {
 
 const instances = new Map<string, WatchdogInstance>();
 const KEEPALIVE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
-const SESSIONS_FILE = path.join(__dirname, '../../watchdog-sessions.json');
+
+// Location: packages/wrapped-gemini/broker/dist/manager.js (or src)
+// Root is 4 levels up: ../../../../
+const ROOT_DIR = path.resolve(__dirname, '../../../../'); 
+// Sessions file is in packages/ (3 levels up)
+const SESSIONS_FILE = path.resolve(__dirname, '../../../watchdog-sessions.json');
 
 // Persistence Helpers
 function saveSessions() {
@@ -31,12 +36,12 @@ function saveSessions() {
   try {
     fs.writeJsonSync(SESSIONS_FILE, data);
   } catch (e) {
-    console.error('[WatchdogManager] Failed to save sessions:', e);
+    console.error('[WatchdogBroker] Failed to save sessions:', e);
   }
 }
 
 function killInstance(instance: WatchdogInstance) {
-  console.log(`[WatchdogManager] Killing instance for ${instance.projectPath} (PID ${instance.pid})`);
+  console.log(`[WatchdogBroker] Killing instance for ${instance.projectPath} (PID ${instance.pid})`);
   try {
     if (instance.process) {
       instance.process.kill();
@@ -57,7 +62,7 @@ function checkTimeout(projectPath: string) {
   if (instance) {
     const elapsed = Date.now() - instance.lastKeepalive;
     if (elapsed > KEEPALIVE_TIMEOUT) {
-      console.log(`[WatchdogManager] Timeout for ${projectPath}. Elapsed: ${elapsed}ms > Limit: ${KEEPALIVE_TIMEOUT}ms. Killing process.`);
+      console.log(`[WatchdogBroker] Timeout for ${projectPath}. Elapsed: ${elapsed}ms > Limit: ${KEEPALIVE_TIMEOUT}ms. Killing process.`);
       killInstance(instance);
     }
   }
@@ -67,7 +72,7 @@ function loadSessions() {
   try {
     if (fs.existsSync(SESSIONS_FILE)) {
       const data = fs.readJsonSync(SESSIONS_FILE);
-      console.log(`[WatchdogManager] Loading ${data.length} sessions from file.`);
+      console.log(`[WatchdogBroker] Loading ${data.length} sessions from file.`);
       
       data.forEach((s: any) => {
         // Check if alive
@@ -76,12 +81,12 @@ function loadSessions() {
           
           // Check if timed out while we were away
           if (Date.now() - s.lastKeepalive > KEEPALIVE_TIMEOUT) {
-             console.log(`[WatchdogManager] Reclaimed session for ${s.projectPath} (PID ${s.pid}) is expired. Killing.`);
+             console.log(`[WatchdogBroker] Reclaimed session for ${s.projectPath} (PID ${s.pid}) is expired. Killing.`);
              try { process.kill(s.pid); } catch(e){}
              return;
           }
 
-          console.log(`[WatchdogManager] Reclaiming session for ${s.projectPath} (PID ${s.pid})`);
+          console.log(`[WatchdogBroker] Reclaiming session for ${s.projectPath} (PID ${s.pid})`);
           
           const checkInterval = setInterval(() => {
             checkTimeout(s.projectPath);
@@ -95,12 +100,12 @@ function loadSessions() {
             checkInterval
           });
         } catch (e) {
-          console.log(`[WatchdogManager] Session for ${s.projectPath} (PID ${s.pid}) is dead.`);
+          console.log(`[WatchdogBroker] Session for ${s.projectPath} (PID ${s.pid}) is dead.`);
         }
       });
     }
   } catch (e) {
-    console.error('[WatchdogManager] Failed to load sessions:', e);
+    console.error('[WatchdogBroker] Failed to load sessions:', e);
   }
 }
 
@@ -144,46 +149,44 @@ export const WatchdogManager = {
             saveSessions();
             return { port: existing.port, pid: existing.pid };
         } catch (e) {
-            console.log(`[WatchdogManager] Existing instance dead, cleaning up.`);
+            console.log(`[WatchdogBroker] Existing instance dead, cleaning up.`);
             killInstance(existing);
         }
     }
 
-    // Find free port starting from 4100
-    // Note: Watchdog's own finding logic starts at 4011. 
-    // We want to control it, so we pick one here.
-    // To avoid collisions with manually started watchdogs, let's start at 4200.
-    const port = await findAvailablePort(4200);
+    // Find free port starting from process start port
+    const startPort = parseInt(process.env.PORT_PROCESS_START || '6000');
+    const port = await findAvailablePort(startPort);
 
     // Resolve path to watchdog executable
-    // Backend runs from packages/backend/src (dev) or dist (prod)
-    // Watchdog is at root/watchdog/dist/index.js
-    // Assuming backend is at packages/backend
-    // Relative: ../../watchdog/dist/index.js
+    // We are at packages/wrapped-gemini/broker/src (or dist)
+    // Worker is at packages/wrapped-gemini/backend
     
-    // Adjust path based on execution context (ts-node vs node dist)
-    // __dirname in ts-node (src): .../packages/backend/src
-    // __dirname in build (dist): .../packages/backend/dist
-    // Target: .../watchdog/dist/index.js
-    
-    const rootDir = path.resolve(__dirname, '../../..'); // Up to project root
-    const watchdogScript = path.join(rootDir, 'packages/watchdog/dist/index.js');
+    // Path to Worker entry point:
+    const workerScript = path.join(ROOT_DIR, 'packages/wrapped-gemini/process/dist/index.js');
 
-    console.log(`[WatchdogManager] Spawning watchdog on port ${port} for ${projectPath}`);
-    console.log(`[WatchdogManager] Script: ${watchdogScript}`);
+    console.log(`[WatchdogBroker] Spawning worker on port ${port} for ${projectPath}`);
+    console.log(`[WatchdogBroker] Script: ${workerScript}`);
 
     // Ensure we pass the PROJECT ROOT to the watchdog, not the .bowman dir
-    // The watchdog script uses this path as the CWD for the worker (Gemini agent).
-    // Gemini agent expects to run in the project root.
     const projectRoot = projectPath.endsWith('.bowman') || projectPath.endsWith('.bowman/')
         ? path.dirname(projectPath) 
         : projectPath;
 
-    const child = spawn('node', [watchdogScript, '--port', String(port), projectRoot], {
-      cwd: rootDir,
-      stdio: 'inherit', // Pipe logs to main backend logs for now
+    // Prepare logs
+    const logDir = path.join(ROOT_DIR, 'logs', 'watchdog', String(port));
+    fs.ensureDirSync(logDir);
+    const out = fs.openSync(path.join(logDir, 'out.log'), 'a');
+    const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
+
+    const child = spawn('node', [workerScript, '--port', String(port), projectRoot], {
+      cwd: ROOT_DIR,
+      detached: true,
+      stdio: ['ignore', out, err],
       env: { ...process.env }
     });
+    
+    child.unref();
 
     const checkInterval = setInterval(() => {
         checkTimeout(projectPath);
@@ -201,7 +204,7 @@ export const WatchdogManager = {
     saveSessions();
 
     child.on('exit', (code) => {
-      console.log(`[WatchdogManager] Watchdog for ${projectPath} exited with code ${code}`);
+      console.log(`[WatchdogBroker] Worker for ${projectPath} exited with code ${code}`);
       const instance = instances.get(projectPath);
       if (instance?.process === child) {
         clearInterval(instance.checkInterval);
@@ -225,82 +228,47 @@ export const WatchdogManager = {
   keepalive(projectPath: string): boolean {
     const instance = instances.get(projectPath);
     if (instance) {
-      // Check liveness first? No, simple update is fine, checkTimeout handles liveness.
       instance.lastKeepalive = Date.now();
-      // Only log every 10th keepalive to avoid spam, or log if it was close to timeout?
-      // console.log(`[WatchdogManager] Keepalive received for ${projectPath}`);
-      saveSessions(); // Persist keepalive update? Optional but safe.
+      saveSessions();
       return true;
     }
-    console.warn(`[WatchdogManager] Keepalive failed: No instance found for ${projectPath}`);
+    console.warn(`[WatchdogBroker] Keepalive failed: No instance found for ${projectPath}`);
     return false;
   },
 
-    getStatus(projectPath: string): { running: boolean, port?: number } {
-
+  getStatus(projectPath: string): { running: boolean, port?: number } {
       const instance = instances.get(projectPath);
-
       if (instance) {
-
-          // Verify liveness on status check
-
           try {
-
               if (instance.process) {
-
                   if (instance.process.exitCode !== null) {
-
                       killInstance(instance);
-
                       return { running: false };
-
                   }
-
               } else {
-
                   process.kill(instance.pid, 0);
-
               }
-
               return { running: true, port: instance.port };
-
           } catch(e) {
-
               killInstance(instance);
-
           }
-
       }
-
       return { running: false };
+  },
 
-    },
-
-  
-
-    async relaunch(projectPath: string): Promise<{ port: number, pid: number }> {
-
-      console.log(`[WatchdogManager] Relaunching for ${projectPath}`);
-
+  async relaunch(projectPath: string): Promise<{ port: number, pid: number }> {
+      console.log(`[WatchdogBroker] Relaunching for ${projectPath}`);
       this.stop(projectPath);
-
-      // Wait a bit for the old process to potentially free up ports/resources
-
       await new Promise(resolve => setTimeout(resolve, 500));
-
       return this.start(projectPath);
+  },
 
-    },
-
-    list(): Array<{ projectPath: string, pid: number, port: number, lastKeepalive: number }> {
+  list(): Array<{ projectPath: string, pid: number, port: number, lastKeepalive: number }> {
       return Array.from(instances.values()).map(i => ({
         projectPath: i.projectPath,
         pid: i.pid,
         port: i.port,
         lastKeepalive: i.lastKeepalive
       }));
-    }
-
-  };
-
-  
+  }
+};

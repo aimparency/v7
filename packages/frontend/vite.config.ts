@@ -6,6 +6,8 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
+  const PORT = parseInt(process.env.PORT_FRONTEND || '4000')
+
   const env = loadEnv(mode, process.cwd(), '')
   return {
     plugins: [
@@ -18,7 +20,12 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      port: parseInt(env.VITE_PORT) || 4001
+      port: PORT,
+      strictPort: true
+    },
+    define: {
+      'process.env.PORT_BACKEND_WS': JSON.stringify(process.env.PORT_BACKEND_WS || '3001'),
+      'process.env.PORT_BROKER_WS': JSON.stringify(process.env.PORT_BROKER_WS || '5001'),
     }
   }
 })
