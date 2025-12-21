@@ -9,11 +9,11 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
+    "state": "done",
     "comment": "Implemented backend initialization of default meta.json. Created ProjectSettingsModal.vue for editing name and color. Added Settings button to App header.",
-    "date": 1765911903853
+    "date": 1766345310577
   },
   "intrinsicValue": 0,
-  "loopWeight": 0,
-  "cost": 0
+  "cost": 0,
+  "loopWeight": 0
 }
