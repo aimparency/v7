@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { io, type Socket } from 'socket.io-client';
 import Terminal from './components/Terminal.vue';
 import { trpc } from './trpc';
+import { AIMPARENCY_DIR_NAME } from 'shared';
 
 const socket = ref<Socket | null>(null);
 const status = ref('stopped');
@@ -125,7 +126,7 @@ onMounted(() => {
     <div v-if="!currentSession" class="session-manager">
         <h1>Infinite Worker Manager</h1>
         <div class="controls">
-            <input v-model="newProjectPath" placeholder="/path/to/project/.bowman" @keyup.enter="createSession" />
+            <input v-model="newProjectPath" :placeholder="'/path/to/project/' + AIMPARENCY_DIR_NAME" @keyup.enter="createSession" />
             <button @click="createSession" :disabled="loading || !newProjectPath">Start New</button>
             <button @click="refreshSessions" :disabled="loading">Refresh</button>
         </div>

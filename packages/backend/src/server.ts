@@ -8,7 +8,7 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema, SystemStatusSchema } from 'shared';
+import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME } from 'shared';
 import type { Aim, Phase, ProjectMeta, SystemStatus, SearchAimResult } from 'shared';
 import {
   indexAims,
@@ -49,7 +49,7 @@ const GITIGNORE_CONTENT = 'vectors.json\n';
 
 function normalizeProjectPath(p: string): string {
   if (!p) return p;
-  return p.endsWith('.bowman') ? p : path.join(p, '.bowman');
+  return p.endsWith(AIMPARENCY_DIR_NAME) ? p : path.join(p, AIMPARENCY_DIR_NAME);
 }
 
 // Recalculation Queue
@@ -1219,7 +1219,9 @@ const appRouter = t.router({
         }
         
         // Initialize with defaults if missing
-        const projectDir = projectPath.replace(/(\\|\/)\.bowman\/?$/, '');
+        // const projectDir = projectPath.replace(/(\\|\/)\.bowman\/?$/, ''); // Legacy regex
+        const projectDir = projectPath.endsWith(AIMPARENCY_DIR_NAME) ? path.dirname(projectPath) : projectPath;
+        
         const defaultMeta: ProjectMeta = {
             name: path.basename(projectDir) || 'Project',
             color: '#007acc'

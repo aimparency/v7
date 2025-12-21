@@ -57,8 +57,8 @@ const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 
 // Broker Port
-const HTTP_PORT = 4000;
-const WS_PORT = 4001;
+const HTTP_PORT = parseInt(process.env.PORT_BROKER_HTTP || '5000');
+const WS_PORT = parseInt(process.env.PORT_BROKER_WS || '5001');
 
 const app = express();
 app.use(cors());

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
-import { calculateAimValues } from 'shared'
+import { calculateAimValues, AIMPARENCY_DIR_NAME } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
 import { loadAllAimsCache, saveAims } from '../utils/db'
@@ -660,10 +660,9 @@ export const useDataStore = defineStore('data', {
       this.subscription = trpc.project.onUpdate.subscribe(undefined, {
         onData: async (data: { type: string, id: string, projectPath: string }) => {
           // Normalize paths for comparison (handle .bowman suffix mismatch)
-          // Use .replace to strip trailing slash just in case before appending, or robust check
-          // Simple robust check:
-          const eventPath = data.projectPath.replace(/\/?\.bowman$/, '');
-          const myPath = projectPath.replace(/\/?\.bowman$/, '');
+          const suffix = '/' + AIMPARENCY_DIR_NAME;
+          const eventPath = data.projectPath.endsWith(suffix) ? data.projectPath.slice(0, -suffix.length) : (data.projectPath.endsWith(AIMPARENCY_DIR_NAME) ? data.projectPath.slice(0, -AIMPARENCY_DIR_NAME.length) : data.projectPath);
+          const myPath = projectPath.endsWith(suffix) ? projectPath.slice(0, -suffix.length) : (projectPath.endsWith(AIMPARENCY_DIR_NAME) ? projectPath.slice(0, -AIMPARENCY_DIR_NAME.length) : projectPath);
           
           if (eventPath !== myPath) return;
 

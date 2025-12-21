@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Hint } from 'shared'
-import { timestampToLocalDate, timestampToLocalTime } from 'shared'
+import { timestampToLocalDate, timestampToLocalTime, AIMPARENCY_DIR_NAME } from 'shared'
 import { trpc } from '../trpc'
 import { useDataStore, type Aim, type Phase } from './data'
 
@@ -138,8 +138,9 @@ export const useUIStore = defineStore('ui', {
   
   actions: {
     setProjectPath(path: string) {
-      // Normalize: strip trailing /.bowman or .bowman
-      const cleanPath = path.replace(/\/?\.bowman$/, '');
+      const suffix = '/' + AIMPARENCY_DIR_NAME;
+      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
+      
       this.projectPath = cleanPath
       if (cleanPath) {
         localStorage.setItem('aimparency-project-path', cleanPath)
@@ -149,7 +150,9 @@ export const useUIStore = defineStore('ui', {
     },
 
     addProjectToHistory(path: string) {
-      const cleanPath = path.replace(/\/?\.bowman$/, '');
+      const suffix = '/' + AIMPARENCY_DIR_NAME;
+      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
+      
       // Remove existing occurrences of this path
       this.projectHistory = this.projectHistory.filter(p => p.path !== cleanPath)
 
@@ -168,13 +171,17 @@ export const useUIStore = defineStore('ui', {
     },
 
     removeProjectFromHistory(path: string) {
-      const cleanPath = path.replace(/\/?\.bowman$/, '');
+      const suffix = '/' + AIMPARENCY_DIR_NAME;
+      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
+      
       this.projectHistory = this.projectHistory.filter(p => p.path !== cleanPath)
       localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
     },
 
     markProjectAsFailed(path: string) {
-      const cleanPath = path.replace(/\/?\.bowman$/, '');
+      const suffix = '/' + AIMPARENCY_DIR_NAME;
+      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
+      
       const project = this.projectHistory.find(p => p.path === cleanPath)
       if (project) {
         project.failedToLoad = true
@@ -183,7 +190,9 @@ export const useUIStore = defineStore('ui', {
     },
 
     clearProjectFailure(path: string) {
-      const cleanPath = path.replace(/\/?\.bowman$/, '');
+      const suffix = '/' + AIMPARENCY_DIR_NAME;
+      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
+      
       const project = this.projectHistory.find(p => p.path === cleanPath)
       if (project) {
         project.failedToLoad = false

@@ -1,14 +1,5 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { resolve } from 'path'
-import dotenv from 'dotenv'
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-dotenv.config({ path: resolve(__dirname, '../../../ports.env') })
 
 export default defineConfig({
   plugins: [vue()],

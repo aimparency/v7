@@ -217,7 +217,7 @@ export function registerTools(server: Server, trpcClient = trpc) {
         },
         {
           name: "update_aim",
-          description: "Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships. It's recommended, to update aims before using git add for the code changes and .bowman, in order to commit code and related aim changes at the same time.",
+          description: `Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships. It's recommended, to update aims before using git add for the code changes and ${SUBDIR_NAME}, in order to commit code and related aim changes at the same time.`,
           inputSchema: {
             type: "object",
             properties: {

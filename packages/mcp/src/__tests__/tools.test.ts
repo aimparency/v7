@@ -5,9 +5,10 @@ import path from 'path';
 import { appRouter } from '../../../backend/src/server.js';
 import { registerTools } from '../tools.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { AIMPARENCY_DIR_NAME } from 'shared';
 
 const caller = appRouter.createCaller({});
-const TEST_PROJECT_PATH = path.join(process.cwd(), 'test-mcp-project', '.bowman');
+const TEST_PROJECT_PATH = path.join(process.cwd(), 'test-mcp-project', AIMPARENCY_DIR_NAME);
 
 // Mock MCP Server
 class MockServer {

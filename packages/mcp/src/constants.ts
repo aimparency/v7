@@ -1,7 +1,9 @@
+import { AIMPARENCY_DIR_NAME } from 'shared';
+
 export const AIM_STATES = ["open", "done", "cancelled", "partially", "failed", "archived"];
 export const AIM_STATES_DESCRIPTION = `Current status of the aim. Options: ${AIM_STATES.join(", ")}`;
 
-export const SUBDIR_NAME = ".bowman"
+export const SUBDIR_NAME = AIMPARENCY_DIR_NAME
 export const PROJECT_PATH_DESCRIPTION = `Absolute path to the project directory. For a repository it defaults to /path/to/repo/${SUBDIR_NAME}. So be careful to append /${SUBDIR_NAME} to the repo directory if no otherwise specified`
 
 export const PROJECT_PATH_TOOL_PROPERTY = {

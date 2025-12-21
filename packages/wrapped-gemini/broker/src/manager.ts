@@ -4,6 +4,8 @@ import * as net from 'net';
 import { fileURLToPath } from 'url';
 import fs from 'fs-extra';
 
+import { AIMPARENCY_DIR_NAME } from 'shared';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -24,6 +26,13 @@ const KEEPALIVE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 const ROOT_DIR = path.resolve(__dirname, '../../../../'); 
 // Sessions file is in packages/ (3 levels up)
 const SESSIONS_FILE = path.resolve(__dirname, '../../../watchdog-sessions.json');
+
+const DIR_NAME = process.env.AIMPARENCY_DIR_NAME || '.bowman';
+
+function normalizeProjectPath(p: string): string {
+  if (!p) return p;
+  return p.endsWith(DIR_NAME) ? p : path.join(p, DIR_NAME);
+}
 
 // Persistence Helpers
 function saveSessions() {
@@ -169,7 +178,7 @@ export const WatchdogManager = {
     console.log(`[WatchdogBroker] Script: ${workerScript}`);
 
     // Ensure we pass the PROJECT ROOT to the watchdog, not the .bowman dir
-    const projectRoot = projectPath.endsWith('.bowman') || projectPath.endsWith('.bowman/')
+    const projectRoot = projectPath.endsWith(AIMPARENCY_DIR_NAME) || projectPath.endsWith(`${AIMPARENCY_DIR_NAME}/`)
         ? path.dirname(projectPath) 
         : projectPath;
 

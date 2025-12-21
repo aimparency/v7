@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
 import WatchdogTerminal from './WatchdogTerminal.vue'
+import { AIMPARENCY_DIR_NAME } from 'shared'
 
 const store = useWatchdogStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
@@ -83,7 +84,7 @@ const toggle = () => {
             <select v-model="selectedSession" @change="onSessionSelect" class="session-select">
                 <option value="" disabled selected>Select Session...</option>
                 <option v-for="s in store.sessions" :key="s.projectPath" :value="s.projectPath">
-                    {{ s.projectPath.split('/').pop() === '.bowman' ? s.projectPath.split('/').slice(-2, -1)[0] : s.projectPath.split('/').pop() }} ({{ s.pid }})
+                    {{ s.projectPath.split('/').pop() === AIMPARENCY_DIR_NAME ? s.projectPath.split('/').slice(-2, -1)[0] : s.projectPath.split('/').pop() }} ({{ s.pid }})
                 </option>
                 <option value="__new__">+ New Session...</option>
             </select>

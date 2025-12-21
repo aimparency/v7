@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { writeFileSync, mkdirSync } from 'fs';
 import { randomUUID } from 'crypto';
+import { AIMPARENCY_DIR_NAME } from 'shared';
 
 export interface MockAim {
   id?: string;
@@ -22,7 +23,7 @@ export interface MockPhase {
 }
 
 export function seedProject(projectPath: string, data: { phases?: MockPhase[], aims?: MockAim[] }) {
-  const bowmanPath = join(projectPath, '.bowman');
+  const bowmanPath = join(projectPath, AIMPARENCY_DIR_NAME);
   mkdirSync(join(bowmanPath, 'aims'), { recursive: true });
   mkdirSync(join(bowmanPath, 'phases'), { recursive: true });
 
