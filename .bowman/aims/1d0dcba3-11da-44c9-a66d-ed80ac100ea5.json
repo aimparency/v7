@@ -3,14 +3,6 @@
   "text": "prioritizing aims",
   "description": "aims should be prioritized based on their return of invest of energy",
   "tags": [],
-  "committedIn": [
-    "f51f8930-c937-4c66-9db8-d4d313e6d286"
-  ],
-  "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765556741315
-  },
   "supportingConnections": [
     {
       "aimId": "535d5d5a-883a-434f-892f-856f144482bb",
@@ -21,5 +13,16 @@
       "weight": 1
     }
   ],
-  "supportedAims": []
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1766359111689
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }
