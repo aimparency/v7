@@ -1,56 +1,52 @@
 {
   "id": "b9596362-3fab-4b4b-8834-df81f48930cc",
   "text": "Define sustainable revenue model: 'Echo' Service (Journal -> Cinema)",
-  "committedIn": [],
-  "status": {
-    "state": "done",
-    "comment": "Defined sustainable revenue model ('Echo' Service). Designed product, implemented mock payment gateway, and linked it to the content generation pipeline. Infrastructure is ready for frontend integration.",
-    "date": 1765017128434
-  },
   "description": "blabla",
+  "tags": [],
   "supportingConnections": [
-    {
-      "aimId": "1874f90a-2b67-42b5-a107-29f125b2e8a2",
-      "relativePosition": [
-        -0.9091330020943351,
-        -2.328836014944578
-      ],
-      "weight": 1
-    },
     {
       "aimId": "1b77783f-747e-4f90-a983-efe8be6cadb7",
       "relativePosition": [
-        1.8463055377961346,
-        -1.6855728584381413
+        -1.9636765146775241,
+        1.5472474093382513
       ],
       "weight": 1
     },
     {
       "aimId": "5a0ca937-9951-40de-b647-809a2cadcf95",
       "relativePosition": [
-        2.4834983113147278,
-        -0.2867684391576148
+        -2.2632137945575,
+        -1.0620090960649262
       ],
       "weight": 1
     },
     {
       "aimId": "f86a45b5-f303-41ea-a006-4ce82da77890",
       "relativePosition": [
-        -1.6486835518043623,
-        1.879319702980244
+        -0.5558707423601708,
+        -2.4374182484317197
       ],
       "weight": 1
     },
     {
       "aimId": "34451a1f-4fa2-4626-8169-8b1ca4a78741",
       "relativePosition": [
-        0.7226136527051066,
-        -2.393288429948255
+        0.6091612306276804,
+        2.424648963272863
       ],
       "weight": 1
     }
   ],
   "supportedAims": [
-    "1c60ee55-0627-43d6-8393-e912fc2e52a2"
-  ]
+    "1874f90a-2b67-42b5-a107-29f125b2e8a2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Defined sustainable revenue model ('Echo' Service). Designed product, implemented mock payment gateway, and linked it to the content generation pipeline. Infrastructure is ready for frontend integration.",
+    "date": 1765017128434
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }

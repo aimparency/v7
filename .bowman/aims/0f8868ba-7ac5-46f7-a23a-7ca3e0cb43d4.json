@@ -5,6 +5,10 @@
     "revenue",
     "product"
   ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "1874f90a-2b67-42b5-a107-29f125b2e8a2"
+  ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
@@ -13,15 +17,7 @@
     "comment": "MVP Implemented. Service pipeline supports real API calls to ElevenLabs and Replicate, with graceful mock fallback. Configured via .env.",
     "date": 1765214241471
   },
-  "supportingConnections": [
-    {
-      "aimId": "1874f90a-2b67-42b5-a107-29f125b2e8a2",
-      "relativePosition": [
-        2.4892727484853596,
-        0.23134645804106174
-      ],
-      "weight": 1
-    }
-  ],
-  "supportedAims": []
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }
