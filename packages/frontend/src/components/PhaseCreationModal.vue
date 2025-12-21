@@ -13,6 +13,11 @@ const phaseNameInput = ref<HTMLInputElement>()
 const submitBtn = ref<HTMLButtonElement>()
 const dateWarning = ref<string>('')
 const allPhases = ref<Phase[]>([])
+const focusedField = ref<string | null>(null)
+
+const startTimestamp = computed(() => localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime))
+const endTimestamp = computed(() => localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime))
+const isRangeInvalid = computed(() => startTimestamp.value > endTimestamp.value)
 
 const availableParents = computed(() => {
   if (uiStore.phaseModalMode !== 'edit' || !uiStore.phaseModalEditingPhaseId) return []
@@ -225,18 +230,46 @@ const calculateSmartDateRanges = async () => {
         <div class="form-row">
           <div class="form-group">
             <label>Start Date</label>
-            <input v-model="uiStore.newPhaseStartDate" type="date" @keydown="handleKeydown"/>
-            <input v-model="uiStore.newPhaseStartTime" type="time" @keydown="handleKeydown"/>
+            <input 
+              v-model="uiStore.newPhaseStartDate" 
+              type="date" 
+              :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('start') }"
+              @keydown="handleKeydown"
+              @focus="focusedField = 'startDate'"
+              @blur="focusedField = null"
+            />
+            <input 
+              v-model="uiStore.newPhaseStartTime" 
+              type="time" 
+              :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('start') }"
+              @keydown="handleKeydown"
+              @focus="focusedField = 'startTime'"
+              @blur="focusedField = null"
+            />
           </div>
           <div class="form-group">
             <label>End Date</label>
-            <input v-model="uiStore.newPhaseEndDate" type="date" @keydown="handleKeydown"/>
-            <input v-model="uiStore.newPhaseEndTime" type="time" @keydown="handleKeydown"/>
+            <input 
+              v-model="uiStore.newPhaseEndDate" 
+              type="date" 
+              :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('end') }"
+              @keydown="handleKeydown"
+              @focus="focusedField = 'endDate'"
+              @blur="focusedField = null"
+            />
+            <input 
+              v-model="uiStore.newPhaseEndTime" 
+              type="time" 
+              :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('end') }"
+              @keydown="handleKeydown"
+              @focus="focusedField = 'endTime'"
+              @blur="focusedField = null"
+            />
           </div>
         </div>
 
-        <div v-if="dateWarning" class="warning">
-          {{ dateWarning }}
+        <div v-if="isRangeInvalid" class="warning">
+          Start date must be before end date.
         </div>
       </div>
       
@@ -248,7 +281,7 @@ const calculateSmartDateRanges = async () => {
           ref="submitBtn"
           @click="handleSubmit"
           class="btn-primary"
-          :disabled="!uiStore.newPhaseName.trim()"
+          :disabled="!uiStore.newPhaseName.trim() || isRangeInvalid"
           @keydown.tab.exact.prevent="phaseNameInput?.focus()"
         >
           {{ uiStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
@@ -259,6 +292,11 @@ const calculateSmartDateRanges = async () => {
 </template>
 
 <style scoped>
+.invalid-range {
+  border-color: #ff4444 !important;
+  background-color: rgba(255, 0, 0, 0.1) !important;
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
