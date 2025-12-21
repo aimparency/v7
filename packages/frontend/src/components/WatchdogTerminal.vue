@@ -17,6 +17,7 @@ const terminalContainer = ref<HTMLElement | null>(null);
 let term: Terminal;
 let fitAddon: FitAddon;
 let resizeObserver: ResizeObserver;
+let scrollTimeout: any = null;
 
 const emit = defineEmits<{
   (e: 'resize', dimensions: { cols: number, rows: number }): void
@@ -49,6 +50,21 @@ onMounted(() => {
     resizeObserver = new ResizeObserver(() => requestAnimationFrame(() => fit()));
     resizeObserver.observe(terminalContainer.value);
   }
+
+  term.onScroll((newScrollPos) => {
+    if (newScrollPos === 0) {
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        term.scrollToBottom();
+        scrollTimeout = null;
+      }, 200);
+    } else {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = null;
+      }
+    }
+  });
 
   if (props.initialContent) {
     term.write(props.initialContent);
