@@ -9,10 +9,11 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
+    "state": "done",
     "comment": "",
-    "date": 1765820192747
+    "date": 1766345218532
   },
   "intrinsicValue": 0,
+  "cost": 1,
   "loopWeight": 0
 }

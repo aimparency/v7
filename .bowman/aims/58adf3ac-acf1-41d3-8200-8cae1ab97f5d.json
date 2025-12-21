@@ -20,8 +20,9 @@
   "status": {
     "state": "done",
     "comment": "Implemented 'priority' option in sortBy for list-aims. Calculates priority as intrinsicValue / cost. Updated backend and MCP schema.",
-    "date": 1765910579199
+    "date": 1766345236557
   },
   "intrinsicValue": 0,
+  "cost": 1,
   "loopWeight": 0
 }
