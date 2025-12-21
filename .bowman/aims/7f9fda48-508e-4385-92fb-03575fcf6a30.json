@@ -1,0 +1,17 @@
+{
+  "id": "7f9fda48-508e-4385-92fb-03575fcf6a30",
+  "text": "asd",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766316630560
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

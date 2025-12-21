@@ -27,11 +27,12 @@ const ROOT_DIR = path.resolve(__dirname, '../../../../');
 // Sessions file is in packages/ (3 levels up)
 const SESSIONS_FILE = path.resolve(__dirname, '../../../watchdog-sessions.json');
 
-const DIR_NAME = process.env.AIMPARENCY_DIR_NAME || '.bowman';
-
 function normalizeProjectPath(p: string): string {
   if (!p) return p;
-  return p.endsWith(DIR_NAME) ? p : path.join(p, DIR_NAME);
+  // Handle potential trailing slash
+  const clean = p.replace(/[\\/]$/, '');
+  if (clean.endsWith(AIMPARENCY_DIR_NAME)) return clean;
+  return path.join(clean, AIMPARENCY_DIR_NAME);
 }
 
 // Persistence Helpers
@@ -143,6 +144,8 @@ function findAvailablePort(startPort: number): Promise<number> {
 
 export const WatchdogManager = {
   async start(projectPath: string): Promise<{ port: number, pid: number }> {
+    projectPath = normalizeProjectPath(projectPath);
+
     // Check if already running
     const existing = instances.get(projectPath);
     if (existing) {
@@ -178,9 +181,7 @@ export const WatchdogManager = {
     console.log(`[WatchdogBroker] Script: ${workerScript}`);
 
     // Ensure we pass the PROJECT ROOT to the watchdog, not the .bowman dir
-    const projectRoot = projectPath.endsWith(AIMPARENCY_DIR_NAME) || projectPath.endsWith(`${AIMPARENCY_DIR_NAME}/`)
-        ? path.dirname(projectPath) 
-        : projectPath;
+    const projectRoot = path.dirname(projectPath);
 
     // Prepare logs
     const logDir = path.join(ROOT_DIR, 'logs', 'watchdog', String(port));
@@ -226,6 +227,7 @@ export const WatchdogManager = {
   },
 
   stop(projectPath: string): boolean {
+    projectPath = normalizeProjectPath(projectPath);
     const instance = instances.get(projectPath);
     if (instance) {
       killInstance(instance);
@@ -235,6 +237,7 @@ export const WatchdogManager = {
   },
 
   keepalive(projectPath: string): boolean {
+    projectPath = normalizeProjectPath(projectPath);
     const instance = instances.get(projectPath);
     if (instance) {
       instance.lastKeepalive = Date.now();
@@ -246,6 +249,7 @@ export const WatchdogManager = {
   },
 
   getStatus(projectPath: string): { running: boolean, port?: number } {
+      projectPath = normalizeProjectPath(projectPath);
       const instance = instances.get(projectPath);
       if (instance) {
           try {
@@ -266,6 +270,7 @@ export const WatchdogManager = {
   },
 
   async relaunch(projectPath: string): Promise<{ port: number, pid: number }> {
+      projectPath = normalizeProjectPath(projectPath);
       console.log(`[WatchdogBroker] Relaunching for ${projectPath}`);
       this.stop(projectPath);
       await new Promise(resolve => setTimeout(resolve, 500));

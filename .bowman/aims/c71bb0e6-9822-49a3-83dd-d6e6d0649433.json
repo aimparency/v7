@@ -13,7 +13,7 @@
     "comment": "Configured playwright.config.ts to run headless by default (unless HEADED=true). Verified with test run.",
     "date": 1766145000000
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 1,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 1
 }

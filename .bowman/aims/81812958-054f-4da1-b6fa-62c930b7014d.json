@@ -12,5 +12,8 @@
     "date": 1765316000000
   },
   "supportingConnections": [],
-  "supportedAims": []
+  "supportedAims": [],
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
 }

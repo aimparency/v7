@@ -1,0 +1,19 @@
+{
+  "id": "66af6dde-aab1-49f2-90b6-e42d15a955bf",
+  "text": "remove border left or that vertical bar from aim description text container. It's useless and confusing",
+  "description": "only the subaim list should have that indent bar",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766323936383
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

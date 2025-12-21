@@ -699,9 +699,10 @@ const appRouter = t.router({
         }
 
         // Then delete the aim file
+        const projectPath = normalizeProjectPath(input.projectPath);
         const isArchived = aim.status.state === 'archived';
         const dirName = isArchived ? 'archived-aims' : 'aims';
-        const aimPath = path.join(input.projectPath, dirName, `${input.aimId}.json`);
+        const aimPath = path.join(projectPath, dirName, `${input.aimId}.json`);
         await fs.remove(aimPath);
 
         // Remove from search index
@@ -1107,7 +1108,8 @@ const appRouter = t.router({
         phaseId: z.string().uuid()
       }))
       .mutation(async ({ input }) => {
-        const phasePath = path.join(input.projectPath, 'phases', `${input.phaseId}.json`);
+        const projectPath = normalizeProjectPath(input.projectPath);
+        const phasePath = path.join(projectPath, 'phases', `${input.phaseId}.json`);
         await fs.remove(phasePath);
         
         await cleanupCommitments(input.projectPath, input.phaseId);

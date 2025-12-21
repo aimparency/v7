@@ -21,6 +21,14 @@
       "weight": 1
     },
     {
+      "aimId": "66af6dde-aab1-49f2-90b6-e42d15a955bf",
+      "relativePosition": [
+        -1.073351444177881,
+        2.2578566556097526
+      ],
+      "weight": 1
+    },
+    {
       "aimId": "58648df0-e137-418f-a0c9-7fd6f0871452",
       "relativePosition": [
         -2.2620934202273144,
@@ -81,6 +89,30 @@
       "relativePosition": [
         -1.9615438480853897,
         -1.5499502353425294
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c6cdb537-d734-47ff-94da-269cdcbadc3a",
+      "relativePosition": [
+        -2.4921580095047906,
+        0.19785968680133156
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "4c18cbb2-c607-40f9-bf03-6a99b15317b7",
+      "relativePosition": [
+        2.4675718454438993,
+        -0.40135917526897247
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "2e7aa327-e5ee-4622-858e-ab6d1877a009",
+      "relativePosition": [
+        2.2688245596956578,
+        -1.0499691030319915
       ],
       "weight": 1
     }

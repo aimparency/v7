@@ -1,0 +1,19 @@
+{
+  "id": "c6cdb537-d734-47ff-94da-269cdcbadc3a",
+  "text": "pressing tab in edit aim from tag input jumps to the wrong input element...",
+  "description": "should jump to buttons i think and not to description (we reordered intentionally)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766315835554
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,6 +1,6 @@
 {
-  "id": "793cbea9-7d33-4393-b875-b9d44cca604c",
-  "text": "move tags to the end of the aim edit modal (below status)",
+  "id": "4c18cbb2-c607-40f9-bf03-6a99b15317b7",
+  "text": "when changing phase dates, show other (non-being-edited from/to) in red if from is after to",
   "description": "",
   "tags": [],
   "supportingConnections": [],
@@ -11,9 +11,9 @@
   "status": {
     "state": "open",
     "comment": "",
-    "date": 1766233160583
+    "date": 1766320935970
   },
-  "intrinsicValue": 1,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0
 }

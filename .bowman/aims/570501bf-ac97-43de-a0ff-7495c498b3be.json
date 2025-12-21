@@ -1,0 +1,19 @@
+{
+  "id": "570501bf-ac97-43de-a0ff-7495c498b3be",
+  "text": "maybe 'a' brings up search aim modal and inserts aim-id + aim title as text into the terminal (useful for referencing aims directly).",
+  "description": "this should be an additional option from the watchdog panel",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3ccbee81-a78e-45eb-ad8a-f041b2ab32bd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766315785722
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
