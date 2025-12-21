@@ -52,6 +52,24 @@ function normalizeProjectPath(p: string): string {
   return p.endsWith(AIMPARENCY_DIR_NAME) ? p : path.join(p, AIMPARENCY_DIR_NAME);
 }
 
+const indexedProjects = new Set<string>();
+
+async function ensureSearchIndex(projectPath: string) {
+    // Normalize path for consistent cache key
+    const normalizedPath = normalizeProjectPath(projectPath);
+    if (indexedProjects.has(normalizedPath)) return;
+    
+    console.log(`[Search] Building index for ${normalizedPath}...`);
+    // Pass raw projectPath to list functions (they normalize internally) but use normalized for map key
+    const aims = await listAims(normalizedPath);
+    const phases = await listPhases(normalizedPath);
+    
+    indexAims(normalizedPath, aims);
+    indexPhases(normalizedPath, phases);
+    
+    indexedProjects.add(normalizedPath);
+}
+
 // Recalculation Queue
 const recalculateTimers = new Map<string, NodeJS.Timeout>();
 
@@ -932,6 +950,7 @@ const appRouter = t.router({
         archived: z.boolean().optional()
       }))
       .query(async ({ input }) => {
+        await ensureSearchIndex(input.projectPath);
         const allAims = await listAims(input.projectPath, input.archived);
         console.log(`[Search] Query: "${input.query}" | Total Aims: ${allAims.length} | Archived: ${input.archived}`);
         
@@ -989,6 +1008,7 @@ const appRouter = t.router({
         phaseId: z.string().uuid().optional()
       }))
       .query(async ({ input }) => {
+        await ensureSearchIndex(input.projectPath);
         const queryVector = await generateEmbedding(input.query);
         if (!queryVector) return [];
         
@@ -1126,6 +1146,7 @@ const appRouter = t.router({
         parentPhaseId: z.string().uuid().nullable().optional()
       }))
       .query(async ({ input }) => {
+        await ensureSearchIndex(input.projectPath);
         const phases = await listPhases(input.projectPath, input.parentPhaseId);
         return await searchPhases(input.projectPath, input.query, phases);
       })
