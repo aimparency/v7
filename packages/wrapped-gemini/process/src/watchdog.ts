@@ -245,14 +245,11 @@ ${context}
 
 What shall we do about this situation?
 
-1. Check the model that is being used in the main agent: it's usually the last word of the context. If it changed to a inferior model, return { "action": { "type": "stop", "reason": "model-switch" } }. 
+1. Check the model that is being used in the main agent: it's usually around the end of the current situation. If it changed to a inferior model (lower than gemini 3, 3 is the minimum for reasonable quality), stop with: { "action": { "type": "stop", "reason": "model-switch" } }. 
 2. Check for "Quota exceeded" or "High demand" errors. If found, return { "action": { "type": "cooldown", "duration": 30000 } }.
 
 ${PROMPT_MARKER}
 `;
-    
-    // Ensure the entire prompt is a single line
-    const singleLineQuestion = question.replace(/\s+/g, ' ').trim();
     
     await this.post(this.watchdog, singleLineQuestion);
   }

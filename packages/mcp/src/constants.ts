@@ -1,6 +1,5 @@
-import { AIMPARENCY_DIR_NAME } from 'shared';
+import { AIMPARENCY_DIR_NAME, AIM_STATES } from 'shared';
 
-export const AIM_STATES = ["open", "done", "cancelled", "partially", "failed", "archived"];
 export const AIM_STATES_DESCRIPTION = `Current status of the aim. Options: ${AIM_STATES.join(", ")}`;
 
 export const PROJECT_PATH_DESCRIPTION = `Absolute path to the project directory. For a repository it defaults to /path/to/repo/${AIMPARENCY_DIR_NAME}. So be careful to append /${AIMPARENCY_DIR_NAME} to the repo directory if no otherwise specified`

@@ -293,6 +293,16 @@ onUnmounted(() => {
           >
             {{ dataStore.consistencyErrors.length > 0 ? '×' : '✓' }}
           </button>
+
+          <button 
+            v-if="uiStore.projectPath"
+            class="icon-btn"
+            title="Refresh Consistency Check"
+            @click="dataStore.checkConsistency(uiStore.projectPath)"
+            style="font-size: 0.7rem; margin-left: 2px"
+          >
+            🔄
+          </button>
         </div>
 
         <a @click="closeProject" class="close-project">Close Project</a>

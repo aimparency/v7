@@ -4,6 +4,8 @@ if (!process.env.AIMPARENCY_DIR_NAME) {
 
 export const AIMPARENCY_DIR_NAME = process.env.AIMPARENCY_DIR_NAME;
 
+export const AIM_STATES = ['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived'] as const;
+
 export const DEFAULT_STATUSES = [
   { key: 'open', color: '#ffcc80' },
   { key: 'done', color: '#81c784' },

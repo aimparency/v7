@@ -222,6 +222,29 @@ export const WatchdogManager = {
     
     saveSessions();
 
+    // Wait for port to be ready
+    console.log(`[WatchdogBroker] Waiting for port ${port} to be open...`);
+    let ready = false;
+    for (let i = 0; i < 20; i++) { // 10 seconds timeout
+        try {
+            await new Promise((resolve, reject) => {
+                const s = net.createConnection(port, 'localhost');
+                s.on('connect', () => { s.end(); resolve(true); });
+                s.on('error', () => { reject(); });
+            });
+            ready = true;
+            break;
+        } catch(e) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+    }
+
+    if (!ready) {
+        console.warn(`[WatchdogBroker] Port ${port} did not open within timeout.`);
+    } else {
+        console.log(`[WatchdogBroker] Port ${port} is ready.`);
+    }
+
     child.on('exit', (code) => {
       console.log(`[WatchdogBroker] Worker for ${projectPath} exited with code ${code}`);
       const instance = instances.get(projectPath);

@@ -8,9 +8,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766396364938
+    "state": "done",
+    "comment": "Implemented `update_market_config` MCP tool and updated `step_agent.py` to use dynamic risk/leverage settings. Verified with trade amount scaling.",
+    "date": 1766403840657
   },
   "intrinsicValue": 0,
   "cost": 1,

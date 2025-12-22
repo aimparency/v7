@@ -8,9 +8,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766396399960
+    "state": "done",
+    "comment": "Integrated Android SpeechRecognizer for STT and implemented sequential AudioPlayer for TTS chunk playback.",
+    "date": 1766406254289
   },
   "intrinsicValue": 0,
   "cost": 1,

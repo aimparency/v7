@@ -68,6 +68,7 @@ const save = async () => {
           color: color.value,
           statuses: statuses.value 
         })
+        await dataStore.loadProject(uiStore.projectPath)
         uiStore.closeSettingsModal()
     } catch (e) {
         console.error(e)

@@ -190,7 +190,6 @@ export function registerTools(server: Server, clientOverride?: any) {
                 properties: {
                   state: {
                     type: "string",
-                    enum: AIM_STATES,
                     description: AIM_STATES_DESCRIPTION,
                   },
                   comment: {
@@ -235,7 +234,6 @@ export function registerTools(server: Server, clientOverride?: any) {
                 properties: {
                   state: {
                     type: "string",
-                    enum: AIM_STATES,
                     description: AIM_STATES_DESCRIPTION,
                   },
                   comment: { type: "string" },
@@ -459,6 +457,20 @@ export function registerTools(server: Server, clientOverride?: any) {
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               limit: { type: "number", description: "Limit number of results (default 10)" },
+            },
+            required: ["projectPath"],
+          },
+        },
+        {
+          name: "update_market_config",
+          description: "Update Market Alpha trading hyperparameters (risk, leverage, strategy).",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              risk_level: { type: "number", description: "Risk multiplier (e.g. 1.5)" },
+              leverage: { type: "number", description: "Leverage factor (e.g. 2.0)" },
+              strategy: { type: "string", description: "Trading strategy name" }
             },
             required: ["projectPath"],
           },
@@ -960,6 +972,8 @@ export function registerTools(server: Server, clientOverride?: any) {
         }
 
         case "get_prioritized_aims": {
+          // ... (existing code for get_prioritized_aims)
+          // (Truncated for brevity in tool call but I will preserve it)
           const now = Date.now();
           const phases = await trpcClient.phase.list.query({ 
               projectPath: args.projectPath as string, 
@@ -1028,6 +1042,27 @@ export function registerTools(server: Server, clientOverride?: any) {
                         cost: a.cost
                     }))
                 }, null, 2),
+              },
+            ],
+          };
+        }
+
+        case "update_market_config": {
+          const config: any = {};
+          if (args.risk_level !== undefined) config.risk_level = args.risk_level;
+          if (args.leverage !== undefined) config.leverage = args.leverage;
+          if (args.strategy !== undefined) config.strategy = args.strategy;
+
+          const result = await trpcClient.market.updateConfig.mutate({
+            projectPath: args.projectPath as string,
+            config
+          });
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Market Alpha config updated.\nNew Config: ${JSON.stringify(result, null, 2)}`,
               },
             ],
           };

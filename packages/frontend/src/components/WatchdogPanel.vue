@@ -86,8 +86,18 @@ defineExpose({
   <div class="watchdog-panel">
     <div class="panel-header">
       <div class="status-indicator">
-        <span class="dot" :class="{ connected: store.isConnected }"></span>
-        <span class="status-text">{{ store.isConnected ? 'Connected' : 'Disconnected' }}</span>
+        <span class="dot" :class="{ 
+          connected: store.isConnected, 
+          connecting: store.connectionState === 'connecting' || store.connectionState === 'spawning',
+          error: store.connectionState === 'error'
+        }"></span>
+        <span class="status-text">
+          <template v-if="store.connectionState === 'idle'">Disconnected</template>
+          <template v-else-if="store.connectionState === 'spawning'">Spawning Process...</template>
+          <template v-else-if="store.connectionState === 'connecting'">Connecting to Socket...</template>
+          <template v-else-if="store.connectionState === 'connected'">Connected</template>
+          <template v-else-if="store.connectionState === 'error'">Connection Error</template>
+        </span>
         <button 
           v-if="store.isConnected" 
           @click="store.disconnect()" 
@@ -99,6 +109,7 @@ defineExpose({
           @click="store.connect()" 
           class="link-btn" 
           title="Connect to backend"
+          :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
         >(Connect)</button>
       </div>
       <div class="controls">
@@ -115,13 +126,14 @@ defineExpose({
           @click="store.relaunch()" 
           class="relaunch-btn"
           title="Restart the underlying Watchdog process"
+          :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
         >
           Relaunch
         </button>
       </div>
     </div>
     
-    <div class="terminals">
+    <div class="terminals" v-show="store.isConnected">
       <div class="term-col">
         <div class="term-label">Worker (Main Agent)</div>
         <WatchdogTerminal 
@@ -139,6 +151,17 @@ defineExpose({
           :onData="handleWatchdogInput"
           @resize="(dims) => store.socket?.emit('resize-watchdog', dims)"
         />
+      </div>
+    </div>
+
+    <!-- Informative Log when not connected -->
+    <div v-if="!store.isConnected" class="spawning-log">
+      <div class="log-title">Connection Status Log:</div>
+      <div v-for="(log, i) in store.spawningLog" :key="i" class="log-entry">
+        {{ log }}
+      </div>
+      <div v-if="store.connectionState === 'error'" class="error-hint">
+        Check backend logs or try Relaunching.
       </div>
     </div>
 
@@ -184,6 +207,25 @@ defineExpose({
   background: #00aa00;
 }
 
+.dot.connecting {
+  background: #fa0;
+  animation: blink 1s infinite;
+}
+
+.dot.error {
+  background: #d32f2f;
+}
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+.status-text {
+  min-width: 120px;
+}
+
 .controls {
   display: flex;
   align-items: center;
@@ -209,6 +251,11 @@ defineExpose({
 
 .link-btn:hover {
   color: #aaa;
+}
+
+.link-btn:disabled {
+  text-decoration: none;
+  cursor: default;
 }
 
 .toggle-btn {
@@ -245,6 +292,11 @@ defineExpose({
   color: #fff;
 }
 
+.relaunch-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .terminals {
   flex: 1;
   display: flex;
@@ -269,5 +321,31 @@ defineExpose({
   color: #888;
   background: #1e1e1e;
   border-bottom: 1px solid #333;
+}
+
+.spawning-log {
+  flex: 1;
+  padding: 1rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #aaa;
+  overflow-y: auto;
+  background: #1a1a1a;
+}
+
+.log-title {
+  color: #666;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.log-entry {
+  margin-bottom: 0.2rem;
+}
+
+.error-hint {
+  margin-top: 1rem;
+  color: #f44;
+  font-weight: bold;
 }
 </style>

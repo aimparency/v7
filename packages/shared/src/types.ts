@@ -1,10 +1,13 @@
 import { z } from 'zod';
+import { AIM_STATES } from './constants.js';
 
 export const AimStatusSchema = z.object({
   state: z.string(),
   comment: z.string(),
   date: z.number() // Date.now() timestamp
 });
+
+export type AimStatusState = string;
 
 export const ConnectionSchema = z.object({
   aimId: z.string().uuid(),

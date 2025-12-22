@@ -3,6 +3,7 @@ import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
 import fs from 'fs-extra';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
@@ -641,7 +642,7 @@ const appRouter = t.router({
           description: z.string().optional(),
           tags: z.array(z.string()).optional(),
           status: z.object({
-            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']).optional(),
+            state: z.string().optional(),
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
@@ -782,7 +783,7 @@ const appRouter = t.router({
           description: z.string().optional(),
           tags: z.array(z.string()).optional(),
           status: z.object({
-            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']).optional(),
+            state: z.string().optional(),
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
@@ -836,7 +837,7 @@ const appRouter = t.router({
           description: z.string().optional(),
           tags: z.array(z.string()).optional(),
           status: z.object({
-            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']).optional(),
+            state: z.string().optional(),
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
@@ -893,7 +894,7 @@ const appRouter = t.router({
           description: z.string().optional(),
           tags: z.array(z.string()).optional(),
           status: z.object({
-            state: z.enum(['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived']).optional(),
+            state: z.string().optional(),
             comment: z.string().optional(),
             date: z.number().optional()
           }).optional(),
@@ -1227,6 +1228,32 @@ const appRouter = t.router({
       })
   }),
 
+  market: t.router({
+    updateConfig: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        config: z.object({
+          risk_level: z.number().optional(),
+          leverage: z.number().optional(),
+          strategy: z.string().optional()
+        })
+      }))
+      .mutation(async ({ input }) => {
+        // Find root dir by going up from this file's location
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const ROOT_DIR = path.resolve(__dirname, '../../..');
+        const configPath = path.join(ROOT_DIR, 'subdev/market-alpha/config.json');
+        let current = {};
+        if (await fs.pathExists(configPath)) {
+          current = await fs.readJson(configPath);
+        }
+        const updated = { ...current, ...input.config };
+        await fs.writeJson(configPath, updated, { spaces: 2 });
+        return updated;
+      })
+  }),
+
   project: t.router({
     onUpdate: t.procedure.subscription(() => {
       return observable<{ type: string, id: string, projectPath: string }>((emit) => {
@@ -1319,7 +1346,11 @@ const appRouter = t.router({
     updateMeta: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        meta: ProjectMetaSchema
+        meta: z.object({
+          name: z.string(),
+          color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+          statuses: z.array(z.any()).optional()
+        })
       }))
       .mutation(async ({ input }) => {
         const projectPath = normalizeProjectPath(input.projectPath);

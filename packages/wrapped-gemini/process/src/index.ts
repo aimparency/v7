@@ -59,6 +59,9 @@ let projectRootPath = path.resolve(__dirname, '../../../../');
 let workerModel: string | undefined; // 'gemini-3-pro'; 
 let watchdogModel: string | undefined; // 'gemini-3-flash'; 
 
+workerModel = 'gemini-3-pro-preview'
+watchdogModel = 'gemini-3-flash-preview'
+
 let clearEvery = 20;
 
 let requestedPort = 0;

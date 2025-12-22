@@ -22,15 +22,16 @@ export interface MockPhase {
   parent?: string | null;
 }
 
-export function seedProject(projectPath: string, data: { phases?: MockPhase[], aims?: MockAim[] }) {
+export function seedProject(projectPath: string, data: { phases?: MockPhase[], aims?: MockAim[], meta?: { name?: string, color?: string, statuses?: any[] } }) {
   const bowmanPath = join(projectPath, AIMPARENCY_DIR_NAME);
   mkdirSync(join(bowmanPath, 'aims'), { recursive: true });
   mkdirSync(join(bowmanPath, 'phases'), { recursive: true });
 
   // Write Meta
   writeFileSync(join(bowmanPath, 'meta.json'), JSON.stringify({
-    name: 'Test Project',
-    color: '#ff0000'
+    name: data.meta?.name || 'Test Project',
+    color: data.meta?.color || '#ff0000',
+    statuses: data.meta?.statuses || []
   }, null, 2));
 
   // Write Phases

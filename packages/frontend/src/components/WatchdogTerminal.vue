@@ -102,7 +102,8 @@ onUnmounted(() => {
 
 defineExpose({
   write,
-  fit
+  fit,
+  focus
 });
 </script>
 

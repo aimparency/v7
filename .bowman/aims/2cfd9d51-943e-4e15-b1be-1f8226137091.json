@@ -8,9 +8,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766396389948
+    "state": "done",
+    "comment": "Implemented VoiceClient.kt using Socket.io for real-time communication with voice-bridge.",
+    "date": 1766406247284
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -102,7 +102,7 @@ describe('Multi-Client Synchronization', () => {
     await store.loadProject(projectPath)
 
     expect(store.floatingAims.length).toBe(1)
-    expect(store.floatingAims[0].id).toBe(aimId)
+    expect(store.floatingAims[0]!.id).toBe(aimId)
     expect(store.getAimsForPhase(phaseId).length).toBe(0)
 
     // 2. Simulate Remote Update: Phase updated (commitments added)
@@ -117,7 +117,7 @@ describe('Multi-Client Synchronization', () => {
     // Check state: Aim should be in phase list?
     const phaseAims = store.getAimsForPhase(phaseId)
     expect(phaseAims.length).toBe(1)
-    expect(phaseAims[0].id).toBe(aimId)
+    expect(phaseAims[0]!.id).toBe(aimId)
 
     // 3. Simulate Remote Update: Aim updated (committedIn added)
     const updatedAim = { ...initialAim, committedIn: [phaseId] }
@@ -178,6 +178,8 @@ describe('Multi-Client Synchronization', () => {
 
     // Check: Now in phase
     expect(store.getAimsForPhase(phaseId).length).toBe(1)
-    expect(store.aims[aimId].text).toBe('New Aim')
+    // Verify sync
+    await new Promise(resolve => setTimeout(resolve, 500))
+    expect(store.aims[aimId]!.text).toBe('New Aim')
   })
 })

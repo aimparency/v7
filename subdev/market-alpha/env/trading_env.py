@@ -69,23 +69,35 @@ class TradingEnv:
             "portfolio_value": self.balance + (self.shares * current_price)
         }
 
-    def step(self, action):
+    def step(self, action, amount=1):
+        # Action: 0 = Hold, 1 = Buy, 2 = Sell
         current_price = self.prices[self.current_step]
         prev_portfolio_value = self.balance + (self.shares * current_price)
         
-        info = {"action": ["Hold", "Buy", "Sell"][action]}
+        info = {"action": ["Hold", "Buy", "Sell"][action], "amount": amount}
 
         if action == 1: # Buy
-            if self.balance >= current_price:
-                self.balance -= current_price
-                self.shares += 1
+            cost = current_price * amount
+            if self.balance >= cost:
+                self.balance -= cost
+                self.shares += amount
             else:
-                info["msg"] = "Insufficient funds"
+                # Buy as much as possible
+                max_buy = int(self.balance // current_price)
+                if max_buy > 0:
+                    self.balance -= current_price * max_buy
+                    self.shares += max_buy
+                    info["msg"] = f"Partial buy: {max_buy}/{amount}"
+                else:
+                    info["msg"] = "Insufficient funds"
         
         elif action == 2: # Sell
             if self.shares > 0:
-                self.balance += current_price
-                self.shares -= 1
+                sell_amount = min(amount, self.shares)
+                self.balance += current_price * sell_amount
+                self.shares -= sell_amount
+                if sell_amount < amount:
+                    info["msg"] = f"Partial sell: {sell_amount}/{amount}"
             else:
                 info["msg"] = "No shares to sell"
 

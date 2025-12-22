@@ -3,7 +3,7 @@ import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
-import type { Aim } from 'shared'
+import type { Aim, AimStatusState } from 'shared'
 import TagInput from './TagInput.vue'
 
 const uiStore = useUIStore()
@@ -15,7 +15,7 @@ const aimIntrinsicValue = ref(0)
 const aimCost = ref(1)
 const aimLoopWeight = ref(0)
 const aimTags = ref<string[]>([])
-const selectedStatus = ref<string>('open')
+const selectedStatus = ref<AimStatusState>('open')
 const statusComment = ref('')
 const searchResults = ref<Aim[]>([])
 

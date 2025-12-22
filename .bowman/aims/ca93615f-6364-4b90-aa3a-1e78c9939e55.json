@@ -3,14 +3,6 @@
   "text": "integrate watchdog",
   "description": "",
   "tags": [],
-  "committedIn": [
-    "f51f8930-c937-4c66-9db8-d4d313e6d286"
-  ],
-  "status": {
-    "state": "done",
-    "comment": "Completed full Watchdog integration: Multi-project backend manager, Frontend UI/Store with Socket.IO, Terminal emulation, and Relaunch capabilities. All sub-aims closed.",
-    "date": 1765544228350
-  },
   "supportingConnections": [
     {
       "aimId": "eb334eee-a1c9-4a4b-95d9-4334bb34b829",
@@ -45,14 +37,6 @@
       "weight": 1
     },
     {
-      "aimId": "dda6cb11-afd4-4b4e-9785-4526cd00c062",
-      "relativePosition": [
-        -0.3703966400715979,
-        2.472409013295266
-      ],
-      "weight": 1
-    },
-    {
       "aimId": "dcbd8807-83d6-492f-87be-8da3c34cc8cb",
       "relativePosition": [
         1.4110742419637803,
@@ -61,5 +45,16 @@
       "weight": 1
     }
   ],
-  "supportedAims": []
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Completed full Watchdog integration: Multi-project backend manager, Frontend UI/Store with Socket.IO, Terminal emulation, and Relaunch capabilities. All sub-aims closed.",
+    "date": 1765544228350
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }
