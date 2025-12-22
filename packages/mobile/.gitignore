@@ -1,0 +1,12 @@
+.gradle/
+build/
+app/build/
+*.iml
+.idea/
+local.properties
+.DS_Store
+app/src/main/assets/config.json
+# Optional: keep the wrapper but ignore local properties
+# gradlew
+# gradlew.bat
+# gradle/
