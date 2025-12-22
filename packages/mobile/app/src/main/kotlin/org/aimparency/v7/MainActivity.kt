@@ -1,4 +1,4 @@
-package com.aimparency.v7
+package org.aimparency.v7
 
 import android.Manifest
 import android.content.Intent
@@ -13,16 +13,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.charset.Charset
 import java.util.*
 
 class MainActivity : ComponentActivity() {
@@ -33,8 +44,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        val serverUrl = "http://localhost:5005" 
-        val projectPath = "/home/felix/dev/aimparency/v7/.bowman"
+        // Load Dynamic Config
+        val config = loadConfig()
+        val serverUrl = config.optString("serverUrl", "http://127.0.0.1:5005")
+        val projectPath = config.optString("projectPath", "")
 
         voiceClient = VoiceClient(serverUrl)
 
@@ -59,16 +72,18 @@ class MainActivity : ComponentActivity() {
                     override fun onDisconnect() { status = "Disconnected" }
                     override fun onError(message: String) { status = "Error: $message" }
                     override fun onAudioChunk(text: String, audio: ByteArray?) {
-                        lastAiText = if (lastAiText.isEmpty()) text else "$lastAiText $text"
+                        lastAiText = text
                         audio?.let { audioPlayer.playChunk(it, context) }
+                        
+                        if (!isListening) {
+                            startListening(projectPath)
+                            isListening = true
+                        }
                     }
-                    override fun onResponseComplete() {
-                        // Response stream finished, but audio might still be playing
-                    }
+                    override fun onResponseComplete() {}
                 })
                 
                 audioPlayer.onPlaybackFinished = {
-                    // AI finished speaking, resume listening
                     if (status.contains("Connected")) {
                         startListening(projectPath)
                     }
@@ -76,12 +91,11 @@ class MainActivity : ComponentActivity() {
 
                 speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
                     setRecognitionListener(object : RecognitionListener {
-                        override fun onReadyForSpeech(params: Bundle?) { status = "Listening..." }
+                        override fun onReadyForSpeech(params: Bundle?) { status = "Listening..."; isListening = true }
                         override fun onEndOfSpeech() { isListening = false; status = "Processing..." }
                         override fun onError(error: Int) { 
                             status = "STT Error: $error"
                             isListening = false 
-                            // Auto-restart on timeout or no match
                             if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
                                 startListening(projectPath)
                             }
@@ -91,11 +105,9 @@ class MainActivity : ComponentActivity() {
                             matches?.firstOrNull()?.let { transcript ->
                                 voiceClient.sendTranscript(transcript, projectPath)
                             }
-                            // Important: restart listening after processing result
                             startListening(projectPath)
                         }
                         override fun onBeginningOfSpeech() {
-                            // INTERRUPT: Stop AI if user starts talking
                             audioPlayer.stop()
                             status = "User speaking..."
                         }
@@ -116,37 +128,76 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = Color(0xFF121212)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(text = "Aimparency Voice", style = MaterialTheme.typography.headlineMedium)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(text = "Status: $status")
-                        Spacer(modifier = Modifier.height(32.dp))
-                        
+                    Box(contentAlignment = Alignment.Center) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(32.dp)
+                        ) {
+                            Text(
+                                text = status.uppercase(),
+                                color = if (isListening) Color(0xFF007ACC) else Color.Gray,
+                                style = MaterialTheme.typography.labelMedium,
+                                letterSpacing = 2.sp
+                            )
+                            
+                            Spacer(modifier = Modifier.height(100.dp))
+
+                            VoicePulse(isListening = isListening)
+
+                            Spacer(modifier = Modifier.height(100.dp))
+
+                            Text(
+                                text = lastAiText,
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyLarge,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 16.dp)
+                            )
+                        }
+
                         if (status == "Disconnected") {
-                            Button(onClick = { voiceClient.connect() }) {
-                                Text("Connect to Bridge")
-                            }
-                        } else {
-                            Text(text = "AI: $lastAiText", style = MaterialTheme.typography.bodyLarge)
-                            Spacer(modifier = Modifier.height(16.dp))
                             Button(
+                                onClick = { voiceClient.connect() },
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 64.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007ACC))
+                            ) {
+                                Text("INITIALIZE CONNECTION")
+                            }
+                        } else if (!isListening && !status.startsWith("User") && !status.startsWith("Listening")) {
+                             IconButton(
                                 onClick = { 
                                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                                         startListening(projectPath)
-                                        isListening = true
                                     } else {
                                         permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                                     }
                                 },
-                                enabled = !isListening
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 64.dp)
+                                    .size(72.dp)
+                                    .background(Color(0xFF007ACC), CircleShape)
                             ) {
-                                Text(if (isListening) "Listening..." else "Talk to AI")
+                                Text("🎤", fontSize = 24.sp)
+                            }
+                        } else {
+                            // Stop Button
+                             IconButton(
+                                onClick = { 
+                                    audioPlayer.stop()
+                                    speechRecognizer?.stopListening()
+                                    isListening = false
+                                    status = "Stopped"
+                                },
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 64.dp)
+                                    .size(72.dp)
+                                    .background(Color(0xFFE57373), CircleShape)
+                            ) {
+                                Text("⏹", fontSize = 24.sp)
                             }
                         }
                     }
@@ -159,8 +210,23 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
+            // Pass projectPath as an extra to be picked up in results if needed
+            putExtra("projectPath", projectPath)
         }
         speechRecognizer?.startListening(intent)
+    }
+
+    private fun loadConfig(): JSONObject {
+        return try {
+            val inputStream = assets.open("config.json")
+            val size = inputStream.available()
+            val buffer = ByteArray(size)
+            inputStream.read(buffer)
+            inputStream.close()
+            JSONObject(String(buffer, Charset.forName("UTF-8")))
+        } catch (e: Exception) {
+            JSONObject()
+        }
     }
 }
 
@@ -228,5 +294,47 @@ class AudioPlayer {
         mediaPlayer = null
         queue.forEach { it.delete() }
         queue.clear()
+    }
+}
+
+@Composable
+fun VoicePulse(isListening: Boolean) {
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    
+    val waveCount = 3
+    val waves = List(waveCount) { index ->
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(2000, delayMillis = index * 600, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "wave-$index"
+        )
+    }
+
+    Box(contentAlignment = Alignment.Center) {
+        waves.forEach { progress ->
+            Canvas(modifier = Modifier.size(200.dp)) {
+                drawCircle(
+                    color = Color(0xFF007ACC),
+                    radius = size.minDimension / 2 * progress.value,
+                    alpha = (1f - progress.value) * (if (isListening) 0.8f else 0.3f),
+                    style = Stroke(width = 2.dp.toPx())
+                )
+            }
+        }
+        
+        // Inner Glow
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .background(
+                    if (isListening) Color(0xFF007ACC) else Color(0xFF1E1E1E),
+                    CircleShape
+                )
+                .clip(CircleShape)
+        )
     }
 }

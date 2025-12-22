@@ -55,8 +55,8 @@ test('saveAimValues replaces existing values', () => {
   assert.equal(retrieved.size, 2);
   
   const aim1 = retrieved.get('aim-1');
-  assert.equal(aim1.value, 15);
+  assert.equal(aim1!.value, 15);
   
   const aim3 = retrieved.get('aim-3');
-  assert.equal(aim3.value, 30);
+  assert.equal(aim3!.value, 30);
 });

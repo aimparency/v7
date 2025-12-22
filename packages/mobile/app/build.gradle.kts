@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.aimparency.v7"
+    namespace = "org.aimparency.v7"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.aimparency.v7"
+        applicationId = "org.aimparency.v7"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -37,7 +37,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+        kotlinCompilerExtensionVersion = "1.4.7"
     }
     packaging {
         resources {
@@ -55,6 +55,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("com.google.android.material:material:1.11.0")
     
     // Networking
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { calculateAimValues } from './value-calculation.js';
+import { calculateAimValues } from 'shared';
 import type { Aim } from 'shared';
 
 test('calculateAimValues - simple distribution', () => {

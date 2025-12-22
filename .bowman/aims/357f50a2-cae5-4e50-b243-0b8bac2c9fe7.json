@@ -8,9 +8,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766396410964
+    "state": "done",
+    "comment": "Implemented minimalist Jetpack Compose UI with reactive wave animations (`VoicePulse`). Centered the interface around the vocal interaction.",
+    "date": 1766407936899
   },
   "intrinsicValue": 0,
   "cost": 1,

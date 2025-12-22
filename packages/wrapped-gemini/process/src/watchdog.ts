@@ -251,7 +251,7 @@ What shall we do about this situation?
 ${PROMPT_MARKER}
 `;
     
-    await this.post(this.watchdog, singleLineQuestion);
+    await this.post(this.watchdog, question);
   }
 
   async processDecision(jsonString: string) {

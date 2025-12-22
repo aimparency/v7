@@ -1,4 +1,4 @@
-package com.aimparency.v7
+package org.aimparency.v7
 
 import io.socket.client.IO
 import io.socket.client.Socket
