@@ -10,3 +10,4 @@ packages/embedder/venv/
 
 .env
 logs
+cache.db

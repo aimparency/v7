@@ -1,0 +1,143 @@
+- the terminals: 
+  - when scrolling: switch scroll mode to "no automatic scroll" or so. manual scroll. 
+  - if in manual scroll show button fixed in bottom right corner with an arrow down
+  - clicking the button reactivates autoscroll (current behavior: always scroll down after an update)
+
+- voice interface: 
+  - steer and ideate handsfree with voice only
+    - converse and model does the formulation of aims etc.
+
+- take the last json object (search from the last closing bracket)
+
+- don't rerun the embedding generation every time (save them somewhere!)
+
+---
+
+- drag aims (when 
+- when clicking into the void, handle should deselect
+
+---
+
+- aims cannot be selected, but should be (should have a stroke when selected), make sure that the camera does not follow when selected. maybe introduce a "followSelected" that gets set to false on first pan/zoom. 
+- aim title text should fill circle (multi line), but still ellipse. make sure it does not recompute but is cached. Maybe vue compute internal dynamics suffices
+
+---
+
+- changes to relative position do not yet persist. persist them with a 5s debounce all the way to the json file
+
+---
+
+- when one aim is selected, clicking another aims should not create a connection. check the reference implementation. only when an aim is selected and we then drag from that aim (mouse down on a selected aim) to another aim, we create a connection. mouse/touchdown on a *non-selected* and dragging keeps moving the aim. 
+
+- label lines in circle are not yet properly centered vertically in the circle. 
+
+---
+
+- clicking an aim still can create a connection immedeately for some reason. find the code and remove it. Look for to which aim it get's connected. I think it's some invisible aim selected state
+
+---
+
+- we do need a side panel. much simpler than in the reference implementation. 
+  - when connection is clicked, it has two buttons for the connected aims
+    - selecting an aim here focuses it (camera moves to it, followSelectedAim = true)
+  - when aim is clicked, it has a list of supported and a list of supporting aims
+    - clicking them selects and focuses the connection (move camera to target pan and posistion so that the rect that is described by from and to position is centered and the zoom so that the larger one of (displayrectwidth / graphview.width) and (displayrectheight / graphview.height) is 0.3
+  - the side panel should be 0.3 opacity as long as not hovered
+  - connections have this additional ui: 
+    - edit weight 
+    - there should be buttons for removing a connection
+    - edit explanation (needs to be added to the data model. textual explanation for the connection. "why does it support, how?")
+
+---
+
+- when clicking and selecting a connection from the side panel, it has to be selected in a way that connection handles show
+- when connection drag into emptyness, the aim should not be deselected. 
+- also persist the camera position and zoom when persisting the aim positions (the indexdb persistance)
+
+---
+
+- font size in side panel has to be much smaller. 1rem in general
+- reduce custom styling in the side panel. rely on style.css global style e.g. for text color. no black text color. make the remove button switch to "confirm" instead of alert and defuse on blur.
+- move the sidepanel to the left top corner
+- make it resizeable
+
+---
+
+when dragging connections the created connection points the wrong way. 
+dragfrom should become supporting aim and dragto supported aim. 
+arrow direction is flow of support. 
+
+about the sidepanel in graphui: resize should only affect the width. because the height should extend all the way to the bottom (respecting some margin) and then scroll. let's move the side panel to the right side again. the resize handle should be all the left edge of the side menu. the aim title font-size is still too huge. 
+
+--- 
+
+when dragging relative position handlers - because the aims move, can we keep updating the handle position even if mouse is not moving while mouse down? 
+
+---
+
+Okay in the sidebar put aims into some kind of div. 
+Also in Connection sidebar put the aims in the same kind (same style) of div. 
+
+For the selected Aim we would like to see the value (multiplied with total inflow, rounded to 2 decimal places).
+Also for the selected aim (only the selected aim again), show the description with maybe 0.8rem or so. (similar to description in column list view!)
+
+---
+
+And then let's try to understand this: 
+Node Selected: the last line of main agent in watchdog ui (standalon npm run start web app) is cut off/ not fully visible (00247a1a-2104-4a17-88ec-d08958e22173) GraphView.vue:431:11
+- Radius: 245.73480147182087 GraphView.vue:432:11
+- Value: 0.017458135932250814 GraphView.vue:433:11
+- Links (1): GraphView.vue:436:11
+  * -> put the aim search results in add aim directly beneath aim text and bfore description. (8fe1aa4e-d89d-4bc0-b9ab-8fd412d24d3b) GraphView.vue:441:13
+    - Share: 1.000 GraphView.vue:442:13
+    - Weight: 1 GraphView.vue:443:13
+    - Target R: 324.38980529044176 GraphView.vue:444:13
+    - Width: 324.4 GraphView.vue:445:13
+Node Selected: put the aim search results in add aim directly beneath aim text and bfore description. (8fe1aa4e-d89d-4bc0-b9ab-8fd412d24d3b) GraphView.vue:431:11
+- Radius: 324.38980529044176 GraphView.vue:432:11
+- Value: 0.03092454828119241 GraphView.vue:433:11
+- Links (2): GraphView.vue:436:11
+  * <- the last line of main agent in watchdog ui (standalon npm run start web app) is cut off/ not fully visible (00247a1a-2104-4a17-88ec-d08958e22173) GraphView.vue:441:13
+    - Share: 1.000 GraphView.vue:442:13
+    - Weight: 1 GraphView.vue:443:13
+    - Target R: 324.38980529044176 GraphView.vue:444:13
+    - Width: 324.4 GraphView.vue:445:13
+  * -> ui-enhancements (f2337265-ffc6-4ae8-a421-d6e4d5540210) GraphView.vue:441:13
+    - Share: 0.250 GraphView.vue:442:13
+    - Weight: 1 GraphView.vue:443:13
+    - Target R: 855.4993109388247 GraphView.vue:444:13
+    - Width: 213.9 GraphView.vue:445:13
+
+How can it be that the link share is 1 but the value is different than the parent value?
+
+---
+
+I think it would be a good thing if the sidepanel opacity get's set to 1 when an aim or connection is selected. When the user starts zoom or pan the opacity is low again if not hovering. 
+
+---
+
+should be possible to drag resize watchdog area portion from below
+
+---
+
+the graph should check the indexdb state 
+
+---
+
+we need a watchdog broker that returns a port with the watchdog backend for a specific project path. if there is no watchdog backend instance for that project path, a new backend process is spun up. if we don't get a keepalive for 5 minutes we close the backend process. 
+otherwise clients about the same project path (including the .bowman) should share the same backend process. 
+
+---
+
+about the watchdog state on the aimparency web ui:
+showing: boolean, // whether it's showing
+connected: boolean, // whether a connection is active to the backend watchdog broker, sending keepalives
+
+we need a button to disconnect. maybe on the left side where it also shows the connection state. 
+And very important: when showing the first time, connection may be established automatically. but then,
+showing and connected should remain independently. Meaning, it can not be showing but still be
+connected. Also, can we store the view state locally just like we store the column/graph ui view mode
+state?
+
+ideally, when the page reloads (e.g. because dev server picks up code changes), it should connect to the
+same backend watchdog instance than before and continue showing the state.
