@@ -11,6 +11,30 @@
         1.5897220211761312
       ],
       "weight": 1
+    },
+    {
+      "aimId": "2cfd9d51-943e-4e15-b1be-1f8226137091",
+      "relativePosition": [
+        1.593325664232231,
+        -1.9264769211435988
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "22346b05-fd69-45d0-87f9-0028b8f5efcd",
+      "relativePosition": [
+        2.4870797385353414,
+        -0.2538392683707132
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "357f50a2-cae5-4e50-b243-0b8bac2c9fe7",
+      "relativePosition": [
+        -0.7554957991341762,
+        2.3831126908920215
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [],
@@ -23,5 +47,6 @@
     "date": 1766052562641
   },
   "intrinsicValue": 0,
+  "cost": 1,
   "loopWeight": 0
 }

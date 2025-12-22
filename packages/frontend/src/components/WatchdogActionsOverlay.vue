@@ -1,31 +1,56 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
+import { useUIStore } from '../stores/ui'
 
 const store = useWatchdogStore()
+const uiStore = useUIStore()
 const selectedIndex = ref(0)
 
 const actions = [
   {
     id: 'toggle',
+    key: 't',
     label: () => store.isEnabled ? 'Disable Watchdog' : 'Enable Watchdog',
     action: () => store.toggle(),
     icon: '⚡'
   },
   {
+    id: 'search',
+    key: 'a',
+    label: () => 'Search & Insert Aim',
+    action: () => {
+      uiStore.openAimSearch('pick', (aim) => {
+        const textToInsert = `[${aim.id}] ${aim.text}`
+        store.sendWorkerInput(textToInsert)
+      })
+    },
+    icon: '🔍'
+  },
+  {
+    id: 'hide',
+    key: 'w',
+    label: () => 'Hide Watchdog Panel',
+    action: () => { uiStore.showWatchdog = false },
+    icon: '👁️'
+  },
+  {
     id: 'clear',
+    key: 'c',
     label: () => 'Clear Main Agent Context',
     action: () => store.sendWorkerInput('/clear\r\n'),
     icon: '🧹'
   },
   {
     id: 'relaunch',
+    key: 'r',
     label: () => 'Relaunch Watchdog Process',
     action: () => store.relaunch(),
     icon: '🔄'
   },
   {
     id: 'cancel',
+    key: 'Escape',
     label: () => 'Cancel',
     action: () => { store.showActionsOverlay = false },
     icon: '❌'
@@ -33,27 +58,54 @@ const actions = [
 ]
 
 const handleKeydown = (e: KeyboardEvent) => {
+  // BLOCK ALL input from reaching xterm
+  e.preventDefault()
+  e.stopPropagation()
+
   if (e.key === 'j' || e.key === 'ArrowDown') {
     selectedIndex.value = (selectedIndex.value + 1) % actions.length
   } else if (e.key === 'k' || e.key === 'ArrowUp') {
     selectedIndex.value = (selectedIndex.value - 1 + actions.length) % actions.length
   } else if (e.key === 'Enter') {
-    const action = actions[selectedIndex.value]
-    action.action()
-    if (action.id !== 'cancel') store.showActionsOverlay = false
+    executeAction(actions[selectedIndex.value])
   } else if (e.key === 'Escape') {
     store.showActionsOverlay = false
+  } else {
+    // Check for direct key matches
+    const key = e.key.toLowerCase()
+    const match = actions.find(a => a.key === key)
+    if (match) {
+      executeAction(match)
+    }
   }
-  // Prevent propagation to terminals
+}
+
+const executeAction = (action: any) => {
+  action.action()
+  if (action.id !== 'cancel') store.showActionsOverlay = false
+}
+
+const blockEvent = (e: Event) => {
+  e.preventDefault()
   e.stopPropagation()
 }
 
 onMounted(() => {
-  window.addEventListener('keydown', handleKeydown, true) // Bubble down
+  // Ensure terminals lose focus
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur()
+  }
+  
+  // Register handlers in capture phase to intercept before terminals
+  window.addEventListener('keydown', handleKeydown, true)
+  window.addEventListener('keypress', blockEvent, true)
+  window.addEventListener('keyup', blockEvent, true)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown, true)
+  window.removeEventListener('keypress', blockEvent, true)
+  window.removeEventListener('keyup', blockEvent, true)
 })
 </script>
 
@@ -67,15 +119,18 @@ onUnmounted(() => {
           :key="action.id"
           class="action-item"
           :class="{ selected: index === selectedIndex }"
-          @click="action.action(); if (action.id !== 'cancel') store.showActionsOverlay = false"
+          @click="executeAction(action)"
           @mouseenter="selectedIndex = index"
         >
           <span class="icon">{{ action.icon }}</span>
-          <span class="label">{{ action.label() }}</span>
+          <div class="action-content">
+            <span class="label">{{ action.label() }}</span>
+            <span v-if="action.key && action.key !== 'Escape'" class="key-hint">{{ action.key.toUpperCase() }}</span>
+          </div>
         </div>
       </div>
       <div class="modal-footer">
-        Use <kbd>J</kbd>/<kbd>K</kbd> to navigate, <kbd>Enter</kbd> to select
+        <kbd>J</kbd>/<kbd>K</kbd> navigate, <kbd>Enter</kbd> select, or press key
       </div>
     </div>
   </div>
@@ -99,7 +154,7 @@ onUnmounted(() => {
   background: #252526;
   border: 1px solid #444;
   border-radius: 8px;
-  width: 300px;
+  width: 320px;
   overflow: hidden;
   box-shadow: 0 10px 25px rgba(0,0,0,0.5);
 }
@@ -127,6 +182,11 @@ onUnmounted(() => {
   &.selected {
     background: #094771;
     color: white;
+    
+    .key-hint {
+      color: #aaa;
+      border-color: #666;
+    }
   }
 
   .icon {
@@ -135,8 +195,23 @@ onUnmounted(() => {
     text-align: center;
   }
 
+  .action-content {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
   .label {
     font-size: 0.9rem;
+  }
+
+  .key-hint {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+    border: 1px solid #444;
+    border-radius: 3px;
+    color: #666;
   }
 }
 

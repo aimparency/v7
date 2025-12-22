@@ -8,7 +8,7 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME } from 'shared';
+import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME, DEFAULT_STATUSES } from 'shared';
 import type { Aim, Phase, ProjectMeta, SystemStatus, SearchAimResult } from 'shared';
 import {
   indexAims,
@@ -1243,34 +1243,36 @@ const appRouter = t.router({
       .query(async ({ input }) => {
         const projectPath = normalizeProjectPath(input.projectPath);
         const metaPath = path.join(projectPath, 'meta.json');
+        
+        let meta: ProjectMeta;
+        
         if (await fs.pathExists(metaPath)) {
-          return await fs.readJson(metaPath);
+          meta = await fs.readJson(metaPath);
+          // Merge defaults if missing properties (like statuses)
+          if (!meta.statuses) {
+              meta.statuses = DEFAULT_STATUSES;
+          }
+          return meta;
         }
         
         // Initialize with defaults if missing
-        const projectDir = path.basename(projectPath); // Use normalized path which ends in .bowman's parent (if we normalize it correctly)
-        // Wait, normalizeProjectPath returns /path/to/.bowman.
-        // So basename is .bowman?
-        // No, normalizeProjectPath appends .bowman if missing.
-        // So projectPath is /.../.bowman
-        
-        // We want the parent dir name as project name
         const parentDir = path.dirname(projectPath);
         const name = path.basename(parentDir) || 'Project';
         
-        const defaultMeta: ProjectMeta = {
+        meta = {
             name,
-            color: '#007acc'
+            color: '#007acc',
+            statuses: DEFAULT_STATUSES
         };
         
         try {
             await ensureProjectStructure(projectPath);
-            await fs.writeJson(metaPath, defaultMeta, { spaces: 2 });
+            await fs.writeJson(metaPath, meta, { spaces: 2 });
         } catch (e) {
             console.error("Failed to initialize meta.json", e);
         }
         
-        return defaultMeta;
+        return meta;
       }),
 
     buildSearchIndex: delayedProcedure
@@ -1317,10 +1319,7 @@ const appRouter = t.router({
     updateMeta: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        meta: z.object({
-          name: z.string(),
-          color: z.string().regex(/^#[0-9a-fA-F]{6}$/)
-        })
+        meta: ProjectMetaSchema
       }))
       .mutation(async ({ input }) => {
         const projectPath = normalizeProjectPath(input.projectPath);

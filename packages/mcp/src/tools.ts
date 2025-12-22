@@ -362,6 +362,18 @@ export function registerTools(server: Server, clientOverride?: any) {
                 description: "Hex color code (e.g., #FF5733)",
                 pattern: "^#[0-9a-fA-F]{6}$",
               },
+              statuses: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    key: { type: "string" },
+                    color: { type: "string", pattern: "^#[0-9a-fA-F]{6}$" }
+                  },
+                  required: ["key", "color"]
+                },
+                description: "Custom aim statuses"
+              }
             },
             required: ["projectPath", "name", "color"],
           },
@@ -512,7 +524,8 @@ export function registerTools(server: Server, clientOverride?: any) {
 
             // 2. Get the phase to find roots
             const phases = await trpcClient.phase.list.query({
-                projectPath: args.projectPath as string
+                projectPath: args.projectPath as string,
+                all: true
             });
             const phase = phases.find((p: any) => p.id === args.phaseId);
             if (!phase) throw new Error(`Phase ${args.phaseId} not found`);

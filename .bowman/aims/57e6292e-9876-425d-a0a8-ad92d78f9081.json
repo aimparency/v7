@@ -1,0 +1,18 @@
+{
+  "id": "57e6292e-9876-425d-a0a8-ad92d78f9081",
+  "text": "Enable Dynamic Hyperparameter Tuning via MCP (adjust env/agent settings)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "de2686b1-db2b-4524-a969-adc4a3acc1b8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766396364938
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

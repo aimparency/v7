@@ -1,0 +1,18 @@
+{
+  "id": "2cfd9d51-943e-4e15-b1be-1f8226137091",
+  "text": "Implement Kotlin tRPC/WebSocket Client for Real-time Status Sync",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "93149e0b-ef1a-424d-b9db-ffef9f50957d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766396389948
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

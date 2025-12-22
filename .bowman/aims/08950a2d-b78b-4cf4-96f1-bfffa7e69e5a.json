@@ -1,0 +1,18 @@
+{
+  "id": "08950a2d-b78b-4cf4-96f1-bfffa7e69e5a",
+  "text": "Implement Performance Trend Analyzer (identify drawdown/growth regimes)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "de2686b1-db2b-4524-a969-adc4a3acc1b8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766396353918
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

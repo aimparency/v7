@@ -1,0 +1,18 @@
+{
+  "id": "22346b05-fd69-45d0-87f9-0028b8f5efcd",
+  "text": "Setup Android Voice Pipeline (Local STT & Google Cloud TTS)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "93149e0b-ef1a-424d-b9db-ffef9f50957d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766396399960
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

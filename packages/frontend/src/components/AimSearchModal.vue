@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useUIStore, type AimPath } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
@@ -93,12 +93,23 @@ watch(searchQuery, (newVal) => {
   }, 150)
 })
 
-const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape') {
-    e.preventDefault()
+const blockLeakage = (e: KeyboardEvent) => {
+  // If typing in search input, let it through to the input but stop it from reaching others
+  // UNLESS it's a navigation key (ArrowDown, ArrowUp, Enter) which we want to handle
+  const isNavKey = ['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Tab'].includes(e.key)
+  const isInputTarget = e.target === searchInput.value
+
+  if (isInputTarget && !isNavKey) {
     e.stopPropagation()
+    return
+  }
+  
+  // Handle navigation/selection logic
+  e.preventDefault()
+  e.stopPropagation()
+
+  if (e.key === 'Escape') {
     if (pathSelectionMode.value) {
-      // Go back to search results
       pathSelectionMode.value = false
       selectedIndex.value = 0
       focusedResultIndex.value = -1
@@ -110,107 +121,67 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 
   const listLength = pathSelectionMode.value ? availablePaths.value.length : searchResults.value.length
-  if (listLength === 0) {
-    return // Only Escape is handled if no results
-  }
-
-  const isInputFocused = (document.activeElement === searchInput.value)
-
-  // Allow typing j/k in input (only in search mode)
-  if (!pathSelectionMode.value && isInputFocused && (e.key === 'j' || e.key === 'k')) {
-    return
-  }
+  if (listLength === 0) return
 
   switch(e.key) {
     case 'ArrowDown':
-    case 'j': // Vim style for navigation
-      e.preventDefault()
-      e.stopPropagation()
-      if (isInputFocused) {
-        if (e.key === 'ArrowDown' && listLength > 0) {
-           // ArrowDown from input goes to list
-           focusedResultIndex.value = selectedIndex.value
-          nextTick(() => {
-            const items = resultsListRef.value?.querySelectorAll('.result-item')
-            const el = items?.[focusedResultIndex.value] as HTMLElement
-            if (el) {
-              el.focus()
-              el.scrollIntoView({ block: 'nearest' })
-            }
-           })
-        }
-        // j from input types (handled by pre-check)
-      } else {
-        // Navigate list
-        if (focusedResultIndex.value < listLength - 1) {
-          focusedResultIndex.value++
-          selectedIndex.value = focusedResultIndex.value
-          nextTick(() => {
-            const items = resultsListRef.value?.querySelectorAll('.result-item')
-            const el = items?.[focusedResultIndex.value] as HTMLElement
-            if (el) {
-              el.focus()
-              el.scrollIntoView({ block: 'nearest' })
-            }
-          })
-        }
+    case 'j':
+      if (!isInputTarget || e.key === 'ArrowDown') {
+         focusedResultIndex.value = selectedIndex.value
+         if (focusedResultIndex.value < listLength - 1) {
+            focusedResultIndex.value++
+            selectedIndex.value = focusedResultIndex.value
+            nextTick(() => {
+                const items = resultsListRef.value?.querySelectorAll('.result-item')
+                const el = items?.[focusedResultIndex.value] as HTMLElement
+                if (el) {
+                    el.focus()
+                    el.scrollIntoView({ block: 'nearest' })
+                }
+            })
+         }
       }
       break
     case 'ArrowUp':
-    case 'k': // Vim style for navigation
-      e.preventDefault()
-      e.stopPropagation()
-      if (!isInputFocused) {
-        // Navigate list, stop at top
-        if (focusedResultIndex.value > 0) {
-          focusedResultIndex.value--
-          selectedIndex.value = focusedResultIndex.value
-          nextTick(() => {
-            const items = resultsListRef.value?.querySelectorAll('.result-item')
-            const el = items?.[focusedResultIndex.value] as HTMLElement
-            if (el) {
-              el.focus()
-              el.scrollIntoView({ block: 'nearest' })
-            }
-          })
-        }
+    case 'k':
+      if (!isInputTarget || e.key === 'ArrowUp') {
+         if (focusedResultIndex.value > 0) {
+            focusedResultIndex.value--
+            selectedIndex.value = focusedResultIndex.value
+            nextTick(() => {
+                const items = resultsListRef.value?.querySelectorAll('.result-item')
+                const el = items?.[focusedResultIndex.value] as HTMLElement
+                if (el) {
+                    el.focus()
+                    el.scrollIntoView({ block: 'nearest' })
+                }
+            })
+         } else if (focusedResultIndex.value === 0) {
+             // Go back to input? Optional. Currently we stay at top.
+         }
       }
       break
     case 'Enter':
-      e.preventDefault()
-      e.stopPropagation()
       if (pathSelectionMode.value) {
         const path = availablePaths.value[selectedIndex.value]
-        if (path) {
-          selectPath(path)
-        }
-      }
-      else {
+        if (path) selectPath(path)
+      } else {
         const result = searchResults.value[selectedIndex.value]
-        if (result) {
-          selectAim(result)
-        }
+        if (result) selectAim(result)
       }
       break
     case 'Tab':
-      e.preventDefault()
-      e.stopPropagation()
-      if (isInputFocused) {
-        // Switch to Results List (focus selected item)
-        if (listLength > 0) {
-           focusedResultIndex.value = selectedIndex.value
-           nextTick(() => {
-             const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
-             if (el) {
-               el.focus()
-               el.scrollIntoView({ block: 'nearest' })
-             }
-           })
-        }
+      if (isInputTarget) {
+         if (listLength > 0) {
+             focusedResultIndex.value = selectedIndex.value
+             nextTick(() => {
+                 const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
+                 if (el) el.focus()
+             })
+         }
       } else {
-        // Switch to Input
-        focusedResultIndex.value = -1
-        searchInput.value?.focus()
+          focusedResultIndex.value = -1
+          searchInput.value?.focus()
       }
       break
   }
@@ -292,6 +263,8 @@ const selectPath = async (path: AimPath) => {
   }
 }
 
+
+
 const close = () => {
   searchQuery.value = ''
   searchResults.value = []
@@ -303,13 +276,25 @@ const close = () => {
 }
 
 onMounted(() => {
+  // Ensure terminals lose focus
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur()
+  }
+  
+  // Capture phase to intercept before terminals
+  window.addEventListener('keydown', blockLeakage, true)
+  
   // Ensure input is focused when modal opens
   nextTick(() => searchInput.value?.focus())
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', blockLeakage, true)
 })
 </script>
 
 <template>
-  <div class="search-overlay" @click.self="close" @keydown="handleKeydown">
+  <div class="search-overlay" @click.self="close">
     <div class="search-modal">
       <div class="search-input-wrapper">
         <span class="search-icon">/</span>

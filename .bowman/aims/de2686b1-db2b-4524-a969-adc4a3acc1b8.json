@@ -1,0 +1,43 @@
+{
+  "id": "de2686b1-db2b-4524-a969-adc4a3acc1b8",
+  "text": "Hypothesis: Autonomous Parameter Optimization for Market Alpha",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "08950a2d-b78b-4cf4-96f1-bfffa7e69e5a",
+      "relativePosition": [
+        -1.051789376007439,
+        2.267981284869406
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "57e6292e-9876-425d-a0a8-ad92d78f9081",
+      "relativePosition": [
+        -1.051571548962151,
+        2.268082290705816
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "290f1baf-9d8d-487e-8a82-d92fa8585283",
+      "relativePosition": [
+        2.330060954690005,
+        -0.9059889333921817
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766396337918
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

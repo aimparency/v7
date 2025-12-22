@@ -62,6 +62,7 @@ export const useUIStore = defineStore('ui', {
     aimSearchMode: 'navigate' as 'navigate' | 'pick',
     aimSearchCallback: null as ((aim: Aim) => void) | null,
     showSettingsModal: false,
+    showWatchdog: localStorage.getItem('aimparency-show-watchdog') === 'true',
 
     // Navigation mode system
     navigatingAims: false, 

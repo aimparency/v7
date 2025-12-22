@@ -1,0 +1,18 @@
+{
+  "id": "357f50a2-cae5-4e50-b243-0b8bac2c9fe7",
+  "text": "Build Minimalist Voice-First UI with Jetpack Compose",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "93149e0b-ef1a-424d-b9db-ffef9f50957d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766396410964
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

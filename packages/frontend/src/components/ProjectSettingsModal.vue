@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
@@ -12,22 +12,39 @@ const color = ref('#007acc')
 const statuses = ref<Array<{ key: string, color: string }>>([])
 const loading = ref(false)
 
-watch(() => uiStore.showSettingsModal, async (val) => {
-  if (val) {
-    loading.value = true
-    try {
-      const meta = dataStore.meta || await trpc.project.getMeta.query({ projectPath: uiStore.projectPath })
-      if (meta) {
-          name.value = meta.name
-          color.value = meta.color
-          statuses.value = JSON.parse(JSON.stringify(meta.statuses || DEFAULT_STATUSES))
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      loading.value = false
-    }
+const blockLeakage = (e: KeyboardEvent) => {
+  // If typing in any input, let it through but stop it from reaching others
+  if (e.target instanceof HTMLInputElement) {
+    e.stopPropagation()
+    return
   }
+  e.stopPropagation()
+}
+
+onMounted(async () => {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur()
+  }
+  window.addEventListener('keydown', blockLeakage, true)
+
+  // Load data
+  loading.value = true
+  try {
+    const meta = dataStore.meta || await trpc.project.getMeta.query({ projectPath: uiStore.projectPath })
+    if (meta) {
+        name.value = meta.name
+        color.value = meta.color
+        statuses.value = JSON.parse(JSON.stringify(meta.statuses || DEFAULT_STATUSES))
+    }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', blockLeakage, true)
 })
 
 const handleKeydown = (e: KeyboardEvent) => {

@@ -18,14 +18,13 @@ const uiStore = useUIStore()
 const dataStore = useDataStore()
 
 // Local UI state
-const showWatchdog = ref(localStorage.getItem('aimparency-show-watchdog') === 'true')
 const watchdogHeight = ref(parseInt(localStorage.getItem('aimparency-watchdog-height') || '300'))
 const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
 const showConsistencyModal = ref(false)
 const isResizingWatchdog = ref(false)
 
 // Persist watchdog visibility and handle focus
-watch(showWatchdog, (val) => {
+watch(() => uiStore.showWatchdog, (val) => {
   localStorage.setItem('aimparency-show-watchdog', String(val))
   if (val) {
     nextTick(() => {
@@ -126,7 +125,7 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
 
   // Watchdog toggle
   if (event.key === 'w' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-    showWatchdog.value = !showWatchdog.value
+    uiStore.showWatchdog = !uiStore.showWatchdog
     return
   }
 
@@ -269,10 +268,10 @@ onUnmounted(() => {
         </div>
 
         <button 
-          @click="showWatchdog = !showWatchdog" 
+          @click="uiStore.showWatchdog = !uiStore.showWatchdog" 
           class="icon-btn" 
           style="width: auto; padding: 0 0.5rem;"
-          :style="{ background: showWatchdog ? '#444' : 'transparent' }"
+          :style="{ background: uiStore.showWatchdog ? '#444' : 'transparent' }"
           title="Toggle Watchdog Panel"
         >
           Watchdog
@@ -376,7 +375,7 @@ onUnmounted(() => {
       </main>
 
       <!-- Watchdog Panel -->
-      <div v-if="showWatchdog" class="watchdog-container" :style="{ height: watchdogHeight + 'px' }">
+      <div v-if="uiStore.showWatchdog" class="watchdog-container" :style="{ height: watchdogHeight + 'px' }">
         <div class="resize-handle" @mousedown="startResizeWatchdog"></div>
         <WatchdogPanel ref="watchdogRef" />
       </div>
@@ -397,7 +396,7 @@ onUnmounted(() => {
         @close="showConsistencyModal = false" 
     />
 
-    <ProjectSettingsModal />
+    <ProjectSettingsModal v-if="uiStore.showSettingsModal" />
 
     <!-- Help Text -->
     <footer v-if="!uiStore.isInProjectSelection" class="help">
