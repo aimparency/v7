@@ -59,6 +59,8 @@ export const useUIStore = defineStore('ui', {
     aimModalInsertPosition: 'before' as RelativePosition,
 
     showAimSearch: false,
+    aimSearchMode: 'navigate' as 'navigate' | 'pick',
+    aimSearchCallback: null as ((aim: Aim) => void) | null,
     showSettingsModal: false,
 
     // Navigation mode system
@@ -314,12 +316,16 @@ export const useUIStore = defineStore('ui', {
       this.aimModalMode = 'create'
     },
 
-    openAimSearch() {
+    openAimSearch(mode: 'navigate' | 'pick' = 'navigate', callback?: (aim: Aim) => void) {
       this.showAimSearch = true
+      this.aimSearchMode = mode
+      this.aimSearchCallback = callback || null
     },
 
     closeAimSearch() {
       this.showAimSearch = false
+      this.aimSearchMode = 'navigate'
+      this.aimSearchCallback = null
     },
 
     openSettingsModal() {

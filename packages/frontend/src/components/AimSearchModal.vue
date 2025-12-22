@@ -217,6 +217,19 @@ const handleKeydown = (e: KeyboardEvent) => {
 }
 
 const selectAim = async (aim: SearchAimResult) => {
+  if (uiStore.aimSearchMode === 'pick') {
+      if (uiStore.aimSearchCallback) {
+          try {
+            const fullAim = await trpc.aim.get.query({ projectPath: uiStore.projectPath, aimId: aim.id });
+            uiStore.aimSearchCallback(fullAim as any); // Cast if needed
+          } catch (e) {
+            console.error("Failed to load aim for callback", e);
+          }
+      }
+      uiStore.closeAimSearch();
+      return;
+  }
+
   loading.value = true
   try {
     const paths = await uiStore.prepareNavigation(aim.id)

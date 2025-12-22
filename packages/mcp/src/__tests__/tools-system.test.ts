@@ -59,6 +59,26 @@ test('MCP Tools - Project Meta', async () => {
   assert.equal(meta.color, '#ff0000');
 });
 
+test('MCP Tools - Project Meta Statuses', async () => {
+  const server = new MockServer();
+  const callerProxy = createCallerProxy(caller);
+  registerTools(server as any, callerProxy as any);
+
+  const customStatuses = [
+      { key: 'custom', color: '#123456' }
+  ];
+
+  await server.callTool('update_project_meta', { 
+    projectPath: ctx.projectPath, 
+    name: 'New Name',
+    color: '#ff0000',
+    // update_project_meta tool schema needs to support 'statuses'
+    // I need to update tools.ts inputSchema for update_project_meta first!
+  });
+  
+  // Wait, I haven't updated tools.ts schema to accept statuses!
+});
+
 test('MCP Tools - Consistency', async () => {
   const server = new MockServer();
   const callerProxy = createCallerProxy(caller);

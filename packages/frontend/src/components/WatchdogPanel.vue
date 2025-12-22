@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
+import { useUIStore } from '../stores/ui'
 import WatchdogTerminal from './WatchdogTerminal.vue'
 import WatchdogActionsOverlay from './WatchdogActionsOverlay.vue'
 
 const store = useWatchdogStore()
+const uiStore = useUIStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 
@@ -16,6 +18,17 @@ const handleKeyDown = (e: KeyboardEvent) => {
     e.preventDefault()
     e.stopPropagation()
     store.showActionsOverlay = !store.showActionsOverlay
+  }
+
+  // Ctrl+Shift+A: Search Aim and Insert
+  if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
+    e.preventDefault()
+    e.stopPropagation()
+    uiStore.openAimSearch('pick', (aim) => {
+      // Insert [ID] Title into worker terminal
+      const textToInsert = `[${aim.id}] ${aim.text}`
+      store.sendWorkerInput(textToInsert)
+    })
   }
 }
 
