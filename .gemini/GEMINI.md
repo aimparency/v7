@@ -15,6 +15,7 @@
     - Every folder (including './subdev' itself and all its subfolders, recursively) *must* contain a 'structure.md' file.
     - This 'structure.md' file explains how the folder's contents should be treated 
 4. Context Protocol: On startup, I will analyze './subdev' by recursively inspecting 'structure.md' files to understand the project layout, and also read 'structure.md' files of the 3 most recently modified project folders within './subdev' for current active context. I look at the direcory contents (ls) of subdev and the 3 most recent subdirs. 
+5. 'subdev' projects have their own git repositories. 
 - if you need to look at files outside the project dir, use system tools ls and cp to bring them into a temporary folder tmpread inside the project dir so that you can examine them.
 - prefer working test driven: for any feature, define a test case and then implement the functionality. This way, any feature will be protected against regression. 
 - The user is interested in using financial markets as an RL training environment for the agent (inspired by Nof1/AlphaZero), viewing capital allocation as a convergence of intelligence and truth.

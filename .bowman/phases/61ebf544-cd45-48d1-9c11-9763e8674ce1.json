@@ -1,0 +1,11 @@
+{
+  "id": "61ebf544-cd45-48d1-9c11-9763e8674ce1",
+  "from": 1766361600000,
+  "to": 1767571200000,
+  "parent": "f51f8930-c937-4c66-9db8-d4d313e6d286",
+  "commitments": [
+    "93149e0b-ef1a-424d-b9db-ffef9f50957d",
+    "de2686b1-db2b-4524-a969-adc4a3acc1b8"
+  ],
+  "name": "Iteration 2: Voice & Econ"
+}

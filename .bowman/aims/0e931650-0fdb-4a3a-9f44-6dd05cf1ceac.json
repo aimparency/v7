@@ -1,0 +1,19 @@
+{
+  "id": "0e931650-0fdb-4a3a-9f44-6dd05cf1ceac",
+  "text": "fix issue that watchdog get's stuck in json parsing loop when API error",
+  "description": "this is the gemini agent API error (shown instead of valid JSON response): \n\n✕ [API Error: request to https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse failed, reason:\n  C0B82D018C7F0000:error:0A0003FC:SSL routines:ssl3_read_bytes:ssl/tls alert bad record\n  mac:../deps/openssl/openssl/ssl/record/rec_layer_s3.c:916:SSL alert number 20\n  ]\n\n\nthis is the log output of the wrapped gemini process: \n[2025-12-22T12:44:44.373Z] [WatchdogService] Attempting to extract JSON...\n[2025-12-22T12:44:44.374Z] [WatchdogService] JSON extraction/parsing failed: Error: No JSON closing brace found. Content length: 1099\n[2025-12-22T12:44:45.372Z] [WatchdogService] Attempting to extract JSON...\n[2025-12-22T12:44:45.372Z] [WatchdogService] JSON extraction/parsing failed: Error: No JSON closing brace found. Content length: 1099\n[2025-12-22T12:44:46.375Z] [WatchdogService] Attempting to extract JSON...\n[2025-12-22T12:44:46.375Z] [WatchdogService] JSON extraction/parsing failed: Error: No JSON closing brace found. Content length: 1099\n[2025-12-22T12:44:47.374Z] [WatchdogService] Attempting to extract JSON...\n[2025-12-22T12:44:47.374Z] [WatchdogService] JSON extraction/parsing failed: Error: No JSON closing brace found. Content length: 1099\n[2025-12-22T12:44:48.377Z] [WatchdogService] Attempting to extract JSON...\n[2025-12-22T12:44:48.377Z] [WatchdogService] JSON extraction/parsing failed: Error: No JSON closing brace found. Content length: 1099\n[2025-12-22T12:44:49.375Z] [WatchdogService] Attempting to extract JSON...\n[2025-12-22T12:44:49.376Z] [WatchdogService] JSON extraction/parsing failed: Error: No JSON closing brace found. Content length: 1099\n[2025-12-22T12:44:50.379Z] [WatchdogService] Attempting to extract JSON...",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766407637318
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
