@@ -62,6 +62,7 @@ const nodeMap = new Map<string, GraphNode>()
 const layoutingHandlePos = vec2.create()
 const loadedPositions = new Map<string, { x: number, y: number }>()
 const freezings = new Map<string, number>() // aimId -> releaseTime (ms)
+const semanticLinks = shallowRef<any[]>([]) // Semantic connections
 
 let animFrameId: number | null = null
 let saveIntervalId: number | null = null
@@ -70,6 +71,12 @@ let saveIntervalId: number | null = null
 const OUTER_MARGIN_FACTOR = 2
 const FLOW_FORCE = 0.5
 const GLOBAL_FORCE = 0.14
+const SEMANTIC_STIFFNESS = 0.01
+
+// Dynamic Semantic State
+const semanticMaxGap = ref(2000)
+
+// --- Map / Interaction Logic ---
 
 // --- Map / Interaction Logic ---
 
@@ -498,6 +505,16 @@ const onBackgroundClick = () => {
   }
 }
 
+const randomizeLayout = () => {
+  const range = semanticMaxGap.value || 2000
+  nodes.value.forEach(n => {
+    n.pos[0] = (Math.random() - 0.5) * range
+    n.pos[1] = (Math.random() - 0.5) * range
+    vec2.scale(n.shift, n.shift, 0)
+  })
+  freezings.clear()
+}
+
 // --- Layout ---
 const reusable = {
   r: [] as number[],
@@ -506,6 +523,7 @@ const reusable = {
 }
 
 const hShift = vec2.create()
+const abVector = vec2.create()
 
 const layout = () => {
   if (mapStore.anim.update) {
@@ -600,12 +618,58 @@ const layout = () => {
         vec2.add(from.shift, from.shift, targetShift)
       }
 
+      // 3. Semantic Forces (Spring-to-Target)
+      const SEMANTIC_STIFFNESS = 0.01 // Reduced stiffness for stability
+      const SEMANTIC_MAX_GAP = 3000   // Physical pixels for max semantic distance (2.0)
+
+      if (semanticLinks.value.length > 0) {
+          for (const link of semanticLinks.value) {
+              const nodeA = nodeMap.get(link.source)
+              const nodeB = nodeMap.get(link.target)
+              if (!nodeA || !nodeB) continue
+
+              // Vector A -> B
+              vec2.sub(abVector, nodeB.pos, nodeA.pos)
+              let currentDist = vec2.len(abVector)
+
+              if (currentDist < 0.1) {
+                  abVector[0] = Math.random() - 0.5
+                  abVector[1] = Math.random() - 0.5
+                  currentDist = vec2.len(abVector)
+              }
+
+              // Normalize to Unit Vector
+              vec2.scale(abVector, abVector, 1 / currentDist)
+
+              // Target Distance Calculation
+              // 1. Edge-to-Edge contact (min distance)
+              const minDist = nodeA.r + nodeB.r
+              
+              // 2. Semantic Gap
+              // Map embedding distance (0.0 to 2.0) to Physical Gap (0 to MAX)
+              // 0.0 (Identical) -> 0 Gap
+              // 1.0 (Unrelated) -> Half MAX
+              // 2.0 (Opposite)  -> MAX
+              const targetGap = (link.distance / 2.0) * SEMANTIC_MAX_GAP
+              
+              const targetDist = minDist + targetGap
+
+              // Spring Force (Hooke's Law)
+              const displacement = currentDist - targetDist
+              const forceMagnitude = displacement * SEMANTIC_STIFFNESS
+
+              vec2.scale(hShift, abVector, forceMagnitude)
+              vec2.add(nodeA.shift, nodeA.shift, hShift)
+              vec2.sub(nodeB.shift, nodeB.shift, hShift)
+          }
+      }
+
       for (let i = 0; i < count; i++) {
         const n = currentNodes[i]!
         vec2.scale(n.shift, n.shift, FLOW_FORCE)
       }
 
-      // 3. Collisions
+      // 4. Collisions
       const intersections = naiveBoxIntersect(boxes)
       const ab = vec2.create()
       
@@ -640,14 +704,24 @@ const layout = () => {
         }
       }
 
-      // 4. Global Force & Apply
+      // 4. Global Force, Centering & Apply
       const viewMinShift = 0.1 * (LOGICAL_HALF_SIDE / mapStore.halfSide) / mapStore.scale
       const now = Date.now()
       const FREEZE_DURATION = 10000
+      
+      // Adaptive Gravity: Inversely proportional to universe size
+      // Standard universe ~3000px. Standard gravity ~0.0002
+      // Force = Constant / Size
+      const GRAVITY_CONSTANT = 0.6 
+      const CENTERING_FORCE = GRAVITY_CONSTANT / (semanticMaxGap.value || 2000)
 
       for (let i = 0; i < count; i++) {
         const n = currentNodes[i]!
         vec2.scale(n.shift, n.shift, GLOBAL_FORCE)
+        
+        // Centering Gravity: Pull gently towards (0,0)
+        vec2.scale(hShift, n.pos, -CENTERING_FORCE)
+        vec2.add(n.shift, n.shift, hShift)
         
         // Apply Freezing Decay
         const releaseTime = freezings.get(n.id)
@@ -712,17 +786,40 @@ const calcShiftAndApply = (
 const updateGraphData = () => {
   const { nodes: rawNodes, links: rawLinks } = dataStore.graphData
   
+  // 1. Calculate Total Value
   let totalValue = 0
   for (const n of rawNodes) {
-    totalValue += n.value || 0
+    totalValue += (n.value || 0)
   }
-  const avgValue = rawNodes.length > 0 ? totalValue / rawNodes.length : 0
+  if (totalValue === 0) totalValue = 1 // Prevent div/0
+
+  // 2. Define Target Surface Area (Constant Universe Size)
+  // Let's assume a "populated universe" of ~3000x3000px
   
+  // NODE_PACKING_FACTOR: Determines how big the circles are. 
+  // 9 means they cover ~11% of a 3000x3000 box.
+  const NODE_PACKING_FACTOR = 9 
+  const TARGET_NODE_AREA = (UNIVERSE_WIDTH * UNIVERSE_WIDTH) / NODE_PACKING_FACTOR 
+
+  // SPACING_FACTOR: Determines how far apart they push.
+  // 36 means the semantic universe is 2x wider than the visual node mass.
+  const SPACING_FACTOR = 36
+
   const newNodes: GraphNode[] = []
   rawNodes.forEach(raw => {
     let existing = nodeMap.get(raw.id)
     const val = raw.value || 0
-    const radius = Math.sqrt((val / (avgValue || 1)) + 0.1) * 150
+    
+    // 3. Calculate Area-Preserving Radius
+    // Share of total area
+    const share = val / totalValue
+    const targetArea = share * TARGET_NODE_AREA
+    
+    // r = sqrt(A / PI)
+    // Add base radius (e.g. 15px) so 0-value aims are visible
+    // We do this *after* the area calc so it adds slightly to the total area,
+    // but ensures visibility.
+    const radius = Math.sqrt(targetArea / Math.PI) + 15
 
     if (!existing) {
       const loaded = loadedPositions.get(raw.id)
@@ -771,6 +868,23 @@ const updateGraphData = () => {
     }
   })
   links.value = newLinks
+  
+  // Calculate dynamic semantic gap based on Total Surface Area
+  if (newNodes.length > 0) {
+      // 1. Calculate exact populated area (sum of all circle areas)
+      let totalArea = 0
+      for (const n of newNodes) {
+          totalArea += Math.PI * (n.r * n.r)
+      }
+
+      // 2. Expand for gaps
+      const expandedArea = totalArea * SPACING_FACTOR
+
+      // 3. Max Gap is the side length of this expanded universe
+      semanticMaxGap.value = Math.sqrt(expandedArea)
+      
+      console.log(`[Graph] Dynamic Semantic Gap: ${semanticMaxGap.value.toFixed(0)}px (Area: ${totalArea.toFixed(0)}, N=${newNodes.length})`)
+  }
 }
 
 // --- Lifecycle ---
@@ -825,6 +939,18 @@ onMounted(async () => {
   
   if (uiStore.projectPath) {
     dataStore.loadAllAims(uiStore.projectPath)
+    
+    // Load Semantic Forces
+    trpc.graph.getSemanticForces.query({ projectPath: uiStore.projectPath })
+      .then(graph => {
+        console.log(`[Graph] Loaded ${graph.links.length} semantic links (Avg Dist: ${graph.averageDistance.toFixed(3)})`)
+        // Log a few links to verify
+        if (graph.links.length > 0) {
+            console.log('[Graph] First 3 links:', graph.links.slice(0, 3));
+        }
+        semanticLinks.value = graph.links
+      })
+      .catch(err => console.error("[Graph] Failed to load semantic forces:", err))
   }
   updateGraphData()
 })
@@ -941,13 +1067,24 @@ const renderLinks = computed(() => {
       </g>
     </svg>
     <GraphSidePanel />
-    <button class="reload-btn" @click="dataStore.loadAllAims(uiStore.projectPath)">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M23 4v6h-6"></path>
-        <path d="M1 20v-6h6"></path>
-        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-      </svg>
-    </button>
+    <div class="top-controls">
+      <button class="control-btn" @click="dataStore.loadAllAims(uiStore.projectPath)" title="Reload Data">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 4v6h-6"></path>
+          <path d="M1 20v-6h6"></path>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
+      <button class="control-btn" @click="randomizeLayout" title="Randomize Layout">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <line x1="4" y1="20" x2="21" y2="3"></line>
+          <polyline points="21 16 21 21 16 21"></polyline>
+          <line x1="15" y1="15" x2="21" y2="21"></line>
+          <line x1="4" y1="4" x2="9" y2="9"></line>
+        </svg>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -960,20 +1097,32 @@ const renderLinks = computed(() => {
   position: relative;
 }
 
-.reload-btn {
+.top-controls {
   position: absolute;
   top: 10px;
   left: 10px;
-  background: none;
-  border: none;
-  color: #fff;
-  opacity: 0.3;
-  cursor: pointer;
+  display: flex;
+  gap: 10px;
   z-index: 100;
-  transition: opacity 0.2s;
 }
 
-.reload-btn:hover {
+.control-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #fff;
+  padding: 6px;
+  opacity: 0.4;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-btn:hover {
   opacity: 1;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 </style>

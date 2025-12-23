@@ -1,0 +1,28 @@
+{
+  "id": "01fe0313-b467-40fd-9a3d-ae4a93af38ba",
+  "text": "bugfixes and sidequests",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "51d2496e-1f46-4dbb-90c2-2069e0e042fc",
+      "relativePosition": [
+        -1.8716540208073362,
+        1.657380833241332
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "61ebf544-cd45-48d1-9c11-9763e8674ce1"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766507881061
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

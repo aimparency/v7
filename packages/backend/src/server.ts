@@ -24,6 +24,7 @@ import {
   removePhaseFromIndex
 } from './search.js';
 import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
+import { getSemanticGraph } from './forces.js';
 import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues } from 'shared';
 import { saveAimValues, getAimValues } from './db.js';
@@ -1225,6 +1226,16 @@ const appRouter = t.router({
       .mutation(async ({ input }) => {
         const response = await chatWithGemini(input.transcript, input.projectPath);
         return { response };
+      })
+  }),
+
+  graph: t.router({
+    getSemanticForces: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .query(async ({ input }) => {
+        return await getSemanticGraph(input.projectPath);
       })
   }),
 

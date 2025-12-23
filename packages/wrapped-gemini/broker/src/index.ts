@@ -44,7 +44,7 @@ const appRouter = t.router({
     keepalive: t.procedure
       .input(z.object({ projectPath: z.string() }))
       .mutation(async ({ input }) => {
-         const success = WatchdogManager.keepalive(input.projectPath);
+         const success = await WatchdogManager.keepalive(input.projectPath);
          return { success };
       }),
     list: t.procedure

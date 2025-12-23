@@ -1,0 +1,19 @@
+{
+  "id": "dc78838d-0b4d-4e7a-90df-8b7e5f006856",
+  "text": "implement projects selection for mobile app. path to the .bowman directory...",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "93149e0b-ef1a-424d-b9db-ffef9f50957d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766498833139
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

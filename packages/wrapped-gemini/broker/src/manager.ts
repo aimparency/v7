@@ -19,7 +19,7 @@ interface WatchdogInstance {
 }
 
 const instances = new Map<string, WatchdogInstance>();
-const KEEPALIVE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const KEEPALIVE_TIMEOUT = 60 * 60 * 1000; // 60 minutes
 
 // Location: packages/wrapped-gemini/broker/src/manager.ts
 // WRAPPER_DIR: packages/wrapped-gemini (2 levels up from src)
@@ -268,7 +268,7 @@ export const WatchdogManager = {
     return false;
   },
 
-  keepalive(projectPath: string): boolean {
+  async keepalive(projectPath: string): Promise<boolean> {
     projectPath = normalizeProjectPath(projectPath);
     const instance = instances.get(projectPath);
     if (instance) {
@@ -276,8 +276,14 @@ export const WatchdogManager = {
       saveSessions();
       return true;
     }
-    console.warn(`[WatchdogBroker] Keepalive failed: No instance found for ${projectPath}`);
-    return false;
+    console.warn(`[WatchdogBroker] Keepalive warning: No instance found for ${projectPath}. Relaunching...`);
+    try {
+        await this.start(projectPath);
+        return true;
+    } catch (e) {
+        console.error(`[WatchdogBroker] Failed to relaunch during keepalive:`, e);
+        return false;
+    }
   },
 
   getStatus(projectPath: string): { running: boolean, port?: number } {

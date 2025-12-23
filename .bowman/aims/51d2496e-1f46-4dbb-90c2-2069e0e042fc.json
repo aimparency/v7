@@ -1,0 +1,28 @@
+{
+  "id": "51d2496e-1f46-4dbb-90c2-2069e0e042fc",
+  "text": "when removing aims, we also have to remove the entries from the cache and embedding database",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "81293987-ba2b-45a3-ac09-d9d9dc2138a7",
+      "relativePosition": [
+        -0.6242213655779061,
+        -2.4208155003543856
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "01fe0313-b467-40fd-9a3d-ae4a93af38ba"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766507912897
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

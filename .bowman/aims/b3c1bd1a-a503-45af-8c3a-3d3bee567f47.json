@@ -1,0 +1,19 @@
+{
+  "id": "b3c1bd1a-a503-45af-8c3a-3d3bee567f47",
+  "text": "when searching aim in watchdog actions panel and entering it into the xterm.js that same xterm.js should be focused for further typing.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766499028258
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

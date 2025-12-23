@@ -1,0 +1,19 @@
+{
+  "id": "81293987-ba2b-45a3-ac09-d9d9dc2138a7",
+  "text": "ensure consistency should also check if we have any embeddings or cache for data (e.g. aims) that don't exist anymore",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "51d2496e-1f46-4dbb-90c2-2069e0e042fc"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766507972753
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

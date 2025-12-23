@@ -2185,16 +2185,22 @@ export const useUIStore = defineStore('ui', {
         case 'l': {
           event.preventDefault()
           const currentAim = this.getCurrentAim()
-          if(currentAim) {
+          if (currentAim) {
+            // Logic: First 'l' expands, second 'l' enters sub-aim selection
             if (!currentAim.expanded) {
               currentAim.expanded = true
+              // Load children when expanding
               const connections = currentAim.supportingConnections || []
               if (connections.length > 0) {
                 dataStore.loadAims(this.projectPath, connections.map(c => c.aimId))
               }
-            } else if (currentAim.supportingConnections && currentAim.supportingConnections.length > 0 && currentAim.selectedIncomingIndex === undefined) {
-              // Second 'l': enter sub-aim selection
-              currentAim.selectedIncomingIndex = 0
+            } else {
+              // Already expanded: Enter sub-aim selection
+              if (currentAim.supportingConnections && currentAim.supportingConnections.length > 0) {
+                if (currentAim.selectedIncomingIndex === undefined) {
+                  currentAim.selectedIncomingIndex = 0
+                }
+              }
             }
           }
           break

@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Create a test caller
 const caller = appRouter.createCaller({});
 
-const TEST_PROJECT_PATH = path.join(process.cwd(), 'test-project');
+const TEST_PROJECT_PATH = path.join(process.cwd(), 'test-project', '.bowman');
 
 beforeEach(async () => {
   // Clean up any existing test project

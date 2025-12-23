@@ -24,14 +24,17 @@ const io = new Server(httpServer, {
 const apiKey = process.env.OPENROUTER_API_KEY;
 if (!apiKey || apiKey === 'sk-or-placeholder') {
   console.error('[VoiceBridge] CRITICAL: OPENROUTER_API_KEY is missing or invalid in .env!');
+} else {
+  console.log(`[VoiceBridge] API Key loaded (starts with ${apiKey.substring(0, 10)}...)`);
 }
 
 const openai = new OpenAI({
   apiKey: apiKey || 'sk-or-placeholder',
   baseURL: 'https://openrouter.ai/api/v1',
   defaultHeaders: {
-    'HTTP-Referer': 'https://aimparency.com', // Optional
+    'HTTP-Referer': 'https://aimparency.com',
     'X-Title': 'Aimparency v7 Voice Bridge',
+    'Authorization': `Bearer ${apiKey}`
   }
 });
 
@@ -133,7 +136,7 @@ io.on('connection', (socket) => {
 
       // 1. Initial Request
       let response = await openai.chat.completions.create({
-        model: 'openai/gpt-oss-120b',
+        model: 'anthropic/claude-3-haiku',
         messages,
         tools: TOOLS,
         tool_choice: 'auto'
@@ -160,7 +163,7 @@ io.on('connection', (socket) => {
         }
 
         response = await openai.chat.completions.create({
-          model: 'openai/gpt-oss-120b',
+          model: 'anthropic/claude-3-haiku',
           messages,
           tools: TOOLS
         });
@@ -181,7 +184,7 @@ io.on('connection', (socket) => {
 
           const [ttsResponse] = await ttsClient.synthesizeSpeech({
             input: { text: trimmed },
-            voice: { name: 'en-US-Chirp3-HD-MultiLingual', languageCode: 'en-US' },
+            voice: { name: 'en-US-Chirp3-HD-Orus', languageCode: 'en-US' },
             audioConfig: { audioEncoding: 'MP3' },
           });
 

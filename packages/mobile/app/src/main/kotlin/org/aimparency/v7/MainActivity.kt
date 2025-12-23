@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -36,7 +38,10 @@ import java.io.FileOutputStream
 import java.nio.charset.Charset
 import java.util.*
 
+import android.util.Log
+
 class MainActivity : ComponentActivity() {
+    private val TAG = "MainActivity"
     private lateinit var voiceClient: VoiceClient
     private var speechRecognizer: SpeechRecognizer? = null
     private val audioPlayer = AudioPlayer()
@@ -48,6 +53,8 @@ class MainActivity : ComponentActivity() {
         val config = loadConfig()
         val serverUrl = config.optString("serverUrl", "http://127.0.0.1:5005")
         val projectPath = config.optString("projectPath", "")
+        
+        Log.d(TAG, "Config Loaded - Server: $serverUrl, Project: $projectPath")
 
         voiceClient = VoiceClient(serverUrl)
 
@@ -55,12 +62,17 @@ class MainActivity : ComponentActivity() {
             var status by remember { mutableStateOf("Disconnected") }
             var lastAiText by remember { mutableStateOf("") }
             var isListening by remember { mutableStateOf(false) }
+            var isUserStopped by remember { mutableStateOf(false) }
+            // Track if the backend has finished sending the full response stream
+            var isServerResponseComplete by remember { mutableStateOf(true) }
             val context = LocalContext.current
 
             val permissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
             ) { isGranted ->
+                Log.d(TAG, "Permission Result: $isGranted")
                 if (isGranted) {
+                    isUserStopped = false
                     startListening(projectPath)
                     isListening = true
                 }
@@ -68,52 +80,120 @@ class MainActivity : ComponentActivity() {
 
             DisposableEffect(Unit) {
                 voiceClient.setCallback(object : VoiceClient.Callback {
-                    override fun onConnect() { status = "Connected" }
-                    override fun onDisconnect() { status = "Disconnected" }
-                    override fun onError(message: String) { status = "Error: $message" }
+                    override fun onConnect() { 
+                        Log.i(TAG, "UI: Connected")
+                        status = "Connected" 
+                    }
+                    override fun onDisconnect() { 
+                        Log.w(TAG, "UI: Disconnected")
+                        status = "Disconnected" 
+                    }
+                    override fun onError(message: String) { 
+                        Log.e(TAG, "UI Error: $message")
+                        status = "Error: $message" 
+                    }
                     override fun onAudioChunk(text: String, audio: ByteArray?) {
+                        Log.v(TAG, "UI: Received audio chunk: $text")
                         lastAiText = text
-                        audio?.let { audioPlayer.playChunk(it, context) }
                         
-                        if (!isListening) {
-                            startListening(projectPath)
-                            isListening = true
+                        // NOTE: We do NOT stop listening here anymore.
+                        // We rely on AEC (Echo Cancellation) to filter this out,
+                        // and onBeginningOfSpeech to trigger the interrupt if the user speaks.
+
+                        audio?.let { audioPlayer.playChunk(it, context) }
+                    }
+                    override fun onResponseComplete() {
+                        Log.d(TAG, "UI: Server response stream complete")
+                        isServerResponseComplete = true
+                        
+                        // Ensure we are listening if we weren't already
+                        Handler(Looper.getMainLooper()).post {
+                            if (!isListening && !isUserStopped) {
+                                Log.d(TAG, "Server done -> ensuring listener active")
+                                startListening(projectPath)
+                                isListening = true
+                            }
                         }
                     }
-                    override fun onResponseComplete() {}
                 })
                 
                 audioPlayer.onPlaybackFinished = {
-                    if (status.contains("Connected")) {
-                        startListening(projectPath)
+                    Log.d(TAG, "Playback finished. serverDone=$isServerResponseComplete")
+                    // If we just finished playing and aren't listening for some reason, start now
+                    if (!isListening && !isUserStopped) {
+                         Handler(Looper.getMainLooper()).post {
+                            startListening(projectPath)
+                            isListening = true
+                        }
                     }
                 }
 
                 speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context).apply {
                     setRecognitionListener(object : RecognitionListener {
-                        override fun onReadyForSpeech(params: Bundle?) { status = "Listening..."; isListening = true }
-                        override fun onEndOfSpeech() { isListening = false; status = "Processing..." }
+                        override fun onReadyForSpeech(params: Bundle?) { 
+                            Log.d(TAG, "STT: Ready")
+                            status = "Listening..."
+                            isListening = true 
+                        }
+                        override fun onEndOfSpeech() { 
+                            Log.d(TAG, "STT: End of speech")
+                            // We don't set isListening=false here because we want to conceptually remain "in session"
+                            // until we either get results or restart.
+                            status = "Processing..." 
+                        }
                         override fun onError(error: Int) { 
+                            Log.e(TAG, "STT Error: $error")
                             status = "STT Error: $error"
                             isListening = false 
-                            if (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT) {
-                                startListening(projectPath)
+                            
+                            // Restart on No Match / Timeout / Rec Error, even if AI is playing (to allow barge-in retry)
+                            if (!isUserStopped && (error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT || error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY)) {
+                                Log.d(TAG, "STT Error recoverable, restarting...")
+                                Handler(Looper.getMainLooper()).postDelayed({
+                                    startListening(projectPath)
+                                }, 100)
                             }
                         }
                         override fun onResults(results: Bundle?) {
                             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                            matches?.firstOrNull()?.let { transcript ->
+                            val transcript = matches?.firstOrNull()
+                            Log.i(TAG, "STT Result: $transcript")
+                            
+                            // Only send if we have actual content (strict check)
+                            if (!transcript.isNullOrBlank() && transcript.length > 1) {
+                                audioPlayer.stop() // Ensure audio stops if we actually got a result
+                                isServerResponseComplete = false // Expecting new response
                                 voiceClient.sendTranscript(transcript, projectPath)
+                            } else {
+                                Log.d(TAG, "Empty or short transcript, ignoring and restarting")
+                                if (!isUserStopped) {
+                                    startListening(projectPath)
+                                }
                             }
-                            startListening(projectPath)
                         }
                         override fun onBeginningOfSpeech() {
-                            audioPlayer.stop()
+                            Log.d(TAG, "STT: User started speaking.")
+                            // We do NOT stop audio here anymore. We wait for loudness (onRmsChanged).
                             status = "User speaking..."
                         }
-                        override fun onRmsChanged(rmsdB: Float) {}
+                        override fun onRmsChanged(rmsdB: Float) {
+                            // BARGE-IN THRESHOLD: 
+                            // Only stop AI if user is speaking LOUDLY (approx > 8dB)
+                            // This filters out background noise/breathing that AEC missed.
+                            if (audioPlayer.isPlaying() && rmsdB > 8.0f) {
+                                Log.d(TAG, "Barge-in Triggered! RMS: $rmsdB > 8.0")
+                                audioPlayer.stop()
+                            }
+                        }
                         override fun onBufferReceived(buffer: ByteArray?) {}
-                        override fun onPartialResults(partialResults: Bundle?) {}
+                        override fun onPartialResults(partialResults: Bundle?) {
+                            // If we get partial words, that's a definite interrupt
+                            val partials = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                            if (!partials.isNullOrEmpty() && audioPlayer.isPlaying()) {
+                                Log.d(TAG, "Partial results received, stopping playback.")
+                                audioPlayer.stop()
+                            }
+                        }
                         override fun onEvent(eventType: Int, params: Bundle?) {}
                     })
                 }
@@ -159,7 +239,11 @@ class MainActivity : ComponentActivity() {
 
                         if (status == "Disconnected") {
                             Button(
-                                onClick = { voiceClient.connect() },
+                                onClick = { 
+                                    Log.d(TAG, "Initialize Connection clicked")
+                                    isUserStopped = false
+                                    voiceClient.connect() 
+                                },
                                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 64.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007ACC))
                             ) {
@@ -168,6 +252,8 @@ class MainActivity : ComponentActivity() {
                         } else if (!isListening && !status.startsWith("User") && !status.startsWith("Listening")) {
                              IconButton(
                                 onClick = { 
+                                    Log.d(TAG, "Mic clicked")
+                                    isUserStopped = false
                                     if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
                                         startListening(projectPath)
                                     } else {
@@ -186,6 +272,8 @@ class MainActivity : ComponentActivity() {
                             // Stop Button
                              IconButton(
                                 onClick = { 
+                                    Log.d(TAG, "Stop clicked")
+                                    isUserStopped = true
                                     audioPlayer.stop()
                                     speechRecognizer?.stopListening()
                                     isListening = false
@@ -207,10 +295,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startListening(projectPath: String) {
+        Log.d(TAG, "Starting Speech Recognition (Project: $projectPath)")
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault())
-            // Pass projectPath as an extra to be picked up in results if needed
             putExtra("projectPath", projectPath)
         }
         speechRecognizer?.startListening(intent)
@@ -223,20 +311,29 @@ class MainActivity : ComponentActivity() {
             val buffer = ByteArray(size)
             inputStream.read(buffer)
             inputStream.close()
-            JSONObject(String(buffer, Charset.forName("UTF-8")))
+            val json = JSONObject(String(buffer, Charset.forName("UTF-8")))
+            Log.d(TAG, "Raw config: $json")
+            json
         } catch (e: Exception) {
+            Log.e(TAG, "Error loading config: ${e.message}")
             JSONObject()
         }
     }
 }
 
 class AudioPlayer {
+    private val TAG = "AudioPlayer"
     private val queue = mutableListOf<File>()
     private var mediaPlayer: MediaPlayer? = null
     private var isPlaying = false
     var onPlaybackFinished: (() -> Unit)? = null
 
+    fun isPlaying(): Boolean {
+        return synchronized(this) { isPlaying }
+    }
+
     fun playChunk(audio: ByteArray, context: android.content.Context) {
+        Log.v(TAG, "Queueing audio chunk (${audio.size} bytes)")
         val tempFile = File.createTempFile("tts_chunk_", ".mp3", context.cacheDir)
         FileOutputStream(tempFile).use { it.write(audio) }
         
@@ -249,6 +346,7 @@ class AudioPlayer {
     }
 
     fun stop() {
+        Log.d(TAG, "Stopping playback and clearing queue")
         synchronized(this) {
             queue.forEach { it.delete() }
             queue.clear()
@@ -260,6 +358,7 @@ class AudioPlayer {
     private fun playNext() {
         val nextFile = synchronized(this) {
             if (queue.isEmpty()) {
+                Log.d(TAG, "Queue empty, playback stopped")
                 isPlaying = false
                 onPlaybackFinished?.invoke()
                 null
@@ -270,6 +369,7 @@ class AudioPlayer {
         }
 
         nextFile?.let { file ->
+            Log.v(TAG, "Playing chunk: ${file.name}")
             mediaPlayer?.release()
             mediaPlayer = MediaPlayer().apply {
                 setAudioAttributes(
@@ -280,6 +380,7 @@ class AudioPlayer {
                 )
                 setDataSource(file.absolutePath)
                 setOnCompletionListener { 
+                    Log.v(TAG, "Finished chunk: ${file.name}")
                     file.delete()
                     playNext() 
                 }
@@ -290,12 +391,14 @@ class AudioPlayer {
     }
 
     fun release() {
+        Log.d(TAG, "Releasing AudioPlayer")
         mediaPlayer?.release()
         mediaPlayer = null
         queue.forEach { it.delete() }
         queue.clear()
     }
 }
+
 
 @Composable
 fun VoicePulse(isListening: Boolean) {

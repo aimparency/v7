@@ -1,0 +1,19 @@
+{
+  "id": "62c2ab13-3fb0-4554-8119-e480500f8f72",
+  "text": "switch back to gpt-oss-120b model, as it's good with finance",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "93149e0b-ef1a-424d-b9db-ffef9f50957d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1766432715087
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
