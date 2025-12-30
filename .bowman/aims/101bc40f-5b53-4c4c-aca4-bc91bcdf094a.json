@@ -1,0 +1,28 @@
+{
+  "id": "101bc40f-5b53-4c4c-aca4-bc91bcdf094a",
+  "text": "allow setting contribution share when creating an aim as subaim of another one.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "7a1e6736-8627-4675-ac43-214df0d80026",
+      "relativePosition": [
+        -0.3798156652227458,
+        2.470979575077747
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "4f8c3aca-dec4-4932-bc16-d0a5a6955473"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767097849122
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

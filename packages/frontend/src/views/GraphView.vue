@@ -71,7 +71,7 @@ let saveIntervalId: number | null = null
 const OUTER_MARGIN_FACTOR = 2
 const FLOW_FORCE = 0.5
 const GLOBAL_FORCE = 0.14
-const SEMANTIC_STIFFNESS = 0.01
+const SEMANTIC_STIFFNESS = 0.01 // Reduced back to 0.01 to fix relative positioning
 
 // Dynamic Semantic State
 const semanticMaxGap = ref(2000)
@@ -619,10 +619,9 @@ const layout = () => {
       }
 
       // 3. Semantic Forces (Spring-to-Target)
-      const SEMANTIC_STIFFNESS = 0.01 // Reduced stiffness for stability
-      const SEMANTIC_MAX_GAP = 3000   // Physical pixels for max semantic distance (2.0)
-
       if (semanticLinks.value.length > 0) {
+          const maxGap = semanticMaxGap.value
+
           for (const link of semanticLinks.value) {
               const nodeA = nodeMap.get(link.source)
               const nodeB = nodeMap.get(link.target)
@@ -647,16 +646,16 @@ const layout = () => {
               
               // 2. Semantic Gap
               // Map embedding distance (0.0 to 2.0) to Physical Gap (0 to MAX)
-              // 0.0 (Identical) -> 0 Gap
-              // 1.0 (Unrelated) -> Half MAX
-              // 2.0 (Opposite)  -> MAX
-              const targetGap = (link.distance / 2.0) * SEMANTIC_MAX_GAP
+              const targetGap = (link.distance / 2.0) * maxGap
               
               const targetDist = minDist + targetGap
 
               // Spring Force (Hooke's Law)
               const displacement = currentDist - targetDist
-              const forceMagnitude = displacement * SEMANTIC_STIFFNESS
+              
+              // Weight based on surface area (normalized by standard radius 150)
+              const weight = (nodeA.r * nodeB.r) / (150 * 150)
+              const forceMagnitude = displacement * SEMANTIC_STIFFNESS * weight
 
               vec2.scale(hShift, abVector, forceMagnitude)
               vec2.add(nodeA.shift, nodeA.shift, hShift)
@@ -786,40 +785,24 @@ const calcShiftAndApply = (
 const updateGraphData = () => {
   const { nodes: rawNodes, links: rawLinks } = dataStore.graphData
   
-  // 1. Calculate Total Value
+  // Revert to original Average-based normalization for Node Size consistency
   let totalValue = 0
   for (const n of rawNodes) {
     totalValue += (n.value || 0)
   }
-  if (totalValue === 0) totalValue = 1 // Prevent div/0
-
-  // 2. Define Target Surface Area (Constant Universe Size)
-  // Let's assume a "populated universe" of ~3000x3000px
+  const avgValue = rawNodes.length > 0 ? totalValue / rawNodes.length : 0
   
-  // NODE_PACKING_FACTOR: Determines how big the circles are. 
-  // 9 means they cover ~11% of a 3000x3000 box.
-  const NODE_PACKING_FACTOR = 9 
-  const TARGET_NODE_AREA = (UNIVERSE_WIDTH * UNIVERSE_WIDTH) / NODE_PACKING_FACTOR 
-
-  // SPACING_FACTOR: Determines how far apart they push.
-  // 36 means the semantic universe is 2x wider than the visual node mass.
-  const SPACING_FACTOR = 36
+  // SPACING_FACTOR: Determines how far apart they push (Universe Size)
+  // 144 means the semantic universe is huge relative to node mass
+  const SPACING_FACTOR = 144
 
   const newNodes: GraphNode[] = []
   rawNodes.forEach(raw => {
     let existing = nodeMap.get(raw.id)
     const val = raw.value || 0
     
-    // 3. Calculate Area-Preserving Radius
-    // Share of total area
-    const share = val / totalValue
-    const targetArea = share * TARGET_NODE_AREA
-    
-    // r = sqrt(A / PI)
-    // Add base radius (e.g. 15px) so 0-value aims are visible
-    // We do this *after* the area calc so it adds slightly to the total area,
-    // but ensures visibility.
-    const radius = Math.sqrt(targetArea / Math.PI) + 15
+    // Original Radius Calculation (preserves relative position logic)
+    const radius = Math.sqrt((val / (avgValue || 1)) + 0.1) * 150
 
     if (!existing) {
       const loaded = loadedPositions.get(raw.id)
@@ -843,6 +826,7 @@ const updateGraphData = () => {
     }
     newNodes.push(existing)
   })
+
   
   if (nodeMap.size > newNodes.length) {
     const newIds = new Set(newNodes.map(n => n.id))

@@ -1,0 +1,19 @@
+{
+  "id": "17f8e9b2-ba9c-420c-a099-c0912db7275b",
+  "text": "Finalize the priority = expected value / effort implementation.",
+  "description": "Let's develop a sound mathematical/economic model. \nExpected value and time are also connected. \nSo we should also track duration maybe in order to discount that (cost of capital), when aims take longer time until return of invest. This should really become economically sound",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767099384837
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

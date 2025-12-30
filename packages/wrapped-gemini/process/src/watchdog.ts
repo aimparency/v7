@@ -20,6 +20,7 @@ export class WatchdogService {
   waitingForResponse: boolean = false;
   processing: boolean = false;
   retryCount: number = 0;
+  cooldownMultiplier: number = 1; // Track consecutive cooldowns
   
   clearEvery: number;
   turnCount: number = 0;
@@ -246,7 +247,7 @@ ${context}
 What shall we do about this situation?
 
 1. Check the model that is being used in the main agent: it's usually around the end of the current situation. If it changed to a inferior model (lower than gemini 3, 3 is the minimum for reasonable quality), stop with: { "action": { "type": "stop", "reason": "model-switch" } }. 
-2. Check for "Quota exceeded" or "High demand" errors. If found, return { "action": { "type": "cooldown", "duration": 30000 } }.
+2. Check for "Quota exceeded" or "High demand" errors. If found, return { "action": { "type": "cooldown" } }. Do NOT include duration.
 
 ${PROMPT_MARKER}
 `;
@@ -298,6 +299,11 @@ ${PROMPT_MARKER}
   async executeAction(action: any) {
     this.log(`Executing Action: ${action.type}`);
 
+    // Reset cooldown multiplier on successful non-cooldown actions
+    if (action.type !== 'cooldown' && action.type !== 'wait') {
+        this.cooldownMultiplier = 1;
+    }
+
     if (action.type === 'send-prompt') {
         this.log(`Sending prompt to Worker: ${action.text}`);
         await this.post(this.worker, action.text);
@@ -320,15 +326,15 @@ ${PROMPT_MARKER}
         this.nextCheckTime = Date.now() + duration;
         return; 
     } else if (action.type === 'cooldown') {
-        const duration = action.duration || 30000;
-        this.log(`Cooldown for ${duration}ms (High Demand/Quota)...`);
+        const baseDuration = 30000;
+        const duration = baseDuration * this.cooldownMultiplier;
+        
+        this.log(`Cooldown for ${duration}ms (High Demand/Quota). Multiplier: ${this.cooldownMultiplier}x`);
         this.nextCheckTime = Date.now() + duration;
-        // Optionally send a retry prompt after cooldown? 
-        // For now, just wait. Next tick will check context again.
-        // If the error persists on screen, we might loop?
-        // We probably want to send "1" (Keep trying) if it's an option menu?
-        // But the prompt says "wait then retry".
-        // The supervisor should see the menu and select option next time?
+        
+        // Increase backoff for next time (cap at some reasonable limit, e.g. 1 hour?)
+        this.cooldownMultiplier = Math.min(this.cooldownMultiplier * 2, 120); 
+        
         return;
     }
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;

@@ -1,0 +1,19 @@
+{
+  "id": "7a1e6736-8627-4675-ac43-214df0d80026",
+  "text": "when creating aims: show the supported aims with a weight field each (input in %, then calculate the actual weight based on the other supporting aims and loop weight of the supported aim)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "101bc40f-5b53-4c4c-aca4-bc91bcdf094a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767097856090
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

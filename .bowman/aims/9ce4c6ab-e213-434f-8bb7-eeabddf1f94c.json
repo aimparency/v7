@@ -1,0 +1,19 @@
+{
+  "id": "9ce4c6ab-e213-434f-8bb7-eeabddf1f94c",
+  "text": "double click in graph to create a free floating aim",
+  "description": "double click on free surface",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "4f8c3aca-dec4-4932-bc16-d0a5a6955473"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767097491770
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

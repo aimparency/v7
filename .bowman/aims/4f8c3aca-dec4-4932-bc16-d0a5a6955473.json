@@ -1,0 +1,44 @@
+{
+  "id": "4f8c3aca-dec4-4932-bc16-d0a5a6955473",
+  "text": "ui improvements",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "9ce4c6ab-e213-434f-8bb7-eeabddf1f94c",
+      "relativePosition": [
+        -1.4485162207576967,
+        -2.037596809528774
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "101bc40f-5b53-4c4c-aca4-bc91bcdf094a",
+      "relativePosition": [
+        -1.8704652499927878,
+        1.6587223241306597
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "7a1c2e24-4a04-4962-b34d-cab94db1b590",
+      "relativePosition": [
+        2.2530880247708565,
+        1.0833255986240515
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767097449581
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

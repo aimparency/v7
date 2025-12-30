@@ -1,0 +1,19 @@
+{
+  "id": "b3fa8f91-37d5-45d6-86c0-bf6c5afcb8dc",
+  "text": "update graph force layout threshold to depend on aim radius",
+  "description": "The graph layout threshold should depend on aim size. \nBut still, when a single node reaches the threshold (movement too small, we can ignore it for let's say 10 steps but then recheck again, because the other position updates may have caused a movement that is above the threshold again)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767098786150
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,0 +1,19 @@
+{
+  "id": "5d24451d-e630-462e-94c8-ac4754d1c31d",
+  "text": "content: genreate and post content - manually (until automated), at least once per week. Twitter and instagram.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "dce12489-6642-4005-b756-99f781484ad5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767099184317
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

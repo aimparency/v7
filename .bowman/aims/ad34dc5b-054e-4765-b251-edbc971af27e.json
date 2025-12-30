@@ -1,23 +1,27 @@
 {
   "id": "ad34dc5b-054e-4765-b251-edbc971af27e",
   "text": "show aim description between title and status when aim is expanded.",
-  "committedIn": [],
-  "status": {
-    "state": "done",
-    "comment": "Implemented description display between title and status when aim is expanded. Verified with tests.",
-    "date": 1764799875307
-  },
+  "tags": [],
   "supportingConnections": [
     {
       "aimId": "9f88d152-c3d2-49de-a1e6-6426c34ada69",
       "relativePosition": [
-        1.4360337238125165,
-        -2.0464132388335345
+        6.347904825831126,
+        -0.5438127196637847
       ],
       "weight": 1
     }
   ],
   "supportedAims": [
     "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ]
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented description display between title and status when aim is expanded. Verified with tests.",
+    "date": 1764799875307
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }

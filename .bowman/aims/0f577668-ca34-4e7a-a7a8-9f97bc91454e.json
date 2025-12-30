@@ -5,6 +5,17 @@
     "ui",
     "feature"
   ],
+  "supportingConnections": [
+    {
+      "aimId": "d59d03c1-45dd-48db-98c2-49b61b481f07",
+      "relativePosition": [
+        -1.9506357950706121,
+        -0.39872458320209675
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
@@ -13,15 +24,7 @@
     "comment": "Implemented using vuedraggable. Supports reordering within phases and sub-aim lists.",
     "date": 1765214774613
   },
-  "supportingConnections": [
-    {
-      "aimId": "d59d03c1-45dd-48db-98c2-49b61b481f07",
-      "relativePosition": [
-        -0.8215395134989998,
-        2.3611592127088397
-      ],
-      "weight": 1
-    }
-  ],
-  "supportedAims": []
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }

@@ -5,16 +5,15 @@
     "automation",
     "social-media"
   ],
-  "incoming": [],
-  "committedIn": [
-    "2abfd425-ee90-4286-a019-ba0ff703c73a"
-  ],
-  "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765230130719
-  },
   "supportingConnections": [
+    {
+      "aimId": "5d24451d-e630-462e-94c8-ac4754d1c31d",
+      "relativePosition": [
+        0.7404176316563227,
+        2.3878403905480035
+      ],
+      "weight": 1
+    },
     {
       "aimId": "00344a8d-7743-48cf-a147-b7636138fd62",
       "relativePosition": [
@@ -40,5 +39,17 @@
       "weight": 1
     }
   ],
-  "supportedAims": []
+  "incoming": [],
+  "supportedAims": [],
+  "committedIn": [
+    "2abfd425-ee90-4286-a019-ba0ff703c73a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1765230130719
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }
