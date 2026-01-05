@@ -1,0 +1,19 @@
+{
+  "id": "0e8d959e-7bc0-41f8-a262-d3e8725e15c7",
+  "text": "cooldown action type should also include option to press.",
+  "description": "Because usually in main agent thread are options like: \n1. retry\n2. switch to different model. \n\nWatchdog should choose retry (cooldown and retry)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767618711593
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

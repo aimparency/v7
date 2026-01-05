@@ -1,0 +1,19 @@
+{
+  "id": "e266c632-dc74-4c44-8cf6-c184378cdc68",
+  "text": "enable moving aims into the next phase. If aim is at the end of a phase, moving down moves it into the next phase (if the current phase is not the last phase in the column)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "4f8c3aca-dec4-4932-bc16-d0a5a6955473"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767635385543
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

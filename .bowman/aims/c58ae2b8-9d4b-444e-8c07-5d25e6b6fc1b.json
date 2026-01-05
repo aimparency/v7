@@ -1,0 +1,28 @@
+{
+  "id": "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b",
+  "text": "watchdog enhancements",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "0e8d959e-7bc0-41f8-a262-d3e8725e15c7",
+      "relativePosition": [
+        -1.6485788364817846,
+        -1.8794115621396943
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767618644421
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

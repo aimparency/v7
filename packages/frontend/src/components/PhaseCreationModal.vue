@@ -5,6 +5,7 @@ import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import { timestampToLocalDate, timestampToLocalTime, localDateTimeToTimestamp } from 'shared'
+import TimePicker from './TimePicker.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -138,9 +139,11 @@ watch(() => uiStore.showPhaseModal, async (newVal) => {
 
 const calculateSmartDateRanges = async () => {
   dateWarning.value = ''
+  console.log('[PhaseCreation] Calc Smart Dates. Col:', uiStore.selectedColumn)
   
-  // Priority 1: Copy from currently selected phase (if a phase is selected when pressing 'o')
-  if (uiStore.selectedColumn > 0) {
+  // Priority 1: Copy from currently selected phase (Only for root phases - Column 0)
+  // For sub-phases, we prefer Priority 2 (Smart Logic from Parent)
+  if (uiStore.selectedColumn === 0) {
     const selectedPhaseId = uiStore.getSelectedPhaseId(uiStore.selectedColumn)
     if (selectedPhaseId) {
       try {
@@ -163,7 +166,7 @@ const calculateSmartDateRanges = async () => {
   }
 
   // Priority 2: Copy from parent phase (one column to the left)
-  if (uiStore.selectedColumn > 1) {
+  if (uiStore.selectedColumn > 0) {
     const parentColumn = uiStore.selectedColumn - 1
     const parentPhaseIdFromColumn = uiStore.getSelectedPhaseId(parentColumn)
     if (parentPhaseIdFromColumn) {
@@ -173,19 +176,25 @@ const calculateSmartDateRanges = async () => {
           phaseId: parentPhaseIdFromColumn
         })
         if (parentPhase) {
-          // Check if this is the first sub-phase of its parent
-          const existingChildren = dataStore.getPhasesByParentId(parentPhase.id)
-          
-          if (existingChildren.length === 0) {
-            // First sub-phase: start = parent start, length = 1/6 of parent
-            const duration = (parentPhase.to - parentPhase.from) / 6
-            const subTo = parentPhase.from + duration
+          // Use backend smart calculation
+          try {
+            const suggestion = await trpc.phase.suggestSubPhaseConfig.query({
+              projectPath: uiStore.projectPath,
+              parentPhaseId: parentPhase.id
+            })
+
+            console.log('[PhaseCreation] Smart Suggestion:', suggestion, 
+              'Start:', timestampToLocalDate(suggestion.from), timestampToLocalTime(suggestion.from),
+              'End:', timestampToLocalDate(suggestion.to), timestampToLocalTime(suggestion.to)
+            );
             
-            uiStore.newPhaseStartDate = timestampToLocalDate(parentPhase.from)
-            uiStore.newPhaseStartTime = timestampToLocalTime(parentPhase.from)
-            uiStore.newPhaseEndDate = timestampToLocalDate(subTo)
-            uiStore.newPhaseEndTime = timestampToLocalTime(subTo)
-          } else {
+            uiStore.newPhaseStartDate = timestampToLocalDate(suggestion.from)
+            uiStore.newPhaseStartTime = timestampToLocalTime(suggestion.from)
+            uiStore.newPhaseEndDate = timestampToLocalDate(suggestion.to)
+            uiStore.newPhaseEndTime = timestampToLocalTime(suggestion.to)
+          } catch (e) {
+            console.error('Failed to get smart dates:', e)
+            // Fallback to parent bounds
             uiStore.newPhaseStartDate = timestampToLocalDate(parentPhase.from)
             uiStore.newPhaseStartTime = timestampToLocalTime(parentPhase.from)
             uiStore.newPhaseEndDate = timestampToLocalDate(parentPhase.to)
@@ -252,11 +261,10 @@ const calculateSmartDateRanges = async () => {
               @focus="focusedField = 'startDate'"
               @blur="focusedField = null"
             />
-            <input 
+            <TimePicker
               v-model="uiStore.newPhaseStartTime" 
-              type="time" 
               :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('start') }"
-              @keydown="handleKeydown"
+              @keydown.native="handleKeydown"
               @focus="focusedField = 'startTime'"
               @blur="focusedField = null"
             />
@@ -271,11 +279,10 @@ const calculateSmartDateRanges = async () => {
               @focus="focusedField = 'endDate'"
               @blur="focusedField = null"
             />
-            <input 
+            <TimePicker
               v-model="uiStore.newPhaseEndTime" 
-              type="time" 
               :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('end') }"
-              @keydown="handleKeydown"
+              @keydown.native="handleKeydown"
               @focus="focusedField = 'endTime'"
               @blur="focusedField = null"
             />
