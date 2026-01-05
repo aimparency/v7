@@ -1,0 +1,19 @@
+{
+  "id": "338f71c7-44c5-4209-8fa5-84d03e438b83",
+  "text": "aims im Graph haben Farbe je nach priorisierung",
+  "description": "Golden/gelb hohe Priorität. dunkel cyan niedrige priorität",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767551848642
+  },
+  "intrinsicValue": 20,
+  "cost": 1,
+  "loopWeight": 0
+}

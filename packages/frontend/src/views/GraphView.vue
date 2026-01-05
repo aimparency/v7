@@ -39,6 +39,7 @@ interface GraphNode extends MapNode {
   shift: vec2.T
   freezeFactor: number
   color?: string
+  freezeCounter?: number // For adaptive threshold debounce
 }
 
 interface GraphLink {
@@ -653,9 +654,8 @@ const layout = () => {
               // Spring Force (Hooke's Law)
               const displacement = currentDist - targetDist
               
-              // Weight based on surface area (normalized by standard radius 150)
-              const weight = (nodeA.r * nodeB.r) / (150 * 150)
-              const forceMagnitude = displacement * SEMANTIC_STIFFNESS * weight
+              // Constant Acceleration: Force is independent of node mass (size)
+              const forceMagnitude = displacement * SEMANTIC_STIFFNESS
 
               vec2.scale(hShift, abVector, forceMagnitude)
               vec2.add(nodeA.shift, nodeA.shift, hShift)
@@ -752,8 +752,16 @@ const layout = () => {
         if (n.id === mapStore.dragCandidate?.id && mapStore.dragBeginning) {
            // Do not move via physics
         } else {
+           if (n.freezeCounter && n.freezeCounter > 0) {
+               n.freezeCounter--
+               continue
+           }
+
            if (Math.abs(n.shift[0]) > minShift || Math.abs(n.shift[1]) > minShift) {
                vec2.add(n.pos, n.pos, n.shift)
+           } else {
+               // Movement too small, freeze for a bit
+               n.freezeCounter = 10
            }
         }
       }
@@ -793,8 +801,8 @@ const updateGraphData = () => {
   const avgValue = rawNodes.length > 0 ? totalValue / rawNodes.length : 0
   
   // SPACING_FACTOR: Determines how far apart they push (Universe Size)
-  // 144 means the semantic universe is huge relative to node mass
-  const SPACING_FACTOR = 144
+  // 64 means linear spacing is 1.5x tighter than 144 (sqrt(144)=12, sqrt(64)=8)
+  const SPACING_FACTOR = 64
 
   const newNodes: GraphNode[] = []
   rawNodes.forEach(raw => {
@@ -815,6 +823,7 @@ const updateGraphData = () => {
         pos: loaded ? [loaded.x, loaded.y] : [Math.random() * 100 - 50, Math.random() * 100 - 50],
         shift: [0, 0],
         freezeFactor: 0,
+        freezeCounter: 0,
         color: undefined
       }
       nodeMap.set(raw.id, existing)

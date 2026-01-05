@@ -565,6 +565,7 @@ export function registerTools(server: Server, clientOverride?: any) {
                 const node = {
                     id: aim.id,
                     text: aim.text,
+                    description: aim.description,
                     status: aim.status.state,
                     children: children
                 };
@@ -1036,7 +1037,9 @@ export function registerTools(server: Server, clientOverride?: any) {
                 text: JSON.stringify({
                     phase: targetPhase.name,
                     aims: prioritized.map((a: any) => ({
+                        id: a.id,
                         text: a.text,
+                        description: a.description,
                         priority: a.priority.toFixed(2),
                         value: a.intrinsicValue,
                         cost: a.cost

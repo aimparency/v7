@@ -1,0 +1,19 @@
+{
+  "id": "88d7bcb6-c79e-43c3-963f-cfd7d8deb354",
+  "text": "add cache.db to .gitignore when setting up bowman projects",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767099721107
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

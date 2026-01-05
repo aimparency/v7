@@ -1,0 +1,19 @@
+{
+  "id": "7c7cdd5b-de92-4c26-81d8-c0995c3f1e17",
+  "text": "planen und spezifizieren",
+  "description": "Wie genau wird priorität berechnet? \nWie genau wird value berechnet? Im Moment wird der Value so weitergegeben aber ist am ursprünglichen Ziel dann != intrinsic value. Sollte eigentlich die Summe sein. \nUnd same für Kosten: auch da aufsummieren von unten nach oben. \nFrage ist nur: wie verteilt man zu multiplen supported aims.  \ndiscounted values (currencies? timestamps?) => eigentlich werte, die nicht angepasst werden müssen. Also \"wert zu einem bestimmten zeitpunkt\".",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767599890694
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

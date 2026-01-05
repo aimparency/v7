@@ -1,0 +1,17 @@
+{
+  "id": "093916f0-a6fa-4ed8-af9c-f6d1c47ebb68",
+  "text": "watchdog improvements",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767605186715
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

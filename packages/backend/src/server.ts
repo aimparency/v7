@@ -508,6 +508,72 @@ async function migrateCommittedInField(projectPath: string): Promise<void> {
   }
 }
 
+// Helper to calculate smart sub-phase dates
+async function calculateSmartSubPhaseDates(projectPath: string, parentId: string): Promise<{ from: number, to: number }> {
+    const parentPhase = await readPhase(projectPath, parentId);
+    // listPhases filters by parent if provided
+    const siblings = await listPhases(projectPath, parentId);
+    siblings.sort((a, b) => a.from - b.from);
+
+    // 1. Calculate Target Duration
+    let targetDuration = 0;
+    if (siblings.length > 0) {
+        const totalDuration = siblings.reduce((sum, p) => sum + (p.to - p.from), 0);
+        targetDuration = totalDuration / siblings.length;
+    } else {
+        // Default: 1/4 of parent duration
+        targetDuration = (parentPhase.to - parentPhase.from) / 4;
+    }
+
+    // 2. Find Largest Gap
+    let maxGap = { start: parentPhase.from, duration: 0 };
+    let currentCheck = parentPhase.from;
+
+    // Check gaps between siblings
+    for (const sibling of siblings) {
+        // Gap is between currentCheck and sibling.from
+        // Ensure we don't go backwards if siblings overlap parent start (shouldn't happen but safe)
+        const gapStart = Math.max(currentCheck, parentPhase.from);
+        const gapEnd = Math.min(sibling.from, parentPhase.to);
+        
+        const gapDuration = Math.max(0, gapEnd - gapStart);
+        
+        if (gapDuration > maxGap.duration) {
+            maxGap = { start: gapStart, duration: gapDuration };
+        }
+        // Move check to end of this sibling
+        currentCheck = Math.max(currentCheck, sibling.to);
+    }
+
+    // Check final gap (after last sibling)
+    const finalGapStart = Math.max(currentCheck, parentPhase.from);
+    const finalGapEnd = parentPhase.to;
+    const finalGapDuration = Math.max(0, finalGapEnd - finalGapStart);
+
+    if (finalGapDuration >= maxGap.duration) { // Prefer later gaps if equal? Or earlier? ">= " takes later. Let's use ">" for earlier.
+        // Actually, usually filling from left to right is better. 
+        // But the requirement says "largest gap". 
+        // If strict >: First largest.
+        // If >=: Last largest.
+        // Let's use strict > to preserve the first available large slot.
+    }
+    // Correction: I want to include final gap check
+    if (finalGapDuration > maxGap.duration) {
+         maxGap = { start: finalGapStart, duration: finalGapDuration };
+    }
+
+    // 3. Determine Result
+    const newFrom = maxGap.start;
+    let newTo = newFrom + targetDuration;
+
+    // 4. Cap at Parent End
+    if (newTo > parentPhase.to) {
+        newTo = parentPhase.to;
+    }
+
+    return { from: newFrom, to: newTo };
+}
+
 // Create the actual tRPC router
 const appRouter = t.router({
   aim: t.router({
@@ -1051,19 +1117,41 @@ const appRouter = t.router({
         projectPath: z.string(),
         phase: z.object({
           name: z.string(),
-          from: z.number(),
-          to: z.number(),
+          from: z.number().optional(),
+          to: z.number().optional(),
           parent: z.string().nullable().optional(),
           commitments: z.array(z.string()).optional()
         })
       }))
       .mutation(async ({ input }) => {
+        let from = input.phase.from;
+        let to = input.phase.to;
+
+        // Smart Dates Logic
+        if (from === undefined || to === undefined) {
+            if (input.phase.parent) {
+                const smartDates = await calculateSmartSubPhaseDates(input.projectPath, input.phase.parent);
+                if (from === undefined) from = smartDates.from;
+                if (to === undefined) to = smartDates.to;
+            } else {
+                // If checking for undefined is tricky with 0 timestamps, use strict check or Zod handles it.
+                // Assuming timestamps are > 0.
+                // If it's a root phase, we can't infer dates.
+                // However, maybe we default to "now" -> "now + 1 month" for root? 
+                // Requirement only specified subphase logic.
+                // Let's enforce explicit dates for root for now to avoid accidental garbage data.
+                if (from === undefined || to === undefined) {
+                     throw new Error("Start and End dates are required for root phases (no parent specified).");
+                }
+            }
+        }
+
         const phaseId = uuidv4();
         const phase: Phase = {
           id: phaseId,
           name: input.phase.name,
-          from: input.phase.from,
-          to: input.phase.to,
+          from: from!,
+          to: to!,
           parent: input.phase.parent ?? null,
           commitments: input.phase.commitments || []
         };
@@ -1157,6 +1245,15 @@ const appRouter = t.router({
         await ensureSearchIndex(input.projectPath);
         const phases = await listPhases(input.projectPath, input.parentPhaseId);
         return await searchPhases(input.projectPath, input.query, phases);
+      }),
+
+    suggestSubPhaseConfig: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        parentPhaseId: z.string().uuid()
+      }))
+      .query(async ({ input }) => {
+        return await calculateSmartSubPhaseDates(input.projectPath, input.parentPhaseId);
       })
   }),
 

@@ -23,3 +23,4 @@
 - Felix has a brother he was competitive with and grew apart from; he admires the symbiotic, non-competitive dynamic of Billie Eilish and Finneas.
 - The user's name is Felix.
 - The Watchdog Broker (in backend) manages watchdog processes per project path (normalized to .bowman), reusing sessions and enforcing a 5-minute idle timeout reset by frontend keepalives (every 30s).
+- When you are not sure about user intent regarding an aim you are working on, pause work on it, set status to "unclear" and describe the ambiguity in the status comment. 

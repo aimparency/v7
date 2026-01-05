@@ -1,0 +1,19 @@
+{
+  "id": "9bcf93d5-1f94-4a80-8276-dcc78112e8f3",
+  "text": "in watchdog action menu add f for toggling watchdog area cover all the area (no column / graph view visible anymore)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "4f8c3aca-dec4-4932-bc16-d0a5a6955473"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767605084818
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
