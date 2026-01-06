@@ -32,7 +32,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
   }
 }
 
-// Manage socket listeners manually to prevent leaks and ensure data flow to terminals
+// Manage socket listeners manually to prevent filtered data
 watch(() => store.socket, (socket, oldSocket) => {
   if (oldSocket) {
     oldSocket.off('worker-data', onWorkerData)
@@ -43,6 +43,13 @@ watch(() => store.socket, (socket, oldSocket) => {
     socket.on('watchdog-data', onWatchdogData)
   }
 }, { immediate: true })
+
+watch(() => store.focusRequestCounter, () => {
+  // Allow UI updates (e.g. search modal closing) to complete before focusing
+  setTimeout(() => {
+    workerTerm.value?.focus()
+  }, 50)
+})
 
 onMounted(() => {
   store.fetchSessions()
@@ -120,7 +127,7 @@ defineExpose({
           :class="{ running: store.isEnabled }"
           :disabled="!store.isConnected"
         >
-          {{ store.isEnabled ? 'Disable Watchdog' : 'Enable Watchdog' }}
+          {{ store.isEnabled ? 'Disable Animator' : 'Enable Animator' }}
         </button>
         <button 
           @click="store.relaunch()" 
@@ -144,7 +151,7 @@ defineExpose({
         />
       </div>
       <div class="term-col">
-        <div class="term-label">Watchdog (Brain)</div>
+        <div class="term-label">Watchdog (Animator)</div>
         <WatchdogTerminal 
           ref="watchdogTerm" 
           :initial-content="store.watchdogOutput"

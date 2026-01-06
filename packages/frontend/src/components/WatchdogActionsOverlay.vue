@@ -6,12 +6,13 @@ import { useUIStore } from '../stores/ui'
 const store = useWatchdogStore()
 const uiStore = useUIStore()
 const selectedIndex = ref(0)
+const previouslyFocusedElement = ref<HTMLElement | null>(null)
 
 const actions = [
   {
     id: 'toggle',
     key: 't',
-    label: () => store.isEnabled ? 'Disable Watchdog' : 'Enable Watchdog',
+    label: () => store.isEnabled ? 'Disable Animator' : 'Enable Animator',
     action: () => store.toggle(),
     icon: '⚡'
   },
@@ -23,6 +24,7 @@ const actions = [
       uiStore.openAimSearch('pick', (aim) => {
         const textToInsert = `[${aim.id}] ${aim.text}`
         store.sendWorkerInput(textToInsert)
+        store.triggerWorkerFocus()
       })
     },
     icon: '🔍'
@@ -30,7 +32,7 @@ const actions = [
   {
     id: 'hide',
     key: 'w',
-    label: () => 'Hide Watchdog Panel',
+    label: () => 'Hide Animator Panel',
     action: () => { uiStore.showWatchdog = false },
     icon: '👁️'
   },
@@ -44,7 +46,7 @@ const actions = [
   {
     id: 'relaunch',
     key: 'r',
-    label: () => 'Relaunch Watchdog Process',
+    label: () => 'Relaunch Animator Process',
     action: () => store.relaunch(),
     icon: '🔄'
   },
@@ -91,8 +93,9 @@ const blockEvent = (e: Event) => {
 }
 
 onMounted(() => {
-  // Ensure terminals lose focus
+  // Ensure terminals lose focus, but remember what was focused
   if (document.activeElement instanceof HTMLElement) {
+    previouslyFocusedElement.value = document.activeElement
     document.activeElement.blur()
   }
   
@@ -106,13 +109,18 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown, true)
   window.removeEventListener('keypress', blockEvent, true)
   window.removeEventListener('keyup', blockEvent, true)
+
+  // Restore focus if it hasn't been moved elsewhere by other logic
+  if (previouslyFocusedElement.value && document.body.contains(previouslyFocusedElement.value)) {
+    previouslyFocusedElement.value.focus()
+  }
 })
 </script>
 
 <template>
   <div class="actions-overlay" @click.self="store.showActionsOverlay = false">
     <div class="actions-modal">
-      <div class="modal-header">Watchdog Actions</div>
+      <div class="modal-header">Animator Actions</div>
       <div class="actions-list">
         <div 
           v-for="(action, index) in actions" 

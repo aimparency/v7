@@ -12,6 +12,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const isEmergencyStopped = ref(false)
   const stopReason = ref('')
   const showActionsOverlay = ref(false)
+  const focusRequestCounter = ref(0)
   
   // Terminal buffers
   const workerOutput = ref('')
@@ -177,6 +178,10 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
+  function triggerWorkerFocus() {
+    focusRequestCounter.value++
+  }
+
   function setupSocketListeners() {
     if (!socket.value) return
 
@@ -268,6 +273,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     watchdogOutput,
     spawningLog,
     showActionsOverlay,
+    focusRequestCounter,
     sessions,
     fetchSessions,
     connect,
@@ -275,6 +281,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     toggle,
     sendWorkerInput,
     sendWatchdogInput,
-    relaunch
+    relaunch,
+    triggerWorkerFocus
   }
 })

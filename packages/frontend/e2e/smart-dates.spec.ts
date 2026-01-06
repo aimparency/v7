@@ -3,12 +3,9 @@ import { test, expect } from '@playwright/test';
 import path from 'path';
 import fs from 'fs-extra';
 import { v4 as uuidv4 } from 'uuid';
-import { fileURLToPath } from 'url';
+import os from 'os';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const TMP_ROOT = path.resolve(__dirname, '../../../.test-tmp');
+const TMP_ROOT = os.tmpdir();
 const TEST_ID = uuidv4();
 const PROJECT_DIR = path.join(TMP_ROOT, TEST_ID, '.bowman');
 

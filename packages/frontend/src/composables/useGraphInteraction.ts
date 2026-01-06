@@ -1,0 +1,414 @@
+import { ref, onMounted, onUnmounted, type Ref } from 'vue'
+import { useDataStore } from '../stores/data'
+import { useUIStore } from '../stores/ui'
+import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
+import * as vec2 from '../utils/vec2'
+import { trpc } from '../trpc'
+import { type GraphNode, type GraphLink, useGraphSimulation } from './useGraphSimulation'
+
+export function useGraphInteraction(
+    svgRef: Ref<SVGSVGElement | undefined>,
+    width: Ref<number>,
+    height: Ref<number>,
+    simulation: ReturnType<typeof useGraphSimulation>
+) {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const mapStore = useMapStore()
+
+    const { nodes, links, nodeMap, freezings, onTick } = simulation
+
+    // State for layouting handle
+    const layoutingHandlePos = vec2.create()
+
+    // --- Helpers ---
+    const updateHalfSide = () => {
+        if (!svgRef.value) return
+        let w = svgRef.value.clientWidth 
+        let h = svgRef.value.clientHeight
+        width.value = w
+        height.value = h
+        if(w > h) {
+            mapStore.clientOffset = [ (w - h) / 2, 0 ]
+            mapStore.halfSide = h / 2
+            mapStore.xratio = w/h
+            mapStore.yratio = 1
+        } else {
+            mapStore.clientOffset = [ 0, (h - w) / 2 ]
+            mapStore.halfSide = w / 2
+            mapStore.xratio = 1
+            mapStore.yratio = h/w
+        }
+    }
+
+    const getLocalPos = (clientX: number, clientY: number) => {
+        if (!svgRef.value) return vec2.fromValues(0, 0)
+        const rect = svgRef.value.getBoundingClientRect()
+        return vec2.fromValues(clientX - rect.left, clientY - rect.top)
+    }
+
+    // --- Interaction Logic ---
+    const updatePan = (d: vec2.T) => {
+        const pb = mapStore.panBeginning; 
+        if(pb !== undefined) {
+            const s = LOGICAL_HALF_SIDE / (mapStore.halfSide * mapStore.scale)
+            const scaledD = vec2.crScale(d, s)
+            
+            const offset = vec2.clone(pb.offset)
+            vec2.sub(offset, offset, scaledD)
+            mapStore.offset = offset  
+        }
+    }
+
+    const updateDrag = (d: vec2.T) => {
+        const db = mapStore.dragBeginning;
+        const node = mapStore.dragCandidate as GraphNode; 
+        if(db && node) {
+            const s = LOGICAL_HALF_SIDE / (mapStore.halfSide * mapStore.scale)
+            const scaledD = vec2.crScale(d, s)
+            
+            const pos = vec2.clone(db.pos)
+            vec2.sub(pos, pos, scaledD) 
+            node.pos = pos
+        }
+    }
+
+    const updateLayout = (d: vec2.T) => {
+        const lc = mapStore.layoutCandidate
+        if(lc) {
+            const s = LOGICAL_HALF_SIDE / (mapStore.halfSide * mapStore.scale)
+            const scaledD = vec2.crScale(d, s)
+            vec2.sub(layoutingHandlePos, lc.start, scaledD)
+            
+            updateRelativeDeltaWhileLayouting()
+        }
+    }
+
+    const updateRelativeDeltaWhileLayouting = () => {
+        const lc = mapStore.layoutCandidate
+        if (mapStore.layouting && lc) {
+            const link = lc.link as GraphLink
+            const M = vec2.crMix(
+                link.source.pos, 
+                link.target.pos, 
+                lc.fromWeight
+            )
+            const arm = vec2.crSub(layoutingHandlePos, M) 
+            vec2.scale(link.relativePosition, arm, lc.dScale)
+        }
+    }
+
+    // Register tick callback
+    onTick(() => {
+        if (mapStore.layouting) {
+            updateRelativeDeltaWhileLayouting()
+        }
+    })
+
+    const beginWhatever = (mouse: vec2.T) => {
+        mapStore.isTracking = false
+        mapStore.updateMouse(mouse) 
+        mapStore.mousePhysBegin = vec2.clone(mouse)
+        
+        if(mapStore.dragCandidate) {
+            mapStore.dragBeginning = {
+                pos: vec2.clone(mapStore.dragCandidate.pos) 
+            }
+        } else if (mapStore.layoutCandidate) {
+            updateLayout(vec2.create())
+        } else if (mapStore.connectFrom) {
+            // connecting
+        } else {
+            mapStore.panBeginning = {
+                offset: vec2.clone(mapStore.offset)
+            }
+        } 
+    }
+
+    const endWhatever = () => {
+        if(mapStore.panBeginning) {
+            mapStore.panBeginning = undefined
+        } else if (mapStore.dragBeginning) {
+            // Update relative positions for links
+            const node = mapStore.dragCandidate as GraphNode
+            if (node && links.value) {
+                links.value.forEach(link => {
+                    if (link.target === node) {
+                        const child = link.source
+                        const parent = node
+                        const deltaX = child.pos[0] - parent.pos[0]
+                        const deltaY = child.pos[1] - parent.pos[1]
+                        const rSum = parent.r + child.r 
+                        const relX = deltaX / rSum
+                        const relY = deltaY / rSum
+                        
+                        ;(dataStore as any).updateConnectionPosition(
+                            uiStore.projectPath,
+                            parent.id,
+                            child.id,
+                            [relX, relY]
+                        )
+                        link.relativePosition = [relX, relY]
+                    } else if (link.source === node) {
+                        const child = node
+                        const parent = link.target
+                        const deltaX = child.pos[0] - parent.pos[0]
+                        const deltaY = child.pos[1] - parent.pos[1]
+                        const rSum = parent.r + child.r 
+                        const relX = deltaX / rSum
+                        const relY = deltaY / rSum
+                        
+                        ;(dataStore as any).updateConnectionPosition(
+                            uiStore.projectPath,
+                            parent.id,
+                            child.id,
+                            [relX, relY]
+                        )
+                        link.relativePosition = [relX, relY]
+                    }
+                })
+            }
+            
+            mapStore.dragBeginning = undefined
+            mapStore.dragCandidate = undefined
+            
+            if (node) {
+                freezings.set(node.id, Date.now())
+            }
+        } else if (mapStore.layouting) {
+            const lc = mapStore.layoutCandidate
+            if (lc) {
+                const link = lc.link as GraphLink
+                ;(dataStore as any).updateConnectionPosition(
+                    uiStore.projectPath,
+                    link.target.id,
+                    link.source.id,
+                    [link.relativePosition[0], link.relativePosition[1]]
+                )
+            }
+            mapStore.layouting = false
+            mapStore.layoutCandidate = undefined
+        } else if (mapStore.connecting) {
+            mapStore.connecting = false
+            mapStore.connectFrom = undefined
+        }
+        
+        setTimeout(() => { mapStore.cursorMoved = false })
+    }
+
+    const updateWhatever = (mouse: vec2.T) => {
+        mapStore.updateMouse(mouse)
+        const d = vec2.crSub(mapStore.mousePhysBegin, mouse)
+        
+        if(vec2.len2(d) > 25 || mapStore.cursorMoved) {
+            let actionOngoing = true
+            if(mapStore.panBeginning) {
+                updatePan(d); 
+            } else if (mapStore.dragBeginning) {
+                updateDrag(d); 
+            } else if (mapStore.layouting) {
+                updateLayout(d);
+            } else if (mapStore.connecting) {
+                // Keep actionOngoing true
+            } else {
+                actionOngoing = false
+            }
+            if(actionOngoing) {
+                mapStore.cursorMoved = true
+                mapStore.stopAnim()
+            }
+        }
+    }
+
+    // --- Event Handlers ---
+    const onMouseMove = (e: MouseEvent) => {
+        updateWhatever(getLocalPos(e.clientX, e.clientY))
+    }
+    const onMouseDown = (e: MouseEvent) => {
+        const mouse = getLocalPos(e.clientX, e.clientY)
+        beginWhatever(mouse)
+    }
+    const onMouseUp = () => endWhatever()
+    const onWheel = (e: WheelEvent) => {
+        e.preventDefault()
+        mapStore.isTracking = false
+        const mouse = getLocalPos(e.clientX, e.clientY)
+        const f = Math.pow(1.1, -e.deltaY / 150)
+        mapStore.zoom(f, mouse)
+    }
+
+    // Touch Handling (Ported)
+    let touchState = { currentCount: 0, dragFingerId: 0 }
+    let pinchBeginning: undefined | {
+        first: number, 
+        second: number, 
+        mLogical: vec2.T, 
+        distancePage: number, 
+        offset: vec2.T, 
+        scale: number, 
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+        if(e.touches.length > 0) {
+            if(e.touches.length > 1) {
+                if(touchState.currentCount < 2) {
+                    mapStore.connectFrom = undefined
+                    touchState.currentCount = 2
+                    const t1 = e.touches[0]!
+                    const t2 = e.touches[1]!
+                    let firstPage = getLocalPos(t1.clientX, t1.clientY)
+                    let secondPage = getLocalPos(t2.clientX, t2.clientY)
+                    let mPhysical = vec2.clone(firstPage) 
+                    vec2.add(mPhysical, mPhysical, secondPage) 
+                    vec2.scale(mPhysical, mPhysical, 0.5) 
+                    let mLogical = mapStore.physicalToLogicalCoord(mPhysical) 
+                    pinchBeginning = {
+                        first: t1.identifier, 
+                        second: t2.identifier, 
+                        mLogical, 
+                        distancePage: vec2.dist(firstPage, secondPage), 
+                        offset: vec2.clone(mapStore.offset), 
+                        scale: mapStore.scale
+                    }
+                } 
+            } else {
+                if(touchState.currentCount == 0) {
+                    touchState.currentCount = 1
+                    const t = e.touches[0]!
+                    touchState.dragFingerId = t.identifier
+                    let mouse = getLocalPos(t.clientX, t.clientY)
+                    beginWhatever(mouse)
+                } else if (touchState.currentCount > 1) {
+                    pinchBeginning = undefined
+                }
+            }
+        }
+    }
+
+    const onTouchMove = (e: TouchEvent) => {
+        e.preventDefault()
+        if(touchState.currentCount == 1) {
+            if (e.touches.length > 0) {
+                const t = e.touches[0]!
+                let mouse = getLocalPos(t.clientX, t.clientY)
+                updateWhatever(mouse)
+            }
+        } else if (touchState.currentCount > 1) {
+            if(pinchBeginning && e.touches.length > 1) {
+                const t1 = e.touches[0]!
+                const t2 = e.touches[1]!
+                let firstPage = getLocalPos(t1.clientX, t1.clientY)
+                let secondPage = getLocalPos(t2.clientX, t2.clientY)
+                let distancePage = vec2.dist(firstPage, secondPage)
+                let mPhysical = vec2.clone(firstPage) 
+                vec2.add(mPhysical, mPhysical, secondPage) 
+                vec2.scale(mPhysical, mPhysical, 0.5) 
+                let mLogical = mapStore.physicalToLogicalCoord(mPhysical) 
+                let scaleChange = distancePage / pinchBeginning.distancePage 
+                mapStore.scale = pinchBeginning.scale * scaleChange
+                vec2.sub(mLogical, mLogical, pinchBeginning.mLogical) 
+                vec2.add(mapStore.offset, mapStore.offset, mLogical) 
+            }
+        }
+    }
+
+    const onTouchEnd = (e: TouchEvent) => {
+        if(touchState.currentCount > 1) pinchBeginning = undefined
+        if(touchState.currentCount > 0) endWhatever()
+        touchState.currentCount = 0
+    }
+
+    // Node Events
+    const onNodeDown = (e: MouseEvent | TouchEvent, nodeCopy: GraphNode) => {
+        const node = nodeMap.get(nodeCopy.id)
+        if (!node) return
+        const selectedId = uiStore.graphSelectedAimId
+        if (selectedId && selectedId === node.id) {
+            mapStore.startConnecting(node)
+        } else {
+            mapStore.startDragging(node)
+        }
+    }
+
+    const onNodeUp = async (node: GraphNode) => {
+        if (mapStore.connecting && mapStore.connectFrom) {
+            if (mapStore.connectFrom.id !== node.id) {
+                const parent = mapStore.connectFrom as GraphNode
+                const child = node
+                const deltaX = child.pos[0] - parent.pos[0]
+                const deltaY = child.pos[1] - parent.pos[1]
+                const rSum = parent.r + child.r
+                const relativePosition: [number, number] = [deltaX / rSum, deltaY / rSum]
+                try {
+                    await trpc.aim.connectAims.mutate({
+                        projectPath: uiStore.projectPath,
+                        parentAimId: parent.id,
+                        childAimId: child.id,
+                        relativePosition,
+                    })
+                    const updatedParent = await trpc.aim.get.query({
+                        projectPath: uiStore.projectPath,
+                        aimId: parent.id
+                    })
+                    dataStore.replaceAim(parent.id, updatedParent)
+                    dataStore.recalculateValues()
+                } catch (e) {
+                    console.error('Failed to connect aims:', e)
+                }
+            }
+        }
+    }
+
+    const onNodeClick = async (node: GraphNode) => {
+        if (!mapStore.cursorMoved) {
+            uiStore.setGraphSelection(node.id)
+            uiStore.deselectLink()
+        }
+    }
+
+    const onBackgroundClick = () => {
+        if (!mapStore.cursorMoved && !mapStore.connecting) {
+            uiStore.deselectLink()
+            uiStore.setGraphSelection(null)
+        }
+    }
+
+    // Initialize Listeners
+    const initListeners = () => {
+        if (svgRef.value) {
+            svgRef.value.addEventListener("mousemove", onMouseMove)
+            svgRef.value.addEventListener("mousedown", onMouseDown)
+            svgRef.value.addEventListener("mouseup", onMouseUp)
+            svgRef.value.addEventListener("wheel", onWheel, { passive: false })
+            svgRef.value.addEventListener("touchstart", onTouchStart, { passive: false })
+            svgRef.value.addEventListener("touchmove", onTouchMove, { passive: false })
+            svgRef.value.addEventListener("touchend", onTouchEnd)
+            svgRef.value.addEventListener("touchcancel", onTouchEnd)
+        }
+        window.addEventListener('resize', updateHalfSide)
+        updateHalfSide()
+    }
+
+    const cleanupListeners = () => {
+        if (svgRef.value) {
+            svgRef.value.removeEventListener("mousemove", onMouseMove)
+            svgRef.value.removeEventListener("mousedown", onMouseDown)
+            svgRef.value.removeEventListener("mouseup", onMouseUp)
+            svgRef.value.removeEventListener("wheel", onWheel)
+            svgRef.value.removeEventListener("touchstart", onTouchStart)
+            svgRef.value.removeEventListener("touchmove", onTouchMove)
+            svgRef.value.removeEventListener("touchend", onTouchEnd)
+            svgRef.value.removeEventListener("touchcancel", onTouchEnd)
+        }
+        window.removeEventListener('resize', updateHalfSide)
+    }
+
+    return {
+        initListeners,
+        cleanupListeners,
+        onNodeDown,
+        onNodeUp,
+        onNodeClick,
+        onBackgroundClick
+    }
+}
