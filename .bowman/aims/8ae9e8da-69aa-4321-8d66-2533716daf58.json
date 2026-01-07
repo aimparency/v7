@@ -1,0 +1,36 @@
+{
+  "id": "8ae9e8da-69aa-4321-8d66-2533716daf58",
+  "text": "make the graph layout calculations more efficient (fluid)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "66995257-6857-410b-a1b2-a2799fd8ec33",
+      "relativePosition": [
+        -2.475125779302188,
+        -0.3517845599706418
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "11023dbf-c89c-42cc-870b-cc057e785b81",
+      "relativePosition": [
+        -0.5332353541863946,
+        2.442470072906874
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767734942406
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -25,6 +25,9 @@ export interface GraphNode {
   freezeFactor: number
   color?: string
   freezeCounter?: number
+  // Optimization
+  lastRenderX?: number
+  lastRenderY?: number
 }
 
 export interface GraphLink {
@@ -35,17 +38,47 @@ export interface GraphLink {
   share: number
 }
 
-// Helper: Naive Box Intersect
-function naiveBoxIntersect(boxes: number[][]) {
+// Helper: Spatial Grid Intersect (O(N) avg instead of O(N^2))
+function gridIntersect(boxes: number[][], cellSize: number) {
+  const grid = new Map<string, number[]>()
   const results = []
+
+  // 1. Bin objects
   for (let i = 0; i < boxes.length; i++) {
-    for (let j = i + 1; j < boxes.length; j++) {
-      const a = boxes[i]
-      const b = boxes[j]
-      if (a && b && a[2]! >= b[0]! && a[0]! <= b[2]! && a[3]! >= b[1]! && a[1]! <= b[3]!) {
-        results.push([i, j])
+    const b = boxes[i]
+    if (!b) continue
+    const cx = (b[0] + b[2]) / 2
+    const cy = (b[1] + b[3]) / 2
+    const key = `${Math.floor(cx / cellSize)},${Math.floor(cy / cellSize)}`
+    
+    if (!grid.has(key)) grid.set(key, [])
+    grid.get(key)!.push(i)
+  }
+
+  // 2. Check collisions
+  for (let i = 0; i < boxes.length; i++) {
+      const bA = boxes[i]
+      if (!bA) continue
+      const cx = Math.floor(((bA[0] + bA[2]) / 2) / cellSize)
+      const cy = Math.floor(((bA[1] + bA[3]) / 2) / cellSize)
+      
+      // Check 9 neighbors
+      for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+              const key = `${cx + dx},${cy + dy}`
+              const cell = grid.get(key)
+              if (cell) {
+                  for (const j of cell) {
+                      if (i < j) { // Unique pairs
+                          const bB = boxes[j]
+                          if (bB && bA[2] >= bB[0] && bA[0] <= bB[2] && bA[3] >= bB[1] && bA[1] <= bB[3]) {
+                              results.push([i, j])
+                          }
+                      }
+                  }
+              }
+          }
       }
-    }
   }
   return results
 }

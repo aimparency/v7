@@ -1,0 +1,19 @@
+{
+  "id": "66995257-6857-410b-a1b2-a2799fd8ec33",
+  "text": "efficient collision handling",
+  "description": "leverage that aims move only a bit from frame to frame",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8ae9e8da-69aa-4321-8d66-2533716daf58"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767734967314
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

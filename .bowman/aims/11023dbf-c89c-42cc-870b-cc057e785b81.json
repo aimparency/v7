@@ -1,0 +1,19 @@
+{
+  "id": "11023dbf-c89c-42cc-870b-cc057e785b81",
+  "text": "only make dom changes, when position was updated in a visual way (respecting view zoom)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8ae9e8da-69aa-4321-8d66-2533716daf58"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767734999698
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

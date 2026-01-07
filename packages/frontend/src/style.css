@@ -33,6 +33,27 @@ body {
   }
 }
 
+/* Global Input Styling */
+input, select, textarea {
+  width: 100%;
+  padding: 0.5rem;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  border-radius: 0.1875rem;
+  color: #e0e0e0;
+  font-family: inherit; /* Ensure monospace inheritance */
+  font-size: 1rem; /* Consistent font size */
+  
+  &:focus {
+    outline: none;
+    border-color: #007acc;
+  }
+  
+  &::placeholder {
+    color: #666;
+  }
+}
+
 /* Selected element with inset outline */
 .selected-outlined {
   outline: 0.15rem solid #007acc;

@@ -1,0 +1,19 @@
+{
+  "id": "54afad1d-4660-4908-8043-eeea348eaf90",
+  "text": "create favicon",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767735946155
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

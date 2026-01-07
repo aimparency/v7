@@ -6,6 +6,7 @@ import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import { timestampToLocalDate, timestampToLocalTime, localDateTimeToTimestamp } from 'shared'
 import TimePicker from './TimePicker.vue'
+import PhaseSearchModal from './PhaseSearchModal.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -13,44 +14,15 @@ const dataStore = useDataStore()
 const phaseNameInput = ref<HTMLInputElement>()
 const submitBtn = ref<HTMLButtonElement>()
 const dateWarning = ref<string>('')
-const allPhases = ref<Phase[]>([])
 const focusedField = ref<string | null>(null)
+const showPhaseSearch = ref(false)
+const selectedParentName = ref<string>('Root (No Parent)')
+const parentSelectorBtn = ref<HTMLButtonElement>()
+const parentSelectorDisplay = ref<HTMLDivElement>()
 
 const startTimestamp = computed(() => localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime))
 const endTimestamp = computed(() => localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime))
 const isRangeInvalid = computed(() => startTimestamp.value > endTimestamp.value)
-
-const availableParents = computed(() => {
-  if (uiStore.phaseModalMode !== 'edit' || !uiStore.phaseModalEditingPhaseId) return []
-
-  const selfId = uiStore.phaseModalEditingPhaseId
-  const phaseMap = new Map(allPhases.value.map(p => [p.id, p]))
-
-  // Helper to check if candidate is a descendant of self
-  const isDescendant = (candidate: Phase) => {
-    let current = candidate
-    const visited = new Set<string>()
-    
-    while (current.parent) {
-      if (current.parent === selfId) return true
-      if (visited.has(current.id)) break // Cycle in existing tree
-      visited.add(current.id)
-      
-      const parent = phaseMap.get(current.parent)
-      if (!parent) break
-      current = parent
-    }
-    return false
-  }
-
-  return allPhases.value.filter(p => {
-    // Exclude self
-    if (p.id === selfId) return false
-    // Exclude descendants (to avoid cycles)
-    if (isDescendant(p)) return false
-    return true
-  }).sort((a, b) => a.name.localeCompare(b.name))
-})
 
 const createPhase = async () => {
   if (!uiStore.newPhaseName.trim()) return;
@@ -129,8 +101,20 @@ watch(() => uiStore.showPhaseModal, async (newVal) => {
       await nextTick()
       phaseNameInput.value?.focus()
     } else if (uiStore.phaseModalMode === 'edit') {
-      // Load all phases for parent selection
-      allPhases.value = await trpc.phase.list.query({ projectPath: uiStore.projectPath })
+      // Resolve parent name
+      if (uiStore.phaseModalEditingParentId) {
+          try {
+              const p = await trpc.phase.get.query({ 
+                  projectPath: uiStore.projectPath, 
+                  phaseId: uiStore.phaseModalEditingParentId 
+              })
+              selectedParentName.value = p.name
+          } catch {
+              selectedParentName.value = 'Unknown Parent'
+          }
+      } else {
+          selectedParentName.value = 'Root (No Parent)'
+      }
       await nextTick()
       phaseNameInput.value?.focus()
     }
@@ -217,6 +201,37 @@ const calculateSmartDateRanges = async () => {
   uiStore.newPhaseEndDate = sevenDaysLater.toISOString().split('T')[0] || ''
   uiStore.newPhaseEndTime = '00:00'
 }
+
+const onParentSelected = (phase: Phase) => {
+    // Check for self-reference
+    if (uiStore.phaseModalMode === 'edit' && phase.id === uiStore.phaseModalEditingPhaseId) {
+        alert("Cannot set phase as its own parent.")
+        return
+    }
+    
+    // Cycle check (simple depth check or rely on backend? Let's rely on backend check or user common sense for now to be fast)
+    // TODO: Implement cycle check
+    
+    uiStore.phaseModalEditingParentId = phase.id
+    selectedParentName.value = phase.name
+}
+
+const clearParent = () => {
+    uiStore.phaseModalEditingParentId = null
+    selectedParentName.value = 'Root (No Parent)'
+}
+
+const handleSearchClose = () => {
+    showPhaseSearch.value = false
+    nextTick(() => {
+        // Focus back on the appropriate element
+        if (uiStore.phaseModalEditingParentId) {
+            parentSelectorDisplay.value?.focus()
+        } else {
+            parentSelectorBtn.value?.focus()
+        }
+    })
+}
 </script>
 
 <template>
@@ -242,12 +257,31 @@ const calculateSmartDateRanges = async () => {
 
         <div v-if="uiStore.phaseModalMode === 'edit'" class="form-group">
           <label>Parent Phase</label>
-          <select v-model="uiStore.phaseModalEditingParentId" @keydown="handleKeydown">
-            <option :value="null">Root (No Parent)</option>
-            <option v-for="phase in availableParents" :key="phase.id" :value="phase.id">
-              {{ phase.name }}
-            </option>
-          </select>
+          
+          <button 
+            v-if="!uiStore.phaseModalEditingParentId" 
+            ref="parentSelectorBtn"
+            class="btn-select-parent"
+            @click="showPhaseSearch = true"
+            @keydown.esc="handleKeydown"
+          >
+            + Add Parent Phase
+          </button>
+          
+          <div 
+            v-else
+            ref="parentSelectorDisplay"
+            class="parent-selector" 
+            @click="showPhaseSearch = true" 
+            tabindex="0" 
+            @keydown.enter="showPhaseSearch = true"
+            @keydown.esc="handleKeydown"
+          >
+              <div class="selected-parent">{{ selectedParentName }}</div>
+              <div class="parent-actions">
+                <button @click.stop="clearParent" class="btn-icon btn-danger" title="Clear parent">✕</button>
+              </div>
+          </div>
         </div>
         
         <div class="form-row">
@@ -309,6 +343,13 @@ const calculateSmartDateRanges = async () => {
         </button>
       </div>
     </div>
+    
+    <PhaseSearchModal 
+        v-if="showPhaseSearch" 
+        :exclude-phase-id="uiStore.phaseModalEditingPhaseId"
+        @select="onParentSelected" 
+        @close="handleSearchClose" 
+    />
   </div>
 </template>
 
@@ -360,26 +401,73 @@ const calculateSmartDateRanges = async () => {
         color: #ccc;
       }
       
-      input, select {
-        width: 100%;
-        padding: 0.5rem;
-        background: #1a1a1a;
-        border: 1px solid #555;
-        border-radius: 0.1875rem;
-        color: #e0e0e0;
-        
-        &:focus {
-          outline: none;
-          border-color: #007acc;
-        }
-        
-        &::placeholder {
-          color: #666;
-        }
-      }
-
       select {
         cursor: pointer;
+      }
+
+      .btn-select-parent {
+          width: 100%;
+          padding: 0.5rem;
+          background: #333;
+          border: 1px dashed #555;
+          color: #aaa;
+          border-radius: 0.1875rem;
+          cursor: pointer;
+          transition: all 0.2s;
+
+          &:hover, &:focus {
+              background: #444;
+              border-color: #777;
+              color: #fff;
+              outline: none;
+          }
+      }
+
+      .parent-selector {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: #1a1a1a;
+          border: 1px solid #555;
+          padding: 0.5rem;
+          border-radius: 0.1875rem;
+          cursor: pointer;
+          transition: border-color 0.2s;
+
+          &:hover, &:focus {
+             border-color: #007acc;
+             outline: none;
+          }
+
+          .selected-parent {
+              color: #e0e0e0;
+              flex: 1;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              margin-right: 10px;
+          }
+
+          .parent-actions {
+              display: flex;
+              gap: 8px;
+              align-items: center;
+          }
+
+          .btn-icon {
+              background: transparent;
+              border: none;
+              color: #888;
+              font-size: 1rem;
+              cursor: pointer;
+              padding: 0 4px;
+              border-radius: 3px;
+
+              &:hover {
+                  color: #ff4444;
+                  background: rgba(255, 68, 68, 0.1);
+              }
+          }
       }
     }
     

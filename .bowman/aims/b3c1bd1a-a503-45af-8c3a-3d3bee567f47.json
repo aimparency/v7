@@ -1,7 +1,7 @@
 {
   "id": "b3c1bd1a-a503-45af-8c3a-3d3bee567f47",
   "text": "when searching aim in watchdog actions panel and entering it into the xterm.js that same xterm.js should be focused for further typing.",
-  "description": "",
+  "description": "in general, after the watchdog action menu we want to be able to continue typing in whereever we left of (xterm.js usually).",
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [],
@@ -11,7 +11,7 @@
   "status": {
     "state": "open",
     "comment": "",
-    "date": 1766499028258
+    "date": 1767771948409
   },
   "intrinsicValue": 0,
   "cost": 1,
