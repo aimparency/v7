@@ -1,0 +1,16 @@
+{
+  "id": "d6034015-cfe4-4ea4-ae8c-b873278257aa",
+  "text": "Optimize graph simulation layout: implemented sweep and prune for collisions and fixed layout jitter by removing forced sleep logic",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "",
+    "date": 1767789657203
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

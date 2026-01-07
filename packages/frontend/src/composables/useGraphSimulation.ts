@@ -38,47 +38,51 @@ export interface GraphLink {
   share: number
 }
 
-// Helper: Spatial Grid Intersect (O(N) avg instead of O(N^2))
-function gridIntersect(boxes: number[][], cellSize: number) {
-  const grid = new Map<string, number[]>()
-  const results = []
+// Helper: Sweep and Prune (1-axis sort)
+function sweepAndPrune(boxes: number[][]) {
+  const n = boxes.length
+  // Create index array
+  const indices = new Uint32Array(n)
+  for (let i = 0; i < n; i++) indices[i] = i
 
-  // 1. Bin objects
-  for (let i = 0; i < boxes.length; i++) {
-    const b = boxes[i]
-    if (!b) continue
-    const cx = (b[0]! + b[2]!) / 2
-    const cy = (b[1]! + b[3]!) / 2
-    const key = `${Math.floor(cx / cellSize)},${Math.floor(cy / cellSize)}`
-    
-    if (!grid.has(key)) grid.set(key, [])
-    grid.get(key)!.push(i)
-  }
+  // Sort indices based on minX (box[0])
+  // Note: Sorting inside the loop might be slow if we don't exploit coherence, 
+  // but TypedArray sort is usually optimized. 
+  // Since we rebuild boxes every frame, we just sort indices.
+  indices.sort((a, b) => {
+      const boxA = boxes[a]
+      const boxB = boxes[b]
+      if (!boxA || !boxB) return 0
+      return boxA[0] - boxB[0]
+  })
 
-  // 2. Check collisions
-  for (let i = 0; i < boxes.length; i++) {
-      const bA = boxes[i]
-      if (!bA) continue
-      const cx = Math.floor(((bA[0]! + bA[2]!) / 2) / cellSize)
-      const cy = Math.floor(((bA[1]! + bA[3]!) / 2) / cellSize)
-      
-      // Check 9 neighbors
-      for (let dx = -1; dx <= 1; dx++) {
-          for (let dy = -1; dy <= 1; dy++) {
-              const key = `${cx + dx},${cy + dy}`
-              const cell = grid.get(key)
-              if (cell) {
-                  for (const j of cell) {
-                      if (i < j) { // Unique pairs
-                          const bB = boxes[j]
-                          if (bB && bA[2]! >= bB[0]! && bA[0]! <= bB[2]! && bA[3]! >= bB[1]! && bA[1]! <= bB[3]!) {
-                              results.push([i, j])
-                          }
-                      }
-                  }
-              }
-          }
+  const results: [number, number][] = []
+
+  for (let i = 0; i < n; i++) {
+    const iA = indices[i]
+    if (iA === undefined) continue // Should not happen with Uint32Array valid range
+    const boxA = boxes[iA]
+    if (!boxA) continue
+
+    for (let j = i + 1; j < n; j++) {
+      const iB = indices[j]
+      if (iB === undefined) continue
+      const boxB = boxes[iB]
+      if (!boxB) continue
+
+      // Break if no overlap on X axis possible
+      if (boxB[0] > boxA[2]) break
+
+      // Check Y overlap
+      // boxA[3] >= boxB[1] (A.maxY >= B.minY)
+      // boxA[1] <= boxB[3] (A.minY <= B.maxY)
+      if (boxA[3] >= boxB[1] && boxA[1] <= boxB[3]) {
+        // Since we are iterating pairs, order doesn't matter for the set, 
+        // but typically we want iA < iB or just push pair.
+        // The original code handled collisions for [iA, iB].
+        results.push([iA, iB] as [number, number])
       }
+    }
   }
   return results
 }
@@ -369,8 +373,7 @@ export function useGraphSimulation() {
         }
 
         // Collisions
-        const GRID_CELL_SIZE = 500
-        const intersections = gridIntersect(boxes, GRID_CELL_SIZE)
+        const intersections = sweepAndPrune(boxes)
         const ab = vec2.create()
         
         for (const [iA, iB] of intersections) {
@@ -428,14 +431,11 @@ export function useGraphSimulation() {
             if (n.id === mapStore.dragCandidate?.id && mapStore.dragBeginning) {
                 // Do not move via physics
             } else {
-                if (n.freezeCounter && n.freezeCounter > 0) {
-                    n.freezeCounter--
-                    continue
-                }
+                // Simplified Update Logic: Apply only if shift is significant
+                // This prevents micro-jitter and unnecessary reactivity triggers
+                // but doesn't "sleep" the force accumulation, so it reacts instantly to new forces.
                 if (Math.abs(n.shift[0]) > minShift || Math.abs(n.shift[1]) > minShift) {
                     vec2.add(n.pos, n.pos, n.shift)
-                } else {
-                    n.freezeCounter = 10
                 }
             }
         }
