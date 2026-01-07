@@ -10,7 +10,7 @@ import { trpc } from '../trpc'
 const OUTER_MARGIN_FACTOR = 2
 const FLOW_FORCE = 0.5
 const GLOBAL_FORCE = 0.14
-const BASE_SEMANTIC_STIFFNESS = 0.15
+const BASE_SEMANTIC_STIFFNESS = 0.75 // 5x stronger (was 0.15)
 
 export interface GraphNode {
   id: string
@@ -54,14 +54,12 @@ function sweepAndPrune(boxes: number[][]) {
   const results: [number, number][] = []
 
   for (let i = 0; i < n; i++) {
-    const iA = indices[i]
-    if (iA === undefined) continue 
+    const iA = indices[i]!
     const boxA = boxes[iA]
     if (!boxA) continue
 
     for (let j = i + 1; j < n; j++) {
-      const iB = indices[j]
-      if (iB === undefined) continue
+      const iB = indices[j]!
       const boxB = boxes[iB]
       if (!boxB) continue
 
@@ -215,21 +213,24 @@ export function useGraphSimulation() {
   }
 
   // --- Main Simulation Loop ---
-  const layout = () => {
-    let hasVisualChange = false
-
-    // 1. Smooth Semantic Force
-    const diff = targetSemanticForce.value - semanticForceMultiplier.value
-    if (Math.abs(diff) > 0.0001) {
-        // Ease In (diff > 0) is slow (0.01), Ease Out (diff < 0) is fast (0.1)
-        const factor = diff > 0 ? 0.01 : 0.1
-        semanticForceMultiplier.value += diff * factor
-    } else {
-        semanticForceMultiplier.value = targetSemanticForce.value
-    }
-
-    // Run registered callbacks (e.g. interaction updates)
-    tickCallbacks.forEach(cb => cb())
+      const layout = () => {
+      let hasVisualChange = false
+  
+      // 1. Smooth Semantic Force
+      const diff = targetSemanticForce.value - semanticForceMultiplier.value
+      if (Math.abs(diff) > 0.0001) {
+          // Ease In (diff > 0) is slow (0.01), Ease Out (diff < 0) is fast (0.1)
+          const factor = diff > 0 ? 0.01 : 0.1
+          semanticForceMultiplier.value += diff * factor
+      } else {
+          semanticForceMultiplier.value = targetSemanticForce.value
+      }
+      
+      // Dynamic Gap Scaling: Shrink space by half (side * 0.707) when active
+      const gapMultiplier = 1.0 + ((Math.SQRT1_2 - 1.0) * semanticForceMultiplier.value)
+      const effectiveMaxGap = (semanticMaxGap.value || 2000) * gapMultiplier
+  
+      // Run registered callbacks (e.g. interaction updates)    tickCallbacks.forEach(cb => cb())
 
     if (mapStore.anim.update) {
       mapStore.anim.update()
@@ -307,6 +308,7 @@ export function useGraphSimulation() {
         const delta = vec2.create()
         const targetPos = vec2.create()
         const targetShift = vec2.create()
+        // const flowMultiplier = 1.0 + (9.0 * semanticForceMultiplier.value) // Removed for jitter testing
 
         for (const link of currentLinks) {
             const from = link.source
@@ -318,19 +320,19 @@ export function useGraphSimulation() {
             // Parent
             vec2.sub(targetPos, from.pos, delta)
             vec2.sub(targetShift, targetPos, into.pos)
-            vec2.scale(targetShift, targetShift, from.r / rSum)
+            vec2.scale(targetShift, targetShift, (from.r / rSum)) // Removed flowMultiplier
             vec2.add(into.shift, into.shift, targetShift)
             
             // Child
             vec2.add(targetPos, into.pos, delta)
             vec2.sub(targetShift, targetPos, from.pos)
-            vec2.scale(targetShift, targetShift, into.r / rSum)
+            vec2.scale(targetShift, targetShift, (into.r / rSum)) // Removed flowMultiplier
             vec2.add(from.shift, from.shift, targetShift)
         }
 
         // Semantic Forces
         if (semanticLinks.value.length > 0 && semanticForceMultiplier.value > 0.001) {
-            const maxGap = semanticMaxGap.value
+            const maxGap = effectiveMaxGap
             const effectiveStiffness = BASE_SEMANTIC_STIFFNESS * semanticForceMultiplier.value
 
             for (const link of semanticLinks.value) {
@@ -399,9 +401,11 @@ export function useGraphSimulation() {
         const now = Date.now()
         const FREEZE_DURATION = 10000
         const GRAVITY_CONSTANT = 0.6 
-        const CENTERING_FORCE = GRAVITY_CONSTANT / (semanticMaxGap.value || 2000)
-        let hasVisualChange = false
-        const currentScale = mapStore.scale
+        const CENTERING_FORCE = GRAVITY_CONSTANT / (effectiveMaxGap || 2000)
+        
+        // Calculate rendering scale factor 's'
+        const currentScale = mapStore.scale || 1
+        const s = (currentScale * mapStore.halfSide) / (LOGICAL_HALF_SIDE || 1000) || 1
 
         for (let i = 0; i < count; i++) {
             const n = currentNodes[i]!
@@ -422,29 +426,44 @@ export function useGraphSimulation() {
                 }
             }
             
-            const minShift = n.r * 0.001
-
             // Check dragging
             if (n.id === mapStore.dragCandidate?.id && mapStore.dragBeginning) {
-                // Do not move via physics, but ensure renderPos matches pos (dragged)
-                // The drag interaction updates n.pos directly.
-                // We must update renderPos to show the drag.
+                // Sync renderPos to pos during drag
                 n.renderPos[0] = n.pos[0]
                 n.renderPos[1] = n.pos[1]
                 hasVisualChange = true
+                n.freezeCounter = 0
             } else {
-                // Simplified Update Logic: Apply only if shift is significant
-                if (Math.abs(n.shift[0]) > minShift || Math.abs(n.shift[1]) > minShift) {
-                    vec2.add(n.pos, n.pos, n.shift)
-                }
+                const minShift = n.r * 0.001
+                const isSmallShift = Math.abs(n.shift[0]) < minShift && Math.abs(n.shift[1]) < minShift
                 
-                // Visual Update Logic: Decouple render pos from physics pos
-                // Only update DOM if visual delta > 1px
-                const dx = n.pos[0] - n.renderPos[0]
-                const dy = n.pos[1] - n.renderPos[1]
-                const dist = Math.sqrt(dx*dx + dy*dy)
+                if (isSmallShift) {
+                    n.freezeCounter = (n.freezeCounter || 0) + 1
+                    if (n.freezeCounter < 10) {
+                        // Skip update for 10 frames if shift is small
+                        continue
+                    }
+                    n.freezeCounter = 0
+                            } else {
+                                n.freezeCounter = 0
+                            }
                 
-                if (dist * currentScale > 1.0) {
+                            // Clamp maximum movement to prevent chaos (10% of world side)
+                            const maxMove = effectiveMaxGap * 0.1
+                            if (n.shift[0] > maxMove) n.shift[0] = maxMove
+                            else if (n.shift[0] < -maxMove) n.shift[0] = -maxMove
+                            
+                            if (n.shift[1] > maxMove) n.shift[1] = maxMove
+                            else if (n.shift[1] < -maxMove) n.shift[1] = -maxMove
+                
+                            // Physics Update: Always apply shift to resolve tensions
+                            vec2.add(n.pos, n.pos, n.shift)
+                            
+                            // Visual Update Logic: Manhattan distance > 0.5px screen space
+                            const dx = Math.abs(n.pos[0] - n.renderPos[0])
+                            const dy = Math.abs(n.pos[1] - n.renderPos[1])
+                
+                            if ((dx + dy) * s > 0.5) {
                     n.renderPos[0] = n.pos[0]
                     n.renderPos[1] = n.pos[1]
                     hasVisualChange = true
@@ -460,7 +479,8 @@ export function useGraphSimulation() {
   }
 
   const randomizeLayout = () => {
-    const range = semanticMaxGap.value || 2000
+    // Use the tighter semantic spacing (half area / 0.707 side) for randomization
+    const range = (semanticMaxGap.value || 2000) * Math.SQRT1_2
     nodes.value.forEach(n => {
       n.pos[0] = (Math.random() - 0.5) * range
       n.pos[1] = (Math.random() - 0.5) * range
