@@ -26,9 +26,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767734942406
+    "state": "done",
+    "comment": "Implemented sweep and prune collision detection and decoupled render position. Fixed regressions in drag/drop and initial aim sizing. Fixed TypeScript errors.",
+    "date": 1767791645414
   },
   "intrinsicValue": 0,
   "cost": 1,

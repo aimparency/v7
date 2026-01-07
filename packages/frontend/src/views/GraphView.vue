@@ -52,8 +52,8 @@ const renderNodes = computed(() => {
     const currentAimId = uiStore.graphSelectedAimId
     return nodes.value.map(n => ({
         ...n,
-        x: n.pos[0],
-        y: n.pos[1],
+        x: n.renderPos[0],
+        y: n.renderPos[1],
         selected: n.id === currentAimId
     })) 
 })
@@ -61,19 +61,25 @@ const renderNodes = computed(() => {
 const renderLinks = computed(() => { 
     trigger.value; 
     return links.value.map(l => ({
-        source: { ...l.source, x: l.source.pos[0], y: l.source.pos[1] },
-        target: { ...l.target, x: l.target.pos[0], y: l.target.pos[1] },
+        source: { ...l.source, x: l.source.renderPos[0], y: l.source.renderPos[1] },
+        target: { ...l.target, x: l.target.renderPos[0], y: l.target.renderPos[1] },
         weight: l.weight,
         share: l.share
     })) 
 })
 
 const selectedLinkData = computed(() => {
+  trigger.value
   if (!uiStore.selectedLink) return null
-  return links.value.find(l => 
+  const link = links.value.find(l => 
     l.source.id === uiStore.selectedLink!.childId && 
     l.target.id === uiStore.selectedLink!.parentId
   )
+  if (!link) return null
+  return {
+    ...link,
+    relativePosition: [link.relativePosition[0], link.relativePosition[1]] as vec2.T
+  }
 })
 
 const selectedLinkVisuals = computed(() => {
@@ -81,8 +87,8 @@ const selectedLinkVisuals = computed(() => {
   const link = selectedLinkData.value
   if (!link) return null
   return {
-    sourcePos: [link.source.pos[0], link.source.pos[1]] as vec2.T,
-    targetPos: [link.target.pos[0], link.target.pos[1]] as vec2.T,
+    sourcePos: [link.source.renderPos[0], link.source.renderPos[1]] as vec2.T,
+    targetPos: [link.target.renderPos[0], link.target.renderPos[1]] as vec2.T,
     sourceR: link.source.r || 25,
     targetR: link.target.r || 25
   }

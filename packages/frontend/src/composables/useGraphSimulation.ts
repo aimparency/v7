@@ -16,6 +16,7 @@ export interface GraphNode {
   id: string
   // MapNode props
   pos: vec2.T
+  renderPos: vec2.T
   r: number
   // Graph props
   text: string
@@ -25,9 +26,6 @@ export interface GraphNode {
   freezeFactor: number
   color?: string
   freezeCounter?: number
-  // Optimization
-  lastRenderX?: number
-  lastRenderY?: number
 }
 
 export interface GraphLink {
@@ -46,9 +44,6 @@ function sweepAndPrune(boxes: number[][]) {
   for (let i = 0; i < n; i++) indices[i] = i
 
   // Sort indices based on minX (box[0])
-  // Note: Sorting inside the loop might be slow if we don't exploit coherence, 
-  // but TypedArray sort is usually optimized. 
-  // Since we rebuild boxes every frame, we just sort indices.
   indices.sort((a, b) => {
       const boxA = boxes[a]
       const boxB = boxes[b]
@@ -60,7 +55,7 @@ function sweepAndPrune(boxes: number[][]) {
 
   for (let i = 0; i < n; i++) {
     const iA = indices[i]
-    if (iA === undefined) continue // Should not happen with Uint32Array valid range
+    if (iA === undefined) continue 
     const boxA = boxes[iA]
     if (!boxA) continue
 
@@ -74,12 +69,7 @@ function sweepAndPrune(boxes: number[][]) {
       if (boxB[0] > boxA[2]) break
 
       // Check Y overlap
-      // boxA[3] >= boxB[1] (A.maxY >= B.minY)
-      // boxA[1] <= boxB[3] (A.minY <= B.maxY)
       if (boxA[3] >= boxB[1] && boxA[1] <= boxB[3]) {
-        // Since we are iterating pairs, order doesn't matter for the set, 
-        // but typically we want iA < iB or just push pair.
-        // The original code handled collisions for [iA, iB].
         results.push([iA, iB] as [number, number])
       }
     }
@@ -140,13 +130,15 @@ export function useGraphSimulation() {
 
       if (!existing) {
         const loaded = loadedPositions.get(raw.id)
+        const pos: vec2.T = loaded ? [loaded.x, loaded.y] : [Math.random() * 100 - 50, Math.random() * 100 - 50]
         existing = {
           id: raw.id,
           text: raw.text,
           status: raw.status,
           r: radius,
           value: val,
-          pos: loaded ? [loaded.x, loaded.y] : [Math.random() * 100 - 50, Math.random() * 100 - 50],
+          pos,
+          renderPos: vec2.clone(pos),
           shift: [0, 0],
           freezeFactor: 0,
           freezeCounter: 0,
@@ -158,6 +150,7 @@ export function useGraphSimulation() {
         existing.status = raw.status
         existing.value = val
         existing.r = radius
+        if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }
       newNodes.push(existing)
     })
@@ -223,6 +216,8 @@ export function useGraphSimulation() {
 
   // --- Main Simulation Loop ---
   const layout = () => {
+    let hasVisualChange = false
+
     // 1. Smooth Semantic Force
     const diff = targetSemanticForce.value - semanticForceMultiplier.value
     if (Math.abs(diff) > 0.0001) {
@@ -405,6 +400,8 @@ export function useGraphSimulation() {
         const FREEZE_DURATION = 10000
         const GRAVITY_CONSTANT = 0.6 
         const CENTERING_FORCE = GRAVITY_CONSTANT / (semanticMaxGap.value || 2000)
+        let hasVisualChange = false
+        const currentScale = mapStore.scale
 
         for (let i = 0; i < count; i++) {
             const n = currentNodes[i]!
@@ -429,19 +426,36 @@ export function useGraphSimulation() {
 
             // Check dragging
             if (n.id === mapStore.dragCandidate?.id && mapStore.dragBeginning) {
-                // Do not move via physics
+                // Do not move via physics, but ensure renderPos matches pos (dragged)
+                // The drag interaction updates n.pos directly.
+                // We must update renderPos to show the drag.
+                n.renderPos[0] = n.pos[0]
+                n.renderPos[1] = n.pos[1]
+                hasVisualChange = true
             } else {
                 // Simplified Update Logic: Apply only if shift is significant
-                // This prevents micro-jitter and unnecessary reactivity triggers
-                // but doesn't "sleep" the force accumulation, so it reacts instantly to new forces.
                 if (Math.abs(n.shift[0]) > minShift || Math.abs(n.shift[1]) > minShift) {
                     vec2.add(n.pos, n.pos, n.shift)
+                }
+                
+                // Visual Update Logic: Decouple render pos from physics pos
+                // Only update DOM if visual delta > 1px
+                const dx = n.pos[0] - n.renderPos[0]
+                const dy = n.pos[1] - n.renderPos[1]
+                const dist = Math.sqrt(dx*dx + dy*dy)
+                
+                if (dist * currentScale > 1.0) {
+                    n.renderPos[0] = n.pos[0]
+                    n.renderPos[1] = n.pos[1]
+                    hasVisualChange = true
                 }
             }
         }
     }
     
-    trigger.value++
+    if (hasVisualChange || mapStore.anim.update || mapStore.layouting || mapStore.dragBeginning) {
+        trigger.value++
+    }
     animFrameId = requestAnimationFrame(layout)
   }
 
@@ -489,6 +503,7 @@ export function useGraphSimulation() {
     }
 
     updateGraphData()
+    trigger.value++ // Force initial render to pick up calculated sizes/positions
     layout()
     
     saveIntervalId = setInterval(async () => {
