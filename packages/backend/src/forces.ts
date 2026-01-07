@@ -18,14 +18,17 @@ interface SemanticGraph {
 const semanticCache = new Map<string, SemanticGraph>();
 
 function cosineSimilarity(a: number[], b: number[]): number {
+  if (!a || !b) return 0;
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
+  const len = Math.min(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    dotProduct += (a[i] ?? 0) * (b[i] ?? 0);
+    normA += (a[i] ?? 0) * (a[i] ?? 0);
+    normB += (b[i] ?? 0) * (b[i] ?? 0);
   }
+  if (normA === 0 || normB === 0) return 0;
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
@@ -62,7 +65,10 @@ export async function calculateSemanticGraph(projectPath: string): Promise<Seman
 
   // Helper to get distance (0 = identical, 2 = opposite)
   const getDist = (idA: string, idB: string) => {
-    const sim = cosineSimilarity(store[idA], store[idB]);
+    const vecA = store[idA];
+    const vecB = store[idB];
+    if (!vecA || !vecB) return 1;
+    const sim = cosineSimilarity(vecA, vecB);
     return 1 - sim;
   };
 
@@ -85,13 +91,14 @@ export async function calculateSemanticGraph(projectPath: string): Promise<Seman
 
     // Top 3 Nearest
     for (let i = 0; i < Math.min(3, candidates.length); i++) {
-      addLink(idA, candidates[i].id, candidates[i].dist, 'nearest');
+      const item = candidates[i];
+      if (item) addLink(idA, item.id, item.dist, 'nearest');
     }
 
     // Top 3 Furthest
     for (let i = 0; i < Math.min(3, candidates.length); i++) {
         const item = candidates[candidates.length - 1 - i];
-        addLink(idA, item.id, item.dist, 'furthest');
+        if (item) addLink(idA, item.id, item.dist, 'furthest');
     }
   }
 

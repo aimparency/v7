@@ -9,9 +9,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767098671643
+    "state": "done",
+    "comment": "Fixed TypeScript errors in forces.ts and useGraphSimulation.ts. Replaced missing naiveBoxIntersect with gridIntersect and added safety checks for undefined values.",
+    "date": 1767788809683
   },
   "intrinsicValue": 0,
   "cost": 1,

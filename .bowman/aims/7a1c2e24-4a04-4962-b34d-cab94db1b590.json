@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767098215317
+    "state": "done",
+    "comment": "Refactored PhaseCreationModal to use new PhaseSearchModal. Implemented focus restoration and unified styles. Refactored AimSearchModal to use events.",
+    "date": 1767787001715
   },
   "intrinsicValue": 0,
   "cost": 1,

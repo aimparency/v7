@@ -3,10 +3,15 @@ import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useUIStore, type AimPath } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
-import type { SearchAimResult } from 'shared'
+import type { SearchAimResult, Aim } from 'shared'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
+
+const emit = defineEmits<{
+  (e: 'select', payload: { type: 'aim', data: Aim } | { type: 'path', data: AimPath }): void
+  (e: 'close'): void
+}>()
 
 const searchQuery = ref('')
 const searchResults = ref<SearchAimResult[]>([])
@@ -189,15 +194,18 @@ const blockLeakage = (e: KeyboardEvent) => {
 
 const selectAim = async (aim: SearchAimResult) => {
   if (uiStore.aimSearchMode === 'pick') {
-      if (uiStore.aimSearchCallback) {
-          try {
-            const fullAim = await trpc.aim.get.query({ projectPath: uiStore.projectPath, aimId: aim.id });
-            uiStore.aimSearchCallback(fullAim as any); // Cast if needed
-          } catch (e) {
-            console.error("Failed to load aim for callback", e);
-          }
+      try {
+        // Ensure we pass a full Aim object
+        const fullAim = await trpc.aim.get.query({ projectPath: uiStore.projectPath, aimId: aim.id });
+        emit('select', { type: 'aim', data: fullAim });
+      } catch (e) {
+        console.error("Failed to load aim for selection", e);
+        // Fallback to SearchAimResult (it extends Aim mostly) if fetch fails?
+        // Better to fail safely or just pass what we have if compatible.
+        // SearchAimResult has score, but is compatible with Aim structure generally.
+        emit('select', { type: 'aim', data: aim as unknown as Aim });
       }
-      uiStore.closeAimSearch();
+      close();
       return;
   }
 
@@ -207,10 +215,10 @@ const selectAim = async (aim: SearchAimResult) => {
     
     if (paths.length === 0) {
       console.warn('No paths found for aim', aim.id)
-      uiStore.closeAimSearch()
+      close()
     } else if (paths.length === 1 && paths[0]) {
-      await uiStore.executeNavigation(paths[0])
-      uiStore.closeAimSearch()
+      emit('select', { type: 'path', data: paths[0] })
+      close()
     } else {
       // Multiple paths found, present selection
       selectedAimText.value = aim.text.length > 50 ? aim.text.substring(0, 50) + '...' : aim.text
@@ -254,16 +262,9 @@ const selectAim = async (aim: SearchAimResult) => {
 }
 
 const selectPath = async (path: AimPath) => {
-  loading.value = true
-  try {
-    await uiStore.executeNavigation(path)
-    uiStore.closeAimSearch()
-  } finally {
-    loading.value = false
-  }
+  emit('select', { type: 'path', data: path })
+  close()
 }
-
-
 
 const close = () => {
   searchQuery.value = ''
@@ -272,7 +273,7 @@ const close = () => {
   focusedResultIndex.value = -1
   pathSelectionMode.value = false
   availablePaths.value = []
-  uiStore.closeAimSearch()
+  emit('close')
 }
 
 onMounted(() => {

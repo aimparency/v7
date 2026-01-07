@@ -12,7 +12,7 @@
     },
     {
       "key": "cancelled",
-      "color": "#b5835a"
+      "color": "#ffa348"
     },
     {
       "key": "partially",
@@ -28,7 +28,7 @@
     },
     {
       "key": "archived",
-      "color": "#444444"
+      "color": "#b5835a"
     }
   ]
 }

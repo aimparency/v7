@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
-import { useUIStore } from './stores/ui'
-import { useDataStore } from './stores/data'
+import { useUIStore, type AimPath } from './stores/ui'
+import { useDataStore, type Aim } from './stores/data'
 import { trpc } from './trpc'
 import RootAimsColumn from './components/RootAimsColumn.vue'
 import PhaseColumn from './components/PhaseColumn.vue'
@@ -16,6 +16,20 @@ import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
+
+const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath }) => {
+  if (uiStore.aimSearchMode === 'pick') {
+    if (uiStore.aimSearchCallback && payload.type === 'aim') {
+      uiStore.aimSearchCallback(payload.data as Aim)
+    }
+  } else {
+    // Navigate
+    if (payload.type === 'path') {
+      uiStore.executeNavigation(payload.data as AimPath)
+    }
+  }
+  uiStore.closeAimSearch()
+}
 
 // Local UI state
 const watchdogHeight = ref(parseInt(localStorage.getItem('aimparency-watchdog-height') || '300'))
@@ -398,7 +412,11 @@ onUnmounted(() => {
     <AimCreationModal v-if="uiStore.showAimModal" />
 
     <!-- Aim Search Modal -->
-    <AimSearchModal v-if="uiStore.showAimSearch" />
+    <AimSearchModal 
+      v-if="uiStore.showAimSearch" 
+      @select="handleAimSearchSelect"
+      @close="uiStore.closeAimSearch()"
+    />
 
     <!-- Consistency Modal -->
     <ConsistencyModal 

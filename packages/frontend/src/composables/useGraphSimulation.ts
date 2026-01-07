@@ -47,8 +47,8 @@ function gridIntersect(boxes: number[][], cellSize: number) {
   for (let i = 0; i < boxes.length; i++) {
     const b = boxes[i]
     if (!b) continue
-    const cx = (b[0] + b[2]) / 2
-    const cy = (b[1] + b[3]) / 2
+    const cx = (b[0]! + b[2]!) / 2
+    const cy = (b[1]! + b[3]!) / 2
     const key = `${Math.floor(cx / cellSize)},${Math.floor(cy / cellSize)}`
     
     if (!grid.has(key)) grid.set(key, [])
@@ -59,8 +59,8 @@ function gridIntersect(boxes: number[][], cellSize: number) {
   for (let i = 0; i < boxes.length; i++) {
       const bA = boxes[i]
       if (!bA) continue
-      const cx = Math.floor(((bA[0] + bA[2]) / 2) / cellSize)
-      const cy = Math.floor(((bA[1] + bA[3]) / 2) / cellSize)
+      const cx = Math.floor(((bA[0]! + bA[2]!) / 2) / cellSize)
+      const cy = Math.floor(((bA[1]! + bA[3]!) / 2) / cellSize)
       
       // Check 9 neighbors
       for (let dx = -1; dx <= 1; dx++) {
@@ -71,7 +71,7 @@ function gridIntersect(boxes: number[][], cellSize: number) {
                   for (const j of cell) {
                       if (i < j) { // Unique pairs
                           const bB = boxes[j]
-                          if (bB && bA[2] >= bB[0] && bA[0] <= bB[2] && bA[3] >= bB[1] && bA[1] <= bB[3]) {
+                          if (bB && bA[2]! >= bB[0]! && bA[0]! <= bB[2]! && bA[3]! >= bB[1]! && bA[1]! <= bB[3]!) {
                               results.push([i, j])
                           }
                       }
@@ -369,7 +369,8 @@ export function useGraphSimulation() {
         }
 
         // Collisions
-        const intersections = naiveBoxIntersect(boxes)
+        const GRID_CELL_SIZE = 500
+        const intersections = gridIntersect(boxes, GRID_CELL_SIZE)
         const ab = vec2.create()
         
         for (const [iA, iB] of intersections) {
