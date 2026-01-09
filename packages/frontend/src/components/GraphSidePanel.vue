@@ -300,53 +300,60 @@ const isOpaque = computed(() => !hasInteracted.value)
         <!-- AIM SELECTED -->
         <div v-else-if="selectedAim" class="panel-content">
             <h3>{{ selectedAim.text }}</h3>
+            <div class="aim-status">{{ selectedAim.status.state }}</div>
             
-            <div class="metrics-row">
-                <div class="metric">
-                    <span class="label">Intrinsic</span>
-                    <input 
-                        type="number" 
-                        v-model.number="editedIntrinsicValue" 
-                        @change="updateAimAttributes" 
-                        class="value-input" 
-                        step="0.1" 
-                    />
-                </div>
-                <div class="metric">
-                    <span class="label">Loop</span>
-                    <input 
-                        type="number" 
-                        v-model.number="editedLoopWeight" 
-                        @change="updateAimAttributes" 
-                        class="value-input" 
-                        step="0.1" 
-                        min="0" 
-                    />
-                </div>
-                <div class="metric">
-                    <span class="label">Total Val</span>
-                    <span class="value highlight">{{ dataStore.getAimValue(selectedAim.id).toFixed(2) }}</span>
+            <div class="metrics-section">
+                <h4>Value</h4>
+                <div class="metrics-row">
+                    <div class="metric">
+                        <span class="label">Intrinsic</span>
+                        <input 
+                            type="number" 
+                            v-model.number="editedIntrinsicValue" 
+                            @change="updateAimAttributes" 
+                            class="value-input" 
+                            step="0.1" 
+                        />
+                    </div>
+                    <div class="metric">
+                        <span class="label">Loop</span>
+                        <input 
+                            type="number" 
+                            v-model.number="editedLoopWeight" 
+                            @change="updateAimAttributes" 
+                            class="value-input" 
+                            step="0.1" 
+                            min="0" 
+                        />
+                    </div>
+                    <div class="metric">
+                        <span class="label">Total</span>
+                        <span class="value highlight">{{ dataStore.getAimValue(selectedAim.id).toFixed(2) }}</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="metrics-row">
-                <div class="metric">
-                    <span class="label">Cost</span>
-                    <input 
-                        type="number" 
-                        v-model.number="editedCost" 
-                        @change="updateAimAttributes" 
-                        class="value-input" 
-                        step="0.1" 
-                    />
-                </div>
-                <div class="metric">
-                    <span class="label">Total Cost</span>
-                    <span class="value">{{ dataStore.getAimCost(selectedAim.id).toFixed(1) }}</span>
-                </div>
-                <div class="metric">
-                    <span class="label">Progress</span>
-                    <span class="value">{{ dataStore.getAimProgress(selectedAim.id).toFixed(0) }}%</span>
+            <div class="metrics-section">
+                <h4>Cost</h4>
+                <div class="metrics-row">
+                    <div class="metric">
+                        <span class="label">Intrinsic</span>
+                        <input 
+                            type="number" 
+                            v-model.number="editedCost" 
+                            @change="updateAimAttributes" 
+                            class="value-input" 
+                            step="0.1" 
+                        />
+                    </div>
+                    <div class="metric">
+                        <span class="label">Total</span>
+                        <span class="value">{{ dataStore.getAimCost(selectedAim.id).toFixed(1) }}</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">Progress</span>
+                        <span class="value">{{ dataStore.getAimProgress(selectedAim.id).toFixed(0) }}%</span>
+                    </div>
                 </div>
             </div>
             
@@ -661,5 +668,28 @@ textarea.input-field {
 
 .resize-handle:hover, .side-panel:hover .resize-handle {
     background: rgba(255, 255, 255, 0.05);
+}
+
+.aim-status {
+    font-size: 0.85rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+    margin-top: -0.25rem;
+}
+
+.metrics-section {
+    margin-bottom: 1rem;
+}
+
+.metrics-section h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.8rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.2rem;
 }
 </style>

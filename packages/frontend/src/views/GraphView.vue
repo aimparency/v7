@@ -31,12 +31,20 @@ const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick } = interaction
 onMounted(() => {
     simulation.init()
     interaction.initListeners()
+    window.addEventListener('keydown', onKeydown)
 })
 
 onUnmounted(() => {
     simulation.cleanup()
     interaction.cleanupListeners()
+    window.removeEventListener('keydown', onKeydown)
 })
+
+const onKeydown = (e: KeyboardEvent) => {
+    if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
+        uiStore.setGraphColorMode(uiStore.graphColorMode === 'status' ? 'priority' : 'status')
+    }
+}
 
 // Rendering Computeds
 const transform = computed(() => {
@@ -169,6 +177,19 @@ const stopSemanticForce = () => setSemanticForce(false)
            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
         </svg>
       </button>
+      
+      <div class="segmented-control">
+        <button 
+            class="segment-btn" 
+            :class="{ active: uiStore.graphColorMode === 'status' }"
+            @click="uiStore.setGraphColorMode('status')"
+        >Status</button>
+        <button 
+            class="segment-btn" 
+            :class="{ active: uiStore.graphColorMode === 'priority' }"
+            @click="uiStore.setGraphColorMode('priority')"
+        >Prio</button>
+      </div>
     </div>
   </div>
 </template>
@@ -189,6 +210,7 @@ const stopSemanticForce = () => setSemanticForce(false)
   display: flex;
   gap: 10px;
   z-index: 100;
+  align-items: center;
 }
 
 .control-btn {
@@ -197,7 +219,7 @@ const stopSemanticForce = () => setSemanticForce(false)
   border-radius: 4px;
   color: #fff;
   padding: 6px;
-  opacity: 0.4;
+  opacity: 0.6;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -217,5 +239,34 @@ const stopSemanticForce = () => setSemanticForce(false)
     border-color: rgba(74, 222, 128, 0.5);
     color: #4ade80;
     box-shadow: 0 0 8px rgba(74, 222, 128, 0.2);
+}
+
+.segmented-control {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.segment-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.segment-btn:hover {
+    color: #ccc;
+}
+
+.segment-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-weight: 500;
 }
 </style>

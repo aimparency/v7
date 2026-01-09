@@ -72,8 +72,8 @@ export function calculateAimValues(aims: Aim[]): {
   }
 
   if (totalIntrinsic === 0) {
-    const costs = calculateCosts(aims, aimMap);
-    const doneCosts = calculateDoneCosts(aims, aimMap, costs);
+    const costs = distributeCosts(aims, aimMap, currentValues, flowValues, false);
+    const doneCosts = distributeCosts(aims, aimMap, currentValues, flowValues, true, costs);
     return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, costs, doneCosts, priorities: new Map() };
   }
 
@@ -146,8 +146,9 @@ export function calculateAimValues(aims: Aim[]): {
       }
   }
 
-  const costs = calculateCosts(aims, aimMap);
-  const doneCosts = calculateDoneCosts(aims, aimMap, costs);
+  // Use the flow values (Parent->Child) to compute cost shares (Child->Parent)
+  const costs = distributeCosts(aims, aimMap, currentValues, flowValues, false);
+  const doneCosts = distributeCosts(aims, aimMap, currentValues, flowValues, true, costs);
 
   // Calculate Priorities
   // Priority = (Normalized Value * Total Intrinsic) / Cost
@@ -168,78 +169,191 @@ export function calculateAimValues(aims: Aim[]): {
   return { values: currentValues, totalIntrinsic, flowShares, flowValues, costs, doneCosts, priorities };
 }
 
+function distributeCosts(
+    aims: Aim[], 
+    aimMap: Map<string, Aim>, 
+    values: Map<string, number>, 
+    flowValues: Map<string, number>,
+    isDoneCost: boolean,
+    totalCosts?: Map<string, number>
+): Map<string, number> {
+    const costs = new Map<string, number>();
+    
+    // Initialize with Intrinsic
+    for (const aim of aims) {
+        if (isDoneCost) {
+            // For Done Cost:
+            // If aim is done, its intrinsic "done cost" is its FULL Total Cost (passed in)
+            // Wait, logic check:
+            // If I am DONE, my DoneCost = My Total Cost.
+            // But distributing up?
+            // If I am DONE, I pass my full cost up as done cost.
+            
+            // However, the recursive logic was:
+            // if (done) return totalCosts.get(id);
+            // else return sum(children done costs).
+            
+            // So if I am Done, my "Intrinsic Done Contribution" is my Total Cost.
+            // If I am Not Done, my "Intrinsic Done Contribution" is 0.
+            
+            if (aim.status.state === 'done') {
+                costs.set(aim.id, totalCosts?.get(aim.id) || 0);
+            } else {
+                costs.set(aim.id, 0);
+            }
+        } else {
+            costs.set(aim.id, aim.cost || 0);
+        }
+    }
+
+    // Iterative Distribution (Child -> Parent)
+    // We reuse the iterations count from values
+    const iterations = 100;
+    
+    // To optimized, pre-calculate the "Share" factors for each connection
+    // Share(Child->Parent) = Flow(Parent->Child) / Value(Child)
+    // We need map: Parent -> List<{ChildID, Share}>
+    // Wait, we need to PULL from children. 
+    // Cost(Parent) = Intrinsic(Parent) + Sum(Cost(Child) * Share(Child->Parent))
+    // So we need map: Parent -> List<{ChildID, Share}>.
+    // Yes.
+    
+    const costDependencyMatrix = new Map<string, { childId: string, share: number }[]>();
+    
+    for (const parent of aims) {
+        const deps: { childId: string, share: number }[] = [];
+        const parentId = parent.id;
+        
+        // Children are in supportingConnections
+        if (parent.supportingConnections) {
+            for (const conn of parent.supportingConnections) {
+                if (!aimMap.has(conn.aimId)) continue;
+                
+                const childId = conn.aimId;
+                const childValue = values.get(childId) || 0;
+                
+                let share = 0;
+                if (childValue > 0.00000001) {
+                    // Value Share
+                    const flowPtoC = flowValues.get(`${parentId}->${childId}`) || 0;
+                    share = flowPtoC / childValue;
+                } else {
+                    // Fallback: Structural Share
+                    // If child has 0 value, we can't use value share.
+                    // Fallback to: 1 / NumberOfParents? Or weight/totalWeight?
+                    // We don't have total incoming weight easily available here.
+                    // Let's use 1 / (Number of Parents who support this child).
+                    // Or simpler: just ignore cost flow if value is 0? 
+                    // No, that hides cost.
+                    // Let's assume equal split among connected parents for now to conserve mass.
+                    // Ideally we'd scan all parents of this child.
+                    // But here we are iterating parents.
+                    // Let's calculate shares per Child first?
+                }
+                
+                if (share > 0) {
+                    deps.push({ childId, share });
+                }
+            }
+        }
+        costDependencyMatrix.set(parentId, deps);
+    }
+    
+    // Handling the 0-value fallback properly:
+    // We need to know for each child, what its parents are, to normalize structural shares.
+    // Invert the graph temporarily.
+    const childToParents = new Map<string, string[]>();
+    for (const parent of aims) {
+         if (parent.supportingConnections) {
+            for (const conn of parent.supportingConnections) {
+                if (!aimMap.has(conn.aimId)) continue;
+                if (!childToParents.has(conn.aimId)) childToParents.set(conn.aimId, []);
+                childToParents.get(conn.aimId)!.push(parent.id);
+            }
+         }
+    }
+    
+    // Now fill in shares for 0-value children
+    for (const [childId, parents] of childToParents) {
+        const childValue = values.get(childId) || 0;
+        if (childValue <= 0.00000001) {
+            const share = 1.0 / parents.length;
+            for (const pId of parents) {
+                const deps = costDependencyMatrix.get(pId);
+                if (deps) {
+                    // Check if already added (unlikely if value was 0)
+                    const existing = deps.find(d => d.childId === childId);
+                    if (existing) {
+                        existing.share = share;
+                    } else {
+                        deps.push({ childId, share });
+                    }
+                }
+            }
+        }
+    }
+    
+    // Iterate
+    for (let iter = 0; iter < iterations; iter++) {
+        const nextCosts = new Map<string, number>();
+        let maxChange = 0;
+        
+        for (const parent of aims) {
+            let aggregatedCost = 0;
+            const deps = costDependencyMatrix.get(parent.id);
+            if (deps) {
+                for (const dep of deps) {
+                    const childCost = costs.get(dep.childId) || 0;
+                    aggregatedCost += childCost * dep.share;
+                }
+            }
+            
+            // Add Intrinsic
+            let intrinsic = 0;
+            if (isDoneCost) {
+                 if (parent.status.state === 'done') {
+                     // If done, my cost is fixed to TotalCost (which is constant in this phase)
+                     // So result is just TotalCost. aggregatedCost from children is IGNORED?
+                     // Wait. If I am done, "My Done Cost" = "My Total Cost".
+                     // Does "My Done Cost" include my children's done cost?
+                     // Yes, conceptually. But if I am done, implicitly my children *should* be done or irrelevant?
+                     // Actually, if I am marked Done manually, I assume full responsibility.
+                     // The previous logic: `if (done) return totalCosts`
+                     // This implies: If I am done, I override the sum of children.
+                     intrinsic = totalCosts?.get(parent.id) || 0;
+                     // And we do NOT add aggregatedCost.
+                     nextCosts.set(parent.id, intrinsic);
+                 } else {
+                     // If not done, intrinsic is 0.
+                     // Result is aggregatedCost.
+                     nextCosts.set(parent.id, aggregatedCost);
+                 }
+            } else {
+                intrinsic = parent.cost || 0;
+                nextCosts.set(parent.id, intrinsic + aggregatedCost);
+            }
+        }
+        
+        // Convergence Check
+        for (const [id, c] of nextCosts) {
+            const oldC = costs.get(id) || 0;
+            maxChange = Math.max(maxChange, Math.abs(c - oldC));
+            costs.set(id, c);
+        }
+        
+        if (maxChange < 0.001) break;
+    }
+    
+    return costs;
+}
+
+// Remove old functions (commented out or just omitted in replacement)
+/*
 function calculateCosts(aims: Aim[], aimMap: Map<string, Aim>): Map<string, number> {
-  const costs = new Map<string, number>();
-  const calculating = new Set<string>();
-
-  function getCost(aimId: string): number {
-    if (costs.has(aimId)) return costs.get(aimId)!;
-    if (calculating.has(aimId)) return 0; // Cycle breaking
-    
-    calculating.add(aimId);
-    const aim = aimMap.get(aimId);
-    if (!aim) {
-        calculating.delete(aimId);
-        return 0;
-    }
-
-    let childCost = 0;
-    if (aim.supportingConnections) {
-        for (const conn of aim.supportingConnections) {
-            childCost += getCost(conn.aimId);
-        }
-    }
-
-    const total = (aim.cost ?? 0) + childCost;
-    costs.set(aimId, total);
-    calculating.delete(aimId);
-    return total;
-  }
-
-  for (const aim of aims) {
-    getCost(aim.id);
-  }
-  
-  return costs;
+  // ...
 }
+function calculateDoneCosts(...) {
+  // ...
+} 
+*/
 
-function calculateDoneCosts(aims: Aim[], aimMap: Map<string, Aim>, totalCosts: Map<string, number>): Map<string, number> {
-  const doneCosts = new Map<string, number>();
-  const calculating = new Set<string>();
-
-  function getDoneCost(aimId: string): number {
-    if (doneCosts.has(aimId)) return doneCosts.get(aimId)!;
-    if (calculating.has(aimId)) return 0;
-    
-    calculating.add(aimId);
-    const aim = aimMap.get(aimId);
-    if (!aim) {
-        calculating.delete(aimId);
-        return 0;
-    }
-
-    if (aim.status.state === 'done') {
-        const total = totalCosts.get(aimId) || 0;
-        doneCosts.set(aimId, total);
-        calculating.delete(aimId);
-        return total;
-    }
-
-    let childDone = 0;
-    if (aim.supportingConnections) {
-        for (const conn of aim.supportingConnections) {
-            childDone += getDoneCost(conn.aimId);
-        }
-    }
-    
-    doneCosts.set(aimId, childDone);
-    calculating.delete(aimId);
-    return childDone;
-  }
-
-  for (const aim of aims) {
-    getDoneCost(aim.id);
-  }
-  
-  return doneCosts;
-}

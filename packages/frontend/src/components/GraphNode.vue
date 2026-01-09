@@ -9,19 +9,23 @@ const props = defineProps<{
     r: number
     x: number
     y: number
+    color?: string
   },
   selected?: boolean
 }>()
 
 const fillColor = computed(() => {
+  if (props.node.color) return props.node.color
+  
   switch (props.node.status) {
-    case 'done': return '#00aa00'
-    case 'open': return '#007acc'
-    case 'cancelled': return '#ff0000'
-    case 'failed': return '#ff6666'
-    case 'partially': return '#aaaa00'
-    case 'unclear': return '#ffa500'
-    default: return '#555'
+    case 'done': return '#007700'
+    case 'open': return '#00558e'
+    case 'cancelled': return '#b20000'
+    case 'failed': return '#b24747'
+    case 'partially': return '#777700'
+    case 'unclear': return '#b27300'
+    case 'archived': return '#3b3b3b'
+    default: return '#3b3b3b'
   }
 })
 

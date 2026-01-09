@@ -99,6 +99,7 @@ export const useUIStore = defineStore('ui', {
 
     // Graph specific selection
     graphSelectedAimId: null as string | null,
+    graphColorMode: (localStorage.getItem('aimparency-graph-color-mode') || 'status') as 'status' | 'priority',
 
     // View state
     currentView: (localStorage.getItem('aimparency-current-view') || 'columns') as 'columns' | 'graph' | 'voice',
@@ -1010,6 +1011,11 @@ export const useUIStore = defineStore('ui', {
 
     setGraphSelection(aimId: string | null) {
       this.graphSelectedAimId = aimId
+    },
+
+    setGraphColorMode(mode: 'status' | 'priority') {
+      this.graphColorMode = mode
+      localStorage.setItem('aimparency-graph-color-mode', mode)
     },
 
     async calculateAimPaths(aimId: string): Promise<AimPath[]> {

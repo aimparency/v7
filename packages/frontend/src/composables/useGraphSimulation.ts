@@ -81,6 +81,21 @@ function sweepAndPrune(boxes: Box[]) {
   return results
 }
 
+// Helper to interpolate colors (Orange #FF8000 -> Azure #0080FF)
+function interpolateColor(t: number): string {
+  // Clamp t to [0, 1]
+  t = Math.max(0, Math.min(1, t))
+  
+  // Start: [255, 128, 0]
+  // End:   [0, 128, 255]
+  
+  const r = Math.round(255 + (0 - 255) * t)
+  const g = 128
+  const b = Math.round(0 + (255 - 0) * t)
+  
+  return `rgb(${r}, ${g}, ${b})`
+}
+
 export function useGraphSimulation() {
   const dataStore = useDataStore()
   const uiStore = useUIStore()
@@ -124,6 +139,19 @@ export function useGraphSimulation() {
     for (const n of rawNodes) totalValue += (n.value || 0)
     const avgValue = rawNodes.length > 0 ? totalValue / rawNodes.length : 0
     
+    // Calculate Priority Range if needed
+    let maxPriority = 0
+    if (uiStore.graphColorMode === 'priority') {
+      for (const n of rawNodes) {
+        const p = dataStore.getAimPriority(n.id)
+        if (p !== Number.POSITIVE_INFINITY && p > maxPriority) {
+          maxPriority = p
+        }
+      }
+      // Logarithmic scaling often works better for distributions like this
+      if (maxPriority <= 0) maxPriority = 1
+    }
+    
     const SPACING_FACTOR = 64
     const newNodes: GraphNode[] = []
 
@@ -131,6 +159,20 @@ export function useGraphSimulation() {
       let existing = nodeMap.get(raw.id)
       const val = raw.value || 0
       const radius = Math.sqrt((val / (avgValue || 1)) + 0.1) * 150
+      
+      let color: string | undefined = undefined
+      if (uiStore.graphColorMode === 'priority') {
+        const p = dataStore.getAimPriority(raw.id)
+        if (p === Number.POSITIVE_INFINITY) {
+          color = '#FFFF00' // Max Yellow
+        } else {
+          // Linear mapping for now: priority / max
+          // Or sqrt mapping to highlight lower-mid range?
+          // Let's try simple linear first
+          const t = p / maxPriority
+          color = interpolateColor(t)
+        }
+      }
 
       if (!existing) {
         const loaded = loadedPositions.get(raw.id)
@@ -146,7 +188,7 @@ export function useGraphSimulation() {
           shift: [0, 0],
           freezeFactor: 0,
           freezeCounter: 0,
-          color: undefined
+          color
         }
         nodeMap.set(raw.id, existing)
       } else {
@@ -154,6 +196,7 @@ export function useGraphSimulation() {
         existing.status = raw.status
         existing.value = val
         existing.r = radius
+        existing.color = color // Update color
         if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }
       newNodes.push(existing)
@@ -541,6 +584,7 @@ export function useGraphSimulation() {
     }, 2000) as any
     
     watch(() => dataStore.graphData, updateGraphData, { deep: true })
+    watch(() => uiStore.graphColorMode, updateGraphData)
   }
 
   const cleanup = () => {
