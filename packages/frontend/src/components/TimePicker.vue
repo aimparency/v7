@@ -36,8 +36,8 @@ const handleBlur = (e: Event) => {
   
   const match = val.match(/^(\d{1,2}):(\d{1,2})$/)
   if (match) {
-    let h = parseInt(match[1])
-    let m = parseInt(match[2])
+    let h = parseInt(match[1]!)
+    let m = parseInt(match[2]!)
     
     if (h > 23) h = 23
     if (m > 59) m = 59

@@ -34,6 +34,7 @@ export const useDataStore = defineStore('data', {
     calculatedValues: new Map<string, number>(),
     calculatedCosts: new Map<string, number>(),
     calculatedDoneCosts: new Map<string, number>(),
+    calculatedPriorities: new Map<string, number>(),
     flowShares: new Map<string, number>(),
     flowValues: new Map<string, number>(),
     totalIntrinsicValue: 0,
@@ -84,6 +85,10 @@ export const useDataStore = defineStore('data', {
 
     getAimCost: (state) => (aimId: string): number => {
       return state.calculatedCosts.get(aimId) || 0
+    },
+
+    getAimPriority: (state) => (aimId: string): number => {
+      return state.calculatedPriorities.get(aimId) || 0
     },
 
     getAimProgress: (state) => (aimId: string): number => {
@@ -188,6 +193,7 @@ export const useDataStore = defineStore('data', {
             this.calculatedValues = result.values;
             this.calculatedCosts = result.costs;
             this.calculatedDoneCosts = result.doneCosts;
+            this.calculatedPriorities = result.priorities;
             this.flowShares = result.flowShares;
             this.flowValues = result.flowValues;
             this.totalIntrinsicValue = result.totalIntrinsic;
@@ -319,6 +325,9 @@ export const useDataStore = defineStore('data', {
       }
       if (newAim.calculatedDoneCost !== undefined) {
         this.calculatedDoneCosts.set(aimId, newAim.calculatedDoneCost)
+      }
+      if (newAim.calculatedPriority !== undefined) {
+        this.calculatedPriorities.set(aimId, newAim.calculatedPriority)
       }
 
       if (oldSelectedIndex !== undefined && newAim.supportingConnections && newAim.supportingConnections.length > 0) {

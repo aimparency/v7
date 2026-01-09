@@ -10,7 +10,9 @@ import { trpc } from '../trpc'
 const OUTER_MARGIN_FACTOR = 2
 const FLOW_FORCE = 0.5
 const GLOBAL_FORCE = 0.14
-const BASE_SEMANTIC_STIFFNESS = 0.75 // 5x stronger (was 0.15)
+const BASE_SEMANTIC_STIFFNESS = 0.75
+
+type Box = [number, number, number, number]
 
 export interface GraphNode {
   id: string
@@ -37,7 +39,7 @@ export interface GraphLink {
 }
 
 // Helper: Sweep and Prune (1-axis sort)
-function sweepAndPrune(boxes: number[][]) {
+function sweepAndPrune(boxes: Box[]) {
   const n = boxes.length
   // Create index array
   const indices = new Uint32Array(n)
@@ -54,13 +56,17 @@ function sweepAndPrune(boxes: number[][]) {
   const results: [number, number][] = []
 
   for (let i = 0; i < n; i++) {
-    const iA = indices[i]!
-    const boxA = boxes[iA]
+    const iA = indices[i]! // indices is typed Uint32Array, access is number | undefined? No, typed array access is number.
+    // Actually standard TS lib types TypedArray index signature as number.
+    // Let's rely on standard 'boxA' check to be safe or just cast if we trust logic.
+    // indices[i] is technically number.
+    
+    const boxA = boxes[indices[i]!] 
     if (!boxA) continue
 
     for (let j = i + 1; j < n; j++) {
       const iB = indices[j]!
-      const boxB = boxes[iB]
+      const boxB = boxes[indices[j]!]
       if (!boxB) continue
 
       // Break if no overlap on X axis possible
@@ -68,7 +74,7 @@ function sweepAndPrune(boxes: number[][]) {
 
       // Check Y overlap
       if (boxA[3] >= boxB[1] && boxA[1] <= boxB[3]) {
-        results.push([iA, iB] as [number, number])
+        results.push([indices[i]!, indices[j]!] as [number, number])
       }
     }
   }
@@ -190,7 +196,7 @@ export function useGraphSimulation() {
   const reusable = {
     r: [] as number[],
     pos: [] as vec2.T[],
-    boxes: [] as number[][]
+    boxes: [] as Box[]
   }
   const hShift = vec2.create()
   const abVector = vec2.create()

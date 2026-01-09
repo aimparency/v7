@@ -7,7 +7,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
     "@trpc/server": "^11.7.2",

@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "stop-sessions": "tsx src/scripts/stop-sessions.ts",
+    "list-sessions": "tsx src/scripts/list-sessions.ts"
   },
   "dependencies": {
     "@trpc/server": "^11.7.2",

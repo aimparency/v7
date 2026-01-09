@@ -18,6 +18,8 @@
     "dev:mobile:config": "tsx packages/mobile/scripts/generate-config.ts",
     "dev": "npm run dev:mobile:config && dotenv -e .env -- concurrently -n \"BACK,FRNT,PROC,BROK,EMBD,MCP,VOICE\" -c \"blue,green,magenta,yellow,cyan,red,white\" \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:process\" \"npm run dev:broker\" \"npm run dev:embedder\" \"npm run dev:mcp\" \"npm run dev:voice\"",
     "dev:delay": "npm run dev:backend:delay & npm run dev:frontend",
+    "stop-sessions": "npm run stop-sessions -w wrapped-gemini-broker",
+    "list-sessions": "npm run list-sessions -w wrapped-gemini-broker",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test -w backend",
     "ncu-upgrade": "npx npm-check-updates -u --deep && npm install",

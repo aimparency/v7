@@ -89,7 +89,8 @@ function triggerRecalculation(projectPath: string) {
             map.set(id, {
                 value,
                 cost: result.costs.get(id) || 0,
-                doneCost: result.doneCosts.get(id) || 0
+                doneCost: result.doneCosts.get(id) || 0,
+                priority: result.priorities.get(id) || 0
             });
         }
         saveAimValues(projectPath, map);
@@ -263,6 +264,7 @@ function populateAimValues(projectPath: string, aims: Aim[]) {
                 aim.calculatedValue = data.value;
                 aim.calculatedCost = data.cost;
                 aim.calculatedDoneCost = data.doneCost;
+                aim.calculatedPriority = data.priority;
             }
         }
     } catch (e) {

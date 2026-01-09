@@ -1,0 +1,19 @@
+{
+  "id": "9c44aab0-68cd-42ba-a192-272459bea4f1",
+  "text": "mcp search should support fuzzy and semantic search too. just like aim search in UI",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1767802838689
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -33,7 +33,8 @@ export const AimSchema = z.object({
   loopWeight: z.number().default(0),
   calculatedValue: z.number().optional(),
   calculatedCost: z.number().optional(),
-  calculatedDoneCost: z.number().optional()
+  calculatedDoneCost: z.number().optional(),
+  calculatedPriority: z.number().optional()
 });
 
 export const PhaseSchema = z.object({

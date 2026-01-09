@@ -6,7 +6,8 @@ export function calculateAimValues(aims: Aim[]): {
   flowShares: Map<string, number>,
   flowValues: Map<string, number>,
   costs: Map<string, number>,
-  doneCosts: Map<string, number>
+  doneCosts: Map<string, number>,
+  priorities: Map<string, number>
 } {
   const aimMap = new Map<string, Aim>();
   const currentValues = new Map<string, number>();
@@ -73,7 +74,7 @@ export function calculateAimValues(aims: Aim[]): {
   if (totalIntrinsic === 0) {
     const costs = calculateCosts(aims, aimMap);
     const doneCosts = calculateDoneCosts(aims, aimMap, costs);
-    return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, costs, doneCosts };
+    return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, costs, doneCosts, priorities: new Map() };
   }
 
   // 3. Iterate
@@ -147,7 +148,24 @@ export function calculateAimValues(aims: Aim[]): {
 
   const costs = calculateCosts(aims, aimMap);
   const doneCosts = calculateDoneCosts(aims, aimMap, costs);
-  return { values: currentValues, totalIntrinsic, flowShares, flowValues, costs, doneCosts };
+
+  // Calculate Priorities
+  // Priority = (Normalized Value * Total Intrinsic) / Cost
+  const priorities = new Map<string, number>();
+  for (const aim of aims) {
+      const val = (currentValues.get(aim.id) || 0) * totalIntrinsic;
+      const cost = costs.get(aim.id) || 0;
+      
+      let priority = 0;
+      if (cost > 0) {
+          priority = val / cost;
+      } else if (val > 0) {
+          priority = Number.POSITIVE_INFINITY;
+      }
+      priorities.set(aim.id, priority);
+  }
+
+  return { values: currentValues, totalIntrinsic, flowShares, flowValues, costs, doneCosts, priorities };
 }
 
 function calculateCosts(aims: Aim[], aimMap: Map<string, Aim>): Map<string, number> {
