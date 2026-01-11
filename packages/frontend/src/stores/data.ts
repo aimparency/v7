@@ -368,13 +368,14 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async createSubAim(projectPath: string, parentAimId: string, aim: Omit<Aim, 'id' | 'incoming' | 'supportedAims' | 'committedIn'>, positionInParent?: number): Promise<{id: string}> {
+    async createSubAim(projectPath: string, parentAimId: string, aim: Omit<Aim, 'id' | 'incoming' | 'supportedAims' | 'committedIn'>, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createSubAim.mutate({
           projectPath,
           parentAimId,
           aim,
-          positionInParent
+          positionInParent,
+          weight
         })
 
         // Reload parent aim to get updated connections

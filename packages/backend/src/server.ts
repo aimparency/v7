@@ -27,7 +27,7 @@ import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadV
 import { getSemanticGraph } from './forces.js';
 import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues } from 'shared';
-import { saveAimValues, getAimValues } from './db.js';
+import { saveAimValues, getAimValues, getDb } from './db.js';
 
 // Create context for tRPC
 const createContext = () => ({});
@@ -47,7 +47,7 @@ const delayMiddleware = t.middleware(async ({ next }) => {
 // Create procedures with delay middleware
 const delayedProcedure = t.procedure.use(delayMiddleware);
 
-const GITIGNORE_CONTENT = 'vectors.json\n';
+const GITIGNORE_CONTENT = 'vectors.json\ncache.db\n';
 
 function normalizeProjectPath(p: string): string {
   if (!p) return p;
@@ -120,9 +120,19 @@ async function ensureProjectStructure(rawProjectPath: string) {
     await fs.writeFile(gitignorePath, GITIGNORE_CONTENT);
   } else {
     let currentContent = await fs.readFile(gitignorePath, 'utf8');
+    let needsUpdate = false;
+    
     if (!currentContent.includes('vectors.json')) {
-      currentContent += '\n' + GITIGNORE_CONTENT;
-      await fs.writeFile(gitignorePath, currentContent);
+      currentContent += '\nvectors.json';
+      needsUpdate = true;
+    }
+    if (!currentContent.includes('cache.db')) {
+        currentContent += '\ncache.db';
+        needsUpdate = true;
+    }
+    
+    if (needsUpdate) {
+        await fs.writeFile(gitignorePath, currentContent);
     }
   }
 }
@@ -431,8 +441,8 @@ function getRandomRelativePosition(): [number, number] {
 }
 
 // Helper function to connect aims (reused by connectAims and createSubAim)
-async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number, relativePosition?: [number, number]): Promise<void> {
-  console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childSupportedAimsIndex, relativePosition });
+async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number, relativePosition?: [number, number], weight: number = 1): Promise<void> {
+  console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childSupportedAimsIndex, relativePosition, weight });
   const parent = await readAim(projectPath, parentAimId);
   const child = await readAim(projectPath, childAimId);
 
@@ -441,7 +451,13 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
   const currentChildIndex = parent.supportingConnections.findIndex(c => c.aimId === childAimId);
   
   if (currentChildIndex === targetParentIndex) {
-    // Already at the correct position
+    // Already at the correct position, but update weight if changed
+    if (currentChildIndex !== -1 && parent.supportingConnections[currentChildIndex]) {
+      if (parent.supportingConnections[currentChildIndex].weight !== weight) {
+        parent.supportingConnections[currentChildIndex].weight = weight;
+        await writeAim(projectPath, parent);
+      }
+    }
   } else {
     // Remove from current position if present
     if (currentChildIndex !== -1) {
@@ -451,11 +467,11 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
       targetParentIndex = Math.min(targetParentIndex, maxIndex);
     }
     // Insert at target position
-    const newConnection = { aimId: childAimId, relativePosition: relativePosition || getRandomRelativePosition(), weight: 1 };
+    const newConnection = { aimId: childAimId, relativePosition: relativePosition || getRandomRelativePosition(), weight };
     
     parent.supportingConnections.splice(targetParentIndex, 0, newConnection);
+    await writeAim(projectPath, parent);
   }
-  await writeAim(projectPath, parent);
 
   // Update child's supportedAims (parent goes into child's supportedAims)
   let targetChildIndex = childSupportedAimsIndex !== undefined ? childSupportedAimsIndex : child.supportedAims.length;
@@ -837,11 +853,11 @@ const appRouter = t.router({
         childAimId: z.string().uuid(),
         parentIncomingIndex: z.number().optional(),
         childSupportedAimsIndex: z.number().optional(),
-        relativePosition: z.tuple([z.number(), z.number()]).optional()
+        relativePosition: z.tuple([z.number(), z.number()]).optional(),
+        weight: z.number().optional()
       }))
       .mutation(async ({ input }) => {
-        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex, input.relativePosition);
-        return { success: true };
+        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex, input.relativePosition, input.weight);
       }),
 
     createFloatingAim: delayedProcedure
@@ -914,7 +930,8 @@ const appRouter = t.router({
           cost: z.number().optional(),
           loopWeight: z.number().optional()
         }),
-        positionInParent: z.number().optional()
+        positionInParent: z.number().optional(),
+        weight: z.number().optional()
       }))
       .mutation(async ({ input }) => {
         const childAimId = uuidv4();
@@ -949,7 +966,7 @@ const appRouter = t.router({
           });
         }
 
-        await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0);
+        await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0, undefined, input.weight);
 
         return childAim;
       }),
@@ -1029,17 +1046,55 @@ const appRouter = t.router({
         let results: SearchAimResult[] = [];
 
         if (input.query && input.query.trim().length > 0) {
-          // Primary: FlexSearch (returns SearchAimResult[])
-          results = await searchAims(input.projectPath, input.query, allAims);
+          // 1. Text Search (FlexSearch)
+          const textPromise = searchAims(input.projectPath, input.query, allAims);
           
-          // Fallback/Augment: Simple text matching if FlexSearch misses obvious ones
-          const lowerQuery = input.query.toLowerCase();
-          const fallbackResults = allAims.filter(aim => 
-            aim.text.toLowerCase().includes(lowerQuery) && 
-            !results.some(r => r.id === aim.id)
-          ).map(aim => ({ ...aim, score: 0.05 })); // Assign low score to fallback matches
+          // 2. Semantic Search (Embeddings)
+          const vectorPromise = (async () => {
+             try {
+                 const queryVector = await generateEmbedding(input.query);
+                 if (!queryVector) return [];
+                 return await searchVectors(input.projectPath, queryVector, 20); 
+             } catch (e) {
+                 return [];
+             }
+          })();
+
+          const [textResults, vectorCandidates] = await Promise.all([textPromise, vectorPromise]);
           
-          results = [...results, ...fallbackResults];
+          // Merge results
+          const resultMap = new Map<string, SearchAimResult>();
+          
+          // Add Semantic Candidates
+          for (const cand of vectorCandidates) {
+              const aim = allAims.find(a => a.id === cand.id);
+              if (aim) {
+                  resultMap.set(aim.id, { ...aim, score: cand.score });
+              }
+          }
+          
+          // Add/Boost Text Results
+          for (const r of textResults) {
+              if (resultMap.has(r.id)) {
+                  const existing = resultMap.get(r.id)!;
+                  // Boost score if both match (Hybrid)
+                  // Vector scores are cos-sim (0-1). FlexSearch can be arbitrary.
+                  // Simple heuristic: Max score + small boost.
+                  r.score = Math.max(r.score || 0, existing.score || 0) * 1.1;
+              }
+              resultMap.set(r.id, r);
+          }
+          
+          results = Array.from(resultMap.values());
+          
+          // Fallback: Simple substring if hybrid failed entirely (e.g. embedder down and flexsearch empty)
+          if (results.length === 0) {
+            const lowerQuery = input.query.toLowerCase();
+            const fallbackResults = allAims.filter(aim => 
+                aim.text.toLowerCase().includes(lowerQuery)
+            ).map(aim => ({ ...aim, score: 0.05 }));
+            results = fallbackResults;
+          }
         } else {
           // No query provided: start with all aims
           results = allAims;
@@ -1641,6 +1696,14 @@ const appRouter = t.router({
         }
         */
 
+        // Check 4: Embeddings consistency
+        const vectorStore = await loadVectorStore(input.projectPath);
+        for (const aimId of Object.keys(vectorStore)) {
+            if (!aimMap.has(aimId)) {
+                errors.push(`Orphaned embedding found for Aim ${aimId}`);
+            }
+        }
+
         return { valid: errors.length === 0, errors };
       }),
 
@@ -1758,6 +1821,37 @@ const appRouter = t.router({
               await writePhase(input.projectPath, phase);
             }
           }
+        }
+
+        // Fix 4: Embeddings consistency
+        const vectorStore = await loadVectorStore(input.projectPath);
+        for (const aimId of Object.keys(vectorStore)) {
+            if (!aimMap.has(aimId)) {
+                await removeEmbedding(input.projectPath, aimId);
+                fixes.push(`Removed orphaned embedding for Aim ${aimId}`);
+            }
+        }
+
+        // Fix 5: Cache consistency (aim_values)
+        try {
+            const db = getDb(input.projectPath);
+            const validIds = Array.from(aimMap.keys());
+            if (validIds.length > 0) {
+                const placeholders = validIds.map(() => '?').join(',');
+                const info = db.prepare(`DELETE FROM aim_values WHERE id NOT IN (${placeholders})`).run(...validIds);
+                if (info.changes > 0) {
+                    fixes.push(`Removed ${info.changes} orphaned entries from aim_values cache`);
+                }
+            } else {
+                // No aims, clear cache
+                const info = db.prepare('DELETE FROM aim_values').run();
+                if (info.changes > 0) {
+                    fixes.push(`Cleared ${info.changes} entries from aim_values cache (no valid aims)`);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to clean aim_values cache:', e);
+            fixes.push('Failed to clean aim_values cache (see logs)');
         }
 
         return { success: true, fixes };

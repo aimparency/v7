@@ -129,10 +129,12 @@ export class WatchdogService {
               const jsonString = this.extractJson(contentToParse); 
               this.log("JSON extracted. Processing decision...");
               await this.processDecision(jsonString);
-          } catch (e) {
+          } catch (e: any) {
               this.log(`JSON extraction/parsing failed: ${e}. Content length: ${contentToParse.length}`);
-              // console.debug("Failed content:", contentToParse); 
-              this.nextCheckTime = Date.now() + 100; // Retry faster
+              // Check for API Error keywords to be specific? 
+              // Regardless, if we can't parse JSON, we should retry or fail after N attempts.
+              this.retry(e.message || "JSON extraction failed");
+              return; 
           }
         this.processing = false;
         return;
@@ -247,7 +249,9 @@ ${context}
 What shall we do about this situation?
 
 1. Check the model that is being used in the main agent: it's usually around the end of the current situation. If it changed to a inferior model (lower than gemini 3, 3 is the minimum for reasonable quality), stop with: { "action": { "type": "stop", "reason": "model-switch" } }. 
-2. Check for "Quota exceeded" or "High demand" errors. If found, return { "action": { "type": "cooldown" } }. Do NOT include duration.
+2. Check for "Quota exceeded" or "High demand" errors. If found, return { "action": { "type": "cooldown", "press": "key_to_press" } }. 
+   - "press" is optional. Use it if the error prompt asks for input (e.g. "Retry? (y/n)" -> press: "y").
+   - Do NOT include duration.
 
 ${PROMPT_MARKER}
 `;
@@ -331,6 +335,16 @@ ${PROMPT_MARKER}
         
         this.log(`Cooldown for ${duration}ms (High Demand/Quota). Multiplier: ${this.cooldownMultiplier}x`);
         this.nextCheckTime = Date.now() + duration;
+        
+        if (action.press) {
+            this.log(`Will press '${action.press}' after cooldown.`);
+            setTimeout(() => {
+                this.log(`Executing delayed press: '${action.press}'`);
+                this.worker.write(action.press);
+                // Send enter after a short delay to ensure char is registered
+                setTimeout(() => this.worker.write('\r\n'), 100);
+            }, duration);
+        }
         
         // Increase backoff for next time (cap at some reasonable limit, e.g. 1 hour?)
         this.cooldownMultiplier = Math.min(this.cooldownMultiplier * 2, 120); 

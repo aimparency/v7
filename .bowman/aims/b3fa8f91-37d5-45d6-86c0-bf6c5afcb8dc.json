@@ -9,9 +9,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767098786150
+    "state": "done",
+    "comment": "Updated simulation threshold to 1% of node radius (0.01 factor) with 10-frame recheck logic.",
+    "date": 1768081472467
   },
   "intrinsicValue": 0,
   "cost": 1,

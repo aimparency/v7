@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767635385543
+    "state": "done",
+    "comment": "Implemented logic in navigateDown to automatically select the next phase (and its first aim) when navigating past the last aim of the current phase.",
+    "date": 1768081818638
   },
   "intrinsicValue": 0,
   "cost": 1,

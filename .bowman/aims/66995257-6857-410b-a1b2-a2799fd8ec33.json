@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767734967314
+    "state": "done",
+    "comment": "Implemented efficient collision handling using persistent Uint32Array indices and incremental sorting (Sweep and Prune), leveraging temporal coherence for O(N) performance on nearly sorted data.",
+    "date": 1768083200413
   },
   "intrinsicValue": 0,
   "cost": 1,

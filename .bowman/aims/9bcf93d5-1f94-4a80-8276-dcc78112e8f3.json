@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767605084818
+    "state": "done",
+    "comment": "Implemented 'f' key shortcut in Watchdog Actions Overlay to toggle full-screen mode for the Watchdog panel.",
+    "date": 1768080522985
   },
   "intrinsicValue": 0,
   "cost": 1,

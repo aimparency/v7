@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767618711593
+    "state": "done",
+    "comment": "Implemented 'press' option for cooldown action in WatchdogService. The prompt now instructs the model to use it for retry prompts, and executeAction schedules the keypress after the cooldown duration.",
+    "date": 1768083461577
   },
   "intrinsicValue": 0,
   "cost": 1,

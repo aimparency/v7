@@ -373,12 +373,100 @@ export function useGraphInteraction(
         }
     }
 
+    const onDblClick = async (e: MouseEvent) => {
+        // Only handle double click on background (not if we hit a node, though this listener is on SVG so it bubbles)
+        // But onNodeClick handles single clicks. Double click on node might mean something else (expand?).
+        // For now, let's implement "Create Aim" on empty space.
+        
+        // Check if we are hovering a node? 
+        // We can do a hit test or just assume if target is not a node class.
+        // But the SVG structure is complex. 
+        // Simple heuristic: if we are not "tracking" a node interaction.
+        // But dblclick happens after two clicks.
+        
+        // Let's rely on the fact that if we double click a node, we might want to do something else (like open details).
+        // But user asked for "double click in graph to create a free floating aim".
+        
+        // If we hit a node, e.target would be the circle or text.
+        // We can check if e.target is the svg itself or a background group.
+        // Or simpler: mapStore has no hover state exposed here easily.
+        
+        // Let's proceed: if mapStore.hoveredNode is null? (not available here)
+        // Let's use a hit test with the simulation nodes?
+        const mouse = getLocalPos(e.clientX, e.clientY)
+        const logicalMouse = mapStore.physicalToLogicalCoord(mouse)
+        
+        // Simple hit test
+        let hitNode = false
+        for (const node of nodes.value) {
+            const dx = node.pos[0] - logicalMouse[0]
+            const dy = node.pos[1] - logicalMouse[1]
+            if (dx*dx + dy*dy < node.r * node.r) {
+                hitNode = true
+                break
+            }
+        }
+        
+        if (!hitNode) {
+            const text = window.prompt("New Aim:")
+            if (text) {
+                try {
+                    const newAim = await dataStore.createFloatingAim(uiStore.projectPath, {
+                        text,
+                        status: { state: 'open', date: Date.now(), comment: '' },
+                        tags: [],
+                        supportingConnections: [],
+                        intrinsicValue: 0,
+                        cost: 1,
+                        loopWeight: 0
+                    })
+                    
+                    // Force position
+                    // We need to wait for the graph to update?
+                    // The store update triggers the watcher synchronously or next tick.
+                    // Let's wait a small tick or check immediately.
+                    
+                    // Actually, let's try setting it immediately after await
+                    const node = nodeMap.get(newAim.id)
+                    if (node) {
+                        node.pos[0] = logicalMouse[0]
+                        node.pos[1] = logicalMouse[1]
+                        node.renderPos[0] = logicalMouse[0]
+                        node.renderPos[1] = logicalMouse[1]
+                        // Stop it from flying away
+                        node.shift[0] = 0
+                        node.shift[1] = 0
+                    } else {
+                        // Fallback if not yet created in graph (race condition)
+                        // Add to loadedPositions in simulation? 
+                        // We can't access loadedPositions directly (it's internal to useGraphSimulation closure).
+                        // But we can just setTimeout
+                        setTimeout(() => {
+                             const n = nodeMap.get(newAim.id)
+                             if (n) {
+                                n.pos[0] = logicalMouse[0]
+                                n.pos[1] = logicalMouse[1]
+                                n.renderPos[0] = logicalMouse[0]
+                                n.renderPos[1] = logicalMouse[1]
+                                n.shift[0] = 0
+                                n.shift[1] = 0
+                             }
+                        }, 50)
+                    }
+                } catch (err) {
+                    console.error("Failed to create aim", err)
+                }
+            }
+        }
+    }
+
     // Initialize Listeners
     const initListeners = () => {
         if (svgRef.value) {
             svgRef.value.addEventListener("mousemove", onMouseMove)
             svgRef.value.addEventListener("mousedown", onMouseDown)
             svgRef.value.addEventListener("mouseup", onMouseUp)
+            svgRef.value.addEventListener("dblclick", onDblClick)
             svgRef.value.addEventListener("wheel", onWheel, { passive: false })
             svgRef.value.addEventListener("touchstart", onTouchStart, { passive: false })
             svgRef.value.addEventListener("touchmove", onTouchMove, { passive: false })
@@ -394,6 +482,7 @@ export function useGraphInteraction(
             svgRef.value.removeEventListener("mousemove", onMouseMove)
             svgRef.value.removeEventListener("mousedown", onMouseDown)
             svgRef.value.removeEventListener("mouseup", onMouseUp)
+            svgRef.value.removeEventListener("dblclick", onDblClick)
             svgRef.value.removeEventListener("wheel", onWheel)
             svgRef.value.removeEventListener("touchstart", onTouchStart)
             svgRef.value.removeEventListener("touchmove", onTouchMove)

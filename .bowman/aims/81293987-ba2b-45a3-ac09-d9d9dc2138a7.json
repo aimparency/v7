@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766507972753
+    "state": "done",
+    "comment": "Implemented consistency checks and fixes for orphaned embeddings and aim_values cache.",
+    "date": 1768081233340
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -366,7 +366,7 @@ onUnmounted(() => {
 
     <!-- Main Interface -->
     <div v-else class="main-split">
-      <main class="content-area">
+      <main class="content-area" v-show="!uiStore.watchdogMaximized">
         <!-- Columns View -->
         <div 
           v-if="uiStore.currentView === 'columns'"
@@ -399,8 +399,12 @@ onUnmounted(() => {
       </main>
 
       <!-- Watchdog Panel -->
-      <div v-if="uiStore.showWatchdog" class="watchdog-container" :style="{ height: watchdogHeight + 'px' }">
-        <div class="resize-handle" @mousedown="startResizeWatchdog"></div>
+      <div 
+        v-if="uiStore.showWatchdog" 
+        class="watchdog-container" 
+        :style="{ height: uiStore.watchdogMaximized ? '100%' : watchdogHeight + 'px' }"
+      >
+        <div class="resize-handle" v-if="!uiStore.watchdogMaximized" @mousedown="startResizeWatchdog"></div>
         <WatchdogPanel ref="watchdogRef" />
       </div>
     </div>

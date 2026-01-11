@@ -18,6 +18,7 @@ const aimTags = ref<string[]>([])
 const selectedStatus = ref<AimStatusState>('open')
 const statusComment = ref('')
 const searchResults = ref<Aim[]>([])
+const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
 
 const availableStatuses = computed(() => dataStore.getStatuses)
 
@@ -66,10 +67,12 @@ const hasSearchText = computed(() => aimText.value.trim().length > 0)
 const createAim = async () => {
   if (!aimText.value.trim() && !selectedSearchResult.value) return
 
+  const weight = supportedAimsList.value.length > 0 ? (supportedAimsList.value[0]?.weight ?? 1) : 1
+
   try {
     if (selectedSearchResult.value) {
       // Link existing aim
-      await uiStore.createAim(selectedSearchResult.value.id, true)
+      await uiStore.createAim(selectedSearchResult.value.id, true, undefined, undefined, 0, 1, 1, weight)
     } else {
       // Create new aim with text and description
       await uiStore.createAim(
@@ -79,7 +82,8 @@ const createAim = async () => {
         aimTags.value, 
         aimIntrinsicValue.value, 
         aimLoopWeight.value,
-        aimCost.value
+        aimCost.value,
+        weight
       )
     }
   } catch (error) {
@@ -231,8 +235,31 @@ watch(aimText, async (newValue) => {
 
 onMounted(async () => {
   let aim
+  supportedAimsList.value = []
+
   if (uiStore.aimModalMode === 'edit') {
     aim = uiStore.getCurrentAim()
+  } else {
+    // Create mode: identify potential parent
+    const path = uiStore.getSelectionPath()
+    if (path.aims.length > 0) {
+        let parentAim: Aim | undefined
+        const currentAim = path.aims[path.aims.length - 1]
+        
+        if (currentAim && currentAim.expanded && uiStore.aimModalInsertPosition === 'after') {
+            parentAim = currentAim
+        } else if (path.aims.length > 1) {
+            parentAim = path.aims[path.aims.length - 2]
+        }
+        
+        if (parentAim) {
+            supportedAimsList.value.push({
+                id: parentAim.id,
+                text: parentAim.text,
+                weight: 1
+            })
+        }
+    }
   }
 
   console.log('Loaded aim for editing:', aim) 
@@ -330,6 +357,17 @@ onMounted(async () => {
             rows="3"
             @keydown="handleTextareaKeydown"
           ></textarea>
+        </div>
+
+        <div v-if="supportedAimsList.length > 0" class="form-group">
+            <label>Supports</label>
+            <div v-for="parent in supportedAimsList" :key="parent.id" class="supported-aim-row">
+                <span class="parent-text">{{ parent.text }}</span>
+                <div class="weight-input">
+                    <span class="weight-label">Weight:</span>
+                    <input type="number" v-model.number="parent.weight" step="0.1" min="0" class="weight-field" />
+                </div>
+            </div>
         </div>
 
         <div class="form-row">
@@ -612,5 +650,43 @@ onMounted(async () => {
       font-size: 0.7rem;
     }
   }
+}
+
+.supported-aim-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #252525;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    border: 1px solid #444;
+}
+
+.parent-text {
+    font-weight: 500;
+    color: #ddd;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 1rem;
+}
+
+.weight-input {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.weight-label {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.weight-field {
+    width: 60px !important;
+    padding: 0.2rem 0.4rem !important;
+    text-align: center;
 }
 </style>

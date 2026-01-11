@@ -18,9 +18,9 @@
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Implemented stripping of 'relativePosition' from all aim-related tools and resources in the MCP server. This improves token efficiency and reduces noise for the LLM.",
-    "date": 1766114371144
+    "state": "done",
+    "comment": "Enhanced MCP output formatting by stripping visual data (relativePosition) and removing empty arrays (connections, tags, phases) to optimize token usage. Applied to both Tools and Resources.",
+    "date": 1768083978925
   },
   "intrinsicValue": 0,
   "cost": 1,

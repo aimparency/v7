@@ -9,9 +9,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767099721107
+    "state": "done",
+    "comment": "Added 'cache.db' to GITIGNORE_CONTENT and updated ensureProjectStructure to append it to existing .gitignore files if missing.",
+    "date": 1768081698083
   },
   "intrinsicValue": 0,
   "cost": 1,

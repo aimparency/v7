@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766508006116
+    "state": "done",
+    "comment": "Refactored aim navigation: 'l' expands then enters sub-aims. 'h' collapses or goes to parent (keeping expanded). 'Esc' goes to parent (keeping expanded) or exits navigation mode.",
+    "date": 1768081059761
   },
   "intrinsicValue": 0,
   "cost": 1,

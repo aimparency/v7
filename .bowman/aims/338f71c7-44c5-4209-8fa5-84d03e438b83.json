@@ -9,9 +9,9 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767551848642
+    "state": "done",
+    "comment": "Implemented priority-based coloring with toggle switch (S/P) and configurable gradient.",
+    "date": 1768079952693
   },
   "intrinsicValue": 20,
   "cost": 10,

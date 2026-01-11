@@ -103,6 +103,7 @@ export const useUIStore = defineStore('ui', {
 
     // View state
     currentView: (localStorage.getItem('aimparency-current-view') || 'columns') as 'columns' | 'graph' | 'voice',
+    watchdogMaximized: false,
 
     // Remember last selected sub-phase index per parent phase
     lastSelectedSubPhaseIndexByPhase: JSON.parse(localStorage.getItem('aimparency-last-sub-phase-index') || '{}') as Record<string, number>,
@@ -339,7 +340,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Create aim and update selection
-    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = 0, loopWeight: number = 1, cost: number = 1) {
+    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = 0, loopWeight: number = 1, cost: number = 1, weight: number = 1) {
       const dataStore = useDataStore()
 
       const path = this.getSelectionPath()
@@ -396,7 +397,8 @@ export const useUIStore = defineStore('ui', {
                 projectPath: this.projectPath,
                 parentAimId: currentAim.id,
                 childAimId: aimTextOrId,
-                parentIncomingIndex: 0
+                parentIncomingIndex: 0,
+                weight
               })
               newAimId = aimTextOrId
               
@@ -407,7 +409,7 @@ export const useUIStore = defineStore('ui', {
               })
               dataStore.replaceAim(currentAim.id, updatedParent)
             } else {
-              const result = await dataStore.createSubAim(this.projectPath, currentAim.id, aimAttributes, 0)
+              const result = await dataStore.createSubAim(this.projectPath, currentAim.id, aimAttributes, 0, weight)
               newAimId = result.id
             }
 
@@ -433,7 +435,8 @@ export const useUIStore = defineStore('ui', {
                     projectPath: this.projectPath,
                     parentAimId: parentAim.id,
                     childAimId: aimTextOrId,
-                    parentIncomingIndex: insertionIndex
+                    parentIncomingIndex: insertionIndex,
+                    weight
                     })
                     newAimId = aimTextOrId
 
@@ -444,7 +447,7 @@ export const useUIStore = defineStore('ui', {
                     })
                     dataStore.replaceAim(parentAim.id, updatedParent)
                 } else {
-                    const result = await dataStore.createSubAim(this.projectPath, parentAim.id, aimAttributes, insertionIndex)
+                    const result = await dataStore.createSubAim(this.projectPath, parentAim.id, aimAttributes, insertionIndex, weight)
                     newAimId = result.id
                 }
 
@@ -456,6 +459,9 @@ export const useUIStore = defineStore('ui', {
                 }
               }
             } else if(path.phase) {
+              // ... existing phase logic (weight doesn't apply to phase commitments yet, or phase links are implicit)
+              // Actually phase commitments don't have weights in this model, they are just order.
+              // So weight is ignored here.
               console.log(isExistingAim ? 'link existing aim to phase (top-level)' : 'create top-level aim in phase', path.phase)
               let insertionIndex = 0
               const phase = dataStore.phases[path.phase.id]
@@ -491,6 +497,7 @@ export const useUIStore = defineStore('ui', {
               }
               // Also ensure the new aim is in the list (createCommittedAim adds it to aims map)
             } else {
+              // ... existing floating logic (weight ignored as no parent)
               if (isExistingAim) {
                 console.warn('Cannot link existing aim as floating aim - ignoring')
                 this.showAimModal = false
@@ -1250,6 +1257,23 @@ export const useUIStore = defineStore('ui', {
             if (path.phase) {
               if (path.phase.selectedAimIndex! < path.phase.commitments.length - 1 ) {
                 path.phase.selectedAimIndex!++
+              } else if (col >= 0) {
+                 // End of phase, try next phase
+                 const currentPhaseIndex = this.getSelectedPhase(col)
+                 const phaseCount = this.getPhaseCount(col)
+                 if (currentPhaseIndex < phaseCount - 1) {
+                     await this.selectPhase(col, currentPhaseIndex + 1)
+                     const newPhaseId = this.getSelectedPhaseId(col)
+                     if (newPhaseId) {
+                         const newPhase = dataStore.phases[newPhaseId]
+                         // If new phase has aims, select the first one. 
+                         // Note: selectPhase doesn't reset selectedAimIndex usually (it might preserve it? no, distinct objects).
+                         // But we want to ensure it's 0.
+                         if (newPhase && newPhase.commitments.length > 0) {
+                             newPhase.selectedAimIndex = 0
+                         }
+                     }
+                 }
               }
             }
           }
@@ -1274,6 +1298,20 @@ export const useUIStore = defineStore('ui', {
             if(path.phase) {
               if(path.phase.selectedAimIndex! < path.phase.commitments.length - 1) {
                 path.phase.selectedAimIndex! ++
+              } else if (col >= 0) {
+                 // End of phase (from nested), try next phase
+                 const currentPhaseIndex = this.getSelectedPhase(col)
+                 const phaseCount = this.getPhaseCount(col)
+                 if (currentPhaseIndex < phaseCount - 1) {
+                     await this.selectPhase(col, currentPhaseIndex + 1)
+                     const newPhaseId = this.getSelectedPhaseId(col)
+                     if (newPhaseId) {
+                         const newPhase = dataStore.phases[newPhaseId]
+                         if (newPhase && newPhase.commitments.length > 0) {
+                             newPhase.selectedAimIndex = 0
+                         }
+                     }
+                 }
               }
             } else {
               if(this.floatingAimIndex < dataStore.floatingAims.length - 1) {
@@ -2144,7 +2182,16 @@ export const useUIStore = defineStore('ui', {
           if(this.pendingDeleteAimId) {
             this.pendingDeleteAimId = null
           } else {
-            this.navigatingAims = false
+            // If deeply nested, pop up one level (keeping parent expanded)
+            if (path.aims.length > 1) {
+                const parentAim = path.aims[path.aims.length - 2]
+                if (parentAim) {
+                    parentAim.selectedIncomingIndex = undefined
+                }
+            } else {
+                // Top level: exit navigation mode
+                this.navigatingAims = false
+            }
           }
           break
         case 'e': {
@@ -2174,16 +2221,23 @@ export const useUIStore = defineStore('ui', {
         }
         case 'h': {
           event.preventDefault()
-          // Collapse the current aim
           if(currentAim) {
             if(currentAim.expanded) {
+              // 1. If expanded, collapse
               currentAim.expanded = false
             } else if (path.aims.length > 1) {
-              // collapse parent aim
+              // 2. If not expanded but is child, go to parent (keep expanded)
               const parentAim = path.aims[path.aims.length - 2]
-              if (parentAim && parentAim.expanded) {
-                parentAim.expanded = false
+              if (parentAim) {
+                // Just deselect this child
+                parentAim.selectedIncomingIndex = undefined
               }
+            } else {
+                // Top level collapsed: Collapse parent phase (switch to column mode?)
+                // Or maybe collapse phase if in phase?
+                // Currently 'h' in navigation mode stays in navigation mode.
+                // If at root, do nothing? Or maybe exit navigation mode?
+                // Let's keep it simple: do nothing if at root and collapsed.
             }
           }
           break

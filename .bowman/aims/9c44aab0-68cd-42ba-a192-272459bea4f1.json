@@ -9,9 +9,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767802838689
+    "state": "done",
+    "comment": "Upgraded 'aim.search' procedure to use hybrid search (Text/FlexSearch + Semantic/Embeddings), enabling advanced search capabilities for MCP tool and UI.",
+    "date": 1768081362408
   },
   "intrinsicValue": 0,
   "cost": 1,

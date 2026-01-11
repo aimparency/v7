@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767097856090
+    "state": "done",
+    "comment": "Implemented weight field for supported aims in AimCreationModal. Updated backend and stores to handle weight during aim creation/connection.",
+    "date": 1768080933215
   },
   "intrinsicValue": 0,
   "cost": 1,

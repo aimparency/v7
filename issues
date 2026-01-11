@@ -1,0 +1,9 @@
+- 'l' does indeed just expand aim. but when aim is just expanded j should skip to the next sibling not step inside sub aims. (we might need to track two different states if we arent already: expanded and selectedSubAim which can be null)
+- dragging handles does not lead to handle update on mousemove (just on release). but it should update on mouse/touch move, too. 
+- in aim search, tab should tab to the search result list 
+- for inconsitencies we should also output the auto-resolve action in the list items. 
+- deleting an aim should remove all connections (supporting or supported) to other aims.
+- favicon should be a bit more simple and less detailed
+- when switching from column view to graph the selected node should be focused smoothly in graph view
+- when double clicking to create aim - please reuse existing aim creation modal
+

@@ -30,6 +30,13 @@ const actions = [
     icon: '🔍'
   },
   {
+    id: 'fullscreen',
+    key: 'f',
+    label: () => uiStore.watchdogMaximized ? 'Exit Fullscreen' : 'Maximize Panel',
+    action: () => { uiStore.watchdogMaximized = !uiStore.watchdogMaximized },
+    icon: '⛶'
+  },
+  {
     id: 'hide',
     key: 'w',
     label: () => 'Hide Animator Panel',

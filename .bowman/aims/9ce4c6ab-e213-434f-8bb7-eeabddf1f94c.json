@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767097491770
+    "state": "done",
+    "comment": "Implemented double-click handler on graph background to create floating aims at the clicked position.",
+    "date": 1768080366396
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -5,15 +5,18 @@
     "ingestion",
     "ai"
   ],
-  "incoming": [],
-  "committedIn": [],
-  "status": {
-    "state": "partially",
-    "comment": "",
-    "date": 1765870126822
-  },
   "supportingConnections": [],
+  "incoming": [],
   "supportedAims": [
     "dce12489-6642-4005-b756-99f781484ad5"
-  ]
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented robust ingestion script (ingest.ts) that scans markdown files, uses thought-extractor.ts (via Gemini CLI) to extract thoughts, and saves them to output/thoughts.json with state tracking to avoid re-processing.",
+    "date": 1768083353007
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }

@@ -6,11 +6,19 @@ import { AIMPARENCY_DIR_NAME } from "shared";
 
 function formatAim(aim: any) {
   if (aim.supportingConnections) {
-    aim.supportingConnections = aim.supportingConnections.map((conn: any) => {
-      const { relativePosition, ...rest } = conn;
-      return rest;
-    });
+    if (aim.supportingConnections.length === 0) {
+        delete aim.supportingConnections;
+    } else {
+        aim.supportingConnections = aim.supportingConnections.map((conn: any) => {
+          const { relativePosition, ...rest } = conn;
+          return rest;
+        });
+    }
   }
+  if (aim.supportedAims && aim.supportedAims.length === 0) delete aim.supportedAims;
+  if (aim.committedIn && aim.committedIn.length === 0) delete aim.committedIn;
+  if (aim.tags && aim.tags.length === 0) delete aim.tags;
+  
   return aim;
 }
 

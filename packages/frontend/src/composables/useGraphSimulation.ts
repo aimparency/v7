@@ -39,14 +39,11 @@ export interface GraphLink {
 }
 
 // Helper: Sweep and Prune (1-axis sort)
-function sweepAndPrune(boxes: Box[]) {
-  const n = boxes.length
-  // Create index array
-  const indices = new Uint32Array(n)
-  for (let i = 0; i < n; i++) indices[i] = i
+function sweepAndPrune(boxes: Box[], indices: Uint32Array, n: number) {
+  const view = indices.subarray(0, n)
 
-  // Sort indices based on minX (box[0])
-  indices.sort((a, b) => {
+  // Sort indices based on minX (box[0]) - fast if nearly sorted
+  view.sort((a, b) => {
       const boxA = boxes[a]
       const boxB = boxes[b]
       if (!boxA || !boxB) return 0
@@ -56,17 +53,13 @@ function sweepAndPrune(boxes: Box[]) {
   const results: [number, number][] = []
 
   for (let i = 0; i < n; i++) {
-    const iA = indices[i]! // indices is typed Uint32Array, access is number | undefined? No, typed array access is number.
-    // Actually standard TS lib types TypedArray index signature as number.
-    // Let's rely on standard 'boxA' check to be safe or just cast if we trust logic.
-    // indices[i] is technically number.
-    
-    const boxA = boxes[indices[i]!] 
+    const iA = view[i]!
+    const boxA = boxes[iA] 
     if (!boxA) continue
 
     for (let j = i + 1; j < n; j++) {
-      const iB = indices[j]!
-      const boxB = boxes[indices[j]!]
+      const iB = view[j]!
+      const boxB = boxes[iB]
       if (!boxB) continue
 
       // Break if no overlap on X axis possible
@@ -74,7 +67,7 @@ function sweepAndPrune(boxes: Box[]) {
 
       // Check Y overlap
       if (boxA[3] >= boxB[1] && boxA[1] <= boxB[3]) {
-        results.push([indices[i]!, indices[j]!] as [number, number])
+        results.push([iA, iB] as [number, number])
       }
     }
   }
@@ -239,7 +232,9 @@ export function useGraphSimulation() {
   const reusable = {
     r: [] as number[],
     pos: [] as vec2.T[],
-    boxes: [] as Box[]
+    boxes: [] as Box[],
+    indices: new Uint32Array(0),
+    lastCount: 0
   }
   const hShift = vec2.create()
   const abVector = vec2.create()
@@ -344,6 +339,20 @@ export function useGraphSimulation() {
             boxes.length = count
         }
 
+        // Manage indices buffer
+        if (reusable.indices.length < count) {
+            const newSize = Math.max(count, Math.ceil(reusable.indices.length * 1.5))
+            reusable.indices = new Uint32Array(newSize)
+            reusable.lastCount = 0 // Force reset
+        }
+        
+        // If node count changed, reset indices to identity to ensure validity.
+        // We rely on sorting in sweepAndPrune to restore order.
+        if (reusable.lastCount !== count) {
+            for(let i=0; i<count; i++) reusable.indices[i] = i
+            reusable.lastCount = count
+        }
+
         for (let i = 0; i < count; i++) {
             const n = currentNodes[i]!
             r[i] = n.r
@@ -419,7 +428,7 @@ export function useGraphSimulation() {
         }
 
         // Collisions
-        const intersections = sweepAndPrune(boxes)
+        const intersections = sweepAndPrune(boxes, reusable.indices, count)
         const ab = vec2.create()
         
         for (const [iA, iB] of intersections) {
@@ -483,7 +492,8 @@ export function useGraphSimulation() {
                 hasVisualChange = true
                 n.freezeCounter = 0
             } else {
-                const minShift = n.r * 0.001
+                // Movement threshold dependent on radius (1% of radius)
+                const minShift = n.r * 0.01
                 const isSmallShift = Math.abs(n.shift[0]) < minShift && Math.abs(n.shift[1]) < minShift
                 
                 if (isSmallShift) {
