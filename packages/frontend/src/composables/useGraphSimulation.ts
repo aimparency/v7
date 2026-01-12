@@ -104,6 +104,9 @@ export function useGraphSimulation() {
   const loadedPositions = new Map<string, { x: number, y: number }>()
   const freezings = new Map<string, number>()
   const semanticMaxGap = ref(2000)
+  const cameraTarget = vec2.create()
+  let lastSelectedAimId: string | null = null
+  let wasTracking = false
   
   // Simulation Control
   let animFrameId: number | null = null
@@ -301,23 +304,48 @@ export function useGraphSimulation() {
     }
 
     // Camera Auto-Pan (Smooth)
+    const currentAimId = uiStore.graphSelectedAimId
+    
+    // Detect target change or tracking start to prevent jumps
+    if (currentAimId !== lastSelectedAimId || (mapStore.isTracking && !wasTracking)) {
+        cameraTarget[0] = mapStore.offset[0]
+        cameraTarget[1] = mapStore.offset[1]
+    }
+    lastSelectedAimId = currentAimId
+    wasTracking = mapStore.isTracking
+
     if (!mapStore.panBeginning && !mapStore.dragBeginning && !mapStore.anim.update && mapStore.isTracking) {
-        const currentAimId = uiStore.graphSelectedAimId
         if (currentAimId) {
             const node = nodeMap.get(currentAimId)
             if (node) {
-                const targetX = -node.pos[0]
-                const targetY = -node.pos[1]
-                const dx = targetX - mapStore.offset[0]
-                const dy = targetY - mapStore.offset[1]
+                const ultimateTargetX = -node.pos[0]
+                const ultimateTargetY = -node.pos[1]
+                
+                // Distance to ultimate target for zoom logic
+                const totalDx = ultimateTargetX - mapStore.offset[0]
+                const totalDy = ultimateTargetY - mapStore.offset[1]
+                const totalDist = Math.sqrt(totalDx*totalDx + totalDy*totalDy)
+
+                // 1. Update cameraTarget (smoothing layer)
+                cameraTarget[0] += (ultimateTargetX - cameraTarget[0]) * 0.1
+                cameraTarget[1] += (ultimateTargetY - cameraTarget[1]) * 0.1
+                
+                // 2. Update real offset (ease-in effect)
+                const dx = cameraTarget[0] - mapStore.offset[0]
+                const dy = cameraTarget[1] - mapStore.offset[1]
+
                 if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
                     mapStore.offset[0] += dx * 0.1
                     mapStore.offset[1] += dy * 0.1
                 }
-                const targetScale = LOGICAL_HALF_SIDE / (3 * Math.max(node.r, 10))
+
+                // 3. Dynamic zoom based on total distance
+                const zoomPadding = 3 
+                const targetScale = LOGICAL_HALF_SIDE / (zoomPadding * (Math.max(node.r, 10) + totalDist * 0.25))
+
                 const dScale = targetScale - mapStore.scale
-                if (Math.abs(dScale) > 0.001) {
-                    mapStore.scale += dScale * 0.1
+                if (Math.abs(dScale) > 0.0001) {
+                    mapStore.scale += dScale * 0.05
                 }
             }
         }
@@ -576,6 +604,8 @@ export function useGraphSimulation() {
       if (camera) {
         mapStore.offset = vec2.fromValues(camera.x, camera.y)
         mapStore.scale = camera.scale
+        cameraTarget[0] = mapStore.offset[0]
+        cameraTarget[1] = mapStore.offset[1]
       }
     } catch (e) {
       console.error("Failed to load positions", e)
@@ -600,6 +630,12 @@ export function useGraphSimulation() {
   const cleanup = () => {
     if (animFrameId) cancelAnimationFrame(animFrameId)
     if (saveIntervalId) clearInterval(saveIntervalId)
+    // Save state on exit to ensure persistence
+    if (nodes.value.length > 0) {
+        const toSave = nodes.value.map(n => ({ id: n.id, x: n.pos[0], y: n.pos[1] }))
+        savePositions(toSave)
+        saveCamera({ x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
+    }
   }
 
   return {

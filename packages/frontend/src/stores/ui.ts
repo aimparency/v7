@@ -1198,6 +1198,29 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Global keyboard handler - single source of truth for all navigation
+    async handleGraphKeydown(event: KeyboardEvent, dataStore: any) {
+        if (event.key === 'd') {
+            event.preventDefault()
+            const aimId = this.graphSelectedAimId
+            if (!aimId) return
+
+            if (this.pendingDeleteAimId === aimId) {
+                await dataStore.deleteAim(aimId)
+                this.pendingDeleteAimId = null
+                this.setGraphSelection(null)
+            } else {
+                this.setPendingDeleteAim(aimId)
+            }
+        } else if (event.key === 'Escape') {
+            event.preventDefault()
+            if (this.pendingDeleteAimId) {
+                this.pendingDeleteAimId = null
+            } else {
+                this.setGraphSelection(null)
+            }
+        }
+    },
+
     async handleGlobalKeydown(event: KeyboardEvent, dataStore: any) {
       console.log('pressed', event.key, '. nav aims? ', this.navigatingAims)
 
@@ -1224,6 +1247,11 @@ export const useUIStore = defineStore('ui', {
           event.preventDefault()
           this.setView(this.currentView === 'columns' ? 'graph' : 'columns')
           return
+        }
+
+        if (this.currentView === 'graph') {
+            await this.handleGraphKeydown(event, dataStore)
+            return
         }
 
         if(this.navigatingAims) {
@@ -1340,7 +1368,9 @@ export const useUIStore = defineStore('ui', {
             if (this.floatingAimIndex > 0) {
               this.floatingAimIndex--
               const target = dataStore.floatingAims[this.floatingAimIndex]
-              if (target) this.goToLastChildAim(target)
+              if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
+                  this.goToLastChildAim(target)
+              }
             }
           } else if (col >= 0) {
             // previous aim in phase
@@ -1348,7 +1378,9 @@ export const useUIStore = defineStore('ui', {
               if (path.phase.selectedAimIndex !== undefined && path.phase.selectedAimIndex > 0) {
                 path.phase.selectedAimIndex--
                 const target = dataStore.getAimsForPhase(path.phase.id)[path.phase.selectedAimIndex]
-                if (target) this.goToLastChildAim(target)
+                if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
+                    this.goToLastChildAim(target)
+                }
               }
             }
           }
@@ -1367,7 +1399,7 @@ export const useUIStore = defineStore('ui', {
                     const targetConn = parentConnections[parentAim.selectedIncomingIndex]
                     if (targetConn) {
                         const target = dataStore.aims[targetConn.aimId]
-                        if (target) {
+                        if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
                             this.goToLastChildAim(target)
                         }
                     }
@@ -1375,7 +1407,6 @@ export const useUIStore = defineStore('ui', {
             }
           }
         }
-      } else {
       }
     },
 
@@ -1971,7 +2002,7 @@ export const useUIStore = defineStore('ui', {
             if (col === this.viewportStart && this.viewportStart > -1) {
               this.viewportStart--
             }
-            this.selectedColumn = col - 1
+            this.setSelectedColumn(col - 1)
           }
           break
         case 'l':
@@ -1985,7 +2016,7 @@ export const useUIStore = defineStore('ui', {
                 this.viewportStart++
               }
             }
-            this.selectedColumn = col + 1
+            this.setSelectedColumn(col + 1)
           }
           break
         case 'i': {
