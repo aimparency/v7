@@ -44,6 +44,18 @@ export function registerTools(server: Server, clientOverride?: any) {
           },
         },
         {
+          name: "get_aim_context",
+          description: "Get context for an aim: 5 semantically closest aims, parents, and children.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              aimId: { type: "string", description: "UUID of the aim" }
+            },
+            required: ["projectPath", "aimId"],
+          },
+        },
+        {
           name: "list_aims",
           description: "List all aims in the project",
           inputSchema: {
@@ -506,6 +518,58 @@ export function registerTools(server: Server, clientOverride?: any) {
               {
                 type: "text",
                 text: JSON.stringify(formatAim(aim), null, 2),
+              },
+            ],
+          };
+        }
+
+        case "get_aim_context": {
+          const aimId = args.aimId as string;
+          const projectPath = args.projectPath as string;
+
+          // 1. Get Target Aim
+          const aim = await trpcClient.aim.get.query({ projectPath, aimId });
+          
+          // 2. Semantic Search
+          const queryText = `${aim.text} ${aim.description || ''}`.trim();
+          const similarAims = await trpcClient.aim.searchSemantic.query({
+            projectPath,
+            query: queryText,
+            limit: 6 // Request 6, filter self
+          });
+          const semanticContext = similarAims
+            .filter((a: any) => a.id !== aimId)
+            .slice(0, 5)
+            .map((a: any) => ({ id: a.id, text: a.text, description: a.description }));
+
+          // 3. Parents
+          const parentIds = aim.supportedAims || [];
+          const parents = await Promise.all(parentIds.map((id: string) => 
+             trpcClient.aim.get.query({ projectPath, aimId: id }).catch(() => null)
+          ));
+          const parentContext = parents
+            .filter((p: any) => p !== null)
+            .map((p: any) => ({ id: p.id, text: p.text, description: p.description }));
+
+          // 4. Children
+          const childConnections = aim.supportingConnections || [];
+          const children = await Promise.all(childConnections.map((c: any) => 
+             trpcClient.aim.get.query({ projectPath, aimId: c.aimId }).catch(() => null)
+          ));
+          const childContext = children
+            .filter((c: any) => c !== null)
+            .map((c: any) => ({ id: c.id, text: c.text, description: c.description }));
+
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                    aim: { id: aim.id, text: aim.text, description: aim.description },
+                    semantic_context: semanticContext,
+                    parents: parentContext,
+                    children: childContext
+                }, null, 2),
               },
             ],
           };

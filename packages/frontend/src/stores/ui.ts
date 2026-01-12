@@ -1381,6 +1381,26 @@ export const useUIStore = defineStore('ui', {
                 if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
                     this.goToLastChildAim(target)
                 }
+              } else {
+                 // Start of phase, try previous phase
+                 const currentPhaseIndex = this.getSelectedPhase(col)
+                 if (currentPhaseIndex > 0) {
+                     await this.selectPhase(col, currentPhaseIndex - 1)
+                     const newPhaseId = this.getSelectedPhaseId(col)
+                     if (newPhaseId) {
+                         const newPhase = dataStore.phases[newPhaseId]
+                         if (newPhase && newPhase.commitments.length > 0) {
+                             newPhase.selectedAimIndex = newPhase.commitments.length - 1
+                             
+                             // Check for deep dive into last aim
+                             const aims = dataStore.getAimsForPhase(newPhaseId)
+                             const target = aims[newPhase.selectedAimIndex]
+                             if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
+                                 this.goToLastChildAim(target)
+                             }
+                         }
+                     }
+                 }
               }
             }
           }

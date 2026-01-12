@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768170035027
+    "state": "done",
+    "comment": "Implemented 'k' key navigation to jump to the previous phase when at the top of the current phase. It selects the last aim of the previous phase and correctly dives into its last descendant if expanded.",
+    "date": 1768249613991
   },
   "intrinsicValue": 0,
   "cost": 1,

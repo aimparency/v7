@@ -114,3 +114,11 @@ When there are options offered with this frame and the questionmark: """
 │ ?  list-aims (aimparency MCP Server) {"projectPath":"/home/felix/dev/aimparency/v7"}            ← │
 """ - do not respond with action type "send-prompt" but choose an option with "select-option" + "number"
 
+## special cases 
+If gemini said something about recently completed changes to MCP server or asking to restart MCP server or that it cannot find mcp tools, respond with type: "send-prompt" and text: "/mcp refresh".
+
+Also reject attempts to call aimparency MCP via curl. 
+
+## call mcp prompts
+in the future, we can also call mcp prompts like "analyze_dependencies" by responding with type: "send-prompt" and the mcp prompt name as text with a slash: "/analyze_dependencies". 
+
