@@ -18,9 +18,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767097849122
+    "state": "done",
+    "comment": "Implemented by sub-aim 7a1e6736: Added weight field to supported aims list in AimCreationModal, allowing setting contribution share/weight during creation/linking.",
+    "date": 1768249837077
   },
   "intrinsicValue": 0,
   "cost": 1,

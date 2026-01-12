@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768170107924
+    "state": "done",
+    "comment": "Implemented 'p' key handler to open AimSearchModal with the current aim selected. This calculates and displays all paths to the aim (parents), allowing navigation to any context. Reused existing path calculation logic from AimSearchModal.",
+    "date": 1768249814562
   },
   "intrinsicValue": 0,
   "cost": 1,

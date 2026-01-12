@@ -62,6 +62,7 @@ export const useUIStore = defineStore('ui', {
     aimSearchMode: 'navigate' as 'navigate' | 'pick',
     aimSearchCallback: null as ((aim: Aim) => void) | null,
     aimCreationCallback: null as ((aimId: string) => void) | null,
+    aimSearchInitialAimId: null as string | null,
     showSettingsModal: false,
     showWatchdog: localStorage.getItem('aimparency-show-watchdog') === 'true',
 
@@ -320,16 +321,18 @@ export const useUIStore = defineStore('ui', {
       this.aimModalMode = 'create'
     },
 
-    openAimSearch(mode: 'navigate' | 'pick' = 'navigate', callback?: (aim: Aim) => void) {
+    openAimSearch(mode: 'navigate' | 'pick' = 'navigate', callback?: (aim: Aim) => void, initialAimId?: string) {
       this.showAimSearch = true
       this.aimSearchMode = mode
       this.aimSearchCallback = callback || null
+      this.aimSearchInitialAimId = initialAimId || null
     },
 
     closeAimSearch() {
       this.showAimSearch = false
       this.aimSearchMode = 'navigate'
       this.aimSearchCallback = null
+      this.aimSearchInitialAimId = null
     },
 
     openSettingsModal() {
@@ -2199,6 +2202,14 @@ export const useUIStore = defineStore('ui', {
       if (event.key === 'K') {
         event.preventDefault()
         await this.moveAimUp()
+        return
+      }
+
+      if (event.key === 'p') {
+        event.preventDefault()
+        if (currentAim) {
+            this.openAimSearch('navigate', undefined, currentAim.id)
+        }
         return
       }
 

@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768247876049
+    "state": "done",
+    "comment": "Verified that WatchdogActionsOverlay.vue restores focus to the previously focused element (terminal) in its onUnmounted hook. This handles Esc and selection cases correctly.",
+    "date": 1768249951612
   },
   "intrinsicValue": 0,
   "cost": 1,

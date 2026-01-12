@@ -48,7 +48,7 @@ watch(() => store.focusRequestCounter, () => {
   // Allow UI updates (e.g. search modal closing) to complete before focusing
   setTimeout(() => {
     workerTerm.value?.focus()
-  }, 50)
+  }, 200)
 })
 
 onMounted(() => {

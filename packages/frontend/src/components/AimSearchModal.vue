@@ -286,8 +286,27 @@ onMounted(() => {
   // Capture phase to intercept before terminals
   window.addEventListener('keydown', blockLeakage, true)
   
-  // Ensure input is focused when modal opens
-  nextTick(() => searchInput.value?.focus())
+  // Check if we have an initial aim ID to select immediately
+  if (uiStore.aimSearchInitialAimId) {
+    const aimId = uiStore.aimSearchInitialAimId
+    loading.value = true
+    trpc.aim.get.query({ projectPath: uiStore.projectPath, aimId }).then(aim => {
+        // Construct a SearchAimResult compatible object
+        const searchResult: SearchAimResult = {
+            id: aim.id,
+            text: aim.text,
+            status: aim.status,
+            tags: aim.tags
+        }
+        selectAim(searchResult)
+    }).catch(e => {
+        console.error("Failed to load initial aim", e)
+        loading.value = false
+    })
+  } else {
+    // Ensure input is focused when modal opens
+    nextTick(() => searchInput.value?.focus())
+  }
 })
 
 onUnmounted(() => {
