@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import { createMcpServer } from "./factory.js";
 
-const port = process.env.MCP_PORT || 3005;
+const port = process.env.PORT_MCP || 3005;
 const app = express();
 
 app.use(cors());

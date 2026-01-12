@@ -1,0 +1,19 @@
+{
+  "id": "301e728a-ed84-44b7-93b8-dec6398eb19e",
+  "text": "when closing the watchdog action modal (esc or selection) the focus should go back to the agent session (if the action does not lead away e.g. watchdog toggle)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b3c1bd1a-a503-45af-8c3a-3d3bee567f47"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768247876049
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

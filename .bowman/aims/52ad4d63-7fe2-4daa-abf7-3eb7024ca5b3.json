@@ -1,0 +1,19 @@
+{
+  "id": "52ad4d63-7fe2-4daa-abf7-3eb7024ca5b3",
+  "text": "put a \"new\" badge at the free option",
+  "description": "The idea is: we have no videos to show, nobody want's to be the first. We try to make the impression that we already have a lot of experience.",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "55abf645-bfa1-4def-ada3-f8f40357db50"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768227845753
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,0 +1,19 @@
+{
+  "id": "c5a37698-841d-42e0-93a7-e5f62315f2b8",
+  "text": "deploy on \"zentest.quest\"",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "55abf645-bfa1-4def-ada3-f8f40357db50"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768227951036
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

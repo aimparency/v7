@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const MCP_PORT = 3005;
+const MCP_PORT = process.env.MCP_PORT || 3005;
 
 async function main() {
   console.log('🚀 Starting Aimparency MCP Server in SSE Mode...');

@@ -1,0 +1,36 @@
+{
+  "id": "55abf645-bfa1-4def-ada3-f8f40357db50",
+  "text": "physical pentest website",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "52ad4d63-7fe2-4daa-abf7-3eb7024ca5b3",
+      "relativePosition": [
+        -2.1421369421356804,
+        -1.2888946121144262
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c5a37698-841d-42e0-93a7-e5f62315f2b8",
+      "relativePosition": [
+        -1.9162984404465597,
+        -1.60555295370227
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768227769202
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
