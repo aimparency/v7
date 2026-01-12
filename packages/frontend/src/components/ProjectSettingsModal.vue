@@ -11,6 +11,8 @@ const name = ref('')
 const color = ref('#007acc')
 const statuses = ref<Array<{ key: string, color: string }>>([])
 const loading = ref(false)
+const isUpdatingInstructions = ref(false)
+const updateResults = ref<string[]>([])
 
 const blockLeakage = (e: KeyboardEvent) => {
   // If typing in any input, let it through but stop it from reaching others
@@ -59,6 +61,19 @@ const addStatus = () => {
 
 const removeStatus = (index: number) => {
   statuses.value.splice(index, 1)
+}
+
+const updateInstructions = async () => {
+    isUpdatingInstructions.value = true
+    updateResults.value = []
+    try {
+        const res = await trpc.project.injectAgentInstructions.mutate({ projectPath: uiStore.projectPath })
+        updateResults.value = res.results
+    } catch (e: any) {
+        updateResults.value = [`Error: ${e.message}`]
+    } finally {
+        isUpdatingInstructions.value = false
+    }
 }
 
 const save = async () => {
@@ -131,6 +146,17 @@ const save = async () => {
             </div>
           </div>
           <button @click="addStatus" class="add-btn">+ Add Status</button>
+        </div>
+
+        <div class="form-group">
+          <label>Agent Integration</label>
+          <p class="hint-text">Injects Aimparency MCP instructions into .gemini/GEMINI.md, CLAUDE.md, etc.</p>
+          <button @click="updateInstructions" class="action-btn" :disabled="isUpdatingInstructions">
+            {{ isUpdatingInstructions ? 'Updating...' : 'Update Agent Instructions' }}
+          </button>
+          <div v-if="updateResults.length > 0" class="update-results">
+            <div v-for="(res, i) in updateResults" :key="i" class="result-line">{{ res }}</div>
+          </div>
         </div>
       </div>
       
@@ -275,6 +301,36 @@ const save = async () => {
         border-color: #777;
       }
     }
+
+    .hint-text {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 0.5rem;
+      margin-top: -0.25rem;
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 0.5rem;
+      background: #333;
+      border: 1px solid #555;
+      color: #e0e0e0;
+      border-radius: 3px;
+      cursor: pointer;
+      &:hover { background: #444; }
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
+
+    .update-results {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: #88ff88;
+      background: rgba(0,0,0,0.2);
+      padding: 0.5rem;
+      border-radius: 3px;
+    }
+    
+    .result-line { margin-bottom: 0.2rem; }
   }
   
   .modal-footer {

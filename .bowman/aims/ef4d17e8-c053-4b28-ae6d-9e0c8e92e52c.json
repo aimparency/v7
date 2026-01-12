@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768170319032
+    "state": "done",
+    "comment": "Verified and optimized embedding distance calculations. 1. Enabled 'normalize_embeddings=True' in the Python embedder service to ensure all vectors lie on the unit hypersphere. 2. Consolidated vector math into shared/src/vector-math.ts using Cosine Similarity as the primary metric, which is optimal for the model's codomain. 3. Updated backend services to use these shared utilities. 4. Cleaned up compiled .js files from src.",
+    "date": 1768251326134
   },
   "intrinsicValue": 0,
   "cost": 1,

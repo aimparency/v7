@@ -1,8 +1,6 @@
-if (!process.env.AIMPARENCY_DIR_NAME) {
-  throw new Error('AIMPARENCY_DIR_NAME has to be defined in env');
-}
-
-export const AIMPARENCY_DIR_NAME = process.env.AIMPARENCY_DIR_NAME;
+export const AIMPARENCY_DIR_NAME = (typeof process !== 'undefined' && process.env?.AIMPARENCY_DIR_NAME) 
+  ? process.env.AIMPARENCY_DIR_NAME 
+  : '.bowman';
 
 export const AIM_STATES = ['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived'] as const;
 

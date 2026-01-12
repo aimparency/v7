@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768170474555
+    "state": "done",
+    "comment": "Created standard Agent Instructions in shared/src/agent-instruction.ts. Implemented backend procedure 'injectAgentInstructions' to inject/update these instructions in .gemini/GEMINI.md, CLAUDE.md, and .cursorrules. Added 'Agent Integration' section to Project Settings modal to trigger this update.",
+    "date": 1768251153137
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -26,9 +26,9 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768170133170
+    "state": "done",
+    "comment": "All sub-aims (navigation improvements and 'p' key) completed.",
+    "date": 1768251335065
   },
   "intrinsicValue": 0,
   "cost": 1,

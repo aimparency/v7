@@ -1,6 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { loadVectorStore } from './embeddings.js';
+import { cosineSimilarity } from 'shared';
 
 interface SemanticLink {
   source: string;
@@ -16,21 +17,6 @@ interface SemanticGraph {
 }
 
 const semanticCache = new Map<string, SemanticGraph>();
-
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (!a || !b) return 0;
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-  const len = Math.min(a.length, b.length);
-  for (let i = 0; i < len; i++) {
-    dotProduct += (a[i] ?? 0) * (b[i] ?? 0);
-    normA += (a[i] ?? 0) * (a[i] ?? 0);
-    normB += (b[i] ?? 0) * (b[i] ?? 0);
-  }
-  if (normA === 0 || normB === 0) return 0;
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-}
 
 export async function getSemanticGraph(projectPath: string): Promise<SemanticGraph> {
   const cacheKey = projectPath;

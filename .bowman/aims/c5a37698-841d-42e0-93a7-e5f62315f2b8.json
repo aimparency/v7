@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768227951036
+    "state": "unclear",
+    "comment": "Website builds successfully. I need information about the deployment target (e.g. hosting provider, SSH access, or CI/CD setup) to proceed with deploying to 'zentest.quest'.",
+    "date": 1768251407760
   },
   "intrinsicValue": 0,
   "cost": 1,

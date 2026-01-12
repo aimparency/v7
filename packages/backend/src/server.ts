@@ -1551,6 +1551,65 @@ const appRouter = t.router({
         return input.meta;
       }),
 
+    injectAgentInstructions: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .mutation(async ({ input }) => {
+        const projectPath = normalizeProjectPath(input.projectPath);
+        const rootDir = path.dirname(projectPath); // Project root (above .bowman)
+        
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const instructionsPath = path.join(__dirname, 'agent-instruction.md');
+        
+        if (!(await fs.pathExists(instructionsPath))) {
+            throw new Error(`Agent instructions file not found at ${instructionsPath}`);
+        }
+        
+        const agentInstructions = await fs.readFile(instructionsPath, 'utf-8');
+        
+        const geminiConfig = path.join(rootDir, '.gemini/GEMINI.md');
+        const claudeConfig = path.join(rootDir, 'CLAUDE.md');
+        const cursorConfig = path.join(rootDir, '.cursorrules');
+        
+        const results: string[] = [];
+
+        async function inject(filePath: string, name: string) {
+            try {
+                if (await fs.pathExists(filePath)) {
+                    let content = await fs.readFile(filePath, 'utf-8');
+                    const markerStart = '--- Context from: Aimparency ---';
+                    const markerEnd = '--- End of Context from: Aimparency ---';
+                    // Ensure newlines around block
+                    const block = `\n${markerStart}\n${agentInstructions}\n${markerEnd}\n`;
+                    
+                    // Regex to find existing block (escaped markers)
+                    const regex = new RegExp(`${markerStart.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}[\\s\\S]*?${markerEnd.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}`, 'g');
+                    
+                    if (regex.test(content)) {
+                        content = content.replace(regex, block.trim());
+                        results.push(`Updated ${name}`);
+                    } else {
+                        content += block;
+                        results.push(`Appended to ${name}`);
+                    }
+                    await fs.writeFile(filePath, content, 'utf-8');
+                } else {
+                    // results.push(`Skipped ${name} (file not found)`);
+                }
+            } catch (e: any) {
+                results.push(`Failed to update ${name}: ${e.message}`);
+            }
+        }
+
+        await inject(geminiConfig, 'GEMINI.md');
+        await inject(claudeConfig, 'CLAUDE.md');
+        await inject(cursorConfig, '.cursorrules');
+
+        return { results };
+      }),
+
     migrateCommittedIn: delayedProcedure
       .input(z.object({
         projectPath: z.string()
