@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
@@ -29,9 +29,14 @@ const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick } = interaction
 
 // Lifecycle
 onMounted(() => {
+    mapStore.isTracking = true
     simulation.init()
     interaction.initListeners()
     window.addEventListener('keydown', onKeydown)
+})
+
+watch(() => uiStore.graphSelectedAimId, () => {
+    mapStore.isTracking = true
 })
 
 onUnmounted(() => {

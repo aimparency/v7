@@ -804,6 +804,32 @@ const appRouter = t.router({
           await removeAimFromPhase(input.projectPath, input.aimId, phaseId);
         }
 
+        // Clean up parent connections (supportedAims)
+        for (const parentId of aim.supportedAims || []) {
+            try {
+                const parent = await readAim(input.projectPath, parentId);
+                if (parent.supportingConnections) {
+                    parent.supportingConnections = parent.supportingConnections.filter(c => c.aimId !== input.aimId);
+                    await writeAim(input.projectPath, parent);
+                }
+            } catch (e) {
+                console.warn(`Failed to cleanup parent ${parentId} for deleted aim ${input.aimId}: ${e}`);
+            }
+        }
+
+        // Clean up child connections (supportingConnections)
+        for (const conn of aim.supportingConnections || []) {
+            try {
+                const child = await readAim(input.projectPath, conn.aimId);
+                if (child.supportedAims) {
+                    child.supportedAims = child.supportedAims.filter(id => id !== input.aimId);
+                    await writeAim(input.projectPath, child);
+                }
+            } catch (e) {
+                console.warn(`Failed to cleanup child ${conn.aimId} for deleted aim ${input.aimId}: ${e}`);
+            }
+        }
+
         // Then delete the aim file
         const projectPath = normalizeProjectPath(input.projectPath);
         const isArchived = aim.status.state === 'archived';

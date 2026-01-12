@@ -1,0 +1,19 @@
+{
+  "id": "f50a5919-91f5-4ce7-a0db-ff4919a8893a",
+  "text": "j already moves focus to the next phase first item. now k should also move focus across phases",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768170035027
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -7,3 +7,9 @@
 - when switching from column view to graph the selected node should be focused smoothly in graph view
 - when double clicking to create aim - please reuse existing aim creation modal
 
+---
+
+- when coming from the decessor of the parent aim, k should only step into the subaims when expanded *and* a child is selected (selectedChildIndex != null)
+- when switching to graph the view focusses on the selected aim, that's good. However, when we don't wait for the movement to be completed, switching to column and back to graph shows the same animation as if the camera pan was not persisted in memory during the focus animation. It should start where we left of no matter whether user pan or animation pan
+- after creating an aim in graph mode, it should be selected. can we have dd work for deletion in graph mode? shortcut? (d => red bg, d again = confirm)
+- actually, pressing d in graph mode currently removes stuff as if the column view was open. that's really bad. we need to clearly disable column view shortcut handling when column view is not active (e.g. when in graph view)

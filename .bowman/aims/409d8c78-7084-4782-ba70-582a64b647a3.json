@@ -1,0 +1,28 @@
+{
+  "id": "409d8c78-7084-4782-ba70-582a64b647a3",
+  "text": "let's implement a \"get context\" tool that should be called whenever working on an aim. It returns 5 semantically closest aims, and all supported and supporting aims (title and desription each) for context.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "ef4d17e8-c053-4b28-ae6d-9e0c8e92e52c",
+      "relativePosition": [
+        -1.4005404838184645,
+        2.0708660876999123
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "8921cf33-d9ff-40d0-b106-e725c754a5f5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768170204586
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

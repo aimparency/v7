@@ -208,6 +208,9 @@ export function useGraphInteraction(
                 updateDrag(d); 
             } else if (mapStore.layouting) {
                 updateLayout(d);
+            } else if (mapStore.layoutCandidate) {
+                mapStore.layouting = true
+                updateLayout(d);
             } else if (mapStore.connecting) {
                 // Keep actionOngoing true
             } else {
@@ -408,55 +411,36 @@ export function useGraphInteraction(
         }
         
         if (!hitNode) {
-            const text = window.prompt("New Aim:")
-            if (text) {
-                try {
-                    const newAim = await dataStore.createFloatingAim(uiStore.projectPath, {
-                        text,
-                        status: { state: 'open', date: Date.now(), comment: '' },
-                        tags: [],
-                        supportingConnections: [],
-                        intrinsicValue: 0,
-                        cost: 1,
-                        loopWeight: 0
-                    })
-                    
-                    // Force position
-                    // We need to wait for the graph to update?
-                    // The store update triggers the watcher synchronously or next tick.
-                    // Let's wait a small tick or check immediately.
-                    
-                    // Actually, let's try setting it immediately after await
-                    const node = nodeMap.get(newAim.id)
-                    if (node) {
-                        node.pos[0] = logicalMouse[0]
-                        node.pos[1] = logicalMouse[1]
-                        node.renderPos[0] = logicalMouse[0]
-                        node.renderPos[1] = logicalMouse[1]
-                        // Stop it from flying away
-                        node.shift[0] = 0
-                        node.shift[1] = 0
-                    } else {
-                        // Fallback if not yet created in graph (race condition)
-                        // Add to loadedPositions in simulation? 
-                        // We can't access loadedPositions directly (it's internal to useGraphSimulation closure).
-                        // But we can just setTimeout
-                        setTimeout(() => {
-                             const n = nodeMap.get(newAim.id)
-                             if (n) {
-                                n.pos[0] = logicalMouse[0]
-                                n.pos[1] = logicalMouse[1]
-                                n.renderPos[0] = logicalMouse[0]
-                                n.renderPos[1] = logicalMouse[1]
-                                n.shift[0] = 0
-                                n.shift[1] = 0
-                             }
-                        }, 50)
-                    }
-                } catch (err) {
-                    console.error("Failed to create aim", err)
-                }
+            // Deselect to ensure creating floating aim
+            uiStore.setGraphSelection(null)
+            uiStore.deselectAim()
+            uiStore.setFocusedColumn(-1)
+
+            uiStore.aimCreationCallback = (id) => {
+                 const node = nodeMap.get(id)
+                 if (node) {
+                    node.pos[0] = logicalMouse[0]
+                    node.pos[1] = logicalMouse[1]
+                    node.renderPos[0] = logicalMouse[0]
+                    node.renderPos[1] = logicalMouse[1]
+                    node.shift[0] = 0
+                    node.shift[1] = 0
+                 } else {
+                    setTimeout(() => {
+                         const n = nodeMap.get(id)
+                         if (n) {
+                            n.pos[0] = logicalMouse[0]
+                            n.pos[1] = logicalMouse[1]
+                            n.renderPos[0] = logicalMouse[0]
+                            n.renderPos[1] = logicalMouse[1]
+                            n.shift[0] = 0
+                            n.shift[1] = 0
+                         }
+                    }, 50)
+                 }
             }
+            
+            uiStore.openAimModal()
         }
     }
 

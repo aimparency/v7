@@ -1,0 +1,19 @@
+{
+  "id": "2181d80e-795a-4160-8377-77ddafb47fc4",
+  "text": "'p' on an aim should show its parents (all routes similar when selecting a search result from aim search - but all paths of all parents)",
+  "description": "try to reuse code for finding all paths",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768170107924
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

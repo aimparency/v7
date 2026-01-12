@@ -1,0 +1,19 @@
+{
+  "id": "de25fd9a-e299-45e6-b238-bbef0b3483ad",
+  "text": "formulate a system prompt that can be added to a project where aimparency is added/applied",
+  "description": "maybe make the snipped detectable and the backend server checks for common coding assistant project configs like gemini and claude markdown files and then a popup proposes to insert or update the snipped with the most recent aimparency mcp how to (for the LLM)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8921cf33-d9ff-40d0-b106-e725c754a5f5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768170474555
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

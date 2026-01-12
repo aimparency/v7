@@ -29,6 +29,17 @@ const handleFix = async () => {
   }
 }
 
+const getActionForError = (error: string) => {
+    if (error.includes('non-existent phase')) return 'Remove invalid phase link'
+    if (error.includes('does not have it in commitments')) return 'Add to phase commitments'
+    if (error.includes('non-existent supporting connection')) return 'Remove invalid child link'
+    if (error.includes('non-existent supportedAims')) return 'Remove invalid parent link'
+    if (error.includes('does not list')) return 'Sync bidirectional link'
+    if (error.includes('Orphaned embedding')) return 'Delete orphaned embedding'
+    if (error.includes('Cycle detected')) return 'Manual Fix Required'
+    return 'Auto-fix'
+}
+
 const close = () => {
     emit('close')
 }
@@ -54,7 +65,12 @@ const close = () => {
             <div class="error-list">
                 <div v-for="(error, i) in dataStore.consistencyErrors" :key="i" class="error-item">
                     <span class="icon">⚠️</span>
-                    <span class="text">{{ error }}</span>
+                    <div class="text-col">
+                        <span class="text">{{ error }}</span>
+                        <span class="action-hint" v-if="getActionForError(error) !== 'Manual Fix Required'">
+                            🛠️ Will: {{ getActionForError(error) }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -167,6 +183,18 @@ h3 {
 
 .icon {
   flex-shrink: 0;
+}
+
+.text-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.action-hint {
+    color: #4CAF50;
+    font-size: 0.8rem;
+    font-style: italic;
 }
 
 .no-errors {

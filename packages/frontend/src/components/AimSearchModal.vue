@@ -180,7 +180,8 @@ const blockLeakage = (e: KeyboardEvent) => {
          if (listLength > 0) {
              focusedResultIndex.value = selectedIndex.value
              nextTick(() => {
-                 const el = resultsListRef.value?.children[focusedResultIndex.value] as HTMLElement
+                 const items = resultsListRef.value?.querySelectorAll('.result-item')
+                 const el = items?.[focusedResultIndex.value] as HTMLElement
                  if (el) el.focus()
              })
          }

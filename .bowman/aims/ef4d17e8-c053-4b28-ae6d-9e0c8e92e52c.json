@@ -1,0 +1,19 @@
+{
+  "id": "ef4d17e8-c053-4b28-ae6d-9e0c8e92e52c",
+  "text": "make sure, that the embedding distnace fnuction we use makes sense for the embedding codomain",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "409d8c78-7084-4782-ba70-582a64b647a3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768170319032
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

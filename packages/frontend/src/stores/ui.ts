@@ -61,6 +61,7 @@ export const useUIStore = defineStore('ui', {
     showAimSearch: false,
     aimSearchMode: 'navigate' as 'navigate' | 'pick',
     aimSearchCallback: null as ((aim: Aim) => void) | null,
+    aimCreationCallback: null as ((aimId: string) => void) | null,
     showSettingsModal: false,
     showWatchdog: localStorage.getItem('aimparency-show-watchdog') === 'true',
 
@@ -513,6 +514,11 @@ export const useUIStore = defineStore('ui', {
 
       // Update selection to the newly created aim
       if (newAimId) {
+        if (this.aimCreationCallback) {
+            this.aimCreationCallback(newAimId)
+            this.aimCreationCallback = null
+        }
+
         if (path.phase) {
           // For phase aims, find the new aim's index and select it
           const aims = dataStore.getAimsForPhase(path.phase.id)
@@ -1241,11 +1247,8 @@ export const useUIStore = defineStore('ui', {
 
       const currentConnections = currentAim?.supportingConnections || []
       
-      if (currentAim !== undefined && currentAim.expanded && currentConnections.length > 0 && !dontDescend) {
-        // Dive into first child if expanded
-        currentAim.selectedIncomingIndex = 0
-      } else {
-        if (path.aims.length === 1) {
+      // Removed automatic dive on 'j'. User must use 'l' to enter sub-aims.
+      if (path.aims.length === 1) {
         // At top level
           if (col === -1) {
             // next floating aim
@@ -1320,7 +1323,6 @@ export const useUIStore = defineStore('ui', {
             }
           }
         }
-      }
     },
 
     // Universal navigation up (k) - works on selection path
