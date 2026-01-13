@@ -1,0 +1,17 @@
+{
+  "id": "b161d820-38d7-407a-8596-1b0c6c9ef1d3",
+  "text": "the grey outline of \"active\" aims has a wider radius than the blue outline of \"selected\" aims. See what I mean? can we make the shape/size both as the blue outline? (keeping the distinct colors!)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768326875775
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

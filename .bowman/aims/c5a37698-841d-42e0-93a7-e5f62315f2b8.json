@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Website builds successfully. I need information about the deployment target (e.g. hosting provider, SSH access, or CI/CD setup) to proceed with deploying to 'zentest.quest'.",
-    "date": 1768251407760
+    "state": "open",
+    "comment": "Created 'deploy.sh' script for rsync deployment to /home/avonx/zentest/. Removed unnecessary Docker files. Ready for execution.",
+    "date": 1768308419827
   },
   "intrinsicValue": 0,
   "cost": 1,

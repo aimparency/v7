@@ -47,9 +47,10 @@
   "status": {
     "state": "open",
     "comment": "",
-    "date": 1765230130719
+    "date": 1768326153105
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 10,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "description": ""
 }

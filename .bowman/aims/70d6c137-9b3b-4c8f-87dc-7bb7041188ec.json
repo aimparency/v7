@@ -1,0 +1,17 @@
+{
+  "id": "70d6c137-9b3b-4c8f-87dc-7bb7041188ec",
+  "text": "create aim dialog should allow adding supported and supporting aims",
+  "description": "clicking \"add\" should bring up the normal aim search. same style as parent phase. the weight should be settable for each supported aim as it already is. maybe show % regarding total weight sum of parent next to it. and there should be an x to remove the connection. requires a seccond click to confirm (bg color red), blur cancels",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768326417471
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

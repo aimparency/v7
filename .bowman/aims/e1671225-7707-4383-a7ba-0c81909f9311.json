@@ -1,0 +1,17 @@
+{
+  "id": "e1671225-7707-4383-a7ba-0c81909f9311",
+  "text": "the relative position drag handlers do not update in realtime. also, let's remove that \"skip 10 frames\" logic for layout updates. it leads to jumps. the internal vs. render position split provides a more elegant perforamnce optimization.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768326498998
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

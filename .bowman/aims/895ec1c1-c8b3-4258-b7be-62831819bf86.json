@@ -5,7 +5,9 @@
     "vision",
     "strategy"
   ],
+  "supportingConnections": [],
   "incoming": [],
+  "supportedAims": [],
   "committedIn": [
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
@@ -14,6 +16,7 @@
     "comment": "",
     "date": 1765212626780
   },
-  "supportingConnections": [],
-  "supportedAims": []
+  "intrinsicValue": 20,
+  "cost": 1,
+  "loopWeight": 0
 }

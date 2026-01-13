@@ -1,17 +1,15 @@
 {
-  "id": "093916f0-a6fa-4ed8-af9c-f6d1c47ebb68",
-  "text": "watchdog improvements",
+  "id": "7fbf1bb1-6a27-422b-9bd5-613a28fbaea5",
+  "text": "when watchdog is in fullscreen, disabling watchdog still hides colum/graph view. fix that",
   "description": "",
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [
-    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
-  ],
+  "supportedAims": [],
   "committedIn": [],
   "status": {
     "state": "open",
     "comment": "",
-    "date": 1767605186715
+    "date": 1768326631525
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -63,7 +63,7 @@
     "comment": "User requested this to be a native Android application. The current web implementation is a prototype. Re-opening to address native mobile requirement.",
     "date": 1766052562641
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 5,
   "cost": 1,
   "loopWeight": 0
 }
