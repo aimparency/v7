@@ -1,0 +1,19 @@
+{
+  "id": "d3b97d82-dfc0-4db6-841b-b90e678e6546",
+  "text": "make the follow-selected-aim target zoom 0.333 as large (zoomed out 3 times as much)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768414387493
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

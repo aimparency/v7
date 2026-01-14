@@ -1,0 +1,19 @@
+{
+  "id": "dd4e0829-abb1-455f-b51f-3a3112ff1138",
+  "text": "when changing connections (supported) on aims in aim edit mode, or when creating connections alongside creating an aim with the create aim modal, we have to create and remove connections consitently with the involved aim",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768414491984
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

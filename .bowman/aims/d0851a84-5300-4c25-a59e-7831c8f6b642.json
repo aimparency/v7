@@ -1,0 +1,28 @@
+{
+  "id": "d0851a84-5300-4c25-a59e-7831c8f6b642",
+  "text": "graph view improvements",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "c3a52342-553b-4fe0-a600-38c004be9ad2",
+      "relativePosition": [
+        -2.481761240407088,
+        -0.3014318258131866
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768414503354
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,0 +1,19 @@
+{
+  "id": "c3a52342-553b-4fe0-a600-38c004be9ad2",
+  "text": "draging from an aim into an empty area should create a new supporting aim",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d0851a84-5300-4c25-a59e-7831c8f6b642"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768414519171
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
