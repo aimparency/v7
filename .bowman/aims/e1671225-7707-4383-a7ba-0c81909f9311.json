@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
+    "state": "done",
     "comment": "Reopened: User reported that drag handlers still only update on release. Need to ensure realtime visual updates during drag.",
-    "date": 1768410886624
+    "date": 1768414064033
   },
   "intrinsicValue": 0,
   "cost": 1,

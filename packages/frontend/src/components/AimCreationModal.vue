@@ -135,7 +135,8 @@ const updateAim = async () => {
       },
       intrinsicValue: aimIntrinsicValue.value,
       cost: aimCost.value,
-      loopWeight: aimLoopWeight.value
+      loopWeight: aimLoopWeight.value,
+      supportedAims: supportedAimsList.value.map(a => a.id)
     })
 
     uiStore.closeAimModal()
@@ -302,6 +303,23 @@ onMounted(async () => {
     aimLoopWeight.value = aim.loopWeight ?? 0
     selectedStatus.value = aim.status.state
     statusComment.value = aim.status.comment
+
+    // Load supported aims (Parents) to prevent data loss
+    if (aim.supportedAims && aim.supportedAims.length > 0) {
+      try {
+        const parents = await trpc.aim.list.query({
+          projectPath: uiStore.projectPath,
+          ids: aim.supportedAims
+        })
+        supportedAimsList.value = parents.map(p => ({
+          id: p.id,
+          text: p.text,
+          weight: 1 // Placeholder weight as we can't easily fetch inbound weight
+        }))
+      } catch (e) {
+        console.error("Failed to load supported aims", e)
+      }
+    }
   } else {
     // Reset for create mode
     aimText.value = ''
@@ -403,7 +421,7 @@ onMounted(async () => {
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" v-if="uiStore.aimModalMode === 'create'">
             <div class="label-row">
                 <label>Supporting (Children)</label>
                 <button @click="openChildSearch" class="btn-small" title="Add Child">+</button>
