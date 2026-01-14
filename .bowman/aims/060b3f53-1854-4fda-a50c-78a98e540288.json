@@ -67,6 +67,22 @@
         -1.9770712491438984
       ],
       "weight": 1
+    },
+    {
+      "aimId": "c9536d91-3bed-427a-b14a-60b67c68cf8c",
+      "relativePosition": [
+        2.3817480186672966,
+        -0.7597870593622978
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "e33ca34b-b3d4-4b98-bcad-0c0aaf8db644",
+      "relativePosition": [
+        1.7198596430714193,
+        -1.814409768529218
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [],
@@ -82,4 +98,3 @@
   "cost": 1,
   "loopWeight": 0
 }
-

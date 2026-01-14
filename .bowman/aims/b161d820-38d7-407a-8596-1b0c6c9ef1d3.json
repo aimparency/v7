@@ -1,7 +1,7 @@
 {
   "id": "b161d820-38d7-407a-8596-1b0c6c9ef1d3",
   "text": "the grey outline of \"active\" aims has a wider radius than the blue outline of \"selected\" aims. See what I mean? can we make the shape/size both as the blue outline? (keeping the distinct colors!)",
-  "description": "",
+  "description": "after a first refactor attempt, the selected aims are now grey! I said keep the distinct colors. gemini failed. fix it. look at git diff, if you want: 59feb68d6af1d9d321a42ae162be99c8a9b1e4f6",
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "done",
+    "state": "open",
     "comment": "Unified outline style (width, offset, margin/padding) for both active (Blue) and selected (Grey) states in Aim.vue.",
-    "date": 1768334201908
+    "date": 1768410196721
   },
   "intrinsicValue": 0,
   "cost": 1,

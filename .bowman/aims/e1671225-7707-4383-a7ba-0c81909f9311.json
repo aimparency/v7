@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "done",
-    "comment": "Removed the 'skip 10 frames' optimization in useGraphSimulation.ts. This ensures realtime physics updates (e.g. during dragging) while relying on the render-position split for visual performance.",
-    "date": 1768334629226
+    "state": "open",
+    "comment": "Reopened: User reported that drag handlers still only update on release. Need to ensure realtime visual updates during drag.",
+    "date": 1768410886624
   },
   "intrinsicValue": 0,
   "cost": 1,

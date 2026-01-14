@@ -94,7 +94,14 @@ export function useGraphInteraction(
                 lc.fromWeight
             )
             const arm = vec2.crSub(layoutingHandlePos, M) 
-            vec2.scale(link.relativePosition, arm, lc.dScale)
+            
+            // Create new vector to trigger reactivity in Vue watchers
+            const newRel = vec2.create()
+            vec2.scale(newRel, arm, lc.dScale)
+            link.relativePosition = newRel
+
+            // Force visual update
+            simulation.trigger.value++
         }
     }
 
