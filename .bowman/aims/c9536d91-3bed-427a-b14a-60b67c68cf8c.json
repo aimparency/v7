@@ -1,0 +1,19 @@
+{
+  "id": "c9536d91-3bed-427a-b14a-60b67c68cf8c",
+  "text": "place status below description in aim edit mode",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768410127863
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

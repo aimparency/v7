@@ -390,6 +390,12 @@ export function useGraphSimulation() {
             boxes[i] = [n.pos[0] - br, n.pos[1] - br, n.pos[0] + br, n.pos[1] + br]
         }
 
+        // Debug Setup
+        const debugId = uiStore.graphSelectedAimId
+        const debugNode = debugId ? nodeMap.get(debugId) : null
+        const shouldLog = debugNode && (trigger.value % 60 === 0)
+        const debugState = { flow: [0,0], semantic: [0,0], collision: [0,0], global: [0,0] }
+
         // Flow Forces
         const delta = vec2.create()
         const targetPos = vec2.create()
@@ -414,6 +420,11 @@ export function useGraphSimulation() {
             vec2.sub(targetShift, targetPos, from.pos)
             vec2.scale(targetShift, targetShift, (into.r / rSum)) // Removed flowMultiplier
             vec2.add(from.shift, from.shift, targetShift)
+        }
+
+        if (shouldLog && debugNode) {
+            debugState.flow[0] = debugNode.shift[0]
+            debugState.flow[1] = debugNode.shift[1]
         }
 
         // Semantic Forces
@@ -450,6 +461,11 @@ export function useGraphSimulation() {
             }
         }
 
+        if (shouldLog && debugNode) {
+            debugState.semantic[0] = debugNode.shift[0] - debugState.flow[0]
+            debugState.semantic[1] = debugNode.shift[1] - debugState.flow[1]
+        }
+
         for (let i = 0; i < count; i++) {
             const n = currentNodes[i]!
             vec2.scale(n.shift, n.shift, FLOW_FORCE)
@@ -483,11 +499,19 @@ export function useGraphSimulation() {
             }
         }
 
+        if (shouldLog && debugNode) {
+            debugState.collision[0] = debugNode.shift[0] 
+            debugState.collision[1] = debugNode.shift[1] 
+        }
+
         // Global Force & Apply
         const now = Date.now()
         const FREEZE_DURATION = 10000
         const GRAVITY_CONSTANT = 0.6 
-        const CENTERING_FORCE = GRAVITY_CONSTANT / (effectiveMaxGap || 2000)
+        
+        // Scale gravity by semantic multiplier (Disable gravity when not in auto-arrange)
+        const effectiveGravity = GRAVITY_CONSTANT * semanticForceMultiplier.value
+        const CENTERING_FORCE = effectiveGravity / (effectiveMaxGap || 2000)
         
         // Calculate rendering scale factor 's'
         const currentScale = mapStore.scale || 1
@@ -495,10 +519,33 @@ export function useGraphSimulation() {
 
         for (let i = 0; i < count; i++) {
             const n = currentNodes[i]!
+            
+            // Capture state before global for debug
+            const beforeGlobalX = n.shift[0]
+            const beforeGlobalY = n.shift[1]
+
             vec2.scale(n.shift, n.shift, GLOBAL_FORCE)
             
-            vec2.scale(hShift, n.pos, -CENTERING_FORCE)
-            vec2.add(n.shift, n.shift, hShift)
+            if (effectiveGravity > 0.001) {
+                vec2.scale(hShift, n.pos, -CENTERING_FORCE)
+                vec2.add(n.shift, n.shift, hShift)
+            }
+            
+            if (shouldLog && n.id === debugId) {
+                debugState.global[0] = n.shift[0] - beforeGlobalX
+                debugState.global[1] = n.shift[1] - beforeGlobalY
+                
+                console.group(`[GraphForce] ${n.text}`)
+                console.table({
+                    Flow: { x: debugState.flow[0], y: debugState.flow[1] },
+                    Semantic: { x: debugState.semantic[0], y: debugState.semantic[1] },
+                    Collision: { x: debugState.collision[0], y: debugState.collision[1] }, // Cumulative
+                    GlobalDelta: { x: debugState.global[0], y: debugState.global[1] },
+                    TotalShift: { x: n.shift[0], y: n.shift[1] },
+                    Pos: { x: n.pos[0], y: n.pos[1] }
+                })
+                console.groupEnd()
+            }
             
             const releaseTime = freezings.get(n.id)
             if (releaseTime !== undefined) {

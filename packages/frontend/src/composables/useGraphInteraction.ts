@@ -87,21 +87,29 @@ export function useGraphInteraction(
     const updateRelativeDeltaWhileLayouting = () => {
         const lc = mapStore.layoutCandidate
         if (mapStore.layouting && lc) {
-            const link = lc.link as GraphLink
-            const M = vec2.crMix(
-                link.source.pos, 
-                link.target.pos, 
-                lc.fromWeight
-            )
-            const arm = vec2.crSub(layoutingHandlePos, M) 
+            const copyLink = lc.link as GraphLink
+            // Find the real link in simulation
+            const realLink = links.value.find(l => l.source.id === copyLink.source.id && l.target.id === copyLink.target.id)
             
-            // Create new vector to trigger reactivity in Vue watchers
-            const newRel = vec2.create()
-            vec2.scale(newRel, arm, lc.dScale)
-            link.relativePosition = newRel
+            if (realLink) {
+                const M = vec2.crMix(
+                    realLink.source.pos, 
+                    realLink.target.pos, 
+                    lc.fromWeight
+                )
+                const arm = vec2.crSub(layoutingHandlePos, M) 
+                
+                // Update REAL link
+                const newRel = vec2.create()
+                vec2.scale(newRel, arm, lc.dScale)
+                realLink.relativePosition = newRel
+                
+                // Update COPY as well (so handle stays synced if it uses copy)
+                copyLink.relativePosition = newRel
 
-            // Force visual update
-            simulation.trigger.value++
+                // Force visual update
+                simulation.trigger.value++
+            }
         }
     }
 

@@ -1,0 +1,19 @@
+{
+  "id": "e33ca34b-b3d4-4b98-bcad-0c0aaf8db644",
+  "text": "when a phase is empty and we are stepping into that phase with j or k from aim selection (cross phase aim selection), we get stuck in that phase because we are not focussing any aim. can we solve that elegantly? like adding: when a pase has no aims, and we're in aim mode (i), j and k go to first/last aim of next/previous phase if it exists",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768411279945
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
