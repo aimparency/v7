@@ -900,7 +900,13 @@ const appRouter = t.router({
           }).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
-          loopWeight: z.number().optional()
+          loopWeight: z.number().optional(),
+          supportedAims: z.array(z.string()).optional(),
+          supportingConnections: z.array(z.object({
+             aimId: z.string(),
+             weight: z.number().optional(),
+             relativePosition: z.tuple([z.number(), z.number()]).optional()
+          })).optional()
         })
       }))
       .mutation(async ({ input }) => {
@@ -936,6 +942,18 @@ const appRouter = t.router({
           });
         }
 
+        if (input.aim.supportedAims) {
+            for (const parentId of input.aim.supportedAims) {
+                await connectAimsInternal(input.projectPath, parentId, aimId);
+            }
+        }
+
+        if (input.aim.supportingConnections) {
+            for (const conn of input.aim.supportingConnections) {
+                await connectAimsInternal(input.projectPath, aimId, conn.aimId, undefined, undefined, conn.relativePosition, conn.weight);
+            }
+        }
+
         return aim;
       }),
 
@@ -954,7 +972,13 @@ const appRouter = t.router({
           }).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
-          loopWeight: z.number().optional()
+          loopWeight: z.number().optional(),
+          supportedAims: z.array(z.string()).optional(),
+          supportingConnections: z.array(z.object({
+             aimId: z.string(),
+             weight: z.number().optional(),
+             relativePosition: z.tuple([z.number(), z.number()]).optional()
+          })).optional()
         }),
         positionInParent: z.number().optional(),
         weight: z.number().optional()
@@ -994,6 +1018,20 @@ const appRouter = t.router({
 
         await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0, undefined, input.weight);
 
+        if (input.aim.supportedAims) {
+            for (const parentId of input.aim.supportedAims) {
+                if (parentId !== input.parentAimId) {
+                    await connectAimsInternal(input.projectPath, parentId, childAimId);
+                }
+            }
+        }
+
+        if (input.aim.supportingConnections) {
+            for (const conn of input.aim.supportingConnections) {
+                await connectAimsInternal(input.projectPath, childAimId, conn.aimId, undefined, undefined, conn.relativePosition, conn.weight);
+            }
+        }
+
         return childAim;
       }),
 
@@ -1012,7 +1050,13 @@ const appRouter = t.router({
           }).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
-          loopWeight: z.number().optional()
+          loopWeight: z.number().optional(),
+          supportedAims: z.array(z.string()).optional(),
+          supportingConnections: z.array(z.object({
+             aimId: z.string(),
+             weight: z.number().optional(),
+             relativePosition: z.tuple([z.number(), z.number()]).optional()
+          })).optional()
         }),
         insertionIndex: z.number().optional()
       }))
@@ -1050,6 +1094,18 @@ const appRouter = t.router({
         }
 
         await commitAimToPhase(input.projectPath, aimId, input.phaseId, input.insertionIndex);
+
+        if (input.aim.supportedAims) {
+            for (const parentId of input.aim.supportedAims) {
+                await connectAimsInternal(input.projectPath, parentId, aimId);
+            }
+        }
+
+        if (input.aim.supportingConnections) {
+            for (const conn of input.aim.supportingConnections) {
+                await connectAimsInternal(input.projectPath, aimId, conn.aimId, undefined, undefined, conn.relativePosition, conn.weight);
+            }
+        }
 
         return aim;
       }),

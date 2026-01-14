@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767734999698
+    "state": "done",
+    "comment": "Verified that DOM/Visual updates are already decoupled from physics updates using a Manhattan distance check (>0.5px). Removed the conflicting 'skip 10 frames' logic to ensure fluid motion while maintaining DOM performance.",
+    "date": 1768403872183
   },
   "intrinsicValue": 0,
   "cost": 1,

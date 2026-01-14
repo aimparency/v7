@@ -4,12 +4,14 @@
   "description": "",
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768326875775
+    "state": "done",
+    "comment": "Unified outline style (width, offset, margin/padding) for both active (Blue) and selected (Grey) states in Aim.vue.",
+    "date": 1768334201908
   },
   "intrinsicValue": 0,
   "cost": 1,

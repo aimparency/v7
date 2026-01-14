@@ -9,9 +9,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767099384837
+    "state": "done",
+    "comment": "Finalized priority calculation by introducing a discount rate (5% per cost unit) to account for time/duration (Cost of Capital). Priority = (Value / (1+r)^Cost) / Cost.",
+    "date": 1768408283981
   },
   "intrinsicValue": 0,
   "cost": 1,

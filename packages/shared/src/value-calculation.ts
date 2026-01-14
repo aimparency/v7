@@ -1,4 +1,5 @@
 import type { Aim } from './types';
+import { DISCOUNT_RATE } from './constants';
 
 export function calculateAimValues(aims: Aim[]): { 
   values: Map<string, number>, 
@@ -159,7 +160,8 @@ export function calculateAimValues(aims: Aim[]): {
       
       let priority = 0;
       if (cost > 0) {
-          priority = val / cost;
+          const discountedVal = val / Math.pow(1 + DISCOUNT_RATE, cost);
+          priority = discountedVal / cost;
       } else if (val > 0) {
           priority = Number.POSITIVE_INFINITY;
       }

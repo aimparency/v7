@@ -19,6 +19,7 @@ const selectedStatus = ref<AimStatusState>('open')
 const statusComment = ref('')
 const searchResults = ref<Aim[]>([])
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
+const supportingConnectionsList = ref<{ id: string, text: string, weight: number }[]>([])
 
 const availableStatuses = computed(() => dataStore.getStatuses)
 
@@ -32,6 +33,32 @@ const statusSelect = ref<HTMLSelectElement>()
 const statusCommentInput = ref<HTMLInputElement>()
 const submitBtn = ref<HTMLButtonElement>()
 const searchResultsContainer = ref<HTMLDivElement>()
+
+const openParentSearch = () => {
+  uiStore.aimSearchCallback = (aim: Aim) => {
+    if (!supportedAimsList.value.some(a => a.id === aim.id)) {
+      supportedAimsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
+    }
+  }
+  uiStore.openAimSearch('pick')
+}
+
+const openChildSearch = () => {
+  uiStore.aimSearchCallback = (aim: Aim) => {
+    if (!supportingConnectionsList.value.some(a => a.id === aim.id)) {
+      supportingConnectionsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
+    }
+  }
+  uiStore.openAimSearch('pick')
+}
+
+const removeParent = (index: number) => {
+  supportedAimsList.value.splice(index, 1)
+}
+
+const removeChild = (index: number) => {
+  supportingConnectionsList.value.splice(index, 1)
+}
 
 // Real search functionality
 const performSearch = async (query: string) => {
@@ -83,7 +110,9 @@ const createAim = async () => {
         aimIntrinsicValue.value, 
         aimLoopWeight.value,
         aimCost.value,
-        weight
+        weight,
+        supportedAimsList.value.map(a => a.id),
+        supportingConnectionsList.value.map(a => ({ aimId: a.id, weight: a.weight }))
       )
     }
   } catch (error) {
@@ -359,14 +388,33 @@ onMounted(async () => {
           ></textarea>
         </div>
 
-        <div v-if="supportedAimsList.length > 0" class="form-group">
-            <label>Supports</label>
-            <div v-for="parent in supportedAimsList" :key="parent.id" class="supported-aim-row">
+        <div class="form-group">
+            <div class="label-row">
+                <label>Supports (Parents)</label>
+                <button @click="openParentSearch" class="btn-small" title="Add Parent">+</button>
+            </div>
+            <div v-for="(parent, index) in supportedAimsList" :key="parent.id" class="supported-aim-row">
                 <span class="parent-text">{{ parent.text }}</span>
                 <div class="weight-input">
                     <span class="weight-label">Weight:</span>
                     <input type="number" v-model.number="parent.weight" step="0.1" min="0" class="weight-field" />
                 </div>
+                <button @click="removeParent(index)" class="btn-remove" title="Remove Connection">×</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="label-row">
+                <label>Supporting (Children)</label>
+                <button @click="openChildSearch" class="btn-small" title="Add Child">+</button>
+            </div>
+            <div v-for="(child, index) in supportingConnectionsList" :key="child.id" class="supported-aim-row">
+                <span class="parent-text">{{ child.text }}</span>
+                <div class="weight-input">
+                    <span class="weight-label">Weight:</span>
+                    <input type="number" v-model.number="child.weight" step="0.1" min="0" class="weight-field" />
+                </div>
+                <button @click="removeChild(index)" class="btn-remove" title="Remove Connection">×</button>
             </div>
         </div>
 
@@ -688,5 +736,48 @@ onMounted(async () => {
     width: 60px !important;
     padding: 0.2rem 0.4rem !important;
     text-align: center;
+}
+
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.btn-small {
+    background: #444;
+    border: 1px solid #555;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding-bottom: 3px;
+}
+
+.btn-small:hover {
+    background: #555;
+    border-color: #666;
+}
+
+.btn-remove {
+    background: transparent;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0 0.5rem;
+    margin-left: 0.5rem;
+    line-height: 1;
+}
+
+.btn-remove:hover {
+    color: #ff4444;
 }
 </style>

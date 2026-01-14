@@ -342,11 +342,11 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async createFloatingAim(projectPath: string, aim: Omit<Aim, 'id' | 'incoming' | 'supportedAims' | 'committedIn'>): Promise<{id: string}> {
+    async createFloatingAim(projectPath: string, aim: Omit<Aim, 'id' | 'incoming' | 'committedIn'> & { supportedAims?: string[] }): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createFloatingAim.mutate({
           projectPath,
-          aim
+          aim: aim as any // Cast to any to satisfy backend schema which expects optional arrays
         })
 
         this.aims[newAim.id] = newAim
@@ -368,12 +368,12 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async createSubAim(projectPath: string, parentAimId: string, aim: Omit<Aim, 'id' | 'incoming' | 'supportedAims' | 'committedIn'>, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
+    async createSubAim(projectPath: string, parentAimId: string, aim: Omit<Aim, 'id' | 'incoming' | 'committedIn'> & { supportedAims?: string[] }, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createSubAim.mutate({
           projectPath,
           parentAimId,
-          aim,
+          aim: aim as any,
           positionInParent,
           weight
         })
@@ -400,12 +400,12 @@ export const useDataStore = defineStore('data', {
       }
     }, 
 
-    async createCommittedAim(projectPath: string, phaseId: string, aim: Omit<Aim, 'id' | 'incoming' | 'supportedAims' | 'committedIn'>, insertionIndex?: number): Promise<{id: string}> {
+    async createCommittedAim(projectPath: string, phaseId: string, aim: Omit<Aim, 'id' | 'incoming' | 'committedIn'> & { supportedAims?: string[] }, insertionIndex?: number): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createAimInPhase.mutate({
           projectPath,
           phaseId,
-          aim,
+          aim: aim as any,
           insertionIndex
         })
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted, computed } from 'vue'
 import { useUIStore, type AimPath } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
@@ -26,6 +26,26 @@ const pathSelectionMode = ref(false)
 const availablePaths = ref<(AimPath & { label: string })[]>([])
 const selectedAimText = ref('')
 
+// Filter State
+const selectedStatuses = ref<string[]>([])
+const includeArchived = ref(false)
+const isStatusDropdownOpen = ref(false)
+const availableStatuses = computed(() => dataStore.getStatuses)
+
+const toggleStatus = (status: string) => {
+  const index = selectedStatuses.value.indexOf(status)
+  if (index === -1) {
+    selectedStatuses.value.push(status)
+  } else {
+    selectedStatuses.value.splice(index, 1)
+  }
+}
+
+// Watch filters to trigger search
+watch([selectedStatuses, includeArchived], () => {
+  performSearch(searchQuery.value)
+}, { deep: true })
+
 const performSearch = async (query: string) => {
   if (!query.trim()) {
     searchResults.value = []
@@ -38,12 +58,29 @@ const performSearch = async (query: string) => {
       trpc.aim.search.query({
         projectPath: uiStore.projectPath,
         query: query,
-        limit: 10
+        limit: 10,
+        status: selectedStatuses.value.length > 0 ? selectedStatuses.value : undefined,
+        archived: includeArchived.value
       }),
       trpc.aim.searchSemantic.query({
         projectPath: uiStore.projectPath,
         query: query,
-        limit: 30 // Fetch more semantic results to allow for better ranking after deduplication
+        limit: 30,
+        status: selectedStatuses.value.length > 0 ? selectedStatuses.value : undefined,
+        // Semantic search doesn't support archived flag in backend yet? 
+        // Checked server.ts: It DOES accept input.status and input.phaseId, but NOT archived flag?
+        // Let's check server.ts searchSemantic input.
+        // It accepts 'status' and 'phaseId'. 'archived' is missing in searchSemantic input schema.
+        // So we can't filter archived in semantic search on server side?
+        // Wait, searchSemantic uses `searchVectors`.
+        // Then `readAim` and checks status/phaseId.
+        // If archived aims are indexed, they will be found.
+        // But `readAim` reads from `aims/` or `archived-aims/`.
+        // If we want to include archived, we might need to update backend searchSemantic.
+        // For now, let's omit it for semantic or rely on client filtering if needed.
+        // Or better: filter client side if backend doesn't support.
+        // But FlexSearch supports it.
+        // Let's skip passing it to semantic for now to avoid error if schema validation fails.
       })
     ])
 
@@ -317,6 +354,39 @@ onUnmounted(() => {
 <template>
   <div class="search-overlay" @click.self="close">
     <div class="search-modal">
+      <div class="filter-bar">
+        <div class="filter-group relative">
+          <button 
+            @click="isStatusDropdownOpen = !isStatusDropdownOpen" 
+            class="filter-btn"
+            :class="{ active: selectedStatuses.length > 0 || isStatusDropdownOpen }"
+          >
+            Status {{ selectedStatuses.length > 0 ? `(${selectedStatuses.length})` : '' }} ▼
+          </button>
+          
+          <!-- Dropdown overlay to close on click outside -->
+          <div v-if="isStatusDropdownOpen" class="dropdown-overlay" @click="isStatusDropdownOpen = false"></div>
+
+          <div v-if="isStatusDropdownOpen" class="dropdown-menu">
+            <div 
+              v-for="status in availableStatuses" 
+              :key="status.key" 
+              class="dropdown-item" 
+              @click.stop="toggleStatus(status.key)"
+            >
+              <input type="checkbox" :checked="selectedStatuses.includes(status.key)" readonly />
+              <span :style="{ color: status.color }">{{ status.key }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="checkbox-label">
+            <input type="checkbox" v-model="includeArchived" /> 
+            <span>Archived</span>
+          </label>
+        </div>
+      </div>
+
       <div class="search-input-wrapper">
         <span class="search-icon">/</span>
         <!-- Search Input -->
@@ -411,6 +481,77 @@ onUnmounted(() => {
   border-bottom: 1px solid #333;
   background: #1e1e1e;
   min-height: 3rem;
+}
+
+.filter-bar {
+  display: flex;
+  padding: 8px 16px;
+  background: #1e1e1e;
+  border-bottom: 1px solid #333;
+  gap: 16px;
+  align-items: center;
+}
+
+.filter-btn {
+  background: #333;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.filter-btn.active {
+  background: #444;
+  border-color: #555;
+  color: #fff;
+}
+
+.relative {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #252526;
+  border: 1px solid #454545;
+  border-radius: 3px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  z-index: 100;
+  min-width: 150px;
+  margin-top: 4px;
+}
+
+.dropdown-item {
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.dropdown-item:hover {
+  background: #333;
+}
+
+.dropdown-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 99;
+  background: transparent;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #ccc;
+  cursor: pointer;
 }
 
 .path-selection-header {

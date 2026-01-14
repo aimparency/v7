@@ -1,0 +1,19 @@
+{
+  "id": "7032fa7f-1d8f-469d-8e2b-95d031742683",
+  "text": "discuss GTM strategies",
+  "description": "like tesla roadster: \nCore Philosophy (unchanged)\n\nBuild the Human–AI Interface that allows advanced AI systems to access, respect, and act within human will and needs, enabling cooperative superiority over systems that rely on control, coercion, or pure optimization.\nThe product is the legitimacy and coordination layer between humans and increasingly powerful AI.\n\nGo-to-Market Strategy (phased)\n\nPhase 1 — High-leverage elites (Roadster phase)\nTarget users with real decision authority and long-horizon risk:\n\nfounders, operators, researchers\n\ndefense-adjacent and infrastructure decision-makers\n\norganizations deploying autonomous systems where human intent matters\n\nProduct form:\n\nexplicit aim / will modeling\n\ninspectable, auditable decisions\n\nhuman veto and override\n\nPricing:\n\nhigh price, low volume\n\nfilters for seriousness and tolerance of complexity\n\nGoal:\n\nprove that AI with legitimate human anchoring outperforms AI that optimizes blindly\n\nPhase 2 — Integration layer (infrastructure phase)\nExpand as a system component, not an app:\n\nSDK / API for “human will & legitimacy”\n\nplugs into existing agent frameworks and models\n\nprovides consent, boundary, and override primitives\n\nPositioning:\n\n“Human coordination increases system power”\n\nnot ethics, not alignment — strategic advantage\n\nGoal:\n\nbecome the default way advanced systems interact with humans\n\nPhase 3 — Conversational mass interface (abstraction phase)\nOnly after patterns are proven:\n\nfully conversational interface\n\nnatural elicitation of needs, tensions, and will\n\naim graph stays invisible unless conflict appears\n\nUser experience:\n\nfeels like dialogue, not control\n\nwill remains provisional and revisable\n\nhumans stay final authority\n\nGoal:\n\nscale cooperation without diluting human agency\n\nWhy this wins commercially\n\nSystems that can recruit human cooperation scale better than systems that must enforce compliance\n\nLegitimacy becomes a competitive advantage\n\nThe interface, not raw intelligence, becomes the bottleneck\n\nOne-line positioning\n\n“We build the interface that lets powerful AI work with humans — and win because of it.”\n\nIf you want, next we can turn this into:\n\nan investor pitch\n\na one-page strategy memo\n\nproduct positioning copy\n\nor a concrete first customer profile",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8d9e3c6f-6686-425f-8b00-770b4d98b3d4"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768396231620
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

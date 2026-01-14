@@ -13,3 +13,5 @@ export const DEFAULT_STATUSES = [
   { key: 'unclear', color: '#90a4ae' },
   { key: 'archived', color: '#444444' }
 ];
+
+export const DISCOUNT_RATE = 0.05; // 5% discount per cost unit

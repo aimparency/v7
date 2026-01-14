@@ -99,6 +99,9 @@ export const useUIStore = defineStore('ui', {
     // Selected Link (Flow)
     selectedLink: null as { parentId: string, childId: string } | null,
 
+    // Scroll Request
+    columnScrollRequest: null as { col: number, direction: 'bottom' | 'top' } | null,
+
     // Graph specific selection
     graphSelectedAimId: null as string | null,
     graphColorMode: (localStorage.getItem('aimparency-graph-color-mode') || 'status') as 'status' | 'priority',
@@ -144,6 +147,15 @@ export const useUIStore = defineStore('ui', {
   },
   
   actions: {
+    requestColumnScroll(col: number, direction: 'bottom' | 'top') {
+      this.columnScrollRequest = { col, direction }
+      setTimeout(() => { 
+        if (this.columnScrollRequest?.col === col && this.columnScrollRequest?.direction === direction) {
+          this.columnScrollRequest = null 
+        }
+      }, 100)
+    },
+
     setProjectPath(path: string) {
       const suffix = '/' + AIMPARENCY_DIR_NAME;
       const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
@@ -344,7 +356,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Create aim and update selection
-    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = 0, loopWeight: number = 1, cost: number = 1, weight: number = 1) {
+    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = 0, loopWeight: number = 1, cost: number = 1, weight: number = 1, supportedAims: string[] = [], supportingConnections: { aimId: string, weight?: number, relativePosition?: [number, number] }[] = []) {
       const dataStore = useDataStore()
 
       const path = this.getSelectionPath()
@@ -354,7 +366,8 @@ export const useUIStore = defineStore('ui', {
         description,
         tags: tags || [],
         status: { state: 'open' as const, comment: '', date: Date.now() },
-        supportingConnections: [],
+        supportingConnections,
+        supportedAims,
         intrinsicValue,
         loopWeight,
         cost
@@ -2007,6 +2020,8 @@ export const useUIStore = defineStore('ui', {
             const phaseCount = this.getPhaseCount(col)
             if (currentIndex < phaseCount - 1) {
               await this.selectPhase(col, currentIndex + 1)
+            } else {
+              this.requestColumnScroll(col, 'bottom')
             }
           }
           break
@@ -2015,6 +2030,8 @@ export const useUIStore = defineStore('ui', {
             const currentIndex = this.getSelectedPhase(col)
             if (currentIndex > 0) {
               await this.selectPhase(col, currentIndex - 1)
+            } else {
+              this.requestColumnScroll(col, 'top')
             }
           }
           break

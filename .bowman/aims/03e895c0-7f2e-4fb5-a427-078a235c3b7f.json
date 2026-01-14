@@ -4,12 +4,14 @@
   "description": "",
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768326782329
+    "state": "done",
+    "comment": "Implemented scrolling to bottom/top of phase column when navigation ('j'/'k') hits the boundaries. Added columnScrollRequest state and watcher in PhaseColumn.vue.",
+    "date": 1768334545274
   },
   "intrinsicValue": 0,
   "cost": 1,

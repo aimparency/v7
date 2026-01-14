@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useScrollIntoView } from '../composables/useScrollIntoView'
@@ -25,6 +25,17 @@ const phases = computed(() => dataStore.getPhasesByParentId(props.parentPhaseId)
 
 // Handle scroll requests from child components
 const { handleScrollRequest } = useScrollIntoView(phaseListRef)
+
+watch(() => uiStore.columnScrollRequest, (req) => {
+  if (req && req.col === props.columnIndex && phaseListRef.value) {
+    const behavior = 'smooth'
+    if (req.direction === 'bottom') {
+      phaseListRef.value.scrollTo({ top: phaseListRef.value.scrollHeight, behavior })
+    } else if (req.direction === 'top') {
+      phaseListRef.value.scrollTo({ top: 0, behavior })
+    }
+  }
+})
 </script>
 
 <template>

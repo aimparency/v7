@@ -122,3 +122,5 @@ Also reject attempts to call aimparency MCP via curl.
 ## call mcp prompts
 in the future, we can also call mcp prompts like "analyze_dependencies" by responding with type: "send-prompt" and the mcp prompt name as text with a slash: "/analyze_dependencies". 
 
+## gemini errors
+at the end of a context there can be something like " ✖ 3 errors ". This has nothing to do with the project itself but those are gemini cli errors. You can ignore this information. 

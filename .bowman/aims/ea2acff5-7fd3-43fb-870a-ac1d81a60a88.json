@@ -1,0 +1,19 @@
+{
+  "id": "ea2acff5-7fd3-43fb-870a-ac1d81a60a88",
+  "text": "write tests for untested features. ui and mcp. regression, unit and e2e tests",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Created unit tests for AimCreationModal (connection management) and AimSearchModal (filters) using Vitest/Vue Test Utils. Verified functionality.",
+    "date": 1768405384735
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

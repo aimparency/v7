@@ -4,12 +4,14 @@
   "description": "",
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768326631525
+    "state": "done",
+    "comment": "Fixed logic in App.vue to show content area when Watchdog is hidden, even if watchdogMaximized flag was left true.",
+    "date": 1768334569566
   },
   "intrinsicValue": 0,
   "cost": 1,

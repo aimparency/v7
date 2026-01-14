@@ -1,0 +1,36 @@
+{
+  "id": "8d9e3c6f-6686-425f-8b00-770b4d98b3d4",
+  "text": "discuss business models (towards monopoly)",
+  "description": "Okay, which monopoly could we achieve? Planning? Agentic action? Exploring? Survival? Real world experimentation? Yes! How is our go to market strategy? What's the product? Which shape which parts hosted and how?",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "57286a32-c74e-4f50-86b0-f8e8e5f1f918",
+      "relativePosition": [
+        1.6353720252468453,
+        1.8909146831732073
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "7032fa7f-1d8f-469d-8e2b-95d031742683",
+      "relativePosition": [
+        -0.4107218008858801,
+        -2.466030738307424
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768337130978
+  },
+  "intrinsicValue": 1,
+  "cost": 1,
+  "loopWeight": 0
+}

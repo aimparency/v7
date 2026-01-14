@@ -1,0 +1,17 @@
+{
+  "id": "0013d4a8-4ce6-4794-8667-24eae73674d4",
+  "text": "Build API integrations",
+  "description": "there should be a repository of APIs. \nSo that LLMs can interact with the realworld. \nMaybe MCPs are the right thing. \nDoes booking have an MCP? \nOtherwise we could build a website that adapts APIs like the one from booking to MCP",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768396942185
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

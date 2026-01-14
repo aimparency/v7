@@ -19,6 +19,54 @@
         -0.9902318493390541
       ],
       "weight": 1
+    },
+    {
+      "aimId": "40a2db34-aa80-48bf-ac13-dfe17004e351",
+      "relativePosition": [
+        -0.9720879355428752,
+        -2.3032683398970235
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c63419f1-5d5f-4320-93fb-f12d01940037",
+      "relativePosition": [
+        -0.7516062261048712,
+        -2.384342274271962
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "03e895c0-7f2e-4fb5-a427-078a235c3b7f",
+      "relativePosition": [
+        -0.5330221890407051,
+        -2.4425166009651305
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "70d6c137-9b3b-4c8f-87dc-7bb7041188ec",
+      "relativePosition": [
+        -2.498806542078375,
+        0.07723901388750401
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "7fbf1bb1-6a27-422b-9bd5-613a28fbaea5",
+      "relativePosition": [
+        -1.9439610093058335,
+        -1.5719464349330246
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b161d820-38d7-407a-8596-1b0c6c9ef1d3",
+      "relativePosition": [
+        -1.5300945316576307,
+        -1.9770712491438984
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [],
@@ -27,10 +75,11 @@
   ],
   "status": {
     "state": "done",
-    "comment": "All sub-aims (navigation improvements and 'p' key) completed.",
-    "date": 1768251335065
+    "comment": "Completed all recent sub-aims: Phase scrolling, Watchdog fullscreen fix, Outline radius fix, Drag handlers realtime update, Create Aim Dialog enhancements, Graph layout spacing, and Aim Search filters.",
+    "date": 1768403860726
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0
 }
+

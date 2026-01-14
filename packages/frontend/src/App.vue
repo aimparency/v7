@@ -366,7 +366,7 @@ onUnmounted(() => {
 
     <!-- Main Interface -->
     <div v-else class="main-split">
-      <main class="content-area" v-show="!uiStore.watchdogMaximized">
+      <main class="content-area" v-show="!(uiStore.showWatchdog && uiStore.watchdogMaximized)">
         <!-- Columns View -->
         <div 
           v-if="uiStore.currentView === 'columns'"

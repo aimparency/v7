@@ -438,7 +438,7 @@ export function useGraphSimulation() {
                 vec2.scale(abVector, abVector, 1 / currentDist)
 
                 const minDist = nodeA.r + nodeB.r
-                const targetGap = (link.distance / 2.0) * maxGap
+                const targetGap = (link.distance / 2.0) * maxGap * 1.2 // Enlarge by 1.2
                 const targetDist = minDist + targetGap
                 const displacement = currentDist - targetDist
                 
@@ -520,22 +520,10 @@ export function useGraphSimulation() {
                 hasVisualChange = true
                 n.freezeCounter = 0
             } else {
-                // Movement threshold dependent on radius (1% of radius)
-                const minShift = n.r * 0.01
-                const isSmallShift = Math.abs(n.shift[0]) < minShift && Math.abs(n.shift[1]) < minShift
+                // Removed skip logic to ensure realtime updates and prevent jumps.
+                // Internal vs render position split handles performance optimization.
                 
-                if (isSmallShift) {
-                    n.freezeCounter = (n.freezeCounter || 0) + 1
-                    if (n.freezeCounter < 10) {
-                        // Skip update for 10 frames if shift is small
-                        continue
-                    }
-                    n.freezeCounter = 0
-                            } else {
-                                n.freezeCounter = 0
-                            }
-                
-                            // Clamp maximum movement to prevent chaos (10% of world side)
+                // Clamp maximum movement to prevent chaos (10% of world side)
                             const maxMove = effectiveMaxGap * 0.1
                             if (n.shift[0] > maxMove) n.shift[0] = maxMove
                             else if (n.shift[0] < -maxMove) n.shift[0] = -maxMove

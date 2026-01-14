@@ -1,0 +1,19 @@
+{
+  "id": "57286a32-c74e-4f50-86b0-f8e8e5f1f918",
+  "text": "discuss architectures",
+  "description": "keep git based? Partially open source? Like github? People come with their repos, we do the hosting people stay with us because it's convenient?",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8d9e3c6f-6686-425f-8b00-770b4d98b3d4"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768395805791
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

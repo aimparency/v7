@@ -1,0 +1,19 @@
+{
+  "id": "c63419f1-5d5f-4320-93fb-f12d01940037",
+  "text": "in the aim search show some options above the text input. filter for certain statuses for example. click/space brings up a dropdown menu and any status can be ticked (selected) or be unselected. also there is a checkbox for archived which defaults to false",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented filter bar in AimSearchModal with Status dropdown (multi-select) and Archived checkbox. Filters update search results dynamically.",
+    "date": 1768403853700
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
