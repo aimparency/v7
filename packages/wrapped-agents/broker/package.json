@@ -1,8 +1,8 @@
 {
-  "name": "wrapped-gemini-broker",
+  "name": "wrapped-agents-broker",
   "version": "1.0.0",
   "type": "module",
-  "description": "Broker for managing Infinite Worker (Wrapped Gemini) sessions",
+  "description": "Broker for managing AI agent sessions (Claude, Gemini)",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

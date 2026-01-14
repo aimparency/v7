@@ -10,8 +10,8 @@ const HTTP_PORT = parseInt(process.env.PORT_BROKER_HTTP || '5000');
 const BASE_URL = `http://localhost:${HTTP_PORT}/trpc`;
 
 // Paths
-// Script location: packages/wrapped-gemini/broker/src/scripts/stop-sessions.ts
-// Target: packages/wrapped-gemini/watchdog-sessions.json
+// Script location: packages/wrapped-agents/broker/src/scripts/stop-sessions.ts
+// Target: packages/wrapped-agents/watchdog-sessions.json
 const WRAPPER_DIR = path.resolve(__dirname, '../../../');
 const SESSIONS_FILE = path.join(WRAPPER_DIR, 'watchdog-sessions.json');
 

@@ -1,5 +1,5 @@
 {
-  "name": "wrapped-gemini-process",
+  "name": "wrapped-agents-gemini-session",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",

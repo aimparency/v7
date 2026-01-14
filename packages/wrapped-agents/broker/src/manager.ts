@@ -9,11 +9,14 @@ import { AIMPARENCY_DIR_NAME } from 'shared';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export type AgentType = 'claude' | 'gemini';
+
 interface WatchdogInstance {
   process?: ChildProcess;
   pid: number;
   port: number;
   projectPath: string;
+  agentType: AgentType;
   lastKeepalive: number;
   checkInterval: NodeJS.Timeout;
 }
@@ -21,8 +24,13 @@ interface WatchdogInstance {
 const instances = new Map<string, WatchdogInstance>();
 const KEEPALIVE_TIMEOUT = 60 * 60 * 1000; // 60 minutes
 
-// Location: packages/wrapped-gemini/broker/src/manager.ts
-// WRAPPER_DIR: packages/wrapped-gemini (2 levels up from src)
+// Compound key for instances: allows same project with different agent types
+function getInstanceKey(projectPath: string, agentType: AgentType): string {
+  return `${projectPath}:${agentType}`;
+}
+
+// Location: packages/wrapped-agents/broker/src/manager.ts
+// WRAPPER_DIR: packages/wrapped-agents (2 levels up from src)
 const WRAPPER_DIR = path.resolve(__dirname, '../../');
 const SESSIONS_FILE = path.join(WRAPPER_DIR, 'watchdog-sessions.json');
 
@@ -40,6 +48,7 @@ function saveSessions() {
     pid: i.pid,
     port: i.port,
     projectPath: i.projectPath,
+    agentType: i.agentType,
     lastKeepalive: i.lastKeepalive
   }));
   try {
@@ -50,7 +59,7 @@ function saveSessions() {
 }
 
 function killInstance(instance: WatchdogInstance) {
-  console.log(`[WatchdogBroker] Killing instance for ${instance.projectPath} (PID ${instance.pid})`);
+  console.log(`[WatchdogBroker] Killing ${instance.agentType} instance for ${instance.projectPath} (PID ${instance.pid})`);
   try {
     // Kill the entire process group because we spawned with 'detached: true'
     process.kill(-instance.pid, 'SIGTERM');
@@ -66,18 +75,19 @@ function killInstance(instance: WatchdogInstance) {
       // Ignore if already dead
     }
   }
-  
+
   clearInterval(instance.checkInterval);
-  instances.delete(instance.projectPath);
+  instances.delete(getInstanceKey(instance.projectPath, instance.agentType));
   saveSessions();
 }
 
-function checkTimeout(projectPath: string) {
-  const instance = instances.get(projectPath);
+function checkTimeout(projectPath: string, agentType: AgentType) {
+  const key = getInstanceKey(projectPath, agentType);
+  const instance = instances.get(key);
   if (instance) {
     const elapsed = Date.now() - instance.lastKeepalive;
     if (elapsed > KEEPALIVE_TIMEOUT) {
-      console.log(`[WatchdogBroker] Timeout for ${projectPath}. Elapsed: ${elapsed}ms > Limit: ${KEEPALIVE_TIMEOUT}ms. Killing process.`);
+      console.log(`[WatchdogBroker] Timeout for ${agentType}@${projectPath}. Elapsed: ${elapsed}ms > Limit: ${KEEPALIVE_TIMEOUT}ms. Killing process.`);
       killInstance(instance);
     }
   }
@@ -88,34 +98,39 @@ function loadSessions() {
     if (fs.existsSync(SESSIONS_FILE)) {
       const data = fs.readJsonSync(SESSIONS_FILE);
       console.log(`[WatchdogBroker] Loading ${data.length} sessions from file.`);
-      
+
       data.forEach((s: any) => {
+        // Default to gemini for backward compatibility
+        const agentType: AgentType = s.agentType || 'gemini';
+        const key = getInstanceKey(s.projectPath, agentType);
+
         // Check if alive
         try {
           process.kill(s.pid, 0);
-          
+
           // Check if timed out while we were away
           if (Date.now() - s.lastKeepalive > KEEPALIVE_TIMEOUT) {
-             console.log(`[WatchdogBroker] Reclaimed session for ${s.projectPath} (PID ${s.pid}) is expired. Killing.`);
+             console.log(`[WatchdogBroker] Reclaimed ${agentType} session for ${s.projectPath} (PID ${s.pid}) is expired. Killing.`);
              try { process.kill(s.pid); } catch(e){}
              return;
           }
 
-          console.log(`[WatchdogBroker] Reclaiming session for ${s.projectPath} (PID ${s.pid})`);
-          
+          console.log(`[WatchdogBroker] Reclaiming ${agentType} session for ${s.projectPath} (PID ${s.pid})`);
+
           const checkInterval = setInterval(() => {
-            checkTimeout(s.projectPath);
+            checkTimeout(s.projectPath, agentType);
           }, 30 * 1000);
 
-          instances.set(s.projectPath, {
+          instances.set(key, {
             pid: s.pid,
             port: s.port,
             projectPath: s.projectPath,
+            agentType,
             lastKeepalive: s.lastKeepalive,
             checkInterval
           });
         } catch (e) {
-          console.log(`[WatchdogBroker] Session for ${s.projectPath} (PID ${s.pid}) is dead.`);
+          console.log(`[WatchdogBroker] ${agentType} session for ${s.projectPath} (PID ${s.pid}) is dead.`);
         }
       });
     }
@@ -148,11 +163,12 @@ function findAvailablePort(startPort: number): Promise<number> {
 }
 
 export const WatchdogManager = {
-  async start(projectPath: string): Promise<{ port: number, pid: number }> {
+  async start(projectPath: string, agentType: AgentType = 'gemini'): Promise<{ port: number, pid: number, agentType: AgentType }> {
     projectPath = normalizeProjectPath(projectPath);
+    const key = getInstanceKey(projectPath, agentType);
 
     // Check if already running
-    const existing = instances.get(projectPath);
+    const existing = instances.get(key);
     if (existing) {
         // Verify liveness
         try {
@@ -161,12 +177,12 @@ export const WatchdogManager = {
             } else {
                 process.kill(existing.pid, 0);
             }
-            
+
             existing.lastKeepalive = Date.now();
             saveSessions();
-            return { port: existing.port, pid: existing.pid };
+            return { port: existing.port, pid: existing.pid, agentType };
         } catch (e) {
-            console.log(`[WatchdogBroker] Existing instance dead, cleaning up.`);
+            console.log(`[WatchdogBroker] Existing ${agentType} instance dead, cleaning up.`);
             killInstance(existing);
         }
     }
@@ -175,10 +191,10 @@ export const WatchdogManager = {
     const startPort = parseInt(process.env.PORT_PROCESS_START || '7000');
     const port = await findAvailablePort(startPort);
 
-    // Path to Worker entry point:
-    const workerScript = path.join(WRAPPER_DIR, 'process/dist/index.js');
+    // Path to Worker entry point - dynamic based on agent type
+    const workerScript = path.join(WRAPPER_DIR, `${agentType}-session/dist/index.js`);
 
-    console.log(`[WatchdogBroker] Spawning worker on port ${port} for ${projectPath}`);
+    console.log(`[WatchdogBroker] Spawning ${agentType} worker on port ${port} for ${projectPath}`);
     console.log(`[WatchdogBroker] Script: ${workerScript}`);
 
     // Ensure we pass the PROJECT ROOT to the watchdog, not the .bowman dir
@@ -191,12 +207,7 @@ export const WatchdogManager = {
     const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
 
     const child = spawn('node', [workerScript, '--port', String(port), projectRoot], {
-      // cwd: ROOT_DIR, // Keep running from root if needed for deps, or WRAPPER_DIR? 
-      // User diff removed ROOT_DIR usage for workerScript but didn't change CWD explicitly in diff view.
-      // But ROOT_DIR definition was removed.
-      // Let's use WRAPPER_DIR or process.cwd()?
-      // The child process needs to find node_modules.
-      // If we run from WRAPPER_DIR, we are in packages/wrapped-gemini.
+      // If we run from WRAPPER_DIR, we are in packages/wrapped-agents.
       // It has its own package.json? No, it's a workspace.
       // Let's use WRAPPER_DIR for CWD.
       cwd: WRAPPER_DIR,
@@ -204,22 +215,23 @@ export const WatchdogManager = {
       stdio: ['ignore', out, err],
       env: { ...process.env }
     });
-    
+
     child.unref();
 
     const checkInterval = setInterval(() => {
-        checkTimeout(projectPath);
+        checkTimeout(projectPath, agentType);
     }, 30 * 1000); // Check every 30 seconds
 
-    instances.set(projectPath, {
+    instances.set(key, {
       process: child,
       pid: child.pid!,
       port,
       projectPath,
+      agentType,
       lastKeepalive: Date.now(),
       checkInterval
     });
-    
+
     saveSessions();
 
     // Wait for port to be ready
@@ -246,21 +258,22 @@ export const WatchdogManager = {
     }
 
     child.on('exit', (code) => {
-      console.log(`[WatchdogBroker] Worker for ${projectPath} exited with code ${code}`);
-      const instance = instances.get(projectPath);
+      console.log(`[WatchdogBroker] ${agentType} worker for ${projectPath} exited with code ${code}`);
+      const instance = instances.get(key);
       if (instance?.process === child) {
         clearInterval(instance.checkInterval);
-        instances.delete(projectPath);
+        instances.delete(key);
         saveSessions();
       }
     });
 
-    return { port, pid: child.pid! };
+    return { port, pid: child.pid!, agentType };
   },
 
-  stop(projectPath: string): boolean {
+  stop(projectPath: string, agentType: AgentType = 'gemini'): boolean {
     projectPath = normalizeProjectPath(projectPath);
-    const instance = instances.get(projectPath);
+    const key = getInstanceKey(projectPath, agentType);
+    const instance = instances.get(key);
     if (instance) {
       killInstance(instance);
       return true;
@@ -268,17 +281,18 @@ export const WatchdogManager = {
     return false;
   },
 
-  async keepalive(projectPath: string): Promise<boolean> {
+  async keepalive(projectPath: string, agentType: AgentType = 'gemini'): Promise<boolean> {
     projectPath = normalizeProjectPath(projectPath);
-    const instance = instances.get(projectPath);
+    const key = getInstanceKey(projectPath, agentType);
+    const instance = instances.get(key);
     if (instance) {
       instance.lastKeepalive = Date.now();
       saveSessions();
       return true;
     }
-    console.warn(`[WatchdogBroker] Keepalive warning: No instance found for ${projectPath}. Relaunching...`);
+    console.warn(`[WatchdogBroker] Keepalive warning: No ${agentType} instance found for ${projectPath}. Relaunching...`);
     try {
-        await this.start(projectPath);
+        await this.start(projectPath, agentType);
         return true;
     } catch (e) {
         console.error(`[WatchdogBroker] Failed to relaunch during keepalive:`, e);
@@ -286,9 +300,10 @@ export const WatchdogManager = {
     }
   },
 
-  getStatus(projectPath: string): { running: boolean, port?: number } {
+  getStatus(projectPath: string, agentType: AgentType = 'gemini'): { running: boolean, port?: number, agentType?: AgentType } {
       projectPath = normalizeProjectPath(projectPath);
-      const instance = instances.get(projectPath);
+      const key = getInstanceKey(projectPath, agentType);
+      const instance = instances.get(key);
       if (instance) {
           try {
               if (instance.process) {
@@ -299,7 +314,7 @@ export const WatchdogManager = {
               } else {
                   process.kill(instance.pid, 0);
               }
-              return { running: true, port: instance.port };
+              return { running: true, port: instance.port, agentType: instance.agentType };
           } catch(e) {
               killInstance(instance);
           }
@@ -307,19 +322,20 @@ export const WatchdogManager = {
       return { running: false };
   },
 
-  async relaunch(projectPath: string): Promise<{ port: number, pid: number }> {
+  async relaunch(projectPath: string, agentType: AgentType = 'gemini'): Promise<{ port: number, pid: number, agentType: AgentType }> {
       projectPath = normalizeProjectPath(projectPath);
-      console.log(`[WatchdogBroker] Relaunching for ${projectPath}`);
-      this.stop(projectPath);
+      console.log(`[WatchdogBroker] Relaunching ${agentType} for ${projectPath}`);
+      this.stop(projectPath, agentType);
       await new Promise(resolve => setTimeout(resolve, 500));
-      return this.start(projectPath);
+      return this.start(projectPath, agentType);
   },
 
-  list(): Array<{ projectPath: string, pid: number, port: number, lastKeepalive: number }> {
+  list(): Array<{ projectPath: string, pid: number, port: number, agentType: AgentType, lastKeepalive: number }> {
       return Array.from(instances.values()).map(i => ({
         projectPath: i.projectPath,
         pid: i.pid,
         port: i.port,
+        agentType: i.agentType,
         lastKeepalive: i.lastKeepalive
       }));
   }

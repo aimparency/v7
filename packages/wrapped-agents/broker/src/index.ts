@@ -4,7 +4,9 @@ import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import { WatchdogManager } from './manager.js';
+import { WatchdogManager, type AgentType } from './manager.js';
+
+const agentTypeSchema = z.enum(['claude', 'gemini']).default('gemini');
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,30 +23,30 @@ const t = initTRPC.context<Context>().create();
 const appRouter = t.router({
   watchdog: t.router({
     start: t.procedure
-      .input(z.object({ projectPath: z.string() }))
+      .input(z.object({ projectPath: z.string(), agentType: agentTypeSchema }))
       .mutation(async ({ input }) => {
-         return await WatchdogManager.start(input.projectPath);
+         return await WatchdogManager.start(input.projectPath, input.agentType as AgentType);
       }),
     stop: t.procedure
-      .input(z.object({ projectPath: z.string() }))
+      .input(z.object({ projectPath: z.string(), agentType: agentTypeSchema }))
       .mutation(async ({ input }) => {
-         const success = WatchdogManager.stop(input.projectPath);
+         const success = WatchdogManager.stop(input.projectPath, input.agentType as AgentType);
          return { success };
       }),
     relaunch: t.procedure
-      .input(z.object({ projectPath: z.string() }))
+      .input(z.object({ projectPath: z.string(), agentType: agentTypeSchema }))
       .mutation(async ({ input }) => {
-         return await WatchdogManager.relaunch(input.projectPath);
+         return await WatchdogManager.relaunch(input.projectPath, input.agentType as AgentType);
       }),
     getStatus: t.procedure
-      .input(z.object({ projectPath: z.string() }))
+      .input(z.object({ projectPath: z.string(), agentType: agentTypeSchema }))
       .query(async ({ input }) => {
-         return WatchdogManager.getStatus(input.projectPath);
+         return WatchdogManager.getStatus(input.projectPath, input.agentType as AgentType);
       }),
     keepalive: t.procedure
-      .input(z.object({ projectPath: z.string() }))
+      .input(z.object({ projectPath: z.string(), agentType: agentTypeSchema }))
       .mutation(async ({ input }) => {
-         const success = await WatchdogManager.keepalive(input.projectPath);
+         const success = await WatchdogManager.keepalive(input.projectPath, input.agentType as AgentType);
          return { success };
       }),
     list: t.procedure
@@ -64,8 +66,8 @@ const app = express();
 app.use(cors());
 
 // Serve static client
-// We are in packages/wrapped-gemini/broker/dist (compiled) or src (dev)
-// Target: packages/wrapped-gemini/client/dist
+// We are in packages/wrapped-agents/broker/dist (compiled) or src (dev)
+// Target: packages/wrapped-agents/client/dist
 const CLIENT_DIST = path.resolve(__dirname, '../../client/dist');
 app.use(express.static(CLIENT_DIST));
 
