@@ -277,7 +277,8 @@ export function useGraphSimulation() {
       const gapMultiplier = 1.0 + ((Math.SQRT1_2 - 1.0) * semanticForceMultiplier.value)
       const effectiveMaxGap = (semanticMaxGap.value || 2000) * gapMultiplier
   
-      // Run registered callbacks (e.g. interaction updates)    tickCallbacks.forEach(cb => cb())
+      // Run registered callbacks (e.g. interaction updates)
+      tickCallbacks.forEach(cb => cb())
 
     if (mapStore.anim.update) {
       mapStore.anim.update()

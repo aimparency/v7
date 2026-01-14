@@ -79,8 +79,6 @@ export function useGraphInteraction(
             const s = LOGICAL_HALF_SIDE / (mapStore.halfSide * mapStore.scale)
             const scaledD = vec2.crScale(d, s)
             vec2.sub(layoutingHandlePos, lc.start, scaledD)
-            
-            updateRelativeDeltaWhileLayouting()
         }
     }
 
