@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import { useWatchdogStore } from '../stores/watchdog'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { useWatchdogStore, type AgentType } from '../stores/watchdog'
 import { useUIStore } from '../stores/ui'
 import WatchdogTerminal from './WatchdogTerminal.vue'
 import WatchdogActionsOverlay from './WatchdogActionsOverlay.vue'
@@ -12,6 +12,27 @@ const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 
 const onWorkerData = (data: string) => workerTerm.value?.write(data)
 const onWatchdogData = (data: string) => watchdogTerm.value?.write(data)
+
+// Computed: is a session running for the selected agent type?
+const sessionExists = computed(() => store.currentProjectSession !== null)
+
+// Computed: are we connected to the selected agent type?
+const isConnectedToSelected = computed(() =>
+  store.isConnected && store.connectedAgentType === store.selectedAgentType
+)
+
+// Header background color based on selected agent type
+const headerBgColor = computed(() => {
+  if (store.isConnected) {
+    return store.connectedAgentType === 'claude' ? '#92400e' : '#0e7490'
+  }
+  return store.selectedAgentType === 'claude' ? '#78350f' : '#164e63'
+})
+
+function onAgentTypeChange(e: Event) {
+  const target = e.target as HTMLSelectElement
+  store.setAgentType(target.value as AgentType)
+}
 
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.ctrlKey && e.code === 'Space') {
@@ -53,10 +74,7 @@ watch(() => store.focusRequestCounter, () => {
 
 onMounted(() => {
   store.fetchSessions()
-  const shouldConnect = localStorage.getItem('aimparency-watchdog-should-connect')
-  if (shouldConnect !== 'false') {
-    store.connect()
-  }
+  // No auto-connect - user must explicitly connect
   window.addEventListener('keydown', handleKeyDown, true) // Capture phase
 })
 
@@ -91,49 +109,71 @@ defineExpose({
 
 <template>
   <div class="watchdog-panel">
-    <div class="panel-header">
-      <div class="status-indicator">
-        <span class="dot" :class="{ 
-          connected: store.isConnected, 
-          connecting: store.connectionState === 'connecting' || store.connectionState === 'spawning',
-          error: store.connectionState === 'error'
-        }"></span>
-        <span class="status-text">
-          <template v-if="store.connectionState === 'idle'">Disconnected</template>
-          <template v-else-if="store.connectionState === 'spawning'">Spawning Process...</template>
-          <template v-else-if="store.connectionState === 'connecting'">Connecting to Socket...</template>
-          <template v-else-if="store.connectionState === 'connected'">Connected</template>
-          <template v-else-if="store.connectionState === 'error'">Connection Error</template>
+    <div class="panel-header" :style="{ background: headerBgColor }">
+      <!-- Agent Type Selector -->
+      <div class="agent-selector">
+        <select
+          :value="store.selectedAgentType"
+          @change="onAgentTypeChange"
+          :disabled="store.isConnected"
+          class="agent-select"
+        >
+          <option value="claude">Claude</option>
+          <option value="gemini">Gemini</option>
+        </select>
+        <span class="session-status">
+          <template v-if="isConnectedToSelected">
+            <span class="dot connected"></span> Connected
+          </template>
+          <template v-else-if="store.connectionState === 'spawning' || store.connectionState === 'connecting'">
+            <span class="dot connecting"></span> {{ store.connectionState === 'spawning' ? 'Spawning...' : 'Connecting...' }}
+          </template>
+          <template v-else-if="sessionExists">
+            <span class="dot idle"></span> Session exists
+          </template>
+          <template v-else>
+            <span class="dot"></span> No session
+          </template>
         </span>
-        <button 
-          v-if="store.isConnected" 
-          @click="store.disconnect()" 
-          class="link-btn" 
-          title="Disconnect from backend"
-        >(Disconnect)</button>
-        <button 
-          v-else 
-          @click="store.connect()" 
-          class="link-btn" 
-          title="Connect to backend"
-          :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
-        >(Connect)</button>
       </div>
+
+      <!-- Action Buttons -->
       <div class="controls">
         <span v-if="store.stopReason" class="stop-reason">{{ store.stopReason }}</span>
-        <button 
-          @click="toggle" 
-          class="toggle-btn"
+
+        <!-- Connect/Disconnect -->
+        <button
+          v-if="!store.isConnected"
+          @click="store.connect()"
+          class="action-btn connect-btn"
+          :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
+        >
+          {{ sessionExists ? 'Connect' : 'Start' }}
+        </button>
+        <button
+          v-else
+          @click="store.disconnect()"
+          class="action-btn disconnect-btn"
+        >
+          Disconnect
+        </button>
+
+        <!-- Animator Toggle -->
+        <button
+          @click="toggle"
+          class="action-btn toggle-btn"
           :class="{ running: store.isEnabled }"
           :disabled="!store.isConnected"
         >
           {{ store.isEnabled ? 'Disable Animator' : 'Enable Animator' }}
         </button>
-        <button 
-          @click="store.relaunch()" 
-          class="relaunch-btn"
-          title="Restart the underlying Watchdog process"
-          :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
+
+        <!-- Relaunch -->
+        <button
+          @click="store.relaunch()"
+          class="action-btn relaunch-btn"
+          title="Restart the underlying agent process"
+          :disabled="!store.isConnected || store.connectionState === 'spawning' || store.connectionState === 'connecting'"
         >
           Relaunch
         </button>
@@ -191,16 +231,38 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 1rem;
-  background: #252526;
   border-bottom: 1px solid #333;
+  transition: background 0.3s ease;
 }
 
-.status-indicator {
+.agent-selector {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+}
+
+.agent-select {
+  padding: 0.35rem 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.session-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 0.8rem;
-  color: #ccc;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .dot {
@@ -211,16 +273,20 @@ defineExpose({
 }
 
 .dot.connected {
-  background: #00aa00;
+  background: #22c55e;
 }
 
 .dot.connecting {
-  background: #fa0;
+  background: #fbbf24;
   animation: blink 1s infinite;
 }
 
+.dot.idle {
+  background: #3b82f6;
+}
+
 .dot.error {
-  background: #d32f2f;
+  background: #ef4444;
 }
 
 @keyframes blink {
@@ -229,79 +295,79 @@ defineExpose({
   100% { opacity: 1; }
 }
 
-.status-text {
-  min-width: 120px;
-}
-
 .controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .stop-reason {
-  color: #fa0;
+  color: #fbbf24;
   font-weight: bold;
   font-size: 0.8rem;
+  margin-right: 0.5rem;
 }
 
-.link-btn {
-  background: none;
-  border: none;
-  color: #666;
+.action-btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 0.75rem;
-  text-decoration: underline;
-  padding: 0;
-  margin-left: 0.5rem;
+  border: none;
+  transition: opacity 0.2s, background 0.2s;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
-.link-btn:hover {
-  color: #aaa;
+.connect-btn {
+  background: #22c55e;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: #16a34a;
+  }
 }
 
-.link-btn:disabled {
-  text-decoration: none;
-  cursor: default;
+.disconnect-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.25);
+  }
 }
 
 .toggle-btn {
-  background: #007acc;
+  background: #3b82f6;
   color: white;
-  border: none;
-  padding: 0.25rem 0.75rem;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
 
-.toggle-btn:disabled {
-  background: #444;
-  cursor: not-allowed;
-}
+  &:hover:not(:disabled) {
+    background: #2563eb;
+  }
 
-.toggle-btn.running {
-  background: #d32f2f;
+  &.running {
+    background: #ef4444;
+
+    &:hover:not(:disabled) {
+      background: #dc2626;
+    }
+  }
 }
 
 .relaunch-btn {
-  background: transparent;
-  border: 1px solid #555;
-  color: #ccc;
-  padding: 0.25rem 0.75rem;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 0.8rem;
-}
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 
-.relaunch-btn:hover {
-  background: #333;
-  color: #fff;
-}
-
-.relaunch-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
 }
 
 .terminals {

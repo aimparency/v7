@@ -1287,6 +1287,25 @@ export const useUIStore = defineStore('ui', {
       const col = this.selectedColumn
 
       const path = this.getSelectionPath()
+
+      if (path.aims.length === 0) {
+        if (path.phase && col >= 0) {
+          const currentPhaseIndex = this.getSelectedPhase(col)
+          const phaseCount = this.getPhaseCount(col)
+          if (currentPhaseIndex < phaseCount - 1) {
+            await this.selectPhase(col, currentPhaseIndex + 1)
+            const newPhaseId = this.getSelectedPhaseId(col)
+            if (newPhaseId) {
+              const newPhase = dataStore.phases[newPhaseId]
+              if (newPhase) {
+                newPhase.selectedAimIndex = 0
+              }
+            }
+          }
+        }
+        return
+      }
+
       const currentAim = path.aims.length > 0 ? path.aims[path.aims.length - 1] : undefined
 
       const currentConnections = currentAim?.supportingConnections || []
@@ -1376,6 +1395,23 @@ export const useUIStore = defineStore('ui', {
 
       const path = this.getSelectionPath()
       const col = this.selectedColumn
+
+      if (path.aims.length === 0) {
+        if (path.phase && col >= 0) {
+          const currentPhaseIndex = this.getSelectedPhase(col)
+          if (currentPhaseIndex > 0) {
+            await this.selectPhase(col, currentPhaseIndex - 1)
+            const newPhaseId = this.getSelectedPhaseId(col)
+            if (newPhaseId) {
+              const newPhase = dataStore.phases[newPhaseId]
+              if (newPhase && newPhase.commitments.length > 0) {
+                newPhase.selectedAimIndex = newPhase.commitments.length - 1
+              }
+            }
+          }
+        }
+        return
+      }
 
       if(this.navigatingAims) {
         if(path.aims.length === 1) {
@@ -1560,6 +1596,63 @@ export const useUIStore = defineStore('ui', {
           } catch (e) {
               console.error("Move failed", e)
           }
+        } else {
+          // Move to next phase
+          const parentPhaseId = path.phase.parent
+          const siblings = dataStore.getPhasesByParentId(parentPhaseId)
+          const currentPhaseIndex = siblings.findIndex(p => p.id === phaseId)
+          
+          if (currentPhaseIndex !== -1 && currentPhaseIndex < siblings.length - 1) {
+            const nextPhase = siblings[currentPhaseIndex + 1]
+            const nextPhaseId = nextPhase.id
+            
+            // Optimistic Update
+            const ph = dataStore.phases[phaseId]
+            if (ph && ph.commitments) {
+                ph.commitments.splice(currentIndex, 1)
+            }
+            const nextPh = dataStore.phases[nextPhaseId]
+            if (nextPh) {
+                if (!nextPh.commitments) nextPh.commitments = []
+                nextPh.commitments.unshift(currentAim.id)
+                nextPh.selectedAimIndex = 0
+            }
+
+            // Update UI selection to next phase
+            const col = this.selectedColumn
+            if (col >= 0) {
+               await this.selectPhase(col, currentPhaseIndex + 1)
+            }
+
+            try {
+                // Backend
+                await trpc.aim.removeFromPhase.mutate({
+                    projectPath: this.projectPath,
+                    aimId: currentAim.id,
+                    phaseId: phaseId
+                })
+                await trpc.aim.commitToPhase.mutate({
+                    projectPath: this.projectPath,
+                    aimId: currentAim.id,
+                    phaseId: nextPhaseId,
+                    insertionIndex: 0
+                })
+                
+                // Reload both phases
+                const [updatedOld, updatedNew] = await Promise.all([
+                    trpc.phase.get.query({ projectPath: this.projectPath, phaseId }),
+                    trpc.phase.get.query({ projectPath: this.projectPath, phaseId: nextPhaseId })
+                ])
+                dataStore.replacePhase(phaseId, updatedOld)
+                dataStore.replacePhase(nextPhaseId, updatedNew)
+                
+                // Ensure selection on new phase
+                const reloadedNew = dataStore.phases[nextPhaseId]
+                if (reloadedNew) reloadedNew.selectedAimIndex = 0
+            } catch(e) {
+                console.error("Move across phases failed", e)
+            }
+          }
         }
       }
     },
@@ -1656,6 +1749,64 @@ export const useUIStore = defineStore('ui', {
               }
           } catch (e) {
               console.error("Move failed", e)
+          }
+        } else {
+          // Move to prev phase
+          const parentPhaseId = path.phase.parent
+          const siblings = dataStore.getPhasesByParentId(parentPhaseId)
+          const currentPhaseIndex = siblings.findIndex(p => p.id === phaseId)
+
+          if (currentPhaseIndex > 0) {
+            const prevPhase = siblings[currentPhaseIndex - 1]
+            const prevPhaseId = prevPhase.id
+            
+            // Optimistic Update
+            const ph = dataStore.phases[phaseId]
+            if (ph && ph.commitments) {
+                ph.commitments.splice(currentIndex, 1)
+            }
+            const prevPh = dataStore.phases[prevPhaseId]
+            let newIndex = 0
+            if (prevPh) {
+                if (!prevPh.commitments) prevPh.commitments = []
+                newIndex = prevPh.commitments.length
+                prevPh.commitments.push(currentAim.id)
+                prevPh.selectedAimIndex = newIndex
+            }
+
+            // Update UI selection
+            const col = this.selectedColumn
+            if (col >= 0) {
+               await this.selectPhase(col, currentPhaseIndex - 1)
+            }
+
+            try {
+                // Backend
+                await trpc.aim.removeFromPhase.mutate({
+                    projectPath: this.projectPath,
+                    aimId: currentAim.id,
+                    phaseId: phaseId
+                })
+                await trpc.aim.commitToPhase.mutate({
+                    projectPath: this.projectPath,
+                    aimId: currentAim.id,
+                    phaseId: prevPhaseId,
+                    insertionIndex: newIndex
+                })
+                
+                // Reload both
+                const [updatedOld, updatedNew] = await Promise.all([
+                    trpc.phase.get.query({ projectPath: this.projectPath, phaseId }),
+                    trpc.phase.get.query({ projectPath: this.projectPath, phaseId: prevPhaseId })
+                ])
+                dataStore.replacePhase(phaseId, updatedOld)
+                dataStore.replacePhase(prevPhaseId, updatedNew)
+
+                const reloadedPrev = dataStore.phases[prevPhaseId]
+                if (reloadedPrev) reloadedPrev.selectedAimIndex = reloadedPrev.commitments.length - 1
+            } catch(e) {
+                console.error("Move across phases failed", e)
+            }
           }
         }
       }

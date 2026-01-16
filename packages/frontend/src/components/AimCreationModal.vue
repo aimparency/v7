@@ -406,6 +406,33 @@ onMounted(async () => {
           ></textarea>
         </div>
 
+        <!-- Status fields (edit mode only) -->
+        <div v-if="uiStore.aimModalMode === 'edit'">
+          <div class="form-group">
+            <label>Status</label>
+                      <select
+                        ref="statusSelect"
+                        v-model="selectedStatus"
+                        class="status-select"
+                        @keydown="handleInputKeydown"
+                      >
+                        <option v-for="status in availableStatuses" :key="status.key" :value="status.key">
+                          {{ status.key }}
+                        </option>
+                      </select>
+                    </div>
+                    <div class="form-group">            <label>Status Comment (optional)</label>
+            <input
+              ref="statusCommentInput"
+              v-model="statusComment"
+              type="text"
+              placeholder="Add a comment about the status"
+              @keydown="handleInputKeydown"
+              @keydown.tab.exact="handleStatusCommentNext"
+            />
+          </div>
+        </div>
+
         <div class="form-group">
             <div class="label-row">
                 <label>Supports (Parents)</label>
@@ -468,33 +495,6 @@ onMounted(async () => {
               placeholder="0"
               @keydown="handleInputKeydown"
               @keydown.tab.exact="handleLoopWeightNext"
-            />
-          </div>
-        </div>
-
-        <!-- Status fields (edit mode only) -->
-        <div v-if="uiStore.aimModalMode === 'edit'">
-          <div class="form-group">
-            <label>Status</label>
-                      <select
-                        ref="statusSelect"
-                        v-model="selectedStatus"
-                        class="status-select"
-                        @keydown="handleInputKeydown"
-                      >
-                        <option v-for="status in availableStatuses" :key="status.key" :value="status.key">
-                          {{ status.key }}
-                        </option>
-                      </select>
-                    </div>
-                    <div class="form-group">            <label>Status Comment (optional)</label>
-            <input
-              ref="statusCommentInput"
-              v-model="statusComment"
-              type="text"
-              placeholder="Add a comment about the status"
-              @keydown="handleInputKeydown"
-              @keydown.tab.exact="handleStatusCommentNext"
             />
           </div>
         </div>

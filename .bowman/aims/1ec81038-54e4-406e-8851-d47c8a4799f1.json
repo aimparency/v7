@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768545624222
+    "state": "done",
+    "comment": "Implemented cross-phase aim moving in moveAimDown (Shift+J) and moveAimUp (Shift+K). Logic now detects phase boundaries and moves the aim to the start/end of the adjacent phase, updating selection accordingly.",
+    "date": 1768591830707
   },
   "intrinsicValue": 0,
   "cost": 1,

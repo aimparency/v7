@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768410127863
+    "state": "done",
+    "comment": "Moved Status and Status Comment fields to immediately follow the Description field in AimCreationModal.vue. Removed the duplicate block at the bottom.",
+    "date": 1768591825409
   },
   "intrinsicValue": 0,
   "cost": 1,

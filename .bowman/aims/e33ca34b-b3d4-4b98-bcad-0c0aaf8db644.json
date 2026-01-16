@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768411279945
+    "state": "done",
+    "comment": "Updated navigateDown and navigateUp in uiStore.ts to detect empty phases (path.aims.length === 0) and automatically select the adjacent phase, preventing the user from getting stuck.",
+    "date": 1768591827420
   },
   "intrinsicValue": 0,
   "cost": 1,

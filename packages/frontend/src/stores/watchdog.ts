@@ -1,8 +1,10 @@
 import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { trpcWatchdog } from '../trpc-watchdog'
 import { useUIStore } from './ui'
+
+export type AgentType = 'claude' | 'gemini'
 
 export const useWatchdogStore = defineStore('watchdog', () => {
   const socket = ref<Socket | null>(null)
@@ -13,7 +15,14 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const stopReason = ref('')
   const showActionsOverlay = ref(false)
   const focusRequestCounter = ref(0)
-  
+
+  // Agent type selection with localStorage persistence
+  const storedAgentType = localStorage.getItem('aimparency-agent-type') as AgentType | null
+  const selectedAgentType = ref<AgentType>(storedAgentType || 'claude')
+
+  // Track which agent type we're currently connected to
+  const connectedAgentType = ref<AgentType | null>(null)
+
   // Terminal buffers
   const workerOutput = ref('')
   const watchdogOutput = ref('')
@@ -24,28 +33,43 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     spawningLog.value.push(`${new Date().toLocaleTimeString()}: ${msg}`)
     if (spawningLog.value.length > 50) spawningLog.value.shift()
   }
-  
+
   interface WatchdogSession {
     projectPath: string
     pid: number
     port: number
+    agentType: AgentType
     lastKeepalive: number
   }
   const sessions = ref<WatchdogSession[]>([])
 
+  // Get session for currently selected agent type and project
+  const currentProjectSession = computed(() => {
+    const uiStore = useUIStore()
+    if (!uiStore.projectPath) return null
+    return sessions.value.find(
+      s => s.projectPath === uiStore.projectPath && s.agentType === selectedAgentType.value
+    ) || null
+  })
+
+  function setAgentType(type: AgentType) {
+    selectedAgentType.value = type
+    localStorage.setItem('aimparency-agent-type', type)
+  }
+
   let keepaliveTimer: number | NodeJS.Timeout | null = null
 
-  function startKeepalive(projectPath: string) {
+  function startKeepalive(projectPath: string, agentType: AgentType) {
     stopKeepalive()
-    
+
     // Initial call
-    trpcWatchdog.watchdog.keepalive.mutate({ projectPath }).catch((e: Error) => {
+    trpcWatchdog.watchdog.keepalive.mutate({ projectPath, agentType }).catch((e: Error) => {
         logStatus(`Keepalive initial call failed: ${e.message}`)
     })
 
     keepaliveTimer = setInterval(async () => {
        try {
-         await trpcWatchdog.watchdog.keepalive.mutate({ projectPath });
+         await trpcWatchdog.watchdog.keepalive.mutate({ projectPath, agentType });
        } catch (e: any) {
          logStatus(`Keepalive loop failed: ${e.message}`)
        }
@@ -67,11 +91,12 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
-  async function connect(overridePath?: string) {
+  async function connect(overridePath?: string, overrideAgentType?: AgentType) {
     if (socket.value || connectionState.value === 'spawning' || connectionState.value === 'connecting') return
 
     const uiStore = useUIStore()
     const targetPath = overridePath || uiStore.projectPath
+    const agentType = overrideAgentType || selectedAgentType.value
 
     if (!targetPath) {
         logStatus('Cannot connect: No project path selected.')
@@ -79,17 +104,18 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
 
     connectionState.value = 'spawning'
-    logStatus(`Spawning watchdog process for path: ${targetPath}...`)
+    logStatus(`Spawning ${agentType} session for path: ${targetPath}...`)
 
     try {
         // 1. Ask broker to start the process
-        const { port } = await trpcWatchdog.watchdog.start.mutate({ projectPath: targetPath })
+        const { port } = await trpcWatchdog.watchdog.start.mutate({ projectPath: targetPath, agentType })
         
         logStatus(`Process spawned. Starting keepalive and connecting to port ${port}...`)
-        startKeepalive(targetPath)
+        startKeepalive(targetPath, agentType)
 
         connectionState.value = 'connecting'
-        const watchdogUrl = `http://localhost:${port}` 
+        connectedAgentType.value = agentType
+        const watchdogUrl = `http://localhost:${port}`
 
         // 2. Connect with automatic reconnection
         socket.value = io(watchdogUrl, {
@@ -105,6 +131,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     } catch (e: any) {
         logStatus(`Spawn/Connect failed: ${e.message}`)
         connectionState.value = 'error'
+        connectedAgentType.value = null
     }
   }
 
@@ -116,6 +143,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
     isConnected.value = false
     connectionState.value = 'idle'
+    connectedAgentType.value = null
     localStorage.setItem('aimparency-show-watchdog', 'false')
     localStorage.setItem('aimparency-watchdog-should-connect', 'false')
     stopKeepalive()
@@ -140,7 +168,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     const uiStore = useUIStore()
     if (!uiStore.projectPath) return
 
-    logStatus('Relaunching watchdog process...')
+    const agentType = connectedAgentType.value || selectedAgentType.value
+    logStatus(`Relaunching ${agentType} session...`)
     stopKeepalive()
 
     if (socket.value) {
@@ -155,12 +184,16 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     watchdogOutput.value = ''
 
     try {
-        const { port } = await trpcWatchdog.watchdog.relaunch.mutate({ projectPath: uiStore.projectPath })
-        
+        const { port } = await trpcWatchdog.watchdog.relaunch.mutate({
+            projectPath: uiStore.projectPath,
+            agentType
+        })
+
         logStatus(`Relaunched. Connecting to port ${port}...`)
-        startKeepalive(uiStore.projectPath)
+        startKeepalive(uiStore.projectPath, agentType)
 
         connectionState.value = 'connecting'
+        connectedAgentType.value = agentType
         const watchdogUrl = `http://localhost:${port}`
         socket.value = io(watchdogUrl, {
           transports: ['websocket'],
@@ -171,10 +204,11 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         })
 
         setupSocketListeners()
-        
+
     } catch (e: any) {
         logStatus(`Relaunch failed: ${e.message}`)
         connectionState.value = 'error'
+        connectedAgentType.value = null
     }
   }
 
@@ -275,6 +309,10 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     showActionsOverlay,
     focusRequestCounter,
     sessions,
+    selectedAgentType,
+    connectedAgentType,
+    currentProjectSession,
+    setAgentType,
     fetchSessions,
     connect,
     disconnect,
