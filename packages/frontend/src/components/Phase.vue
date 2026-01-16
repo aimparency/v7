@@ -106,7 +106,7 @@ const isPendingDelete = computed(() => {
   <div
     ref="phaseContainerRef"
     class="phase-container"
-    :class="{ 'selected-outlined': isActive, 'selected': isSelected, 'pending-delete': isPendingDelete }"
+    :class="{ 'active': isActive, 'selected': isSelected, 'pending-delete': isPendingDelete }"
     @click="$emit('phase-clicked')"
   >
     <!-- Progress Bar -->
@@ -129,7 +129,7 @@ const isPendingDelete = computed(() => {
         :phase-id="phase.id"
         :column-index="0"
         :is-active="isActive && uiStore.navigatingAims"
-        :is-selected="isSelected && uiStore.navigatingAims"
+        :is-selected="isSelected"
         :selected-aim-index="phase.selectedAimIndex"
         @scroll-request="$emit('scroll-request', $event)"
         @aim-clicked="$emit('aim-clicked', $event)"
@@ -150,11 +150,14 @@ const isPendingDelete = computed(() => {
 }
 
 .phase-container.selected {
-  outline: 2px solid #888;
-}
+  outline-width: 0.15rem;
+  outline-style: solid;
+  outline-offset: -0.15rem;
+  outline-color: #888;
 
-.phase-container.selected-outlined {
-  outline: 2px solid #007acc;
+  &.active {
+    outline-color: #007acc;
+  }
 }
 
 .progress-bar {

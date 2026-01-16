@@ -50,7 +50,7 @@ test('edit phase and search for parent phase', async ({ page }) => {
   await page.keyboard.press('j');
   
   // Verify selection
-  const childPhaseHeader = page.locator('.phase-container.selected-outlined .phase-name', { hasText: 'Child Phase' });
+  const childPhaseHeader = page.locator('.phase-container.active .phase-name', { hasText: 'Child Phase' });
   await expect(childPhaseHeader).toBeVisible();
 
   // 4. Open Edit Modal (press 'e')
@@ -96,7 +96,7 @@ test('edit phase and search for parent phase', async ({ page }) => {
 
   // Select Parent Candidate (index 0)
   await page.keyboard.press('k'); // Go up to Parent Candidate
-  const parentPhaseHeader = page.locator('.phase-container.selected-outlined .phase-name', { hasText: 'Parent Candidate' });
+  const parentPhaseHeader = page.locator('.phase-container.active .phase-name', { hasText: 'Parent Candidate' });
   await expect(parentPhaseHeader).toBeVisible();
 
   // Check column 1 for Child Phase

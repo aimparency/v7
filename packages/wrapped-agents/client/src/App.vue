@@ -10,15 +10,19 @@ const status = ref('stopped');
 const emergencyStopped = ref(false);
 const stopReason = ref('');
 
+type AgentType = 'claude' | 'gemini';
+
 interface Session {
     projectPath: string;
     pid: number;
     port: number;
+    agentType: AgentType;
     lastKeepalive: number;
 }
 const sessions = ref<Session[]>([]);
 const currentSession = ref<Session | null>(null);
 const newProjectPath = ref('');
+const newAgentType = ref<AgentType>('claude');
 const loading = ref(false);
 
 async function refreshSessions() {
@@ -33,12 +37,12 @@ async function connectToSession(session: Session) {
     loading.value = true;
     try {
         // Ensure it's alive/started via backend just in case
-        await trpc.watchdog.start.mutate({ projectPath: session.projectPath });
-        
+        await trpc.watchdog.start.mutate({ projectPath: session.projectPath, agentType: session.agentType });
+
         currentSession.value = session;
         const url = `http://localhost:${session.port}`;
-        console.log(`Connecting to ${url}`);
-        
+        console.log(`Connecting to ${session.agentType} session at ${url}`);
+
         socket.value = io(url);
         setupSocket(socket.value);
     } catch (e) {
@@ -53,19 +57,25 @@ async function createSession() {
     if (!newProjectPath.value) return;
     loading.value = true;
     try {
-        const res = await trpc.watchdog.start.mutate({ projectPath: newProjectPath.value });
+        const res = await trpc.watchdog.start.mutate({
+            projectPath: newProjectPath.value,
+            agentType: newAgentType.value
+        });
         // Refresh list and connect
         await refreshSessions();
-        const session = sessions.value.find(s => s.projectPath === newProjectPath.value);
+        const session = sessions.value.find(s =>
+            s.projectPath === newProjectPath.value && s.agentType === newAgentType.value
+        );
         if (session) {
             connectToSession(session);
         } else {
-            // If list is stale or path normalization changed it, try constructing it manually or alerting
-             connectToSession({ 
-                 projectPath: newProjectPath.value, 
-                 port: res.port, 
-                 pid: res.pid, 
-                 lastKeepalive: Date.now() 
+            // If list is stale or path normalization changed it, try constructing it manually
+             connectToSession({
+                 projectPath: newProjectPath.value,
+                 port: res.port,
+                 pid: res.pid,
+                 agentType: newAgentType.value,
+                 lastKeepalive: Date.now()
              });
         }
     } catch (e) {
@@ -124,15 +134,20 @@ onMounted(() => {
   <div class="layout">
     <!-- Session Manager View -->
     <div v-if="!currentSession" class="session-manager">
-        <h1>Infinite Worker Manager</h1>
+        <h1>Agent Session Manager</h1>
         <div class="controls">
             <input v-model="newProjectPath" :placeholder="'/path/to/project/' + AIMPARENCY_DIR_NAME" @keyup.enter="createSession" />
+            <select v-model="newAgentType" class="agent-select">
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+            </select>
             <button @click="createSession" :disabled="loading || !newProjectPath">Start New</button>
             <button @click="refreshSessions" :disabled="loading">Refresh</button>
         </div>
         <div class="session-list">
-            <div v-for="s in sessions" :key="s.projectPath" class="session-item" @click="connectToSession(s)">
+            <div v-for="s in sessions" :key="`${s.projectPath}:${s.agentType}`" class="session-item" @click="connectToSession(s)">
                 <div class="session-info">
+                    <span class="agent-badge" :class="s.agentType">{{ s.agentType }}</span>
                     <span class="path">{{ s.projectPath }}</span>
                     <span class="meta">PID: {{ s.pid }} | Port: {{ s.port }}</span>
                 </div>
@@ -145,7 +160,10 @@ onMounted(() => {
     <!-- Active Session View -->
     <template v-else>
         <div class="top-bar">
-            <span>Session: {{ currentSession.projectPath }} ({{ currentSession.port }})</span>
+            <span>
+                <span class="agent-badge small" :class="currentSession.agentType">{{ currentSession.agentType }}</span>
+                {{ currentSession.projectPath }} ({{ currentSession.port }})
+            </span>
             <button @click="disconnect" class="disconnect-btn">Disconnect</button>
         </div>
         <div class="worker-pane">
@@ -189,6 +207,12 @@ html, body, #app { margin: 0; height: 100%; width: 100%; background: #000; color
 .controls { display: flex; gap: 10px; margin-bottom: 2rem; }
 .controls input { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; }
 .controls button { padding: 10px 20px; font-size: 14px; }
+.agent-select { padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; cursor: pointer; }
+
+.agent-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-right: 8px; }
+.agent-badge.claude { background: #d97706; color: white; }
+.agent-badge.gemini { background: #4285f4; color: white; }
+.agent-badge.small { font-size: 0.65rem; padding: 1px 5px; }
 
 .session-list { display: flex; flex-direction: column; gap: 10px; }
 .session-item { background: #1a1a1a; padding: 15px; border-radius: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; transition: background 0.2s; }

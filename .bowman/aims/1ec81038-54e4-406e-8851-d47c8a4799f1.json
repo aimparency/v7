@@ -1,0 +1,19 @@
+{
+  "id": "1ec81038-54e4-406e-8851-d47c8a4799f1",
+  "text": "just like navigation works across phases, moving aims should also work across phases (shift + j/k)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768545624222
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Unified outline style (width, offset, margin/padding) for both active (Blue) and selected (Grey) states in Aim.vue.",
-    "date": 1768410196721
+    "state": "done",
+    "comment": "Standardized outline styles across Aims and Phases (0.15rem solid). Implemented 'active' (Blue) vs 'selected' (Grey) distinction with robust CSS nesting. Renamed 'selected-outlined' to 'active'. Ensuring selected aims are always visible (Grey) even when not navigating.",
+    "date": 1768546992891
   },
   "intrinsicValue": 0,
   "cost": 1,

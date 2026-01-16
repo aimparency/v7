@@ -55,7 +55,7 @@ input, select, textarea {
 }
 
 /* Selected element with inset outline */
-.selected-outlined {
+.active {
   outline: 0.15rem solid #007acc;
   outline-offset: -0.15rem;
 }

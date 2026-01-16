@@ -39,7 +39,7 @@ watch(() => uiStore.columnScrollRequest, (req) => {
 </script>
 
 <template>
-  <div class="phase-column" :class="{ 'selected-outlined': isActive, 'selected': isSelected }">
+  <div class="phase-column" :class="{ 'active': isActive, 'selected': isSelected }">
     <div v-if="phases.length === 0" class="empty-state">
       No sub phases, create one with o
     </div>
@@ -69,11 +69,14 @@ watch(() => uiStore.columnScrollRequest, (req) => {
 }
 
 .phase-column.selected {
-  outline: 2px solid #888;
-}
+  outline-width: 0.15rem;
+  outline-style: solid;
+  outline-offset: -0.15rem;
+  outline-color: #888;
 
-.phase-column.selected-outlined {
-  outline: 2px solid #007acc;
+  &.active {
+    outline-color: #007acc;
+  }
 }
 
 .phase-list {

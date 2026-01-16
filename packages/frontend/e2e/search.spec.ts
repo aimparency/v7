@@ -116,7 +116,7 @@ test('search finds deep nested aim and expands path', async ({ page }) => {
   const targetAimItem = page.locator('.aim-item').filter({ 
     has: page.locator('> .aim-content .aim-text', { hasText: /^target aim$/ }) 
   });
-  await expect(targetAimItem).toHaveClass(/selected-outlined/);
+  await expect(targetAimItem).toHaveClass(/active/);
 });
 
 test('search finds deep nested aim after reload', async ({ page }) => {
@@ -181,5 +181,5 @@ test('search finds deep nested aim after reload', async ({ page }) => {
   const targetAimItem = page.locator('.aim-item').filter({ 
     has: page.locator('> .aim-content .aim-text', { hasText: /^target aim$/ }) 
   }).last();
-  await expect(targetAimItem).toHaveClass(/selected-outlined/);
+  await expect(targetAimItem).toHaveClass(/active/);
 });

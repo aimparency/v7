@@ -96,7 +96,7 @@ test('aim creation with o key inserts after selected aim', async ({ page }) => {
     await page.keyboard.press('k'); // Move up to Aim 1
     
     // Wait for selection to update
-    await expect(page.locator('.aim-item', { hasText: 'Aim 1' }).first()).toHaveClass(/selected-outlined/);
+    await expect(page.locator('.aim-item', { hasText: 'Aim 1' }).first()).toHaveClass(/active/);
 
     // Create a new aim after Aim 1
     await createAim(page, 'Aim 1.5');
@@ -111,7 +111,7 @@ test('aim creation with o key inserts after selected aim', async ({ page }) => {
     await page.keyboard.press('j'); // Move down to Aim 2
     
     // Wait for selection to update
-    await expect(page.locator('.aim-item', { hasText: 'Aim 2' }).first()).toHaveClass(/selected-outlined/);
+    await expect(page.locator('.aim-item', { hasText: 'Aim 2' }).first()).toHaveClass(/active/);
 
     await createAim(page, 'Aim 2.5');
     await page.waitForTimeout(500);
@@ -168,7 +168,7 @@ test('aim creation with O key inserts before selected aim', async ({ page }) => 
     await page.keyboard.press('k'); // Move up to Aim 2 (from Aim 3 created last)
     
     // Wait for selection to update
-    await expect(page.locator('.aim-item', { hasText: 'Aim 2' }).first()).toHaveClass(/selected-outlined/);
+    await expect(page.locator('.aim-item', { hasText: 'Aim 2' }).first()).toHaveClass(/active/);
 
     // Create Aim 1.5 BEFORE Aim 2
     await page.keyboard.press('O'); // shift+o

@@ -18,7 +18,7 @@ const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
 </script>
 
 <template>
-  <div class="root-aims-column" :class="{ 'selected-outlined': isActive, 'selected': isSelected }">
+  <div class="root-aims-column" :class="{ 'active': isActive, 'selected': isSelected }">
     <div 
       ref="rootColumnRef" 
       class="aims-container"
@@ -29,7 +29,7 @@ const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
         phase-id=""
         :column-index="-1"
         :is-active="isActive && uiStore.navigatingAims"
-        :is-selected="isSelected && uiStore.navigatingAims"
+        :is-selected="isSelected"
         :selected-aim-index="uiStore.floatingAimIndex"
         @aim-clicked="(aimId) => uiStore.selectAimById(-1, undefined, aimId)"
         @scroll-request="handleScrollRequest"
@@ -57,11 +57,14 @@ const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
 }
 
 .root-aims-column.selected {
-  outline: 2px solid #888;
-}
+  outline-width: 0.15rem;
+  outline-style: solid;
+  outline-offset: -0.15rem;
+  outline-color: #888;
 
-.root-aims-column.selected-outlined {
-  outline: 2px solid #007acc;
+  &.active {
+    outline-color: #007acc;
+  }
 }
 
 .empty-state {

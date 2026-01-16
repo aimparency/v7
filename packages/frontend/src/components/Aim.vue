@@ -158,7 +158,6 @@ onMounted(() => {
   padding: 0.25rem 0;
   cursor: pointer;
 
-  &.selected-outlined,
   &.selected {
     outline-width: 0.15rem;
     outline-style: solid;
@@ -167,14 +166,11 @@ onMounted(() => {
     margin-right: -0.5rem;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
-  }
-
-  &.selected-outlined {
-    outline-color: #007acc;
-  }
-
-  &.selected {
     outline-color: #888;
+
+    &.active {
+      outline-color: #007acc;
+    }
   }
 
   &.pending-delete {
