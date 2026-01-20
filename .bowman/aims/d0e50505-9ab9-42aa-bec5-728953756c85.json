@@ -1,0 +1,19 @@
+{
+  "id": "d0e50505-9ab9-42aa-bec5-728953756c85",
+  "text": "it seems like newly created aims do not get analyzed and assigned 3 most close and most distant other aims. At least this information does not make it to the graph UI where the user can hold the button for embedding alignment",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768809630855
+  },
+  "intrinsicValue": 1,
+  "cost": 1,
+  "loopWeight": 0
+}

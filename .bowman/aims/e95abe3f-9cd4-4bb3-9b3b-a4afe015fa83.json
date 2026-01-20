@@ -1,0 +1,21 @@
+{
+  "id": "e95abe3f-9cd4-4bb3-9b3b-a4afe015fa83",
+  "text": "Launch aimparency as a service for paying customers",
+  "tags": [
+    "strategy",
+    "product"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "GTM Phase 1: High-leverage elites",
+    "date": 1768763939455
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

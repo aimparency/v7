@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768414387493
+    "state": "done",
+    "comment": "Adjusted Graph View zoom levels. Increased zoomPadding to 9. Restored distance sensitivity (0.75). Added 1% hysteresis deadzone. Added NaN recovery. Removed redundant Math.max(r, 10) clamp for cleaner logic.",
+    "date": 1768594038231
   },
   "intrinsicValue": 0,
   "cost": 1,

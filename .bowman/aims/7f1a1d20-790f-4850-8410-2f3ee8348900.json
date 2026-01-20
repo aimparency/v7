@@ -1,0 +1,21 @@
+{
+  "id": "7f1a1d20-790f-4850-8410-2f3ee8348900",
+  "text": "Explore forking/cleavage for parallel strategy testing",
+  "tags": [
+    "strategy",
+    "growth"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "133934ba-f325-4b92-b57c-517bb1ea497f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Cell division model - test variants, let successful ones thrive",
+    "date": 1768764007357
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

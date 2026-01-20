@@ -1,0 +1,22 @@
+{
+  "id": "b45149aa-c0f5-49de-8aec-f589dd3c7453",
+  "text": "Launch aimparency as a service (SaaS)",
+  "tags": [
+    "product",
+    "revenue",
+    "strategy"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768828817699
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

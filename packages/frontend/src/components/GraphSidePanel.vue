@@ -192,7 +192,7 @@ const vFocus = {
 }
 
 // Resizing logic
-const panelWidth = ref(300)
+const panelWidth = computed(() => uiStore.graphPanelWidth)
 const isResizing = ref(false)
 
 const startResize = (e: MouseEvent) => {
@@ -207,7 +207,7 @@ const onResize = (e: MouseEvent) => {
         // Resize from left edge (panel is on right)
         // Width = Window Width - Mouse X - Right Margin (20)
         const newWidth = window.innerWidth - e.clientX - 20
-        panelWidth.value = Math.max(200, Math.min(newWidth, 600))
+        uiStore.setGraphPanelWidth(newWidth)
     }
 }
 

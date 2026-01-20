@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useWatchdogStore, type AgentType } from '../stores/watchdog'
 import { useUIStore } from '../stores/ui'
 import WatchdogTerminal from './WatchdogTerminal.vue'
@@ -29,9 +29,25 @@ const headerBgColor = computed(() => {
   return store.selectedAgentType === 'claude' ? '#78350f' : '#164e63'
 })
 
-function onAgentTypeChange(e: Event) {
+async function onAgentTypeChange(e: Event) {
   const target = e.target as HTMLSelectElement
-  store.setAgentType(target.value as AgentType)
+  const newType = target.value as AgentType
+
+  // If currently connected to a different agent type, disconnect (but leave it running)
+  if (store.isConnected && store.connectedAgentType !== newType) {
+    store.disconnect()
+  }
+
+  // Update the selected type
+  store.setAgentType(newType)
+
+  // Wait for computed properties to update
+  await nextTick()
+
+  // Auto-connect if session exists for new agent type
+  if (store.currentProjectSession !== null && !store.isConnected) {
+    await store.connect()
+  }
 }
 
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -110,17 +126,18 @@ defineExpose({
 <template>
   <div class="watchdog-panel">
     <div class="panel-header" :style="{ background: headerBgColor }">
-      <!-- Agent Type Selector -->
-      <div class="agent-selector">
+      <!-- Left: Agent Selector + Status + Session Controls -->
+      <div class="header-left">
         <select
           :value="store.selectedAgentType"
           @change="onAgentTypeChange"
-          :disabled="store.isConnected"
+          :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
           class="agent-select"
         >
           <option value="claude">Claude</option>
           <option value="gemini">Gemini</option>
         </select>
+
         <span class="session-status">
           <template v-if="isConnectedToSelected">
             <span class="dot connected"></span> Connected
@@ -135,30 +152,62 @@ defineExpose({
             <span class="dot"></span> No session
           </template>
         </span>
+
+        <!-- Session state buttons -->
+        <div class="session-controls">
+          <!-- No session: Start -->
+          <button
+            v-if="!sessionExists && !store.isConnected"
+            @click="store.connect()"
+            class="action-btn connect-btn"
+            :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
+          >
+            Start
+          </button>
+
+          <!-- Session exists but not connected: Connect -->
+          <button
+            v-if="sessionExists && !isConnectedToSelected"
+            @click="store.connect()"
+            class="action-btn connect-btn"
+            :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
+          >
+            Connect
+          </button>
+
+          <!-- Connected: Disconnect -->
+          <button
+            v-if="isConnectedToSelected"
+            @click="store.disconnect()"
+            class="action-btn disconnect-btn"
+          >
+            Disconnect
+          </button>
+
+          <!-- Session exists (connected or not): Stop + Relaunch -->
+          <template v-if="sessionExists || store.isConnected">
+            <button
+              @click="store.stop()"
+              class="action-btn stop-btn"
+              :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
+            >
+              Stop
+            </button>
+            <button
+              @click="store.relaunch()"
+              class="action-btn relaunch-btn"
+              title="Restart the underlying agent process"
+              :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
+            >
+              Relaunch
+            </button>
+          </template>
+        </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="controls">
+      <!-- Right: Animator Toggle + Stop Reason -->
+      <div class="header-right">
         <span v-if="store.stopReason" class="stop-reason">{{ store.stopReason }}</span>
-
-        <!-- Connect/Disconnect -->
-        <button
-          v-if="!store.isConnected"
-          @click="store.connect()"
-          class="action-btn connect-btn"
-          :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
-        >
-          {{ sessionExists ? 'Connect' : 'Start' }}
-        </button>
-        <button
-          v-else
-          @click="store.disconnect()"
-          class="action-btn disconnect-btn"
-        >
-          Disconnect
-        </button>
-
-        <!-- Animator Toggle -->
         <button
           @click="toggle"
           class="action-btn toggle-btn"
@@ -166,16 +215,6 @@ defineExpose({
           :disabled="!store.isConnected"
         >
           {{ store.isEnabled ? 'Disable Animator' : 'Enable Animator' }}
-        </button>
-
-        <!-- Relaunch -->
-        <button
-          @click="store.relaunch()"
-          class="action-btn relaunch-btn"
-          title="Restart the underlying agent process"
-          :disabled="!store.isConnected || store.connectionState === 'spawning' || store.connectionState === 'connecting'"
-        >
-          Relaunch
         </button>
       </div>
     </div>
@@ -235,10 +274,25 @@ defineExpose({
   transition: background 0.3s ease;
 }
 
-.agent-selector {
+.header-left {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.session-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .agent-select {
@@ -295,12 +349,6 @@ defineExpose({
   100% { opacity: 1; }
 }
 
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .stop-reason {
   color: #fbbf24;
   font-weight: bold;
@@ -339,6 +387,15 @@ defineExpose({
 
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+.stop-btn {
+  background: #dc2626;
+  color: white;
+
+  &:hover:not(:disabled) {
+    background: #b91c1c;
   }
 }
 

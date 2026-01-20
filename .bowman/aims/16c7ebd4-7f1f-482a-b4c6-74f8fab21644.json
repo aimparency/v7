@@ -1,0 +1,39 @@
+{
+  "id": "16c7ebd4-7f1f-482a-b4c6-74f8fab21644",
+  "text": "Apply for AI NATION Grant (up to €54k)",
+  "tags": [
+    "funding",
+    "grant"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "6462d09a-983f-4a67-8c97-1de00fd44897",
+      "relativePosition": [
+        1.4489098118316959,
+        2.0373169505940503
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b33d2821-76e3-43c8-81a7-fd961ff733d5",
+      "relativePosition": [
+        1.0177942695277546,
+        -2.2834392536076944
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "8d9e3c6f-6686-425f-8b00-770b4d98b3d4",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768759159304
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

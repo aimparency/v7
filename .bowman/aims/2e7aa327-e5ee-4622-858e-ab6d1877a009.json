@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "gemini cli set this to done without actually implementing it",
-    "date": 1766508070379
+    "state": "cancelled",
+    "comment": "implemented a more intelligent phase date suggestion",
+    "date": 1768593266465
   },
   "intrinsicValue": 0,
   "cost": 1,

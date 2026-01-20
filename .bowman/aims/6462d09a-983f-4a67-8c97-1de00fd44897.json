@@ -1,0 +1,18 @@
+{
+  "id": "6462d09a-983f-4a67-8c97-1de00fd44897",
+  "text": "Prepare AI NATION Grant application materials",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "16c7ebd4-7f1f-482a-b4c6-74f8fab21644"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Deadline: February 1, 2026",
+    "date": 1768761050416
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

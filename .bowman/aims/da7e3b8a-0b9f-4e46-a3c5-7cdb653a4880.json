@@ -1,0 +1,19 @@
+{
+  "id": "da7e3b8a-0b9f-4e46-a3c5-7cdb653a4880",
+  "text": "when aims are too small (less than say 20 pixel radius), don't display the text",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "28134f24-5279-465d-bf6a-38795df36b8c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768809755332
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

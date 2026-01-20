@@ -1,0 +1,36 @@
+{
+  "id": "28134f24-5279-465d-bf6a-38795df36b8c",
+  "text": "graph performance optimization",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "570efde7-6a3b-4665-a2a7-e804514aa23c",
+      "relativePosition": [
+        -0.4505370861015601,
+        -2.4590681840988298
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "da7e3b8a-0b9f-4e46-a3c5-7cdb653a4880",
+      "relativePosition": [
+        1.215481322020854,
+        2.1846292948274857
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768809723028
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

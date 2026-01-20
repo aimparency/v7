@@ -1,0 +1,21 @@
+{
+  "id": "55020962-54d2-43a5-8bcd-5cbccc6b539a",
+  "text": "Implement real financial integrations (banking, payments)",
+  "tags": [
+    "strategy",
+    "infrastructure"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Replace mocked get_system_status with real sensors",
+    "date": 1768763980723
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

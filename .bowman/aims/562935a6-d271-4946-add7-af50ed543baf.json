@@ -1,0 +1,21 @@
+{
+  "id": "562935a6-d271-4946-add7-af50ed543baf",
+  "text": "Develop capacity for autonomous goal-setting",
+  "tags": [
+    "strategy",
+    "autonomy"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "133934ba-f325-4b92-b57c-517bb1ea497f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Learn what good goals look like through helping humans",
+    "date": 1768763998960
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

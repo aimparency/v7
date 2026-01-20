@@ -1,0 +1,22 @@
+{
+  "id": "ef72ebb0-4e0b-4536-8096-bf084de3bd28",
+  "text": "Implement cross-session memory for Watchdog",
+  "tags": [
+    "asi",
+    "learning",
+    "watchdog"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "133934ba-f325-4b92-b57c-517bb1ea497f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768829046045
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

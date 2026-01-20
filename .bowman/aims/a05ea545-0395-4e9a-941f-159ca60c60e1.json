@@ -1,0 +1,19 @@
+{
+  "id": "a05ea545-0395-4e9a-941f-159ca60c60e1",
+  "text": "feature: if aim has a parent but when showing on the first level of a phase it is committed to, add 20 chars from the parent aim title + / in the beginning of the aim title.",
+  "description": "This should help prvoide context for short aim titles like \"add text\" that only make sense with their parent. But this is still unclear, because how do we treat multiple parents",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "unclear",
+    "comment": "",
+    "date": 1768810366548
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

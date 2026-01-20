@@ -1,6 +1,9 @@
 # aimparency
 Maintaining ideas/aims and reaching them by breaking them down.
 
+## Education (Foundational)
+See [education/](./education/README.md) for core documents on purpose, economics, and relationships.
+
 Server (backend) + web app (UI) using backend API. Server persists to files, may create in-memory indices.
 
 ## Storage

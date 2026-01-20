@@ -1,0 +1,31 @@
+{
+  "id": "9de71f50-9ee4-423e-a79e-d3c9f493a79d",
+  "text": "Build content engine for social presence and attention",
+  "tags": [
+    "strategy",
+    "content"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "67a448b5-125a-4a6b-8331-93ef488d67e9",
+      "relativePosition": [
+        -2.228982678814358,
+        -1.1320937317844173
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Experience mining -> social posts -> audience -> monetization",
+    "date": 1768763943783
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

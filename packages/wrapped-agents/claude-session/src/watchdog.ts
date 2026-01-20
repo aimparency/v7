@@ -100,12 +100,19 @@ export class WatchdogService {
           return;
         }
 
-        const screenContent = this.watchdog.getLines(30);
+        const screenContent = this.watchdog.getLines(50); // Increased from 30 to 50
         const markerIndex = screenContent.lastIndexOf(PROMPT_MARKER);
         let contentToParse = screenContent;
 
         if (markerIndex !== -1) {
              contentToParse = screenContent.substring(markerIndex + PROMPT_MARKER.length).trim();
+        }
+
+        // Look for Claude Code's output marker (● ) and extract after it
+        const stripped = stripAnsi(contentToParse);
+        const bulletIndex = stripped.lastIndexOf('●');
+        if (bulletIndex !== -1) {
+            contentToParse = stripped.substring(bulletIndex + 1).trim();
         }
 
         if (contentToParse.length === 0) {
@@ -121,7 +128,7 @@ export class WatchdogService {
             this.log("JSON extracted. Processing decision...");
             await this.processDecision(jsonString);
         } catch (e: any) {
-            this.log(`JSON extraction/parsing failed: ${e}. Content length: ${contentToParse.length}`);
+            this.log(`JSON extraction/parsing failed: ${e}. Content snippet: "${contentToParse.substring(0, 100)}"`);
             this.retry(e.message || "JSON extraction failed");
             return;
         }
@@ -221,23 +228,23 @@ export class WatchdogService {
     const rawContext = stripAnsi(this.worker.getLines(40));
     const context = rawContext.replace(/\s+/g, ' ').trim();
 
-    const question = `
-You are observing a Claude Code CLI session.
-Decide what action to take (prompt, choose option, stop - as defined in .claude/CLAUDE.md).
+    const question = `You are supervising a Claude Code session. Look at what Claude is doing and decide the next action.
 
-Current situation:
-===
+Current screen:
 ${context}
-===
 
-What shall we do?
+Actions available:
+- send-prompt: Send text to Claude (use when idle or needs guidance)
+- select-option: Choose a numbered option (use when Claude presents choices)
+- stop: Stop supervision (use when done or if critical error)
+- wait: Pause supervision briefly
 
-1. Check if Claude seems stuck, waiting for input, or has completed a task.
-2. If presenting options or asking for confirmation, select the appropriate option.
-3. If done with current task, guide to check for more aims via MCP tools.
+Return a JSON object with your decision. Examples:
+{"action": {"type": "send-prompt", "text": "check for more aims using MCP tools"}}
+{"action": {"type": "select-option", "number": 1}}
+{"action": {"type": "stop", "reason": "task completed"}}
 
-${PROMPT_MARKER}
-`;
+${PROMPT_MARKER}`;
 
     await this.post(this.watchdog, question);
   }

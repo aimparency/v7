@@ -316,10 +316,34 @@ export function useGraphSimulation() {
     wasTracking = mapStore.isTracking
 
     if (!mapStore.panBeginning && !mapStore.dragBeginning && !mapStore.anim.update && mapStore.isTracking) {
+        // Recovery from NaN
+        if (isNaN(mapStore.offset[0]) || isNaN(mapStore.offset[1])) {
+            console.warn('Recovering from NaN offset')
+            mapStore.offset[0] = 0
+            mapStore.offset[1] = 0
+            cameraTarget[0] = 0
+            cameraTarget[1] = 0
+        }
+        if (isNaN(mapStore.scale) || !isFinite(mapStore.scale)) {
+            mapStore.scale = 1
+        }
+
         if (currentAimId) {
             const node = nodeMap.get(currentAimId)
             if (node) {
-                const ultimateTargetX = -node.pos[0]
+                // Shift target to account for sidebar (center in remaining space)
+                let shiftX = 0
+                if (uiStore.graphSelectedAimId || uiStore.selectedLink) {
+                    const panelW = (uiStore.graphPanelWidth || 300) + 20
+                    const physicalShift = -panelW / 2
+                    // Convert to logical
+                    const s = (mapStore.scale * mapStore.halfSide) / LOGICAL_HALF_SIDE
+                    if (s > 0.0001) {
+                        shiftX = physicalShift / s
+                    }
+                }
+
+                const ultimateTargetX = -node.pos[0] + shiftX
                 const ultimateTargetY = -node.pos[1]
                 
                 // Distance to ultimate target for zoom logic
@@ -341,11 +365,19 @@ export function useGraphSimulation() {
                 }
 
                 // 3. Dynamic zoom based on total distance
-                const zoomPadding = 3 
-                const targetScale = LOGICAL_HALF_SIDE / (zoomPadding * (Math.max(node.r, 10) + totalDist * 0.25))
+                const zoomPadding = 7 // Zoomed out (was 3)
+                let targetScale = LOGICAL_HALF_SIDE / (zoomPadding * node.r + totalDist * 0.75)
+
+                if (isNaN(targetScale) || !isFinite(targetScale)) {
+                    targetScale = 1
+                }
 
                 const dScale = targetScale - mapStore.scale
-                if (Math.abs(dScale) > 0.0001) {
+                // Stop if relative difference is less than 1% (hysteresis/deadzone)
+                // BUT only if we are close to the target (dist < radius).
+                // If we are far, we want to track precise zoom-out based on distance.
+                const deadzone = mapStore.scale * 0.01
+                if (totalDist > node.r || Math.abs(dScale) > deadzone) {
                     mapStore.scale += dScale * 0.05
                 }
             }

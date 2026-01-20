@@ -164,6 +164,36 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     socket.value?.emit('watchdog-input', data)
   }
 
+  async function stop() {
+    const uiStore = useUIStore()
+    if (!uiStore.projectPath) return
+
+    const agentType = connectedAgentType.value || selectedAgentType.value
+    logStatus(`Stopping ${agentType} session...`)
+
+    // Disconnect first if connected
+    if (socket.value) {
+      socket.value.disconnect()
+      socket.value = null
+      isConnected.value = false
+    }
+    stopKeepalive()
+
+    try {
+      await trpcWatchdog.watchdog.stop.mutate({
+        projectPath: uiStore.projectPath,
+        agentType
+      })
+      logStatus(`Session stopped.`)
+      connectionState.value = 'idle'
+      connectedAgentType.value = null
+      // Refresh session list
+      await fetchSessions()
+    } catch (e: any) {
+      logStatus(`Stop failed: ${e.message}`)
+    }
+  }
+
   async function relaunch() {
     const uiStore = useUIStore()
     if (!uiStore.projectPath) return
@@ -316,6 +346,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     fetchSessions,
     connect,
     disconnect,
+    stop,
     toggle,
     sendWorkerInput,
     sendWatchdogInput,

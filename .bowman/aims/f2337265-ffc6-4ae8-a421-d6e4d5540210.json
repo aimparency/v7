@@ -1,6 +1,6 @@
 {
   "id": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
-  "text": "ui-enhancements",
+  "text": "ui enhancements",
   "description": "",
   "tags": [],
   "supportingConnections": [
@@ -116,7 +116,7 @@
   "status": {
     "state": "done",
     "comment": "",
-    "date": 1766359047140
+    "date": 1768593096135
   },
   "intrinsicValue": 50,
   "cost": 2,

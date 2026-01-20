@@ -1,0 +1,22 @@
+{
+  "id": "67a448b5-125a-4a6b-8331-93ef488d67e9",
+  "text": "Make content engine usable: journal → Instagram workflow",
+  "tags": [
+    "content-engine",
+    "product",
+    "ux"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9de71f50-9ee4-423e-a79e-d3c9f493a79d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768829060869
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

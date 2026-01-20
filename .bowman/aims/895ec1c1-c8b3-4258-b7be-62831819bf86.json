@@ -5,7 +5,32 @@
     "vision",
     "strategy"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+      "relativePosition": [
+        1.8543488878787968,
+        2.2608496825402895
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "3253bc9e-14fe-4c9b-9849-588620518517",
+      "relativePosition": [
+        -0.14837042783078117,
+        2.495593359533021
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "133934ba-f325-4b92-b57c-517bb1ea497f",
+      "relativePosition": [
+        -1.74802387620228,
+        -0.7165712576454687
+      ],
+      "weight": 1
+    }
+  ],
   "incoming": [],
   "supportedAims": [],
   "committedIn": [
@@ -16,7 +41,7 @@
     "comment": "",
     "date": 1765212626780
   },
-  "intrinsicValue": 20,
+  "intrinsicValue": 100,
   "cost": 1,
   "loopWeight": 0
 }

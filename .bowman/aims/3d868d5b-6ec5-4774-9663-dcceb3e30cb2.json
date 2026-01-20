@@ -1,0 +1,46 @@
+{
+  "id": "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+  "text": "Build the Human-AI Cooperation Engine",
+  "tags": [
+    "vision",
+    "core"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "e95abe3f-9cd4-4bb3-9b3b-a4afe015fa83",
+      "relativePosition": [
+        1.0728524006940197,
+        -2.2580938258462777
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9de71f50-9ee4-423e-a79e-d3c9f493a79d",
+      "relativePosition": [
+        -2.445463343416731,
+        -0.5193351865655381
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b45149aa-c0f5-49de-8aec-f589dd3c7453",
+      "relativePosition": [
+        -1.4912459167858145,
+        -2.006535724992116
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768763893265
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

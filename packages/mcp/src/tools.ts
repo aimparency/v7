@@ -198,7 +198,11 @@ export function registerTools(server: Server, clientOverride?: any) {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               text: {
                 type: "string",
-                description: "The aim text/description",
+                description: "The aim title (short)",
+              },
+              description: {
+                type: "string",
+                description: "Optional longer description with details, context, or notes",
               },
               tags: {
                 type: "array",
@@ -244,7 +248,8 @@ export function registerTools(server: Server, clientOverride?: any) {
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               aimId: { type: "string", description: "UUID of the aim to update" },
-              text: { type: "string" },
+              text: { type: "string", description: "The aim title (short)" },
+              description: { type: "string", description: "Optional longer description" },
               tags: {
                 type: "array",
                 items: { type: "string" },
@@ -748,6 +753,7 @@ export function registerTools(server: Server, clientOverride?: any) {
             projectPath: args.projectPath as string,
             aim: {
               text: args.text as string,
+              description: args.description as string | undefined,
               tags: args.tags as string[] | undefined,
               status: (args.status as any) || {
                 state: "open",
@@ -799,6 +805,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         case "update_aim": {
           const updateData: any = {};
           if (args.text) updateData.text = args.text;
+          if (args.description !== undefined) updateData.description = args.description;
           if (args.tags) updateData.tags = args.tags;
           if (args.status) updateData.status = args.status;
           

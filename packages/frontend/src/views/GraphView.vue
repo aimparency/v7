@@ -35,9 +35,9 @@ onMounted(() => {
     window.addEventListener('keydown', onKeydown)
 })
 
-watch(() => uiStore.graphSelectedAimId, () => {
-    mapStore.isTracking = true
-})
+// watch(() => uiStore.graphSelectedAimId, () => {
+//     mapStore.isTracking = true
+// })
 
 onUnmounted(() => {
     simulation.cleanup()

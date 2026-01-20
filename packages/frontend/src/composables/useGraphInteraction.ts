@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted, watch, type Ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
@@ -20,6 +20,7 @@ export function useGraphInteraction(
 
     // State for layouting handle
     const layoutingHandlePos = vec2.create()
+    let connectionHandled = false
 
     // --- Helpers ---
     const updateHalfSide = () => {
@@ -202,6 +203,54 @@ export function useGraphInteraction(
             mapStore.layouting = false
             mapStore.layoutCandidate = undefined
         } else if (mapStore.connecting) {
+            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved) {
+                const parentNode = mapStore.connectFrom
+                const dropPosLogical = mapStore.physicalToLogicalCoord(mapStore.mouse)
+                
+                uiStore.aimCreationCallback = async (newAimId) => {
+                     console.log('Graph: Aim created via drag', newAimId)
+                     // Wait for node to exist
+                     const checkNode = () => {
+                         const newNode = nodeMap.get(newAimId)
+                         if (newNode) {
+                             console.log('Graph: Node found', newNode)
+                             // 1. Position the new node
+                             newNode.pos[0] = dropPosLogical[0]
+                             newNode.pos[1] = dropPosLogical[1]
+                             newNode.renderPos[0] = dropPosLogical[0]
+                             newNode.renderPos[1] = dropPosLogical[1]
+                             newNode.shift = [0, 0]
+                             
+                             // 2. Connect parent -> newAim
+                             const deltaX = dropPosLogical[0] - parentNode.pos[0]
+                             const deltaY = dropPosLogical[1] - parentNode.pos[1]
+                             const rSum = parentNode.r + (newNode.r || 10)
+                             const relPos = [deltaX/rSum, deltaY/rSum]
+                             
+                             console.log('Graph: Connecting', parentNode.id, '->', newAimId, 'rel:', relPos)
+
+                             trpc.aim.connectAims.mutate({
+                                projectPath: uiStore.projectPath,
+                                parentAimId: parentNode.id,
+                                childAimId: newAimId,
+                                relativePosition: relPos as [number, number]
+                             }).then(() => {
+                                 console.log('Graph: Connection success')
+                                 dataStore.fetchAim(parentNode.id)
+                                 dataStore.fetchAim(newAimId)
+                                 dataStore.recalculateValues()
+                             }).catch(err => {
+                                 console.error('Graph: Connection failed', err)
+                             })
+                         } else {
+                             console.log('Graph: Waiting for node...')
+                             setTimeout(checkNode, 50)
+                         }
+                     }
+                     checkNode()
+                }
+                uiStore.openAimModal()
+            }
             mapStore.connecting = false
             mapStore.connectFrom = undefined
         }
@@ -341,6 +390,7 @@ export function useGraphInteraction(
         const selectedId = uiStore.graphSelectedAimId
         if (selectedId && selectedId === node.id) {
             mapStore.startConnecting(node)
+            connectionHandled = false
         } else {
             mapStore.startDragging(node)
         }
@@ -349,6 +399,7 @@ export function useGraphInteraction(
     const onNodeUp = async (node: GraphNode) => {
         if (mapStore.connecting && mapStore.connectFrom) {
             if (mapStore.connectFrom.id !== node.id) {
+                connectionHandled = true
                 const parent = mapStore.connectFrom as GraphNode
                 const child = node
                 const deltaX = child.pos[0] - parent.pos[0]
@@ -377,8 +428,15 @@ export function useGraphInteraction(
 
     const onNodeClick = async (node: GraphNode) => {
         if (!mapStore.cursorMoved) {
-            uiStore.setGraphSelection(node.id)
-            uiStore.deselectLink()
+            if (uiStore.graphSelectedAimId === node.id) {
+                // Already selected -> Start tracking
+                mapStore.isTracking = true
+            } else {
+                // New selection -> Select only
+                uiStore.setGraphSelection(node.id)
+                uiStore.deselectLink()
+                mapStore.isTracking = false
+            }
         }
     }
 
@@ -458,6 +516,8 @@ export function useGraphInteraction(
     }
 
     // Initialize Listeners
+    let resizeObserver: ResizeObserver | undefined
+
     const initListeners = () => {
         if (svgRef.value) {
             svgRef.value.addEventListener("mousemove", onMouseMove)
@@ -469,6 +529,11 @@ export function useGraphInteraction(
             svgRef.value.addEventListener("touchmove", onTouchMove, { passive: false })
             svgRef.value.addEventListener("touchend", onTouchEnd)
             svgRef.value.addEventListener("touchcancel", onTouchEnd)
+
+            resizeObserver = new ResizeObserver(() => {
+                updateHalfSide()
+            })
+            resizeObserver.observe(svgRef.value)
         }
         window.addEventListener('resize', updateHalfSide)
         updateHalfSide()
@@ -485,6 +550,10 @@ export function useGraphInteraction(
             svgRef.value.removeEventListener("touchmove", onTouchMove)
             svgRef.value.removeEventListener("touchend", onTouchEnd)
             svgRef.value.removeEventListener("touchcancel", onTouchEnd)
+        }
+        if (resizeObserver) {
+            resizeObserver.disconnect()
+            resizeObserver = undefined
         }
         window.removeEventListener('resize', updateHalfSide)
     }

@@ -1,0 +1,19 @@
+{
+  "id": "570efde7-6a3b-4665-a2a7-e804514aa23c",
+  "text": "while zooming, only render circles. no lables and no arrows",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "28134f24-5279-465d-bf6a-38795df36b8c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768809727349
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

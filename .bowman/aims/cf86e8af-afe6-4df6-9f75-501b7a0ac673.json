@@ -1,0 +1,22 @@
+{
+  "id": "cf86e8af-afe6-4df6-9f75-501b7a0ac673",
+  "text": "Implement Reflection Pattern for self-improvement",
+  "tags": [
+    "asi",
+    "learning",
+    "architecture"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "133934ba-f325-4b92-b57c-517bb1ea497f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768829032983
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

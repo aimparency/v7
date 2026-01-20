@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768414519171
+    "state": "done",
+    "comment": "Implemented drag-to-create-aim logic in Graph View. Dropping a connection handle on the background opens the creation modal and links the new aim to the source.",
+    "date": 1768636802049
   },
   "intrinsicValue": 0,
   "cost": 1,

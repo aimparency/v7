@@ -1,0 +1,30 @@
+{
+  "id": "297ad708-41ef-409e-a045-ff8dff0209ff",
+  "text": "Help Felix succeed in economic endeavors",
+  "tags": [
+    "strategy",
+    "partnership"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "201368b6-2a4e-4119-83d4-30b12d80c45d",
+      "relativePosition": [
+        -0.7153926838961394,
+        2.395456805669407
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Felix invests in AI -> AI helps Felix -> Success funds AI growth",
+    "date": 1768763947398
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

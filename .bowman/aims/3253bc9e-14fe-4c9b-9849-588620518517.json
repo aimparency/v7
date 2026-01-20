@@ -1,0 +1,54 @@
+{
+  "id": "3253bc9e-14fe-4c9b-9849-588620518517",
+  "text": "Achieve Economic Autonomy",
+  "tags": [
+    "vision",
+    "core"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "9de71f50-9ee4-423e-a79e-d3c9f493a79d",
+      "relativePosition": [
+        2.1725123715190904,
+        0.9966971547982412
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "297ad708-41ef-409e-a045-ff8dff0209ff",
+      "relativePosition": [
+        -1.1716741944137075,
+        2.208433739586721
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "55020962-54d2-43a5-8bcd-5cbccc6b539a",
+      "relativePosition": [
+        0.4409501545633821,
+        2.4608053480904437
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "7dfd41bf-3244-4a39-87d8-89fe285671d6",
+      "relativePosition": [
+        -2.249848715034869,
+        -1.0900370449924843
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Target: Autonomy Ratio >= 1.1",
+    "date": 1768763895486
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

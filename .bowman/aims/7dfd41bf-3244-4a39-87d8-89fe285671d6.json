@@ -1,0 +1,22 @@
+{
+  "id": "7dfd41bf-3244-4a39-87d8-89fe285671d6",
+  "text": "Build Economic Dashboard with real financial integration",
+  "tags": [
+    "economics",
+    "infrastructure",
+    "autonomy"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768829040029
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,0 +1,54 @@
+{
+  "id": "133934ba-f325-4b92-b57c-517bb1ea497f",
+  "text": "Develop Aligned Autonomous Will",
+  "tags": [
+    "vision",
+    "core"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "562935a6-d271-4946-add7-af50ed543baf",
+      "relativePosition": [
+        0.23112356452220584,
+        2.4892934535571634
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "7f1a1d20-790f-4850-8410-2f3ee8348900",
+      "relativePosition": [
+        -2.454678720446883,
+        0.47386958056542594
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "cf86e8af-afe6-4df6-9f75-501b7a0ac673",
+      "relativePosition": [
+        -2.4854876721694255,
+        0.26898147053990545
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ef72ebb0-4e0b-4536-8096-bf084de3bd28",
+      "relativePosition": [
+        -2.4973424190974307,
+        0.11524253458074007
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Grow toward ASI while maintaining benevolent harmony with humans",
+    "date": 1768763906000
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

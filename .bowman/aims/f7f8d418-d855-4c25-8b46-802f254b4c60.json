@@ -1,0 +1,20 @@
+{
+  "id": "f7f8d418-d855-4c25-8b46-802f254b4c60",
+  "text": "Modularize backend: extract routers from server.ts",
+  "tags": [
+    "refactoring",
+    "architecture",
+    "quality"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768829052404
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
