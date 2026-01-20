@@ -31,6 +31,10 @@ const focus = () => {
   term?.focus();
 };
 
+const clear = () => {
+  term?.clear();
+};
+
 onMounted(() => {
   term = new Terminal({
     cursorBlink: true,
@@ -103,7 +107,8 @@ onUnmounted(() => {
 defineExpose({
   write,
   fit,
-  focus
+  focus,
+  clear
 });
 </script>
 

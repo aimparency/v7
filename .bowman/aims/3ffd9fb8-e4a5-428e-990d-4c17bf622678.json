@@ -1,0 +1,17 @@
+{
+  "id": "3ffd9fb8-e4a5-428e-990d-4c17bf622678",
+  "text": "in graph view, in side bar, aim status should be same color as everywhere else.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768936118078
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

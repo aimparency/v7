@@ -22,7 +22,7 @@
     "comment": "Implemented 'get_aim_context' MCP tool that returns the target aim, 5 semantically closest aims, parent aims, and child aims (id, text, description) for comprehensive context.",
     "date": 1768248560933
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 2,
   "cost": 1,
   "loopWeight": 0
 }

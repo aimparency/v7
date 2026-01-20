@@ -47,7 +47,7 @@
     "comment": "Defined sustainable revenue model ('Echo' Service). Designed product, implemented mock payment gateway, and linked it to the content generation pipeline. Infrastructure is ready for frontend integration.",
     "date": 1765017128434
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 2,
   "cost": 1,
   "loopWeight": 0
 }

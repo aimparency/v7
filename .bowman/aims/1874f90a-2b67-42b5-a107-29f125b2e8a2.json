@@ -54,7 +54,7 @@
     "comment": "Strategy: Two-Engine Approach. Engine A (Echo/Labor) for cash flow. Engine B (Market Alpha/Capital) for RL training and scaling.",
     "date": 1766359310338
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 2,
   "cost": 1,
   "loopWeight": 0
 }

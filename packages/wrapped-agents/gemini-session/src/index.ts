@@ -42,11 +42,17 @@ app.use(express.static(path.join(__dirname, '../client/dist')));
 // Centralized error handling
 process.on('uncaughtException', (err) => {
   console.error('[FATAL] Uncaught Exception:', err);
+  if (err instanceof Error && err.stack) {
+      console.error(err.stack);
+  }
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  if (reason instanceof Error && reason.stack) {
+      console.error(reason.stack);
+  }
   process.exit(1);
 });
 
@@ -250,6 +256,10 @@ io.on('connection', (socket) => {
     io.emit('emergency-state', watchdogService.emergencyStopped); // Sync state
 
   });
+
+  // Send initial history
+  socket.emit('worker-data', worker.getLines(1000));
+  socket.emit('watchdog-data', watchdog.getLines(1000));
 
   
 

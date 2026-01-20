@@ -30,7 +30,7 @@
     "comment": "All sub-aims (get_context tool and agent instruction injection) completed.",
     "date": 1768251339642
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 5,
   "cost": 1,
   "loopWeight": 0
 }

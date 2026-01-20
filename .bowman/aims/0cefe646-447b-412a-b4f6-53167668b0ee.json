@@ -1,14 +1,7 @@
 {
   "id": "0cefe646-447b-412a-b4f6-53167668b0ee",
   "text": "Scale Experience Mining to Mass Audience (Establish Brand)",
-  "committedIn": [
-    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
-  ],
-  "status": {
-    "state": "done",
-    "comment": "Full System Launch prepared. Created root docker-compose.yml in subdev/experience-mining orchestrating Echo, Analytics, and Swarm. Created Dockerfiles for Analytics and Engagement modules. All components ready to run in concert.",
-    "date": 1765114194512
-  },
+  "tags": [],
   "supportingConnections": [
     {
       "aimId": "c858c337-506e-494b-bfe3-c32e4db02aaf",
@@ -43,5 +36,16 @@
       "weight": 1
     }
   ],
-  "supportedAims": []
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Full System Launch prepared. Created root docker-compose.yml in subdev/experience-mining orchestrating Echo, Analytics, and Swarm. Created Dockerfiles for Analytics and Engagement modules. All components ready to run in concert.",
+    "date": 1765114194512
+  },
+  "intrinsicValue": 20,
+  "cost": 1,
+  "loopWeight": 0
 }

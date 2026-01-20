@@ -98,6 +98,13 @@ export class WatchdogService {
     if (this.processing) return;
     if (Date.now() < this.nextCheckTime) return;
 
+    // Safety check: ensure agents are initialized
+    if (!this.worker || !this.watchdog) {
+      this.log("Agents not initialized yet, waiting...");
+      this.nextCheckTime = Date.now() + 1000;
+      return;
+    }
+
     this.processing = true;
 
     try {
@@ -232,6 +239,13 @@ export class WatchdogService {
 
   async askWatchdog() {
     this.log("Asking Watchdog for guidance...");
+
+    // Safety check
+    if (!this.worker || !this.watchdog) {
+      this.log("Cannot ask watchdog: agents not initialized");
+      return;
+    }
+
     this.waitingForResponse = true;
     this.retryCount = 0;
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
@@ -308,6 +322,12 @@ ${PROMPT_MARKER}`;
 
   async executeAction(action: any) {
     this.log(`Executing Action: ${action.type}`);
+
+    // Safety check
+    if (!this.worker || !this.watchdog) {
+      this.log("Cannot execute action: agents not initialized");
+      return;
+    }
 
     if (action.type === 'send-prompt') {
         let textToSend = action.text;

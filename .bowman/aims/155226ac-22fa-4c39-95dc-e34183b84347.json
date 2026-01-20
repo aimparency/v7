@@ -4,7 +4,9 @@
   "description": "3 zeros has prevalance => 10000 becomes \"10k\" with out the leading ~",
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
   "committedIn": [
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],

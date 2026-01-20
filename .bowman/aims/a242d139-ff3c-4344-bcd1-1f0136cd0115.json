@@ -1,0 +1,18 @@
+{
+  "id": "a242d139-ff3c-4344-bcd1-1f0136cd0115",
+  "text": "Add MCP tools for updating graph positions",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b5da0d8d-b089-4eb4-b14d-05f772867446"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Not needed - positions calculated client-side",
+    "date": 1768941908826
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

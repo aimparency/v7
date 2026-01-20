@@ -39,30 +39,32 @@
     {
       "aimId": "e266c632-dc74-4c44-8cf6-c184378cdc68",
       "relativePosition": [
-        1.704926110892158,
-        1.8284493310994816
+        -0.12995998787283738,
+        2.646265891126037
       ],
       "weight": 1
     },
     {
       "aimId": "b3c1bd1a-a503-45af-8c3a-3d3bee567f47",
       "relativePosition": [
-        2.3596944280903807,
-        0.8257373711048883
+        2.6448743204563496,
+        -0.7727803026586034
       ],
       "weight": 1
     }
   ],
-  "supportedAims": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767097449581
+    "state": "done",
+    "comment": "All 6 sub-aims completed. Merged as sub-group of main UI improvements aim.",
+    "date": 1768935106450
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 5,
   "cost": 1,
   "loopWeight": 0
 }

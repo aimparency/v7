@@ -207,14 +207,27 @@ export const WatchdogManager = {
     const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
 
     const child = spawn('node', [workerScript, '--port', String(port), projectRoot], {
-      // If we run from WRAPPER_DIR, we are in packages/wrapped-agents.
-      // It has its own package.json? No, it's a workspace.
-      // Let's use WRAPPER_DIR for CWD.
       cwd: WRAPPER_DIR,
       detached: true,
-      stdio: ['ignore', out, err],
+      stdio: ['ignore', 'pipe', 'pipe'], // Use pipes to capture output
       env: { ...process.env }
     });
+
+    // Capture and log output so it gets the [BROK] prefix from concurrently
+    if (child.stdout) {
+      child.stdout.on('data', (data) => {
+        const str = data.toString().trim();
+        if (str) console.log(str);
+        fs.appendFileSync(path.join(logDir, 'out.log'), data);
+      });
+    }
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        const str = data.toString().trim();
+        if (str) console.error(str);
+        fs.appendFileSync(path.join(logDir, 'err.log'), data);
+      });
+    }
 
     child.unref();
 

@@ -8,14 +8,14 @@ export class Agent {
   constructor(cwd: string, args: string[], onData: (data: string) => void) {
     this.ptyProcess = pty.spawn('gemini', args, {
       name: 'xterm-color',
-      cols: 80,
+      cols: 120,
       rows: 30,
       cwd: cwd,
       env: process.env as any
     });
 
     this.terminal = new Terminal({
-      cols: 80,
+      cols: 120,
       rows: 30,
       allowProposedApi: true
     });
@@ -23,6 +23,10 @@ export class Agent {
     this.ptyProcess.onData((data) => {
       this.terminal.write(data);
       onData(data);
+    });
+
+    this.ptyProcess.onExit((e) => {
+      console.log(`[Agent] Process exited with code ${e.exitCode}, signal ${e.signal}`);
     });
   }
 

@@ -1,0 +1,18 @@
+{
+  "id": "fdf0ee47-98d1-43b8-9b0f-4d2da54f89c3",
+  "text": "Persist graph positions to .bowman/aims/*.json",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b5da0d8d-b089-4eb4-b14d-05f772867446"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Wrong approach - positions should be calculated by force layout, not persisted",
+    "date": 1768941908334
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

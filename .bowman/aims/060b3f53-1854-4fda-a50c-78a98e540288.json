@@ -111,8 +111,8 @@
     {
       "aimId": "d0851a84-5300-4c25-a59e-7831c8f6b642",
       "relativePosition": [
-        0.029340479943467897,
-        2.8074526943724636
+        -2.2440892842250215,
+        1.7373445847318116
       ],
       "weight": 1
     },
@@ -127,8 +127,8 @@
     {
       "aimId": "a927cfcc-e058-4262-9899-0bdba24ead8a",
       "relativePosition": [
-        -1.447921296463643,
-        2.038019607179245
+        1.3255702717999256,
+        -3.5951217151759236
       ],
       "weight": 1
     },
@@ -146,11 +146,11 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "done",
-    "comment": "Completed all recent sub-aims: Phase scrolling, Watchdog fullscreen fix, Outline radius fix, Drag handlers realtime update, Create Aim Dialog enhancements, Graph layout spacing, and Aim Search filters.",
-    "date": 1768403860726
+    "state": "open",
+    "comment": "Reopened - has open sub-aim for k-unit value/cost display",
+    "date": 1768935161506
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 5,
   "cost": 1,
   "loopWeight": 0
 }

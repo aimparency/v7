@@ -29,13 +29,17 @@ const headerBgColor = computed(() => {
   return store.selectedAgentType === 'claude' ? '#78350f' : '#164e63'
 })
 
-const getAgentStatus = (type: AgentType) => {
-  if (!uiStore.projectPath) return ''
-  const session = store.sessions.find(
-    s => s.projectPath === uiStore.projectPath && s.agentType === type
-  )
-  return session ? '(Running)' : ''
-}
+const runningAgents = computed(() => {
+  const set = new Set<AgentType>()
+  if (!uiStore.projectPath) return set
+  
+  store.sessions.forEach(s => {
+    if (s.projectPath === uiStore.projectPath) {
+      set.add(s.agentType)
+    }
+  })
+  return set
+})
 
 async function onAgentTypeChange(e: Event) {
   const target = e.target as HTMLSelectElement
@@ -44,6 +48,9 @@ async function onAgentTypeChange(e: Event) {
   // If currently connected to a different agent type, disconnect (but leave it running)
   if (store.isConnected && store.connectedAgentType !== newType) {
     store.disconnect()
+    // Clear terminals when switching agent types
+    workerTerm.value?.clear()
+    watchdogTerm.value?.clear()
   }
 
   // Update the selected type
@@ -142,8 +149,8 @@ defineExpose({
           :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
           class="agent-select"
         >
-          <option value="claude">Claude {{ getAgentStatus('claude') }}</option>
-          <option value="gemini">Gemini {{ getAgentStatus('gemini') }}</option>
+          <option value="claude">Claude {{ runningAgents.has('claude') ? '(Running)' : '' }}</option>
+          <option value="gemini">Gemini {{ runningAgents.has('gemini') ? '(Running)' : '' }}</option>
         </select>
 
         <span class="session-status">

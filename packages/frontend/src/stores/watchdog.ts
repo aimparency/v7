@@ -86,6 +86,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   async function fetchSessions() {
     try {
       sessions.value = await trpcWatchdog.watchdog.list.query()
+      // console.log(`[WatchdogStore] Fetched sessions:`, sessions.value)
     } catch (e: any) {
       logStatus(`Failed to fetch sessions: ${e.message}`)
     }
@@ -109,7 +110,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     try {
         // 1. Ask broker to start the process
         const { port } = await trpcWatchdog.watchdog.start.mutate({ projectPath: targetPath, agentType })
-        
+
         logStatus(`Process spawned. Starting keepalive and connecting to port ${port}...`)
         startKeepalive(targetPath, agentType)
 
