@@ -196,7 +196,7 @@ startWorker(true);
 
 const geminiWatchdogArgs: string[] = []
 if(watchdogModel !== undefined) {
-  geminiArgs.push('--model', watchdogModel)
+  geminiWatchdogArgs.push('--model', watchdogModel)
 }
 
 const watchdog = new Agent(KENNEL_PATH, geminiWatchdogArgs, (data) => {

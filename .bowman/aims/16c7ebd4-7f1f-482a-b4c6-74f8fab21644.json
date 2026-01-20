@@ -21,13 +21,31 @@
         -2.2834392536076944
       ],
       "weight": 1
+    },
+    {
+      "aimId": "e9f7d467-e347-41aa-a3cb-ad09cbd4b230",
+      "relativePosition": [
+        -1.454854180825356,
+        -2.0330763174398996
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "5f660c4c-a96d-4a52-b1ea-81c045c2025e",
+      "relativePosition": [
+        -1.246035247867589,
+        -2.1673477250020485
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
     "8d9e3c6f-6686-425f-8b00-770b4d98b3d4",
     "3253bc9e-14fe-4c9b-9849-588620518517"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
   "status": {
     "state": "open",
     "comment": "",

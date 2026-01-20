@@ -1,0 +1,19 @@
+{
+  "id": "d252435b-41c1-4711-8218-96bb0ac52838",
+  "text": "when connecting to an existing session, is there a way to get the current terminal output for both xterm.js windows? maybe requires backedn updates",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "a927cfcc-e058-4262-9899-0bdba24ead8a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768902110653
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

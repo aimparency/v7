@@ -1,4 +1,15 @@
 import { Agent } from './agent';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Load instruction text for autonomous guidance
+const INSTRUCT_PATH = path.join(__dirname, '../../INSTRUCT.md');
+let INSTRUCT_TEXT = '';
+try {
+  INSTRUCT_TEXT = fs.readFileSync(INSTRUCT_PATH, 'utf-8');
+} catch (e) {
+  console.warn('[WatchdogService] Could not load INSTRUCT.md:', e);
+}
 
 const POST_ACTION_COOLDOWN = 3000;
 const INITIAL_WAIT_AFTER_POST = 2000;
@@ -234,15 +245,23 @@ Current screen:
 ${context}
 
 Actions available:
-- send-prompt: Send text to Claude (use when idle or needs guidance)
+- send-prompt: Send text to Claude. Add "instruct": true if Claude seems idle/waiting for user input - this will prepend aimparency MCP usage instructions.
 - select-option: Choose a numbered option (use when Claude presents choices)
-- stop: Stop supervision (use when done or if critical error)
+- compact: Run /compact to free up context (use when "Context left until auto-compact" shows < 20%)
+- stop: Stop supervision (use when ALL aims are done and verified complete)
 - wait: Pause supervision briefly
 
+IMPORTANT:
+- If you see "Context left until auto-compact: X%" where X < 20%, use compact action BEFORE starting new work.
+- Use "instruct": true when Claude asks "what should I do?" or seems to need direction.
+- Only use stop when you've verified ALL open aims are complete (not just the current task).
+
 Return a JSON object with your decision. Examples:
-{"action": {"type": "send-prompt", "text": "check for more aims using MCP tools"}}
+{"action": {"type": "send-prompt", "text": "continue working on aims", "instruct": true}}
+{"action": {"type": "send-prompt", "text": "run the tests"}}
 {"action": {"type": "select-option", "number": 1}}
-{"action": {"type": "stop", "reason": "task completed"}}
+{"action": {"type": "compact"}}
+{"action": {"type": "stop", "reason": "all aims verified complete"}}
 
 ${PROMPT_MARKER}`;
 
@@ -291,9 +310,21 @@ ${PROMPT_MARKER}`;
     this.log(`Executing Action: ${action.type}`);
 
     if (action.type === 'send-prompt') {
-        this.log(`Sending prompt to Worker: ${action.text}`);
-        await this.post(this.worker, action.text);
+        let textToSend = action.text;
+
+        // If instruct flag is set, prepend the aimparency guidance
+        if (action.instruct && INSTRUCT_TEXT) {
+            this.log('Including aimparency instruction text');
+            textToSend = `${INSTRUCT_TEXT}\n\n---\n\n${action.text}`;
+        }
+
+        this.log(`Sending prompt to Worker: ${textToSend.substring(0, 100)}...`);
+        await this.post(this.worker, textToSend);
         this.turnCount++;
+    } else if (action.type === 'compact') {
+        this.log(`Compacting worker context...`);
+        await this.post(this.worker, '/compact');
+        // Don't increment turn count, this is maintenance
     } else if (action.type === 'enter') {
         await this.ensureEnter(this.worker);
     } else if (action.type === 'select-option') {

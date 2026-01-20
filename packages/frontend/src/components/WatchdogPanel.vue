@@ -29,6 +29,14 @@ const headerBgColor = computed(() => {
   return store.selectedAgentType === 'claude' ? '#78350f' : '#164e63'
 })
 
+const getAgentStatus = (type: AgentType) => {
+  if (!uiStore.projectPath) return ''
+  const session = store.sessions.find(
+    s => s.projectPath === uiStore.projectPath && s.agentType === type
+  )
+  return session ? '(Running)' : ''
+}
+
 async function onAgentTypeChange(e: Event) {
   const target = e.target as HTMLSelectElement
   const newType = target.value as AgentType
@@ -134,8 +142,8 @@ defineExpose({
           :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
           class="agent-select"
         >
-          <option value="claude">Claude</option>
-          <option value="gemini">Gemini</option>
+          <option value="claude">Claude {{ getAgentStatus('claude') }}</option>
+          <option value="gemini">Gemini {{ getAgentStatus('gemini') }}</option>
         </select>
 
         <span class="session-status">

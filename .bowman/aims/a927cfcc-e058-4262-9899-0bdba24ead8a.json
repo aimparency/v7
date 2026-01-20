@@ -1,0 +1,44 @@
+{
+  "id": "a927cfcc-e058-4262-9899-0bdba24ead8a",
+  "text": "watchdog ui improvements",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "18fe2d8a-c9b6-45bc-bd9a-f14e5e60605d",
+      "relativePosition": [
+        -1.108833323681815,
+        -2.240644697468284
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "6078f0cf-6e0a-4a06-a902-800c46847061",
+      "relativePosition": [
+        0.6364710647292253,
+        -2.417623747352438
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "d252435b-41c1-4711-8218-96bb0ac52838",
+      "relativePosition": [
+        1.9864466845971396,
+        -1.517903017077518
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768901987647
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

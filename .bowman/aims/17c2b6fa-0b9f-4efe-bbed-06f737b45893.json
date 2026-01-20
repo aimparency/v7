@@ -1,0 +1,20 @@
+{
+  "id": "17c2b6fa-0b9f-4efe-bbed-06f737b45893",
+  "text": "Watchdog: auto-compact when context < 20%",
+  "tags": [
+    "watchdog",
+    "ux",
+    "claude-session"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Added compact action type to watchdog prompt. Triggers /compact when context < 20%. Doesn't increment turn count (maintenance action).",
+    "date": 1768907232578
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

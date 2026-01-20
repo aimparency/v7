@@ -1,0 +1,19 @@
+{
+  "id": "6078f0cf-6e0a-4a06-a902-800c46847061",
+  "text": "query available sessions for the current project from the session broker. Show the status next to the session type. Display connect and stop instead of start if a session exists",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "a927cfcc-e058-4262-9899-0bdba24ead8a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768902069438
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

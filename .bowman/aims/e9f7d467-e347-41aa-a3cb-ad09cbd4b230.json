@@ -1,0 +1,19 @@
+{
+  "id": "e9f7d467-e347-41aa-a3cb-ad09cbd4b230",
+  "text": "Create demo video",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "16c7ebd4-7f1f-482a-b4c6-74f8fab21644"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768902284931
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

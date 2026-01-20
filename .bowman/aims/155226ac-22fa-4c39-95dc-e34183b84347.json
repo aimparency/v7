@@ -1,0 +1,19 @@
+{
+  "id": "155226ac-22fa-4c39-95dc-e34183b84347",
+  "text": "Throughout the app, allow for value and cost input \"k\" unit for 1000. When displaying, if 3 last digits are 0 => replace with \"k\". And if >= 9500 round to thousands and add ~ in front: 9700 => ~10k",
+  "description": "3 zeros has prevalance => 10000 becomes \"10k\" with out the leading ~",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768906725684
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

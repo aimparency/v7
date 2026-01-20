@@ -1,0 +1,19 @@
+{
+  "id": "5f660c4c-a96d-4a52-b1ea-81c045c2025e",
+  "text": "talk to Robin",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "16c7ebd4-7f1f-482a-b4c6-74f8fab21644"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768902291426
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

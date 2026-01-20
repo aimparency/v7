@@ -1,0 +1,19 @@
+{
+  "id": "18fe2d8a-c9b6-45bc-bd9a-f14e5e60605d",
+  "text": "when clicking relaunch on watchdog, clear the web termx.js content",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "a927cfcc-e058-4262-9899-0bdba24ead8a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768901911119
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

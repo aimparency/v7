@@ -1,0 +1,16 @@
+{
+  "id": "27d63681-1973-4243-883f-d91f3cc4e532",
+  "text": "Animator: instruct flag to prepend aimparency/MCP guidance when main agent is idle",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented INSTRUCT.md with autonomous workflow guidance, added instruct flag to send-prompt action for both claude and gemini sessions",
+    "date": 1768923777378
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}
