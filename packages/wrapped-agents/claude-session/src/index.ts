@@ -59,7 +59,7 @@ let projectRootPath = path.resolve(__dirname, '../../../../');
 let workerModel: string | undefined = 'sonnet';
 let watchdogModel: string | undefined = 'haiku';
 
-let clearEvery = 20;
+let compactEvery = 20;
 let requestedPort = 0;
 
 // Parse arguments
@@ -82,9 +82,9 @@ for (let i = 0; i < args.length; i++) {
       workerModel = args[i + 1];
       i++;
     }
-  } else if (arg === '--clear-every') {
+  } else if (arg === '--compact-every') {
     if (args[i + 1]) {
-      clearEvery = parseInt(args[i + 1], 10);
+      compactEvery = parseInt(args[i + 1], 10);
       i++;
     }
   } else if (arg === '--port') {
@@ -104,7 +104,7 @@ console.log("Starting Claude Agents...");
 console.log(`Worker Project Root: ${PROJECT_ROOT}`);
 console.log(`Worker Model: ${workerModel ?? "default"}`);
 console.log(`Watchdog Model: ${watchdogModel ?? "default"}`);
-console.log(`Clear Context Every: ${clearEvery} turns`);
+console.log(`Compact Watchdog Context Every: ${compactEvery} turns`);
 
 // Claude CLI args: --continue for resuming, --dangerously-skip-permissions for auto-approval
 const claudeArgs = ['--continue', '--dangerously-skip-permissions'];
@@ -158,7 +158,7 @@ const watchdog = new Agent(KENNEL_PATH, claudeWatchdogArgs, (data) => {
   io.emit('watchdog-data', data);
 });
 
-const watchdogService = new WatchdogService(worker!, watchdog, workerModel, clearEvery);
+const watchdogService = new WatchdogService(worker!, watchdog, workerModel, compactEvery);
 
 watchdogService.onStop = (reason) => {
     console.log(`Watchdog stopped: ${reason}`);

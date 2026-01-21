@@ -33,17 +33,17 @@ export class WatchdogService {
   processing: boolean = false;
   retryCount: number = 0;
 
-  clearEvery: number;
+  compactEvery: number;
   turnCount: number = 0;
   expectedModel: string | undefined;
 
   private nextCheckTime = 0;
 
-  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, clearEvery: number = 1) {
+  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1) {
     this.worker = worker;
     this.watchdog = watchdog;
     this.expectedModel = expectedModel;
-    this.clearEvery = clearEvery;
+    this.compactEvery = compactEvery;
   }
 
   private log(msg: string) {
@@ -110,6 +110,7 @@ export class WatchdogService {
     try {
       // Check Watchdog Response
       if (this.waitingForResponse) {
+        // waitForIdle checks isGenerating(), so if it returns true, the watchdog has halted
         const isIdle = await this.waitForIdle(this.watchdog);
 
         if (!isIdle) {
@@ -118,12 +119,27 @@ export class WatchdogService {
           return;
         }
 
-        const screenContent = this.watchdog.getLines(50); // Increased from 30 to 50
+        // Watchdog is idle (halted), parse the response
+        this.log("DEBUG: Watchdog is idle. Attempting to parse response...");
+        const screenContent = this.watchdog.getLines(500);
+
+        this.log(`DEBUG: Screen content length: ${screenContent.length} chars`);
+        this.log(`DEBUG: First 400 chars of screen:\n${screenContent.substring(0, 400)}`);
+        this.log(`DEBUG: Last 400 chars of screen:\n${screenContent.substring(Math.max(0, screenContent.length - 400))}`);
+        this.log(`DEBUG: Looking for marker: "${PROMPT_MARKER}"`);
+
         const markerIndex = screenContent.lastIndexOf(PROMPT_MARKER);
-        let contentToParse = screenContent;
+        let contentToParse: string;
 
         if (markerIndex !== -1) {
+             this.log(`DEBUG: Marker found at index ${markerIndex}`);
              contentToParse = screenContent.substring(markerIndex + PROMPT_MARKER.length).trim();
+             this.log(`DEBUG: Content after marker (first 300 chars): ${contentToParse.substring(0, 300)}`);
+        } else {
+             this.log("PROMPT_MARKER not found in watchdog output. Waiting...");
+             this.nextCheckTime = Date.now() + 1000;
+             this.processing = false;
+             return;
         }
 
         // Look for Claude Code's output marker (● ) and extract after it
@@ -159,8 +175,8 @@ export class WatchdogService {
 
       if (isWorkerIdle) {
           // Check for context clear
-          if (this.turnCount >= this.clearEvery) {
-              this.log(`Turn count ${this.turnCount} reached limit ${this.clearEvery}. Compacting watchdog context.`);
+          if (this.turnCount >= this.compactEvery) {
+              this.log(`Turn count ${this.turnCount} reached limit ${this.compactEvery}. Compacting watchdog context.`);
               this.turnCount = 0;
               await this.post(this.watchdog, '/compact');
               this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
@@ -223,8 +239,8 @@ export class WatchdogService {
 
   private async post(agent: Agent, text: string): Promise<void> {
     this.log(`Posting text to agent... Length: ${text.length}`);
-    await this.ensureInsertMode(agent);
 
+    // Claude Code doesn't use vi modes - just write the text directly
     const chunkSize = 100;
     for (let i = 0; i < text.length; i += chunkSize) {
         const chunk = text.substring(i, i + chunkSize);
@@ -232,8 +248,10 @@ export class WatchdogService {
         await this.wait(50);
     }
 
+    // Send enter to submit
     await this.wait(100);
-    await this.ensureEnter(agent);
+    agent.write('\r');
+    await this.wait(100);
     this.log("Post complete.");
   }
 
@@ -252,6 +270,9 @@ export class WatchdogService {
 
     const rawContext = stripAnsi(this.worker.getLines(40));
     const context = rawContext.replace(/\s+/g, ' ').trim();
+
+    this.log(`DEBUG: Worker context length: ${context.length} chars`);
+    this.log(`DEBUG: Worker context (first 200 chars): ${context.substring(0, 200)}`);
 
     const question = `You are supervising a Claude Code session. Look at what Claude is doing and decide the next action.
 
@@ -279,7 +300,24 @@ Return a JSON object with your decision. Examples:
 
 ${PROMPT_MARKER}`;
 
+    this.log(`DEBUG: Prepared question length: ${question.length} chars`);
+    this.log(`DEBUG: Question (first 500 chars):\n${question.substring(0, 500)}`);
+    this.log(`DEBUG: Question (last 200 chars):\n${question.substring(question.length - 200)}`);
+
+    // Capture screen BEFORE posting
+    const screenBefore = this.watchdog.getLines(50);
+    this.log(`DEBUG: Watchdog screen BEFORE post (last 300 chars):\n${screenBefore.substring(Math.max(0, screenBefore.length - 300))}`);
+
     await this.post(this.watchdog, question);
+
+    // Capture screen AFTER posting
+    await this.wait(500);
+    const screenAfter = this.watchdog.getLines(100);
+    this.log(`DEBUG: Watchdog screen AFTER post (last 500 chars):\n${screenAfter.substring(Math.max(0, screenAfter.length - 500))}`);
+
+    // Check if Claude is processing (showing spinners)
+    const isProcessing = this.isGenerating(this.watchdog);
+    this.log(`DEBUG: Is watchdog generating after post? ${isProcessing}`);
   }
 
   async processDecision(jsonString: string) {
@@ -346,7 +384,7 @@ ${PROMPT_MARKER}`;
         await this.post(this.worker, '/compact');
         // Don't increment turn count, this is maintenance
     } else if (action.type === 'enter') {
-        await this.ensureEnter(this.worker);
+        this.worker.write('\r');
     } else if (action.type === 'select-option') {
         this.log(`Selecting option: ${action.number}`);
         await this.wait(70);
@@ -370,16 +408,16 @@ ${PROMPT_MARKER}`;
      this.retryCount++;
      if (this.retryCount < MAX_RETRIES) {
        this.log(`Retrying watchdog request (Count: ${this.retryCount}). Error: ${error}`);
-       const retryMessage = `ERROR: Invalid JSON. Error: ${error}. Retry JSON.`;
+       await this.wait(1000);
+       const retryMessage = `ERROR: Invalid JSON. Error: ${error}. Retry with valid JSON.`;
        await this.post(this.watchdog, retryMessage);
 
        this.waitingForResponse = true;
        this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
      } else {
-       console.error(`[WatchdogService] Max retries (${MAX_RETRIES}) reached. Halting.`);
-       this.worker.write('\x03');
-       this.watchdog.write('\x03');
-       process.exit(1);
+       console.error(`[WatchdogService] Max retries (${MAX_RETRIES}) reached. Stopping Watchdog.`);
+       this.stop(`Max retries (${MAX_RETRIES}) reached. JSON parsing failed repeatedly.`);
+       // Do not kill the worker or exit process, just disable watchdog
      }
   }
 }

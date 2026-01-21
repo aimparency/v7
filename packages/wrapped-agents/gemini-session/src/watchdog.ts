@@ -33,17 +33,17 @@ export class WatchdogService {
   retryCount: number = 0;
   cooldownMultiplier: number = 1; // Track consecutive cooldowns
   
-  clearEvery: number;
+  compactEvery: number;
   turnCount: number = 0;
   expectedModel: string | undefined;
 
   private nextCheckTime = 0;
 
-  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, clearEvery: number = 1) {
+  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1) {
     this.worker = worker;
     this.watchdog = watchdog;
     this.expectedModel = expectedModel;
-    this.clearEvery = clearEvery;
+    this.compactEvery = compactEvery;
   }
   
   private log(msg: string) {
@@ -174,8 +174,8 @@ export class WatchdogService {
       
       if (isWorkerIdle) {
           // Check for context clear
-          if (this.turnCount >= this.clearEvery) {
-              this.log(`Turn count ${this.turnCount} reached limit ${this.clearEvery}. Compressing watchdog context.`);
+          if (this.turnCount >= this.compactEvery) {
+              this.log(`Turn count ${this.turnCount} reached limit ${this.compactEvery}. Compressing watchdog context.`);
               this.turnCount = 0;
               await this.post(this.watchdog, '/compress');
               this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;

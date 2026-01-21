@@ -68,7 +68,7 @@ let watchdogModel: string | undefined; // 'gemini-3-flash';
 workerModel = 'gemini-3-pro-preview'
 watchdogModel = 'gemini-3-flash-preview'
 
-let clearEvery = 20;
+let compactEvery = 20;
 
 let requestedPort = 0;
 
@@ -112,11 +112,11 @@ for (let i = 0; i < args.length; i++) {
 
     }
 
-  } else if (arg === '--clear-every') {
+  } else if (arg === '--compact-every') {
 
     if (args[i + 1]) {
 
-      clearEvery = parseInt(args[i + 1], 10);
+      compactEvery = parseInt(args[i + 1], 10);
 
       i++;
 
@@ -156,7 +156,7 @@ console.log(`Worker Model: ${workerModel ?? "default"}`);
 
 console.log(`Watchdog Model: ${watchdogModel ?? "default"}`);
 
-console.log(`Clear Context Every: ${clearEvery} turns`);
+console.log(`Compact Watchdog Context Every: ${compactEvery} turns`);
 
 
 const geminiArgs = ['--resume', 'latest', '--approval-mode', 'auto_edit']
@@ -215,7 +215,7 @@ const watchdog = new Agent(KENNEL_PATH, geminiWatchdogArgs, (data) => {
 
 
 
-const watchdogService = new WatchdogService(worker!, watchdog, workerModel, clearEvery);
+const watchdogService = new WatchdogService(worker!, watchdog, workerModel, compactEvery);
 
 
 
