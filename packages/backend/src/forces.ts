@@ -1,6 +1,6 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { loadVectorStore } from './embeddings.js';
+import { loadVectorStore, invalidateVectorCache } from './embeddings.js';
 import { cosineSimilarity } from 'shared';
 
 interface SemanticLink {
@@ -104,4 +104,14 @@ export async function calculateSemanticGraph(projectPath: string): Promise<Seman
   
   semanticCache.set(projectPath, result);
   return result;
+}
+
+/**
+ * Invalidate the semantic graph cache for a project.
+ * Call this after creating/updating/deleting aims or their embeddings.
+ * Also invalidates the vector cache to ensure fresh data on recalculation.
+ */
+export function invalidateSemanticCache(projectPath: string): void {
+  semanticCache.delete(projectPath);
+  invalidateVectorCache(projectPath);
 }

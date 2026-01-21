@@ -9,9 +9,9 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768809630855
+    "state": "done",
+    "comment": "Fixed by invalidating semantic graph cache when embeddings are created/updated/deleted. Changes in backend/src/forces.ts (added invalidateSemanticCache function) and backend/src/server.ts (called cache invalidation after embedding operations)",
+    "date": 1769003953302
   },
   "intrinsicValue": 1,
   "cost": 1,

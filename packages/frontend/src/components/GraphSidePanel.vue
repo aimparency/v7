@@ -5,6 +5,7 @@ import { useDataStore } from '../stores/data'
 import { useMapStore } from '../stores/map'
 import { trpc } from '../trpc'
 import type { Aim, Connection } from 'shared/src/types'
+import { formatWithK, parseK } from '../utils/number-format'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -42,6 +43,11 @@ const editedIntrinsicValue = ref(0)
 const editedCost = ref(0)
 const editedLoopWeight = ref(0)
 
+// String versions for k-notation input
+const editedIntrinsicValueStr = ref('0')
+const editedCostStr = ref('0')
+const editedLoopWeightStr = ref('0')
+
 watch(selectedLink, (newVal) => {
     if (newVal) {
         editedExplanation.value = newVal.connection.explanation || ''
@@ -55,6 +61,11 @@ watch(selectedAim, (newVal) => {
         editedIntrinsicValue.value = newVal.intrinsicValue || 0
         editedCost.value = newVal.cost ?? 0
         editedLoopWeight.value = newVal.loopWeight ?? 0
+
+        // Update string versions with formatting
+        editedIntrinsicValueStr.value = editedIntrinsicValue.value.toString()
+        editedCostStr.value = editedCost.value.toString()
+        editedLoopWeightStr.value = editedLoopWeight.value.toString()
     }
 }, { immediate: true })
 
@@ -65,6 +76,22 @@ const focusAim = (aimId: string) => {
         uiStore.deselectLink()
         mapStore.centerOnNode(node)
     }
+}
+
+// Input handlers for k-notation
+const onIntrinsicValueInput = (event: Event) => {
+    const input = (event.target as HTMLInputElement).value
+    editedIntrinsicValue.value = parseK(input)
+}
+
+const onCostInput = (event: Event) => {
+    const input = (event.target as HTMLInputElement).value
+    editedCost.value = parseK(input)
+}
+
+const onLoopWeightInput = (event: Event) => {
+    const input = (event.target as HTMLInputElement).value
+    editedLoopWeight.value = parseK(input)
 }
 
 const updateAimAttributes = async () => {
@@ -307,28 +334,29 @@ const isOpaque = computed(() => !hasInteracted.value)
                 <div class="metrics-row">
                     <div class="metric">
                         <span class="label">Intrinsic</span>
-                        <input 
-                            type="number" 
-                            v-model.number="editedIntrinsicValue" 
-                            @change="updateAimAttributes" 
-                            class="value-input" 
-                            step="0.1" 
+                        <input
+                            type="text"
+                            v-model="editedIntrinsicValueStr"
+                            @input="onIntrinsicValueInput"
+                            @change="updateAimAttributes"
+                            class="value-input"
+                            placeholder="e.g. 10k, 1500"
                         />
                     </div>
                     <div class="metric">
                         <span class="label">Loop</span>
-                        <input 
-                            type="number" 
-                            v-model.number="editedLoopWeight" 
-                            @change="updateAimAttributes" 
-                            class="value-input" 
-                            step="0.1" 
-                            min="0" 
+                        <input
+                            type="text"
+                            v-model="editedLoopWeightStr"
+                            @input="onLoopWeightInput"
+                            @change="updateAimAttributes"
+                            class="value-input"
+                            placeholder="e.g. 5k"
                         />
                     </div>
                     <div class="metric">
                         <span class="label">Total</span>
-                        <span class="value highlight">{{ dataStore.getAimValue(selectedAim.id).toFixed(2) }}</span>
+                        <span class="value highlight">{{ formatWithK(dataStore.getAimValue(selectedAim.id)) }}</span>
                     </div>
                 </div>
             </div>
@@ -338,17 +366,18 @@ const isOpaque = computed(() => !hasInteracted.value)
                 <div class="metrics-row">
                     <div class="metric">
                         <span class="label">Intrinsic</span>
-                        <input 
-                            type="number" 
-                            v-model.number="editedCost" 
-                            @change="updateAimAttributes" 
-                            class="value-input" 
-                            step="0.1" 
+                        <input
+                            type="text"
+                            v-model="editedCostStr"
+                            @input="onCostInput"
+                            @change="updateAimAttributes"
+                            class="value-input"
+                            placeholder="e.g. 2k, 500"
                         />
                     </div>
                     <div class="metric">
                         <span class="label">Total</span>
-                        <span class="value">{{ dataStore.getAimCost(selectedAim.id).toFixed(1) }}</span>
+                        <span class="value">{{ formatWithK(dataStore.getAimCost(selectedAim.id)) }}</span>
                     </div>
                     <div class="metric">
                         <span class="label">Progress</span>

@@ -1,0 +1,20 @@
+{
+  "id": "4b7136c1-8085-4850-9e61-2941f5cae10b",
+  "text": "Investigate and fix Watchdog input truncation",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "ad1ee75c-f073-4b90-8428-c5003fa868e1"
+  ],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Investigate why input is still being truncated (e.g. at ~2300 chars or mid-word) despite safe chunking. Verify if it's a CLI buffer issue, socket issue, or xterm.js rendering issue.",
+    "date": 1769010951171
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,0 +1,27 @@
+{
+  "id": "ad1ee75c-f073-4b90-8428-c5003fa868e1",
+  "text": "Implement Watchdog Cooldown and Compress improvements",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "4b7136c1-8085-4850-9e61-2941f5cae10b",
+      "relativePosition": [
+        -1.8411349722380101,
+        1.6912190910707405
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Implemented during user session:\n1. Replaced /clear with /compress (or /compact) in Watchdog tick to preserve context.\n2. Added 'compress' action to Watchdog prompt.\n3. Enhanced 'cooldown' action with 'press' and 'text' parameters.\n4. Updated documentation.",
+    "date": 1769010898664
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

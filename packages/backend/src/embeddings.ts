@@ -84,11 +84,19 @@ export async function removeEmbedding(projectPath: string, aimId: string) {
 export async function searchVectors(projectPath: string, queryVector: number[], limit: number = 10): Promise<{ id: string, score: number }[]> {
   const store = await loadVectorStore(projectPath);
   const results = [];
-  
+
   for (const [id, vector] of Object.entries(store)) {
     const score = cosineSimilarity(queryVector, vector);
     results.push({ id, score });
   }
-  
+
   return results.sort((a, b) => b.score - a.score).slice(0, limit);
+}
+
+/**
+ * Invalidate the vector store cache for a project.
+ * Call this when vectors.json is modified externally or needs to be reloaded.
+ */
+export function invalidateVectorCache(projectPath: string): void {
+  vectorCache.delete(projectPath);
 }

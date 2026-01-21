@@ -311,8 +311,9 @@ ${sanitizedContext}
 What shall we do about this situation?
 
 1. Check the model that is being used in the main agent: it's usually around the end of the current situation. If it changed to a inferior model (lower than gemini 3, 3 is the minimum for reasonable quality), stop with: { "action": { "type": "stop", "reason": "model-switch" } }.
-2. Check for "Quota exceeded" or "High demand" errors. If found, return { "action": { "type": "cooldown", "press": "key_to_press" } }.
-   - "press" is optional. Use it if the error prompt asks for input (e.g. "Retry? (y/n)" -> press: "y").
+2. Check for "Quota exceeded" or "High demand" errors. If found, return { "action": { "type": "cooldown", "press": "key_to_press", "text": "optional_text_to_send" } }.
+   - "press": Optional single key to press after cooldown (e.g. "y").
+   - "text": Optional text to send after cooldown (e.g. "continue").
    - Do NOT include duration.
 3. If the agent seems idle, waiting for user input, or asking "what should I do?", use send-prompt with "instruct": true to include aimparency guidance.
 4. Only use stop when ALL aims are verified complete - not just the current task.
@@ -324,6 +325,7 @@ Examples:
 {"action": {"type": "select-option", "number": 1}}
 {"action": {"type": "compress"}}
 {"action": {"type": "stop", "reason": "all aims verified complete"}}
+{"action": {"type": "cooldown", "text": "continue"}}
 
 ${PROMPT_MARKER}
 `;
@@ -442,15 +444,16 @@ ${PROMPT_MARKER}
         this.log(`Cooldown for ${duration}ms (High Demand/Quota). Multiplier: ${this.cooldownMultiplier}x`);
         this.nextCheckTime = Date.now() + duration;
         
-        if (action.press) {
-            this.log(`Will press '${action.press}' after cooldown.`);
-            setTimeout(() => {
+        setTimeout(async () => {
+            if (action.press) {
                 this.log(`Executing delayed press: '${action.press}'`);
                 this.worker.write(action.press);
-                // Send enter after a short delay to ensure char is registered
                 setTimeout(() => this.worker.write('\r\n'), 100);
-            }, duration);
-        }
+            } else if (action.text) {
+                this.log(`Executing delayed text: '${action.text}'`);
+                await this.post(this.worker, action.text);
+            }
+        }, duration);
         
         // Increase backoff for next time (cap at some reasonable limit, e.g. 1 hour?)
         this.cooldownMultiplier = Math.min(this.cooldownMultiplier * 2, 120); 

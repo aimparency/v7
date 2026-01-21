@@ -24,7 +24,7 @@ import {
   removePhaseFromIndex
 } from './search.js';
 import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
-import { getSemanticGraph } from './forces.js';
+import { getSemanticGraph, invalidateSemanticCache } from './forces.js';
 import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues } from 'shared';
 import { saveAimValues, getAimValues, getDb } from './db.js';
@@ -855,7 +855,10 @@ const appRouter = t.router({
         // Update embedding (async)
         if (process.env.NODE_ENV !== 'test' && updatedAim.text) {
           generateEmbedding(updatedAim.text).then(vector => {
-             if(vector) saveEmbedding(input.projectPath, input.aimId, vector);
+             if(vector) {
+               saveEmbedding(input.projectPath, input.aimId, vector);
+               invalidateSemanticCache(input.projectPath);
+             }
           });
         }
 
@@ -909,11 +912,12 @@ const appRouter = t.router({
 
         // Remove from search index
         removeAimFromIndex(input.projectPath, input.aimId);
-        
+
         if (process.env.NODE_ENV !== 'test') {
           await removeEmbedding(input.projectPath, input.aimId);
+          invalidateSemanticCache(input.projectPath);
         }
-        
+
         ee.emit('change', { type: 'aim', id: input.aimId, projectPath: input.projectPath });
 
         return { success: true };
@@ -1008,7 +1012,10 @@ const appRouter = t.router({
 
         if (process.env.NODE_ENV !== 'test') {
           generateEmbedding(aim.text).then(vector => {
-             if(vector) saveEmbedding(input.projectPath, aimId, vector);
+             if(vector) {
+               saveEmbedding(input.projectPath, aimId, vector);
+               invalidateSemanticCache(input.projectPath);
+             }
           });
         }
 
@@ -1159,7 +1166,10 @@ const appRouter = t.router({
 
         if (process.env.NODE_ENV !== 'test') {
           generateEmbedding(aim.text).then(vector => {
-             if(vector) saveEmbedding(input.projectPath, aimId, vector);
+             if(vector) {
+               saveEmbedding(input.projectPath, aimId, vector);
+               invalidateSemanticCache(input.projectPath);
+             }
           });
         }
 
