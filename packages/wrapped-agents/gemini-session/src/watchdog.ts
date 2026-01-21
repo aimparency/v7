@@ -175,9 +175,9 @@ export class WatchdogService {
       if (isWorkerIdle) {
           // Check for context clear
           if (this.turnCount >= this.clearEvery) {
-              this.log(`Turn count ${this.turnCount} reached limit ${this.clearEvery}. Clearing context.`);
+              this.log(`Turn count ${this.turnCount} reached limit ${this.clearEvery}. Compressing watchdog context.`);
               this.turnCount = 0;
-              await this.post(this.watchdog, '/clear');
+              await this.post(this.watchdog, '/compress');
               this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
           } else {
               await this.askWatchdog(); // This sets waitingForResponse=true
@@ -279,12 +279,7 @@ export class WatchdogService {
 
     try {
         this.waitingForResponse = true;
-
-    // Clear supervisor context to prevent hallucination/stale state
-    await this.post(this.watchdog, '/clear');
-    await this.wait(500);
-
-    this.retryCount = 0;
+        this.retryCount = 0;
 
     // Get lines and strip ANSI to clean up formatting tokens
     const rawContext = stripAnsi(this.worker.getLines(25));
@@ -321,11 +316,13 @@ What shall we do about this situation?
    - Do NOT include duration.
 3. If the agent seems idle, waiting for user input, or asking "what should I do?", use send-prompt with "instruct": true to include aimparency guidance.
 4. Only use stop when ALL aims are verified complete - not just the current task.
+5. If context is getting long, use { "action": { "type": "compress" } }.
 
 Examples:
 {"action": {"type": "send-prompt", "text": "continue working on aims", "instruct": true}}
 {"action": {"type": "send-prompt", "text": "run the tests"}}
 {"action": {"type": "select-option", "number": 1}}
+{"action": {"type": "compress"}}
 {"action": {"type": "stop", "reason": "all aims verified complete"}}
 
 ${PROMPT_MARKER}
@@ -358,7 +355,7 @@ ${PROMPT_MARKER}
            throw new Error("Missing 'action' field in JSON response.");
        }
 
-       const validTypes = ['select-option', 'send-prompt', 'stop', 'wait', 'enter', 'cooldown', 'emergency-stop'];
+       const validTypes = ['select-option', 'send-prompt', 'stop', 'wait', 'enter', 'cooldown', 'emergency-stop', 'compress'];
        if (!validTypes.includes(decision.action.type)) {
            throw new Error(`Invalid action type: '${decision.action.type}'. Must be one of: ${validTypes.join(', ')}`);
        }
@@ -418,6 +415,9 @@ ${PROMPT_MARKER}
         this.log(`Sending prompt to Worker: ${textToSend.substring(0, 100)}...`);
         await this.post(this.worker, textToSend);
         this.turnCount++;
+    } else if (action.type === 'compress') {
+        this.log('Compressing worker context...');
+        await this.post(this.worker, '/compress');
     } else if (action.type === 'enter') {
         await this.ensureEnter(this.worker);
     } else if (action.type === 'select-option') {

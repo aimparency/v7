@@ -107,7 +107,7 @@ watch(() => store.socket, (socket, oldSocket) => {
     socket.on('worker-data', onWorkerData)
     socket.on('watchdog-data', onWatchdogData)
   }
-}, { immediate: true })
+}, { immediate: true, flush: 'sync' })
 
 watch(() => store.focusRequestCounter, () => {
   // Allow UI updates (e.g. search modal closing) to complete before focusing

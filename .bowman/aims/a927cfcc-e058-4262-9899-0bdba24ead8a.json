@@ -34,9 +34,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768901987647
+    "state": "done",
+    "comment": "Completed all sub-aims: session status display, clearing on relaunch, and history sync on connect.",
+    "date": 1768983443771
   },
   "intrinsicValue": 0,
   "cost": 1,

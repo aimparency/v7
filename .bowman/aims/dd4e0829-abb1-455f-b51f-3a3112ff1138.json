@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768414491984
+    "state": "done",
+    "comment": "Updated backend/src/server.ts aim.update mutation to handle consistency for supportedAims (parents) and supportingConnections (children). Added logic to automatically add/remove reverse connections on related aims.",
+    "date": 1768983759593
   },
   "intrinsicValue": 0,
   "cost": 1,

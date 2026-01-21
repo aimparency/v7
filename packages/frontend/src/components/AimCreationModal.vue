@@ -31,6 +31,7 @@ const costInput = ref<HTMLInputElement>()
 const loopWeightInput = ref<HTMLInputElement>()
 const statusSelect = ref<HTMLSelectElement>()
 const statusCommentInput = ref<HTMLInputElement>()
+const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 const searchResultsContainer = ref<HTMLDivElement>()
 
@@ -230,7 +231,7 @@ const handleLoopWeightNext = (event: KeyboardEvent) => {
 const handleStatusCommentNext = (event: KeyboardEvent) => {
   if (event.key === 'Tab' && !event.shiftKey) {
     event.preventDefault()
-    document.querySelector<HTMLElement>('.tag-input-container input')?.focus()
+    addParentBtn.value?.focus()
   }
 }
 
@@ -436,7 +437,7 @@ onMounted(async () => {
         <div class="form-group">
             <div class="label-row">
                 <label>Supports (Parents)</label>
-                <button @click="openParentSearch" class="btn-small" title="Add Parent">+</button>
+                <button ref="addParentBtn" @click="openParentSearch" class="btn-small" title="Add Parent">+</button>
             </div>
             <div v-for="(parent, index) in supportedAimsList" :key="parent.id" class="supported-aim-row">
                 <span class="parent-text">{{ parent.text }}</span>

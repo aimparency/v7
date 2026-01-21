@@ -747,6 +747,76 @@ const appRouter = t.router({
       .mutation(async ({ input }) => {
         const existingAim = await readAim(input.projectPath, input.aimId);
         
+        // Handle consistency for supportedAims (Parents)
+        if (input.aim.supportedAims) {
+            const oldParents = new Set(existingAim.supportedAims || []);
+            const newParents = new Set(input.aim.supportedAims);
+            
+            // Removed Parents
+            for (const parentId of oldParents) {
+                if (!newParents.has(parentId)) {
+                    try {
+                        const parent = await readAim(input.projectPath, parentId);
+                        if (parent.supportingConnections) {
+                            parent.supportingConnections = parent.supportingConnections.filter(c => c.aimId !== input.aimId);
+                            await writeAim(input.projectPath, parent);
+                        }
+                    } catch(e) { console.warn(`Failed to update removed parent ${parentId}`, e); }
+                }
+            }
+            
+            // Added Parents
+            for (const parentId of newParents) {
+                if (!oldParents.has(parentId)) {
+                    try {
+                        const parent = await readAim(input.projectPath, parentId);
+                        if (!parent.supportingConnections) parent.supportingConnections = [];
+                        if (!parent.supportingConnections.some(c => c.aimId === input.aimId)) {
+                            parent.supportingConnections.push({ 
+                                aimId: input.aimId, 
+                                relativePosition: getRandomRelativePosition(), 
+                                weight: 1 
+                            });
+                            await writeAim(input.projectPath, parent);
+                        }
+                    } catch(e) { console.warn(`Failed to update added parent ${parentId}`, e); }
+                }
+            }
+        }
+
+        // Handle consistency for supportingConnections (Children)
+        if (input.aim.supportingConnections) {
+             const oldChildren = new Set((existingAim.supportingConnections || []).map(c => c.aimId));
+             const newChildren = new Set(input.aim.supportingConnections.map(c => c.aimId));
+             
+             // Removed Children
+             for (const childId of oldChildren) {
+                 if (!newChildren.has(childId)) {
+                     try {
+                         const child = await readAim(input.projectPath, childId);
+                         if (child.supportedAims) {
+                             child.supportedAims = child.supportedAims.filter(id => id !== input.aimId);
+                             await writeAim(input.projectPath, child);
+                         }
+                     } catch(e) { console.warn(`Failed to update removed child ${childId}`, e); }
+                 }
+             }
+             
+             // Added Children
+             for (const childId of newChildren) {
+                 if (!oldChildren.has(childId)) {
+                     try {
+                         const child = await readAim(input.projectPath, childId);
+                         if (!child.supportedAims) child.supportedAims = [];
+                         if (!child.supportedAims.includes(input.aimId)) {
+                             child.supportedAims.push(input.aimId);
+                             await writeAim(input.projectPath, child);
+                         }
+                     } catch(e) { console.warn(`Failed to update added child ${childId}`, e); }
+                 }
+             }
+        }
+
         // Handle status deep merge and date default
         let status = existingAim.status;
         if (input.aim.status) {

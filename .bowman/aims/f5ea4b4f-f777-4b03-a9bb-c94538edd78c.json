@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768809396185
+    "state": "done",
+    "comment": "Updated AimCreationModal to focus the 'Add Parent' button when tabbing from Status Comment field.",
+    "date": 1768983548018
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768902110653
+    "state": "done",
+    "comment": "Modified store to clear buffers on connect, and WatchdogPanel to attach socket listeners synchronously. Server already sends history, this ensures it's captured and displayed without duplication.",
+    "date": 1768983411652
   },
   "intrinsicValue": 0,
   "cost": 1,

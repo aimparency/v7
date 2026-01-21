@@ -106,6 +106,10 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     connectionState.value = 'spawning'
     logStatus(`Spawning ${agentType} session for path: ${targetPath}...`)
+    
+    // Clear buffers to avoid duplication/stale data on reconnect
+    workerOutput.value = ''
+    watchdogOutput.value = ''
 
     try {
         // 1. Ask broker to start the process
