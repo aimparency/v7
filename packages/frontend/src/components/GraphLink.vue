@@ -10,10 +10,17 @@ const props = defineProps<{
     target: { id: string, x: number, y: number, r?: number }
     weight?: number
     share?: number
-  }
+  },
+  scale?: number
 }>()
 
 const uiStore = useUIStore()
+
+const isVisible = computed(() => {
+  // Hide links if scale is very small to improve performance
+  if (props.scale !== undefined && props.scale < 0.2) return false
+  return true
+})
 
 const selected = computed(() => {
   return uiStore.selectedLink?.parentId === props.link.source.id &&
@@ -60,6 +67,7 @@ const select = () => {
 
 <template>
   <path 
+    v-show="isVisible"
     :d="d" 
     class="graph-link"
     :class="{ selected, aimSelected }"

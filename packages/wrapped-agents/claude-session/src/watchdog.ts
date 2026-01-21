@@ -160,9 +160,9 @@ export class WatchdogService {
       if (isWorkerIdle) {
           // Check for context clear
           if (this.turnCount >= this.clearEvery) {
-              this.log(`Turn count ${this.turnCount} reached limit ${this.clearEvery}. Clearing context.`);
+              this.log(`Turn count ${this.turnCount} reached limit ${this.clearEvery}. Compacting watchdog context.`);
               this.turnCount = 0;
-              await this.post(this.watchdog, '/clear');
+              await this.post(this.watchdog, '/compact');
               this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
           } else {
               await this.askWatchdog();

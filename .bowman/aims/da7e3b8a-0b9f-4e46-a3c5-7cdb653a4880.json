@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768809755332
+    "state": "done",
+    "comment": "Implemented label visibility optimization in GraphNode.vue using a zoom scale threshold. Labels are now hidden when visual radius is small.",
+    "date": 1768998603645
   },
   "intrinsicValue": 0,
   "cost": 1,

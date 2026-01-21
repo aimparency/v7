@@ -67,7 +67,8 @@ const renderNodes = computed(() => {
         ...n,
         x: n.renderPos[0],
         y: n.renderPos[1],
-        selected: n.id === currentAimId
+        selected: n.id === currentAimId,
+        scale: mapStore.scale
     })) 
 })
 
@@ -77,7 +78,8 @@ const renderLinks = computed(() => {
         source: { ...l.source, x: l.source.renderPos[0], y: l.source.renderPos[1] },
         target: { ...l.target, x: l.target.renderPos[0], y: l.target.renderPos[1] },
         weight: l.weight,
-        share: l.share
+        share: l.share,
+        scale: mapStore.scale
     })) 
 })
 
@@ -122,6 +124,7 @@ const stopSemanticForce = () => setSemanticForce(false)
             v-for="(link, i) in renderLinks" 
             :key="i"
             :link="link" 
+            :scale="link.scale"
           />
         </g>
         <GraphConnector />
@@ -130,6 +133,7 @@ const stopSemanticForce = () => setSemanticForce(false)
             v-for="node in renderNodes" 
             :key="node.id" 
             :node="node"
+            :scale="node.scale"
             :selected="node.selected"
             @mousedown="onNodeDown($event, node as any)"
             @touchstart="onNodeDown($event, node as any)"

@@ -11,8 +11,17 @@ const props = defineProps<{
     y: number
     color?: string
   },
-  selected?: boolean
+  selected?: boolean,
+  scale?: number
 }>()
+
+const shouldShowLabel = computed(() => {
+  // If no scale provided, assume visible (or 1)
+  const currentScale = props.scale || 1
+  // Visual radius = node radius * zoom scale
+  // Hide if visual radius is less than 10 pixels
+  return (props.node.r * currentScale) > 10
+})
 
 const fillColor = computed(() => {
   if (props.node.color) return props.node.color
@@ -68,6 +77,7 @@ const titleLines = computed(() => {
         :class="{ selected }"
       />
       <text 
+        v-show="shouldShowLabel"
         dominant-baseline="central"
         text-anchor="middle" 
         fill="#fff" 

@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768809727349
+    "state": "done",
+    "comment": "Implemented link visibility optimization in GraphLink.vue using a zoom scale threshold. Links are now hidden when zoom is < 0.2.",
+    "date": 1768998680594
   },
   "intrinsicValue": 0,
   "cost": 1,
