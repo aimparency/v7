@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768901911119
+    "state": "done",
+    "comment": "Added watchers in WatchdogPanel to clear xterm instances when store output buffers are reset.",
+    "date": 1768983198208
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -84,6 +84,19 @@ const handleKeyDown = (e: KeyboardEvent) => {
   }
 }
 
+// Watch for buffer clears (e.g. on relaunch)
+watch(() => store.workerOutput, (newVal) => {
+  if (newVal === '') {
+    workerTerm.value?.clear()
+  }
+})
+
+watch(() => store.watchdogOutput, (newVal) => {
+  if (newVal === '') {
+    watchdogTerm.value?.clear()
+  }
+})
+
 // Manage socket listeners manually to prevent filtered data
 watch(() => store.socket, (socket, oldSocket) => {
   if (oldSocket) {
@@ -161,7 +174,7 @@ defineExpose({
             <span class="dot connecting"></span> {{ store.connectionState === 'spawning' ? 'Spawning...' : 'Connecting...' }}
           </template>
           <template v-else-if="sessionExists">
-            <span class="dot idle"></span> Session exists
+            <span class="dot idle"></span> Running
           </template>
           <template v-else>
             <span class="dot"></span> No session

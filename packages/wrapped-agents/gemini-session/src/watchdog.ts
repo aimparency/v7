@@ -17,7 +17,7 @@ const IDLE_CHECK_INTERVAL = 500;
 const IDLE_DEBOUNCE_INTERVAL = 100;
 const MAX_RETRIES = 5;
 const SPINNER_CHARS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠏'];
-const PROMPT_MARKER = "___RESPONSE_START___";
+const PROMPT_MARKER = "[[RESPONSE_START]]";
 
 function stripAnsi(str: string): string {
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
@@ -131,14 +131,15 @@ export class WatchdogService {
 
         // We are confident the watchdog is idle. Try to parse.
           
-          const screenContent = this.watchdog.getLines(200); 
+          const screenContent = this.watchdog.getLines(500); 
           const markerIndex = screenContent.lastIndexOf(PROMPT_MARKER);
           let contentToParse = "";
 
           if (markerIndex !== -1) {
                contentToParse = screenContent.substring(markerIndex + PROMPT_MARKER.length).trim();
           } else {
-               this.log("PROMPT_MARKER not found in last 200 lines. Waiting...");
+               this.log("PROMPT_MARKER not found in last 500 lines. Waiting...");
+               this.log(`DEBUG: Last 20 lines of content:\n${screenContent.split('\n').slice(-20).join('\n')}`);
                this.nextCheckTime = Date.now() + 1000;
                this.processing = false;
                return;
@@ -241,22 +242,23 @@ export class WatchdogService {
     try {
         await this.ensureInsertMode(agent);
 
-        // Very conservative typing to prevent buffer overflow
-        const chunkSize = 30; // Smaller chunks
-        const delayMs = 100;  // Longer delays
+        // Use Array.from to correctly handle surrogate pairs (emojis, etc)
+        const chars = Array.from(text);
+        const chunkSize = 30; 
+        const delayMs = 100;
 
-        for (let i = 0; i < text.length; i += chunkSize) {
-            const chunk = text.substring(i, i + chunkSize);
+        for (let i = 0; i < chars.length; i += chunkSize) {
+            const chunk = chars.slice(i, i + chunkSize).join('');
             agent.write(chunk);
             await this.wait(delayMs);
 
             // Log progress every 300 chars
             if (i > 0 && i % 300 === 0) {
-                this.log(`Typed ${i}/${text.length} chars...`);
+                this.log(`Typed ${i}/${chars.length} chars...`);
             }
         }
 
-        this.log(`Typed all ${text.length} chars. Submitting...`);
+        this.log(`Typed all ${chars.length} chars. Submitting...`);
         await this.wait(300);
         await this.ensureEnter(agent);
         this.log("Post complete.");
@@ -291,14 +293,15 @@ export class WatchdogService {
     // and trim edges.
     let context = rawContext.replace(/\s+/g, ' ').trim();
 
-    // Remove box-drawing characters (u2500-u257F) to prevent input issues
-    context = context.replace(/[\u2500-\u257F]/g, '');
+    // STRICT SANITIZATION: Only allow printable ASCII (32-126)
+    // This removes all control chars, emojis, box-drawing, etc. to prevent terminal/editor issues.
+    context = context.replace(/[^\x20-\x7E]/g, '');
 
     if (context.length > 1000) {
         context = "..." + context.substring(context.length - 1000);
     }
 
-    // Pass context as is. Sanitization (replacing brackets) was causing confusion and invalid JSON in Supervisor responses.
+    // Pass context as is.
     const sanitizedContext = context;
 
     const question = `You are observing a code assistant cli. Decide what action to take (prompt, choose option, stop - as defined in .gemini/GEMINI.md).

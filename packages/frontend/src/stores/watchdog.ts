@@ -111,6 +111,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         // 1. Ask broker to start the process
         const { port } = await trpcWatchdog.watchdog.start.mutate({ projectPath: targetPath, agentType })
 
+        // Update session list to reflect the new process
+        await fetchSessions()
+
         logStatus(`Process spawned. Starting keepalive and connecting to port ${port}...`)
         startKeepalive(targetPath, agentType)
 
@@ -219,6 +222,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
             projectPath: uiStore.projectPath,
             agentType
         })
+
+        // Update session list
+        await fetchSessions()
 
         logStatus(`Relaunched. Connecting to port ${port}...`)
         startKeepalive(uiStore.projectPath, agentType)
