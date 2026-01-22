@@ -19,6 +19,14 @@
         -2.4237159852310097
       ],
       "weight": 1
+    },
+    {
+      "aimId": "01fe0313-b467-40fd-9a3d-ae4a93af38ba",
+      "relativePosition": [
+        -2.174472628506235,
+        1.2335593977904693
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [],

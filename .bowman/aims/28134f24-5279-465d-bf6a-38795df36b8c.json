@@ -29,8 +29,8 @@
   ],
   "status": {
     "state": "done",
-    "comment": "Completed all sub-aims: hiding node labels and links at low zoom levels to improve rendering performance.",
-    "date": 1768998692560
+    "comment": "Implemented performance optimizations:\n1. CSS-based hiding of labels and links during zoom actions (`.is-zooming`).\n2. Correct visual-radius-based hiding of labels for small nodes (<20px).\n3. Removed incorrect static hiding of links at low zoom.\n4. Added UI toggle for labels.",
+    "date": 1769096102534
   },
   "intrinsicValue": 2,
   "cost": 1,

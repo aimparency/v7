@@ -17,8 +17,6 @@ const props = defineProps<{
 const uiStore = useUIStore()
 
 const isVisible = computed(() => {
-  // Hide links if scale is very small to improve performance
-  if (props.scale !== undefined && props.scale < 0.2) return false
   return true
 })
 
@@ -42,7 +40,7 @@ const d = computed(() => {
   
   // Calculate width based on share (relative weight)
   const share = props.link.share || 0
-  const width = 1.0 * intoR * share 
+  const width = 1.2 * intoR * share 
   
   return makeCircularPath(
     { pos: [source.x, source.y], r: fromR },

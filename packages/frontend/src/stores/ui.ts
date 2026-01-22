@@ -106,6 +106,7 @@ export const useUIStore = defineStore('ui', {
     graphSelectedAimId: null as string | null,
     graphColorMode: (localStorage.getItem('aimparency-graph-color-mode') || 'status') as 'status' | 'priority',
     graphPanelWidth: parseInt(localStorage.getItem('aimparency-graph-panel-width') || '300'),
+    graphShowLabels: localStorage.getItem('aimparency-graph-show-labels') !== 'false',
 
     // View state
     currentView: (localStorage.getItem('aimparency-current-view') || 'columns') as 'columns' | 'graph' | 'voice',
@@ -1051,6 +1052,11 @@ export const useUIStore = defineStore('ui', {
     setGraphPanelWidth(width: number) {
       this.graphPanelWidth = Math.max(200, Math.min(width, 600))
       localStorage.setItem('aimparency-graph-panel-width', this.graphPanelWidth.toString())
+    },
+
+    toggleGraphShowLabels() {
+      this.graphShowLabels = !this.graphShowLabels
+      localStorage.setItem('aimparency-graph-show-labels', String(this.graphShowLabels))
     },
 
     async calculateAimPaths(aimId: string): Promise<AimPath[]> {

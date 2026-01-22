@@ -25,7 +25,7 @@ const simulation = useGraphSimulation()
 const { nodes, links, trigger, randomizeLayout, semanticForceMultiplier, setSemanticForce } = simulation
 
 const interaction = useGraphInteraction(svgRef, width, height, simulation)
-const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick } = interaction
+const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick, isZooming } = interaction
 
 // Lifecycle
 onMounted(() => {
@@ -52,11 +52,15 @@ const onKeydown = (e: KeyboardEvent) => {
 }
 
 // Rendering Computeds
+const visualScale = computed(() => {
+    return mapStore.scale * mapStore.halfSide / LOGICAL_HALF_SIDE
+})
+
 const transform = computed(() => {
     trigger.value // dependency
     const cx = mapStore.clientOffset[0] + mapStore.halfSide
     const cy = mapStore.clientOffset[1] + mapStore.halfSide
-    const s = mapStore.scale * mapStore.halfSide / LOGICAL_HALF_SIDE
+    const s = visualScale.value
     return `translate(${cx}, ${cy}) scale(${s}) translate(${mapStore.offset[0]}, ${mapStore.offset[1]})`
 })
 
@@ -68,7 +72,7 @@ const renderNodes = computed(() => {
         x: n.renderPos[0],
         y: n.renderPos[1],
         selected: n.id === currentAimId,
-        scale: mapStore.scale
+        scale: visualScale.value
     })) 
 })
 
@@ -79,7 +83,7 @@ const renderLinks = computed(() => {
         target: { ...l.target, x: l.target.renderPos[0], y: l.target.renderPos[1] },
         weight: l.weight,
         share: l.share,
-        scale: mapStore.scale
+        scale: visualScale.value
     })) 
 })
 
@@ -117,7 +121,13 @@ const stopSemanticForce = () => setSemanticForce(false)
 
 <template>
   <div class="graph-view">
-    <svg ref="svgRef" width="100%" height="100%" @click="onBackgroundClick">
+    <svg 
+        ref="svgRef" 
+        width="100%" 
+        height="100%" 
+        @click="onBackgroundClick"
+        :class="{ 'is-zooming': isZooming, 'hide-labels': !uiStore.graphShowLabels }"
+    >
       <g :transform="transform">
         <g class="links">
           <GraphLinkComponent 
@@ -186,6 +196,19 @@ const stopSemanticForce = () => setSemanticForce(false)
            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
         </svg>
       </button>
+
+      <button 
+        class="control-btn" 
+        :class="{ active: uiStore.graphShowLabels }"
+        @click="uiStore.toggleGraphShowLabels()"
+        title="Toggle Labels"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+           <path d="M4 7V4h16v3"></path>
+           <path d="M9 20h6"></path>
+           <path d="M12 4v16"></path>
+        </svg>
+      </button>
       
       <div class="segmented-control">
         <button 
@@ -210,6 +233,17 @@ const stopSemanticForce = () => setSemanticForce(false)
   background: #1e1e1e;
   overflow: hidden;
   position: relative;
+}
+
+/* Optimize rendering while zooming */
+.is-zooming :deep(.node-label),
+.hide-labels :deep(.node-label),
+.is-zooming :deep(.graph-link) {
+    display: none;
+}
+/* Ensure circles remain visible but optimize interactions */
+.is-zooming :deep(.node-circle) {
+    pointer-events: none;
 }
 
 .top-controls {

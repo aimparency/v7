@@ -1,7 +1,7 @@
 {
   "id": "570efde7-6a3b-4665-a2a7-e804514aa23c",
   "text": "while zooming, only render circles. no lables and no arrows",
-  "description": "",
+  "description": "While zooming (when zoom level is changing from frame to frame because of smooth zoom change), do not show labels or arrows for performance reasons. The svg get's redrawn on zoom. Let's make that light. The circles are enough orientation for the user. Also let's implement a switch for this.",
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -10,8 +10,8 @@
   "committedIn": [],
   "status": {
     "state": "done",
-    "comment": "Implemented link visibility optimization in GraphLink.vue using a zoom scale threshold. Links are now hidden when zoom is < 0.2.",
-    "date": 1768998680594
+    "comment": "Implemented `isZooming` state detection (debounced wheel, pinch tracking) and added CSS rules to hide labels and links while zooming. Also added a UI toggle button to permanently hide labels (simplified view).",
+    "date": 1769095746144
   },
   "intrinsicValue": 0,
   "cost": 1,

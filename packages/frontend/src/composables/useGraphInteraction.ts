@@ -21,6 +21,10 @@ export function useGraphInteraction(
     // State for layouting handle
     const layoutingHandlePos = vec2.create()
     let connectionHandled = false
+    
+    // Zoom state
+    const isZooming = ref(false)
+    let zoomTimeout: number | undefined
 
     // --- Helpers ---
     const updateHalfSide = () => {
@@ -300,6 +304,13 @@ export function useGraphInteraction(
         const mouse = getLocalPos(e.clientX, e.clientY)
         const f = Math.pow(1.1, -e.deltaY / 150)
         mapStore.zoom(f, mouse)
+        
+        // Handle isZooming state
+        isZooming.value = true
+        if (zoomTimeout) window.clearTimeout(zoomTimeout)
+        zoomTimeout = window.setTimeout(() => {
+            isZooming.value = false
+        }, 200)
     }
 
     // Touch Handling (Ported)
@@ -335,6 +346,7 @@ export function useGraphInteraction(
                         offset: vec2.clone(mapStore.offset), 
                         scale: mapStore.scale
                     }
+                    isZooming.value = true
                 } 
             } else {
                 if(touchState.currentCount == 0) {
@@ -378,7 +390,10 @@ export function useGraphInteraction(
     }
 
     const onTouchEnd = (e: TouchEvent) => {
-        if(touchState.currentCount > 1) pinchBeginning = undefined
+        if(touchState.currentCount > 1) {
+            pinchBeginning = undefined
+            isZooming.value = false
+        }
         if(touchState.currentCount > 0) endWhatever()
         touchState.currentCount = 0
     }
@@ -564,6 +579,7 @@ export function useGraphInteraction(
         onNodeDown,
         onNodeUp,
         onNodeClick,
-        onBackgroundClick
+        onBackgroundClick,
+        isZooming
     }
 }

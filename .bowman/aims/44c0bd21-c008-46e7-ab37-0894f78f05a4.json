@@ -1,0 +1,19 @@
+{
+  "id": "44c0bd21-c008-46e7-ab37-0894f78f05a4",
+  "text": "participate in metaculus tournaments",
+  "description": "https://www.metaculus.com/tournament/bridgewater/",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769023223469
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

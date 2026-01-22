@@ -1,0 +1,20 @@
+{
+  "id": "1976d643-a5fa-4b47-bc0a-d36cc7507b1b",
+  "text": "Fix Watchdog UI focus and status display",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "a927cfcc-e058-4262-9899-0bdba24ead8a"
+  ],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Implemented focus restoration to worker terminal when closing action overlay. Fixed running status display in agent selector by normalizing project paths (handling .bowman suffix mismatch).",
+    "date": 1769098403832
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

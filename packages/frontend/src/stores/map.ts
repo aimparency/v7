@@ -143,7 +143,7 @@ export const useMapStore = defineStore('map', {
     },
     centerOnNode(node: MapNode, duration = 1000) {
       const targetOffset = vec2.crScale(node.pos, -1)
-      const targetScale = 66 / node.r // Heuristic (zoomed out)
+      const targetScale = 22 / node.r // Heuristic (zoomed out) - reduced from 66 to 22 per aim d3b97d82
       this.animateCamera(targetOffset, targetScale, duration)
     }
   }

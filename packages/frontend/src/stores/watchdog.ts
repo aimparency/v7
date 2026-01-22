@@ -47,8 +47,16 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const currentProjectSession = computed(() => {
     const uiStore = useUIStore()
     if (!uiStore.projectPath) return null
+    // Normalize: strip trailing slashes, then .bowman
+    const normalize = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
+    
+    const normalizedUiPath = normalize(uiStore.projectPath)
+    
     return sessions.value.find(
-      s => s.projectPath === uiStore.projectPath && s.agentType === selectedAgentType.value
+      s => {
+        const normalizedSessionPath = normalize(s.projectPath)
+        return normalizedSessionPath === normalizedUiPath && s.agentType === selectedAgentType.value
+      }
     ) || null
   })
 

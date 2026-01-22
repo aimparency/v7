@@ -18,9 +18,9 @@ const props = defineProps<{
 const shouldShowLabel = computed(() => {
   // If no scale provided, assume visible (or 1)
   const currentScale = props.scale || 1
-  // Visual radius = node radius * zoom scale
-  // Hide if visual radius is less than 10 pixels
-  return (props.node.r * currentScale) > 10
+  // Visual radius = node radius * zoom scale (where scale is visual scale)
+  // Hide if visual radius is less than 20 pixels
+  return (props.node.r * currentScale) > 20
 })
 
 const fillColor = computed(() => {

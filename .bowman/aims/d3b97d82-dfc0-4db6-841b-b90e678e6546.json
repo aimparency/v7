@@ -10,8 +10,8 @@
   "committedIn": [],
   "status": {
     "state": "done",
-    "comment": "Adjusted Graph View zoom levels. Increased zoomPadding to 9. Restored distance sensitivity (0.75). Added 1% hysteresis deadzone. Added NaN recovery. Removed redundant Math.max(r, 10) clamp for cleaner logic.",
-    "date": 1768594038231
+    "comment": "Updated mapStore.centerOnNode heuristic from 66/r to 22/r, effectively zooming out 3x more when following selected aim.",
+    "date": 1769096259881
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -33,8 +33,14 @@ const runningAgents = computed(() => {
   const set = new Set<AgentType>()
   if (!uiStore.projectPath) return set
   
+  // Normalize: strip trailing slashes, then .bowman
+  const normalize = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
+  
+  const normalizedUiPath = normalize(uiStore.projectPath)
+
   store.sessions.forEach(s => {
-    if (s.projectPath === uiStore.projectPath) {
+    const normalizedSessionPath = normalize(s.projectPath)
+    if (normalizedSessionPath === normalizedUiPath) {
       set.add(s.agentType)
     }
   })
@@ -114,6 +120,15 @@ watch(() => store.focusRequestCounter, () => {
   setTimeout(() => {
     workerTerm.value?.focus()
   }, 200)
+})
+
+watch(() => store.showActionsOverlay, (newValue) => {
+  if (!newValue) {
+    // Overlay closed - restore focus to worker terminal
+    setTimeout(() => {
+      workerTerm.value?.focus()
+    }, 100)
+  }
 })
 
 onMounted(() => {
