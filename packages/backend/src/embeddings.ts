@@ -63,6 +63,7 @@ export async function saveEmbedding(projectPath: string, aimId: string, vector: 
     // Cache is updated by reference
 
     const storePath = await getVectorStorePath(projectPath);
+    await fs.ensureDir(path.dirname(storePath)); // Ensure .bowman directory exists
     await fs.writeJson(storePath, store, { spaces: 0 });  // Compact format (no indentation)
   } catch (error: any) {
     if (error.code === 'ENOENT') {

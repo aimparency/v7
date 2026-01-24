@@ -100,6 +100,7 @@ export async function calculateSemanticGraph(projectPath: string): Promise<Seman
 
   // Save to disk
   const cacheFile = path.join(projectPath, '.bowman', 'semantic-graph.json');
+  await fs.ensureDir(path.dirname(cacheFile)); // Ensure .bowman directory exists
   await fs.writeJson(cacheFile, result);
   
   semanticCache.set(projectPath, result);

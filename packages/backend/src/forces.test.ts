@@ -10,6 +10,9 @@ test('calculateSemanticGraph: assigns 3 nearest and 3 furthest aims for each aim
   const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
 
   try {
+    // Create .bowman directory
+    await fs.ensureDir(path.join(testDir, '.bowman'));
+
     // Create a vectors.json with 10 aims
     const vectors: Record<string, number[]> = {};
     const aimIds: string[] = [];
@@ -23,7 +26,7 @@ test('calculateSemanticGraph: assigns 3 nearest and 3 furthest aims for each aim
       vectors[id] = [Math.cos(angle), Math.sin(angle), i * 0.1];
     }
 
-    await fs.writeJson(path.join(testDir, 'vectors.json'), vectors);
+    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), vectors);
 
     // Calculate semantic graph
     const graph = await calculateSemanticGraph(testDir);
@@ -66,8 +69,11 @@ test('calculateSemanticGraph: handles < 2 aims gracefully', async () => {
   const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
 
   try {
+    // Create .bowman directory
+    await fs.ensureDir(path.join(testDir, '.bowman'));
+
     // Empty vectors
-    await fs.writeJson(path.join(testDir, 'vectors.json'), {});
+    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), {});
 
     const graph = await calculateSemanticGraph(testDir);
 
@@ -75,7 +81,7 @@ test('calculateSemanticGraph: handles < 2 aims gracefully', async () => {
     assert.equal(graph.averageDistance, 0, 'Should have 0 average distance');
 
     // Single aim
-    await fs.writeJson(path.join(testDir, 'vectors.json'), {
+    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), {
       'aim-1': [1, 0, 0]
     });
 
@@ -92,13 +98,16 @@ test('invalidateSemanticCache: clears memory cache', async () => {
   const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
 
   try {
+    // Create .bowman directory
+    await fs.ensureDir(path.join(testDir, '.bowman'));
+
     // Create initial vectors
     const vectors = {
       'aim-1': [1, 0, 0],
       'aim-2': [0, 1, 0],
       'aim-3': [0, 0, 1]
     };
-    await fs.writeJson(path.join(testDir, 'vectors.json'), vectors);
+    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), vectors);
 
     // Get semantic graph (caches it)
     const graph1 = await getSemanticGraph(testDir);
@@ -110,7 +119,7 @@ test('invalidateSemanticCache: clears memory cache', async () => {
       'aim-4': [1, 1, 0],
       'aim-5': [1, 0, 1]
     };
-    await fs.writeJson(path.join(testDir, 'vectors.json'), newVectors);
+    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), newVectors);
 
     // WITHOUT invalidation, we'd get the old cached result
     // But first let's verify the cache is working (get same result)

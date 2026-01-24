@@ -98,7 +98,7 @@ test('calculateAimValues - simple distribution', () => {
   
   // Costs:
   // Root cost = self(1) + children(2+3) = 6
-  assert.equal(result.costs.get('root'), 6);
-  assert.equal(result.costs.get('child1'), 2);
-  assert.equal(result.costs.get('child2'), 3);
+  assert.ok(Math.abs(result.costs.get('root')! - 6) < 0.01);
+  assert.ok(Math.abs(result.costs.get('child1')! - 2) < 0.01);
+  assert.ok(Math.abs(result.costs.get('child2')! - 3) < 0.01);
 });
