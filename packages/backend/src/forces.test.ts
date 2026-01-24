@@ -54,7 +54,7 @@ test('calculateSemanticGraph: assigns 3 nearest and 3 furthest aims for each aim
     }
 
     // Verify cache was saved to disk
-    const cacheFile = path.join(testDir, 'semantic-graph.json');
+    const cacheFile = path.join(testDir, '.bowman', 'semantic-graph.json');
     assert.ok(await fs.pathExists(cacheFile), 'Should save semantic graph to disk');
 
   } finally {

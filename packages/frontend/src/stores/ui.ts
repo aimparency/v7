@@ -397,13 +397,20 @@ export const useUIStore = defineStore('ui', {
           await dataStore.loadPhaseAims(this.projectPath, path.phase.id)
         } else {
           if (isExistingAim) {
-            console.warn('Cannot link existing aim as floating aim - ignoring')
-            this.showAimModal = false
-            return
+            // If there's a callback (e.g., from graph view drag), allow it - callback will handle connection
+            if (this.aimCreationCallback) {
+              console.log('Existing aim selected with callback - callback will handle connection')
+              newAimId = aimTextOrId
+            } else {
+              console.warn('Cannot link existing aim as floating aim - ignoring')
+              this.showAimModal = false
+              return
+            }
+          } else {
+            console.log('create floating aim', aimAttributes)
+            const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
+            newAimId = result.id
           }
-          console.log('create floating aim', aimAttributes)
-          const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
-          newAimId = result.id
         }
       } else if (path.aims.length > 0) {
         const currentAim = path.aims[path.aims.length - 1]
@@ -518,13 +525,20 @@ export const useUIStore = defineStore('ui', {
             } else {
               // ... existing floating logic (weight ignored as no parent)
               if (isExistingAim) {
-                console.warn('Cannot link existing aim as floating aim - ignoring')
-                this.showAimModal = false
-                return
+                // If there's a callback (e.g., from graph view drag), allow it - callback will handle connection
+                if (this.aimCreationCallback) {
+                  console.log('Existing aim selected with callback - callback will handle connection')
+                  newAimId = aimTextOrId
+                } else {
+                  console.warn('Cannot link existing aim as floating aim - ignoring')
+                  this.showAimModal = false
+                  return
+                }
+              } else {
+                // free floating - use createFloatingAim
+                const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
+                newAimId = result.id
               }
-              // free floating - use createFloatingAim
-              const result = await dataStore.createFloatingAim(this.projectPath, aimAttributes)
-              newAimId = result.id
             }
           }
         }
@@ -2510,6 +2524,19 @@ export const useUIStore = defineStore('ui', {
           break
         }
       }
+    },
+
+    resetViewState() {
+      // Reset column/viewport state when switching projects
+      this.selectedColumn = 0
+      this.viewportStart = 0
+      this.viewportSize = 2
+      this.rightmostColumnIndex = 0
+      this.floatingAimIndex = -1
+      this.navigatingAims = false
+      this.graphSelectedAimId = undefined
+      this.selectedLink = null
+      localStorage.setItem('aimparency-selected-column', '0')
     },
   }
 })

@@ -33,7 +33,7 @@ export interface VectorStore {
 }
 
 async function getVectorStorePath(projectPath: string) {
-  return path.join(projectPath, 'vectors.json');
+  return path.join(projectPath, '.bowman', 'vectors.json');
 }
 
 // Cache per project
@@ -58,11 +58,12 @@ export async function loadVectorStore(projectPath: string): Promise<VectorStore>
 export async function saveEmbedding(projectPath: string, aimId: string, vector: number[]) {
   try {
     const store = await loadVectorStore(projectPath);
-    store[aimId] = vector;
+    // Reduce precision to 6 decimals to save space (plenty for cosine similarity)
+    store[aimId] = vector.map(v => parseFloat(v.toFixed(6)));
     // Cache is updated by reference
-    
+
     const storePath = await getVectorStorePath(projectPath);
-    await fs.writeJson(storePath, store);
+    await fs.writeJson(storePath, store, { spaces: 0 });  // Compact format (no indentation)
   } catch (error: any) {
     if (error.code === 'ENOENT') {
       console.warn(`Failed to save embedding: Project directory might have been deleted (${projectPath})`);

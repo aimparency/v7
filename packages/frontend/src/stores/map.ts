@@ -19,14 +19,14 @@ export interface LayoutCandidate {
 
 export const useMapStore = defineStore('map', {
   state: () => ({
-    scale: 1, 
+    scale: 1,
     offset: vec2.fromValues(0,0),
     mouse: {
-      logical: vec2.fromValues(0,0), 
+      logical: vec2.fromValues(0,0),
       physical: vec2.fromValues(0,0)
     },
-    halfSide: 0, 
-    xratio: 1, 
+    halfSide: 400,  // Default to reasonable value (prevents NaN from division by zero)
+    xratio: 1,
     yratio: 1, 
     mousePhysBegin: vec2.create(), 
     panBeginning: undefined as undefined | { offset: vec2.T },
@@ -145,6 +145,18 @@ export const useMapStore = defineStore('map', {
       const targetOffset = vec2.crScale(node.pos, -1)
       const targetScale = 22 / node.r // Heuristic (zoomed out) - reduced from 66 to 22 per aim d3b97d82
       this.animateCamera(targetOffset, targetScale, duration)
+    },
+    resetView() {
+      // Reset pan/zoom to defaults (called when switching projects)
+      this.scale = 1
+      this.offset = vec2.fromValues(0, 0)
+      this.connecting = false
+      this.connectFrom = undefined
+      this.dragCandidate = undefined
+      this.layouting = false
+      this.layoutCandidate = undefined
+      this.isTracking = false
+      this.anim.update = undefined
     }
   }
 })

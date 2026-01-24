@@ -29,8 +29,12 @@ export function useGraphInteraction(
     // --- Helpers ---
     const updateHalfSide = () => {
         if (!svgRef.value) return
-        let w = svgRef.value.clientWidth 
+        let w = svgRef.value.clientWidth
         let h = svgRef.value.clientHeight
+
+        // Guard: don't set halfSide to 0 (causes NaN in coordinate transforms)
+        if (w === 0 || h === 0) return
+
         width.value = w
         height.value = h
         if(w > h) {
@@ -209,45 +213,47 @@ export function useGraphInteraction(
         } else if (mapStore.connecting) {
             if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved) {
                 const parentNode = mapStore.connectFrom
-                const dropPosLogical = mapStore.physicalToLogicalCoord(mapStore.mouse)
+                const dropPosLogical = mapStore.mouse.logical  // Use already-computed logical coords
                 
                 uiStore.aimCreationCallback = async (newAimId) => {
-                     console.log('Graph: Aim created via drag', newAimId)
-                     // Wait for node to exist
+                     // Wait for node to exist in the graph
                      const checkNode = () => {
                          const newNode = nodeMap.get(newAimId)
                          if (newNode) {
-                             console.log('Graph: Node found', newNode)
+                             // Validate drop position
+                             const x = dropPosLogical[0] ?? 0
+                             const y = dropPosLogical[1] ?? 0
+
                              // 1. Position the new node
-                             newNode.pos[0] = dropPosLogical[0]
-                             newNode.pos[1] = dropPosLogical[1]
-                             newNode.renderPos[0] = dropPosLogical[0]
-                             newNode.renderPos[1] = dropPosLogical[1]
+                             newNode.pos[0] = x
+                             newNode.pos[1] = y
+                             newNode.renderPos[0] = x
+                             newNode.renderPos[1] = y
                              newNode.shift = [0, 0]
-                             
+
                              // 2. Connect parent -> newAim
-                             const deltaX = dropPosLogical[0] - parentNode.pos[0]
-                             const deltaY = dropPosLogical[1] - parentNode.pos[1]
-                             const rSum = parentNode.r + (newNode.r || 10)
-                             const relPos = [deltaX/rSum, deltaY/rSum]
-                             
-                             console.log('Graph: Connecting', parentNode.id, '->', newAimId, 'rel:', relPos)
+                             const parentX = parentNode.pos[0] ?? 0
+                             const parentY = parentNode.pos[1] ?? 0
+                             const parentR = parentNode.r ?? 25
+                             const childR = newNode.r ?? 25
+
+                             const deltaX = x - parentX
+                             const deltaY = y - parentY
+                             const rSum = parentR + childR
+                             const relPos: [number, number] = [deltaX/rSum, deltaY/rSum]
 
                              trpc.aim.connectAims.mutate({
                                 projectPath: uiStore.projectPath,
                                 parentAimId: parentNode.id,
                                 childAimId: newAimId,
                                 relativePosition: relPos as [number, number]
-                             }).then(() => {
-                                 console.log('Graph: Connection success')
-                                 dataStore.fetchAim(parentNode.id)
-                                 dataStore.fetchAim(newAimId)
-                                 dataStore.recalculateValues()
+                             }).then(async () => {
+                                 // Reload both aims to get updated incoming/outgoing arrays
+                                 await dataStore.loadAims(uiStore.projectPath, [parentNode.id, newAimId])
                              }).catch(err => {
                                  console.error('Graph: Connection failed', err)
                              })
                          } else {
-                             console.log('Graph: Waiting for node...')
                              setTimeout(checkNode, 50)
                          }
                      }
@@ -417,10 +423,20 @@ export function useGraphInteraction(
                 connectionHandled = true
                 const parent = mapStore.connectFrom as GraphNode
                 const child = node
-                const deltaX = child.pos[0] - parent.pos[0]
-                const deltaY = child.pos[1] - parent.pos[1]
-                const rSum = parent.r + child.r
+
+                // Validate positions and radii
+                const parentX = parent.pos?.[0] ?? 0
+                const parentY = parent.pos?.[1] ?? 0
+                const childX = child.pos?.[0] ?? 0
+                const childY = child.pos?.[1] ?? 0
+                const parentR = parent.r ?? 25
+                const childR = child.r ?? 25
+
+                const deltaX = childX - parentX
+                const deltaY = childY - parentY
+                const rSum = parentR + childR
                 const relativePosition: [number, number] = [deltaX / rSum, deltaY / rSum]
+
                 try {
                     await trpc.aim.connectAims.mutate({
                         projectPath: uiStore.projectPath,
@@ -428,12 +444,8 @@ export function useGraphInteraction(
                         childAimId: child.id,
                         relativePosition,
                     })
-                    const updatedParent = await trpc.aim.get.query({
-                        projectPath: uiStore.projectPath,
-                        aimId: parent.id
-                    })
-                    dataStore.replaceAim(parent.id, updatedParent)
-                    dataStore.recalculateValues()
+                    // Reload both aims to get updated incoming/outgoing arrays
+                    await dataStore.loadAims(uiStore.projectPath, [parent.id, child.id])
                 } catch (e) {
                     console.error('Failed to connect aims:', e)
                 }
@@ -504,21 +516,23 @@ export function useGraphInteraction(
 
             uiStore.aimCreationCallback = (id) => {
                  const node = nodeMap.get(id)
+                 const x = logicalMouse[0] ?? 0
+                 const y = logicalMouse[1] ?? 0
                  if (node) {
-                    node.pos[0] = logicalMouse[0]
-                    node.pos[1] = logicalMouse[1]
-                    node.renderPos[0] = logicalMouse[0]
-                    node.renderPos[1] = logicalMouse[1]
+                    node.pos[0] = x
+                    node.pos[1] = y
+                    node.renderPos[0] = x
+                    node.renderPos[1] = y
                     node.shift[0] = 0
                     node.shift[1] = 0
                  } else {
                     setTimeout(() => {
                          const n = nodeMap.get(id)
                          if (n) {
-                            n.pos[0] = logicalMouse[0]
-                            n.pos[1] = logicalMouse[1]
-                            n.renderPos[0] = logicalMouse[0]
-                            n.renderPos[1] = logicalMouse[1]
+                            n.pos[0] = x
+                            n.pos[1] = y
+                            n.renderPos[0] = x
+                            n.renderPos[1] = y
                             n.shift[0] = 0
                             n.shift[1] = 0
                          }

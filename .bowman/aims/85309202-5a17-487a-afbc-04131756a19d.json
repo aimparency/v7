@@ -1,0 +1,16 @@
+{
+  "id": "85309202-5a17-487a-afbc-04131756a19d",
+  "text": "Fix drag-to-create aim bug (null position values)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Fixed in useGraphInteraction.ts lines 223-224 and 513-514",
+    "date": 1769271107068
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

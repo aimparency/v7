@@ -3,6 +3,7 @@ import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
 import { calculateAimValues, AIMPARENCY_DIR_NAME, DEFAULT_STATUSES } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
+import { useMapStore } from './map'
 import { loadAllAimsCache, saveAims } from '../utils/db'
 
 // Extend Phase type with UI-only properties
@@ -631,12 +632,17 @@ export const useDataStore = defineStore('data', {
 
     async loadProject(projectPath: string) {
       const uiStore = useUIStore();
+      const mapStore = useMapStore();
 
       if (!projectPath) return;
 
       try {
         uiStore.setProjectPath(projectPath);
         uiStore.setConnectionStatus('connecting');
+
+        // Reset view state when switching projects
+        uiStore.resetViewState();
+        mapStore.resetView();
 
         // Repair project state (clean up invalid commitments)
         const [meta] = await Promise.all([

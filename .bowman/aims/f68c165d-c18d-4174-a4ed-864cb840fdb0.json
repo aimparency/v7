@@ -1,0 +1,18 @@
+{
+  "id": "f68c165d-c18d-4174-a4ed-864cb840fdb0",
+  "text": "Write 90s product video script for AI NATION grant",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e9f7d467-e347-41aa-a3cb-ad09cbd4b230"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Script written to video-pitch-script.md with 4-layer structure: relatable problem, demo, business model, bold vision",
+    "date": 1769187463060
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

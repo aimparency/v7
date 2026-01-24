@@ -28,7 +28,7 @@ export async function getSemanticGraph(projectPath: string): Promise<SemanticGra
   }
 
   // 2. Check Disk Cache
-  const cacheFile = path.join(projectPath, 'semantic-graph.json');
+  const cacheFile = path.join(projectPath, '.bowman', 'semantic-graph.json');
   if (await fs.pathExists(cacheFile)) {
     const diskGraph = await fs.readJson(cacheFile);
     // basic check to see if it's stale? For now, trust it.
@@ -99,7 +99,7 @@ export async function calculateSemanticGraph(projectPath: string): Promise<Seman
   };
 
   // Save to disk
-  const cacheFile = path.join(projectPath, 'semantic-graph.json');
+  const cacheFile = path.join(projectPath, '.bowman', 'semantic-graph.json');
   await fs.writeJson(cacheFile, result);
   
   semanticCache.set(projectPath, result);
