@@ -1,0 +1,20 @@
+{
+  "id": "cf695de6-3a8e-4830-a274-14a942998c04",
+  "text": "Dynamic VBO buffer management (partial updates, ping-pong)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Core concept component",
+    "date": 1769328382398
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

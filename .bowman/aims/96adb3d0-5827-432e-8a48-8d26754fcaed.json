@@ -1,0 +1,19 @@
+{
+  "id": "96adb3d0-5827-432e-8a48-8d26754fcaed",
+  "text": "use the \"instruct\" option less. Only when main agent comes to a point of completeness and wondering what to do next.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "173bdd80-4cb8-44bc-a4b8-13ac1267795d"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769328587035
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

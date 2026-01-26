@@ -993,6 +993,14 @@ const appRouter = t.router({
             }
           : { state: 'open' as const, comment: '', date: Date.now() };
 
+        // Check if this is the first aim in the project
+        const normalizedPath = normalizeProjectPath(input.projectPath);
+        const aimsDir = path.join(normalizedPath, 'aims');
+        const existingAims = await fs.pathExists(aimsDir)
+          ? (await fs.readdir(aimsDir)).filter(f => f.endsWith('.json')).length
+          : 0;
+        const isFirstAim = existingAims === 0;
+
         const aim: Aim = {
           id: aimId,
           text: input.aim.text,
@@ -1002,9 +1010,9 @@ const appRouter = t.router({
           supportedAims: [],
           committedIn: [],
           status,
-          intrinsicValue: input.aim.intrinsicValue ?? 0,
+          intrinsicValue: input.aim.intrinsicValue ?? (isFirstAim ? 1000 : 0),
           cost: input.aim.cost ?? 1,
-          loopWeight: input.aim.loopWeight ?? 0
+          loopWeight: input.aim.loopWeight ?? 1
         };
 
         await writeAim(input.projectPath, aim);
@@ -1081,7 +1089,7 @@ const appRouter = t.router({
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0,
           cost: input.aim.cost ?? 1,
-          loopWeight: input.aim.loopWeight ?? 0
+          loopWeight: input.aim.loopWeight ?? 1
         };
 
         await writeAim(input.projectPath, childAim);
@@ -1158,7 +1166,7 @@ const appRouter = t.router({
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0,
           cost: input.aim.cost ?? 1,
-          loopWeight: input.aim.loopWeight ?? 0
+          loopWeight: input.aim.loopWeight ?? 1
         };
 
         await writeAim(input.projectPath, aim);

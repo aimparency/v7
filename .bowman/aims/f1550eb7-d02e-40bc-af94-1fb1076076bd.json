@@ -1,0 +1,19 @@
+{
+  "id": "f1550eb7-d02e-40bc-af94-1fb1076076bd",
+  "text": "make sure cache.db vectors.json semantic-graph.json are created in <project>/.bowman/ and not in <project>/",
+  "description": "make sure when setting up the project, all files that are not aims and connections are listed in the initial .gitignore in ./.bowman",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "173bdd80-4cb8-44bc-a4b8-13ac1267795d"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769288687870
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

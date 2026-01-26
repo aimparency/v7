@@ -43,7 +43,7 @@ test('graph view: create first aim by double-click, then drag to create sub-aim'
     await expect(graphView).toBeVisible();
 
     // Get SVG element
-    const svg = page.locator('.graph-view svg');
+    const svg = page.locator('.graph-view > svg');
     await expect(svg).toBeVisible();
 
     // Double-click on empty space to create first aim
@@ -148,7 +148,7 @@ test('graph view: drag from existing node to another existing node creates conne
     await page.keyboard.press('g');
     await page.waitForTimeout(500);
 
-    const svg = page.locator('.graph-view svg');
+    const svg = page.locator('.graph-view > svg');
     const svgBox = await svg.boundingBox();
     if (!svgBox) throw new Error('SVG not found');
 

@@ -305,21 +305,38 @@ test('createFloatingAim - sets and persists intrinsicValue', async () => {
   assert.equal(aim.intrinsicValue, 42);
 });
 
-test('createFloatingAim - defaults intrinsicValue to 0', async () => {
-  const aimResult = await caller.aim.createFloatingAim({
+test('createFloatingAim - first aim defaults intrinsicValue to 1000', async () => {
+  // First aim in empty project should default to 1000
+  const firstAimResult = await caller.aim.createFloatingAim({
     projectPath: TEST_PROJECT_PATH,
     aim: {
-      text: 'Default Value Aim',
+      text: 'First Aim',
       status: { state: 'open', comment: '', date: Date.now() }
     }
   });
 
-  const aim = await caller.aim.get({
+  const firstAim = await caller.aim.get({
     projectPath: TEST_PROJECT_PATH,
-    aimId: aimResult.id
+    aimId: firstAimResult.id
   });
 
-  assert.equal(aim.intrinsicValue, 0);
+  assert.equal(firstAim.intrinsicValue, 1000);
+
+  // Second aim should default to 0
+  const secondAimResult = await caller.aim.createFloatingAim({
+    projectPath: TEST_PROJECT_PATH,
+    aim: {
+      text: 'Second Aim',
+      status: { state: 'open', comment: '', date: Date.now() }
+    }
+  });
+
+  const secondAim = await caller.aim.get({
+    projectPath: TEST_PROJECT_PATH,
+    aimId: secondAimResult.id
+  });
+
+  assert.equal(secondAim.intrinsicValue, 0);
 });
 
 test('readAim - performs lazy migration of incoming array', async () => {

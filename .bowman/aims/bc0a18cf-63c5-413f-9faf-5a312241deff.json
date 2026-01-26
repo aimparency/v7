@@ -1,0 +1,19 @@
+{
+  "id": "bc0a18cf-63c5-413f-9faf-5a312241deff",
+  "text": "Gemini can sometimes get stuck in processing. We need to activate the watchdog after >15min of processing and check the situation. If the current processing is actually > 15min \"(esc to cancel, 15m 8s)\" watchdog should be able to call an action \"interrupt\" which inserts 2 times esc. key press in the main agent session",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "173bdd80-4cb8-44bc-a4b8-13ac1267795d"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769328440916
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

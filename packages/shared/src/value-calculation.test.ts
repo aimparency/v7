@@ -24,30 +24,30 @@ test('calculateAimValues computes priority correctly', () => {
 
   const result = calculateAimValues([aimA, aimB]);
 
-  // Check simple value/cost (Total Intrinsic = 510)
-  // Value A (norm) = 10/510
-  // Value B (norm) = 500/510
-  
-  // Cost A = 5
-  // Cost B = 200
+  // Total Intrinsic = 510
+  // Value A = 10 (normalized then denormalized)
+  // Value B = 500 (normalized then denormalized)
 
-  // Priority A = (10/510 * 510) / 5 = 2
-  // Priority B = (500/510 * 510) / 200 = 2.5
-  
-  // Need to verify if 'priority' is returned. 
-  // The current function returns { values, costs ... } but not priorities explicitly mapped?
-  // Or does it mutate the aims? The function returns maps.
-  // The types.ts says Aim has 'calculatedValue' etc. but those are likely populated *after* calling this function 
-  // in the actual application code, OR we should update calculateAimValues to return priorities too.
-  
-  // Let's assume we want calculateAimValues to return a 'priorities' map.
-  
+  // Priority uses time-discounted value/cost formula:
+  // priority = (value / (1 + DISCOUNT_RATE)^cost) / cost
+  // where DISCOUNT_RATE = 0.05
+
+  // Priority A = (10 / 1.05^5) / 5
+  //            = (10 / 1.2763) / 5
+  //            = 7.835 / 5
+  //            ≈ 1.567
+
+  // Priority B = (500 / 1.05^200) / 200
+  //            = (500 / 17292.58) / 200
+  //            = 0.0289 / 200
+  //            ≈ 0.000145
+
   const priorityA = result.priorities?.get('A');
   const priorityB = result.priorities?.get('B');
 
-  // Use approximate equality for floating point
-  assert.ok(Math.abs(priorityA! - 2) < 0.5, `Priority A should be ~2, got ${priorityA}`);
-  assert.ok(Math.abs(priorityB! - 2.5) < 0.5, `Priority B should be ~2.5, got ${priorityB}`);
+  // Priority A should be significantly higher than B due to discounting
+  assert.ok(priorityA! > 1.5 && priorityA! < 1.6, `Priority A should be ~1.567, got ${priorityA}`);
+  assert.ok(priorityB! > 0.0001 && priorityB! < 0.0002, `Priority B should be ~0.000145, got ${priorityB}`);
 });
 
 test('calculateAimValues distributes costs weighted by value share', () => {

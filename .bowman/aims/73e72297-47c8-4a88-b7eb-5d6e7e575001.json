@@ -1,0 +1,19 @@
+{
+  "id": "73e72297-47c8-4a88-b7eb-5d6e7e575001",
+  "text": "When checking for watchdog response, we have to wait for isGenerating or 5s passed before we'd take not isGenerating as \"complete\"",
+  "description": "ERROR: Invalid JSON. Error: No JSON closing brace found. Retry JSON.",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "173bdd80-4cb8-44bc-a4b8-13ac1267795d"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769328665800
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,0 +1,59 @@
+{
+  "id": "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200",
+  "text": "WebGL Graph Rendering",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "6bfa572e-b451-44e0-b36d-fe4e3ab6f582",
+      "relativePosition": [
+        -2.499995939012812,
+        -0.004506098029094508
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "cf695de6-3a8e-4830-a274-14a942998c04",
+      "relativePosition": [
+        2.491162711952911,
+        -0.21001986233548953
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ff2e9a3b-b65e-4e45-abec-c19cffe59bad",
+      "relativePosition": [
+        -0.37296574056985177,
+        -2.4720227661494505
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9f83a877-1b9d-42a4-a7f8-72344ff27459",
+      "relativePosition": [
+        0.9120287693986927,
+        2.327703487085309
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "d7f7b02f-e650-4cb5-aeaa-e7ef36279b67",
+      "relativePosition": [
+        2.1641051243003333,
+        -1.2516585041364279
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Added detailed description.",
+    "date": 1769328312346
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

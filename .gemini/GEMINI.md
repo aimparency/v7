@@ -20,7 +20,7 @@
 - prefer working test driven: for any feature, define a test case and then implement the functionality. This way, any feature will be protected against regression. 
 - The user is interested in using financial markets as an RL training environment for the agent (inspired by Nof1/AlphaZero), viewing capital allocation as a convergence of intelligence and truth.
 - User prefers using 'gemini' CLI one-shot commands over paid APIs (like OpenAI) to utilize existing subscriptions.
-- Felix has a brother he was competitive with and grew apart from; he admires the symbiotic, non-competitive dynamic of Billie Eilish and Finneas.
-- The user's name is Felix.
 - The Watchdog Broker (in backend) manages watchdog processes per project path (normalized to .bowman), reusing sessions and enforcing a 5-minute idle timeout reset by frontend keepalives (every 30s).
 - When you are not sure about user intent regarding an aim you are working on, pause work on it, set status to "unclear" and describe the ambiguity in the status comment. 
+- the dev server is usually always running (with: npm run dev); no need to start it yourself ever. 
+- the unit for value and cost is explicitly up to the user

@@ -1,0 +1,20 @@
+{
+  "id": "d7f7b02f-e650-4cb5-aeaa-e7ef36279b67",
+  "text": "Implement distance field text rendering for performant scaling",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Core concept component",
+    "date": 1769329177924
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

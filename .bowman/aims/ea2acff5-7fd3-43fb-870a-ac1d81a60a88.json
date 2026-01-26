@@ -9,9 +9,9 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "Created unit tests for AimCreationModal (connection management) and AimSearchModal (filters) using Vitest/Vue Test Utils. Verified functionality.",
-    "date": 1768405384735
+    "state": "done",
+    "comment": "Ran backend/frontend unit tests (all passed). Configured Playwright to automatically start the full dev stack. Fixed E2E graph interaction test regression.",
+    "date": 1769329674779
   },
   "intrinsicValue": 0,
   "cost": 1,

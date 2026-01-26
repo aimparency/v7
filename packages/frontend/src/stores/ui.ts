@@ -3,6 +3,7 @@ import type { Hint } from 'shared'
 import { timestampToLocalDate, timestampToLocalTime, AIMPARENCY_DIR_NAME } from 'shared'
 import { trpc } from '../trpc'
 import { useDataStore, type Aim, type Phase } from './data'
+import { AIM_DEFAULTS } from '../constants/aimDefaults'
 
 type RelativePosition = 'before' | 'after' 
 type SelectionPath = {
@@ -358,7 +359,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Create aim and update selection
-    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = 0, loopWeight: number = 1, cost: number = 1, weight: number = 1, supportedAims: string[] = [], supportingConnections: { aimId: string, weight?: number, relativePosition?: [number, number] }[] = []) {
+    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = AIM_DEFAULTS.intrinsicValue, loopWeight: number = AIM_DEFAULTS.loopWeight, cost: number = AIM_DEFAULTS.cost, weight: number = 1, supportedAims: string[] = [], supportingConnections: { aimId: string, weight?: number, relativePosition?: [number, number] }[] = []) {
       const dataStore = useDataStore()
 
       const path = this.getSelectionPath()
@@ -370,7 +371,7 @@ export const useUIStore = defineStore('ui', {
         status: { state: 'open' as const, comment: '', date: Date.now() },
         supportingConnections,
         supportedAims,
-        intrinsicValue,
+        ...(intrinsicValue !== 0 && { intrinsicValue }),
         loopWeight,
         cost
       }
@@ -2435,21 +2436,14 @@ export const useUIStore = defineStore('ui', {
       }
 
       switch (event.key) {
-        case 'Escape': 
+        case 'Escape':
           event.preventDefault()
           if(this.pendingDeleteAimId) {
             this.pendingDeleteAimId = null
           } else {
-            // If deeply nested, pop up one level (keeping parent expanded)
-            if (path.aims.length > 1) {
-                const parentAim = path.aims[path.aims.length - 2]
-                if (parentAim) {
-                    parentAim.selectedIncomingIndex = undefined
-                }
-            } else {
-                // Top level: exit navigation mode
-                this.navigatingAims = false
-            }
+            // Always exit aim navigation mode on ESC
+            // This allows quick column switching without navigating through nested aims
+            this.navigatingAims = false
           }
           break
         case 'e': {

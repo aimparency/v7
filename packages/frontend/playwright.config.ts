@@ -8,7 +8,7 @@ import dotenv from 'dotenv'
  */
 dotenv.config();
 
-const PORT = process.env.VITE_PORT || 4001;
+const PORT = process.env.PORT_FRONTEND || 4000;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -95,16 +95,16 @@ const baseConfig = {
   // outputDir: 'test-results/',
 
   /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   /**
-  //    * Use the dev server by default for faster feedback loop.
-  //    * Use the preview server on CI for more realistic testing.
-  //    * Playwright will re-use the local server if there is already a dev-server running.
-  //    */
-  //   command: process.env.CI ? 'npm run preview' : 'npm run dev',
-  //   port: process.env.CI ? 4173 : 5173,
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  webServer: {
+    /**
+     * Use the dev server by default for faster feedback loop.
+     * Use the preview server on CI for more realistic testing.
+     * Playwright will re-use the local server if there is already a dev-server running.
+     */
+    command: process.env.CI ? 'npm run preview' : 'cd ../.. && npm run dev:delay',
+    port: Number(PORT),
+    reuseExistingServer: true,
+  },
 }
 
 export default defineConfig({

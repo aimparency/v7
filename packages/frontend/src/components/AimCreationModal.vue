@@ -5,18 +5,19 @@ import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import type { Aim, AimStatusState } from 'shared'
 import TagInput from './TagInput.vue'
+import { AIM_DEFAULTS } from '../constants/aimDefaults'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
 
-const aimText = ref('')
-const aimDescription = ref('')
-const aimIntrinsicValue = ref(0)
-const aimCost = ref(1)
-const aimLoopWeight = ref(0)
-const aimTags = ref<string[]>([])
-const selectedStatus = ref<AimStatusState>('open')
-const statusComment = ref('')
+const aimText = ref(AIM_DEFAULTS.text)
+const aimDescription = ref(AIM_DEFAULTS.description)
+const aimIntrinsicValue = ref(AIM_DEFAULTS.intrinsicValue)
+const aimCost = ref(AIM_DEFAULTS.cost)
+const aimLoopWeight = ref(AIM_DEFAULTS.loopWeight)
+const aimTags = ref<string[]>([...AIM_DEFAULTS.tags])
+const selectedStatus = ref<AimStatusState>(AIM_DEFAULTS.status.state)
+const statusComment = ref(AIM_DEFAULTS.status.comment)
 const searchResults = ref<Aim[]>([])
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
 const supportingConnectionsList = ref<{ id: string, text: string, weight: number }[]>([])
@@ -322,15 +323,15 @@ onMounted(async () => {
       }
     }
   } else {
-    // Reset for create mode
-    aimText.value = ''
-    aimDescription.value = ''
-    aimTags.value = []
-    aimIntrinsicValue.value = 0
-    aimCost.value = 1
-    aimLoopWeight.value = 0
-    selectedStatus.value = 'open'
-    statusComment.value = ''
+    // Reset for create mode using defaults
+    aimText.value = AIM_DEFAULTS.text
+    aimDescription.value = AIM_DEFAULTS.description
+    aimTags.value = [...AIM_DEFAULTS.tags]
+    aimIntrinsicValue.value = AIM_DEFAULTS.intrinsicValue
+    aimCost.value = AIM_DEFAULTS.cost
+    aimLoopWeight.value = AIM_DEFAULTS.loopWeight
+    selectedStatus.value = AIM_DEFAULTS.status.state
+    statusComment.value = AIM_DEFAULTS.status.comment
     searchResults.value = []
     selectedSearchIndex.value = 0
   }
