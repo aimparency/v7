@@ -18,6 +18,18 @@ export type Aim = BaseAim & {
   selectedIncomingIndex?: number
 }
 
+// Type for creating new aims (omits server-generated fields)
+// Connections can be partial since backend provides defaults
+export type AimCreationParams = Omit<BaseAim, 'id' | 'incoming' | 'committedIn' | 'calculatedValue' | 'calculatedCost' | 'calculatedDoneCost' | 'calculatedPriority' | 'supportingConnections'> & {
+  supportedAims?: string[]
+  supportingConnections?: Array<{
+    aimId: string
+    weight?: number
+    relativePosition?: [number, number]
+    explanation?: string
+  }>
+}
+
 export const useDataStore = defineStore('data', {
   state: () => ({
     phases: {} as Record<string, Phase>,
@@ -343,11 +355,11 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async createFloatingAim(projectPath: string, aim: Omit<Aim, 'id' | 'incoming' | 'committedIn'> & { supportedAims?: string[] }): Promise<{id: string}> {
+    async createFloatingAim(projectPath: string, aim: AimCreationParams): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createFloatingAim.mutate({
           projectPath,
-          aim: aim as any // Cast to any to satisfy backend schema which expects optional arrays
+          aim
         })
 
         this.aims[newAim.id] = newAim
@@ -369,12 +381,12 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async createSubAim(projectPath: string, parentAimId: string, aim: Omit<Aim, 'id' | 'incoming' | 'committedIn'> & { supportedAims?: string[] }, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
+    async createSubAim(projectPath: string, parentAimId: string, aim: AimCreationParams, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createSubAim.mutate({
           projectPath,
           parentAimId,
-          aim: aim as any,
+          aim,
           positionInParent,
           weight
         })
@@ -401,12 +413,12 @@ export const useDataStore = defineStore('data', {
       }
     }, 
 
-    async createCommittedAim(projectPath: string, phaseId: string, aim: Omit<Aim, 'id' | 'incoming' | 'committedIn'> & { supportedAims?: string[] }, insertionIndex?: number): Promise<{id: string}> {
+    async createCommittedAim(projectPath: string, phaseId: string, aim: AimCreationParams, insertionIndex?: number): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createAimInPhase.mutate({
           projectPath,
           phaseId,
-          aim: aim as any,
+          aim,
           insertionIndex
         })
 

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { Hint } from 'shared'
 import { timestampToLocalDate, timestampToLocalTime, AIMPARENCY_DIR_NAME } from 'shared'
 import { trpc } from '../trpc'
-import { useDataStore, type Aim, type Phase } from './data'
+import { useDataStore, type Aim, type Phase, type AimCreationParams } from './data'
 import { AIM_DEFAULTS } from '../constants/aimDefaults'
 
 type RelativePosition = 'before' | 'after' 
@@ -364,14 +364,14 @@ export const useUIStore = defineStore('ui', {
 
       const path = this.getSelectionPath()
 
-      const aimAttributes = {
+      const aimAttributes: AimCreationParams = {
         text: aimTextOrId,
         description,
         tags: tags || [],
         status: { state: 'open' as const, comment: '', date: Date.now() },
         supportingConnections,
         supportedAims,
-        ...(intrinsicValue !== 0 && { intrinsicValue }),
+        intrinsicValue: intrinsicValue ?? 0,
         loopWeight,
         cost
       }
@@ -1632,7 +1632,8 @@ export const useUIStore = defineStore('ui', {
           const currentPhaseIndex = siblings.findIndex(p => p.id === phaseId)
           
           if (currentPhaseIndex !== -1 && currentPhaseIndex < siblings.length - 1) {
-            const nextPhase = siblings[currentPhaseIndex + 1]!
+            const nextPhase = siblings[currentPhaseIndex + 1]
+            if (!nextPhase) return
             const nextPhaseId = nextPhase.id
             
             // Optimistic Update
@@ -1786,7 +1787,8 @@ export const useUIStore = defineStore('ui', {
           const currentPhaseIndex = siblings.findIndex(p => p.id === phaseId)
 
           if (currentPhaseIndex > 0) {
-            const prevPhase = siblings[currentPhaseIndex - 1]!
+            const prevPhase = siblings[currentPhaseIndex - 1]
+            if (!prevPhase) return
             const prevPhaseId = prevPhase.id
             
             // Optimistic Update

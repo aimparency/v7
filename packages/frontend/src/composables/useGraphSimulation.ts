@@ -423,11 +423,18 @@ export function useGraphSimulation() {
             boxes[i] = [n.pos[0] - br, n.pos[1] - br, n.pos[0] + br, n.pos[1] + br]
         }
 
-        // Debug Setup
+        // Debug Setup - Track force contributions for selected node
         const debugId = uiStore.graphSelectedAimId
         const debugNode = debugId ? nodeMap.get(debugId) : null
         const shouldLog = debugNode && (trigger.value % 60 === 0)
-        const debugState = { flow: [0,0], semantic: [0,0], collision: [0,0], global: [0,0] }
+
+        // Track force contributions: how much each force type contributes to the selected node's movement
+        const forceContributions = {
+          flow: vec2.create() as vec2.T,
+          semantic: vec2.create() as vec2.T,
+          collision: vec2.create() as vec2.T,
+          global: vec2.create() as vec2.T
+        }
 
         // Flow Forces
         const delta = vec2.create()
@@ -455,9 +462,10 @@ export function useGraphSimulation() {
             vec2.add(from.shift, from.shift, targetShift)
         }
 
+        // Capture flow force contribution (shift accumulated so far is from flow forces only)
         if (shouldLog && debugNode) {
-            debugState.flow[0] = debugNode.shift[0]
-            debugState.flow[1] = debugNode.shift[1]
+            forceContributions.flow[0] = debugNode.shift[0]
+            forceContributions.flow[1] = debugNode.shift[1]
         }
 
         // Semantic Forces
@@ -494,9 +502,9 @@ export function useGraphSimulation() {
             }
         }
 
+        // Calculate semantic force contribution (total shift minus flow = semantic)
         if (shouldLog && debugNode) {
-            debugState.semantic[0] = debugNode.shift[0] - debugState.flow[0]
-            debugState.semantic[1] = debugNode.shift[1] - debugState.flow[1]
+            vec2.sub(forceContributions.semantic, debugNode.shift, forceContributions.flow)
         }
 
         for (let i = 0; i < count; i++) {
@@ -532,9 +540,14 @@ export function useGraphSimulation() {
             }
         }
 
+        // Capture shift before scaling to get collision contribution
+        let shiftBeforeGlobal: vec2.T | null = null
         if (shouldLog && debugNode) {
-            debugState.collision[0] = debugNode.shift[0] 
-            debugState.collision[1] = debugNode.shift[1] 
+            shiftBeforeGlobal = vec2.clone(debugNode.shift)
+            // Collision contribution = total shift minus (flow + semantic)
+            const flowAndSemantic = vec2.create()
+            vec2.add(flowAndSemantic, forceContributions.flow, forceContributions.semantic)
+            vec2.sub(forceContributions.collision, debugNode.shift, flowAndSemantic)
         }
 
         // Global Force & Apply
@@ -552,30 +565,29 @@ export function useGraphSimulation() {
 
         for (let i = 0; i < count; i++) {
             const n = currentNodes[i]!
-            
-            // Capture state before global for debug
-            const beforeGlobalX = n.shift[0]
-            const beforeGlobalY = n.shift[1]
 
             vec2.scale(n.shift, n.shift, GLOBAL_FORCE)
-            
+
             if (effectiveGravity > 0.001) {
                 vec2.scale(hShift, n.pos, -CENTERING_FORCE)
                 vec2.add(n.shift, n.shift, hShift)
             }
-            
-            if (shouldLog && n.id === debugId) {
-                debugState.global[0] = n.shift[0] - beforeGlobalX
-                debugState.global[1] = n.shift[1] - beforeGlobalY
-                
-                console.group(`[GraphForce] ${n.text}`)
+
+            // Debug logging for selected node
+            if (shouldLog && n.id === debugId && shiftBeforeGlobal) {
+                // Global contribution = shift after global - shift before global (scaled)
+                const scaledBeforeGlobal = vec2.create()
+                vec2.scale(scaledBeforeGlobal, shiftBeforeGlobal, GLOBAL_FORCE)
+                vec2.sub(forceContributions.global, n.shift, scaledBeforeGlobal)
+
+                console.group(`[GraphForce] ${n.text} (every 60 frames)`)
                 console.table({
-                    Flow: { x: debugState.flow[0], y: debugState.flow[1] },
-                    Semantic: { x: debugState.semantic[0], y: debugState.semantic[1] },
-                    Collision: { x: debugState.collision[0], y: debugState.collision[1] }, // Cumulative
-                    GlobalDelta: { x: debugState.global[0], y: debugState.global[1] },
-                    TotalShift: { x: n.shift[0], y: n.shift[1] },
-                    Pos: { x: n.pos[0], y: n.pos[1] }
+                    Flow: { x: forceContributions.flow[0].toFixed(2), y: forceContributions.flow[1].toFixed(2) },
+                    Semantic: { x: forceContributions.semantic[0].toFixed(2), y: forceContributions.semantic[1].toFixed(2) },
+                    Collision: { x: forceContributions.collision[0].toFixed(2), y: forceContributions.collision[1].toFixed(2) },
+                    Global: { x: forceContributions.global[0].toFixed(2), y: forceContributions.global[1].toFixed(2) },
+                    TotalShift: { x: n.shift[0].toFixed(2), y: n.shift[1].toFixed(2) },
+                    Position: { x: n.pos[0].toFixed(2), y: n.pos[1].toFixed(2) }
                 })
                 console.groupEnd()
             }

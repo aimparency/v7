@@ -328,14 +328,8 @@ onMounted(() => {
     const aimId = uiStore.aimSearchInitialAimId
     loading.value = true
     trpc.aim.get.query({ projectPath: uiStore.projectPath, aimId }).then(aim => {
-        // Construct a SearchAimResult compatible object
-        const searchResult: SearchAimResult = {
-            id: aim.id,
-            text: aim.text,
-            status: aim.status,
-            tags: aim.tags
-        }
-        selectAim(searchResult)
+        // The full aim object is already SearchAimResult compatible
+        selectAim(aim)
     }).catch(e => {
         console.error("Failed to load initial aim", e)
         loading.value = false

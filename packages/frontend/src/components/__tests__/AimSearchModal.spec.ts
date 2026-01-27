@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, type DOMWrapper } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import AimSearchModal from '../AimSearchModal.vue'
 import { trpc } from '../../trpc'
@@ -59,7 +59,8 @@ describe('AimSearchModal', () => {
     
     // Toggle Archived
     // Find the archived checkbox (it's the one with label "Archived")
-    const archivedLabel = wrapper.findAll('.checkbox-label').find(l => l.text().includes('Archived'))
+    const labels = wrapper.findAll('.checkbox-label')
+    const archivedLabel = labels.find((l: DOMWrapper<Element>) => l.text().includes('Archived'))
     await archivedLabel.find('input').setValue(true)
     
     expect(trpc.aim.search.query).toHaveBeenCalledWith(expect.objectContaining({
@@ -69,7 +70,8 @@ describe('AimSearchModal', () => {
     
     // Toggle Status Dropdown
     await wrapper.find('.filter-btn').trigger('click')
-    const openStatus = wrapper.findAll('.dropdown-item').filter(i => i.text().includes('open'))[0]
+    const dropdownItems = wrapper.findAll('.dropdown-item')
+    const openStatus = dropdownItems.filter((i: DOMWrapper<Element>) => i.text().includes('open'))[0]
     await openStatus.trigger('click')
     
     expect(trpc.aim.search.query).toHaveBeenCalledWith(expect.objectContaining({
