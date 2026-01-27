@@ -9,9 +9,9 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769499748464
+    "state": "done",
+    "comment": "Added session management shortcuts: 's' (start/connect), 'p' (stop), 'd' (disconnect). Changed animator toggle to 'm' key.",
+    "date": 1769501294574
   },
   "intrinsicValue": 0,
   "cost": 1,

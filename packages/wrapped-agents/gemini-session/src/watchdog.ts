@@ -11,11 +11,22 @@ try {
   console.warn('[WatchdogService] Could not load INSTRUCT.md:', e);
 }
 
-const POST_ACTION_COOLDOWN = 3000; 
-const INITIAL_WAIT_AFTER_POST = 3000;
-const IDLE_CHECK_INTERVAL = 500; 
-const IDLE_DEBOUNCE_INTERVAL = 100;
-const MAX_RETRIES = 5;
+/**
+ * Configurable timing constants and behavior flags
+ *
+ * Environment Variables:
+ * - WATCHDOG_POST_ACTION_COOLDOWN: Cooldown period after posting to watchdog (default: 3000ms)
+ * - WATCHDOG_INITIAL_WAIT: Initial wait time after posting before checking idle state (default: 3000ms)
+ * - WATCHDOG_IDLE_CHECK_INTERVAL: Interval between idle state checks (default: 500ms)
+ * - WATCHDOG_IDLE_DEBOUNCE: Debounce interval for idle detection (default: 100ms)
+ * - WATCHDOG_MAX_RETRIES: Maximum retries for JSON parsing failures (default: 5)
+ * - DEBUG_WATCHDOG: Enable verbose debug logging (default: false, set to 'true' to enable)
+ */
+const POST_ACTION_COOLDOWN = parseInt(process.env.WATCHDOG_POST_ACTION_COOLDOWN || '3000', 10);
+const INITIAL_WAIT_AFTER_POST = parseInt(process.env.WATCHDOG_INITIAL_WAIT || '3000', 10);
+const IDLE_CHECK_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_CHECK_INTERVAL || '500', 10);
+const IDLE_DEBOUNCE_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_DEBOUNCE || '100', 10);
+const MAX_RETRIES = parseInt(process.env.WATCHDOG_MAX_RETRIES || '5', 10);
 const SPINNER_CHARS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠏'];
 const PROMPT_MARKER = "[[RESPONSE_START]]";
 

@@ -9,8 +9,8 @@
   "committedIn": [],
   "status": {
     "state": "done",
-    "comment": "Implemented: claude-session log() now filters DEBUG: messages unless DEBUG_WATCHDOG=true. Matches gemini-session pattern. Built successfully.",
-    "date": 1769499903162
+    "comment": "Implemented conditional DEBUG logging. Built and committed with full type safety refactor.",
+    "date": 1769501071501
   },
   "intrinsicValue": 0,
   "cost": 1,
