@@ -7,9 +7,9 @@
   "supportedAims": [],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768936158019
+    "state": "done",
+    "comment": "Fixed: Added input check in GraphView onKeydown to prevent color toggle when typing in modals",
+    "date": 1769551539387
   },
   "intrinsicValue": 1,
   "cost": 1,

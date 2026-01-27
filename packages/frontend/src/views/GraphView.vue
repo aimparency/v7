@@ -46,6 +46,11 @@ onUnmounted(() => {
 })
 
 const onKeydown = (e: KeyboardEvent) => {
+    // Ignore if user is typing in an input or textarea
+    const target = e.target as HTMLElement
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+    if (isInput) return
+
     if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
         uiStore.setGraphColorMode(uiStore.graphColorMode === 'status' ? 'priority' : 'status')
     }
