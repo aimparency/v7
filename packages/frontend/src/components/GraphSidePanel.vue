@@ -22,7 +22,7 @@ const selectedLink = computed(() => {
     const parent = dataStore.aims[parentId]
     const child = dataStore.aims[childId]
     if (!parent || !child) return null
-    
+
     const connection = parent.supportingConnections?.find((c: any) => c.aimId === childId)
     if (!connection) return null
 
@@ -31,6 +31,15 @@ const selectedLink = computed(() => {
         child,
         connection
     }
+})
+
+const statusColor = computed(() => {
+    if (!selectedAim.value) return '#888'
+    const colorMap: Record<string, string> = {}
+    dataStore.getStatuses.forEach((s: any) => {
+        colorMap[s.key] = s.color
+    })
+    return colorMap[selectedAim.value.status.state] ?? '#888'
 })
 
 // Editing state
@@ -327,7 +336,7 @@ const isOpaque = computed(() => !hasInteracted.value)
         <!-- AIM SELECTED -->
         <div v-else-if="selectedAim" class="panel-content">
             <h3>{{ selectedAim.text }}</h3>
-            <div class="aim-status">{{ selectedAim.status.state }}</div>
+            <div class="aim-status" :style="{ color: statusColor }">{{ selectedAim.status.state }}</div>
             
             <div class="metrics-section">
                 <h4>Value</h4>

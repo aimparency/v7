@@ -7,9 +7,9 @@
   "supportedAims": [],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768936118078
+    "state": "done",
+    "comment": "Fixed: Added statusColor computed property to match status colors used everywhere else in the app",
+    "date": 1769551664424
   },
   "intrinsicValue": 0,
   "cost": 1,
