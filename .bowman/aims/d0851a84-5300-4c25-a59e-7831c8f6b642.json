@@ -18,9 +18,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768414503354
+    "state": "done",
+    "comment": "Sub-aim completed: drag-to-create from aim to empty area implemented in Graph View.",
+    "date": 1769499726115
   },
   "intrinsicValue": 0,
   "cost": 1,

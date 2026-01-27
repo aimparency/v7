@@ -1,0 +1,19 @@
+{
+  "id": "7fb5145d-b650-470c-8f07-2619513d5be4",
+  "text": "add to watchdog action menu: 's' for starting or connecting to a session, 'p' to stop, 'd' to disconnect. change animator to \"toggle animator\" and give it key 'm'",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769499748464
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

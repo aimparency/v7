@@ -1,0 +1,18 @@
+{
+  "id": "e2965899-f3fc-43fe-8572-6530b1e52d55",
+  "text": "Make watchdog DEBUG logging conditional via environment variable",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "093916f0-a6fa-4ed8-af9c-f6d1c47ebb68"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented: claude-session log() now filters DEBUG: messages unless DEBUG_WATCHDOG=true. Matches gemini-session pattern. Built successfully.",
+    "date": 1769499903162
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

@@ -3,15 +3,32 @@
   "text": "watchdog improvements",
   "description": "",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "e2965899-f3fc-43fe-8572-6530b1e52d55",
+      "relativePosition": [
+        1.894600657469352,
+        -1.6311003490639988
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "27d92e90-f3bd-44ef-a06a-410d0a63e83b",
+      "relativePosition": [
+        -0.7683625691509927,
+        2.378995368286304
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
   ],
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1767605186715
+    "comment": "Added sub-aim for conditional DEBUG logging (completed). Need more specific improvements.",
+    "date": 1769499948736
   },
   "intrinsicValue": 0,
   "cost": 1,

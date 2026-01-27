@@ -1,0 +1,18 @@
+{
+  "id": "27d92e90-f3bd-44ef-a06a-410d0a63e83b",
+  "text": "Add configurable timing constants for watchdog (via env vars or config file)",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "093916f0-a6fa-4ed8-af9c-f6d1c47ebb68"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Constants like POST_ACTION_COOLDOWN, IDLE_CHECK_INTERVAL, MAX_RETRIES are hard-coded. Make them configurable.",
+    "date": 1769499909923
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

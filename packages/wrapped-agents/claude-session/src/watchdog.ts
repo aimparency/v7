@@ -16,6 +16,7 @@ const INITIAL_WAIT_AFTER_POST = 2000;
 const IDLE_CHECK_INTERVAL = 500;
 const IDLE_DEBOUNCE_INTERVAL = 100;
 const MAX_RETRIES = 5;
+const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 // Claude Code uses different spinner characters
 const SPINNER_CHARS = ['✻', '·', '✢', '○', '◎', '●', '◯'];
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
@@ -47,6 +48,10 @@ export class WatchdogService {
   }
 
   private log(msg: string) {
+    // Only log DEBUG messages when DEBUG_WATCHDOG is enabled
+    if (msg.startsWith('DEBUG:') && !DEBUG_WATCHDOG) {
+      return;
+    }
     console.log(`[${new Date().toISOString()}] [WatchdogService] ${msg}`);
   }
 

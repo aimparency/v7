@@ -162,9 +162,9 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "Reopened - has open sub-aim for k-unit value/cost display",
-    "date": 1768935161506
+    "state": "done",
+    "comment": "All sub-aims completed including k-unit formatting and graph view improvements.",
+    "date": 1769499730409
   },
   "intrinsicValue": 5,
   "cost": 1,

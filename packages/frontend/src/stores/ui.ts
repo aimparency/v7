@@ -1632,7 +1632,7 @@ export const useUIStore = defineStore('ui', {
           const currentPhaseIndex = siblings.findIndex(p => p.id === phaseId)
           
           if (currentPhaseIndex !== -1 && currentPhaseIndex < siblings.length - 1) {
-            const nextPhase = siblings[currentPhaseIndex + 1]
+            const nextPhase = siblings[currentPhaseIndex + 1]!
             const nextPhaseId = nextPhase.id
             
             // Optimistic Update
@@ -1786,7 +1786,7 @@ export const useUIStore = defineStore('ui', {
           const currentPhaseIndex = siblings.findIndex(p => p.id === phaseId)
 
           if (currentPhaseIndex > 0) {
-            const prevPhase = siblings[currentPhaseIndex - 1]
+            const prevPhase = siblings[currentPhaseIndex - 1]!
             const prevPhaseId = prevPhase.id
             
             // Optimistic Update
@@ -2538,7 +2538,7 @@ export const useUIStore = defineStore('ui', {
       this.rightmostColumnIndex = 0
       this.floatingAimIndex = -1
       this.navigatingAims = false
-      this.graphSelectedAimId = undefined
+      this.graphSelectedAimId = null
       this.selectedLink = null
       localStorage.setItem('aimparency-selected-column', '0')
     },
