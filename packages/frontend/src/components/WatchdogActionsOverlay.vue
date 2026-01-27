@@ -10,9 +10,30 @@ const previouslyFocusedElement = ref<HTMLElement | null>(null)
 
 const actions = [
   {
+    id: 'connect',
+    key: 's',
+    label: () => 'Start/Connect Session',
+    action: () => store.connect(),
+    icon: '🔌'
+  },
+  {
+    id: 'stop',
+    key: 'p',
+    label: () => 'Stop Session',
+    action: () => store.stop(),
+    icon: '⏹️'
+  },
+  {
+    id: 'disconnect',
+    key: 'd',
+    label: () => 'Disconnect',
+    action: () => store.disconnect(),
+    icon: '🔗'
+  },
+  {
     id: 'toggle',
-    key: 't',
-    label: () => store.isEnabled ? 'Disable Animator' : 'Enable Animator',
+    key: 'm',
+    label: () => 'Toggle Animator',
     action: () => store.toggle(),
     icon: '⚡'
   },
