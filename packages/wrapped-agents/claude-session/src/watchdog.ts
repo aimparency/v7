@@ -282,12 +282,12 @@ ${context}
 Actions available:
 - send-prompt: Send text to Claude. Add "instruct": true if Claude seems idle/waiting for user input - this will prepend aimparency MCP usage instructions.
 - select-option: Choose a numbered option (use when Claude presents choices)
-- compact: Run /compact to free up context (use when "Context left until auto-compact" shows < 20%)
+- compact: Run /compact to free up context
 - stop: Stop supervision (use when ALL aims are done and verified complete)
 - wait: Pause supervision briefly
 
 IMPORTANT:
-- If you see "Context left until auto-compact: X%" where X < 20%, use compact action BEFORE starting new work.
+- Use compact action whenever Claude completes a significant chunk of work or is about to start looking for new work. This keeps context fresh and improves performance.
 - Use "instruct": true when Claude asks "what should I do?" or seems to need direction.
 - Only use stop when you've verified ALL open aims are complete (not just the current task).
 

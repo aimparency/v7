@@ -26,8 +26,28 @@ export class Agent {
     });
   }
 
-  write(data: string) {
-    this.ptyProcess.write(data);
+  async write(data: string) {
+    // For small inputs (single chars or small pastes), write directly
+    if (data.length < 100) {
+      this.ptyProcess.write(data);
+      return;
+    }
+
+    // For larger inputs, chunk to avoid PTY buffer overflow
+    // Use Array.from to correctly handle Unicode surrogate pairs (emojis, etc)
+    const chars = Array.from(data);
+    const chunkSize = 30;
+    const delayMs = 10; // Small delay to avoid overwhelming the PTY
+
+    for (let i = 0; i < chars.length; i += chunkSize) {
+      const chunk = chars.slice(i, i + chunkSize).join('');
+      this.ptyProcess.write(chunk);
+
+      // Don't delay on the last chunk
+      if (i + chunkSize < chars.length) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
   }
 
   resize(cols: number, rows: number) {

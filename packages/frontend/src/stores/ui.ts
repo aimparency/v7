@@ -740,7 +740,9 @@ export const useUIStore = defineStore('ui', {
         if(this.selectedColumn === -1) {
           const floatingAims = dataStore.floatingAims
           if (floatingAims.length > 0) {
-            let aim = floatingAims[this.floatingAimIndex]
+            // Clamp floatingAimIndex to valid range
+            const validIndex = Math.max(0, Math.min(this.floatingAimIndex, floatingAims.length - 1))
+            let aim = floatingAims[validIndex]
             const aimPath: Aim[] = []
             if (aim) {
                 this.makeSelectedAimPath(aim, aimPath)
@@ -2241,6 +2243,9 @@ export const useUIStore = defineStore('ui', {
           event.preventDefault()
           const dataStore = useDataStore()
 
+          // Clear any pending deletion state
+          this.pendingDeleteAimId = null
+
           // Initialize aim selection if needed
           if (this.selectedColumn >= 0) {
             const phaseId = this.getSelectedPhaseId(this.selectedColumn)
@@ -2255,10 +2260,15 @@ export const useUIStore = defineStore('ui', {
           } else {
             // Initialize floating aim selection for root aims column
             const floatingAims = dataStore.floatingAims
-            if (this.floatingAimIndex === undefined && floatingAims.length > 0) {
-              this.floatingAimIndex = 0
+            if (floatingAims.length > 0) {
+              // Ensure floatingAimIndex is valid (within bounds)
+              // This handles cases where localStorage had an old/invalid index
+              if (this.floatingAimIndex < 0 || this.floatingAimIndex >= floatingAims.length) {
+                this.floatingAimIndex = 0
+              }
+              // Activate navigation mode
+              this.navigatingAims = true
             }
-            this.navigatingAims = true
           }
           break
         }

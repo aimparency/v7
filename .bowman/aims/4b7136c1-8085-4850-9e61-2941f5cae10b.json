@@ -10,9 +10,9 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "Investigate why input is still being truncated (e.g. at ~2300 chars or mid-word) despite safe chunking. Verify if it's a CLI buffer issue, socket issue, or xterm.js rendering issue.",
-    "date": 1769010951171
+    "state": "done",
+    "comment": "Fixed: Agent.write() now chunks inputs >100 chars into 30-char pieces with 10ms delay to prevent PTY buffer overflow. Applied to both claude-session and gemini-session. Handles Unicode correctly with Array.from(). Compiled and ready to test.",
+    "date": 1769459242825
   },
   "intrinsicValue": 0,
   "cost": 1,
