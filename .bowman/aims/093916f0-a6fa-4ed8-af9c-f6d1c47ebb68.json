@@ -26,9 +26,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Added sub-aim for conditional DEBUG logging (completed). Need more specific improvements.",
-    "date": 1769499948736
+    "state": "done",
+    "comment": "Completed: conditional DEBUG logging and configurable timing constants via env vars.",
+    "date": 1769501465486
   },
   "intrinsicValue": 0,
   "cost": 1,

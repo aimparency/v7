@@ -417,12 +417,17 @@ ${PROMPT_MARKER}
     }
 
     if (action.type === 'send-prompt') {
-        let textToSend = action.text;
+        let textToSend = action.text || '';
 
         // If instruct flag is set, prepend the aimparency guidance
         if (action.instruct && INSTRUCT_TEXT) {
             this.log('Including aimparency instruction text');
-            textToSend = `${INSTRUCT_TEXT}\n\n---\n\n${action.text}`;
+            // Always append the specific instruction/question after the general instructions
+            if (textToSend) {
+                textToSend = `${INSTRUCT_TEXT}\n\n---\n\n${textToSend}`;
+            } else {
+                textToSend = INSTRUCT_TEXT;
+            }
         }
 
         this.log(`Sending prompt to Worker: ${textToSend.substring(0, 100)}...`);

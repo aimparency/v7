@@ -8,9 +8,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Constants like POST_ACTION_COOLDOWN, IDLE_CHECK_INTERVAL, MAX_RETRIES are hard-coded. Make them configurable.",
-    "date": 1769499909923
+    "state": "done",
+    "comment": "Made 5 watchdog timing constants configurable via env vars with comprehensive documentation. Applied to both claude-session and gemini-session.",
+    "date": 1769501434880
   },
   "intrinsicValue": 0,
   "cost": 1,
