@@ -2,11 +2,10 @@ import { z } from 'zod';
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import type { ProcedureBuilder } from '@trpc/server';
 
 export const createMarketRouter = (
   t: any,
-  delayedProcedure: ProcedureBuilder<any, any>
+  delayedProcedure: any
 ) => {
   return t.router({
     updateConfig: delayedProcedure

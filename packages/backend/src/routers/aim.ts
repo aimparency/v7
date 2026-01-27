@@ -2,12 +2,11 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs-extra';
-import type { ProcedureBuilder } from '@trpc/server';
 import type { Aim, SearchAimResult } from 'shared';
 
 export const createAimRouter = (
   t: any,
-  delayedProcedure: ProcedureBuilder<any, any>,
+  delayedProcedure: any,
   readAim: (projectPath: string, aimId: string) => Promise<Aim>,
   listAims: (projectPath: string, archived?: boolean) => Promise<Aim[]>,
   writeAim: (projectPath: string, aim: Aim) => Promise<void>,
@@ -184,8 +183,8 @@ export const createAimRouter = (
 
         // Handle consistency for supportedAims (Parents)
         if (input.aim.supportedAims) {
-            const oldParents = new Set(existingAim.supportedAims || []);
-            const newParents = new Set(input.aim.supportedAims);
+            const oldParents = new Set<string>(existingAim.supportedAims || []);
+            const newParents = new Set<string>(input.aim.supportedAims);
 
             // Removed Parents
             for (const parentId of oldParents) {
@@ -201,7 +200,7 @@ export const createAimRouter = (
             }
 
             // Added Parents
-            for (const parentId of newParents) {
+            for (const parentId of Array.from(newParents)) {
                 if (!oldParents.has(parentId)) {
                     try {
                         const parent = await readAim(input.projectPath, parentId);
@@ -221,8 +220,8 @@ export const createAimRouter = (
 
         // Handle consistency for supportingConnections (Children)
         if (input.aim.supportingConnections) {
-             const oldChildren = new Set((existingAim.supportingConnections || []).map((c: any) => c.aimId));
-             const newChildren = new Set(input.aim.supportingConnections.map((c: any) => c.aimId));
+             const oldChildren = new Set<string>((existingAim.supportingConnections || []).map((c: any) => c.aimId));
+             const newChildren = new Set<string>(input.aim.supportingConnections.map((c: any) => c.aimId));
 
              // Removed Children
              for (const childId of oldChildren) {
@@ -238,7 +237,7 @@ export const createAimRouter = (
              }
 
              // Added Children
-             for (const childId of newChildren) {
+             for (const childId of Array.from(newChildren)) {
                  if (!oldChildren.has(childId)) {
                      try {
                          const child = await readAim(input.projectPath, childId);

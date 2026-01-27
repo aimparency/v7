@@ -2,12 +2,11 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs-extra';
 import path from 'path';
-import type { ProcedureBuilder } from '@trpc/server';
 import type { Phase } from 'shared';
 
 export const createPhaseRouter = (
   t: any,
-  delayedProcedure: ProcedureBuilder<any, any>,
+  delayedProcedure: any,
   readPhase: (projectPath: string, phaseId: string) => Promise<Phase>,
   listPhases: (projectPath: string, parentPhaseId?: string | null) => Promise<Phase[]>,
   writePhase: (projectPath: string, phase: Phase) => Promise<void>,

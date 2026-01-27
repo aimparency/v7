@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import type { ProcedureBuilder } from '@trpc/server';
 
 export const createVoiceRouter = (
   t: any,
-  delayedProcedure: ProcedureBuilder<any, any>,
+  delayedProcedure: any,
   chatWithGemini: (transcript: string, projectPath: string) => Promise<string>
 ) => {
   return t.router({
