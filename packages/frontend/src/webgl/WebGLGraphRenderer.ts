@@ -2,8 +2,10 @@
  * WebGL Graph Renderer
  *
  * High-performance WebGL-based renderer for graph visualization.
- * Renders nodes as circles using instanced rendering.
+ * Renders nodes as circles using instanced rendering with viewport culling.
  */
+
+import { Quadtree, type QuadtreeItem, type Bounds } from './spatial/Quadtree'
 
 export interface NodeData {
   id: string
@@ -48,6 +50,11 @@ export class WebGLGraphRenderer {
   // Data
   private nodes: NodeData[] = []
   private instanceData: Float32Array = new Float32Array(0)
+  private visibleNodes: NodeData[] = []
+
+  // Spatial indexing for culling
+  private quadtree: Quadtree | null = null
+  private enableCulling: boolean = true
 
   // Options
   private options: Required<RendererOptions>
@@ -149,29 +156,43 @@ export class WebGLGraphRenderer {
   updateNodes(nodes: NodeData[]): void {
     this.nodes = nodes
 
-    // Pack node data into interleaved array
-    // Format: [x, y, r, r, g, b, selected] per node (7 floats)
-    const stride = 7
-    this.instanceData = new Float32Array(nodes.length * stride)
+    // Build spatial index for viewport culling
+    if (this.enableCulling && nodes.length > 0) {
+      // Calculate bounds from nodes
+      let minX = Infinity, minY = Infinity
+      let maxX = -Infinity, maxY = -Infinity
 
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i]!
-      const offset = i * stride
+      for (const node of nodes) {
+        minX = Math.min(minX, node.x - node.r)
+        minY = Math.min(minY, node.y - node.r)
+        maxX = Math.max(maxX, node.x + node.r)
+        maxY = Math.max(maxY, node.y + node.r)
+      }
 
-      this.instanceData[offset + 0] = node.x
-      this.instanceData[offset + 1] = node.y
-      this.instanceData[offset + 2] = node.r
-      this.instanceData[offset + 3] = node.color[0]
-      this.instanceData[offset + 4] = node.color[1]
-      this.instanceData[offset + 5] = node.color[2]
-      this.instanceData[offset + 6] = node.selected ? 1.0 : 0.0
-    }
+      // Add 10% padding
+      const padX = (maxX - minX) * 0.1
+      const padY = (maxY - minY) * 0.1
+      const bounds: Bounds = {
+        minX: minX - padX,
+        minY: minY - padY,
+        maxX: maxX + padX,
+        maxY: maxY + padY
+      }
 
-    // Upload to GPU
-    if (this.gl && this.instanceBuffer) {
-      const gl = this.gl
-      gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer)
-      gl.bufferData(gl.ARRAY_BUFFER, this.instanceData, gl.DYNAMIC_DRAW)
+      // Create or rebuild quadtree
+      if (!this.quadtree) {
+        this.quadtree = new Quadtree(bounds)
+      }
+
+      // Convert nodes to quadtree items and build
+      const items: QuadtreeItem[] = nodes.map(node => ({
+        id: node.id,
+        x: node.x,
+        y: node.y,
+        r: node.r
+      }))
+
+      this.quadtree.build(items)
     }
   }
 
@@ -184,6 +205,47 @@ export class WebGLGraphRenderer {
     this.viewMatrix[4] = zoom
     this.viewMatrix[6] = panX
     this.viewMatrix[7] = panY
+  }
+
+  /**
+   * Calculate viewport bounds in world space
+   */
+  private getViewportBounds(): Bounds {
+    const zoom = this.viewMatrix[0]
+    const panX = this.viewMatrix[6]
+    const panY = this.viewMatrix[7]
+
+    const width = this.canvas.width
+    const height = this.canvas.height
+
+    // Transform viewport corners from NDC to world space
+    // Inverse of: ndc = (viewPos.xy / viewport) * 2.0 - 1.0
+    // viewPos = camera * worldPos
+    // worldPos = inverse(camera) * viewPos
+
+    // Corner 1: top-left (NDC: -1, 1)
+    const ndc1X = -1, ndc1Y = 1
+    const view1X = ((ndc1X + 1) / 2) * width
+    const view1Y = ((ndc1Y * -1 + 1) / 2) * height
+
+    // Inverse transform: world = (view - pan) / zoom
+    const world1X = (view1X - panX) / zoom
+    const world1Y = (view1Y - panY) / zoom
+
+    // Corner 2: bottom-right (NDC: 1, -1)
+    const ndc2X = 1, ndc2Y = -1
+    const view2X = ((ndc2X + 1) / 2) * width
+    const view2Y = ((ndc2Y * -1 + 1) / 2) * height
+
+    const world2X = (view2X - panX) / zoom
+    const world2Y = (view2Y - panY) / zoom
+
+    return {
+      minX: Math.min(world1X, world2X),
+      minY: Math.min(world1Y, world2Y),
+      maxX: Math.max(world1X, world2X),
+      maxY: Math.max(world1Y, world2Y)
+    }
   }
 
   render(): void {
@@ -201,8 +263,45 @@ export class WebGLGraphRenderer {
       gl.viewport(0, 0, displayWidth, displayHeight)
     }
 
+    // Perform viewport culling
+    if (this.enableCulling && this.quadtree) {
+      const viewBounds = this.getViewportBounds()
+      const visibleItems = this.quadtree.query(viewBounds)
+
+      // Convert visible item IDs to NodeData
+      const visibleIds = new Set(visibleItems.map(item => item.id))
+      this.visibleNodes = this.nodes.filter(node => visibleIds.has(node.id))
+    } else {
+      // No culling - render all nodes
+      this.visibleNodes = this.nodes
+    }
+
+    // Pack visible nodes into buffer
+    const stride = 7
+    this.instanceData = new Float32Array(this.visibleNodes.length * stride)
+
+    for (let i = 0; i < this.visibleNodes.length; i++) {
+      const node = this.visibleNodes[i]!
+      const offset = i * stride
+
+      this.instanceData[offset + 0] = node.x
+      this.instanceData[offset + 1] = node.y
+      this.instanceData[offset + 2] = node.r
+      this.instanceData[offset + 3] = node.color[0]
+      this.instanceData[offset + 4] = node.color[1]
+      this.instanceData[offset + 5] = node.color[2]
+      this.instanceData[offset + 6] = node.selected ? 1.0 : 0.0
+    }
+
+    // Upload visible nodes to GPU
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, this.instanceData, gl.DYNAMIC_DRAW)
+
     // Clear
     gl.clear(gl.COLOR_BUFFER_BIT)
+
+    // No nodes visible? Done.
+    if (this.visibleNodes.length === 0) return
 
     // Use program
     gl.useProgram(this.program)
@@ -218,43 +317,32 @@ export class WebGLGraphRenderer {
 
     // Bind instance data (per-instance attributes)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer)
-    const stride = 7 * 4 // 7 floats * 4 bytes
+    const byteStride = 7 * 4 // 7 floats * 4 bytes
 
     gl.enableVertexAttribArray(this.a_position)
-    gl.vertexAttribPointer(this.a_position, 2, gl.FLOAT, false, stride, 0)
+    gl.vertexAttribPointer(this.a_position, 2, gl.FLOAT, false, byteStride, 0)
 
     gl.enableVertexAttribArray(this.a_radius)
-    gl.vertexAttribPointer(this.a_radius, 1, gl.FLOAT, false, stride, 2 * 4)
+    gl.vertexAttribPointer(this.a_radius, 1, gl.FLOAT, false, byteStride, 2 * 4)
 
     gl.enableVertexAttribArray(this.a_color)
-    gl.vertexAttribPointer(this.a_color, 3, gl.FLOAT, false, stride, 3 * 4)
+    gl.vertexAttribPointer(this.a_color, 3, gl.FLOAT, false, byteStride, 3 * 4)
 
     gl.enableVertexAttribArray(this.a_selected)
-    gl.vertexAttribPointer(this.a_selected, 1, gl.FLOAT, false, stride, 6 * 4)
+    gl.vertexAttribPointer(this.a_selected, 1, gl.FLOAT, false, byteStride, 6 * 4)
 
-    // Draw instances
-    // Note: WebGL 1.0 doesn't have instanced rendering built-in
-    // We'll draw each node with a separate draw call for now
-    // TODO: Use ANGLE_instanced_arrays extension or upgrade to WebGL2
-
-    for (let i = 0; i < this.nodes.length; i++) {
-      // Set instance-specific attributes by updating buffer slice
-      // For now, we'll just draw all in one go with manual loop
-      // This is a simplified version - proper instancing requires extension
-    }
-
-    // For initial prototype, draw using triangle strip (4 vertices = 2 triangles = quad)
-    // We need to repeat this for each instance manually
+    // Use instanced rendering
     const ext = gl.getExtension('ANGLE_instanced_arrays')
 
     if (ext) {
-      // Use instanced rendering if available
+      // Set attribute divisors for instancing
       ext.vertexAttribDivisorANGLE(this.a_position, 1)
       ext.vertexAttribDivisorANGLE(this.a_radius, 1)
       ext.vertexAttribDivisorANGLE(this.a_color, 1)
       ext.vertexAttribDivisorANGLE(this.a_selected, 1)
 
-      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, this.nodes.length)
+      // Draw all visible instances in one call
+      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, this.visibleNodes.length)
 
       // Reset divisors
       ext.vertexAttribDivisorANGLE(this.a_position, 0)
@@ -264,8 +352,6 @@ export class WebGLGraphRenderer {
     } else {
       // Fallback: draw each instance manually
       console.warn('ANGLE_instanced_arrays not available, using slow fallback')
-      // This would require restructuring the draw call
-      // For now, just draw once (will only show first node)
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     }
   }
@@ -284,5 +370,36 @@ export class WebGLGraphRenderer {
 
   getCanvas(): HTMLCanvasElement {
     return this.canvas
+  }
+
+  /**
+   * Enable or disable viewport culling
+   */
+  setCullingEnabled(enabled: boolean): void {
+    this.enableCulling = enabled
+  }
+
+  /**
+   * Get culling statistics
+   */
+  getCullingStats(): {
+    totalNodes: number
+    visibleNodes: number
+    cullingEnabled: boolean
+    quadtreeStats: any
+  } {
+    return {
+      totalNodes: this.nodes.length,
+      visibleNodes: this.visibleNodes.length,
+      cullingEnabled: this.enableCulling,
+      quadtreeStats: this.quadtree ? this.quadtree.getStats() : null
+    }
+  }
+
+  /**
+   * Get the spatial tree for hit testing
+   */
+  getQuadtree(): Quadtree | null {
+    return this.quadtree
   }
 }
