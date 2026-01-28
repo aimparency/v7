@@ -1,0 +1,78 @@
+{
+  "id": "bb023302-bd2f-49dc-99f0-83f7eb746e57",
+  "text": "Implement WebGL arc-based arrow rendering",
+  "tags": [
+    "webgl",
+    "rendering"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "36495c75-6aec-4bcf-b142-c49ed928a2d5",
+      "relativePosition": [
+        1.666454520227858,
+        -1.8635797090578499
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "6600de0d-1c82-40d9-a0d7-cf6b9bf7fc59",
+      "relativePosition": [
+        -1.0918365588595498,
+        -2.2489759733571493
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "7621e006-e194-4b2c-b3f1-d4bdef976b03",
+      "relativePosition": [
+        -1.7531184302027398,
+        1.7822950849069525
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0a8bdb94-8427-4f05-9c22-ca526c903ba9",
+      "relativePosition": [
+        1.9372313748440257,
+        -1.580232451356422
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "92c0e508-4685-4927-8dfc-f836a16de0a7",
+      "relativePosition": [
+        1.25479180924598,
+        2.1622898777567268
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "150dc21a-66bb-4293-a974-2b90dbca30bc",
+      "relativePosition": [
+        -0.7722577324624885,
+        -2.377733793899539
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "5e1d4d48-646b-4965-88fa-2e2a27fab911",
+      "relativePosition": [
+        1.9431716794206664,
+        -1.572922065551077
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769583147594
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

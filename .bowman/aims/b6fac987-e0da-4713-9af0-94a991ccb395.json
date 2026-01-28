@@ -1,0 +1,21 @@
+{
+  "id": "b6fac987-e0da-4713-9af0-94a991ccb395",
+  "text": "Audit current SVG rendering implementation and identify bottlenecks",
+  "tags": [
+    "performance",
+    "profiling"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769583133481
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

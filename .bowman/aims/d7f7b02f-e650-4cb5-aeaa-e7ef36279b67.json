@@ -2,7 +2,16 @@
   "id": "d7f7b02f-e650-4cb5-aeaa-e7ef36279b67",
   "text": "Implement distance field text rendering for performant scaling",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "7c27e5df-5d67-4db1-9418-6cc72b9d94d8",
+      "relativePosition": [
+        2.4197693487184733,
+        -0.6282645135630169
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
   ],

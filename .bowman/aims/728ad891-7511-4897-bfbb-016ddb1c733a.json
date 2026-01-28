@@ -1,0 +1,21 @@
+{
+  "id": "728ad891-7511-4897-bfbb-016ddb1c733a",
+  "text": "Implement viewport culling using spatial data structure",
+  "tags": [
+    "optimization",
+    "spatial-index"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "6bfa572e-b451-44e0-b36d-fe4e3ab6f582"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769583165375
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

@@ -1,0 +1,21 @@
+{
+  "id": "effdb188-3862-42b5-bbc2-d247c59c1184",
+  "text": "Implement CPU-based hit testing using spatial tree",
+  "tags": [
+    "interaction",
+    "spatial-index"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9f83a877-1b9d-42a4-a7f8-72344ff27459"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769583182359
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

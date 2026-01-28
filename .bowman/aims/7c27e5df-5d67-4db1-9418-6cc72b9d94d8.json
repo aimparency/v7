@@ -1,0 +1,22 @@
+{
+  "id": "7c27e5df-5d67-4db1-9418-6cc72b9d94d8",
+  "text": "Research and prototype text rendering solution for WebGL",
+  "tags": [
+    "research",
+    "text-rendering",
+    "webgl"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d7f7b02f-e650-4cb5-aeaa-e7ef36279b67"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769583156384
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

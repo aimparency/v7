@@ -1,0 +1,21 @@
+{
+  "id": "36495c75-6aec-4bcf-b142-c49ed928a2d5",
+  "text": "Create basic arc fragment shader for arrow trunk",
+  "tags": [
+    "webgl",
+    "shader"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bb023302-bd2f-49dc-99f0-83f7eb746e57"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769584041738
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

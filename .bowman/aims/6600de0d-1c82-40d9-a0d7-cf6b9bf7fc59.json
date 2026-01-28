@@ -1,0 +1,21 @@
+{
+  "id": "6600de0d-1c82-40d9-a0d7-cf6b9bf7fc59",
+  "text": "Add phase-based width tapering to arrow trunk shader",
+  "tags": [
+    "webgl",
+    "shader"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bb023302-bd2f-49dc-99f0-83f7eb746e57"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769584050148
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

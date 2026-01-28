@@ -1,0 +1,21 @@
+{
+  "id": "a8c7a142-a104-4700-ab73-d6ea93b304e8",
+  "text": "Implement basic WebGL node rendering prototype",
+  "tags": [
+    "prototype",
+    "webgl"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769583140522
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

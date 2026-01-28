@@ -1,0 +1,22 @@
+{
+  "id": "26cb2bf1-06bc-4279-ad62-427dc5b5ebea",
+  "text": "Design dynamic VBO update strategy for animated layouts",
+  "tags": [
+    "webgl",
+    "optimization",
+    "animation"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "cf695de6-3a8e-4830-a274-14a942998c04"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769583173816
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

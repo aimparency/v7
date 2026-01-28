@@ -2,7 +2,16 @@
   "id": "cf695de6-3a8e-4830-a274-14a942998c04",
   "text": "Dynamic VBO buffer management (partial updates, ping-pong)",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "26cb2bf1-06bc-4279-ad62-427dc5b5ebea",
+      "relativePosition": [
+        -1.3515907905613476,
+        -2.1031410639492902
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
   ],

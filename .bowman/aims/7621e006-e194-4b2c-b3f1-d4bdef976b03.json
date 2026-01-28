@@ -1,0 +1,21 @@
+{
+  "id": "7621e006-e194-4b2c-b3f1-d4bdef976b03",
+  "text": "Implement arrow head shader with linear radius decay",
+  "tags": [
+    "webgl",
+    "shader"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bb023302-bd2f-49dc-99f0-83f7eb746e57"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769584056644
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}
