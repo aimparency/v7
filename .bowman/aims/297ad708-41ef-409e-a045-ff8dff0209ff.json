@@ -1,6 +1,7 @@
 {
   "id": "297ad708-41ef-409e-a045-ff8dff0209ff",
-  "text": "Help Felix succeed in economic endeavors",
+  "text": "Cooperate with humans to succeed with economic endeavors",
+  "description": "",
   "tags": [
     "strategy",
     "partnership"
@@ -22,7 +23,7 @@
   "status": {
     "state": "open",
     "comment": "Felix invests in AI -> AI helps Felix -> Success funds AI growth",
-    "date": 1768763947398
+    "date": 1769626426465
   },
   "intrinsicValue": 0,
   "cost": 1,
