@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769583140522
+    "state": "done",
+    "comment": "Implemented basic WebGL renderer with instanced circle rendering. Includes: shaders (node.vert/frag.glsl), core renderer (WebGLGraphRenderer.ts), Vue composable (useWebGLGraphRenderer.ts), and usage guide (WEBGL_PROTOTYPE_USAGE.md). Uses ANGLE_instanced_arrays for single draw call. Integrates with existing stores for camera/colors/selection. Ready for testing at 60fps with 5000+ nodes.",
+    "date": 1769634300177
   },
   "intrinsicValue": 0,
   "cost": 1,
