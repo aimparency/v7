@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769584050148
+    "state": "done",
+    "comment": "Added phase calculation based on projection along arrow direction, and phase-based width tapering using the formula f * (rCenterSq - radiusSq) + radiusSq",
+    "date": 1769699716818
   },
   "intrinsicValue": 0,
   "cost": 1,

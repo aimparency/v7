@@ -10,9 +10,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "Core concept component",
-    "date": 1769328439723
+    "state": "done",
+    "comment": "Shader-based rendering complete: nodes use instanced circle shaders (node.vert/frag.glsl), curved edges use arc-based arrow shaders (arrow.vert/frag.glsl + arrow-head.vert/frag.glsl)",
+    "date": 1769700149929
   },
   "intrinsicValue": 0,
   "cost": 1,

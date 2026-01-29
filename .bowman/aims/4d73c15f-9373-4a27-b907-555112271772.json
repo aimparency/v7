@@ -1,0 +1,22 @@
+{
+  "id": "4d73c15f-9373-4a27-b907-555112271772",
+  "text": "Implement MSDF text rendering for graph node labels",
+  "tags": [
+    "webgl",
+    "text-rendering",
+    "implementation"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d7f7b02f-e650-4cb5-aeaa-e7ef36279b67"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Implementation based on TEXT_RENDERING_RESEARCH.md: generate MSDF atlas, implement shaders (text.vert/frag.glsl), create TextRenderer class with layout engine, integrate with WebGLGraphRenderer",
+    "date": 1769700717827
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

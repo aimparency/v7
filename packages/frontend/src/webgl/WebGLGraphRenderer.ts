@@ -6,6 +6,11 @@
  */
 
 import { Quadtree, type QuadtreeItem, type Bounds } from './spatial/Quadtree'
+import {
+  DynamicBufferManager,
+  BufferPacker,
+  BufferPerformanceMonitor
+} from './buffers/DynamicBufferManager'
 
 export interface NodeData {
   id: string
@@ -27,7 +32,9 @@ export class WebGLGraphRenderer {
 
   // Buffers
   private quadBuffer: WebGLBuffer | null = null // Static quad corners
-  private instanceBuffer: WebGLBuffer | null = null // Node data (positions, colors, etc.)
+  private bufferManager: DynamicBufferManager | null = null // Dynamic instance buffer manager
+  private bufferPacker: BufferPacker | null = null // Packs node data into typed arrays
+  private performanceMonitor: BufferPerformanceMonitor = new BufferPerformanceMonitor()
 
   // Attributes
   private a_corner: number = -1
@@ -49,7 +56,6 @@ export class WebGLGraphRenderer {
 
   // Data
   private nodes: NodeData[] = []
-  private instanceData: Float32Array = new Float32Array(0)
   private visibleNodes: NodeData[] = []
 
   // Spatial indexing for culling
@@ -121,8 +127,17 @@ export class WebGLGraphRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW)
 
-    // Create instance buffer (will be updated with node data)
-    this.instanceBuffer = gl.createBuffer()
+    // Create dynamic buffer manager for instance data
+    const MAX_NODES = 50000
+    const STRIDE = 7 // position(2) + radius(1) + color(3) + selected(1)
+
+    this.bufferManager = new DynamicBufferManager(gl, {
+      maxItems: MAX_NODES,
+      stride: STRIDE,
+      usage: gl.DYNAMIC_DRAW
+    })
+
+    this.bufferPacker = new BufferPacker(MAX_NODES, STRIDE)
 
     // Enable blending for transparency
     gl.enable(gl.BLEND)
@@ -277,25 +292,32 @@ export class WebGLGraphRenderer {
     }
 
     // Pack visible nodes into buffer
+    if (!this.bufferPacker || !this.bufferManager) return
+
     const stride = 7
-    this.instanceData = new Float32Array(this.visibleNodes.length * stride)
+    const buffer = this.bufferPacker.getBuffer()
 
     for (let i = 0; i < this.visibleNodes.length; i++) {
       const node = this.visibleNodes[i]!
       const offset = i * stride
 
-      this.instanceData[offset + 0] = node.x
-      this.instanceData[offset + 1] = node.y
-      this.instanceData[offset + 2] = node.r
-      this.instanceData[offset + 3] = node.color[0]
-      this.instanceData[offset + 4] = node.color[1]
-      this.instanceData[offset + 5] = node.color[2]
-      this.instanceData[offset + 6] = node.selected ? 1.0 : 0.0
+      buffer[offset + 0] = node.x
+      buffer[offset + 1] = node.y
+      buffer[offset + 2] = node.r
+      buffer[offset + 3] = node.color[0]
+      buffer[offset + 4] = node.color[1]
+      buffer[offset + 5] = node.color[2]
+      buffer[offset + 6] = node.selected ? 1.0 : 0.0
     }
 
-    // Upload visible nodes to GPU
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, this.instanceData, gl.DYNAMIC_DRAW)
+    // Get view of used portion
+    const instanceData = this.bufferPacker.getView(this.visibleNodes.length)
+
+    // Upload to GPU using buffer manager (with performance monitoring)
+    const updateStart = performance.now()
+    this.bufferManager.updateBuffer(instanceData)
+    const updateEnd = performance.now()
+    this.performanceMonitor.recordUpdate(updateEnd - updateStart)
 
     // Clear
     gl.clear(gl.COLOR_BUFFER_BIT)
@@ -316,7 +338,8 @@ export class WebGLGraphRenderer {
     gl.vertexAttribPointer(this.a_corner, 2, gl.FLOAT, false, 0, 0)
 
     // Bind instance data (per-instance attributes)
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer)
+    const instanceBuffer = this.bufferManager.getRenderBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer)
     const byteStride = 7 * 4 // 7 floats * 4 bytes
 
     gl.enableVertexAttribArray(this.a_position)
@@ -362,9 +385,11 @@ export class WebGLGraphRenderer {
     const gl = this.gl
 
     if (this.quadBuffer) gl.deleteBuffer(this.quadBuffer)
-    if (this.instanceBuffer) gl.deleteBuffer(this.instanceBuffer)
+    if (this.bufferManager) this.bufferManager.destroy()
     if (this.program) gl.deleteProgram(this.program)
 
+    this.bufferManager = null
+    this.bufferPacker = null
     this.gl = null
   }
 
@@ -401,5 +426,40 @@ export class WebGLGraphRenderer {
    */
   getQuadtree(): Quadtree | null {
     return this.quadtree
+  }
+
+  /**
+   * Start animation mode (enables double buffering for better performance)
+   * Call this when force simulation starts or any continuous animation begins
+   */
+  startAnimation(): void {
+    if (this.bufferManager) {
+      this.bufferManager.startAnimation()
+    }
+  }
+
+  /**
+   * Stop animation mode (switches to partial updates)
+   * Call this when force simulation stops or animation ends
+   */
+  stopAnimation(): void {
+    if (this.bufferManager) {
+      this.bufferManager.stopAnimation()
+    }
+  }
+
+  /**
+   * Get buffer update performance statistics
+   */
+  getBufferPerformanceStats(): {
+    avg: number
+    p99: number
+    samples: number
+    animationMode: boolean
+  } {
+    return {
+      ...this.performanceMonitor.getStats(),
+      animationMode: this.bufferManager?.isInAnimationMode() ?? false
+    }
   }
 }

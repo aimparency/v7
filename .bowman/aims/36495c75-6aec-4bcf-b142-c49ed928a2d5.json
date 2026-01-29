@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769584041738
+    "state": "done",
+    "comment": "Created arrow.vert.glsl and arrow.frag.glsl with basic arc-based rendering using square distance calculations to inner/outer arc centers",
+    "date": 1769699654596
   },
   "intrinsicValue": 0,
   "cost": 1,

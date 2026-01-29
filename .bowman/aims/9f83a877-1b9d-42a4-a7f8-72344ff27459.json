@@ -19,9 +19,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "Core concept component",
-    "date": 1769328715162
+    "state": "done",
+    "comment": "CPU-based hit testing using spatial tree is implemented in InteractionManager.ts with screen-to-world conversion, node/edge picking, and mouse event handling",
+    "date": 1769700149594
   },
   "intrinsicValue": 0,
   "cost": 1,

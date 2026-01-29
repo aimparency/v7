@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769584064904
+    "state": "done",
+    "comment": "Created arrow-geometry.ts with functions to calculate all arrow parameters (start/end positions, arc centers, radii) from source/target node positions. Supports configurable style parameters for width, curvature, head length, and tapering.",
+    "date": 1769699813353
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769584071739
+    "state": "done",
+    "comment": "Added weight parameter to arrow geometry calculation with configurable min/max width scaling. Arrow width now scales based on normalized edge weight using the formula: widthScale = minWidth + (maxWidth - minWidth) * normalizedWeight",
+    "date": 1769699973517
   },
   "intrinsicValue": 0,
   "cost": 1,

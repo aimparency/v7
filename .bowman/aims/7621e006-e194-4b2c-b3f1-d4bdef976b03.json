@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769584056644
+    "state": "done",
+    "comment": "Created arrow-head.vert.glsl and arrow-head.frag.glsl with linear radius decay from trunk width to center radius at the point, using actual radii instead of squared values for smoother decay",
+    "date": 1769699763188
   },
   "intrinsicValue": 0,
   "cost": 1,
