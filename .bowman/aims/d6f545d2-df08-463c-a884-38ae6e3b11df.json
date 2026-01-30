@@ -1,0 +1,32 @@
+{
+  "id": "d6f545d2-df08-463c-a884-38ae6e3b11df",
+  "text": "Co-editing agreement system with dual consent",
+  "tags": [
+    "booking",
+    "agreement",
+    "chat",
+    "collaboration"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "583166bc-cc2e-489f-8a5b-6279da071078",
+      "relativePosition": [
+        -1.6107846739659373,
+        -1.9119029091762085
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "c38645ca-5b97-41c6-937e-dc1941d20946"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769747752098
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

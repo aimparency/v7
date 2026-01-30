@@ -1,0 +1,21 @@
+{
+  "id": "4123f43d-587e-409f-9f9e-828481355147",
+  "text": "AI conflict resolution service as third-party arbitrator",
+  "tags": [
+    "ai",
+    "legal-tech",
+    "conflict-resolution",
+    "separate-service"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769747797030
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

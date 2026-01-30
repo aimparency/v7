@@ -1,0 +1,71 @@
+{
+  "id": "c38645ca-5b97-41c6-937e-dc1941d20946",
+  "text": "Build Share-Ring: P2P sharing platform for physical items and services",
+  "tags": [
+    "product",
+    "web-platform",
+    "sharing-economy"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "cf36f439-2b9b-4726-927c-5d3a0f617db3",
+      "relativePosition": [
+        2.0210179165247717,
+        1.4715592346507393
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c22c084f-fbb4-4449-9ad2-ff93c69db5e3",
+      "relativePosition": [
+        -0.980433431639687,
+        2.2997283070230767
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "1c0ca08d-f8c9-4407-8ceb-4cd89325b69e",
+      "relativePosition": [
+        1.8580537413391385,
+        1.6726136117751849
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "d6f545d2-df08-463c-a884-38ae6e3b11df",
+      "relativePosition": [
+        -2.388604116870178,
+        -0.7379501154352084
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "62e1abee-953e-4fab-a290-891c71aed9ac",
+      "relativePosition": [
+        2.246582469053078,
+        -1.096753030423612
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0ef65526-ef12-4a9c-957c-7102b1771165",
+      "relativePosition": [
+        -1.6775359471073537,
+        -1.8536108399992255
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "2abfd425-ee90-4286-a019-ba0ff703c73a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769747786566
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}
