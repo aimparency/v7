@@ -1,0 +1,30 @@
+{
+  "id": "6ad092fc-a69e-475d-8870-30f994a7f6a5",
+  "text": "aim graph backend development",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "b5c6fda9-4c32-4b3a-94f0-31d0f2760040",
+      "relativePosition": [
+        -4.376209483146108,
+        3.3548149278012076
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769966033189
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

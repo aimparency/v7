@@ -17,9 +17,12 @@
     }
   ],
   "supportedAims": [
-    "3253bc9e-14fe-4c9b-9849-588620518517"
+    "3253bc9e-14fe-4c9b-9849-588620518517",
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
   "status": {
     "state": "open",
     "comment": "Felix invests in AI -> AI helps Felix -> Success funds AI growth",

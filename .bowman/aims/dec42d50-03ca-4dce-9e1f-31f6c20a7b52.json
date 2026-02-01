@@ -21,7 +21,9 @@
       "weight": 1
     }
   ],
-  "supportedAims": [],
+  "supportedAims": [
+    "8921cf33-d9ff-40d0-b106-e725c754a5f5"
+  ],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],

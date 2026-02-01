@@ -69,7 +69,9 @@
       "weight": 1
     }
   ],
-  "supportedAims": [],
+  "supportedAims": [
+    "c254d8bd-d7ba-494e-8a97-8c46636fdb2f"
+  ],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],

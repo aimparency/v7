@@ -111,7 +111,10 @@ function loadSessions() {
           // Check if timed out while we were away
           if (Date.now() - s.lastKeepalive > KEEPALIVE_TIMEOUT) {
              console.log(`[WatchdogBroker] Reclaimed ${agentType} session for ${s.projectPath} (PID ${s.pid}) is expired. Killing.`);
-             try { process.kill(s.pid); } catch(e){}
+             // Kill process group to clean up any children
+             try { process.kill(-s.pid, 'SIGTERM'); } catch(e) {
+               try { process.kill(s.pid); } catch(e2) {}
+             }
              return;
           }
 
@@ -133,6 +136,9 @@ function loadSessions() {
           console.log(`[WatchdogBroker] ${agentType} session for ${s.projectPath} (PID ${s.pid}) is dead.`);
         }
       });
+
+      // Persist cleaned state - removes dead/expired sessions from file
+      saveSessions();
     }
   } catch (e) {
     console.error('[WatchdogBroker] Failed to load sessions:', e);
@@ -303,14 +309,9 @@ export const WatchdogManager = {
       saveSessions();
       return true;
     }
-    console.warn(`[WatchdogBroker] Keepalive warning: No ${agentType} instance found for ${projectPath}. Relaunching...`);
-    try {
-        await this.start(projectPath, agentType);
-        return true;
-    } catch (e) {
-        console.error(`[WatchdogBroker] Failed to relaunch during keepalive:`, e);
-        return false;
-    }
+    // Don't auto-spawn - let the client handle reconnection explicitly
+    console.warn(`[WatchdogBroker] Keepalive: No ${agentType} instance found for ${projectPath}.`);
+    return false;
   },
 
   getStatus(projectPath: string, agentType: AgentType = 'gemini'): { running: boolean, port?: number, agentType?: AgentType } {

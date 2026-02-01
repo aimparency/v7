@@ -70,14 +70,32 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   function startKeepalive(projectPath: string, agentType: AgentType) {
     stopKeepalive()
 
+    const handleKeepaliveResult = (success: boolean) => {
+      if (!success) {
+        logStatus(`Session lost - keepalive failed. Click Start to reconnect.`)
+        // Session is gone, clean up client state
+        if (socket.value) {
+          socket.value.disconnect()
+          socket.value = null
+        }
+        isConnected.value = false
+        connectionState.value = 'idle'
+        connectedAgentType.value = null
+        stopKeepalive()
+      }
+    }
+
     // Initial call
-    trpcWatchdog.watchdog.keepalive.mutate({ projectPath, agentType }).catch((e: Error) => {
+    trpcWatchdog.watchdog.keepalive.mutate({ projectPath, agentType })
+      .then((result) => handleKeepaliveResult(result.success))
+      .catch((e: Error) => {
         logStatus(`Keepalive initial call failed: ${e.message}`)
-    })
+      })
 
     keepaliveTimer = setInterval(async () => {
        try {
-         await trpcWatchdog.watchdog.keepalive.mutate({ projectPath, agentType });
+         const result = await trpcWatchdog.watchdog.keepalive.mutate({ projectPath, agentType });
+         handleKeepaliveResult(result.success);
        } catch (e: any) {
          logStatus(`Keepalive loop failed: ${e.message}`)
        }

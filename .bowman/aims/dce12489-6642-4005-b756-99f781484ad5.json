@@ -41,7 +41,9 @@
     }
   ],
   "incoming": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "045d0879-46f3-4e2a-b13c-08ec339f03c2"
+  ],
   "committedIn": [
     "2abfd425-ee90-4286-a019-ba0ff703c73a"
   ],

@@ -1,0 +1,46 @@
+{
+  "id": "cffdcd91-fd9c-45e4-98fd-e265650be143",
+  "text": "enable autonomy",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "b9596362-3fab-4b4b-8834-df81f48930cc",
+      "relativePosition": [
+        -2.236257424347612,
+        4.17335802606047
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "297ad708-41ef-409e-a045-ff8dff0209ff",
+      "relativePosition": [
+        -9.634873324657294,
+        -14.593270793414737
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "045d0879-46f3-4e2a-b13c-08ec339f03c2",
+      "relativePosition": [
+        1.233337126205238,
+        4.2383230669971255
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769966148668
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

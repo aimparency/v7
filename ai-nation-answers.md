@@ -104,6 +104,14 @@ Private funds: 10 months, 15k EUR
 ## how heard
 Asked AI how I could get some funding to keep working on this. 
 
+## other ideas
+- share ring
+- repeer 
+- dron delivery
+
+## anything to share
+- mixed up problem & product in the videos
+
 # page 9
 ## SDG: 
 Decent Work and Economic Growth

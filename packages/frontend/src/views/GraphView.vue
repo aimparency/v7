@@ -72,11 +72,13 @@ const transform = computed(() => {
 const renderNodes = computed(() => { 
     trigger.value; 
     const currentAimId = uiStore.graphSelectedAimId
+    const activeAim = uiStore.getCurrentAim()
     return nodes.value.map(n => ({
         ...n,
         x: n.renderPos[0],
         y: n.renderPos[1],
         selected: n.id === currentAimId,
+        active: n.id === activeAim?.id,
         scale: visualScale.value
     })) 
 })

@@ -1,0 +1,46 @@
+{
+  "id": "c254d8bd-d7ba-494e-8a97-8c46636fdb2f",
+  "text": "LLM integration",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "abc3d503-5945-45eb-8122-be5e33b2ccea",
+      "relativePosition": [
+        -3.8632216897665095,
+        -1.9999608278105512
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "93149e0b-ef1a-424d-b9db-ffef9f50957d",
+      "relativePosition": [
+        -2.433290412420133,
+        4.916123086864051
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "8921cf33-d9ff-40d0-b106-e725c754a5f5",
+      "relativePosition": [
+        -4.3894262033907765,
+        2.5285057258128187
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769966074308
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}
