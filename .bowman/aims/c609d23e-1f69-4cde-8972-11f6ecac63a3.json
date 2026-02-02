@@ -5,15 +5,18 @@
     "publishing",
     "infrastructure"
   ],
-  "incoming": [],
-  "committedIn": [],
-  "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1765230132830
-  },
   "supportingConnections": [],
+  "incoming": [],
   "supportedAims": [
     "dce12489-6642-4005-b756-99f781484ad5"
-  ]
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented automated publishing system for Twitter/X and Instagram. Created TwitterPublisher (uses twitter-api-v2), InstagramPublisher (uses Graph API), and main publish.ts orchestrator. Features: dry-run mode, duplicate prevention via .published tracker, platform-specific publishing, one-post-per-run safety. Requires API credentials setup (documented in .secrets.example and README). Tested successfully in dry-run mode. Ready for production use once credentials are configured. Instagram requires public image URLs (CDN/S3/Cloudinary). Documentation complete with setup guides and usage examples.",
+    "date": 1769970544539
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
 }

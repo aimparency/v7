@@ -197,6 +197,7 @@ const scrollToItem = (index: number) => {
 .search-modal {
   width: 500px;
   max-width: 90vw;
+  max-height: 90vh;
   background: #252526;
   border: 1px solid #454545;
   border-radius: 6px;

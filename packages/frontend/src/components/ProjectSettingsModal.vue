@@ -192,15 +192,21 @@ const save = async () => {
   border-radius: 5px;
   width: 25rem;
   max-width: 90vw;
-  
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+
   .modal-header {
     padding: 1rem;
     border-bottom: 1px solid #555;
+    flex-shrink: 0;
     h3 { margin: 0; }
   }
-  
+
   .modal-body {
     padding: 1rem;
+    flex: 1;
+    overflow-y: auto;
     
     .form-group {
       margin-bottom: 1rem;
@@ -339,6 +345,7 @@ const save = async () => {
     display: flex;
     gap: 0.5rem;
     justify-content: flex-end;
+    flex-shrink: 0;
     
     button {
       padding: 0.5rem 1rem;

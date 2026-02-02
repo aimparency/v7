@@ -4,12 +4,14 @@
   "description": "there should be a repository of APIs. \nSo that LLMs can interact with the realworld. \nMaybe MCPs are the right thing. \nDoes booking have an MCP? \nOtherwise we could build a website that adapts APIs like the one from booking to MCP",
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "dce12489-6642-4005-b756-99f781484ad5"
+  ],
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1768396942185
+    "comment": "Researched MCP ecosystem. Answer: Yes, booking.com has multiple MCPs (hotels_mcp_server, Bright Data Booking MCP, Apify scrapers, flights-mcp-server). Found 1200+ MCPs in community directories (mcp-awesome.com). Created comprehensive research doc (docs/MCP_RESEARCH.md) covering existing MCPs, categories, and opportunities. Proposed next steps: (1) Build social media MCP for Twitter/Instagram to complement experience-mining pipeline, (2) Document existing aimparency MCP implementation, (3) Create MCP template for future integrations.",
+    "date": 1769970848335
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -1,0 +1,19 @@
+{
+  "id": "e0289c2f-8fe7-4875-a46a-21709c8d8295",
+  "text": "let's try freezing the aim whose handle is not being dragged while dragging connection handles in graph view",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769976103888
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

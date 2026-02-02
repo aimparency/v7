@@ -1,0 +1,19 @@
+{
+  "id": "980ccb42-ff50-4384-8bab-cfe9646e83f0",
+  "text": "when browser is zoomed in, watchdog response does not get parsed (at least for claude sessions).",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769974091183
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

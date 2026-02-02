@@ -8,7 +8,9 @@
     "separate-service"
   ],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "045d0879-46f3-4e2a-b13c-08ec339f03c2"
+  ],
   "committedIn": [],
   "status": {
     "state": "open",

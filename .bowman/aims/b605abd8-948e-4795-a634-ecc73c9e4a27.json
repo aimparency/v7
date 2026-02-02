@@ -1,0 +1,19 @@
+{
+  "id": "b605abd8-948e-4795-a634-ecc73c9e4a27",
+  "text": "When zoomed in, the modals may overflow the visible viewport. They should scroll then",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Fixed modal overflow when browser is zoomed in. Applied max-height: 90vh to all modals with flexbox layout for proper scrolling. Updated: PhaseCreationModal, AimCreationModal, AimSearchModal, PhaseSearchModal, ProjectSettingsModal. Added display: flex, flex-direction: column to modal containers, flex: 1 + overflow-y: auto to modal-body sections, and flex-shrink: 0 to headers/footers. ConsistencyModal already had correct pattern (max-height: 85vh). All modals now properly scroll their content when zoomed in or on small viewports.",
+    "date": 1769976821517
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}
