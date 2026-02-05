@@ -1,0 +1,19 @@
+{
+  "id": "7fbc7a91-9666-4d98-8773-a62084c20b84",
+  "text": "Ximonde besuchen",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1770140488367
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

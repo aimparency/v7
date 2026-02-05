@@ -54,7 +54,7 @@ const delayMiddleware = t.middleware(async ({ next }) => {
 // Create procedures with delay middleware
 const delayedProcedure = t.procedure.use(delayMiddleware);
 
-const GITIGNORE_CONTENT = 'vectors.json\ncache.db\n';
+const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\n';
 
 function normalizeProjectPath(p: string): string {
   if (!p) return p;
@@ -135,6 +135,10 @@ async function ensureProjectStructure(rawProjectPath: string) {
     }
     if (!currentContent.includes('cache.db')) {
         currentContent += '\ncache.db';
+        needsUpdate = true;
+    }
+    if (!currentContent.includes('semantic-graph.json')) {
+        currentContent += '\nsemantic-graph.json';
         needsUpdate = true;
     }
     
