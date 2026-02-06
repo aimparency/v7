@@ -23,29 +23,14 @@ export interface ArrowGeometry {
   targetCenter: Vec2      // T - supported aim center
   targetRadius: number    // For end bound check
 
-  // Arc center and radii (single center M)
+  // Arc geometry (single center M)
   arcCenter: Vec2         // M - shared arc center
-  radiusOuter: number     // r1 - outer edge radius (larger)
-  radiusInner: number     // r2 - inner edge radius (smaller)
+  centerRadius: number    // Distance from M to arc centerline
+  halfWidth: number       // Half the arrow width (r1 - r2) / 2
 
-  // Precomputed squared values for fragment shader
-  radiusOuterSq: number   // r1²
-  radiusInnerSq: number   // r2²
-  targetRadiusSq: number  // For end bound check
-
-  // Triangle vertices (computed for optimal coverage)
-  // v0 = M, v1 and v2 are on the tangent line at the tip
-  triangleV0: Vec2        // M (arc center)
-  triangleV1: Vec2        // On tangent, covers M→S side
-  triangleV2: Vec2        // On tangent, covers outer arc side
-
-  // Tip point (tangent point on target circle)
-  tipPoint: Vec2
-
-  // Phase values for each vertex (for interpolation)
-  // v0 (M) gets phase based on its position, v1/v2 get phase 1.0 (at tip)
-  phaseV0: number         // Phase at M (will be ~0 or negative, clamped in shader)
-  // v1 and v2 are at phase 1.0 (tip)
+  // Triangle vertices
+  triangleV1: Vec2        // Towards S (source side)
+  triangleV2: Vec2        // Towards tip (target side)
 }
 
 export interface ArrowStyle {
