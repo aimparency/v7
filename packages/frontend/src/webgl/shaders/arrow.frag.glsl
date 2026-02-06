@@ -1,57 +1,50 @@
-// Arrow Fragment Shader (Trunk)
-// Renders arc-based arrow trunk using square distance checks
+// Arrow Fragment Shader (Simplified Arc-Based)
+// Renders annulus segment with bounds checking
 
 #ifdef GL_ES
-precision mediump float;
+precision highp float;
 #endif
 
-// Input from vertex shader
-varying vec2 v_worldPos;      // Fragment position in world space
-varying vec2 v_startPos;      // Arrow start position
-varying vec2 v_endPos;        // Arrow end position
-varying vec2 v_arcCenter1;    // Inner arc center (M1)
-varying vec2 v_arcCenter2;    // Outer arc center (M2)
-varying float v_radiusInnerSq;   // Inner radius squared at base (r1s)
-varying float v_radiusOuterSq;   // Outer radius squared at base (r2s)
-varying float v_radiusCenterSq;  // Center radius squared
-varying float v_taperFactor;     // Tapering factor
-varying vec3 v_color;         // Arrow color
-varying float v_opacity;      // Arrow opacity
+// Varyings from vertex shader
+varying vec2 v_worldPos;
+varying vec2 v_arcCenter;
+varying float v_radiusOuterSq;
+varying float v_radiusInnerSq;
+varying vec2 v_sourceCenter;
+varying vec2 v_targetCenter;
+varying float v_targetRadiusSq;
+varying vec3 v_color;
+varying float v_opacity;
+varying float v_phase;  // 0 at source, 1 at tip (for future tapering)
 
 void main() {
-  // Calculate phase (position along arrow from start to end)
-  // Project fragment position onto arrow direction vector
-  vec2 arrowDir = v_endPos - v_startPos;
-  float arrowLength = length(arrowDir);
-  vec2 arrowDirNorm = arrowDir / arrowLength;
+  // Distance squared from fragment to arc center M
+  vec2 toCenter = v_worldPos - v_arcCenter;
+  float distSq = dot(toCenter, toCenter);
 
-  vec2 toFragment = v_worldPos - v_startPos;
-  float projectionLength = dot(toFragment, arrowDirNorm);
-  float phase = clamp(projectionLength / arrowLength, 0.0, 1.0);
+  // Annulus test: r2² <= dist² <= r1²
+  bool inRing = distSq >= v_radiusInnerSq && distSq <= v_radiusOuterSq;
 
-  // Apply phase-based width tapering
-  // Formula: f * (r1s - rCenterSquared) + rCenterSquared
-  // Where f goes from 0.0 (full width at base) to taperFactor (tapered at tip)
-  float f = phase * v_taperFactor;
+  // Start bound: fragment should be on the "arrow side" of the radial through S
+  // Use cross product to check which side of the M→S line we're on
+  // We want the SHORT side of the arc (between S and T, not the long way around)
+  vec2 toSource = v_sourceCenter - v_arcCenter;
+  vec2 toFrag = v_worldPos - v_arcCenter;
+  float crossStart = toSource.x * toFrag.y - toSource.y * toFrag.x;
+  bool pastStart = crossStart <= 0.0;  // Flipped: short side of arc
 
-  float r1s_tapered = f * (v_radiusCenterSq - v_radiusInnerSq) + v_radiusInnerSq;
-  float r2s_tapered = f * (v_radiusCenterSq - v_radiusOuterSq) + v_radiusOuterSq;
+  // End bound: fragment should be outside target circle
+  vec2 toTarget = v_worldPos - v_targetCenter;
+  float distToTargetSq = dot(toTarget, toTarget);
+  bool beforeEnd = distToTargetSq >= v_targetRadiusSq;
 
-  // Compute square distances to arc centers
-  vec2 diff1 = v_worldPos - v_arcCenter1;
-  float d1s = dot(diff1, diff1); // Square distance to inner arc center
+  // Combined test
+  bool isArrow = inRing && pastStart && beforeEnd;
 
-  vec2 diff2 = v_worldPos - v_arcCenter2;
-  float d2s = dot(diff2, diff2); // Square distance to outer arc center
-
-  // Discard fragments outside the tapered arc region
-  // Keep fragments where:
-  // - Distance to inner center is within tapered inner radius: d1s <= r1s_tapered
-  // - Distance to outer center is outside tapered outer radius: d2s >= r2s_tapered
-  if (d1s > r1s_tapered || d2s < r2s_tapered) {
-    discard;
+  if (isArrow) {
+    gl_FragColor = vec4(v_color, v_opacity);
+  } else {
+    // Debug: magenta background for quad
+    gl_FragColor = vec4(1.0, 0.0, 1.0, 0.3);
   }
-
-  // Apply color and opacity
-  gl_FragColor = vec4(v_color, v_opacity);
 }

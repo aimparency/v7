@@ -2,119 +2,146 @@
 
 ## Overview
 
-Instead of Bezier curves, we use arc-based rendering with inner and outer radii. This approach is computationally cheaper as it only requires per-fragment distance calculations (multiplications and comparisons) rather than curve evaluation.
+Arrows are rendered as **annulus segments** (arc slices) using a single arc center M and two radii. This approach requires only per-fragment distance calculations, making it GPU-efficient.
 
-## Geometry Approach
+## Core Geometry
 
-### Arrow Trunk (Main Body)
+### Arc Center Placement
 
-The arrow trunk is rendered using a quad with a fragment shader that:
+Given:
+- **S** = Supporting aim center (source/parent)
+- **T** = Supported aim center (target/child)
+- **dist** = |T - S| (distance between centers)
 
-1. **Computes square distances** to two arc centers:
-   - `d1s` = square distance to center M1 (inner arc center)
-   - `d2s` = square distance to center M2 (outer arc center)
+The arc center **M** is positioned:
+1. On the **perpendicular bisector** of the S→T line
+2. At distance `dist * curvature` from the midpoint
+3. `curvature` is a tunable parameter (default 0.5)
 
-2. **Fragments are discarded** if:
-   ```glsl
-   d1s > r1s || d2s < r2s
-   ```
-   Where:
-   - `r1s` = square of inner radius
-   - `r2s` = square of outer radius
+```
+M = midpoint(S, T) + perpendicular(S→T) * dist * curvature
+```
 
-3. **Positioning**:
-   - The arrow trunk centerline passes through the center of the supporting aim
-   - The trunk starts at the center of the supporting aim (parent/source)
-   - The arrow point touches the circle around the supported aim (child/target)
+Where `perpendicular` rotates 90° clockwise for consistent curve direction.
 
-4. **Width tapering**: The trunk gets slimmer toward the arrow head using phase-based interpolation:
-   ```glsl
-   f * (r1s - rCenterSquared) + rCenterSquared
-   ```
-   Where `f` is a phase factor (0.0 to 1.0) that varies along the arrow length.
+### Radii (Single Center, Two Radii)
+
+Both the inner and outer edges of the arrow are arcs from the **same center M**:
+- **centerRadius** = distance from M to S (equals distance from M to T by symmetry)
+- **radiusOuter** (r1) = centerRadius + width/2
+- **radiusInner** (r2) = centerRadius - width/2
+- **Arrow width** = r1 - r2
+
+### Width Calculation
+
+Matching the SVG implementation:
+```
+width = widthFactor * targetRadius * share
+```
+Where:
+- `widthFactor` = 1.2 (tunable)
+- `targetRadius` = radius of the supported aim
+- `share` = contribution share (0-1)
+
+## Fragment Test
+
+A fragment is part of the arrow if:
+```glsl
+// Annulus test: inside outer, outside inner
+bool inRing = distSq >= radiusInnerSq && distSq <= radiusOuterSq;
+
+// Start bound: on the short arc side (towards target, not away)
+bool pastStart = cross(M→S, M→fragment) <= 0;
+
+// End bound: outside target circle
+bool beforeEnd = distToTargetSq >= targetRadiusSq;
+
+bool isArrow = inRing && pastStart && beforeEnd;
+```
+
+## Triangle Rendering (Optimized)
+
+Instead of a quad, we use a **triangle** that precisely covers the arc segment:
+
+### Triangle Vertices
+
+1. **Vertex 0**: Arc center **M**
+2. **Vertex 1**: Extended along M→S direction
+3. **Vertex 2**: Extended along M→(target circumference point) direction
+
+### Extension Calculation
+
+To ensure the triangle covers the full arc width:
+- The triangle edges from M must extend beyond `radiusOuter`
+- Calculate the **sagitta** (height of circular segment) to determine extension
+
+For a circular segment with:
+- Chord from S to target tip
+- Arc center M at distance `centerRadius`
+
+The sagitta h = centerRadius - distance(M to chord midpoint)
+
+Extension factor ensures coverage:
+```
+extend = radiusOuter / cos(halfAngle)
+```
+Where `halfAngle` is half the arc's angular span.
+
+### Phase Interpolation
+
+Pass a **phase** value (0 to 1) to each vertex:
+- Phase 0 = at supporting aim center (S)
+- Phase 1 = at supported aim circumference (tip)
+
+This phase is linearly interpolated across the triangle and used in the fragment shader to:
+1. **Taper the trunk**: radii modulated [1.0 → 0.5] along phase
+2. **Form the arrow head**: radii modulated [1.0 → 0.0] for the tip portion
+
+### Vertex Data
+
+Per-instance attributes:
+- `arcCenter` (vec2): M position
+- `radiusOuterSq` (float): r1²
+- `radiusInnerSq` (float): r2²
+- `sourceCenter` (vec2): S position
+- `targetCenter` (vec2): T position
+- `targetRadiusSq` (float): for end bound
+- `vertex0`, `vertex1`, `vertex2` (vec2 each): triangle corners with phase encoded
+- `color` (vec3), `opacity` (float)
+
+Or compute triangle vertices in vertex shader from the above.
+
+## Arrow Shape (Future)
+
+Using the interpolated phase:
+
+### Trunk Tapering
+```glsl
+// Phase 0→0.8: trunk tapers from full width to half
+float trunkPhase = clamp(phase / 0.8, 0.0, 1.0);
+float taperFactor = mix(1.0, 0.5, trunkPhase);
+float r1_tapered = centerRadius + (width/2) * taperFactor;
+float r2_tapered = centerRadius - (width/2) * taperFactor;
+```
 
 ### Arrow Head
-
-The arrow head is rendered using a separate quad with its own shader:
-
-1. **Vertex shader** computes a vector from "tail to point" of the arrow head
-
-2. **Radius decay**: The inner/outer radii decay linearly from the trunk width to a point:
-   ```glsl
-   f * (r1 - rCenter) + rCenter
-   ```
-   Where:
-   - `f` decays from 2.0 at the trunk to 0.0 at the point
-   - `(r1 - rCenter)` can be precomputed and passed as uniform
-   - This phase uses actual radii instead of squared values for smoother decay
-
-3. **Integration**: The arrow head seamlessly connects to the trunk at the appropriate phase point
-
-## Implementation Strategy
-
-### Unified Shader Approach
-
-We could potentially use the same shader for both trunk and head by:
-- Including a "phase" parameter that indicates position along arrow
-- Linearly interpolating the square distances based on phase
-- Adjusting radius calculations based on whether rendering trunk or head
-
-### Performance Benefits
-
-Compared to Bezier curves:
-- **Cheaper computation**: Only distance checks per fragment (multiplications + comparisons)
-- **No curve evaluation**: No polynomial or recursive subdivision needed
-- **GPU-friendly**: All operations are simple arithmetic
-- **Scalable**: Performance stays consistent with large numbers of arrows
-
-## Mathematical Details
-
-### Square Distance Calculation
-For a point P and center M:
 ```glsl
-vec2 diff = P - M;
-float distSquared = dot(diff, diff); // d1s or d2s
+// Phase 0.8→1.0: head tapers to point
+float headPhase = clamp((phase - 0.8) / 0.2, 0.0, 1.0);
+float headTaper = 1.0 - headPhase;  // 1→0
+float r1_head = centerRadius + (width/2) * 0.5 * headTaper;
+float r2_head = centerRadius - (width/2) * 0.5 * headTaper;
 ```
 
-### Phase-Based Width Variation
-Along the arrow length (t from 0.0 to 1.0):
-```glsl
-// For trunk (squared values)
-float r1s_at_t = mix(r1s_base, r1s_tip, t);
-float r2s_at_t = mix(r2s_base, r2s_tip, t);
+## Coordinate System
 
-// For head (linear radii for smoother decay)
-float r1_at_t = mix(r1_trunk, 0.0, t);
-float r2_at_t = mix(r2_trunk, 0.0, t);
-```
+- Arrow starts at **center** of supporting aim (S)
+- Arrow ends at **circumference** of supported aim (tip touches the circle)
+- Inner/outer edges at start lie on a **radial line through S from M**
 
-### Weight Visualization
-Arrow width can be controlled by scaling r1 and r2 based on edge weight:
-```glsl
-float widthScale = mix(minWidth, maxWidth, normalizedWeight);
-float r1s = baseR1s * widthScale * widthScale;
-float r2s = baseR2s * widthScale * widthScale;
-```
+## Performance Benefits
 
-## Precomputation Opportunities
-
-To maximize performance:
-1. **Precompute** `(r1 - rCenter)` and `(r1s - rCenterSquared)` on CPU
-2. **Pass as uniforms** or vertex attributes
-3. **Compute arrow geometry** (start point, end point, tangent vectors) on CPU
-4. **Upload** only necessary data to GPU (4 vertices per arrow: 2 for trunk quad, 2 for head quad)
-
-## Visual Quality
-
-- Smooth circular arcs provide clean, professional appearance
-- Linear interpolation might create interesting visual effect
-- Width tapering creates clear directional flow
-- Compatible with various arc curvatures by adjusting center positions
-
-## Next Steps
-
-1. Implement basic arc rendering shader for proof-of-concept
-2. Test performance with 10,000+ arrows
-3. Add arrow head shader
-4. Integrate with spatial tree for culling
-5. Add weight-based width variation
+- Single draw call for all arrows (instanced rendering)
+- Only distance calculations in fragment shader (no curve evaluation)
+- Triangle covers exact needed area (minimal overdraw vs quad)
+- Precomputed squared values avoid sqrt in shader

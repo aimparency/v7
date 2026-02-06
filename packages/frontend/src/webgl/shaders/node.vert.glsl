@@ -18,6 +18,7 @@ uniform vec2 u_viewportSize;  // Canvas size in pixels
 varying vec2 v_uv;       // Position within quad (-1 to 1)
 varying vec3 v_color;    // Node color
 varying float v_selected; // Selection state
+varying float v_aaWidth; // Anti-aliasing width in UV space
 
 void main() {
   // Transform corner to world space
@@ -31,6 +32,15 @@ void main() {
   ndc.y *= -1.0; // Flip Y axis (canvas has Y-down, WebGL has Y-up)
 
   gl_Position = vec4(ndc, 0.0, 1.0);
+
+  // Calculate pixel radius for AA
+  // zoom is stored in viewMatrix[0][0]
+  float zoom = u_viewMatrix[0][0];
+  float pixelRadius = a_radius * zoom;
+  // AA width in UV space: ~1.5 pixels / pixel radius
+  // Min clamp prevents division issues, max clamp prevents over-blur on tiny nodes
+  float aaPixels = 1.5;
+  v_aaWidth = clamp(aaPixels / pixelRadius, 0.002, 0.5);
 
   // Pass data to fragment shader
   v_uv = a_corner;

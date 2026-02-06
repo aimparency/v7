@@ -7,11 +7,13 @@ import { trpc } from '../trpc'
 import { type GraphNode, type GraphLink, useGraphSimulation } from './useGraphSimulation'
 
 export function useGraphInteraction(
-    svgRef: Ref<SVGSVGElement | undefined>,
+    elementRef: Ref<HTMLElement | SVGSVGElement | undefined>,
     width: Ref<number>,
     height: Ref<number>,
     simulation: ReturnType<typeof useGraphSimulation>
 ) {
+    // Alias for backwards compatibility
+    const svgRef = elementRef
     const dataStore = useDataStore()
     const uiStore = useUIStore()
     const mapStore = useMapStore()

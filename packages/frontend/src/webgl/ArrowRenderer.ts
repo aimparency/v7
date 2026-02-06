@@ -1,190 +1,109 @@
 /**
- * WebGL Arrow Renderer
+ * WebGL Arrow Renderer (Triangle-based Arc Rendering)
  *
- * Renders arc-based arrows using WebGL instanced rendering.
- * Supports both trunk and head rendering with separate shaders.
+ * Renders arrows as annulus segments using triangles.
+ * Each arrow is one triangle: M (arc center) + two points on tangent line at tip.
  */
 
 import type { ArrowGeometry } from './utils/arrow-geometry'
-import {
-  DynamicBufferManager,
-  BufferPacker,
-  BufferPerformanceMonitor
-} from './buffers/DynamicBufferManager'
 
 export interface EdgeData {
   id: string
   sourceId: string
   targetId: string
-  color: [number, number, number] // RGB 0-1
+  color: [number, number, number]
   opacity: number
   geometry: ArrowGeometry
 }
+
+// Stride: arcCenter(2) + triangleV1(2) + triangleV2(2) + radiusOuterSq(1) + radiusInnerSq(1)
+//       + sourceCenter(2) + targetCenter(2) + targetRadiusSq(1) + color(3) + opacity(1) = 17
+const STRIDE = 17
 
 export class ArrowRenderer {
   private gl: WebGLRenderingContext
   private canvas: HTMLCanvasElement
 
-  // Shader programs
-  private trunkProgram: WebGLProgram | null = null
-  private headProgram: WebGLProgram | null = null
+  private program: WebGLProgram | null = null
+  private vertexIndexBuffer: WebGLBuffer | null = null
+  private instanceBuffer: WebGLBuffer | null = null
+  private instanceData: Float32Array
 
-  // Buffers
-  private quadBuffer: WebGLBuffer | null = null // Static quad corners
-  private trunkBufferManager: DynamicBufferManager | null = null
-  private headBufferManager: DynamicBufferManager | null = null
-  private trunkBufferPacker: BufferPacker | null = null
-  private headBufferPacker: BufferPacker | null = null
-  private trunkPerformanceMonitor: BufferPerformanceMonitor = new BufferPerformanceMonitor()
-  private headPerformanceMonitor: BufferPerformanceMonitor = new BufferPerformanceMonitor()
+  // Attribute locations
+  private a_vertexIndex: number = -1
+  private a_arcCenter: number = -1
+  private a_triangleV1: number = -1
+  private a_triangleV2: number = -1
+  private a_radiusOuterSq: number = -1
+  private a_radiusInnerSq: number = -1
+  private a_sourceCenter: number = -1
+  private a_targetCenter: number = -1
+  private a_targetRadiusSq: number = -1
+  private a_color: number = -1
+  private a_opacity: number = -1
 
-  // Trunk shader attributes
-  private trunk_a_corner: number = -1
-  private trunk_a_startPos: number = -1
-  private trunk_a_endPos: number = -1
-  private trunk_a_arcCenter1: number = -1
-  private trunk_a_arcCenter2: number = -1
-  private trunk_a_radiusInnerSq: number = -1
-  private trunk_a_radiusOuterSq: number = -1
-  private trunk_a_radiusCenterSq: number = -1
-  private trunk_a_taperFactor: number = -1
-  private trunk_a_color: number = -1
-  private trunk_a_opacity: number = -1
+  // Uniform locations
+  private u_viewMatrix: WebGLUniformLocation | null = null
+  private u_viewportSize: WebGLUniformLocation | null = null
 
-  // Trunk shader uniforms
-  private trunk_u_viewMatrix: WebGLUniformLocation | null = null
-  private trunk_u_viewportSize: WebGLUniformLocation | null = null
-
-  // Head shader attributes
-  private head_a_corner: number = -1
-  private head_a_tailPos: number = -1
-  private head_a_pointPos: number = -1
-  private head_a_arcCenter1: number = -1
-  private head_a_arcCenter2: number = -1
-  private head_a_radiusInner: number = -1
-  private head_a_radiusOuter: number = -1
-  private head_a_radiusCenter: number = -1
-  private head_a_color: number = -1
-  private head_a_opacity: number = -1
-
-  // Head shader uniforms
-  private head_u_viewMatrix: WebGLUniformLocation | null = null
-  private head_u_viewportSize: WebGLUniformLocation | null = null
-
-  // Data
   private edges: EdgeData[] = []
+  private viewMatrix: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1])
 
-  // Camera state (shared with node renderer)
-  private viewMatrix: Float32Array = new Float32Array([
-    1, 0, 0,
-    0, 1, 0,
-    0, 0, 1
-  ])
+  private maxEdges: number
 
-  constructor(gl: WebGLRenderingContext, canvas: HTMLCanvasElement) {
+  constructor(gl: WebGLRenderingContext, canvas: HTMLCanvasElement, maxEdges: number = 50000) {
     this.gl = gl
     this.canvas = canvas
+    this.maxEdges = maxEdges
+    this.instanceData = new Float32Array(maxEdges * STRIDE)
   }
 
   async init(): Promise<void> {
     const gl = this.gl
 
-    // Load and compile shaders
-    const trunkVertexShader = await this.loadShader(gl.VERTEX_SHADER, '/src/webgl/shaders/arrow.vert.glsl')
-    const trunkFragmentShader = await this.loadShader(gl.FRAGMENT_SHADER, '/src/webgl/shaders/arrow.frag.glsl')
-    const headVertexShader = await this.loadShader(gl.VERTEX_SHADER, '/src/webgl/shaders/arrow-head.vert.glsl')
-    const headFragmentShader = await this.loadShader(gl.FRAGMENT_SHADER, '/src/webgl/shaders/arrow-head.frag.glsl')
+    // Load shaders
+    const vertShader = await this.loadShader(gl.VERTEX_SHADER, '/src/webgl/shaders/arrow.vert.glsl')
+    const fragShader = await this.loadShader(gl.FRAGMENT_SHADER, '/src/webgl/shaders/arrow.frag.glsl')
 
-    // Create trunk program
-    this.trunkProgram = gl.createProgram()
-    if (!this.trunkProgram) throw new Error('Failed to create trunk program')
+    // Create program
+    this.program = gl.createProgram()
+    if (!this.program) throw new Error('Failed to create program')
 
-    gl.attachShader(this.trunkProgram, trunkVertexShader)
-    gl.attachShader(this.trunkProgram, trunkFragmentShader)
-    gl.linkProgram(this.trunkProgram)
+    gl.attachShader(this.program, vertShader)
+    gl.attachShader(this.program, fragShader)
+    gl.linkProgram(this.program)
 
-    if (!gl.getProgramParameter(this.trunkProgram, gl.LINK_STATUS)) {
-      const info = gl.getProgramInfoLog(this.trunkProgram)
-      throw new Error('Trunk program link failed: ' + info)
+    if (!gl.getProgramParameter(this.program, gl.LINK_STATUS)) {
+      throw new Error('Program link failed: ' + gl.getProgramInfoLog(this.program))
     }
 
-    // Create head program
-    this.headProgram = gl.createProgram()
-    if (!this.headProgram) throw new Error('Failed to create head program')
+    // Get attribute locations
+    this.a_vertexIndex = gl.getAttribLocation(this.program, 'a_vertexIndex')
+    this.a_arcCenter = gl.getAttribLocation(this.program, 'a_arcCenter')
+    this.a_triangleV1 = gl.getAttribLocation(this.program, 'a_triangleV1')
+    this.a_triangleV2 = gl.getAttribLocation(this.program, 'a_triangleV2')
+    this.a_radiusOuterSq = gl.getAttribLocation(this.program, 'a_radiusOuterSq')
+    this.a_radiusInnerSq = gl.getAttribLocation(this.program, 'a_radiusInnerSq')
+    this.a_sourceCenter = gl.getAttribLocation(this.program, 'a_sourceCenter')
+    this.a_targetCenter = gl.getAttribLocation(this.program, 'a_targetCenter')
+    this.a_targetRadiusSq = gl.getAttribLocation(this.program, 'a_targetRadiusSq')
+    this.a_color = gl.getAttribLocation(this.program, 'a_color')
+    this.a_opacity = gl.getAttribLocation(this.program, 'a_opacity')
 
-    gl.attachShader(this.headProgram, headVertexShader)
-    gl.attachShader(this.headProgram, headFragmentShader)
-    gl.linkProgram(this.headProgram)
+    // Get uniform locations
+    this.u_viewMatrix = gl.getUniformLocation(this.program, 'u_viewMatrix')
+    this.u_viewportSize = gl.getUniformLocation(this.program, 'u_viewportSize')
 
-    if (!gl.getProgramParameter(this.headProgram, gl.LINK_STATUS)) {
-      const info = gl.getProgramInfoLog(this.headProgram)
-      throw new Error('Head program link failed: ' + info)
-    }
+    // Create vertex index buffer (3 vertices: 0, 1, 2)
+    const vertexIndices = new Float32Array([0, 1, 2])
+    this.vertexIndexBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexIndexBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, vertexIndices, gl.STATIC_DRAW)
 
-    // Get trunk attribute locations
-    this.trunk_a_corner = gl.getAttribLocation(this.trunkProgram, 'a_corner')
-    this.trunk_a_startPos = gl.getAttribLocation(this.trunkProgram, 'a_startPos')
-    this.trunk_a_endPos = gl.getAttribLocation(this.trunkProgram, 'a_endPos')
-    this.trunk_a_arcCenter1 = gl.getAttribLocation(this.trunkProgram, 'a_arcCenter1')
-    this.trunk_a_arcCenter2 = gl.getAttribLocation(this.trunkProgram, 'a_arcCenter2')
-    this.trunk_a_radiusInnerSq = gl.getAttribLocation(this.trunkProgram, 'a_radiusInnerSq')
-    this.trunk_a_radiusOuterSq = gl.getAttribLocation(this.trunkProgram, 'a_radiusOuterSq')
-    this.trunk_a_radiusCenterSq = gl.getAttribLocation(this.trunkProgram, 'a_radiusCenterSq')
-    this.trunk_a_taperFactor = gl.getAttribLocation(this.trunkProgram, 'a_taperFactor')
-    this.trunk_a_color = gl.getAttribLocation(this.trunkProgram, 'a_color')
-    this.trunk_a_opacity = gl.getAttribLocation(this.trunkProgram, 'a_opacity')
-
-    // Get trunk uniform locations
-    this.trunk_u_viewMatrix = gl.getUniformLocation(this.trunkProgram, 'u_viewMatrix')
-    this.trunk_u_viewportSize = gl.getUniformLocation(this.trunkProgram, 'u_viewportSize')
-
-    // Get head attribute locations
-    this.head_a_corner = gl.getAttribLocation(this.headProgram, 'a_corner')
-    this.head_a_tailPos = gl.getAttribLocation(this.headProgram, 'a_tailPos')
-    this.head_a_pointPos = gl.getAttribLocation(this.headProgram, 'a_pointPos')
-    this.head_a_arcCenter1 = gl.getAttribLocation(this.headProgram, 'a_arcCenter1')
-    this.head_a_arcCenter2 = gl.getAttribLocation(this.headProgram, 'a_arcCenter2')
-    this.head_a_radiusInner = gl.getAttribLocation(this.headProgram, 'a_radiusInner')
-    this.head_a_radiusOuter = gl.getAttribLocation(this.headProgram, 'a_radiusOuter')
-    this.head_a_radiusCenter = gl.getAttribLocation(this.headProgram, 'a_radiusCenter')
-    this.head_a_color = gl.getAttribLocation(this.headProgram, 'a_color')
-    this.head_a_opacity = gl.getAttribLocation(this.headProgram, 'a_opacity')
-
-    // Get head uniform locations
-    this.head_u_viewMatrix = gl.getUniformLocation(this.headProgram, 'u_viewMatrix')
-    this.head_u_viewportSize = gl.getUniformLocation(this.headProgram, 'u_viewportSize')
-
-    // Create static quad buffer (4 corners of a quad)
-    const quadVertices = new Float32Array([
-      -1, -1,  // Bottom-left
-       1, -1,  // Bottom-right
-      -1,  1,  // Top-left
-       1,  1   // Top-right
-    ])
-
-    this.quadBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, quadVertices, gl.STATIC_DRAW)
-
-    // Create dynamic buffer managers for instance data
-    const MAX_EDGES = 50000
-    const TRUNK_STRIDE = 17 // startPos(2) + endPos(2) + arcCenter1(2) + arcCenter2(2) + radiusInnerSq(1) + radiusOuterSq(1) + radiusCenterSq(1) + taperFactor(1) + color(3) + opacity(1) + padding(1)
-    const HEAD_STRIDE = 15 // tailPos(2) + pointPos(2) + arcCenter1(2) + arcCenter2(2) + radiusInner(1) + radiusOuter(1) + radiusCenter(1) + color(3) + opacity(1)
-
-    this.trunkBufferManager = new DynamicBufferManager(gl, {
-      maxItems: MAX_EDGES,
-      stride: TRUNK_STRIDE,
-      usage: gl.DYNAMIC_DRAW
-    })
-
-    this.headBufferManager = new DynamicBufferManager(gl, {
-      maxItems: MAX_EDGES,
-      stride: HEAD_STRIDE,
-      usage: gl.DYNAMIC_DRAW
-    })
-
-    this.trunkBufferPacker = new BufferPacker(MAX_EDGES, TRUNK_STRIDE)
-    this.headBufferPacker = new BufferPacker(MAX_EDGES, HEAD_STRIDE)
+    // Create instance buffer
+    this.instanceBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, this.instanceData.byteLength, gl.DYNAMIC_DRAW)
   }
 
   private async loadShader(type: number, url: string): Promise<WebGLShader> {
@@ -209,6 +128,36 @@ export class ArrowRenderer {
 
   updateEdges(edges: EdgeData[]): void {
     this.edges = edges
+
+    // Pack instance data
+    for (let i = 0; i < edges.length && i < this.maxEdges; i++) {
+      const e = edges[i]!
+      const g = e.geometry
+      const offset = i * STRIDE
+
+      this.instanceData[offset + 0] = g.arcCenter.x
+      this.instanceData[offset + 1] = g.arcCenter.y
+      this.instanceData[offset + 2] = g.triangleV1.x
+      this.instanceData[offset + 3] = g.triangleV1.y
+      this.instanceData[offset + 4] = g.triangleV2.x
+      this.instanceData[offset + 5] = g.triangleV2.y
+      this.instanceData[offset + 6] = g.radiusOuterSq
+      this.instanceData[offset + 7] = g.radiusInnerSq
+      this.instanceData[offset + 8] = g.sourceCenter.x
+      this.instanceData[offset + 9] = g.sourceCenter.y
+      this.instanceData[offset + 10] = g.targetCenter.x
+      this.instanceData[offset + 11] = g.targetCenter.y
+      this.instanceData[offset + 12] = g.targetRadiusSq
+      this.instanceData[offset + 13] = e.color[0]
+      this.instanceData[offset + 14] = e.color[1]
+      this.instanceData[offset + 15] = e.color[2]
+      this.instanceData[offset + 16] = e.opacity
+    }
+
+    // Upload to GPU
+    const gl = this.gl
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer)
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.instanceData.subarray(0, edges.length * STRIDE))
   }
 
   setCamera(viewMatrix: Float32Array): void {
@@ -216,257 +165,65 @@ export class ArrowRenderer {
   }
 
   render(): void {
-    if (!this.trunkProgram || !this.headProgram || this.edges.length === 0) return
-    if (!this.trunkBufferPacker || !this.headBufferPacker) return
-    if (!this.trunkBufferManager || !this.headBufferManager) return
+    if (!this.program || this.edges.length === 0) return
 
     const gl = this.gl
-
-    // Pack trunk instance data
-    const trunkStride = 17
-    const trunkBuffer = this.trunkBufferPacker.getBuffer()
-
-    for (let i = 0; i < this.edges.length; i++) {
-      const edge = this.edges[i]!
-      const t = edge.geometry.trunk
-      const offset = i * trunkStride
-
-      trunkBuffer[offset + 0] = t.startPos.x
-      trunkBuffer[offset + 1] = t.startPos.y
-      trunkBuffer[offset + 2] = t.endPos.x
-      trunkBuffer[offset + 3] = t.endPos.y
-      trunkBuffer[offset + 4] = t.arcCenter1.x
-      trunkBuffer[offset + 5] = t.arcCenter1.y
-      trunkBuffer[offset + 6] = t.arcCenter2.x
-      trunkBuffer[offset + 7] = t.arcCenter2.y
-      trunkBuffer[offset + 8] = t.radiusInnerSq
-      trunkBuffer[offset + 9] = t.radiusOuterSq
-      trunkBuffer[offset + 10] = t.radiusCenterSq
-      trunkBuffer[offset + 11] = t.taperFactor
-      trunkBuffer[offset + 12] = edge.color[0]
-      trunkBuffer[offset + 13] = edge.color[1]
-      trunkBuffer[offset + 14] = edge.color[2]
-      trunkBuffer[offset + 15] = edge.opacity
-    }
-
-    // Upload trunk data using buffer manager
-    const trunkInstanceData = this.trunkBufferPacker.getView(this.edges.length)
-    const trunkUpdateStart = performance.now()
-    this.trunkBufferManager.updateBuffer(trunkInstanceData)
-    const trunkUpdateEnd = performance.now()
-    this.trunkPerformanceMonitor.recordUpdate(trunkUpdateEnd - trunkUpdateStart)
-
-    // Pack head instance data
-    const headStride = 15
-    const headBuffer = this.headBufferPacker.getBuffer()
-
-    for (let i = 0; i < this.edges.length; i++) {
-      const edge = this.edges[i]!
-      const h = edge.geometry.head
-      const offset = i * headStride
-
-      headBuffer[offset + 0] = h.tailPos.x
-      headBuffer[offset + 1] = h.tailPos.y
-      headBuffer[offset + 2] = h.pointPos.x
-      headBuffer[offset + 3] = h.pointPos.y
-      headBuffer[offset + 4] = h.arcCenter1.x
-      headBuffer[offset + 5] = h.arcCenter1.y
-      headBuffer[offset + 6] = h.arcCenter2.x
-      headBuffer[offset + 7] = h.arcCenter2.y
-      headBuffer[offset + 8] = h.radiusInner
-      headBuffer[offset + 9] = h.radiusOuter
-      headBuffer[offset + 10] = h.radiusCenter
-      headBuffer[offset + 11] = edge.color[0]
-      headBuffer[offset + 12] = edge.color[1]
-      headBuffer[offset + 13] = edge.color[2]
-      headBuffer[offset + 14] = edge.opacity
-    }
-
-    // Upload head data using buffer manager
-    const headInstanceData = this.headBufferPacker.getView(this.edges.length)
-    const headUpdateStart = performance.now()
-    this.headBufferManager.updateBuffer(headInstanceData)
-    const headUpdateEnd = performance.now()
-    this.headPerformanceMonitor.recordUpdate(headUpdateEnd - headUpdateStart)
-
-    // Get instancing extension
     const ext = gl.getExtension('ANGLE_instanced_arrays')
-    if (!ext) {
-      console.warn('ANGLE_instanced_arrays not available')
-      return
+    if (!ext) return
+
+    gl.useProgram(this.program)
+
+    // Set uniforms
+    gl.uniformMatrix3fv(this.u_viewMatrix, false, this.viewMatrix)
+    gl.uniform2f(this.u_viewportSize, this.canvas.width, this.canvas.height)
+
+    // Bind vertex index buffer (per-vertex, not instanced)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexIndexBuffer)
+    gl.enableVertexAttribArray(this.a_vertexIndex)
+    gl.vertexAttribPointer(this.a_vertexIndex, 1, gl.FLOAT, false, 0, 0)
+    // NOT instanced - divisor stays 0
+
+    // Bind instance buffer
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.instanceBuffer)
+    const byteStride = STRIDE * 4
+
+    // Setup instance attributes (all with divisor 1)
+    const attrs = [
+      { loc: this.a_arcCenter, size: 2, offset: 0 },
+      { loc: this.a_triangleV1, size: 2, offset: 2 },
+      { loc: this.a_triangleV2, size: 2, offset: 4 },
+      { loc: this.a_radiusOuterSq, size: 1, offset: 6 },
+      { loc: this.a_radiusInnerSq, size: 1, offset: 7 },
+      { loc: this.a_sourceCenter, size: 2, offset: 8 },
+      { loc: this.a_targetCenter, size: 2, offset: 10 },
+      { loc: this.a_targetRadiusSq, size: 1, offset: 12 },
+      { loc: this.a_color, size: 3, offset: 13 },
+      { loc: this.a_opacity, size: 1, offset: 16 }
+    ]
+
+    for (const attr of attrs) {
+      if (attr.loc >= 0) {
+        gl.enableVertexAttribArray(attr.loc)
+        gl.vertexAttribPointer(attr.loc, attr.size, gl.FLOAT, false, byteStride, attr.offset * 4)
+        ext.vertexAttribDivisorANGLE(attr.loc, 1)
+      }
     }
 
-    // Render trunks
-    this.renderTrunks(ext)
-
-    // Render heads
-    this.renderHeads(ext)
-  }
-
-  private renderTrunks(ext: ANGLE_instanced_arrays): void {
-    const gl = this.gl
-
-    // Upload trunk data
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.trunkInstanceBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, this.trunkInstanceData, gl.DYNAMIC_DRAW)
-
-    // Use trunk program
-    gl.useProgram(this.trunkProgram)
-
-    // Set uniforms
-    gl.uniformMatrix3fv(this.trunk_u_viewMatrix, false, this.viewMatrix)
-    gl.uniform2f(this.trunk_u_viewportSize, this.canvas.width, this.canvas.height)
-
-    // Bind quad vertices
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer)
-    gl.enableVertexAttribArray(this.trunk_a_corner)
-    gl.vertexAttribPointer(this.trunk_a_corner, 2, gl.FLOAT, false, 0, 0)
-
-    // Bind instance data
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.trunkInstanceBuffer)
-    const byteStride = 17 * 4
-
-    gl.enableVertexAttribArray(this.trunk_a_startPos)
-    gl.vertexAttribPointer(this.trunk_a_startPos, 2, gl.FLOAT, false, byteStride, 0)
-
-    gl.enableVertexAttribArray(this.trunk_a_endPos)
-    gl.vertexAttribPointer(this.trunk_a_endPos, 2, gl.FLOAT, false, byteStride, 2 * 4)
-
-    gl.enableVertexAttribArray(this.trunk_a_arcCenter1)
-    gl.vertexAttribPointer(this.trunk_a_arcCenter1, 2, gl.FLOAT, false, byteStride, 4 * 4)
-
-    gl.enableVertexAttribArray(this.trunk_a_arcCenter2)
-    gl.vertexAttribPointer(this.trunk_a_arcCenter2, 2, gl.FLOAT, false, byteStride, 6 * 4)
-
-    gl.enableVertexAttribArray(this.trunk_a_radiusInnerSq)
-    gl.vertexAttribPointer(this.trunk_a_radiusInnerSq, 1, gl.FLOAT, false, byteStride, 8 * 4)
-
-    gl.enableVertexAttribArray(this.trunk_a_radiusOuterSq)
-    gl.vertexAttribPointer(this.trunk_a_radiusOuterSq, 1, gl.FLOAT, false, byteStride, 9 * 4)
-
-    gl.enableVertexAttribArray(this.trunk_a_radiusCenterSq)
-    gl.vertexAttribPointer(this.trunk_a_radiusCenterSq, 1, gl.FLOAT, false, byteStride, 10 * 4)
-
-    gl.enableVertexAttribArray(this.trunk_a_taperFactor)
-    gl.vertexAttribPointer(this.trunk_a_taperFactor, 1, gl.FLOAT, false, byteStride, 11 * 4)
-
-    gl.enableVertexAttribArray(this.trunk_a_color)
-    gl.vertexAttribPointer(this.trunk_a_color, 3, gl.FLOAT, false, byteStride, 12 * 4)
-
-    gl.enableVertexAttribArray(this.trunk_a_opacity)
-    gl.vertexAttribPointer(this.trunk_a_opacity, 1, gl.FLOAT, false, byteStride, 15 * 4)
-
-    // Set attribute divisors for instancing
-    ext.vertexAttribDivisorANGLE(this.trunk_a_startPos, 1)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_endPos, 1)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_arcCenter1, 1)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_arcCenter2, 1)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_radiusInnerSq, 1)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_radiusOuterSq, 1)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_radiusCenterSq, 1)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_taperFactor, 1)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_color, 1)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_opacity, 1)
-
-    // Draw
-    ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, this.edges.length)
+    // Draw triangles (3 vertices per instance)
+    ext.drawArraysInstancedANGLE(gl.TRIANGLES, 0, 3, Math.min(this.edges.length, this.maxEdges))
 
     // Reset divisors
-    ext.vertexAttribDivisorANGLE(this.trunk_a_startPos, 0)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_endPos, 0)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_arcCenter1, 0)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_arcCenter2, 0)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_radiusInnerSq, 0)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_radiusOuterSq, 0)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_radiusCenterSq, 0)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_taperFactor, 0)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_color, 0)
-    ext.vertexAttribDivisorANGLE(this.trunk_a_opacity, 0)
-  }
-
-  private renderHeads(ext: ANGLE_instanced_arrays): void {
-    const gl = this.gl
-
-    // Upload head data
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.headInstanceBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, this.headInstanceData, gl.DYNAMIC_DRAW)
-
-    // Use head program
-    gl.useProgram(this.headProgram)
-
-    // Set uniforms
-    gl.uniformMatrix3fv(this.head_u_viewMatrix, false, this.viewMatrix)
-    gl.uniform2f(this.head_u_viewportSize, this.canvas.width, this.canvas.height)
-
-    // Bind quad vertices
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer)
-    gl.enableVertexAttribArray(this.head_a_corner)
-    gl.vertexAttribPointer(this.head_a_corner, 2, gl.FLOAT, false, 0, 0)
-
-    // Bind instance data
-    gl.bindBuffer(gl.ARRAY_BUFFER, this.headInstanceBuffer)
-    const byteStride = 15 * 4
-
-    gl.enableVertexAttribArray(this.head_a_tailPos)
-    gl.vertexAttribPointer(this.head_a_tailPos, 2, gl.FLOAT, false, byteStride, 0)
-
-    gl.enableVertexAttribArray(this.head_a_pointPos)
-    gl.vertexAttribPointer(this.head_a_pointPos, 2, gl.FLOAT, false, byteStride, 2 * 4)
-
-    gl.enableVertexAttribArray(this.head_a_arcCenter1)
-    gl.vertexAttribPointer(this.head_a_arcCenter1, 2, gl.FLOAT, false, byteStride, 4 * 4)
-
-    gl.enableVertexAttribArray(this.head_a_arcCenter2)
-    gl.vertexAttribPointer(this.head_a_arcCenter2, 2, gl.FLOAT, false, byteStride, 6 * 4)
-
-    gl.enableVertexAttribArray(this.head_a_radiusInner)
-    gl.vertexAttribPointer(this.head_a_radiusInner, 1, gl.FLOAT, false, byteStride, 8 * 4)
-
-    gl.enableVertexAttribArray(this.head_a_radiusOuter)
-    gl.vertexAttribPointer(this.head_a_radiusOuter, 1, gl.FLOAT, false, byteStride, 9 * 4)
-
-    gl.enableVertexAttribArray(this.head_a_radiusCenter)
-    gl.vertexAttribPointer(this.head_a_radiusCenter, 1, gl.FLOAT, false, byteStride, 10 * 4)
-
-    gl.enableVertexAttribArray(this.head_a_color)
-    gl.vertexAttribPointer(this.head_a_color, 3, gl.FLOAT, false, byteStride, 11 * 4)
-
-    gl.enableVertexAttribArray(this.head_a_opacity)
-    gl.vertexAttribPointer(this.head_a_opacity, 1, gl.FLOAT, false, byteStride, 14 * 4)
-
-    // Set attribute divisors for instancing
-    ext.vertexAttribDivisorANGLE(this.head_a_tailPos, 1)
-    ext.vertexAttribDivisorANGLE(this.head_a_pointPos, 1)
-    ext.vertexAttribDivisorANGLE(this.head_a_arcCenter1, 1)
-    ext.vertexAttribDivisorANGLE(this.head_a_arcCenter2, 1)
-    ext.vertexAttribDivisorANGLE(this.head_a_radiusInner, 1)
-    ext.vertexAttribDivisorANGLE(this.head_a_radiusOuter, 1)
-    ext.vertexAttribDivisorANGLE(this.head_a_radiusCenter, 1)
-    ext.vertexAttribDivisorANGLE(this.head_a_color, 1)
-    ext.vertexAttribDivisorANGLE(this.head_a_opacity, 1)
-
-    // Draw
-    ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, this.edges.length)
-
-    // Reset divisors
-    ext.vertexAttribDivisorANGLE(this.head_a_tailPos, 0)
-    ext.vertexAttribDivisorANGLE(this.head_a_pointPos, 0)
-    ext.vertexAttribDivisorANGLE(this.head_a_arcCenter1, 0)
-    ext.vertexAttribDivisorANGLE(this.head_a_arcCenter2, 0)
-    ext.vertexAttribDivisorANGLE(this.head_a_radiusInner, 0)
-    ext.vertexAttribDivisorANGLE(this.head_a_radiusOuter, 0)
-    ext.vertexAttribDivisorANGLE(this.head_a_radiusCenter, 0)
-    ext.vertexAttribDivisorANGLE(this.head_a_color, 0)
-    ext.vertexAttribDivisorANGLE(this.head_a_opacity, 0)
+    for (const attr of attrs) {
+      if (attr.loc >= 0) {
+        ext.vertexAttribDivisorANGLE(attr.loc, 0)
+      }
+    }
   }
 
   destroy(): void {
     const gl = this.gl
-
-    if (this.quadBuffer) gl.deleteBuffer(this.quadBuffer)
-    if (this.trunkInstanceBuffer) gl.deleteBuffer(this.trunkInstanceBuffer)
-    if (this.headInstanceBuffer) gl.deleteBuffer(this.headInstanceBuffer)
-    if (this.trunkProgram) gl.deleteProgram(this.trunkProgram)
-    if (this.headProgram) gl.deleteProgram(this.headProgram)
+    if (this.vertexIndexBuffer) gl.deleteBuffer(this.vertexIndexBuffer)
+    if (this.instanceBuffer) gl.deleteBuffer(this.instanceBuffer)
+    if (this.program) gl.deleteProgram(this.program)
   }
 }

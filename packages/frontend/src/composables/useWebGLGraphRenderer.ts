@@ -1,25 +1,27 @@
 /**
  * Vue Composable for WebGL Graph Rendering
  *
- * Integrates WebGLGraphRenderer with Vue reactivity and existing stores.
+ * Integrates WebGLGraphRenderer and ArrowRenderer with Vue reactivity and existing stores.
  */
 
 import { ref, onMounted, onUnmounted, watch, type Ref } from 'vue'
 import { WebGLGraphRenderer, type NodeData } from '../webgl/WebGLGraphRenderer'
-import { useDataStore } from '../stores/data'
+import { ArrowRenderer, type EdgeData } from '../webgl/ArrowRenderer'
+import { calculateArrowGeometry } from '../webgl/utils/arrow-geometry'
 import { useUIStore } from '../stores/ui'
-import { useMapStore } from '../stores/map'
-import type { GraphNode } from './useGraphSimulation'
+import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
+import type { GraphNode, GraphLink } from './useGraphSimulation'
 
 export function useWebGLGraphRenderer(
   canvasRef: Ref<HTMLCanvasElement | undefined>,
-  nodes: Ref<GraphNode[]>
+  nodes: Ref<GraphNode[]>,
+  links: Ref<GraphLink[]>
 ) {
-  const dataStore = useDataStore()
   const uiStore = useUIStore()
   const mapStore = useMapStore()
 
   let renderer: WebGLGraphRenderer | null = null
+  let arrowRenderer: ArrowRenderer | null = null
   let animationFrameId: number | null = null
 
   const isInitialized = ref(false)
@@ -54,12 +56,13 @@ export function useWebGLGraphRenderer(
   // Convert graph nodes to WebGL format
   function convertNodes(graphNodes: GraphNode[]): NodeData[] {
     const currentAimId = uiStore.graphSelectedAimId
+    const colorMode = uiStore.graphColorMode
 
     return graphNodes.map(node => {
       // Determine color (priority mode or status mode)
       let color: [number, number, number]
 
-      if (node.color) {
+      if (colorMode === 'priority' && node.color) {
         // Priority color (interpolated)
         color = hexToRgb(node.color)
       } else {
@@ -78,19 +81,79 @@ export function useWebGLGraphRenderer(
     })
   }
 
+  // Convert graph links to WebGL edge format
+  function convertLinks(graphLinks: GraphLink[]): EdgeData[] {
+    return graphLinks.map(link => {
+      const sourceNode = {
+        x: link.source.renderPos[0],
+        y: link.source.renderPos[1],
+        r: link.source.r
+      }
+      const targetNode = {
+        x: link.target.renderPos[0],
+        y: link.target.renderPos[1],
+        r: link.target.r
+      }
+
+      // Calculate arrow geometry with share-based width
+      const geometry = calculateArrowGeometry(sourceNode, targetNode, link.share ?? 0.5)
+
+      // Edge color - use a neutral gray
+      const color: [number, number, number] = [0.5, 0.5, 0.5]
+
+      return {
+        id: `${link.source.id}->${link.target.id}`,
+        sourceId: link.source.id,
+        targetId: link.target.id,
+        color,
+        opacity: 0.6,
+        geometry
+      }
+    })
+  }
+
+  // Build view matrix for arrow renderer (shared format)
+  function buildViewMatrix(panX: number, panY: number, zoom: number): Float32Array {
+    return new Float32Array([
+      zoom, 0, 0,
+      0, zoom, 0,
+      panX, panY, 1
+    ])
+  }
+
   // Animation loop
   function animate() {
     if (!renderer) return
 
-    // Update camera from mapStore
-    renderer.setCamera(
-      mapStore.offset[0],
-      mapStore.offset[1],
-      mapStore.scale
-    )
+    const canvas = renderer.getCanvas()
 
-    // Render frame
+    // Calculate camera transform to match SVG coordinate system
+    // SVG uses: translate(cx, cy) scale(visualScale) translate(offset)
+    // Where cx, cy is the viewport center
+    const visualScale = mapStore.scale * mapStore.halfSide / LOGICAL_HALF_SIDE
+    const cx = mapStore.clientOffset[0] + mapStore.halfSide
+    const cy = mapStore.clientOffset[1] + mapStore.halfSide
+
+    // For WebGL: panX = cx + visualScale * offset[0]
+    const panX = cx + visualScale * mapStore.offset[0]
+    const panY = cy + visualScale * mapStore.offset[1]
+
+    // Update camera from mapStore
+    renderer.setCamera(panX, panY, visualScale)
+
+    // Update arrow renderer camera
+    if (arrowRenderer) {
+      const viewMatrix = buildViewMatrix(panX, panY, visualScale)
+      arrowRenderer.setCamera(viewMatrix)
+    }
+
+    // Clear and render nodes
     renderer.render()
+
+    // Render arrows on top
+    if (arrowRenderer) {
+      arrowRenderer.render()
+    }
 
     // Continue loop
     animationFrameId = requestAnimationFrame(animate)
@@ -106,8 +169,24 @@ export function useWebGLGraphRenderer(
     try {
       renderer = new WebGLGraphRenderer(canvasRef.value)
       await renderer.init()
+
+      // Initialize arrow renderer with same GL context
+      const gl = canvasRef.value.getContext('webgl')
+      if (gl) {
+        arrowRenderer = new ArrowRenderer(gl, canvasRef.value)
+        await arrowRenderer.init()
+      }
+
       isInitialized.value = true
       error.value = null
+
+      // Initial data update
+      if (nodes.value.length > 0) {
+        renderer.updateNodes(convertNodes(nodes.value))
+      }
+      if (links.value.length > 0 && arrowRenderer) {
+        arrowRenderer.updateEdges(convertLinks(links.value))
+      }
 
       // Start animation loop
       animate()
@@ -123,6 +202,14 @@ export function useWebGLGraphRenderer(
 
     const nodeData = convertNodes(newNodes)
     renderer.updateNodes(nodeData)
+  }, { immediate: true })
+
+  // Watch for link changes
+  watch(links, (newLinks) => {
+    if (!arrowRenderer || !isInitialized.value) return
+
+    const edgeData = convertLinks(newLinks)
+    arrowRenderer.updateEdges(edgeData)
   }, { immediate: true })
 
   // Watch for selection changes
@@ -152,13 +239,29 @@ export function useWebGLGraphRenderer(
     if (animationFrameId !== null) {
       cancelAnimationFrame(animationFrameId)
     }
+    if (arrowRenderer) {
+      arrowRenderer.destroy()
+    }
     if (renderer) {
       renderer.destroy()
     }
   })
 
+  // Force update (useful when simulation triggers)
+  function forceUpdate() {
+    if (!renderer || !isInitialized.value) return
+
+    renderer.updateNodes(convertNodes(nodes.value))
+    if (arrowRenderer) {
+      arrowRenderer.updateEdges(convertLinks(links.value))
+    }
+  }
+
   return {
     isInitialized,
-    error
+    error,
+    forceUpdate,
+    getRenderer: () => renderer,
+    getQuadtree: () => renderer?.getQuadtree() ?? null
   }
 }

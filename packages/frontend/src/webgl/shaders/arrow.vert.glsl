@@ -1,70 +1,74 @@
-// Arrow Vertex Shader
-// Renders arc-based arrows using instanced quads
+// Arrow Vertex Shader (Triangle-based Arc Rendering)
+// Uses 3 vertices: M (arc center), and two points on tangent line at tip
 
-// Per-vertex attributes (static quad corners)
-attribute vec2 a_corner; // (-1,-1), (1,-1), (-1,1), (1,1)
+// Per-vertex attribute (0, 1, or 2 for triangle vertex index)
+attribute float a_vertexIndex;
 
-// Per-instance attributes (updated per arrow)
-attribute vec2 a_startPos;      // Start position (supporting aim center)
-attribute vec2 a_endPos;        // End position (supported aim edge)
-attribute vec2 a_arcCenter1;    // Inner arc center (M1)
-attribute vec2 a_arcCenter2;    // Outer arc center (M2)
-attribute float a_radiusInnerSq;   // Inner radius squared at base (r1s)
-attribute float a_radiusOuterSq;   // Outer radius squared at base (r2s)
-attribute float a_radiusCenterSq;  // Center radius squared (for tapering)
-attribute float a_taperFactor;     // How much to taper (0.0 = no taper, 1.0 = full taper)
-attribute vec3 a_color;         // Arrow color
-attribute float a_opacity;      // Arrow opacity
+// Per-instance attributes
+attribute vec2 a_arcCenter;       // M - arc center (vertex 0)
+attribute vec2 a_triangleV1;      // Tangent point 1 (vertex 1)
+attribute vec2 a_triangleV2;      // Tangent point 2 (vertex 2)
+attribute float a_radiusOuterSq;  // r1²
+attribute float a_radiusInnerSq;  // r2²
+attribute vec2 a_sourceCenter;    // S - for start bound
+attribute vec2 a_targetCenter;    // T - for end bound
+attribute float a_targetRadiusSq; // target radius squared
+attribute vec3 a_color;
+attribute float a_opacity;
 
-// Uniforms (camera & viewport)
-uniform mat3 u_viewMatrix;    // Camera transform (pan + zoom)
-uniform vec2 u_viewportSize;  // Canvas size in pixels
+// Uniforms
+uniform mat3 u_viewMatrix;
+uniform vec2 u_viewportSize;
 
-// Varying (passed to fragment shader)
-varying vec2 v_worldPos;      // Fragment position in world space
-varying vec2 v_startPos;      // Arrow start position
-varying vec2 v_endPos;        // Arrow end position
-varying vec2 v_arcCenter1;    // Inner arc center
-varying vec2 v_arcCenter2;    // Outer arc center
-varying float v_radiusInnerSq;
+// Varyings
+varying vec2 v_worldPos;
+varying vec2 v_arcCenter;
 varying float v_radiusOuterSq;
-varying float v_radiusCenterSq;
-varying float v_taperFactor;
+varying float v_radiusInnerSq;
+varying vec2 v_sourceCenter;
+varying vec2 v_targetCenter;
+varying float v_targetRadiusSq;
 varying vec3 v_color;
 varying float v_opacity;
+varying float v_phase;  // 0 at source, 1 at tip
 
 void main() {
-  // Calculate bounding box for the arrow quad
-  // Use arc centers and radii to determine quad size
-  vec2 minCorner = min(a_arcCenter1, a_arcCenter2) - vec2(sqrt(max(a_radiusInnerSq, a_radiusOuterSq)));
-  vec2 maxCorner = max(a_arcCenter1, a_arcCenter2) + vec2(sqrt(max(a_radiusInnerSq, a_radiusOuterSq)));
+  // Select vertex position based on index
+  vec2 worldPos;
+  float phase;
 
-  // Expand to include start and end positions
-  minCorner = min(minCorner, min(a_startPos, a_endPos));
-  maxCorner = max(maxCorner, max(a_startPos, a_endPos));
-
-  // Map corner to world space within bounding box
-  vec2 worldPos = mix(minCorner, maxCorner, (a_corner + 1.0) * 0.5);
+  if (a_vertexIndex < 0.5) {
+    // Vertex 0: M (arc center)
+    worldPos = a_arcCenter;
+    phase = 0.0;  // At/before source
+  } else if (a_vertexIndex < 1.5) {
+    // Vertex 1: tangent point 1
+    worldPos = a_triangleV1;
+    phase = 1.0;  // At tip
+  } else {
+    // Vertex 2: tangent point 2
+    worldPos = a_triangleV2;
+    phase = 1.0;  // At tip
+  }
 
   // Apply camera transform
   vec3 viewPos = u_viewMatrix * vec3(worldPos, 1.0);
 
-  // Convert to NDC (Normalized Device Coordinates)
+  // Convert to NDC
   vec2 ndc = (viewPos.xy / u_viewportSize) * 2.0 - 1.0;
-  ndc.y *= -1.0; // Flip Y axis (canvas has Y-down, WebGL has Y-up)
+  ndc.y *= -1.0;
 
   gl_Position = vec4(ndc, 0.0, 1.0);
 
-  // Pass data to fragment shader
+  // Pass to fragment shader
   v_worldPos = worldPos;
-  v_startPos = a_startPos;
-  v_endPos = a_endPos;
-  v_arcCenter1 = a_arcCenter1;
-  v_arcCenter2 = a_arcCenter2;
-  v_radiusInnerSq = a_radiusInnerSq;
+  v_arcCenter = a_arcCenter;
   v_radiusOuterSq = a_radiusOuterSq;
-  v_radiusCenterSq = a_radiusCenterSq;
-  v_taperFactor = a_taperFactor;
+  v_radiusInnerSq = a_radiusInnerSq;
+  v_sourceCenter = a_sourceCenter;
+  v_targetCenter = a_targetCenter;
+  v_targetRadiusSq = a_targetRadiusSq;
   v_color = a_color;
   v_opacity = a_opacity;
+  v_phase = phase;
 }

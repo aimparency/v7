@@ -3,20 +3,20 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
-import GraphNodeComponent from '../components/GraphNode.vue'
-import GraphLinkComponent from '../components/GraphLink.vue'
 import GraphConnector from '../components/GraphConnector.vue'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
 import GraphSidePanel from '../components/GraphSidePanel.vue'
 import * as vec2 from '../utils/vec2'
 import { useGraphSimulation } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
+import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 const mapStore = useMapStore()
 
-const svgRef = ref<SVGSVGElement>()
+const canvasRef = ref<HTMLCanvasElement>()
+const svgOverlayRef = ref<SVGSVGElement>()
 const width = ref(0)
 const height = ref(0)
 
@@ -24,8 +24,37 @@ const height = ref(0)
 const simulation = useGraphSimulation()
 const { nodes, links, trigger, randomizeLayout, semanticForceMultiplier, setSemanticForce } = simulation
 
-const interaction = useGraphInteraction(svgRef, width, height, simulation)
+// WebGL renderer
+const webglRenderer = useWebGLGraphRenderer(canvasRef, nodes, links)
+
+// Use canvas for interaction (same API as SVG)
+const interaction = useGraphInteraction(canvasRef, width, height, simulation)
 const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick, isZooming } = interaction
+
+// Hit testing for canvas clicks
+function handleCanvasClick(e: MouseEvent) {
+  // Convert click to logical coordinates
+  const rect = canvasRef.value?.getBoundingClientRect()
+  if (!rect) return onBackgroundClick()
+
+  const physX = e.clientX - rect.left
+  const physY = e.clientY - rect.top
+  const logicalPos = mapStore.physicalToLogicalCoord([physX, physY])
+
+  // Find node at click position
+  const clickedNode = nodes.value.find(node => {
+    const dx = node.renderPos[0] - logicalPos[0]
+    const dy = node.renderPos[1] - logicalPos[1]
+    const distSq = dx * dx + dy * dy
+    return distSq <= node.r * node.r
+  })
+
+  if (clickedNode && !mapStore.cursorMoved) {
+    onNodeClick(clickedNode)
+  } else {
+    onBackgroundClick()
+  }
+}
 
 // Lifecycle
 onMounted(() => {
@@ -35,14 +64,15 @@ onMounted(() => {
     window.addEventListener('keydown', onKeydown)
 })
 
-// watch(() => uiStore.graphSelectedAimId, () => {
-//     mapStore.isTracking = true
-// })
-
 onUnmounted(() => {
     simulation.cleanup()
     interaction.cleanupListeners()
     window.removeEventListener('keydown', onKeydown)
+})
+
+// Force WebGL update when simulation triggers
+watch(trigger, () => {
+    webglRenderer.forceUpdate()
 })
 
 const onKeydown = (e: KeyboardEvent) => {
@@ -69,18 +99,20 @@ const transform = computed(() => {
     return `translate(${cx}, ${cy}) scale(${s}) translate(${mapStore.offset[0]}, ${mapStore.offset[1]})`
 })
 
-const renderNodes = computed(() => { 
-    trigger.value; 
+const renderNodes = computed(() => {
+    trigger.value;
     const currentAimId = uiStore.graphSelectedAimId
     const activeAim = uiStore.getCurrentAim()
     return nodes.value.map(n => ({
         ...n,
         x: n.renderPos[0],
         y: n.renderPos[1],
+        r: n.r,
+        text: n.text,
         selected: n.id === currentAimId,
         active: n.id === activeAim?.id,
         scale: visualScale.value
-    })) 
+    }))
 })
 
 const renderLinks = computed(() => { 
@@ -124,43 +156,89 @@ const selectedLinkVisuals = computed(() => {
 const isSemanticForceActive = computed(() => simulation.targetSemanticForce.value > 0.5)
 const startSemanticForce = () => setSemanticForce(true)
 const stopSemanticForce = () => setSemanticForce(false)
+
+// Helper: split node text into lines for label rendering
+function getNodeTitleLines(text: string): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let currentLine = words[0] || ''
+  const maxChars = 12
+
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i]
+    if (word === undefined) continue
+
+    if (currentLine.length + 1 + word.length <= maxChars) {
+      currentLine += (currentLine.length > 0 ? ' ' : '') + word
+    } else {
+      lines.push(currentLine)
+      currentLine = word
+    }
+  }
+  lines.push(currentLine)
+
+  if (lines.length > 4) {
+    lines.length = 3
+    lines[2] += '...'
+  }
+  return lines
+}
 </script>
 
 <template>
   <div class="graph-view">
-    <svg 
-        ref="svgRef" 
-        width="100%" 
-        height="100%" 
-        @click="onBackgroundClick"
-        :class="{ 'is-zooming': isZooming, 'hide-labels': !uiStore.graphShowLabels }"
+    <!-- WebGL Canvas for nodes and edges -->
+    <canvas
+        ref="canvasRef"
+        class="graph-canvas"
+        @click="handleCanvasClick"
+        :class="{ 'is-zooming': isZooming }"
+    ></canvas>
+
+    <!-- SVG Overlay for labels and interactive elements -->
+    <svg
+        ref="svgOverlayRef"
+        class="graph-overlay"
+        :class="{ 'hide-labels': !uiStore.graphShowLabels }"
     >
       <g :transform="transform">
-        <g class="links">
-          <GraphLinkComponent 
-            v-for="(link, i) in renderLinks" 
-            :key="i"
-            :link="link" 
-            :scale="link.scale"
-          />
-        </g>
         <GraphConnector />
-        <g class="nodes">
-          <GraphNodeComponent 
-            v-for="node in renderNodes" 
-            :key="node.id" 
-            :node="node"
-            :scale="node.scale"
-            :selected="node.selected"
+        <!-- Labels rendered as SVG text on top of WebGL -->
+        <g class="labels" v-if="uiStore.graphShowLabels">
+          <g
+            v-for="node in renderNodes"
+            :key="node.id"
+            :transform="`translate(${node.x},${node.y})`"
+            class="node-label-group"
+            :class="{ selected: node.selected }"
             @mousedown="onNodeDown($event, node as any)"
             @touchstart="onNodeDown($event, node as any)"
             @mouseup="onNodeUp(node as any)"
             @touchend="onNodeUp(node as any)"
             @click.stop="onNodeClick(node as any)"
-          />
+          >
+            <g :transform="`scale(${node.r})`" v-if="node.r * node.scale > 20">
+              <text
+                dominant-baseline="central"
+                text-anchor="middle"
+                fill="#fff"
+                font-size="0.25"
+                class="node-label"
+              >
+                <tspan
+                  v-for="(line, i) in getNodeTitleLines(node.text)"
+                  :key="i"
+                  x="0"
+                  :dy="i === 0 ? (-(getNodeTitleLines(node.text).length - 1) * 0.6) + 'em' : '1.2em'"
+                >
+                  {{ line }}
+                </tspan>
+              </text>
+            </g>
+          </g>
         </g>
-        <GraphFlowHandle 
-          v-if="selectedLinkData && selectedLinkVisuals" 
+        <GraphFlowHandle
+          v-if="selectedLinkData && selectedLinkVisuals"
           :link="selectedLinkData"
           :source-pos="selectedLinkVisuals.sourcePos"
           :target-pos="selectedLinkVisuals.targetPos"
@@ -242,15 +320,40 @@ const stopSemanticForce = () => setSemanticForce(false)
   position: relative;
 }
 
-/* Optimize rendering while zooming */
-.is-zooming :deep(.node-label),
-.hide-labels :deep(.node-label),
-.is-zooming :deep(.graph-link) {
-    display: none;
+.graph-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
-/* Ensure circles remain visible but optimize interactions */
-.is-zooming :deep(.node-circle) {
-    pointer-events: none;
+
+.graph-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.graph-overlay .labels {
+  pointer-events: auto;
+}
+
+.node-label-group {
+  cursor: pointer;
+}
+
+.node-label {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Optimize rendering while zooming */
+.is-zooming .labels,
+.hide-labels .labels {
+    display: none;
 }
 
 .top-controls {

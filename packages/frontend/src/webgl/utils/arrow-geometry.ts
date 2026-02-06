@@ -1,8 +1,9 @@
 /**
- * Arrow Geometry Calculation
+ * Arrow Geometry Calculation (Simplified Arc-Based)
  *
- * Computes geometric parameters for arc-based arrow rendering.
- * Based on the NEW_ARROWS.md specification.
+ * The arrow is an annulus segment (ring slice) with:
+ * - Single arc center M on the perpendicular bisector of S→T
+ * - Two radii: r1 (outer), r2 (inner), where width = r1 - r2
  */
 
 export interface Vec2 {
@@ -17,179 +18,221 @@ export interface NodeGeometry {
 }
 
 export interface ArrowGeometry {
-  // Trunk parameters
-  trunk: {
-    startPos: Vec2           // Supporting aim center
-    endPos: Vec2             // Point where arrow touches supported aim
-    arcCenter1: Vec2         // Inner arc center (M1)
-    arcCenter2: Vec2         // Outer arc center (M2)
-    radiusInnerSq: number    // Inner radius squared (r1s)
-    radiusOuterSq: number    // Outer radius squared (r2s)
-    radiusCenterSq: number   // Center radius squared (for tapering)
-    taperFactor: number      // How much to taper (0.0 = no taper, 1.0 = full taper)
-  }
+  // Source and target positions
+  sourceCenter: Vec2      // S - supporting aim center
+  targetCenter: Vec2      // T - supported aim center
+  targetRadius: number    // For end bound check
 
-  // Head parameters
-  head: {
-    tailPos: Vec2            // Connection point to trunk
-    pointPos: Vec2           // Tip of arrow (same as trunk endPos)
-    arcCenter1: Vec2         // Inner arc center (M1)
-    arcCenter2: Vec2         // Outer arc center (M2)
-    radiusInner: number      // Inner radius at tail (r1)
-    radiusOuter: number      // Outer radius at tail (r2)
-    radiusCenter: number     // Center radius
-  }
+  // Arc center and radii (single center M)
+  arcCenter: Vec2         // M - shared arc center
+  radiusOuter: number     // r1 - outer edge radius (larger)
+  radiusInner: number     // r2 - inner edge radius (smaller)
+
+  // Precomputed squared values for fragment shader
+  radiusOuterSq: number   // r1²
+  radiusInnerSq: number   // r2²
+  targetRadiusSq: number  // For end bound check
+
+  // Triangle vertices (computed for optimal coverage)
+  // v0 = M, v1 and v2 are on the tangent line at the tip
+  triangleV0: Vec2        // M (arc center)
+  triangleV1: Vec2        // On tangent, covers M→S side
+  triangleV2: Vec2        // On tangent, covers outer arc side
+
+  // Tip point (tangent point on target circle)
+  tipPoint: Vec2
+
+  // Phase values for each vertex (for interpolation)
+  // v0 (M) gets phase based on its position, v1/v2 get phase 1.0 (at tip)
+  phaseV0: number         // Phase at M (will be ~0 or negative, clamped in shader)
+  // v1 and v2 are at phase 1.0 (tip)
 }
 
 export interface ArrowStyle {
-  baseWidth: number          // Base width of arrow trunk
-  curvature: number          // Arc curvature factor (0 = straight, higher = more curved)
-  headLength: number         // Length of arrow head
-  taperFactor: number        // How much trunk tapers (0.0 = no taper, 1.0 = full taper)
-  minWidth: number           // Minimum arrow width (for weight visualization)
-  maxWidth: number           // Maximum arrow width (for weight visualization)
+  curvature: number       // How far M is from midpoint (as factor of |S-T|)
+  widthFactor: number     // Multiplier for share-based width (like SVG's 1.2)
 }
 
 const DEFAULT_STYLE: ArrowStyle = {
-  baseWidth: 2.0,
-  curvature: 0.3,
-  headLength: 12.0,
-  taperFactor: 0.7,
-  minWidth: 1.0,
-  maxWidth: 4.0
+  curvature: 0.5,         // M is at |S-T| * 0.5 from midpoint
+  widthFactor: 1.2        // Match SVG: width = widthFactor * targetR * share
 }
 
 /**
  * Calculate arrow geometry from source and target nodes
+ * @param share - The contribution share (0-1), determines arrow width like SVG
  */
 export function calculateArrowGeometry(
   source: NodeGeometry,
   target: NodeGeometry,
-  weight: number = 1.0,  // Edge weight (0.0 to 1.0, where 1.0 is max weight)
+  share: number = 0.5,
   style: Partial<ArrowStyle> = {}
 ): ArrowGeometry {
   const s = { ...DEFAULT_STYLE, ...style }
 
-  // Calculate direction vector from source to target
-  const dx = target.x - source.x
-  const dy = target.y - source.y
-  const distance = Math.sqrt(dx * dx + dy * dy)
+  // Source and target centers
+  const S: Vec2 = { x: source.x, y: source.y }
+  const T: Vec2 = { x: target.x, y: target.y }
 
-  // Normalize direction
-  const dirX = dx / distance
-  const dirY = dy / distance
+  // Vector from S to T
+  const dx = T.x - S.x
+  const dy = T.y - S.y
+  const dist = Math.sqrt(dx * dx + dy * dy)
 
-  // Arrow starts at source center
-  const startPos: Vec2 = { x: source.x, y: source.y }
-
-  // Arrow ends at target circle edge
-  const endPos: Vec2 = {
-    x: target.x - dirX * target.r,
-    y: target.y - dirY * target.r
+  if (dist < 0.001) {
+    // Degenerate case: source and target at same position
+    return createDegenerateGeometry(S, T, target.r)
   }
 
-  // Calculate effective arrow length (after subtracting target radius)
-  const arrowLength = distance - target.r
+  // Normalized direction
+  const dirX = dx / dist
+  const dirY = dy / dist
 
-  // Calculate perpendicular vector (for arc centers)
-  const perpX = -dirY
-  const perpY = dirX
+  // Perpendicular (rotate 90° clockwise for consistent curve direction)
+  const perpX = dirY
+  const perpY = -dirX
 
-  // Calculate arc centers based on curvature
-  // Place them perpendicular to the arrow direction
-  const arcOffset = arrowLength * s.curvature
+  // Midpoint
+  const midX = (S.x + T.x) / 2
+  const midY = (S.y + T.y) / 2
 
-  // Midpoint of arrow
-  const midX = (startPos.x + endPos.x) / 2
-  const midY = (startPos.y + endPos.y) / 2
-
-  // Arc centers (offset from midpoint)
-  const arcCenter1: Vec2 = {
-    x: midX + perpX * arcOffset,
-    y: midY + perpY * arcOffset
+  // Arc center M: midpoint + perpendicular * dist * curvature
+  const M: Vec2 = {
+    x: midX + perpX * dist * s.curvature,
+    y: midY + perpY * dist * s.curvature
   }
 
-  const arcCenter2: Vec2 = {
-    x: midX - perpX * arcOffset,
-    y: midY - perpY * arcOffset
+  // Distance from M to S (and M to T, which is the same by symmetry)
+  const msX = S.x - M.x
+  const msY = S.y - M.y
+  const centerRadius = Math.sqrt(msX * msX + msY * msY)
+
+  // Arrow width based on share (matching SVG: width = widthFactor * targetR * share)
+  const width = s.widthFactor * target.r * share
+
+  // Inner and outer radii
+  const radiusOuter = centerRadius + width / 2  // r1
+  const radiusInner = centerRadius - width / 2  // r2
+
+  // Calculate tip point (tangent point from M to T's circle)
+  // The line M→tip is tangent to T's circle at tip
+  // This means (tip - M) · (tip - T) = 0
+  const mtX = T.x - M.x
+  const mtY = T.y - M.y
+  const d = Math.sqrt(mtX * mtX + mtY * mtY)
+
+  // Angle from T towards M
+  const angleToM = Math.atan2(M.y - T.y, M.x - T.x)
+
+  // Angle offset to tangent point: cos(θ) = r/d
+  // If M is inside T's circle, no tangent exists - use fallback
+  let tipPoint: Vec2
+  if (d <= target.r) {
+    // Fallback: use closest point on circle
+    tipPoint = {
+      x: T.x - (mtX / d) * target.r,
+      y: T.y - (mtY / d) * target.r
+    }
+  } else {
+    const tangentAngleOffset = Math.acos(target.r / d)
+    // Choose tangent point closer to the supporting aim (S)
+    const tipAngle = angleToM - tangentAngleOffset
+    tipPoint = {
+      x: T.x + target.r * Math.cos(tipAngle),
+      y: T.y + target.r * Math.sin(tipAngle)
+    }
   }
 
-  // Calculate width based on edge weight
-  // Formula from NEW_ARROWS.md: widthScale = mix(minWidth, maxWidth, normalizedWeight)
-  const normalizedWeight = Math.max(0.0, Math.min(1.0, weight))
-  const widthScale = s.minWidth + (s.maxWidth - s.minWidth) * normalizedWeight
-  const effectiveWidth = s.baseWidth * widthScale
+  // Triangle vertices per spec:
+  // V0 = M (arc center)
+  // V1 = Extended along M→S direction (covers start of arc)
+  // V2 = Extended along M→tip direction (the tip, covers end of arc)
 
-  // Calculate radii based on arc geometry
-  // Distance from arc center to arrow line determines radius
-  const halfWidth = effectiveWidth / 2
+  const triangleV0: Vec2 = M  // Arc center
 
-  // For simplicity, use distance from arc center to endpoints
-  const r1Dx = startPos.x - arcCenter1.x
-  const r1Dy = startPos.y - arcCenter1.y
-  const radiusInner = Math.sqrt(r1Dx * r1Dx + r1Dy * r1Dy) - halfWidth
+  // Calculate directions
+  const msDirX = msX / centerRadius  // msX, msY already calculated, centerRadius = |M→S|
+  const msDirY = msY / centerRadius
 
-  const r2Dx = startPos.x - arcCenter2.x
-  const r2Dy = startPos.y - arcCenter2.y
-  const radiusOuter = Math.sqrt(r2Dx * r2Dx + r2Dy * r2Dy) + halfWidth
+  const mtipX = tipPoint.x - M.x
+  const mtipY = tipPoint.y - M.y
+  const mtipDist = Math.sqrt(mtipX * mtipX + mtipY * mtipY)
+  const mtipDirX = mtipX / mtipDist
+  const mtipDirY = mtipY / mtipDist
 
-  const radiusCenter = (radiusInner + radiusOuter) / 2
+  // Calculate exact extension factor: radiusOuter / cos(θ/2)
+  // where θ is the arc angle between M→S and M→tip
+  // cos(θ) = dot(msDir, mtipDir)
+  const cosTheta = msDirX * mtipDirX + msDirY * mtipDirY
+  // cos(θ/2) = sqrt((1 + cos(θ)) / 2)
+  const cosHalfTheta = Math.sqrt((1 + cosTheta) / 2)
+  const extend = radiusOuter / cosHalfTheta
 
-  // Trunk parameters (using squared radii for shader efficiency)
-  const trunk = {
-    startPos,
-    endPos,
-    arcCenter1,
-    arcCenter2,
-    radiusInnerSq: radiusInner * radiusInner,
-    radiusOuterSq: radiusOuter * radiusOuter,
-    radiusCenterSq: radiusCenter * radiusCenter,
-    taperFactor: s.taperFactor
+  // V1: Extend along M→S direction
+  const triangleV1: Vec2 = {
+    x: M.x + msDirX * extend,
+    y: M.y + msDirY * extend
   }
 
-  // Calculate arrow head geometry
-  // Head starts where trunk ends and extends backward
-  const headTailPos: Vec2 = {
-    x: endPos.x - dirX * s.headLength,
-    y: endPos.y - dirY * s.headLength
+  // V2: Extend along M→tip direction
+  const triangleV2: Vec2 = {
+    x: M.x + mtipDirX * extend,
+    y: M.y + mtipDirY * extend
   }
 
-  const head = {
-    tailPos: headTailPos,
-    pointPos: endPos,
-    arcCenter1,
-    arcCenter2,
-    radiusInner,
+  // Phase at M: we need to calculate where M falls on the 0→1 scale
+  // 0 = at S, 1 = at tip. M is "behind" the arc, so phase is negative/0
+  const phaseV0 = 0  // Will be clamped in shader
+
+  return {
+    sourceCenter: S,
+    targetCenter: T,
+    targetRadius: target.r,
+    arcCenter: M,
     radiusOuter,
-    radiusCenter
+    radiusInner,
+    radiusOuterSq: radiusOuter * radiusOuter,
+    radiusInnerSq: radiusInner * radiusInner,
+    targetRadiusSq: target.r * target.r,
+    triangleV0,
+    triangleV1,
+    triangleV2,
+    tipPoint,
+    phaseV0
   }
+}
 
-  return { trunk, head }
+function createDegenerateGeometry(S: Vec2, T: Vec2, targetR: number): ArrowGeometry {
+  return {
+    sourceCenter: S,
+    targetCenter: T,
+    targetRadius: targetR,
+    arcCenter: S,
+    radiusOuter: 0,
+    radiusInner: 0,
+    radiusOuterSq: 0,
+    radiusInnerSq: 0,
+    targetRadiusSq: targetR * targetR,
+    triangleV0: S,
+    triangleV1: S,
+    triangleV2: S,
+    tipPoint: S,
+    phaseV0: 0
+  }
 }
 
 /**
- * Calculate arrow geometries for multiple edges
+ * Calculate bounding box for the arrow quad
  */
-export function calculateArrowGeometries(
-  edges: Array<{ sourceId: string; targetId: string; weight?: number }>,
-  nodes: Map<string, NodeGeometry>,
-  style: Partial<ArrowStyle> = {}
-): Map<string, ArrowGeometry> {
-  const geometries = new Map<string, ArrowGeometry>()
+export function calculateArrowBounds(geom: ArrowGeometry): { min: Vec2, max: Vec2 } {
+  const M = geom.arcCenter
+  const r = geom.radiusOuter
 
-  for (const edge of edges) {
-    const source = nodes.get(edge.sourceId)
-    const target = nodes.get(edge.targetId)
-
-    if (!source || !target) {
-      console.warn(`Missing node for edge ${edge.sourceId} -> ${edge.targetId}`)
-      continue
-    }
-
-    const edgeKey = `${edge.sourceId}->${edge.targetId}`
-    const weight = edge.weight !== undefined ? edge.weight : 1.0
-    geometries.set(edgeKey, calculateArrowGeometry(source, target, weight, style))
+  // The arrow is contained within a circle of radius r1 around M
+  // But we can tighten this by considering actual arc extent
+  // For now, use the simple bounding box
+  return {
+    min: { x: M.x - r, y: M.y - r },
+    max: { x: M.x + r, y: M.y + r }
   }
-
-  return geometries
 }
