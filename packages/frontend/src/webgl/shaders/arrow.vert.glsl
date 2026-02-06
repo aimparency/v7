@@ -1,13 +1,13 @@
 // Arrow Vertex Shader (Triangle-based Arc Rendering)
-// Uses 3 vertices: M (arc center), and two points on tangent line at tip
+// Uses 3 vertices: M (arc center), V1 (towards source S), V2 (towards tip on T)
 
 // Per-vertex attribute (0, 1, or 2 for triangle vertex index)
 attribute float a_vertexIndex;
 
 // Per-instance attributes
 attribute vec2 a_arcCenter;       // M - arc center (vertex 0)
-attribute vec2 a_triangleV1;      // Tangent point 1 (vertex 1)
-attribute vec2 a_triangleV2;      // Tangent point 2 (vertex 2)
+attribute vec2 a_triangleV1;      // Extended towards S (vertex 1) - phase 0
+attribute vec2 a_triangleV2;      // Extended towards tip (vertex 2) - phase 1
 attribute float a_radiusOuterSq;  // r1²
 attribute float a_radiusInnerSq;  // r2²
 attribute vec2 a_sourceCenter;    // S - for start bound
@@ -30,25 +30,25 @@ varying vec2 v_targetCenter;
 varying float v_targetRadiusSq;
 varying vec3 v_color;
 varying float v_opacity;
-varying float v_phase;  // 0 at source, 1 at tip
+varying float v_tip;  // 0 at source (S), 0.5 at M, 1 at tip
 
 void main() {
   // Select vertex position based on index
   vec2 worldPos;
-  float phase;
+  float tip;
 
   if (a_vertexIndex < 0.5) {
     // Vertex 0: M (arc center)
     worldPos = a_arcCenter;
-    phase = 0.0;  // At/before source
+    tip = 0.5;
   } else if (a_vertexIndex < 1.5) {
-    // Vertex 1: tangent point 1
+    // Vertex 1: towards source S
     worldPos = a_triangleV1;
-    phase = 1.0;  // At tip
+    tip = 0.0;
   } else {
-    // Vertex 2: tangent point 2
+    // Vertex 2: towards tip on T
     worldPos = a_triangleV2;
-    phase = 1.0;  // At tip
+    tip = 1.0;
   }
 
   // Apply camera transform
@@ -70,5 +70,5 @@ void main() {
   v_targetRadiusSq = a_targetRadiusSq;
   v_color = a_color;
   v_opacity = a_opacity;
-  v_phase = phase;
+  v_tip = tip;
 }

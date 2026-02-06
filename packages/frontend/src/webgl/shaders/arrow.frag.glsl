@@ -15,7 +15,7 @@ varying vec2 v_targetCenter;
 varying float v_targetRadiusSq;
 varying vec3 v_color;
 varying float v_opacity;
-varying float v_phase;  // 0 at source, 1 at tip (for future tapering)
+varying float v_tip;  // 0 at source (S), 0.5 at M, 1 at tip
 
 void main() {
   // Distance squared from fragment to arc center M
@@ -44,7 +44,7 @@ void main() {
   if (isArrow) {
     gl_FragColor = vec4(v_color, v_opacity);
   } else {
-    // Debug: magenta background for quad
-    gl_FragColor = vec4(1.0, 0.0, 1.0, 0.3);
+    // Debug: pink with tip value in blue channel
+    gl_FragColor = vec4(1.0, 0.0, v_tip, 0.1);
   }
 }
