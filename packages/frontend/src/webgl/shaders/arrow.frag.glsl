@@ -15,15 +15,48 @@ varying vec2 v_targetCenter;
 varying float v_targetRadiusSq;
 varying vec3 v_color;
 varying float v_opacity;
-varying float v_tip;  // 0 at source (S), 0.5 at M, 1 at tip
+varying float v_tip;        // 0 at V1, 0.5 at M, 1 at V2 (linear interpolation)
+varying float v_distFromM;  // 0 at M, 1 at V1 and V2
 
 void main() {
+  // Correct tip from linear to radial interpolation
+  // Linear: tip = 0.5*b0 + 0*b1 + 1*b2, distFromM = b1 + b2
+  // Radial: correctedTip = b2 / (b1 + b2)
+  float correctedTip = (v_tip - 0.5 + 0.5 * v_distFromM) / max(v_distFromM, 0.001);
+
+  // Calculate base radii
+  float r1 = sqrt(v_radiusOuterSq);
+  float r2 = sqrt(v_radiusInnerSq);
+  float centerRadius = (r1 + r2) / 2.0;
+  float halfWidth = (r1 - r2) / 2.0;
+
+  // Calculate trunkLength based on arrow width
+  // Head length (in world units) ≈ 2 * halfWidth, convert to tip-space
+  float headLengthFactor = 2.0 * halfWidth / centerRadius;
+  float trunkLength = 1.0 - clamp(headLengthFactor, 0.1, 0.5);
+
+  // Calculate taper factor based on correctedTip
+  // trunk: [0, trunkLength] => taper [1.0, 0.5]
+  // head:  [trunkLength, 1] => taper [1.0, 0.0] (restarts at full width!)
+  float taperFactor;
+  if (correctedTip < trunkLength) {
+    // Trunk: taper from 1.0 to 0.5
+    taperFactor = mix(1.0, 0.5, correctedTip / trunkLength);
+  } else {
+    // Head: taper from 1.0 to 0.0
+    taperFactor = mix(1.0, 0.0, (correctedTip - trunkLength) / (1.0 - trunkLength));
+  }
+  float tapered_r1 = centerRadius + halfWidth * taperFactor;
+  float tapered_r2 = centerRadius - halfWidth * taperFactor;
+
   // Distance squared from fragment to arc center M
   vec2 toCenter = v_worldPos - v_arcCenter;
   float distSq = dot(toCenter, toCenter);
+  float dist = sqrt(distSq);
 
-  // Annulus test: r2² <= dist² <= r1²
-  bool inRing = distSq >= v_radiusInnerSq && distSq <= v_radiusOuterSq;
+  // Annulus tests
+  bool inOriginalRing = distSq >= v_radiusInnerSq && distSq <= v_radiusOuterSq;
+  bool inTaperedRing = dist >= tapered_r2 && dist <= tapered_r1;
 
   // Start bound: fragment should be on the "arrow side" of the radial through S
   // Use cross product to check which side of the M→S line we're on
@@ -38,13 +71,12 @@ void main() {
   float distToTargetSq = dot(toTarget, toTarget);
   bool beforeEnd = distToTargetSq >= v_targetRadiusSq;
 
-  // Combined test
-  bool isArrow = inRing && pastStart && beforeEnd;
+  // Combined tests
+  bool isOriginalArrow = inOriginalRing && pastStart && beforeEnd;
+  bool isTaperedArrow = inTaperedRing && pastStart && beforeEnd;
 
-  if (isArrow) {
-    gl_FragColor = vec4(v_color, v_opacity);
-  } else {
-    // Debug: pink with tip value in blue channel
-    gl_FragColor = vec4(1.0, 0.0, v_tip, 0.1);
-  }
+  // Debug rendering: r=original ring segment, g=tapered shape, b=correctedTip
+  float debugR = (inOriginalRing && pastStart && beforeEnd) ? 1.0 : 0.0;
+  float debugG = (inTaperedRing && pastStart && beforeEnd) ? 1.0 : 0.0;
+  gl_FragColor = vec4(debugR, debugG, correctedTip, 0.1);
 }
