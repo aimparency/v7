@@ -93,6 +93,7 @@ const selectAim = (aimId: string) => {
 .flow-handle-group {
   opacity: 0.3;
   transition: opacity 0.2s;
+  pointer-events: auto;
 }
 .flow-handle-group:hover, .flow-handle-group.dragging {
   opacity: 0.8;

@@ -254,3 +254,88 @@ export function calculateArrowBounds(geom: ArrowGeometry): { min: Vec2, max: Vec
     max: { x: M.x + r, y: M.y + r }
   }
 }
+
+/**
+ * Hit test: check if a point is inside the arrow shape
+ * Replicates the fragment shader logic for CPU-side hit testing
+ */
+export function hitTestArrow(geom: ArrowGeometry, point: Vec2, debug = false): boolean {
+  const M = geom.arcCenter
+
+  // Vector from M to point
+  const toPointX = point.x - M.x
+  const toPointY = point.y - M.y
+  const dist = Math.sqrt(toPointX * toPointX + toPointY * toPointY)
+
+  // Quick ring bounding check (performance optimization)
+  const innerRadius = geom.centerRadius * (1 - geom.normalizedHalfWidth)
+  const outerRadius = geom.centerRadius * (1 + geom.normalizedHalfWidth)
+
+  if (debug) {
+    console.log('    hitTestArrow: dist=', dist, 'inner=', innerRadius, 'outer=', outerRadius)
+  }
+
+  if (dist < innerRadius || dist > outerRadius) {
+    if (debug) console.log('    FAIL: outside ring bounds')
+    return false
+  }
+
+  // Normalized direction from M to point
+  const fragDirX = toPointX / Math.max(dist, 0.001)
+  const fragDirY = toPointY / Math.max(dist, 0.001)
+
+  // Start bound: cross product with source direction (must be <= 0 to be past start)
+  const crossStart = geom.sourceDirX * fragDirY - geom.sourceDirY * fragDirX
+  if (crossStart > 0) {
+    return false
+  }
+
+  // End bound: must be outside target circle
+  const toTargetX = point.x - geom.targetCenter.x
+  const toTargetY = point.y - geom.targetCenter.y
+  const toTargetDistSq = toTargetX * toTargetX + toTargetY * toTargetY
+  if (toTargetDistSq < geom.targetRadiusSq) {
+    return false
+  }
+
+  // Calculate arc position (0 at source, 1 at tip) using angle
+  // Cross product gives sin of angle, dot gives cos
+  // We use atan2 to get the angle from source direction
+  const dotWithSource = geom.sourceDirX * fragDirX + geom.sourceDirY * fragDirY
+  const crossWithSource = geom.sourceDirX * fragDirY - geom.sourceDirY * fragDirX
+
+  // Angle from source direction (negative because we go clockwise)
+  const angleFromSource = Math.atan2(-crossWithSource, dotWithSource)
+
+  // Calculate total arc angle (from source to tip direction)
+  // We need tip direction - compute from target intersection
+  const mtX = geom.targetCenter.x - M.x
+  const mtY = geom.targetCenter.y - M.y
+  const mtDist = Math.sqrt(mtX * mtX + mtY * mtY)
+  const tipDirX = mtX / Math.max(mtDist, 0.001)
+  const tipDirY = mtY / Math.max(mtDist, 0.001)
+
+  const dotTipSource = geom.sourceDirX * tipDirX + geom.sourceDirY * tipDirY
+  const crossTipSource = geom.sourceDirX * tipDirY - geom.sourceDirY * tipDirX
+  const totalAngle = Math.atan2(-crossTipSource, dotTipSource)
+
+  // Normalized position along arc (0 at source, 1 at tip)
+  const arcPos = totalAngle !== 0 ? angleFromSource / totalAngle : 0
+  const clampedArcPos = Math.max(0, Math.min(1, arcPos))
+
+  // Calculate taper factor based on position
+  let taperFactor: number
+  if (clampedArcPos < geom.trunkLength) {
+    // Trunk: taper from 1.0 to 0.5
+    taperFactor = 1.0 - 0.5 * (clampedArcPos / geom.trunkLength)
+  } else {
+    // Head: taper from 1.0 to 0.0
+    taperFactor = 1.0 - (clampedArcPos - geom.trunkLength) / (1.0 - geom.trunkLength)
+  }
+
+  // Final ring check with taper
+  const normalizedDist = dist / geom.centerRadius
+  const distFromCenterline = Math.abs(normalizedDist - 1.0)
+
+  return distFromCenterline <= taperFactor * geom.normalizedHalfWidth
+}

@@ -1,7 +1,7 @@
 /**
- * WebGL Graph Renderer
+ * WebGL2 Graph Renderer
  *
- * High-performance WebGL-based renderer for graph visualization.
+ * High-performance WebGL2-based renderer for graph visualization.
  * Renders nodes as circles using instanced rendering with viewport culling.
  */
 
@@ -19,6 +19,7 @@ export interface NodeData {
   r: number
   color: [number, number, number] // RGB 0-1
   selected: boolean
+  moving: boolean  // Movement flag for TAA
 }
 
 export interface RendererOptions {
@@ -27,7 +28,7 @@ export interface RendererOptions {
 
 export class WebGLGraphRenderer {
   private canvas: HTMLCanvasElement
-  private gl: WebGLRenderingContext | null = null
+  private gl: WebGL2RenderingContext | null = null
   private program: WebGLProgram | null = null
 
   // Buffers
@@ -42,10 +43,12 @@ export class WebGLGraphRenderer {
   private a_radius: number = -1
   private a_color: number = -1
   private a_selected: number = -1
+  private a_moving: number = -1
 
   // Uniforms
   private u_viewMatrix: WebGLUniformLocation | null = null
   private u_viewportSize: WebGLUniformLocation | null = null
+  private u_jitter: WebGLUniformLocation | null = null
 
   // Camera state
   private viewMatrix: Float32Array = new Float32Array([
@@ -73,16 +76,16 @@ export class WebGLGraphRenderer {
   }
 
   async init(): Promise<void> {
-    // Get WebGL context
-    this.gl = this.canvas.getContext('webgl', {
+    // Get WebGL2 context
+    this.gl = this.canvas.getContext('webgl2', {
       alpha: false,
-      antialias: true,
+      antialias: false,
       depth: false,
       preserveDrawingBuffer: false
     })
 
     if (!this.gl) {
-      throw new Error('WebGL not supported')
+      throw new Error('WebGL2 not supported')
     }
 
     const gl = this.gl
@@ -110,10 +113,12 @@ export class WebGLGraphRenderer {
     this.a_radius = gl.getAttribLocation(this.program, 'a_radius')
     this.a_color = gl.getAttribLocation(this.program, 'a_color')
     this.a_selected = gl.getAttribLocation(this.program, 'a_selected')
+    this.a_moving = gl.getAttribLocation(this.program, 'a_moving')
 
     // Get uniform locations
     this.u_viewMatrix = gl.getUniformLocation(this.program, 'u_viewMatrix')
     this.u_viewportSize = gl.getUniformLocation(this.program, 'u_viewportSize')
+    this.u_jitter = gl.getUniformLocation(this.program, 'u_jitter')
 
     // Create static quad buffer (4 corners of a quad)
     const quadVertices = new Float32Array([
@@ -129,9 +134,9 @@ export class WebGLGraphRenderer {
 
     // Create dynamic buffer manager for instance data
     const MAX_NODES = 50000
-    const STRIDE = 7 // position(2) + radius(1) + color(3) + selected(1)
+    const STRIDE = 8 // position(2) + radius(1) + color(3) + selected(1) + moving(1)
 
-    this.bufferManager = new DynamicBufferManager(gl, {
+    this.bufferManager = new DynamicBufferManager(gl as any, {
       maxItems: MAX_NODES,
       stride: STRIDE,
       usage: gl.DYNAMIC_DRAW
@@ -263,7 +268,7 @@ export class WebGLGraphRenderer {
     }
   }
 
-  render(): void {
+  render(jitterX: number = 0, jitterY: number = 0): void {
     if (!this.gl || !this.program || this.nodes.length === 0) return
 
     const gl = this.gl
@@ -294,7 +299,7 @@ export class WebGLGraphRenderer {
     // Pack visible nodes into buffer
     if (!this.bufferPacker || !this.bufferManager) return
 
-    const stride = 7
+    const stride = 8
     const buffer = this.bufferPacker.getBuffer()
 
     for (let i = 0; i < this.visibleNodes.length; i++) {
@@ -308,6 +313,7 @@ export class WebGLGraphRenderer {
       buffer[offset + 4] = node.color[1]
       buffer[offset + 5] = node.color[2]
       buffer[offset + 6] = node.selected ? 1.0 : 0.0
+      buffer[offset + 7] = node.moving ? 1.0 : 0.0
     }
 
     // Get view of used portion
@@ -319,8 +325,7 @@ export class WebGLGraphRenderer {
     const updateEnd = performance.now()
     this.performanceMonitor.recordUpdate(updateEnd - updateStart)
 
-    // Clear
-    gl.clear(gl.COLOR_BUFFER_BIT)
+    // Note: Don't clear here - TAA pass handles framebuffer clearing
 
     // No nodes visible? Done.
     if (this.visibleNodes.length === 0) return
@@ -331,6 +336,7 @@ export class WebGLGraphRenderer {
     // Set uniforms
     gl.uniformMatrix3fv(this.u_viewMatrix, false, this.viewMatrix)
     gl.uniform2f(this.u_viewportSize, this.canvas.width, this.canvas.height)
+    gl.uniform2f(this.u_jitter, jitterX, jitterY)
 
     // Bind quad vertices (per-vertex attribute)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer)
@@ -340,7 +346,7 @@ export class WebGLGraphRenderer {
     // Bind instance data (per-instance attributes)
     const instanceBuffer = this.bufferManager.getRenderBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, instanceBuffer)
-    const byteStride = 7 * 4 // 7 floats * 4 bytes
+    const byteStride = 8 * 4 // 8 floats * 4 bytes
 
     gl.enableVertexAttribArray(this.a_position)
     gl.vertexAttribPointer(this.a_position, 2, gl.FLOAT, false, byteStride, 0)
@@ -354,29 +360,25 @@ export class WebGLGraphRenderer {
     gl.enableVertexAttribArray(this.a_selected)
     gl.vertexAttribPointer(this.a_selected, 1, gl.FLOAT, false, byteStride, 6 * 4)
 
-    // Use instanced rendering
-    const ext = gl.getExtension('ANGLE_instanced_arrays')
+    gl.enableVertexAttribArray(this.a_moving)
+    gl.vertexAttribPointer(this.a_moving, 1, gl.FLOAT, false, byteStride, 7 * 4)
 
-    if (ext) {
-      // Set attribute divisors for instancing
-      ext.vertexAttribDivisorANGLE(this.a_position, 1)
-      ext.vertexAttribDivisorANGLE(this.a_radius, 1)
-      ext.vertexAttribDivisorANGLE(this.a_color, 1)
-      ext.vertexAttribDivisorANGLE(this.a_selected, 1)
+    // Set attribute divisors for instancing (WebGL2 native)
+    gl.vertexAttribDivisor(this.a_position, 1)
+    gl.vertexAttribDivisor(this.a_radius, 1)
+    gl.vertexAttribDivisor(this.a_color, 1)
+    gl.vertexAttribDivisor(this.a_selected, 1)
+    gl.vertexAttribDivisor(this.a_moving, 1)
 
-      // Draw all visible instances in one call
-      ext.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, this.visibleNodes.length)
+    // Draw all visible instances in one call (WebGL2 native)
+    gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.visibleNodes.length)
 
-      // Reset divisors
-      ext.vertexAttribDivisorANGLE(this.a_position, 0)
-      ext.vertexAttribDivisorANGLE(this.a_radius, 0)
-      ext.vertexAttribDivisorANGLE(this.a_color, 0)
-      ext.vertexAttribDivisorANGLE(this.a_selected, 0)
-    } else {
-      // Fallback: draw each instance manually
-      console.warn('ANGLE_instanced_arrays not available, using slow fallback')
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-    }
+    // Reset divisors
+    gl.vertexAttribDivisor(this.a_position, 0)
+    gl.vertexAttribDivisor(this.a_radius, 0)
+    gl.vertexAttribDivisor(this.a_color, 0)
+    gl.vertexAttribDivisor(this.a_selected, 0)
+    gl.vertexAttribDivisor(this.a_moving, 0)
   }
 
   destroy(): void {

@@ -421,36 +421,39 @@ export function useGraphInteraction(
 
     const onNodeUp = async (node: GraphNode) => {
         if (mapStore.connecting && mapStore.connectFrom) {
-            if (mapStore.connectFrom.id !== node.id) {
+            if (mapStore.connectFrom.id === node.id) {
+                // Released on same node where connection started - cancel
                 connectionHandled = true
-                const parent = mapStore.connectFrom as GraphNode
-                const child = node
+                return
+            }
+            connectionHandled = true
+            const parent = mapStore.connectFrom as GraphNode
+            const child = node
 
-                // Validate positions and radii
-                const parentX = parent.pos?.[0] ?? 0
-                const parentY = parent.pos?.[1] ?? 0
-                const childX = child.pos?.[0] ?? 0
-                const childY = child.pos?.[1] ?? 0
-                const parentR = parent.r ?? 25
-                const childR = child.r ?? 25
+            // Validate positions and radii
+            const parentX = parent.pos?.[0] ?? 0
+            const parentY = parent.pos?.[1] ?? 0
+            const childX = child.pos?.[0] ?? 0
+            const childY = child.pos?.[1] ?? 0
+            const parentR = parent.r ?? 25
+            const childR = child.r ?? 25
 
-                const deltaX = childX - parentX
-                const deltaY = childY - parentY
-                const rSum = parentR + childR
-                const relativePosition: [number, number] = [deltaX / rSum, deltaY / rSum]
+            const deltaX = childX - parentX
+            const deltaY = childY - parentY
+            const rSum = parentR + childR
+            const relativePosition: [number, number] = [deltaX / rSum, deltaY / rSum]
 
-                try {
-                    await trpc.aim.connectAims.mutate({
-                        projectPath: uiStore.projectPath,
-                        parentAimId: parent.id,
-                        childAimId: child.id,
-                        relativePosition,
-                    })
-                    // Reload both aims to get updated incoming/outgoing arrays
-                    await dataStore.loadAims(uiStore.projectPath, [parent.id, child.id])
-                } catch (e) {
-                    console.error('Failed to connect aims:', e)
-                }
+            try {
+                await trpc.aim.connectAims.mutate({
+                    projectPath: uiStore.projectPath,
+                    parentAimId: parent.id,
+                    childAimId: child.id,
+                    relativePosition,
+                })
+                // Reload both aims to get updated incoming/outgoing arrays
+                await dataStore.loadAims(uiStore.projectPath, [parent.id, child.id])
+            } catch (e) {
+                console.error('Failed to connect aims:', e)
             }
         }
     }

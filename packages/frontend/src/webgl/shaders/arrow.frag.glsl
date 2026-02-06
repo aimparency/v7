@@ -1,23 +1,28 @@
+#version 300 es
 // Arrow Fragment Shader (Normalized Arc-Based)
 // All distance checks use normalized coordinates (relative to centerRadius)
+// Outputs to MRT: color + movement flag
 
-#ifdef GL_ES
 precision highp float;
-#endif
 
-// Varyings from vertex shader
-varying vec2 v_worldPos;
-varying vec2 v_arcCenter;
-varying float v_centerRadius;
-varying float v_normalizedHalfWidth;  // Precomputed: halfWidth / centerRadius
-varying float v_trunkLength;          // Precomputed: where trunk ends (0-1)
-varying vec2 v_sourceDir;             // Precomputed: normalized direction M→S
-varying vec2 v_targetCenter;
-varying float v_targetRadiusSq;
-varying vec3 v_color;
-varying float v_opacity;
-varying float v_tip;        // 0 at V1, 0.5 at M, 1 at V2 (linear interpolation)
-varying float v_distFromM;  // 0 at M, 1 at V1 and V2
+// Input from vertex shader
+in vec2 v_worldPos;
+in vec2 v_arcCenter;
+in float v_centerRadius;
+in float v_normalizedHalfWidth;  // Precomputed: halfWidth / centerRadius
+in float v_trunkLength;          // Precomputed: where trunk ends (0-1)
+in vec2 v_sourceDir;             // Precomputed: normalized direction M→S
+in vec2 v_targetCenter;
+in float v_targetRadiusSq;
+in vec3 v_color;
+in float v_opacity;
+in float v_tip;        // 0 at V1, 0.5 at M, 1 at V2 (linear interpolation)
+in float v_distFromM;  // 0 at M, 1 at V1 and V2
+flat in float v_moving;
+
+// MRT outputs
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outMovement;
 
 void main() {
   // Correct tip from linear to radial interpolation
@@ -45,8 +50,7 @@ void main() {
 
   // Annulus test in normalized space: |normalizedDist - 1| <= taperFactor * normalizedHalfWidth
   float distFromCenterline = abs(normalizedDist - 1.0);
-  bool inOriginalRing = distFromCenterline <= v_normalizedHalfWidth;
-  bool inTaperedRing = distFromCenterline <= taperFactor * v_normalizedHalfWidth;
+  bool inRing = distFromCenterline <= taperFactor * v_normalizedHalfWidth;
 
   // Start bound: cross product with precomputed source direction
   float crossStart = v_sourceDir.x * fragDir.y - v_sourceDir.y * fragDir.x;
@@ -56,12 +60,11 @@ void main() {
   vec2 toTarget = v_worldPos - v_targetCenter;
   bool beforeEnd = dot(toTarget, toTarget) >= v_targetRadiusSq;
 
-  // Combined tests
-  bool isOriginalArrow = inOriginalRing && pastStart && beforeEnd;
-  bool isTaperedArrow = inTaperedRing && pastStart && beforeEnd;
-
-  // Debug rendering: r=original ring segment, g=tapered shape, b=correctedTip
-  float debugR = isOriginalArrow ? 1.0 : 0.0;
-  float debugG = isTaperedArrow ? 1.0 : 0.0;
-  gl_FragColor = vec4(debugR, debugG, correctedTip, 0.1);
+  // Combined test
+  if (inRing && pastStart && beforeEnd) {
+    outColor = vec4(v_color, v_opacity);
+    outMovement = vec4(v_moving, 0.0, 0.0, 1.0);
+  } else {
+    discard;
+  }
 }

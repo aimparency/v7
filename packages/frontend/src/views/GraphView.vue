@@ -10,6 +10,7 @@ import * as vec2 from '../utils/vec2'
 import { useGraphSimulation } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
+import { calculateArrowGeometry, hitTestArrow } from '../webgl/utils/arrow-geometry'
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -31,29 +32,105 @@ const webglRenderer = useWebGLGraphRenderer(canvasRef, nodes, links)
 const interaction = useGraphInteraction(canvasRef, width, height, simulation)
 const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick, isZooming } = interaction
 
-// Hit testing for canvas clicks
-function handleCanvasClick(e: MouseEvent) {
-  // Convert click to logical coordinates
-  const rect = canvasRef.value?.getBoundingClientRect()
-  if (!rect) return onBackgroundClick()
-
-  const physX = e.clientX - rect.left
-  const physY = e.clientY - rect.top
+// Hit test helper - find node at physical position
+function hitTestNode(physX: number, physY: number) {
   const logicalPos = mapStore.physicalToLogicalCoord([physX, physY])
-
-  // Find node at click position
-  const clickedNode = nodes.value.find(node => {
+  return nodes.value.find(node => {
     const dx = node.renderPos[0] - logicalPos[0]
     const dy = node.renderPos[1] - logicalPos[1]
     const distSq = dx * dx + dy * dy
     return distSq <= node.r * node.r
   })
+}
 
-  if (clickedNode && !mapStore.cursorMoved) {
-    onNodeClick(clickedNode)
-  } else {
-    onBackgroundClick()
+// Hit test helper - find link at physical position (reverse order for front-to-back)
+function hitTestLink(physX: number, physY: number) {
+  const logicalPos = mapStore.physicalToLogicalCoord([physX, physY])
+  const point = { x: logicalPos[0], y: logicalPos[1] }
+
+  console.log('hitTestLink: physPos=', physX, physY, 'logicalPos=', point)
+
+  // Iterate in reverse (last rendered = on top)
+  for (let i = links.value.length - 1; i >= 0; i--) {
+    const link = links.value[i]!
+    const sourceNode = {
+      x: link.source.renderPos[0],
+      y: link.source.renderPos[1],
+      r: link.source.r
+    }
+    const targetNode = {
+      x: link.target.renderPos[0],
+      y: link.target.renderPos[1],
+      r: link.target.r
+    }
+
+    const geom = calculateArrowGeometry(sourceNode, targetNode, link.share ?? 0.5)
+
+    console.log('  testing link', link.source.id, '->', link.target.id, 'arcCenter=', geom.arcCenter, 'centerRadius=', geom.centerRadius)
+
+    // Debug first link only to avoid spam
+    if (hitTestArrow(geom, point, i === links.value.length - 1)) {
+      console.log('  HIT!')
+      return link
+    }
   }
+  console.log('  no hit')
+  return undefined
+}
+
+// Track node hit on mousedown for drag handling
+let mouseDownNode: typeof nodes.value[0] | undefined = undefined
+
+function handleCanvasMouseDown(e: MouseEvent) {
+  const rect = canvasRef.value?.getBoundingClientRect()
+  if (!rect) return
+
+  const physX = e.clientX - rect.left
+  const physY = e.clientY - rect.top
+  mouseDownNode = hitTestNode(physX, physY)
+
+  if (mouseDownNode) {
+    onNodeDown(e, mouseDownNode)
+  }
+}
+
+function handleCanvasMouseUp(e: MouseEvent) {
+  if (mouseDownNode) {
+    onNodeUp(mouseDownNode)
+  }
+  mouseDownNode = undefined
+}
+
+function handleCanvasClick(e: MouseEvent) {
+  // Skip hit tests if cursor moved (pan/drag ended) - just handle as background
+  if (mapStore.cursorMoved) {
+    onBackgroundClick()
+    return
+  }
+
+  const rect = canvasRef.value?.getBoundingClientRect()
+  if (!rect) return onBackgroundClick()
+
+  const physX = e.clientX - rect.left
+  const physY = e.clientY - rect.top
+
+  // Nodes render on top of arrows, so test nodes first
+  const clickedNode = hitTestNode(physX, physY)
+  if (clickedNode) {
+    onNodeClick(clickedNode)
+    return
+  }
+
+  // Test links (arrows) if no node hit
+  // Link goes from source (child) to target (parent), but selectLink expects (parentId, childId)
+  const clickedLink = hitTestLink(physX, physY)
+  if (clickedLink) {
+    uiStore.selectLink(clickedLink.target.id, clickedLink.source.id)
+    uiStore.setGraphSelection(null)
+    return
+  }
+
+  onBackgroundClick()
 }
 
 // Lifecycle
@@ -191,6 +268,8 @@ function getNodeTitleLines(text: string): string[] {
     <canvas
         ref="canvasRef"
         class="graph-canvas"
+        @mousedown="handleCanvasMouseDown"
+        @mouseup="handleCanvasMouseUp"
         @click="handleCanvasClick"
         :class="{ 'is-zooming': isZooming }"
     ></canvas>
