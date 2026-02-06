@@ -48,6 +48,46 @@ const DEFAULT_STYLE: ArrowStyle = {
 }
 
 /**
+ * Find intersection points of two circles
+ * Returns null if no intersection, otherwise returns the two points
+ */
+function circleCircleIntersection(
+  c1: Vec2, r1: number,
+  c2: Vec2, r2: number
+): [Vec2, Vec2] | null {
+  const dx = c2.x - c1.x
+  const dy = c2.y - c1.y
+  const d = Math.sqrt(dx * dx + dy * dy)
+
+  // No intersection cases
+  if (d > r1 + r2 || d < Math.abs(r1 - r2) || d < 0.0001) {
+    return null
+  }
+
+  // Distance from c1 to the line connecting intersection points
+  const a = (d * d + r1 * r1 - r2 * r2) / (2 * d)
+  const hSq = r1 * r1 - a * a
+  if (hSq < 0) return null
+  const h = Math.sqrt(hSq)
+
+  // Direction and perpendicular
+  const dirX = dx / d
+  const dirY = dy / d
+  const perpX = -dirY
+  const perpY = dirX
+
+  // Midpoint on the line between intersection points
+  const midX = c1.x + a * dirX
+  const midY = c1.y + a * dirY
+
+  // Two intersection points
+  return [
+    { x: midX + h * perpX, y: midY + h * perpY },
+    { x: midX - h * perpX, y: midY - h * perpY }
+  ]
+}
+
+/**
  * Calculate arrow geometry from source and target nodes
  * @param share - The contribution share (0-1), determines arrow width like SVG
  */
@@ -102,77 +142,75 @@ export function calculateArrowGeometry(
   // Normalized half-width (for normalized distance checks in shader)
   const normalizedHalfWidth = halfWidth / centerRadius
 
-  // Precompute trunk length: head takes ~2x the normalized width
-  const headLength = Math.min(2.0 * normalizedHalfWidth, 0.5)  // Cap at 50% of arc
+  // Precompute trunk length: head takes ~4/3x the normalized width
+  const headLength = Math.min((4 / 3) * normalizedHalfWidth, 0.5)  // Cap at 50% of arc
   const trunkLength = 1.0 - headLength
 
   // For triangle extension, compute outer radius
   const radiusOuter = centerRadius + halfWidth
 
-  // Calculate tip point (tangent point from M to T's circle)
-  // The line M→tip is tangent to T's circle at tip
-  // This means (tip - M) · (tip - T) = 0
-  const mtX = T.x - M.x
-  const mtY = T.y - M.y
-  const d = Math.sqrt(mtX * mtX + mtY * mtY)
-
-  // Angle from T towards M
-  const angleToM = Math.atan2(M.y - T.y, M.x - T.x)
-
-  // Angle offset to tangent point: cos(θ) = r/d
-  // If M is inside T's circle, no tangent exists - use fallback
-  let tipPoint: Vec2
-  if (d <= target.r) {
-    // Fallback: use closest point on circle
-    tipPoint = {
-      x: T.x - (mtX / d) * target.r,
-      y: T.y - (mtY / d) * target.r
-    }
-  } else {
-    const tangentAngleOffset = Math.acos(target.r / d)
-    // Choose tangent point closer to the supporting aim (S)
-    const tipAngle = angleToM - tangentAngleOffset
-    tipPoint = {
-      x: T.x + target.r * Math.cos(tipAngle),
-      y: T.y + target.r * Math.sin(tipAngle)
-    }
-  }
-
-  // Triangle vertices per spec:
-  // V0 = M (arc center)
-  // V1 = Extended along M→S direction (covers start of arc)
-  // V2 = Extended along M→tip direction (the tip, covers end of arc)
-
-  const triangleV0: Vec2 = M  // Arc center
-
-  // Calculate directions
-  const msDirX = msX / centerRadius  // msX, msY already calculated, centerRadius = |M→S|
+  // Normalized direction from M to S (reuse for fallbacks)
+  const msDirX = msX / centerRadius
   const msDirY = msY / centerRadius
 
-  const mtipX = tipPoint.x - M.x
-  const mtipY = tipPoint.y - M.y
-  const mtipDist = Math.sqrt(mtipX * mtipX + mtipY * mtipY)
-  const mtipDirX = mtipX / mtipDist
-  const mtipDirY = mtipY / mtipDist
+  // Calculate tip point: intersection of centerline circle (M, centerRadius) and target circle (T, targetR)
+  // Since |M-T| = centerRadius (M is on perpendicular bisector), T is ON the centerline circle
+  // So we find where circle(T, targetR) intersects circle(M, centerRadius)
+  const tipIntersections = circleCircleIntersection(M, centerRadius, T, target.r)
+  let tipDirX: number, tipDirY: number
+  if (tipIntersections) {
+    // Pick intersection on short arc side (cross with M→S direction <= 0)
+    const tip0X = tipIntersections[0].x - M.x
+    const tip0Y = tipIntersections[0].y - M.y
+    const cross0 = msX * tip0Y - msY * tip0X
+    const tipPoint = cross0 <= 0 ? tipIntersections[0] : tipIntersections[1]
+    const tipX = tipPoint.x - M.x
+    const tipY = tipPoint.y - M.y
+    const tipDist = Math.sqrt(tipX * tipX + tipY * tipY)
+    tipDirX = tipX / tipDist
+    tipDirY = tipY / tipDist
+  } else {
+    // Fallback: direction from M towards T
+    const mtX = T.x - M.x
+    const mtY = T.y - M.y
+    const mtDist = Math.sqrt(mtX * mtX + mtY * mtY)
+    tipDirX = mtX / mtDist
+    tipDirY = mtY / mtDist
+  }
 
-  // Calculate exact extension factor: radiusOuter / cos(θ/2)
-  // where θ is the arc angle between M→S and M→tip
-  // cos(θ) = dot(msDir, mtipDir)
-  const cosTheta = msDirX * mtipDirX + msDirY * mtipDirY
-  // cos(θ/2) = sqrt((1 + cos(θ)) / 2)
+  // Calculate source start: intersection of outer circle (M, radiusOuter) and source circle (S, sourceR)
+  const sourceIntersections = circleCircleIntersection(M, radiusOuter, S, source.r)
+  let sourceDirX: number, sourceDirY: number
+  if (sourceIntersections) {
+    // Pick intersection on the far side from tip (cross with tip direction <= 0)
+    const src0X = sourceIntersections[0].x - M.x
+    const src0Y = sourceIntersections[0].y - M.y
+    const cross0 = tipDirX * src0Y - tipDirY * src0X
+    const srcPoint = cross0 <= 0 ? sourceIntersections[0] : sourceIntersections[1]
+    const srcX = srcPoint.x - M.x
+    const srcY = srcPoint.y - M.y
+    const srcDist = Math.sqrt(srcX * srcX + srcY * srcY)
+    sourceDirX = srcX / srcDist
+    sourceDirY = srcY / srcDist
+  } else {
+    // Fallback: direction from M to S
+    sourceDirX = msDirX
+    sourceDirY = msDirY
+  }
+
+  // Triangle extension factor: radiusOuter / cos(θ/2) where θ is arc angle
+  const cosTheta = sourceDirX * tipDirX + sourceDirY * tipDirY
   const cosHalfTheta = Math.sqrt((1 + cosTheta) / 2)
   const extend = radiusOuter / cosHalfTheta
 
-  // V1: Extend along M→S direction
+  // Triangle vertices
   const triangleV1: Vec2 = {
-    x: M.x + msDirX * extend,
-    y: M.y + msDirY * extend
+    x: M.x + sourceDirX * extend,
+    y: M.y + sourceDirY * extend
   }
-
-  // V2: Extend along M→tip direction
   const triangleV2: Vec2 = {
-    x: M.x + mtipDirX * extend,
-    y: M.y + mtipDirY * extend
+    x: M.x + tipDirX * extend,
+    y: M.y + tipDirY * extend
   }
 
   return {
@@ -180,8 +218,8 @@ export function calculateArrowGeometry(
     centerRadius,
     normalizedHalfWidth,
     trunkLength,
-    sourceDirX: msDirX,  // Already normalized (msX / centerRadius)
-    sourceDirY: msDirY,
+    sourceDirX,
+    sourceDirY,
     targetCenter: T,
     targetRadiusSq: target.r * target.r,
     triangleV1,
