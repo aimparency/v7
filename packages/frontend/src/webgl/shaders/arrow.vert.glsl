@@ -5,14 +5,15 @@
 attribute float a_vertexIndex;
 
 // Per-instance attributes
-attribute vec2 a_arcCenter;       // M - arc center (vertex 0)
-attribute vec2 a_triangleV1;      // Extended towards S (vertex 1) - phase 0
-attribute vec2 a_triangleV2;      // Extended towards tip (vertex 2) - phase 1
-attribute float a_radiusOuterSq;  // r1²
-attribute float a_radiusInnerSq;  // r2²
-attribute vec2 a_sourceCenter;    // S - for start bound
-attribute vec2 a_targetCenter;    // T - for end bound
-attribute float a_targetRadiusSq; // target radius squared
+attribute vec2 a_arcCenter;            // M - arc center (vertex 0)
+attribute vec2 a_triangleV1;           // Extended towards S (vertex 1)
+attribute vec2 a_triangleV2;           // Extended towards tip (vertex 2)
+attribute float a_centerRadius;        // Distance from M to arc centerline
+attribute float a_normalizedHalfWidth; // halfWidth / centerRadius (precomputed)
+attribute float a_trunkLength;         // Where trunk ends (precomputed, 0-1)
+attribute vec2 a_sourceDir;            // Normalized direction from M to S (precomputed)
+attribute vec2 a_targetCenter;         // T - for end bound
+attribute float a_targetRadiusSq;      // target radius squared
 attribute vec3 a_color;
 attribute float a_opacity;
 
@@ -20,12 +21,13 @@ attribute float a_opacity;
 uniform mat3 u_viewMatrix;
 uniform vec2 u_viewportSize;
 
-// Varyings
+// Varyings - pass precomputed values to fragment shader
 varying vec2 v_worldPos;
 varying vec2 v_arcCenter;
-varying float v_radiusOuterSq;
-varying float v_radiusInnerSq;
-varying vec2 v_sourceCenter;
+varying float v_centerRadius;
+varying float v_normalizedHalfWidth;
+varying float v_trunkLength;
+varying vec2 v_sourceDir;
 varying vec2 v_targetCenter;
 varying float v_targetRadiusSq;
 varying vec3 v_color;
@@ -68,9 +70,10 @@ void main() {
   // Pass to fragment shader
   v_worldPos = worldPos;
   v_arcCenter = a_arcCenter;
-  v_radiusOuterSq = a_radiusOuterSq;
-  v_radiusInnerSq = a_radiusInnerSq;
-  v_sourceCenter = a_sourceCenter;
+  v_centerRadius = a_centerRadius;
+  v_normalizedHalfWidth = a_normalizedHalfWidth;
+  v_trunkLength = a_trunkLength;
+  v_sourceDir = a_sourceDir;
   v_targetCenter = a_targetCenter;
   v_targetRadiusSq = a_targetRadiusSq;
   v_color = a_color;

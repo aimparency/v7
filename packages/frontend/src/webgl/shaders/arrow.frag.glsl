@@ -1,5 +1,5 @@
-// Arrow Fragment Shader (Simplified Arc-Based)
-// Renders annulus segment with bounds checking
+// Arrow Fragment Shader (Normalized Arc-Based)
+// All distance checks use normalized coordinates (relative to centerRadius)
 
 #ifdef GL_ES
 precision highp float;
@@ -8,9 +8,10 @@ precision highp float;
 // Varyings from vertex shader
 varying vec2 v_worldPos;
 varying vec2 v_arcCenter;
-varying float v_radiusOuterSq;
-varying float v_radiusInnerSq;
-varying vec2 v_sourceCenter;
+varying float v_centerRadius;
+varying float v_normalizedHalfWidth;  // Precomputed: halfWidth / centerRadius
+varying float v_trunkLength;          // Precomputed: where trunk ends (0-1)
+varying vec2 v_sourceDir;             // Precomputed: normalized direction M→S
 varying vec2 v_targetCenter;
 varying float v_targetRadiusSq;
 varying vec3 v_color;
@@ -24,59 +25,43 @@ void main() {
   // Radial: correctedTip = b2 / (b1 + b2)
   float correctedTip = (v_tip - 0.5 + 0.5 * v_distFromM) / max(v_distFromM, 0.001);
 
-  // Calculate base radii
-  float r1 = sqrt(v_radiusOuterSq);
-  float r2 = sqrt(v_radiusInnerSq);
-  float centerRadius = (r1 + r2) / 2.0;
-  float halfWidth = (r1 - r2) / 2.0;
-
-  // Calculate trunkLength based on arrow width
-  // Head length (in world units) ≈ 2 * halfWidth, convert to tip-space
-  float headLengthFactor = 2.0 * halfWidth / centerRadius;
-  float trunkLength = 1.0 - clamp(headLengthFactor, 0.1, 0.5);
-
-  // Calculate taper factor based on correctedTip
+  // Calculate taper factor based on correctedTip (all precomputed values from CPU)
   // trunk: [0, trunkLength] => taper [1.0, 0.5]
-  // head:  [trunkLength, 1] => taper [1.0, 0.0] (restarts at full width!)
+  // head:  [trunkLength, 1] => taper [1.0, 0.0] (restarts at full width)
   float taperFactor;
-  if (correctedTip < trunkLength) {
-    // Trunk: taper from 1.0 to 0.5
-    taperFactor = mix(1.0, 0.5, correctedTip / trunkLength);
+  if (correctedTip < v_trunkLength) {
+    taperFactor = mix(1.0, 0.5, correctedTip / v_trunkLength);
   } else {
-    // Head: taper from 1.0 to 0.0
-    taperFactor = mix(1.0, 0.0, (correctedTip - trunkLength) / (1.0 - trunkLength));
+    taperFactor = mix(1.0, 0.0, (correctedTip - v_trunkLength) / (1.0 - v_trunkLength));
   }
-  float tapered_r1 = centerRadius + halfWidth * taperFactor;
-  float tapered_r2 = centerRadius - halfWidth * taperFactor;
 
-  // Distance squared from fragment to arc center M
+  // Normalized distance from fragment to arc center M
   vec2 toCenter = v_worldPos - v_arcCenter;
-  float distSq = dot(toCenter, toCenter);
-  float dist = sqrt(distSq);
+  float dist = length(toCenter);
+  float normalizedDist = dist / v_centerRadius;
 
-  // Annulus tests
-  bool inOriginalRing = distSq >= v_radiusInnerSq && distSq <= v_radiusOuterSq;
-  bool inTaperedRing = dist >= tapered_r2 && dist <= tapered_r1;
+  // Normalized direction from M to fragment (for cross product)
+  vec2 fragDir = toCenter / max(dist, 0.001);
 
-  // Start bound: fragment should be on the "arrow side" of the radial through S
-  // Use cross product to check which side of the M→S line we're on
-  // We want the SHORT side of the arc (between S and T, not the long way around)
-  vec2 toSource = v_sourceCenter - v_arcCenter;
-  vec2 toFrag = v_worldPos - v_arcCenter;
-  float crossStart = toSource.x * toFrag.y - toSource.y * toFrag.x;
-  bool pastStart = crossStart <= 0.0;  // Flipped: short side of arc
+  // Annulus test in normalized space: |normalizedDist - 1| <= taperFactor * normalizedHalfWidth
+  float distFromCenterline = abs(normalizedDist - 1.0);
+  bool inOriginalRing = distFromCenterline <= v_normalizedHalfWidth;
+  bool inTaperedRing = distFromCenterline <= taperFactor * v_normalizedHalfWidth;
 
-  // End bound: fragment should be outside target circle
+  // Start bound: cross product with precomputed source direction
+  float crossStart = v_sourceDir.x * fragDir.y - v_sourceDir.y * fragDir.x;
+  bool pastStart = crossStart <= 0.0;
+
+  // End bound: fragment should be outside target circle (world coords)
   vec2 toTarget = v_worldPos - v_targetCenter;
-  float distToTargetSq = dot(toTarget, toTarget);
-  bool beforeEnd = distToTargetSq >= v_targetRadiusSq;
+  bool beforeEnd = dot(toTarget, toTarget) >= v_targetRadiusSq;
 
   // Combined tests
   bool isOriginalArrow = inOriginalRing && pastStart && beforeEnd;
   bool isTaperedArrow = inTaperedRing && pastStart && beforeEnd;
 
   // Debug rendering: r=original ring segment, g=tapered shape, b=correctedTip
-  float debugR = (inOriginalRing && pastStart && beforeEnd) ? 1.0 : 0.0;
-  float debugG = (inTaperedRing && pastStart && beforeEnd) ? 1.0 : 0.0;
+  float debugR = isOriginalArrow ? 1.0 : 0.0;
+  float debugG = isTaperedArrow ? 1.0 : 0.0;
   gl_FragColor = vec4(debugR, debugG, correctedTip, 0.1);
 }

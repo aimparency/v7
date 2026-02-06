@@ -18,19 +18,23 @@ export interface NodeGeometry {
 }
 
 export interface ArrowGeometry {
-  // Source and target positions
-  sourceCenter: Vec2      // S - supporting aim center
-  targetCenter: Vec2      // T - supported aim center
-  targetRadius: number    // For end bound check
-
   // Arc geometry (single center M)
-  arcCenter: Vec2         // M - shared arc center
-  centerRadius: number    // Distance from M to arc centerline
-  halfWidth: number       // Half the arrow width (r1 - r2) / 2
+  arcCenter: Vec2           // M - shared arc center
+  centerRadius: number      // Distance from M to arc centerline
+  normalizedHalfWidth: number  // (halfWidth / centerRadius) - for normalized checks
+  trunkLength: number       // Precomputed: where trunk ends and head begins (0-1)
 
-  // Triangle vertices
-  triangleV1: Vec2        // Towards S (source side)
-  triangleV2: Vec2        // Towards tip (target side)
+  // Precomputed normalized direction from M to S (for start bound cross product)
+  sourceDirX: number        // (S.x - M.x) / centerRadius
+  sourceDirY: number        // (S.y - M.y) / centerRadius
+
+  // Target info for end bound (world coords)
+  targetCenter: Vec2        // T
+  targetRadiusSq: number    // For end bound check
+
+  // Triangle vertices (world coords for vertex shader)
+  triangleV1: Vec2          // Towards S (source side)
+  triangleV2: Vec2          // Towards tip (target side)
 }
 
 export interface ArrowStyle {
@@ -93,11 +97,17 @@ export function calculateArrowGeometry(
   const centerRadius = Math.sqrt(msX * msX + msY * msY)
 
   // Arrow width based on share (matching SVG: width = widthFactor * targetR * share)
-  const width = s.widthFactor * target.r * share
+  const halfWidth = s.widthFactor * target.r * share / 2
 
-  // Inner and outer radii
-  const radiusOuter = centerRadius + width / 2  // r1
-  const radiusInner = centerRadius - width / 2  // r2
+  // Normalized half-width (for normalized distance checks in shader)
+  const normalizedHalfWidth = halfWidth / centerRadius
+
+  // Precompute trunk length: head takes ~2x the normalized width
+  const headLength = Math.min(2.0 * normalizedHalfWidth, 0.5)  // Cap at 50% of arc
+  const trunkLength = 1.0 - headLength
+
+  // For triangle extension, compute outer radius
+  const radiusOuter = centerRadius + halfWidth
 
   // Calculate tip point (tangent point from M to T's circle)
   // The line M→tip is tangent to T's circle at tip
@@ -165,57 +175,42 @@ export function calculateArrowGeometry(
     y: M.y + mtipDirY * extend
   }
 
-  // Phase at M: we need to calculate where M falls on the 0→1 scale
-  // 0 = at S, 1 = at tip. M is "behind" the arc, so phase is negative/0
-  const phaseV0 = 0  // Will be clamped in shader
-
   return {
-    sourceCenter: S,
-    targetCenter: T,
-    targetRadius: target.r,
     arcCenter: M,
-    radiusOuter,
-    radiusInner,
-    radiusOuterSq: radiusOuter * radiusOuter,
-    radiusInnerSq: radiusInner * radiusInner,
+    centerRadius,
+    normalizedHalfWidth,
+    trunkLength,
+    sourceDirX: msDirX,  // Already normalized (msX / centerRadius)
+    sourceDirY: msDirY,
+    targetCenter: T,
     targetRadiusSq: target.r * target.r,
-    triangleV0,
     triangleV1,
-    triangleV2,
-    tipPoint,
-    phaseV0
+    triangleV2
   }
 }
 
 function createDegenerateGeometry(S: Vec2, T: Vec2, targetR: number): ArrowGeometry {
   return {
-    sourceCenter: S,
-    targetCenter: T,
-    targetRadius: targetR,
     arcCenter: S,
-    radiusOuter: 0,
-    radiusInner: 0,
-    radiusOuterSq: 0,
-    radiusInnerSq: 0,
+    centerRadius: 0.001,  // Avoid division by zero
+    normalizedHalfWidth: 0,
+    trunkLength: 1,
+    sourceDirX: 1,
+    sourceDirY: 0,
+    targetCenter: T,
     targetRadiusSq: targetR * targetR,
-    triangleV0: S,
     triangleV1: S,
-    triangleV2: S,
-    tipPoint: S,
-    phaseV0: 0
+    triangleV2: S
   }
 }
 
 /**
- * Calculate bounding box for the arrow quad
+ * Calculate bounding box for the arrow
  */
 export function calculateArrowBounds(geom: ArrowGeometry): { min: Vec2, max: Vec2 } {
   const M = geom.arcCenter
-  const r = geom.radiusOuter
+  const r = geom.centerRadius * (1 + geom.normalizedHalfWidth)
 
-  // The arrow is contained within a circle of radius r1 around M
-  // But we can tighten this by considering actual arc extent
-  // For now, use the simple bounding box
   return {
     min: { x: M.x - r, y: M.y - r },
     max: { x: M.x + r, y: M.y + r }

@@ -16,9 +16,9 @@ export interface EdgeData {
   geometry: ArrowGeometry
 }
 
-// Stride: arcCenter(2) + triangleV1(2) + triangleV2(2) + radiusOuterSq(1) + radiusInnerSq(1)
-//       + sourceCenter(2) + targetCenter(2) + targetRadiusSq(1) + color(3) + opacity(1) = 17
-const STRIDE = 17
+// Stride: arcCenter(2) + triangleV1(2) + triangleV2(2) + centerRadius(1) + normalizedHalfWidth(1)
+//       + trunkLength(1) + sourceDir(2) + targetCenter(2) + targetRadiusSq(1) + color(3) + opacity(1) = 18
+const STRIDE = 18
 
 export class ArrowRenderer {
   private gl: WebGLRenderingContext
@@ -34,9 +34,10 @@ export class ArrowRenderer {
   private a_arcCenter: number = -1
   private a_triangleV1: number = -1
   private a_triangleV2: number = -1
-  private a_radiusOuterSq: number = -1
-  private a_radiusInnerSq: number = -1
-  private a_sourceCenter: number = -1
+  private a_centerRadius: number = -1
+  private a_normalizedHalfWidth: number = -1
+  private a_trunkLength: number = -1
+  private a_sourceDir: number = -1
   private a_targetCenter: number = -1
   private a_targetRadiusSq: number = -1
   private a_color: number = -1
@@ -82,9 +83,10 @@ export class ArrowRenderer {
     this.a_arcCenter = gl.getAttribLocation(this.program, 'a_arcCenter')
     this.a_triangleV1 = gl.getAttribLocation(this.program, 'a_triangleV1')
     this.a_triangleV2 = gl.getAttribLocation(this.program, 'a_triangleV2')
-    this.a_radiusOuterSq = gl.getAttribLocation(this.program, 'a_radiusOuterSq')
-    this.a_radiusInnerSq = gl.getAttribLocation(this.program, 'a_radiusInnerSq')
-    this.a_sourceCenter = gl.getAttribLocation(this.program, 'a_sourceCenter')
+    this.a_centerRadius = gl.getAttribLocation(this.program, 'a_centerRadius')
+    this.a_normalizedHalfWidth = gl.getAttribLocation(this.program, 'a_normalizedHalfWidth')
+    this.a_trunkLength = gl.getAttribLocation(this.program, 'a_trunkLength')
+    this.a_sourceDir = gl.getAttribLocation(this.program, 'a_sourceDir')
     this.a_targetCenter = gl.getAttribLocation(this.program, 'a_targetCenter')
     this.a_targetRadiusSq = gl.getAttribLocation(this.program, 'a_targetRadiusSq')
     this.a_color = gl.getAttribLocation(this.program, 'a_color')
@@ -141,17 +143,18 @@ export class ArrowRenderer {
       this.instanceData[offset + 3] = g.triangleV1.y
       this.instanceData[offset + 4] = g.triangleV2.x
       this.instanceData[offset + 5] = g.triangleV2.y
-      this.instanceData[offset + 6] = g.radiusOuterSq
-      this.instanceData[offset + 7] = g.radiusInnerSq
-      this.instanceData[offset + 8] = g.sourceCenter.x
-      this.instanceData[offset + 9] = g.sourceCenter.y
-      this.instanceData[offset + 10] = g.targetCenter.x
-      this.instanceData[offset + 11] = g.targetCenter.y
-      this.instanceData[offset + 12] = g.targetRadiusSq
-      this.instanceData[offset + 13] = e.color[0]
-      this.instanceData[offset + 14] = e.color[1]
-      this.instanceData[offset + 15] = e.color[2]
-      this.instanceData[offset + 16] = e.opacity
+      this.instanceData[offset + 6] = g.centerRadius
+      this.instanceData[offset + 7] = g.normalizedHalfWidth
+      this.instanceData[offset + 8] = g.trunkLength
+      this.instanceData[offset + 9] = g.sourceDirX
+      this.instanceData[offset + 10] = g.sourceDirY
+      this.instanceData[offset + 11] = g.targetCenter.x
+      this.instanceData[offset + 12] = g.targetCenter.y
+      this.instanceData[offset + 13] = g.targetRadiusSq
+      this.instanceData[offset + 14] = e.color[0]
+      this.instanceData[offset + 15] = e.color[1]
+      this.instanceData[offset + 16] = e.color[2]
+      this.instanceData[offset + 17] = e.opacity
     }
 
     // Upload to GPU
@@ -192,13 +195,14 @@ export class ArrowRenderer {
       { loc: this.a_arcCenter, size: 2, offset: 0 },
       { loc: this.a_triangleV1, size: 2, offset: 2 },
       { loc: this.a_triangleV2, size: 2, offset: 4 },
-      { loc: this.a_radiusOuterSq, size: 1, offset: 6 },
-      { loc: this.a_radiusInnerSq, size: 1, offset: 7 },
-      { loc: this.a_sourceCenter, size: 2, offset: 8 },
-      { loc: this.a_targetCenter, size: 2, offset: 10 },
-      { loc: this.a_targetRadiusSq, size: 1, offset: 12 },
-      { loc: this.a_color, size: 3, offset: 13 },
-      { loc: this.a_opacity, size: 1, offset: 16 }
+      { loc: this.a_centerRadius, size: 1, offset: 6 },
+      { loc: this.a_normalizedHalfWidth, size: 1, offset: 7 },
+      { loc: this.a_trunkLength, size: 1, offset: 8 },
+      { loc: this.a_sourceDir, size: 2, offset: 9 },
+      { loc: this.a_targetCenter, size: 2, offset: 11 },
+      { loc: this.a_targetRadiusSq, size: 1, offset: 13 },
+      { loc: this.a_color, size: 3, offset: 14 },
+      { loc: this.a_opacity, size: 1, offset: 17 }
     ]
 
     for (const attr of attrs) {
