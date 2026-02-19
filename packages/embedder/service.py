@@ -1,18 +1,17 @@
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 from flask import Flask, request, jsonify
-import json
 
 # Initialize Flask app
 app = Flask(__name__)
 
 # Load the model once at startup and keep it in memory
-model_name = "all-distilroberta-v1"
-model = SentenceTransformer(model_name)
+# bge-small-en-v1.5: 384 dimensions, good quality, fast
+model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 def generate_embedding(text):
     """Generate embedding for a given text."""
-    # normalize_embeddings=True ensures output vectors have magnitude 1
-    embedding = model.encode(text, convert_to_numpy=True, normalize_embeddings=True)
+    # fastembed returns a generator, get first result
+    embedding = list(model.embed([text]))[0]
     return embedding.tolist()
 
 @app.route('/embed', methods=['POST'])

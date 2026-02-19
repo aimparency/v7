@@ -599,6 +599,9 @@ export function useGraphInteraction(
         onNodeUp,
         onNodeClick,
         onBackgroundClick,
+        onMouseDown,
+        onMouseMove,
+        onMouseUp,
         isZooming
     }
 }

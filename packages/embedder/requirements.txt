@@ -1,10 +1,4 @@
-# CPU-only PyTorch (must be installed before sentence-transformers)
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-torchvision
-torchaudio
-
-# App dependencies
+# Lightweight embedding using ONNX runtime
+fastembed
 Flask
 gunicorn
-sentence-transformers

@@ -30,7 +30,7 @@ const webglRenderer = useWebGLGraphRenderer(canvasRef, nodes, links)
 
 // Use canvas for interaction (same API as SVG)
 const interaction = useGraphInteraction(canvasRef, width, height, simulation)
-const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick, isZooming } = interaction
+const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick, onMouseDown, onMouseMove, onMouseUp, isZooming } = interaction
 
 // Hit test helper - find node at physical position
 function hitTestNode(physX: number, physY: number) {
@@ -279,6 +279,9 @@ function getNodeTitleLines(text: string): string[] {
         ref="svgOverlayRef"
         class="graph-overlay"
         :class="{ 'hide-labels': !uiStore.graphShowLabels }"
+        @mousedown="onMouseDown"
+        @mousemove="onMouseMove"
+        @mouseup="onMouseUp"
     >
       <g :transform="transform">
         <GraphConnector />
