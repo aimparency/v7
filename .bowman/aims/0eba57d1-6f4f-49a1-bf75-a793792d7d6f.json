@@ -7,7 +7,9 @@
   "supportedAims": [
     "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
   "status": {
     "state": "open",
     "comment": "Investigated. No 'reasoning' field exists in the schema. The GraphSidePanel allows editing: (1) connection explanation (click to edit inline), (2) aim intrinsic value/cost/loopWeight. Connection explanation updates appear to persist correctly via trpc.aim.update. Aim description field is read-only in GraphSidePanel (must use AimCreationModal to edit). Need clarification: Is the issue about (a) aim description not editable in graph view, (b) connection explanation not persisting, or (c) typo in aim text?",

@@ -1,0 +1,76 @@
+{
+  "id": "743bf11e-ca4e-4c78-bf4f-cc5ec66f59fa",
+  "text": "Complete experience-mining → social posting pipeline (THE ORIGINAL VISION)",
+  "description": "Build the autonomous life-sharing system:\nA) Live interesting life (user does this)\nB) AI extracts moments from daily experience (photos, voice notes, journal)\nC) Transforms into digestible content (captions, stories, reels)\nD) Posts autonomously to platforms (Instagram, Twitter, TikTok, YouTube)\nE) Revenue flows from platform payments (views, engagement, monetization)\n\nThis is THE core product: Just experience → autonomous sharing → passive income\n\nCurrent state: experience-mining/ exists but not autonomous end-to-end",
+  "tags": [
+    "vision",
+    "product",
+    "revenue",
+    "content-engine",
+    "original-idea"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "fa09c443-dd67-48c9-9655-122b18c4defd",
+      "relativePosition": [
+        -0.3088676507123174,
+        -2.4808467857454346
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "fa4ba8b1-ff99-4d97-b76d-d6ea95fe5f7c",
+      "relativePosition": [
+        1.9497618996709698,
+        1.5647455175176093
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "12d8696a-8714-41da-bdab-222074ee6dc5",
+      "relativePosition": [
+        0.5345254393215793,
+        -2.4421880670247473
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9917490b-c0a5-41b8-9c2d-ea515d91b495",
+      "relativePosition": [
+        2.2898313012011764,
+        -1.0033307590417666
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "8803f635-b219-4053-9958-760e6a0c339c",
+      "relativePosition": [
+        -1.0629432695139753,
+        2.262775200013236
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "93fbe6f4-a11a-45e3-9441-39aaba18e458",
+      "relativePosition": [
+        2.454938442826893,
+        -0.472522213161106
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "9de71f50-9ee4-423e-a79e-d3c9f493a79d"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608125560
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

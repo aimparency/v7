@@ -9,7 +9,7 @@ import { AIMPARENCY_DIR_NAME } from 'shared';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export type AgentType = 'claude' | 'gemini';
+export type AgentType = 'claude' | 'gemini' | 'codex';
 
 interface WatchdogInstance {
   process?: ChildProcess;

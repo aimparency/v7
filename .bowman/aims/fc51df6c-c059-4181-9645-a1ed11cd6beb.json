@@ -1,0 +1,26 @@
+{
+  "id": "fc51df6c-c059-4181-9645-a1ed11cd6beb",
+  "text": "Session memory: Implement compression + storage",
+  "description": "Before watchdog compacts context (/compact), extract learnings.\n\nArchitecture (from education/005):\n```\n.bowman/memory/sessions/{session-id}.json: {\n  timestamp, duration, aimsWorked, \n  outcomes, patterns, lessonsLearned\n}\n```\n\nImplementation: ~8 hours\n1. Modify watchdog.ts: Before /compact, send reflection prompt\n2. Prompt: \"Summarize: What did you accomplish? What patterns emerged? What would you do differently?\"\n3. Store compressed summary (not full transcript)\n4. On startup: Load recent summaries → inject into INSTRUCT.md context\n5. Recursive compression: Every N sessions, compress N summaries into meta-summary\n\nBenefits:\n- Learn from past mistakes\n- Recognize recurring patterns\n- Improve strategy over time\n- Core ASI capability",
+  "tags": [
+    "asi",
+    "memory",
+    "learning",
+    "watchdog"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "69321b93-d540-45a9-9a25-8f2d5254d43c"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608600816
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

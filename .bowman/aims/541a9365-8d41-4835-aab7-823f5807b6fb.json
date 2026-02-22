@@ -1,0 +1,26 @@
+{
+  "id": "541a9365-8d41-4835-aab7-823f5807b6fb",
+  "text": "Reflection pattern: Periodic self-evaluation",
+  "description": "Implement reflection loop from education/005.\n\nTrigger reflection:\n- After completing each aim (immediate)\n- End of each work session (periodic)\n- Every N hours of active work (time-based)\n\nReflection prompt:\n```\nReflect on your recent work:\n1. Context: What were you trying to achieve?\n2. Outcome: What actually happened?\n3. Effectiveness: How well did your approach work?\n4. Lesson: What would you do differently next time?\n5. Pattern: Does this relate to past experiences?\n```\n\nStore as:\n- New field in aim schema: `reflections: Reflection[]`\n- OR separate `.bowman/reflections/` directory\n- Link to aims worked on\n\nUse reflections:\n- Inform strategy adjustments\n- Build pattern library\n- Improve future work quality",
+  "tags": [
+    "asi",
+    "reflection",
+    "learning",
+    "self-improvement"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "69321b93-d540-45a9-9a25-8f2d5254d43c"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608601852
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

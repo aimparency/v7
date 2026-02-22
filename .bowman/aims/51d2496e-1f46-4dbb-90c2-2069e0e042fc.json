@@ -18,9 +18,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766507912897
+    "state": "done",
+    "comment": "Implemented in aim.ts delete mutation: removeEmbedding() for vectors.json, removeAimFromIndex() for search, invalidateSemanticCache() for semantic-graph.json, cache.db cleaned on recalculation",
+    "date": 1771523671437
   },
   "intrinsicValue": 0,
   "cost": 1,

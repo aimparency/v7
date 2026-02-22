@@ -1,0 +1,25 @@
+{
+  "id": "c4ab85c2-0497-48de-ae93-3dc7b4c2aa60",
+  "text": "Multi-parent aim support: Show all paths to an aim in list view",
+  "description": "Aims can support multiple parents (synergies). Graph view already shows this well.\n\nList view needs enhancement:\n- When viewing an aim with multiple supportedAims, show all paths\n- \"This aim supports: [Aim A] [Aim B] [Aim C]\"\n- Click to navigate to each parent path\n- Visual indicator for multi-parent aims (badge/icon)\n\nAlready implemented in data model, just needs UI support.",
+  "tags": [
+    "ui",
+    "multi-parent",
+    "synergies"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608126827
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

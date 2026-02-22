@@ -7,7 +7,9 @@
   "supportedAims": [
     "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
   "status": {
     "state": "open",
     "comment": "",

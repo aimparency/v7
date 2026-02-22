@@ -1,0 +1,51 @@
+{
+  "id": "69321b93-d540-45a9-9a25-8f2d5254d43c",
+  "text": "Implement compressed session memory for cross-session learning",
+  "description": "Watchdog/agent should remember past sessions through recursive compression:\n- Store session summaries in .bowman/memory/ or as aims/connections\n- Each session compresses: previous compression + new session transcript\n- Memory stays bounded (compress the compression)\n- Enables learning from past work, pattern recognition, strategy improvement\n- Core ASI capability for autonomous improvement",
+  "tags": [
+    "asi",
+    "memory",
+    "watchdog",
+    "learning"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "fc51df6c-c059-4181-9645-a1ed11cd6beb",
+      "relativePosition": [
+        2.255339289779987,
+        1.0786309322352594
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "992b990a-d90f-4cf9-8ec6-e1ff4678b1bf",
+      "relativePosition": [
+        2.491945372625855,
+        -0.20051997368987734
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "541a9365-8d41-4835-aab7-823f5807b6fb",
+      "relativePosition": [
+        -0.3907892439908039,
+        -2.469267860476278
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "133934ba-f325-4b92-b57c-517bb1ea497f"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608123111
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

@@ -1,0 +1,17 @@
+{
+  "id": "54a82679-d41c-4878-99b6-4135d3ee834e",
+  "text": "when moving phases by editing parent phase, we may need to update columns",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented in PhaseCreationModal.vue:62-72. Properly reloads both old and new parent phases when parent changes.",
+    "date": 1771523774049
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

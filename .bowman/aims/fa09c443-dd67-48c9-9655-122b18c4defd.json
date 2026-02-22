@@ -1,0 +1,26 @@
+{
+  "id": "fa09c443-dd67-48c9-9655-122b18c4defd",
+  "text": "Set up CDN for Instagram image hosting (CRITICAL BLOCKER)",
+  "description": "Instagram Graph API requires publicly accessible image URLs.\n\nCurrent: Local filesystem only\nNeeded: CDN integration\n\nOptions:\n- Cloudinary (generous free tier, auto-optimization)\n- AWS S3 + CloudFront (scalable, pay-as-you-go)\n- Vercel Blob (simple, integrated)\n\nImplementation: ~4 hours\n- Sign up + get API keys\n- Add upload function to generate.ts\n- Store CDN URLs in content.json\n- Update publish.ts to use CDN URLs\n\nThis UNBLOCKS Instagram publishing entirely.",
+  "tags": [
+    "experience-mining",
+    "blocker",
+    "instagram",
+    "cdn"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "743bf11e-ca4e-4c78-bf4f-cc5ec66f59fa"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608595219
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

@@ -1,0 +1,27 @@
+{
+  "id": "93fbe6f4-a11a-45e3-9441-39aaba18e458",
+  "text": "Multi-modal input: voice notes, photos, SMS/email → journal",
+  "description": "Current: Manual markdown file creation\nVision: Capture experiences effortlessly throughout the day\n\nInput channels:\n- Voice notes (phone app → transcription via Whisper)\n- Photos with auto-captioning (phone → GPT-4V description)\n- SMS/email forwarding (forward thoughts → parser)\n- Mobile quick-capture app\n\nProcessing pipeline:\n- All inputs → unified format\n- AI clustering into journal entries\n- Auto-markdown generation\n- Append to /ideas/ directory\n\nImplementation: ~16-24 hours\nThis completes \"just experience\" - capturing life becomes frictionless.",
+  "tags": [
+    "experience-mining",
+    "input",
+    "mobile",
+    "voice",
+    "multimodal"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "743bf11e-ca4e-4c78-bf4f-cc5ec66f59fa"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608600148
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

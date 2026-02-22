@@ -4,9 +4,12 @@
   "description": "",
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
+  ],
   "committedIn": [
-    "173bdd80-4cb8-44bc-a4b8-13ac1267795d"
+    "173bdd80-4cb8-44bc-a4b8-13ac1267795d",
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
     "state": "open",

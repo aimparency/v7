@@ -4,7 +4,7 @@ import { ref, computed } from 'vue'
 import { trpcWatchdog } from '../trpc-watchdog'
 import { useUIStore } from './ui'
 
-export type AgentType = 'claude' | 'gemini'
+export type AgentType = 'claude' | 'gemini' | 'codex'
 
 export const useWatchdogStore = defineStore('watchdog', () => {
   const socket = ref<Socket | null>(null)

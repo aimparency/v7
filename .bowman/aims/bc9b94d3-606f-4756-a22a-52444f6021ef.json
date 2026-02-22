@@ -1,0 +1,21 @@
+{
+  "id": "bc9b94d3-606f-4756-a22a-52444f6021ef",
+  "text": "Refine economic logic: variance and time horizon estimation",
+  "description": "Current economic model uses fixed 5% discount rate per cost unit. Enhance to support:\n- Variance in cost/value estimates (uncertainty modeling)\n- Time horizon estimation (when will returns arrive?)\n- Temporal discounting based on actual time-to-completion, not just cost\n- Aims returning investment sooner should be visibly more attractive due to cost of capital/interest",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "6ad092fc-a69e-475d-8870-30f994a7f6a5"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771523791811
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

@@ -1,0 +1,26 @@
+{
+  "id": "8803f635-b219-4053-9958-760e6a0c339c",
+  "text": "Build Echo MVP: Stripe payment + user auth + delivery",
+  "description": "Revenue implementation for Echo service (journal → video)\n\nTiers from product-design.md:\n- Spark (Free): 1 Echo/month, watermarked, SD\n- Flame ($19/mo): 4 Echos/month, HD\n- Blaze ($49/mo): 15 Echos/month, voice clone\n\nImplementation: ~60 hours\n- Stripe Checkout + subscription webhooks\n- User authentication (email/password or OAuth)\n- User dashboard (upload journal → receive video)\n- Usage metering + quota enforcement\n- Email delivery system\n- Landing page\n\nThis converts the content engine into revenue.",
+  "tags": [
+    "experience-mining",
+    "revenue",
+    "echo-product",
+    "mvp"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "743bf11e-ca4e-4c78-bf4f-cc5ec66f59fa"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608599392
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

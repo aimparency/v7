@@ -24,9 +24,13 @@ const isConnectedToSelected = computed(() =>
 // Header background color based on selected agent type
 const headerBgColor = computed(() => {
   if (store.isConnected) {
-    return store.connectedAgentType === 'claude' ? '#92400e' : '#0e7490'
+    if (store.connectedAgentType === 'claude') return '#92400e'
+    if (store.connectedAgentType === 'gemini') return '#0e7490'
+    return '#0f766e'
   }
-  return store.selectedAgentType === 'claude' ? '#78350f' : '#164e63'
+  if (store.selectedAgentType === 'claude') return '#78350f'
+  if (store.selectedAgentType === 'gemini') return '#164e63'
+  return '#115e59'
 })
 
 const runningAgents = computed(() => {
@@ -179,6 +183,7 @@ defineExpose({
         >
           <option value="claude">Claude {{ runningAgents.has('claude') ? '(Running)' : '' }}</option>
           <option value="gemini">Gemini {{ runningAgents.has('gemini') ? '(Running)' : '' }}</option>
+          <option value="codex">Codex {{ runningAgents.has('codex') ? '(Running)' : '' }}</option>
         </select>
 
         <span class="session-status">

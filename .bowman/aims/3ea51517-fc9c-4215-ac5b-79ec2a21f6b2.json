@@ -1,0 +1,26 @@
+{
+  "id": "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2",
+  "text": "Deployment architecture: Git-based, self-host + optional cloud sync",
+  "description": "File-based storage is correct for git tracking!\n\nArchitecture options:\n1. Open source self-hosting (Docker compose, VPS)\n2. Optional cloud sync service (sync .bowman/ to server for backup/collaboration)\n3. Git-based merging for collaboration (conflicts resolved through git workflow)\n\nQuestions to resolve:\n- Full open source or partial?\n- Pricing model for cloud sync?\n- How to handle merge conflicts in aims/phases?\n\nFile-based stays, this is about deployment + optional services on top",
+  "tags": [
+    "deployment",
+    "architecture",
+    "open-source",
+    "git"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b45149aa-c0f5-49de-8aec-f589dd3c7453"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608130082
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

@@ -1,11 +1,11 @@
 {
-  "id": "e0289c2f-8fe7-4875-a46a-21709c8d8295",
-  "text": "let's try freezing the aim whose handle is not being dragged while dragging connection handles in graph view",
+  "id": "e2846e8e-29e8-4584-b250-9e0dcfd3c787",
+  "text": "in an empty column page, entering aim edit mode and adding aims should not be possible",
   "description": "",
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
-    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
@@ -13,7 +13,7 @@
   "status": {
     "state": "open",
     "comment": "",
-    "date": 1769976103888
+    "date": 1770626784889
   },
   "intrinsicValue": 0,
   "cost": 1,

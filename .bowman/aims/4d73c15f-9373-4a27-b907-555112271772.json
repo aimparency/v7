@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Implementation based on TEXT_RENDERING_RESEARCH.md: generate MSDF atlas, implement shaders (text.vert/frag.glsl), create TextRenderer class with layout engine, integrate with WebGLGraphRenderer",
-    "date": 1769700717827
+    "state": "cancelled",
+    "comment": "Text rendering staying with SVG for now. WebGL MSDF not needed.",
+    "date": 1771523659390
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -2,7 +2,7 @@
   "name": "wrapped-agents-broker",
   "version": "1.0.0",
   "type": "module",
-  "description": "Broker for managing AI agent sessions (Claude, Gemini)",
+  "description": "Broker for managing AI agent sessions (Claude, Gemini, Codex)",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

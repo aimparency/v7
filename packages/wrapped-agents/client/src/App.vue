@@ -10,7 +10,7 @@ const status = ref('stopped');
 const emergencyStopped = ref(false);
 const stopReason = ref('');
 
-type AgentType = 'claude' | 'gemini';
+type AgentType = 'claude' | 'gemini' | 'codex';
 
 interface Session {
     projectPath: string;
@@ -140,6 +140,7 @@ onMounted(() => {
             <select v-model="newAgentType" class="agent-select">
                 <option value="claude">Claude</option>
                 <option value="gemini">Gemini</option>
+                <option value="codex">Codex</option>
             </select>
             <button @click="createSession" :disabled="loading || !newProjectPath">Start New</button>
             <button @click="refreshSessions" :disabled="loading">Refresh</button>
@@ -212,6 +213,7 @@ html, body, #app { margin: 0; height: 100%; width: 100%; background: #000; color
 .agent-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-right: 8px; }
 .agent-badge.claude { background: #d97706; color: white; }
 .agent-badge.gemini { background: #4285f4; color: white; }
+.agent-badge.codex { background: #0ea5a3; color: white; }
 .agent-badge.small { font-size: 0.65rem; padding: 1px 5px; }
 
 .session-list { display: flex; flex-direction: column; gap: 10px; }

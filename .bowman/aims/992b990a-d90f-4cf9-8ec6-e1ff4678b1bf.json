@@ -1,0 +1,26 @@
+{
+  "id": "992b990a-d90f-4cf9-8ec6-e1ff4678b1bf",
+  "text": "Session memory: Context injection on startup",
+  "description": "When watchdog starts, load compressed memories.\n\nImplementation: ~4 hours\n1. Read recent session summaries from .bowman/memory/sessions/\n2. Format as condensed context (limit: 2000 tokens)\n3. Prepend to INSTRUCT.md as \"Previous Session Insights\"\n4. Example format:\n   ```\n   ## What You've Learned\n   Session 2024-02-15: Struggled with value calculation bugs → learned to write tests first\n   Session 2024-02-16: Refactored ui.ts successfully → clearer boundaries improve maintainability\n   Recurring pattern: Over-engineering initial implementations → start simple, iterate\n   ```\n\nEnables continuity across sessions - agent \"remembers\" its past.",
+  "tags": [
+    "asi",
+    "memory",
+    "watchdog",
+    "context"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "69321b93-d540-45a9-9a25-8f2d5254d43c"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608601376
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

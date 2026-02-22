@@ -1,0 +1,25 @@
+{
+  "id": "3427a68e-791e-4f59-bc46-bd72d85e6d71",
+  "text": "Code refactoring: Split ui.ts mega-store (2547 lines)",
+  "description": "ui.ts is too large, split into focused stores:\n- navigation.ts: Column/phase selection, keyboard nav\n- modals.ts: Modal state management\n- graph.ts: Graph view state\n- settings.ts: Project settings, preferences\n\nBenefits: Better maintainability, clearer boundaries, easier testing",
+  "tags": [
+    "refactoring",
+    "technical-debt",
+    "code-quality"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "6ad092fc-a69e-475d-8870-30f994a7f6a5"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608128053
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

@@ -35,6 +35,38 @@
         -2.3474878937538683
       ],
       "weight": 1
+    },
+    {
+      "aimId": "f1550eb7-d02e-40bc-af94-1fb1076076bd",
+      "relativePosition": [
+        2.49475790032656,
+        0.16181167682900913
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "bc0a18cf-63c5-413f-9faf-5a312241deff",
+      "relativePosition": [
+        1.829394529456201,
+        -1.7039118684942964
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "96adb3d0-5827-432e-8a48-8d26754fcaed",
+      "relativePosition": [
+        2.4856113758658633,
+        0.2678359351659345
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "73e72297-47c8-4a88-b7eb-5d6e7e575001",
+      "relativePosition": [
+        -1.6955252492820727,
+        1.837170141562007
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [],

@@ -1,0 +1,19 @@
+{
+  "id": "a55217d4-0ec4-447e-8f24-eed087aaac13",
+  "text": "Aim list view: New way of moving (teleporting aims): x for cutting, p for pasting.",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "2abfd425-ee90-4286-a019-ba0ff703c73a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1770548323416
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

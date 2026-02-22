@@ -1,0 +1,26 @@
+{
+  "id": "365e78d0-ed64-47d7-9902-b575d493c6e4",
+  "text": "Real financial integration: PayPal/crypto access for ASI",
+  "description": "Replace mocked economic system with real financial capabilities:\n- PayPal API integration (multiple accounts for risk distribution)\n- Crypto wallet integration (ETH/BTC for decentralized autonomy)\n- Real cost tracking (Anthropic/Google API usage monitoring)\n- Real revenue tracking (grant income, trading, social posting)\n- Autonomy ratio dashboard (earned/consumed)\n- Multiple accounts strategy for safety and experimentation",
+  "tags": [
+    "economics",
+    "autonomy",
+    "asi",
+    "infrastructure"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608124354
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

@@ -6,7 +6,7 @@ import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { WatchdogManager, type AgentType } from './manager.js';
 
-const agentTypeSchema = z.enum(['claude', 'gemini']).default('gemini');
+const agentTypeSchema = z.enum(['claude', 'gemini', 'codex']).default('gemini');
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -98,4 +98,3 @@ process.on('SIGTERM', () => {
   server.close();
   wss.close();
 });
-

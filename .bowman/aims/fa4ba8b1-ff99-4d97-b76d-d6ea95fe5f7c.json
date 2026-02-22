@@ -1,0 +1,26 @@
+{
+  "id": "fa4ba8b1-ff99-4d97-b76d-d6ea95fe5f7c",
+  "text": "Upgrade Gemini API tier for image generation",
+  "description": "Current quota: 0 (free tier exhausted)\nAll image generation fails → \"IMAGE GENERATION FAILED\" text files\n\nSolution: Upgrade to Gemini Pro paid tier\nCost: ~$0.04/image\nAlternative: Switch to DALL-E 3 or Stable Diffusion\n\nQuick win: ~30 min setup + payment\nImpact: Enables visual content for Instagram/Twitter",
+  "tags": [
+    "experience-mining",
+    "blocker",
+    "api-quota",
+    "images"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "743bf11e-ca4e-4c78-bf4f-cc5ec66f59fa"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1771608596940
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}
