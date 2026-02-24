@@ -11,9 +11,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1770626784889
+    "state": "done",
+    "comment": "Implemented guard in aim navigation: create shortcuts o/O now require a selected aim context, preventing create modal opening on empty-column pages. Added focused regression test in packages/frontend/src/__tests__/ui-teleport.spec.ts (does not open create modal when no aim selected). Verification: npm run test:unit -w frontend -- src/__tests__/ui-teleport.spec.ts passed; full frontend tests and typecheck pass.",
+    "date": 1771957693392
   },
   "intrinsicValue": 0,
   "cost": 1,

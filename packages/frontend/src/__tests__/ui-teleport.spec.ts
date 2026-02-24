@@ -200,4 +200,28 @@ describe('UI teleport cut/paste', () => {
     })
     expect(uiStore.teleportCutAimId).toBeNull()
   })
+
+  it('does not open create modal in aim-navigation when no aim is selected', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+
+    uiStore.navigatingAims = true
+    uiStore.showAimModal = false
+    uiStore.selectedColumn = 0
+    uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
+
+    dataStore.phases['phase-empty'] = {
+      id: 'phase-empty',
+      name: 'Empty',
+      from: 0,
+      to: 1,
+      parent: null,
+      commitments: [],
+      selectedAimIndex: undefined
+    } as any
+
+    await uiStore.handleAimNavigationKeys(keyEvent('o'), dataStore)
+
+    expect(uiStore.showAimModal).toBe(false)
+  })
 })

@@ -9,7 +9,9 @@ import { WebGLGraphRenderer, type NodeData } from '../webgl/WebGLGraphRenderer'
 import { ArrowRenderer, type EdgeData } from '../webgl/ArrowRenderer'
 import { TAAPass } from '../webgl/TAAPass'
 import { calculateArrowGeometry } from '../webgl/utils/arrow-geometry'
+import { applyBrightness, cssColorToRgb, statusToColor, type StatusColorEntry } from '../webgl/status-colors'
 import { useUIStore } from '../stores/ui'
+import { useDataStore } from '../stores/data'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import type { GraphNode, GraphLink } from './useGraphSimulation'
 
@@ -19,6 +21,7 @@ export function useWebGLGraphRenderer(
   links: Ref<GraphLink[]>
 ) {
   const uiStore = useUIStore()
+  const dataStore = useDataStore()
   const mapStore = useMapStore()
 
   let renderer: WebGLGraphRenderer | null = null
@@ -45,36 +48,11 @@ export function useWebGLGraphRenderer(
   let cachedNodeData: NodeData[] = []
   let cachedEdgeData: EdgeData[] = []
 
-  // Helper: Convert status to RGB color
-  function statusToColor(status: string): [number, number, number] {
-    switch (status) {
-      case 'done': return [0.0, 0.47, 0.0]        // #007700
-      case 'open': return [0.0, 0.33, 0.56]       // #00558e
-      case 'cancelled': return [0.70, 0.0, 0.0]   // #b20000
-      case 'failed': return [0.70, 0.28, 0.28]    // #b24747
-      case 'partially': return [0.47, 0.47, 0.0]  // #777700
-      case 'unclear': return [0.70, 0.45, 0.0]    // #b27300
-      case 'archived': return [0.23, 0.23, 0.23]  // #3b3b3b
-      default: return [0.23, 0.23, 0.23]          // #3b3b3b
-    }
-  }
-
-  // Helper: Convert hex color to RGB
-  function hexToRgb(hex: string): [number, number, number] {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-    if (!result) return [0.5, 0.5, 0.5]
-
-    return [
-      parseInt(result[1]!, 16) / 255,
-      parseInt(result[2]!, 16) / 255,
-      parseInt(result[3]!, 16) / 255
-    ]
-  }
-
   // Convert graph nodes to WebGL format with per-element movement tracking
   function convertNodes(graphNodes: GraphNode[]): NodeData[] {
     const currentAimId = uiStore.graphSelectedAimId
     const colorMode = uiStore.graphColorMode
+    const configuredStatuses = (dataStore.getStatuses || []) as StatusColorEntry[]
 
     return graphNodes.map(node => {
       const x = node.renderPos[0]
@@ -112,9 +90,9 @@ export function useWebGLGraphRenderer(
       // Determine color (priority mode or status mode)
       let color: [number, number, number]
       if (colorMode === 'priority' && node.color) {
-        color = hexToRgb(node.color)
+        color = applyBrightness(cssColorToRgb(node.color))
       } else {
-        color = statusToColor(node.status)
+        color = statusToColor(node.status, configuredStatuses)
       }
 
       const result: NodeData = {

@@ -2630,7 +2630,8 @@ export const useUIStore = defineStore('ui', {
         return
       }
 
-      // Allow o/O even when no aims exist (for creating first aim)
+      // Creating aims from empty aim-navigation pages is disallowed.
+      // Creation requires a concrete selected aim context.
       let creationPos = undefined as RelativePosition | undefined
       if (event.key === 'o') {
         event.preventDefault()
@@ -2639,7 +2640,7 @@ export const useUIStore = defineStore('ui', {
         event.preventDefault()
         creationPos = 'before' as const
       }
-      if(creationPos !== undefined){
+      if (creationPos !== undefined && currentAim) {
         this.showAimModal = true
         this.aimModalMode = 'create'
         this.aimModalInsertPosition = creationPos

@@ -1,0 +1,25 @@
+{
+  "id": "e2dc1422-5f19-4841-9f17-d38296886461",
+  "text": "Graph mode colors: use project-configured status colors in WebGL renderer",
+  "tags": [
+    "ui",
+    "graph",
+    "colors",
+    "webgl"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Follow-up regression fix: WebGL priority mode consumed SVG-style rgb(...) color strings from useGraphSimulation, but parser accepted hex only, causing gray fallback for all nodes and ineffective mode switching perception. Added cssColorToRgb parser (hex + rgb/rgba), wired WebGL priority path to cssColorToRgb, and kept status-mode mapping via configured project statuses. Added tests for rgb/rgba parsing in packages/frontend/src/webgl/status-colors.spec.ts. Verification: npm run type-check -w frontend passed; npm run test:unit -w frontend passed (13 files, 53 tests).",
+    "date": 1771960731350
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}
