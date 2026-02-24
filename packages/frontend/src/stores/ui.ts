@@ -1,15 +1,33 @@
 import { defineStore } from 'pinia'
 import type { Hint } from 'shared'
-import { timestampToLocalDate, timestampToLocalTime, AIMPARENCY_DIR_NAME } from 'shared'
+import { timestampToLocalDate, timestampToLocalTime } from 'shared'
 import { trpc } from '../trpc'
 import { useDataStore, type Aim, type Phase, type AimCreationParams } from './data'
 import { AIM_DEFAULTS } from '../constants/aimDefaults'
+import {
+  normalizeProjectPath,
+  removeProjectFromHistoryEntries,
+  setProjectFailureState,
+  upsertProjectHistory,
+  type ProjectHistoryEntry
+} from './ui/project-helpers'
+import {
+  findLastDescendant as findLastDescendantHelper,
+  findNextAimInTree as findNextAimInTreeHelper,
+  findNextSiblingOrAncestorSibling as findNextSiblingOrAncestorSiblingHelper,
+  findPathInTree as findPathInTreeHelper,
+  findPathToAim as findPathToAimHelper,
+  findPreviousAimInTree as findPreviousAimInTreeHelper,
+  findPreviousSiblingOrAncestor as findPreviousSiblingOrAncestorHelper,
+  findTopLevelAncestorIndex as findTopLevelAncestorIndexHelper,
+  getSelectionPathFromState,
+  isAimInTree as isAimInTreeHelper,
+  makeSelectedAimPath as makeSelectedAimPathHelper,
+  setCurrentAimIndexInState,
+  type SelectionPath
+} from './ui/navigation-helpers'
 
 type RelativePosition = 'before' | 'after' 
-type SelectionPath = {
-  phase: Phase | undefined
-  aims: Aim[]
-}
 
 type TeleportSource = {
   parentAimId?: string
@@ -41,11 +59,7 @@ export const useUIStore = defineStore('ui', {
     // Project state
     projectPath: getInitialProjectPath(),
     connectionStatus: 'connecting' as 'connecting' | 'connected' | 'no connection',
-    projectHistory: JSON.parse(localStorage.getItem('aimparency-project-history') || '[]') as Array<{
-      path: string
-      lastOpened: number
-      failedToLoad: boolean
-    }>,
+    projectHistory: JSON.parse(localStorage.getItem('aimparency-project-history') || '[]') as ProjectHistoryEntry[],
 
     // Modal states
     showPhaseModal: false,
@@ -167,9 +181,8 @@ export const useUIStore = defineStore('ui', {
     },
 
     setProjectPath(path: string) {
-      const suffix = '/' + AIMPARENCY_DIR_NAME;
-      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
-      
+      const cleanPath = normalizeProjectPath(path)
+
       this.projectPath = cleanPath
       if (cleanPath) {
         localStorage.setItem('aimparency-project-path', cleanPath)
@@ -179,54 +192,23 @@ export const useUIStore = defineStore('ui', {
     },
 
     addProjectToHistory(path: string) {
-      const suffix = '/' + AIMPARENCY_DIR_NAME;
-      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
-      
-      // Remove existing occurrences of this path
-      this.projectHistory = this.projectHistory.filter(p => p.path !== cleanPath)
-
-      // Add to top
-      this.projectHistory.unshift({
-        path: cleanPath,
-        lastOpened: Date.now(),
-        failedToLoad: false
-      })
-
-      // Limit to 30 entries
-      this.projectHistory = this.projectHistory.slice(0, 30)
-
-      // Save to localStorage
+      this.projectHistory = upsertProjectHistory(this.projectHistory, path, Date.now())
       localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
     },
 
     removeProjectFromHistory(path: string) {
-      const suffix = '/' + AIMPARENCY_DIR_NAME;
-      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
-      
-      this.projectHistory = this.projectHistory.filter(p => p.path !== cleanPath)
+      this.projectHistory = removeProjectFromHistoryEntries(this.projectHistory, path)
       localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
     },
 
     markProjectAsFailed(path: string) {
-      const suffix = '/' + AIMPARENCY_DIR_NAME;
-      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
-      
-      const project = this.projectHistory.find(p => p.path === cleanPath)
-      if (project) {
-        project.failedToLoad = true
-        localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
-      }
+      this.projectHistory = setProjectFailureState(this.projectHistory, path, true)
+      localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
     },
 
     clearProjectFailure(path: string) {
-      const suffix = '/' + AIMPARENCY_DIR_NAME;
-      const cleanPath = path.endsWith(suffix) ? path.slice(0, -suffix.length) : (path.endsWith(AIMPARENCY_DIR_NAME) ? path.slice(0, -AIMPARENCY_DIR_NAME.length) : path);
-      
-      const project = this.projectHistory.find(p => p.path === cleanPath)
-      if (project) {
-        project.failedToLoad = false
-        localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
-      }
+      this.projectHistory = setProjectFailureState(this.projectHistory, path, false)
+      localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
     },
     
     setConnectionStatus(status: typeof this.connectionStatus) {
@@ -595,134 +577,37 @@ export const useUIStore = defineStore('ui', {
     // Helper to find next aim in depth-first traversal
     // Returns { aimId, topLevelIndex, parentAimId, indexInParent } or null
     findNextAimInTree(currentAimId: string, phaseId: string, dataStore: any): {aimId: string, topLevelIndex: number, parentAimId?: string, indexInParent?: number} | null {
-      const topLevelAims = dataStore.getAimsForPhase(phaseId)
-      const currentAim = dataStore.aims[currentAimId]
-
-      // If current aim is expanded with supportingConnections, dive into first child
-      if (currentAim?.expanded && currentAim.supportingConnections?.length > 0) {
-        const firstIncomingId = currentAim.supportingConnections[0].aimId
-        const topLevelIndex = this.findTopLevelAncestorIndex(firstIncomingId, topLevelAims, dataStore)
-        return { aimId: firstIncomingId, topLevelIndex, parentAimId: currentAimId, indexInParent: 0 }
-      }
-
-      // Find current aim in tree and get next sibling or parent's next sibling
-      return this.findNextSiblingOrAncestorSibling(currentAimId, topLevelAims, dataStore, null, -1)
+      return findNextAimInTreeHelper(currentAimId, phaseId, dataStore)
     },
 
     // Helper to find previous aim in depth-first traversal
     findPreviousAimInTree(currentAimId: string, phaseId: string | undefined, dataStore: any): {aimId: string, topLevelIndex: number, parentAimId?: string, indexInParent?: number} | null {
-      const topLevelAims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
-      return this.findPreviousSiblingOrAncestor(currentAimId, topLevelAims, dataStore, null, -1)
+      return findPreviousAimInTreeHelper(currentAimId, phaseId, dataStore)
     },
 
     // Recursive helper to find next sibling or pop up to parent's next sibling
     findNextSiblingOrAncestorSibling(aimId: string, aims: any[], dataStore: any, parentAimId: string | null, topLevelIndex: number): {aimId: string, topLevelIndex: number, parentAimId?: string, indexInParent?: number} | null {
-      for (let i = 0; i < aims.length; i++) {
-        const aim = aims[i]
-        const currentTopLevel = parentAimId === null ? i : topLevelIndex
-
-        if (aim.id === aimId) {
-          // Found current aim, try next sibling
-          if (i < aims.length - 1) {
-            const nextSibling = aims[i + 1]
-            return { aimId: nextSibling.id, topLevelIndex: currentTopLevel, parentAimId: parentAimId ?? undefined, indexInParent: i + 1 }
-          }
-          // No next sibling, return null (caller will pop up)
-          return null
-        }
-
-        // Check if aimId is nested in this aim's supportingConnections
-        if (aim.expanded && aim.supportingConnections?.length > 0) {
-          const incomingAims = aim.supportingConnections.map((c: any) => dataStore.aims[c.aimId]).filter(Boolean)
-          const result = this.findNextSiblingOrAncestorSibling(aimId, incomingAims, dataStore, aim.id, currentTopLevel)
-
-          if (result) return result
-
-          // If result is null, aimId was last in supportingConnections, so next is this aim's next sibling
-          const wasInIncoming = incomingAims.some((a: any) => a.id === aimId || this.isAimInTree(aimId, a, dataStore))
-          if (wasInIncoming) {
-            if (i < aims.length - 1) {
-              const nextSibling = aims[i + 1]
-              return { aimId: nextSibling.id, topLevelIndex: currentTopLevel, parentAimId: parentAimId ?? undefined, indexInParent: i + 1 }
-            }
-            return null
-          }
-        }
-      }
-      return null
+      return findNextSiblingOrAncestorSiblingHelper(aimId, aims, dataStore, parentAimId, topLevelIndex)
     },
 
     // Recursive helper to find previous sibling (or its last descendant) or parent
     findPreviousSiblingOrAncestor(aimId: string, aims: any[], dataStore: any, parentAimId: string | null, topLevelIndex: number): {aimId: string, topLevelIndex: number, parentAimId?: string, indexInParent?: number} | null {
-      for (let i = 0; i < aims.length; i++) {
-        const aim = aims[i]
-        const currentTopLevel = parentAimId === null ? i : topLevelIndex
-
-        if (aim.id === aimId) {
-          // Found current aim
-          if (i > 0) {
-            // Has previous sibling - get its last descendant or itself
-            const prevSibling = aims[i - 1]
-            const prevSiblingTopLevel = parentAimId === null ? i - 1 : topLevelIndex
-            const lastDescendant = this.findLastDescendant(prevSibling, dataStore)
-            return { aimId: lastDescendant.id, topLevelIndex: prevSiblingTopLevel, parentAimId: lastDescendant.parentId, indexInParent: lastDescendant.indexInParent }
-          }
-          // No previous sibling, return parent
-          if (parentAimId) {
-            // topLevelIndex is already set correctly when recursing
-            return { aimId: parentAimId, topLevelIndex }
-          }
-          return null
-        }
-
-        // Check nested
-        if (aim.expanded && aim.supportingConnections?.length > 0) {
-          const incomingAims = aim.supportingConnections.map((c: any) => dataStore.aims[c.aimId]).filter(Boolean)
-          const result = this.findPreviousSiblingOrAncestor(aimId, incomingAims, dataStore, aim.id, currentTopLevel)
-          if (result) return result
-        }
-      }
-      return null
+      return findPreviousSiblingOrAncestorHelper(aimId, aims, dataStore, parentAimId, topLevelIndex)
     },
 
     // Find last descendant of an aim (itself if not expanded, or last child's last descendant)
     findLastDescendant(aim: any, dataStore: any): {id: string, parentId?: string, indexInParent?: number} {
-      if (!aim.expanded || !aim.supportingConnections || aim.supportingConnections.length === 0) {
-        return { id: aim.id }
-      }
-      const lastIncomingId = aim.supportingConnections[aim.supportingConnections.length - 1].aimId
-      const lastIncoming = dataStore.aims[lastIncomingId]
-      const descendant = this.findLastDescendant(lastIncoming, dataStore)
-      return { ...descendant, parentId: aim.id, indexInParent: aim.supportingConnections.length - 1 }
+      return findLastDescendantHelper(aim, dataStore)
     },
 
     // Find top-level ancestor index for a nested aim
     findTopLevelAncestorIndex(aimId: string, topLevelAims: any[], dataStore: any): number {
-      // Check if it's already top-level
-      const directIndex = topLevelAims.findIndex(a => a.id === aimId)
-      if (directIndex >= 0) return directIndex
-
-      // Search recursively
-      for (let i = 0; i < topLevelAims.length; i++) {
-        if (this.isAimInTree(aimId, topLevelAims[i], dataStore)) {
-          return i
-        }
-      }
-      return -1
+      return findTopLevelAncestorIndexHelper(aimId, topLevelAims, dataStore)
     },
 
     // Check if aimId exists anywhere in the tree rooted at rootAim
     isAimInTree(aimId: string, rootAim: any, dataStore: any): boolean {
-      if (rootAim.id === aimId) return true
-      if (!rootAim.supportingConnections || rootAim.supportingConnections.length === 0) return false
-
-      for (const conn of rootAim.supportingConnections) {
-        const incomingAim = dataStore.aims[conn.aimId]
-        if (incomingAim && this.isAimInTree(aimId, incomingAim, dataStore)) {
-          return true
-        }
-      }
-      return false
+      return isAimInTreeHelper(aimId, rootAim, dataStore)
     },
 
     // Column tracking actions
@@ -748,78 +633,27 @@ export const useUIStore = defineStore('ui', {
     }, 
 
     getSelectionPath(): SelectionPath {
-      const dataStore = useDataStore()
-      if(this.navigatingAims) {
-        if(this.selectedColumn === -1) {
-          const floatingAims = dataStore.floatingAims
-          if (floatingAims.length > 0) {
-            // Clamp floatingAimIndex to valid range
-            const validIndex = Math.max(0, Math.min(this.floatingAimIndex, floatingAims.length - 1))
-            let aim = floatingAims[validIndex]
-            const aimPath: Aim[] = []
-            if (aim) {
-                this.makeSelectedAimPath(aim, aimPath)
-            }
-            return { phase: undefined, aims: aimPath }
-          }
-        } else {
-          let phaseId = this.getSelectedPhaseId(this.selectedColumn)
-          if(phaseId) {
-            let phase = dataStore.phases[phaseId]
-            let aims = dataStore.getAimsForPhase(phaseId)
-            const aimPath: Aim[] = []
-            if(phase && phase.selectedAimIndex !== undefined) {
-              let aim = aims[phase.selectedAimIndex]
-              if (aim) {
-                this.makeSelectedAimPath(aim, aimPath)
-              }
-            }
-            return { phase, aims: aimPath }
-          }
-        }
-      }
-      return { phase: undefined, aims: [] }
+      return getSelectionPathFromState(
+        this.navigatingAims,
+        this.selectedColumn,
+        this.floatingAimIndex,
+        (columnIndex) => this.getSelectedPhaseId(columnIndex)
+      )
     },
 
     makeSelectedAimPath(aim: Aim, path: Aim[]): Aim {
-      const dataStore = useDataStore()
-      if (!aim) return path[path.length - 1] as Aim // Safe guard
-      
-      path.push(aim)
-      if(aim.expanded && aim.selectedIncomingIndex !== undefined) {
-        // Use supportingConnections instead of incoming
-        const connections = aim.supportingConnections || []
-        if (aim.selectedIncomingIndex < connections.length) {
-            // SAFE ACCESS: using guard instead of !
-            const selectedConn = connections[aim.selectedIncomingIndex]
-            if (selectedConn) {
-              const subAim = dataStore.aims[selectedConn.aimId]
-              if (subAim) {
-                  // Ensure subAim is not undefined before passing
-                  const subPath = this.makeSelectedAimPath(subAim as Aim, path)
-                  if (subPath) return subPath
-              }
-            }
-        }
-        return aim
-      } else {
-        return aim
-      }
+      return makeSelectedAimPathHelper(aim, path, useDataStore())
     },
 
     // Helper to set current aim index (replaces setSelectedAim)
     setCurrentAimIndex(aimIndex: number, dataStore: any) {
-      if (this.selectedColumn === -1) {
-        this.floatingAimIndex = aimIndex
-      } else {
-        const phaseId = this.getSelectedPhaseId(this.selectedColumn)
-        if (phaseId) {
-          const phase = dataStore.phases[phaseId]
-          if (phase) {
-            phase.selectedAimIndex = aimIndex
-          }
-        }
-      }
+      setCurrentAimIndexInState(
+        this.selectedColumn,
+        (columnIndex) => this.getSelectedPhaseId(columnIndex),
+        (index) => { this.floatingAimIndex = index },
+        aimIndex,
+        dataStore
+      )
     },
 
     async selectPhase(columnIndex: number, phaseIndex: number, isTopLevel = true) {
@@ -985,33 +819,12 @@ export const useUIStore = defineStore('ui', {
     // Helper to find path from top-level to target aim
     // Returns array of {aimId, topLevelIndex, indexInParent} from root to target
     findPathToAim(targetId: string, topLevelAims: any[], dataStore: any): Array<{aimId: string, topLevelIndex: number, indexInParent?: number}> | null {
-      for (let i = 0; i < topLevelAims.length; i++) {
-        const path = this.findPathInTree(targetId, topLevelAims[i], dataStore, i, undefined)
-        if (path) return path
-      }
-      return null
+      return findPathToAimHelper(targetId, topLevelAims, dataStore)
     },
 
     // Recursive helper to find path to aim in tree
     findPathInTree(targetId: string, currentAim: any, dataStore: any, topLevelIndex: number, indexInParent: number | undefined): Array<{aimId: string, topLevelIndex: number, indexInParent?: number}> | null {
-      if (currentAim.id === targetId) {
-        return [{ aimId: currentAim.id, topLevelIndex, indexInParent }]
-      }
-
-      if (currentAim.supportingConnections && currentAim.supportingConnections.length > 0) {
-        for (let i = 0; i < currentAim.supportingConnections.length; i++) {
-          const childId = currentAim.supportingConnections[i].aimId
-          const child = dataStore.aims[childId]
-          if (!child) continue
-
-          const childPath = this.findPathInTree(targetId, child, dataStore, topLevelIndex, i)
-          if (childPath) {
-            return [{ aimId: currentAim.id, topLevelIndex, indexInParent }, ...childPath]
-          }
-        }
-      }
-
-      return null
+      return findPathInTreeHelper(targetId, currentAim, dataStore, topLevelIndex, indexInParent)
     },
 
     // Click-to-select: focus an aim (set column, phase, mode, and aim)
