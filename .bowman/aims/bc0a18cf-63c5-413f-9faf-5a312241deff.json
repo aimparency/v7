@@ -12,9 +12,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769328440916
+    "state": "done",
+    "comment": "Implemented watchdog long-processing escalation for '(esc to cancel, 15m 8s)' sessions: added duration parsing, escalation path to ask watchdog once threshold is exceeded, interrupt action support with double ESC in worker session, and prompt/action schema updates. Verified with updated watchdog tests and targeted typecheck (both pass).",
+    "date": 1771797009466
   },
   "intrinsicValue": 0,
   "cost": 1,

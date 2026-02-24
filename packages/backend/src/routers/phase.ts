@@ -3,10 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs-extra';
 import path from 'path';
 import type { Phase } from 'shared';
+import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 export const createPhaseRouter = (
-  t: any,
-  delayedProcedure: any,
+  t: RouterBuilder,
+  delayedProcedure: BaseProcedure,
   readPhase: (projectPath: string, phaseId: string) => Promise<Phase>,
   listPhases: (projectPath: string, parentPhaseId?: string | null) => Promise<Phase[]>,
   writePhase: (projectPath: string, phase: Phase) => Promise<void>,

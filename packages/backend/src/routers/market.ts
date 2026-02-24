@@ -2,10 +2,11 @@ import { z } from 'zod';
 import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 export const createMarketRouter = (
-  t: any,
-  delayedProcedure: any
+  t: RouterBuilder,
+  delayedProcedure: BaseProcedure
 ) => {
   return t.router({
     updateConfig: delayedProcedure

@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 export const createGraphRouter = (
-  t: any,
-  delayedProcedure: any,
+  t: RouterBuilder,
+  delayedProcedure: BaseProcedure,
   getSemanticGraph: (projectPath: string) => Promise<any>
 ) => {
   return t.router({

@@ -47,6 +47,7 @@ const isEditingExplanation = ref(false)
 const editedExplanation = ref('')
 const editedWeight = ref(1)
 const isConfirmingDelete = ref(false)
+const editingConnectionRef = ref<{ parentId: string, childId: string } | null>(null)
 
 const editedIntrinsicValue = ref(0)
 const editedCost = ref(0)
@@ -57,11 +58,21 @@ const editedIntrinsicValueStr = ref('0')
 const editedCostStr = ref('0')
 const editedLoopWeightStr = ref('0')
 
+const syncEditedConnectionFields = (link: NonNullable<typeof selectedLink.value>) => {
+    editedExplanation.value = link.connection.explanation || ''
+    editedWeight.value = link.connection.weight
+    isConfirmingDelete.value = false
+}
+
 watch(selectedLink, (newVal) => {
     if (newVal) {
-        editedExplanation.value = newVal.connection.explanation || ''
-        editedWeight.value = newVal.connection.weight
-        isConfirmingDelete.value = false
+        if (!isEditingExplanation.value) {
+            syncEditedConnectionFields(newVal)
+            editingConnectionRef.value = {
+                parentId: newVal.parent.id,
+                childId: newVal.child.id
+            }
+        }
     }
 }, { immediate: true })
 
@@ -136,10 +147,36 @@ const focusConnection = (parentId: string, childId: string) => {
     mapStore.centerOnConnection(parentId, childId)
 }
 
-const updateConnection = async () => {
-    if (!selectedLink.value) return
+const resolveConnection = (linkRef?: { parentId: string, childId: string } | null) => {
+    if (linkRef) {
+        const parent = dataStore.aims[linkRef.parentId]
+        const child = dataStore.aims[linkRef.childId]
+        if (!parent || !child) return null
+        const connection = parent.supportingConnections?.find((c: any) => c.aimId === child.id)
+        if (!connection) return null
+        return { parent, child, connection }
+    }
 
-    const { parent, child, connection } = selectedLink.value
+    if (!selectedLink.value) return null
+    return selectedLink.value
+}
+
+const startEditingExplanation = () => {
+    if (!selectedLink.value) return
+    editingConnectionRef.value = {
+        parentId: selectedLink.value.parent.id,
+        childId: selectedLink.value.child.id
+    }
+    editedExplanation.value = selectedLink.value.connection.explanation || ''
+    isEditingExplanation.value = true
+}
+
+const updateConnection = async (options?: { linkRef?: { parentId: string, childId: string } | null, closeEditor?: boolean }) => {
+    const resolved = resolveConnection(options?.linkRef)
+    if (!resolved) return
+
+    const { parent, child, connection } = resolved
+    const closeEditor = options?.closeEditor ?? false
     
     // Optimistic update
     const updatedConnections = parent.supportingConnections.map((c: any) => {
@@ -161,7 +198,10 @@ const updateConnection = async () => {
     // Local update
     dataStore.replaceAim(parent.id, updatedParent)
     dataStore.recalculateValues()
-    isEditingExplanation.value = false
+    if (closeEditor) {
+        isEditingExplanation.value = false
+        editingConnectionRef.value = null
+    }
 
     // Backend update
     try {
@@ -174,7 +214,22 @@ const updateConnection = async () => {
         })
     } catch (e) {
         console.error('Failed to update connection', e)
+    } finally {
+        if (closeEditor && selectedLink.value) {
+            syncEditedConnectionFields(selectedLink.value)
+        }
     }
+}
+
+const saveEditedExplanation = async () => {
+    await updateConnection({
+        linkRef: editingConnectionRef.value,
+        closeEditor: true
+    })
+}
+
+const onWeightChange = async () => {
+    await updateConnection()
 }
 
 const removeConnection = async () => {
@@ -305,18 +360,18 @@ const isOpaque = computed(() => !hasInteracted.value)
 
             <div class="field-group">
                 <label>Weight</label>
-                <input type="number" v-model.number="editedWeight" @change="updateConnection" step="0.1" min="0" class="input-field" />
+                <input type="number" v-model.number="editedWeight" @change="onWeightChange" step="0.1" min="0" class="input-field" />
             </div>
 
             <div class="field-group">
                 <label>Explanation</label>
-                <div v-if="!isEditingExplanation" class="explanation-view" @click="isEditingExplanation = true">
+                <div v-if="!isEditingExplanation" class="explanation-view" @click="startEditingExplanation">
                     {{ selectedLink.connection.explanation || 'Add explanation...' }}
                 </div>
                 <textarea 
                     v-else 
                     v-model="editedExplanation" 
-                    @blur="updateConnection" 
+                    @blur="saveEditedExplanation" 
                     placeholder="Why does it support?"
                     class="input-field"
                     v-focus

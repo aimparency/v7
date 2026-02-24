@@ -40,7 +40,7 @@ export async function createArrowRenderingExample(
   await nodeRenderer.init()
 
   // Initialize arrow renderer
-  const gl = canvas.getContext('webgl')
+  const gl = canvas.getContext('webgl2')
   if (!gl) throw new Error('WebGL not supported')
 
   const arrowRenderer = new ArrowRenderer(gl, canvas)
@@ -71,7 +71,8 @@ export async function createArrowRenderingExample(
       targetId: edge.targetId,
       color: [0.5, 0.5, 0.5] as [number, number, number],
       opacity: 0.8,
-      geometry: calculateArrowGeometry(source, target, weight)
+      geometry: calculateArrowGeometry(source, target, weight),
+      moving: false
     }
   })
 
@@ -136,7 +137,8 @@ export function generateTestGraphData(nodeCount: number, edgeDensity: number = 0
         0.3 + Math.random() * 0.4,
         0.3 + Math.random() * 0.4
       ] as [number, number, number],
-      selected: false
+      selected: false,
+      moving: false
     })
   }
 

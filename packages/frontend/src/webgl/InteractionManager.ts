@@ -87,9 +87,10 @@ export class InteractionManager {
     // [zoom, 0, panX]
     // [0, zoom, panY]
     // [0, 0, 1]
-    const zoom = this.viewMatrix[0]
-    const panX = this.viewMatrix[6]
-    const panY = this.viewMatrix[7]
+    const zoom = this.viewMatrix[0] ?? 1
+    const panX = this.viewMatrix[6] ?? 0
+    const panY = this.viewMatrix[7] ?? 0
+    const zoomSafe = Math.abs(zoom) > Number.EPSILON ? zoom : 1
 
     const width = this.canvas.width
     const height = this.canvas.height
@@ -100,8 +101,8 @@ export class InteractionManager {
     const viewY = screenY
 
     // Then apply inverse transform: world = (view - pan) / zoom
-    const worldX = (viewX - panX) / zoom
-    const worldY = (viewY - panY) / zoom
+    const worldX = (viewX - panX) / zoomSafe
+    const worldY = (viewY - panY) / zoomSafe
 
     return { x: worldX, y: worldY }
   }
@@ -116,8 +117,9 @@ export class InteractionManager {
     const worldPos = this.screenToWorld(screenX, screenY)
 
     // Convert tolerance from screen pixels to world units
-    const zoom = this.viewMatrix[0]
-    const worldTolerance = tolerance / zoom
+    const zoom = this.viewMatrix[0] ?? 1
+    const zoomSafe = Math.abs(zoom) > Number.EPSILON ? zoom : 1
+    const worldTolerance = tolerance / zoomSafe
 
     // Query spatial tree for nearby nodes
     const queryRadius = worldTolerance
@@ -161,15 +163,16 @@ export class InteractionManager {
     const worldPos = this.screenToWorld(screenX, screenY)
 
     // Convert tolerance from screen pixels to world units
-    const zoom = this.viewMatrix[0]
-    const worldTolerance = tolerance / zoom
+    const zoom = this.viewMatrix[0] ?? 1
+    const zoomSafe = Math.abs(zoom) > Number.EPSILON ? zoom : 1
+    const worldTolerance = tolerance / zoomSafe
 
     // Check all edges (in the future, could use spatial indexing for edges too)
     let closestEdge: string | null = null
     let closestDistance = Infinity
 
     for (const [edgeId, edge] of this.edges) {
-      const distance = this.pointToArrowDistance(worldPos, edge.geometry)
+      const distance = this.pointToArrowDistance(worldPos, edge)
 
       if (distance <= worldTolerance && distance < closestDistance) {
         closestDistance = distance
@@ -185,10 +188,16 @@ export class InteractionManager {
    * This is a simplified version - for more accuracy, would need to check
    * distance to the actual arc path
    */
-  private pointToArrowDistance(point: Vec2, geometry: ArrowGeometry): number {
-    // Simplified: check distance to line segment from start to end
-    const start = geometry.trunk.startPos
-    const end = geometry.trunk.endPos
+  private pointToArrowDistance(point: Vec2, edge: EdgeData): number {
+    // Simplified: check distance to line segment from source to target center.
+    const source = this.nodes.get(edge.sourceId)
+    const target = this.nodes.get(edge.targetId)
+    const start = source
+      ? { x: source.x, y: source.y }
+      : edge.geometry.triangleV1
+    const end = target
+      ? { x: target.x, y: target.y }
+      : edge.geometry.triangleV2
 
     // Vector from start to end
     const dx = end.x - start.x

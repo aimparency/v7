@@ -611,6 +611,12 @@ export function useGraphSimulation() {
                 n.renderPos[1] = n.pos[1]
                 hasVisualChange = true
                 n.freezeCounter = 0
+            } else if (mapStore.layouting && mapStore.layoutCandidate?.frozenAimId === n.id) {
+                // While dragging a connection handle, keep the opposite endpoint stable.
+                n.shift[0] = 0
+                n.shift[1] = 0
+                n.renderPos[0] = n.pos[0]
+                n.renderPos[1] = n.pos[1]
             } else {
                 // Removed skip logic to ensure realtime updates and prevent jumps.
                 // Internal vs render position split handles performance optimization.

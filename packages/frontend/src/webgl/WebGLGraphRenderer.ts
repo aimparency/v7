@@ -199,10 +199,10 @@ export class WebGLGraphRenderer {
         maxY: maxY + padY
       }
 
-      // Create or rebuild quadtree
-      if (!this.quadtree) {
-        this.quadtree = new Quadtree(bounds)
-      }
+      // Recreate quadtree with current world bounds.
+      // Reusing a tree with stale root bounds can drop nodes that moved
+      // outside the original extent, causing apparent clipping.
+      this.quadtree = new Quadtree(bounds)
 
       // Convert nodes to quadtree items and build
       const items: QuadtreeItem[] = nodes.map(node => ({
@@ -231,9 +231,10 @@ export class WebGLGraphRenderer {
    * Calculate viewport bounds in world space
    */
   private getViewportBounds(): Bounds {
-    const zoom = this.viewMatrix[0]
-    const panX = this.viewMatrix[6]
-    const panY = this.viewMatrix[7]
+    const zoom = this.viewMatrix[0] ?? 1
+    const panX = this.viewMatrix[6] ?? 0
+    const panY = this.viewMatrix[7] ?? 0
+    const zoomSafe = Math.abs(zoom) > Number.EPSILON ? zoom : 1
 
     const width = this.canvas.width
     const height = this.canvas.height
@@ -249,16 +250,16 @@ export class WebGLGraphRenderer {
     const view1Y = ((ndc1Y * -1 + 1) / 2) * height
 
     // Inverse transform: world = (view - pan) / zoom
-    const world1X = (view1X - panX) / zoom
-    const world1Y = (view1Y - panY) / zoom
+    const world1X = (view1X - panX) / zoomSafe
+    const world1Y = (view1Y - panY) / zoomSafe
 
     // Corner 2: bottom-right (NDC: 1, -1)
     const ndc2X = 1, ndc2Y = -1
     const view2X = ((ndc2X + 1) / 2) * width
     const view2Y = ((ndc2Y * -1 + 1) / 2) * height
 
-    const world2X = (view2X - panX) / zoom
-    const world2Y = (view2Y - panY) / zoom
+    const world2X = (view2X - panX) / zoomSafe
+    const world2Y = (view2Y - panY) / zoomSafe
 
     return {
       minX: Math.min(world1X, world2X),

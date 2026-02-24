@@ -15,6 +15,8 @@ export interface LayoutCandidate {
   start: vec2.T
   dScale: number
   link: any // Avoid circular dependency with GraphLink
+  activeAimId?: string
+  frozenAimId?: string
 }
 
 export const useMapStore = defineStore('map', {

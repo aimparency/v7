@@ -12,9 +12,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769328665800
+    "state": "done",
+    "comment": "Implemented watchdog response-completion gating in codex-session: defer completion until generation is seen or grace period elapses (default 5s), preventing early JSON parse failures. Added regression tests for the new gating behavior; codex-session tests and typecheck pass.",
+    "date": 1771796300359
   },
   "intrinsicValue": 0,
   "cost": 1,

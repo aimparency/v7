@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Starting implementation: Creating DynamicBufferManager class with double buffering and partial update strategies",
-    "date": 1769700728346
+    "state": "done",
+    "comment": "Implemented and verified a concrete end-to-end slice for DynamicBufferManager via focused unit coverage in packages/frontend/src/webgl/buffers/DynamicBufferManager.test.ts. Added tests for first-frame full upload, partial updates below threshold, full-update fallback above threshold, animation ping-pong buffer swap behavior, and mode transition cleanup. Verification: `npm run test:unit -w frontend -- src/webgl/buffers/DynamicBufferManager.test.ts` passed (5/5). Note: full frontend `npm run type-check -w frontend` currently fails on many unrelated pre-existing issues outside this aim scope.",
+    "date": 1771797196515
   },
   "intrinsicValue": 0,
   "cost": 1,

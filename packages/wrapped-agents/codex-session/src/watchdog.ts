@@ -28,6 +28,9 @@ const IDLE_CHECK_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_CHECK_INTERVAL ||
 const IDLE_DEBOUNCE_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_DEBOUNCE || '100', 10);
 const MAX_RETRIES = parseInt(process.env.WATCHDOG_MAX_RETRIES || '5', 10);
 const RESPONSE_START_TIMEOUT = parseInt(process.env.WATCHDOG_RESPONSE_START_TIMEOUT || '8000', 10);
+const RESPONSE_COMPLETION_GRACE_MS = parseInt(process.env.WATCHDOG_RESPONSE_COMPLETION_GRACE_MS || '5000', 10);
+const PROCESSING_INTERRUPT_THRESHOLD_MS = parseInt(process.env.WATCHDOG_PROCESSING_INTERRUPT_THRESHOLD_MS || '900000', 10);
+const PROCESSING_INTERRUPT_RECHECK_MS = parseInt(process.env.WATCHDOG_PROCESSING_INTERRUPT_RECHECK_MS || '120000', 10);
 const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 // Codex may render spinner-like characters depending on terminal mode
 const SPINNER_CHARS = ['✻', '·', '✢', '○', '◎', '●', '◯'];
@@ -53,9 +56,11 @@ export class WatchdogService {
 
   private nextCheckTime = 0;
   private responseRequestedAt = 0;
+  private responseSawGenerating = false;
   private currentPromptMarker: string = PROMPT_MARKER;
   private lastExecutedActionSignature = '';
   private lastExecutedActionAt = 0;
+  private lastLongProcessingEscalationAt = 0;
 
   constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1) {
     this.worker = worker;
@@ -138,6 +143,7 @@ export class WatchdogService {
       if (this.waitingForResponseStart) {
         const isGenerating = this.isGenerating(this.watchdog);
         if (isGenerating) {
+          this.responseSawGenerating = true;
           this.waitingForResponseStart = false;
           this.waitingForResponse = true;
           this.log("DEBUG: Watchdog response started (busy indicator detected).");
@@ -148,10 +154,18 @@ export class WatchdogService {
 
         const elapsed = Date.now() - this.responseRequestedAt;
         if (elapsed > RESPONSE_START_TIMEOUT) {
-          // Fallback when busy indicator is not shown by terminal rendering.
-          this.waitingForResponseStart = false;
-          this.waitingForResponse = true;
-          this.log(`DEBUG: Response start timeout (${RESPONSE_START_TIMEOUT}ms). Switching to response wait mode.`);
+          const screenContent = this.watchdog.getLines(500);
+          const hasResponseCandidate = this.hasResponseCandidateAfterMarker(screenContent);
+          if (hasResponseCandidate) {
+            this.waitingForResponseStart = false;
+            this.waitingForResponse = true;
+            this.log(`DEBUG: Response start timeout (${RESPONSE_START_TIMEOUT}ms), but detected response candidate after marker. Switching to response wait mode.`);
+          } else {
+            this.log(`DEBUG: Response start timeout (${RESPONSE_START_TIMEOUT}ms) without busy indicator or response candidate. Remaining in response-start wait mode.`);
+            this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
+            this.processing = false;
+            return;
+          }
         } else {
           this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
           this.processing = false;
@@ -161,6 +175,18 @@ export class WatchdogService {
 
       // Check Watchdog Response
       if (this.waitingForResponse) {
+        const now = Date.now();
+        const isGeneratingNow = this.isGenerating(this.watchdog);
+        if (this.shouldDeferResponseCompletion(isGeneratingNow, now)) {
+          if (!isGeneratingNow) {
+            const elapsed = now - this.responseRequestedAt;
+            this.log(`DEBUG: Deferring response completion check (${elapsed}ms < ${RESPONSE_COMPLETION_GRACE_MS}ms grace).`);
+          }
+          this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
+          this.processing = false;
+          return;
+        }
+
         // waitForIdle checks isGenerating(), so if it returns true, the watchdog has halted
         const isIdle = await this.waitForIdle(this.watchdog);
 
@@ -202,6 +228,21 @@ export class WatchdogService {
       }
 
       // Check Worker Idle
+      const workerProcessingDurationMs = this.getWorkerProcessingDurationMs();
+      if (
+        workerProcessingDurationMs !== null &&
+        workerProcessingDurationMs >= PROCESSING_INTERRUPT_THRESHOLD_MS &&
+        Date.now() - this.lastLongProcessingEscalationAt >= PROCESSING_INTERRUPT_RECHECK_MS
+      ) {
+        this.lastLongProcessingEscalationAt = Date.now();
+        this.log(
+          `Detected long worker processing (${Math.round(workerProcessingDurationMs / 1000)}s). Asking watchdog for interrupt decision.`
+        );
+        await this.askWatchdog();
+        this.processing = false;
+        return;
+      }
+
       const isWorkerIdle = await this.waitForIdle(this.worker);
 
       if (isWorkerIdle) {
@@ -244,10 +285,28 @@ export class WatchdogService {
 
   isGenerating(agent: Agent): boolean {
     const lastLine = agent.getLastLine();
+    const recentLines = stripAnsi(agent.getLines(8));
     const hasSpinner = SPINNER_CHARS.some(char => lastLine.includes(char));
-    // Codex shows "esc to interrupt" while it is actively generating
-    const hasBusyIndicator = /esc to interrupt/i.test(lastLine);
+    // Codex shows "esc to interrupt" while it is actively generating.
+    // Check recent lines because zoom/terminal wrapping can move this off the last line.
+    const hasBusyIndicator = /esc to (interrupt|cancel)/i.test(recentLines);
     return hasSpinner || hasBusyIndicator;
+  }
+
+  private getWorkerProcessingDurationMs(): number | null {
+    if (!this.worker) return null;
+    const recentLines = stripAnsi(this.worker.getLines(12));
+    const durationMatch = recentLines.match(/esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i);
+    if (!durationMatch) return null;
+
+    const hours = durationMatch[1] ? Number(durationMatch[1]) : 0;
+    const minutes = durationMatch[2] ? Number(durationMatch[2]) : 0;
+    const seconds = durationMatch[3] ? Number(durationMatch[3]) : 0;
+
+    if (hours === 0 && minutes === 0 && seconds === 0) {
+      return null;
+    }
+    return ((hours * 3600) + (minutes * 60) + seconds) * 1000;
   }
 
   private async wait(ms: number): Promise<void> {
@@ -305,6 +364,7 @@ export class WatchdogService {
     this.waitingForResponse = false;
     this.retryCount = 0;
     this.responseRequestedAt = Date.now();
+    this.responseSawGenerating = false;
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
 
     const rawContext = stripAnsi(this.worker.getLines(40));
@@ -324,6 +384,7 @@ ${context}
 Actions available:
 - send-prompt: Send text to Codex. Add "instruct": true if Codex seems idle/waiting for user input - this will prepend aimparency MCP usage instructions.
 - select-option: Choose a numbered option (use when Codex presents choices)
+- interrupt: Send two ESC key presses to interrupt a stuck worker generation
 - compact: Run /compact to free up context
 - stop: Stop supervision (use when ALL aims are done and verified complete)
 - wait: Pause supervision briefly
@@ -337,6 +398,7 @@ Return a JSON object with your decision. Examples:
 {"action": {"type": "send-prompt", "text": "continue working on aims", "instruct": true}}
 {"action": {"type": "send-prompt", "text": "run the tests"}}
 {"action": {"type": "select-option", "number": 1}}
+{"action": {"type": "interrupt"}}
 {"action": {"type": "compact"}}
 {"action": {"type": "stop", "reason": "all aims verified complete"}}
 
@@ -378,6 +440,30 @@ ${this.currentPromptMarker}`;
        this.log(`Error parsing JSON decision: ${e.message}`);
        this.retry(e.message);
     }
+  }
+
+  private shouldDeferResponseCompletion(isGeneratingNow: boolean, now: number = Date.now()): boolean {
+    if (isGeneratingNow) {
+      this.responseSawGenerating = true;
+      return true;
+    }
+
+    if (!this.responseSawGenerating) {
+      const elapsed = now - this.responseRequestedAt;
+      if (elapsed < RESPONSE_COMPLETION_GRACE_MS) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private hasResponseCandidateAfterMarker(screenContent: string): boolean {
+    const strippedScreen = stripAnsi(screenContent);
+    const markerIndex = strippedScreen.lastIndexOf(this.currentPromptMarker);
+    if (markerIndex === -1) return false;
+    const afterMarker = strippedScreen.substring(markerIndex + this.currentPromptMarker.length);
+    return /{"action"\s*:\s*{/.test(afterMarker);
   }
 
   extractJson(text: string): string {
@@ -510,6 +596,13 @@ ${this.currentPromptMarker}`;
         this.log(`Selecting option: ${action.number}`);
         await this.wait(70);
         this.worker.write(String(action.number));
+        await this.wait(70);
+    } else if (action.type === 'interrupt') {
+        this.log('Interrupting worker generation with double ESC.');
+        await this.wait(70);
+        this.worker.write('\x1b');
+        await this.wait(70);
+        this.worker.write('\x1b');
         await this.wait(70);
     } else if (action.type === 'emergency-stop') {
         this.triggerEmergencyStop();

@@ -1,4 +1,4 @@
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from 'wrapped-agents-broker';
 
 // Create WebSocket client for Watchdog Broker
@@ -7,7 +7,7 @@ const wsClient = createWSClient({
 });
 
 // Create tRPC client with WebSocket
-export const trpcWatchdog = createTRPCClient<AppRouter>({
+export const trpcWatchdog = createTRPCProxyClient<AppRouter>({
   links: [
     wsLink({
       client: wsClient,

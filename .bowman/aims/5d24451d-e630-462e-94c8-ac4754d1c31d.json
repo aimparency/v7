@@ -9,9 +9,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1767099184317
+    "state": "done",
+    "comment": "Implemented weekly manual Twitter/Instagram workflow support with reusable planning module + CLI check command, added focused tests for weekly coverage/candidate/action behavior, and verified via node test + targeted typecheck + workflow command execution.",
+    "date": 1771796640204
   },
   "intrinsicValue": 0,
   "cost": 1,

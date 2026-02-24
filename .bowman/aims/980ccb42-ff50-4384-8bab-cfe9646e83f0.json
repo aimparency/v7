@@ -11,9 +11,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769974091183
+    "state": "done",
+    "comment": "Confirmed with reproducible automated regression. Added/ran zoom-wrapped-output path tests: (1) busy indicator detection scans recent lines (not only last line), (2) timeout in waitingForResponseStart does not advance without response candidate, and (3) end-to-end tick path executes wrapped newline-in-string JSON after marker into worker prompt. Verified with node --test --import tsx packages/wrapped-agents/codex-session/src/watchdog.test.ts and TypeScript noEmit check for watchdog.ts + watchdog.test.ts.",
+    "date": 1771796842767
   },
   "intrinsicValue": 0,
   "cost": 1,

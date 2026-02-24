@@ -5,10 +5,11 @@ import { fileURLToPath } from 'url';
 import { observable } from '@trpc/server/observable';
 import type { Aim, Phase, ProjectMeta } from 'shared';
 import { DEFAULT_STATUSES } from 'shared';
+import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 export const createProjectRouter = (
-  t: any,
-  delayedProcedure: any,
+  t: RouterBuilder,
+  delayedProcedure: BaseProcedure,
   normalizeProjectPath: (p: string) => string,
   ensureProjectStructure: (projectPath: string) => Promise<void>,
   listAims: (projectPath: string, archived?: boolean) => Promise<Aim[]>,

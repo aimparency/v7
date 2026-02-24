@@ -38,11 +38,15 @@ const fromHandlePos = computed(() => {
 
 const startLayouting = (from: boolean) => {
   const rSum = props.sourceR + props.targetR
+  const activeAimId = from ? props.link.source.id : props.link.target.id
+  const frozenAimId = from ? props.link.target.id : props.link.source.id
   mapStore.startLayouting({
     fromWeight: props.sourceR / rSum,
     start: from ? fromHandlePos.value : intoHandlePos.value,
     dScale: from ? 1 / props.targetR : -1 / props.sourceR,
-    link: props.link 
+    link: props.link,
+    activeAimId,
+    frozenAimId
   })
 }
 

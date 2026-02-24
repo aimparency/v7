@@ -3,10 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs-extra';
 import type { Aim, SearchAimResult } from 'shared';
+import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 export const createAimRouter = (
-  t: any,
-  delayedProcedure: any,
+  t: RouterBuilder,
+  delayedProcedure: BaseProcedure,
   readAim: (projectPath: string, aimId: string) => Promise<Aim>,
   listAims: (projectPath: string, archived?: boolean) => Promise<Aim[]>,
   writeAim: (projectPath: string, aim: Aim) => Promise<void>,

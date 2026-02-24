@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 export const createSystemRouter = (
-  t: any,
-  delayedProcedure: any,
+  t: RouterBuilder,
+  delayedProcedure: BaseProcedure,
   readSystemStatus: (projectPath: string) => Promise<any>,
   writeSystemStatus: (projectPath: string, status: any) => Promise<void>
 ) => {

@@ -11,6 +11,11 @@ type SelectionPath = {
   aims: Aim[]
 }
 
+type TeleportSource = {
+  parentAimId?: string
+  phaseId?: string
+}
+
 export type AimPath = {
   phaseId?: string
   aims: Aim[] // Root to Leaf
@@ -96,6 +101,8 @@ export const useUIStore = defineStore('ui', {
 
     // Moving aim state (for loading animation)
     movingAimId: null as string | null,
+    teleportCutAimId: null as string | null,
+    teleportSource: null as TeleportSource | null,
 
     // Selected Link (Flow)
     selectedLink: null as { parentId: string, childId: string } | null,
@@ -348,6 +355,12 @@ export const useUIStore = defineStore('ui', {
       this.aimSearchMode = 'navigate'
       this.aimSearchCallback = null
       this.aimSearchInitialAimId = null
+    },
+
+    clearTeleportBuffer() {
+      this.teleportCutAimId = null
+      this.teleportSource = null
+      this.movingAimId = null
     },
 
     openSettingsModal() {
@@ -2187,6 +2200,187 @@ export const useUIStore = defineStore('ui', {
       }
     },
 
+    cutAimForTeleport() {
+      const path = this.getSelectionPath()
+      const currentAim = path.aims[path.aims.length - 1]
+      if (!currentAim) return
+
+      let source: TeleportSource | null = null
+      if (path.aims.length > 1) {
+        const parentAim = path.aims[path.aims.length - 2]
+        if (parentAim) {
+          source = { parentAimId: parentAim.id }
+        }
+      } else if (path.phase) {
+        source = { phaseId: path.phase.id }
+      }
+
+      this.teleportCutAimId = currentAim.id
+      this.teleportSource = source
+      this.movingAimId = currentAim.id
+    },
+
+    async pasteCutAim(dataStore: any) {
+      const cutAimId = this.teleportCutAimId
+      const source = this.teleportSource
+      if (!cutAimId) return
+
+      const path = this.getSelectionPath()
+      const currentAim = path.aims[path.aims.length - 1]
+
+      let destinationParentAimId: string | undefined
+      let destinationPhaseId: string | undefined
+      let destinationFloating = false
+      let insertionIndex = 0
+
+      if (path.aims.length > 1) {
+        const parentAim = path.aims[path.aims.length - 2]
+        if (!parentAim) return
+        destinationParentAimId = parentAim.id
+        insertionIndex = (parentAim.selectedIncomingIndex ?? 0) + 1
+      } else if (path.phase) {
+        destinationPhaseId = path.phase.id
+        insertionIndex = (path.phase.selectedAimIndex ?? -1) + 1
+      } else if (this.selectedColumn === -1) {
+        destinationFloating = true
+        insertionIndex = this.floatingAimIndex + 1
+      } else {
+        return
+      }
+
+      const cutAim = dataStore.aims[cutAimId]
+      if (destinationParentAimId && cutAim && this.isAimInTree(destinationParentAimId, cutAim, dataStore)) {
+        console.warn('Cannot paste aim into its own subtree')
+        return
+      }
+
+      const sourceParentAimId = source?.parentAimId
+      const sourcePhaseId = source?.phaseId
+
+      try {
+        if (destinationParentAimId && sourceParentAimId === destinationParentAimId) {
+          await trpc.aim.connectAims.mutate({
+            projectPath: this.projectPath,
+            parentAimId: destinationParentAimId,
+            childAimId: cutAimId,
+            parentIncomingIndex: insertionIndex
+          })
+        } else if (destinationPhaseId && sourcePhaseId === destinationPhaseId) {
+          await trpc.aim.commitToPhase.mutate({
+            projectPath: this.projectPath,
+            aimId: cutAimId,
+            phaseId: destinationPhaseId,
+            insertionIndex
+          })
+        } else {
+          if (sourceParentAimId) {
+            const sourceParent = dataStore.aims[sourceParentAimId]
+            if (sourceParent) {
+              const updatedConnections = (sourceParent.supportingConnections || []).filter((c: any) => c.aimId !== cutAimId)
+              await trpc.aim.update.mutate({
+                projectPath: this.projectPath,
+                aimId: sourceParentAimId,
+                aim: { supportingConnections: updatedConnections }
+              })
+            }
+          } else if (sourcePhaseId) {
+            await trpc.aim.removeFromPhase.mutate({
+              projectPath: this.projectPath,
+              aimId: cutAimId,
+              phaseId: sourcePhaseId
+            })
+          }
+
+          if (destinationParentAimId) {
+            await trpc.aim.connectAims.mutate({
+              projectPath: this.projectPath,
+              parentAimId: destinationParentAimId,
+              childAimId: cutAimId,
+              parentIncomingIndex: insertionIndex
+            })
+          } else if (destinationPhaseId) {
+            await trpc.aim.commitToPhase.mutate({
+              projectPath: this.projectPath,
+              aimId: cutAimId,
+              phaseId: destinationPhaseId,
+              insertionIndex
+            })
+          } else if (destinationFloating) {
+            // Nothing to add in backend: floating means no parent and no phase.
+          }
+        }
+
+        const reloads: Promise<any>[] = [
+          trpc.aim.get.query({
+            projectPath: this.projectPath,
+            aimId: cutAimId
+          }).then((updatedAim: any) => dataStore.replaceAim(cutAimId, updatedAim))
+        ]
+
+        if (sourceParentAimId) {
+          reloads.push(
+            trpc.aim.get.query({
+              projectPath: this.projectPath,
+              aimId: sourceParentAimId
+            }).then((updatedAim: any) => dataStore.replaceAim(sourceParentAimId, updatedAim))
+          )
+        }
+
+        if (destinationParentAimId) {
+          reloads.push(
+            trpc.aim.get.query({
+              projectPath: this.projectPath,
+              aimId: destinationParentAimId
+            }).then((updatedAim: any) => dataStore.replaceAim(destinationParentAimId, updatedAim))
+          )
+        }
+
+        if (sourcePhaseId) {
+          reloads.push(
+            trpc.phase.get.query({
+              projectPath: this.projectPath,
+              phaseId: sourcePhaseId
+            }).then((updatedPhase: any) => dataStore.replacePhase(sourcePhaseId, updatedPhase))
+          )
+        }
+
+        if (destinationPhaseId) {
+          reloads.push(
+            trpc.phase.get.query({
+              projectPath: this.projectPath,
+              phaseId: destinationPhaseId
+            }).then((updatedPhase: any) => dataStore.replacePhase(destinationPhaseId, updatedPhase))
+          )
+        }
+
+        await Promise.all(reloads)
+
+        if (destinationParentAimId) {
+          const destinationParent = dataStore.aims[destinationParentAimId]
+          if (destinationParent) {
+            destinationParent.expanded = true
+            destinationParent.selectedIncomingIndex = Math.max(
+              0,
+              (destinationParent.supportingConnections || []).findIndex((c: any) => c.aimId === cutAimId)
+            )
+          }
+        } else if (destinationPhaseId) {
+          const destinationPhase = dataStore.phases[destinationPhaseId]
+          if (destinationPhase) {
+            destinationPhase.selectedAimIndex = Math.max(0, destinationPhase.commitments.indexOf(cutAimId))
+          }
+        } else if (destinationFloating) {
+          await dataStore.loadFloatingAims(this.projectPath)
+          const idx = dataStore.floatingAimsIds.indexOf(cutAimId)
+          if (idx >= 0) this.floatingAimIndex = idx
+        }
+
+        this.clearTeleportBuffer()
+      } catch (e) {
+        console.error('Teleport paste failed', e)
+      }
+    },
+
     // Keyboard navigation handlers
     async handleColumnNavigationKeys(event: KeyboardEvent, dataStore: any) {
       const col = this.selectedColumn
@@ -2385,7 +2579,7 @@ export const useUIStore = defineStore('ui', {
       }
     },
 
-    // Aims edit mode: j/k = navigate aims, J/K = move aims, h/l = expand/collapse, H = move out, d = delete, o/O = create
+    // Aims edit mode: j/k = navigate aims, J/K = move aims, h/l = expand/collapse, H = move out, d = delete, o/O = create, x/p = cut/paste teleport
     async handleAimNavigationKeys(event: KeyboardEvent, dataStore: any) {
       const path = this.getSelectionPath()
       const currentAim = path.aims[path.aims.length - 1]
@@ -2412,11 +2606,15 @@ export const useUIStore = defineStore('ui', {
         return
       }
 
+      if (event.key === 'x') {
+        event.preventDefault()
+        this.cutAimForTeleport()
+        return
+      }
+
       if (event.key === 'p') {
         event.preventDefault()
-        if (currentAim) {
-            this.openAimSearch('navigate', undefined, currentAim.id)
-        }
+        await this.pasteCutAim(dataStore)
         return
       }
 

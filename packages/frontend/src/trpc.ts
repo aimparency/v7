@@ -1,4 +1,4 @@
-import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
+import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from 'backend';
 
 // Create WebSocket client
@@ -7,7 +7,7 @@ const wsClient = createWSClient({
 });
 
 // Create tRPC client with WebSocket
-export const trpc = createTRPCClient<AppRouter>({
+export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     wsLink({
       client: wsClient,

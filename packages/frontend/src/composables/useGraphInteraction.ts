@@ -551,18 +551,42 @@ export function useGraphInteraction(
 
     // Initialize Listeners
     let resizeObserver: ResizeObserver | undefined
+    const onMouseMoveListener: EventListener = (event) => {
+        if (event instanceof MouseEvent) onMouseMove(event)
+    }
+    const onMouseDownListener: EventListener = (event) => {
+        if (event instanceof MouseEvent) onMouseDown(event)
+    }
+    const onMouseUpListener: EventListener = (event) => {
+        if (event instanceof MouseEvent) onMouseUp()
+    }
+    const onDblClickListener: EventListener = (event) => {
+        if (event instanceof MouseEvent) void onDblClick(event)
+    }
+    const onWheelListener: EventListener = (event) => {
+        if (event instanceof WheelEvent) onWheel(event)
+    }
+    const onTouchStartListener: EventListener = (event) => {
+        if (event instanceof TouchEvent) onTouchStart(event)
+    }
+    const onTouchMoveListener: EventListener = (event) => {
+        if (event instanceof TouchEvent) onTouchMove(event)
+    }
+    const onTouchEndListener: EventListener = (event) => {
+        if (event instanceof TouchEvent) onTouchEnd(event)
+    }
 
     const initListeners = () => {
         if (svgRef.value) {
-            svgRef.value.addEventListener("mousemove", onMouseMove)
-            svgRef.value.addEventListener("mousedown", onMouseDown)
-            svgRef.value.addEventListener("mouseup", onMouseUp)
-            svgRef.value.addEventListener("dblclick", onDblClick)
-            svgRef.value.addEventListener("wheel", onWheel, { passive: false })
-            svgRef.value.addEventListener("touchstart", onTouchStart, { passive: false })
-            svgRef.value.addEventListener("touchmove", onTouchMove, { passive: false })
-            svgRef.value.addEventListener("touchend", onTouchEnd)
-            svgRef.value.addEventListener("touchcancel", onTouchEnd)
+            svgRef.value.addEventListener("mousemove", onMouseMoveListener)
+            svgRef.value.addEventListener("mousedown", onMouseDownListener)
+            svgRef.value.addEventListener("mouseup", onMouseUpListener)
+            svgRef.value.addEventListener("dblclick", onDblClickListener)
+            svgRef.value.addEventListener("wheel", onWheelListener, { passive: false })
+            svgRef.value.addEventListener("touchstart", onTouchStartListener, { passive: false })
+            svgRef.value.addEventListener("touchmove", onTouchMoveListener, { passive: false })
+            svgRef.value.addEventListener("touchend", onTouchEndListener)
+            svgRef.value.addEventListener("touchcancel", onTouchEndListener)
 
             resizeObserver = new ResizeObserver(() => {
                 updateHalfSide()
@@ -575,15 +599,15 @@ export function useGraphInteraction(
 
     const cleanupListeners = () => {
         if (svgRef.value) {
-            svgRef.value.removeEventListener("mousemove", onMouseMove)
-            svgRef.value.removeEventListener("mousedown", onMouseDown)
-            svgRef.value.removeEventListener("mouseup", onMouseUp)
-            svgRef.value.removeEventListener("dblclick", onDblClick)
-            svgRef.value.removeEventListener("wheel", onWheel)
-            svgRef.value.removeEventListener("touchstart", onTouchStart)
-            svgRef.value.removeEventListener("touchmove", onTouchMove)
-            svgRef.value.removeEventListener("touchend", onTouchEnd)
-            svgRef.value.removeEventListener("touchcancel", onTouchEnd)
+            svgRef.value.removeEventListener("mousemove", onMouseMoveListener)
+            svgRef.value.removeEventListener("mousedown", onMouseDownListener)
+            svgRef.value.removeEventListener("mouseup", onMouseUpListener)
+            svgRef.value.removeEventListener("dblclick", onDblClickListener)
+            svgRef.value.removeEventListener("wheel", onWheelListener)
+            svgRef.value.removeEventListener("touchstart", onTouchStartListener)
+            svgRef.value.removeEventListener("touchmove", onTouchMoveListener)
+            svgRef.value.removeEventListener("touchend", onTouchEndListener)
+            svgRef.value.removeEventListener("touchcancel", onTouchEndListener)
         }
         if (resizeObserver) {
             resizeObserver.disconnect()

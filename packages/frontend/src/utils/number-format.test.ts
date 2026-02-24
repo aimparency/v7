@@ -39,9 +39,11 @@ describe('formatWithK', () => {
       expect(formatWithK(12_345)).toBe('~12.35k')
     })
 
-    it('does not format values below 9500', () => {
+    it('below 10k keeps exact value unless divisible by 1000', () => {
       expect(formatWithK(9499)).toBe('9499')
-      expect(formatWithK(5000)).toBe('5000')
+      expect(formatWithK(5000)).toBe('5k')
+      expect(formatWithK(2000)).toBe('2k')
+      expect(formatWithK(3499)).toBe('3499')
       expect(formatWithK(1500)).toBe('1500')
     })
   })

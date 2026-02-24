@@ -118,12 +118,12 @@ export class TAAPass {
     // Clean up old buffers if size changed
     if (this.currentFB && (this.fbWidth !== width || this.fbHeight !== height)) {
       gl.deleteFramebuffer(this.currentFB)
-      gl.deleteFramebuffer(this.historyFB[0])
-      gl.deleteFramebuffer(this.historyFB[1])
+      gl.deleteFramebuffer(this.historyFB[0] ?? null)
+      gl.deleteFramebuffer(this.historyFB[1] ?? null)
       gl.deleteTexture(this.currentColorTex)
       gl.deleteTexture(this.currentMovementTex)
-      gl.deleteTexture(this.historyTex[0])
-      gl.deleteTexture(this.historyTex[1])
+      gl.deleteTexture(this.historyTex[0] ?? null)
+      gl.deleteTexture(this.historyTex[1] ?? null)
       this.currentFB = null
       this.historyFB = [null, null]
       this.historyTex = [null, null]
@@ -136,7 +136,8 @@ export class TAAPass {
 
     // Helper to create texture (RGBA16F for history if available, RGBA8 fallback)
     const createTexture = (forHistory: boolean = false): WebGLTexture => {
-      const tex = gl.createTexture()!
+      const tex = gl.createTexture()
+      if (!tex) throw new Error('Failed to create texture')
       gl.bindTexture(gl.TEXTURE_2D, tex)
       if (forHistory && this.canRenderToFloat) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, width, height, 0, gl.RGBA, gl.HALF_FLOAT, null)
@@ -168,11 +169,13 @@ export class TAAPass {
 
     // Create two history buffers for ping-pong (float16 for accumulation precision)
     for (let i = 0; i < 2; i++) {
-      this.historyTex[i] = createTexture(true)
+      const historyTex = createTexture(true)
+      const historyFB = gl.createFramebuffer()
 
-      this.historyFB[i] = gl.createFramebuffer()
-      gl.bindFramebuffer(gl.FRAMEBUFFER, this.historyFB[i])
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.historyTex[i], 0)
+      this.historyTex[i] = historyTex
+      this.historyFB[i] = historyFB
+      gl.bindFramebuffer(gl.FRAMEBUFFER, historyFB)
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, historyTex, 0)
 
       if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
         console.error(`History framebuffer ${i} incomplete`)
@@ -227,9 +230,9 @@ export class TAAPass {
 
     // Ping-pong: read from old history, write to new history
     const readIndex = 1 - this.writeIndex
-    const writeHistoryFB = this.historyFB[this.writeIndex]
-    const readHistoryTex = this.historyTex[readIndex]
-    const writeHistoryTex = this.historyTex[this.writeIndex]
+    const writeHistoryFB = this.historyFB[this.writeIndex] ?? null
+    const readHistoryTex = this.historyTex[readIndex] ?? null
+    const writeHistoryTex = this.historyTex[this.writeIndex] ?? null
 
     // Render blended result to write history buffer
     gl.bindFramebuffer(gl.FRAMEBUFFER, writeHistoryFB)
@@ -289,12 +292,12 @@ export class TAAPass {
     const gl = this.gl
 
     if (this.currentFB) gl.deleteFramebuffer(this.currentFB)
-    if (this.historyFB[0]) gl.deleteFramebuffer(this.historyFB[0])
-    if (this.historyFB[1]) gl.deleteFramebuffer(this.historyFB[1])
+    if (this.historyFB[0]) gl.deleteFramebuffer(this.historyFB[0] ?? null)
+    if (this.historyFB[1]) gl.deleteFramebuffer(this.historyFB[1] ?? null)
     if (this.currentColorTex) gl.deleteTexture(this.currentColorTex)
     if (this.currentMovementTex) gl.deleteTexture(this.currentMovementTex)
-    if (this.historyTex[0]) gl.deleteTexture(this.historyTex[0])
-    if (this.historyTex[1]) gl.deleteTexture(this.historyTex[1])
+    if (this.historyTex[0]) gl.deleteTexture(this.historyTex[0] ?? null)
+    if (this.historyTex[1]) gl.deleteTexture(this.historyTex[1] ?? null)
     if (this.quadBuffer) gl.deleteBuffer(this.quadBuffer)
     if (this.blendProgram) gl.deleteProgram(this.blendProgram)
   }

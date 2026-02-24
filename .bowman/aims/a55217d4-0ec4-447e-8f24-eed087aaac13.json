@@ -9,9 +9,9 @@
     "2abfd425-ee90-4286-a019-ba0ff703c73a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1770548323416
+    "state": "done",
+    "comment": "Implemented list-view teleport move flow: cut with x and paste with p in aim navigation. Added focused frontend unit tests for x/p same-phase reorder and cross-parent move behavior; tests pass.",
+    "date": 1771796211939
   },
   "intrinsicValue": 0,
   "cost": 1,
