@@ -75,6 +75,3 @@ export const useProjectStore = defineStore('project', {
     }
   }
 })
-
-// Backward compatibility during migration
-export const useUIProjectStore = useProjectStore

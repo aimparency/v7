@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import GraphSidePanel from '../GraphSidePanel.vue'
-import { useUIStore } from '../../stores/ui'
+import { useGraphUIStore } from '../../stores/ui/graph-store'
 import { useDataStore } from '../../stores/data'
 import { useProjectStore } from '../../stores/project-store'
 
@@ -42,7 +42,7 @@ describe('GraphSidePanel', () => {
   })
 
   it('persists explanation to the originally edited connection when selection changes before blur', async () => {
-    const uiStore = useUIStore()
+    const graphStore = useGraphUIStore()
     const projectStore = useProjectStore()
     const dataStore = useDataStore()
 
@@ -67,7 +67,7 @@ describe('GraphSidePanel', () => {
       c2: child2
     } as any
 
-    uiStore.selectLink('p1', 'c1')
+    graphStore.selectLink('p1', 'c1')
 
     const wrapper = mount(GraphSidePanel, {
       global: {
@@ -80,7 +80,7 @@ describe('GraphSidePanel', () => {
     const textarea = wrapper.find('textarea')
     await textarea.setValue('updated explanation')
 
-    uiStore.selectLink('p2', 'c2')
+    graphStore.selectLink('p2', 'c2')
     await textarea.trigger('blur')
 
     expect(trpc.aim.update.mutate).toHaveBeenCalledWith(
