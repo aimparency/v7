@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUIStore, type AimPath } from './stores/ui'
 import { useDataStore, type Aim } from './stores/data'
 import { trpc } from './trpc'
-import RootAimsColumn from './components/RootAimsColumn.vue'
-import PhaseColumn from './components/PhaseColumn.vue'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
 import AimSearchModal from './components/AimSearchModal.vue'
-import GraphView from './views/GraphView.vue'
+import ColumnsView from './views/ColumnsView.vue'
+import GraphViewWrapper from './views/GraphViewWrapper.vue'
+import ProjectSelectionView from './views/ProjectSelectionView.vue'
 import VoiceView from './views/VoiceView.vue'
 import WatchdogPanel from './components/WatchdogPanel.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
@@ -70,18 +70,6 @@ const stopResizeWatchdog = () => {
 // Template refs
 const projectPathInput = ref('')
 
-// Container offset based on viewport start from store
-const containerOffset = computed(() => {
-  const columnWidth = 100 / uiStore.viewportSize
-  const columnsToShift = uiStore.viewportStart + 1
-  const offset = columnsToShift * columnWidth
-  return `translateX(-${offset}%)`
-})
-
-const columnWidth = computed(() => {
-  return `${100 / uiStore.viewportSize}%`
-})
-
 const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
   await dataStore.loadProject(path)
@@ -102,23 +90,8 @@ const openProjectFromHistory = async (path: string) => {
   uiStore.ensureSelectionVisible()
 }
 
-const removeFromHistory = (path: string, event: Event) => {
-  event.stopPropagation()
+const removeFromHistory = (path: string) => {
   uiStore.removeProjectFromHistory(path)
-}
-
-const formatRelativeTime = (timestamp: number): string => {
-  const now = Date.now()
-  const diff = now - timestamp
-  const minutes = Math.floor(diff / (60 * 1000))
-  const hours = Math.floor(diff / (60 * 60 * 1000))
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000))
-
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  if (days < 30) return `${days}d ago`
-  return new Date(timestamp).toLocaleDateString()
 }
 
 const closeProject = () => {
@@ -323,76 +296,23 @@ onUnmounted(() => {
       </div>
     </header>
 
-    <!-- Project Selection -->
-    <div v-if="uiStore.isInProjectSelection" class="project-selection">
-      <h1>Aimparency</h1>
-      <p>Select a project base folder to get started</p>
-
-      <div class="project-input-container">
-        <input
-          v-model="projectPathInput"
-          type="text"
-          placeholder="Enter project folder path..."
-          class="project-input"
-          @keydown.enter="handleSelectProject"
-        />
-        <button @click="handleSelectProject" class="select-project">Open Project</button>
-      </div>
-
-      <!-- Project History -->
-      <div v-if="uiStore.projectHistory.length > 0" class="project-history">
-        <h3>Recent Projects</h3>
-        <div class="history-list">
-          <div
-            v-for="project in uiStore.projectHistory"
-            :key="project.path"
-            class="history-item"
-            :class="{ failed: project.failedToLoad }"
-            @click="openProjectFromHistory(project.path)"
-          >
-            <div class="history-item-content">
-              <div class="history-path">{{ project.path }}</div>
-              <div class="history-time">{{ formatRelativeTime(project.lastOpened) }}</div>
-            </div>
-            <button
-              class="remove-button"
-              @click="removeFromHistory(project.path, $event)"
-              title="Remove from history"
-            >×</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <ProjectSelectionView
+      v-if="uiStore.isInProjectSelection"
+      v-model="projectPathInput"
+      :project-history="uiStore.projectHistory"
+      @select-project="handleSelectProject"
+      @open-project-from-history="openProjectFromHistory"
+      @remove-from-history="removeFromHistory"
+    />
 
     <!-- Main Interface -->
     <div v-else class="main-split">
       <main class="content-area" v-show="!(uiStore.showWatchdog && uiStore.watchdogMaximized)">
         <!-- Columns View -->
-        <div 
-          v-if="uiStore.currentView === 'columns'"
-          class="columns-layout" 
-          :style="{ transform: containerOffset, '--column-width': columnWidth }"
-        >
-          <!-- Root Aims Column (Column -1) -->
-          <RootAimsColumn
-            class="column-aims"
-          />
-
-          <!-- Phase Columns (0, 1, 2...) -->
-          <PhaseColumn
-            v-for="colIndex in [...Array(uiStore.rightmostColumnIndex + 1).keys()]"
-            :key="colIndex"
-            :column-index="colIndex"
-            :parent-phase-id="uiStore.columnParentPhaseId[colIndex] ?? null"
-            class="column"
-            :is-selected="uiStore.selectedColumn === colIndex"
-            :is-active="uiStore.selectedColumn === colIndex"
-            :selected-phase-index="uiStore.getSelectedPhase(colIndex)"
-          />
-        </div>
+        <ColumnsView v-if="uiStore.currentView === 'columns'" />
 
         <!-- Graph View -->
-        <GraphView v-else-if="uiStore.currentView === 'graph'" />
+        <GraphViewWrapper v-else-if="uiStore.currentView === 'graph'" />
 
         <!-- Voice View -->
         <VoiceView v-else-if="uiStore.currentView === 'voice'" />
@@ -556,160 +476,6 @@ onUnmounted(() => {
   background: #ff6666;
 }
 
-.project-selection {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2rem;
-  padding: 2rem;
-  max-width: 50rem;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.project-input-container {
-  display: flex;
-  gap: 0.5rem;
-  width: 100%;
-}
-
-.project-input {
-  flex: 1;
-  padding: 0.75rem 1rem;
-  background: #1a1a1a;
-  border: 1px solid #555;
-  border-radius: 0.3125rem;
-  color: #e0e0e0;
-  font-size: 1rem;
-
-  &:focus {
-    outline: none;
-    border-color: #007acc;
-  }
-
-  &::placeholder {
-    color: #666;
-  }
-}
-
-.select-project {
-  background: #007acc;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.3125rem;
-  cursor: pointer;
-  font-size: 1rem;
-  white-space: nowrap;
-}
-
-.select-project:hover {
-  background: #005a99;
-}
-
-.project-history {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-
-  h3 {
-    margin: 0;
-    font-size: 1rem;
-    color: #ccc;
-  }
-}
-
-.history-list {
-  max-height: 20rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-
-  /* Custom scrollbar */
-  &::-webkit-scrollbar {
-    width: 0.375rem;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #1a1a1a;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #555;
-    border-radius: 0.1875rem;
-
-    &:hover {
-      background: #666;
-    }
-  }
-
-  scrollbar-width: thin;
-  scrollbar-color: #555 #1a1a1a;
-}
-
-.history-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  background: #2d2d2d;
-  border: 1px solid #444;
-  border-radius: 0.3125rem;
-  cursor: pointer;
-  transition: background 0.2s;
-
-  &:hover {
-    background: #333;
-  }
-
-  &.failed {
-    .history-path {
-      color: #ff6666;
-    }
-    border-color: #ff666644;
-  }
-}
-
-.history-item-content {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  min-width: 0;
-}
-
-.history-path {
-  color: #e0e0e0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.history-time {
-  font-size: 0.8rem;
-  color: #888;
-  white-space: nowrap;
-}
-
-.remove-button {
-  background: transparent;
-  border: none;
-  color: #888;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0 0.5rem;
-  line-height: 1;
-  transition: color 0.2s;
-
-  &:hover {
-    color: #ff6666;
-  }
-}
 
 .main-split {
   flex: 1;
@@ -749,24 +515,6 @@ onUnmounted(() => {
   position: relative;
   min-height: 0;
   overflow: hidden;
-}
-
-.columns-layout {
-  flex: 1;
-  display: flex;
-  flex-direction: row;
-  position: relative;
-  transition: transform 0.3s ease;
-  min-height: 0;
-  width: 100%;
-}
-
-.column-aims,
-.column {
-  flex-basis: var(--column-width);
-  flex-shrink: 0;
-  height: 100%;
-  border-right: 1px solid #444;
 }
 
 .help {

@@ -16,8 +16,8 @@
   ],
   "status": {
     "state": "partially",
-    "comment": "Refactor slice 2 complete: extracted project path/history normalization and mutation logic from `stores/ui.ts` into typed helper module `stores/ui/project-helpers.ts` and added focused unit coverage (`stores/ui/project-helpers.spec.ts`). `useUIStore` now delegates setProjectPath + project history actions to helpers, reducing duplication and centralizing path semantics. Verification: `npm run type-check -w frontend` passed; `npm run test:unit -w frontend` passed (14 files, 57 tests).",
-    "date": 1771962196783
+    "comment": "Refactor slice 4 complete: extracted view/graph UI state transitions from `stores/ui.ts` into `stores/ui/view-helpers.ts` (`setViewportSize`, `setView`, graph color/panel/labels persistence, `resetViewState`) with focused tests in `stores/ui/view-helpers.spec.ts`. Combined with prior slices (`navigation-helpers`, `project-helpers`, `modal-helpers`) this modularizes key domains while preserving `useUIStore` API compatibility. Verification: `npm run type-check -w frontend` passed; `npm run test:unit -w frontend` passed (16 files, 63 tests). `stores/ui.ts` reduced from 2747 to 2527 lines; further extraction remains.",
+    "date": 1771963204053
   },
   "intrinsicValue": 0,
   "cost": 1,

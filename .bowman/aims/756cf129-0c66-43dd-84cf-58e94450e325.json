@@ -15,9 +15,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1771608129168
+    "state": "done",
+    "comment": "Completed App.vue decomposition: extracted `views/ColumnsView.vue` (columns rendering + viewport transform logic), `views/GraphViewWrapper.vue` (graph view wrapper), and `views/ProjectSelectionView.vue` (project selection/history UI). `App.vue` now acts as orchestration/layout shell and dropped from 841 lines to 590 lines while preserving behavior. Verification: `npm run type-check -w frontend` passed; `npm run test:unit -w frontend` passed (15 files, 60 tests).",
+    "date": 1771963109405
   },
   "intrinsicValue": 0,
   "cost": 1,

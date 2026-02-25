@@ -201,7 +201,7 @@ describe('UI teleport cut/paste', () => {
     expect(uiStore.teleportCutAimId).toBeNull()
   })
 
-  it('does not open create modal in aim-navigation when no aim is selected', async () => {
+  it('opens create modal in aim-navigation for an empty selected phase', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
 
@@ -222,6 +222,48 @@ describe('UI teleport cut/paste', () => {
 
     await uiStore.handleAimNavigationKeys(keyEvent('o'), dataStore)
 
-    expect(uiStore.showAimModal).toBe(false)
+    expect(uiStore.showAimModal).toBe(true)
+    expect(uiStore.aimModalMode).toBe('create')
+    expect(uiStore.aimModalInsertPosition).toBe('after')
+  })
+
+  it('does not enter aim mode with i when selected column has no phases', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+
+    uiStore.navigatingAims = false
+    uiStore.selectedColumn = 0
+    uiStore.columnParentPhaseId[0] = null
+    dataStore.childrenByParentId['null'] = []
+
+    await uiStore.handleColumnNavigationKeys(keyEvent('i'), dataStore)
+
+    expect(uiStore.navigatingAims).toBe(false)
+  })
+
+  it('enters aim mode with i when selected phase exists even if it has no aims', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+
+    uiStore.navigatingAims = false
+    uiStore.selectedColumn = 0
+    uiStore.columnParentPhaseId[0] = null
+    uiStore.selectedPhaseByColumn[0] = 0
+    uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
+    uiStore.phaseCountByColumn[0] = 1
+    dataStore.childrenByParentId['null'] = ['phase-empty']
+    dataStore.phases['phase-empty'] = {
+      id: 'phase-empty',
+      name: 'Empty',
+      from: 0,
+      to: 1,
+      parent: null,
+      commitments: [],
+      selectedAimIndex: undefined
+    } as any
+
+    await uiStore.handleColumnNavigationKeys(keyEvent('i'), dataStore)
+
+    expect(uiStore.navigatingAims).toBe(true)
   })
 })

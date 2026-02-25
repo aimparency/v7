@@ -1,9 +1,20 @@
 import { defineStore } from 'pinia'
 import type { Hint } from 'shared'
-import { timestampToLocalDate, timestampToLocalTime } from 'shared'
 import { trpc } from '../trpc'
 import { useDataStore, type Aim, type Phase, type AimCreationParams } from './data'
 import { AIM_DEFAULTS } from '../constants/aimDefaults'
+import {
+  clearTeleportBuffer as clearTeleportBufferHelper,
+  closeAimModal as closeAimModalHelper,
+  closeAimSearchModal as closeAimSearchModalHelper,
+  closePhaseModal as closePhaseModalHelper,
+  closeSettingsModal as closeSettingsModalHelper,
+  openAimCreateModal as openAimCreateModalHelper,
+  openAimSearchModal as openAimSearchModalHelper,
+  openPhaseCreateModal as openPhaseCreateModalHelper,
+  openPhaseEditModal as openPhaseEditModalHelper,
+  openSettingsModal as openSettingsModalHelper
+} from './ui/modal-helpers'
 import {
   normalizeProjectPath,
   removeProjectFromHistoryEntries,
@@ -11,6 +22,14 @@ import {
   upsertProjectHistory,
   type ProjectHistoryEntry
 } from './ui/project-helpers'
+import {
+  resetViewState as resetViewStateHelper,
+  setGraphColorMode as setGraphColorModeHelper,
+  setGraphPanelWidth as setGraphPanelWidthHelper,
+  setView as setViewHelper,
+  setViewportSize as setViewportSizeHelper,
+  toggleGraphShowLabels as toggleGraphShowLabelsHelper
+} from './ui/view-helpers'
 import {
   findLastDescendant as findLastDescendantHelper,
   findNextAimInTree as findNextAimInTreeHelper,
@@ -216,25 +235,20 @@ export const useUIStore = defineStore('ui', {
     },
 
     setViewportSize(size: number) {
-      const newSize = Math.max(1, Math.min(size, 10))
-      this.viewportSize = newSize
-      localStorage.setItem('aimparency-viewport-size', newSize.toString())
+      setViewportSizeHelper(this, size)
       this.ensureSelectionVisible()
     },
 
     setView(view: 'columns' | 'graph' | 'voice') {
-      if (view === 'graph') {
-        // Sync List -> Graph
-        const current = this.getCurrentAim()
-        this.graphSelectedAimId = current ? current.id : null
-      } else if (view === 'columns') {
-        // Sync Graph -> List
-        if (this.graphSelectedAimId) {
-          this.navigateToAim(this.graphSelectedAimId)
-        }
-      }
-      this.currentView = view
-      localStorage.setItem('aimparency-current-view', view)
+      setViewHelper(
+        this,
+        view,
+        () => {
+          const current = this.getCurrentAim()
+          return current ? current.id : null
+        },
+        (aimId) => this.navigateToAim(aimId)
+      )
     },
 
     ensureSelectionVisible() {
@@ -252,39 +266,15 @@ export const useUIStore = defineStore('ui', {
     
     // Phase creation/editing actions
     openPhaseModal() {
-      this.showPhaseModal = true
-      this.phaseModalMode = 'create'
-      this.phaseModalEditingPhaseId = null
-      this.phaseModalEditingParentId = null
-      this.newPhaseName = ''
-      // Date calculation will be handled by PhaseCreationModal component
+      openPhaseCreateModalHelper(this)
     },
 
     openPhaseEditModal(phaseId: string, phaseName: string, phaseFrom: number, phaseTo: number, parentPhaseId: string | null, columnIndex: number = 0) {
-      this.showPhaseModal = true
-      this.phaseModalMode = 'edit'
-      this.phaseModalEditingPhaseId = phaseId
-      this.phaseModalEditingParentId = parentPhaseId
-      this.newPhaseName = phaseName
-
-      // Extract local date and time from timestamps
-      this.newPhaseStartDate = timestampToLocalDate(phaseFrom)
-      this.newPhaseStartTime = timestampToLocalTime(phaseFrom)
-      this.newPhaseEndDate = timestampToLocalDate(phaseTo)
-      this.newPhaseEndTime = timestampToLocalTime(phaseTo)
-
+      openPhaseEditModalHelper(this, phaseId, phaseName, phaseFrom, phaseTo, parentPhaseId)
     },
 
     closePhaseModal() {
-      this.showPhaseModal = false
-      this.phaseModalMode = 'create'
-      this.phaseModalEditingPhaseId = null
-      this.phaseModalEditingParentId = null
-      this.newPhaseName = ''
-      this.newPhaseStartDate = ''
-      this.newPhaseStartTime = ''
-      this.newPhaseEndDate = ''
-      this.newPhaseEndTime = ''
+      closePhaseModalHelper(this)
     },
 
     // Create phase and update selection
@@ -314,43 +304,32 @@ export const useUIStore = defineStore('ui', {
     },
 
     closeAimModal() {
-      this.showAimModal = false
-      this.aimModalMode = 'create'
-      this.aimModalEditingAimId = null
+      closeAimModalHelper(this)
     },
     
     // Aim creation/editing actions
     openAimModal(phaseId?: string, insertionIndex: number = 0) {
-      this.showAimModal = true
-      this.aimModalMode = 'create'
+      openAimCreateModalHelper(this)
     },
 
     openAimSearch(mode: 'navigate' | 'pick' = 'navigate', callback?: (aim: Aim) => void, initialAimId?: string) {
-      this.showAimSearch = true
-      this.aimSearchMode = mode
-      this.aimSearchCallback = callback || null
-      this.aimSearchInitialAimId = initialAimId || null
+      openAimSearchModalHelper(this, mode, callback, initialAimId)
     },
 
     closeAimSearch() {
-      this.showAimSearch = false
-      this.aimSearchMode = 'navigate'
-      this.aimSearchCallback = null
-      this.aimSearchInitialAimId = null
+      closeAimSearchModalHelper(this)
     },
 
     clearTeleportBuffer() {
-      this.teleportCutAimId = null
-      this.teleportSource = null
-      this.movingAimId = null
+      clearTeleportBufferHelper(this)
     },
 
     openSettingsModal() {
-      this.showSettingsModal = true
+      openSettingsModalHelper(this)
     },
 
     closeSettingsModal() {
-      this.showSettingsModal = false
+      closeSettingsModalHelper(this)
     },
 
     // Create aim and update selection
@@ -888,18 +867,15 @@ export const useUIStore = defineStore('ui', {
     },
 
     setGraphColorMode(mode: 'status' | 'priority') {
-      this.graphColorMode = mode
-      localStorage.setItem('aimparency-graph-color-mode', mode)
+      setGraphColorModeHelper(this, mode)
     },
 
     setGraphPanelWidth(width: number) {
-      this.graphPanelWidth = Math.max(200, Math.min(width, 600))
-      localStorage.setItem('aimparency-graph-panel-width', this.graphPanelWidth.toString())
+      setGraphPanelWidthHelper(this, width)
     },
 
     toggleGraphShowLabels() {
-      this.graphShowLabels = !this.graphShowLabels
-      localStorage.setItem('aimparency-graph-show-labels', String(this.graphShowLabels))
+      toggleGraphShowLabelsHelper(this)
     },
 
     async calculateAimPaths(aimId: string): Promise<AimPath[]> {
@@ -2257,14 +2233,20 @@ export const useUIStore = defineStore('ui', {
 
           // Initialize aim selection if needed
           if (this.selectedColumn >= 0) {
-            const phaseId = this.getSelectedPhaseId(this.selectedColumn)
-            if (phaseId) {
-              const phase = dataStore.phases[phaseId]
-              const aims = dataStore.getAimsForPhase(phaseId)
-              if (phase && aims.length > 0 && phase.selectedAimIndex === undefined) {
-                phase.selectedAimIndex = 0
+            const parentId = this.columnParentPhaseId[this.selectedColumn] ?? null
+            const phases = dataStore.getPhasesByParentId(parentId)
+            if (phases.length > 0) {
+              const selectedIndex = this.getSelectedPhase(this.selectedColumn)
+              const selectedPhase = phases[selectedIndex] ?? phases[0]
+              if (selectedPhase) {
+                this.selectedPhaseByColumn[this.selectedColumn] = phases.indexOf(selectedPhase)
+                this.selectedPhaseIdByColumn[this.selectedColumn] = selectedPhase.id
+                const aims = dataStore.getAimsForPhase(selectedPhase.id)
+                if (aims.length > 0 && selectedPhase.selectedAimIndex === undefined) {
+                  selectedPhase.selectedAimIndex = 0
+                }
+                this.navigatingAims = true
               }
-              this.navigatingAims = true
             }
           } else {
             // Initialize floating aim selection for root aims column
@@ -2457,6 +2439,10 @@ export const useUIStore = defineStore('ui', {
         this.showAimModal = true
         this.aimModalMode = 'create'
         this.aimModalInsertPosition = creationPos
+      } else if (creationPos !== undefined && path.phase) {
+        this.showAimModal = true
+        this.aimModalMode = 'create'
+        this.aimModalInsertPosition = creationPos
       }
 
       switch (event.key) {
@@ -2545,16 +2531,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     resetViewState() {
-      // Reset column/viewport state when switching projects
-      this.selectedColumn = 0
-      this.viewportStart = 0
-      this.viewportSize = 2
-      this.rightmostColumnIndex = 0
-      this.floatingAimIndex = -1
-      this.navigatingAims = false
-      this.graphSelectedAimId = null
-      this.selectedLink = null
-      localStorage.setItem('aimparency-selected-column', '0')
+      resetViewStateHelper(this)
     },
   }
 })
