@@ -1,7 +1,7 @@
 import { ref, shallowRef, watch } from 'vue'
 import { useDataStore } from '../stores/data'
-import { useUIStore } from '../stores/ui'
 import { useGraphUIStore } from '../stores/ui/graph-store'
+import { useUIProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
@@ -92,7 +92,7 @@ function interpolateColor(t: number): string {
 
 export function useGraphSimulation() {
   const dataStore = useDataStore()
-  const uiStore = useUIStore()
+  const projectStore = useUIProjectStore()
   const graphUIStore = useGraphUIStore()
   const mapStore = useMapStore()
 
@@ -669,10 +669,10 @@ export function useGraphSimulation() {
     mapStore.setNodeGetter((id) => nodeMap.get(id))
     
     // Load Data
-    if (uiStore.projectPath) {
-      dataStore.loadAllAims(uiStore.projectPath)
+    if (projectStore.projectPath) {
+      dataStore.loadAllAims(projectStore.projectPath)
       
-      trpc.graph.getSemanticForces.query({ projectPath: uiStore.projectPath })
+      trpc.graph.getSemanticForces.query({ projectPath: projectStore.projectPath })
         .then(graph => {
           semanticLinks.value = graph.links
         })

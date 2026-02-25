@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useGraphUIStore } from '../stores/ui/graph-store'
-import { useUIProjectStore } from '../stores/ui/project-store'
+import { useUIProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { useMapStore } from '../stores/map'
 import { trpc } from '../trpc'

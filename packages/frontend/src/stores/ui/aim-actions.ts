@@ -1,5 +1,7 @@
 import { trpc } from '../../trpc'
 import type { AimCreationParams } from '../data'
+import { useUIModalStore } from './modal-store'
+import { useUIProjectStore } from '../project-store'
 
 export async function createAimAction(
   uiStore: any,
@@ -9,6 +11,8 @@ export async function createAimAction(
   aimAttributes: AimCreationParams,
   weight: number
 ) {
+  const modalStore = useUIModalStore()
+  const projectStore = useUIProjectStore()
   const path = uiStore.getSelectionPath()
   let newAimId: string | undefined
 
@@ -16,40 +20,40 @@ export async function createAimAction(
     if (path.phase) {
       if (isExistingAim) {
         await trpc.aim.commitToPhase.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           aimId: aimTextOrId,
           phaseId: path.phase.id,
           insertionIndex: 0
         })
         newAimId = aimTextOrId
       } else {
-        const result = await dataStore.createCommittedAim(uiStore.projectPath, path.phase.id, aimAttributes, 0)
+        const result = await dataStore.createCommittedAim(projectStore.projectPath, path.phase.id, aimAttributes, 0)
         newAimId = result.id
       }
 
-      await dataStore.loadPhaseAims(uiStore.projectPath, path.phase.id)
+      await dataStore.loadPhaseAims(projectStore.projectPath, path.phase.id)
     } else if (isExistingAim) {
-      if (uiStore.aimCreationCallback) {
+      if (modalStore.aimCreationCallback) {
         newAimId = aimTextOrId
       } else {
-        uiStore.showAimModal = false
+        modalStore.showAimModal = false
         return
       }
     } else {
-      const result = await dataStore.createFloatingAim(uiStore.projectPath, aimAttributes)
+      const result = await dataStore.createFloatingAim(projectStore.projectPath, aimAttributes)
       newAimId = result.id
     }
   } else {
     const currentAim = path.aims[path.aims.length - 1]
     if (!currentAim) {
-      uiStore.showAimModal = false
+      modalStore.showAimModal = false
       return
     }
 
-    if (currentAim.expanded && uiStore.aimModalInsertPosition === 'after') {
+    if (currentAim.expanded && modalStore.aimModalInsertPosition === 'after') {
       if (isExistingAim) {
         await trpc.aim.connectAims.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           parentAimId: currentAim.id,
           childAimId: aimTextOrId,
           parentIncomingIndex: 0,
@@ -58,12 +62,12 @@ export async function createAimAction(
         newAimId = aimTextOrId
 
         const updatedParent = await trpc.aim.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           aimId: currentAim.id
         })
         dataStore.replaceAim(currentAim.id, updatedParent)
       } else {
-        const result = await dataStore.createSubAim(uiStore.projectPath, currentAim.id, aimAttributes, 0, weight)
+        const result = await dataStore.createSubAim(projectStore.projectPath, currentAim.id, aimAttributes, 0, weight)
         newAimId = result.id
       }
 
@@ -75,13 +79,13 @@ export async function createAimAction(
       const parentAim = path.aims[path.aims.length - 2]
       if (parentAim) {
         let insertionIndex = parentAim.selectedIncomingIndex ?? 0
-        if (uiStore.aimModalInsertPosition === 'after') {
+        if (modalStore.aimModalInsertPosition === 'after') {
           insertionIndex++
         }
 
         if (isExistingAim) {
           await trpc.aim.connectAims.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             parentAimId: parentAim.id,
             childAimId: aimTextOrId,
             parentIncomingIndex: insertionIndex,
@@ -90,12 +94,12 @@ export async function createAimAction(
           newAimId = aimTextOrId
 
           const updatedParent = await trpc.aim.get.query({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             aimId: parentAim.id
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
         } else {
-          const result = await dataStore.createSubAim(uiStore.projectPath, parentAim.id, aimAttributes, insertionIndex, weight)
+          const result = await dataStore.createSubAim(projectStore.projectPath, parentAim.id, aimAttributes, insertionIndex, weight)
           newAimId = result.id
         }
 
@@ -108,12 +112,12 @@ export async function createAimAction(
       let insertionIndex = 0
       const phase = dataStore.phases[path.phase.id]
       if (phase && phase.selectedAimIndex !== undefined) {
-        insertionIndex = phase.selectedAimIndex + (uiStore.aimModalInsertPosition === 'after' ? 1 : 0)
+        insertionIndex = phase.selectedAimIndex + (modalStore.aimModalInsertPosition === 'after' ? 1 : 0)
       }
 
       if (isExistingAim) {
         await trpc.aim.commitToPhase.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           aimId: aimTextOrId,
           phaseId: path.phase.id,
           insertionIndex
@@ -121,12 +125,12 @@ export async function createAimAction(
         newAimId = aimTextOrId
 
         const updatedPhase = await trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           phaseId: path.phase.id
         })
         dataStore.replacePhase(path.phase.id, updatedPhase)
       } else {
-        const result = await dataStore.createCommittedAim(uiStore.projectPath, path.phase.id, aimAttributes, insertionIndex)
+        const result = await dataStore.createCommittedAim(projectStore.projectPath, path.phase.id, aimAttributes, insertionIndex)
         newAimId = result.id
       }
 
@@ -135,22 +139,22 @@ export async function createAimAction(
         freshPhase.selectedAimIndex = insertionIndex
       }
     } else if (isExistingAim) {
-      if (uiStore.aimCreationCallback) {
+      if (modalStore.aimCreationCallback) {
         newAimId = aimTextOrId
       } else {
-        uiStore.showAimModal = false
+        modalStore.showAimModal = false
         return
       }
     } else {
-      const result = await dataStore.createFloatingAim(uiStore.projectPath, aimAttributes)
+      const result = await dataStore.createFloatingAim(projectStore.projectPath, aimAttributes)
       newAimId = result.id
     }
   }
 
   if (newAimId) {
-    if (uiStore.aimCreationCallback) {
-      uiStore.aimCreationCallback(newAimId)
-      uiStore.aimCreationCallback = null
+    if (modalStore.aimCreationCallback) {
+      modalStore.aimCreationCallback(newAimId)
+      modalStore.aimCreationCallback = null
     }
 
     if (path.phase) {
@@ -170,5 +174,5 @@ export async function createAimAction(
     }
   }
 
-  uiStore.showAimModal = false
+  modalStore.showAimModal = false
 }

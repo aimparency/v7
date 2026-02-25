@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useWatchdogStore, type AgentType } from '../stores/watchdog'
-import { useUIProjectStore } from '../stores/ui/project-store'
+import { useUIProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import WatchdogTerminal from './WatchdogTerminal.vue'
 import WatchdogActionsOverlay from './WatchdogActionsOverlay.vue'

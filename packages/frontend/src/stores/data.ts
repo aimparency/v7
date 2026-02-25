@@ -4,6 +4,7 @@ import { calculateAimValues, AIMPARENCY_DIR_NAME, DEFAULT_STATUSES } from 'share
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
 import { useMapStore } from './map'
+import { useUIProjectStore } from './project-store'
 import { loadAllAimsCache, saveAims } from '../utils/db'
 
 // Extend Phase type with UI-only properties
@@ -788,18 +789,18 @@ export const useDataStore = defineStore('data', {
     },
 
     async deletePhase(phaseId: string, parentPhaseId: string | null) {
-      const uiStore = useUIStore();
+      const projectStore = useUIProjectStore();
 
       try {
         // Get child phases and update their parent
         const childPhases = await trpc.phase.list.query({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           parentPhaseId: phaseId
         });
 
         for (const child of childPhases) {
           await trpc.phase.update.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             phaseId: child.id,
             phase: { parent: parentPhaseId }
           });
@@ -807,7 +808,7 @@ export const useDataStore = defineStore('data', {
 
         // Delete the phase
         await trpc.phase.delete.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           phaseId: phaseId
         });
       } catch (error) {
@@ -861,6 +862,7 @@ export const useDataStore = defineStore('data', {
 
     async deleteAim(aimId: string) {
       const uiStore = useUIStore();
+      const projectStore = useUIProjectStore();
 
       try {
         const aim = this.aims[aimId]
@@ -878,7 +880,7 @@ export const useDataStore = defineStore('data', {
           // B) Sub-aim: remove from parent aim's supporting list
           const parentAim = path.aims[path.aims.length - 2]
           if (parentAim) {
-            await this.deleteSubAimRecursive(uiStore.projectPath, aimId, parentAim.id)
+            await this.deleteSubAimRecursive(projectStore.projectPath, aimId, parentAim.id)
 
             // Adjust parent's selectedIncomingIndex to stay in valid range
             const updatedParentAim = this.aims[parentAim.id]
@@ -896,13 +898,13 @@ export const useDataStore = defineStore('data', {
         } else if (path.phase) {
           // A) Committed aim: remove from phase
           await trpc.aim.removeFromPhase.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             aimId: aimId,
             phaseId: path.phase.id
           });
 
           // Reload the specific phase to get updated commitments
-          const phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId: path.phase.id })
+          const phase = await trpc.phase.get.query({ projectPath: projectStore.projectPath, phaseId: path.phase.id })
           if (phase) {
             this.replacePhase(path.phase.id, phase)
           }
@@ -918,14 +920,14 @@ export const useDataStore = defineStore('data', {
           // First recursively delete all sub-aims
           if (aim.supportingConnections && aim.supportingConnections.length > 0) {
             for (const conn of [...aim.supportingConnections]) {
-              await this.deleteSubAimRecursive(uiStore.projectPath, conn.aimId, aimId)
+              await this.deleteSubAimRecursive(projectStore.projectPath, conn.aimId, aimId)
             }
           }
 
           // Then delete the aim itself
           this.deletedAims.add(aimId)
           await trpc.aim.delete.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             aimId: aimId
           });
 

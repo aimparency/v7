@@ -4,7 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import GraphSidePanel from '../GraphSidePanel.vue'
 import { useUIStore } from '../../stores/ui'
 import { useDataStore } from '../../stores/data'
-import { useUIProjectStore } from '../../stores/ui/project-store'
+import { useUIProjectStore } from '../../stores/project-store'
 
 vi.mock('../../trpc', () => ({
   trpc: {

@@ -1,6 +1,8 @@
 import { trpc } from '../../trpc'
 import { useDataStore, type Aim, type Phase } from '../data'
 import { findPathToAim as findPathToAimHelper } from './navigation-helpers'
+import { useUIModalStore } from './modal-store'
+import { useUIProjectStore } from '../project-store'
 
 export type AimPath = {
   phaseId?: string
@@ -14,6 +16,7 @@ export async function selectAimByIdAction(
   aimId: string
 ) {
   const dataStore = useDataStore()
+  const modalStore = useUIModalStore()
 
   const currentAim = uiStore.getCurrentAim()
   const isAlreadySelected = currentAim?.id === aimId && uiStore.selectedColumn === columnIndex
@@ -22,8 +25,8 @@ export async function selectAimByIdAction(
     const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
     const aimIndex = aims.findIndex((a: any) => a && a.id === aimId)
     if (aimIndex !== -1) {
-      uiStore.showAimModal = true
-      uiStore.aimModalMode = 'edit'
+      modalStore.showAimModal = true
+      modalStore.aimModalMode = 'edit'
     }
     return
   }
@@ -99,6 +102,7 @@ export async function selectAimAction(
 }
 
 export async function calculateAimPathsAction(uiStore: any, aimId: string): Promise<AimPath[]> {
+  const projectStore = useUIProjectStore()
   const paths: AimPath[] = []
   const visited = new Set<string>()
 
@@ -110,7 +114,7 @@ export async function calculateAimPathsAction(uiStore: any, aimId: string): Prom
     let aim = dataStore.aims[currentId]
     if (!aim) {
       try {
-        aim = await trpc.aim.get.query({ projectPath: uiStore.projectPath, aimId: currentId })
+        aim = await trpc.aim.get.query({ projectPath: projectStore.projectPath, aimId: currentId })
         dataStore.replaceAim(aim.id, aim)
       } catch {
         console.error('failed to load aim', currentId)
@@ -151,13 +155,14 @@ export async function prepareNavigationAction(uiStore: any, aimId: string): Prom
 }
 
 export async function executeNavigationAction(uiStore: any, path: AimPath) {
+  const projectStore = useUIProjectStore()
   const dataStore = useDataStore()
   const rootAim = path.aims[0]
   const phaseId = path.phaseId
 
   if (phaseId) {
     const phasePath: Phase[] = []
-    let currentPhase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId })
+    let currentPhase = await trpc.phase.get.query({ projectPath: projectStore.projectPath, phaseId })
 
     while (currentPhase) {
       dataStore.replacePhase(currentPhase.id, currentPhase)
@@ -165,7 +170,7 @@ export async function executeNavigationAction(uiStore: any, path: AimPath) {
       if (storedPhase) phasePath.unshift(storedPhase)
 
       if (currentPhase.parent) {
-        currentPhase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId: currentPhase.parent })
+        currentPhase = await trpc.phase.get.query({ projectPath: projectStore.projectPath, phaseId: currentPhase.parent })
       } else {
         break
       }
@@ -175,13 +180,13 @@ export async function executeNavigationAction(uiStore: any, path: AimPath) {
       const p = phasePath[i]
       if (!p) continue
       const parentId = p.parent
-      await dataStore.loadPhases(uiStore.projectPath, parentId)
+      await dataStore.loadPhases(projectStore.projectPath, parentId)
       const siblings = dataStore.getPhasesByParentId(parentId)
       const index = siblings.findIndex((x: any) => x && x.id === p.id)
       if (index !== -1) {
         uiStore.setSelection(i, index)
         if (i < phasePath.length - 1) {
-          await dataStore.loadPhases(uiStore.projectPath, p.id)
+          await dataStore.loadPhases(projectStore.projectPath, p.id)
           uiStore.columnParentPhaseId[i + 1] = p.id
         }
       }
@@ -189,10 +194,10 @@ export async function executeNavigationAction(uiStore: any, path: AimPath) {
 
     uiStore.selectedColumn = phasePath.length - 1
     uiStore.setRightmostColumn(phasePath.length)
-    await dataStore.loadPhaseAims(uiStore.projectPath, phaseId)
+    await dataStore.loadPhaseAims(projectStore.projectPath, phaseId)
   } else {
     uiStore.selectedColumn = -1
-    await dataStore.loadFloatingAims(uiStore.projectPath)
+    await dataStore.loadFloatingAims(projectStore.projectPath)
   }
 
   const contextAims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
@@ -218,7 +223,7 @@ export async function executeNavigationAction(uiStore: any, path: AimPath) {
     parent.expanded = true
     if (parent.supportingConnections && parent.supportingConnections.length > 0) {
       await dataStore.loadAims(
-        uiStore.projectPath,
+        projectStore.projectPath,
         parent.supportingConnections.map((c: any) => c.aimId)
       )
     }

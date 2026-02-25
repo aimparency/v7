@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
 import { ref, computed } from 'vue'
 import { trpcWatchdog } from '../trpc-watchdog'
-import { useUIProjectStore } from './ui/project-store'
+import { useUIProjectStore } from './project-store'
 
 export type AgentType = 'claude' | 'gemini' | 'codex'
 

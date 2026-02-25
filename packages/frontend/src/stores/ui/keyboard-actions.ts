@@ -1,16 +1,20 @@
 import { trpc } from '../../trpc'
 import { useDataStore } from '../data'
+import { useGraphUIStore } from './graph-store'
+import { useUIModalStore } from './modal-store'
+import { useUIProjectStore } from '../project-store'
 
 export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
+  const graphStore = useGraphUIStore()
   if (event.key === 'd') {
     event.preventDefault()
-    const aimId = uiStore.graphSelectedAimId
+    const aimId = graphStore.graphSelectedAimId
     if (!aimId) return
 
     if (uiStore.pendingDeleteAimId === aimId) {
       await dataStore.deleteAim(aimId)
       uiStore.pendingDeleteAimId = null
-      uiStore.setGraphSelection(null)
+      graphStore.setGraphSelection(null)
     } else {
       uiStore.setPendingDeleteAim(aimId)
     }
@@ -19,12 +23,14 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
     if (uiStore.pendingDeleteAimId) {
       uiStore.pendingDeleteAimId = null
     } else {
-      uiStore.setGraphSelection(null)
+      graphStore.setGraphSelection(null)
     }
   }
 }
 
 export async function handleColumnNavigationKeysAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
+  const modalStore = useUIModalStore()
+  const projectStore = useUIProjectStore()
   const col = uiStore.selectedColumn
   switch (event.key) {
     case 'j':
@@ -115,19 +121,18 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       if (!selectedPhaseId) break
 
       const selectedPhase = await trpc.phase.get.query({
-        projectPath: uiStore.projectPath,
+        projectPath: projectStore.projectPath,
         phaseId: selectedPhaseId
       })
 
       if (!selectedPhase) break
 
-      uiStore.openPhaseEditModal(
+      modalStore.openPhaseEditModal(
         selectedPhase.id,
         selectedPhase.name,
         selectedPhase.from,
         selectedPhase.to,
-        selectedPhase.parent,
-        currentCol
+        selectedPhase.parent
       )
       break
     }
@@ -135,9 +140,9 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
     case 'O':
       event.preventDefault()
       if (uiStore.selectedColumn === -1) {
-        uiStore.openAimModal()
+        modalStore.openAimModal()
       } else {
-        uiStore.openPhaseModal()
+        modalStore.openPhaseModal()
       }
       break
     case 'd': {
@@ -166,7 +171,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         if (!selectedPhaseId) break
 
         const selectedPhase = await trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           phaseId: selectedPhaseId
         })
 
@@ -174,10 +179,10 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
 
         if (uiStore.pendingDeletePhaseId === selectedPhase.id) {
           const parentId = selectedPhase.parent
-          await dataStore.deletePhase(uiStore.projectPath, selectedPhase.id)
+          await dataStore.deletePhase(projectStore.projectPath, selectedPhase.id)
           uiStore.pendingDeletePhaseId = null
 
-          await dataStore.loadPhases(uiStore.projectPath, parentId)
+          await dataStore.loadPhases(projectStore.projectPath, parentId)
 
           const phases = dataStore.getPhasesByParentId(parentId)
           uiStore.phaseCountByColumn[currentCol] = phases.length
@@ -210,12 +215,14 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       break
     case 'g':
       event.preventDefault()
-      uiStore.setView(uiStore.currentView === 'columns' ? 'graph' : 'columns')
+      uiStore.setView(projectStore.currentView === 'columns' ? 'graph' : 'columns')
       break
   }
 }
 
 export async function handleAimNavigationKeysAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
+  const modalStore = useUIModalStore()
+  const projectStore = useUIProjectStore()
   const path = uiStore.getSelectionPath()
   const currentAim = path.aims[path.aims.length - 1]
 
@@ -275,13 +282,13 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
   }
 
   if (creationPos !== undefined && currentAim) {
-    uiStore.showAimModal = true
-    uiStore.aimModalMode = 'create'
-    uiStore.aimModalInsertPosition = creationPos
+    modalStore.showAimModal = true
+    modalStore.aimModalMode = 'create'
+    modalStore.aimModalInsertPosition = creationPos
   } else if (creationPos !== undefined && path.phase) {
-    uiStore.showAimModal = true
-    uiStore.aimModalMode = 'create'
-    uiStore.aimModalInsertPosition = creationPos
+    modalStore.showAimModal = true
+    modalStore.aimModalMode = 'create'
+    modalStore.aimModalInsertPosition = creationPos
   }
 
   switch (event.key) {
@@ -296,8 +303,8 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
     case 'e': {
       event.preventDefault()
       if (currentAim) {
-        uiStore.showAimModal = true
-        uiStore.aimModalMode = 'edit'
+        modalStore.showAimModal = true
+        modalStore.aimModalMode = 'edit'
       }
       break
     }
@@ -336,7 +343,7 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
           selectedAim.expanded = true
           const connections = selectedAim.supportingConnections || []
           if (connections.length > 0) {
-            dataStore.loadAims(uiStore.projectPath, connections.map((connection: any) => connection.aimId))
+            dataStore.loadAims(projectStore.projectPath, connections.map((connection: any) => connection.aimId))
           }
         } else if (selectedAim.supportingConnections && selectedAim.supportingConnections.length > 0) {
           if (selectedAim.selectedIncomingIndex === undefined) {
@@ -350,11 +357,13 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
 }
 
 export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
+  const modalStore = useUIModalStore()
+  const projectStore = useUIProjectStore()
   console.log('pressed', event.key, '. nav aims? ', uiStore.navigatingAims)
 
   if (event.ctrlKey || event.metaKey) return
 
-  if (uiStore.showPhaseModal || uiStore.showAimModal || uiStore.showAimSearch) {
+  if (modalStore.showPhaseModal || modalStore.showAimModal || modalStore.showAimSearch) {
     return
   }
 
@@ -364,17 +373,17 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
 
   if (event.key === '/') {
     event.preventDefault()
-    uiStore.openAimSearch()
+    modalStore.openAimSearch()
     return
   }
 
   if (event.key === 'g') {
     event.preventDefault()
-    uiStore.setView(uiStore.currentView === 'columns' ? 'graph' : 'columns')
+    uiStore.setView(projectStore.currentView === 'columns' ? 'graph' : 'columns')
     return
   }
 
-  if (uiStore.currentView === 'graph') {
+  if (projectStore.currentView === 'graph') {
     await uiStore.handleGraphKeydown(event, dataStore)
     return
   }

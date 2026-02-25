@@ -38,6 +38,8 @@ vi.mock('shared', async (importOriginal) => {
 
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useUIProjectStore } from '../stores/project-store'
+import { useUIModalStore } from '../stores/ui/modal-store'
 
 function keyEvent(key: string) {
   return { key, preventDefault: vi.fn() } as unknown as KeyboardEvent
@@ -68,8 +70,9 @@ describe('UI teleport cut/paste', () => {
   it('cuts with x and reorders in same phase with p', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
+    const projectStore = useUIProjectStore()
 
-    uiStore.projectPath = '/tmp/project'
+    projectStore.projectPath = '/tmp/project'
     uiStore.navigatingAims = true
     uiStore.selectedColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
@@ -122,8 +125,9 @@ describe('UI teleport cut/paste', () => {
   it('moves from one parent to another on paste', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
+    const projectStore = useUIProjectStore()
 
-    uiStore.projectPath = '/tmp/project'
+    projectStore.projectPath = '/tmp/project'
     uiStore.navigatingAims = true
     uiStore.selectedColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
@@ -204,9 +208,10 @@ describe('UI teleport cut/paste', () => {
   it('opens create modal in aim-navigation for an empty selected phase', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
+    const modalStore = useUIModalStore()
 
     uiStore.navigatingAims = true
-    uiStore.showAimModal = false
+    modalStore.showAimModal = false
     uiStore.selectedColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
 
@@ -222,9 +227,9 @@ describe('UI teleport cut/paste', () => {
 
     await uiStore.handleAimNavigationKeys(keyEvent('o'), dataStore)
 
-    expect(uiStore.showAimModal).toBe(true)
-    expect(uiStore.aimModalMode).toBe('create')
-    expect(uiStore.aimModalInsertPosition).toBe('after')
+    expect(modalStore.showAimModal).toBe(true)
+    expect(modalStore.aimModalMode).toBe('create')
+    expect(modalStore.aimModalInsertPosition).toBe('after')
   })
 
   it('does not enter aim mode with i when selected column has no phases', async () => {

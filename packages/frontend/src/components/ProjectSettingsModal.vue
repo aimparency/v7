@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { useUIProjectStore } from '../stores/ui/project-store'
+import { useUIProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import { DEFAULT_STATUSES } from 'shared'

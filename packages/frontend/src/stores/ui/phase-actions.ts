@@ -1,4 +1,5 @@
 import { useDataStore } from '../data'
+import { useUIProjectStore } from '../project-store'
 
 export async function selectPhaseAction(
   uiStore: any,
@@ -7,6 +8,7 @@ export async function selectPhaseAction(
   isTopLevel = true
 ) {
   const dataStore = useDataStore()
+  const projectStore = useUIProjectStore()
 
   if (isTopLevel) {
     uiStore.setSelectedColumn(columnIndex)
@@ -37,7 +39,7 @@ export async function selectPhaseAction(
   }
 
   const rememberedIndex = uiStore.lastSelectedSubPhaseIndexByPhase[phaseId] ?? 0
-  const children = await dataStore.loadPhases(uiStore.projectPath, phaseId)
+  const children = await dataStore.loadPhases(projectStore.projectPath, phaseId)
   uiStore.phaseCountByColumn[columnIndex + 1] = children.length
 
   if (children.length > 0) {

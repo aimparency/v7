@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { trpc } from '../trpc'
-import { useUIStore } from '../stores/ui'
-import { useDataStore } from '../stores/data'
+import { useUIProjectStore } from '../stores/project-store'
 
-const uiStore = useUIStore()
-const dataStore = useDataStore()
+const projectStore = useUIProjectStore()
 
 const isListening = ref(false)
 const transcript = ref('')
@@ -96,7 +94,7 @@ const handleTranscript = async (text: string) => {
   try {
     // Call the backend voice chat endpoint
     const result = await trpc.voice.chat.mutate({
-      projectPath: uiStore.projectPath,
+      projectPath: projectStore.projectPath,
       transcript: text
     })
 

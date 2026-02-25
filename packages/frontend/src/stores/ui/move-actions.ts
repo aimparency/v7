@@ -1,6 +1,12 @@
 import { trpc } from '../../trpc'
 import { useDataStore } from '../data'
 import { isAimInTree as isAimInTreeHelper } from './navigation-helpers'
+import { useUIProjectStore } from '../project-store'
+import { useUIModalStore } from './modal-store'
+
+function getProjectPath(): string {
+  return useUIProjectStore().projectPath
+}
 
 export async function moveAimDownAction(uiStore: any) {
   const dataStore = useDataStore()
@@ -28,7 +34,7 @@ export async function moveAimDownAction(uiStore: any) {
 
         try {
           await trpc.aim.connectAims.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: getProjectPath(),
             parentAimId: parentAim.id,
             childAimId: currentAim.id,
             parentIncomingIndex: nextIndex,
@@ -36,7 +42,7 @@ export async function moveAimDownAction(uiStore: any) {
           })
 
           const updatedParent = await trpc.aim.get.query({
-            projectPath: uiStore.projectPath,
+            projectPath: getProjectPath(),
             aimId: parentAim.id
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
@@ -67,14 +73,14 @@ export async function moveAimDownAction(uiStore: any) {
 
       try {
         await trpc.aim.commitToPhase.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: currentAim.id,
           phaseId,
           insertionIndex: nextIndex
         })
 
         const updatedPhase = await trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           phaseId
         })
         dataStore.replacePhase(phaseId, updatedPhase)
@@ -114,20 +120,20 @@ export async function moveAimDownAction(uiStore: any) {
 
         try {
           await trpc.aim.removeFromPhase.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: getProjectPath(),
             aimId: currentAim.id,
             phaseId
           })
           await trpc.aim.commitToPhase.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: getProjectPath(),
             aimId: currentAim.id,
             phaseId: nextPhaseId,
             insertionIndex: 0
           })
 
           const [updatedOld, updatedNew] = await Promise.all([
-            trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId }),
-            trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId: nextPhaseId })
+            trpc.phase.get.query({ projectPath: getProjectPath(), phaseId }),
+            trpc.phase.get.query({ projectPath: getProjectPath(), phaseId: nextPhaseId })
           ])
           dataStore.replacePhase(phaseId, updatedOld)
           dataStore.replacePhase(nextPhaseId, updatedNew)
@@ -166,7 +172,7 @@ export async function moveAimUpAction(uiStore: any) {
 
         try {
           await trpc.aim.connectAims.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: getProjectPath(),
             parentAimId: parentAim.id,
             childAimId: currentAim.id,
             parentIncomingIndex: prevIndex,
@@ -174,7 +180,7 @@ export async function moveAimUpAction(uiStore: any) {
           })
 
           const updatedParent = await trpc.aim.get.query({
-            projectPath: uiStore.projectPath,
+            projectPath: getProjectPath(),
             aimId: parentAim.id
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
@@ -204,14 +210,14 @@ export async function moveAimUpAction(uiStore: any) {
 
       try {
         await trpc.aim.commitToPhase.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: currentAim.id,
           phaseId,
           insertionIndex: prevIndex
         })
 
         const updatedPhase = await trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           phaseId
         })
         dataStore.replacePhase(phaseId, updatedPhase)
@@ -253,20 +259,20 @@ export async function moveAimUpAction(uiStore: any) {
 
         try {
           await trpc.aim.removeFromPhase.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: getProjectPath(),
             aimId: currentAim.id,
             phaseId
           })
           await trpc.aim.commitToPhase.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: getProjectPath(),
             aimId: currentAim.id,
             phaseId: prevPhaseId,
             insertionIndex: newIndex
           })
 
           const [updatedOld, updatedNew] = await Promise.all([
-            trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId }),
-            trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId: prevPhaseId })
+            trpc.phase.get.query({ projectPath: getProjectPath(), phaseId }),
+            trpc.phase.get.query({ projectPath: getProjectPath(), phaseId: prevPhaseId })
           ])
           dataStore.replacePhase(phaseId, updatedOld)
           dataStore.replacePhase(prevPhaseId, updatedNew)
@@ -346,19 +352,19 @@ export async function moveAimOutAction(uiStore: any) {
 
   try {
     await trpc.aim.update.mutate({
-      projectPath: uiStore.projectPath,
+      projectPath: getProjectPath(),
       aimId: parentId,
       aim: { supportingConnections: updatedConnections }
     })
     await trpc.aim.update.mutate({
-      projectPath: uiStore.projectPath,
+      projectPath: getProjectPath(),
       aimId: currentAimId,
       aim: { supportedAims: updatedSupportedAims }
     })
 
     if (grandparentId) {
       await trpc.aim.connectAims.mutate({
-        projectPath: uiStore.projectPath,
+        projectPath: getProjectPath(),
         parentAimId: grandparentId,
         childAimId: currentAimId,
         parentIncomingIndex: newIndex!,
@@ -366,7 +372,7 @@ export async function moveAimOutAction(uiStore: any) {
       })
     } else if (targetPhaseId) {
       await trpc.aim.commitToPhase.mutate({
-        projectPath: uiStore.projectPath,
+        projectPath: getProjectPath(),
         aimId: currentAimId,
         phaseId: targetPhaseId,
         insertionIndex: newIndex!
@@ -376,7 +382,7 @@ export async function moveAimOutAction(uiStore: any) {
     const reloads = []
     reloads.push(
       trpc.aim.get.query({
-        projectPath: uiStore.projectPath,
+        projectPath: getProjectPath(),
         aimId: parentId
       }).then((updated: any) => dataStore.replaceAim(parentId, updated))
     )
@@ -384,25 +390,25 @@ export async function moveAimOutAction(uiStore: any) {
     if (grandparentId) {
       reloads.push(
         trpc.aim.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: grandparentId
         }).then((updated: any) => dataStore.replaceAim(grandparentId, updated))
       )
     } else if (targetPhaseId) {
       reloads.push(
         trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           phaseId: targetPhaseId
         }).then((updated: any) => dataStore.replacePhase(targetPhaseId, updated)),
         trpc.aim.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: currentAimId
         }).then((updated: any) => dataStore.replaceAim(currentAimId, updated))
       )
     } else {
       reloads.push(
         trpc.aim.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: currentAimId
         }).then((updated: any) => {
           dataStore.replaceAim(currentAimId, updated)
@@ -511,7 +517,7 @@ export async function moveAimInAction(uiStore: any) {
 
   try {
     await trpc.aim.connectAims.mutate({
-      projectPath: uiStore.projectPath,
+      projectPath: getProjectPath(),
       parentAimId: previousSiblingId,
       childAimId: currentAimId,
       parentIncomingIndex: insertionIndex,
@@ -525,19 +531,19 @@ export async function moveAimInAction(uiStore: any) {
         const updatedConnections = oldParentConnections.filter((c: any) => c.aimId !== currentAimId)
 
         await trpc.aim.update.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: oldParentId,
           aim: { supportingConnections: updatedConnections }
         })
       }
       await trpc.aim.update.mutate({
-        projectPath: uiStore.projectPath,
+        projectPath: getProjectPath(),
         aimId: currentAimId,
         aim: { supportedAims: currentAim.supportedAims.filter((id: string) => id !== oldParentId) }
       })
     } else if (oldPhaseId) {
       await trpc.aim.removeFromPhase.mutate({
-        projectPath: uiStore.projectPath,
+        projectPath: getProjectPath(),
         aimId: currentAimId,
         phaseId: oldPhaseId
       })
@@ -546,7 +552,7 @@ export async function moveAimInAction(uiStore: any) {
     const reloads = []
     reloads.push(
       trpc.aim.get.query({
-        projectPath: uiStore.projectPath,
+        projectPath: getProjectPath(),
         aimId: previousSiblingId
       }).then((updated: any) => dataStore.replaceAim(previousSiblingId, updated))
     )
@@ -554,14 +560,14 @@ export async function moveAimInAction(uiStore: any) {
     if (oldParentId) {
       reloads.push(
         trpc.aim.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: oldParentId
         }).then((updated: any) => dataStore.replaceAim(oldParentId, updated))
       )
     } else if (oldPhaseId) {
       reloads.push(
         trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           phaseId: oldPhaseId
         }).then((updated: any) => dataStore.replacePhase(oldPhaseId, updated))
       )
@@ -574,8 +580,9 @@ export async function moveAimInAction(uiStore: any) {
 }
 
 export async function pasteCutAimAction(uiStore: any, dataStore: any) {
-  const cutAimId = uiStore.teleportCutAimId
-  const source = uiStore.teleportSource
+  const modalStore = useUIModalStore()
+  const cutAimId = modalStore.teleportCutAimId
+  const source = modalStore.teleportSource
   if (!cutAimId) return
 
   const path = uiStore.getSelectionPath()
@@ -611,14 +618,14 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
   try {
     if (destinationParentAimId && sourceParentAimId === destinationParentAimId) {
       await trpc.aim.connectAims.mutate({
-        projectPath: uiStore.projectPath,
+        projectPath: getProjectPath(),
         parentAimId: destinationParentAimId,
         childAimId: cutAimId,
         parentIncomingIndex: insertionIndex
       })
     } else if (destinationPhaseId && sourcePhaseId === destinationPhaseId) {
       await trpc.aim.commitToPhase.mutate({
-        projectPath: uiStore.projectPath,
+        projectPath: getProjectPath(),
         aimId: cutAimId,
         phaseId: destinationPhaseId,
         insertionIndex
@@ -629,14 +636,14 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
         if (sourceParent) {
           const updatedConnections = (sourceParent.supportingConnections || []).filter((c: any) => c.aimId !== cutAimId)
           await trpc.aim.update.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: getProjectPath(),
             aimId: sourceParentAimId,
             aim: { supportingConnections: updatedConnections }
           })
         }
       } else if (sourcePhaseId) {
         await trpc.aim.removeFromPhase.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: cutAimId,
           phaseId: sourcePhaseId
         })
@@ -644,14 +651,14 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
 
       if (destinationParentAimId) {
         await trpc.aim.connectAims.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           parentAimId: destinationParentAimId,
           childAimId: cutAimId,
           parentIncomingIndex: insertionIndex
         })
       } else if (destinationPhaseId) {
         await trpc.aim.commitToPhase.mutate({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: cutAimId,
           phaseId: destinationPhaseId,
           insertionIndex
@@ -661,7 +668,7 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
 
     const reloads: Promise<any>[] = [
       trpc.aim.get.query({
-        projectPath: uiStore.projectPath,
+        projectPath: getProjectPath(),
         aimId: cutAimId
       }).then((updatedAim: any) => dataStore.replaceAim(cutAimId, updatedAim))
     ]
@@ -669,7 +676,7 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
     if (sourceParentAimId) {
       reloads.push(
         trpc.aim.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: sourceParentAimId
         }).then((updatedAim: any) => dataStore.replaceAim(sourceParentAimId, updatedAim))
       )
@@ -678,7 +685,7 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
     if (destinationParentAimId) {
       reloads.push(
         trpc.aim.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           aimId: destinationParentAimId
         }).then((updatedAim: any) => dataStore.replaceAim(destinationParentAimId, updatedAim))
       )
@@ -687,7 +694,7 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
     if (sourcePhaseId) {
       reloads.push(
         trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           phaseId: sourcePhaseId
         }).then((updatedPhase: any) => dataStore.replacePhase(sourcePhaseId, updatedPhase))
       )
@@ -696,7 +703,7 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
     if (destinationPhaseId) {
       reloads.push(
         trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: getProjectPath(),
           phaseId: destinationPhaseId
         }).then((updatedPhase: any) => dataStore.replacePhase(destinationPhaseId, updatedPhase))
       )
@@ -719,12 +726,12 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
         destinationPhase.selectedAimIndex = Math.max(0, destinationPhase.commitments.indexOf(cutAimId))
       }
     } else if (destinationFloating) {
-      await dataStore.loadFloatingAims(uiStore.projectPath)
+      await dataStore.loadFloatingAims(getProjectPath())
       const idx = dataStore.floatingAimsIds.indexOf(cutAimId)
       if (idx >= 0) uiStore.floatingAimIndex = idx
     }
 
-    uiStore.clearTeleportBuffer()
+    modalStore.clearTeleportBuffer()
   } catch (e) {
     console.error('Teleport paste failed', e)
   }

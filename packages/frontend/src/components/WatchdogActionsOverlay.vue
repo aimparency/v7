@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { useUIProjectStore } from '../stores/ui/project-store'
+import { useUIProjectStore } from '../stores/project-store'
 
 const store = useWatchdogStore()
 const modalStore = useUIModalStore()
