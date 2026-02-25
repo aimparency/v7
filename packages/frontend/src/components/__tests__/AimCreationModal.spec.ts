@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import AimCreationModal from '../AimCreationModal.vue'
 import { useUIStore } from '../../stores/ui'
+import { useUIModalStore } from '../../stores/ui/modal-store'
 
 // Mock TRPC
 vi.mock('../../trpc', () => ({
@@ -17,13 +18,16 @@ vi.mock('../../trpc', () => ({
 describe('AimCreationModal', () => {
   let wrapper: any
   let uiStore: any
+  let modalStore: any
 
   beforeEach(() => {
     const pinia = createTestingPinia({
       createSpy: vi.fn,
       initialState: {
-        ui: {
+        'ui-modal': {
           aimModalMode: 'create',
+        },
+        'ui-project': {
           projectPath: '/test/project'
         },
         data: {
@@ -34,6 +38,7 @@ describe('AimCreationModal', () => {
     
     // Configure mock before mount
     uiStore = useUIStore(pinia)
+    modalStore = useUIModalStore(pinia)
     uiStore.getSelectionPath.mockReturnValue({ aims: [], phase: null })
 
     wrapper = mount(AimCreationModal, {
@@ -71,10 +76,10 @@ describe('AimCreationModal', () => {
 
   it('adds supported aim (parent)', async () => {
     // Override openAimSearch to simulate selection
-    uiStore.openAimSearch.mockImplementation((mode: string) => {
+    modalStore.openAimSearch.mockImplementation((mode: string) => {
         // Execute the callback immediately
-        if (uiStore.aimSearchCallback) {
-            uiStore.aimSearchCallback({ id: 'p1', text: 'Parent 1' })
+        if (modalStore.aimSearchCallback) {
+            modalStore.aimSearchCallback({ id: 'p1', text: 'Parent 1' })
         }
     })
 
@@ -90,9 +95,9 @@ describe('AimCreationModal', () => {
   })
 
   it('adds supporting connection (child)', async () => {
-    uiStore.openAimSearch.mockImplementation((mode: string) => {
-        if (uiStore.aimSearchCallback) {
-            uiStore.aimSearchCallback({ id: 'c1', text: 'Child 1' })
+    modalStore.openAimSearch.mockImplementation((mode: string) => {
+        if (modalStore.aimSearchCallback) {
+            modalStore.aimSearchCallback({ id: 'c1', text: 'Child 1' })
         }
     })
 

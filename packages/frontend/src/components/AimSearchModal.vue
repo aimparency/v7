@@ -2,10 +2,14 @@
 import { ref, watch, nextTick, onMounted, onUnmounted, computed } from 'vue'
 import { useUIStore, type AimPath } from '../stores/ui'
 import { useDataStore } from '../stores/data'
+import { useUIModalStore } from '../stores/ui/modal-store'
+import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
 import type { SearchAimResult, Aim } from 'shared'
 
 const uiStore = useUIStore()
+const modalStore = useUIModalStore()
+const projectStore = useProjectStore()
 const dataStore = useDataStore()
 
 const emit = defineEmits<{
@@ -56,14 +60,14 @@ const performSearch = async (query: string) => {
   try {
     const [flexSearchResults, semanticSearchResults] = await Promise.all([
       trpc.aim.search.query({
-        projectPath: uiStore.projectPath,
+        projectPath: projectStore.projectPath,
         query: query,
         limit: 10,
         status: selectedStatuses.value.length > 0 ? selectedStatuses.value : undefined,
         archived: includeArchived.value
       }),
       trpc.aim.searchSemantic.query({
-        projectPath: uiStore.projectPath,
+        projectPath: projectStore.projectPath,
         query: query,
         limit: 30,
         status: selectedStatuses.value.length > 0 ? selectedStatuses.value : undefined,
@@ -231,10 +235,10 @@ const blockLeakage = (e: KeyboardEvent) => {
 }
 
 const selectAim = async (aim: SearchAimResult) => {
-  if (uiStore.aimSearchMode === 'pick') {
+  if (modalStore.aimSearchMode === 'pick') {
       try {
         // Ensure we pass a full Aim object
-        const fullAim = await trpc.aim.get.query({ projectPath: uiStore.projectPath, aimId: aim.id });
+        const fullAim = await trpc.aim.get.query({ projectPath: projectStore.projectPath, aimId: aim.id });
         emit('select', { type: 'aim', data: fullAim });
       } catch (e) {
         console.error("Failed to load aim for selection", e);
@@ -266,7 +270,7 @@ const selectAim = async (aim: SearchAimResult) => {
         if (p.phaseId) {
             let phase = dataStore.phases[p.phaseId]
             if (!phase) {
-                try { phase = await trpc.phase.get.query({ projectPath: uiStore.projectPath, phaseId: p.phaseId }) } catch {}
+                try { phase = await trpc.phase.get.query({ projectPath: projectStore.projectPath, phaseId: p.phaseId }) } catch {}
             }
             label = phase ? phase.name : 'Unknown Phase'
         } else {
@@ -324,10 +328,10 @@ onMounted(() => {
   window.addEventListener('keydown', blockLeakage, true)
   
   // Check if we have an initial aim ID to select immediately
-  if (uiStore.aimSearchInitialAimId) {
-    const aimId = uiStore.aimSearchInitialAimId
+  if (modalStore.aimSearchInitialAimId) {
+    const aimId = modalStore.aimSearchInitialAimId
     loading.value = true
-    trpc.aim.get.query({ projectPath: uiStore.projectPath, aimId }).then(aim => {
+    trpc.aim.get.query({ projectPath: projectStore.projectPath, aimId }).then(aim => {
         // The full aim object is already SearchAimResult compatible
         selectAim(aim)
     }).catch(e => {

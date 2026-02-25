@@ -1,11 +1,11 @@
 import { trpc } from '../../trpc'
 import { useDataStore } from '../data'
 import { isAimInTree as isAimInTreeHelper } from './navigation-helpers'
-import { useUIProjectStore } from '../project-store'
+import { useProjectStore } from '../project-store'
 import { useUIModalStore } from './modal-store'
 
 function getProjectPath(): string {
-  return useUIProjectStore().projectPath
+  return useProjectStore().projectPath
 }
 
 export async function moveAimDownAction(uiStore: any) {

@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUIStore, type AimPath } from './stores/ui'
 import { useUIModalStore } from './stores/ui/modal-store'
-import { useUIProjectStore } from './stores/project-store'
+import { useProjectStore } from './stores/project-store'
 import { useDataStore, type Aim } from './stores/data'
 import { trpc } from './trpc'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
@@ -18,7 +18,7 @@ import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
-const projectStore = useUIProjectStore()
+const projectStore = useProjectStore()
 const dataStore = useDataStore()
 
 const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath }) => {

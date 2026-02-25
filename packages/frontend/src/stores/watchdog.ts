@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
 import { ref, computed } from 'vue'
 import { trpcWatchdog } from '../trpc-watchdog'
-import { useUIProjectStore } from './project-store'
+import { useProjectStore } from './project-store'
 
 export type AgentType = 'claude' | 'gemini' | 'codex'
 
@@ -45,7 +45,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
   // Get session for currently selected agent type and project
   const currentProjectSession = computed(() => {
-    const projectStore = useUIProjectStore()
+    const projectStore = useProjectStore()
     if (!projectStore.projectPath) return null
     // Normalize: strip trailing slashes, then .bowman
     const normalize = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
@@ -121,7 +121,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   async function connect(overridePath?: string, overrideAgentType?: AgentType) {
     if (socket.value || connectionState.value === 'spawning' || connectionState.value === 'connecting') return
 
-    const projectStore = useUIProjectStore()
+    const projectStore = useProjectStore()
     const targetPath = overridePath || projectStore.projectPath
     const agentType = overrideAgentType || selectedAgentType.value
 
@@ -199,7 +199,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   async function stop() {
-    const projectStore = useUIProjectStore()
+    const projectStore = useProjectStore()
     if (!projectStore.projectPath) return
 
     const agentType = connectedAgentType.value || selectedAgentType.value
@@ -229,7 +229,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   async function relaunch() {
-    const projectStore = useUIProjectStore()
+    const projectStore = useProjectStore()
     if (!projectStore.projectPath) return
 
     const agentType = connectedAgentType.value || selectedAgentType.value

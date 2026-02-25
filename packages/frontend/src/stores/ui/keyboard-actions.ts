@@ -2,7 +2,7 @@ import { trpc } from '../../trpc'
 import { useDataStore } from '../data'
 import { useGraphUIStore } from './graph-store'
 import { useUIModalStore } from './modal-store'
-import { useUIProjectStore } from '../project-store'
+import { useProjectStore } from '../project-store'
 
 export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const graphStore = useGraphUIStore()
@@ -30,7 +30,7 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
 
 export async function handleColumnNavigationKeysAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
-  const projectStore = useUIProjectStore()
+  const projectStore = useProjectStore()
   const col = uiStore.selectedColumn
   switch (event.key) {
     case 'j':
@@ -222,7 +222,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
 
 export async function handleAimNavigationKeysAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
-  const projectStore = useUIProjectStore()
+  const projectStore = useProjectStore()
   const path = uiStore.getSelectionPath()
   const currentAim = path.aims[path.aims.length - 1]
 
@@ -358,7 +358,7 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
 
 export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
-  const projectStore = useUIProjectStore()
+  const projectStore = useProjectStore()
   console.log('pressed', event.key, '. nav aims? ', uiStore.navigatingAims)
 
   if (event.ctrlKey || event.metaKey) return

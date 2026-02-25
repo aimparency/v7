@@ -2,11 +2,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { useUIProjectStore } from '../stores/project-store'
+import { useProjectStore } from '../stores/project-store'
 
 const store = useWatchdogStore()
 const modalStore = useUIModalStore()
-const projectStore = useUIProjectStore()
+const projectStore = useProjectStore()
 const selectedIndex = ref(0)
 const previouslyFocusedElement = ref<HTMLElement | null>(null)
 

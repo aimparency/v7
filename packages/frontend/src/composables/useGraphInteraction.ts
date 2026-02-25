@@ -1,7 +1,9 @@
 import { ref, onMounted, onUnmounted, watch, type Ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useUIModalStore } from '../stores/ui/modal-store'
 import { useGraphUIStore } from '../stores/ui/graph-store'
+import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { trpc } from '../trpc'
@@ -17,6 +19,8 @@ export function useGraphInteraction(
     const svgRef = elementRef
     const dataStore = useDataStore()
     const uiStore = useUIStore()
+    const modalStore = useUIModalStore()
+    const projectStore = useProjectStore()
     const graphUIStore = useGraphUIStore()
     const mapStore = useMapStore()
 
@@ -169,7 +173,7 @@ export function useGraphInteraction(
                         const relY = deltaY / rSum
                         
                         ;(dataStore as any).updateConnectionPosition(
-                            uiStore.projectPath,
+                            projectStore.projectPath,
                             parent.id,
                             child.id,
                             [relX, relY]
@@ -185,7 +189,7 @@ export function useGraphInteraction(
                         const relY = deltaY / rSum
                         
                         ;(dataStore as any).updateConnectionPosition(
-                            uiStore.projectPath,
+                            projectStore.projectPath,
                             parent.id,
                             child.id,
                             [relX, relY]
@@ -206,7 +210,7 @@ export function useGraphInteraction(
             if (lc) {
                 const link = lc.link as GraphLink
                 ;(dataStore as any).updateConnectionPosition(
-                    uiStore.projectPath,
+                    projectStore.projectPath,
                     link.target.id,
                     link.source.id,
                     [link.relativePosition[0], link.relativePosition[1]]
@@ -219,7 +223,7 @@ export function useGraphInteraction(
                 const parentNode = mapStore.connectFrom
                 const dropPosLogical = mapStore.mouse.logical  // Use already-computed logical coords
                 
-                uiStore.aimCreationCallback = async (newAimId) => {
+                modalStore.aimCreationCallback = async (newAimId) => {
                      // Wait for node to exist in the graph
                      const checkNode = () => {
                          const newNode = nodeMap.get(newAimId)
@@ -247,13 +251,13 @@ export function useGraphInteraction(
                              const relPos: [number, number] = [deltaX/rSum, deltaY/rSum]
 
                              trpc.aim.connectAims.mutate({
-                                projectPath: uiStore.projectPath,
+                                projectPath: projectStore.projectPath,
                                 parentAimId: parentNode.id,
                                 childAimId: newAimId,
                                 relativePosition: relPos as [number, number]
                              }).then(async () => {
                                  // Reload both aims to get updated incoming/outgoing arrays
-                                 await dataStore.loadAims(uiStore.projectPath, [parentNode.id, newAimId])
+                                 await dataStore.loadAims(projectStore.projectPath, [parentNode.id, newAimId])
                              }).catch(err => {
                                  console.error('Graph: Connection failed', err)
                              })
@@ -263,7 +267,7 @@ export function useGraphInteraction(
                      }
                      checkNode()
                 }
-                uiStore.openAimModal()
+                modalStore.openAimModal()
             }
             mapStore.connecting = false
             mapStore.connectFrom = undefined
@@ -447,13 +451,13 @@ export function useGraphInteraction(
 
             try {
                 await trpc.aim.connectAims.mutate({
-                    projectPath: uiStore.projectPath,
+                    projectPath: projectStore.projectPath,
                     parentAimId: parent.id,
                     childAimId: child.id,
                     relativePosition,
                 })
                 // Reload both aims to get updated incoming/outgoing arrays
-                await dataStore.loadAims(uiStore.projectPath, [parent.id, child.id])
+                await dataStore.loadAims(projectStore.projectPath, [parent.id, child.id])
             } catch (e) {
                 console.error('Failed to connect aims:', e)
             }
@@ -521,7 +525,7 @@ export function useGraphInteraction(
             uiStore.deselectAim()
             uiStore.setFocusedColumn(-1)
 
-            uiStore.aimCreationCallback = (id) => {
+            modalStore.aimCreationCallback = (id) => {
                  const node = nodeMap.get(id)
                  const x = logicalMouse[0] ?? 0
                  const y = logicalMouse[1] ?? 0
@@ -547,7 +551,7 @@ export function useGraphInteraction(
                  }
             }
             
-            uiStore.openAimModal()
+            modalStore.openAimModal()
         }
     }
 

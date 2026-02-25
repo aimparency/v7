@@ -1,1 +1,1 @@
-export { useUIProjectStore } from '../project-store'
+export { useProjectStore, useUIProjectStore } from '../project-store'

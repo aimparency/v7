@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useGraphUIStore } from '../stores/ui/graph-store'
-import { useUIProjectStore } from '../stores/project-store'
+import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphConnector from '../components/GraphConnector.vue'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
@@ -17,7 +17,7 @@ import { calculateArrowGeometry, hitTestArrow } from '../webgl/utils/arrow-geome
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 const graphUIStore = useGraphUIStore()
-const projectStore = useUIProjectStore()
+const projectStore = useProjectStore()
 const mapStore = useMapStore()
 
 const canvasRef = ref<HTMLCanvasElement>()

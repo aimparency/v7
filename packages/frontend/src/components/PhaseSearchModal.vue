@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
-import { useUIStore } from '../stores/ui'
+import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
 import type { Phase } from 'shared'
 import { timestampToLocalDate } from 'shared'
 
-const uiStore = useUIStore()
+const projectStore = useProjectStore()
 
 const props = defineProps<{
   excludePhaseId?: string | null // ID to exclude (e.g. self)
@@ -31,7 +31,7 @@ const performSearch = async (query: string) => {
     // If query is empty, we might want to list all phases (or recent ones)
     // The backend searchPhases returns all if query is empty.
     let results = await trpc.phase.search.query({
-      projectPath: uiStore.projectPath,
+      projectPath: projectStore.projectPath,
       query: query
     })
     

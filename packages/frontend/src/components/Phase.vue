@@ -2,6 +2,7 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useDataStore, type Phase} from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useProjectStore } from '../stores/project-store'
 import AimsList from './AimsList.vue'
 
 interface Props {
@@ -22,6 +23,7 @@ const phaseContainerRef = ref<HTMLElement | null>(null)
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
+const projectStore = useProjectStore()
 
 // Get aims from the store
 const phaseAims = computed(() => dataStore.getAimsForPhase(props.phase.id))
@@ -35,7 +37,7 @@ watch(() => props.isActive || props.isSelected, (shouldScroll) => {
 
 // Load aims and scroll on mount
 onMounted(() => {
-  dataStore.loadPhaseAims(uiStore.projectPath, props.phase.id)
+  dataStore.loadPhaseAims(projectStore.projectPath, props.phase.id)
 
   if ((props.isActive || props.isSelected) && phaseContainerRef.value) {
     emit('scroll-request', phaseContainerRef.value)

@@ -1,5 +1,5 @@
 import { useDataStore } from '../data'
-import { useUIProjectStore } from '../project-store'
+import { useProjectStore } from '../project-store'
 
 export async function selectPhaseAction(
   uiStore: any,
@@ -8,7 +8,7 @@ export async function selectPhaseAction(
   isTopLevel = true
 ) {
   const dataStore = useDataStore()
-  const projectStore = useUIProjectStore()
+  const projectStore = useProjectStore()
 
   if (isTopLevel) {
     uiStore.setSelectedColumn(columnIndex)

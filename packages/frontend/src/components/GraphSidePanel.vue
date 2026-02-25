@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useGraphUIStore } from '../stores/ui/graph-store'
-import { useUIProjectStore } from '../stores/project-store'
+import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { useMapStore } from '../stores/map'
 import { trpc } from '../trpc'
@@ -9,7 +9,7 @@ import type { Aim, Connection } from 'shared/src/types'
 import { formatWithK, parseK } from '../utils/number-format'
 
 const graphUIStore = useGraphUIStore()
-const projectStore = useUIProjectStore()
+const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const mapStore = useMapStore()
 

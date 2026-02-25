@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { useUIProjectStore } from '../stores/project-store'
+import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import { DEFAULT_STATUSES } from 'shared'
 
 const modalStore = useUIModalStore()
-const projectStore = useUIProjectStore()
+const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const name = ref('')
 const color = ref('#007acc')

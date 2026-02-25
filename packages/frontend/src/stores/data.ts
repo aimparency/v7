@@ -4,7 +4,7 @@ import { calculateAimValues, AIMPARENCY_DIR_NAME, DEFAULT_STATUSES } from 'share
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
 import { useMapStore } from './map'
-import { useUIProjectStore } from './project-store'
+import { useProjectStore } from './project-store'
 import { loadAllAimsCache, saveAims } from '../utils/db'
 
 // Extend Phase type with UI-only properties
@@ -645,13 +645,14 @@ export const useDataStore = defineStore('data', {
 
     async loadProject(projectPath: string) {
       const uiStore = useUIStore();
+      const projectStore = useProjectStore();
       const mapStore = useMapStore();
 
       if (!projectPath) return;
 
       try {
-        uiStore.setProjectPath(projectPath);
-        uiStore.setConnectionStatus('connecting');
+        projectStore.setProjectPath(projectPath);
+        projectStore.setConnectionStatus('connecting');
 
         // Reset view state when switching projects
         uiStore.resetViewState();
@@ -675,13 +676,13 @@ export const useDataStore = defineStore('data', {
         // Check consistency
         this.checkConsistency(projectPath);
 
-        uiStore.setConnectionStatus('connected');
-        uiStore.addProjectToHistory(projectPath);
-        uiStore.clearProjectFailure(projectPath);
+        projectStore.setConnectionStatus('connected');
+        projectStore.addProjectToHistory(projectPath);
+        projectStore.clearProjectFailure(projectPath);
       } catch (error) {
         console.error('Failed to load project:', error);
-        uiStore.setConnectionStatus('no connection');
-        uiStore.markProjectAsFailed(projectPath);
+        projectStore.setConnectionStatus('no connection');
+        projectStore.markProjectAsFailed(projectPath);
       }
     },
 
@@ -789,7 +790,7 @@ export const useDataStore = defineStore('data', {
     },
 
     async deletePhase(phaseId: string, parentPhaseId: string | null) {
-      const projectStore = useUIProjectStore();
+      const projectStore = useProjectStore();
 
       try {
         // Get child phases and update their parent
@@ -862,7 +863,7 @@ export const useDataStore = defineStore('data', {
 
     async deleteAim(aimId: string) {
       const uiStore = useUIStore();
-      const projectStore = useUIProjectStore();
+      const projectStore = useProjectStore();
 
       try {
         const aim = this.aims[aimId]

@@ -15,7 +15,7 @@ function getInitialProjectPath(): string {
   return localStorage.getItem('aimparency-project-path') || ''
 }
 
-export const useUIProjectStore = defineStore('ui-project', {
+export const useProjectStore = defineStore('project', {
   state: () => ({
     projectPath: getInitialProjectPath(),
     connectionStatus: 'connecting' as 'connecting' | 'connected' | 'no connection',
@@ -75,3 +75,6 @@ export const useUIProjectStore = defineStore('ui-project', {
     }
   }
 })
+
+// Backward compatibility during migration
+export const useUIProjectStore = useProjectStore

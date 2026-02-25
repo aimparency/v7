@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { trpc } from '../trpc'
-import { useUIProjectStore } from '../stores/project-store'
+import { useProjectStore } from '../stores/project-store'
 
-const projectStore = useUIProjectStore()
+const projectStore = useProjectStore()
 
 const isListening = ref(false)
 const transcript = ref('')

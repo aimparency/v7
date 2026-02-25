@@ -2,7 +2,7 @@ import { trpc } from '../../trpc'
 import { useDataStore, type Aim, type Phase } from '../data'
 import { findPathToAim as findPathToAimHelper } from './navigation-helpers'
 import { useUIModalStore } from './modal-store'
-import { useUIProjectStore } from '../project-store'
+import { useProjectStore } from '../project-store'
 
 export type AimPath = {
   phaseId?: string
@@ -102,7 +102,7 @@ export async function selectAimAction(
 }
 
 export async function calculateAimPathsAction(uiStore: any, aimId: string): Promise<AimPath[]> {
-  const projectStore = useUIProjectStore()
+  const projectStore = useProjectStore()
   const paths: AimPath[] = []
   const visited = new Set<string>()
 
@@ -155,7 +155,7 @@ export async function prepareNavigationAction(uiStore: any, aimId: string): Prom
 }
 
 export async function executeNavigationAction(uiStore: any, path: AimPath) {
-  const projectStore = useUIProjectStore()
+  const projectStore = useProjectStore()
   const dataStore = useDataStore()
   const rootAim = path.aims[0]
   const phaseId = path.phaseId

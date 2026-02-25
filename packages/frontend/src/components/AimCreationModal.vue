@@ -2,6 +2,8 @@
 import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
+import { useUIModalStore } from '../stores/ui/modal-store'
+import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
 import type { Aim, AimStatusState } from 'shared'
 import TagInput from './TagInput.vue'
@@ -9,6 +11,8 @@ import { AIM_DEFAULTS } from '../constants/aimDefaults'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
+const modalStore = useUIModalStore()
+const projectStore = useProjectStore()
 
 const aimText = ref(AIM_DEFAULTS.text)
 const aimDescription = ref(AIM_DEFAULTS.description)
@@ -37,21 +41,21 @@ const submitBtn = ref<HTMLButtonElement>()
 const searchResultsContainer = ref<HTMLDivElement>()
 
 const openParentSearch = () => {
-  uiStore.aimSearchCallback = (aim: Aim) => {
+  modalStore.aimSearchCallback = (aim: Aim) => {
     if (!supportedAimsList.value.some(a => a.id === aim.id)) {
       supportedAimsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
     }
   }
-  uiStore.openAimSearch('pick')
+  modalStore.openAimSearch('pick')
 }
 
 const openChildSearch = () => {
-  uiStore.aimSearchCallback = (aim: Aim) => {
+  modalStore.aimSearchCallback = (aim: Aim) => {
     if (!supportingConnectionsList.value.some(a => a.id === aim.id)) {
       supportingConnectionsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
     }
   }
-  uiStore.openAimSearch('pick')
+  modalStore.openAimSearch('pick')
 }
 
 const removeParent = (index: number) => {
@@ -72,7 +76,7 @@ const performSearch = async (query: string) => {
 
   try {
     const results = await trpc.aim.search.query({
-      projectPath: uiStore.projectPath,
+      projectPath: projectStore.projectPath,
       query: query
     })
     console.log('Search results:', results.length)
@@ -126,7 +130,7 @@ const updateAim = async () => {
   const aim = uiStore.getCurrentAim()
 
   if(aim) {
-    await dataStore.updateAim(uiStore.projectPath, aim.id, {
+    await dataStore.updateAim(projectStore.projectPath, aim.id, {
       text: aimText.value.trim(),
       description: aimDescription.value.trim(),
       tags: aimTags.value,
@@ -141,14 +145,14 @@ const updateAim = async () => {
       supportedAims: supportedAimsList.value.map(a => a.id)
     })
 
-    uiStore.closeAimModal()
+    modalStore.closeAimModal()
   } else {
     console.error('Failed to update aim: no current aim')
   }
 }
 
 const handleSubmit = () => {
-  if (uiStore.aimModalMode === 'edit') {
+  if (modalStore.aimModalMode === 'edit') {
     updateAim()
   } else {
     createAim()
@@ -162,7 +166,7 @@ const handleInputKeydown = (event: KeyboardEvent) => {
   } else if (event.key === 'Escape') {
     event.preventDefault()
     event.stopPropagation() // Prevent escape from bubbling to global handler
-    uiStore.closeAimModal()
+    modalStore.closeAimModal()
   }
 }
 
@@ -197,12 +201,12 @@ const handleSearchResultsKeydown = (event: KeyboardEvent) => {
   } else if (event.key === 'Escape') {
     event.preventDefault()
     event.stopPropagation()
-    uiStore.closeAimModal()
+    modalStore.closeAimModal()
   }
 }
 
 const handleTagPrev = () => {
-  if (uiStore.aimModalMode === 'edit') {
+  if (modalStore.aimModalMode === 'edit') {
     statusCommentInput.value?.focus()
   } else {
     loopWeightInput.value?.focus()
@@ -216,7 +220,7 @@ const handleTagNext = () => {
 const handleLoopWeightNext = (event: KeyboardEvent) => {
   if (event.key === 'Tab' && !event.shiftKey) {
     event.preventDefault()
-    if (uiStore.aimModalMode === 'edit') {
+    if (modalStore.aimModalMode === 'edit') {
       statusSelect.value?.focus()
     } else {
       // Tags? TagInput doesn't have a focus method easily accessible here 
@@ -269,7 +273,7 @@ onMounted(async () => {
   let aim
   supportedAimsList.value = []
 
-  if (uiStore.aimModalMode === 'edit') {
+  if (modalStore.aimModalMode === 'edit') {
     aim = uiStore.getCurrentAim()
   } else {
     // Create mode: identify potential parent
@@ -278,7 +282,7 @@ onMounted(async () => {
         let parentAim: Aim | undefined
         const currentAim = path.aims[path.aims.length - 1]
         
-        if (currentAim && currentAim.expanded && uiStore.aimModalInsertPosition === 'after') {
+        if (currentAim && currentAim.expanded && modalStore.aimModalInsertPosition === 'after') {
             parentAim = currentAim
         } else if (path.aims.length > 1) {
             parentAim = path.aims[path.aims.length - 2]
@@ -310,7 +314,7 @@ onMounted(async () => {
     if (aim.supportedAims && aim.supportedAims.length > 0) {
       try {
         const parents = await trpc.aim.list.query({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           ids: aim.supportedAims
         })
         supportedAimsList.value = parents.map(p => ({
@@ -345,7 +349,7 @@ onMounted(async () => {
   <div class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h3>{{ uiStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim' }}</h3>
+        <h3>{{ modalStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim' }}</h3>
       </div>
 
       <div class="modal-body">
@@ -363,7 +367,7 @@ onMounted(async () => {
 
         <!-- Search Results (create mode only) -->
         <div
-          v-if="uiStore.aimModalMode === 'create' && hasSearchText"
+          v-if="modalStore.aimModalMode === 'create' && hasSearchText"
           ref="searchResultsContainer"
           class="search-results"
           tabindex="0"
@@ -409,7 +413,7 @@ onMounted(async () => {
         </div>
 
         <!-- Status fields (edit mode only) -->
-        <div v-if="uiStore.aimModalMode === 'edit'">
+        <div v-if="modalStore.aimModalMode === 'edit'">
           <div class="form-group">
             <label>Status</label>
                       <select
@@ -450,7 +454,7 @@ onMounted(async () => {
             </div>
         </div>
 
-        <div class="form-group" v-if="uiStore.aimModalMode === 'create'">
+        <div class="form-group" v-if="modalStore.aimModalMode === 'create'">
             <div class="label-row">
                 <label>Supporting (Children)</label>
                 <button @click="openChildSearch" class="btn-small" title="Add Child">+</button>
@@ -514,7 +518,7 @@ onMounted(async () => {
       </div>
       
       <div class="modal-footer">
-        <button @click="uiStore.closeAimModal" class="btn-secondary">
+        <button @click="modalStore.closeAimModal" class="btn-secondary">
           Cancel
         </button>
         <button
@@ -524,7 +528,7 @@ onMounted(async () => {
           :disabled="!aimText.trim() && !selectedSearchResult"
           @keydown.tab.exact.prevent="aimTextInput?.focus()"
         >
-          {{ uiStore.aimModalMode === 'edit' ? 'Update' : (selectedSearchResult ? 'Link Existing' : 'Create New') }}
+          {{ modalStore.aimModalMode === 'edit' ? 'Update' : (selectedSearchResult ? 'Link Existing' : 'Create New') }}
         </button>
       </div>
     </div>

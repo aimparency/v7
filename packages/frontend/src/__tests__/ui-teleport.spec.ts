@@ -38,7 +38,7 @@ vi.mock('shared', async (importOriginal) => {
 
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
-import { useUIProjectStore } from '../stores/project-store'
+import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 
 function keyEvent(key: string) {
@@ -70,7 +70,7 @@ describe('UI teleport cut/paste', () => {
   it('cuts with x and reorders in same phase with p', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
-    const projectStore = useUIProjectStore()
+    const projectStore = useProjectStore()
 
     projectStore.projectPath = '/tmp/project'
     uiStore.navigatingAims = true
@@ -104,8 +104,9 @@ describe('UI teleport cut/paste', () => {
     })
 
     await uiStore.handleAimNavigationKeys(keyEvent('x'), dataStore)
-    expect(uiStore.teleportCutAimId).toBe('aim-2')
-    expect(uiStore.movingAimId).toBe('aim-2')
+    const modalStore = useUIModalStore()
+    expect(modalStore.teleportCutAimId).toBe('aim-2')
+    expect(modalStore.movingAimId).toBe('aim-2')
 
     const selectedPhase = dataStore.phases['phase-1']
     if (!selectedPhase) throw new Error('phase-1 should exist in test setup')
@@ -118,14 +119,14 @@ describe('UI teleport cut/paste', () => {
       phaseId: 'phase-1',
       insertionIndex: 1
     })
-    expect(uiStore.teleportCutAimId).toBeNull()
-    expect(uiStore.movingAimId).toBeNull()
+    expect(modalStore.teleportCutAimId).toBeNull()
+    expect(modalStore.movingAimId).toBeNull()
   })
 
   it('moves from one parent to another on paste', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
-    const projectStore = useUIProjectStore()
+    const projectStore = useProjectStore()
 
     projectStore.projectPath = '/tmp/project'
     uiStore.navigatingAims = true
@@ -165,9 +166,10 @@ describe('UI teleport cut/paste', () => {
       selectedAimIndex: 0
     } as any
 
-    uiStore.teleportCutAimId = 'child'
-    uiStore.teleportSource = { parentAimId: 'parent-a' }
-    uiStore.movingAimId = 'child'
+    const modalStore = useUIModalStore()
+    modalStore.teleportCutAimId = 'child'
+    modalStore.teleportSource = { parentAimId: 'parent-a' }
+    modalStore.movingAimId = 'child'
 
     mockTrpc.aim.update.mutate.mockResolvedValue({})
     mockTrpc.aim.connectAims.mutate.mockResolvedValue({})
@@ -202,7 +204,7 @@ describe('UI teleport cut/paste', () => {
       childAimId: 'child',
       parentIncomingIndex: 1
     })
-    expect(uiStore.teleportCutAimId).toBeNull()
+    expect(modalStore.teleportCutAimId).toBeNull()
   })
 
   it('opens create modal in aim-navigation for an empty selected phase', async () => {

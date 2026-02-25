@@ -1,7 +1,7 @@
 import { trpc } from '../../trpc'
 import type { AimCreationParams } from '../data'
 import { useUIModalStore } from './modal-store'
-import { useUIProjectStore } from '../project-store'
+import { useProjectStore } from '../project-store'
 
 export async function createAimAction(
   uiStore: any,
@@ -12,7 +12,7 @@ export async function createAimAction(
   weight: number
 ) {
   const modalStore = useUIModalStore()
-  const projectStore = useUIProjectStore()
+  const projectStore = useProjectStore()
   const path = uiStore.getSelectionPath()
   let newAimId: string | undefined
 

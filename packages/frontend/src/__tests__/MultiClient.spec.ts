@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useDataStore } from '../stores/data'
-import { useUIStore } from '../stores/ui'
+import { useProjectStore } from '../stores/project-store'
 
 // Use hoisted to make variable available inside vi.mock
 const { mockTrpc } = vi.hoisted(() => {
@@ -62,9 +62,9 @@ describe('Multi-Client Synchronization', () => {
 
   it('updates state correctly when a floating aim is committed to a phase by another client', async () => {
     const store = useDataStore()
-    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
     const projectPath = '/test/project'
-    uiStore.projectPath = projectPath
+    projectStore.projectPath = projectPath
 
     // 1. Initial State: 1 Floating Aim, 1 Phase
     const aimId = 'aim-1'
@@ -136,9 +136,9 @@ describe('Multi-Client Synchronization', () => {
 
   it('loads missing aims when a phase update is received via subscription', async () => {
     const store = useDataStore()
-    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
     const projectPath = '/test/project'
-    uiStore.projectPath = projectPath
+    projectStore.projectPath = projectPath
 
     const aimId = 'new-aim-3'
     const phaseId = 'phase-3'

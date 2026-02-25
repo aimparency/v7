@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useWatchdogStore, type AgentType } from '../stores/watchdog'
-import { useUIProjectStore } from '../stores/project-store'
+import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import WatchdogTerminal from './WatchdogTerminal.vue'
 import WatchdogActionsOverlay from './WatchdogActionsOverlay.vue'
 
 const store = useWatchdogStore()
-const projectStore = useUIProjectStore()
+const projectStore = useProjectStore()
 const modalStore = useUIModalStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()

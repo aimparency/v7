@@ -1,7 +1,7 @@
 import { ref, shallowRef, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useGraphUIStore } from '../stores/ui/graph-store'
-import { useUIProjectStore } from '../stores/project-store'
+import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
@@ -92,7 +92,7 @@ function interpolateColor(t: number): string {
 
 export function useGraphSimulation() {
   const dataStore = useDataStore()
-  const projectStore = useUIProjectStore()
+  const projectStore = useProjectStore()
   const graphUIStore = useGraphUIStore()
   const mapStore = useMapStore()
 

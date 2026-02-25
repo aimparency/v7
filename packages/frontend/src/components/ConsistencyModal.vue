@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDataStore } from '../stores/data'
-import { useUIStore } from '../stores/ui'
+import { useProjectStore } from '../stores/project-store'
 
 const emit = defineEmits(['close'])
 
 const dataStore = useDataStore()
-const uiStore = useUIStore()
+const projectStore = useProjectStore()
 
 const isFixing = ref(false)
 const fixesApplied = ref<string[]>([])
@@ -18,7 +18,7 @@ const hasAutoFixableErrors = computed(() => {
 const handleFix = async () => {
   isFixing.value = true
   try {
-    const fixes = await dataStore.fixConsistency(uiStore.projectPath)
+    const fixes = await dataStore.fixConsistency(projectStore.projectPath)
     if (fixes && fixes.length > 0) {
         fixesApplied.value = fixes
     }

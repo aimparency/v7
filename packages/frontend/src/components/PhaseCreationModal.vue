@@ -2,6 +2,8 @@
 import { ref, nextTick, watch, onMounted, computed } from 'vue'
 import type { Phase } from 'shared'
 import { useUIStore } from '../stores/ui'
+import { useUIModalStore } from '../stores/ui/modal-store'
+import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import { timestampToLocalDate, timestampToLocalTime, localDateTimeToTimestamp } from 'shared'
@@ -9,6 +11,8 @@ import TimePicker from './TimePicker.vue'
 import PhaseSearchModal from './PhaseSearchModal.vue'
 
 const uiStore = useUIStore()
+const modalStore = useUIModalStore()
+const projectStore = useProjectStore()
 const dataStore = useDataStore()
 
 const phaseNameInput = ref<HTMLInputElement>()
@@ -20,41 +24,49 @@ const selectedParentName = ref<string>('Root (No Parent)')
 const parentSelectorBtn = ref<HTMLButtonElement>()
 const parentSelectorDisplay = ref<HTMLDivElement>()
 
-const startTimestamp = computed(() => localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime))
-const endTimestamp = computed(() => localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime))
+const startTimestamp = computed(() => localDateTimeToTimestamp(modalStore.newPhaseStartDate, modalStore.newPhaseStartTime))
+const endTimestamp = computed(() => localDateTimeToTimestamp(modalStore.newPhaseEndDate, modalStore.newPhaseEndTime))
 const isRangeInvalid = computed(() => startTimestamp.value > endTimestamp.value)
 
 const createPhase = async () => {
-  if (!uiStore.newPhaseName.trim()) return;
+  if (!modalStore.newPhaseName.trim()) return
 
   try {
-    await uiStore.createPhase(
-      uiStore.newPhaseName.trim(),
-      localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
-      localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime)
-    );
-    uiStore.closePhaseModal();
+    const columnIndex = uiStore.selectedColumn
+    let parentPhaseId: string | null = null
+    if (columnIndex > 0) {
+      parentPhaseId = uiStore.getSelectedPhaseId(columnIndex - 1) ?? null
+    }
+
+    await dataStore.createAndSelectPhase(projectStore.projectPath, {
+      name: modalStore.newPhaseName.trim(),
+      from: localDateTimeToTimestamp(modalStore.newPhaseStartDate, modalStore.newPhaseStartTime),
+      to: localDateTimeToTimestamp(modalStore.newPhaseEndDate, modalStore.newPhaseEndTime),
+      parent: parentPhaseId,
+      commitments: []
+    }, columnIndex)
+    modalStore.closePhaseModal()
   } catch (error) {
-    console.error('Failed to create phase:', error);
+    console.error('Failed to create phase:', error)
   }
 }
 
 const updatePhase = async () => {
-  if (!uiStore.newPhaseName.trim()) return
-  if (!uiStore.phaseModalEditingPhaseId) return
+  if (!modalStore.newPhaseName.trim()) return
+  if (!modalStore.phaseModalEditingPhaseId) return
 
   try {
-    const oldPhase = dataStore.phases[uiStore.phaseModalEditingPhaseId]
+    const oldPhase = dataStore.phases[modalStore.phaseModalEditingPhaseId]
     const oldParentId = oldPhase?.parent ?? null
 
     const updatedPhase = await trpc.phase.update.mutate({
-      projectPath: uiStore.projectPath,
-      phaseId: uiStore.phaseModalEditingPhaseId,
+      projectPath: projectStore.projectPath,
+      phaseId: modalStore.phaseModalEditingPhaseId,
       phase: {
-        name: uiStore.newPhaseName.trim(),
-        from: localDateTimeToTimestamp(uiStore.newPhaseStartDate, uiStore.newPhaseStartTime),
-        to: localDateTimeToTimestamp(uiStore.newPhaseEndDate, uiStore.newPhaseEndTime),
-        parent: uiStore.phaseModalEditingParentId
+        name: modalStore.newPhaseName.trim(),
+        from: localDateTimeToTimestamp(modalStore.newPhaseStartDate, modalStore.newPhaseStartTime),
+        to: localDateTimeToTimestamp(modalStore.newPhaseEndDate, modalStore.newPhaseEndTime),
+        parent: modalStore.phaseModalEditingParentId
       }
     })
 
@@ -63,22 +75,22 @@ const updatePhase = async () => {
       dataStore.phases[updatedPhase.id] = updatedPhase
       
       // Reload the new parent's children
-      await dataStore.loadPhases(uiStore.projectPath, updatedPhase.parent);
+      await dataStore.loadPhases(projectStore.projectPath, updatedPhase.parent)
       
       // If parent changed, reload the old parent's children too to remove the ghost entry
       if (oldParentId !== updatedPhase.parent) {
-        await dataStore.loadPhases(uiStore.projectPath, oldParentId);
+        await dataStore.loadPhases(projectStore.projectPath, oldParentId)
       }
     }
 
-    uiStore.closePhaseModal()
+    modalStore.closePhaseModal()
   } catch (error) {
     console.error('Failed to update phase:', error)
   }
 }
 
 const handleSubmit = () => {
-  if (uiStore.phaseModalMode === 'edit') {
+  if (modalStore.phaseModalMode === 'edit') {
     updatePhase()
   } else {
     createPhase()
@@ -89,24 +101,24 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     handleSubmit()
   } else if (event.key === 'Escape') {
-    uiStore.closePhaseModal()
+    modalStore.closePhaseModal()
   }
 }
 
 // Calculate smart date ranges when modal opens (only for create mode)
-watch(() => uiStore.showPhaseModal, async (newVal) => {
+watch(() => modalStore.showPhaseModal, async (newVal) => {
   if (newVal) {
-    if (uiStore.phaseModalMode === 'create') {
+    if (modalStore.phaseModalMode === 'create') {
       await calculateSmartDateRanges()
       await nextTick()
       phaseNameInput.value?.focus()
-    } else if (uiStore.phaseModalMode === 'edit') {
+    } else if (modalStore.phaseModalMode === 'edit') {
       // Resolve parent name
-      if (uiStore.phaseModalEditingParentId) {
+      if (modalStore.phaseModalEditingParentId) {
           try {
               const p = await trpc.phase.get.query({ 
-                  projectPath: uiStore.projectPath, 
-                  phaseId: uiStore.phaseModalEditingParentId 
+                  projectPath: projectStore.projectPath,
+                  phaseId: modalStore.phaseModalEditingParentId
               })
               selectedParentName.value = p.name
           } catch {
@@ -132,15 +144,15 @@ const calculateSmartDateRanges = async () => {
     if (selectedPhaseId) {
       try {
         const selectedPhase = await trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           phaseId: selectedPhaseId
         })
         if (selectedPhase) {
           // Extract local date and time from timestamps
-          uiStore.newPhaseStartDate = timestampToLocalDate(selectedPhase.from) || ''
-          uiStore.newPhaseStartTime = timestampToLocalTime(selectedPhase.from) || ''
-          uiStore.newPhaseEndDate = timestampToLocalDate(selectedPhase.to) || ''
-          uiStore.newPhaseEndTime = timestampToLocalTime(selectedPhase.to) || ''
+          modalStore.newPhaseStartDate = timestampToLocalDate(selectedPhase.from) || ''
+          modalStore.newPhaseStartTime = timestampToLocalTime(selectedPhase.from) || ''
+          modalStore.newPhaseEndDate = timestampToLocalDate(selectedPhase.to) || ''
+          modalStore.newPhaseEndTime = timestampToLocalTime(selectedPhase.to) || ''
           return
         }
       } catch (error) {
@@ -156,14 +168,14 @@ const calculateSmartDateRanges = async () => {
     if (parentPhaseIdFromColumn) {
       try {
         const parentPhase = await trpc.phase.get.query({
-          projectPath: uiStore.projectPath,
+          projectPath: projectStore.projectPath,
           phaseId: parentPhaseIdFromColumn
         })
         if (parentPhase) {
           // Use backend smart calculation
           try {
             const suggestion = await trpc.phase.suggestSubPhaseConfig.query({
-              projectPath: uiStore.projectPath,
+              projectPath: projectStore.projectPath,
               parentPhaseId: parentPhase.id
             })
 
@@ -172,17 +184,17 @@ const calculateSmartDateRanges = async () => {
               'End:', timestampToLocalDate(suggestion.to), timestampToLocalTime(suggestion.to)
             );
             
-            uiStore.newPhaseStartDate = timestampToLocalDate(suggestion.from)
-            uiStore.newPhaseStartTime = timestampToLocalTime(suggestion.from)
-            uiStore.newPhaseEndDate = timestampToLocalDate(suggestion.to)
-            uiStore.newPhaseEndTime = timestampToLocalTime(suggestion.to)
+            modalStore.newPhaseStartDate = timestampToLocalDate(suggestion.from)
+            modalStore.newPhaseStartTime = timestampToLocalTime(suggestion.from)
+            modalStore.newPhaseEndDate = timestampToLocalDate(suggestion.to)
+            modalStore.newPhaseEndTime = timestampToLocalTime(suggestion.to)
           } catch (e) {
             console.error('Failed to get smart dates:', e)
             // Fallback to parent bounds
-            uiStore.newPhaseStartDate = timestampToLocalDate(parentPhase.from)
-            uiStore.newPhaseStartTime = timestampToLocalTime(parentPhase.from)
-            uiStore.newPhaseEndDate = timestampToLocalDate(parentPhase.to)
-            uiStore.newPhaseEndTime = timestampToLocalTime(parentPhase.to)
+            modalStore.newPhaseStartDate = timestampToLocalDate(parentPhase.from)
+            modalStore.newPhaseStartTime = timestampToLocalTime(parentPhase.from)
+            modalStore.newPhaseEndDate = timestampToLocalDate(parentPhase.to)
+            modalStore.newPhaseEndTime = timestampToLocalTime(parentPhase.to)
           }
           return
         }
@@ -195,16 +207,16 @@ const calculateSmartDateRanges = async () => {
   // Priority 3: Default for root phases (column 1, "very first phase" scenario)
   // Current date 00:00 to current date + 7 days 00:00
   const now = new Date()
-  uiStore.newPhaseStartDate = now.toISOString().split('T')[0] || '' // YYYY-MM-DD
-  uiStore.newPhaseStartTime = '00:00'
+  modalStore.newPhaseStartDate = now.toISOString().split('T')[0] || '' // YYYY-MM-DD
+  modalStore.newPhaseStartTime = '00:00'
   const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-  uiStore.newPhaseEndDate = sevenDaysLater.toISOString().split('T')[0] || ''
-  uiStore.newPhaseEndTime = '00:00'
+  modalStore.newPhaseEndDate = sevenDaysLater.toISOString().split('T')[0] || ''
+  modalStore.newPhaseEndTime = '00:00'
 }
 
 const onParentSelected = (phase: Phase) => {
     // Check for self-reference
-    if (uiStore.phaseModalMode === 'edit' && phase.id === uiStore.phaseModalEditingPhaseId) {
+    if (modalStore.phaseModalMode === 'edit' && phase.id === modalStore.phaseModalEditingPhaseId) {
         alert("Cannot set phase as its own parent.")
         return
     }
@@ -212,12 +224,12 @@ const onParentSelected = (phase: Phase) => {
     // Cycle check (simple depth check or rely on backend? Let's rely on backend check or user common sense for now to be fast)
     // TODO: Implement cycle check
     
-    uiStore.phaseModalEditingParentId = phase.id
+    modalStore.phaseModalEditingParentId = phase.id
     selectedParentName.value = phase.name
 }
 
 const clearParent = () => {
-    uiStore.phaseModalEditingParentId = null
+    modalStore.phaseModalEditingParentId = null
     selectedParentName.value = 'Root (No Parent)'
 }
 
@@ -225,7 +237,7 @@ const handleSearchClose = () => {
     showPhaseSearch.value = false
     nextTick(() => {
         // Focus back on the appropriate element
-        if (uiStore.phaseModalEditingParentId) {
+        if (modalStore.phaseModalEditingParentId) {
             parentSelectorDisplay.value?.focus()
         } else {
             parentSelectorBtn.value?.focus()
@@ -235,10 +247,10 @@ const handleSearchClose = () => {
 </script>
 
 <template>
-  <div v-if="uiStore.showPhaseModal" class="modal-overlay">
+  <div v-if="modalStore.showPhaseModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h3>{{ uiStore.phaseModalMode === 'edit' ? 'Edit Phase' : 'Create New Phase' }}</h3>
+        <h3>{{ modalStore.phaseModalMode === 'edit' ? 'Edit Phase' : 'Create New Phase' }}</h3>
       </div>
       
       <div class="modal-body">
@@ -246,7 +258,7 @@ const handleSearchClose = () => {
           <label>Phase Name</label>
           <input 
             ref="phaseNameInput"
-            v-model="uiStore.newPhaseName" 
+            v-model="modalStore.newPhaseName"
             type="text" 
             placeholder="Enter phase name"
             @keydown.enter="handleKeydown"
@@ -255,11 +267,11 @@ const handleSearchClose = () => {
           />
         </div>
 
-        <div v-if="uiStore.phaseModalMode === 'edit'" class="form-group">
+        <div v-if="modalStore.phaseModalMode === 'edit'" class="form-group">
           <label>Parent Phase</label>
           
           <button 
-            v-if="!uiStore.phaseModalEditingParentId" 
+            v-if="!modalStore.phaseModalEditingParentId"
             ref="parentSelectorBtn"
             class="btn-select-parent"
             @click="showPhaseSearch = true"
@@ -288,7 +300,7 @@ const handleSearchClose = () => {
           <div class="form-group">
             <label>Start Date</label>
             <input 
-              v-model="uiStore.newPhaseStartDate" 
+              v-model="modalStore.newPhaseStartDate"
               type="date" 
               :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('start') }"
               @keydown="handleKeydown"
@@ -296,7 +308,7 @@ const handleSearchClose = () => {
               @blur="focusedField = null"
             />
             <TimePicker
-              v-model="uiStore.newPhaseStartTime" 
+              v-model="modalStore.newPhaseStartTime"
               :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('start') }"
               @keydown.native="handleKeydown"
               @focus="focusedField = 'startTime'"
@@ -306,7 +318,7 @@ const handleSearchClose = () => {
           <div class="form-group">
             <label>End Date</label>
             <input 
-              v-model="uiStore.newPhaseEndDate" 
+              v-model="modalStore.newPhaseEndDate"
               type="date" 
               :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('end') }"
               @keydown="handleKeydown"
@@ -314,7 +326,7 @@ const handleSearchClose = () => {
               @blur="focusedField = null"
             />
             <TimePicker
-              v-model="uiStore.newPhaseEndTime" 
+              v-model="modalStore.newPhaseEndTime"
               :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('end') }"
               @keydown.native="handleKeydown"
               @focus="focusedField = 'endTime'"
@@ -329,24 +341,24 @@ const handleSearchClose = () => {
       </div>
       
       <div class="modal-footer">
-        <button @click="uiStore.closePhaseModal" class="btn-secondary">
+        <button @click="modalStore.closePhaseModal" class="btn-secondary">
           Cancel
         </button>
         <button
           ref="submitBtn"
           @click="handleSubmit"
           class="btn-primary"
-          :disabled="!uiStore.newPhaseName.trim() || isRangeInvalid"
+          :disabled="!modalStore.newPhaseName.trim() || isRangeInvalid"
           @keydown.tab.exact.prevent="phaseNameInput?.focus()"
         >
-          {{ uiStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
+          {{ modalStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
         </button>
       </div>
     </div>
     
     <PhaseSearchModal 
         v-if="showPhaseSearch" 
-        :exclude-phase-id="uiStore.phaseModalEditingPhaseId"
+        :exclude-phase-id="modalStore.phaseModalEditingPhaseId"
         @select="onParentSelected" 
         @close="handleSearchClose" 
     />

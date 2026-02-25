@@ -2,7 +2,7 @@
 import { computed, ref, watch, onMounted, useAttrs } from 'vue'
 import type { Aim } from '../stores/data'
 import { useDataStore } from '../stores/data'
-import { useUIStore } from '../stores/ui'
+import { useProjectStore } from '../stores/project-store'
 import AimsList from './AimsList.vue'
 
 defineOptions({ inheritAttrs: false })
@@ -32,7 +32,7 @@ const emit = defineEmits<{
 const attrs = useAttrs()
 const aimContainerRef = ref<HTMLElement | null>(null)
 const dataStore = useDataStore()
-const uiStore = useUIStore()
+const projectStore = useProjectStore()
 
 const hasIncomingAims = computed(() => props.aim.supportingConnections && props.aim.supportingConnections.length > 0)
 const isExpanded = computed(() => props.aim.expanded || false)
@@ -77,7 +77,7 @@ watch(() => [props.isThisAimSelected, props.isActive], ([isSelected, isActive]) 
 // Ensure sub-aims are loaded when expanded
 watch(isExpanded, (newVal) => {
   if (newVal && props.aim.supportingConnections && props.aim.supportingConnections.length > 0) {
-    dataStore.loadAims(uiStore.projectPath, props.aim.supportingConnections.map(c => c.aimId))
+    dataStore.loadAims(projectStore.projectPath, props.aim.supportingConnections.map(c => c.aimId))
   }
 }, { immediate: true })
 

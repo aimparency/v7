@@ -4,6 +4,8 @@ import draggable from 'vuedraggable'
 import type { Aim } from '../stores/data'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useProjectStore } from '../stores/project-store'
+import { useUIModalStore } from '../stores/ui/modal-store'
 import AimComponent from './Aim.vue'
 
 interface Props {
@@ -29,6 +31,8 @@ const emit = defineEmits<{
 }>()
 
 const uiStore = useUIStore()
+const projectStore = useProjectStore()
+const modalStore = useUIModalStore()
 const dataStore = useDataStore()
 const aimsListRef = ref<HTMLElement | null>(null)
 const localAims = ref<Aim[]>([...props.aims])
@@ -43,9 +47,9 @@ const handleChange = async (event: any) => {
     const aimId = element.id
     
     if (props.parentAimId) {
-      await dataStore.reorderSubAim(uiStore.projectPath, props.parentAimId, aimId, newIndex)
+      await dataStore.reorderSubAim(projectStore.projectPath, props.parentAimId, aimId, newIndex)
     } else {
-      await dataStore.reorderPhaseAim(uiStore.projectPath, props.phaseId, aimId, newIndex)
+      await dataStore.reorderPhaseAim(projectStore.projectPath, props.phaseId, aimId, newIndex)
     }
   }
 }
@@ -81,7 +85,7 @@ const handleScrollRequest = (element: HTMLElement) => {
             'active': isActive && selectedAimIndex === index,
             'selected': isSelected && selectedAimIndex === index,
             'pending-delete': uiStore.pendingDeleteAimId === aim.id,
-            'moving': uiStore.movingAimId === aim.id
+            'moving': modalStore.movingAimId === aim.id
           }"
           @scroll-request="handleScrollRequest"
           @aim-clicked="$emit('aim-clicked', $event)"
