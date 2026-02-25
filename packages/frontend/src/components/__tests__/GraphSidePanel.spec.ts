@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import GraphSidePanel from '../GraphSidePanel.vue'
 import { useUIStore } from '../../stores/ui'
 import { useDataStore } from '../../stores/data'
+import { useUIProjectStore } from '../../stores/ui/project-store'
 
 vi.mock('../../trpc', () => ({
   trpc: {
@@ -42,9 +43,10 @@ describe('GraphSidePanel', () => {
 
   it('persists explanation to the originally edited connection when selection changes before blur', async () => {
     const uiStore = useUIStore()
+    const projectStore = useUIProjectStore()
     const dataStore = useDataStore()
 
-    uiStore.projectPath = '/tmp/project'
+    projectStore.projectPath = '/tmp/project'
 
     const parent1 = makeAim('p1', 'Parent 1')
     const child1 = makeAim('c1', 'Child 1')

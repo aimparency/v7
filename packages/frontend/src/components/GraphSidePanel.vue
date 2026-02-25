@@ -1,24 +1,26 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useUIStore } from '../stores/ui'
+import { useGraphUIStore } from '../stores/ui/graph-store'
+import { useUIProjectStore } from '../stores/ui/project-store'
 import { useDataStore } from '../stores/data'
 import { useMapStore } from '../stores/map'
 import { trpc } from '../trpc'
 import type { Aim, Connection } from 'shared/src/types'
 import { formatWithK, parseK } from '../utils/number-format'
 
-const uiStore = useUIStore()
+const graphUIStore = useGraphUIStore()
+const projectStore = useUIProjectStore()
 const dataStore = useDataStore()
 const mapStore = useMapStore()
 
 const selectedAim = computed(() => {
-    if (!uiStore.graphSelectedAimId) return null
-    return dataStore.aims[uiStore.graphSelectedAimId] || null
+    if (!graphUIStore.graphSelectedAimId) return null
+    return dataStore.aims[graphUIStore.graphSelectedAimId] || null
 })
 
 const selectedLink = computed(() => {
-    if (!uiStore.selectedLink) return null
-    const { parentId, childId } = uiStore.selectedLink
+    if (!graphUIStore.selectedLink) return null
+    const { parentId, childId } = graphUIStore.selectedLink
     const parent = dataStore.aims[parentId]
     const child = dataStore.aims[childId]
     if (!parent || !child) return null
@@ -92,8 +94,8 @@ watch(selectedAim, (newVal) => {
 const focusAim = (aimId: string) => {
     const node = mapStore.getNode(aimId)
     if (node) {
-        uiStore.setGraphSelection(aimId)
-        uiStore.deselectLink()
+        graphUIStore.setGraphSelection(aimId)
+        graphUIStore.deselectLink()
         mapStore.centerOnNode(node)
     }
 }
@@ -132,7 +134,7 @@ const updateAimAttributes = async () => {
     // Persist
     try {
         await trpc.aim.update.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             aimId,
             aim: updates
         })
@@ -142,8 +144,8 @@ const updateAimAttributes = async () => {
 }
 
 const focusConnection = (parentId: string, childId: string) => {
-    uiStore.selectLink(parentId, childId)
-    uiStore.setGraphSelection(null)
+    graphUIStore.selectLink(parentId, childId)
+    graphUIStore.setGraphSelection(null)
     mapStore.centerOnConnection(parentId, childId)
 }
 
@@ -206,7 +208,7 @@ const updateConnection = async (options?: { linkRef?: { parentId: string, childI
     // Backend update
     try {
         await trpc.aim.update.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             aimId: parent.id,
             aim: {
                 supportingConnections: updatedConnections
@@ -251,17 +253,17 @@ const removeConnection = async () => {
     dataStore.replaceAim(parent.id, updatedParent)
     dataStore.replaceAim(child.id, updatedChild)
     dataStore.recalculateValues()
-    uiStore.deselectLink()
+    graphUIStore.deselectLink()
     isConfirmingDelete.value = false
 
     try {
         await trpc.aim.update.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             aimId: parent.id,
             aim: { supportingConnections: updatedConnections }
         })
         await trpc.aim.update.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             aimId: child.id,
             aim: { supportedAims: updatedChildSupported }
         })
@@ -283,7 +285,7 @@ const vFocus = {
 }
 
 // Resizing logic
-const panelWidth = computed(() => uiStore.graphPanelWidth)
+const panelWidth = computed(() => graphUIStore.graphPanelWidth)
 const isResizing = ref(false)
 
 const startResize = (e: MouseEvent) => {
@@ -298,7 +300,7 @@ const onResize = (e: MouseEvent) => {
         // Resize from left edge (panel is on right)
         // Width = Window Width - Mouse X - Right Margin (20)
         const newWidth = window.innerWidth - e.clientX - 20
-        uiStore.setGraphPanelWidth(newWidth)
+        graphUIStore.setGraphPanelWidth(newWidth)
     }
 }
 

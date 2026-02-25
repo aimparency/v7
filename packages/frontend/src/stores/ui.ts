@@ -187,6 +187,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     graphSelectedAimId: () => useGraphUIStore().graphSelectedAimId,
+    selectedLink: () => useGraphUIStore().selectedLink,
     graphColorMode: () => useGraphUIStore().graphColorMode,
     graphPanelWidth: () => useGraphUIStore().graphPanelWidth,
     graphShowLabels: () => useGraphUIStore().graphShowLabels,
@@ -435,6 +436,14 @@ export const useUIStore = defineStore('ui', {
 
     deselectAim() {
       this.navigatingAims = false
+    },
+
+    selectLink(parentId: string, childId: string) {
+      useGraphUIStore().selectLink(parentId, childId)
+    },
+
+    deselectLink() {
+      useGraphUIStore().deselectLink()
     },
 
     setGraphSelection(aimId: string | null) {

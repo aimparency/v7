@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useUIStore } from '../stores/ui'
+import { useGraphUIStore } from '../stores/ui/graph-store'
 import makeCircularPath from '../utils/make-circular-path'
 import * as vec2 from '../utils/vec2'
 
@@ -14,19 +14,19 @@ const props = defineProps<{
   scale?: number
 }>()
 
-const uiStore = useUIStore()
+const graphUIStore = useGraphUIStore()
 
 const isVisible = computed(() => {
   return true
 })
 
 const selected = computed(() => {
-  return uiStore.selectedLink?.parentId === props.link.source.id &&
-         uiStore.selectedLink?.childId === props.link.target.id
+  return graphUIStore.selectedLink?.parentId === props.link.source.id &&
+         graphUIStore.selectedLink?.childId === props.link.target.id
 })
 
 const aimSelected = computed(() => {
-  const currentAimId = uiStore.graphSelectedAimId
+  const currentAimId = graphUIStore.graphSelectedAimId
   return currentAimId === props.link.source.id || 
          currentAimId === props.link.target.id
 })
@@ -59,7 +59,7 @@ const opacity = computed(() => {
 })
 
 const select = () => {
-  uiStore.selectLink(props.link.target.id, props.link.source.id)
+  graphUIStore.selectLink(props.link.target.id, props.link.source.id)
 }
 </script>
 

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUIStore, type AimPath } from './stores/ui'
+import { useUIModalStore } from './stores/ui/modal-store'
+import { useUIProjectStore } from './stores/ui/project-store'
 import { useDataStore, type Aim } from './stores/data'
 import { trpc } from './trpc'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
@@ -15,12 +17,14 @@ import ConsistencyModal from './components/ConsistencyModal.vue'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 
 const uiStore = useUIStore()
+const modalStore = useUIModalStore()
+const projectStore = useUIProjectStore()
 const dataStore = useDataStore()
 
 const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath }) => {
-  if (uiStore.aimSearchMode === 'pick') {
-    if (uiStore.aimSearchCallback && payload.type === 'aim') {
-      uiStore.aimSearchCallback(payload.data as Aim)
+  if (modalStore.aimSearchMode === 'pick') {
+    if (modalStore.aimSearchCallback && payload.type === 'aim') {
+      modalStore.aimSearchCallback(payload.data as Aim)
     }
   } else {
     // Navigate
@@ -28,7 +32,7 @@ const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimP
       uiStore.executeNavigation(payload.data as AimPath)
     }
   }
-  uiStore.closeAimSearch()
+  modalStore.closeAimSearch()
 }
 
 // Local UI state
@@ -38,7 +42,7 @@ const showConsistencyModal = ref(false)
 const isResizingWatchdog = ref(false)
 
 // Persist watchdog visibility and handle focus
-watch(() => uiStore.showWatchdog, (val) => {
+watch(() => projectStore.showWatchdog, (val) => {
   localStorage.setItem('aimparency-show-watchdog', String(val))
   if (val) {
     nextTick(() => {
@@ -91,18 +95,18 @@ const openProjectFromHistory = async (path: string) => {
 }
 
 const removeFromHistory = (path: string) => {
-  uiStore.removeProjectFromHistory(path)
+  projectStore.removeProjectFromHistory(path)
 }
 
 const closeProject = () => {
   // Just clearing the project path will reset the app state
-  uiStore.setProjectPath('')
+  projectStore.setProjectPath('')
 }
 
 // Global keydown handler
 const handleGlobalKeydown = (event: KeyboardEvent) => {
   // Ignore if in project selection screen
-  if (uiStore.isInProjectSelection) return
+  if (projectStore.isInProjectSelection) return
 
   // Ignore if user is typing in an input (except Escape which might be needed to close modals/search)
   const target = event.target as HTMLElement
@@ -112,13 +116,13 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
 
   // Watchdog toggle
   if (event.key === 'w' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-    uiStore.showWatchdog = !uiStore.showWatchdog
+    projectStore.showWatchdog = !projectStore.showWatchdog
     return
   }
 
   // Voice view toggle
   if (event.key === 'v' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-    uiStore.setView(uiStore.currentView === 'voice' ? 'columns' : 'voice')
+    uiStore.setView(projectStore.currentView === 'voice' ? 'columns' : 'voice')
     return
   }
 
@@ -145,9 +149,9 @@ watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, 
       hints.push({ key: 'e', action: 'edit phase' })
     }
 
-    uiStore.setKeyboardHints(hints)
+    projectStore.setKeyboardHints(hints)
   } else {
-    uiStore.setKeyboardHints([
+    projectStore.setKeyboardHints([
       { key: '/', action: 'search' },
       { key: 'j/k', action: 'navigate aims' },
       { key: 'h/l', action: 'collapse/expand' },
@@ -160,7 +164,7 @@ watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, 
 }, { immediate: true })
 
 // Watch for modal close
-watch(() => [uiStore.showPhaseModal, uiStore.showAimModal], async () => {
+watch(() => [modalStore.showPhaseModal, modalStore.showAimModal], async () => {
   // When both modals are closed, we don't need to manually restore focus 
   // because we use window listener now.
 })
@@ -188,17 +192,17 @@ onMounted(async () => {
   // Register global keydown listener
   window.addEventListener('keydown', handleGlobalKeydown)
 
-  if (uiStore.projectPath) {
+  if (projectStore.projectPath) {
     // Save restored column because selectPhase(0) resets it
     const restoredColumn = uiStore.selectedColumn
     const rootIndex = uiStore.selectedPhaseByColumn[0] ?? 0
 
     // Load all project data first
-    await dataStore.loadProject(uiStore.projectPath);
+    await dataStore.loadProject(projectStore.projectPath);
 
     // Build search index
     await trpc.project.buildSearchIndex.mutate({
-      projectPath: uiStore.projectPath
+      projectPath: projectStore.projectPath
     });
 
     // Then, select the first root phase (index 0 in column 0) to kick off the cascade
@@ -223,14 +227,14 @@ onUnmounted(() => {
 <template>
   <div class="app">
     <!-- Header -->
-    <header v-if="!uiStore.isInProjectSelection" class="header">
+    <header v-if="!projectStore.isInProjectSelection" class="header">
       <div class="status">
-        <span class="connection-status" :class="uiStore.connectionStatus">
-          {{ uiStore.connectionStatus === 'connected' ? 'Connected to' : uiStore.connectionStatus }}
-          {{ uiStore.connectionStatus === 'connected' ? 'aimparency server' : '' }}
+        <span class="connection-status" :class="projectStore.connectionStatus">
+          {{ projectStore.connectionStatus === 'connected' ? 'Connected to' : projectStore.connectionStatus }}
+          {{ projectStore.connectionStatus === 'connected' ? 'aimparency server' : '' }}
         </span>
         
-        <div class="column-controls" v-if="uiStore.currentView === 'columns'">
+        <div class="column-controls" v-if="projectStore.currentView === 'columns'">
           <button @click="uiStore.setViewportSize(uiStore.viewportSize - 1)" class="icon-btn" title="Decrease columns">-</button>
           <span>{{ uiStore.viewportSize }} columns</span>
           <button @click="uiStore.setViewportSize(uiStore.viewportSize + 1)" class="icon-btn" title="Increase columns">+</button>
@@ -239,40 +243,40 @@ onUnmounted(() => {
         <div class="view-controls">
           <button 
             @click="uiStore.setView('columns')" 
-            :class="{ active: uiStore.currentView === 'columns' }"
+            :class="{ active: projectStore.currentView === 'columns' }"
             class="view-btn"
           >Columns</button>
           <button 
             @click="uiStore.setView('graph')" 
-            :class="{ active: uiStore.currentView === 'graph' }"
+            :class="{ active: projectStore.currentView === 'graph' }"
             class="view-btn"
           >Graph</button>
           <button 
             @click="uiStore.setView('voice')" 
-            :class="{ active: uiStore.currentView === 'voice' }"
+            :class="{ active: projectStore.currentView === 'voice' }"
             class="view-btn"
           >Voice</button>
         </div>
 
         <button 
-          @click="uiStore.showWatchdog = !uiStore.showWatchdog" 
+          @click="projectStore.showWatchdog = !projectStore.showWatchdog" 
           class="icon-btn" 
           style="width: auto; padding: 0 0.5rem;"
-          :style="{ background: uiStore.showWatchdog ? '#444' : 'transparent' }"
+          :style="{ background: projectStore.showWatchdog ? '#444' : 'transparent' }"
           title="Toggle Watchdog Panel"
         >
           Watchdog
         </button>
 
         <div class="project-info">
-          <span class="project-path">{{ uiStore.projectPath }}</span>
+          <span class="project-path">{{ projectStore.projectPath }}</span>
 
-          <button @click="uiStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
+          <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
             ⚙️
           </button>
 
           <button 
-            v-if="uiStore.projectPath"
+            v-if="projectStore.projectPath"
             class="consistency-btn"
             :class="{ 'has-errors': dataStore.consistencyErrors.length > 0 }"
             @click="showConsistencyModal = true"
@@ -282,10 +286,10 @@ onUnmounted(() => {
           </button>
 
           <button 
-            v-if="uiStore.projectPath"
+            v-if="projectStore.projectPath"
             class="icon-btn"
             title="Refresh Consistency Check"
-            @click="dataStore.checkConsistency(uiStore.projectPath)"
+            @click="dataStore.checkConsistency(projectStore.projectPath)"
             style="font-size: 0.7rem; margin-left: 2px"
           >
             🔄
@@ -297,9 +301,9 @@ onUnmounted(() => {
     </header>
 
     <ProjectSelectionView
-      v-if="uiStore.isInProjectSelection"
+      v-if="projectStore.isInProjectSelection"
       v-model="projectPathInput"
-      :project-history="uiStore.projectHistory"
+      :project-history="projectStore.projectHistory"
       @select-project="handleSelectProject"
       @open-project-from-history="openProjectFromHistory"
       @remove-from-history="removeFromHistory"
@@ -307,24 +311,24 @@ onUnmounted(() => {
 
     <!-- Main Interface -->
     <div v-else class="main-split">
-      <main class="content-area" v-show="!(uiStore.showWatchdog && uiStore.watchdogMaximized)">
+      <main class="content-area" v-show="!(projectStore.showWatchdog && projectStore.watchdogMaximized)">
         <!-- Columns View -->
-        <ColumnsView v-if="uiStore.currentView === 'columns'" />
+        <ColumnsView v-if="projectStore.currentView === 'columns'" />
 
         <!-- Graph View -->
-        <GraphViewWrapper v-else-if="uiStore.currentView === 'graph'" />
+        <GraphViewWrapper v-else-if="projectStore.currentView === 'graph'" />
 
         <!-- Voice View -->
-        <VoiceView v-else-if="uiStore.currentView === 'voice'" />
+        <VoiceView v-else-if="projectStore.currentView === 'voice'" />
       </main>
 
       <!-- Watchdog Panel -->
       <div 
-        v-if="uiStore.showWatchdog" 
+        v-if="projectStore.showWatchdog" 
         class="watchdog-container" 
-        :style="{ height: uiStore.watchdogMaximized ? '100%' : watchdogHeight + 'px' }"
+        :style="{ height: projectStore.watchdogMaximized ? '100%' : watchdogHeight + 'px' }"
       >
-        <div class="resize-handle" v-if="!uiStore.watchdogMaximized" @mousedown="startResizeWatchdog"></div>
+        <div class="resize-handle" v-if="!projectStore.watchdogMaximized" @mousedown="startResizeWatchdog"></div>
         <WatchdogPanel ref="watchdogRef" />
       </div>
     </div>
@@ -333,13 +337,13 @@ onUnmounted(() => {
     <PhaseCreationModal />
     
     <!-- Aim Creation Modal -->
-    <AimCreationModal v-if="uiStore.showAimModal" />
+    <AimCreationModal v-if="modalStore.showAimModal" />
 
     <!-- Aim Search Modal -->
     <AimSearchModal 
-      v-if="uiStore.showAimSearch" 
+      v-if="modalStore.showAimSearch" 
       @select="handleAimSearchSelect"
-      @close="uiStore.closeAimSearch()"
+      @close="modalStore.closeAimSearch()"
     />
 
     <!-- Consistency Modal -->
@@ -348,12 +352,12 @@ onUnmounted(() => {
         @close="showConsistencyModal = false" 
     />
 
-    <ProjectSettingsModal v-if="uiStore.showSettingsModal" />
+    <ProjectSettingsModal v-if="modalStore.showSettingsModal" />
 
     <!-- Help Text -->
-    <footer v-if="!uiStore.isInProjectSelection" class="help">
+    <footer v-if="!projectStore.isInProjectSelection" class="help">
       <div class="help-keys">
-        <div v-for="hint in uiStore.keyboardHints" :key="`${hint.key}-${hint.action}`" class="hint">
+        <div v-for="hint in projectStore.keyboardHints" :key="`${hint.key}-${hint.action}`" class="hint">
           <span class="key">{{ hint.key }}</span>
           <span class="action">{{ hint.action }}</span>
         </div>

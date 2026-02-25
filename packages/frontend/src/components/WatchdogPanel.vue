@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue'
 import { useWatchdogStore, type AgentType } from '../stores/watchdog'
-import { useUIStore } from '../stores/ui'
+import { useUIProjectStore } from '../stores/ui/project-store'
+import { useUIModalStore } from '../stores/ui/modal-store'
 import WatchdogTerminal from './WatchdogTerminal.vue'
 import WatchdogActionsOverlay from './WatchdogActionsOverlay.vue'
 
 const store = useWatchdogStore()
-const uiStore = useUIStore()
+const projectStore = useUIProjectStore()
+const modalStore = useUIModalStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 
@@ -35,12 +37,12 @@ const headerBgColor = computed(() => {
 
 const runningAgents = computed(() => {
   const set = new Set<AgentType>()
-  if (!uiStore.projectPath) return set
+  if (!projectStore.projectPath) return set
   
   // Normalize: strip trailing slashes, then .bowman
   const normalize = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
   
-  const normalizedUiPath = normalize(uiStore.projectPath)
+  const normalizedUiPath = normalize(projectStore.projectPath)
 
   store.sessions.forEach(s => {
     const normalizedSessionPath = normalize(s.projectPath)
@@ -86,7 +88,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
   if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
     e.preventDefault()
     e.stopPropagation()
-    uiStore.openAimSearch('pick', (aim) => {
+    modalStore.openAimSearch('pick', (aim) => {
       // Insert [ID] Title into worker terminal
       const textToInsert = `[${aim.id}] ${aim.text}`
       store.sendWorkerInput(textToInsert)

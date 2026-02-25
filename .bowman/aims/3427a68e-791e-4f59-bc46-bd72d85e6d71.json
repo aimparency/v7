@@ -16,8 +16,8 @@
   ],
   "status": {
     "state": "partially",
-    "comment": "Continued modularization with focused architectural split: created dedicated Pinia graph store `stores/ui/graph-store.ts` for graph selection/color/panel/labels state + actions, and rewired `useUIStore` to delegate via typed compatibility facade getters/actions. Also removed legacy one-line tree/path wrapper methods from `ui.ts` and switched action modules to shared helpers directly (`selection-actions.ts`, `move-actions.ts`). `ui.ts` reduced to 576 LOC. Verification: `npm run type-check -w frontend` ✅ and `npm run test:unit -w frontend` ✅ (16 files, 65 tests).",
-    "date": 1772058502825
+    "comment": "Continued hard migration away from monolithic ui store toward domain stores. Added `ui/project-store.ts` and `ui/modal-store.ts`, expanded `ui/graph-store.ts` with selectedLink ownership, and migrated graph/watchdog consumers to direct domain stores (GraphLink, GraphFlowHandle, GraphSidePanel, GraphView, useGraphSimulation, useWebGLGraphRenderer, WatchdogPanel, WatchdogActionsOverlay, watchdog store, App.vue partial migration for project/modal view concerns). Full verification passes: `npm run type-check -w frontend` ✅ and `npm run test:unit -w frontend` ✅ (16 files, 65 tests). Remaining blocker: cross-domain mutation still centralized in ui action modules (keyboard/aim/selection/move) and App/navigation paths still depend on `useUIStore` compatibility shim; next step is extracting final navigation store and deleting shim fields.",
+    "date": 1772060110938
   },
   "intrinsicValue": 0,
   "cost": 1,

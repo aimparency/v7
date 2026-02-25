@@ -2,6 +2,8 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useGraphUIStore } from '../stores/ui/graph-store'
+import { useUIProjectStore } from '../stores/ui/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphConnector from '../components/GraphConnector.vue'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
@@ -14,6 +16,8 @@ import { calculateArrowGeometry, hitTestArrow } from '../webgl/utils/arrow-geome
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
+const graphUIStore = useGraphUIStore()
+const projectStore = useUIProjectStore()
 const mapStore = useMapStore()
 
 const canvasRef = ref<HTMLCanvasElement>()
@@ -125,8 +129,8 @@ function handleCanvasClick(e: MouseEvent) {
   // Link goes from source (child) to target (parent), but selectLink expects (parentId, childId)
   const clickedLink = hitTestLink(physX, physY)
   if (clickedLink) {
-    uiStore.selectLink(clickedLink.target.id, clickedLink.source.id)
-    uiStore.setGraphSelection(null)
+    graphUIStore.selectLink(clickedLink.target.id, clickedLink.source.id)
+    graphUIStore.setGraphSelection(null)
     return
   }
 
@@ -159,7 +163,7 @@ const onKeydown = (e: KeyboardEvent) => {
     if (isInput) return
 
     if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
-        uiStore.setGraphColorMode(uiStore.graphColorMode === 'status' ? 'priority' : 'status')
+        graphUIStore.setGraphColorMode(graphUIStore.graphColorMode === 'status' ? 'priority' : 'status')
     }
 }
 
@@ -178,7 +182,7 @@ const transform = computed(() => {
 
 const renderNodes = computed(() => {
     trigger.value;
-    const currentAimId = uiStore.graphSelectedAimId
+    const currentAimId = graphUIStore.graphSelectedAimId
     const activeAim = uiStore.getCurrentAim()
     return nodes.value.map(n => ({
         ...n,
@@ -205,10 +209,10 @@ const renderLinks = computed(() => {
 
 const selectedLinkData = computed(() => {
   trigger.value
-  if (!uiStore.selectedLink) return null
+  if (!graphUIStore.selectedLink) return null
   const link = links.value.find(l => 
-    l.source.id === uiStore.selectedLink!.childId && 
-    l.target.id === uiStore.selectedLink!.parentId
+    l.source.id === graphUIStore.selectedLink!.childId && 
+    l.target.id === graphUIStore.selectedLink!.parentId
   )
   if (!link) return null
   return {
@@ -278,7 +282,7 @@ function getNodeTitleLines(text: string): string[] {
     <svg
         ref="svgOverlayRef"
         class="graph-overlay"
-        :class="{ 'hide-labels': !uiStore.graphShowLabels }"
+        :class="{ 'hide-labels': !graphUIStore.graphShowLabels }"
         @mousedown="onMouseDown"
         @mousemove="onMouseMove"
         @mouseup="onMouseUp"
@@ -286,7 +290,7 @@ function getNodeTitleLines(text: string): string[] {
       <g :transform="transform">
         <GraphConnector />
         <!-- Labels rendered as SVG text on top of WebGL -->
-        <g class="labels" v-if="uiStore.graphShowLabels">
+        <g class="labels" v-if="graphUIStore.graphShowLabels">
           <g
             v-for="node in renderNodes"
             :key="node.id"
@@ -331,7 +335,7 @@ function getNodeTitleLines(text: string): string[] {
     </svg>
     <GraphSidePanel />
     <div class="top-controls">
-      <button class="control-btn" @click="dataStore.loadAllAims(uiStore.projectPath)" title="Reload Data">
+      <button class="control-btn" @click="dataStore.loadAllAims(projectStore.projectPath)" title="Reload Data">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 4v6h-6"></path>
           <path d="M1 20v-6h6"></path>
@@ -366,8 +370,8 @@ function getNodeTitleLines(text: string): string[] {
 
       <button 
         class="control-btn" 
-        :class="{ active: uiStore.graphShowLabels }"
-        @click="uiStore.toggleGraphShowLabels()"
+        :class="{ active: graphUIStore.graphShowLabels }"
+        @click="graphUIStore.toggleGraphShowLabels()"
         title="Toggle Labels"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -380,13 +384,13 @@ function getNodeTitleLines(text: string): string[] {
       <div class="segmented-control">
         <button 
             class="segment-btn" 
-            :class="{ active: uiStore.graphColorMode === 'status' }"
-            @click="uiStore.setGraphColorMode('status')"
+            :class="{ active: graphUIStore.graphColorMode === 'status' }"
+            @click="graphUIStore.setGraphColorMode('status')"
         >Status</button>
         <button 
             class="segment-btn" 
-            :class="{ active: uiStore.graphColorMode === 'priority' }"
-            @click="uiStore.setGraphColorMode('priority')"
+            :class="{ active: graphUIStore.graphColorMode === 'priority' }"
+            @click="graphUIStore.setGraphColorMode('priority')"
         >Prio</button>
       </div>
     </div>

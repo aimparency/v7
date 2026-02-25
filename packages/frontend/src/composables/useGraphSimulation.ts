@@ -1,6 +1,7 @@
 import { ref, shallowRef, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
@@ -92,6 +93,7 @@ function interpolateColor(t: number): string {
 export function useGraphSimulation() {
   const dataStore = useDataStore()
   const uiStore = useUIStore()
+  const graphUIStore = useGraphUIStore()
   const mapStore = useMapStore()
 
   // State
@@ -137,7 +139,7 @@ export function useGraphSimulation() {
     
     // Calculate Priority Range if needed
     let maxPriority = 0
-    if (uiStore.graphColorMode === 'priority') {
+    if (graphUIStore.graphColorMode === 'priority') {
       for (const n of rawNodes) {
         const p = dataStore.getAimPriority(n.id)
         if (p !== Number.POSITIVE_INFINITY && p > maxPriority) {
@@ -157,7 +159,7 @@ export function useGraphSimulation() {
       const radius = Math.sqrt((val / (avgValue || 1)) + 0.1) * 150
       
       let color: string | undefined = undefined
-      if (uiStore.graphColorMode === 'priority') {
+      if (graphUIStore.graphColorMode === 'priority') {
         const p = dataStore.getAimPriority(raw.id)
         if (p === Number.POSITIVE_INFINITY) {
           color = '#FFFF00' // Max Yellow
@@ -305,7 +307,7 @@ export function useGraphSimulation() {
     }
 
     // Camera Auto-Pan (Smooth)
-    const currentAimId = uiStore.graphSelectedAimId
+    const currentAimId = graphUIStore.graphSelectedAimId
     
     // Detect target change or tracking start to prevent jumps
     if (currentAimId !== lastSelectedAimId || (mapStore.isTracking && !wasTracking)) {
@@ -333,8 +335,8 @@ export function useGraphSimulation() {
             if (node) {
                 // Shift target to account for sidebar (center in remaining space)
                 let shiftX = 0
-                if (uiStore.graphSelectedAimId || uiStore.selectedLink) {
-                    const panelW = (uiStore.graphPanelWidth || 300) + 20
+                if (graphUIStore.graphSelectedAimId || graphUIStore.selectedLink) {
+                    const panelW = (graphUIStore.graphPanelWidth || 300) + 20
                     const physicalShift = -panelW / 2
                     // Convert to logical
                     const s = (mapStore.scale * mapStore.halfSide) / LOGICAL_HALF_SIDE
@@ -424,7 +426,7 @@ export function useGraphSimulation() {
         }
 
         // Debug Setup - Track force contributions for selected node
-        const debugId = uiStore.graphSelectedAimId
+        const debugId = graphUIStore.graphSelectedAimId
         const debugNode = debugId ? nodeMap.get(debugId) : null
         const shouldLog = debugNode && (trigger.value % 60 === 0)
 
@@ -710,7 +712,7 @@ export function useGraphSimulation() {
     }, 2000) as any
     
     watch(() => dataStore.graphData, updateGraphData, { deep: true })
-    watch(() => uiStore.graphColorMode, updateGraphData)
+    watch(() => graphUIStore.graphColorMode, updateGraphData)
   }
 
   const cleanup = () => {

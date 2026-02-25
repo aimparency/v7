@@ -10,7 +10,7 @@ import { ArrowRenderer, type EdgeData } from '../webgl/ArrowRenderer'
 import { TAAPass } from '../webgl/TAAPass'
 import { calculateArrowGeometry } from '../webgl/utils/arrow-geometry'
 import { applyBrightness, cssColorToRgb, statusToColor, type StatusColorEntry } from '../webgl/status-colors'
-import { useUIStore } from '../stores/ui'
+import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useDataStore } from '../stores/data'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import type { GraphNode, GraphLink } from './useGraphSimulation'
@@ -20,7 +20,7 @@ export function useWebGLGraphRenderer(
   nodes: Ref<GraphNode[]>,
   links: Ref<GraphLink[]>
 ) {
-  const uiStore = useUIStore()
+  const graphUIStore = useGraphUIStore()
   const dataStore = useDataStore()
   const mapStore = useMapStore()
 
@@ -50,8 +50,8 @@ export function useWebGLGraphRenderer(
 
   // Convert graph nodes to WebGL format with per-element movement tracking
   function convertNodes(graphNodes: GraphNode[]): NodeData[] {
-    const currentAimId = uiStore.graphSelectedAimId
-    const colorMode = uiStore.graphColorMode
+    const currentAimId = graphUIStore.graphSelectedAimId
+    const colorMode = graphUIStore.graphColorMode
     const configuredStatuses = (dataStore.getStatuses || []) as StatusColorEntry[]
 
     return graphNodes.map(node => {
@@ -339,7 +339,7 @@ export function useWebGLGraphRenderer(
   }
 
   // Watch for selection changes
-  watch(() => uiStore.graphSelectedAimId, () => {
+  watch(() => graphUIStore.graphSelectedAimId, () => {
     if (!renderer || !isInitialized.value) return
     // Selection change doesn't affect positions, just re-render with current cached data
     cachedNodeData = convertNodes(nodes.value)
@@ -347,7 +347,7 @@ export function useWebGLGraphRenderer(
   })
 
   // Watch for color mode changes
-  watch(() => uiStore.graphColorMode, () => {
+  watch(() => graphUIStore.graphColorMode, () => {
     if (!renderer || !isInitialized.value) return
     cachedNodeData = convertNodes(nodes.value)
     renderer.updateNodes(cachedNodeData)

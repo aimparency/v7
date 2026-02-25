@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { useUIStore } from '../stores/ui'
+import { useUIModalStore } from '../stores/ui/modal-store'
+import { useUIProjectStore } from '../stores/ui/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import { DEFAULT_STATUSES } from 'shared'
 
-const uiStore = useUIStore()
+const modalStore = useUIModalStore()
+const projectStore = useUIProjectStore()
 const dataStore = useDataStore()
 const name = ref('')
 const color = ref('#007acc')
@@ -32,7 +34,7 @@ onMounted(async () => {
   // Load data
   loading.value = true
   try {
-    const meta = dataStore.meta || await trpc.project.getMeta.query({ projectPath: uiStore.projectPath })
+    const meta = dataStore.meta || await trpc.project.getMeta.query({ projectPath: projectStore.projectPath })
     if (meta) {
         name.value = meta.name
         color.value = meta.color
@@ -50,7 +52,7 @@ onUnmounted(() => {
 })
 
 const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape') uiStore.closeSettingsModal()
+  if (e.key === 'Escape') modalStore.closeSettingsModal()
   // Disable enter to save because it conflicts with status editing?
   // Or just allow it if not in an input.
 }
@@ -67,7 +69,7 @@ const updateInstructions = async () => {
     isUpdatingInstructions.value = true
     updateResults.value = []
     try {
-        const res = await trpc.project.injectAgentInstructions.mutate({ projectPath: uiStore.projectPath })
+        const res = await trpc.project.injectAgentInstructions.mutate({ projectPath: projectStore.projectPath })
         updateResults.value = res.results
     } catch (e: any) {
         updateResults.value = [`Error: ${e.message}`]
@@ -78,13 +80,13 @@ const updateInstructions = async () => {
 
 const save = async () => {
     try {
-        await dataStore.updateProjectMeta(uiStore.projectPath, { 
+        await dataStore.updateProjectMeta(projectStore.projectPath, { 
           name: name.value, 
           color: color.value,
           statuses: statuses.value 
         })
-        await dataStore.loadProject(uiStore.projectPath)
-        uiStore.closeSettingsModal()
+        await dataStore.loadProject(projectStore.projectPath)
+        modalStore.closeSettingsModal()
     } catch (e) {
         console.error(e)
     }
@@ -92,7 +94,7 @@ const save = async () => {
 </script>
 
 <template>
-  <div v-if="uiStore.showSettingsModal" class="modal-overlay">
+  <div v-if="modalStore.showSettingsModal" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
         <h3>Project Settings</h3>
@@ -161,7 +163,7 @@ const save = async () => {
       </div>
       
       <div class="modal-footer">
-        <button @click="uiStore.closeSettingsModal" class="btn-secondary">
+        <button @click="modalStore.closeSettingsModal" class="btn-secondary">
           Cancel
         </button>
         <button @click="save" class="btn-primary">

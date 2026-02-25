@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
 import { ref, computed } from 'vue'
 import { trpcWatchdog } from '../trpc-watchdog'
-import { useUIStore } from './ui'
+import { useUIProjectStore } from './ui/project-store'
 
 export type AgentType = 'claude' | 'gemini' | 'codex'
 
@@ -45,12 +45,12 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
   // Get session for currently selected agent type and project
   const currentProjectSession = computed(() => {
-    const uiStore = useUIStore()
-    if (!uiStore.projectPath) return null
+    const projectStore = useUIProjectStore()
+    if (!projectStore.projectPath) return null
     // Normalize: strip trailing slashes, then .bowman
     const normalize = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
     
-    const normalizedUiPath = normalize(uiStore.projectPath)
+    const normalizedUiPath = normalize(projectStore.projectPath)
     
     return sessions.value.find(
       s => {
@@ -121,8 +121,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   async function connect(overridePath?: string, overrideAgentType?: AgentType) {
     if (socket.value || connectionState.value === 'spawning' || connectionState.value === 'connecting') return
 
-    const uiStore = useUIStore()
-    const targetPath = overridePath || uiStore.projectPath
+    const projectStore = useUIProjectStore()
+    const targetPath = overridePath || projectStore.projectPath
     const agentType = overrideAgentType || selectedAgentType.value
 
     if (!targetPath) {
@@ -199,8 +199,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   async function stop() {
-    const uiStore = useUIStore()
-    if (!uiStore.projectPath) return
+    const projectStore = useUIProjectStore()
+    if (!projectStore.projectPath) return
 
     const agentType = connectedAgentType.value || selectedAgentType.value
     logStatus(`Stopping ${agentType} session...`)
@@ -215,7 +215,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     try {
       await trpcWatchdog.watchdog.stop.mutate({
-        projectPath: uiStore.projectPath,
+        projectPath: projectStore.projectPath,
         agentType
       })
       logStatus(`Session stopped.`)
@@ -229,8 +229,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   async function relaunch() {
-    const uiStore = useUIStore()
-    if (!uiStore.projectPath) return
+    const projectStore = useUIProjectStore()
+    if (!projectStore.projectPath) return
 
     const agentType = connectedAgentType.value || selectedAgentType.value
     logStatus(`Relaunching ${agentType} session...`)
@@ -249,7 +249,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     try {
         const { port } = await trpcWatchdog.watchdog.relaunch.mutate({
-            projectPath: uiStore.projectPath,
+            projectPath: projectStore.projectPath,
             agentType
         })
 
@@ -257,7 +257,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         await fetchSessions()
 
         logStatus(`Relaunched. Connecting to port ${port}...`)
-        startKeepalive(uiStore.projectPath, agentType)
+        startKeepalive(projectStore.projectPath, agentType)
 
         connectionState.value = 'connecting'
         connectedAgentType.value = agentType

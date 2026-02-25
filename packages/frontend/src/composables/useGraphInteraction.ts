@@ -1,6 +1,7 @@
 import { ref, onMounted, onUnmounted, watch, type Ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { trpc } from '../trpc'
@@ -16,6 +17,7 @@ export function useGraphInteraction(
     const svgRef = elementRef
     const dataStore = useDataStore()
     const uiStore = useUIStore()
+    const graphUIStore = useGraphUIStore()
     const mapStore = useMapStore()
 
     const { nodes, links, nodeMap, freezings, onTick } = simulation
@@ -410,7 +412,7 @@ export function useGraphInteraction(
     const onNodeDown = (e: MouseEvent | TouchEvent, nodeCopy: GraphNode) => {
         const node = nodeMap.get(nodeCopy.id)
         if (!node) return
-        const selectedId = uiStore.graphSelectedAimId
+        const selectedId = graphUIStore.graphSelectedAimId
         if (selectedId && selectedId === node.id) {
             mapStore.startConnecting(node)
             connectionHandled = false
@@ -460,13 +462,13 @@ export function useGraphInteraction(
 
     const onNodeClick = async (node: GraphNode) => {
         if (!mapStore.cursorMoved) {
-            if (uiStore.graphSelectedAimId === node.id) {
+            if (graphUIStore.graphSelectedAimId === node.id) {
                 // Already selected -> Start tracking
                 mapStore.isTracking = true
             } else {
                 // New selection -> Select only
-                uiStore.setGraphSelection(node.id)
-                uiStore.deselectLink()
+                graphUIStore.setGraphSelection(node.id)
+                graphUIStore.deselectLink()
                 mapStore.isTracking = false
             }
         }
@@ -474,8 +476,8 @@ export function useGraphInteraction(
 
     const onBackgroundClick = () => {
         if (!mapStore.cursorMoved && !mapStore.connecting) {
-            uiStore.deselectLink()
-            uiStore.setGraphSelection(null)
+            graphUIStore.deselectLink()
+            graphUIStore.setGraphSelection(null)
         }
     }
 
@@ -515,7 +517,7 @@ export function useGraphInteraction(
         
         if (!hitNode) {
             // Deselect to ensure creating floating aim
-            uiStore.setGraphSelection(null)
+            graphUIStore.setGraphSelection(null)
             uiStore.deselectAim()
             uiStore.setFocusedColumn(-1)
 

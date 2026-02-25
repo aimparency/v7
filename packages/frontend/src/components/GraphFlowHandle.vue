@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useMapStore } from '../stores/map'
-import { useUIStore } from '../stores/ui'
+import { useGraphUIStore } from '../stores/ui/graph-store'
 import * as vec2 from '../utils/vec2'
 
 const props = defineProps<{
@@ -17,7 +17,7 @@ const props = defineProps<{
 }>()
 
 const mapStore = useMapStore()
-const uiStore = useUIStore()
+const graphUIStore = useGraphUIStore()
 
 // Computeds using reactive props
 const M = computed(() => {
@@ -52,7 +52,7 @@ const startLayouting = (from: boolean) => {
 
 const selectAim = (aimId: string) => {
   if (!mapStore.cursorMoved) {
-    uiStore.setGraphSelection(aimId)
+    graphUIStore.setGraphSelection(aimId)
   }
 }
 </script>

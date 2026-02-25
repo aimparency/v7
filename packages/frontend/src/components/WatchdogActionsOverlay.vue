@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
-import { useUIStore } from '../stores/ui'
+import { useUIModalStore } from '../stores/ui/modal-store'
+import { useUIProjectStore } from '../stores/ui/project-store'
 
 const store = useWatchdogStore()
-const uiStore = useUIStore()
+const modalStore = useUIModalStore()
+const projectStore = useUIProjectStore()
 const selectedIndex = ref(0)
 const previouslyFocusedElement = ref<HTMLElement | null>(null)
 
@@ -42,7 +44,7 @@ const actions = [
     key: 'a',
     label: () => 'Search & Insert Aim',
     action: () => {
-      uiStore.openAimSearch('pick', (aim) => {
+      modalStore.openAimSearch('pick', (aim) => {
         const textToInsert = `[${aim.id}] ${aim.text}`
         store.sendWorkerInput(textToInsert)
         store.triggerWorkerFocus()
@@ -53,15 +55,15 @@ const actions = [
   {
     id: 'fullscreen',
     key: 'f',
-    label: () => uiStore.watchdogMaximized ? 'Exit Fullscreen' : 'Maximize Panel',
-    action: () => { uiStore.watchdogMaximized = !uiStore.watchdogMaximized },
+    label: () => projectStore.watchdogMaximized ? 'Exit Fullscreen' : 'Maximize Panel',
+    action: () => { projectStore.watchdogMaximized = !projectStore.watchdogMaximized },
     icon: '⛶'
   },
   {
     id: 'hide',
     key: 'w',
     label: () => 'Hide Animator Panel',
-    action: () => { uiStore.showWatchdog = false },
+    action: () => { projectStore.showWatchdog = false },
     icon: '👁️'
   },
   {
