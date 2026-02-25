@@ -16,8 +16,8 @@
   ],
   "status": {
     "state": "partially",
-    "comment": "Refactor slice 4 complete: extracted view/graph UI state transitions from `stores/ui.ts` into `stores/ui/view-helpers.ts` (`setViewportSize`, `setView`, graph color/panel/labels persistence, `resetViewState`) with focused tests in `stores/ui/view-helpers.spec.ts`. Combined with prior slices (`navigation-helpers`, `project-helpers`, `modal-helpers`) this modularizes key domains while preserving `useUIStore` API compatibility. Verification: `npm run type-check -w frontend` passed; `npm run test:unit -w frontend` passed (16 files, 63 tests). `stores/ui.ts` reduced from 2747 to 2527 lines; further extraction remains.",
-    "date": 1771963204053
+    "comment": "Continued modularization with focused architectural split: created dedicated Pinia graph store `stores/ui/graph-store.ts` for graph selection/color/panel/labels state + actions, and rewired `useUIStore` to delegate via typed compatibility facade getters/actions. Also removed legacy one-line tree/path wrapper methods from `ui.ts` and switched action modules to shared helpers directly (`selection-actions.ts`, `move-actions.ts`). `ui.ts` reduced to 576 LOC. Verification: `npm run type-check -w frontend` ✅ and `npm run test:unit -w frontend` ✅ (16 files, 65 tests).",
+    "date": 1772058502825
   },
   "intrinsicValue": 0,
   "cost": 1,
