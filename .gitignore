@@ -2,7 +2,6 @@ node_modules/
 package-lock.json
 
 .kilocode/
-focus-based-ui-bad.md
 packages/frontend/public/
 
 packages/embedder/venv/
@@ -11,3 +10,7 @@ packages/embedder/venv/
 .env
 logs
 cache.db
+
+.test-tmp
+
+.codex

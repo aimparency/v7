@@ -197,26 +197,36 @@ const handleCancel = () => {
       <div class="form-section">
         <label>Title</label>
         <input
+          ref="aimTextInput"
           v-model="aimText"
           type="text"
           placeholder="Aim title..."
           class="text-input"
+          @keydown="handleInputKeydown"
+          @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
         />
       </div>
 
       <div class="form-section">
         <label>Description</label>
         <textarea
+          ref="descriptionInput"
           v-model="aimDescription"
           placeholder="Optional description..."
           class="textarea-input"
           rows="3"
+          @keydown="handleTextareaKeydown"
         />
       </div>
 
       <div class="form-section">
         <label>Status</label>
-        <select v-model="selectedStatus" class="status-select">
+        <select
+          ref="statusSelect"
+          v-model="selectedStatus"
+          class="status-select"
+          @keydown="handleInputKeydown"
+        >
           <option v-for="status in statuses" :key="status.key" :value="status.key">
             {{ status.key }}
           </option>
@@ -226,10 +236,13 @@ const handleCancel = () => {
       <div class="form-section">
         <label>Status Comment</label>
         <input
+          ref="statusCommentInput"
           v-model="statusComment"
           type="text"
           placeholder="Optional comment about status..."
           class="text-input"
+          @keydown="handleInputKeydown"
+          @keydown.tab.exact="handleStatusCommentNext"
         />
       </div>
 
@@ -239,10 +252,12 @@ const handleCancel = () => {
           <span v-if="isTransitioningToHalted" class="recommendation">(recommended when halting work)</span>
         </label>
         <textarea
+          ref="reflectionInput"
           v-model="reflection"
           placeholder="How did this aim go? What did you learn?"
           class="textarea-input"
           rows="4"
+          @keydown="handleTextareaKeydown"
         />
       </div>
 
@@ -253,13 +268,13 @@ const handleCancel = () => {
       <div class="form-section">
         <div class="label-row">
           <label>Supports (Parents)</label>
-          <button @click="openParentSearch" class="btn-add" type="button" title="Add Parent">+</button>
+          <button ref="addParentBtn" @click="openParentSearch" class="btn-add" type="button" title="Add Parent">+</button>
         </div>
         <div v-for="(parent, index) in supportedAimsList" :key="parent.id" class="aim-row">
           <span class="aim-text">{{ parent.text }}</span>
           <div class="weight-input">
             <span class="weight-label">Weight:</span>
-            <input type="number" v-model.number="parent.weight" step="0.1" min="0" class="weight-field" />
+            <input type="text" v-model.number="parent.weight" class="weight-field" />
           </div>
           <button @click="removeParent(index)" class="btn-remove" type="button" title="Remove">×</button>
         </div>
@@ -270,42 +285,60 @@ const handleCancel = () => {
         <div class="form-group">
           <label>Intrinsic Value</label>
           <input
+            ref="intrinsicValueInput"
             v-model.number="aimIntrinsicValue"
-            type="number"
+            type="text"
             placeholder="0"
             class="text-input"
+            @keydown="handleInputKeydown"
           />
         </div>
 
         <div class="form-group">
           <label>Cost</label>
           <input
+            ref="costInput"
             v-model.number="aimCost"
-            type="number"
+            type="text"
             placeholder="0"
             class="text-input"
+            @keydown="handleInputKeydown"
           />
         </div>
 
         <div class="form-group">
           <label>Loop Weight</label>
           <input
+            ref="loopWeightInput"
             v-model.number="aimLoopWeight"
-            type="number"
+            type="text"
             placeholder="0"
-            step="0.1"
             class="text-input"
+            @keydown="handleInputKeydown"
+            @keydown.tab.exact="handleLoopWeightNext"
           />
         </div>
       </div>
 
       <div class="form-section">
-        <TagInput v-model="aimTags" label="Tags" />
+        <TagInput
+          v-model="aimTags"
+          label="Tags"
+          @next-field="handleTagNext"
+          @prev-field="handleTagPrev"
+        />
       </div>
 
       <div class="modal-actions">
         <button @click="handleCancel" class="btn-cancel">Cancel</button>
-        <button @click="handleSave" class="btn-save">Save</button>
+        <button
+          ref="submitBtn"
+          @click="handleSave"
+          class="btn-save"
+          @keydown.tab.exact.prevent="aimTextInput?.focus()"
+        >
+          Save
+        </button>
       </div>
     </div>
   </div>
