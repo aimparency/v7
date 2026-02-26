@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
-import { calculateAimValues, AIMPARENCY_DIR_NAME, DEFAULT_STATUSES } from 'shared'
+import { calculateAimValues, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
 import { trpc } from '../trpc'
 import { useUIStore } from './ui'
 import { useMapStore } from './map'
@@ -113,7 +113,7 @@ export const useDataStore = defineStore('data', {
     },
 
     getStatuses: (state) => {
-      return state.meta?.statuses || DEFAULT_STATUSES
+      return state.meta?.statuses || INITIAL_STATES
     },
 
     graphData(state) {

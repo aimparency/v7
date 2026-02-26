@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { observable } from '@trpc/server/observable';
 import type { Aim, Phase, ProjectMeta } from 'shared';
-import { DEFAULT_STATUSES } from 'shared';
+import { INITIAL_STATES } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 export const createProjectRouter = (
@@ -51,7 +51,7 @@ export const createProjectRouter = (
           meta = await fs.readJson(metaPath);
           // Merge defaults if missing properties (like statuses)
           if (!meta.statuses) {
-              meta.statuses = DEFAULT_STATUSES;
+              meta.statuses = INITIAL_STATES;
           }
           return meta;
         }
@@ -63,7 +63,7 @@ export const createProjectRouter = (
         meta = {
             name,
             color: '#007acc',
-            statuses: DEFAULT_STATUSES
+            statuses: INITIAL_STATES
         };
 
         try {

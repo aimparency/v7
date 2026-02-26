@@ -2,16 +2,20 @@ export const AIMPARENCY_DIR_NAME = (typeof process !== 'undefined' && process.en
   ? process.env.AIMPARENCY_DIR_NAME 
   : '.bowman';
 
-export const AIM_STATES = ['open', 'done', 'cancelled', 'partially', 'failed', 'unclear', 'archived'] as const;
+export interface AimState {
+  key: string;
+  color: string;
+  ongoing: boolean;
+}
 
-export const DEFAULT_STATUSES = [
-  { key: 'open', color: '#ffcc80' },
-  { key: 'done', color: '#81c784' },
-  { key: 'cancelled', color: '#e57373' },
-  { key: 'partially', color: '#fff176' },
-  { key: 'failed', color: '#ba68c8' },
-  { key: 'unclear', color: '#90a4ae' },
-  { key: 'archived', color: '#444444' }
+export const INITIAL_STATES: AimState[] = [
+  { key: 'open', color: '#ffcc80', ongoing: true },
+  { key: 'partially', color: '#fff176', ongoing: true },
+  { key: 'done', color: '#81c784', ongoing: false },
+  { key: 'cancelled', color: '#e57373', ongoing: false },
+  { key: 'failed', color: '#ba68c8', ongoing: false },
+  { key: 'unclear', color: '#90a4ae', ongoing: false }
 ];
+
 
 export const DISCOUNT_RATE = 0.05; // 5% discount per cost unit

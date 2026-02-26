@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { AIM_STATES } from './constants.js';
 
 export const AimStatusSchema = z.object({
   state: z.string(),
@@ -13,7 +12,8 @@ export const ConnectionSchema = z.object({
   aimId: z.string().uuid(),
   relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
   weight: z.number().default(1),
-  explanation: z.string().optional()
+  explanation: z.string().optional(),
+  reflection: z.string().optional() // How did this connection work out?
 });
 
 export type Connection = z.infer<typeof ConnectionSchema>;
@@ -22,6 +22,8 @@ export const AimSchema = z.object({
   id: z.string().uuid(),
   text: z.string(),
   description: z.string().optional(),
+  reflection: z.string().optional(), // Notes on how this aim went
+  archived: z.boolean().default(false),
   tags: z.array(z.string()).default([]),
   supportingConnections: z.array(ConnectionSchema).default([]),
   incoming: z.array(z.string().uuid()).optional(), // Deprecated: use supportingConnections
@@ -46,15 +48,16 @@ export const PhaseSchema = z.object({
   name: z.string()
 });
 
-export const CustomStatusSchema = z.object({
+export const AimStateSchema = z.object({
   key: z.string().regex(/^[a-z0-9-]+$/),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/)
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  ongoing: z.boolean()
 });
 
 export const ProjectMetaSchema = z.object({
   name: z.string(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/), // hex color
-  statuses: z.array(CustomStatusSchema).optional()
+  statuses: z.array(AimStateSchema).optional()
 });
 
 export const SystemStatusSchema = z.object({

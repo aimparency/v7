@@ -4,7 +4,7 @@ import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
-import { DEFAULT_STATUSES } from 'shared'
+import { INITIAL_STATES } from 'shared'
 
 const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
@@ -38,7 +38,7 @@ onMounted(async () => {
     if (meta) {
         name.value = meta.name
         color.value = meta.color
-        statuses.value = JSON.parse(JSON.stringify(meta.statuses || DEFAULT_STATUSES))
+        statuses.value = JSON.parse(JSON.stringify(meta.statuses || INITIAL_STATES))
     }
   } catch (e) {
     console.error(e)
