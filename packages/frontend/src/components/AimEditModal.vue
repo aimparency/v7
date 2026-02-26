@@ -4,7 +4,6 @@ import { useDataStore, type Aim } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { trpc } from '../trpc'
-import type { AimState } from 'shared'
 import TagInput from './TagInput.vue'
 
 const props = defineProps<{
@@ -27,14 +26,6 @@ const aim = computed(() => {
 
 const statuses = computed(() => dataStore.getStatuses)
 
-const getCurrentState = computed(() => {
-  if (!aim.value) return null
-  const state = statuses.value.find((s: AimState) => s.key === aim.value!.status.state)
-  return state || null
-})
-
-const isOngoing = computed(() => getCurrentState.value?.ongoing ?? true)
-
 // Form state
 const aimText = ref('')
 const aimDescription = ref('')
@@ -48,6 +39,7 @@ const reflection = ref('')
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
 
 // Template refs
+const modalOverlay = ref<HTMLDivElement>()
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
 const statusSelect = ref<HTMLSelectElement>()
@@ -58,13 +50,6 @@ const costInput = ref<HTMLInputElement>()
 const loopWeightInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
-
-// Track if transitioning to halted
-const wasOngoing = ref(true)
-const isTransitioningToHalted = computed(() => {
-  const newState = statuses.value.find((s: AimState) => s.key === selectedStatus.value)
-  return wasOngoing.value && newState && !newState.ongoing
-})
 
 const openParentSearch = () => {
   modalStore.aimSearchCallback = (aim: Aim) => {
@@ -90,7 +75,6 @@ watch(() => props.show, async (show) => {
     selectedStatus.value = aim.value.status.state
     statusComment.value = aim.value.status.comment
     reflection.value = aim.value.reflection || ''
-    wasOngoing.value = getCurrentState.value?.ongoing ?? true
 
     // Load supported aims (Parents)
     supportedAimsList.value = []
@@ -116,14 +100,30 @@ watch(() => props.show, async (show) => {
   }
 })
 
+const handleModalKeydown = (event: KeyboardEvent) => {
+  // Stop ALL keyboard events from leaking through the modal
+  event.stopPropagation()
+
+  // Only handle Escape at modal level
+  if (event.key === 'Escape') {
+    // Check if any input/textarea is focused
+    const activeElement = document.activeElement
+    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
+      // Blur the focused field
+      (activeElement as HTMLElement).blur()
+      event.preventDefault()
+    } else {
+      // Close modal if nothing is focused
+      event.preventDefault()
+      handleCancel()
+    }
+  }
+}
+
 const handleInputKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     event.preventDefault()
     handleSave()
-  } else if (event.key === 'Escape') {
-    event.preventDefault()
-    event.stopPropagation()
-    handleCancel()
   }
 }
 
@@ -131,12 +131,6 @@ const handleTextareaKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault()
     handleSave()
-  } else if (event.key === 'Escape') {
-    // Vim-friendly: Esc blurs the field instead of closing modal
-    event.preventDefault()
-    event.stopPropagation()
-    const target = event.target as HTMLTextAreaElement
-    target?.blur()
   }
 }
 
@@ -190,7 +184,7 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <div v-if="show" class="modal-overlay" @click.self="handleCancel">
+  <div v-if="show" class="modal-overlay" @click.self="handleCancel" @keydown="handleModalKeydown">
     <div class="modal-content">
       <h2>Edit Aim</h2>
 
@@ -246,11 +240,8 @@ const handleCancel = () => {
         />
       </div>
 
-      <div class="form-section" :class="{ 'highlight': isTransitioningToHalted }">
-        <label>
-          Reflection
-          <span v-if="isTransitioningToHalted" class="recommendation">(recommended when halting work)</span>
-        </label>
+      <div class="form-section">
+        <label>Reflection</label>
         <textarea
           ref="reflectionInput"
           v-model="reflection"
@@ -259,10 +250,6 @@ const handleCancel = () => {
           rows="4"
           @keydown="handleTextareaKeydown"
         />
-      </div>
-
-      <div v-if="isTransitioningToHalted && aim && aim.supportingConnections && aim.supportingConnections.length > 0" class="info-box">
-        <strong>Tip:</strong> Consider also reflecting on which sub-aims helped most (you can edit connections in the graph view)
       </div>
 
       <div class="form-section">
@@ -379,25 +366,12 @@ h2 {
   margin-bottom: 1rem;
 }
 
-.form-section.highlight {
-  padding: 1rem;
-  background: rgba(138, 43, 226, 0.1);
-  border: 1px solid rgba(138, 43, 226, 0.3);
-  border-radius: 4px;
-}
-
 label {
   display: block;
   margin-bottom: 0.5rem;
   color: #ccc;
   font-size: 0.9rem;
   font-weight: 500;
-}
-
-.recommendation {
-  color: #b19cd9;
-  font-weight: normal;
-  font-size: 0.85rem;
 }
 
 .status-select,
@@ -428,16 +402,6 @@ label {
   font-size: 0.9rem;
   font-family: inherit;
   resize: vertical;
-}
-
-.info-box {
-  background: rgba(100, 180, 255, 0.1);
-  border: 1px solid rgba(100, 180, 255, 0.3);
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  font-size: 0.85rem;
-  color: #aaa;
 }
 
 .modal-actions {

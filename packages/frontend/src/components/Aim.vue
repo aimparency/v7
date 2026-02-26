@@ -409,12 +409,12 @@ onMounted(() => {
       font-weight: bold;
 
       &.cost {
-        background-color: rgba(255, 165, 0, 0.2);
-        color: #ffcc80;
+        background-color: rgba(0, 200, 200, 0.25);
+        color: #fff;
       }
 
       &.value {
-        background-color: rgba(0, 122, 204, 0.35);
+        background-color: rgba(255, 100, 200, 0.35);
         color: #fff;
       }
     }
@@ -429,13 +429,13 @@ onMounted(() => {
       border-top: 1px solid rgba(255, 255, 255, 0.1);
 
       &.cost {
-        background-color: rgba(255, 165, 0, 0.08);
-        color: #aa8855;
+        background-color: rgba(0, 200, 200, 0.1);
+        color: #70b3b3;
       }
 
       &.value {
-        background-color: rgba(0, 122, 204, 0.15);
-        color: #88b3d0;
+        background-color: rgba(255, 100, 200, 0.15);
+        color: #d988ba;
       }
     }
   }
