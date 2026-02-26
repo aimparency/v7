@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import fs from 'fs-extra';
 import path from 'path';
 import { appRouter } from './server';
+import { clearIndices } from './search';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,6 +21,8 @@ beforeEach(async () => {
 afterEach(async () => {
   // Clean up test project
   await fs.remove(TEST_PROJECT_PATH);
+  // Clear in-memory search indices
+  clearIndices(TEST_PROJECT_PATH);
 });
 
 test('connectAims - connects two existing aims', async () => {
@@ -282,9 +285,11 @@ test('search - matches aims using search index', async () => {
     query: 'Apple'
   });
 
-  assert.equal(results.length, 2);
-  const texts = results.map(r => r.text).sort();
-  assert.deepEqual(texts, ['Apple Cider', 'Apple Pie']);
+  // Hybrid search may return additional semantically similar results
+  // So we verify the expected aims are present, not that they're the only results
+  const texts = results.map(r => r.text);
+  assert.ok(texts.includes('Apple Pie'), 'Should find Apple Pie');
+  assert.ok(texts.includes('Apple Cider'), 'Should find Apple Cider');
 });
 
 test('createFloatingAim - sets and persists intrinsicValue', async () => {

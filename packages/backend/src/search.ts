@@ -96,7 +96,7 @@ export async function searchAims(projectPath: string, query: string, allAims: Ai
   // FlexSearch returns array of results with field name
   const aimIds = new Set<string>();
   const scores = new Map<string, number>();
-  
+
   // Aggregate results and assign scores based on rank
   let rank = 0;
   for (const result of results) {

@@ -96,6 +96,7 @@ Tools allow the LLM to modify state. All tools require `projectPath` parameter.
 - `create-aim` - Create new aim with text, status, relationships
 - `update-aim` - Update aim text, status, or relationships
 - `delete-aim` - Delete aim (removes from all phases)
+- `addReflection` - Add structured reflection to completed aim (context, outcome, effectiveness, lesson, pattern)
 
 **Phase Operations:**
 - `create-phase` - Create new phase with name, dates, parent
@@ -109,12 +110,26 @@ Tools allow the LLM to modify state. All tools require `projectPath` parameter.
 **Project Operations:**
 - `update-project-meta` - Update project name and color
 
-**Example:**
+**Examples:**
 ```javascript
+// Create a new aim
 create-aim({
   projectPath: "/home/user/my-project",
   text: "Implement user authentication",
   status: { state: "open", comment: "" }
+})
+
+// Add reflection after completing an aim
+addReflection({
+  projectPath: "/home/user/my-project",
+  aimId: "some-uuid",
+  reflection: {
+    context: "Implemented JWT authentication with refresh tokens",
+    outcome: "Successfully deployed, all tests passing",
+    effectiveness: "Approach worked well, though refresh token rotation was tricky",
+    lesson: "Should have reviewed OAuth 2.0 best practices before starting",
+    pattern: "Similar to previous API authentication work in project X"
+  }
 })
 ```
 

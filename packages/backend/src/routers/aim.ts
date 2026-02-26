@@ -435,6 +435,7 @@ export const createAimRouter = (
           text: input.aim.text,
           description: input.aim.description,
           tags: input.aim.tags || [],
+          reflections: [],
           supportingConnections: [],
           supportedAims: [],
           committedIn: [],
@@ -442,6 +443,9 @@ export const createAimRouter = (
           intrinsicValue: input.aim.intrinsicValue ?? (isFirstAim ? 1000 : 0),
           cost: input.aim.cost ?? 1,
           loopWeight: input.aim.loopWeight ?? 1,
+          duration: input.aim.duration ?? 1,
+          costVariance: input.aim.costVariance ?? 0,
+          valueVariance: input.aim.valueVariance ?? 0,
           archived: false
         };
 
@@ -513,6 +517,7 @@ export const createAimRouter = (
           text: input.aim.text,
           description: input.aim.description,
           tags: input.aim.tags || [],
+          reflections: [],
           supportingConnections: [],
           supportedAims: [],
           committedIn: [],
@@ -520,6 +525,9 @@ export const createAimRouter = (
           intrinsicValue: input.aim.intrinsicValue ?? 0,
           cost: input.aim.cost ?? 1,
           loopWeight: input.aim.loopWeight ?? 1,
+          duration: input.aim.duration ?? 1,
+          costVariance: input.aim.costVariance ?? 0,
+          valueVariance: input.aim.valueVariance ?? 0,
           archived: false
         };
 
@@ -591,6 +599,7 @@ export const createAimRouter = (
           text: input.aim.text,
           description: input.aim.description,
           tags: input.aim.tags || [],
+          reflections: [],
           supportingConnections: [],
           supportedAims: [],
           committedIn: [input.phaseId], // Will be updated by commitAimToPhase
@@ -598,6 +607,9 @@ export const createAimRouter = (
           intrinsicValue: input.aim.intrinsicValue ?? 0,
           cost: input.aim.cost ?? 1,
           loopWeight: input.aim.loopWeight ?? 1,
+          duration: input.aim.duration ?? 1,
+          costVariance: input.aim.costVariance ?? 0,
+          valueVariance: input.aim.valueVariance ?? 0,
           archived: false
         };
 
@@ -699,8 +711,6 @@ export const createAimRouter = (
           results = allAims;
         }
 
-        console.log(`[Search] Search results (after fallback/init): ${results.length}`);
-
         if (input.status) {
           const statuses = Array.isArray(input.status) ? input.status : [input.status];
           results = results.filter((aim: SearchAimResult) => statuses.includes(aim.status.state));
@@ -721,7 +731,6 @@ export const createAimRouter = (
           results = results.slice(0, input.limit);
         }
 
-        console.log(`[Search] Final results: ${results.length}`);
         return results;
       }),
 
@@ -764,6 +773,42 @@ export const createAimRouter = (
             }
         }
         return results.slice(0, input.limit || 10);
+      }),
+
+    // Add reflection to aim
+    addReflection: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        reflection: z.object({
+          context: z.string(),
+          outcome: z.string(),
+          effectiveness: z.string(),
+          lesson: z.string(),
+          pattern: z.string().optional()
+        })
+      }))
+      .mutation(async ({ input }: any) => {
+        const aim = await readAim(input.projectPath, input.aimId);
+
+        const newReflection = {
+          date: Date.now(),
+          context: input.reflection.context,
+          outcome: input.reflection.outcome,
+          effectiveness: input.reflection.effectiveness,
+          lesson: input.reflection.lesson,
+          pattern: input.reflection.pattern
+        };
+
+        if (!aim.reflections) {
+          aim.reflections = [];
+        }
+        aim.reflections.push(newReflection);
+
+        await writeAim(input.projectPath, aim);
+        updateAimInIndex(input.projectPath, aim);
+
+        return { success: true, reflection: newReflection };
       })
   });
 };
