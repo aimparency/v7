@@ -1,0 +1,24 @@
+{
+  "id": "6da6ecb2-04e7-426e-95d1-66566d11182b",
+  "text": "Inline trivial action wrappers into list-store.ts",
+  "description": "Review action files and inline simple 1-5 line wrappers directly into list-store.ts.\n\nKeep separate (complex logic):\n- move-actions.ts (738 lines - complex reordering/API calls)\n- keyboard-actions.ts (396 lines - event handling logic)\n- selection-actions.ts (247 lines - path calculation)\n- navigation-actions.ts (184 lines - traversal logic)\n\nInline candidates (if trivial):\n- aim-actions.ts (178 lines - check if just wrappers)\n- phase-actions.ts (83 lines - likely simple)\n\nGoal: Reduce indirection, keep list-store.ts under 500 lines",
+  "tags": [
+    "refactoring",
+    "code-quality"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3427a68e-791e-4f59-bc46-bd72d85e6d71"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Analysis complete: NO trivial wrappers found. All action files contain substantial business logic:\n- aim-actions.ts: 178 lines (complex creation with path handling)\n- phase-actions.ts: 83 lines (recursive selection logic)\n- move-actions.ts: 738 lines (complex reordering + API)\n- keyboard-actions.ts: 396 lines (event handling)\n- selection-actions.ts: 247 lines (path calculation)\n- navigation-actions.ts: 184 lines (traversal)\n\nThe thin delegators in list-store.ts provide value by maintaining stable API and encapsulating dependencies. Current architecture is sound.",
+    "date": 1772063899768
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

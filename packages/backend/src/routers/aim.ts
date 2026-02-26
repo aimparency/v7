@@ -441,7 +441,8 @@ export const createAimRouter = (
           status,
           intrinsicValue: input.aim.intrinsicValue ?? (isFirstAim ? 1000 : 0),
           cost: input.aim.cost ?? 1,
-          loopWeight: input.aim.loopWeight ?? 1
+          loopWeight: input.aim.loopWeight ?? 1,
+          archived: false
         };
 
         await writeAim(input.projectPath, aim);
@@ -518,7 +519,8 @@ export const createAimRouter = (
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0,
           cost: input.aim.cost ?? 1,
-          loopWeight: input.aim.loopWeight ?? 1
+          loopWeight: input.aim.loopWeight ?? 1,
+          archived: false
         };
 
         await writeAim(input.projectPath, childAim);
@@ -595,7 +597,8 @@ export const createAimRouter = (
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0,
           cost: input.aim.cost ?? 1,
-          loopWeight: input.aim.loopWeight ?? 1
+          loopWeight: input.aim.loopWeight ?? 1,
+          archived: false
         };
 
         await writeAim(input.projectPath, aim);

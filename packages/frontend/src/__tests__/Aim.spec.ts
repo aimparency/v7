@@ -33,6 +33,7 @@ describe('Aim.vue', () => {
     intrinsicValue: 0,
     cost: 1,
     loopWeight: 0,
+    archived: false,
     ...overrides
   })
 

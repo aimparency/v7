@@ -1,0 +1,25 @@
+{
+  "id": "3c0b4344-07bd-48b5-a800-6cf02332ea45",
+  "text": "Organize complex action modules by domain",
+  "description": "Group remaining action files into logical domains:\n\nCurrent separate files:\n- keyboard-actions.ts → keep (event handling)\n- move-actions.ts → keep (complex aim/phase reordering)\n- selection-actions.ts → keep (path calculation)\n- navigation-actions.ts → keep (traversal logic)\n\nConsider:\n- Rename to more descriptive names (e.g., aim-movement.ts, aim-selection.ts, keyboard-handler.ts)\n- Add JSDoc comments explaining each module's purpose\n- Ensure clear boundaries between modules\n\nGoal: Clear architecture where each module has single responsibility",
+  "tags": [
+    "refactoring",
+    "architecture",
+    "code-quality"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3427a68e-791e-4f59-bc46-bd72d85e6d71"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Architecture review complete. Current organization is already clear and domain-focused:\n\n**Stores (594 lines):**\n- list-store.ts (363) - navigation/selection state\n- project-store.ts (77) - project lifecycle\n- modal-store.ts (99) - modal state\n- graph-store.ts (55) - graph UI state\n\n**Actions (1826 lines):**\n- move-actions.ts (738) - aim/phase reordering\n- keyboard-actions.ts (396) - event handling\n- selection-actions.ts (247) - path calculation\n- navigation-actions.ts (184) - traversal logic\n- aim-actions.ts (178) - aim creation\n- phase-actions.ts (83) - phase selection\n\n**Helpers (577 lines):**\n- navigation-helpers.ts (334) - path utilities\n- modal-helpers.ts (112) - modal state transitions\n- view-helpers.ts (78) - viewport management\n- project-helpers.ts (53) - path normalization\n\nEach module has single responsibility. No rename needed.",
+    "date": 1772063910585
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

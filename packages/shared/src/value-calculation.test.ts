@@ -14,7 +14,8 @@ function createMockAim(id: string, intrinsicValue: number, cost: number): Aim {
     supportedAims: [],
     committedIn: [],
     tags: [],
-    loopWeight: 0
+    loopWeight: 0,
+    archived: false
   };
 }
 

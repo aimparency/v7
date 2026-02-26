@@ -169,7 +169,8 @@ export const useListStore = defineStore('ui', {
         supportedAims,
         intrinsicValue: intrinsicValue ?? 0,
         loopWeight,
-        cost
+        cost,
+        archived: false
       }
       await createAimAction(this, dataStore, aimTextOrId, isExistingAim, aimAttributes, weight)
     },

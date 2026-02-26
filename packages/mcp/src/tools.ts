@@ -1,6 +1,6 @@
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { trpc } from "./client.js";
-import { AIM_STATES, AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
+import { AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { AIMPARENCY_DIR_NAME } from "shared";
 
