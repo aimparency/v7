@@ -12,9 +12,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769328587035
+    "state": "done",
+    "comment": "Updated watchdog prompts to use 'instruct' flag more conservatively. Now only uses instruct (which prepends full INSTRUCT.md + session memory context) when agent is truly idle and explicitly needs direction. Added clear guidelines: USE instruct only when (1) agent asks 'what should I do next?', (2) clearly completed all work and is idle, (3) stuck/unsure. DO NOT use if actively working, just needs simple nudge, or mid-task. This reduces unnecessary token usage while maintaining autonomous guidance when truly needed. Updated both codex-session and claude-session watchdogs.",
+    "date": 1772065372043
   },
   "intrinsicValue": 0,
   "cost": 1,

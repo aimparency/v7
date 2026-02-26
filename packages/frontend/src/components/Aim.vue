@@ -59,6 +59,16 @@ const incomingAims = computed(() => {
     .filter((a): a is Aim => !!a)
 })
 
+// Get parent aims (supportedAims) from the data store
+const parentAims = computed(() => {
+  if (!props.aim.supportedAims || props.aim.supportedAims.length === 0) return []
+  return props.aim.supportedAims
+    .map(parentId => dataStore.aims[parentId])
+    .filter((a): a is Aim => !!a)
+})
+
+const hasMultipleParents = computed(() => parentAims.value.length > 1)
+
   const statusColor = computed(() => {
     const colorMap: Record<string, string> = {}
     dataStore.getStatuses.forEach((s: any) => {
@@ -74,10 +84,17 @@ watch(() => [props.isThisAimSelected, props.isActive], ([isSelected, isActive]) 
   }
 }, { flush: 'post' })
 
-// Ensure sub-aims are loaded when expanded
+// Ensure sub-aims and parent aims are loaded when expanded
 watch(isExpanded, (newVal) => {
-  if (newVal && props.aim.supportingConnections && props.aim.supportingConnections.length > 0) {
-    dataStore.loadAims(projectStore.projectPath, props.aim.supportingConnections.map(c => c.aimId))
+  if (newVal) {
+    // Load child aims (supportingConnections)
+    if (props.aim.supportingConnections && props.aim.supportingConnections.length > 0) {
+      dataStore.loadAims(projectStore.projectPath, props.aim.supportingConnections.map(c => c.aimId))
+    }
+    // Load parent aims (supportedAims)
+    if (props.aim.supportedAims && props.aim.supportedAims.length > 0) {
+      dataStore.loadAims(projectStore.projectPath, props.aim.supportedAims)
+    }
   }
 }, { immediate: true })
 
@@ -102,12 +119,15 @@ onMounted(() => {
         <div class="aim-main">
           <div class="aim-text" :class="{ 'untitled': !aim.text }">
             {{ aim.text || '(untitled)' }}
+            <span v-if="hasMultipleParents" class="multi-parent-badge" :title="`Supports ${parentAims.length} aims`">
+              ⟲{{ parentAims.length }}
+            </span>
           </div>
           <div class="aim-status" :style="{ color: statusColor }">
             {{ aim.status.state }}
           </div>
         </div>
-        
+
         <div v-if="hasStats" class="stats-box">
           <div class="stat-value" :title="`Value: ${aimValue}`">{{ aimValue }}</div>
           <div class="stat-cost" :title="`Cost: ${aimCost}`">{{ aimCost }}</div>
@@ -118,6 +138,21 @@ onMounted(() => {
       <div v-if="isExpanded" class="aim-details">
         <div v-if="aim.description" class="aim-description">
           {{ aim.description }}
+        </div>
+
+        <div v-if="parentAims.length > 0" class="aim-parents">
+          <div class="parents-label">Supports:</div>
+          <div class="parents-list">
+            <button
+              v-for="parent in parentAims"
+              :key="parent.id"
+              class="parent-aim"
+              @click.stop="$emit('aim-clicked', parent.id)"
+              :title="`Navigate to: ${parent.text}`"
+            >
+              {{ parent.text || '(untitled)' }}
+            </button>
+          </div>
         </div>
 
         <div v-if="aim.tags && aim.tags.length > 0" class="aim-tags">
@@ -241,11 +276,27 @@ onMounted(() => {
     color: #e0e0e0;
     line-height: 1.4;
     word-break: break-word;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
 
     &.untitled {
       color: #888;
       font-style: italic;
     }
+  }
+
+  .multi-parent-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.3rem;
+    background: rgba(138, 43, 226, 0.2);
+    color: #b19cd9;
+    border-radius: 0.25rem;
+    font-weight: bold;
+    border: 1px solid rgba(138, 43, 226, 0.4);
+    flex-shrink: 0;
   }
 
   .aim-status {
@@ -264,6 +315,43 @@ onMounted(() => {
     font-size: 0.9rem;
     color: #bbb;
     white-space: pre-wrap;
+  }
+
+  .aim-parents {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding-left: 0.25rem;
+
+    .parents-label {
+      font-size: 0.75rem;
+      color: #888;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .parents-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .parent-aim {
+      font-size: 0.8rem;
+      color: #b19cd9;
+      background: rgba(138, 43, 226, 0.15);
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.3rem;
+      border: 1px solid rgba(138, 43, 226, 0.3);
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: rgba(138, 43, 226, 0.3);
+        border-color: rgba(138, 43, 226, 0.5);
+        color: #d0b3ff;
+      }
+    }
   }
 
   .aim-tags {

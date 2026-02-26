@@ -158,7 +158,7 @@ const watchdog = new Agent(KENNEL_PATH, claudeWatchdogArgs, (data) => {
   io.emit('watchdog-data', data);
 });
 
-const watchdogService = new WatchdogService(worker!, watchdog, workerModel, compactEvery);
+const watchdogService = new WatchdogService(worker!, watchdog, workerModel, compactEvery, PROJECT_ROOT);
 
 watchdogService.onStop = (reason) => {
     console.log(`Watchdog stopped: ${reason}`);

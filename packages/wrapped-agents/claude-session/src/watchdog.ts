@@ -1,6 +1,7 @@
 import { Agent } from './agent';
 import * as fs from 'fs';
 import * as path from 'path';
+import { SessionMemory } from './session-memory';
 
 // Load instruction text for autonomous guidance
 const INSTRUCT_PATH = path.join(__dirname, '../../INSTRUCT.md');
@@ -50,12 +51,40 @@ export class WatchdogService {
   expectedModel: string | undefined;
 
   private nextCheckTime = 0;
+  private sessionMemory: SessionMemory | null = null;
+  private instructTextWithMemory: string = INSTRUCT_TEXT;
 
-  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1) {
+  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1, projectPath?: string) {
     this.worker = worker;
     this.watchdog = watchdog;
     this.expectedModel = expectedModel;
     this.compactEvery = compactEvery;
+
+    // Initialize session memory if projectPath provided
+    if (projectPath) {
+      this.sessionMemory = new SessionMemory(projectPath);
+      this.loadSessionMemoryContext(projectPath);
+    }
+  }
+
+  /**
+   * Load recent session memories and inject into instruction context
+   */
+  private async loadSessionMemoryContext(projectPath: string) {
+    try {
+      const summaries = await SessionMemory.loadRecentSummaries(projectPath, 5);
+
+      if (summaries.length > 0) {
+        const memoryContext = SessionMemory.formatForContext(summaries);
+        this.instructTextWithMemory = `${INSTRUCT_TEXT}\n\n${memoryContext}`;
+        this.log(`Loaded ${summaries.length} session memories into context`);
+      } else {
+        this.instructTextWithMemory = INSTRUCT_TEXT;
+      }
+    } catch (error) {
+      this.log(`Failed to load session memory context: ${error}`);
+      this.instructTextWithMemory = INSTRUCT_TEXT;
+    }
   }
 
   private log(msg: string) {
@@ -296,20 +325,28 @@ Current screen:
 ${context}
 
 Actions available:
-- send-prompt: Send text to Claude. Add "instruct": true if Claude seems idle/waiting for user input - this will prepend aimparency MCP usage instructions.
+- send-prompt: Send text to Claude. Add "instruct": true ONLY if Claude has reached completion and explicitly needs direction.
 - select-option: Choose a numbered option (use when Claude presents choices)
 - compact: Run /compact to free up context
 - stop: Stop supervision (use when ALL aims are done and verified complete)
 - wait: Pause supervision briefly
 
 IMPORTANT:
-- IMPORTANT: Use compact action whenever Claude completes a significant chunk of work or is about to start looking for new work. This keeps context fresh and improves performance. (Be generous with returning compact). 
-- Use "instruct": true when Claude asks "what should I do?" or seems to need direction.
+- IMPORTANT: Use compact action whenever Claude completes a significant chunk of work or is about to start looking for new work. This keeps context fresh and improves performance. (Be generous with returning compact).
+- Use "instruct": true ONLY when:
+  1. Claude explicitly asks "what should I do next?" or similar
+  2. Claude has clearly completed all current work and is idle
+  3. Claude shows signs of being stuck or unsure how to proceed
+- DO NOT use "instruct": true if:
+  1. Claude is actively working (writing code, running tests, reading files)
+  2. Claude just needs a simple nudge like "continue" or "run the tests"
+  3. Claude is in the middle of a task
 - Only use stop when you've verified ALL open aims are complete (not just the current task).
 
 Return a JSON object with your decision. Examples:
-{"action": {"type": "send-prompt", "text": "continue working on aims", "instruct": true}}
-{"action": {"type": "send-prompt", "text": "run the tests"}}
+{"action": {"type": "send-prompt", "text": "continue working on aims", "instruct": true}}  ← ONLY if truly idle
+{"action": {"type": "send-prompt", "text": "run the tests"}}  ← Prefer this for simple nudges
+{"action": {"type": "send-prompt", "text": "continue working"}}
 {"action": {"type": "select-option", "number": 1}}
 {"action": {"type": "compact"}}
 {"action": {"type": "stop", "reason": "all aims verified complete"}}
@@ -386,14 +423,14 @@ ${PROMPT_MARKER}`;
     if (action.type === 'send-prompt') {
         let textToSend = action.text || '';
 
-        // If instruct flag is set, prepend the aimparency guidance
-        if (action.instruct && INSTRUCT_TEXT) {
-            this.log('Including aimparency instruction text');
+        // If instruct flag is set, prepend the aimparency guidance (with session memory)
+        if (action.instruct && this.instructTextWithMemory) {
+            this.log('Including aimparency instruction text with session memory');
             // Always append the specific instruction/question after the general instructions
             if (textToSend) {
-                textToSend = `${INSTRUCT_TEXT}\n\n---\n\n${textToSend}`;
+                textToSend = `${this.instructTextWithMemory}\n\n---\n\n${textToSend}`;
             } else {
-                textToSend = INSTRUCT_TEXT;
+                textToSend = this.instructTextWithMemory;
             }
         }
 
@@ -402,6 +439,22 @@ ${PROMPT_MARKER}`;
         this.turnCount++;
     } else if (action.type === 'compact') {
         this.log(`Compacting worker context...`);
+
+        // Extract session memory before compacting
+        if (this.sessionMemory) {
+          this.log('Extracting session memory before compact...');
+          try {
+            const summary = await this.sessionMemory.extractReflection(this.worker, this.watchdog);
+            if (summary) {
+              await this.sessionMemory.saveSummary(summary);
+              this.log(`Session memory saved: ${summary.sessionId}`);
+            }
+          } catch (error) {
+            this.log(`Failed to save session memory: ${error}`);
+            // Continue with compact even if memory extraction fails
+          }
+        }
+
         await this.post(this.worker, '/compact');
         // Don't increment turn count, this is maintenance
     } else if (action.type === 'enter') {

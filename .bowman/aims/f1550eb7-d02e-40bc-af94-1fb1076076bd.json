@@ -12,9 +12,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769288687870
+    "state": "done",
+    "comment": "Fixed db.ts to create cache.db in .bowman/ directory. Updated path normalization to match other functions (embeddings, forces). All 19 backend tests pass. Cleaned up old cache files from project root.",
+    "date": 1772064463419
   },
   "intrinsicValue": 0,
   "cost": 1,

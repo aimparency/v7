@@ -4,12 +4,18 @@ import fs from 'fs-extra';
 
 const dbCache = new Map<string, Database.Database>();
 
-export function getDb(projectPath: string): Database.Database {
+export function getDb(rawProjectPath: string): Database.Database {
+  // Normalize path to ensure it includes .bowman
+  const projectPath = rawProjectPath.endsWith('.bowman')
+    ? rawProjectPath
+    : path.join(rawProjectPath, '.bowman');
+
   if (dbCache.has(projectPath)) {
     return dbCache.get(projectPath)!;
   }
 
   const dbPath = path.join(projectPath, 'cache.db');
+  fs.ensureDirSync(path.dirname(dbPath)); // Ensure .bowman directory exists
   const db = new Database(dbPath);
   
   // Initialize schema
@@ -38,7 +44,12 @@ export function getDb(projectPath: string): Database.Database {
   return db;
 }
 
-export function closeDb(projectPath: string) {
+export function closeDb(rawProjectPath: string) {
+  // Normalize path to match getDb()
+  const projectPath = rawProjectPath.endsWith('.bowman')
+    ? rawProjectPath
+    : path.join(rawProjectPath, '.bowman');
+
   if (dbCache.has(projectPath)) {
     dbCache.get(projectPath)!.close();
     dbCache.delete(projectPath);

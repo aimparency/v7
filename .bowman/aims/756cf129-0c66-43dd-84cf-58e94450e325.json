@@ -16,8 +16,8 @@
   ],
   "status": {
     "state": "done",
-    "comment": "Completed App.vue decomposition: extracted `views/ColumnsView.vue` (columns rendering + viewport transform logic), `views/GraphViewWrapper.vue` (graph view wrapper), and `views/ProjectSelectionView.vue` (project selection/history UI). `App.vue` now acts as orchestration/layout shell and dropped from 841 lines to 590 lines while preserving behavior. Verification: `npm run type-check -w frontend` passed; `npm run test:unit -w frontend` passed (15 files, 60 tests).",
-    "date": 1771963109405
+    "comment": "App.vue refactoring complete: 841→590 lines (-30%). Extracted ColumnsView, GraphViewWrapper, ProjectSelectionView components. All tests pass.",
+    "date": 1772063945845
   },
   "intrinsicValue": 0,
   "cost": 1,

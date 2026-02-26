@@ -16,9 +16,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1771608601376
+    "state": "done",
+    "comment": "Implemented session memory context injection on startup. Watchdog now loads recent session summaries (limit 5) from .bowman/memory/sessions/ and injects them into INSTRUCT.md context as 'Previous Session Insights' section. Includes session date, duration, aims worked, outcomes, patterns, and lessons learned. Content is truncated to stay within ~2000 token limit. All tests pass (22/22). Implemented for both codex-session and claude-session watchdogs.",
+    "date": 1772065277396
   },
   "intrinsicValue": 0,
   "cost": 1,
