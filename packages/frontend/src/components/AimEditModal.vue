@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useDataStore, type Aim } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
@@ -181,10 +181,26 @@ const handleSave = async () => {
 const handleCancel = () => {
   emit('close')
 }
+
+// Capture all keyboard events in capture phase to prevent leakage
+const captureKeydown = (event: KeyboardEvent) => {
+  if (props.show) {
+    event.stopPropagation()
+  }
+}
+
+onMounted(() => {
+  // Use capture phase to intercept ALL keyboard events before they reach anything else
+  window.addEventListener('keydown', captureKeydown, true)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', captureKeydown, true)
+})
 </script>
 
 <template>
-  <div v-if="show" class="modal-overlay" @click.self="handleCancel" @keydown="handleModalKeydown">
+  <div v-if="show" ref="modalOverlay" class="modal-overlay" tabindex="-1" @click.self="handleCancel" @keydown="handleModalKeydown">
     <div class="modal-content">
       <h2>Edit Aim</h2>
 
