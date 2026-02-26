@@ -37,6 +37,9 @@ export const useUIModalStore = defineStore('ui-modal', {
     aimModalEditingAimId: null as string | null,
     aimModalInsertPosition: 'before' as RelativePosition,
 
+    showAimEditModal: false,
+    aimEditModalAimId: null as string | null,
+
     showAimSearch: false,
     aimSearchMode: 'navigate' as 'navigate' | 'pick',
     aimSearchCallback: null as ((aim: Aim) => void) | null,
@@ -94,6 +97,16 @@ export const useUIModalStore = defineStore('ui-modal', {
 
     closeSettingsModal() {
       closeSettingsModalHelper(this)
+    },
+
+    openAimEditModal(aimId: string) {
+      this.showAimEditModal = true
+      this.aimEditModalAimId = aimId
+    },
+
+    closeAimEditModal() {
+      this.showAimEditModal = false
+      this.aimEditModalAimId = null
     }
   }
 })

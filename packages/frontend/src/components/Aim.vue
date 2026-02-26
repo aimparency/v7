@@ -41,15 +41,30 @@ const subAimCount = computed(() => {
   return props.aim.supportingConnections?.length || 0
 })
 
-const aimValue = computed(() => {
+const parentAimCount = computed(() => {
+  return props.aim.supportedAims?.length || 0
+})
+
+const totalValue = computed(() => {
   return Math.round(dataStore.getAimValue(props.aim.id))
 })
 
-const aimCost = computed(() => {
+const totalCost = computed(() => {
   return Math.round(dataStore.getAimCost(props.aim.id))
 })
 
-const hasStats = computed(() => aimValue.value > 0 || aimCost.value > 0 || subAimCount.value > 0)
+const intrinsicValue = computed(() => {
+  return Math.round(props.aim.intrinsicValue || 0)
+})
+
+const intrinsicCost = computed(() => {
+  return Math.round(props.aim.cost || 0)
+})
+
+const hasStats = computed(() =>
+  totalValue.value > 0 || totalCost.value > 0 ||
+  subAimCount.value > 0 || parentAimCount.value > 0
+)
 
 // Get incoming aims from the data store
 const incomingAims = computed(() => {
@@ -119,19 +134,25 @@ onMounted(() => {
         <div class="aim-main">
           <div class="aim-text" :class="{ 'untitled': !aim.text }">
             {{ aim.text || '(untitled)' }}
-            <span v-if="hasMultipleParents" class="multi-parent-badge" :title="`Supports ${parentAims.length} aims`">
-              ⟲{{ parentAims.length }}
-            </span>
           </div>
           <div class="aim-status" :style="{ color: statusColor }">
             {{ aim.status.state }}
           </div>
         </div>
 
-        <div v-if="hasStats" class="stats-box">
-          <div class="stat-value" :title="`Value: ${aimValue}`">{{ aimValue }}</div>
-          <div class="stat-cost" :title="`Cost: ${aimCost}`">{{ aimCost }}</div>
-          <div v-if="subAimCount > 0" class="stat-count" :title="`Sub-aims: ${subAimCount}`">{{ subAimCount }}</div>
+        <div v-if="hasStats" class="stats-container">
+          <div class="stat-box" :title="`Supported aims: ${parentAimCount} | Supporting aims: ${subAimCount}`">
+            <div class="stat-top">{{ parentAimCount }}</div>
+            <div class="stat-bottom">{{ subAimCount }}</div>
+          </div>
+          <div class="stat-box" :title="`Total cost: ${totalCost} | Intrinsic cost: ${intrinsicCost}`">
+            <div class="stat-top cost">{{ totalCost }}</div>
+            <div class="stat-bottom cost">{{ intrinsicCost }}</div>
+          </div>
+          <div class="stat-box" :title="`Total value: ${totalValue} | Intrinsic value: ${intrinsicValue}`">
+            <div class="stat-top value">{{ totalValue }}</div>
+            <div class="stat-bottom value">{{ intrinsicValue }}</div>
+          </div>
         </div>
       </div>
       
@@ -286,19 +307,6 @@ onMounted(() => {
     }
   }
 
-  .multi-parent-badge {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.7rem;
-    padding: 0.1rem 0.3rem;
-    background: rgba(138, 43, 226, 0.2);
-    color: #b19cd9;
-    border-radius: 0.25rem;
-    font-weight: bold;
-    border: 1px solid rgba(138, 43, 226, 0.4);
-    flex-shrink: 0;
-  }
-
   .aim-status {
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -376,46 +384,60 @@ onMounted(() => {
     padding-left: 0.25rem;
   }
 
-  .stats-box {
+  .stats-container {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  .stat-box {
     display: flex;
     flex-direction: column;
-    min-width: 1.8rem;
+    min-width: 1.5rem;
     border-radius: 0.2rem;
     overflow: hidden;
     background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    flex-shrink: 0;
-    /* No margin-right requested. Left margin handled by gap in parent. */
-  }
 
-  .stat-value {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.3rem;
-    text-align: center;
-    line-height: 1.1;
-    background-color: rgba(0, 122, 204, 0.3);
-    color: #fff;
-    font-weight: bold;
-  }
+    .stat-top {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.25rem;
+      text-align: center;
+      line-height: 1.1;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: #ccc;
+      font-weight: bold;
 
-  .stat-cost {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.3rem;
-    text-align: center;
-    line-height: 1.1;
-    background-color: rgba(255, 165, 0, 0.15);
-    color: #ffcc80;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
+      &.cost {
+        background-color: rgba(255, 165, 0, 0.2);
+        color: #ffcc80;
+      }
 
-  .stat-count {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.3rem;
-    text-align: center;
-    line-height: 1.1;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #ccc;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+      &.value {
+        background-color: rgba(0, 122, 204, 0.35);
+        color: #fff;
+      }
+    }
+
+    .stat-bottom {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.25rem;
+      text-align: center;
+      line-height: 1.1;
+      background-color: rgba(255, 255, 255, 0.05);
+      color: #999;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+      &.cost {
+        background-color: rgba(255, 165, 0, 0.08);
+        color: #aa8855;
+      }
+
+      &.value {
+        background-color: rgba(0, 122, 204, 0.15);
+        color: #88b3d0;
+      }
+    }
   }
 }
 

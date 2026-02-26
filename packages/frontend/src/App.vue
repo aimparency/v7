@@ -7,6 +7,7 @@ import { useDataStore, type Aim } from './stores/data'
 import { trpc } from './trpc'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
+import AimEditModal from './components/AimEditModal.vue'
 import AimSearchModal from './components/AimSearchModal.vue'
 import ColumnsView from './views/ColumnsView.vue'
 import GraphViewWrapper from './views/GraphViewWrapper.vue'
@@ -339,9 +340,16 @@ onUnmounted(() => {
     <!-- Aim Creation Modal -->
     <AimCreationModal v-if="modalStore.showAimModal" />
 
+    <!-- Aim Edit Modal -->
+    <AimEditModal
+      :show="modalStore.showAimEditModal"
+      :aim-id="modalStore.aimEditModalAimId"
+      @close="modalStore.closeAimEditModal()"
+    />
+
     <!-- Aim Search Modal -->
-    <AimSearchModal 
-      v-if="modalStore.showAimSearch" 
+    <AimSearchModal
+      v-if="modalStore.showAimSearch"
       @select="handleAimSearchSelect"
       @close="modalStore.closeAimSearch()"
     />

@@ -303,8 +303,7 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
     case 'e': {
       event.preventDefault()
       if (currentAim) {
-        modalStore.showAimModal = true
-        modalStore.aimModalMode = 'edit'
+        modalStore.openAimEditModal(currentAim.id)
       }
       break
     }
