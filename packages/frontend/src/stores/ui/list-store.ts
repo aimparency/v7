@@ -160,12 +160,16 @@ export const useListStore = defineStore('ui', {
         text: aimTextOrId,
         description,
         tags: tags || [],
+        reflections: [],
         status: { state: 'open' as const, comment: '', date: Date.now() },
         supportingConnections,
         supportedAims,
         intrinsicValue: intrinsicValue ?? 0,
         loopWeight,
         cost,
+        duration: 1,
+        costVariance: 0,
+        valueVariance: 0,
         archived: false
       }
 

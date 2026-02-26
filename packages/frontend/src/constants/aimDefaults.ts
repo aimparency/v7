@@ -11,6 +11,9 @@ export const AIM_DEFAULTS = {
   intrinsicValue: 0,
   cost: 1,
   loopWeight: 1,
+  duration: 1, // Default 1 day
+  costVariance: 0,
+  valueVariance: 0,
   status: {
     state: 'open' as AimStatusState,
     comment: ''
@@ -28,6 +31,9 @@ export function getNewAimDefaults() {
     intrinsicValue: AIM_DEFAULTS.intrinsicValue,
     cost: AIM_DEFAULTS.cost,
     loopWeight: AIM_DEFAULTS.loopWeight,
+    duration: AIM_DEFAULTS.duration,
+    costVariance: AIM_DEFAULTS.costVariance,
+    valueVariance: AIM_DEFAULTS.valueVariance,
     status: {
       state: AIM_DEFAULTS.status.state,
       comment: AIM_DEFAULTS.status.comment

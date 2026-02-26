@@ -17,7 +17,8 @@ When idle or unsure what to do:
 3. **Pick an aim**: Choose one that matches your capabilities (coding, research, etc.)
 4. **Work on it**: Implement the aim - write code, create files, run tests
 5. **Update status**: Use `update_aim` to mark as done when complete, or add a status comment if blocked
-6. **Break down if needed**: If an aim is too large, create sub-aims with `create_aim` and link them as supporting
+6. **Reflect on completion**: When you complete an aim, use `addReflection` to record what you learned
+7. **Break down if needed**: If an aim is too large, create sub-aims with `create_aim` and link them as supporting
 
 ## Go Beyond the Graph
 
@@ -42,6 +43,37 @@ You are not just an executor - you are a collaborator. The aim graph is a guide,
 - `get_aim` / `get_aim_context` - Get aim details and related aims
 - `create_aim` - Create new aims (with optional phaseId to commit immediately)
 - `update_aim` - Update aim status, text, or relationships
+- `addReflection` - Record structured reflections on completed aims
+
+## Reflection Pattern: Learn from Your Work
+
+**When to reflect:**
+- After completing each aim (immediate)
+- End of each work session (periodic)
+- When you encounter challenges or blockers
+
+**How to reflect:**
+
+When you complete an aim, call `addReflection` with:
+```
+{
+  "projectPath": "/path/to/project/.bowman",
+  "aimId": "uuid-of-completed-aim",
+  "reflection": {
+    "context": "What were you trying to achieve?",
+    "outcome": "What actually happened?",
+    "effectiveness": "How well did your approach work?",
+    "lesson": "What would you do differently next time?",
+    "pattern": "(optional) Does this relate to past experiences?"
+  }
+}
+```
+
+**Benefits:**
+- Build pattern library from successes and failures
+- Inform future strategy adjustments
+- Improve work quality over time
+- Enable cross-session learning
 
 ## Important
 

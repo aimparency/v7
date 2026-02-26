@@ -1,5 +1,5 @@
 import type { Aim } from './types';
-import { DISCOUNT_RATE } from './constants';
+import { DISCOUNT_RATE, DAILY_DISCOUNT_RATE } from './constants';
 
 export function calculateAimValues(aims: Aim[]): { 
   values: Map<string, number>, 
@@ -151,17 +151,33 @@ export function calculateAimValues(aims: Aim[]): {
   const costs = distributeCosts(aims, aimMap, currentValues, flowValues, false);
   const doneCosts = distributeCosts(aims, aimMap, currentValues, flowValues, true, costs);
 
-  // Calculate Priorities
-  // Priority = (Normalized Value * Total Intrinsic) / Cost
+  // Calculate Priorities with temporal discounting
+  // Priority = NPV / Cost = (PV of returns - Cost) / Cost
+  // Where PV uses duration (time to completion), not cost
   const priorities = new Map<string, number>();
   for (const aim of aims) {
       const val = (currentValues.get(aim.id) || 0) * totalIntrinsic;
       const cost = costs.get(aim.id) || 0;
-      
+      const duration = aim.duration || 1; // Default 1 day if not specified
+      const valueVariance = aim.valueVariance || 0;
+      const costVariance = aim.costVariance || 0;
+
       let priority = 0;
       if (cost > 0) {
-          const discountedVal = val / Math.pow(1 + DISCOUNT_RATE, cost);
-          priority = discountedVal / cost;
+          // Temporal discounting: discount by actual time to completion (duration)
+          const discountFactor = Math.pow(1 + DAILY_DISCOUNT_RATE, duration);
+          const presentValue = val / discountFactor;
+
+          // Risk adjustment: reduce value by uncertainty
+          // Simple approach: subtract some multiple of variance as risk penalty
+          // More sophisticated: use certainty equivalence or utility functions
+          const riskAdjustedValue = presentValue - (valueVariance * 0.5);
+          const riskAdjustedCost = cost + (costVariance * 0.5);
+
+          // ROI = (Present Value - Cost) / Cost
+          // Higher priority = better return on investment considering time value of money
+          const netPresentValue = riskAdjustedValue - riskAdjustedCost;
+          priority = netPresentValue / riskAdjustedCost;
       } else if (val > 0) {
           priority = Number.POSITIVE_INFINITY;
       }

@@ -3,12 +3,16 @@ import assert from 'node:assert';
 import { calculateAimValues } from './value-calculation.js';
 import type { Aim } from './types.js';
 
-function createMockAim(id: string, intrinsicValue: number, cost: number): Aim {
+function createMockAim(id: string, intrinsicValue: number, cost: number, duration?: number): Aim {
   return {
     id,
     text: `Aim ${id}`,
     intrinsicValue,
     cost,
+    duration: duration || 1, // Default 1 day
+    costVariance: 0,
+    valueVariance: 0,
+    reflections: [],
     status: { state: 'open', comment: '', date: Date.now() },
     supportingConnections: [],
     supportedAims: [],
@@ -19,36 +23,40 @@ function createMockAim(id: string, intrinsicValue: number, cost: number): Aim {
   };
 }
 
-test('calculateAimValues computes priority correctly', () => {
-  const aimA = createMockAim('A', 10, 5);
-  const aimB = createMockAim('B', 500, 200);
+test('calculateAimValues computes priority with temporal discounting', () => {
+  // Test with explicit durations to show time-based discounting
+  const aimA = createMockAim('A', 10, 5, 30);  // 30 days to complete
+  const aimB = createMockAim('B', 500, 200, 365); // 1 year to complete
 
   const result = calculateAimValues([aimA, aimB]);
 
   // Total Intrinsic = 510
-  // Value A = 10 (normalized then denormalized)
-  // Value B = 500 (normalized then denormalized)
+  // Value A = 10 (normalized)
+  // Value B = 500 (normalized)
 
-  // Priority uses time-discounted value/cost formula:
-  // priority = (value / (1 + DISCOUNT_RATE)^cost) / cost
-  // where DISCOUNT_RATE = 0.05
+  // NEW priority formula uses duration for discounting:
+  // priority = (PV - Cost) / Cost
+  // where PV = value / (1 + DAILY_DISCOUNT_RATE)^duration
+  // DAILY_DISCOUNT_RATE ≈ 0.000261 (from 10% annual)
 
-  // Priority A = (10 / 1.05^5) / 5
-  //            = (10 / 1.2763) / 5
-  //            = 7.835 / 5
-  //            ≈ 1.567
+  // Priority A: duration=30 days, minimal discounting
+  // PV_A ≈ 10 / 1.000261^30 ≈ 10 / 1.0078 ≈ 9.92
+  // Priority_A = (9.92 - 5) / 5 ≈ 0.98
 
-  // Priority B = (500 / 1.05^200) / 200
-  //            = (500 / 17292.58) / 200
-  //            = 0.0289 / 200
-  //            ≈ 0.000145
+  // Priority B: duration=365 days, significant discounting
+  // PV_B ≈ 500 / 1.000261^365 ≈ 500 / 1.1 ≈ 454.5
+  // Priority_B = (454.5 - 200) / 200 ≈ 1.27
 
   const priorityA = result.priorities?.get('A');
   const priorityB = result.priorities?.get('B');
 
-  // Priority A should be significantly higher than B due to discounting
-  assert.ok(priorityA! > 1.5 && priorityA! < 1.6, `Priority A should be ~1.567, got ${priorityA}`);
-  assert.ok(priorityB! > 0.0001 && priorityB! < 0.0002, `Priority B should be ~0.000145, got ${priorityB}`);
+  // With duration-based discounting, shorter-duration aims are prioritized
+  // Both should be positive (net present value > cost)
+  assert.ok(priorityA! > 0.9 && priorityA! < 1.1, `Priority A should be ~0.98, got ${priorityA}`);
+  assert.ok(priorityB! > 1.0 && priorityB! < 1.5, `Priority B should be ~1.27, got ${priorityB}`);
+
+  // Key insight: B has higher absolute priority despite longer duration
+  // because its value/cost ratio is much better (500/200 vs 10/5)
 });
 
 test('calculateAimValues distributes costs weighted by value share', () => {

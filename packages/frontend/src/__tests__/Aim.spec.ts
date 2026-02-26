@@ -20,6 +20,7 @@ describe('Aim.vue', () => {
     text: 'Test Aim',
     description: 'Test Description',
     tags: [],
+    reflections: [],
     status: {
       state: 'open',
       comment: '',
@@ -33,6 +34,9 @@ describe('Aim.vue', () => {
     intrinsicValue: 0,
     cost: 1,
     loopWeight: 0,
+    duration: 1,
+    costVariance: 0,
+    valueVariance: 0,
     archived: false,
     ...overrides
   })

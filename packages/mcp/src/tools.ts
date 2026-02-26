@@ -291,6 +291,29 @@ export function registerTools(server: Server, clientOverride?: any) {
           },
         },
         {
+          name: "addReflection",
+          description: "Add a structured reflection to an aim. Use this after completing an aim to record what you learned.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              aimId: { type: "string", description: "UUID of the aim to add reflection to" },
+              reflection: {
+                type: "object",
+                properties: {
+                  context: { type: "string", description: "What were you trying to achieve?" },
+                  outcome: { type: "string", description: "What actually happened?" },
+                  effectiveness: { type: "string", description: "How well did your approach work?" },
+                  lesson: { type: "string", description: "What would you do differently next time?" },
+                  pattern: { type: "string", description: "(optional) Does this relate to past experiences?" }
+                },
+                required: ["context", "outcome", "effectiveness", "lesson"]
+              }
+            },
+            required: ["projectPath", "aimId", "reflection"],
+          },
+        },
+        {
           name: "create_phase",
           description: "Create a time-boxed phase. Provide dates as Unix timestamps (milliseconds). Set parent to null for root phase or a phase UUID for sub-phase.",
           inputSchema: {
@@ -843,6 +866,22 @@ export function registerTools(server: Server, clientOverride?: any) {
               {
                 type: "text",
                 text: `Deleted aim ${args.aimId}`,
+              },
+            ],
+          };
+        }
+
+        case "addReflection": {
+          const result = await trpcClient.aim.addReflection.mutate({
+            projectPath: args.projectPath as string,
+            aimId: args.aimId as string,
+            reflection: args.reflection as any,
+          });
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Added reflection to aim ${args.aimId}`,
               },
             ],
           };

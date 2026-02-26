@@ -18,11 +18,24 @@ export const ConnectionSchema = z.object({
 
 export type Connection = z.infer<typeof ConnectionSchema>;
 
+// Reflection pattern: Periodic self-evaluation
+export const ReflectionSchema = z.object({
+  date: z.number(), // Unix timestamp
+  context: z.string(), // What were you trying to achieve?
+  outcome: z.string(), // What actually happened?
+  effectiveness: z.string(), // How well did your approach work?
+  lesson: z.string(), // What would you do differently next time?
+  pattern: z.string().optional() // Does this relate to past experiences?
+});
+
+export type Reflection = z.infer<typeof ReflectionSchema>;
+
 export const AimSchema = z.object({
   id: z.string().uuid(),
   text: z.string(),
   description: z.string().optional(),
-  reflection: z.string().optional(), // Notes on how this aim went
+  reflection: z.string().optional(), // Notes on how this aim went (simple text)
+  reflections: z.array(ReflectionSchema).default([]), // Structured periodic self-evaluations
   archived: z.boolean().default(false),
   tags: z.array(z.string()).default([]),
   supportingConnections: z.array(ConnectionSchema).default([]),
@@ -31,8 +44,12 @@ export const AimSchema = z.object({
   committedIn: z.array(z.string().uuid()),
   status: AimStatusSchema,
   intrinsicValue: z.number().default(0),
-  cost: z.number().default(1),
+  cost: z.number().default(1), // Effort/resource cost (not time)
   loopWeight: z.number().default(0),
+  // Economic refinement: temporal and uncertainty modeling
+  duration: z.number().default(1), // Time horizon in days (when will returns arrive?)
+  costVariance: z.number().default(0), // Uncertainty in cost estimate (std deviation)
+  valueVariance: z.number().default(0), // Uncertainty in value estimate (std deviation)
   calculatedValue: z.number().optional(),
   calculatedCost: z.number().optional(),
   calculatedDoneCost: z.number().optional(),

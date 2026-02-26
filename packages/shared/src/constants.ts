@@ -18,4 +18,7 @@ export const INITIAL_STATES: AimState[] = [
 ];
 
 
-export const DISCOUNT_RATE = 0.05; // 5% discount per cost unit
+// Cost of capital / discount rates
+export const DISCOUNT_RATE = 0.05; // 5% discount per cost unit (legacy, for backward compat)
+export const ANNUAL_DISCOUNT_RATE = 0.10; // 10% annual discount rate (cost of capital)
+export const DAILY_DISCOUNT_RATE = Math.pow(1 + ANNUAL_DISCOUNT_RATE, 1/365) - 1; // ~0.026% per day
