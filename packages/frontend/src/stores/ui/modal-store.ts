@@ -45,6 +45,7 @@ export const useUIModalStore = defineStore('ui-modal', {
     aimSearchCallback: null as ((aim: Aim) => void) | null,
     aimCreationCallback: null as ((aimId: string) => void) | null,
     aimSearchInitialAimId: null as string | null,
+    aimSearchShowParentPaths: false,
     showSettingsModal: false,
 
     teleportCutAimId: null as string | null,
@@ -85,6 +86,16 @@ export const useUIModalStore = defineStore('ui-modal', {
 
     closeAimSearch() {
       closeAimSearchModalHelper(this)
+      this.aimSearchShowParentPaths = false
+    },
+
+    openParentPathsModal(aimId: string) {
+      // Open search modal in path selection mode showing all paths to parent aims
+      this.aimSearchInitialAimId = aimId
+      this.aimSearchShowParentPaths = true
+      this.aimSearchMode = 'navigate'
+      this.aimSearchCallback = null
+      this.showAimSearch = true
     },
 
     clearTeleportBuffer() {

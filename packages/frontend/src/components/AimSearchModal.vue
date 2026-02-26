@@ -318,17 +318,82 @@ const close = () => {
   emit('close')
 }
 
-onMounted(() => {
+onMounted(async () => {
   // Ensure terminals lose focus
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur()
   }
-  
+
   // Capture phase to intercept before terminals
   window.addEventListener('keydown', blockLeakage, true)
-  
-  // Check if we have an initial aim ID to select immediately
-  if (modalStore.aimSearchInitialAimId) {
+
+  // Check if we should show parent paths
+  if (modalStore.aimSearchInitialAimId && modalStore.aimSearchShowParentPaths) {
+    const aimId = modalStore.aimSearchInitialAimId
+    loading.value = true
+    try {
+      const aim = await trpc.aim.get.query({ projectPath: projectStore.projectPath, aimId })
+
+      if (!aim.supportedAims || aim.supportedAims.length === 0) {
+        console.warn('Aim has no parent aims')
+        loading.value = false
+        nextTick(() => searchInput.value?.focus())
+        return
+      }
+
+      // Collect all paths to all parent aims
+      const allPaths: AimPath[] = []
+      for (const parentId of aim.supportedAims) {
+        const paths = await uiStore.prepareNavigation(parentId)
+        allPaths.push(...paths)
+      }
+
+      if (allPaths.length === 0) {
+        console.warn('No paths found to parent aims')
+        loading.value = false
+        nextTick(() => searchInput.value?.focus())
+        return
+      }
+
+      selectedAimText.value = `Parent aims of: ${aim.text.length > 40 ? aim.text.substring(0, 40) + '...' : aim.text}`
+
+      const enrichedPaths = await Promise.all(allPaths.map(async p => {
+        let label = ''
+        if (p.phaseId) {
+          let phase = dataStore.phases[p.phaseId]
+          if (!phase) {
+            try { phase = await trpc.phase.get.query({ projectPath: projectStore.projectPath, phaseId: p.phaseId }) } catch {}
+          }
+          label = phase ? phase.name : 'Unknown Phase'
+        } else {
+          label = 'Floating'
+        }
+
+        // Construct trail showing full path
+        const trail = p.aims.map(a => a.text).join(' > ')
+        if (trail) label += ' > ' + trail
+
+        return { ...p, label }
+      }))
+
+      availablePaths.value = enrichedPaths
+      pathSelectionMode.value = true
+      selectedIndex.value = 0
+      focusedResultIndex.value = 0
+
+      nextTick(() => {
+        if (resultsListRef.value?.children[0]) {
+          (resultsListRef.value.children[0] as HTMLElement).focus()
+        }
+      })
+    } catch (e) {
+      console.error("Failed to load parent paths", e)
+      loading.value = false
+    } finally {
+      loading.value = false
+    }
+  } else if (modalStore.aimSearchInitialAimId) {
+    // Regular mode: show paths to a single aim
     const aimId = modalStore.aimSearchInitialAimId
     loading.value = true
     trpc.aim.get.query({ projectPath: projectStore.projectPath, aimId }).then(aim => {

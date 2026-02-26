@@ -260,6 +260,15 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
     return
   }
 
+  if (event.key === 's') {
+    event.preventDefault()
+    if (currentAim) {
+      // Show parent paths
+      modalStore.openParentPathsModal(currentAim.id)
+    }
+    return
+  }
+
   if (event.key === 'H') {
     event.preventDefault()
     await uiStore.moveAimOut()
@@ -362,7 +371,7 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
 
   if (event.ctrlKey || event.metaKey) return
 
-  if (modalStore.showPhaseModal || modalStore.showAimModal || modalStore.showAimSearch) {
+  if (modalStore.showPhaseModal || modalStore.showAimModal || modalStore.showAimSearch || modalStore.showAimEditModal || modalStore.showSettingsModal) {
     return
   }
 
