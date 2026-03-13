@@ -140,8 +140,14 @@ onUnmounted(() => {
   window.removeEventListener('keypress', blockEvent, true)
   window.removeEventListener('keyup', blockEvent, true)
 
-  // Restore focus if it hasn't been moved elsewhere by other logic
-  if (previouslyFocusedElement.value && document.body.contains(previouslyFocusedElement.value)) {
+  // Restore focus only when no follow-up modal/action UI took focus.
+  const hasActiveFollowupModal =
+    modalStore.showAimSearch ||
+    modalStore.showAimModal ||
+    modalStore.showPhaseModal ||
+    modalStore.showSettingsModal
+
+  if (!hasActiveFollowupModal && previouslyFocusedElement.value && document.body.contains(previouslyFocusedElement.value)) {
     previouslyFocusedElement.value.focus()
   }
 })

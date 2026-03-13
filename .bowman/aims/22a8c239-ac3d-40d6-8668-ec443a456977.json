@@ -1,0 +1,63 @@
+{
+  "id": "22a8c239-ac3d-40d6-8668-ec443a456977",
+  "text": "Adopt open-source-first strategy with optional hosted services",
+  "description": "Core product and infrastructure should be open-source/self-hostable first. Monetization shifts to optional hosted sync/collaboration/ops services, support, and enterprise convenience.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "strategy",
+    "open-source",
+    "gtm"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "b45149aa-c0f5-49de-8aec-f589dd3c7453",
+      "relativePosition": [
+        -2.441518779878736,
+        -0.5375742251070518
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "e95abe3f-9cd4-4bb3-9b3b-a4afe015fa83",
+      "relativePosition": [
+        2.4914524908775175,
+        0.20655383245104467
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2",
+      "relativePosition": [
+        0.5351086744802065,
+        2.442060340469915
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "8d9e3c6f-6686-425f-8b00-770b4d98b3d4",
+      "relativePosition": [
+        1.8569518453752298,
+        1.6738368630059288
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Created as explicit strategic pivot after AI NATION grant rejection.",
+    "date": 1772453588703
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

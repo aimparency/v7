@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { useDataStore, type Aim } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
@@ -52,12 +52,11 @@ const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 
 const openParentSearch = () => {
-  modalStore.aimSearchCallback = (aim: Aim) => {
+  modalStore.openAimSearch('pick', (aim: Aim) => {
     if (!supportedAimsList.value.some(a => a.id === aim.id)) {
       supportedAimsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
     }
-  }
-  modalStore.openAimSearch('pick')
+  })
 }
 
 const removeParent = (index: number) => {
@@ -182,21 +181,6 @@ const handleCancel = () => {
   emit('close')
 }
 
-// Capture all keyboard events in capture phase to prevent leakage
-const captureKeydown = (event: KeyboardEvent) => {
-  if (props.show) {
-    event.stopPropagation()
-  }
-}
-
-onMounted(() => {
-  // Use capture phase to intercept ALL keyboard events before they reach anything else
-  window.addEventListener('keydown', captureKeydown, true)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', captureKeydown, true)
-})
 </script>
 
 <template>

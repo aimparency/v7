@@ -1,0 +1,33 @@
+{
+  "id": "b443243d-59bd-4e01-98bc-81ea959c5d8c",
+  "text": "rename \"close project\" button to \"switch project\"",
+  "description": "",
+  "reflections": [
+    {
+      "date": 1772539460677,
+      "context": "Address wording regression/UX confusion for project switching action.",
+      "outcome": "Updated the label text to 'Switch Project' and verified with App test + typecheck.",
+      "effectiveness": "High for UX clarity with minimal risk.",
+      "lesson": "Small label changes should still get verification to avoid accidental template regressions.",
+      "pattern": "Low-effort UI copy fixes can unblock user flow quickly when triaged from open aims."
+    }
+  ],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "ce8516bc-df20-44d3-9fea-6784401e8276"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Renamed App header action label from 'Close Project' to 'Switch Project' in App.vue. Verified App unit test and frontend typecheck pass.",
+    "date": 1772539460665
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

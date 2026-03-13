@@ -1,6 +1,8 @@
 {
   "id": "16c7ebd4-7f1f-482a-b4c6-74f8fab21644",
   "text": "Apply for AI NATION Grant (up to €54k)",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "funding",
     "grant"
@@ -47,11 +49,14 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768759159304
+    "state": "done",
+    "comment": "Application process completed. Outcome: grant was not awarded. Strategy pivots to open-source-first distribution and product-led adoption.",
+    "date": 1772453557287
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

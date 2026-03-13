@@ -1,6 +1,8 @@
 {
   "id": "b33d2821-76e3-43c8-81a7-fd961ff733d5",
   "text": "Attend AI NATION Q&A session to clarify application requirements",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -8,11 +10,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768761060568
+    "state": "done",
+    "comment": "Done. AI NATION Q&A/requirements clarification completed; grant path closed and strategy pivoted to open-source-first.",
+    "date": 1772454364443
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

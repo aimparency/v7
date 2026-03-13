@@ -2,6 +2,8 @@
   "id": "895ec1c1-c8b3-4258-b7be-62831819bf86",
   "text": "achieve ASI",
   "description": "develop capability to autonomously create the future",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "vision",
     "strategy"
@@ -34,8 +36,8 @@
     {
       "aimId": "6bbb740c-2281-4dbb-83c8-a391e626312a",
       "relativePosition": [
-        2.3158068406430767,
-        -1.9225616977051803
+        1.4988891231734514,
+        -2.1623997676934508
       ],
       "weight": 1
     },
@@ -58,8 +60,16 @@
     {
       "aimId": "cffdcd91-fd9c-45e4-98fd-e265650be143",
       "relativePosition": [
-        -3.317812816939546,
-        0.9361010088875312
+        -2.1193466653338047,
+        1.1324166508310227
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "22a8c239-ac3d-40d6-8668-ec443a456977",
+      "relativePosition": [
+        -0.8310587040223474,
+        -2.3578255725283617
       ],
       "weight": 1
     }
@@ -76,5 +86,8 @@
   },
   "intrinsicValue": 1000,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

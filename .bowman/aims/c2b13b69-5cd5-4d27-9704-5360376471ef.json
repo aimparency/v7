@@ -1,0 +1,29 @@
+{
+  "id": "c2b13b69-5cd5-4d27-9704-5360376471ef",
+  "text": "Startup phase chain should auto-open active phase path to deepest level",
+  "description": "On web-app open, recursively select the active phase in each column and move focus to the deepest/rightmost populated phase column. Avoid trailing empty phase column unless hierarchy depth is less than viewport columns. Replace current localStorage-heavy restoration for this path.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "frontend",
+    "phase-navigation",
+    "startup",
+    "ux"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "ce8516bc-df20-44d3-9fea-6784401e8276"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Requested by user; pending selection rules and implementation decisions.",
+    "date": 1772690275434
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

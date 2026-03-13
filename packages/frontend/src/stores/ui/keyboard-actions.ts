@@ -6,6 +6,7 @@ import { useProjectStore } from '../project-store'
 
 export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const graphStore = useGraphUIStore()
+  const modalStore = useUIModalStore()
   if (event.key === 'd') {
     event.preventDefault()
     const aimId = graphStore.graphSelectedAimId
@@ -25,6 +26,11 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
     } else {
       graphStore.setGraphSelection(null)
     }
+  } else if (event.key === 'e') {
+    event.preventDefault()
+    const aimId = graphStore.graphSelectedAimId
+    if (!aimId) return
+    modalStore.openAimEditModal(aimId)
   }
 }
 
@@ -179,7 +185,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
 
         if (uiStore.pendingDeletePhaseId === selectedPhase.id) {
           const parentId = selectedPhase.parent
-          await dataStore.deletePhase(projectStore.projectPath, selectedPhase.id)
+          await dataStore.deletePhase(selectedPhase.id, parentId)
           uiStore.pendingDeletePhaseId = null
 
           await dataStore.loadPhases(projectStore.projectPath, parentId)

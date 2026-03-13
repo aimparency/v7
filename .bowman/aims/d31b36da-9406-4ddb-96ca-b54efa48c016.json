@@ -1,0 +1,33 @@
+{
+  "id": "d31b36da-9406-4ddb-96ca-b54efa48c016",
+  "text": "Post the first automatically posted post ",
+  "description": "maybe on x.com",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "862b2c32-afe0-41d7-acbf-e62e9a94eb15",
+      "relativePosition": [
+        2.3403008220956125,
+        0.8791996713480961
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "ce8516bc-df20-44d3-9fea-6784401e8276"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Pipeline support improved and tested, but actual first auto-post is blocked in this environment by missing TWITTER_* / INSTAGRAM_* credentials. Next step: configure credentials in subdev/experience-mining/.secrets and run publish command.",
+    "date": 1772454553465
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

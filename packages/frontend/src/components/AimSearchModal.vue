@@ -251,6 +251,18 @@ const selectAim = async (aim: SearchAimResult) => {
       return;
   }
 
+  if (projectStore.currentView === 'graph') {
+    try {
+      const fullAim = await trpc.aim.get.query({ projectPath: projectStore.projectPath, aimId: aim.id })
+      emit('select', { type: 'aim', data: fullAim })
+    } catch (e) {
+      console.error('Failed to load aim for graph navigation', e)
+      emit('select', { type: 'aim', data: aim as unknown as Aim })
+    }
+    close()
+    return
+  }
+
   loading.value = true
   try {
     const paths = await uiStore.prepareNavigation(aim.id)

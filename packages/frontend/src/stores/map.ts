@@ -19,6 +19,10 @@ export interface LayoutCandidate {
   frozenAimId?: string
 }
 
+function getNodeFocusScale(node: MapNode): number {
+  return 22 / node.r
+}
+
 export const useMapStore = defineStore('map', {
   state: () => ({
     scale: 1,
@@ -96,13 +100,14 @@ export const useMapStore = defineStore('map', {
       const nodeB = this.getNode(idB)
       if (!nodeA || !nodeB) return
 
-      const minX = Math.min(nodeA.pos[0], nodeB.pos[0])
-      const maxX = Math.max(nodeA.pos[0], nodeB.pos[0])
-      const minY = Math.min(nodeA.pos[1], nodeB.pos[1])
-      const maxY = Math.max(nodeA.pos[1], nodeB.pos[1])
+      const padding = Math.max(nodeA.r, nodeB.r) * 0.75
+      const minX = Math.min(nodeA.pos[0] - nodeA.r, nodeB.pos[0] - nodeB.r) - padding
+      const maxX = Math.max(nodeA.pos[0] + nodeA.r, nodeB.pos[0] + nodeB.r) + padding
+      const minY = Math.min(nodeA.pos[1] - nodeA.r, nodeB.pos[1] - nodeB.r) - padding
+      const maxY = Math.max(nodeA.pos[1] + nodeA.r, nodeB.pos[1] + nodeB.r) + padding
 
-      const w = Math.max(maxX - minX, 100) // Ensure non-zero
-      const h = Math.max(maxY - minY, 100)
+      const w = Math.max(maxX - minX, 1)
+      const h = Math.max(maxY - minY, 1)
       
       const centerX = (minX + maxX) / 2
       const centerY = (minY + maxY) / 2
@@ -119,7 +124,9 @@ export const useMapStore = defineStore('map', {
       
       const scaleX = (0.6 * this.xratio * LOGICAL_HALF_SIDE) / w
       const scaleY = (0.6 * this.yratio * LOGICAL_HALF_SIDE) / h
-      const targetScale = Math.min(scaleX, scaleY)
+      const fitScale = Math.min(scaleX, scaleY)
+      const maxNodeScale = Math.min(getNodeFocusScale(nodeA), getNodeFocusScale(nodeB))
+      const targetScale = Math.min(fitScale, maxNodeScale)
 
       this.animateCamera(targetOffset, targetScale, duration)
     },
@@ -145,7 +152,7 @@ export const useMapStore = defineStore('map', {
     },
     centerOnNode(node: MapNode, duration = 1000) {
       const targetOffset = vec2.crScale(node.pos, -1)
-      const targetScale = 22 / node.r // Heuristic (zoomed out) - reduced from 66 to 22 per aim d3b97d82
+      const targetScale = getNodeFocusScale(node) // Heuristic (zoomed out) - reduced from 66 to 22 per aim d3b97d82
       this.animateCamera(targetOffset, targetScale, duration)
     },
     resetView() {

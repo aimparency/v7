@@ -130,10 +130,19 @@ watch(() => store.focusRequestCounter, () => {
 
 watch(() => store.showActionsOverlay, (newValue) => {
   if (!newValue) {
-    // Overlay closed - restore focus to worker terminal
+    // Overlay closed - restore focus only if no follow-up modal is active.
     setTimeout(() => {
-      workerTerm.value?.focus()
+      if (!modalStore.showAimSearch && !modalStore.showAimModal && !modalStore.showPhaseModal && !modalStore.showSettingsModal) {
+        workerTerm.value?.focus()
+      }
     }, 100)
+  }
+})
+
+watch(() => modalStore.showAimSearch, (isOpen, wasOpen) => {
+  // If actions overlay launched aim search, restore terminal focus only after search closes.
+  if (wasOpen && !isOpen && !store.showActionsOverlay) {
+    setTimeout(() => workerTerm.value?.focus(), 80)
   }
 })
 

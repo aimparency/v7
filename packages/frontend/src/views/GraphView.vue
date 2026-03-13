@@ -5,7 +5,6 @@ import { useUIStore } from '../stores/ui'
 import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
-import GraphConnector from '../components/GraphConnector.vue'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
 import GraphSidePanel from '../components/GraphSidePanel.vue'
 import * as vec2 from '../utils/vec2'
@@ -100,7 +99,15 @@ function handleCanvasMouseDown(e: MouseEvent) {
 
 function handleCanvasMouseUp(e: MouseEvent) {
   if (mouseDownNode) {
-    onNodeUp(mouseDownNode)
+    const rect = canvasRef.value?.getBoundingClientRect()
+    if (rect) {
+      const physX = e.clientX - rect.left
+      const physY = e.clientY - rect.top
+      const releasedNode = hitTestNode(physX, physY)
+      if (releasedNode) {
+        onNodeUp(releasedNode)
+      }
+    }
   }
   mouseDownNode = undefined
 }
@@ -272,8 +279,8 @@ function getNodeTitleLines(text: string): string[] {
     <canvas
         ref="canvasRef"
         class="graph-canvas"
-        @mousedown="handleCanvasMouseDown"
-        @mouseup="handleCanvasMouseUp"
+        @mousedown.capture="handleCanvasMouseDown"
+        @mouseup.capture="handleCanvasMouseUp"
         @click="handleCanvasClick"
         :class="{ 'is-zooming': isZooming }"
     ></canvas>
@@ -288,7 +295,6 @@ function getNodeTitleLines(text: string): string[] {
         @mouseup="onMouseUp"
     >
       <g :transform="transform">
-        <GraphConnector />
         <!-- Labels rendered as SVG text on top of WebGL -->
         <g class="labels" v-if="graphUIStore.graphShowLabels">
           <g

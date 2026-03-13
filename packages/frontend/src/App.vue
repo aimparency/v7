@@ -2,8 +2,10 @@
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUIStore, type AimPath } from './stores/ui'
 import { useUIModalStore } from './stores/ui/modal-store'
+import { useGraphUIStore } from './stores/ui/graph-store'
 import { useProjectStore } from './stores/project-store'
 import { useDataStore, type Aim } from './stores/data'
+import { useMapStore } from './stores/map'
 import { trpc } from './trpc'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
@@ -19,8 +21,10 @@ import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
+const graphUIStore = useGraphUIStore()
 const projectStore = useProjectStore()
 const dataStore = useDataStore()
+const mapStore = useMapStore()
 
 const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath }) => {
   if (modalStore.aimSearchMode === 'pick') {
@@ -28,8 +32,15 @@ const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimP
       modalStore.aimSearchCallback(payload.data as Aim)
     }
   } else {
-    // Navigate
-    if (payload.type === 'path') {
+    if (projectStore.currentView === 'graph' && payload.type === 'aim') {
+      const aim = payload.data as Aim
+      const node = mapStore.getNode(aim.id)
+      graphUIStore.setGraphSelection(aim.id)
+      graphUIStore.deselectLink()
+      if (node) {
+        mapStore.centerOnNode(node)
+      }
+    } else if (payload.type === 'path') {
       uiStore.executeNavigation(payload.data as AimPath)
     }
   }
@@ -297,7 +308,7 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <a @click="closeProject" class="close-project">Close Project</a>
+        <a @click="closeProject" class="close-project">Switch Project</a>
       </div>
     </header>
 

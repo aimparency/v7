@@ -2,6 +2,8 @@
   "id": "28134f24-5279-465d-bf6a-38795df36b8c",
   "text": "graph performance optimization",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -15,8 +17,8 @@
     {
       "aimId": "da7e3b8a-0b9f-4e46-a3c5-7cdb653a4880",
       "relativePosition": [
-        1.215481322020854,
-        2.1846292948274857
+        -3.058814326506088,
+        1.1824911929954731
       ],
       "weight": 1
     }
@@ -34,5 +36,8 @@
   },
   "intrinsicValue": 2,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

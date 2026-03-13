@@ -81,6 +81,26 @@ const updatePhase = async () => {
       if (oldParentId !== updatedPhase.parent) {
         await dataStore.loadPhases(projectStore.projectPath, oldParentId)
       }
+
+      // Rebuild visible phase columns from root selection to avoid stale column caches.
+      // This ensures moved phases appear immediately in the destination sibling column.
+      const rootPhases = dataStore.getPhasesByParentId(null)
+      if (rootPhases.length > 0) {
+        const previousFocusedColumn = uiStore.selectedColumn
+        const selectedRootId = uiStore.getSelectedPhaseId(0)
+        const fallbackRootIndex = uiStore.selectedPhaseByColumn[0] ?? 0
+        const selectedRootIndex = selectedRootId
+          ? rootPhases.findIndex((p) => p.id === selectedRootId)
+          : fallbackRootIndex
+        const clampedRootIndex = Math.min(
+          Math.max(selectedRootIndex >= 0 ? selectedRootIndex : fallbackRootIndex, 0),
+          rootPhases.length - 1
+        )
+
+        await uiStore.selectPhase(0, clampedRootIndex)
+        uiStore.setSelectedColumn(Math.min(previousFocusedColumn, uiStore.rightmostColumnIndex))
+        uiStore.ensureSelectionVisible()
+      }
     }
 
     modalStore.closePhaseModal()
@@ -275,6 +295,7 @@ const handleSearchClose = () => {
             ref="parentSelectorBtn"
             class="btn-select-parent"
             @click="showPhaseSearch = true"
+            @keydown.space.prevent="showPhaseSearch = true"
             @keydown.esc="handleKeydown"
           >
             + Add Parent Phase
@@ -287,6 +308,7 @@ const handleSearchClose = () => {
             @click="showPhaseSearch = true" 
             tabindex="0" 
             @keydown.enter="showPhaseSearch = true"
+            @keydown.space.prevent="showPhaseSearch = true"
             @keydown.esc="handleKeydown"
           >
               <div class="selected-parent">{{ selectedParentName }}</div>

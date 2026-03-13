@@ -1,6 +1,8 @@
 {
   "id": "3253bc9e-14fe-4c9b-9849-588620518517",
   "text": "Achieve Economic Autonomy",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "vision",
     "core"
@@ -9,8 +11,8 @@
     {
       "aimId": "44c0bd21-c008-46e7-ab37-0894f78f05a4",
       "relativePosition": [
-        -1.9523465507192896,
-        1.5615194350037698
+        -1.3613170044740954,
+        2.388866125632768
       ],
       "weight": 1
     },
@@ -49,16 +51,24 @@
     {
       "aimId": "16c7ebd4-7f1f-482a-b4c6-74f8fab21644",
       "relativePosition": [
-        2.763195198793596,
-        -1.9482525431638584
+        2.8459042645663786,
+        0.6735472312016961
       ],
       "weight": 1
     },
     {
       "aimId": "365e78d0-ed64-47d7-9902-b575d493c6e4",
       "relativePosition": [
-        2.3052670889887477,
-        -0.967338435308629
+        -2.41076107620977,
+        0.6628533027731716
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "22a8c239-ac3d-40d6-8668-ec443a456977",
+      "relativePosition": [
+        -2.486268025626196,
+        0.2616702213642536
       ],
       "weight": 1
     }
@@ -74,5 +84,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

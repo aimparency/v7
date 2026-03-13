@@ -1,21 +1,27 @@
 {
   "id": "e95abe3f-9cd4-4bb3-9b3b-a4afe015fa83",
   "text": "Launch aimparency as a service for paying customers",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "strategy",
     "product"
   ],
   "supportingConnections": [],
   "supportedAims": [
-    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "22a8c239-ac3d-40d6-8668-ec443a456977"
   ],
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "GTM Phase 1: High-leverage elites",
-    "date": 1768763939455
+    "comment": "GTM adjusted to open-source-first adoption. Commercial layer focuses on hosted operations/support for teams needing convenience and scale.",
+    "date": 1772453599884
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -2,6 +2,8 @@
   "id": "5f660c4c-a96d-4a52-b1ea-81c045c2025e",
   "text": "talk to Robin",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -9,11 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768902291426
+    "state": "done",
+    "comment": "Done. Robin conversation completed.",
+    "date": 1772454364453
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

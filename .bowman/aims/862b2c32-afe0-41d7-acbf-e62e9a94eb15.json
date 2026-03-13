@@ -1,0 +1,39 @@
+{
+  "id": "862b2c32-afe0-41d7-acbf-e62e9a94eb15",
+  "text": "Fix publish workflow target resolution so actionable items are not skipped",
+  "description": "Patched subdev/experience-mining/publish.ts to resolve publish targets per item and skip non-actionable records without consuming per-run limit. Added focused tests in publish.test.ts and re-ran weekly workflow checks.",
+  "reflections": [
+    {
+      "date": 1772454558575,
+      "context": "Stabilize weekly Twitter/Instagram manual workflow support so a publish run always targets actionable items.",
+      "outcome": "Added target-resolution logic in publish.ts, prevented non-actionable records from consuming run limit, and added publish target tests; weekly workflow and tests pass.",
+      "effectiveness": "High for local reliability: behavior is deterministic and covered by focused tests.",
+      "lesson": "When a workflow is partially manual and rate-limited, selection logic should be explicit and testable to avoid silent no-op runs.",
+      "pattern": "Recurring pattern in this repo: small eligibility filters in orchestration scripts can block end-to-end outcomes unless directly unit-tested."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "content-engine",
+    "workflow",
+    "bugfix"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d31b36da-9406-4ddb-96ca-b54efa48c016"
+  ],
+  "committedIn": [
+    "ce8516bc-df20-44d3-9fea-6784401e8276"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Verified with node --import tsx --test workflow/weekly-manual.test.ts publish.test.ts (pass) and weekly-workflow.ts output.",
+    "date": 1772454553441
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

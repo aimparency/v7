@@ -41,21 +41,19 @@ const submitBtn = ref<HTMLButtonElement>()
 const searchResultsContainer = ref<HTMLDivElement>()
 
 const openParentSearch = () => {
-  modalStore.aimSearchCallback = (aim: Aim) => {
+  modalStore.openAimSearch('pick', (aim: Aim) => {
     if (!supportedAimsList.value.some(a => a.id === aim.id)) {
       supportedAimsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
     }
-  }
-  modalStore.openAimSearch('pick')
+  })
 }
 
 const openChildSearch = () => {
-  modalStore.aimSearchCallback = (aim: Aim) => {
+  modalStore.openAimSearch('pick', (aim: Aim) => {
     if (!supportingConnectionsList.value.some(a => a.id === aim.id)) {
       supportingConnectionsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
     }
-  }
-  modalStore.openAimSearch('pick')
+  })
 }
 
 const removeParent = (index: number) => {
@@ -252,22 +250,46 @@ watch(aimText, async (newValue) => {
   const trimmedNewValue = newValue.trim().toLowerCase()
 
   if (trimmedNewValue.length > 0) {
-    // Check for a perfect "starts with" match with 90% length threshold
-    const perfectMatchIndex = searchResults.value.findIndex(result => {
+    // Check for perfect "starts with" matches with 90% length threshold.
+    // If there are multiple perfect matches, prefer creating a new aim.
+    const perfectMatchIndices = searchResults.value.flatMap((result, index) => {
       const resultTextLower = result.text.toLowerCase()
-      // Check if result text starts with new value (case-insensitive)
       const startsWithMatch = resultTextLower.startsWith(trimmedNewValue)
-      // Check 90% length threshold
       const lengthThresholdMet = trimmedNewValue.length >= (0.9 * resultTextLower.length)
-      
-      return startsWithMatch && lengthThresholdMet
+
+      return startsWithMatch && lengthThresholdMet ? [index] : []
     })
 
-    if (perfectMatchIndex !== -1) {
-      selectedSearchIndex.value = perfectMatchIndex + 1 // +1 because index 0 is "create new"
+    if (perfectMatchIndices.length === 1) {
+      selectedSearchIndex.value = perfectMatchIndices[0]! + 1 // +1 because index 0 is "create new"
     }
   }
 })
+
+const handleModalKeydown = (event: KeyboardEvent) => {
+  if (modalStore.aimModalMode !== 'edit' || event.key !== 'Enter') return
+
+  const target = event.target as HTMLElement | null
+  if (!target) return
+
+  // Do not submit on multiline fields or tag entry.
+  if (
+    target instanceof HTMLTextAreaElement ||
+    target.closest('.tag-input-container')
+  ) {
+    return
+  }
+
+  // Submit from standard edit fields.
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLSelectElement
+  ) {
+    event.preventDefault()
+    event.stopPropagation()
+    handleSubmit()
+  }
+}
 
 onMounted(async () => {
   let aim
@@ -347,7 +369,7 @@ onMounted(async () => {
 
 <template>
   <div class="modal-overlay">
-    <div class="modal">
+    <div class="modal" @keydown.capture="handleModalKeydown">
       <div class="modal-header">
         <h3>{{ modalStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim' }}</h3>
       </div>
@@ -448,7 +470,7 @@ onMounted(async () => {
                 <span class="parent-text">{{ parent.text }}</span>
                 <div class="weight-input">
                     <span class="weight-label">Weight:</span>
-                    <input type="number" v-model.number="parent.weight" step="0.1" min="0" class="weight-field" />
+                    <input type="number" v-model.number="parent.weight" step="0.1" min="0" class="weight-field" @keydown="handleInputKeydown" />
                 </div>
                 <button @click="removeParent(index)" class="btn-remove" title="Remove Connection">×</button>
             </div>
@@ -463,7 +485,7 @@ onMounted(async () => {
                 <span class="parent-text">{{ child.text }}</span>
                 <div class="weight-input">
                     <span class="weight-label">Weight:</span>
-                    <input type="number" v-model.number="child.weight" step="0.1" min="0" class="weight-field" />
+                    <input type="number" v-model.number="child.weight" step="0.1" min="0" class="weight-field" @keydown="handleInputKeydown" />
                 </div>
                 <button @click="removeChild(index)" class="btn-remove" title="Remove Connection">×</button>
             </div>

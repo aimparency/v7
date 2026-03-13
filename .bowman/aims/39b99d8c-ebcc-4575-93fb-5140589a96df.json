@@ -1,0 +1,41 @@
+{
+  "id": "39b99d8c-ebcc-4575-93fb-5140589a96df",
+  "text": "When editing aims, enter on most input fields (e.g. title, status, but not textareas) should save changes and close modal",
+  "description": "And esc on most fields except e.g. textarea (because enter is used there for newline) should close the modal. I think this works in new aim but not edit aim modal. ",
+  "reflections": [
+    {
+      "date": 1772539436954,
+      "context": "Confirm and lock in edit-aim Enter/Escape behavior, especially Enter-to-save on non-textarea fields.",
+      "outcome": "Added focused tests in AimCreationModal.spec.ts and verified behavior via unit tests; no modal logic patch was required because implementation already matched intended behavior.",
+      "effectiveness": "High: regression coverage now protects title/status select and textarea semantics.",
+      "lesson": "When behavior is disputed, start by codifying expectations in UI tests before changing code.",
+      "pattern": "Recurring pattern: interaction regressions are best stabilized with direct component-level key event tests."
+    },
+    {
+      "date": 1772689308450,
+      "context": "Enter-to-save still failed during real editing despite prior tests.",
+      "outcome": "Identified mismatch: issue was in AimEditModal (used in real edit flow), where a window capture keydown listener blocked modal input key handlers. Removed interception and added dedicated AimEditModal keyboard tests.",
+      "effectiveness": "High: fix is minimal, targeted, and backed by regression tests for both single-line and textarea behavior.",
+      "lesson": "Validate the actually wired component path in App before trusting coverage from a similarly named modal.",
+      "pattern": "Recurring pattern in UI regressions: global keyboard interception in capture phase can silently break local field handlers."
+    }
+  ],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "ce8516bc-df20-44d3-9fea-6784401e8276"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Fixed true root cause in AimEditModal: removed global window keydown capture stopPropagation that blocked field-level Enter handlers. Added regression tests for Enter save on title and Ctrl+Enter behavior for textarea. Verified unit tests and typecheck.",
+    "date": 1772689308410
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

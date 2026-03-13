@@ -2,6 +2,8 @@
   "id": "8d9e3c6f-6686-425f-8b00-770b4d98b3d4",
   "text": "discuss business models (towards monopoly)",
   "description": "Okay, which monopoly could we achieve? Planning? Agentic action? Exploring? Survival? Real world experimentation? Yes! How is our go to market strategy? What's the product? Which shape which parts hosted and how?",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -23,22 +25,27 @@
     {
       "aimId": "16c7ebd4-7f1f-482a-b4c6-74f8fab21644",
       "relativePosition": [
-        -2.4031055307213407,
-        -0.6892632357934837
+        -1.2378811048884608,
+        2.7108696100350276
       ],
       "weight": 1
     }
   ],
-  "supportedAims": [],
+  "supportedAims": [
+    "22a8c239-ac3d-40d6-8668-ec443a456977"
+  ],
   "committedIn": [
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1768337130978
+    "comment": "Business model discussion now anchored in open-source-first strategy with monetization via optional hosted services and enterprise support.",
+    "date": 1772453599914
   },
   "intrinsicValue": 10,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -1,0 +1,38 @@
+{
+  "id": "2a021f77-22e4-48ae-935a-d02bd2375c14",
+  "text": "Hydrate watchdog terminal buffers on reconnect",
+  "description": "Codex watchdog session reconnect showed blank terminals because backend sent only state flags on socket connect. Added initial worker/watchdog terminal history emission via getLines on connect so frontend restores pane content immediately.",
+  "reflections": [
+    {
+      "date": 1772690695286,
+      "context": "Fix reconnect blank-screen behavior in watchdog panel where backend retained PTY history but frontend had no hydration payload.",
+      "outcome": "Backend now emits worker-data/watchdog-data snapshots from getLines immediately after socket connection, restoring visible history after reconnect.",
+      "effectiveness": "High and low-risk: one targeted connect-time emission path with no protocol changes.",
+      "lesson": "Realtime UIs need explicit reconnect hydration, not only live stream events.",
+      "pattern": "Same class of bug as session-resume UX: state exists server-side but requires intentional replay on reattach."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "watchdog",
+    "codex-session",
+    "reconnect",
+    "ux"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "ce8516bc-df20-44d3-9fea-6784401e8276"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Implemented in codex-session index.ts; tests pass.",
+    "date": 1772690690420
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

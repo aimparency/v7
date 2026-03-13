@@ -2,6 +2,8 @@
   "id": "cffdcd91-fd9c-45e4-98fd-e265650be143",
   "text": "enable autonomy",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -15,8 +17,8 @@
     {
       "aimId": "297ad708-41ef-409e-a045-ff8dff0209ff",
       "relativePosition": [
-        2.0364543900359915,
-        -3.2144299863861017
+        0.4906069536446528,
+        -4.412688666099994
       ],
       "weight": 1
     },
@@ -42,5 +44,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

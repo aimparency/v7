@@ -86,8 +86,10 @@ describe('Aim.vue', () => {
       }
     })
 
-    expect(wrapper.find('.stat-count').exists()).toBe(true)
-    expect(wrapper.find('.stat-count').text()).toBe('3')
+    expect(wrapper.find('.stats-container').exists()).toBe(true)
+    const statBottoms = wrapper.findAll('.stat-box .stat-bottom')
+    expect(statBottoms.length).toBeGreaterThan(0)
+    expect(statBottoms[0]?.text()).toBe('3')
   })
 
   it('loads sub-aims when expanded', async () => {

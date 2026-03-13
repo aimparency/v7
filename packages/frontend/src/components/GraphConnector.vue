@@ -25,7 +25,6 @@ const path = computed(() => {
   <path
     v-if="mapStore.connectFrom"
     class="connector"
-    fill="white"
     :d="path"
     :stroke-width="mapStore.connectFrom.r"
   />
@@ -33,7 +32,9 @@ const path = computed(() => {
 
 <style scoped>
 .connector{
-  fill: #bbb; 
+  fill: #808080;
+  fill-opacity: 0.6;
+  mix-blend-mode: lighten;
   pointer-events: none;
 }
 </style>

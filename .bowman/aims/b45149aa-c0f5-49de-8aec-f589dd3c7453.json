@@ -1,6 +1,8 @@
 {
   "id": "b45149aa-c0f5-49de-8aec-f589dd3c7453",
   "text": "Launch aimparency as a service (SaaS)",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "product",
     "revenue",
@@ -17,15 +19,19 @@
     }
   ],
   "supportedAims": [
-    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "22a8c239-ac3d-40d6-8668-ec443a456977"
   ],
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1768828817699
+    "comment": "Reframed: open-source-first product distribution, with hosted services as optional convenience layer rather than closed core SaaS.",
+    "date": 1772453599870
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

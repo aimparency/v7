@@ -1,0 +1,24 @@
+{
+  "id": "0e766e44-fa28-4aa7-8a86-b2b1aa59dedf",
+  "text": "Archive checkbox in edit aim - available when status is a \"halted\" status.",
+  "description": "see data model. some AimStatus have halted: true like done or cancelled. non-halted aims cannot be archived directly.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e4e243d3-1fb7-46d0-962b-127f2a94a5a5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1772521143837
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

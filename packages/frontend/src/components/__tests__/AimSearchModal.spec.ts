@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, type DOMWrapper } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import AimSearchModal from '../AimSearchModal.vue'
@@ -18,6 +18,14 @@ describe('AimSearchModal', () => {
   let wrapper: any
   
   beforeEach(() => {
+    vi.useFakeTimers()
+    vi.clearAllMocks()
+    vi.mocked(trpc.aim.get.query).mockResolvedValue({
+      id: 'a1',
+      text: 'Test aim',
+      status: { state: 'open' }
+    } as any)
+
     wrapper = mount(AimSearchModal, {
       global: {
         plugins: [createTestingPinia({
@@ -26,13 +34,18 @@ describe('AimSearchModal', () => {
             data: {
                 meta: { statuses: [{key:'open', color:'#fff'}, {key:'done', color:'#0f0'}] }
             },
-            ui: {
-                projectPath: '/test'
+            project: {
+                projectPath: '/test',
+                currentView: 'columns'
             }
           }
         })]
       }
     })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('renders search input and filter bar', () => {
@@ -43,13 +56,8 @@ describe('AimSearchModal', () => {
   it('filters trigger search', async () => {
     const input = wrapper.find('input[placeholder="Go to aim..."]')
     await input.setValue('test')
-    
-    // Wait for debounce (mock timers or sleep)
-    // For simplicity, we can inspect calls after a delay or assume immediate update if we force it.
-    // The component uses debounce: setTimeout 150ms.
-    // We should use vi.useFakeTimers().
-    
-    await new Promise(r => setTimeout(r, 200)) // Hack if using real timers
+
+    await vi.advanceTimersByTimeAsync(200)
     
     expect(trpc.aim.search.query).toHaveBeenCalledWith(expect.objectContaining({
         query: 'test',
@@ -78,5 +86,48 @@ describe('AimSearchModal', () => {
         query: 'test',
         status: ['open']
     }))
+  })
+
+  it('emits aim selection directly in graph view', async () => {
+    vi.mocked(trpc.aim.search.query).mockResolvedValue([
+      { id: 'a1', text: 'Graph aim', status: { state: 'open' }, score: 0.7 } as any
+    ])
+    vi.mocked(trpc.aim.searchSemantic.query).mockResolvedValue([])
+    vi.mocked(trpc.aim.get.query).mockResolvedValue({
+      id: 'a1',
+      text: 'Graph aim',
+      status: { state: 'open' }
+    } as any)
+
+    wrapper.unmount()
+    wrapper = mount(AimSearchModal, {
+      global: {
+        plugins: [createTestingPinia({
+          createSpy: vi.fn,
+          initialState: {
+            data: {
+              meta: { statuses: [{ key: 'open', color: '#fff' }] }
+            },
+            project: {
+              projectPath: '/test',
+              currentView: 'graph'
+            }
+          }
+        })]
+      }
+    })
+
+    const input = wrapper.find('input[placeholder="Go to aim..."]')
+    await input.setValue('graph')
+    await vi.advanceTimersByTimeAsync(200)
+
+    const result = wrapper.find('.result-item')
+    expect(result.exists()).toBe(true)
+
+    await result.trigger('click')
+
+    expect(wrapper.emitted('select')).toEqual([
+      [{ type: 'aim', data: { id: 'a1', text: 'Graph aim', status: { state: 'open' } } }]
+    ])
   })
 })

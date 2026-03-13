@@ -1,0 +1,24 @@
+{
+  "id": "5e7e2ca7-cc8b-44b9-8af6-308778f9bccf",
+  "text": "when adding an aim we autoselect a perfect match. if there are two perfect matches, default to creating a new one (seems to be recurring title like \"refactor\")",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "ce8516bc-df20-44d3-9fea-6784401e8276"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Done: Aim creation now only auto-selects existing aim when there is exactly one perfect match. If multiple perfect matches exist, default selection stays on Create New. Covered by AimCreationModal unit test for duplicate perfect-match scenario.",
+    "date": 1772452897177
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

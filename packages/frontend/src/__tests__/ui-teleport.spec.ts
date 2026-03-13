@@ -273,4 +273,45 @@ describe('UI teleport cut/paste', () => {
 
     expect(uiStore.navigatingAims).toBe(true)
   })
+
+  it('deletes selected phase on second d press', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
+
+    projectStore.projectPath = '/tmp/project'
+    uiStore.selectedColumn = 0
+    uiStore.selectedPhaseByColumn[0] = 0
+    uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
+    uiStore.phaseCountByColumn[0] = 1
+    dataStore.childrenByParentId['null'] = ['phase-1']
+    dataStore.phases['phase-1'] = {
+      id: 'phase-1',
+      name: 'P1',
+      from: 0,
+      to: 1,
+      parent: null,
+      commitments: []
+    } as any
+
+    mockTrpc.phase.get.query.mockResolvedValue({
+      id: 'phase-1',
+      name: 'P1',
+      from: 0,
+      to: 1,
+      parent: null,
+      commitments: []
+    })
+
+    const deletePhaseSpy = vi.spyOn(dataStore, 'deletePhase').mockResolvedValue(undefined as any)
+    const loadPhasesSpy = vi.spyOn(dataStore, 'loadPhases').mockResolvedValue([])
+
+    await uiStore.handleColumnNavigationKeys(keyEvent('d'), dataStore)
+    expect(uiStore.pendingDeletePhaseId).toBe('phase-1')
+
+    await uiStore.handleColumnNavigationKeys(keyEvent('d'), dataStore)
+    expect(deletePhaseSpy).toHaveBeenCalledWith('phase-1', null)
+    expect(loadPhasesSpy).toHaveBeenCalled()
+    expect(uiStore.pendingDeletePhaseId).toBeNull()
+  })
 })

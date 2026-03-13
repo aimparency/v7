@@ -1,0 +1,33 @@
+{
+  "id": "e4e243d3-1fb7-46d0-962b-127f2a94a5a5",
+  "text": "Implement archiving",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "0e766e44-fa28-4aa7-8a86-b2b1aa59dedf",
+      "relativePosition": [
+        -1.9104434842033409,
+        1.6125153312961091
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [
+    "ce8516bc-df20-44d3-9fea-6784401e8276"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1772521055096
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

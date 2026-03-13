@@ -130,7 +130,7 @@ export function useWebGLGraphRenderer(
 
   // Convert graph links to WebGL edge format with per-element movement tracking
   function convertLinks(graphLinks: GraphLink[]): EdgeData[] {
-    return graphLinks.map(link => {
+    const renderedLinks = graphLinks.map(link => {
       const sourceX = link.source.renderPos[0]
       const sourceY = link.source.renderPos[1]
       const targetX = link.target.renderPos[0]
@@ -207,6 +207,36 @@ export function useWebGLGraphRenderer(
         moving: state.state > 0
       }
     })
+
+    if (mapStore.connecting && mapStore.connectFrom) {
+      const source = mapStore.mouse.logical
+      const target = mapStore.connectFrom
+
+      renderedLinks.push({
+        id: `temp-connector-${target.id}`,
+        sourceId: '__cursor__',
+        targetId: target.id,
+        color: [0.5, 0.5, 0.5],
+        opacity: 0.6,
+        geometry: calculateArrowGeometry(
+          {
+            x: source[0],
+            y: source[1],
+            r: 1
+          },
+          {
+            x: target.pos[0],
+            y: target.pos[1],
+            r: target.r
+          },
+          0.5,
+          { widthFactor: 1 }
+        ),
+        moving: true
+      })
+    }
+
+    return renderedLinks
   }
 
   // Build view matrix for arrow renderer (shared format)

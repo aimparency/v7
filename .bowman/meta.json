@@ -4,11 +4,11 @@
   "statuses": [
     {
       "key": "open",
-      "color": "#8ff0a4"
+      "color": "#99c1f1"
     },
     {
       "key": "done",
-      "color": "#99c1f1"
+      "color": "#8ff0a4"
     },
     {
       "key": "cancelled",
