@@ -103,25 +103,33 @@ const handleModalKeydown = (event: KeyboardEvent) => {
   // Stop ALL keyboard events from leaking through the modal
   event.stopPropagation()
 
-  // Only handle Escape at modal level
   if (event.key === 'Escape') {
-    // Check if any input/textarea is focused
-    const activeElement = document.activeElement
-    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
-      // Blur the focused field
-      (activeElement as HTMLElement).blur()
-      event.preventDefault()
-    } else {
-      // Close modal if nothing is focused
-      event.preventDefault()
-      handleCancel()
-    }
+    event.preventDefault()
+    handleCancel()
+    return
   }
+
+  if (event.key !== 'Enter') return
+
+  const target = event.target as HTMLElement | null
+  const tagName = target?.tagName
+
+  if (tagName === 'TEXTAREA' && !event.ctrlKey && !event.metaKey) {
+    return
+  }
+
+  if (tagName === 'BUTTON') {
+    return
+  }
+
+  event.preventDefault()
+  handleSave()
 }
 
 const handleInputKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
     event.preventDefault()
+    event.stopPropagation()
     handleSave()
   }
 }
@@ -129,6 +137,7 @@ const handleInputKeydown = (event: KeyboardEvent) => {
 const handleTextareaKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
     event.preventDefault()
+    event.stopPropagation()
     handleSave()
   }
 }

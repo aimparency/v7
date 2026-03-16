@@ -125,7 +125,7 @@ describe('AimEditModal keyboard save behavior', () => {
     await wrapper.find('button[title="Add Parent"]').trigger('click')
 
     expect(modalStore.openAimSearch).toHaveBeenCalledWith('pick', expect.any(Function))
-    const callback = modalStore.openAimSearch.mock.calls[0]?.[1]
+    const callback = vi.mocked(modalStore.openAimSearch).mock.calls[0]?.[1]
     expect(callback).toEqual(expect.any(Function))
 
     callback({
@@ -136,5 +136,46 @@ describe('AimEditModal keyboard save behavior', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('Parent Aim')
+  })
+
+  it('closes on Escape from the title input', async () => {
+    const { wrapper, dataStore } = mountEditModal()
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    const title = wrapper.find('input[placeholder="Aim title..."]')
+    await title.trigger('keydown', { key: 'Escape' })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted('close')).toBeTruthy()
+    expect(dataStore.updateAim).not.toHaveBeenCalled()
+  })
+
+  it('closes on Escape from the status select', async () => {
+    const { wrapper, dataStore } = mountEditModal()
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    const status = wrapper.find('select')
+    await status.trigger('keydown', { key: 'Escape' })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted('close')).toBeTruthy()
+    expect(dataStore.updateAim).not.toHaveBeenCalled()
+  })
+
+  it('saves on Enter from the modal overlay when no field handles it', async () => {
+    const { wrapper, dataStore } = mountEditModal()
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('.modal-overlay').trigger('keydown', { key: 'Enter' })
+    await wrapper.vm.$nextTick()
+
+    expect(dataStore.updateAim).toHaveBeenCalled()
+    expect(wrapper.emitted('close')).toBeTruthy()
   })
 })

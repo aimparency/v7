@@ -1,16 +1,28 @@
 node_modules/
-package-lock.json
 
 .kilocode/
 packages/frontend/public/
 
 packages/embedder/venv/
+packages/embedder/.cache/
+packages/embedder/__pycache__/
 **/vectors.json
+**/dist/
+**/build/
+**/coverage/
+**/playwright-report/
+**/test-results/
+packages/mcp/test-mcp-project-*/
 
 .env
+.env.local
+.env.*.local
 logs
 cache.db
 
 .test-tmp
 
 .codex
+.DS_Store
+
+**/package-lock.json

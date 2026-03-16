@@ -1,5 +1,7 @@
-# Vue 3 + TypeScript + Vite
+# Wrapped Agents Client
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+This package is a development-only inspector UI for the wrapped-agents broker.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+It is not the main Aimparency product frontend and should not be presented as part of the normal open source onboarding path.
+
+Use it only when working on broker or session-runtime internals.

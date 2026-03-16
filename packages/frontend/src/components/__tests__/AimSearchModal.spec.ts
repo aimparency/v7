@@ -130,4 +130,15 @@ describe('AimSearchModal', () => {
       [{ type: 'aim', data: { id: 'a1', text: 'Graph aim', status: { state: 'open' } } }]
     ])
   })
+
+  it('shows a server error instead of no-results when search fails', async () => {
+    vi.mocked(trpc.aim.search.query).mockRejectedValueOnce(new Error('Embedder unavailable'))
+
+    const input = wrapper.find('input[placeholder="Go to aim..."]')
+    await input.setValue('broken')
+    await vi.advanceTimersByTimeAsync(200)
+
+    expect(wrapper.text()).toContain('Search failed: Embedder unavailable')
+    expect(wrapper.text()).not.toContain('No aims found.')
+  })
 })

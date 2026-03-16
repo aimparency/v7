@@ -1,58 +1,65 @@
-# frontend
+# Frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+This package is the main Aimparency browser UI.
 
-## Recommended IDE Setup
+It talks to:
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- the backend over WebSocket tRPC
+- the broker over WebSocket tRPC
+- spawned agent-session processes over Socket.IO
 
-## Type Support for `.vue` Imports in TS
+For normal project usage, run the app from the repo root instead of starting this package in isolation.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## Root-level Commands
 
-## Customize configuration
+Development mode:
 
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
+```bash
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
+Build-mode local run:
 
-```sh
-npm run build
+```bash
+npm run start
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+## Package-level Commands
 
-```sh
-npm run test:unit
+Run only the frontend dev server:
+
+```bash
+npm run dev -w frontend
 ```
 
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
+Build the frontend:
 
-```sh
-# Install browsers for the first run
+```bash
+npm run build -w frontend
+```
+
+Preview the built frontend:
+
+```bash
+npm run preview -w frontend
+```
+
+## Tests
+
+Unit tests:
+
+```bash
+npm run test:unit -w frontend
+```
+
+End-to-end tests:
+
+```bash
+npm run test:e2e -w frontend
+```
+
+On a fresh machine, Playwright browsers may need to be installed first:
+
+```bash
 npx playwright install
-
-# When testing on CI, must build the project first
-npm run build
-
-# Runs the end-to-end tests
-npm run test:e2e
-# Runs the tests only on Chromium
-npm run test:e2e -- --project=chromium
-# Runs the tests of a specific file
-npm run test:e2e -- tests/example.spec.ts
-# Runs the tests in debug mode
-npm run test:e2e -- --debug
 ```

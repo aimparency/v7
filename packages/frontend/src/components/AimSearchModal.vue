@@ -24,6 +24,7 @@ const focusedResultIndex = ref(-1) // Actual DOM focus index for results, -1 mea
 const searchInput = ref<HTMLInputElement>()
 const resultsListRef = ref<HTMLDivElement>()
 const loading = ref(false)
+const searchError = ref<string | null>(null)
 
 // Path selection state
 const pathSelectionMode = ref(false)
@@ -53,10 +54,12 @@ watch([selectedStatuses, includeArchived], () => {
 const performSearch = async (query: string) => {
   if (!query.trim()) {
     searchResults.value = []
+    searchError.value = null
     return
   }
 
   loading.value = true
+  searchError.value = null
   try {
     const [flexSearchResults, semanticSearchResults] = await Promise.all([
       trpc.aim.search.query({
@@ -119,13 +122,23 @@ const performSearch = async (query: string) => {
     searchResults.value = sortedResults
     selectedIndex.value = 0 // Top result always selected
     focusedResultIndex.value = -1 // Reset focus to input when results change
-  } catch (error) {
+  } catch (error: any) {
     console.error('Search failed:', error)
     searchResults.value = []
+    searchError.value = normalizeSearchError(error)
   }
   finally {
     loading.value = false
   }
+}
+
+const normalizeSearchError = (error: any): string => {
+  const message = error?.message || error?.shape?.message || error?.data?.message
+  if (typeof message === 'string' && message.trim()) {
+    return `Search failed: ${message.trim()}`
+  }
+
+  return 'Search failed because the server returned an error.'
 }
 
 // Debounce search
@@ -323,6 +336,7 @@ const selectPath = async (path: AimPath) => {
 const close = () => {
   searchQuery.value = ''
   searchResults.value = []
+  searchError.value = null
   selectedIndex.value = 0
   focusedResultIndex.value = -1
   pathSelectionMode.value = false
@@ -498,7 +512,10 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-        <div v-else-if="searchQuery && !loading" class="no-results">
+        <div v-else-if="searchError" class="search-feedback search-error">
+          {{ searchError }}
+        </div>
+        <div v-else-if="searchQuery && !loading" class="search-feedback no-results">
           No aims found.
         </div>
       </div>
@@ -704,8 +721,16 @@ input {
   .aim-status.failed { color: var(--status-failed); }
   .aim-status.unclear { color: var(--status-unclear); }
 
-  .no-results {  padding: 20px;
+.search-feedback {
+  padding: 20px;
   text-align: center;
+}
+
+.no-results {
   color: #888;
+}
+
+.search-error {
+  color: #f48771;
 }
 </style>
