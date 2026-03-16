@@ -125,9 +125,11 @@ describe('AimEditModal keyboard save behavior', () => {
     await wrapper.find('button[title="Add Parent"]').trigger('click')
 
     expect(modalStore.openAimSearch).toHaveBeenCalledWith('pick', expect.any(Function))
-    const callback = vi.mocked(modalStore.openAimSearch).mock.calls[0]?.[1]
-    expect(callback).toEqual(expect.any(Function))
+    const calls = vi.mocked(modalStore.openAimSearch).mock.calls
+    expect(calls[0]).toBeDefined()
+    expect(calls[0]![1]).toEqual(expect.any(Function))
 
+    const callback = calls[0]![1] as (aim: any) => void
     callback({
       id: 'parent-1',
       text: 'Parent Aim',

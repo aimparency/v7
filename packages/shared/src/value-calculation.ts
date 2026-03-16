@@ -1,5 +1,5 @@
-import type { Aim } from './types';
-import { DISCOUNT_RATE, DAILY_DISCOUNT_RATE } from './constants';
+import type { Aim } from './types.js';
+import { DISCOUNT_RATE, DAILY_DISCOUNT_RATE } from './constants.js';
 
 export function calculateAimValues(aims: Aim[]): { 
   values: Map<string, number>, 
@@ -374,4 +374,3 @@ function calculateDoneCosts(...) {
   // ...
 } 
 */
-
