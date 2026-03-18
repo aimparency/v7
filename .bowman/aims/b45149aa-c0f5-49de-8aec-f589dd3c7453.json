@@ -24,9 +24,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Reframed: open-source-first product distribution, with hosted services as optional convenience layer rather than closed core SaaS.",
-    "date": 1772453599870
+    "state": "cancelled",
+    "comment": "Cancelled: product direction is not SaaS. Aimparency should run locally on the user's computer as a service with browser UI.",
+    "date": 1773878342240
   },
   "intrinsicValue": 0,
   "cost": 1,

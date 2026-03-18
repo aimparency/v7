@@ -1,0 +1,32 @@
+{
+  "id": "be3cbaa2-06c9-4a79-8eed-bc8764ace4f7",
+  "text": "Make clean-clone local startup reliable",
+  "description": "A new user should be able to clone the repo, run npm install, run npm run dev or npm run start, and reach a working local UI without hidden setup work. This includes build-mode startup, process wiring, and robust local service behavior.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "startup",
+    "local-first",
+    "runtime"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d592c61b-6d4f-4d9b-b70d-9245652ecf3d",
+    "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1773878298453
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

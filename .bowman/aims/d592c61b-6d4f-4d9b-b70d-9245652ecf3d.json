@@ -1,0 +1,63 @@
+{
+  "id": "d592c61b-6d4f-4d9b-b70d-9245652ecf3d",
+  "text": "Make Aimparency publishable as a local-first open source project",
+  "description": "Turn the repository into a publishable open-source project whose primary usage story is: clone repo, install dependencies, run locally, connect the web UI to local projects with a .bowman directory.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "open-source",
+    "release",
+    "local-first"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "be3cbaa2-06c9-4a79-8eed-bc8764ace4f7",
+      "relativePosition": [
+        -0.6378054550446932,
+        2.4172720578195643
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "e4e9bb79-5800-49ed-870b-9b1c320ff1fb",
+      "relativePosition": [
+        2.3948698962494994,
+        0.7173549888569191
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "af2a0965-fab1-493b-b1a8-7f54d123b19e",
+      "relativePosition": [
+        1.702768771727011,
+        1.8304585518474015
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "d45cb227-deb1-4712-b9c3-166efcaaedaf",
+      "relativePosition": [
+        -2.4841300298021878,
+        0.2812436577684602
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "22a8c239-ac3d-40d6-8668-ec443a456977"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Umbrella execution aim for the release-prep work.",
+    "date": 1773878280603
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

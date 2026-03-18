@@ -1,27 +1,38 @@
 {
   "id": "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2",
-  "text": "Deployment architecture: Git-based, self-host + optional cloud sync",
-  "description": "File-based storage is correct for git tracking!\n\nArchitecture options:\n1. Open source self-hosting (Docker compose, VPS)\n2. Optional cloud sync service (sync .bowman/ to server for backup/collaboration)\n3. Git-based merging for collaboration (conflicts resolved through git workflow)\n\nQuestions to resolve:\n- Full open source or partial?\n- Pricing model for cloud sync?\n- How to handle merge conflicts in aims/phases?\n\nFile-based stays, this is about deployment + optional services on top",
+  "text": "Deployment architecture: local service + browser UI for .bowman projects",
+  "description": "Aimparency should run as a local service on the user's computer and expose a browser UI. Users point it at local repositories or workspaces that contain a .bowman directory. File-based storage and git-friendly structure stay central. Focus is local runtime, local project discovery, and reliable startup rather than hosted deployment or cloud sync.",
   "reflections": [],
   "archived": false,
   "tags": [
     "deployment",
     "architecture",
     "open-source",
+    "local-first",
     "git"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "be3cbaa2-06c9-4a79-8eed-bc8764ace4f7",
+      "relativePosition": [
+        -1.7887446202635782,
+        -1.7465373409916285
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "b45149aa-c0f5-49de-8aec-f589dd3c7453",
     "22a8c239-ac3d-40d6-8668-ec443a456977"
   ],
   "committedIn": [
-    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a",
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
     "state": "open",
-    "comment": "Confirmed as strategic direction: git/file-based open-source core plus optional cloud sync/hosting services.",
-    "date": 1772453599894
+    "comment": "Reframed away from hosted/cloud direction toward local daemon plus browser UI architecture.",
+    "date": 1773878342179
   },
   "intrinsicValue": 0,
   "cost": 1,

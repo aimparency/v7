@@ -1,0 +1,30 @@
+{
+  "id": "e2c26776-1260-4624-ba97-c3ee29fa623f",
+  "text": "Make Aimparency publishable as a local-first open source project",
+  "description": "Release Aimparency as a local service that runs on the user's computer, exposes a browser UI, and connects to local projects with a .bowman directory. Success means a new user can clone the repo, install dependencies, understand the project from the docs, run it locally, and use it against nearby repositories without any hosted dependency.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "open-source",
+    "local-first"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "22a8c239-ac3d-40d6-8668-ec443a456977"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Execution umbrella for the local-first open source release.",
+    "date": 1773878342083
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "GTM adjusted to open-source-first adoption. Commercial layer focuses on hosted operations/support for teams needing convenience and scale.",
-    "date": 1772453599884
+    "state": "cancelled",
+    "comment": "Cancelled: paying hosted service is not the current product direction. Focus is local-first open source usage on the user's machine.",
+    "date": 1773878342261
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -38,9 +38,9 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "Business model discussion now anchored in open-source-first strategy with monetization via optional hosted services and enterprise support.",
-    "date": 1772453599914
+    "state": "cancelled",
+    "comment": "Cancelled: hosted/commercial GTM discussion is not the priority. Product shape is local service plus browser UI for local .bowman projects.",
+    "date": 1773878342313
   },
   "intrinsicValue": 10,
   "cost": 1,

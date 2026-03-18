@@ -1,13 +1,13 @@
 {
   "id": "22a8c239-ac3d-40d6-8668-ec443a456977",
-  "text": "Adopt open-source-first strategy with optional hosted services",
-  "description": "Core product and infrastructure should be open-source/self-hostable first. Monetization shifts to optional hosted sync/collaboration/ops services, support, and enterprise convenience.",
+  "text": "Adopt local-first open-source strategy",
+  "description": "Aimparency should run as a service on the user's computer with a browser UI and connect to local projects that contain a .bowman directory. The core product is open source and local-first, not a hosted commercial service.",
   "reflections": [],
   "archived": false,
   "tags": [
     "strategy",
     "open-source",
-    "gtm"
+    "local-first"
   ],
   "supportingConnections": [
     {
@@ -41,6 +41,22 @@
         1.6738368630059288
       ],
       "weight": 1
+    },
+    {
+      "aimId": "d592c61b-6d4f-4d9b-b70d-9245652ecf3d",
+      "relativePosition": [
+        -1.9458692005612532,
+        -1.5695837200694678
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "e2c26776-1260-4624-ba97-c3ee29fa623f",
+      "relativePosition": [
+        -2.1617451427823022,
+        -1.2557300417116424
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -51,8 +67,8 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Created as explicit strategic pivot after AI NATION grant rejection.",
-    "date": 1772453588703
+    "comment": "Clarified product shape: local service on the user's machine with browser UI, focused on local repositories.",
+    "date": 1773878342159
   },
   "intrinsicValue": 0,
   "cost": 1,

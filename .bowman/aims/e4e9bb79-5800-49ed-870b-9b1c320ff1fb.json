@@ -1,0 +1,31 @@
+{
+  "id": "e4e9bb79-5800-49ed-870b-9b1c320ff1fb",
+  "text": "Make the repository surface understandable for new users",
+  "description": "Add and maintain docs that explain what Aimparency is, how it runs locally, what .bowman stores, what is optional, and how the main packages fit together. Root README and package READMEs should look intentional and accurate.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "docs",
+    "onboarding",
+    "open-source"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d592c61b-6d4f-4d9b-b70d-9245652ecf3d"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1773878298531
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
