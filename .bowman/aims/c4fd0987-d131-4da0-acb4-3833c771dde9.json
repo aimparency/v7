@@ -1,0 +1,28 @@
+{
+  "id": "c4fd0987-d131-4da0-acb4-3833c771dde9",
+  "text": "Evaluate hypotheses through execution and reflection loops",
+  "description": "Connect strategic hypotheses to real execution outcomes: tests, code changes, market actions, human feedback, and runtime observations. Successful and failed hypotheses should update future planning through structured reflections.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "asi",
+    "evaluation",
+    "learning"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f6af0b7a-39b9-4f22-866e-8f13bca532e8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Closes the loop between planning and learning.",
+    "date": 1773964260949
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,61 @@
+{
+  "id": "f6af0b7a-39b9-4f22-866e-8f13bca532e8",
+  "text": "Build a hypothesis-driven strategic planning engine",
+  "description": "Turn the aim graph into an engine that can generate, compare, execute, and revise complex hypotheses and action plans over long horizons. This should make Aimparency more than a task tracker: it should become a strategic cortex for autonomous systems.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "asi",
+    "planning",
+    "hypothesis"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "af4fd5b4-f32e-496f-8579-a5b5be59eeb7",
+      "relativePosition": [
+        -2.423658101739739,
+        0.6130916781944807
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "5d8044b4-fc4e-440f-bdb3-fbc3b0e00f03",
+      "relativePosition": [
+        -1.8488189431380793,
+        1.6828156510722723
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c4fd0987-d131-4da0-acb4-3833c771dde9",
+      "relativePosition": [
+        1.7059490618726687,
+        -1.8274949516471346
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "6c611056-04f7-4009-90f1-32c1a5da8de4",
+      "relativePosition": [
+        2.1718306237522063,
+        1.2382050483389662
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "New high-level ASI support branch focused on strategy and hypothesis loops.",
+    "date": 1773964260883
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

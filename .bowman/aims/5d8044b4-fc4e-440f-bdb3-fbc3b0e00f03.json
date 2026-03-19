@@ -1,0 +1,28 @@
+{
+  "id": "5d8044b4-fc4e-440f-bdb3-fbc3b0e00f03",
+  "text": "Represent multi-step action plans as first-class graph structures",
+  "description": "Support plans that span multiple aims, dependencies, checkpoints, and fallback branches. The graph should be able to represent not only goals and subgoals, but executable strategy structures that can be revised over time.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "asi",
+    "planning",
+    "graph"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f6af0b7a-39b9-4f22-866e-8f13bca532e8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Needed so hypothesis-driven strategies become durable graph objects instead of prompt-only reasoning.",
+    "date": 1773964260932
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

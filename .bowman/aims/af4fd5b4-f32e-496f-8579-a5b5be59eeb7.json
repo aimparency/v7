@@ -1,0 +1,28 @@
+{
+  "id": "af4fd5b4-f32e-496f-8579-a5b5be59eeb7",
+  "text": "Generate hypotheses from aims, reflections, and observed project state",
+  "description": "Use aims, reflections, repo state, and runtime observations to propose explicit hypotheses about what actions or strategies might unlock progress. Hypotheses should be inspectable, comparable, and linked back to the aims they support.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "asi",
+    "hypothesis",
+    "reasoning"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f6af0b7a-39b9-4f22-866e-8f13bca532e8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Core generative step for strategic planning.",
+    "date": 1773964260912
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

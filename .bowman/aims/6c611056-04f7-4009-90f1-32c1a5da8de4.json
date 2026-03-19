@@ -1,0 +1,28 @@
+{
+  "id": "6c611056-04f7-4009-90f1-32c1a5da8de4",
+  "text": "Use Aimparency aimgraphs as strategic cortex for external autonomous runtimes",
+  "description": "Design Aimparency so external runtimes such as Conway automaton can use the aim graph as a strategic planning and hypothesis-management layer while keeping their own execution/runtime machinery. This would let external agents pursue complex action plans through graph-backed memory, hypotheses, and reflections.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "asi",
+    "integration",
+    "automaton"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f6af0b7a-39b9-4f22-866e-8f13bca532e8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Important long-term direction; integration boundary and ownership split still need design.",
+    "date": 1773964260967
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
