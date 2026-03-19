@@ -1,8 +1,12 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
-import App from './App.vue'
 import './style.css'
+import { loadRuntimeConfig } from './utils/runtime-config'
+
+await loadRuntimeConfig()
+
+const { default: App } = await import('./App.vue')
 
 const app = createApp(App)
 

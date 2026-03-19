@@ -1,0 +1,55 @@
+{
+  "id": "5e5f3c27-720e-4810-8299-1713bba6a154",
+  "text": "Make the repository surface understandable for new users",
+  "description": "Add and maintain clear README files, onboarding documentation, package role descriptions, and explanations of what Aimparency is, how it runs locally, and how .bowman data works. The repository should make sense to a first-time visitor without private context.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "docs",
+    "onboarding"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "511cb67c-6bfc-4095-85ec-5ef02e0548b4",
+      "relativePosition": [
+        0.39144944761468814,
+        2.469163285398954
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "8affbc01-11e0-4fa6-82aa-1723b7cd6168",
+      "relativePosition": [
+        2.038089385200264,
+        -1.447823075494382
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "6d526858-8f15-42b1-865e-1c7de5ef3ed9",
+      "relativePosition": [
+        -2.4567533097811953,
+        0.4629937093299891
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "e2c26776-1260-4624-ba97-c3ee29fa623f"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Docs and package-level explanations need to feel publishable.",
+    "date": 1773878368907
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

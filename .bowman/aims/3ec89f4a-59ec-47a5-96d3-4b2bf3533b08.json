@@ -1,0 +1,31 @@
+{
+  "id": "3ec89f4a-59ec-47a5-96d3-4b2bf3533b08",
+  "text": "Design a local project picker/discovery flow for nearby .bowman repositories",
+  "description": "Define and implement how the local service discovers or lets the user select repositories/workspaces with `.bowman`. The flow should fit local use, avoid hidden magic, and make switching projects explicit.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "ux",
+    "local-projects",
+    "discovery"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5bd5869e-9cfb-4760-8fdc-a6a941d9648e"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Needed so local multi-repo usage feels intentional rather than incidental.",
+    "date": 1773878569292
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,9 +1,10 @@
 import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from 'wrapped-agents-broker';
+import { buildWsUrl, getRuntimeConfig } from './utils/runtime-config';
 
 // Create WebSocket client for Watchdog Broker
 const wsClient = createWSClient({
-  url: `ws://localhost:${process.env.PORT_BROKER_WS || '5001'}`,
+  url: buildWsUrl(getRuntimeConfig().brokerWsPort),
 });
 
 // Create tRPC client with WebSocket

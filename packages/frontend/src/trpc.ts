@@ -1,9 +1,10 @@
 import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from 'backend';
+import { buildWsUrl, getRuntimeConfig } from './utils/runtime-config';
 
 // Create WebSocket client
 const wsClient = createWSClient({
-  url: `ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
+  url: buildWsUrl(getRuntimeConfig().backendWsPort),
 });
 
 // Create tRPC client with WebSocket

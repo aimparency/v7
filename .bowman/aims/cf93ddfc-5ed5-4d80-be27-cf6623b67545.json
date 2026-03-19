@@ -1,0 +1,40 @@
+{
+  "id": "cf93ddfc-5ed5-4d80-be27-cf6623b67545",
+  "text": "Replace hardcoded frontend backend/broker endpoints with runtime configuration",
+  "description": "Remove hardcoded `localhost` websocket and API targets from the frontend. The built UI should connect to the backend and broker using resolved runtime configuration or same-origin-compatible wiring so build mode works reliably and LAN/browser access is not misleading.",
+  "reflections": [
+    {
+      "date": 1773878675170,
+      "context": "Remove hardcoded localhost frontend endpoint assumptions that were breaking build-mode local runs and misleading LAN/browser access.",
+      "outcome": "Frontend websocket and watchdog session URLs now resolve host and protocol from the browser at runtime while keeping configured backend and broker ports. The frontend type-check and production build both passed after the change.",
+      "effectiveness": "High for a small patch. Centralizing URL construction fixed three separate connection sites without changing backend protocol behavior.",
+      "lesson": "For browser builds, hostname and protocol should come from the browser environment, not from server-side assumptions baked into source strings.",
+      "pattern": "Similar to other local-first tooling issues where the runtime topology is correct but the browser client accidentally assumes it is always running on the same machine as the backend."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "release",
+    "startup",
+    "ports",
+    "frontend"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0e5cce7e-7090-444f-92a6-706f02340b46"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Implemented browser-safe runtime endpoint resolution in the frontend. tRPC backend and broker clients now derive host/protocol from the browser instead of hardcoded localhost, and spawned watchdog sockets connect back to the active browser host. Verified with `npm run type-check -w frontend` and `npm run build-only -w frontend`.",
+    "date": 1773878675134
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

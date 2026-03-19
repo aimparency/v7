@@ -24,8 +24,12 @@ export default defineConfig(({ mode }) => {
       strictPort: true
     },
     define: {
+      'process.env.PORT_FRONTEND': JSON.stringify(process.env.PORT_FRONTEND || '4000'),
+      'process.env.PORT_BACKEND_HTTP': JSON.stringify(process.env.PORT_BACKEND_HTTP || '3000'),
       'process.env.PORT_BACKEND_WS': JSON.stringify(process.env.PORT_BACKEND_WS || '3001'),
+      'process.env.PORT_BROKER_HTTP': JSON.stringify(process.env.PORT_BROKER_HTTP || '5000'),
       'process.env.PORT_BROKER_WS': JSON.stringify(process.env.PORT_BROKER_WS || '5001'),
+      'process.env.PORT_PROCESS_START': JSON.stringify(process.env.PORT_PROCESS_START || '7000'),
       'process.env.AIMPARENCY_DIR_NAME': JSON.stringify(process.env.AIMPARENCY_DIR_NAME),
     }
   }

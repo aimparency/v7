@@ -1,0 +1,56 @@
+{
+  "id": "0e5cce7e-7090-444f-92a6-706f02340b46",
+  "text": "Make clean-clone local startup reliable",
+  "description": "A new user should be able to clone the repo, run npm install, run npm run dev or npm run start, and get a working local service plus browser UI without manual scavenger hunting. Includes build-mode startup, background service wiring, and sensible port behavior.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "startup",
+    "local-first"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "2db9fb3e-4a0b-4bbe-b454-f1d5cdecb83a",
+      "relativePosition": [
+        1.9155431369742297,
+        -1.6064540112903722
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "cf93ddfc-5ed5-4d80-be27-cf6623b67545",
+      "relativePosition": [
+        -0.5992194602976841,
+        -2.4271250561931397
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "af58ebb0-1e0f-4f7e-b182-754e918ca30e",
+      "relativePosition": [
+        1.0084954269870088,
+        -2.2875613595587527
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "e2c26776-1260-4624-ba97-c3ee29fa623f",
+    "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Core runtime requirement for the open source release.",
+    "date": 1773878368862
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

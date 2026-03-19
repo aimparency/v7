@@ -11,50 +11,18 @@
   ],
   "supportingConnections": [
     {
-      "aimId": "b45149aa-c0f5-49de-8aec-f589dd3c7453",
-      "relativePosition": [
-        -2.441518779878736,
-        -0.5375742251070518
-      ],
-      "weight": 1
-    },
-    {
-      "aimId": "e95abe3f-9cd4-4bb3-9b3b-a4afe015fa83",
-      "relativePosition": [
-        2.4914524908775175,
-        0.20655383245104467
-      ],
-      "weight": 1
-    },
-    {
       "aimId": "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2",
       "relativePosition": [
-        0.5351086744802065,
-        2.442060340469915
-      ],
-      "weight": 1
-    },
-    {
-      "aimId": "8d9e3c6f-6686-425f-8b00-770b4d98b3d4",
-      "relativePosition": [
-        1.8569518453752298,
-        1.6738368630059288
-      ],
-      "weight": 1
-    },
-    {
-      "aimId": "d592c61b-6d4f-4d9b-b70d-9245652ecf3d",
-      "relativePosition": [
-        -1.9458692005612532,
-        -1.5695837200694678
+        2.091972500747912,
+        -1.3688137404754988
       ],
       "weight": 1
     },
     {
       "aimId": "e2c26776-1260-4624-ba97-c3ee29fa623f",
       "relativePosition": [
-        -2.1617451427823022,
-        -1.2557300417116424
+        2.097291625081593,
+        -1.3606497857136528
       ],
       "weight": 1
     }
@@ -67,8 +35,8 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Clarified product shape: local service on the user's machine with browser UI, focused on local repositories.",
-    "date": 1773878342159
+    "comment": "Strategy now points to the local-first architecture aim and the release-prep execution branch.",
+    "date": 1773878417487
   },
   "intrinsicValue": 0,
   "cost": 1,

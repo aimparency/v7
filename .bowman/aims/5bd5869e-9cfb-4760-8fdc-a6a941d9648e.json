@@ -1,0 +1,56 @@
+{
+  "id": "5bd5869e-9cfb-4760-8fdc-a6a941d9648e",
+  "text": "Make local .bowman project connection intuitive",
+  "description": "The running local service should clearly let the user connect to nearby repositories or workspaces that contain a .bowman directory. The UX should make it obvious what project is open, how projects are discovered or selected, and what Aimparency writes into the local repo.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "ux",
+    "local-projects"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "6d526858-8f15-42b1-865e-1c7de5ef3ed9",
+      "relativePosition": [
+        -1.8801469789190004,
+        -1.6477400698113027
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "4758162c-ceb2-4d49-a203-60b335601039",
+      "relativePosition": [
+        2.475331028260064,
+        0.3503374095539536
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "3ec89f4a-59ec-47a5-96d3-4b2bf3533b08",
+      "relativePosition": [
+        -2.4928749949167517,
+        0.18861139869797108
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "e2c26776-1260-4624-ba97-c3ee29fa623f",
+    "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Product shape clarified: local service plus browser UI connecting to local .bowman projects.",
+    "date": 1773878369055
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

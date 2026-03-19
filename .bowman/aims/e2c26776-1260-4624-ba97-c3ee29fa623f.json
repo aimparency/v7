@@ -9,7 +9,48 @@
     "open-source",
     "local-first"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "0e5cce7e-7090-444f-92a6-706f02340b46",
+      "relativePosition": [
+        2.4916910742941987,
+        0.20365556776730082
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "5e5f3c27-720e-4810-8299-1713bba6a154",
+      "relativePosition": [
+        -0.586660403845914,
+        -2.4301912621354207
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "8ad3d334-7b71-4068-98b0-0e860ccf0d31",
+      "relativePosition": [
+        2.497877507495618,
+        -0.10299493942655753
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "a88bcf3b-e6c1-4ad5-b89c-6cd6081668fe",
+      "relativePosition": [
+        0.24498982752302573,
+        -2.4879670384493116
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "5bd5869e-9cfb-4760-8fdc-a6a941d9648e",
+      "relativePosition": [
+        -0.2024920285106342,
+        2.4917859013947505
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "22a8c239-ac3d-40d6-8668-ec443a456977"
   ],

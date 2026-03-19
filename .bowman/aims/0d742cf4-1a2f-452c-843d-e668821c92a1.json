@@ -1,0 +1,30 @@
+{
+  "id": "0d742cf4-1a2f-452c-843d-e668821c92a1",
+  "text": "Inline embedding into the Node backend for the default local path",
+  "description": "Replace the separate Python embedder in the default local runtime with a Node-based embedding path in the backend, preserving current vector/search behavior well enough for normal local use.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "runtime",
+    "embedder"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "a88bcf3b-e6c1-4ad5-b89c-6cd6081668fe"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Largest simplification target in the default setup.",
+    "date": 1773878569199
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,30 @@
+{
+  "id": "4758162c-ceb2-4d49-a203-60b335601039",
+  "text": "Make the current local project and .bowman root obvious in the UI",
+  "description": "When Aimparency is connected to a project, the UI should clearly show which local repo/workspace is open and which `.bowman` directory is active. Users should not have to infer the target project from indirect state.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "ux",
+    "local-projects"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5bd5869e-9cfb-4760-8fdc-a6a941d9648e"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Basic trust and orientation requirement.",
+    "date": 1773878569250
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

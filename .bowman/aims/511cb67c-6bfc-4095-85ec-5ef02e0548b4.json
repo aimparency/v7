@@ -1,0 +1,30 @@
+{
+  "id": "511cb67c-6bfc-4095-85ec-5ef02e0548b4",
+  "text": "Expand root README into a complete local-first quickstart",
+  "description": "Strengthen the top-level README so a first-time visitor can understand what Aimparency is, prerequisites, quickstart commands, the local service architecture, and the expected `.bowman` project workflow without prior context.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "docs",
+    "readme"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5e5f3c27-720e-4810-8299-1713bba6a154"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Root documentation exists but still needs a stronger first-run path.",
+    "date": 1773878568871
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

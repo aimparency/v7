@@ -1,0 +1,55 @@
+{
+  "id": "8ad3d334-7b71-4068-98b0-0e860ccf0d31",
+  "text": "Make the repository hygienic for publishing",
+  "description": "Clean up generated artifacts, ignore rules, placeholder content, checked-in local junk, and release-facing metadata so the repository is ready for public publishing and normal contributor workflows.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "repo-hygiene",
+    "oss"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "c4b7dd26-f3df-4ab8-838c-97d7ac7f2bc2",
+      "relativePosition": [
+        0.2534815403507807,
+        2.4871162234003856
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "410344ec-1245-4636-991c-ec3b27760b03",
+      "relativePosition": [
+        -1.1245584365102523,
+        2.2327938379692864
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9cf44a40-4aa1-44a9-83d6-665d3e525592",
+      "relativePosition": [
+        2.216960444365348,
+        1.1554593840197926
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "e2c26776-1260-4624-ba97-c3ee29fa623f"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Repository presentation should match an intentional open source project.",
+    "date": 1773878368957
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,30 @@
+{
+  "id": "c4b7dd26-f3df-4ab8-838c-97d7ac7f2bc2",
+  "text": "Audit repository metadata and public-facing package manifests",
+  "description": "Check root and workspace metadata for open source publishing readiness: name, description, license, repository URLs, private flags where intended, and obviously accidental dependency or manifest noise. The repo surface should look intentional before publishing.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "repo-hygiene",
+    "metadata"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Public repo metadata should be coherent before wider publishing.",
+    "date": 1773878569054
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

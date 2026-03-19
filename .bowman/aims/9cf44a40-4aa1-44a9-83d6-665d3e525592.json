@@ -1,0 +1,30 @@
+{
+  "id": "9cf44a40-4aa1-44a9-83d6-665d3e525592",
+  "text": "Create an open source release checklist for repository readiness",
+  "description": "Add a lightweight checklist covering docs, startup verification, repo hygiene, optional integrations, and local project workflow. This provides a concrete definition of done for the release-prep phase.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "repo-hygiene",
+    "checklist"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Useful guardrail before calling the repo publishable.",
+    "date": 1773878569151
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

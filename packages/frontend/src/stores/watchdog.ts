@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
 import { ref, computed } from 'vue'
 import { trpcWatchdog } from '../trpc-watchdog'
+import { buildHttpUrl } from '../utils/runtime-config'
 import { useProjectStore } from './project-store'
 
 export type AgentType = 'claude' | 'gemini' | 'codex'
@@ -149,7 +150,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
         connectionState.value = 'connecting'
         connectedAgentType.value = agentType
-        const watchdogUrl = `http://localhost:${port}`
+        const watchdogUrl = buildHttpUrl(port)
 
         // 2. Connect with automatic reconnection
         socket.value = io(watchdogUrl, {

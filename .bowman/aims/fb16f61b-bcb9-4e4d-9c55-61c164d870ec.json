@@ -1,0 +1,30 @@
+{
+  "id": "fb16f61b-bcb9-4e4d-9c55-61c164d870ec",
+  "text": "Make MCP and voice truly optional in install and runtime flows",
+  "description": "Ensure the documented and default local startup paths work without MCP tooling or voice integration installed. Optional integrations should have separate setup paths and should not break the core product when absent.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "runtime",
+    "optional-integrations"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "a88bcf3b-e6c1-4ad5-b89c-6cd6081668fe"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Optional features should stop leaking into the first-run path.",
+    "date": 1773878568960
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

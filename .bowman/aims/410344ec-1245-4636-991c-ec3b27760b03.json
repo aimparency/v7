@@ -1,0 +1,30 @@
+{
+  "id": "410344ec-1245-4636-991c-ec3b27760b03",
+  "text": "Fence experiments and side projects off from the main onboarding path",
+  "description": "Make sure `subdev/` and other non-core experiments do not confuse first-time users. This can mean docs clarifications, repo structure notes, or other lightweight measures that keep the release story centered on the main product.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "repo-hygiene",
+    "onboarding"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "The public repo should not read like an accidental dump of side projects.",
+    "date": 1773878569097
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

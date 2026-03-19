@@ -1,0 +1,39 @@
+{
+  "id": "8affbc01-11e0-4fa6-82aa-1723b7cd6168",
+  "text": "Add package-level READMEs for backend, broker, and shared packages",
+  "description": "Document the role, local runtime behavior, and boundaries of the backend, broker, and shared packages. Keep package docs short but accurate so contributors can navigate the repo without reverse-engineering package purpose.",
+  "reflections": [
+    {
+      "date": 1773878722832,
+      "context": "Add missing package-level docs for the core packages that new contributors hit immediately when reading the repo.",
+      "outcome": "Created README files for backend, shared, and broker with concise explanations of purpose, runtime role, commands, and package boundaries.",
+      "effectiveness": "High. These were low-risk additions with immediate value for repo readability and open-source onboarding.",
+      "lesson": "Package docs are most useful when they explain boundaries and runtime role, not when they try to restate every implementation detail.",
+      "pattern": "This mirrors earlier repo-surface cleanup work: small documentation patches often unlock disproportionately better orientation for first-time readers."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "release",
+    "docs",
+    "packages"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5e5f3c27-720e-4810-8299-1713bba6a154"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Added contributor-facing READMEs for the backend, shared package, and wrapped-agents broker. The docs now explain each package’s role, local runtime behavior, commands, and boundaries within the local-first architecture.",
+    "date": 1773878722795
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

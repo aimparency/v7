@@ -1,0 +1,30 @@
+{
+  "id": "af58ebb0-1e0f-4f7e-b182-754e918ca30e",
+  "text": "Add preferred-port fallback and resolved-port reporting",
+  "description": "Allow frontend, backend, broker, and spawned sessions to prefer default ports but fall back to free ports when occupied. Startup logs and runtime config should expose the final chosen ports clearly.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "startup",
+    "ports"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0e5cce7e-7090-444f-92a6-706f02340b46"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Needed for robust local use on developer machines.",
+    "date": 1773878568828
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

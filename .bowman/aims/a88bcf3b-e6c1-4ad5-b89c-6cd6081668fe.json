@@ -1,0 +1,47 @@
+{
+  "id": "a88bcf3b-e6c1-4ad5-b89c-6cd6081668fe",
+  "text": "Reduce default runtime complexity for first-time users",
+  "description": "Simplify the default local runtime so first-time users do not need optional services or extra runtimes to get started. This includes keeping MCP optional, keeping voice optional, removing dev-only tools from the default path, and inlining the Python embedder into the Node backend.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "runtime",
+    "onboarding"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "fb16f61b-bcb9-4e4d-9c55-61c164d870ec",
+      "relativePosition": [
+        0.8442889882111598,
+        -2.353120503583566
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0d742cf4-1a2f-452c-843d-e668821c92a1",
+      "relativePosition": [
+        -2.359647037957184,
+        0.8258727845497071
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "e2c26776-1260-4624-ba97-c3ee29fa623f"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Startup should default to the smallest setup that still delivers the core product.",
+    "date": 1773878369003
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

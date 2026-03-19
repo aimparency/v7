@@ -1,0 +1,32 @@
+{
+  "id": "6d526858-8f15-42b1-865e-1c7de5ef3ed9",
+  "text": "Document .bowman data layout and git interaction clearly",
+  "description": "Explain what Aimparency writes into `.bowman`, which files are generated vs user-authored, what belongs in `.gitignore`, and how this fits normal git workflows. This should be understandable from docs and reinforced in the UI where relevant.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "docs",
+    ".bowman",
+    "git"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5e5f3c27-720e-4810-8299-1713bba6a154",
+    "5bd5869e-9cfb-4760-8fdc-a6a941d9648e"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Critical for trust when the app writes into local repos.",
+    "date": 1773878568986
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
