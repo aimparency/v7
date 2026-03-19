@@ -1,0 +1,30 @@
+{
+  "id": "0fee8918-1087-4e7f-bb0e-ba506be3a8c6",
+  "text": "Persist watchdog session metadata under .bowman/runtime",
+  "description": "Move the durable parts of watchdog/autonomy session state out of browser-local ownership and into project-local runtime files under .bowman/runtime, so the local service can recover and reason about active or recently active workers across reloads and restarts.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "watchdog",
+    "persistence"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Next concrete persistence slice after scaffolding the runtime directory.",
+    "date": 1773962133838
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -562,7 +562,7 @@ onUnmounted(() => {
   border: 1px solid #454545;
   border-radius: 6px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
 }

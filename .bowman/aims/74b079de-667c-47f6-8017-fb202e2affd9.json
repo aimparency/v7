@@ -1,0 +1,30 @@
+{
+  "id": "74b079de-667c-47f6-8017-fb202e2affd9",
+  "text": "Evaluate integration boundary with Conway automaton-style runtimes",
+  "description": "Identify which pieces should be borrowed or made compatible with Conway automaton-like systems: heartbeat daemon, identity/soul file, self-modification/audit model, economic survival loop, and replication semantics. Decide what should remain native to Aimparency versus external integration.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "integration",
+    "unclear"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "unclear",
+    "comment": "Needs architectural judgment and probably should not block native Aimparency autonomy work.",
+    "date": 1773962041620
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

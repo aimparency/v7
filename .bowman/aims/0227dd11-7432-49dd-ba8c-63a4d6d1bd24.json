@@ -1,0 +1,30 @@
+{
+  "id": "0227dd11-7432-49dd-ba8c-63a4d6d1bd24",
+  "text": "Make backend tests parallel-safe instead of relying on sequential package execution",
+  "description": "The backend package test script now correctly runs the full suite, but it uses --test-concurrency=1 because some tests share fixed filesystem paths and interfere when files run concurrently. Isolate those fixtures so the suite can later run safely in parallel.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "testing",
+    "cleanup",
+    "backend"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Follow-up after fixing the immediate release blocker.",
+    "date": 1773918947404
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -121,6 +121,8 @@ async function ensureProjectStructure(rawProjectPath: string) {
   await fs.ensureDir(path.join(projectPath, 'aims'));
   await fs.ensureDir(path.join(projectPath, 'archived-aims'));
   await fs.ensureDir(path.join(projectPath, 'phases'));
+  await fs.ensureDir(path.join(projectPath, 'runtime'));
+  await fs.ensureDir(path.join(projectPath, 'runtime', 'audit'));
   
   const gitignorePath = path.join(projectPath, '.gitignore');
   if (!(await fs.pathExists(gitignorePath))) {

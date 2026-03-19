@@ -11,6 +11,8 @@ import {
   BufferPacker,
   BufferPerformanceMonitor
 } from './buffers/DynamicBufferManager'
+import nodeVertexShaderSource from './shaders/node.vert.glsl?raw'
+import nodeFragmentShaderSource from './shaders/node.frag.glsl?raw'
 
 export interface NodeData {
   id: string
@@ -91,8 +93,8 @@ export class WebGLGraphRenderer {
     const gl = this.gl
 
     // Load and compile shaders
-    const vertexShader = await this.loadShader(gl.VERTEX_SHADER, '/src/webgl/shaders/node.vert.glsl')
-    const fragmentShader = await this.loadShader(gl.FRAGMENT_SHADER, '/src/webgl/shaders/node.frag.glsl')
+    const vertexShader = this.loadShader(gl.VERTEX_SHADER, nodeVertexShaderSource)
+    const fragmentShader = this.loadShader(gl.FRAGMENT_SHADER, nodeFragmentShaderSource)
 
     // Create program
     this.program = gl.createProgram()
@@ -153,10 +155,8 @@ export class WebGLGraphRenderer {
     gl.clearColor(bg[0], bg[1], bg[2], bg[3])
   }
 
-  private async loadShader(type: number, url: string): Promise<WebGLShader> {
+  private loadShader(type: number, source: string): WebGLShader {
     const gl = this.gl!
-    const response = await fetch(url)
-    const source = await response.text()
 
     const shader = gl.createShader(type)
     if (!shader) throw new Error('Failed to create shader')

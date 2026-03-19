@@ -1,11 +1,12 @@
 const DEFAULT_HOST = 'localhost'
+const env = import.meta.env
 const DEFAULT_RUNTIME_CONFIG = {
-  frontendPort: Number.parseInt(process.env.PORT_FRONTEND || '4000', 10),
-  backendHttpPort: Number.parseInt(process.env.PORT_BACKEND_HTTP || '3000', 10),
-  backendWsPort: Number.parseInt(process.env.PORT_BACKEND_WS || '3001', 10),
-  brokerHttpPort: Number.parseInt(process.env.PORT_BROKER_HTTP || '5000', 10),
-  brokerWsPort: Number.parseInt(process.env.PORT_BROKER_WS || '5001', 10),
-  processStartPort: Number.parseInt(process.env.PORT_PROCESS_START || '7000', 10),
+  frontendPort: Number.parseInt(env.VITE_PORT_FRONTEND || '4000', 10),
+  backendHttpPort: Number.parseInt(env.VITE_PORT_BACKEND_HTTP || '3000', 10),
+  backendWsPort: Number.parseInt(env.VITE_PORT_BACKEND_WS || '3001', 10),
+  brokerHttpPort: Number.parseInt(env.VITE_PORT_BROKER_HTTP || '5000', 10),
+  brokerWsPort: Number.parseInt(env.VITE_PORT_BROKER_WS || '5001', 10),
+  processStartPort: Number.parseInt(env.VITE_PORT_PROCESS_START || '7000', 10),
 }
 
 export type RuntimeConfig = typeof DEFAULT_RUNTIME_CONFIG & {

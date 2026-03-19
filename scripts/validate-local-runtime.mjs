@@ -9,13 +9,13 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const runtimeConfigPath = path.join(repoRoot, 'packages', 'frontend', 'public', 'runtime-config.json');
 
-const expectedDefaults = {
-  frontendPort: 4000,
-  backendHttpPort: 3000,
-  backendWsPort: 3001,
-  brokerHttpPort: 5000,
-  brokerWsPort: 5001,
-  processStartPort: 7000,
+const testPorts = {
+  frontendPort: 4400,
+  backendHttpPort: 3400,
+  backendWsPort: 3401,
+  brokerHttpPort: 5400,
+  brokerWsPort: 5401,
+  processStartPort: 7400,
 };
 
 function runNodeScript(args, env = process.env) {
@@ -72,7 +72,7 @@ function assert(condition, message) {
 }
 
 function validateShape(config) {
-  for (const [key, value] of Object.entries(expectedDefaults)) {
+  for (const [key, value] of Object.entries(testPorts)) {
     assert(Number.isInteger(config[key]), `runtime-config key "${key}" is not an integer`);
     assert(config[key] > 0, `runtime-config key "${key}" is not a positive port`);
     assert(typeof value === 'number', 'internal expected default mismatch');
@@ -104,7 +104,20 @@ async function removeRuntimeConfigIfPresent() {
   await fs.rm(runtimeConfigPath, { force: true });
 }
 
-async function runScenario(name, setupEnv = process.env, expectedPredicate) {
+function createScenarioEnv(overrides = {}) {
+  return {
+    ...process.env,
+    PORT_FRONTEND: String(testPorts.frontendPort),
+    PORT_BACKEND_HTTP: String(testPorts.backendHttpPort),
+    PORT_BACKEND_WS: String(testPorts.backendWsPort),
+    PORT_BROKER_HTTP: String(testPorts.brokerHttpPort),
+    PORT_BROKER_WS: String(testPorts.brokerWsPort),
+    PORT_PROCESS_START: String(testPorts.processStartPort),
+    ...overrides,
+  };
+}
+
+async function runScenario(name, setupEnv, expectedPredicate) {
   await removeRuntimeConfigIfPresent();
 
   const result = await runNodeScript(['scripts/run-local-stack.mjs', 'start:fast', '--dry-run'], setupEnv);
@@ -130,25 +143,25 @@ async function main() {
   console.log('[validate-local-runtime] repo:', repoRoot);
   console.log('[validate-local-runtime] runtime-config path:', runtimeConfigPath);
 
-  await runScenario('defaults-free', process.env, (config) => {
-    for (const [key, expected] of Object.entries(expectedDefaults)) {
+  await runScenario('defaults-free', createScenarioEnv(), (config) => {
+    for (const [key, expected] of Object.entries(testPorts)) {
       assert(config[key] === expected, `expected ${key}=${expected}, got ${config[key]}`);
     }
   });
 
   const reservedServers = [];
   try {
-    for (const port of Object.values(expectedDefaults)) {
+    for (const port of Object.values(testPorts)) {
       reservedServers.push(await reservePort(port));
     }
 
-    await runScenario('defaults-occupied', process.env, (config) => {
-      assert(config.frontendPort !== expectedDefaults.frontendPort, 'frontend port did not fall back');
-      assert(config.backendHttpPort !== expectedDefaults.backendHttpPort, 'backend HTTP port did not fall back');
-      assert(config.backendWsPort !== expectedDefaults.backendWsPort, 'backend WS port did not fall back');
-      assert(config.brokerHttpPort !== expectedDefaults.brokerHttpPort, 'broker HTTP port did not fall back');
-      assert(config.brokerWsPort !== expectedDefaults.brokerWsPort, 'broker WS port did not fall back');
-      assert(config.processStartPort !== expectedDefaults.processStartPort, 'process start port did not fall back');
+    await runScenario('defaults-occupied', createScenarioEnv(), (config) => {
+      assert(config.frontendPort !== testPorts.frontendPort, 'frontend port did not fall back');
+      assert(config.backendHttpPort !== testPorts.backendHttpPort, 'backend HTTP port did not fall back');
+      assert(config.backendWsPort !== testPorts.backendWsPort, 'backend WS port did not fall back');
+      assert(config.brokerHttpPort !== testPorts.brokerHttpPort, 'broker HTTP port did not fall back');
+      assert(config.brokerWsPort !== testPorts.brokerWsPort, 'broker WS port did not fall back');
+      assert(config.processStartPort !== testPorts.processStartPort, 'process start port did not fall back');
     });
   } finally {
     await Promise.all(

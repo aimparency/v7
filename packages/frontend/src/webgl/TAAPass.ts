@@ -6,6 +6,9 @@
  * Ping-pong buffers for proper history accumulation.
  */
 
+import taaVertexShaderSource from './shaders/taa.vert.glsl?raw'
+import taaFragmentShaderSource from './shaders/taa.frag.glsl?raw'
+
 export class TAAPass {
   private gl: WebGL2RenderingContext
   private canvas: HTMLCanvasElement
@@ -50,8 +53,8 @@ export class TAAPass {
     const gl = this.gl
 
     // Load blend shader
-    const vertShader = await this.loadShader(gl.VERTEX_SHADER, '/src/webgl/shaders/taa.vert.glsl')
-    const fragShader = await this.loadShader(gl.FRAGMENT_SHADER, '/src/webgl/shaders/taa.frag.glsl')
+    const vertShader = this.loadShader(gl.VERTEX_SHADER, taaVertexShaderSource)
+    const fragShader = this.loadShader(gl.FRAGMENT_SHADER, taaFragmentShaderSource)
 
     this.blendProgram = gl.createProgram()
     if (!this.blendProgram) throw new Error('Failed to create TAA program')
@@ -89,10 +92,8 @@ export class TAAPass {
     this.createFramebuffers()
   }
 
-  private async loadShader(type: number, url: string): Promise<WebGLShader> {
+  private loadShader(type: number, source: string): WebGLShader {
     const gl = this.gl
-    const response = await fetch(url)
-    const source = await response.text()
 
     const shader = gl.createShader(type)
     if (!shader) throw new Error('Failed to create shader')

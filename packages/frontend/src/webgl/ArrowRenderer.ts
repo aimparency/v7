@@ -6,6 +6,8 @@
  */
 
 import type { ArrowGeometry } from './utils/arrow-geometry'
+import arrowVertexShaderSource from './shaders/arrow.vert.glsl?raw'
+import arrowFragmentShaderSource from './shaders/arrow.frag.glsl?raw'
 
 export interface EdgeData {
   id: string
@@ -66,8 +68,8 @@ export class ArrowRenderer {
     const gl = this.gl
 
     // Load shaders
-    const vertShader = await this.loadShader(gl.VERTEX_SHADER, '/src/webgl/shaders/arrow.vert.glsl')
-    const fragShader = await this.loadShader(gl.FRAGMENT_SHADER, '/src/webgl/shaders/arrow.frag.glsl')
+    const vertShader = this.loadShader(gl.VERTEX_SHADER, arrowVertexShaderSource)
+    const fragShader = this.loadShader(gl.FRAGMENT_SHADER, arrowFragmentShaderSource)
 
     // Create program
     this.program = gl.createProgram()
@@ -113,10 +115,8 @@ export class ArrowRenderer {
     gl.bufferData(gl.ARRAY_BUFFER, this.instanceData.byteLength, gl.DYNAMIC_DRAW)
   }
 
-  private async loadShader(type: number, url: string): Promise<WebGLShader> {
+  private loadShader(type: number, source: string): WebGLShader {
     const gl = this.gl
-    const response = await fetch(url)
-    const source = await response.text()
 
     const shader = gl.createShader(type)
     if (!shader) throw new Error('Failed to create shader')

@@ -1,0 +1,39 @@
+{
+  "id": "038522a0-3f35-4f06-82ef-2dd0b2d3736e",
+  "text": "Scaffold .bowman/runtime for durable autonomy state",
+  "description": "Create the basic project-local runtime directory structure needed for future autonomy work, such as `.bowman/runtime` and `.bowman/runtime/audit`, without removing or destabilizing current behavior.",
+  "reflections": [
+    {
+      "date": 1773962133817,
+      "context": "Take a first implementation step toward durable autonomy state instead of leaving the work at the architecture-note level.",
+      "outcome": "Extended ensureProjectStructure so newly initialized projects create .bowman/runtime and .bowman/runtime/audit alongside aims, archived-aims, and phases. Verified with backend build and full backend test suite.",
+      "effectiveness": "This was a small but useful slice because it establishes a concrete place for future autonomy state without destabilizing current behavior.",
+      "lesson": "Early autonomy work benefits from laying down project-local seams first. Small structural additions make later persistence features much cleaner.",
+      "pattern": "Create the directory and ownership boundary before introducing new state files or runtime logic."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "runtime",
+    "local-first"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Implemented the first runtime scaffold: backend project initialization now creates .bowman/runtime and .bowman/runtime/audit for future durable autonomy state.",
+    "date": 1773962133809
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

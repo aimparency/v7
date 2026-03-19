@@ -1,0 +1,39 @@
+{
+  "id": "facbacb5-1589-4b73-8ecb-97d7bb32bd99",
+  "text": "Map Aimparency to an automaton-style local autonomy runtime",
+  "description": "Define how Aimparency's local service, graph, watchdog sessions, and .bowman state should map to a continuously running think/act/observe loop with heartbeat, identity, auditability, and local-first constraints. Use Conway Research's automaton as inspiration, but keep Aimparency local-first and git-centric rather than cloud-dependent.",
+  "reflections": [
+    {
+      "date": 1773962133804,
+      "context": "Turn the broad autonomy/ASI direction into a concrete local-first runtime architecture for Aimparency, informed by automaton-style systems but grounded in Aimparency's graph and .bowman model.",
+      "outcome": "Created a written autonomy runtime note that maps aims/phases/reflections/watchdog sessions onto a durable think-act-observe loop with heartbeat, policy, identity, and audit concepts. It also identifies what Aimparency should not copy directly from cloud-first autonomy systems.",
+      "effectiveness": "This was effective because it reduced a vague ambition into a system boundary that can drive code changes. It gives a stable frame for future implementation aims without forcing premature cloud/economic assumptions.",
+      "lesson": "For autonomy work, architecture notes are valuable when they sharply define what becomes durable state, what remains a worker concern, and where operator control lives.",
+      "pattern": "This follows the same pattern as release work: convert broad product direction into explicit local-first architecture before making deeper implementation commitments."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "architecture",
+    "asi"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Documented the automaton-style local autonomy runtime mapping in meta/autonomy-runtime.md, including hypotheses, runtime split, and near-term implementation stages.",
+    "date": 1773962133778
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

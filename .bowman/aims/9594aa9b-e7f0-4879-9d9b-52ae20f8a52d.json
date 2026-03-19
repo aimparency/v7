@@ -1,0 +1,47 @@
+{
+  "id": "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d",
+  "text": "Persist autonomy state in .bowman instead of the browser session",
+  "description": "Move long-running autonomy state toward durable local storage in .bowman: identity, constitution/policy, runtime objectives, heartbeat/scheduler state, and recovery metadata. The frontend should observe and control that state, not own it.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "persistence",
+    "local-first"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "038522a0-3f35-4f06-82ef-2dd0b2d3736e",
+      "relativePosition": [
+        1.873544419068394,
+        -1.6552435801952754
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0fee8918-1087-4e7f-bb0e-ba506be3a8c6",
+      "relativePosition": [
+        2.1791463314954047,
+        -1.2252841572182835
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Direction defined and the first persistence seam exists via .bowman/runtime scaffolding. Remaining work is to move concrete session/policy/heartbeat state into durable files under that runtime area.",
+    "date": 1773962133822
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,5 +1,12 @@
-export const AIMPARENCY_DIR_NAME = (typeof process !== 'undefined' && process.env?.AIMPARENCY_DIR_NAME) 
-  ? process.env.AIMPARENCY_DIR_NAME 
+const processEnv =
+  typeof globalThis !== 'undefined' && 'process' in globalThis
+    ? (globalThis as typeof globalThis & {
+        process?: { env?: Record<string, string | undefined> }
+      }).process?.env
+    : undefined
+
+export const AIMPARENCY_DIR_NAME = processEnv?.AIMPARENCY_DIR_NAME
+  ? processEnv.AIMPARENCY_DIR_NAME
   : '.bowman';
 
 export interface AimState {

@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "description": "Aimparency backend service for project state, search, and local browser clients.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "dev:delay": "DEV_DELAY=true tsx watch src/server.ts",
