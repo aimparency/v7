@@ -26,3 +26,6 @@ cache.db
 .DS_Store
 
 **/package-lock.json
+
+subdev/*
+!subdev/README.md

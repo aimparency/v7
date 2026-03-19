@@ -2,7 +2,16 @@
   "id": "439230f6-4347-4abc-a23b-2f67e58739bd",
   "text": "Make the backend test script run the full backend test suite",
   "description": "`npm run test -w backend` currently reports green while only executing a subset of backend tests. Fix the backend test command or test discovery so the advertised package-level test script actually covers the intended backend test files.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1773918947397,
+      "context": "Make the backend package test command actually run the full backend suite instead of a shell-glob-dependent subset.",
+      "outcome": "Replaced the fragile glob-based test script with explicit test-file discovery, then ran the suite sequentially to avoid shared filesystem races. npm run test -w backend now executes all 26 backend tests and passes.",
+      "effectiveness": "The approach worked well because it immediately exposed the hidden server.test issue and made the package script honest and reproducible.",
+      "lesson": "When a package script claims to run a full suite, verify the discovered file set directly and prefer explicit discovery over shell-dependent globs.",
+      "pattern": "Test runners that rely on recursive shell globs often look green while silently skipping files."
+    }
+  ],
   "archived": false,
   "tags": [
     "testing",
@@ -17,9 +26,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "Discovered during embedder-replacement verification. This is a release-quality and repo-hygiene issue because a green backend test run is currently weaker than it looks.",
-    "date": 1773917308516
+    "state": "done",
+    "comment": "Fixed. The backend package test script now discovers all backend test files explicitly and runs them sequentially, so npm run test -w backend executes the full suite and passes (26 tests).",
+    "date": 1773918929738
   },
   "intrinsicValue": 0,
   "cost": 1,

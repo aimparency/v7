@@ -426,7 +426,7 @@ ${context}
 
 Actions available:
 - send-prompt: Send text to Codex. Add "instruct": true ONLY if Codex has reached completion and explicitly needs direction.
-- select-option: Choose a numbered option (use when Codex presents choices)
+- select-option: Choose a numbered option or a shortcut key shown in the prompt (use when Codex presents choices)
 - interrupt: Send two ESC key presses to interrupt a stuck worker generation
 - wrap-up: Tell Codex to make a git commit for completed work before compacting; this plans a compact for the next checkpoint
 - compact: Run /compact to free up context
@@ -437,6 +437,8 @@ IMPORTANT:
 - IMPORTANT: Use wrap-up whenever Codex completes a significant chunk of work or is about to start looking for new work. This keeps context fresh and improves performance.
 - Treat wrap-up as the normal path to compacting. Use compact directly only after a wrap-up is already in progress and the commit is finished.
 - ${wrapUpGuidance}
+- If Codex is blocked on a visible confirmation/approval menu, prefer select-option immediately over sending another prompt.
+- For approval menus that show shortcut keys like (y), (a), or (esc), use select-option with the shortcut key instead of the numeric list position.
 - Use "instruct": true ONLY when:
   1. Codex explicitly asks "what should I do next?" or similar
   2. Codex has clearly completed all current work and is idle
@@ -452,6 +454,7 @@ Return a JSON object with your decision. Examples:
 {"action": {"type": "send-prompt", "text": "run the tests"}}  ← Prefer this for simple nudges
 {"action": {"type": "send-prompt", "text": "continue working"}}
 {"action": {"type": "select-option", "number": 1}}
+{"action": {"type": "select-option", "key": "y"}}
 {"action": {"type": "interrupt"}}
 {"action": {"type": "wrap-up"}}
 {"action": {"type": "compact"}}
@@ -676,9 +679,25 @@ ${this.currentPromptMarker}`;
     } else if (action.type === 'enter') {
         this.worker.write('\r');
     } else if (action.type === 'select-option') {
-        this.log(`Selecting option: ${action.number}`);
+        const rawSelection = action.key ?? action.text ?? action.number;
+        const selection =
+          typeof rawSelection === 'number' ? String(rawSelection) :
+          typeof rawSelection === 'string' ? rawSelection :
+          '';
+
+        if (!selection) {
+          this.log('select-option action missing number/key/text; skipping.');
+          this.nextCheckTime = Date.now() + POST_ACTION_COOLDOWN;
+          return;
+        }
+
+        this.log(`Selecting option: ${selection}`);
         await this.wait(70);
-        this.worker.write(String(action.number));
+        if (/^(esc|escape)$/i.test(selection)) {
+          this.worker.write('\x1b');
+        } else {
+          this.worker.write(selection);
+        }
         await this.wait(70);
     } else if (action.type === 'interrupt') {
         this.log('Interrupting worker generation with double ESC.');

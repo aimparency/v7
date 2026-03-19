@@ -13,5 +13,6 @@ Important boundaries:
 - folders under `subdev/` may have their own dependencies, build outputs, nested git repos, or rough edges
 - they are not required for `npm install`, `npm run dev`, or `npm run start` for the main product
 - they should not be treated as the public project surface for the first open source release
+- the root repository intentionally ignores nested `subdev/*` contents so they do not pollute the main `git status`
 
 For directory-shape notes, see `subdev/structure.md`.

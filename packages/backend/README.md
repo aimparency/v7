@@ -40,6 +40,8 @@ npm run start
 npm run test
 ```
 
+The package test script uses explicit file discovery under `src/` and runs the suite sequentially, so it covers the full backend test set without depending on shell glob behavior or cross-test filesystem races.
+
 ## Boundaries
 
 - `backend` is the source of truth for filesystem persistence and project structure.

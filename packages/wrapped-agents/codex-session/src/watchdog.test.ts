@@ -214,6 +214,34 @@ test('executeAction interrupt sends double ESC to worker', async () => {
   assert.deepEqual(writes, ['\x1b', '\x1b']);
 });
 
+test('executeAction select-option supports shortcut keys', async () => {
+  const writes: string[] = [];
+  const service = createService('CURRENT_MARKER');
+  (service as any).worker = {
+    write: (chunk: string) => writes.push(chunk),
+  };
+  (service as any).watchdog = {};
+  (service as any).wait = async () => {};
+
+  await service.executeAction({ type: 'select-option', key: 'y' });
+
+  assert.deepEqual(writes, ['y']);
+});
+
+test('executeAction select-option maps esc shortcut to escape byte', async () => {
+  const writes: string[] = [];
+  const service = createService('CURRENT_MARKER');
+  (service as any).worker = {
+    write: (chunk: string) => writes.push(chunk),
+  };
+  (service as any).watchdog = {};
+  (service as any).wait = async () => {};
+
+  await service.executeAction({ type: 'select-option', key: 'esc' });
+
+  assert.deepEqual(writes, ['\x1b']);
+});
+
 test('executeAction wrap-up posts commit prompt and plans compact', async () => {
   const posts: string[] = [];
   const service = createService('CURRENT_MARKER');
@@ -286,4 +314,6 @@ test('askWatchdog includes wrap-up-plan guidance when compact is planned', async
   assert.match(prompt, /WRAP-UP PLAN ACTIVE/);
   assert.match(prompt, /answer with \{"action": \{"type": "compact"\}\}/);
   assert.match(prompt, /Do NOT start new feature work while wrap-up is active/);
+  assert.match(prompt, /shortcut keys like \(y\), \(a\), or \(esc\)/);
+  assert.match(prompt, /"type": "select-option", "key": "y"/);
 });
