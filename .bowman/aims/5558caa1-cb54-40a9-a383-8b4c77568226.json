@@ -1,0 +1,33 @@
+{
+  "id": "5558caa1-cb54-40a9-a383-8b4c77568226",
+  "text": "Persist watchdog connection and animator state across frontend reloads",
+  "description": "If a watchdog session was connected and the animator/watchdog was enabled, a frontend hot reload or full page reload should reconnect to the running session automatically, restore terminal buffers, and show the correct enabled/emergency state without stopping the background animator loop.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "watchdog",
+    "reconnect",
+    "ux",
+    "session"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5bd5869e-9cfb-4760-8fdc-a6a941d9648e",
+    "69321b93-d540-45a9-9a25-8f2d5254d43c",
+    "133934ba-f325-4b92-b57c-517bb1ea497f"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Implemented frontend auto-resume for previously connected watchdog sessions, restored session-owned animator state on reconnect, and added Claude terminal hydration to match Codex/Gemini. Frontend type-check/build and session builds pass, but end-to-end browser reload verification still needs a normal local machine because the sandbox cannot run the live stack.",
+    "date": 1773906609271
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

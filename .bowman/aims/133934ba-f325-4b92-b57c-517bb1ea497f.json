@@ -1,6 +1,8 @@
 {
   "id": "133934ba-f325-4b92-b57c-517bb1ea497f",
   "text": "Develop Aligned Autonomous Will",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "vision",
     "core"
@@ -53,6 +55,14 @@
         0.4167155523739209
       ],
       "weight": 1
+    },
+    {
+      "aimId": "5558caa1-cb54-40a9-a383-8b4c77568226",
+      "relativePosition": [
+        -2.4768244220767723,
+        -0.33961858341978896
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -66,5 +76,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

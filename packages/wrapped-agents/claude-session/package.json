@@ -1,6 +1,7 @@
 {
   "name": "wrapped-agents-claude-session",
   "version": "1.0.0",
+  "private": true,
   "description": "Claude Code CLI wrapper with watchdog supervision",
   "main": "dist/index.js",
   "scripts": {
@@ -10,9 +11,22 @@
     "start": "npm run build && npm run start:server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "aimparency",
+    "claude",
+    "watchdog"
+  ],
+  "author": "Aimparency contributors",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aimparency/v7.git",
+    "directory": "packages/wrapped-agents/claude-session"
+  },
+  "bugs": {
+    "url": "https://github.com/aimparency/v7/issues"
+  },
+  "homepage": "https://github.com/aimparency/v7/tree/main/packages/wrapped-agents/claude-session",
   "dependencies": {
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.0.1",

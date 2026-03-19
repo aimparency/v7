@@ -2,7 +2,16 @@
   "id": "6d526858-8f15-42b1-865e-1c7de5ef3ed9",
   "text": "Document .bowman data layout and git interaction clearly",
   "description": "Explain what Aimparency writes into `.bowman`, which files are generated vs user-authored, what belongs in `.gitignore`, and how this fits normal git workflows. This should be understandable from docs and reinforced in the UI where relevant.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1773908233598,
+      "context": "Document Aimparency's .bowman data layout and git interaction clearly for first-time open source users.",
+      "outcome": "Added a dedicated Git Workflow section to the root README that explains which .bowman files are normally committed, which are generated cache/search artifacts, and that agent-instruction injection can also modify repo-root config files.",
+      "effectiveness": "Checking the backend implementation before writing docs exposed the important exception around injected root-level agent files, which made the final guidance more accurate.",
+      "lesson": "For local-first tools, the git story should be written from the filesystem behavior upward rather than from the idealized architecture.",
+      "pattern": "This follows the same pattern as earlier release-doc work: read the runtime first, then document the exact user-visible consequences."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -19,9 +28,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Critical for trust when the app writes into local repos.",
-    "date": 1773878568986
+    "state": "done",
+    "comment": "Expanded the root README with an explicit git workflow section covering what .bowman files are user-authored vs generated, what should stay ignored, and how multiple local projects stay separate.",
+    "date": 1773908233582
   },
   "intrinsicValue": 0,
   "cost": 1,

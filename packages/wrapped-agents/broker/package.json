@@ -1,6 +1,7 @@
 {
   "name": "wrapped-agents-broker",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "description": "Broker for managing AI agent sessions (Claude, Gemini, Codex)",
   "main": "dist/index.js",
@@ -11,6 +12,22 @@
     "stop-sessions": "tsx src/scripts/stop-sessions.ts",
     "list-sessions": "tsx src/scripts/list-sessions.ts"
   },
+  "keywords": [
+    "aimparency",
+    "broker",
+    "agents"
+  ],
+  "author": "Aimparency contributors",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aimparency/v7.git",
+    "directory": "packages/wrapped-agents/broker"
+  },
+  "bugs": {
+    "url": "https://github.com/aimparency/v7/issues"
+  },
+  "homepage": "https://github.com/aimparency/v7/tree/main/packages/wrapped-agents/broker#readme",
   "dependencies": {
     "@trpc/server": "^11.7.2",
     "@types/express": "^5.0.6",

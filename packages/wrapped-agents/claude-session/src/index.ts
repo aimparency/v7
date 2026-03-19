@@ -173,6 +173,8 @@ io.on('connection', (socket) => {
   console.log('WebUI Client connected');
   socket.emit('watchdog-state', watchdogService.enabled);
   socket.emit('emergency-state', watchdogService.emergencyStopped);
+  socket.emit('worker-data', worker.getLines(1000));
+  socket.emit('watchdog-data', watchdog.getLines(1000));
 
   socket.on('toggle-watchdog', (enabled: boolean) => {
     watchdogService.setEnabled(enabled);

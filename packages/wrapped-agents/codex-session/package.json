@@ -1,6 +1,7 @@
 {
   "name": "wrapped-agents-codex-session",
   "version": "1.0.0",
+  "private": true,
   "description": "Codex CLI wrapper with watchdog supervision",
   "main": "dist/index.js",
   "scripts": {
@@ -10,9 +11,22 @@
     "start": "npm run build && npm run start:server",
     "test": "npm run build && node --test dist/**/*.test.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "aimparency",
+    "codex",
+    "watchdog"
+  ],
+  "author": "Aimparency contributors",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aimparency/v7.git",
+    "directory": "packages/wrapped-agents/codex-session"
+  },
+  "bugs": {
+    "url": "https://github.com/aimparency/v7/issues"
+  },
+  "homepage": "https://github.com/aimparency/v7/tree/main/packages/wrapped-agents/codex-session",
   "dependencies": {
     "@types/node": "^25.0.1",
     "@xterm/headless": "^5.5.0",

@@ -1,6 +1,7 @@
 {
   "name": "mcp",
   "version": "1.0.0",
+  "private": true,
   "description": "MCP server for Aimparency - allows LLMs to interact with aims and phases",
   "type": "module",
   "bin": {
@@ -22,8 +23,17 @@
     "goals",
     "aims"
   ],
-  "author": "",
+  "author": "Aimparency contributors",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aimparency/v7.git",
+    "directory": "packages/mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/aimparency/v7/issues"
+  },
+  "homepage": "https://github.com/aimparency/v7/tree/main/packages/mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.24.3",
     "@trpc/client": "^11.5.1",

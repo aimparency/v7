@@ -2,7 +2,16 @@
   "id": "410344ec-1245-4636-991c-ec3b27760b03",
   "text": "Fence experiments and side projects off from the main onboarding path",
   "description": "Make sure `subdev/` and other non-core experiments do not confuse first-time users. This can mean docs clarifications, repo structure notes, or other lightweight measures that keep the release story centered on the main product.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1773908161692,
+      "context": "Reduce first-time-user confusion by fencing experiments and side projects away from the main Aimparency onboarding path.",
+      "outcome": "Added subdev/README.md and updated the root README so subdev is explicitly framed as exploratory material rather than part of the main product surface.",
+      "effectiveness": "A lightweight docs boundary was enough for this pass because the main issue was discoverability and framing, not code behavior.",
+      "lesson": "For open source release prep, boundary-setting docs often solve confusion faster than restructuring directories.",
+      "pattern": "Similar to package README cleanup, small documentation changes can materially improve repo legibility without risky code changes."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -17,9 +26,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "The public repo should not read like an accidental dump of side projects.",
-    "date": 1773878569097
+    "state": "done",
+    "comment": "Added subdev/README.md and tightened root docs so experiments and side projects are explicitly outside the main Aimparency onboarding path.",
+    "date": 1773908150209
   },
   "intrinsicValue": 0,
   "cost": 1,

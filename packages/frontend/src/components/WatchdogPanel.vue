@@ -147,10 +147,16 @@ watch(() => modalStore.showAimSearch, (isOpen, wasOpen) => {
 })
 
 onMounted(() => {
-  store.fetchSessions()
-  // No auto-connect - user must explicitly connect
+  void store.fetchSessions().then(() => store.restorePreviousConnection())
   window.addEventListener('keydown', handleKeyDown, true) // Capture phase
 })
+
+watch(
+  [() => projectStore.projectPath, () => store.currentProjectSession?.port ?? null],
+  () => {
+    void store.restorePreviousConnection()
+  }
+)
 
 onUnmounted(() => {
   if (store.socket) {

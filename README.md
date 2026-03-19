@@ -2,7 +2,15 @@
 
 Aimparency is a local-first planning and coordination tool for work that lives next to real repositories.
 
-It runs as a browser app on your machine and stores project state in a `.bowman` directory inside the repo or workspace you point it at. It can also start local agent sessions on demand through the broker. 
+It runs as a browser app on your machine and stores project state in a `.bowman` directory inside the repo or workspace you point it at. It can also start local agent sessions on demand through the broker.
+
+The intended open source workflow is simple:
+
+1. clone this repository
+2. run `npm install`
+3. run `npm run dev` while developing on Aimparency itself
+4. run `npm run start` for lower-overhead local usage
+5. open a nearby repo or workspace in the UI and let Aimparency use its `.bowman` directory
 
 ## What This Repo Contains
 
@@ -24,7 +32,9 @@ Optional, depending on how you use the project:
 - Gemini tooling for Gemini-backed sessions
 - Codex tooling for Codex-backed sessions
 
-## Install
+The core app should still start without those optional agent CLIs installed. They are only needed when you want to launch the corresponding local session type.
+
+## Quickstart
 
 ```bash
 npm install
@@ -38,33 +48,102 @@ cp .env.example .env
 
 The defaults are fine for most local runs.
 
-## Run
-
-Development mode with watch processes:
+Start the full development stack with watch mode:
 
 ```bash
 npm run dev
 ```
 
-Build-mode local run with lower overhead:
+Start the lighter build-mode local stack:
 
 ```bash
 npm run start
 ```
 
-If you already built everything and want to skip rebuilding:
+If you already built everything and want to skip rebuilding first:
 
 ```bash
 npm run start:fast
 ```
 
-By default the user-facing UI runs on `http://localhost:4000`. Backend, broker, and agent-session ports stay in the background.
+The main visible URL is the frontend, usually `http://localhost:4000`. Backend, broker, and session ports stay in the background and are not the main user-facing interface.
 
-## How Aimparency Stores Data
+## Local Workflow
+
+Aimparency is meant to be pointed at a local repo or workspace. In the UI, enter the project base folder path, not the `.bowman` path itself.
+
+Example:
+
+- repo root: `/home/user/my-repo`
+- Aimparency data directory inside it: `/home/user/my-repo/.bowman`
+
+The backend normalizes the path and will create `.bowman` if needed. That directory becomes the local storage root for aims, phases, metadata, and generated search artifacts.
+
+This makes the project git-friendly:
+
+- Aimparency state lives next to the code it describes
+- the checked-in shape is plain files
+- generated vector/cache artifacts are ignored inside `.bowman/.gitignore`
+
+## `.bowman` Layout
 
 Aimparency writes its project data into a `.bowman` directory in the target repo or workspace. That includes aims, phases, caches, and vector/search data.
 
-The backend also maintains `.bowman/.gitignore` entries for generated files such as vector and cache artifacts.
+Typical structure:
+
+```text
+my-project/
+  .bowman/
+    aims/
+    archived-aims/
+    phases/
+    meta.json
+    .gitignore
+    vectors.json
+    cache.db
+    semantic-graph.json
+```
+
+What each part is for:
+
+- `aims/`: active aims stored as JSON files
+- `archived-aims/`: archived aims stored as JSON files
+- `phases/`: phase definitions stored as JSON files
+- `meta.json`: project name, color, and available statuses
+- `.gitignore`: generated `.bowman` artifacts that should not be committed
+- `vectors.json`, `cache.db`, `semantic-graph.json`: generated search/cache data
+
+The backend maintains `.bowman/.gitignore` entries for generated artifacts automatically.
+
+## Git Workflow
+
+Aimparency is designed so the important project state can live next to the code it describes.
+
+In normal use, these files are user-authored project state and are reasonable to commit:
+
+- `.bowman/aims/*.json`
+- `.bowman/archived-aims/*.json`
+- `.bowman/phases/*.json`
+- `.bowman/meta.json`
+- `.bowman/.gitignore`
+
+These files are generated runtime/search artifacts and should usually stay uncommitted:
+
+- `.bowman/vectors.json`
+- `.bowman/cache.db`
+- `.bowman/semantic-graph.json`
+
+The backend keeps those generated artifacts listed in `.bowman/.gitignore` automatically.
+
+One exception to the “everything stays in `.bowman`” rule is agent-instruction injection. If you trigger that feature, Aimparency may also update repo-root agent config files such as:
+
+- `CLAUDE.md`
+- `.gemini/GEMINI.md`
+- `.cursorrules`
+
+Those files are normal repository files, not generated cache output. Review and commit them intentionally if you want the injected instructions to travel with the repo.
+
+If you use one Aimparency instance with multiple repos or workspaces, each target gets its own separate `.bowman` directory. Aimparency does not merge those project states together on disk.
 
 ## Current Release Direction
 
@@ -79,10 +158,13 @@ This repo is not currently optimized for global install or hosted deployment. Op
 
 ## Optional Integrations
 
-- MCP: see `packages/mcp/README.md`
-- Frontend package notes: see `packages/frontend/README.md`
+- MCP: `packages/mcp/README.md`
+- Frontend package notes: `packages/frontend/README.md`
+- Backend package notes: `packages/backend/README.md`
+- Broker package notes: `packages/wrapped-agents/broker/README.md`
 
 ## Repository Notes
 
-- `subdev/` contains related experiments and side projects; it is not part of the main onboarding path.
+- `subdev/` contains related experiments and side projects; it is not part of the main onboarding path. See `subdev/README.md`.
 - `packages/wrapped-agents/client` is a dev-only broker inspector, not the main product UI.
+- `packages/embedder` still exists in the repo, but removing the Python embedder from the default path remains an active cleanup target.

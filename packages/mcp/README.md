@@ -1,6 +1,12 @@
 # Aimparency MCP Server
 
-Model Context Protocol (MCP) server for Aimparency - allows LLMs to interact with aims and phases through standardized protocol.
+Model Context Protocol (MCP) server for Aimparency. It lets external LLM tooling interact with aims, phases, project metadata, and reflections through the local Aimparency backend.
+
+This package is an optional integration. The main open source product story is still:
+
+1. run Aimparency locally
+2. open a local repo or workspace in the browser UI
+3. optionally connect an MCP client to that same local backend
 
 ## Architecture
 
@@ -18,15 +24,23 @@ This architecture allows:
 
 ## Prerequisites
 
-1. **Backend must be running** on `ws://localhost:3001`
-2. Node.js 16+ installed
-3. Built MCP package (`npm run build` from this directory)
+1. Aimparency backend running locally
+2. Node.js 20+ installed
+3. Built MCP package: `npm run build -w mcp`
+
+By default the MCP server connects to the local backend on `ws://localhost:3001`. If you run Aimparency on different ports, set the relevant environment variables before launching the MCP server.
 
 ## Installation
 
 ### For Claude Code
 
-Add this MCP server to your Claude Code configuration at `~/.claude/CLAUDE.md` or your project's `CLAUDE.md`:
+Build the package first:
+
+```bash
+npm run build -w mcp
+```
+
+Then add this MCP server to your Claude Code configuration:
 
 ```json
 {
@@ -41,11 +55,14 @@ Add this MCP server to your Claude Code configuration at `~/.claude/CLAUDE.md` o
 }
 ```
 
-**Note:** Use absolute paths, not relative paths!
+Use an absolute path, not a relative one.
 
 ### For Claude for Desktop
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+Add the same command entry to your Claude Desktop configuration:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\\Claude\\claude_desktop_config.json`
 
 ```json
 {
@@ -61,6 +78,15 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 ```
 
 Restart Claude after updating the configuration.
+
+## Choosing `projectPath`
+
+Aimparency stores project state inside a `.bowman` directory, but MCP calls can usually use either of these absolute paths:
+
+- the repo or workspace root, for example `/home/user/my-project`
+- the explicit Aimparency directory, for example `/home/user/my-project/.bowman`
+
+The backend normalizes repo-root paths to the matching `.bowman` directory.
 
 ## Usage
 
@@ -191,30 +217,34 @@ The MCP server is designed to support LLMs working indefinitely on goals:
 ### Building
 
 ```bash
-npm run build
+npm run build -w mcp
 ```
 
-This compiles TypeScript and makes the output executable.
+This compiles TypeScript into `packages/mcp/build` and makes the entrypoint executable.
 
 ### Development Mode
 
 ```bash
-npm run dev
+npm run dev -w mcp
 ```
 
 Watches for changes and rebuilds automatically.
 
 ### Testing
 
-1. Start the backend server:
+1. Start Aimparency locally, usually from the repo root:
    ```bash
-   cd packages/backend
    npm run dev
    ```
 
-2. In another terminal, configure and restart your MCP client (Claude Code or Claude for Desktop)
+2. In another terminal, build the MCP package if needed:
+   ```bash
+   npm run build -w mcp
+   ```
 
-3. Try commands like:
+3. Configure and restart your MCP client (Claude Code or Claude for Desktop)
+
+4. Try commands like:
    - "List all aims in /path/to/my-project"
    - "Create a new aim for implementing authentication"
    - "Break down aim <uuid> into sub-aims"
@@ -224,15 +254,15 @@ Watches for changes and rebuilds automatically.
 ### MCP server not showing up
 
 1. Check that the path in config is absolute and correct
-2. Verify the build folder exists: `ls packages/mcp/build/index.js`
-3. Make sure `index.js` is executable: `chmod +x packages/mcp/build/index.js`
+2. Verify the build output exists: `ls packages/mcp/build/index.js`
+3. Rebuild the package: `npm run build -w mcp`
 4. Restart your MCP client completely
 
 ### Tool calls failing
 
-1. **Check backend is running:** `curl http://localhost:3001` or check for WebSocket connection
+1. **Check backend is running:** `npm run dev` or `npm run start` from the repo root
 2. **Check logs:** Backend logs will show tRPC errors
-3. **Verify projectPath:** Must be absolute path to valid Aimparency project
+3. **Verify projectPath:** Must be an absolute path to a repo/workspace root or its `.bowman` directory
 4. **Verify UUIDs:** All aim/phase IDs must exist
 
 ### Resource reads failing
@@ -252,8 +282,9 @@ aim://some-uuid?projectPath=/absolute/path/to/project
 ### Connection errors
 
 Error: `Failed to connect to backend`
-- Backend not running on `ws://localhost:3001`
-- Start backend: `cd packages/backend && npm run dev`
+- Backend not running on the expected local websocket port
+- Start Aimparency locally: `npm run dev` or `npm run start`
+- If you changed backend ports, launch the MCP server with matching environment variables
 
 ## Future Enhancements
 

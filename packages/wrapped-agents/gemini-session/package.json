@@ -1,7 +1,8 @@
 {
   "name": "wrapped-agents-gemini-session",
   "version": "1.0.0",
-  "description": "",
+  "private": true,
+  "description": "Gemini CLI wrapper with watchdog supervision and bundled web UI.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -12,9 +13,22 @@
     "dev": "npm run build && concurrently \"npm run start:server\" \"cd webui && npm run dev -- --force\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "aimparency",
+    "gemini",
+    "watchdog"
+  ],
+  "author": "Aimparency contributors",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aimparency/v7.git",
+    "directory": "packages/wrapped-agents/gemini-session"
+  },
+  "bugs": {
+    "url": "https://github.com/aimparency/v7/issues"
+  },
+  "homepage": "https://github.com/aimparency/v7/tree/main/packages/wrapped-agents/gemini-session",
   "dependencies": {
     "@types/node": "^25.0.1",
     "@xterm/headless": "^5.5.0",

@@ -43,19 +43,19 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     lastKeepalive: number
   }
   const sessions = ref<WatchdogSession[]>([])
+  const normalizeProjectPathForSession = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
+  const shouldRestoreConnection = () => localStorage.getItem('aimparency-watchdog-should-connect') === 'true'
 
   // Get session for currently selected agent type and project
   const currentProjectSession = computed(() => {
     const projectStore = useProjectStore()
     if (!projectStore.projectPath) return null
-    // Normalize: strip trailing slashes, then .bowman
-    const normalize = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
     
-    const normalizedUiPath = normalize(projectStore.projectPath)
+    const normalizedUiPath = normalizeProjectPathForSession(projectStore.projectPath)
     
     return sessions.value.find(
       s => {
-        const normalizedSessionPath = normalize(s.projectPath)
+        const normalizedSessionPath = normalizeProjectPathForSession(s.projectPath)
         return normalizedSessionPath === normalizedUiPath && s.agentType === selectedAgentType.value
       }
     ) || null
@@ -119,6 +119,43 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
+  function findSession(projectPath: string, agentType: AgentType): WatchdogSession | null {
+    const normalizedProjectPath = normalizeProjectPathForSession(projectPath)
+
+    return sessions.value.find((session) =>
+      normalizeProjectPathForSession(session.projectPath) === normalizedProjectPath &&
+      session.agentType === agentType
+    ) || null
+  }
+
+  function connectToSocket(port: number, projectPath: string, agentType: AgentType) {
+    logStatus(`Starting keepalive and connecting to port ${port}...`)
+    startKeepalive(projectPath, agentType)
+
+    connectionState.value = 'connecting'
+    connectedAgentType.value = agentType
+    socket.value = io(buildHttpUrl(port), {
+      transports: ['websocket'],
+      autoConnect: true,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      timeout: 5000
+    })
+
+    setupSocketListeners()
+  }
+
+  async function connectToExistingSession(session: WatchdogSession, reason: string) {
+    if (socket.value || connectionState.value === 'spawning' || connectionState.value === 'connecting') return false
+
+    logStatus(`${reason} ${session.agentType} session on port ${session.port}...`)
+    workerOutput.value = ''
+    watchdogOutput.value = ''
+    connectToSocket(session.port, session.projectPath, session.agentType)
+    return true
+  }
+
   async function connect(overridePath?: string, overrideAgentType?: AgentType) {
     if (socket.value || connectionState.value === 'spawning' || connectionState.value === 'connecting') return
 
@@ -128,6 +165,12 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     if (!targetPath) {
         logStatus('Cannot connect: No project path selected.')
+        return
+    }
+
+    const existingSession = findSession(targetPath, agentType)
+    if (existingSession) {
+        await connectToExistingSession(existingSession, 'Connecting to existing')
         return
     }
 
@@ -145,24 +188,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         // Update session list to reflect the new process
         await fetchSessions()
 
-        logStatus(`Process spawned. Starting keepalive and connecting to port ${port}...`)
-        startKeepalive(targetPath, agentType)
-
-        connectionState.value = 'connecting'
-        connectedAgentType.value = agentType
-        const watchdogUrl = buildHttpUrl(port)
-
-        // 2. Connect with automatic reconnection
-        socket.value = io(watchdogUrl, {
-          transports: ['websocket'],
-          autoConnect: true,
-          reconnection: true,
-          reconnectionAttempts: 10,
-          reconnectionDelay: 1000,
-          timeout: 5000
-        })
-
-        setupSocketListeners()
+        logStatus(`Process spawned.`)
+        connectToSocket(port, targetPath, agentType)
     } catch (e: any) {
         logStatus(`Spawn/Connect failed: ${e.message}`)
         connectionState.value = 'error'
@@ -222,6 +249,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       logStatus(`Session stopped.`)
       connectionState.value = 'idle'
       connectedAgentType.value = null
+      localStorage.setItem('aimparency-watchdog-should-connect', 'false')
       // Refresh session list
       await fetchSessions()
     } catch (e: any) {
@@ -257,27 +285,23 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         // Update session list
         await fetchSessions()
 
-        logStatus(`Relaunched. Connecting to port ${port}...`)
-        startKeepalive(projectStore.projectPath, agentType)
-
-        connectionState.value = 'connecting'
-        connectedAgentType.value = agentType
-        const watchdogUrl = `http://localhost:${port}`
-        socket.value = io(watchdogUrl, {
-          transports: ['websocket'],
-          autoConnect: true,
-          reconnection: true,
-          reconnectionAttempts: 10,
-          reconnectionDelay: 1000
-        })
-
-        setupSocketListeners()
+        logStatus('Relaunched.')
+        connectToSocket(port, projectStore.projectPath, agentType)
 
     } catch (e: any) {
         logStatus(`Relaunch failed: ${e.message}`)
         connectionState.value = 'error'
         connectedAgentType.value = null
     }
+  }
+
+  async function restorePreviousConnection() {
+    if (!shouldRestoreConnection()) return false
+
+    const session = currentProjectSession.value
+    if (!session) return false
+
+    return connectToExistingSession(session, 'Restoring previous')
   }
 
   function triggerWorkerFocus() {
@@ -389,6 +413,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     sendWorkerInput,
     sendWatchdogInput,
     relaunch,
-    triggerWorkerFocus
+    triggerWorkerFocus,
+    restorePreviousConnection
   }
 })

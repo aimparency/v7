@@ -2,12 +2,29 @@
   "name": "wrapped-agents-client",
   "private": true,
   "version": "0.0.0",
+  "description": "Development inspector UI for wrapped agent broker sessions.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
+  "keywords": [
+    "aimparency",
+    "agents",
+    "devtools"
+  ],
+  "author": "Aimparency contributors",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aimparency/v7.git",
+    "directory": "packages/wrapped-agents/client"
+  },
+  "bugs": {
+    "url": "https://github.com/aimparency/v7/issues"
+  },
+  "homepage": "https://github.com/aimparency/v7/tree/main/packages/wrapped-agents/client#readme",
   "dependencies": {
     "@trpc/client": "^10.0.0",
     "@xterm/addon-fit": "^0.10.0",

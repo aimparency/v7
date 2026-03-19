@@ -2,264 +2,120 @@
 
 ## Release Goal
 
-Make Aimparency publishable as a local-first open source project:
+Publish Aimparency as a local-first open source project:
 
 - users clone the repository
-- users install dependencies once
-- users run `npm run dev` while developing
-- users run `npm run start` for a lighter build-mode local run
-- users typically point Aimparency at nearby git repositories
-- hosting is not the primary story
+- users run `npm install`
+- users use `npm run dev` while developing on Aimparency itself
+- users use `npm run start` for a lighter local run
+- users point Aimparency at nearby repos or workspaces
+- Aimparency stores state in a `.bowman` directory next to the code it describes
 
-This is not a hosted SaaS rollout plan. It is a repository, docs, and local runtime cleanup plan.
+This is not a hosted SaaS launch plan. It is a repository readiness and local runtime checklist.
 
 ## Product Shape
 
-Aimparency should be framed as:
+Aimparency should be presented as:
 
 - a browser UI running on the user's machine
-- a local backend that reads and writes project state inside `.bowman`
+- a local backend that owns `.bowman` persistence
 - a local broker that starts agent sessions on demand
-- optional MCP integration for Claude/Cursor-style tooling
+- optional MCP integration for external agent tooling
 - optional voice features
 
-That makes the product closer to Jupyter or Home Assistant than to a multi-tenant web app.
-
-## Current Runtime Model
-
-### Development
-
-`npm run dev` currently starts a broad development stack:
-
-- backend in watch mode
-- frontend Vite dev server
-- broker in watch mode
-- session package watchers
-- Python embedder
-- MCP dev process
-- voice bridge
-- dev-only broker client inspector
-
-This is useful for active development, but it is too heavy to present as the primary open source usage story.
-
-### Local Build Mode
-
-For normal local use, the project should converge on:
-
-- frontend on its own user-facing port
-- backend on a background port
-- broker on background ports
-- sessions spawned dynamically on background ports
-- optional services started only when needed
-
-The user should mainly care about the frontend URL. The rest are implementation details.
+That makes the product closer to Jupyter or Home Assistant than to a multi-tenant web service.
 
 ## Architecture Decisions
 
-### 1. Keep browser-based UI
+These decisions are intentionally in scope for the first public release:
 
-Do not move toward Electron right now.
+- keep the browser-based UI
+- keep broker-managed session spawning
+- keep MCP optional rather than required
+- keep voice optional rather than required
+- move toward inlining embeddings into the Node backend and away from the Python embedder
 
-Reasons:
+These are intentionally out of scope for this release pass:
 
-- the browser UI already exists
-- local browser access is good enough for the intended workflow
-- Electron would increase packaging and maintenance work before the core open source release is ready
-
-### 2. Keep broker-managed session spawning
-
-This already matches the intended usage:
-
-- sessions are started on demand
-- different agent types can stay independent
-- idle users do not pay the memory cost of all sessions up front
-
-The dev session watchers are a development convenience, not the release model.
-
-### 3. Inline the embedder into the Node backend
-
-Removing the Python embedder remains a strong simplification target.
-
-Benefits:
-
-- one less runtime dependency
-- simpler onboarding
-- less process overhead
-- easier documentation
-- fewer failure modes on first run
-
-The target is one Node-based setup story, with Python no longer required.
-
-### 4. Keep MCP as optional integration
-
-MCP should not be part of the minimum "I cloned it and it works locally" story.
-
-Instead:
-
-- core app works without MCP
-- MCP gets a dedicated setup section in docs
-- MCP setup assumes backend is already running locally
-
-## Ports and Startup Model
-
-### User-facing expectation
-
-The main visible endpoint is the frontend, for example:
-
-- frontend: `http://localhost:4000`
-
-Background services may use ports such as:
-
-- backend HTTP
-- backend WS
-- broker HTTP
-- broker WS
-- dynamically assigned session ports
-
-### Important requirement
-
-The release plan should not assume fixed ports always remain free.
-
-We should support:
-
-- default ports for convenience
-- dynamic fallback when a preferred port is already occupied
-- clear startup logs that show the actual chosen ports
-- frontend configuration that can connect to the chosen backend and broker ports
-
-This is especially important for local use, where developers often already have tools running on common ports.
-
-## Open Source Release Priorities
-
-### Priority 1: Repo hygiene
-
-Before publishing widely:
-
-- remove placeholder documentation
-- make ignore rules sane for generated artifacts and local-only files
-- avoid committing local runtime junk
-- make sure the repository surface looks intentional
-
-### Priority 2: Root onboarding docs
-
-Add a strong root `README.md` that answers:
-
-- what Aimparency is
-- who it is for
-- what gets written to `.bowman`
-- minimum prerequisites
-- how to install
-- how to run in dev mode
-- how to run in build mode
-- which parts are optional
-
-### Priority 3: Build-mode local startup
-
-Support:
-
-- `npm run dev` for development
-- `npm run start` for lighter local runtime
-
-`npm run start` can build automatically before launching, at least initially.
-
-That is acceptable for the first open source release. Smarter incremental behavior can come later.
-
-### Priority 4: Runtime simplification
-
-Reduce required moving parts:
-
-- inline embedder into backend
-- keep voice optional
-- keep MCP optional
-- keep dev-only tools out of the default user path
-
-### Priority 5: Package-level docs
-
-At minimum:
-
-- root README
-- frontend README that explains its role in the app
-- MCP README kept accurate
-- dev-only packages marked as dev-only
-
-## Revised Implementation Plan
-
-### Phase 1: Documentation and repo hygiene
-
-Goal: make the repository look publishable and understandable.
-
-Tasks:
-
-1. Add a real root `README.md`
-2. Replace placeholder package READMEs
-3. Tighten `.gitignore`
-4. Document optional dependencies and local data layout
-5. Clarify which packages are user-facing versus internal/dev-only
-
-### Phase 2: Build-mode startup
-
-Goal: support normal local usage without watch mode.
-
-Tasks:
-
-1. Add root `npm run start`
-2. Run frontend in preview/build mode
-3. Run backend and broker from built output
-4. Keep optional services out of the default startup path
-5. Print the frontend URL clearly
-
-### Phase 3: Port management cleanup
-
-Goal: make local startup robust.
-
-Tasks:
-
-1. Detect preferred-port conflicts
-2. Fall back to free ports when needed
-3. Expose resolved ports to the frontend
-4. Avoid hardcoded localhost assumptions where same-origin or runtime config is better
-
-### Phase 4: Inline embedder
-
-Goal: eliminate the Python dependency from the default path.
-
-Tasks:
-
-1. add a Node embedding implementation in backend
-2. preserve embedding compatibility well enough for existing vector workflows
-3. remove Python embedder from default dev/start flows
-4. update docs accordingly
-
-### Phase 5: Optional integrations cleanup
-
-Goal: keep the core app simple and optional features explicit.
-
-Tasks:
-
-1. document MCP setup separately
-2. document voice bridge separately
-3. mark broker client as dev-only
-4. verify the default experience works without optional tools installed
-
-## Non-Goals for This Release Pass
-
-Do not optimize for these yet:
-
-- global install
-- `npx aimparency`
 - hosted multi-user deployment
+- global install or `npx aimparency`
 - Electron packaging
 - one-binary distribution
 
-Those may become useful later, but they should not drive the first open source release.
+## Publishability Checklist
+
+Use this as the release-prep definition of done.
+
+### 1. Root onboarding
+
+- [x] Root `README.md` explains what Aimparency is and who it is for
+- [x] Root `README.md` documents `npm install`, `npm run dev`, and `npm run start`
+- [x] Root `README.md` explains the local-first `.bowman` workflow
+- [x] Root `README.md` makes optional integrations secondary to the core local runtime
+- [ ] Root docs include a concise troubleshooting section for common local startup failures
+
+### 2. Local data model clarity
+
+- [x] Docs explain that users should point Aimparency at a repo or workspace root, not usually at `.bowman` directly
+- [x] Docs describe the `.bowman` layout and generated artifacts
+- [x] Docs clearly explain what should and should not be committed from `.bowman`
+- [x] Docs explain how multiple local projects/repos are expected to be used from one running Aimparency instance
+
+### 3. Repository surface and package docs
+
+- [x] Placeholder or template docs have been replaced in the main user-facing packages
+- [x] `packages/frontend/README.md` explains the frontend's role
+- [x] `packages/backend/README.md` explains backend ownership of `.bowman`
+- [x] `packages/wrapped-agents/broker/README.md` explains the broker's role
+- [x] `packages/mcp/README.md` reflects current local-first setup
+- [x] Public-facing package manifests and metadata have been audited for publishing readiness
+- [x] The repo has a clear `LICENSE` file and consistent repository metadata where appropriate
+
+### 4. Release-story boundaries
+
+- [x] The docs say clearly that hosting is not the primary story
+- [x] The docs say clearly that global install and `npx` are not release goals
+- [x] Dev-only broker tooling is identified as dev-only
+- [x] `subdev/` and other experiments are clearly fenced off from the main onboarding path
+- [ ] Experimental or archival directories outside `packages/` are either documented or deliberately de-emphasized
+
+### 5. Local startup behavior
+
+- [x] `npm run dev` is the documented development flow
+- [x] `npm run start` exists as the documented lighter local runtime flow
+- [x] Frontend runtime config no longer hardcodes browser-side `localhost` assumptions for backend and broker
+- [ ] Clean-clone startup has been verified on a normal machine for both `npm run dev` and `npm run start`
+- [ ] Startup logs clearly show the frontend URL and resolved background ports
+
+### 6. Port and runtime robustness
+
+- [ ] Preferred ports fall back cleanly when already occupied
+- [ ] Frontend consumes the resolved runtime config after fallback
+- [ ] A validation script or repeatable verification flow exists for launcher/runtime-config behavior
+- [ ] Build-mode local runtime works without hidden watch-mode assumptions
+
+### 7. Optional integrations and dependencies
+
+- [x] MCP is documented as optional
+- [x] Voice is documented as optional
+- [ ] Default install/run flow works without optional agent tooling or voice tooling installed
+- [ ] Python embedder is removed from the default local path or clearly marked as transitional
+
+## Current High-Leverage Work
+
+The remaining release blockers are mostly in four buckets:
+
+1. verify clean-clone startup on a normal machine
+2. finish port fallback and resolved-port reporting
+3. make the default install path tolerant of optional integrations being absent
+4. de-emphasize any remaining experimental surface outside the main product path
 
 ## Definition of Done
 
-The release prep is in good shape when:
+Release prep is in good shape when:
 
-1. a new user can clone the repo and understand it from the root README
-2. `npm install` works without extra scavenger hunting
-3. `npm run dev` works as the development story
-4. `npm run start` works as the lighter local runtime story
-5. optional integrations are clearly separated from the core experience
-6. the repo no longer exposes placeholder or template docs as if they were real project docs
+1. a new user can clone the repo and understand the project from the root docs
+2. `npm install`, `npm run dev`, and `npm run start` work without scavenger hunting
+3. `.bowman` behavior is understandable and git-friendly
+4. optional integrations are clearly separated from the core experience
+5. the repository surface looks intentional instead of exploratory

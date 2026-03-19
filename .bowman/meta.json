@@ -4,11 +4,11 @@
   "statuses": [
     {
       "key": "open",
-      "color": "#99c1f1"
+      "color": "#40abbf"
     },
     {
       "key": "done",
-      "color": "#8ff0a4"
+      "color": "#52bf40"
     },
     {
       "key": "cancelled",
@@ -16,7 +16,7 @@
     },
     {
       "key": "partially",
-      "color": "#fff176"
+      "color": "#40bf9a"
     },
     {
       "key": "failed",
@@ -24,11 +24,11 @@
     },
     {
       "key": "unclear",
-      "color": "#c061cb"
+      "color": "#b5835a"
     },
     {
-      "key": "archived",
-      "color": "#b5835a"
+      "key": "human-dependency",
+      "color": "#bf409f"
     }
   ]
 }

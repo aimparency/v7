@@ -2,7 +2,16 @@
   "id": "511cb67c-6bfc-4095-85ec-5ef02e0548b4",
   "text": "Expand root README into a complete local-first quickstart",
   "description": "Strengthen the top-level README so a first-time visitor can understand what Aimparency is, prerequisites, quickstart commands, the local service architecture, and the expected `.bowman` project workflow without prior context.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1773907914697,
+      "context": "Improve the release-facing documentation so a first-time open source user can understand the local-first startup flow and how Aimparency uses .bowman directories.",
+      "outcome": "Expanded the root README with a real quickstart, local project workflow, and .bowman layout section, and corrected the MCP README so it reflects the current build output and local backend assumptions.",
+      "effectiveness": "Reading the actual backend normalization and project-structure code before editing kept the docs aligned with real behavior instead of repeating stale assumptions.",
+      "lesson": "For release docs, verify path conventions and generated-file behavior against code first; top-level docs drift quickly when local tooling evolves.",
+      "pattern": "This matches earlier cleanup work where the highest-value documentation fixes came from tightening the first-run path and removing old distribution assumptions."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -17,9 +26,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Root documentation exists but still needs a stronger first-run path.",
-    "date": 1773878568871
+    "state": "done",
+    "comment": "Expanded the root README into a local-first quickstart with concrete .bowman workflow and data-layout guidance, and updated the MCP README to match the actual local runtime and package build path.",
+    "date": 1773907914686
   },
   "intrinsicValue": 0,
   "cost": 1,
