@@ -2,7 +2,16 @@
   "id": "0fee8918-1087-4e7f-bb0e-ba506be3a8c6",
   "text": "Persist watchdog session metadata under .bowman/runtime",
   "description": "Move the durable parts of watchdog/autonomy session state out of browser-local ownership and into project-local runtime files under .bowman/runtime, so the local service can recover and reason about active or recently active workers across reloads and restarts.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1773963286642,
+      "context": "Persist durable watchdog session metadata into project-local runtime state under .bowman/runtime so autonomy state is not owned only by the browser or broker-global files.",
+      "outcome": "The broker now syncs active sessions into .bowman/runtime/watchdog-sessions.json on start, keepalive, reclaim, and teardown. The frontend also restores from existing broker sessions directly, which reduces dependence on browser-local reconnect flags.",
+      "effectiveness": "This worked well as a low-risk first slice because the broker already owned the canonical session list. Mirroring that state into project-local runtime files required small focused changes and immediately improved the architecture.",
+      "lesson": "When moving toward durable autonomy state, start by relocating existing canonical state into project-local files before inventing new orchestration. That reduces risk and clarifies the ownership boundary.",
+      "pattern": "This matches earlier runtime cleanup work: moving source-of-truth away from browser-local assumptions and toward the local service makes reloads, recovery, and future autonomy features much more coherent."
+    }
+  ],
   "archived": false,
   "tags": [
     "autonomy",
@@ -17,9 +26,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "Next concrete persistence slice after scaffolding the runtime directory.",
-    "date": 1773962133838
+    "state": "done",
+    "comment": "Broker now mirrors active watchdog sessions into .bowman/runtime/watchdog-sessions.json, and the frontend restores existing sessions from broker truth instead of relying on browser-local reconnect intent.",
+    "date": 1773963286566
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -44,8 +44,12 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
   const sessions = ref<WatchdogSession[]>([])
   const normalizeProjectPathForSession = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
-  const shouldRestoreConnection = () => localStorage.getItem('aimparency-watchdog-should-connect') === 'true'
-
+  const getSessionsForProject = (projectPath: string) => {
+    const normalizedProjectPath = normalizeProjectPathForSession(projectPath)
+    return sessions.value.filter((session) =>
+      normalizeProjectPathForSession(session.projectPath) === normalizedProjectPath
+    )
+  }
   // Get session for currently selected agent type and project
   const currentProjectSession = computed(() => {
     const projectStore = useProjectStore()
@@ -134,6 +138,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     connectionState.value = 'connecting'
     connectedAgentType.value = agentType
+    setAgentType(agentType)
     socket.value = io(buildHttpUrl(port), {
       transports: ['websocket'],
       autoConnect: true,
@@ -296,12 +301,22 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   async function restorePreviousConnection() {
-    if (!shouldRestoreConnection()) return false
+    const projectStore = useProjectStore()
+    const projectPath = projectStore.projectPath
+    if (!projectPath) return false
 
-    const session = currentProjectSession.value
+    const selectedSession = currentProjectSession.value
+    if (selectedSession) {
+      return connectToExistingSession(selectedSession, 'Restoring existing')
+    }
+
+    const projectSessions = getSessionsForProject(projectPath)
+    if (projectSessions.length !== 1) return false
+
+    const session = projectSessions[0]
     if (!session) return false
-
-    return connectToExistingSession(session, 'Restoring previous')
+    setAgentType(session.agentType)
+    return connectToExistingSession(session, 'Restoring detected')
   }
 
   function triggerWorkerFocus() {

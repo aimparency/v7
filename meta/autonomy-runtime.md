@@ -67,7 +67,7 @@ Candidate files or directories:
 - `.bowman/runtime/constitution.md`
 - `.bowman/runtime/objectives.json`
 - `.bowman/runtime/heartbeat.json`
-- `.bowman/runtime/sessions.json`
+- `.bowman/runtime/watchdog-sessions.json`
 - `.bowman/runtime/audit/`
 
 This keeps the system inspectable, recoverable, and git-friendly.
@@ -162,6 +162,19 @@ Priority targets:
 - persist active worker metadata and heartbeat state
 - store autonomy settings per project
 
+Current progress:
+
+- `.bowman/runtime` and `.bowman/runtime/audit` are scaffolded during project initialization
+- active watchdog sessions are mirrored into `.bowman/runtime/watchdog-sessions.json`
+- the frontend now reconnects to an existing broker session for the current project instead of requiring browser-local reconnect intent
+
+Still missing in Stage 1:
+
+- durable watchdog desired state such as enabled/disabled and last stop reason
+- explicit heartbeat / lease state files
+- backend-owned runtime state APIs as the canonical read path
+- durable operator-approved autonomy policy / constitution files
+
 ### Stage 2. Scheduler / heartbeat in the local service
 
 Introduce a backend-owned loop that can:
@@ -208,8 +221,9 @@ Aimparency's strength is the graph, local repo integration, and inspectable memo
 
 ## Suggested Next Implementation Steps
 
-1. Persist autonomy runtime state under `.bowman/runtime`.
-2. Define a backend-owned heartbeat/lease model for worker sessions.
-3. Add an explicit autonomy policy document and UI surface.
-4. Show current autonomy mode, active worker, lease age, and owning project clearly in the UI.
-5. Only then explore deeper compatibility with external autonomy runtimes.
+1. Persist watchdog desired state and stop reasons under `.bowman/runtime`.
+2. Add backend-owned runtime state endpoints for autonomy metadata.
+3. Define a backend-owned heartbeat/lease model for worker sessions.
+4. Add an explicit autonomy policy document and UI surface.
+5. Show current autonomy mode, active worker, lease age, and owning project clearly in the UI.
+6. Only then explore deeper compatibility with external autonomy runtimes.

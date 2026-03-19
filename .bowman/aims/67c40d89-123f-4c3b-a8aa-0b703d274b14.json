@@ -1,0 +1,30 @@
+{
+  "id": "67c40d89-123f-4c3b-a8aa-0b703d274b14",
+  "text": "Persist watchdog desired state and last stop reason under .bowman/runtime",
+  "description": "Move the durable watchdog control state beyond active session metadata: whether watchdog is enabled, the last stop reason, emergency-stop state, and the preferred agent/runtime mode should become project-local runtime state the backend/session layer can restore and explain after reload or restart.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "watchdog",
+    "persistence"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Natural next step after persisting active session metadata.",
+    "date": 1773963318901
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

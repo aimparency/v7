@@ -33,6 +33,8 @@ function getInstanceKey(projectPath: string, agentType: AgentType): string {
 // WRAPPER_DIR: packages/wrapped-agents (2 levels up from src)
 const WRAPPER_DIR = path.resolve(__dirname, '../../');
 const SESSIONS_FILE = path.join(WRAPPER_DIR, 'watchdog-sessions.json');
+const RUNTIME_DIR_NAME = 'runtime';
+const PROJECT_RUNTIME_SESSIONS_FILE = 'watchdog-sessions.json';
 
 function normalizeProjectPath(p: string): string {
   if (!p) return p;
@@ -58,6 +60,40 @@ function saveSessions() {
   }
 }
 
+function getProjectRuntimeSessionsFile(projectPath: string): string {
+  return path.join(projectPath, RUNTIME_DIR_NAME, PROJECT_RUNTIME_SESSIONS_FILE);
+}
+
+async function syncProjectRuntimeSessions(projectPath: string) {
+  const projectSessions = Array.from(instances.values())
+    .filter((instance) => instance.projectPath === projectPath)
+    .map((instance) => ({
+      pid: instance.pid,
+      port: instance.port,
+      projectPath: instance.projectPath,
+      agentType: instance.agentType,
+      lastKeepalive: instance.lastKeepalive
+    }));
+
+  const runtimeSessionsFile = getProjectRuntimeSessionsFile(projectPath);
+
+  try {
+    if (projectSessions.length === 0) {
+      await fs.remove(runtimeSessionsFile);
+      return;
+    }
+
+    await fs.ensureDir(path.dirname(runtimeSessionsFile));
+    await fs.writeJson(runtimeSessionsFile, {
+      updatedAt: Date.now(),
+      projectPath,
+      sessions: projectSessions
+    }, { spaces: 2 });
+  } catch (e) {
+    console.error(`[WatchdogBroker] Failed to sync runtime sessions for ${projectPath}:`, e);
+  }
+}
+
 function killInstance(instance: WatchdogInstance) {
   console.log(`[WatchdogBroker] Killing ${instance.agentType} instance for ${instance.projectPath} (PID ${instance.pid})`);
   try {
@@ -79,6 +115,7 @@ function killInstance(instance: WatchdogInstance) {
   clearInterval(instance.checkInterval);
   instances.delete(getInstanceKey(instance.projectPath, instance.agentType));
   saveSessions();
+  void syncProjectRuntimeSessions(instance.projectPath);
 }
 
 function checkTimeout(projectPath: string, agentType: AgentType) {
@@ -132,6 +169,7 @@ function loadSessions() {
             lastKeepalive: s.lastKeepalive,
             checkInterval
           });
+          void syncProjectRuntimeSessions(s.projectPath);
         } catch (e) {
           console.log(`[WatchdogBroker] ${agentType} session for ${s.projectPath} (PID ${s.pid}) is dead.`);
         }
@@ -186,6 +224,7 @@ export const WatchdogManager = {
 
             existing.lastKeepalive = Date.now();
             saveSessions();
+            await syncProjectRuntimeSessions(projectPath);
             return { port: existing.port, pid: existing.pid, agentType };
         } catch (e) {
             console.log(`[WatchdogBroker] Existing ${agentType} instance dead, cleaning up.`);
@@ -252,6 +291,7 @@ export const WatchdogManager = {
     });
 
     saveSessions();
+    await syncProjectRuntimeSessions(projectPath);
 
     // Wait for port to be ready
     console.log(`[WatchdogBroker] Waiting for port ${port} to be open...`);
@@ -283,6 +323,7 @@ export const WatchdogManager = {
         clearInterval(instance.checkInterval);
         instances.delete(key);
         saveSessions();
+        void syncProjectRuntimeSessions(projectPath);
       }
     });
 
@@ -307,6 +348,7 @@ export const WatchdogManager = {
     if (instance) {
       instance.lastKeepalive = Date.now();
       saveSessions();
+      await syncProjectRuntimeSessions(projectPath);
       return true;
     }
     // Don't auto-spawn - let the client handle reconnection explicitly

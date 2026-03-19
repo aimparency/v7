@@ -1,0 +1,30 @@
+{
+  "id": "2ff1fd7a-7e02-4197-a558-174622db7cbe",
+  "text": "Define a project-local autonomy policy file under .bowman/runtime",
+  "description": "Decide how Aimparency should represent durable local autonomy policy: operator constraints, allowed tools, compaction/commit rules, recovery preferences, and future constitution-like guidance. This should likely live under .bowman/runtime or a closely related project-local file.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "policy",
+    "unclear"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "unclear",
+    "comment": "Needs product and architecture judgment before implementation.",
+    "date": 1773963318960
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

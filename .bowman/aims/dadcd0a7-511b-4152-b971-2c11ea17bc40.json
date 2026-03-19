@@ -1,0 +1,30 @@
+{
+  "id": "dadcd0a7-511b-4152-b971-2c11ea17bc40",
+  "text": "Add backend-owned runtime state endpoints for autonomy metadata",
+  "description": "Expose .bowman/runtime state through backend APIs so the frontend can observe autonomy/session/runtime state without inferring it from localStorage or transient socket-only state. This should become the read path for durable autonomy state.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "backend",
+    "runtime"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Needed to complete the ownership shift from browser to local service.",
+    "date": 1773963318922
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

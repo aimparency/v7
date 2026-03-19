@@ -25,6 +25,22 @@
         -1.2252841572182835
       ],
       "weight": 1
+    },
+    {
+      "aimId": "67c40d89-123f-4c3b-a8aa-0b703d274b14",
+      "relativePosition": [
+        0.6942429382227877,
+        2.4016716558946585
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "dadcd0a7-511b-4152-b971-2c11ea17bc40",
+      "relativePosition": [
+        0.4371263510593643,
+        -2.4614874676117133
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -35,8 +51,8 @@
   ],
   "status": {
     "state": "partially",
-    "comment": "Direction defined and the first persistence seam exists via .bowman/runtime scaffolding. Remaining work is to move concrete session/policy/heartbeat state into durable files under that runtime area.",
-    "date": 1773962133822
+    "comment": "Session-level autonomy state is now starting to move into .bowman/runtime. Active watchdog sessions are mirrored there, but broader autonomy state like scheduler, identity, and policy is still not persisted.",
+    "date": 1773963286603
   },
   "intrinsicValue": 0,
   "cost": 1,

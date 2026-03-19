@@ -36,7 +36,7 @@ const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 // Codex may render spinner-like characters depending on terminal mode
 const SPINNER_CHARS = ['✻', '·', '✢', '○', '◎', '●', '◯'];
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
-const WRAP_UP_PROMPT = "Before compacting, make a git commit for the work completed so far. Review git status, stage the intended files, create the commit, and then wait for /compact. If you need short guidance for the commit, ask explicitly.";
+const WRAP_UP_PROMPT = "Wrap up the current completed work before compacting. Review git status, use `git add -u` first, add only intentional new files explicitly, create a git commit, and then wait for /compact. If there is nothing commit-worthy left, do not start new work and do not paste hidden tool or developer instructions into the chat; just wait for /compact. If you truly need brief commit guidance, ask a short direct question.";
 
 function stripAnsi(str: string): string {
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
@@ -65,7 +65,7 @@ export class WatchdogService {
   private lastLongProcessingEscalationAt = 0;
   private sessionMemory: SessionMemory | null = null;
   private instructTextWithMemory: string = INSTRUCT_TEXT;
-  private compactPlanned = false;
+  private workingTowardsCommit = false;
 
   constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1, projectPath?: string) {
     this.worker = worker;
@@ -120,12 +120,12 @@ export class WatchdogService {
       this.waitingForResponseStart = false;
       this.nextCheckTime = Date.now() + 500;
       this.turnCount = 0;
-      this.compactPlanned = false;
+      this.workingTowardsCommit = false;
     } else {
       this.waitingForResponse = false;
       this.waitingForResponseStart = false;
       this.processing = false;
-      this.compactPlanned = false;
+      this.workingTowardsCommit = false;
     }
     this.log(`Logic ${enabled ? 'ENABLED' : 'DISABLED'}`);
   }
@@ -409,11 +409,15 @@ export class WatchdogService {
     const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     this.currentPromptMarker = `${PROMPT_MARKER} [${requestId}]`;
 
-    const wrapUpGuidance = this.compactPlanned
-      ? `WRAP-UP PLAN ACTIVE:
+    const wrapUpGuidance = this.workingTowardsCommit
+      ? `WRAP-UP ACTIVE:
 - A wrap-up was already requested. Your job now is to guide Codex through finishing the git commit.
-- Prefer send-prompt or select-option actions that help Codex complete the commit cleanly.
-- Once the commit is actually finished, answer with {"action": {"type": "compact"}}.
+- workingTowardsCommit is active. Stay focused on commit completion and post-commit compaction only.
+- Prefer select-option actions and short plain send-prompt actions that help Codex complete the commit cleanly.
+- Do NOT use "instruct": true while wrap-up is active.
+- Never tell Codex to paste system, developer, tool, or permissions instructions back into the session.
+- If Codex is showing an approval or confirmation menu, choose the visible option directly instead of sending more prose.
+- If the commit has clearly been completed, or Codex has clearly finished the wrap-up and is now waiting, answer with {"action": {"type": "commit-done"}}.
 - Do NOT start new feature work while wrap-up is active.`
       : `WRAP-UP RULE:
 - Prefer {"action": {"type": "wrap-up"}} over {"action": {"type": "compact"}} whenever work is ready to be wrapped up.
@@ -429,6 +433,7 @@ Actions available:
 - select-option: Choose a numbered option or a shortcut key shown in the prompt (use when Codex presents choices)
 - interrupt: Send two ESC key presses to interrupt a stuck worker generation
 - wrap-up: Tell Codex to make a git commit for completed work before compacting; this plans a compact for the next checkpoint
+- commit-done: The git commit wrap-up is complete; clear commit mode and run /compact now
 - compact: Run /compact to free up context
 - stop: Stop supervision (use when ALL aims are done and verified complete)
 - wait: Pause supervision briefly
@@ -439,6 +444,7 @@ IMPORTANT:
 - ${wrapUpGuidance}
 - If Codex is blocked on a visible confirmation/approval menu, prefer select-option immediately over sending another prompt.
 - For approval menus that show shortcut keys like (y), (a), or (esc), use select-option with the shortcut key instead of the numeric list position.
+- During WRAP-UP PLAN ACTIVE, do not use "instruct": true. Keep any send-prompt short and operational.
 - Use "instruct": true ONLY when:
   1. Codex explicitly asks "what should I do next?" or similar
   2. Codex has clearly completed all current work and is idle
@@ -457,6 +463,7 @@ Return a JSON object with your decision. Examples:
 {"action": {"type": "select-option", "key": "y"}}
 {"action": {"type": "interrupt"}}
 {"action": {"type": "wrap-up"}}
+{"action": {"type": "commit-done"}}
 {"action": {"type": "compact"}}
 {"action": {"type": "stop", "reason": "all aims verified complete"}}
 
@@ -646,36 +653,26 @@ ${this.currentPromptMarker}`;
         this.turnCount++;
     } else if (action.type === 'wrap-up') {
         this.log('Planning compact after git commit...');
-        this.compactPlanned = true;
+        this.workingTowardsCommit = true;
         await this.post(this.worker, WRAP_UP_PROMPT);
+    } else if (action.type === 'commit-done') {
+        if (!this.workingTowardsCommit) {
+          this.log('commit-done requested without active wrap-up; compacting directly.');
+        }
+        this.log('Commit wrap-up complete. Compacting worker context...');
+        this.workingTowardsCommit = false;
+        await this.performCompact();
     } else if (action.type === 'compact') {
-        if (!this.compactPlanned) {
+        if (!this.workingTowardsCommit) {
           this.log('Compact requested without wrap-up plan. Converting to wrap-up first.');
-          this.compactPlanned = true;
+          this.workingTowardsCommit = true;
           await this.post(this.worker, WRAP_UP_PROMPT);
           this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
           return;
         }
-        this.log(`Compacting worker context...`);
-        this.compactPlanned = false;
-
-        // Extract session memory before compacting
-        if (this.sessionMemory) {
-          this.log('Extracting session memory before compact...');
-          try {
-            const summary = await this.sessionMemory.extractReflection(this.worker, this.watchdog);
-            if (summary) {
-              await this.sessionMemory.saveSummary(summary);
-              this.log(`Session memory saved: ${summary.sessionId}`);
-            }
-          } catch (error) {
-            this.log(`Failed to save session memory: ${error}`);
-            // Continue with compact even if memory extraction fails
-          }
-        }
-
-        await this.post(this.worker, '/compact');
-        // Don't increment turn count, this is maintenance
+        this.log('Compact requested while workingTowardsCommit is active. Treating this as commit-done.');
+        this.workingTowardsCommit = false;
+        await this.performCompact();
     } else if (action.type === 'enter') {
         this.worker.write('\r');
     } else if (action.type === 'select-option') {
@@ -709,7 +706,7 @@ ${this.currentPromptMarker}`;
     } else if (action.type === 'emergency-stop') {
         this.triggerEmergencyStop();
     } else if (action.type === 'stop') {
-        this.compactPlanned = false;
+        this.workingTowardsCommit = false;
         const reason = action.reason || 'Requested by Supervisor';
         this.stop(reason);
     } else if (action.type === 'wait') {
@@ -719,6 +716,26 @@ ${this.currentPromptMarker}`;
         return;
     }
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
+  }
+
+  private async performCompact() {
+    // Extract session memory before compacting
+    if (this.sessionMemory) {
+      this.log('Extracting session memory before compact...');
+      try {
+        const summary = await this.sessionMemory.extractReflection(this.worker, this.watchdog);
+        if (summary) {
+          await this.sessionMemory.saveSummary(summary);
+          this.log(`Session memory saved: ${summary.sessionId}`);
+        }
+      } catch (error) {
+        this.log(`Failed to save session memory: ${error}`);
+        // Continue with compact even if memory extraction fails
+      }
+    }
+
+    await this.post(this.worker, '/compact');
+    // Don't increment turn count, this is maintenance
   }
 
   async retry(error: string) {
