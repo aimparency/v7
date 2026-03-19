@@ -254,9 +254,65 @@ test('executeAction wrap-up posts commit prompt and plans compact', async () => 
   await service.executeAction({ type: 'wrap-up' });
 
   assert.equal((service as any).workingTowardsCommit, true);
-  assert.match(posts[0] || '', /create a git commit/i);
+  assert.match(posts[0] || '', /make a git commit/i);
   assert.match(posts[0] || '', /git add -u/i);
-  assert.match(posts[0] || '', /do not paste hidden tool or developer instructions/i);
+  assert.doesNotMatch(posts[0] || '', /wait for \/compact/i);
+});
+
+test('askWatchdog uses conservative wrap-up guidance when not already wrapping up', async () => {
+  const posts: string[] = [];
+  const worker = {
+    getLines: () => 'worker is between steps',
+    getLastLine: () => 'plain status line',
+    write: () => {},
+  };
+  const watchdog = {
+    getLines: () => '',
+    getLastLine: () => 'plain status line',
+    write: () => {},
+  };
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  (service as any).post = async (_agent: any, text: string) => {
+    posts.push(text);
+  };
+  (service as any).wait = async () => {};
+
+  await service.askWatchdog();
+
+  const prompt = posts[0] || '';
+  assert.match(prompt, /Use wrap-up conservatively/i);
+  assert.match(prompt, /Choose .*wrap-up.* only if:/i);
+  assert.match(prompt, /major milestone or coherent batch of work is complete/i);
+  assert.match(prompt, /prefer a normal prompt or wait instead of wrap-up/i);
+  assert.doesNotMatch(prompt, /about to start looking for new work/i);
+  assert.doesNotMatch(prompt, /whenever Codex completes a significant chunk of work/i);
+});
+
+test('askWatchdog commit mode prompt focuses on finishing the commit', async () => {
+  const posts: string[] = [];
+  const worker = {
+    getLines: () => 'git commit in progress',
+    getLastLine: () => 'plain status line',
+    write: () => {},
+  };
+  const watchdog = {
+    getLines: () => '',
+    getLastLine: () => 'plain status line',
+    write: () => {},
+  };
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  (service as any).workingTowardsCommit = true;
+  (service as any).post = async (_agent: any, text: string) => {
+    posts.push(text);
+  };
+  (service as any).wait = async () => {};
+
+  await service.askWatchdog();
+
+  const prompt = posts[0] || '';
+  assert.match(prompt, /WRAP-UP ACTIVE:/);
+  assert.match(prompt, /guide Codex through finishing the git commit/i);
+  assert.match(prompt, /commit-done/i);
 });
 
 test('executeAction compact without wrap-up plan converts to wrap-up first', async () => {
@@ -271,7 +327,7 @@ test('executeAction compact without wrap-up plan converts to wrap-up first', asy
   await service.executeAction({ type: 'compact' });
 
   assert.equal((service as any).workingTowardsCommit, true);
-  assert.match(posts[0] || '', /create a git commit/i);
+  assert.match(posts[0] || '', /make a git commit/i);
   assert.equal(posts.includes('/compact'), false);
 });
 
@@ -346,12 +402,41 @@ test('askWatchdog includes wrap-up guidance when commit mode is active', async (
 
   const prompt = prompts[0] || '';
   assert.match(prompt, /WRAP-UP ACTIVE/);
-  assert.match(prompt, /answer with \{"action": \{"type": "commit-done"\}\}/);
+  assert.match(prompt, /answer with .*commit-done/i);
+  assert.match(prompt, /You may also use .*compact.* if needed/i);
   assert.match(prompt, /Do NOT start new feature work while wrap-up is active/);
-  assert.match(prompt, /Do NOT use "instruct": true while wrap-up is active/);
+  assert.match(prompt, /Do NOT use .*instruct.* true while wrap-up is active/i);
   assert.match(prompt, /Never tell Codex to paste system, developer, tool, or permissions instructions/);
-  assert.match(prompt, /workingTowardsCommit is active/);
-  assert.match(prompt, /"type": "commit-done"/);
+  assert.match(prompt, /commit-done/);
   assert.match(prompt, /shortcut keys like \(y\), \(a\), or \(esc\)/);
-  assert.match(prompt, /"type": "select-option", "key": "y"/);
+  assert.match(prompt, /select-option/i);
+  assert.match(prompt, /key": "y"/);
+});
+
+test('askWatchdog includes wrap-up rule when commit mode is inactive', async () => {
+  const prompts: string[] = [];
+  const worker = {
+    getLines: () => 'major implementation finished and worker is idle',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const watchdog = {
+    getLines: () => '',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  (service as any).post = async (_agent: any, text: string) => {
+    prompts.push(text);
+  };
+  (service as any).wait = async () => {};
+
+  await service.askWatchdog();
+
+  const prompt = prompts[0] || '';
+  assert.match(prompt, /WRAP-UP RULE/);
+  assert.match(prompt, /Use wrap-up conservatively/i);
+  assert.match(prompt, /Choose .*wrap-up.* only if:/i);
+  assert.match(prompt, /there is no obvious immediate next implementation or verification step/i);
+  assert.match(prompt, /The later compact is handled separately by this animator/);
 });
