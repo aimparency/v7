@@ -1,0 +1,30 @@
+{
+  "id": "41706e8a-2a19-43e7-b17f-89b24e9f38d0",
+  "text": "Decide whether optional packages should stay in the root npm workspace install set",
+  "description": "The default release story should not force unnecessary dependencies, but MCP is strategically important while voice is explicitly optional. Decide whether optional packages like voice-bridge and mcp should remain in the root workspace install set or move to separate opt-in installs. This decision affects npm install behavior, scripts, contributor ergonomics, and how strongly optional integrations are separated from the core local-first path.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "release",
+    "packaging",
+    "unclear"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fb16f61b-bcb9-4e4d-9c55-61c164d870ec"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "unclear",
+    "comment": "Needs a product and packaging decision before restructuring workspace boundaries.",
+    "date": 1773908651301
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

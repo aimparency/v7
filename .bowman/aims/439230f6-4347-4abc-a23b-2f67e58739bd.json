@@ -1,0 +1,30 @@
+{
+  "id": "439230f6-4347-4abc-a23b-2f67e58739bd",
+  "text": "Make the backend test script run the full backend test suite",
+  "description": "`npm run test -w backend` currently reports green while only executing a subset of backend tests. Fix the backend test command or test discovery so the advertised package-level test script actually covers the intended backend test files.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "testing",
+    "release",
+    "repo-hygiene"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Discovered during embedder-replacement verification. This is a release-quality and repo-hygiene issue because a green backend test run is currently weaker than it looks.",
+    "date": 1773917308516
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

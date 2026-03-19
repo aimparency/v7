@@ -32,6 +32,7 @@ const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 // Claude Code uses different spinner characters
 const SPINNER_CHARS = ['✻', '·', '✢', '○', '◎', '●', '◯'];
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
+const WRAP_UP_PROMPT = "Before compacting, make a git commit for the work completed so far. Review git status, stage the intended files, create the commit, and then wait for /compact. If you need short guidance for the commit, ask explicitly.";
 
 function stripAnsi(str: string): string {
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
@@ -53,6 +54,7 @@ export class WatchdogService {
   private nextCheckTime = 0;
   private sessionMemory: SessionMemory | null = null;
   private instructTextWithMemory: string = INSTRUCT_TEXT;
+  private compactPlanned = false;
 
   constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1, projectPath?: string) {
     this.worker = worker;
@@ -105,9 +107,11 @@ export class WatchdogService {
       this.emergencyStopped = false;
       this.nextCheckTime = Date.now() + 500;
       this.turnCount = 0;
+      this.compactPlanned = false;
     } else {
       this.waitingForResponse = false;
       this.processing = false;
+      this.compactPlanned = false;
     }
     this.log(`Logic ${enabled ? 'ENABLED' : 'DISABLED'}`);
   }
@@ -319,6 +323,16 @@ export class WatchdogService {
     this.log(`DEBUG: Worker context length: ${context.length} chars`);
     this.log(`DEBUG: Worker context (first 200 chars): ${context.substring(0, 200)}`);
 
+    const wrapUpGuidance = this.compactPlanned
+      ? `WRAP-UP PLAN ACTIVE:
+- A wrap-up was already requested. Your job now is to guide Claude through finishing the git commit.
+- Prefer send-prompt or select-option actions that help Claude complete the commit cleanly.
+- Once the commit is actually finished, answer with {"action": {"type": "compact"}}.
+- Do NOT start new feature work while wrap-up is active.`
+      : `WRAP-UP RULE:
+- Prefer {"action": {"type": "wrap-up"}} over {"action": {"type": "compact"}} whenever work is ready to be wrapped up.
+- wrap-up implies a later compact: it tells Claude to make a git commit first and schedules compact for the next idle checkpoint.`;
+
     const question = `You are supervising a Claude Code session. Look at what Claude is doing and decide the next action.
 
 Current screen:
@@ -327,12 +341,15 @@ ${context}
 Actions available:
 - send-prompt: Send text to Claude. Add "instruct": true ONLY if Claude has reached completion and explicitly needs direction.
 - select-option: Choose a numbered option (use when Claude presents choices)
+- wrap-up: Tell Claude to make a git commit for completed work before compacting; this plans a compact for the next checkpoint
 - compact: Run /compact to free up context
 - stop: Stop supervision (use when ALL aims are done and verified complete)
 - wait: Pause supervision briefly
 
 IMPORTANT:
-- IMPORTANT: Use compact action whenever Claude completes a significant chunk of work or is about to start looking for new work. This keeps context fresh and improves performance. (Be generous with returning compact).
+- IMPORTANT: Use wrap-up whenever Claude completes a significant chunk of work or is about to start looking for new work. This keeps context fresh and improves performance.
+- Treat wrap-up as the normal path to compacting. Use compact directly only after a wrap-up is already in progress and the commit is finished.
+- ${wrapUpGuidance}
 - Use "instruct": true ONLY when:
   1. Claude explicitly asks "what should I do next?" or similar
   2. Claude has clearly completed all current work and is idle
@@ -348,6 +365,7 @@ Return a JSON object with your decision. Examples:
 {"action": {"type": "send-prompt", "text": "run the tests"}}  ← Prefer this for simple nudges
 {"action": {"type": "send-prompt", "text": "continue working"}}
 {"action": {"type": "select-option", "number": 1}}
+{"action": {"type": "wrap-up"}}
 {"action": {"type": "compact"}}
 {"action": {"type": "stop", "reason": "all aims verified complete"}}
 
@@ -437,8 +455,20 @@ ${PROMPT_MARKER}`;
         this.log(`Sending prompt to Worker: ${textToSend.substring(0, 100)}...`);
         await this.post(this.worker, textToSend);
         this.turnCount++;
+    } else if (action.type === 'wrap-up') {
+        this.log('Planning compact after git commit...');
+        this.compactPlanned = true;
+        await this.post(this.worker, WRAP_UP_PROMPT);
     } else if (action.type === 'compact') {
+        if (!this.compactPlanned) {
+          this.log('Compact requested without wrap-up plan. Converting to wrap-up first.');
+          this.compactPlanned = true;
+          await this.post(this.worker, WRAP_UP_PROMPT);
+          this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
+          return;
+        }
         this.log(`Compacting worker context...`);
+        this.compactPlanned = false;
 
         // Extract session memory before compacting
         if (this.sessionMemory) {
@@ -467,6 +497,7 @@ ${PROMPT_MARKER}`;
     } else if (action.type === 'emergency-stop') {
         this.triggerEmergencyStop();
     } else if (action.type === 'stop') {
+        this.compactPlanned = false;
         const reason = action.reason || 'Requested by Supervisor';
         this.stop(reason);
     } else if (action.type === 'wait') {

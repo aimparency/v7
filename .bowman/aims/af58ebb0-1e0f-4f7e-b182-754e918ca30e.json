@@ -17,9 +17,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Needed for robust local use on developer machines.",
-    "date": 1773878568828
+    "state": "human-dependency",
+    "comment": "Launcher fallback logic needs the user to run `node scripts/validate-local-runtime.mjs` on a normal machine and provide the output so the resolved-port behavior can be confirmed or fixed.",
+    "date": 1773916776999
   },
   "intrinsicValue": 0,
   "cost": 1,

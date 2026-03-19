@@ -7,6 +7,7 @@ It owns the project-facing API and the `.bowman` filesystem data model:
 - serves the main tRPC API over HTTP/WebSocket
 - reads and writes aims, phases, and project metadata in `.bowman`
 - maintains search, vector, cache, and semantic-graph artifacts
+- generates local in-process embeddings for semantic search
 - recalculates derived aim values after graph changes
 - exposes project, graph, system, market, and optional voice routers
 

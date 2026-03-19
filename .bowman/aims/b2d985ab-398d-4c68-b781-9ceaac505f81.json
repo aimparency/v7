@@ -1,0 +1,30 @@
+{
+  "id": "b2d985ab-398d-4c68-b781-9ceaac505f81",
+  "text": "Evaluate stronger model-backed Node embeddings beyond the hashed local default",
+  "description": "The default local architecture now uses a deterministic in-process Node embedding generator to avoid requiring Python. Decide whether future local releases should adopt a higher-quality Node-native model-backed embedding path for better semantic search, and what dependency/runtime tradeoff is acceptable.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "embedding",
+    "quality",
+    "decision"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "a88bcf3b-e6c1-4ad5-b89c-6cd6081668fe"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "unclear",
+    "comment": "Not a release blocker. The current hashed local embedding path is acceptable for the open-source local-first release, but model quality and dependency cost need a deliberate product/engineering decision.",
+    "date": 1773917291044
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

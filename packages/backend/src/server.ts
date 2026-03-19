@@ -23,7 +23,7 @@ import {
   updatePhaseInIndex,
   removePhaseFromIndex
 } from './search.js';
-import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore } from './embeddings.js';
+import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore, hasCurrentEmbedding } from './embeddings.js';
 import { getSemanticGraph, invalidateSemanticCache } from './forces.js';
 import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues } from 'shared';
@@ -676,6 +676,7 @@ const appRouter = t.router({
     indexAims,
     indexPhases,
     loadVectorStore,
+    hasCurrentEmbedding,
     generateEmbedding,
     saveEmbedding,
     removeEmbedding,

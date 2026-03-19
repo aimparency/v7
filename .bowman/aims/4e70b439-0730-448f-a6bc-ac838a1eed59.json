@@ -1,0 +1,31 @@
+{
+  "id": "4e70b439-0730-448f-a6bc-ac838a1eed59",
+  "text": "Evaluate telephone-style voice API for call-like interaction",
+  "description": "When voice work resumes, evaluate a telephone-style API approach so voice interaction feels like a phone call rather than a generic push-to-talk UI. Use Grok-like call interaction as inspiration, compare the implementation surface against the current mobile/voice experiments, and decide how this should fit Aimparency's local-first architecture.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "voice",
+    "mobile",
+    "unclear",
+    "future-direction"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "93fbe6f4-a11a-45e3-9441-39aaba18e458"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "unclear",
+    "comment": "Future voice direction captured from user guidance. Not a release blocker.",
+    "date": 1773916777032
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

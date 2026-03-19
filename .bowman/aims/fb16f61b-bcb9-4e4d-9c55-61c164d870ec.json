@@ -9,7 +9,16 @@
     "runtime",
     "optional-integrations"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "41706e8a-2a19-43e7-b17f-89b24e9f38d0",
+      "relativePosition": [
+        -2.489995452064707,
+        0.2234337680322191
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "a88bcf3b-e6c1-4ad5-b89c-6cd6081668fe"
   ],
@@ -17,9 +26,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Optional features should stop leaking into the first-run path.",
-    "date": 1773878568960
+    "state": "partially",
+    "comment": "Default runtime path no longer starts optional MCP, voice, embedder, or broker-inspector services. Remaining work is the install-side decision on whether optional packages stay in the root workspace set or move to opt-in installs.",
+    "date": 1773908638429
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -17,9 +17,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "First validation slice for the local startup story.",
-    "date": 1773878568726
+    "state": "human-dependency",
+    "comment": "Needs clean-clone validation on a normal local machine outside the sandbox. Waiting on real-machine runs of `npm install`, `npm run dev`, and `npm run start` plus the resulting output.",
+    "date": 1773916776983
   },
   "intrinsicValue": 0,
   "cost": 1,

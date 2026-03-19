@@ -213,3 +213,77 @@ test('executeAction interrupt sends double ESC to worker', async () => {
 
   assert.deepEqual(writes, ['\x1b', '\x1b']);
 });
+
+test('executeAction wrap-up posts commit prompt and plans compact', async () => {
+  const posts: string[] = [];
+  const service = createService('CURRENT_MARKER');
+  (service as any).worker = {};
+  (service as any).watchdog = {};
+  (service as any).post = async (_agent: any, text: string) => {
+    posts.push(text);
+  };
+
+  await service.executeAction({ type: 'wrap-up' });
+
+  assert.equal((service as any).compactPlanned, true);
+  assert.match(posts[0] || '', /make a git commit/i);
+});
+
+test('executeAction compact without wrap-up plan converts to wrap-up first', async () => {
+  const posts: string[] = [];
+  const service = createService('CURRENT_MARKER');
+  (service as any).worker = {};
+  (service as any).watchdog = {};
+  (service as any).post = async (_agent: any, text: string) => {
+    posts.push(text);
+  };
+
+  await service.executeAction({ type: 'compact' });
+
+  assert.equal((service as any).compactPlanned, true);
+  assert.match(posts[0] || '', /make a git commit/i);
+  assert.equal(posts.includes('/compact'), false);
+});
+
+test('executeAction compact after wrap-up sends /compact and clears compact plan', async () => {
+  const posts: string[] = [];
+  const service = createService('CURRENT_MARKER');
+  (service as any).worker = {};
+  (service as any).watchdog = {};
+  (service as any).compactPlanned = true;
+  (service as any).post = async (_agent: any, text: string) => {
+    posts.push(text);
+  };
+
+  await service.executeAction({ type: 'compact' });
+
+  assert.equal((service as any).compactPlanned, false);
+  assert.equal(posts[0], '/compact');
+});
+
+test('askWatchdog includes wrap-up-plan guidance when compact is planned', async () => {
+  const prompts: string[] = [];
+  const worker = {
+    getLines: () => 'worker is asking about commit details',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const watchdog = {
+    getLines: () => '',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  (service as any).compactPlanned = true;
+  (service as any).post = async (_agent: any, text: string) => {
+    prompts.push(text);
+  };
+  (service as any).wait = async () => {};
+
+  await service.askWatchdog();
+
+  const prompt = prompts[0] || '';
+  assert.match(prompt, /WRAP-UP PLAN ACTIVE/);
+  assert.match(prompt, /answer with \{"action": \{"type": "compact"\}\}/);
+  assert.match(prompt, /Do NOT start new feature work while wrap-up is active/);
+});

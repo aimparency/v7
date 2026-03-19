@@ -2,7 +2,16 @@
   "id": "0d742cf4-1a2f-452c-843d-e668821c92a1",
   "text": "Inline embedding into the Node backend for the default local path",
   "description": "Replace the separate Python embedder in the default local runtime with a Node-based embedding path in the backend, preserving current vector/search behavior well enough for normal local use.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1773917291072,
+      "context": "Replace the separate Python embedder in the default local runtime with an in-process backend embedding path without removing semantic-search features.",
+      "outcome": "Implemented a deterministic local embedding generator in the backend, preserved vector storage/search semantics, taught buildSearchIndex to regenerate outdated vectors, removed the Python embedder from default dev architecture, and updated release docs accordingly.",
+      "effectiveness": "This worked well for the release goal because it removed the extra Python runtime immediately and was fully verifiable in the sandbox with backend build/tests. The main compromise is search quality: the new default is lighter and more reliable, but weaker than a model-backed embedder.",
+      "lesson": "When replacing a runtime dependency, account for stored-artifact compatibility explicitly. Preserving old numeric vectors while distinguishing current-format embeddings avoided breaking existing data and tests.",
+      "pattern": "This matches earlier release work: simplify the default local path first, then capture higher-fidelity options as explicit follow-up aims instead of blocking release on ideal architecture."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -17,9 +26,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Largest simplification target in the default setup.",
-    "date": 1773878569199
+    "state": "done",
+    "comment": "Done. Backend now generates embeddings in-process, buildSearchIndex regenerates outdated vectors, docs/scripts no longer treat the Python embedder as part of the default architecture.",
+    "date": 1773917291021
   },
   "intrinsicValue": 0,
   "cost": 1,

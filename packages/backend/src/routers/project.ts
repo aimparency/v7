@@ -18,6 +18,7 @@ export const createProjectRouter = (
   indexAims: (projectPath: string, aims: Aim[]) => void,
   indexPhases: (projectPath: string, phases: Phase[]) => void,
   loadVectorStore: (projectPath: string) => Promise<Record<string, any>>,
+  hasCurrentEmbedding: (value: unknown) => boolean,
   generateEmbedding: (text: string) => Promise<number[] | null>,
   saveEmbedding: (projectPath: string, aimId: string, vector: number[]) => Promise<void>,
   removeEmbedding: (projectPath: string, aimId: string) => Promise<void>,
@@ -91,7 +92,7 @@ export const createProjectRouter = (
         if (process.env.NODE_ENV !== 'test') {
           (async () => {
               const vectorStore = await loadVectorStore(input.projectPath);
-              const aimsToEmbed = aims.filter((aim: Aim) => !vectorStore[aim.id]);
+              const aimsToEmbed = aims.filter((aim: Aim) => !hasCurrentEmbedding(vectorStore[aim.id]));
 
               if (aimsToEmbed.length > 0) {
                   console.log(`Starting embedding generation for ${aimsToEmbed.length} aims (skipped ${aims.length - aimsToEmbed.length} existing)...`);

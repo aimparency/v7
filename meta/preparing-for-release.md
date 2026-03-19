@@ -33,7 +33,7 @@ These decisions are intentionally in scope for the first public release:
 - keep broker-managed session spawning
 - keep MCP optional rather than required
 - keep voice optional rather than required
-- move toward inlining embeddings into the Node backend and away from the Python embedder
+- inline embeddings into the Node backend for the default local path
 
 These are intentionally out of scope for this release pass:
 
@@ -52,7 +52,7 @@ Use this as the release-prep definition of done.
 - [x] Root `README.md` documents `npm install`, `npm run dev`, and `npm run start`
 - [x] Root `README.md` explains the local-first `.bowman` workflow
 - [x] Root `README.md` makes optional integrations secondary to the core local runtime
-- [ ] Root docs include a concise troubleshooting section for common local startup failures
+- [x] Root docs include a concise troubleshooting section for common local startup failures
 
 ### 2. Local data model clarity
 
@@ -77,7 +77,7 @@ Use this as the release-prep definition of done.
 - [x] The docs say clearly that global install and `npx` are not release goals
 - [x] Dev-only broker tooling is identified as dev-only
 - [x] `subdev/` and other experiments are clearly fenced off from the main onboarding path
-- [ ] Experimental or archival directories outside `packages/` are either documented or deliberately de-emphasized
+- [x] Experimental or archival directories outside `packages/` are either documented or deliberately de-emphasized
 
 ### 5. Local startup behavior
 
@@ -99,7 +99,7 @@ Use this as the release-prep definition of done.
 - [x] MCP is documented as optional
 - [x] Voice is documented as optional
 - [ ] Default install/run flow works without optional agent tooling or voice tooling installed
-- [ ] Python embedder is removed from the default local path or clearly marked as transitional
+- [x] Python embedder is removed from the default local architecture
 
 ## Current High-Leverage Work
 
