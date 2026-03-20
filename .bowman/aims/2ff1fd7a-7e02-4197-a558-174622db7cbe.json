@@ -2,14 +2,40 @@
   "id": "2ff1fd7a-7e02-4197-a558-174622db7cbe",
   "text": "Define a project-local autonomy policy file under .bowman/runtime",
   "description": "Decide how Aimparency should represent durable local autonomy policy: operator constraints, allowed tools, compaction/commit rules, recovery preferences, and future constitution-like guidance. This should likely live under .bowman/runtime or a closely related project-local file.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1773965649014,
+      "context": "Define a project-local autonomy policy file so future autonomy behavior is anchored in an inspectable runtime document instead of only prompts and code paths.",
+      "outcome": "Added .bowman/runtime/autonomy-policy.json defaults and backend get/update endpoints. The policy now has an explicit place for autonomy mode, preferred agent type, lease duration, reconnect behavior, and commit-before-compact rules.",
+      "effectiveness": "This was effective because it established a concrete file boundary without forcing a UI redesign first. The backend can now own policy reads/writes and the UI can be layered on later.",
+      "lesson": "For autonomy features, define the durable file contract early. It reduces future prompt sprawl and makes policy decisions inspectable and testable.",
+      "pattern": "This mirrors the broader Aimparency architecture: once a concept has a file-backed model and a backend API, the frontend and worker logic become easier to align around it."
+    }
+  ],
   "archived": false,
   "tags": [
     "autonomy",
     "policy",
     "unclear"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "b69e9372-2207-4624-8a18-9a814f3938b2",
+      "relativePosition": [
+        -2.1518013111640295,
+        1.2726944320113782
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "42c92b27-ed17-4319-9f1a-f2f57af54651",
+      "relativePosition": [
+        -2.3274190623144677,
+        0.9127543527013405
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "cffdcd91-fd9c-45e4-98fd-e265650be143"
   ],
@@ -17,9 +43,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "unclear",
-    "comment": "Needs product and architecture judgment before implementation.",
-    "date": 1773963318960
+    "state": "done",
+    "comment": "Defined and scaffolded .bowman/runtime/autonomy-policy.json with backend read/write endpoints. The file now provides an explicit local policy boundary for autonomy mode, lease defaults, reconnect behavior, and commit-before-compact rules.",
+    "date": 1773965648982
   },
   "intrinsicValue": 0,
   "cost": 1,

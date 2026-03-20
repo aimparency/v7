@@ -54,7 +54,17 @@ const delayMiddleware = t.middleware(async ({ next }) => {
 // Create procedures with delay middleware
 const delayedProcedure = t.procedure.use(delayMiddleware);
 
-const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\n';
+const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\nruntime/\n';
+const DEFAULT_AUTONOMY_POLICY = {
+  version: 1,
+  autonomyMode: 'supervised',
+  preferredAgentType: null,
+  sessionLeaseMinutes: 60,
+  autoConnectToExistingSession: true,
+  restoreAnimatorStateOnSessionRestart: true,
+  requireCommitBeforeCompact: true,
+  askForHumanOn: ['destructive-git', 'network', 'api-keys']
+};
 
 function normalizeProjectPath(p: string): string {
   if (!p) return p;
@@ -123,6 +133,10 @@ async function ensureProjectStructure(rawProjectPath: string) {
   await fs.ensureDir(path.join(projectPath, 'phases'));
   await fs.ensureDir(path.join(projectPath, 'runtime'));
   await fs.ensureDir(path.join(projectPath, 'runtime', 'audit'));
+  const autonomyPolicyPath = path.join(projectPath, 'runtime', 'autonomy-policy.json');
+  if (!(await fs.pathExists(autonomyPolicyPath))) {
+    await fs.writeJson(autonomyPolicyPath, DEFAULT_AUTONOMY_POLICY, { spaces: 2 });
+  }
   
   const gitignorePath = path.join(projectPath, '.gitignore');
   if (!(await fs.pathExists(gitignorePath))) {
@@ -141,6 +155,10 @@ async function ensureProjectStructure(rawProjectPath: string) {
     }
     if (!currentContent.includes('semantic-graph.json')) {
         currentContent += '\nsemantic-graph.json';
+        needsUpdate = true;
+    }
+    if (!currentContent.includes('runtime/')) {
+        currentContent += '\nruntime/';
         needsUpdate = true;
     }
     

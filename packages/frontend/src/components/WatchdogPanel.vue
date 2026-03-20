@@ -240,6 +240,14 @@ defineExpose({
             Connect
           </button>
 
+          <button
+            v-if="store.connectionState === 'connecting' && !store.isConnected"
+            @click="store.cancelConnectionAttempt()"
+            class="action-btn disconnect-btn"
+          >
+            Cancel
+          </button>
+
           <!-- Connected: Disconnect -->
           <button
             v-if="isConnectedToSelected"

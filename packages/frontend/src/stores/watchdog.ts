@@ -1,11 +1,36 @@
 import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
 import { ref, computed } from 'vue'
+import { trpc } from '../trpc'
 import { trpcWatchdog } from '../trpc-watchdog'
 import { buildHttpUrl } from '../utils/runtime-config'
 import { useProjectStore } from './project-store'
 
 export type AgentType = 'claude' | 'gemini' | 'codex'
+
+interface WatchdogRuntimeAgentState {
+  enabled: boolean
+  emergencyStopped: boolean
+  stopReason: string | null
+  updatedAt: number
+}
+
+interface WatchdogRuntimeState {
+  updatedAt: number
+  preferredAgentType?: AgentType | null
+  agents: Partial<Record<AgentType, WatchdogRuntimeAgentState>>
+}
+
+interface AutonomyPolicy {
+  version: number
+  autonomyMode: 'manual' | 'supervised' | 'autonomous'
+  preferredAgentType: AgentType | null
+  sessionLeaseMinutes: number
+  autoConnectToExistingSession: boolean
+  restoreAnimatorStateOnSessionRestart: boolean
+  requireCommitBeforeCompact: boolean
+  askForHumanOn: string[]
+}
 
 export const useWatchdogStore = defineStore('watchdog', () => {
   const socket = ref<Socket | null>(null)
@@ -16,6 +41,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const stopReason = ref('')
   const showActionsOverlay = ref(false)
   const focusRequestCounter = ref(0)
+  const autonomyPolicy = ref<AutonomyPolicy | null>(null)
 
   // Agent type selection with localStorage persistence
   const storedAgentType = localStorage.getItem('aimparency-agent-type') as AgentType | null
@@ -68,6 +94,22 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   function setAgentType(type: AgentType) {
     selectedAgentType.value = type
     localStorage.setItem('aimparency-agent-type', type)
+    const projectStore = useProjectStore()
+    if (projectStore.projectPath) {
+      void trpcWatchdogRuntimePreference(projectStore.projectPath, type)
+    }
+    void hydrateRuntimeState(undefined, type)
+  }
+
+  async function trpcWatchdogRuntimePreference(projectPath: string, preferredAgentType: AgentType) {
+    try {
+      await trpc.project.updateWatchdogRuntimeState.mutate({
+        projectPath,
+        preferredAgentType
+      })
+    } catch (e: any) {
+      logStatus(`Failed to persist preferred agent type: ${e.message}`)
+    }
   }
 
   let keepaliveTimer: number | NodeJS.Timeout | null = null
@@ -117,6 +159,11 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   async function fetchSessions() {
     try {
       sessions.value = await trpcWatchdog.watchdog.list.query()
+      const projectStore = useProjectStore()
+      if (projectStore.projectPath) {
+        await hydrateAutonomyPolicy(projectStore.projectPath)
+        await hydrateRuntimeState(projectStore.projectPath)
+      }
       // console.log(`[WatchdogStore] Fetched sessions:`, sessions.value)
     } catch (e: any) {
       logStatus(`Failed to fetch sessions: ${e.message}`)
@@ -133,8 +180,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   function connectToSocket(port: number, projectPath: string, agentType: AgentType) {
-    logStatus(`Starting keepalive and connecting to port ${port}...`)
-    startKeepalive(projectPath, agentType)
+    logStatus(`Connecting to port ${port}...`)
 
     connectionState.value = 'connecting'
     connectedAgentType.value = agentType
@@ -148,7 +194,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       timeout: 5000
     })
 
-    setupSocketListeners()
+    setupSocketListeners(projectPath, agentType)
   }
 
   async function connectToExistingSession(session: WatchdogSession, reason: string) {
@@ -203,6 +249,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   function disconnect() {
+    const projectStore = useProjectStore()
+    const projectPath = projectStore.projectPath
+    const agentType = connectedAgentType.value || selectedAgentType.value
     if (socket.value) {
       logStatus('Disconnecting from watchdog...')
       socket.value.disconnect()
@@ -214,6 +263,42 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     localStorage.setItem('aimparency-show-watchdog', 'false')
     localStorage.setItem('aimparency-watchdog-should-connect', 'false')
     stopKeepalive()
+    if (projectPath) {
+      void hydrateRuntimeState(projectPath, agentType)
+    }
+  }
+
+  async function cancelConnectionAttempt() {
+    const projectStore = useProjectStore()
+    const projectPath = projectStore.projectPath
+    const agentType = connectedAgentType.value || selectedAgentType.value
+
+    if (socket.value) {
+      socket.value.removeAllListeners()
+      socket.value.disconnect()
+      socket.value = null
+    }
+
+    stopKeepalive()
+    isConnected.value = false
+    connectionState.value = 'idle'
+    connectedAgentType.value = null
+    logStatus('Cancelled watchdog connection attempt.')
+
+    if (projectPath) {
+      try {
+        const status = await trpcWatchdog.watchdog.getStatus.query({
+          projectPath,
+          agentType
+        })
+        if (!status.running) {
+          await fetchSessions()
+        }
+      } catch (e: any) {
+        logStatus(`Failed to refresh watchdog status after cancel: ${e.message}`)
+      }
+      await hydrateRuntimeState(projectPath, agentType)
+    }
   }
 
   function toggle() {
@@ -257,6 +342,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       localStorage.setItem('aimparency-watchdog-should-connect', 'false')
       // Refresh session list
       await fetchSessions()
+      await hydrateRuntimeState(projectStore.projectPath, agentType)
     } catch (e: any) {
       logStatus(`Stop failed: ${e.message}`)
     }
@@ -305,6 +391,12 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     const projectPath = projectStore.projectPath
     if (!projectPath) return false
 
+    await hydrateAutonomyPolicy(projectPath)
+    await hydrateRuntimeState(projectPath)
+    if (autonomyPolicy.value && !autonomyPolicy.value.autoConnectToExistingSession) {
+      return false
+    }
+
     const selectedSession = currentProjectSession.value
     if (selectedSession) {
       return connectToExistingSession(selectedSession, 'Restoring existing')
@@ -319,11 +411,59 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     return connectToExistingSession(session, 'Restoring detected')
   }
 
+  async function hydrateRuntimeState(overridePath?: string, overrideAgentType?: AgentType) {
+    const projectStore = useProjectStore()
+    const projectPath = overridePath || projectStore.projectPath
+    if (!projectPath) return null
+
+    try {
+      const runtimeState = await trpc.project.getWatchdogRuntimeState.query({
+        projectPath
+      }) as WatchdogRuntimeState
+
+      const storedAgentType = localStorage.getItem('aimparency-agent-type') as AgentType | null
+      if (!storedAgentType && runtimeState.preferredAgentType) {
+        selectedAgentType.value = runtimeState.preferredAgentType
+        localStorage.setItem('aimparency-agent-type', runtimeState.preferredAgentType)
+      }
+
+      if (!isConnected.value) {
+        const agentType = overrideAgentType || selectedAgentType.value
+        const agentState = runtimeState.agents[agentType]
+        isEnabled.value = agentState?.enabled ?? false
+        isEmergencyStopped.value = agentState?.emergencyStopped ?? false
+        stopReason.value = agentState?.stopReason ?? ''
+      }
+
+      return runtimeState
+    } catch (e: any) {
+      logStatus(`Failed to hydrate watchdog runtime state: ${e.message}`)
+      return null
+    }
+  }
+
+  async function hydrateAutonomyPolicy(overridePath?: string) {
+    const projectStore = useProjectStore()
+    const projectPath = overridePath || projectStore.projectPath
+    if (!projectPath) return null
+
+    try {
+      const policy = await trpc.project.getAutonomyPolicy.query({
+        projectPath
+      }) as AutonomyPolicy
+      autonomyPolicy.value = policy
+      return policy
+    } catch (e: any) {
+      logStatus(`Failed to hydrate autonomy policy: ${e.message}`)
+      return null
+    }
+  }
+
   function triggerWorkerFocus() {
     focusRequestCounter.value++
   }
 
-  function setupSocketListeners() {
+  function setupSocketListeners(projectPath: string, agentType: AgentType) {
     if (!socket.value) return
 
     socket.value.on('connect', () => {
@@ -331,6 +471,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       isConnected.value = true
       connectionState.value = 'connected'
       localStorage.setItem('aimparency-watchdog-should-connect', 'true')
+      startKeepalive(projectPath, agentType)
     })
 
     socket.value.on('connect_error', (err) => {
@@ -345,7 +486,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     socket.value.on('reconnect_failed', () => {
       logStatus('WebSocket reconnection failed after all attempts.')
-      connectionState.value = 'error'
+      void cancelConnectionAttempt().then(() => {
+        connectionState.value = 'error'
+      })
     })
 
     socket.value.on('disconnect', (reason) => {
@@ -415,6 +558,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     spawningLog,
     showActionsOverlay,
     focusRequestCounter,
+    autonomyPolicy,
     sessions,
     selectedAgentType,
     connectedAgentType,
@@ -422,6 +566,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     setAgentType,
     fetchSessions,
     connect,
+    cancelConnectionAttempt,
     disconnect,
     stop,
     toggle,
@@ -429,6 +574,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     sendWatchdogInput,
     relaunch,
     triggerWorkerFocus,
-    restorePreviousConnection
+    restorePreviousConnection,
+    hydrateRuntimeState,
+    hydrateAutonomyPolicy
   }
 })

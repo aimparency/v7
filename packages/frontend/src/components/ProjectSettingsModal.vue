@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import { INITIAL_STATES } from 'shared'
+import type { AgentType } from '../stores/watchdog'
 
 const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
@@ -15,6 +16,81 @@ const statuses = ref<Array<{ key: string, color: string }>>([])
 const loading = ref(false)
 const isUpdatingInstructions = ref(false)
 const updateResults = ref<string[]>([])
+const autonomyMode = ref<'manual' | 'supervised' | 'autonomous'>('supervised')
+const preferredAgentType = ref<AgentType | ''>('')
+const sessionLeaseMinutes = ref(60)
+const autoConnectToExistingSession = ref(true)
+const restoreAnimatorStateOnSessionRestart = ref(true)
+const requireCommitBeforeCompact = ref(true)
+const askForHumanOnText = ref('destructive-git, network, api-keys')
+
+type RuntimeAgentState = {
+  enabled: boolean
+  emergencyStopped: boolean
+  stopReason: string | null
+  updatedAt: number
+}
+
+type WatchdogRuntimeState = {
+  updatedAt: number
+  preferredAgentType?: AgentType | null
+  agents: Partial<Record<AgentType, RuntimeAgentState>>
+}
+
+const runtimeState = ref<WatchdogRuntimeState | null>(null)
+
+const autonomyRuntimePath = computed(() => {
+  if (!projectStore.projectPath) return ''
+  const normalized = projectStore.projectPath.replace(/\/+$/, '')
+  if (normalized.endsWith('/.bowman')) return `${normalized}/runtime`
+  return `${normalized}/.bowman/runtime`
+})
+
+const runtimeAgents = computed(() => ([
+  { key: 'claude' as AgentType, label: 'Claude' },
+  { key: 'gemini' as AgentType, label: 'Gemini' },
+  { key: 'codex' as AgentType, label: 'Codex' }
+]))
+
+const formatRuntimeTimestamp = (timestamp?: number) => {
+  if (!timestamp) return 'never'
+  return new Date(timestamp).toLocaleString()
+}
+
+const describeAgentRuntimeState = (agentType: AgentType) => {
+  const state = runtimeState.value?.agents?.[agentType]
+  if (!state) return 'No runtime state'
+  if (state.emergencyStopped) return state.stopReason || 'Emergency stopped'
+  if (state.enabled) return 'Animator enabled'
+  if (state.stopReason) return `Stopped: ${state.stopReason}`
+  return 'Idle'
+}
+
+async function loadAutonomyState() {
+  if (!projectStore.projectPath) return
+
+  const [watchdogRuntime, policy] = await Promise.all([
+    trpc.project.getWatchdogRuntimeState.query({ projectPath: projectStore.projectPath }) as Promise<WatchdogRuntimeState>,
+    trpc.project.getAutonomyPolicy.query({ projectPath: projectStore.projectPath }) as Promise<{
+      autonomyMode: 'manual' | 'supervised' | 'autonomous'
+      preferredAgentType: AgentType | null
+      sessionLeaseMinutes: number
+      autoConnectToExistingSession: boolean
+      restoreAnimatorStateOnSessionRestart: boolean
+      requireCommitBeforeCompact: boolean
+      askForHumanOn: string[]
+    }>
+  ])
+
+  runtimeState.value = watchdogRuntime
+  autonomyMode.value = policy.autonomyMode
+  preferredAgentType.value = policy.preferredAgentType || ''
+  sessionLeaseMinutes.value = policy.sessionLeaseMinutes
+  autoConnectToExistingSession.value = policy.autoConnectToExistingSession
+  restoreAnimatorStateOnSessionRestart.value = policy.restoreAnimatorStateOnSessionRestart
+  requireCommitBeforeCompact.value = policy.requireCommitBeforeCompact
+  askForHumanOnText.value = policy.askForHumanOn.join(', ')
+}
 
 const blockLeakage = (e: KeyboardEvent) => {
   // If typing in any input, let it through but stop it from reaching others
@@ -40,6 +116,7 @@ onMounted(async () => {
         color.value = meta.color
         statuses.value = JSON.parse(JSON.stringify(meta.statuses || INITIAL_STATES))
     }
+    await loadAutonomyState()
   } catch (e) {
     console.error(e)
   } finally {
@@ -80,10 +157,25 @@ const updateInstructions = async () => {
 
 const save = async () => {
     try {
-        await dataStore.updateProjectMeta(projectStore.projectPath, { 
+        await dataStore.updateProjectMeta(projectStore.projectPath, {
           name: name.value, 
           color: color.value,
           statuses: statuses.value 
+        })
+        await trpc.project.updateAutonomyPolicy.mutate({
+          projectPath: projectStore.projectPath,
+          policy: {
+            autonomyMode: autonomyMode.value,
+            preferredAgentType: preferredAgentType.value || null,
+            sessionLeaseMinutes: sessionLeaseMinutes.value,
+            autoConnectToExistingSession: autoConnectToExistingSession.value,
+            restoreAnimatorStateOnSessionRestart: restoreAnimatorStateOnSessionRestart.value,
+            requireCommitBeforeCompact: requireCommitBeforeCompact.value,
+            askForHumanOn: askForHumanOnText.value
+              .split(',')
+              .map((value) => value.trim())
+              .filter(Boolean)
+          }
         })
         await dataStore.loadProject(projectStore.projectPath)
         modalStore.closeSettingsModal()
@@ -160,6 +252,94 @@ const save = async () => {
             <div v-for="(res, i) in updateResults" :key="i" class="result-line">{{ res }}</div>
           </div>
         </div>
+
+        <div class="form-group">
+          <label>Autonomy Policy</label>
+          <p class="hint-text">Stored in <code>{{ autonomyRuntimePath }}/autonomy-policy.json</code>.</p>
+
+          <div class="stacked-fields">
+            <div>
+              <label class="sub-label">Autonomy Mode</label>
+              <select v-model="autonomyMode">
+                <option value="manual">Manual</option>
+                <option value="supervised">Supervised</option>
+                <option value="autonomous">Autonomous</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="sub-label">Preferred Agent</label>
+              <select v-model="preferredAgentType">
+                <option value="">Follow UI selection</option>
+                <option value="claude">Claude</option>
+                <option value="gemini">Gemini</option>
+                <option value="codex">Codex</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="sub-label">Session Lease Minutes</label>
+              <input v-model.number="sessionLeaseMinutes" type="number" min="1" step="1" />
+            </div>
+
+            <label class="checkbox-row">
+              <input v-model="autoConnectToExistingSession" type="checkbox" />
+              <span>Auto-connect to an existing session on reload</span>
+            </label>
+
+            <label class="checkbox-row">
+              <input v-model="restoreAnimatorStateOnSessionRestart" type="checkbox" />
+              <span>Restore animator state when a session restarts</span>
+            </label>
+
+            <label class="checkbox-row">
+              <input v-model="requireCommitBeforeCompact" type="checkbox" />
+              <span>Require commit before compact / wrap-up</span>
+            </label>
+
+            <div>
+              <label class="sub-label">Ask For Human On</label>
+              <input
+                v-model="askForHumanOnText"
+                type="text"
+                placeholder="destructive-git, network, api-keys"
+                @keydown="handleKeydown"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Runtime Ownership</label>
+          <p class="hint-text">Current runtime state observed from <code>{{ autonomyRuntimePath }}</code>.</p>
+
+          <div class="runtime-box">
+            <div class="runtime-line">
+              <span class="runtime-key">Project Root</span>
+              <code>{{ projectStore.projectPath.replace(/\/\.bowman$/, '') }}</code>
+            </div>
+            <div class="runtime-line">
+              <span class="runtime-key">.bowman Runtime</span>
+              <code>{{ autonomyRuntimePath }}</code>
+            </div>
+            <div class="runtime-line">
+              <span class="runtime-key">Runtime Updated</span>
+              <span>{{ formatRuntimeTimestamp(runtimeState?.updatedAt) }}</span>
+            </div>
+          </div>
+
+          <div class="runtime-agent-list">
+            <div v-for="agent in runtimeAgents" :key="agent.key" class="runtime-agent-card">
+              <div class="runtime-agent-header">
+                <strong>{{ agent.label }}</strong>
+                <span class="runtime-status-chip">{{ describeAgentRuntimeState(agent.key) }}</span>
+              </div>
+              <div class="runtime-agent-meta">
+                <span>Updated: {{ formatRuntimeTimestamp(runtimeState?.agents?.[agent.key]?.updatedAt) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       
       <div class="modal-footer">
@@ -228,6 +408,21 @@ const save = async () => {
         border-radius: 3px;
         color: #e0e0e0;
         
+        &:focus {
+          outline: none;
+          border-color: #007acc;
+        }
+      }
+
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 0.5rem;
+        background: #1a1a1a;
+        border: 1px solid #555;
+        border-radius: 3px;
+        color: #e0e0e0;
+
         &:focus {
           outline: none;
           border-color: #007acc;
@@ -317,6 +512,30 @@ const save = async () => {
       margin-top: -0.25rem;
     }
 
+    .sub-label {
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-bottom: 0.35rem;
+    }
+
+    .stacked-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #ddd;
+      font-size: 0.9rem;
+
+      input[type="checkbox"] {
+        width: auto;
+      }
+    }
+
     .action-btn {
       width: 100%;
       padding: 0.5rem;
@@ -339,6 +558,64 @@ const save = async () => {
     }
     
     .result-line { margin-bottom: 0.2rem; }
+
+    .runtime-box,
+    .runtime-agent-card {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 0.75rem;
+    }
+
+    .runtime-box {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .runtime-line {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      font-size: 0.85rem;
+    }
+
+    .runtime-key {
+      color: #8f8f8f;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 0.72rem;
+    }
+
+    .runtime-agent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .runtime-agent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .runtime-status-chip {
+      background: rgba(0, 122, 204, 0.18);
+      color: #9dd7ff;
+      border: 1px solid rgba(0, 122, 204, 0.35);
+      border-radius: 999px;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.72rem;
+      white-space: nowrap;
+    }
+
+    .runtime-agent-meta {
+      color: #9b9b9b;
+      font-size: 0.8rem;
+    }
   }
   
   .modal-footer {

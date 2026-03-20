@@ -167,13 +167,15 @@ Current progress:
 - `.bowman/runtime` and `.bowman/runtime/audit` are scaffolded during project initialization
 - active watchdog sessions are mirrored into `.bowman/runtime/watchdog-sessions.json`
 - the frontend now reconnects to an existing broker session for the current project instead of requiring browser-local reconnect intent
+- watchdog desired state, emergency-stop state, preferred agent type, and last stop reason are persisted in `.bowman/runtime/watchdog-state.json`
+- the backend exposes runtime state read/write endpoints for durable watchdog metadata
+- `.bowman/runtime/autonomy-policy.json` is now scaffolded as the first explicit project-local autonomy policy file
 
 Still missing in Stage 1:
 
-- durable watchdog desired state such as enabled/disabled and last stop reason
 - explicit heartbeat / lease state files
-- backend-owned runtime state APIs as the canonical read path
-- durable operator-approved autonomy policy / constitution files
+- UI surfaces for editing autonomy policy and showing runtime ownership clearly
+- a clearer decision on which runtime files should remain local-only versus become durable project state
 
 ### Stage 2. Scheduler / heartbeat in the local service
 
@@ -224,6 +226,6 @@ Aimparency's strength is the graph, local repo integration, and inspectable memo
 1. Persist watchdog desired state and stop reasons under `.bowman/runtime`.
 2. Add backend-owned runtime state endpoints for autonomy metadata.
 3. Define a backend-owned heartbeat/lease model for worker sessions.
-4. Add an explicit autonomy policy document and UI surface.
+4. Add a UI surface for `autonomy-policy.json` and runtime state.
 5. Show current autonomy mode, active worker, lease age, and owning project clearly in the UI.
 6. Only then explore deeper compatibility with external autonomy runtimes.

@@ -1,0 +1,31 @@
+{
+  "id": "fa735173-548c-4830-84a4-de7738024cf7",
+  "text": "Show autonomy runtime ownership directly in the watchdog panel",
+  "description": "Project Settings now shows runtime ownership and autonomy policy, but the watchdog panel should also make it obvious which policy/runtime state currently governs session restore, lease behavior, and animator ownership.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "ui",
+    "watchdog"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b69e9372-2207-4624-8a18-9a814f3938b2",
+    "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1773965910878
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

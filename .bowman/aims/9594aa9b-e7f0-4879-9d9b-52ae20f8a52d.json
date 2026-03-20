@@ -41,6 +41,38 @@
         -2.4614874676117133
       ],
       "weight": 1
+    },
+    {
+      "aimId": "300f5452-f7e9-452d-9f3e-078c988e8af8",
+      "relativePosition": [
+        2.1568857053350805,
+        -1.264058564355779
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b69e9372-2207-4624-8a18-9a814f3938b2",
+      "relativePosition": [
+        -1.4399903484016279,
+        2.043631032380884
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "42c92b27-ed17-4319-9f1a-f2f57af54651",
+      "relativePosition": [
+        -1.7468202231780334,
+        1.7884683692747394
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "fa735173-548c-4830-84a4-de7738024cf7",
+      "relativePosition": [
+        2.135601744975615,
+        -1.2996942666862499
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -51,8 +83,8 @@
   ],
   "status": {
     "state": "partially",
-    "comment": "Session-level autonomy state is now starting to move into .bowman/runtime. Active watchdog sessions are mirrored there, but broader autonomy state like scheduler, identity, and policy is still not persisted.",
-    "date": 1773963286603
+    "comment": "Policy now directly drives broker lease timeout, frontend auto-connect behavior, and session-side animator restore. Remaining work is to push more watchdog/compact/runtime behavior under policy ownership and surface runtime ownership more directly in the watchdog UI.",
+    "date": 1773965910828
   },
   "intrinsicValue": 0,
   "cost": 1,

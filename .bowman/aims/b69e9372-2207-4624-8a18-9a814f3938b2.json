@@ -1,0 +1,49 @@
+{
+  "id": "b69e9372-2207-4624-8a18-9a814f3938b2",
+  "text": "Add a UI surface for autonomy policy and runtime ownership",
+  "description": "Expose .bowman/runtime/autonomy-policy.json and related runtime state in the frontend so the user can inspect and adjust autonomy mode, lease defaults, reconnect behavior, and commit-before-compact rules without editing files manually.",
+  "reflections": [
+    {
+      "date": 1773965775072,
+      "context": "Expose autonomy policy and runtime ownership in the frontend so users can inspect and adjust durable autonomy state without editing files manually.",
+      "outcome": "Extended the project settings modal with autonomy policy controls and a runtime ownership section that displays runtime paths and current per-agent runtime state from backend-owned .bowman/runtime files.",
+      "effectiveness": "This was a good first UI step because it reused an existing settings surface instead of adding another panel. That kept the change small while making the new runtime files visible and editable.",
+      "lesson": "For early autonomy features, integrate them into familiar project settings first. It creates visibility quickly and avoids premature UI sprawl.",
+      "pattern": "This follows the same pattern as other release/autonomy work here: move durable state into backend/file ownership first, then expose a thin UI surface on top."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "ui",
+    "runtime"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "fa735173-548c-4830-84a4-de7738024cf7",
+      "relativePosition": [
+        -2.4149674943639914,
+        0.6464766052730032
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "2ff1fd7a-7e02-4197-a558-174622db7cbe",
+    "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Added a first autonomy UI surface inside Project Settings. It now exposes autonomy-policy.json controls and shows current runtime ownership/status from .bowman/runtime.",
+    "date": 1773965775057
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

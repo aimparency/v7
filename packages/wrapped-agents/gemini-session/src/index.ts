@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import * as path from 'path';
 import * as net from 'net';
+import * as fs from 'fs';
 import cors from 'cors';
 import { Agent } from './agent';
 import { WatchdogService } from './watchdog';
@@ -145,6 +146,84 @@ for (let i = 0; i < args.length; i++) {
 const PROJECT_ROOT = projectRootPath;
 
 const KENNEL_PATH = path.join(__dirname, '../kennel');
+const PROJECT_AIMPARENCY_DIR = path.join(PROJECT_ROOT, '.bowman');
+const WATCHDOG_RUNTIME_STATE_PATH = path.join(PROJECT_AIMPARENCY_DIR, 'runtime', 'watchdog-state.json');
+const AGENT_TYPE = 'gemini' as const;
+
+type RuntimeAgentState = {
+  enabled: boolean;
+  emergencyStopped: boolean;
+  stopReason: string | null;
+  updatedAt: number;
+};
+
+type WatchdogRuntimeState = {
+  updatedAt: number;
+  preferredAgentType: 'claude' | 'gemini' | 'codex' | null;
+  agents: Partial<Record<'claude' | 'gemini' | 'codex', RuntimeAgentState>>;
+};
+
+type AutonomyPolicy = {
+  restoreAnimatorStateOnSessionRestart?: boolean;
+};
+
+function readWatchdogRuntimeState(): WatchdogRuntimeState {
+  try {
+    if (!fs.existsSync(WATCHDOG_RUNTIME_STATE_PATH)) {
+      return {
+        updatedAt: 0,
+        preferredAgentType: null,
+        agents: {}
+      };
+    }
+
+    return JSON.parse(fs.readFileSync(WATCHDOG_RUNTIME_STATE_PATH, 'utf8')) as WatchdogRuntimeState;
+  } catch (error) {
+    console.warn('[Watchdog] Failed to read runtime state:', error);
+    return {
+      updatedAt: 0,
+      preferredAgentType: null,
+      agents: {}
+    };
+  }
+}
+
+function readAutonomyPolicy(): AutonomyPolicy {
+  try {
+    const policyPath = path.join(PROJECT_AIMPARENCY_DIR, 'runtime', 'autonomy-policy.json');
+    if (!fs.existsSync(policyPath)) {
+      return { restoreAnimatorStateOnSessionRestart: true };
+    }
+    return JSON.parse(fs.readFileSync(policyPath, 'utf8')) as AutonomyPolicy;
+  } catch (error) {
+    console.warn('[Watchdog] Failed to read autonomy policy:', error);
+    return { restoreAnimatorStateOnSessionRestart: true };
+  }
+}
+
+function persistWatchdogRuntimeState(service: WatchdogService) {
+  try {
+    const current = readWatchdogRuntimeState();
+    const next: WatchdogRuntimeState = {
+      updatedAt: Date.now(),
+      preferredAgentType: current.preferredAgentType ?? AGENT_TYPE,
+      agents: {
+        ...current.agents,
+        [AGENT_TYPE]: {
+          enabled: service.enabled,
+          emergencyStopped: service.emergencyStopped,
+          stopReason: service.lastStopReason || null,
+          updatedAt: Date.now()
+        }
+      }
+    };
+
+    fs.mkdirSync(path.dirname(WATCHDOG_RUNTIME_STATE_PATH), { recursive: true });
+    fs.writeFileSync(WATCHDOG_RUNTIME_STATE_PATH, JSON.stringify(next, null, 2));
+  } catch (error) {
+    console.warn('[Watchdog] Failed to persist runtime state:', error);
+  }
+}
 
 
 
@@ -216,6 +295,19 @@ const watchdog = new Agent(KENNEL_PATH, geminiWatchdogArgs, (data) => {
 
 
 const watchdogService = new WatchdogService(worker!, watchdog, workerModel, compactEvery);
+const existingRuntimeState = readWatchdogRuntimeState().agents[AGENT_TYPE];
+const autonomyPolicy = readAutonomyPolicy();
+if (existingRuntimeState) {
+  watchdogService.lastStopReason = existingRuntimeState.stopReason ?? '';
+  watchdogService.emergencyStopped = existingRuntimeState.emergencyStopped;
+  if (existingRuntimeState.enabled && autonomyPolicy.restoreAnimatorStateOnSessionRestart !== false) {
+    watchdogService.setEnabled(true);
+  }
+}
+watchdogService.onStateChange = () => {
+  persistWatchdogRuntimeState(watchdogService);
+};
+persistWatchdogRuntimeState(watchdogService);
 
 
 
@@ -224,6 +316,7 @@ watchdogService.onStop = (reason) => {
     console.log(`Watchdog stopped: ${reason}`);
 
     io.emit('watchdog-state', false);
+    io.emit('watchdog-stop-reason', watchdogService.lastStopReason || reason);
 
 };
 
@@ -244,6 +337,7 @@ io.on('connection', (socket) => {
   socket.emit('watchdog-state', watchdogService.enabled);
 
   socket.emit('emergency-state', watchdogService.emergencyStopped);
+  socket.emit('watchdog-stop-reason', watchdogService.lastStopReason);
 
   
 
@@ -254,6 +348,7 @@ io.on('connection', (socket) => {
     io.emit('watchdog-state', enabled);
 
     io.emit('emergency-state', watchdogService.emergencyStopped); // Sync state
+    io.emit('watchdog-stop-reason', watchdogService.lastStopReason);
 
   });
 

@@ -22,7 +22,7 @@ interface WatchdogInstance {
 }
 
 const instances = new Map<string, WatchdogInstance>();
-const KEEPALIVE_TIMEOUT = 60 * 60 * 1000; // 60 minutes
+const DEFAULT_KEEPALIVE_TIMEOUT = 60 * 60 * 1000; // 60 minutes
 
 // Compound key for instances: allows same project with different agent types
 function getInstanceKey(projectPath: string, agentType: AgentType): string {
@@ -35,6 +35,7 @@ const WRAPPER_DIR = path.resolve(__dirname, '../../');
 const SESSIONS_FILE = path.join(WRAPPER_DIR, 'watchdog-sessions.json');
 const RUNTIME_DIR_NAME = 'runtime';
 const PROJECT_RUNTIME_SESSIONS_FILE = 'watchdog-sessions.json';
+const AUTONOMY_POLICY_FILE = 'autonomy-policy.json';
 
 function normalizeProjectPath(p: string): string {
   if (!p) return p;
@@ -62,6 +63,29 @@ function saveSessions() {
 
 function getProjectRuntimeSessionsFile(projectPath: string): string {
   return path.join(projectPath, RUNTIME_DIR_NAME, PROJECT_RUNTIME_SESSIONS_FILE);
+}
+
+function getProjectAutonomyPolicyFile(projectPath: string): string {
+  return path.join(projectPath, RUNTIME_DIR_NAME, AUTONOMY_POLICY_FILE);
+}
+
+function getKeepaliveTimeout(projectPath: string): number {
+  const policyPath = getProjectAutonomyPolicyFile(projectPath);
+  try {
+    if (!fs.existsSync(policyPath)) {
+      return DEFAULT_KEEPALIVE_TIMEOUT;
+    }
+
+    const policy = fs.readJsonSync(policyPath) as { sessionLeaseMinutes?: number };
+    const minutes = policy.sessionLeaseMinutes;
+    if (typeof minutes !== 'number' || !Number.isFinite(minutes) || minutes <= 0) {
+      return DEFAULT_KEEPALIVE_TIMEOUT;
+    }
+    return minutes * 60 * 1000;
+  } catch (error) {
+    console.warn(`[WatchdogBroker] Failed to read autonomy policy for ${projectPath}:`, error);
+    return DEFAULT_KEEPALIVE_TIMEOUT;
+  }
 }
 
 async function syncProjectRuntimeSessions(projectPath: string) {
@@ -123,10 +147,23 @@ function checkTimeout(projectPath: string, agentType: AgentType) {
   const instance = instances.get(key);
   if (instance) {
     const elapsed = Date.now() - instance.lastKeepalive;
-    if (elapsed > KEEPALIVE_TIMEOUT) {
-      console.log(`[WatchdogBroker] Timeout for ${agentType}@${projectPath}. Elapsed: ${elapsed}ms > Limit: ${KEEPALIVE_TIMEOUT}ms. Killing process.`);
+    const keepaliveTimeout = getKeepaliveTimeout(projectPath);
+    if (elapsed > keepaliveTimeout) {
+      console.log(`[WatchdogBroker] Timeout for ${agentType}@${projectPath}. Elapsed: ${elapsed}ms > Limit: ${keepaliveTimeout}ms. Killing process.`);
       killInstance(instance);
     }
+  }
+}
+
+function isInstanceAlive(instance: WatchdogInstance): boolean {
+  try {
+    if (instance.process) {
+      return instance.process.exitCode === null;
+    }
+    process.kill(instance.pid, 0);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -146,7 +183,8 @@ function loadSessions() {
           process.kill(s.pid, 0);
 
           // Check if timed out while we were away
-          if (Date.now() - s.lastKeepalive > KEEPALIVE_TIMEOUT) {
+          const keepaliveTimeout = getKeepaliveTimeout(s.projectPath);
+          if (Date.now() - s.lastKeepalive > keepaliveTimeout) {
              console.log(`[WatchdogBroker] Reclaimed ${agentType} session for ${s.projectPath} (PID ${s.pid}) is expired. Killing.`);
              // Kill process group to clean up any children
              try { process.kill(-s.pid, 'SIGTERM'); } catch(e) {
@@ -346,6 +384,10 @@ export const WatchdogManager = {
     const key = getInstanceKey(projectPath, agentType);
     const instance = instances.get(key);
     if (instance) {
+      if (!isInstanceAlive(instance)) {
+        killInstance(instance);
+        return false;
+      }
       instance.lastKeepalive = Date.now();
       saveSessions();
       await syncProjectRuntimeSessions(projectPath);
@@ -361,19 +403,10 @@ export const WatchdogManager = {
       const key = getInstanceKey(projectPath, agentType);
       const instance = instances.get(key);
       if (instance) {
-          try {
-              if (instance.process) {
-                  if (instance.process.exitCode !== null) {
-                      killInstance(instance);
-                      return { running: false };
-                  }
-              } else {
-                  process.kill(instance.pid, 0);
-              }
+          if (isInstanceAlive(instance)) {
               return { running: true, port: instance.port, agentType: instance.agentType };
-          } catch(e) {
-              killInstance(instance);
           }
+          killInstance(instance);
       }
       return { running: false };
   },
@@ -387,7 +420,11 @@ export const WatchdogManager = {
   },
 
   list(): Array<{ projectPath: string, pid: number, port: number, agentType: AgentType, lastKeepalive: number }> {
-      return Array.from(instances.values()).map(i => ({
+      return Array.from(instances.values()).filter((instance) => {
+        if (isInstanceAlive(instance)) return true;
+        killInstance(instance);
+        return false;
+      }).map(i => ({
         projectPath: i.projectPath,
         pid: i.pid,
         port: i.port,

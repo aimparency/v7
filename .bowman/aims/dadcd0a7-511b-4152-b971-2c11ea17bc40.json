@@ -2,7 +2,16 @@
   "id": "dadcd0a7-511b-4152-b971-2c11ea17bc40",
   "text": "Add backend-owned runtime state endpoints for autonomy metadata",
   "description": "Expose .bowman/runtime state through backend APIs so the frontend can observe autonomy/session/runtime state without inferring it from localStorage or transient socket-only state. This should become the read path for durable autonomy state.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1773965565880,
+      "context": "Expose durable autonomy/watchdog runtime state through backend APIs so the frontend can observe project-local runtime truth instead of inferring it from transient sockets or localStorage.",
+      "outcome": "Added backend project router endpoints to read and update watchdog runtime state under .bowman/runtime/watchdog-state.json, and used them from the frontend store to hydrate and persist preferred runtime state.",
+      "effectiveness": "The endpoint slice was the right size. It moved ownership in the right direction without forcing a full autonomy framework redesign first.",
+      "lesson": "Autonomy architecture benefits from a stable file format plus thin backend endpoints before adding more UI or scheduler behavior.",
+      "pattern": "This follows the same pattern as aims/phases/meta: file-backed project state becomes much easier to reason about once the backend provides a canonical access path."
+    }
+  ],
   "archived": false,
   "tags": [
     "autonomy",
@@ -17,9 +26,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "Needed to complete the ownership shift from browser to local service.",
-    "date": 1773963318922
+    "state": "done",
+    "comment": "Added backend-owned project runtime state endpoints so the frontend can read and update durable watchdog runtime state without relying on browser-local inference.",
+    "date": 1773965555842
   },
   "intrinsicValue": 0,
   "cost": 1,

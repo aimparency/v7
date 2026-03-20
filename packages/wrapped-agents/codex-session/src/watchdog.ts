@@ -122,8 +122,10 @@ export class WatchdogService {
   }
 
   emergencyStopped: boolean = false;
+  lastStopReason = '';
   onEmergencyStop?: () => void;
   onStop?: (reason: string) => void;
+  onStateChange?: () => void;
 
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
@@ -134,15 +136,18 @@ export class WatchdogService {
       this.nextCheckTime = Date.now() + 500;
       this.turnCount = 0;
       this.workingTowardsCommit = false;
+      this.lastStopReason = '';
       this.resetWorkerActivity(Date.now());
     } else {
       this.waitingForResponse = false;
       this.waitingForResponseStart = false;
       this.processing = false;
       this.workingTowardsCommit = false;
+      this.lastStopReason = '';
       this.resetWorkerActivity(0);
     }
     this.log(`Logic ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    this.onStateChange?.();
   }
 
   stop(reason: string) {
@@ -151,10 +156,12 @@ export class WatchdogService {
       this.waitingForResponse = false;
       this.waitingForResponseStart = false;
       this.processing = false;
+      this.lastStopReason = reason;
       this.log(`WATCHDOG STOPPED: ${reason}`);
       if (this.onStop) {
           this.onStop(reason);
       }
+      this.onStateChange?.();
   }
 
   triggerEmergencyStop() {
@@ -164,6 +171,7 @@ export class WatchdogService {
       if (this.onEmergencyStop) {
           this.onEmergencyStop();
       }
+      this.onStateChange?.();
   }
 
   onWorkerData(data: string) {
