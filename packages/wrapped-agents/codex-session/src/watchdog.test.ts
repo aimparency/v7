@@ -106,6 +106,24 @@ test('isGenerating detects cancel-style busy indicator', () => {
   assert.equal(generating, true);
 });
 
+test('hasVisibleChoiceMenu detects command approval prompt with shortcut keys', () => {
+  const service = createService('CURRENT_MARKER');
+  const agent = {
+    getLines: () => `Would you like to run the following command?
+
+  Reason: Do you want to allow me to stage the tracked watchdog changes and create the requested git commit?
+
+  $ git add -u && git commit -m "Tighten codex watchdog wrap-up threshold"
+
+› 1. Yes, proceed (y)
+  2. Yes, and don't ask again for commands that start with \`git add -u\` (p)
+  3. No, and tell Codex what to do differently (esc)`,
+  };
+
+  const detected = (service as any).hasVisibleChoiceMenu(agent);
+  assert.equal(detected, true);
+});
+
 test('getWorkerProcessingDurationMs parses wrapped esc-to-cancel timer', () => {
   const service = createService('CURRENT_MARKER');
   (service as any).worker = {
@@ -161,6 +179,96 @@ test('tick asks watchdog when worker processing exceeds interrupt threshold', as
   service.setEnabled(true);
   (service as any).nextCheckTime = 0;
   (service as any).lastLongProcessingEscalationAt = 0;
+
+  await service.tick();
+
+  assert.equal(asked, true);
+});
+
+test('tick asks watchdog immediately when worker shows a visible choice menu', async () => {
+  const worker = {
+    getLines: () => `Would you like to run the following command?
+
+  Reason: Do you want to allow me to stage the tracked watchdog changes and create the requested git commit?
+
+  $ git add -u && git commit -m "Tighten codex watchdog wrap-up threshold"
+
+› 1. Yes, proceed (y)
+  2. Yes, and don't ask again for commands that start with \`git add -u\` (p)
+  3. No, and tell Codex what to do differently (esc)`,
+    getLastLine: () => '  3. No, and tell Codex what to do differently (esc)',
+    write: () => {},
+  };
+  const watchdog = {
+    getLines: () => '',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  let asked = false;
+  (service as any).askWatchdog = async () => {
+    asked = true;
+  };
+  service.setEnabled(true);
+  (service as any).nextCheckTime = 0;
+
+  await service.tick();
+
+  assert.equal(asked, true);
+});
+
+test('tick asks watchdog after a busy-to-idle transition', async () => {
+  const worker = {
+    getLines: () => 'plain idle-ish screen without esc-to-interrupt marker',
+    getLastLine: () => 'plain idle-ish screen without esc-to-interrupt marker',
+    write: () => {},
+  };
+  const watchdog = {
+    getLines: () => '',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  let asked = false;
+  (service as any).askWatchdog = async () => {
+    asked = true;
+  };
+  service.setEnabled(true);
+  (service as any).workerActivity = {
+    enabledAt: Date.now() - 10_000,
+    observedBusySinceEnabled: true,
+    lastBusyAt: Date.now() - 1000,
+  };
+  (service as any).nextCheckTime = 0;
+
+  await service.tick();
+
+  assert.equal(asked, true);
+});
+
+test('tick asks watchdog after bootstrap timeout when no busy phase has been observed', async () => {
+  const worker = {
+    getLines: () => 'plain idle-ish screen without esc-to-interrupt marker',
+    getLastLine: () => 'plain idle-ish screen without esc-to-interrupt marker',
+    write: () => {},
+  };
+  const watchdog = {
+    getLines: () => '',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  let asked = false;
+  (service as any).askWatchdog = async () => {
+    asked = true;
+  };
+  service.setEnabled(true);
+  (service as any).workerActivity = {
+    enabledAt: Date.now() - 6000,
+    observedBusySinceEnabled: false,
+    lastBusyAt: 0,
+  };
+  (service as any).nextCheckTime = 0;
 
   await service.tick();
 
@@ -408,7 +516,7 @@ test('askWatchdog includes wrap-up guidance when commit mode is active', async (
   assert.match(prompt, /Do NOT use .*instruct.* true while wrap-up is active/i);
   assert.match(prompt, /Never tell Codex to paste system, developer, tool, or permissions instructions/);
   assert.match(prompt, /commit-done/);
-  assert.match(prompt, /shortcut keys like \(y\), \(a\), or \(esc\)/);
+  assert.match(prompt, /shortcut keys like \(y\), \(p\), \(a\), or \(esc\)/);
   assert.match(prompt, /select-option/i);
   assert.match(prompt, /key": "y"/);
 });

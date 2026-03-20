@@ -32,12 +32,19 @@ const RESPONSE_START_TIMEOUT = parseInt(process.env.WATCHDOG_RESPONSE_START_TIME
 const RESPONSE_COMPLETION_GRACE_MS = parseInt(process.env.WATCHDOG_RESPONSE_COMPLETION_GRACE_MS || '5000', 10);
 const PROCESSING_INTERRUPT_THRESHOLD_MS = parseInt(process.env.WATCHDOG_PROCESSING_INTERRUPT_THRESHOLD_MS || '900000', 10);
 const PROCESSING_INTERRUPT_RECHECK_MS = parseInt(process.env.WATCHDOG_PROCESSING_INTERRUPT_RECHECK_MS || '120000', 10);
+const WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS = parseInt(process.env.WATCHDOG_WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS || '5000', 10);
 const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 // Codex may render spinner-like characters depending on terminal mode
 const SPINNER_CHARS = ['✻', '·', '✢', '○', '◎', '●', '◯'];
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
 const WRAP_UP_PROMPT = "Track changes and make a git commit for the completed work (usually use `git add -u` first, then `git add` for intentional new files).";
 const WRAP_UP_THRESHOLD_GUIDANCE = 'Use wrap-up conservatively. Only choose it after a clearly meaningful milestone is complete and Codex is at a natural stopping point.';
+
+interface WorkerActivityState {
+  enabledAt: number;
+  observedBusySinceEnabled: boolean;
+  lastBusyAt: number;
+}
 
 function stripAnsi(str: string): string {
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
@@ -64,6 +71,11 @@ export class WatchdogService {
   private lastExecutedActionSignature = '';
   private lastExecutedActionAt = 0;
   private lastLongProcessingEscalationAt = 0;
+  private workerActivity: WorkerActivityState = {
+    enabledAt: 0,
+    observedBusySinceEnabled: false,
+    lastBusyAt: 0,
+  };
   private sessionMemory: SessionMemory | null = null;
   private instructTextWithMemory: string = INSTRUCT_TEXT;
   private workingTowardsCommit = false;
@@ -122,11 +134,13 @@ export class WatchdogService {
       this.nextCheckTime = Date.now() + 500;
       this.turnCount = 0;
       this.workingTowardsCommit = false;
+      this.resetWorkerActivity(Date.now());
     } else {
       this.waitingForResponse = false;
       this.waitingForResponseStart = false;
       this.processing = false;
       this.workingTowardsCommit = false;
+      this.resetWorkerActivity(0);
     }
     this.log(`Logic ${enabled ? 'ENABLED' : 'DISABLED'}`);
   }
@@ -153,6 +167,8 @@ export class WatchdogService {
   }
 
   onWorkerData(data: string) {
+    void data;
+    this.observeWorkerActivity(Date.now());
     if (this.enabled && !this.waitingForResponse && !this.waitingForResponseStart) {
         this.nextCheckTime = Math.max(this.nextCheckTime, Date.now() + IDLE_CHECK_INTERVAL);
     }
@@ -261,6 +277,23 @@ export class WatchdogService {
         return;
       }
 
+      // Approval/confirmation menus should be handled immediately.
+      if (this.hasVisibleChoiceMenu(this.worker)) {
+        this.log('Detected visible worker choice menu. Asking watchdog for immediate selection.');
+        await this.askWatchdog();
+        this.processing = false;
+        return;
+      }
+
+      const workerIdleReason = this.getWorkerIdleEscalationReason(Date.now());
+      if (workerIdleReason) {
+        this.log(workerIdleReason);
+        await this.askWatchdog();
+        this.markWorkerIdleEscalation(Date.now());
+        this.processing = false;
+        return;
+      }
+
       // Check Worker Idle
       const workerProcessingDurationMs = this.getWorkerProcessingDurationMs();
       if (
@@ -325,6 +358,60 @@ export class WatchdogService {
     // Check recent lines because zoom/terminal wrapping can move this off the last line.
     const hasBusyIndicator = /esc to (interrupt|cancel)/i.test(recentLines);
     return hasSpinner || hasBusyIndicator;
+  }
+
+  private resetWorkerActivity(now: number) {
+    this.workerActivity = {
+      enabledAt: now,
+      observedBusySinceEnabled: false,
+      lastBusyAt: 0,
+    };
+  }
+
+  private observeWorkerActivity(now: number) {
+    if (!this.worker) return;
+    if (!this.isGenerating(this.worker)) return;
+
+    this.workerActivity.observedBusySinceEnabled = true;
+    this.workerActivity.lastBusyAt = now;
+  }
+
+  private getWorkerIdleEscalationReason(now: number): string | null {
+    this.observeWorkerActivity(now);
+
+    if (this.workerActivity.observedBusySinceEnabled) {
+      if (this.workerActivity.lastBusyAt !== 0 && now - this.workerActivity.lastBusyAt >= IDLE_CHECK_INTERVAL) {
+        return 'Worker transitioned from busy to not busy. Asking watchdog.';
+      }
+      return null;
+    }
+
+    if (this.workerActivity.enabledAt !== 0 && now - this.workerActivity.enabledAt >= WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS) {
+      return `Worker never showed a busy indicator after enable; bootstrap timeout ${WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS}ms reached. Asking watchdog.`;
+    }
+
+    return null;
+  }
+
+  private markWorkerIdleEscalation(now: number) {
+    if (this.workerActivity.observedBusySinceEnabled) {
+      this.workerActivity.lastBusyAt = now;
+      return;
+    }
+
+    this.workerActivity.enabledAt = now;
+  }
+
+  private hasVisibleChoiceMenu(agent: Agent): boolean {
+    const recentLines = stripAnsi(agent.getLines(24));
+    const hasApprovalHeading =
+      /Would you like to run the following command\?/i.test(recentLines) ||
+      /Would you like to make the following edits\?/i.test(recentLines) ||
+      /Would you like to /i.test(recentLines);
+    const hasSelectedOption = /^\s*›\s*\d+\./m.test(recentLines);
+    const hasShortcutOptions = /\((?:y|p|a|esc)\)/i.test(recentLines);
+
+    return hasApprovalHeading && hasSelectedOption && hasShortcutOptions;
   }
 
   private getWorkerProcessingDurationMs(): number | null {
@@ -450,7 +537,8 @@ IMPORTANT:
 - Use compact directly only after a wrap-up is already in progress and the commit is finished.
 - ${wrapUpGuidance}
 - If Codex is blocked on a visible confirmation/approval menu, prefer select-option immediately over sending another prompt.
-- For approval menus that show shortcut keys like (y), (a), or (esc), use select-option with the shortcut key instead of the numeric list position.
+- This includes command/edit approval prompts like "Would you like to run the following command?" with visible options such as (y), (p), or (esc).
+- For approval menus that show shortcut keys like (y), (p), (a), or (esc), use select-option with the shortcut key instead of the numeric list position.
 - Use "instruct": true ONLY when:
   1. Codex explicitly asks "what should I do next?" or similar
   2. Codex has clearly completed all current work and is idle
