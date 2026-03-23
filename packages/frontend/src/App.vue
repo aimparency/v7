@@ -7,10 +7,13 @@ import { useProjectStore } from './stores/project-store'
 import { useDataStore, type Aim } from './stores/data'
 import { useMapStore } from './stores/map'
 import { trpc } from './trpc'
+import type { AimSearchAdditionalOption, AimSearchPickPayload } from './stores/ui/aim-search-types'
+import type { PhaseSearchSelection } from './stores/ui/phase-search-types'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
 import AimEditModal from './components/AimEditModal.vue'
 import AimSearchModal from './components/AimSearchModal.vue'
+import PhaseSearchModal from './components/PhaseSearchModal.vue'
 import ColumnsView from './views/ColumnsView.vue'
 import GraphViewWrapper from './views/GraphViewWrapper.vue'
 import ProjectSelectionView from './views/ProjectSelectionView.vue'
@@ -26,10 +29,10 @@ const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const mapStore = useMapStore()
 
-const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath }) => {
+const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath } | { type: 'option', data: AimSearchAdditionalOption }) => {
   if (modalStore.aimSearchMode === 'pick') {
-    if (modalStore.aimSearchCallback && payload.type === 'aim') {
-      modalStore.aimSearchCallback(payload.data as Aim)
+    if (modalStore.aimSearchCallback && payload.type !== 'path') {
+      modalStore.aimSearchCallback(payload as AimSearchPickPayload)
     }
   } else {
     if (projectStore.currentView === 'graph' && payload.type === 'aim') {
@@ -45,6 +48,13 @@ const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimP
     }
   }
   modalStore.closeAimSearch()
+}
+
+const handlePhaseSearchSelect = (payload: PhaseSearchSelection) => {
+  if (modalStore.phaseSearchPromptCallback) {
+    modalStore.phaseSearchPromptCallback(payload)
+  }
+  modalStore.closePhaseSearchPrompt()
 }
 
 // Local UI state
@@ -363,6 +373,14 @@ onUnmounted(() => {
       v-if="modalStore.showAimSearch"
       @select="handleAimSearchSelect"
       @close="modalStore.closeAimSearch()"
+    />
+    <PhaseSearchModal
+      v-if="modalStore.showPhaseSearchPrompt"
+      :title="modalStore.phaseSearchPromptTitle"
+      :placeholder="modalStore.phaseSearchPromptPlaceholder"
+      :additional-options="modalStore.phaseSearchPromptAdditionalOptions"
+      @select="handlePhaseSearchSelect"
+      @close="modalStore.closePhaseSearchPrompt()"
     />
 
     <!-- Consistency Modal -->

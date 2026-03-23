@@ -12,6 +12,7 @@ vi.mock('../../trpc', () => ({
   trpc: {
     aim: {
       search: { query: vi.fn().mockResolvedValue([]) },
+      searchSemantic: { query: vi.fn().mockResolvedValue([]) },
       get: { query: vi.fn() }
     }
   }
@@ -114,9 +115,14 @@ describe('AimCreationModal', () => {
     const addBtn = wrapper.find('button[title="Add Parent"]')
     await addBtn.trigger('click')
 
-    expect(modalStore.openAimSearch).toHaveBeenCalledWith('pick', expect.any(Function))
+    expect(modalStore.openAimSearch).toHaveBeenCalledWith(
+      'pick',
+      expect.any(Function),
+      undefined,
+      expect.objectContaining({ title: 'Select Supported Aim' })
+    )
     const callback = modalStore.openAimSearch.mock.calls[0]?.[1]
-    callback({ id: 'p1', text: 'Parent 1' })
+    callback({ type: 'aim', data: { id: 'p1', text: 'Parent 1' } })
     await wrapper.vm.$nextTick()
     
     expect(wrapper.text()).toContain('Parent 1')
@@ -131,9 +137,14 @@ describe('AimCreationModal', () => {
     const addBtn = wrapper.find('button[title="Add Child"]')
     await addBtn.trigger('click')
 
-    expect(modalStore.openAimSearch).toHaveBeenCalledWith('pick', expect.any(Function))
+    expect(modalStore.openAimSearch).toHaveBeenCalledWith(
+      'pick',
+      expect.any(Function),
+      undefined,
+      expect.objectContaining({ title: 'Select Supporting Aim' })
+    )
     const callback = modalStore.openAimSearch.mock.calls[0]?.[1]
-    callback({ id: 'c1', text: 'Child 1' })
+    callback({ type: 'aim', data: { id: 'c1', text: 'Child 1' } })
     await wrapper.vm.$nextTick()
     
     expect(wrapper.text()).toContain('Child 1')

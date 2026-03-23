@@ -377,7 +377,7 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
 
   if (event.ctrlKey || event.metaKey) return
 
-  if (modalStore.showPhaseModal || modalStore.showAimModal || modalStore.showAimSearch || modalStore.showAimEditModal || modalStore.showSettingsModal) {
+  if (modalStore.showPhaseModal || modalStore.showAimModal || modalStore.showAimSearch || modalStore.showPhaseSearchPrompt || modalStore.showAimEditModal || modalStore.showSettingsModal) {
     return
   }
 

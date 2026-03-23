@@ -88,10 +88,15 @@ const handleKeyDown = (e: KeyboardEvent) => {
   if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
     e.preventDefault()
     e.stopPropagation()
-    modalStore.openAimSearch('pick', (aim) => {
+    modalStore.openAimSearch('pick', (payload) => {
+      if (payload.type !== 'aim') return
+      const aim = payload.data
       // Insert [ID] Title into worker terminal
       const textToInsert = `[${aim.id}] ${aim.text}`
       store.sendWorkerInput(textToInsert)
+    }, undefined, {
+      title: 'Insert Aim Reference',
+      placeholder: 'Search aims to insert...'
     })
   }
 }
@@ -132,7 +137,7 @@ watch(() => store.showActionsOverlay, (newValue) => {
   if (!newValue) {
     // Overlay closed - restore focus only if no follow-up modal is active.
     setTimeout(() => {
-      if (!modalStore.showAimSearch && !modalStore.showAimModal && !modalStore.showPhaseModal && !modalStore.showSettingsModal) {
+      if (!modalStore.showAimSearch && !modalStore.showPhaseSearchPrompt && !modalStore.showAimModal && !modalStore.showPhaseModal && !modalStore.showSettingsModal) {
         workerTerm.value?.focus()
       }
     }, 100)
@@ -141,6 +146,12 @@ watch(() => store.showActionsOverlay, (newValue) => {
 
 watch(() => modalStore.showAimSearch, (isOpen, wasOpen) => {
   // If actions overlay launched aim search, restore terminal focus only after search closes.
+  if (wasOpen && !isOpen && !store.showActionsOverlay) {
+    setTimeout(() => workerTerm.value?.focus(), 80)
+  }
+})
+
+watch(() => modalStore.showPhaseSearchPrompt, (isOpen, wasOpen) => {
   if (wasOpen && !isOpen && !store.showActionsOverlay) {
     setTimeout(() => workerTerm.value?.focus(), 80)
   }

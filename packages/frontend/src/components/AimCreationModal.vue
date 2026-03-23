@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
-import type { Aim, AimStatusState } from 'shared'
+import type { Aim, AimStatusState, SearchAimResult } from 'shared'
 import TagInput from './TagInput.vue'
 import { AIM_DEFAULTS } from '../constants/aimDefaults'
+import AimSearchPicker from './AimSearchPicker.vue'
+import type { AimSearchAdditionalOption } from '../stores/ui/aim-search-types'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -22,13 +24,11 @@ const aimLoopWeight = ref(AIM_DEFAULTS.loopWeight)
 const aimTags = ref<string[]>([...AIM_DEFAULTS.tags])
 const selectedStatus = ref<AimStatusState>(AIM_DEFAULTS.status.state)
 const statusComment = ref(AIM_DEFAULTS.status.comment)
-const searchResults = ref<Aim[]>([])
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
 const supportingConnectionsList = ref<{ id: string, text: string, weight: number }[]>([])
+const searchSelection = ref<{ type: 'aim'; data: SearchAimResult } | { type: 'option'; data: AimSearchAdditionalOption } | null>(null)
 
 const availableStatuses = computed(() => dataStore.getStatuses)
-
-const selectedSearchIndex = ref(0)
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
 const intrinsicValueInput = ref<HTMLInputElement>()
@@ -38,21 +38,30 @@ const statusSelect = ref<HTMLSelectElement>()
 const statusCommentInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
-const searchResultsContainer = ref<HTMLDivElement>()
 
 const openParentSearch = () => {
-  modalStore.openAimSearch('pick', (aim: Aim) => {
+  modalStore.openAimSearch('pick', (payload) => {
+    if (payload.type !== 'aim') return
+    const aim = payload.data
     if (!supportedAimsList.value.some(a => a.id === aim.id)) {
       supportedAimsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
     }
+  }, undefined, {
+    title: 'Select Supported Aim',
+    placeholder: 'Search for a parent aim...'
   })
 }
 
 const openChildSearch = () => {
-  modalStore.openAimSearch('pick', (aim: Aim) => {
+  modalStore.openAimSearch('pick', (payload) => {
+    if (payload.type !== 'aim') return
+    const aim = payload.data
     if (!supportingConnectionsList.value.some(a => a.id === aim.id)) {
       supportingConnectionsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
     }
+  }, undefined, {
+    title: 'Select Supporting Aim',
+    placeholder: 'Search for a child aim...'
   })
 }
 
@@ -64,36 +73,15 @@ const removeChild = (index: number) => {
   supportingConnectionsList.value.splice(index, 1)
 }
 
-// Real search functionality
-const performSearch = async (query: string) => {
-  console.log('Performing search for:', query)
-  if (!query.trim()) {
-    searchResults.value = []
-    return
-  }
-
-  try {
-    const results = await trpc.aim.search.query({
-      projectPath: projectStore.projectPath,
-      query: query
-    })
-    console.log('Search results:', results.length)
-    searchResults.value = results.slice(0, 5) // Limit to 5 results
-  } catch (error) {
-    console.error('Failed to search aims:', error)
-    searchResults.value = []
-  }
-}
-
 const selectedSearchResult = computed(() => {
-  // Index 0 is always "create new", so actual results start at index 1
-  if (selectedSearchIndex.value === 0) {
-    return null // "Create new" selected
-  }
-  return searchResults.value[selectedSearchIndex.value - 1] || null
+  return searchSelection.value?.type === 'aim' ? searchSelection.value.data : null
 })
 
 const hasSearchText = computed(() => aimText.value.trim().length > 0)
+const createNewOption = computed<AimSearchAdditionalOption[]>(() => {
+  if (!hasSearchText.value) return []
+  return [{ id: 'create-new', label: `Create new: "${aimText.value}"` }]
+})
 
 const createAim = async () => {
   if (!aimText.value.trim() && !selectedSearchResult.value) return
@@ -181,19 +169,7 @@ const handleTextareaKeydown = (event: KeyboardEvent) => {
 }
 
 const handleSearchResultsKeydown = (event: KeyboardEvent) => {
-  // In search results container: use J/K without Ctrl
-  if (event.key === 'j' || event.key === 'J') {
-    event.preventDefault()
-    // Max index is searchResults.length (because index 0 is "create new")
-    if (selectedSearchIndex.value < searchResults.value.length) {
-      selectedSearchIndex.value++
-    }
-  } else if (event.key === 'k' || event.key === 'K') {
-    event.preventDefault()
-    if (selectedSearchIndex.value > 0) {
-      selectedSearchIndex.value--
-    }
-  } else if (event.key === 'Enter') {
+  if (event.key === 'Enter') {
     event.preventDefault()
     handleSubmit()
   } else if (event.key === 'Escape') {
@@ -237,34 +213,6 @@ const handleStatusCommentNext = (event: KeyboardEvent) => {
     addParentBtn.value?.focus()
   }
 }
-
-const selectSearchResult = (index: number) => {
-  selectedSearchIndex.value = index
-}
-
-// Watch for search text changes
-watch(aimText, async (newValue) => {
-  await performSearch(newValue)
-  selectedSearchIndex.value = 0 // Reset to 'create new' by default
-
-  const trimmedNewValue = newValue.trim().toLowerCase()
-
-  if (trimmedNewValue.length > 0) {
-    // Check for perfect "starts with" matches with 90% length threshold.
-    // If there are multiple perfect matches, prefer creating a new aim.
-    const perfectMatchIndices = searchResults.value.flatMap((result, index) => {
-      const resultTextLower = result.text.toLowerCase()
-      const startsWithMatch = resultTextLower.startsWith(trimmedNewValue)
-      const lengthThresholdMet = trimmedNewValue.length >= (0.9 * resultTextLower.length)
-
-      return startsWithMatch && lengthThresholdMet ? [index] : []
-    })
-
-    if (perfectMatchIndices.length === 1) {
-      selectedSearchIndex.value = perfectMatchIndices[0]! + 1 // +1 because index 0 is "create new"
-    }
-  }
-})
 
 const handleModalKeydown = (event: KeyboardEvent) => {
   if (modalStore.aimModalMode !== 'edit' || event.key !== 'Enter') return
@@ -358,8 +306,7 @@ onMounted(async () => {
     aimLoopWeight.value = AIM_DEFAULTS.loopWeight
     selectedStatus.value = AIM_DEFAULTS.status.state
     statusComment.value = AIM_DEFAULTS.status.comment
-    searchResults.value = []
-    selectedSearchIndex.value = 0
+    searchSelection.value = null
   }
   await nextTick()
   aimTextInput.value?.focus()
@@ -390,36 +337,24 @@ onMounted(async () => {
         <!-- Search Results (create mode only) -->
         <div
           v-if="modalStore.aimModalMode === 'create' && hasSearchText"
-          ref="searchResultsContainer"
           class="search-results"
           tabindex="0"
           @keydown="handleSearchResultsKeydown"
         >
-          <!-- "Create new" entry (always first, index 0) -->
-          <div
-            class="search-result create-new"
-            :class="{ selected: selectedSearchIndex === 0 }"
-            @click="selectSearchResult(0)"
-          >
-            <div class="result-text">Create new: "{{ aimText }}"</div>
-          </div>
-
-          <!-- Existing aims (if any) -->
-          <div
-            v-for="(result, index) in searchResults"
-            :key="result.id"
-            class="search-result existing-aim"
-            :class="{ selected: index + 1 === selectedSearchIndex }"
-            @click="selectSearchResult(index + 1)"
-          >
-            <div class="result-text">{{ result.text }}</div>
-            <div class="result-status" :class="result.status.state">
-              {{ result.status.state }}
-            </div>
-          </div>
+          <AimSearchPicker
+            :query="aimText"
+            :show-input="false"
+            :show-filters="false"
+            :additional-options="createNewOption"
+            selection-behavior="unique-near-exact-aim"
+            :activate-on-click="false"
+            :activate-on-enter="false"
+            :result-limit="5"
+            @selection-change="searchSelection = $event"
+          />
 
           <div class="search-help">
-            Use <kbd>J</kbd>/<kbd>K</kbd> to navigate, <kbd>Tab</kbd> to continue
+            Use <kbd>J</kbd>/<kbd>K</kbd> to navigate, <kbd>Enter</kbd> to submit
           </div>
         </div>
 

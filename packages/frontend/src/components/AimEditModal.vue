@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue'
-import { useDataStore, type Aim } from '../stores/data'
+import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { trpc } from '../trpc'
@@ -52,10 +52,15 @@ const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 
 const openParentSearch = () => {
-  modalStore.openAimSearch('pick', (aim: Aim) => {
+  modalStore.openAimSearch('pick', (payload) => {
+    if (payload.type !== 'aim') return
+    const aim = payload.data
     if (!supportedAimsList.value.some(a => a.id === aim.id)) {
       supportedAimsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
     }
+  }, undefined, {
+    title: 'Select Supported Aim',
+    placeholder: 'Search for a parent aim...'
   })
 }
 

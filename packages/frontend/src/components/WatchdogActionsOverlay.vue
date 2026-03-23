@@ -44,10 +44,15 @@ const actions = [
     key: 'a',
     label: () => 'Search & Insert Aim',
     action: () => {
-      modalStore.openAimSearch('pick', (aim) => {
+      modalStore.openAimSearch('pick', (payload) => {
+        if (payload.type !== 'aim') return
+        const aim = payload.data
         const textToInsert = `[${aim.id}] ${aim.text}`
         store.sendWorkerInput(textToInsert)
         store.triggerWorkerFocus()
+      }, undefined, {
+        title: 'Insert Aim Reference',
+        placeholder: 'Search aims to insert...'
       })
     },
     icon: '🔍'
@@ -143,6 +148,7 @@ onUnmounted(() => {
   // Restore focus only when no follow-up modal/action UI took focus.
   const hasActiveFollowupModal =
     modalStore.showAimSearch ||
+    modalStore.showPhaseSearchPrompt ||
     modalStore.showAimModal ||
     modalStore.showPhaseModal ||
     modalStore.showSettingsModal

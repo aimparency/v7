@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import type { Aim } from '../data'
 import {
   clearTeleportBuffer as clearTeleportBufferHelper,
   closeAimModal as closeAimModalHelper,
@@ -12,6 +11,8 @@ import {
   openPhaseEditModal as openPhaseEditModalHelper,
   openSettingsModal as openSettingsModalHelper
 } from './modal-helpers'
+import type { AimSearchModalOptions, AimSearchPickPayload } from './aim-search-types'
+import type { PhaseSearchAdditionalOption, PhaseSearchModalOptions, PhaseSearchSelection } from './phase-search-types'
 
 type RelativePosition = 'before' | 'after'
 type TeleportSource = {
@@ -36,16 +37,26 @@ export const useUIModalStore = defineStore('ui-modal', {
     aimModalMode: 'create' as 'create' | 'edit',
     aimModalEditingAimId: null as string | null,
     aimModalInsertPosition: 'before' as RelativePosition,
+    aimModalSource: 'columns' as 'columns' | 'graph',
 
     showAimEditModal: false,
     aimEditModalAimId: null as string | null,
 
     showAimSearch: false,
     aimSearchMode: 'navigate' as 'navigate' | 'pick',
-    aimSearchCallback: null as ((aim: Aim) => void) | null,
+    aimSearchCallback: null as ((payload: AimSearchPickPayload) => void) | null,
     aimCreationCallback: null as ((aimId: string) => void) | null,
     aimSearchInitialAimId: null as string | null,
     aimSearchShowParentPaths: false,
+    aimSearchTitle: 'Search Aims',
+    aimSearchPlaceholder: 'Go to aim...',
+    aimSearchShowFilters: true,
+    aimSearchAdditionalOptions: [],
+    showPhaseSearchPrompt: false,
+    phaseSearchPromptCallback: null as ((payload: PhaseSearchSelection) => void) | null,
+    phaseSearchPromptTitle: 'Search Phases',
+    phaseSearchPromptPlaceholder: 'Search phases...',
+    phaseSearchPromptAdditionalOptions: [] as PhaseSearchAdditionalOption[],
     showSettingsModal: false,
 
     teleportCutAimId: null as string | null,
@@ -72,21 +83,45 @@ export const useUIModalStore = defineStore('ui-modal', {
       closePhaseModalHelper(this)
     },
 
-    openAimModal() {
-      openAimCreateModalHelper(this)
+    openAimModal(source: 'columns' | 'graph' = 'columns') {
+      openAimCreateModalHelper(this, source)
     },
 
     closeAimModal() {
       closeAimModalHelper(this)
     },
 
-    openAimSearch(mode: 'navigate' | 'pick' = 'navigate', callback?: (aim: Aim) => void, initialAimId?: string) {
-      openAimSearchModalHelper(this, mode, callback, initialAimId)
+    openAimSearch(
+      mode: 'navigate' | 'pick' = 'navigate',
+      callback?: (payload: AimSearchPickPayload) => void,
+      initialAimId?: string,
+      options?: Partial<AimSearchModalOptions>
+    ) {
+      openAimSearchModalHelper(this, mode, callback, initialAimId, options)
     },
 
     closeAimSearch() {
       closeAimSearchModalHelper(this)
       this.aimSearchShowParentPaths = false
+    },
+
+    openPhaseSearchPrompt(
+      callback?: (payload: PhaseSearchSelection) => void,
+      options?: Partial<PhaseSearchModalOptions>
+    ) {
+      this.showPhaseSearchPrompt = true
+      this.phaseSearchPromptCallback = callback || null
+      this.phaseSearchPromptTitle = options?.title ?? 'Search Phases'
+      this.phaseSearchPromptPlaceholder = options?.placeholder ?? 'Search phases...'
+      this.phaseSearchPromptAdditionalOptions = options?.additionalOptions ?? []
+    },
+
+    closePhaseSearchPrompt() {
+      this.showPhaseSearchPrompt = false
+      this.phaseSearchPromptCallback = null
+      this.phaseSearchPromptTitle = 'Search Phases'
+      this.phaseSearchPromptPlaceholder = 'Search phases...'
+      this.phaseSearchPromptAdditionalOptions = []
     },
 
     openParentPathsModal(aimId: string) {

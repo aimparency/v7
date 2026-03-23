@@ -175,8 +175,16 @@ export const useListStore = defineStore('ui', {
 
       const path = this.getSelectionPath()
       let newAimId: string | undefined
+      let createdAsPhaseCommitmentWithoutImplicitSupportedAim = false
 
-      if (path.aims.length === 0) {
+      if (modalStore.aimModalSource === 'graph') {
+        if (isExistingAim) {
+          newAimId = aimTextOrId
+        } else {
+          const result = await dataStore.createFloatingAim(projectStore.projectPath, aimAttributes)
+          newAimId = result.id
+        }
+      } else if (path.aims.length === 0) {
         if (path.phase) {
           if (isExistingAim) {
             await trpc.aim.commitToPhase.mutate({
@@ -189,6 +197,7 @@ export const useListStore = defineStore('ui', {
           } else {
             const result = await dataStore.createCommittedAim(projectStore.projectPath, path.phase.id, aimAttributes, 0)
             newAimId = result.id
+            createdAsPhaseCommitmentWithoutImplicitSupportedAim = true
           }
 
           await dataStore.loadPhaseAims(projectStore.projectPath, path.phase.id)
@@ -292,6 +301,7 @@ export const useListStore = defineStore('ui', {
           } else {
             const result = await dataStore.createCommittedAim(projectStore.projectPath, path.phase.id, aimAttributes, insertionIndex)
             newAimId = result.id
+            createdAsPhaseCommitmentWithoutImplicitSupportedAim = true
           }
 
           const freshPhase = dataStore.phases[path.phase.id]
@@ -334,7 +344,60 @@ export const useListStore = defineStore('ui', {
         }
       }
 
-      modalStore.showAimModal = false
+      const shouldPromptForSupportedAim =
+        !isExistingAim &&
+        !!newAimId &&
+        supportedAims.length === 0 &&
+        createdAsPhaseCommitmentWithoutImplicitSupportedAim &&
+        modalStore.aimModalSource === 'columns' &&
+        projectStore.currentView === 'columns'
+
+      const shouldPromptForPhaseCommitment =
+        !isExistingAim &&
+        !!newAimId &&
+        modalStore.aimModalSource === 'graph' &&
+        projectStore.currentView === 'graph'
+
+      modalStore.closeAimModal()
+
+      if (shouldPromptForSupportedAim && newAimId) {
+        modalStore.openAimSearch('pick', async (payload) => {
+          if (payload.type !== 'aim') return
+
+          await trpc.aim.connectAims.mutate({
+            projectPath: projectStore.projectPath,
+            parentAimId: payload.data.id,
+            childAimId: newAimId
+          })
+
+          await dataStore.loadAims(projectStore.projectPath, [payload.data.id, newAimId])
+        }, undefined, {
+          title: 'Connect to Supported Aim',
+          placeholder: 'Optional: search for a parent aim...',
+          additionalOptions: [{
+            id: 'skip-parent',
+            label: 'Skip (no supported aim)',
+            description: 'Leave this new aim without a supported aim connection.',
+            showWhenQueryEmptyOnly: true,
+            actsAsEscape: true
+          }]
+        })
+      } else if (shouldPromptForPhaseCommitment && newAimId) {
+        modalStore.openPhaseSearchPrompt(async (payload) => {
+          if (payload.type !== 'phase') return
+          await dataStore.commitAimToPhase(projectStore.projectPath, newAimId, payload.data.id)
+        }, {
+          title: 'Commit to Phase',
+          placeholder: 'Optional: search for a phase...',
+          additionalOptions: [{
+            id: 'skip-phase',
+            label: 'Skip (leave floating)',
+            description: 'Keep this new graph aim uncommitted to any phase.',
+            showWhenQueryEmptyOnly: true,
+            actsAsEscape: true
+          }]
+        })
+      }
     },
 
     // Column tracking actions

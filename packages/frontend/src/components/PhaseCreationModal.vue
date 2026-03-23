@@ -9,6 +9,7 @@ import { trpc } from '../trpc'
 import { timestampToLocalDate, timestampToLocalTime, localDateTimeToTimestamp } from 'shared'
 import TimePicker from './TimePicker.vue'
 import PhaseSearchModal from './PhaseSearchModal.vue'
+import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
@@ -234,7 +235,12 @@ const calculateSmartDateRanges = async () => {
   modalStore.newPhaseEndTime = '00:00'
 }
 
-const onParentSelected = (phase: Phase) => {
+const onParentSelected = (payload: PhaseSearchSelection) => {
+    if (payload.type !== 'phase') {
+        return
+    }
+
+    const phase = payload.data
     // Check for self-reference
     if (modalStore.phaseModalMode === 'edit' && phase.id === modalStore.phaseModalEditingPhaseId) {
         alert("Cannot set phase as its own parent.")

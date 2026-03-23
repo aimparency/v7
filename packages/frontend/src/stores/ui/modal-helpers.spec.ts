@@ -27,10 +27,15 @@ const createState = (): UIModalState => ({
   aimModalMode: 'create',
   aimModalEditingAimId: null,
   aimModalInsertPosition: 'before',
+  aimModalSource: 'columns',
   showAimSearch: false,
   aimSearchMode: 'navigate',
   aimSearchCallback: null,
   aimSearchInitialAimId: null,
+  aimSearchTitle: 'Search Aims',
+  aimSearchPlaceholder: 'Go to aim...',
+  aimSearchShowFilters: true,
+  aimSearchAdditionalOptions: [],
   showSettingsModal: false,
   teleportCutAimId: 'x',
   teleportSource: { parentAimId: 'p' },
@@ -53,10 +58,19 @@ describe('modal helpers', () => {
     const callback = () => undefined
     openAimCreateModal(state)
     expect(state.showAimModal).toBe(true)
-    openAimSearchModal(state, 'pick', callback, 'a1')
+    openAimSearchModal(state, 'pick', callback, 'a1', {
+      title: 'Pick Parent',
+      placeholder: 'Search parents...',
+      showFilters: false,
+      additionalOptions: [{ id: 'skip', label: 'Skip' }]
+    })
     expect(state.showAimSearch).toBe(true)
     expect(state.aimSearchMode).toBe('pick')
     expect(state.aimSearchInitialAimId).toBe('a1')
+    expect(state.aimSearchTitle).toBe('Pick Parent')
+    expect(state.aimSearchPlaceholder).toBe('Search parents...')
+    expect(state.aimSearchShowFilters).toBe(false)
+    expect(state.aimSearchAdditionalOptions).toEqual([{ id: 'skip', label: 'Skip' }])
     closeAimSearchModal(state)
     closeAimModal(state)
     expect(state.showAimSearch).toBe(false)

@@ -1,7 +1,14 @@
 import { timestampToLocalDate, timestampToLocalTime } from 'shared'
-import type { Aim } from '../data'
+import type { AimSearchAdditionalOption, AimSearchModalOptions, AimSearchPickPayload } from './aim-search-types'
 
 type RelativePosition = 'before' | 'after'
+
+const DEFAULT_AIM_SEARCH_OPTIONS: AimSearchModalOptions = {
+  title: 'Search Aims',
+  placeholder: 'Go to aim...',
+  showFilters: true,
+  additionalOptions: []
+}
 
 export type UIModalState = {
   showPhaseModal: boolean
@@ -18,10 +25,15 @@ export type UIModalState = {
   aimModalMode: 'create' | 'edit'
   aimModalEditingAimId: string | null
   aimModalInsertPosition: RelativePosition
+  aimModalSource: 'columns' | 'graph'
   showAimSearch: boolean
   aimSearchMode: 'navigate' | 'pick'
-  aimSearchCallback: ((aim: Aim) => void) | null
+  aimSearchCallback: ((payload: AimSearchPickPayload) => void) | null
   aimSearchInitialAimId: string | null
+  aimSearchTitle: string
+  aimSearchPlaceholder: string
+  aimSearchShowFilters: boolean
+  aimSearchAdditionalOptions: AimSearchAdditionalOption[]
   showSettingsModal: boolean
   teleportCutAimId: string | null
   teleportSource: { parentAimId?: string; phaseId?: string } | null
@@ -67,27 +79,40 @@ export function closePhaseModal(state: UIModalState): void {
   state.newPhaseEndTime = ''
 }
 
-export function openAimCreateModal(state: UIModalState): void {
+export function openAimCreateModal(state: UIModalState, source: 'columns' | 'graph' = 'columns'): void {
   state.showAimModal = true
   state.aimModalMode = 'create'
+  state.aimModalSource = source
 }
 
 export function closeAimModal(state: UIModalState): void {
   state.showAimModal = false
   state.aimModalMode = 'create'
   state.aimModalEditingAimId = null
+  state.aimModalSource = 'columns'
 }
 
 export function openAimSearchModal(
   state: UIModalState,
   mode: 'navigate' | 'pick',
-  callback?: ((aim: Aim) => void) | null,
-  initialAimId?: string
+  callback?: ((payload: AimSearchPickPayload) => void) | null,
+  initialAimId?: string,
+  options?: Partial<AimSearchModalOptions>
 ): void {
+  const resolvedOptions = {
+    ...DEFAULT_AIM_SEARCH_OPTIONS,
+    ...options,
+    additionalOptions: options?.additionalOptions ?? DEFAULT_AIM_SEARCH_OPTIONS.additionalOptions
+  }
+
   state.showAimSearch = true
   state.aimSearchMode = mode
   state.aimSearchCallback = callback || null
   state.aimSearchInitialAimId = initialAimId || null
+  state.aimSearchTitle = resolvedOptions.title
+  state.aimSearchPlaceholder = resolvedOptions.placeholder
+  state.aimSearchShowFilters = resolvedOptions.showFilters
+  state.aimSearchAdditionalOptions = resolvedOptions.additionalOptions
 }
 
 export function closeAimSearchModal(state: UIModalState): void {
@@ -95,6 +120,10 @@ export function closeAimSearchModal(state: UIModalState): void {
   state.aimSearchMode = 'navigate'
   state.aimSearchCallback = null
   state.aimSearchInitialAimId = null
+  state.aimSearchTitle = DEFAULT_AIM_SEARCH_OPTIONS.title
+  state.aimSearchPlaceholder = DEFAULT_AIM_SEARCH_OPTIONS.placeholder
+  state.aimSearchShowFilters = DEFAULT_AIM_SEARCH_OPTIONS.showFilters
+  state.aimSearchAdditionalOptions = []
 }
 
 export function openSettingsModal(state: UIModalState): void {

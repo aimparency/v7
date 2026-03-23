@@ -70,6 +70,7 @@ describe('AimSearchModal', () => {
     const labels = wrapper.findAll('.checkbox-label')
     const archivedLabel = labels.find((l: DOMWrapper<Element>) => l.text().includes('Archived'))
     await archivedLabel.find('input').setValue(true)
+    await vi.advanceTimersByTimeAsync(200)
     
     expect(trpc.aim.search.query).toHaveBeenCalledWith(expect.objectContaining({
         query: 'test',
@@ -81,6 +82,7 @@ describe('AimSearchModal', () => {
     const dropdownItems = wrapper.findAll('.dropdown-item')
     const openStatus = dropdownItems.filter((i: DOMWrapper<Element>) => i.text().includes('open'))[0]
     await openStatus.trigger('click')
+    await vi.advanceTimersByTimeAsync(200)
     
     expect(trpc.aim.search.query).toHaveBeenCalledWith(expect.objectContaining({
         query: 'test',

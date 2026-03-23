@@ -267,7 +267,7 @@ export function useGraphInteraction(
                      }
                      checkNode()
                 }
-                modalStore.openAimModal()
+                modalStore.openAimModal('graph')
             }
             mapStore.connecting = false
             mapStore.connectFrom = undefined
@@ -551,7 +551,7 @@ export function useGraphInteraction(
                  }
             }
             
-            modalStore.openAimModal()
+            modalStore.openAimModal('graph')
         }
     }
 
