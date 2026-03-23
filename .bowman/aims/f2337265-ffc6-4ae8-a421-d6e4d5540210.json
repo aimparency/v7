@@ -2,6 +2,8 @@
   "id": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
   "text": "ui enhancements",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -179,6 +181,14 @@
         -0.4422242929205944
       ],
       "weight": 1
+    },
+    {
+      "aimId": "75d48504-226a-4316-a395-e3f0a1aa87d4",
+      "relativePosition": [
+        -0.6096643151445935,
+        -4.297629825003429
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -196,5 +206,8 @@
   },
   "intrinsicValue": 50,
   "cost": 2,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

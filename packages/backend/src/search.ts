@@ -29,7 +29,8 @@ function getPhaseIndex(projectPath: string): Document<Phase> {
         id: 'id',
         index: ['name']
       },
-      tokenize: 'forward',
+      tokenize: 'full',
+      cache: true,
       context: {
         resolution: 9,
         depth: 3,
@@ -129,6 +130,7 @@ export async function searchPhases(projectPath: string, query: string, allPhases
     return allPhases;
   }
 
+  const normalizedQuery = query.trim().toLowerCase();
   const index = getPhaseIndex(projectPath);
   const results = await index.searchAsync(query, { limit: 100 });
 
@@ -140,8 +142,19 @@ export async function searchPhases(projectPath: string, query: string, allPhases
     }
   }
 
-  // Return phases in order of search results
-  return allPhases.filter(phase => phaseIds.has(phase.id));
+  const scorePhase = (phase: Phase): number => {
+    const name = phase.name.toLowerCase();
+    if (name === normalizedQuery) return 6;
+    if (name.startsWith(normalizedQuery)) return 5;
+    if (name.split(/\s+/).some(token => token.startsWith(normalizedQuery))) return 4;
+    const containsIndex = name.indexOf(normalizedQuery);
+    if (containsIndex !== -1) return 3 - Math.min(containsIndex / 100, 1);
+    return 1;
+  };
+
+  return allPhases
+    .filter(phase => phaseIds.has(phase.id))
+    .sort((a, b) => scorePhase(b) - scorePhase(a));
 }
 
 // Clear indices for a project (e.g., when project is closed)
@@ -149,4 +162,3 @@ export function clearIndices(projectPath: string): void {
   aimIndices.delete(projectPath);
   phaseIndices.delete(projectPath);
 }
-
