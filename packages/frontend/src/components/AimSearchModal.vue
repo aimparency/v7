@@ -43,9 +43,6 @@ const blockLeakage = (event: KeyboardEvent) => {
   }
 
   if (!pathSelectionMode.value) {
-    if (isNavKey || isInputTarget) {
-      event.stopPropagation()
-    }
     return
   }
 

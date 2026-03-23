@@ -253,13 +253,8 @@ const handleEscape = () => {
 
 const handleInputKeydown = (event: KeyboardEvent) => {
   const key = event.key
-  if (!['ArrowDown', 'ArrowUp', 'j', 'k', 'Enter', 'Escape', 'Tab'].includes(key)) {
+  if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Tab'].includes(key)) {
     return
-  }
-
-  if (key === 'j' || key === 'k') {
-    event.preventDefault()
-    event.stopPropagation()
   }
 
   if (key === 'Escape') {
@@ -286,7 +281,7 @@ const handleInputKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  if (key === 'ArrowDown' || key === 'j') {
+  if (key === 'ArrowDown') {
     event.preventDefault()
     event.stopPropagation()
     const nextIndex = Math.min(selectedIndex.value + 1, items.value.length - 1)
@@ -295,7 +290,7 @@ const handleInputKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  if (key === 'ArrowUp' || key === 'k') {
+  if (key === 'ArrowUp') {
     event.preventDefault()
     event.stopPropagation()
     const nextIndex = Math.max(selectedIndex.value - 1, 0)

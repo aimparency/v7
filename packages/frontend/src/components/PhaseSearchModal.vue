@@ -119,7 +119,7 @@ const handleEscape = () => {
 }
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'j', 'k', 'Tab'].includes(event.key)) {
+  if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Tab'].includes(event.key)) {
     return
   }
 
@@ -140,13 +140,13 @@ const handleKeydown = (event: KeyboardEvent) => {
 
   if (items.value.length === 0) return
 
-  if (event.key === 'ArrowDown' || event.key === 'j') {
+  if (event.key === 'ArrowDown') {
     selectedIndex.value = Math.min(selectedIndex.value + 1, items.value.length - 1)
     scrollToItem(selectedIndex.value)
     return
   }
 
-  if (event.key === 'ArrowUp' || event.key === 'k') {
+  if (event.key === 'ArrowUp') {
     selectedIndex.value = Math.max(selectedIndex.value - 1, 0)
     scrollToItem(selectedIndex.value)
     return
