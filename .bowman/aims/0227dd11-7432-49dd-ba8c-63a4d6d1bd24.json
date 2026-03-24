@@ -17,9 +17,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Follow-up after fixing the immediate release blocker.",
-    "date": 1773918947404
+    "state": "done",
+    "comment": "Backend tests no longer rely on --test-concurrency=1. Fixed import-time server startup so tests can import server.ts without binding ports, moved shared-path suites to per-run temp directories, removed the concurrency guard from packages/backend/scripts/run-tests.mjs, and verified npm run test -w backend passes with the full current backend suite (26 tests).",
+    "date": 1774386250167
   },
   "intrinsicValue": 0,
   "cost": 1,

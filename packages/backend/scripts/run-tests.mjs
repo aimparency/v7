@@ -40,7 +40,7 @@ const env = {
 
 const result = spawnSync(
   process.execPath,
-  ['--import', 'tsx', '--test', '--test-concurrency=1', ...testFiles],
+  ['--import', 'tsx', '--test', ...testFiles],
   {
     cwd: packageRoot,
     stdio: 'inherit',

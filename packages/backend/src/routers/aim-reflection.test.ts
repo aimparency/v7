@@ -1,27 +1,30 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import * as fs from 'fs-extra';
+import fs from 'fs-extra';
+import os from 'node:os';
 import * as path from 'path';
 import { appRouter } from '../server.js';
 import { clearIndices } from '../search.js';
 
 const caller = appRouter.createCaller({});
-const TEST_PROJECT_PATH = path.join(process.cwd(), 'test-project-reflection', '.bowman');
+let testRootPath = '';
+let testProjectPath = '';
 
 beforeEach(async () => {
-  await fs.remove(TEST_PROJECT_PATH);
-  await fs.ensureDir(TEST_PROJECT_PATH);
+  testRootPath = await fs.mkdtemp(path.join(os.tmpdir(), 'aimparency-reflection-test-'));
+  testProjectPath = path.join(testRootPath, '.bowman');
+  await fs.ensureDir(testProjectPath);
 });
 
 afterEach(async () => {
-  await fs.remove(TEST_PROJECT_PATH);
-  clearIndices(TEST_PROJECT_PATH);
+  await fs.remove(testRootPath);
+  clearIndices(testProjectPath);
 });
 
 test('addReflection adds a new reflection to an aim', async () => {
   // Create test aim
   const aimResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Test Aim for Reflection',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -30,7 +33,7 @@ test('addReflection adds a new reflection to an aim', async () => {
 
   // Verify it starts with empty reflections
   const loadedAim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id
   });
   assert.deepStrictEqual(loadedAim.reflections, [], 'Should start with empty reflections array');
@@ -45,14 +48,14 @@ test('addReflection adds a new reflection to an aim', async () => {
   };
 
   await caller.aim.addReflection({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id,
     reflection
   });
 
   // Verify reflection was saved
   const updatedAim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id
   });
   assert.strictEqual(updatedAim.reflections!.length, 1, 'Should have one reflection');
@@ -65,7 +68,7 @@ test('addReflection adds a new reflection to an aim', async () => {
 
 test('addReflection handles multiple reflections', async () => {
   const aimResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Test Aim with Multiple Reflections',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -74,7 +77,7 @@ test('addReflection handles multiple reflections', async () => {
 
   // Add first reflection
   await caller.aim.addReflection({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id,
     reflection: {
       context: 'First attempt',
@@ -86,7 +89,7 @@ test('addReflection handles multiple reflections', async () => {
 
   // Add second reflection
   await caller.aim.addReflection({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id,
     reflection: {
       context: 'Second attempt with better planning',
@@ -99,7 +102,7 @@ test('addReflection handles multiple reflections', async () => {
 
   // Verify both reflections exist
   const finalAim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id
   });
   assert.strictEqual(finalAim.reflections!.length, 2, 'Should have two reflections');
@@ -109,7 +112,7 @@ test('addReflection handles multiple reflections', async () => {
 
 test('reflections field is initialized on aim creation', async () => {
   const aimResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'New Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -117,7 +120,7 @@ test('reflections field is initialized on aim creation', async () => {
   });
 
   const loadedAim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id
   });
   assert.ok(Array.isArray(loadedAim.reflections), 'reflections should be an array');
@@ -126,7 +129,7 @@ test('reflections field is initialized on aim creation', async () => {
 
 test('reflections persist across multiple reads', async () => {
   const aimResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Persistence Test Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -135,7 +138,7 @@ test('reflections persist across multiple reads', async () => {
 
   // Add reflection
   await caller.aim.addReflection({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id,
     reflection: {
       context: 'Testing persistence',
@@ -148,7 +151,7 @@ test('reflections persist across multiple reads', async () => {
   // Read multiple times
   for (let i = 0; i < 3; i++) {
     const reloadedAim = await caller.aim.get({
-      projectPath: TEST_PROJECT_PATH,
+      projectPath: testProjectPath,
       aimId: aimResult.id
     });
     assert.strictEqual(reloadedAim.reflections!.length, 1, `Read ${i + 1}: Should still have one reflection`);

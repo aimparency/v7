@@ -1,6 +1,7 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import fs from 'fs-extra';
+import os from 'node:os';
 import path from 'path';
 import { appRouter } from './server';
 import { clearIndices } from './search';
@@ -10,26 +11,26 @@ import { v4 as uuidv4 } from 'uuid';
 // Create a test caller
 const caller = appRouter.createCaller({});
 
-const TEST_PROJECT_PATH = path.join(process.cwd(), 'test-project', '.bowman');
+let testRootPath = '';
+let testProjectPath = '';
 
 beforeEach(async () => {
-  // Clean up any existing test project
-  await fs.remove(TEST_PROJECT_PATH);
-  await fs.ensureDir(TEST_PROJECT_PATH);
+  testRootPath = await fs.mkdtemp(path.join(os.tmpdir(), 'aimparency-server-test-'));
+  testProjectPath = path.join(testRootPath, '.bowman');
+  await fs.ensureDir(testProjectPath);
 });
 
 afterEach(async () => {
-  // Clean up test project
-  await fs.remove(TEST_PROJECT_PATH);
+  await fs.remove(testRootPath);
   // Clear in-memory search indices
-  clearIndices(TEST_PROJECT_PATH);
+  clearIndices(testProjectPath);
 });
 
 test('connectAims - connects two existing aims', async () => {
 
   // Create parent aim
   const parentResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Parent Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -38,7 +39,7 @@ test('connectAims - connects two existing aims', async () => {
 
   // Create child aim
   const childResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Child Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -47,7 +48,7 @@ test('connectAims - connects two existing aims', async () => {
 
   // Connect them
   await caller.aim.connectAims({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     parentAimId: parentResult.id,
     childAimId: childResult.id,
     parentIncomingIndex: 0, 
@@ -56,11 +57,11 @@ test('connectAims - connects two existing aims', async () => {
 
   // Verify connection
   const updatedParent = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: parentResult.id
   });
   const updatedChild = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: childResult.id
   });
 
@@ -73,7 +74,7 @@ test('createSubAim - creates and connects sub-aim', async () => {
 
   // Create parent aim
   const parentResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Parent Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -82,7 +83,7 @@ test('createSubAim - creates and connects sub-aim', async () => {
 
   // Create sub-aim
   const subAimResult = await caller.aim.createSubAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     parentAimId: parentResult.id,
     aim: {
       text: 'Sub Aim',
@@ -93,11 +94,11 @@ test('createSubAim - creates and connects sub-aim', async () => {
 
   // Verify creation and connection
   const updatedParent = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: parentResult.id
   });
   const subAim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: subAimResult.id
   });
 
@@ -111,7 +112,7 @@ test('createCommittedAim - creates and commits aim to phase', async () => {
 
   // Create phase
   const phaseResult = await caller.phase.create({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     phase: {
       name: 'Test Phase',
       from: Date.now(),
@@ -123,7 +124,7 @@ test('createCommittedAim - creates and commits aim to phase', async () => {
 
   // Create committed aim
   const aimResult = await caller.aim.createAimInPhase({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     phaseId: phaseResult.id,
     aim: {
       text: 'Committed Aim',
@@ -134,11 +135,11 @@ test('createCommittedAim - creates and commits aim to phase', async () => {
 
   // Verify creation and commitment
   const updatedPhase = await caller.phase.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     phaseId: phaseResult.id
   });
   const aim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id
   });
 
@@ -151,7 +152,7 @@ test('connectAims - repositioning existing connections', async () => {
 
   // Create parent aim
   const parentResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Parent Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -160,7 +161,7 @@ test('connectAims - repositioning existing connections', async () => {
 
   // Create two child aims
   const child1Result = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Child 1',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -168,7 +169,7 @@ test('connectAims - repositioning existing connections', async () => {
   });
 
   const child2Result = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Child 2',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -177,7 +178,7 @@ test('connectAims - repositioning existing connections', async () => {
 
   // Connect first child at position 0
   await caller.aim.connectAims({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     parentAimId: parentResult.id,
     childAimId: child1Result.id,
     parentIncomingIndex: 0,
@@ -186,7 +187,7 @@ test('connectAims - repositioning existing connections', async () => {
 
   // Connect second child at position 0 (should move first child to position 1)
   await caller.aim.connectAims({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     parentAimId: parentResult.id,
     childAimId: child2Result.id,
     parentIncomingIndex: 0, 
@@ -195,7 +196,7 @@ test('connectAims - repositioning existing connections', async () => {
 
   // Verify repositioning
   const updatedParent = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: parentResult.id
   });
 
@@ -207,7 +208,7 @@ test('connectAims - repositioning existing connections', async () => {
 test('list - filters aims by status and phase', async () => {
   // Create phase
   const phaseResult = await caller.phase.create({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     phase: {
       name: 'Test Phase',
       from: Date.now(),
@@ -219,7 +220,7 @@ test('list - filters aims by status and phase', async () => {
 
   // Create open aim in phase
   await caller.aim.createAimInPhase({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     phaseId: phaseResult.id,
     aim: {
       text: 'Open Aim In Phase',
@@ -229,7 +230,7 @@ test('list - filters aims by status and phase', async () => {
 
   // Create done aim floating
   await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Done Floating Aim',
       status: { state: 'done', comment: '', date: Date.now() }
@@ -238,7 +239,7 @@ test('list - filters aims by status and phase', async () => {
 
   // Test status filter
   const openAims = await caller.aim.list({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     status: 'open'
   });
   assert.equal(openAims.length, 1);
@@ -246,7 +247,7 @@ test('list - filters aims by status and phase', async () => {
 
   // Test phase filter
   const phaseAims = await caller.aim.list({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     phaseId: phaseResult.id
   });
   assert.equal(phaseAims.length, 1);
@@ -254,7 +255,7 @@ test('list - filters aims by status and phase', async () => {
 
   // Test combined filter
   const filteredAims = await caller.aim.list({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     status: 'open',
     phaseId: phaseResult.id
   });
@@ -264,15 +265,15 @@ test('list - filters aims by status and phase', async () => {
 test('search - matches aims using search index', async () => {
   // Create test aims
   await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: { text: 'Apple Pie', status: { state: 'open', comment: '', date: Date.now() } }
   });
   await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: { text: 'Banana Split', status: { state: 'open', comment: '', date: Date.now() } }
   });
   await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: { text: 'Apple Cider', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
@@ -281,7 +282,7 @@ test('search - matches aims using search index', async () => {
   
   // Search for "Apple"
   const results = await caller.aim.search({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     query: 'Apple'
   });
 
@@ -294,7 +295,7 @@ test('search - matches aims using search index', async () => {
 
 test('createFloatingAim - sets and persists intrinsicValue', async () => {
   const aimResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Valuable Aim',
       status: { state: 'open', comment: '', date: Date.now() },
@@ -303,7 +304,7 @@ test('createFloatingAim - sets and persists intrinsicValue', async () => {
   });
 
   const aim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimResult.id
   });
 
@@ -313,7 +314,7 @@ test('createFloatingAim - sets and persists intrinsicValue', async () => {
 test('createFloatingAim - first aim defaults intrinsicValue to 1000', async () => {
   // First aim in empty project should default to 1000
   const firstAimResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'First Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -321,7 +322,7 @@ test('createFloatingAim - first aim defaults intrinsicValue to 1000', async () =
   });
 
   const firstAim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: firstAimResult.id
   });
 
@@ -329,7 +330,7 @@ test('createFloatingAim - first aim defaults intrinsicValue to 1000', async () =
 
   // Second aim should default to 0
   const secondAimResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Second Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -337,7 +338,7 @@ test('createFloatingAim - first aim defaults intrinsicValue to 1000', async () =
   });
 
   const secondAim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: secondAimResult.id
   });
 
@@ -363,12 +364,12 @@ test('readAim - performs lazy migration of incoming array', async () => {
     committedIn: []
   };
 
-  await fs.ensureDir(path.join(TEST_PROJECT_PATH, 'aims'));
-  await fs.writeJson(path.join(TEST_PROJECT_PATH, 'aims', `${aimId}.json`), legacyAim);
+  await fs.ensureDir(path.join(testProjectPath, 'aims'));
+  await fs.writeJson(path.join(testProjectPath, 'aims', `${aimId}.json`), legacyAim);
 
   // Read the aim (should trigger migration)
   const migratedAim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimId
   });
 
@@ -381,7 +382,7 @@ test('readAim - performs lazy migration of incoming array', async () => {
   assert.equal((migratedAim as any).incoming, undefined);
 
   // Verify persistence
-  const persistedAim = await fs.readJson(path.join(TEST_PROJECT_PATH, 'aims', `${aimId}.json`));
+  const persistedAim = await fs.readJson(path.join(testProjectPath, 'aims', `${aimId}.json`));
   assert.equal(persistedAim.supportingConnections.length, 3);
   assert.equal(persistedAim.incoming, undefined);
 });
@@ -400,12 +401,12 @@ test('readAim - performs lazy migration of outgoing array', async () => {
     committedIn: []
   };
 
-  await fs.ensureDir(path.join(TEST_PROJECT_PATH, 'aims'));
-  await fs.writeJson(path.join(TEST_PROJECT_PATH, 'aims', `${aimId}.json`), legacyAim);
+  await fs.ensureDir(path.join(testProjectPath, 'aims'));
+  await fs.writeJson(path.join(testProjectPath, 'aims', `${aimId}.json`), legacyAim);
 
   // Read the aim (should trigger migration)
   const migratedAim = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: aimId
   });
 
@@ -414,7 +415,7 @@ test('readAim - performs lazy migration of outgoing array', async () => {
   assert.equal((migratedAim as any).outgoing, undefined);
 
   // Verify persistence
-  const persistedAim = await fs.readJson(path.join(TEST_PROJECT_PATH, 'aims', `${aimId}.json`));
+  const persistedAim = await fs.readJson(path.join(testProjectPath, 'aims', `${aimId}.json`));
   assert.deepEqual(persistedAim.supportedAims, [parent1Id, parent2Id]);
   assert.equal(persistedAim.outgoing, undefined);
 });
@@ -423,7 +424,7 @@ test('connectAims - connects with relative position', async () => {
 
   // Create parent aim
   const parentResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Parent Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -432,7 +433,7 @@ test('connectAims - connects with relative position', async () => {
 
   // Create child aim
   const childResult = await caller.aim.createFloatingAim({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aim: {
       text: 'Child Aim',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -443,7 +444,7 @@ test('connectAims - connects with relative position', async () => {
 
   // Connect them
   await caller.aim.connectAims({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     parentAimId: parentResult.id,
     childAimId: childResult.id,
     relativePosition: relativePosition
@@ -451,7 +452,7 @@ test('connectAims - connects with relative position', async () => {
 
   // Verify connection
   const updatedParent = await caller.aim.get({
-    projectPath: TEST_PROJECT_PATH,
+    projectPath: testProjectPath,
     aimId: parentResult.id
   });
 

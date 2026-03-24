@@ -713,21 +713,18 @@ const appRouter = t.router({
 export { appRouter };
 export type AppRouter = typeof appRouter;
 
-// Create HTTP server
-const server = createHTTPServer({
-  router: appRouter,
-  createContext,
-});
-
-// Start servers (only if not in test environment)
 const HTTP_PORT = parseInt(process.env.PORT_BACKEND_HTTP || '3000');
 const WS_PORT = parseInt(process.env.PORT_BACKEND_WS || '3001');
 
-if (process.env.NODE_ENV !== 'test') {
-  // Create WebSocket server
+export function startServer() {
+  const server = createHTTPServer({
+    router: appRouter,
+    createContext,
+  });
+
   const wss = new WebSocketServer({ port: WS_PORT });
 
-  const handler = applyWSSHandler({
+  applyWSSHandler({
     wss,
     router: appRouter,
     createContext,
@@ -751,4 +748,14 @@ if (process.env.NODE_ENV !== 'test') {
     server.close();
     wss.close();
   });
+  
+  return { server, wss };
+}
+
+const isMainModule =
+  process.argv[1] != null &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (process.env.NODE_ENV !== 'test' && isMainModule) {
+  startServer();
 }

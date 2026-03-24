@@ -1,19 +1,19 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
+import os from 'node:os';
 import path from 'path';
 import fs from 'fs-extra';
 import { getDb, closeDb, saveAimValues, getAimValues } from './db.js';
 
-const TEST_PROJECT_PATH = path.join(process.cwd(), 'test-db-project');
+let testProjectPath = '';
 
 beforeEach(async () => {
-  await fs.remove(TEST_PROJECT_PATH);
-  await fs.ensureDir(TEST_PROJECT_PATH);
+  testProjectPath = await fs.mkdtemp(path.join(os.tmpdir(), 'aimparency-db-test-'));
 });
 
 afterEach(async () => {
-  closeDb(TEST_PROJECT_PATH);
-  await fs.remove(TEST_PROJECT_PATH);
+  closeDb(testProjectPath);
+  await fs.remove(testProjectPath);
 });
 
 test('saveAimValues and getAimValues', () => {
@@ -21,9 +21,9 @@ test('saveAimValues and getAimValues', () => {
   values.set('aim-1', { value: 10, cost: 5, doneCost: 2 });
   values.set('aim-2', { value: 20, cost: 10, doneCost: 0 });
 
-  saveAimValues(TEST_PROJECT_PATH, values);
+  saveAimValues(testProjectPath, values);
 
-  const retrieved = getAimValues(TEST_PROJECT_PATH);
+  const retrieved = getAimValues(testProjectPath);
   
   assert.equal(retrieved.size, 2);
   
@@ -41,16 +41,16 @@ test('saveAimValues and getAimValues', () => {
 test('saveAimValues replaces existing values', () => {
   const values1 = new Map();
   values1.set('aim-1', { value: 10, cost: 5, doneCost: 0 });
-  saveAimValues(TEST_PROJECT_PATH, values1);
+  saveAimValues(testProjectPath, values1);
 
   const values2 = new Map();
   values2.set('aim-1', { value: 15, cost: 6, doneCost: 1 }); // Updated
   values2.set('aim-3', { value: 30, cost: 1, doneCost: 0 }); // New
   // aim-2 missing, should be removed if we are doing full snapshot replace
   
-  saveAimValues(TEST_PROJECT_PATH, values2);
+  saveAimValues(testProjectPath, values2);
 
-  const retrieved = getAimValues(TEST_PROJECT_PATH);
+  const retrieved = getAimValues(testProjectPath);
   
   assert.equal(retrieved.size, 2);
   
