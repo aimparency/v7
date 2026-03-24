@@ -88,6 +88,7 @@ function validateShape(config) {
   ]);
 
   assert(uniquePorts.size === 6, 'runtime-config ports are not unique');
+  assert(typeof config.voiceEnabled === 'boolean', 'runtime-config key "voiceEnabled" is not a boolean');
 }
 
 function reservePort(port) {
@@ -113,6 +114,7 @@ function createScenarioEnv(overrides = {}) {
     PORT_BROKER_HTTP: String(testPorts.brokerHttpPort),
     PORT_BROKER_WS: String(testPorts.brokerWsPort),
     PORT_PROCESS_START: String(testPorts.processStartPort),
+    AIMPARENCY_ENABLE_VOICE: 'false',
     ...overrides,
   };
 }
@@ -147,6 +149,7 @@ async function main() {
     for (const [key, expected] of Object.entries(testPorts)) {
       assert(config[key] === expected, `expected ${key}=${expected}, got ${config[key]}`);
     }
+    assert(config.voiceEnabled === false, 'expected voice to stay disabled by default');
   });
 
   const reservedServers = [];
@@ -162,6 +165,7 @@ async function main() {
       assert(config.brokerHttpPort !== testPorts.brokerHttpPort, 'broker HTTP port did not fall back');
       assert(config.brokerWsPort !== testPorts.brokerWsPort, 'broker WS port did not fall back');
       assert(config.processStartPort !== testPorts.processStartPort, 'process start port did not fall back');
+      assert(config.voiceEnabled === false, 'expected voice to stay disabled during port fallback');
     });
   } finally {
     await Promise.all(
@@ -176,6 +180,10 @@ async function main() {
       }))
     );
   }
+
+  await runScenario('voice-enabled', createScenarioEnv({ AIMPARENCY_ENABLE_VOICE: 'true' }), (config) => {
+    assert(config.voiceEnabled === true, 'expected voice to enable when requested');
+  });
 
   console.log('\n[validate-local-runtime] PASS');
 }

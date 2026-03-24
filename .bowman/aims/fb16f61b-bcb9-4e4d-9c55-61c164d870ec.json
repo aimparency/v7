@@ -17,6 +17,14 @@
         0.2234337680322191
       ],
       "weight": 1
+    },
+    {
+      "aimId": "81c363a7-2598-4db5-ac12-2f24a93076a6",
+      "relativePosition": [
+        2.430927789965398,
+        -0.5836009595382321
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -27,8 +35,8 @@
   ],
   "status": {
     "state": "partially",
-    "comment": "Default runtime path no longer starts optional MCP, voice, embedder, or broker-inspector services. Remaining work is the install-side decision on whether optional packages stay in the root workspace set or move to opt-in installs.",
-    "date": 1773908638429
+    "comment": "Default runtime flow now keeps voice hidden unless explicitly enabled, and the launcher/runtime-config path validates that gating. Remaining open question is the install-side packaging decision for keeping optional packages like mcp and voice-bridge inside the root workspace install set.",
+    "date": 1774387293969
   },
   "intrinsicValue": 0,
   "cost": 1,

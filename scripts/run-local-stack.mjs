@@ -34,6 +34,22 @@ const preferredPorts = {
   processStartPort: parsePort(process.env.PORT_PROCESS_START, 7000),
 };
 
+function parseBoolean(value, fallback = false) {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true') {
+    return true;
+  }
+  if (normalized === 'false') {
+    return false;
+  }
+
+  return fallback;
+}
+
 function parsePort(value, fallback) {
   const port = Number.parseInt(value ?? '', 10);
   return Number.isInteger(port) && port > 0 ? port : fallback;
@@ -86,6 +102,7 @@ async function writeRuntimeConfig(resolvedPorts) {
   await fs.mkdir(frontendPublicDir, { recursive: true });
   await fs.writeFile(runtimeConfigPath, JSON.stringify({
     ...resolvedPorts,
+    voiceEnabled: parseBoolean(process.env.AIMPARENCY_ENABLE_VOICE, false),
     generatedAt: new Date().toISOString(),
   }, null, 2) + '\n');
 }

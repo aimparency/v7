@@ -29,6 +29,7 @@ describe('runtime-config', () => {
         brokerHttpPort: 5400,
         brokerWsPort: 5401,
         processStartPort: 7400,
+        voiceEnabled: true,
         generatedAt: '2026-03-24T12:00:00.000Z'
       })
     })
@@ -40,6 +41,7 @@ describe('runtime-config', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('/runtime-config.json', { cache: 'no-store' })
     expect(config.backendWsPort).toBe(3401)
+    expect(config.voiceEnabled).toBe(true)
     expect(getRuntimeConfig().brokerHttpPort).toBe(5400)
     expect(buildWsUrl(config.backendWsPort)).toBe('ws://localhost:3401')
     expect(buildHttpUrl(config.backendHttpPort)).toBe('http://localhost:3400')
@@ -54,6 +56,7 @@ describe('runtime-config', () => {
 
     expect(config.frontendPort).toBe(4000)
     expect(config.backendHttpPort).toBe(3000)
+    expect(config.voiceEnabled).toBe(false)
     expect(getRuntimeConfig().brokerWsPort).toBe(5001)
   })
 })

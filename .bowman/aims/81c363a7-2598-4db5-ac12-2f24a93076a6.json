@@ -1,0 +1,40 @@
+{
+  "id": "81c363a7-2598-4db5-ac12-2f24a93076a6",
+  "text": "Hide voice mode behind an explicit runtime flag in the default UI",
+  "description": "Keep the voice integration optional by default in the browser UI. The launcher/runtime config should expose voice only when explicitly enabled, and the default local-first path should hide voice controls and shortcuts.",
+  "reflections": [
+    {
+      "date": 1774387293962,
+      "context": "Keep optional voice integration out of the default first-run UI while preserving a clean opt-in path for people actively working on voice features.",
+      "outcome": "Added a runtime-config voice flag, hid the Voice tab and shortcut by default, documented the enablement env vars, and verified the behavior with focused frontend tests plus the local runtime validator.",
+      "effectiveness": "High. Reusing the existing runtime-config path avoided touching backend voice routing and kept the change localized to the frontend surface and launcher metadata.",
+      "lesson": "For optional features, the highest-value default-path simplification is often to stop advertising the feature before trying to untangle deeper packaging boundaries.",
+      "pattern": "This matches other release-prep cleanup where reducing exposed surface area improved first-run clarity without requiring invasive architecture changes."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "release",
+    "runtime",
+    "voice",
+    "optional-integrations"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fb16f61b-bcb9-4e4d-9c55-61c164d870ec"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Voice mode is now hidden by default in the browser UI and only appears when the launcher/runtime config or direct frontend env explicitly enables it. Added focused frontend and runtime-validator coverage.",
+    "date": 1774387293936
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

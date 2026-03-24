@@ -21,6 +21,7 @@ import VoiceView from './views/VoiceView.vue'
 import WatchdogPanel from './components/WatchdogPanel.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
+import { getRuntimeConfig } from './utils/runtime-config'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
@@ -28,6 +29,7 @@ const graphUIStore = useGraphUIStore()
 const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const mapStore = useMapStore()
+const voiceEnabled = getRuntimeConfig().voiceEnabled
 
 const normalizedProjectRoot = computed(() => projectStore.projectPath.replace(/\/+$/, ''))
 const activeBowmanRoot = computed(() => normalizedProjectRoot.value ? `${normalizedProjectRoot.value}/.bowman` : '')
@@ -184,7 +186,7 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
   }
 
   // Voice view toggle
-  if (event.key === 'v' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  if (voiceEnabled && event.key === 'v' && !event.ctrlKey && !event.metaKey && !event.altKey) {
     uiStore.setView(projectStore.currentView === 'voice' ? 'columns' : 'voice')
     return
   }
@@ -200,9 +202,12 @@ watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, 
       { key: 'h/l', action: 'switch columns' },
       { key: 'j/k', action: 'navigate phases/aims' },
       { key: 'i', action: 'enter edit mode' },
-      { key: 'o', action: 'create phase/aim' },
-      { key: 'v', action: 'voice mode' }
+      { key: 'o', action: 'create phase/aim' }
     ]
+
+    if (voiceEnabled) {
+      hints.push({ key: 'v', action: 'voice mode' })
+    }
 
     if (selectedColumn === 0) {
       // Root aims column
@@ -223,6 +228,12 @@ watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, 
       { key: 'o/O', action: 'create aim below/above' },
       { key: 'Esc', action: 'exit edit mode' }
     ])
+  }
+}, { immediate: true })
+
+watch(() => projectStore.currentView, (currentView) => {
+  if (!voiceEnabled && currentView === 'voice') {
+    uiStore.setView('columns')
   }
 }, { immediate: true })
 
@@ -316,6 +327,7 @@ onUnmounted(() => {
             class="view-btn"
           >Graph</button>
           <button 
+            v-if="voiceEnabled"
             @click="uiStore.setView('voice')" 
             :class="{ active: projectStore.currentView === 'voice' }"
             class="view-btn"
@@ -403,7 +415,7 @@ onUnmounted(() => {
         <GraphViewWrapper v-else-if="projectStore.currentView === 'graph'" />
 
         <!-- Voice View -->
-        <VoiceView v-else-if="projectStore.currentView === 'voice'" />
+        <VoiceView v-else-if="voiceEnabled && projectStore.currentView === 'voice'" />
       </main>
 
       <!-- Watchdog Panel -->

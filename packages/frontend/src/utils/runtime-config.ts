@@ -7,6 +7,7 @@ const DEFAULT_RUNTIME_CONFIG = {
   brokerHttpPort: Number.parseInt(env.VITE_PORT_BROKER_HTTP || '5000', 10),
   brokerWsPort: Number.parseInt(env.VITE_PORT_BROKER_WS || '5001', 10),
   processStartPort: Number.parseInt(env.VITE_PORT_PROCESS_START || '7000', 10),
+  voiceEnabled: env.VITE_ENABLE_VOICE === 'true',
 }
 
 export type RuntimeConfig = typeof DEFAULT_RUNTIME_CONFIG & {
@@ -40,6 +41,24 @@ function readPort(value: unknown, fallback: number): number {
   return Number.isInteger(port) && port > 0 ? port : fallback
 }
 
+function readBoolean(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === 'true') {
+      return true
+    }
+    if (normalized === 'false') {
+      return false
+    }
+  }
+
+  return fallback
+}
+
 function normalizeRuntimeConfig(value: unknown): RuntimeConfig {
   if (!isRecord(value)) {
     return { ...DEFAULT_RUNTIME_CONFIG }
@@ -52,6 +71,7 @@ function normalizeRuntimeConfig(value: unknown): RuntimeConfig {
     brokerHttpPort: readPort(value.brokerHttpPort, DEFAULT_RUNTIME_CONFIG.brokerHttpPort),
     brokerWsPort: readPort(value.brokerWsPort, DEFAULT_RUNTIME_CONFIG.brokerWsPort),
     processStartPort: readPort(value.processStartPort, DEFAULT_RUNTIME_CONFIG.processStartPort),
+    voiceEnabled: readBoolean(value.voiceEnabled, DEFAULT_RUNTIME_CONFIG.voiceEnabled),
     generatedAt: typeof value.generatedAt === 'string' ? value.generatedAt : undefined,
   }
 }

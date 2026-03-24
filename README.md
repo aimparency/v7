@@ -64,6 +64,8 @@ npm run dev:full
 
 That additionally starts the dev-only broker inspector, MCP server, and voice bridge.
 
+Voice remains opt-in in the browser UI. To expose the voice view in launcher-based runs, set `AIMPARENCY_ENABLE_VOICE=true` before `npm run dev` or `npm run start`. If you run the frontend directly, use `VITE_ENABLE_VOICE=true`.
+
 Start the lighter build-mode local stack:
 
 ```bash
@@ -178,6 +180,7 @@ This repo is not currently optimized for global install or hosted deployment. Op
 ## Optional Integrations
 
 - MCP: `packages/mcp/README.md`
+- Voice UI/runtime flag: set `AIMPARENCY_ENABLE_VOICE=true` for launcher-based runs or `VITE_ENABLE_VOICE=true` when running the frontend directly
 - Frontend package notes: `packages/frontend/README.md`
 - Backend package notes: `packages/backend/README.md`
 - Broker package notes: `packages/wrapped-agents/broker/README.md`
