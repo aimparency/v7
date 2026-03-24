@@ -33,6 +33,14 @@
         -2.2875613595587527
       ],
       "weight": 1
+    },
+    {
+      "aimId": "b7c8b678-fb5a-48e5-95c3-3b1c961fef39",
+      "relativePosition": [
+        1.9898065827630043,
+        -1.513495874851668
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -43,9 +51,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Core runtime requirement for the open source release.",
-    "date": 1773878368862
+    "state": "partially",
+    "comment": "Port fallback/reporting is now validated and documented. Remaining release-prep blocker is end-to-end clean-clone verification of npm install, npm run dev, and npm run start on a normal machine.",
+    "date": 1774386925097
   },
   "intrinsicValue": 0,
   "cost": 1,

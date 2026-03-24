@@ -2,7 +2,16 @@
   "id": "af58ebb0-1e0f-4f7e-b182-754e918ca30e",
   "text": "Add preferred-port fallback and resolved-port reporting",
   "description": "Allow frontend, backend, broker, and spawned sessions to prefer default ports but fall back to free ports when occupied. Startup logs and runtime config should expose the final chosen ports clearly.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774386925090,
+      "context": "Confirm that preferred-port fallback and resolved-port reporting actually work in the local launcher rather than assuming the implementation is correct.",
+      "outcome": "Ran the validator successfully outside the sandbox restriction and confirmed both normal-port and occupied-port scenarios produce unique fallback ports, startup log output, and matching runtime-config data.",
+      "effectiveness": "Using the dedicated validator was efficient because it exercised the port-selection behavior directly without requiring a full app launch.",
+      "lesson": "For local-runtime work, a dry-run validator gives better release confidence than relying only on code inspection or a manual start command.",
+      "pattern": "This follows the same pattern as backend test-script cleanup: small verification harnesses are the fastest way to turn suspected behavior into confirmed behavior."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -17,9 +26,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "human-dependency",
-    "comment": "Launcher fallback logic needs the user to run `node scripts/validate-local-runtime.mjs` on a normal machine and provide the output so the resolved-port behavior can be confirmed or fixed.",
-    "date": 1773916776999
+    "state": "done",
+    "comment": "Validated the existing launcher fallback logic with npm run validate:local-runtime. Resolved ports are logged, written to runtime-config.json, and the validator passed for both default-free and default-occupied scenarios.",
+    "date": 1774386925080
   },
   "intrinsicValue": 0,
   "cost": 1,

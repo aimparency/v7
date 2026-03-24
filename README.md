@@ -77,6 +77,15 @@ npm run start:fast
 ```
 
 The main visible URL is the frontend, usually `http://localhost:4000`. Backend, broker, and session ports stay in the background and are not the main user-facing interface.
+The launcher prints the resolved frontend, backend, broker, and session ports at startup and writes the same values to `packages/frontend/public/runtime-config.json`.
+
+To validate the local launcher and runtime-config fallback behavior without starting the full stack, run:
+
+```bash
+npm run validate:local-runtime
+```
+
+That script exercises both the default-port and occupied-port paths and verifies that the generated runtime config stays internally consistent.
 
 ## Local Workflow
 
@@ -185,6 +194,8 @@ Common local startup failures are usually one of these:
   Run `npm run build` once from the repo root, then retry `npm run start`. `npm run start` should build automatically when needed, but a targeted build is the fastest way to isolate which package is failing.
 - The browser keeps trying to connect to the wrong host or port:
   Remove `packages/frontend/public/runtime-config.json`, rerun the launcher, and reload the page. That file is generated runtime state and should not be committed.
+- You want to verify the launcher's port fallback behavior directly:
+  Run `npm run validate:local-runtime`. It performs a dry-run validation of runtime-config generation for both free and occupied preferred ports.
 - A wrapped-agent session type does not start:
   The core UI can run without Claude, Gemini, or Codex CLIs, but launching that specific session type still requires the corresponding local tooling to be installed and working on your machine.
 - Semantic search looks stale or unexpectedly weak:

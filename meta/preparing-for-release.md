@@ -85,13 +85,13 @@ Use this as the release-prep definition of done.
 - [x] `npm run start` exists as the documented lighter local runtime flow
 - [x] Frontend runtime config no longer hardcodes browser-side `localhost` assumptions for backend and broker
 - [ ] Clean-clone startup has been verified on a normal machine for both `npm run dev` and `npm run start`
-- [ ] Startup logs clearly show the frontend URL and resolved background ports
+- [x] Startup logs clearly show the frontend URL and resolved background ports
 
 ### 6. Port and runtime robustness
 
 - [ ] Preferred ports fall back cleanly when already occupied
-- [ ] Frontend consumes the resolved runtime config after fallback
-- [ ] A validation script or repeatable verification flow exists for launcher/runtime-config behavior
+- [x] Frontend consumes the resolved runtime config after fallback
+- [x] A validation script or repeatable verification flow exists for launcher/runtime-config behavior
 - [ ] Build-mode local runtime works without hidden watch-mode assumptions
 
 ### 7. Optional integrations and dependencies

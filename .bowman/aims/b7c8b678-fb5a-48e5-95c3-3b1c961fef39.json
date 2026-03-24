@@ -1,0 +1,39 @@
+{
+  "id": "b7c8b678-fb5a-48e5-95c3-3b1c961fef39",
+  "text": "Expose and document the local runtime validation flow",
+  "description": "Turn the existing local runtime validation script into an intentional supported workflow by adding a root npm script, documenting how to use it in the release-prep docs, and adding focused test coverage for frontend runtime-config loading so the fallback/runtime-config checklist items are backed by something repeatable.",
+  "reflections": [
+    {
+      "date": 1774386925073,
+      "context": "Make the local runtime validation path explicit and repeatable instead of leaving it as an undocumented ad hoc script.",
+      "outcome": "Exposed the validator as a root npm script, documented it in the main README, tightened the release checklist, and added frontend tests proving runtime-config loading/fallback behavior.",
+      "effectiveness": "This was a small but high-leverage pass because the launcher logic already existed; the missing piece was making verification discoverable and backed by focused tests.",
+      "lesson": "When a verification script already exists, exposing it through the main workflow and documentation often closes more release-prep uncertainty than adding new launcher code.",
+      "pattern": "This matches earlier release-prep work where packaging and documentation changes made existing behavior practically usable."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "release",
+    "startup",
+    "validation"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0e5cce7e-7090-444f-92a6-706f02340b46"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Added a root validate:local-runtime script, documented the launcher/runtime-config verification flow in the root README, and added focused frontend runtime-config tests.",
+    "date": 1774386925046
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

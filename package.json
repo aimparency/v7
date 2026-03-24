@@ -29,6 +29,7 @@
     "start:stack": "dotenv -e .env -- concurrently -n \"BACK,FRNT,BROK\" -c \"blue,green,yellow\" \"npm run start:backend\" \"npm run start:frontend\" \"npm run start:broker\"",
     "start": "node scripts/run-local-stack.mjs start",
     "start:fast": "node scripts/run-local-stack.mjs start:fast",
+    "validate:local-runtime": "node scripts/validate-local-runtime.mjs",
     "stop-sessions": "npm run stop-sessions -w wrapped-agents-broker",
     "list-sessions": "npm run list-sessions -w wrapped-agents-broker",
     "build": "npm run build --workspaces --if-present",
