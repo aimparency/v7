@@ -11,15 +11,28 @@
   --status-partially: #ffff00;
   --status-failed: #ff6666;
   --status-unclear: #ffa500;
+  --font-size-ui: 1rem;
+  --font-size-label: 0.9rem;
+  --font-size-small: 0.85rem;
+  --font-size-tiny: 0.78rem;
+  --font-size-title: 1.2rem;
 }
 
 body {
   margin: 0;
   padding: 0;
   font-family: monospace, sans-serif;
+  font-size: var(--font-size-ui);
   background: #000;
   color: #e0e0e0;
   overflow: hidden;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 /* Global focusable element styling */
@@ -41,8 +54,7 @@ input, select, textarea {
   border: 1px solid #555;
   border-radius: 0.1875rem;
   color: #e0e0e0;
-  font-family: inherit; /* Ensure monospace inheritance */
-  font-size: 1rem; /* Consistent font size */
+  font-size: inherit;
   
   &:focus {
     outline: none;

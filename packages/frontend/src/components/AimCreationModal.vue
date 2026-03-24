@@ -9,6 +9,7 @@ import type { Aim, AimStatusState, SearchAimResult } from 'shared'
 import TagInput from './TagInput.vue'
 import { AIM_DEFAULTS } from '../constants/aimDefaults'
 import AimSearchPicker from './AimSearchPicker.vue'
+import NumericTextInput from './NumericTextInput.vue'
 import type { AimSearchAdditionalOption } from '../stores/ui/aim-search-types'
 
 const uiStore = useUIStore()
@@ -27,6 +28,7 @@ const statusComment = ref(AIM_DEFAULTS.status.comment)
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
 const supportingConnectionsList = ref<{ id: string, text: string, weight: number }[]>([])
 const searchSelection = ref<{ type: 'aim'; data: SearchAimResult } | { type: 'option'; data: AimSearchAdditionalOption } | null>(null)
+const aimSearchPicker = ref<InstanceType<typeof AimSearchPicker>>()
 
 const availableStatuses = computed(() => dataStore.getStatuses)
 const aimTextInput = ref<HTMLInputElement>()
@@ -146,6 +148,17 @@ const handleSubmit = () => {
 }
 
 const handleInputKeydown = (event: KeyboardEvent) => {
+  if (
+    event.key === 'Tab' &&
+    !event.shiftKey &&
+    modalStore.aimModalMode === 'create' &&
+    hasSearchText.value
+  ) {
+    event.preventDefault()
+    aimSearchPicker.value?.focusSelectedResult()
+    return
+  }
+
   if (event.key === 'Enter') {
     event.preventDefault()
     handleSubmit()
@@ -168,15 +181,15 @@ const handleTextareaKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const handleSearchResultsKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    handleSubmit()
-  } else if (event.key === 'Escape') {
-    event.preventDefault()
-    event.stopPropagation()
-    modalStore.closeAimModal()
-  }
+const handleSearchActivate = (
+  payload: { type: 'aim'; data: SearchAimResult } | { type: 'option'; data: AimSearchAdditionalOption }
+) => {
+  searchSelection.value = payload
+  handleSubmit()
+}
+
+const focusAimTextInput = () => {
+  aimTextInput.value?.focus()
 }
 
 const handleTagPrev = () => {
@@ -338,18 +351,21 @@ onMounted(async () => {
         <div
           v-if="modalStore.aimModalMode === 'create' && hasSearchText"
           class="search-results"
-          tabindex="0"
-          @keydown="handleSearchResultsKeydown"
+          @keydown.shift.tab.exact.prevent="focusAimTextInput"
         >
           <AimSearchPicker
+            ref="aimSearchPicker"
             :query="aimText"
             :show-input="false"
             :show-filters="false"
             :additional-options="createNewOption"
             selection-behavior="unique-near-exact-aim"
-            :activate-on-click="false"
-            :activate-on-enter="false"
+            :activate-on-click="true"
+            :activate-on-enter="true"
+            :select-on-hover="false"
             :result-limit="5"
+            @activate="handleSearchActivate"
+            @escape="focusAimTextInput"
             @selection-change="searchSelection = $event"
           />
 
@@ -405,7 +421,7 @@ onMounted(async () => {
                 <span class="parent-text">{{ parent.text }}</span>
                 <div class="weight-input">
                     <span class="weight-label">Weight:</span>
-                    <input type="number" v-model.number="parent.weight" step="0.1" min="0" class="weight-field" @keydown="handleInputKeydown" />
+                    <NumericTextInput v-model="parent.weight" class="weight-field" @keydown="handleInputKeydown" />
                 </div>
                 <button @click="removeParent(index)" class="btn-remove" title="Remove Connection">×</button>
             </div>
@@ -420,7 +436,7 @@ onMounted(async () => {
                 <span class="parent-text">{{ child.text }}</span>
                 <div class="weight-input">
                     <span class="weight-label">Weight:</span>
-                    <input type="number" v-model.number="child.weight" step="0.1" min="0" class="weight-field" @keydown="handleInputKeydown" />
+                    <NumericTextInput v-model="child.weight" class="weight-field" @keydown="handleInputKeydown" />
                 </div>
                 <button @click="removeChild(index)" class="btn-remove" title="Remove Connection">×</button>
             </div>

@@ -277,7 +277,7 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 300;
+  z-index: 1100;
   display: flex;
   justify-content: center;
   align-items: flex-start;

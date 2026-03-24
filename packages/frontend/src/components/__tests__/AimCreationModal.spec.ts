@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import AimCreationModal from '../AimCreationModal.vue'
@@ -56,6 +56,7 @@ describe('AimCreationModal', () => {
   }
 
   beforeEach(() => {
+    vi.useFakeTimers()
     const pinia = createTestingPinia({
       createSpy: vi.fn,
       initialState: {
@@ -83,6 +84,11 @@ describe('AimCreationModal', () => {
     })
 
     ;(trpc.aim.search.query as any).mockResolvedValue([])
+    ;(trpc.aim.searchSemantic.query as any).mockResolvedValue([])
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('renders correctly', () => {
@@ -149,7 +155,7 @@ describe('AimCreationModal', () => {
     
     expect(wrapper.text()).toContain('Child 1')
     // Should have weight input
-    const weightInput = wrapper.find('input[type="number"].weight-field')
+    const weightInput = wrapper.find('input.weight-field')
     expect(weightInput.exists()).toBe(true)
     await weightInput.setValue(5)
     
@@ -198,6 +204,147 @@ describe('AimCreationModal', () => {
       [],
       []
     )
+  })
+
+  it('submits the focused embedded search result on Enter', async () => {
+    ;(trpc.aim.search.query as any).mockResolvedValue([
+      { id: 'a1', text: 'Refactor old auth', status: { state: 'open' }, score: 0.9 },
+      { id: 'a2', text: 'Refactor auth', status: { state: 'open' }, score: 0.8 }
+    ])
+
+    const input = wrapper.find('input[placeholder="Enter aim text"]')
+    await input.setValue('Refactor')
+    await vi.advanceTimersByTimeAsync(200)
+    await wrapper.vm.$nextTick()
+
+    const results = wrapper.findAll('.result-item')
+    expect(results).toHaveLength(3)
+
+    await results[0]!.trigger('focus')
+    await results[0]!.trigger('keydown', { key: 'j' })
+    await results[1]!.trigger('keydown', { key: 'Enter' })
+
+    expect(uiStore.createAim).toHaveBeenCalledWith(
+      'a1',
+      true,
+      undefined,
+      undefined,
+      0,
+      1,
+      1,
+      1
+    )
+  })
+
+  it('tabs from the title input into the embedded search list', async () => {
+    ;(trpc.aim.search.query as any).mockResolvedValue([
+      { id: 'a1', text: 'Refactor old auth', status: { state: 'open' }, score: 0.9 }
+    ])
+
+    const input = wrapper.find('input[placeholder="Enter aim text"]')
+    await input.setValue('Refactor')
+    await vi.advanceTimersByTimeAsync(200)
+    await wrapper.vm.$nextTick()
+
+    await input.trigger('keydown', { key: 'Tab' })
+    await wrapper.vm.$nextTick()
+
+    const results = wrapper.findAll('.result-item')
+    expect(results).toHaveLength(2)
+    expect(results[0]!.attributes('tabindex')).toBe('0')
+  })
+
+  it('returns focus to the title input on Escape from embedded search', async () => {
+    ;(trpc.aim.search.query as any).mockResolvedValue([
+      { id: 'a1', text: 'Refactor old auth', status: { state: 'open' }, score: 0.9 }
+    ])
+
+    const input = wrapper.find('input[placeholder="Enter aim text"]')
+    await input.setValue('Refactor')
+    await vi.advanceTimersByTimeAsync(200)
+    await wrapper.vm.$nextTick()
+    const focusSpy = vi.spyOn(input.element as HTMLInputElement, 'focus')
+
+    await input.trigger('keydown', { key: 'Tab' })
+    await wrapper.vm.$nextTick()
+
+    const results = wrapper.findAll('.result-item')
+    await results[0]!.trigger('keydown', { key: 'Escape' })
+
+    expect(focusSpy).toHaveBeenCalled()
+  })
+
+  it('returns focus to the title input on Shift+Tab from embedded search', async () => {
+    ;(trpc.aim.search.query as any).mockResolvedValue([
+      { id: 'a1', text: 'Refactor old auth', status: { state: 'open' }, score: 0.9 }
+    ])
+
+    const input = wrapper.find('input[placeholder="Enter aim text"]')
+    await input.setValue('Refactor')
+    await vi.advanceTimersByTimeAsync(200)
+    await wrapper.vm.$nextTick()
+    const focusSpy = vi.spyOn(input.element as HTMLInputElement, 'focus')
+
+    await input.trigger('keydown', { key: 'Tab' })
+    await wrapper.vm.$nextTick()
+
+    const results = wrapper.findAll('.result-item')
+    await results[0]!.trigger('keydown', { key: 'Tab', shiftKey: true })
+
+    expect(focusSpy).toHaveBeenCalled()
+  })
+
+  it('does not change embedded selection on hover and click confirms directly', async () => {
+    ;(trpc.aim.search.query as any).mockResolvedValue([
+      { id: 'a1', text: 'Refactor old auth', status: { state: 'open' }, score: 0.9 },
+      { id: 'a2', text: 'Refactor auth', status: { state: 'open' }, score: 0.8 }
+    ])
+
+    const input = wrapper.find('input[placeholder="Enter aim text"]')
+    await input.setValue('Refactor')
+    await vi.advanceTimersByTimeAsync(200)
+    await wrapper.vm.$nextTick()
+
+    const results = wrapper.findAll('.result-item')
+    expect(results).toHaveLength(3)
+
+    await results[2]!.trigger('mouseenter')
+    await wrapper.find('.btn-primary').trigger('click')
+
+    expect(uiStore.createAim).toHaveBeenCalledWith(
+      'Refactor',
+      false,
+      '',
+      [],
+      0,
+      1,
+      1,
+      1,
+      [],
+      []
+    )
+
+    uiStore.createAim.mockClear()
+
+    await results[2]!.trigger('click')
+    expect(uiStore.createAim).toHaveBeenCalledWith(
+      'a2',
+      true,
+      undefined,
+      undefined,
+      0,
+      1,
+      1,
+      1
+    )
+  })
+
+  it('allows typing j and k in the title input', async () => {
+    const input = wrapper.find('input[placeholder="Enter aim text"]')
+
+    await input.setValue('jk')
+
+    expect((input.element as HTMLInputElement).value).toBe('jk')
   })
 
   it('saves on Enter for edit mode input fields', async () => {

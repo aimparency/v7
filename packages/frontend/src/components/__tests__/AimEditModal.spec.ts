@@ -10,6 +10,9 @@ vi.mock('../../trpc', () => ({
   trpc: {
     aim: {
       list: { query: vi.fn().mockResolvedValue([]) }
+    },
+    phase: {
+      get: { query: vi.fn().mockResolvedValue(null) }
     }
   }
 }))
@@ -122,19 +125,30 @@ describe('AimEditModal keyboard save behavior', () => {
 
     const modalStore = useUIModalStore()
 
-    await wrapper.find('button[title="Add Parent"]').trigger('click')
+    await wrapper.find('button[title="Add supported aim"]').trigger('click')
 
-    expect(modalStore.openAimSearch).toHaveBeenCalledWith('pick', expect.any(Function))
+    expect(modalStore.openAimSearch).toHaveBeenCalledWith(
+      'pick',
+      expect.any(Function),
+      undefined,
+      expect.objectContaining({
+        title: 'Select Supported Aim',
+        placeholder: 'Search for a parent aim...'
+      })
+    )
     const calls = vi.mocked(modalStore.openAimSearch).mock.calls
     expect(calls[0]).toBeDefined()
     expect(calls[0]![1]).toEqual(expect.any(Function))
 
-    const callback = calls[0]![1] as (aim: any) => void
+    const callback = calls[0]![1] as (payload: any) => void
     callback({
-      id: 'parent-1',
-      text: 'Parent Aim',
-      status: { state: 'open', comment: '' }
-    } as any)
+      type: 'aim',
+      data: {
+        id: 'parent-1',
+        text: 'Parent Aim',
+        status: { state: 'open', comment: '' }
+      }
+    })
     await wrapper.vm.$nextTick()
 
     expect(wrapper.text()).toContain('Parent Aim')

@@ -7,6 +7,7 @@ import { useMapStore } from '../stores/map'
 import { trpc } from '../trpc'
 import type { Aim, Connection } from 'shared/src/types'
 import { formatWithK, parseK } from '../utils/number-format'
+import NumericTextInput from './NumericTextInput.vue'
 
 const graphUIStore = useGraphUIStore()
 const projectStore = useProjectStore()
@@ -362,7 +363,7 @@ const isOpaque = computed(() => !hasInteracted.value)
 
             <div class="field-group">
                 <label>Weight</label>
-                <input type="number" v-model.number="editedWeight" @change="onWeightChange" step="0.1" min="0" class="input-field" />
+                <NumericTextInput v-model="editedWeight" @change="onWeightChange" class="input-field" />
             </div>
 
             <div class="field-group">

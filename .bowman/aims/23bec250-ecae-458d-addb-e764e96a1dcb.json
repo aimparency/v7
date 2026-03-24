@@ -1,0 +1,24 @@
+{
+  "id": "23bec250-ecae-458d-addb-e764e96a1dcb",
+  "text": "when we show aims in search results (no context) and aims are < 100 characters, show <largest parent title>/<aim title>. recursive untile 100 chars reached",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774385463081
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

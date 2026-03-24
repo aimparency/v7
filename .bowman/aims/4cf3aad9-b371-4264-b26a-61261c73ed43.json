@@ -1,0 +1,24 @@
+{
+  "id": "4cf3aad9-b371-4264-b26a-61261c73ed43",
+  "text": "when creating sub aim by drag and drop, take into account the expected aim size when calculating the initial distance.",
+  "description": "otherwise aim is placed, size calculated, distance scaled. => aim not where we dragged => bad UI",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774366476766
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

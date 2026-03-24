@@ -5,6 +5,8 @@ import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { trpc } from '../trpc'
 import TagInput from './TagInput.vue'
+import NumericTextInput from './NumericTextInput.vue'
+import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 
 const props = defineProps<{
   show: boolean
@@ -37,6 +39,10 @@ const selectedStatus = ref('')
 const statusComment = ref('')
 const reflection = ref('')
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
+const committedPhasesList = ref<{ id: string, name: string }[]>([])
+const confirmRemoveParentId = ref<string | null>(null)
+const confirmRemovePhaseId = ref<string | null>(null)
+const originalCommittedPhaseIds = ref<string[]>([])
 
 // Template refs
 const modalOverlay = ref<HTMLDivElement>()
@@ -64,12 +70,43 @@ const openParentSearch = () => {
   })
 }
 
-const removeParent = (index: number) => {
-  supportedAimsList.value.splice(index, 1)
+const openPhaseSearch = () => {
+  modalStore.openPhaseSearchPrompt((payload: PhaseSearchSelection) => {
+    if (payload.type !== 'phase') return
+    const phase = payload.data
+    if (!committedPhasesList.value.some(entry => entry.id === phase.id)) {
+      committedPhasesList.value.push({ id: phase.id, name: phase.name })
+    }
+  }, {
+    title: 'Commit In Phase',
+    placeholder: 'Search for a phase...'
+  })
+}
+
+const removeParent = (parentId: string) => {
+  if (confirmRemoveParentId.value !== parentId) {
+    confirmRemoveParentId.value = parentId
+    return
+  }
+
+  supportedAimsList.value = supportedAimsList.value.filter(parent => parent.id !== parentId)
+  confirmRemoveParentId.value = null
+}
+
+const removeCommittedPhase = (phaseId: string) => {
+  if (confirmRemovePhaseId.value !== phaseId) {
+    confirmRemovePhaseId.value = phaseId
+    return
+  }
+
+  committedPhasesList.value = committedPhasesList.value.filter(phase => phase.id !== phaseId)
+  confirmRemovePhaseId.value = null
 }
 
 watch(() => props.show, async (show) => {
   if (show && aim.value) {
+    confirmRemoveParentId.value = null
+    confirmRemovePhaseId.value = null
     aimText.value = aim.value.text
     aimDescription.value = aim.value.description || ''
     aimIntrinsicValue.value = aim.value.intrinsicValue ?? 0
@@ -82,6 +119,8 @@ watch(() => props.show, async (show) => {
 
     // Load supported aims (Parents)
     supportedAimsList.value = []
+    committedPhasesList.value = []
+    originalCommittedPhaseIds.value = [...(aim.value.committedIn || [])]
     if (aim.value.supportedAims && aim.value.supportedAims.length > 0) {
       try {
         const parents = await trpc.aim.list.query({
@@ -95,6 +134,28 @@ watch(() => props.show, async (show) => {
         }))
       } catch (e) {
         console.error("Failed to load supported aims", e)
+      }
+    }
+
+    if (aim.value.committedIn && aim.value.committedIn.length > 0) {
+      try {
+        const phases = await Promise.all(
+          aim.value.committedIn.map(phaseId =>
+            trpc.phase.get.query({
+              projectPath: projectStore.projectPath,
+              phaseId
+            }).catch(() => null)
+          )
+        )
+
+        committedPhasesList.value = phases
+          .filter((phase): phase is NonNullable<typeof phase> => phase !== null)
+          .map(phase => ({
+            id: phase.id,
+            name: phase.name
+          }))
+      } catch (e) {
+        console.error('Failed to load committed phases', e)
       }
     }
 
@@ -188,6 +249,18 @@ const handleSave = async () => {
     supportedAims: supportedAimsList.value.map(a => a.id)
   })
 
+  const currentCommittedPhaseIds = committedPhasesList.value.map(phase => phase.id)
+  const phasesToRemove = originalCommittedPhaseIds.value.filter(phaseId => !currentCommittedPhaseIds.includes(phaseId))
+  const phasesToAdd = currentCommittedPhaseIds.filter(phaseId => !originalCommittedPhaseIds.value.includes(phaseId))
+
+  for (const phaseId of phasesToRemove) {
+    await dataStore.removeAimFromPhase(projectStore.projectPath, aim.value.id, phaseId)
+  }
+
+  for (const phaseId of phasesToAdd) {
+    await dataStore.commitAimToPhase(projectStore.projectPath, aim.value.id, phaseId)
+  }
+
   emit('close')
 }
 
@@ -267,19 +340,59 @@ const handleCancel = () => {
       </div>
 
       <div class="form-section">
-        <div class="label-row">
-          <label>Supports (Parents)</label>
-          <button ref="addParentBtn" @click="openParentSearch" class="btn-add" type="button" title="Add Parent">+</button>
-        </div>
-        <div v-for="(parent, index) in supportedAimsList" :key="parent.id" class="aim-row">
-          <span class="aim-text">{{ parent.text }}</span>
-          <div class="weight-input">
-            <span class="weight-label">Weight:</span>
-            <input type="text" v-model.number="parent.weight" class="weight-field" />
+        <label>Supports (Parents)</label>
+        <div class="entry-list">
+          <div v-for="parent in supportedAimsList" :key="parent.id" class="entry-row">
+            <span class="entry-name">{{ parent.text }}</span>
+            <label class="entry-meta">
+              <span class="entry-meta-label">Weight</span>
+              <NumericTextInput v-model="parent.weight" class="entry-inline-input" />
+            </label>
+            <button
+              @click="removeParent(parent.id)"
+              class="entry-action"
+              :class="{ confirm: confirmRemoveParentId === parent.id }"
+              type="button"
+            >
+              {{ confirmRemoveParentId === parent.id ? 'Confirm' : 'Remove' }}
+            </button>
           </div>
-          <button @click="removeParent(index)" class="btn-remove" type="button" title="Remove">×</button>
+          <button
+            ref="addParentBtn"
+            @click="openParentSearch"
+            class="entry-placeholder"
+            type="button"
+            title="Add supported aim"
+          >
+            add supported aim
+          </button>
         </div>
-        <div v-if="supportedAimsList.length === 0" class="empty-list">No parent aims</div>
+      </div>
+
+      <div class="form-section">
+        <label>Committed In</label>
+        <div class="entry-list">
+          <div v-for="phase in committedPhasesList" :key="phase.id" class="entry-row">
+            <span class="entry-name">{{ phase.name }}</span>
+            <span class="entry-meta entry-badge">Phase</span>
+            <button
+              @click="removeCommittedPhase(phase.id)"
+              class="entry-action"
+              :class="{ confirm: confirmRemovePhaseId === phase.id }"
+              type="button"
+            >
+              {{ confirmRemovePhaseId === phase.id ? 'Confirm' : 'Remove' }}
+            </button>
+          </div>
+          <button
+            @click="openPhaseSearch"
+            class="entry-placeholder"
+            type="button"
+            title="Commit in phase"
+          >
+            commit in phase
+          </button>
+        </div>
       </div>
 
       <div class="form-row">
@@ -360,19 +473,20 @@ const handleCancel = () => {
 }
 
 .modal-content {
-  background: #1e1e1e;
-  border: 1px solid #444;
-  border-radius: 8px;
+  background: #1f1d1a;
+  border: 1px solid #575047;
+  border-radius: 10px;
   padding: 1.5rem;
   min-width: 500px;
   max-width: 600px;
   max-height: 85vh;
   overflow-y: auto;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
 }
 
 h2 {
   margin: 0 0 1rem 0;
-  color: #e0e0e0;
+  color: #f0eadf;
   font-size: 1.2rem;
 }
 
@@ -383,7 +497,7 @@ h2 {
 label {
   display: block;
   margin-bottom: 0.5rem;
-  color: #ccc;
+  color: #d4cbbe;
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -392,10 +506,10 @@ label {
 .text-input {
   width: 100%;
   padding: 0.5rem;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 4px;
-  color: #e0e0e0;
+  background: #2b2824;
+  border: 1px solid #575047;
+  border-radius: 6px;
+  color: #f0eadf;
   font-size: 0.9rem;
 }
 
@@ -403,19 +517,141 @@ label {
 .text-input:focus,
 .textarea-input:focus {
   outline: none;
-  border-color: #007acc;
+  border-color: #b09a72;
+  box-shadow: 0 0 0 1px rgba(176, 154, 114, 0.25);
 }
 
 .textarea-input {
   width: 100%;
   padding: 0.5rem;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 4px;
-  color: #e0e0e0;
+  background: #2b2824;
+  border: 1px solid #575047;
+  border-radius: 6px;
+  color: #f0eadf;
   font-size: 0.9rem;
   font-family: inherit;
   resize: vertical;
+}
+
+.entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.entry-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.entry-name {
+  min-width: 0;
+  display: block;
+  padding: 0.5rem 0.7rem;
+  background: #2a2723;
+  border: 1px solid #4f4942;
+  border-radius: 8px;
+  color: #f0eadf;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0;
+  color: #c8bcaa;
+  white-space: nowrap;
+}
+
+.entry-meta-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #a99a84;
+}
+
+.entry-inline-input {
+  width: 4.5rem;
+  padding: 0.35rem 0.45rem;
+  background: #24211d;
+  border: 1px solid #575047;
+  border-radius: 6px;
+  color: #f0eadf;
+  font-size: 0.85rem;
+}
+
+.entry-inline-input:focus {
+  outline: none;
+  border-color: #b09a72;
+  box-shadow: 0 0 0 1px rgba(176, 154, 114, 0.25);
+}
+
+.entry-badge {
+  justify-self: start;
+  padding: 0.28rem 0.55rem;
+  background: #2d2a25;
+  border: 1px solid #5f574d;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: #d8cebf;
+}
+
+.entry-action,
+.entry-placeholder {
+  appearance: none;
+  display: block;
+  border: 1px solid #5f574d;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.entry-action {
+  padding: 0.45rem 0.75rem;
+  background: #2f2b26;
+  color: #dfd4c5;
+}
+
+.entry-action:hover {
+  background: #38332d;
+}
+
+.entry-action.confirm {
+  background: #5a4738;
+  border-color: #87684f;
+  color: #fff3e5;
+}
+
+.entry-action.confirm:hover {
+  background: #675140;
+}
+
+.entry-placeholder {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  background: transparent;
+  color: #c8bcaa;
+  text-align: left;
+}
+
+.entry-placeholder:hover,
+.entry-placeholder:focus {
+  background: #2a2723;
+  border-color: #776b5d;
+  color: #f0eadf;
+  outline: none;
 }
 
 .modal-actions {
@@ -427,30 +663,34 @@ label {
 
 .btn-cancel,
 .btn-save {
+  appearance: none;
   padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
+  border: 1px solid #5f574d;
+  border-radius: 6px;
   font-size: 0.9rem;
+  font-family: inherit;
+  line-height: 1.2;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .btn-cancel {
-  background: #444;
-  color: #e0e0e0;
+  background: #2d2a26;
+  color: #e7ddd0;
 }
 
 .btn-cancel:hover {
-  background: #555;
+  background: #393530;
 }
 
 .btn-save {
-  background: #007acc;
-  color: white;
+  background: #867256;
+  border-color: #9a8567;
+  color: #fff8ef;
 }
 
 .btn-save:hover {
-  background: #005a9e;
+  background: #978265;
 }
 
 .form-row {
@@ -467,93 +707,5 @@ label {
 
 .form-group label {
   margin-bottom: 0.5rem;
-}
-
-.label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.btn-add {
-  padding: 0.2rem 0.6rem;
-  background: #007acc;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-add:hover {
-  background: #005a9e;
-}
-
-.aim-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid #444;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-}
-
-.aim-text {
-  flex: 1;
-  color: #e0e0e0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.weight-input {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.weight-label {
-  font-size: 0.8rem;
-  color: #999;
-}
-
-.weight-field {
-  width: 4rem;
-  padding: 0.25rem;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 4px;
-  color: #e0e0e0;
-  font-size: 0.85rem;
-}
-
-.btn-remove {
-  padding: 0.2rem 0.5rem;
-  background: #cc0000;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-  line-height: 1;
-}
-
-.btn-remove:hover {
-  background: #ff0000;
-}
-
-.empty-list {
-  color: #666;
-  font-style: italic;
-  font-size: 0.9rem;
-  text-align: center;
-  padding: 0.5rem;
 }
 </style>

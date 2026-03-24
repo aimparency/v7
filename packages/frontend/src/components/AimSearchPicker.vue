@@ -23,6 +23,7 @@ const props = withDefaults(defineProps<{
   selectionBehavior?: 'first' | 'unique-near-exact-aim'
   activateOnClick?: boolean
   activateOnEnter?: boolean
+  selectOnHover?: boolean
   resultLimit?: number
 }>(), {
   query: undefined,
@@ -36,6 +37,7 @@ const props = withDefaults(defineProps<{
   selectionBehavior: 'first',
   activateOnClick: true,
   activateOnEnter: true,
+  selectOnHover: true,
   resultLimit: 10
 })
 
@@ -52,6 +54,7 @@ const localQuery = ref(props.initialQuery)
 const searchResults = ref<SearchAimResult[]>([])
 const selectedIndex = ref(0)
 const focusedResultIndex = ref(-1)
+const hoveredResultIndex = ref(-1)
 const searchInput = ref<HTMLInputElement>()
 const resultsListRef = ref<HTMLDivElement>()
 const loading = ref(false)
@@ -220,7 +223,9 @@ const setSelectedIndex = (index: number) => {
 const scrollToItem = (index: number) => {
   nextTick(() => {
     const item = resultsListRef.value?.querySelectorAll<HTMLElement>('.result-item')[index]
-    item?.scrollIntoView({ block: 'nearest' })
+    if (typeof item?.scrollIntoView === 'function') {
+      item.scrollIntoView({ block: 'nearest' })
+    }
   })
 }
 
@@ -228,7 +233,9 @@ const focusResult = (index: number) => {
   nextTick(() => {
     const item = resultsListRef.value?.querySelectorAll<HTMLElement>('.result-item')[index]
     item?.focus()
-    item?.scrollIntoView({ block: 'nearest' })
+    if (typeof item?.scrollIntoView === 'function') {
+      item.scrollIntoView({ block: 'nearest' })
+    }
   })
 }
 
@@ -320,19 +327,25 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
     return
   }
 
-  event.preventDefault()
-  event.stopPropagation()
-
   if (key === 'Escape') {
+    event.preventDefault()
+    event.stopPropagation()
     handleEscape()
     return
   }
 
   if (key === 'Tab') {
     focusedResultIndex.value = -1
-    focusInput()
+    if (props.showInput) {
+      event.preventDefault()
+      event.stopPropagation()
+      focusInput()
+    }
     return
   }
+
+  event.preventDefault()
+  event.stopPropagation()
 
   if (key === 'ArrowDown' || key === 'j') {
     const nextIndex = Math.min(index + 1, items.value.length - 1)
@@ -355,12 +368,45 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
   }
 }
 
+const getResultTabIndex = (index: number) => {
+  if (focusedResultIndex.value >= 0) {
+    return index === focusedResultIndex.value ? 0 : -1
+  }
+
+  if (!props.showInput) {
+    return index === selectedIndex.value ? 0 : -1
+  }
+
+  return -1
+}
+
+const handleResultMouseEnter = (index: number) => {
+  hoveredResultIndex.value = index
+  if (props.selectOnHover) {
+    setSelectedIndex(index)
+  }
+}
+
+const handleResultMouseLeave = (index: number) => {
+  if (hoveredResultIndex.value === index) {
+    hoveredResultIndex.value = -1
+  }
+}
+
 const focusInput = () => {
   searchInput.value?.focus()
 }
 
+const focusSelectedResult = () => {
+  if (items.value.length === 0) return
+  focusedResultIndex.value = selectedIndex.value
+  focusResult(selectedIndex.value)
+}
+
 defineExpose({
-  focusInput
+  activateSelection,
+  focusInput,
+  focusSelectedResult
 })
 
 onMounted(() => {
@@ -435,11 +481,13 @@ onUnmounted(() => {
           class="result-item"
           :class="{
             selected: index === selectedIndex,
+            hovered: !props.selectOnHover && index === hoveredResultIndex,
             'additional-option': item.type === 'option'
           }"
-          :tabindex="index === focusedResultIndex ? 0 : -1"
+          :tabindex="getResultTabIndex(index)"
           @click="handleResultClick(index)"
-          @mouseenter="setSelectedIndex(index)"
+          @mouseenter="handleResultMouseEnter(index)"
+          @mouseleave="handleResultMouseLeave(index)"
           @focus="focusedResultIndex = index"
           @keydown="handleResultKeydown($event, index)"
         >
