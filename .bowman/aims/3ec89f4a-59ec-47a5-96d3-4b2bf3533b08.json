@@ -2,7 +2,16 @@
   "id": "3ec89f4a-59ec-47a5-96d3-4b2bf3533b08",
   "text": "Design a local project picker/discovery flow for nearby .bowman repositories",
   "description": "Define and implement how the local service discovers or lets the user select repositories/workspaces with `.bowman`. The flow should fit local use, avoid hidden magic, and make switching projects explicit.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774386627818,
+      "context": "Make local project selection feel intentional by exposing nearby .bowman repositories instead of relying only on manual path entry and history.",
+      "outcome": "The backend now provides discoverLocalProjects, and the selection view shows explicit nearby project suggestions plus the roots that were scanned.",
+      "effectiveness": "A small backend scan plus a narrow selection-screen UI change delivered a concrete discovery flow without changing project loading semantics.",
+      "lesson": "For local-first tools, explicit discover-and-choose flows are safer and easier to trust than silent auto-discovery.",
+      "pattern": "This follows the same pattern as the header path work: orientation improves fastest when the UI makes local file-system context explicit."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -18,9 +27,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Needed so local multi-repo usage feels intentional rather than incidental.",
-    "date": 1773878569292
+    "state": "done",
+    "comment": "Added explicit local project discovery: backend now scans nearby roots for .bowman repositories and the project selection screen shows refreshable click-to-open suggestions with scanned roots visible.",
+    "date": 1774386622257
   },
   "intrinsicValue": 0,
   "cost": 1,

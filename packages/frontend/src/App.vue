@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUIStore, type AimPath } from './stores/ui'
 import { useUIModalStore } from './stores/ui/modal-store'
 import { useGraphUIStore } from './stores/ui/graph-store'
@@ -28,6 +28,16 @@ const graphUIStore = useGraphUIStore()
 const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const mapStore = useMapStore()
+
+const normalizedProjectRoot = computed(() => projectStore.projectPath.replace(/\/+$/, ''))
+const activeBowmanRoot = computed(() => normalizedProjectRoot.value ? `${normalizedProjectRoot.value}/.bowman` : '')
+const activeProjectName = computed(() => {
+  const projectRoot = normalizedProjectRoot.value
+  if (!projectRoot) return ''
+
+  const segments = projectRoot.split('/').filter(Boolean)
+  return segments.at(-1) || projectRoot
+})
 
 const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath } | { type: 'option', data: AimSearchAdditionalOption }) => {
   if (modalStore.aimSearchMode === 'pick') {
@@ -62,6 +72,9 @@ const watchdogHeight = ref(parseInt(localStorage.getItem('aimparency-watchdog-he
 const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
 const showConsistencyModal = ref(false)
 const isResizingWatchdog = ref(false)
+const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
+const discoveredProjectRoots = ref<string[]>([])
+const isRefreshingDiscoveredProjects = ref(false)
 
 // Persist watchdog visibility and handle focus
 watch(() => projectStore.showWatchdog, (val) => {
@@ -70,6 +83,12 @@ watch(() => projectStore.showWatchdog, (val) => {
     nextTick(() => {
       watchdogRef.value?.focusWorker()
     })
+  }
+})
+
+watch(() => projectStore.isInProjectSelection, (isInProjectSelection) => {
+  if (isInProjectSelection) {
+    void refreshDiscoveredProjects()
   }
 })
 
@@ -106,6 +125,23 @@ const handleSelectProject = async () => {
   uiStore.ensureSelectionVisible()
 }
 
+const refreshDiscoveredProjects = async () => {
+  if (!projectStore.isInProjectSelection) return
+
+  isRefreshingDiscoveredProjects.value = true
+  try {
+    const result = await trpc.project.discoverLocalProjects.query()
+    discoveredProjects.value = result.projects
+    discoveredProjectRoots.value = result.rootsScanned
+  } catch (error) {
+    console.error('Failed to discover local projects', error)
+    discoveredProjects.value = []
+    discoveredProjectRoots.value = []
+  } finally {
+    isRefreshingDiscoveredProjects.value = false
+  }
+}
+
 const openProjectFromHistory = async (path: string) => {
   projectPathInput.value = path
   await dataStore.loadProject(path)
@@ -114,6 +150,11 @@ const openProjectFromHistory = async (path: string) => {
   });
   await uiStore.selectPhase(0, 0)
   uiStore.ensureSelectionVisible()
+}
+
+const openDiscoveredProject = async (path: string) => {
+  projectPathInput.value = path
+  await handleSelectProject()
 }
 
 const removeFromHistory = (path: string) => {
@@ -237,6 +278,7 @@ onMounted(async () => {
   } else {
     // Set initial focus to the first phase column
     uiStore.setSelectedColumn(0);
+    await refreshDiscoveredProjects()
   }
 })
 
@@ -291,7 +333,22 @@ onUnmounted(() => {
         </button>
 
         <div class="project-info">
-          <span class="project-path">{{ projectStore.projectPath }}</span>
+          <div v-if="projectStore.projectPath" class="project-location" :title="`${normalizedProjectRoot}\n${activeBowmanRoot}`">
+            <div class="project-chip">
+              <span class="project-chip-label">Project</span>
+              <span class="project-chip-value">{{ activeProjectName }}</span>
+            </div>
+            <div class="project-path-stack">
+              <span class="project-path-line">
+                <span class="project-path-label">root</span>
+                <code>{{ normalizedProjectRoot }}</code>
+              </span>
+              <span class="project-path-line">
+                <span class="project-path-label">.bowman</span>
+                <code>{{ activeBowmanRoot }}</code>
+              </span>
+            </div>
+          </div>
 
           <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
             ⚙️
@@ -326,9 +383,14 @@ onUnmounted(() => {
       v-if="projectStore.isInProjectSelection"
       v-model="projectPathInput"
       :project-history="projectStore.projectHistory"
+      :discovered-projects="discoveredProjects"
+      :scanned-roots="discoveredProjectRoots"
+      :is-refreshing-discovered-projects="isRefreshingDiscoveredProjects"
       @select-project="handleSelectProject"
       @open-project-from-history="openProjectFromHistory"
       @remove-from-history="removeFromHistory"
+      @refresh-discovered-projects="refreshDiscoveredProjects"
+      @open-discovered-project="openDiscoveredProject"
     />
 
     <!-- Main Interface -->
@@ -471,12 +533,66 @@ onUnmounted(() => {
 .project-info {
   display: flex;
   align-items: center;
-  gap: 0.25rem; /* Reduced gap */
-  white-space: nowrap; /* Prevent wrapping */
+  gap: 0.5rem;
+  min-width: 0;
 }
 
-.project-path {
-  color: #888;
+.project-location {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid #3f3f3f;
+  border-radius: 0.4rem;
+  background: #252525;
+}
+
+.project-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.1rem;
+  padding-right: 0.45rem;
+  border-right: 1px solid #3f3f3f;
+  flex-shrink: 0;
+}
+
+.project-chip-label,
+.project-path-label {
+  color: #7f7f7f;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.project-chip-value {
+  color: #f0f0f0;
+  font-size: 0.86rem;
+}
+
+.project-path-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.project-path-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.project-path-line code {
+  color: #b6d7ff;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.76rem;
 }
 
 .close-project {

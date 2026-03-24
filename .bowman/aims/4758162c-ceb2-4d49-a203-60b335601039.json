@@ -2,7 +2,16 @@
   "id": "4758162c-ceb2-4d49-a203-60b335601039",
   "text": "Make the current local project and .bowman root obvious in the UI",
   "description": "When Aimparency is connected to a project, the UI should clearly show which local repo/workspace is open and which `.bowman` directory is active. Users should not have to infer the target project from indirect state.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774386434188,
+      "context": "Make the active local project and .bowman root obvious in the connected UI, not just buried in settings.",
+      "outcome": "The main app header now renders a dedicated project-location block with the project name, repo root, and .bowman path, and a focused test verifies it.",
+      "effectiveness": "This was a small, direct UI-shell change that solved the trust/orientation problem without touching project loading flows.",
+      "lesson": "For orientation problems, prefer a single always-visible surface in the app shell over duplicating detail in deeper modals.",
+      "pattern": "This matches earlier Aimparency fixes where reducing hidden state and surfacing runtime context in the shell improved trust faster than adding more settings detail."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -17,9 +26,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Basic trust and orientation requirement.",
-    "date": 1773878569250
+    "state": "done",
+    "comment": "App header now shows the active project name, repo root path, and derived .bowman root explicitly; added frontend regression coverage in App.spec.ts.",
+    "date": 1774386434162
   },
   "intrinsicValue": 0,
   "cost": 1,

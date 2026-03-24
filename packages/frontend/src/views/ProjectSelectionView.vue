@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import type { ProjectHistoryEntry } from '../stores/ui/project-helpers'
 
+type DiscoveredProject = {
+  path: string
+  bowmanPath: string
+  sourceRoot: string
+}
+
 const props = defineProps<{
   modelValue: string
   projectHistory: ProjectHistoryEntry[]
+  discoveredProjects: DiscoveredProject[]
+  scannedRoots: string[]
+  isRefreshingDiscoveredProjects: boolean
 }>()
 
 const emit = defineEmits<{
@@ -11,6 +20,8 @@ const emit = defineEmits<{
   (event: 'select-project'): void
   (event: 'open-project-from-history', path: string): void
   (event: 'remove-from-history', path: string): void
+  (event: 'refresh-discovered-projects'): void
+  (event: 'open-discovered-project', path: string): void
 }>()
 
 const onInput = (event: Event) => {
@@ -48,6 +59,42 @@ const formatRelativeTime = (timestamp: number): string => {
         @keydown.enter="emit('select-project')"
       />
       <button @click="emit('select-project')" class="select-project">Open Project</button>
+    </div>
+
+    <div class="project-discovery">
+      <div class="section-header">
+        <h3>Nearby .bowman Projects</h3>
+        <button
+          class="refresh-button"
+          :disabled="props.isRefreshingDiscoveredProjects"
+          @click="emit('refresh-discovered-projects')"
+        >
+          {{ props.isRefreshingDiscoveredProjects ? 'Refreshing…' : 'Refresh' }}
+        </button>
+      </div>
+
+      <p class="discovery-hint" v-if="props.scannedRoots.length > 0">
+        Scanned {{ props.scannedRoots.join(', ') }}
+      </p>
+
+      <div v-if="props.discoveredProjects.length > 0" class="history-list">
+        <button
+          v-for="project in props.discoveredProjects"
+          :key="project.path"
+          type="button"
+          class="history-item discovered-item"
+          @click="emit('open-discovered-project', project.path)"
+        >
+          <div class="history-item-content">
+            <div class="history-primary">
+              <div class="history-path">{{ project.path }}</div>
+              <div class="history-bowman">{{ project.bowmanPath }}</div>
+            </div>
+            <div class="history-time">from {{ project.sourceRoot }}</div>
+          </div>
+        </button>
+      </div>
+      <p v-else class="empty-state">No nearby projects found yet.</p>
     </div>
 
     <div v-if="props.projectHistory.length > 0" class="project-history">
@@ -136,10 +183,50 @@ const formatRelativeTime = (timestamp: number): string => {
   gap: 1rem;
 }
 
-.project-history h3 {
+.project-discovery {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.project-history h3,
+.section-header h3 {
   margin: 0;
   font-size: 1rem;
   color: #ccc;
+}
+
+.refresh-button {
+  background: transparent;
+  color: #ccc;
+  border: 1px solid #555;
+  border-radius: 0.3125rem;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: #2d2d2d;
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.discovery-hint,
+.empty-state {
+  margin: 0;
+  color: #888;
+  font-size: 0.85rem;
 }
 
 .history-list {
@@ -170,6 +257,7 @@ const formatRelativeTime = (timestamp: number): string => {
 }
 
 .history-item {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -179,6 +267,11 @@ const formatRelativeTime = (timestamp: number): string => {
   border-radius: 0.3125rem;
   cursor: pointer;
   transition: background 0.2s;
+}
+
+.discovered-item {
+  border-color: #3b5269;
+  text-align: left;
 }
 
 .history-item:hover {
@@ -204,6 +297,18 @@ const formatRelativeTime = (timestamp: number): string => {
 
 .history-path {
   color: #e0e0e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-primary {
+  min-width: 0;
+}
+
+.history-bowman {
+  color: #7ea8d6;
+  font-size: 0.8rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

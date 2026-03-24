@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import fs from 'fs-extra';
+import os from 'os';
 import path from 'path';
+import type { Dirent } from 'fs';
 import { fileURLToPath } from 'url';
 import { observable } from '@trpc/server/observable';
 import type { Aim, Phase, ProjectMeta } from 'shared';
@@ -29,6 +31,21 @@ const autonomyPolicySchema = z.object({
   requireCommitBeforeCompact: z.boolean().default(true),
   askForHumanOn: z.array(z.string()).default(['destructive-git', 'network', 'api-keys'])
 });
+
+const projectDiscoveryInputSchema = z.object({
+  roots: z.array(z.string()).optional(),
+  maxDepth: z.number().int().min(0).max(6).optional()
+});
+
+const DISCOVERY_IGNORED_DIRS = new Set([
+  '.git',
+  'node_modules',
+  'dist',
+  'build',
+  'coverage',
+  '.next',
+  '.turbo'
+]);
 
 export const createProjectRouter = (
   t: RouterBuilder,
@@ -107,6 +124,53 @@ export const createProjectRouter = (
     await ensureProjectStructure(projectPath);
     const policyPath = getAutonomyPolicyPath(projectPath);
     await fs.writeJson(policyPath, policy, { spaces: 2 });
+  };
+
+  const getDefaultDiscoveryRoots = () => {
+    const cwd = path.resolve(process.cwd());
+    const parent = path.dirname(cwd);
+    return Array.from(new Set([cwd, parent, os.homedir()].filter(Boolean)));
+  };
+
+  const discoverProjectsFromRoot = async (
+    root: string,
+    maxDepth: number,
+    seenProjectRoots: Set<string>,
+    results: Array<{ path: string, bowmanPath: string, sourceRoot: string }>
+  ) => {
+    const visit = async (dirPath: string, depth: number): Promise<void> => {
+      if (depth > maxDepth || results.length >= 50) return;
+
+      let entries: Dirent[];
+      try {
+        entries = await fs.readdir(dirPath, { withFileTypes: true });
+      } catch {
+        return;
+      }
+
+      const hasBowmanDir = entries.some((entry) => entry.isDirectory() && entry.name === '.bowman');
+      if (hasBowmanDir && !seenProjectRoots.has(dirPath)) {
+        seenProjectRoots.add(dirPath);
+        results.push({
+          path: dirPath,
+          bowmanPath: path.join(dirPath, '.bowman'),
+          sourceRoot: root
+        });
+      }
+
+      if (depth === maxDepth) return;
+
+      for (const entry of entries) {
+        if (!entry.isDirectory()) continue;
+        if (entry.name === '.bowman' || DISCOVERY_IGNORED_DIRS.has(entry.name)) continue;
+        if (entry.name.startsWith('.') && depth > 0) continue;
+
+        await visit(path.join(dirPath, entry.name), depth + 1);
+        if (results.length >= 50) return;
+      }
+    };
+
+    await visit(root, 0);
   };
 
   return t.router({
@@ -231,6 +295,28 @@ export const createProjectRouter = (
         });
         await writeAutonomyPolicy(input.projectPath, merged);
         return merged;
+      }),
+
+    discoverLocalProjects: delayedProcedure
+      .input(projectDiscoveryInputSchema.optional())
+      .query(async ({ input }: any) => {
+        const roots = Array.from(
+          new Set((input?.roots?.length ? input.roots : getDefaultDiscoveryRoots()).map((root: string) => path.resolve(root)))
+        );
+        const maxDepth = input?.maxDepth ?? 2;
+        const seenProjectRoots = new Set<string>();
+        const projects: Array<{ path: string, bowmanPath: string, sourceRoot: string }> = [];
+
+        for (const root of roots) {
+          await discoverProjectsFromRoot(root, maxDepth, seenProjectRoots, projects);
+        }
+
+        projects.sort((left, right) => left.path.localeCompare(right.path));
+
+        return {
+          rootsScanned: roots,
+          projects
+        };
       }),
 
     buildSearchIndex: delayedProcedure

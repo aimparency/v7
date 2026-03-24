@@ -460,3 +460,29 @@ test('connectAims - connects with relative position', async () => {
   assert.equal(updatedParent.supportingConnections[0].aimId, childResult.id);
   assert.deepEqual(updatedParent.supportingConnections[0].relativePosition, relativePosition);
 });
+
+test('discoverLocalProjects - finds nearby repositories with .bowman directories', async () => {
+  const workspaceRoot = path.join(testRootPath, 'workspace');
+  const repoA = path.join(workspaceRoot, 'repo-a');
+  const repoB = path.join(workspaceRoot, 'nested', 'repo-b');
+  const plainDir = path.join(workspaceRoot, 'plain-dir');
+
+  await fs.ensureDir(path.join(repoA, '.bowman'));
+  await fs.ensureDir(path.join(repoB, '.bowman'));
+  await fs.ensureDir(plainDir);
+
+  const result = await caller.project.discoverLocalProjects({
+    roots: [workspaceRoot],
+    maxDepth: 3
+  });
+
+  assert.deepEqual(result.rootsScanned, [workspaceRoot]);
+  assert.deepEqual(
+    result.projects.map((project) => project.path).sort(),
+    [repoA, repoB].sort()
+  );
+  assert.deepEqual(
+    result.projects.map((project) => project.bowmanPath).sort(),
+    [path.join(repoA, '.bowman'), path.join(repoB, '.bowman')].sort()
+  );
+});
