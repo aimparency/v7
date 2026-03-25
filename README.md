@@ -78,6 +78,18 @@ If you already built everything and want to skip rebuilding first:
 npm run start:fast
 ```
 
+If you want an explicit core-package build without starting the stack, run:
+
+```bash
+npm run build
+```
+
+If you are working on optional integrations too, use:
+
+```bash
+npm run build:all
+```
+
 The main visible URL is the frontend, usually `http://localhost:4000`. Backend, broker, and session ports stay in the background and are not the main user-facing interface.
 The launcher prints the resolved frontend, backend, broker, and session ports at startup and writes the same values to `packages/frontend/public/runtime-config.json`.
 
@@ -175,7 +187,9 @@ The intended open source usage is:
 3. use `npm run dev` while developing
 4. use `npm run start` for normal local usage
 
-This repo is not currently optimized for global install or hosted deployment. Optional integrations such as MCP and voice are secondary to the local-first workflow and are not part of the default `npm run dev` or `npm run start` path.
+This repo is not currently optimized for global install or hosted deployment. Optional integrations such as MCP and voice are secondary to the local-first workflow and are not part of the default `npm run dev`, `npm run build`, or `npm run start` path.
+
+Those optional packages still live in the main workspace for contributor ergonomics, but the core launcher/build flow no longer depends on building them first.
 
 ## Optional Integrations
 
@@ -194,7 +208,7 @@ Common local startup failures are usually one of these:
 - `npm run start` shows the frontend but the UI cannot reach the backend or broker:
   Check the terminal output from the launcher. It should print the frontend URL and the resolved backend and broker ports. If a background service crashed during startup, fix that service first and rerun `npm run start`.
 - Build-mode startup fails with missing `dist/` output:
-  Run `npm run build` once from the repo root, then retry `npm run start`. `npm run start` should build automatically when needed, but a targeted build is the fastest way to isolate which package is failing.
+  Run `npm run build` once from the repo root, then retry `npm run start`. That builds only the core local runtime packages. If you are debugging MCP or voice specifically, use `npm run build:all`.
 - The browser keeps trying to connect to the wrong host or port:
   Remove `packages/frontend/public/runtime-config.json`, rerun the launcher, and reload the page. That file is generated runtime state and should not be committed.
 - You want to verify the launcher's port fallback behavior directly:

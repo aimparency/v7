@@ -16,7 +16,7 @@ const modes = {
     script: 'dev:stack',
   },
   start: {
-    preflight: [['npm', ['run', 'build']]],
+    preflight: [['npm', ['run', 'build:core']]],
     script: 'start:stack',
   },
   'start:fast': {

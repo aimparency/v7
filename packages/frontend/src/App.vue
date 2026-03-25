@@ -38,7 +38,7 @@ const activeProjectName = computed(() => {
   if (!projectRoot) return ''
 
   const segments = projectRoot.split('/').filter(Boolean)
-  return segments.at(-1) || projectRoot
+  return segments[segments.length - 1] || projectRoot
 })
 
 const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath } | { type: 'option', data: AimSearchAdditionalOption }) => {

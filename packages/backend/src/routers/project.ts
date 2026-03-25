@@ -300,7 +300,7 @@ export const createProjectRouter = (
     discoverLocalProjects: delayedProcedure
       .input(projectDiscoveryInputSchema.optional())
       .query(async ({ input }: any) => {
-        const roots = Array.from(
+        const roots: string[] = Array.from(
           new Set((input?.roots?.length ? input.roots : getDefaultDiscoveryRoots()).map((root: string) => path.resolve(root)))
         );
         const maxDepth = input?.maxDepth ?? 2;

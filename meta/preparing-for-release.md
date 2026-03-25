@@ -98,7 +98,7 @@ Use this as the release-prep definition of done.
 
 - [x] MCP is documented as optional
 - [x] Voice is documented as optional
-- [ ] Default install/run flow works without optional agent tooling or voice tooling installed
+- [x] Default install/run flow works without optional agent tooling or voice tooling installed
 - [x] Python embedder is removed from the default local architecture
 
 ## Current High-Leverage Work

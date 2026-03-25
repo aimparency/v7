@@ -1,0 +1,14 @@
+{
+  "sessionId": "2026-03-24T20-57-53-zl9z7j",
+  "timestamp": 1774385873469,
+  "duration": 1468409,
+  "aimsWorked": [
+    "81c363a7-2598-4db5-ac12-2f24a93076a6",
+    "33ccb9f5-38de-463b-b7be-7c5615817564",
+    "fb16f61b-bcb9-4e4d-9c55-61c164d870ec"
+  ],
+  "outcomes": "  I also created and completed aim 81c363a7-2598-4db5-ac12-2f24a93076a6, and updated fb16f61b-bcb9-4e4d-9c55-61c164d870ec to | › Track changes and make a git commit for the completed work (usually use `git add -u` first, then `git add` for intentional new | • I’m staging the tracked edits plus the intentional new aim file, then I’ll make one commit for this completed optional-runtime",
+  "patterns": "",
+  "lessonsLearned": "",
+  "rawReflection": "fig\n  explicitly enables it, and packages/frontend/src/utils/runtime-config.ts now carries a voiceEnabled flag. The launcher writes\n  that flag in scripts/run-local-stack.mjs, the validator checks both default-off and explicit-on cases in scripts/validate-local-\n\n  I also created and completed aim 81c363a7-2598-4db5-ac12-2f24a93076a6, and updated fb16f61b-bcb9-4e4d-9c55-61c164d870ec to\n  reflect that the remaining blocker is still the install-side workspace/package decision, not runtime/UI exposure.\n\n  Unrelated untracked files are still untouched:\n\n  - .bowman/memory/sessions/2026-03-24T20-57-53-zl9z7j.json\n  - next\n\n\n› Track changes and make a git commit for the completed work (usually use `git add -u` first, then `git add` for intentional new\n  files).\n\n\n• I’m staging the tracked edits plus the intentional new aim file, then I’ll make one commit for this completed optional-runtime\n  work.\n\n• The sandbox blocked writing .git/index.lock, so I’m rerunning the same staging and commit outside the sandbox.\n\n✔ You approved codex to run git add -u && git add .bowman/aims/81c363a7-2598-4db5-ac12-2f24a93076a6.json ... this time\n\n• Ran git add -u && git add .bowman/aims/81c363a7-2598-4db5-ac12-2f24a93076a6.json && git commit -m \"Hide voice mode behind an\n  │ opt-in runtime flag\"\n  └ [back-to-global 033dc34] Hide voice mode behind an opt-in runtime flag\n     10 files changed, 201 insertions(+), 8 deletions(-)\n     create mode 100644 .bowman/aims/81c363a7-2598-4db5-ac12-2f24a93076a6.json\n\n• Ran git status --short\n  └ ?? .bowman/memory/sessions/2026-03-24T20-57-53-zl9z7j.json\n    ?? next\n\n───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n\n• Committed as 033dc34 with message Hide voice mode behind an opt-in runtime flag.\n\n  The worktree is clean aside from two unrelated untracked files I did not stage:\n\n  - .bowman/memory/sessions/2026-03-24T20-57-53-zl9z7j.json\n  - next\n\n \n› Explain this codebase"
+}
