@@ -1,4 +1,5 @@
 import { Document } from 'flexsearch';
+import Fuse from 'fuse.js';
 import type { Aim, Phase, SearchAimResult } from 'shared';
 
 // FlexSearch indices per project
@@ -124,37 +125,27 @@ export async function searchAims(projectPath: string, query: string, allAims: Ai
     .sort((a, b) => (b.score || 0) - (a.score || 0));
 }
 
-// Search phases by name (FlexSearch)
+// Search phases by name (Fuzzy search using Fuse.js)
 export async function searchPhases(projectPath: string, query: string, allPhases: Phase[]): Promise<Phase[]> {
   if (!query.trim()) {
     return allPhases;
   }
 
-  const normalizedQuery = query.trim().toLowerCase();
-  const index = getPhaseIndex(projectPath);
-  const results = await index.searchAsync(query, { limit: 100 });
+  // Configure Fuse.js for fuzzy matching
+  const fuse = new Fuse(allPhases, {
+    keys: ['name'],
+    threshold: 0.4, // 0.0 = exact match, 1.0 = match anything
+    distance: 100,  // Maximum distance for fuzzy match
+    minMatchCharLength: 1,
+    includeScore: true,
+    ignoreLocation: true, // Don't prioritize matches at start
+    findAllMatches: true
+  });
 
-  // FlexSearch returns array of results with field name
-  const phaseIds = new Set<string>();
-  for (const result of results) {
-    if (Array.isArray(result.result)) {
-      result.result.forEach(id => phaseIds.add(id as string));
-    }
-  }
+  const results = fuse.search(query);
 
-  const scorePhase = (phase: Phase): number => {
-    const name = phase.name.toLowerCase();
-    if (name === normalizedQuery) return 6;
-    if (name.startsWith(normalizedQuery)) return 5;
-    if (name.split(/\s+/).some(token => token.startsWith(normalizedQuery))) return 4;
-    const containsIndex = name.indexOf(normalizedQuery);
-    if (containsIndex !== -1) return 3 - Math.min(containsIndex / 100, 1);
-    return 1;
-  };
-
-  return allPhases
-    .filter(phase => phaseIds.has(phase.id))
-    .sort((a, b) => scorePhase(b) - scorePhase(a));
+  // Return phases sorted by relevance score
+  return results.map(result => result.item);
 }
 
 // Clear indices for a project (e.g., when project is closed)
