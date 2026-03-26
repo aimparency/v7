@@ -2,7 +2,16 @@
   "id": "fa735173-548c-4830-84a4-de7738024cf7",
   "text": "Show autonomy runtime ownership directly in the watchdog panel",
   "description": "Project Settings now shows runtime ownership and autonomy policy, but the watchdog panel should also make it obvious which policy/runtime state currently governs session restore, lease behavior, and animator ownership.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774567044193,
+      "context": "Show autonomy runtime ownership directly in the watchdog panel so users can see which policy governs session behavior without opening Project Settings.",
+      "outcome": "Added a runtime info bar between the panel header and terminals that displays: owner label (e.g. 'Claude (Autonomous)', 'Supervised', 'Manual'), animator state (Enabled/Disabled/Emergency Stopped), and session lease duration. The bar appears when connected and both autonomyPolicy and runtimeMetadata are available.",
+      "effectiveness": "Reusing the existing hydrateRuntimeState function was efficient - just added storage of runtimeMetadata to make it accessible in the component. The info bar design is minimal and non-intrusive, showing key information at a glance.",
+      "lesson": "When adding UI features, check if the backend data is already being fetched - often just storing it in the right place is all that's needed. The watchdog store already hydrated runtime state; I just needed to expose it for display.",
+      "pattern": "This follows a common pattern of progressive disclosure: summary information visible immediately (runtime info bar), detailed configuration available in settings modal. Users can see the active policy at a glance without opening a separate screen."
+    }
+  ],
   "archived": false,
   "tags": [
     "autonomy",
@@ -18,9 +27,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1773965910878
+    "state": "done",
+    "comment": "Added runtime ownership info bar to watchdog panel showing autonomy mode, animator state, and session lease.",
+    "date": 1774567043216
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -42,6 +42,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const showActionsOverlay = ref(false)
   const focusRequestCounter = ref(0)
   const autonomyPolicy = ref<AutonomyPolicy | null>(null)
+  const runtimeMetadata = ref<WatchdogRuntimeState | null>(null)
 
   // Agent type selection with localStorage persistence
   const storedAgentType = localStorage.getItem('aimparency-agent-type') as AgentType | null
@@ -421,6 +422,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         projectPath
       }) as WatchdogRuntimeState
 
+      // Store the runtime metadata for UI display
+      runtimeMetadata.value = runtimeState
+
       const storedAgentType = localStorage.getItem('aimparency-agent-type') as AgentType | null
       if (!storedAgentType && runtimeState.preferredAgentType) {
         selectedAgentType.value = runtimeState.preferredAgentType
@@ -559,6 +563,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     showActionsOverlay,
     focusRequestCounter,
     autonomyPolicy,
+    runtimeMetadata,
     sessions,
     selectedAgentType,
     connectedAgentType,

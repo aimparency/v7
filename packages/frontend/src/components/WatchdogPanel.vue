@@ -77,6 +77,28 @@ async function onAgentTypeChange(e: Event) {
   }
 }
 
+const runtimeOwnerLabel = computed(() => {
+  if (!store.autonomyPolicy || !store.runtimeMetadata) return 'Unknown'
+  const mode = store.autonomyPolicy.autonomyMode
+  const preferredAgent = store.autonomyPolicy.preferredAgentType || store.runtimeMetadata.preferredAgentType
+  if (mode === 'autonomous' && preferredAgent) {
+    return `${preferredAgent.charAt(0).toUpperCase() + preferredAgent.slice(1)} (Autonomous)`
+  }
+  if (mode === 'supervised') {
+    return 'Supervised'
+  }
+  return 'Manual'
+})
+
+const animatorStateLabel = computed(() => {
+  if (!store.runtimeMetadata) return 'Unknown'
+  const agentState = store.runtimeMetadata.agents[store.selectedAgentType]
+  if (!agentState) return 'No state'
+  if (agentState.emergencyStopped) return 'Emergency Stopped'
+  if (agentState.enabled) return 'Enabled'
+  return 'Disabled'
+})
+
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.ctrlKey && e.code === 'Space') {
     e.preventDefault()
@@ -159,6 +181,8 @@ watch(() => modalStore.showPhaseSearchPrompt, (isOpen, wasOpen) => {
 
 onMounted(() => {
   void store.fetchSessions().then(() => store.restorePreviousConnection())
+  void store.hydrateAutonomyPolicy()
+  void store.hydrateRuntimeState()
   window.addEventListener('keydown', handleKeyDown, true) // Capture phase
 })
 
@@ -302,7 +326,23 @@ defineExpose({
         </button>
       </div>
     </div>
-    
+
+    <!-- Runtime Ownership Info Bar -->
+    <div v-if="store.isConnected && store.autonomyPolicy && store.runtimeMetadata" class="runtime-info-bar">
+      <div class="runtime-info-item">
+        <span class="info-label">Owner:</span>
+        <span class="info-value">{{ runtimeOwnerLabel }}</span>
+      </div>
+      <div class="runtime-info-item">
+        <span class="info-label">Animator State:</span>
+        <span class="info-value">{{ animatorStateLabel }}</span>
+      </div>
+      <div v-if="store.autonomyPolicy.sessionLeaseMinutes" class="runtime-info-item">
+        <span class="info-label">Lease:</span>
+        <span class="info-value">{{ store.autonomyPolicy.sessionLeaseMinutes }}min</span>
+      </div>
+    </div>
+
     <div class="terminals" v-show="store.isConnected">
       <div class="term-col">
         <div class="term-label">Worker (Main Agent)</div>
@@ -509,6 +549,32 @@ defineExpose({
     background: rgba(255, 255, 255, 0.2);
     color: white;
   }
+}
+
+.runtime-info-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.4rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid #333;
+  font-size: 0.8rem;
+}
+
+.runtime-info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.info-label {
+  color: #888;
+  font-weight: 500;
+}
+
+.info-value {
+  color: #d4d4d4;
+  font-family: monospace;
 }
 
 .terminals {
