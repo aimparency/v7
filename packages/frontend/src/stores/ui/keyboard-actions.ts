@@ -260,9 +260,21 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
     return
   }
 
+  if (event.key === 'c') {
+    event.preventDefault()
+    uiStore.copyAimForTeleport()
+    return
+  }
+
   if (event.key === 'p') {
     event.preventDefault()
-    await uiStore.pasteCutAim(dataStore)
+    const modalStore = useUIModalStore()
+    // Paste handles both cut and copy - prioritize cut if both are present
+    if (modalStore.teleportCutAimId) {
+      await uiStore.pasteCutAim(dataStore)
+    } else if (modalStore.teleportCopyAimId) {
+      await uiStore.pasteCopiedAim(dataStore)
+    }
     return
   }
 

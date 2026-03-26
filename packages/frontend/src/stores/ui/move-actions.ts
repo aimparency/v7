@@ -736,3 +736,99 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
     console.error('Teleport paste failed', e)
   }
 }
+
+export async function pasteCopiedAimAction(uiStore: any, dataStore: any) {
+  const modalStore = useUIModalStore()
+  const copyAimId = modalStore.teleportCopyAimId
+  if (!copyAimId) return
+
+  const path = uiStore.getSelectionPath()
+
+  let destinationParentAimId: string | undefined
+  let destinationPhaseId: string | undefined
+  let insertionIndex = 0
+
+  if (path.aims.length > 1) {
+    const parentAim = path.aims[path.aims.length - 2]
+    if (!parentAim) return
+    destinationParentAimId = parentAim.id
+    insertionIndex = (parentAim.selectedIncomingIndex ?? 0) + 1
+  } else if (path.phase) {
+    destinationPhaseId = path.phase.id
+    insertionIndex = (path.phase.selectedAimIndex ?? -1) + 1
+  } else {
+    return
+  }
+
+  const copyAim = dataStore.aims[copyAimId]
+  if (destinationParentAimId && copyAim && isAimInTreeHelper(destinationParentAimId, copyAim, dataStore)) {
+    return
+  }
+
+  try {
+    if (destinationParentAimId) {
+      await trpc.aim.connectAims.mutate({
+        projectPath: getProjectPath(),
+        parentAimId: destinationParentAimId,
+        childAimId: copyAimId,
+        parentIncomingIndex: insertionIndex
+      })
+    } else if (destinationPhaseId) {
+      await trpc.aim.commitToPhase.mutate({
+        projectPath: getProjectPath(),
+        aimId: copyAimId,
+        phaseId: destinationPhaseId,
+        insertionIndex
+      })
+    }
+
+    const reloads: Promise<any>[] = []
+
+    if (destinationParentAimId) {
+      reloads.push(
+        trpc.aim.get.query({
+          projectPath: getProjectPath(),
+          aimId: destinationParentAimId
+        }).then((updatedAim: any) => dataStore.replaceAim(destinationParentAimId, updatedAim))
+      )
+    }
+
+    if (destinationPhaseId) {
+      reloads.push(
+        trpc.phase.get.query({
+          projectPath: getProjectPath(),
+          phaseId: destinationPhaseId
+        }).then((updatedPhase: any) => dataStore.replacePhase(destinationPhaseId, updatedPhase))
+      )
+    }
+
+    reloads.push(
+      trpc.aim.get.query({
+        projectPath: getProjectPath(),
+        aimId: copyAimId
+      }).then((updatedAim: any) => dataStore.replaceAim(copyAimId, updatedAim))
+    )
+
+    await Promise.all(reloads)
+
+    if (destinationParentAimId) {
+      const destinationParent = dataStore.aims[destinationParentAimId]
+      if (destinationParent) {
+        destinationParent.expanded = true
+        destinationParent.selectedIncomingIndex = Math.max(
+          0,
+          (destinationParent.supportingConnections || []).findIndex((c: any) => c.aimId === copyAimId)
+        )
+      }
+    } else if (destinationPhaseId) {
+      const destinationPhase = dataStore.phases[destinationPhaseId]
+      if (destinationPhase) {
+        destinationPhase.selectedAimIndex = Math.max(0, destinationPhase.commitments.indexOf(copyAimId))
+      }
+    }
+
+    modalStore.clearTeleportBuffer()
+  } catch (e) {
+    console.error('Copy paste failed', e)
+  }
+}

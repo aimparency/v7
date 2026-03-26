@@ -21,7 +21,8 @@ import {
   moveAimInAction,
   moveAimOutAction,
   moveAimUpAction,
-  pasteCutAimAction
+  pasteCutAimAction,
+  pasteCopiedAimAction
 } from './move-actions'
 import { useGraphUIStore } from './graph-store'
 import { useUIModalStore } from './modal-store'
@@ -1006,8 +1007,32 @@ export const useListStore = defineStore('ui', {
       modalStore.movingAimId = currentAim.id
     },
 
+    copyAimForTeleport() {
+      const modalStore = useUIModalStore()
+      const path = this.getSelectionPath()
+      const currentAim = path.aims[path.aims.length - 1]
+      if (!currentAim) return
+
+      let source: TeleportSource | null = null
+      if (path.aims.length > 1) {
+        const parentAim = path.aims[path.aims.length - 2]
+        if (parentAim) {
+          source = { parentAimId: parentAim.id }
+        }
+      } else if (path.phase) {
+        source = { phaseId: path.phase.id }
+      }
+
+      modalStore.teleportCopyAimId = currentAim.id
+      modalStore.teleportCopySource = source
+    },
+
     async pasteCutAim(dataStore: any) {
       await pasteCutAimAction(this, dataStore)
+    },
+
+    async pasteCopiedAim(dataStore: any) {
+      await pasteCopiedAimAction(this, dataStore)
     },
 
     // Keyboard navigation handlers
@@ -1015,7 +1040,7 @@ export const useListStore = defineStore('ui', {
       await handleColumnNavigationKeysAction(this, event, dataStore)
     },
 
-    // Aims edit mode: j/k = navigate aims, J/K = move aims, h/l = expand/collapse, H = move out, d = delete, o/O = create, x/p = cut/paste teleport
+    // Aims edit mode: j/k = navigate aims, J/K = move aims, h/l = expand/collapse, H = move out, d = delete, o/O = create, x/p = cut/paste, c/p = copy/paste
     async handleAimNavigationKeys(event: KeyboardEvent, dataStore: any) {
       await handleAimNavigationKeysAction(this, event, dataStore)
     },

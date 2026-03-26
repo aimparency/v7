@@ -37,6 +37,8 @@ export type UIModalState = {
   showSettingsModal: boolean
   teleportCutAimId: string | null
   teleportSource: { parentAimId?: string; phaseId?: string } | null
+  teleportCopyAimId: string | null
+  teleportCopySource: { parentAimId?: string; phaseId?: string } | null
   movingAimId: string | null
 }
 
@@ -137,5 +139,7 @@ export function closeSettingsModal(state: UIModalState): void {
 export function clearTeleportBuffer(state: UIModalState): void {
   state.teleportCutAimId = null
   state.teleportSource = null
+  state.teleportCopyAimId = null
+  state.teleportCopySource = null
   state.movingAimId = null
 }

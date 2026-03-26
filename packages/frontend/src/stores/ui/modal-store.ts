@@ -61,6 +61,8 @@ export const useUIModalStore = defineStore('ui-modal', {
 
     teleportCutAimId: null as string | null,
     teleportSource: null as TeleportSource | null,
+    teleportCopyAimId: null as string | null,
+    teleportCopySource: null as TeleportSource | null,
     movingAimId: null as string | null
   }),
 

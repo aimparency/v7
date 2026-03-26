@@ -39,6 +39,8 @@ const createState = (): UIModalState => ({
   showSettingsModal: false,
   teleportCutAimId: 'x',
   teleportSource: { parentAimId: 'p' },
+  teleportCopyAimId: 'c',
+  teleportCopySource: { phaseId: 'ph' },
   movingAimId: 'm'
 })
 
@@ -86,6 +88,8 @@ describe('modal helpers', () => {
     clearTeleportBuffer(state)
     expect(state.teleportCutAimId).toBe(null)
     expect(state.teleportSource).toBe(null)
+    expect(state.teleportCopyAimId).toBe(null)
+    expect(state.teleportCopySource).toBe(null)
     expect(state.movingAimId).toBe(null)
   })
 })
