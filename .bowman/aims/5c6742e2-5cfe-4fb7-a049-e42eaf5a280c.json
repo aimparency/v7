@@ -2,7 +2,16 @@
   "id": "5c6742e2-5cfe-4fb7-a049-e42eaf5a280c",
   "text": "when returning from adding a supported aim or a containing phase, focus the add button in the edit aim menu again",
   "description": "",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774556791407,
+      "context": "Improve UX in the aim edit modal by restoring focus to add buttons when returning from search modals, making it easier to add multiple parents or phases without navigating back manually.",
+      "outcome": "Added watchers on showAimSearch and showPhaseSearchPrompt modal states. When they close and we have a pendingFocusRestore flag, focus is restored to the appropriate add button. All 93 frontend tests pass.",
+      "effectiveness": "Using Vue watchers to detect modal state changes was the cleanest approach. The pendingFocusRestore flag tracks which button opened the search, allowing correct focus restoration without complex state management.",
+      "lesson": "For focus management across modal transitions, watch modal state changes and use simple flags to track user intent. This is more reliable than trying to manage focus through callback chains.",
+      "pattern": "This follows common Vue patterns: reactive state watchers + template refs for DOM access. The pattern is reusable for any nested modal scenarios where focus needs to return to the triggering element."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -11,9 +20,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774438878665
+    "state": "done",
+    "comment": "Implemented focus restoration when returning from aim/phase search modals in the edit modal.",
+    "date": 1774556791117
   },
   "intrinsicValue": 0,
   "cost": 1,

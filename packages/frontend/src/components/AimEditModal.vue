@@ -55,9 +55,14 @@ const intrinsicValueInput = ref<HTMLInputElement>()
 const costInput = ref<HTMLInputElement>()
 const loopWeightInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
+const addPhaseBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 
+// Track which button opened a search modal so we can restore focus
+const pendingFocusRestore = ref<'parent' | 'phase' | null>(null)
+
 const openParentSearch = () => {
+  pendingFocusRestore.value = 'parent'
   modalStore.openAimSearch('pick', (payload) => {
     if (payload.type !== 'aim') return
     const aim = payload.data
@@ -71,6 +76,7 @@ const openParentSearch = () => {
 }
 
 const openPhaseSearch = () => {
+  pendingFocusRestore.value = 'phase'
   modalStore.openPhaseSearchPrompt((payload: PhaseSearchSelection) => {
     if (payload.type !== 'phase') return
     const phase = payload.data
@@ -162,6 +168,23 @@ watch(() => props.show, async (show) => {
     // Focus title input after modal opens
     await nextTick()
     aimTextInput.value?.focus()
+  }
+})
+
+// Watch for search modals closing and restore focus to the button that opened them
+watch(() => modalStore.showAimSearch, async (isOpen, wasOpen) => {
+  if (!isOpen && wasOpen && pendingFocusRestore.value === 'parent' && props.show) {
+    await nextTick()
+    addParentBtn.value?.focus()
+    pendingFocusRestore.value = null
+  }
+})
+
+watch(() => modalStore.showPhaseSearchPrompt, async (isOpen, wasOpen) => {
+  if (!isOpen && wasOpen && pendingFocusRestore.value === 'phase' && props.show) {
+    await nextTick()
+    addPhaseBtn.value?.focus()
+    pendingFocusRestore.value = null
   }
 })
 
@@ -385,6 +408,7 @@ const handleCancel = () => {
             </button>
           </div>
           <button
+            ref="addPhaseBtn"
             @click="openPhaseSearch"
             class="entry-placeholder"
             type="button"
