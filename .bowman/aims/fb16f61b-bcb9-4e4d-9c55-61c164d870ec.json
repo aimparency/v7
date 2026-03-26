@@ -2,7 +2,16 @@
   "id": "fb16f61b-bcb9-4e4d-9c55-61c164d870ec",
   "text": "Make MCP and voice truly optional in install and runtime flows",
   "description": "Ensure the documented and default local startup paths work without MCP tooling or voice integration installed. Optional integrations should have separate setup paths and should not break the core product when absent.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774556055932,
+      "context": "Make MCP and voice truly optional in both install and runtime flows for the open source release.",
+      "outcome": "Completed both supporting aims: voice is now hidden by default unless explicitly enabled via runtime flag, and the packaging decision resolved to keep optional packages in workspace but exclude them from default commands.",
+      "effectiveness": "Breaking this into UI-level (voice flag) and packaging-level (workspace structure) concerns allowed independent resolution. The voice flag was implemented as a runtime-config feature, while the packaging stayed as-is with clear script separation.",
+      "lesson": "Optional integrations can be made truly optional at multiple layers: runtime UI visibility, build scripts, and documentation. All three need alignment for a clean first-run experience.",
+      "pattern": "This follows the runtime complexity reduction pattern: simplify defaults while preserving opt-in paths for contributors who need the full feature set."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -34,9 +43,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Default runtime flow now keeps voice hidden unless explicitly enabled, and the launcher/runtime-config path validates that gating. Remaining open question is the install-side packaging decision for keeping optional packages like mcp and voice-bridge inside the root workspace install set.",
-    "date": 1774387293969
+    "state": "done",
+    "comment": "MCP and voice are truly optional: voice hidden behind runtime flag in UI, optional packages excluded from default dev/build/start commands but kept in workspace for contributor convenience.",
+    "date": 1774556055775
   },
   "intrinsicValue": 0,
   "cost": 1,

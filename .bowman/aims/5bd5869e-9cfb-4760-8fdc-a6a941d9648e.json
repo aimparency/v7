@@ -2,7 +2,16 @@
   "id": "5bd5869e-9cfb-4760-8fdc-a6a941d9648e",
   "text": "Make local .bowman project connection intuitive",
   "description": "The running local service should clearly let the user connect to nearby repositories or workspaces that contain a .bowman directory. The UX should make it obvious what project is open, how projects are discovered or selected, and what Aimparency writes into the local repo.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774556009189,
+      "context": "Make the local .bowman project connection flow intuitive for first-time open source users.",
+      "outcome": "Completed three core UX improvements: documented .bowman layout in README, added visible project path in app header, and implemented explicit local project discovery with click-to-open suggestions. One supporting aim (watchdog reconnection) remains partially complete but is polish rather than core functionality.",
+      "effectiveness": "Breaking the UX goal into specific, testable sub-aims allowed focused implementation. Each piece improved orientation independently: docs for understanding, header for runtime awareness, discovery for reducing manual path entry.",
+      "lesson": "When a parent aim has mostly-complete supporting work, mark the parent done once core functionality is delivered. Don't let polish items block completion signals.",
+      "pattern": "This follows the documentation aim pattern: verify supporting work is substantially complete, then mark parent done to keep the aim graph accurate."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -51,9 +60,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Product shape clarified: local service plus browser UI connecting to local .bowman projects.",
-    "date": 1773878369055
+    "state": "done",
+    "comment": "Core project connection UX is complete: .bowman data layout documented, current project visible in header, local project discovery implemented with explicit picker flow. Watchdog reconnection polish remains partially complete but doesn't block basic project connection.",
+    "date": 1774556009011
   },
   "intrinsicValue": 0,
   "cost": 1,

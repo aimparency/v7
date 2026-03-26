@@ -2,7 +2,16 @@
   "id": "a88bcf3b-e6c1-4ad5-b89c-6cd6081668fe",
   "text": "Reduce default runtime complexity for first-time users",
   "description": "Simplify the default local runtime so first-time users do not need optional services or extra runtimes to get started. This includes keeping MCP optional, keeping voice optional, removing dev-only tools from the default path, and inlining the Python embedder into the Node backend.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774556075206,
+      "context": "Simplify the default local runtime so first-time users don't need optional services or extra runtimes to get started.",
+      "outcome": "Achieved core simplification goals: removed Python embedder requirement by inlining to Node backend, made MCP and voice truly optional through runtime flags and script separation. One evaluation aim for stronger embeddings remains as future work.",
+      "effectiveness": "High impact for first-run experience. Removing Python dependency and hiding optional features reduced the surface area significantly. The deterministic Node embedding is weaker quality but acceptable for local-first MVP.",
+      "lesson": "Runtime complexity reduction should prioritize working defaults over optimal quality. Ship the simple path first, then add quality improvements as opt-in enhancements. Don't block release on 'unclear' decision items that are explicitly non-blocking.",
+      "pattern": "This exemplifies release-prep pragmatism: deliver good-enough defaults that work everywhere, defer optimization decisions to post-release."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -42,9 +51,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Startup should default to the smallest setup that still delivers the core product.",
-    "date": 1773878369003
+    "state": "done",
+    "comment": "Default runtime simplified: MCP and voice are opt-in, Python embedder replaced with Node in-process embedding. One future-looking evaluation aim (stronger embeddings) remains but is explicitly not a release blocker.",
+    "date": 1774556075040
   },
   "intrinsicValue": 0,
   "cost": 1,

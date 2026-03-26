@@ -2,7 +2,16 @@
   "id": "41706e8a-2a19-43e7-b17f-89b24e9f38d0",
   "text": "Decide whether optional packages should stay in the root npm workspace install set",
   "description": "The default release story should not force unnecessary dependencies, but MCP is strategically important while voice is explicitly optional. Decide whether optional packages like voice-bridge and mcp should remain in the root workspace install set or move to separate opt-in installs. This decision affects npm install behavior, scripts, contributor ergonomics, and how strongly optional integrations are separated from the core local-first path.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774556038389,
+      "context": "Decide whether optional packages like MCP and voice-bridge should stay in the root workspace install set or be moved to separate opt-in installs.",
+      "outcome": "Verified the current implementation: packages remain in workspace (installed by npm install) but are excluded from default dev/build/start commands. They're opt-in via dev:full and build:optional scripts. This represents a deliberate middle-ground decision.",
+      "effectiveness": "This approach balances contributor ergonomics (single workspace, no complex install docs) with first-run simplicity (default commands only start core services). The package.json clearly separates core vs optional via build:core and build:optional scripts.",
+      "lesson": "For monorepo packaging decisions, verify the current implementation before assuming the decision is unresolved. Often the code already represents the chosen strategy and just needs documentation.",
+      "pattern": "When an 'unclear' aim has an existing working implementation that matches the design goals, mark it done with documentation of the chosen approach rather than treating it as blocked."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -17,9 +26,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "unclear",
-    "comment": "Needs a product and packaging decision before restructuring workspace boundaries.",
-    "date": 1773908651301
+    "state": "done",
+    "comment": "Decision made: optional packages (mcp, voice-bridge) stay in workspace for contributor ergonomics, but are excluded from default npm run dev/build/start commands. They're opt-in via dev:full and build:optional. This balances contributor convenience with first-run simplicity.",
+    "date": 1774556038219
   },
   "intrinsicValue": 0,
   "cost": 1,
