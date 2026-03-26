@@ -2,7 +2,16 @@
   "id": "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2",
   "text": "Deployment architecture: local service + browser UI for .bowman projects",
   "description": "Aimparency should run as a local service on the user's computer and expose a browser UI. Users point it at local repositories or workspaces that contain a .bowman directory. File-based storage and git-friendly structure stay central. Focus is local runtime, local project discovery, and reliable startup rather than hosted deployment or cloud sync.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774556220380,
+      "context": "Establish the deployment architecture as local service + browser UI for .bowman projects, moving away from any hosted deployment assumptions.",
+      "outcome": "Architecture fully implemented and verified: browser UI connects to local Node backend/broker services, all services support port fallback, .bowman project discovery works, current project is visible in UI, and git-friendly file-based storage is documented. Tests and builds pass.",
+      "effectiveness": "High. The architecture is implemented, tested, and documented. The only remaining validation is end-to-end human testing of the startup flow on a fresh clone.",
+      "lesson": "For local-first architectures, implementation and verification can be separated: runtime behavior (port fallback, connection logic, file storage) can be verified via tests and validators in sandbox, while first-run UX requires real-machine testing.",
+      "pattern": "This follows the same pattern as the parent publishability aim: technical implementation completes first, then human verification gates the final 'done' status."
+    }
+  ],
   "archived": false,
   "tags": [
     "deployment",
@@ -37,9 +46,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Architecture branch now cleanly supports the local-first strategy and the relevant execution aims.",
-    "date": 1773878417503
+    "state": "partially",
+    "comment": "Local service + browser UI architecture fully implemented: file-based .bowman storage, runtime port configuration, project discovery, and connection UI all working. Only remaining validation is clean-clone startup testing on a real machine.",
+    "date": 1774556220174
   },
   "intrinsicValue": 0,
   "cost": 1,

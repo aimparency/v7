@@ -2,7 +2,16 @@
   "id": "e2c26776-1260-4624-ba97-c3ee29fa623f",
   "text": "Make Aimparency publishable as a local-first open source project",
   "description": "Release Aimparency as a local service that runs on the user's computer, exposes a browser UI, and connects to local projects with a .bowman directory. Success means a new user can clone the repo, install dependencies, understand the project from the docs, run it locally, and use it against nearby repositories without any hosted dependency.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774556205688,
+      "context": "Make Aimparency publishable as a local-first open source project by completing all repository hygiene, documentation, runtime simplification, and UX improvements needed for a clean first-run experience.",
+      "outcome": "Completed 4 of 5 major supporting aims: repository hygiene (metadata, tests, docs), repository understandability (READMEs, .bowman docs, git workflow), runtime complexity reduction (removed Python embedder, made MCP/voice optional), and local project connection UX (header visibility, project discovery). Only remaining work is end-to-end clean-clone verification on a real machine.",
+      "effectiveness": "Breaking the publishability goal into orthogonal concerns (hygiene, docs, runtime, UX, startup) allowed independent parallel progress. Each supporting aim delivered concrete value and moved closer to release-readiness.",
+      "lesson": "Open source release preparation benefits from separating 'repository surface' work (docs, metadata, structure) from 'runtime behavior' work (startup, ports, dependencies). Most surface work can be completed and verified in sandbox environments, while runtime verification requires real-machine testing.",
+      "pattern": "This follows standard release-prep methodology: fix all automatable issues first (tests, docs, structure, build), then gate final release on manual verification (clean-clone testing, first-run UX)."
+    }
+  ],
   "archived": false,
   "tags": [
     "release",
@@ -58,9 +67,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Execution umbrella for the local-first open source release.",
-    "date": 1773878342083
+    "state": "partially",
+    "comment": "4/5 supporting aims complete: docs, hygiene, runtime complexity, and project connection all done. Remaining work: human verification of clean-clone startup flow (npm install, npm run dev, npm run start) on a real machine.",
+    "date": 1774556205497
   },
   "intrinsicValue": 0,
   "cost": 1,
