@@ -1,0 +1,8 @@
+wenn man sich die supported aim paths anzeigen lässt für ein Ziel: 
+wir sollen Einträge zusammenlegen, die vom gleichen parent aus gehen. 
+also zum Beispiel: 
+Zwei Zeilen
+A->B->C und
+D->B->C wird zu 
+Einer Zeile
+.../B/C

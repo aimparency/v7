@@ -1,0 +1,24 @@
+{
+  "id": "3d0bc9d4-c2a5-4c78-8e70-776d765cde82",
+  "text": "analogous to 'x' and 'p' (cut and paste) implement 'c' and 'p' (copy and paste = don't remove at the original position)",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774447085379
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

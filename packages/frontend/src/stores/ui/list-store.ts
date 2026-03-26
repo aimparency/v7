@@ -479,7 +479,15 @@ export const useListStore = defineStore('ui', {
       this.phaseCountByColumn[columnIndex + 1] = children.length
 
       if (children.length > 0) {
-        const childIndex = Math.min(rememberedIndex, children.length - 1)
+        const existingChildId = this.columnParentPhaseId[columnIndex + 1] === phaseId
+          ? this.selectedPhaseIdByColumn[columnIndex + 1]
+          : undefined
+        const existingChildIndex = existingChildId
+          ? children.findIndex((child) => child.id === existingChildId)
+          : -1
+        const childIndex = existingChildIndex >= 0
+          ? existingChildIndex
+          : Math.min(rememberedIndex, children.length - 1)
 
         this.columnParentPhaseId[columnIndex + 1] = phaseId
         this.selectedPhaseByColumn[columnIndex + 1] = childIndex
