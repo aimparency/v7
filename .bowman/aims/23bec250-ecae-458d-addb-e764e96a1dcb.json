@@ -2,7 +2,16 @@
   "id": "23bec250-ecae-458d-addb-e764e96a1dcb",
   "text": "when we show aims in search results (no context) and aims are < 100 characters, show <largest parent title>/<aim title>. recursive untile 100 chars reached",
   "description": "",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1774556917003,
+      "context": "Improve search result clarity by showing parent context when aim titles are short, helping users understand where aims fit in the hierarchy without extra navigation.",
+      "outcome": "Added getAimDisplayText() helper that recursively builds parent path from dataStore, concatenating parent titles with ' / ' separator until reaching 100 character limit. All 93 frontend tests pass.",
+      "effectiveness": "Using the dataStore to look up parents was straightforward since all aim data is already cached. The recursive approach naturally handles arbitrary depth hierarchies. Stopping at 100 chars prevents overly long display strings.",
+      "lesson": "For hierarchical context display, recursive path building with a character limit provides good balance between context and readability. Accessing cached data from the store is more efficient than making API calls for every search result.",
+      "pattern": "This follows common breadcrumb/path display patterns where parent context enriches understanding without overwhelming the user. The 100-char limit is a reasonable heuristic for single-line display."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -11,9 +20,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774385463081
+    "state": "done",
+    "comment": "Implemented parent path display in search results. When aim text < 100 chars, recursively shows parent path like 'Grandparent / Parent / Aim'.",
+    "date": 1774556916655
   },
   "intrinsicValue": 0,
   "cost": 1,

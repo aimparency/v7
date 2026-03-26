@@ -84,6 +84,51 @@ const toggleStatus = (status: string) => {
   }
 }
 
+const getAimDisplayText = (aim: SearchAimResult): string => {
+  const maxLength = 100
+
+  // If aim text is already >= 100 chars, just return it
+  if (aim.text.length >= maxLength) {
+    return aim.text
+  }
+
+  // Build parent path recursively
+  const buildPath = (aimId: string, currentPath: string[]): string[] => {
+    const currentAim = dataStore.aims[aimId]
+    if (!currentAim || !currentAim.supportedAims || currentAim.supportedAims.length === 0) {
+      return currentPath
+    }
+
+    // Get the first parent (largest/primary parent)
+    const parentId = currentAim.supportedAims[0]
+    if (!parentId) return currentPath
+
+    const parentAim = dataStore.aims[parentId]
+    if (!parentAim) return currentPath
+
+    // Add parent text to the beginning of the path
+    const newPath = [parentAim.text, ...currentPath]
+    const pathString = newPath.join(' / ')
+
+    // If adding this parent would exceed max length, stop here
+    if (pathString.length > maxLength) {
+      return currentPath
+    }
+
+    // Continue recursively with the parent
+    return buildPath(parentId, newPath)
+  }
+
+  const path = buildPath(aim.id, [aim.text])
+
+  // If we only have the aim itself (no parents found or they would exceed limit), return just the text
+  if (path.length === 1) {
+    return aim.text
+  }
+
+  return path.join(' / ')
+}
+
 const normalizeSearchError = (error: any): string => {
   const message = error?.message || error?.shape?.message || error?.data?.message
   if (typeof message === 'string' && message.trim()) {
@@ -500,7 +545,7 @@ onUnmounted(() => {
 
           <template v-else>
             <div class="result-text">
-              <span class="aim-text">{{ item.data.text }}</span>
+              <span class="aim-text">{{ getAimDisplayText(item.data) }}</span>
               <span class="aim-status" :class="item.data.status.state">{{ item.data.status.state }}</span>
             </div>
           </template>
