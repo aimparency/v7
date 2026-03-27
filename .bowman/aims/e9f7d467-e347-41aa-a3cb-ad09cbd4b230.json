@@ -2,13 +2,23 @@
   "id": "e9f7d467-e347-41aa-a3cb-ad09cbd4b230",
   "text": "Create demo video",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
       "aimId": "f68c165d-c18d-4174-a4ed-864cb840fdb0",
       "relativePosition": [
-        2.4680119648129555,
-        0.3986438780918328
+        2.4962369281481718,
+        0.13711746259823274
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "254f8ae4-cb52-4a64-b565-5fc6aae0c33c",
+      "relativePosition": [
+        0.530445830994792,
+        2.4430774077749247
       ],
       "weight": 1
     }
@@ -18,11 +28,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Script created: video-pitch-script.md. User needs to record screen footage of Graph View, Watchdog, and Economics panel.",
-    "date": 1769328779379
+    "state": "human-dependent",
+    "comment": "Blocked by need for screen recording - see supporting aim 254f8ae4",
+    "date": 1774590174564
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

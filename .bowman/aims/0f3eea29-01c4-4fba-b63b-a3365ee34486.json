@@ -1,0 +1,30 @@
+{
+  "id": "0f3eea29-01c4-4fba-b63b-a3365ee34486",
+  "text": "Set up Instagram public image hosting (Cloudinary or S3)",
+  "description": "**HUMAN DECISION + ACTION REQUIRED**\n\nInstagram Graph API requires publicly accessible image URLs (not local file paths).\n\n**Choose hosting solution:**\n\n**Option A: Cloudinary** (RECOMMENDED)\n- Free tier: 25GB storage, 25GB bandwidth/month\n- Easy setup, good API\n- Steps:\n  1. Sign up: https://cloudinary.com/users/register/free\n  2. Get API credentials (cloud name, API key, API secret)\n  3. Add to `.secrets` file in experience-mining/\n- Pro: Optimized for images, free tier generous\n- Con: Vendor lock-in\n\n**Option B: AWS S3 + CloudFront**\n- More control, cheaper at scale\n- Steps:\n  1. Create AWS account\n  2. Create S3 bucket (public read access)\n  3. Create CloudFront distribution\n  4. Get credentials\n- Pro: More powerful, better for scaling\n- Con: More complex setup, costs start immediately\n\n**Option C: Self-hosted CDN**\n- Use existing server with public URL\n- Pro: Full control, no third-party\n- Con: Bandwidth costs, maintenance burden\n\n**After setup:**\n- Add credentials to experience-mining/.secrets\n- Update image generation code to upload to chosen service\n- Get public URL for each generated image\n- Use public URLs in Instagram API calls\n\n**This unblocks:** Instagram posting (aim d31b36da)",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "hosting",
+    "human-decision",
+    "instagram",
+    "infrastructure"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d31b36da-9406-4ddb-96ca-b54efa48c016",
+    "ecb39043-b233-4f13-8150-4cdcf9ad2a7e"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human to choose and set up image hosting",
+    "date": 1774590323972
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

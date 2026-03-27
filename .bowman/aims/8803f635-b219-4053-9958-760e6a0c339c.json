@@ -2,13 +2,24 @@
   "id": "8803f635-b219-4053-9958-760e6a0c339c",
   "text": "Build Echo MVP: Stripe payment + user auth + delivery",
   "description": "Revenue implementation for Echo service (journal → video)\n\nTiers from product-design.md:\n- Spark (Free): 1 Echo/month, watermarked, SD\n- Flame ($19/mo): 4 Echos/month, HD\n- Blaze ($49/mo): 15 Echos/month, voice clone\n\nImplementation: ~60 hours\n- Stripe Checkout + subscription webhooks\n- User authentication (email/password or OAuth)\n- User dashboard (upload journal → receive video)\n- Usage metering + quota enforcement\n- Email delivery system\n- Landing page\n\nThis converts the content engine into revenue.",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "experience-mining",
     "revenue",
     "echo-product",
     "mvp"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "1e03dcb6-0089-4f0d-9b52-ce7ae1cc2eaa",
+      "relativePosition": [
+        -2.397094273908576,
+        -0.7098866402424526
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "743bf11e-ca4e-4c78-bf4f-cc5ec66f59fa"
   ],
@@ -16,11 +27,14 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1771608599392
+    "state": "human-dependent",
+    "comment": "Blocked by Stripe account setup and pricing confirmation - see supporting aim 1e03dcb6",
+    "date": 1774590174039
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -1,0 +1,29 @@
+{
+  "id": "29cf2906-3646-4037-a7f7-b8b1e8626e1d",
+  "text": "Decide voice API strategy: telephone-style vs push-to-talk",
+  "description": "**HUMAN DECISION REQUIRED**\n\nWhen voice work resumes, choose the interaction model for voice interface.\n\n**Option A: Telephone-style (call-like)**\n- Inspiration: Grok-like call interaction\n- User experience: Feels like phone call\n- Implementation: Requires persistent connection, bidirectional audio streaming\n- Pro: Natural, conversational feel\n- Pro: Hands-free operation\n- Con: More complex backend (WebRTC or similar)\n- Con: Higher latency requirements\n- Question: How does this fit local-first architecture?\n\n**Option B: Push-to-talk (current mobile experiments)**\n- User experience: Tap to record, release to send\n- Implementation: Record audio → send to API → get response\n- Pro: Simpler implementation\n- Pro: Works with current API patterns\n- Pro: Lower bandwidth\n- Con: Less natural conversation flow\n- Con: Requires continuous user interaction\n\n**Option C: Hybrid**\n- Default: Push-to-talk for reliability\n- Optional: Telephone mode for advanced users\n- Pro: Flexibility\n- Con: Maintenance burden\n\n**Questions to answer:**\n1. Is telephone-style interaction worth the complexity?\n2. How should this integrate with local backend vs API services?\n3. Should this wait until after open-source release?\n\n**After deciding:** Update voice aims roadmap, plan implementation if proceeding.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "decision",
+    "voice",
+    "mobile",
+    "ux"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "4e70b439-0730-448f-a6bc-ac838a1eed59"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human product direction decision",
+    "date": 1774590240683
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

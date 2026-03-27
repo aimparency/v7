@@ -2,6 +2,8 @@
   "id": "57286a32-c74e-4f50-86b0-f8e8e5f1f918",
   "text": "discuss architectures",
   "description": "keep git based? Partially open source? Like github? People come with their repos, we do the hosting people stay with us because it's convenient?",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -9,11 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768395805791
+    "state": "human-dependent",
+    "comment": "Requires human discussion about architecture strategy",
+    "date": 1774590259916
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

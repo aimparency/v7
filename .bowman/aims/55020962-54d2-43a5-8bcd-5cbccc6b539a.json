@@ -1,21 +1,35 @@
 {
   "id": "55020962-54d2-43a5-8bcd-5cbccc6b539a",
   "text": "Implement real financial integrations (banking, payments)",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "strategy",
     "infrastructure"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "fe5c759d-cc8d-4a89-b14c-eafe9758938a",
+      "relativePosition": [
+        -2.2790098718546647,
+        1.0276740747868385
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "3253bc9e-14fe-4c9b-9849-588620518517"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Replace mocked get_system_status with real sensors",
-    "date": 1768763980723
+    "state": "human-dependent",
+    "comment": "Blocked by PayPal/crypto account setup - see supporting aim fe5c759d",
+    "date": 1774590239972
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

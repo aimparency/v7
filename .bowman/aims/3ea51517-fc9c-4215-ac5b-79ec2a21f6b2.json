@@ -24,16 +24,24 @@
     {
       "aimId": "0e5cce7e-7090-444f-92a6-706f02340b46",
       "relativePosition": [
-        -1.7460992634368542,
-        1.7891722561635244
+        -1.9263225016250334,
+        1.5935123531786857
       ],
       "weight": 1
     },
     {
       "aimId": "5bd5869e-9cfb-4760-8fdc-a6a941d9648e",
       "relativePosition": [
-        1.1657304609479773,
-        -2.2115769243727463
+        -1.443876690910289,
+        -2.040887086892843
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ee7781d4-83fc-4d56-be3f-c901b586ddaf",
+      "relativePosition": [
+        2.430753777383662,
+        0.5843253149873429
       ],
       "weight": 1
     }
@@ -46,9 +54,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Local service + browser UI architecture fully implemented: file-based .bowman storage, runtime port configuration, project discovery, and connection UI all working. Only remaining validation is clean-clone startup testing on a real machine.",
-    "date": 1774556220174
+    "state": "human-dependent",
+    "comment": "Blocked by need for real-machine clean-clone testing - see supporting aim ee7781d4",
+    "date": 1774590174324
   },
   "intrinsicValue": 0,
   "cost": 1,

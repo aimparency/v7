@@ -2,12 +2,23 @@
   "id": "12d8696a-8714-41da-bdab-222074ee6dc5",
   "text": "Integrate video generation (Veo 3.1 or Runway Gen-3)",
   "description": "Current: Mock files with dummy text\nVision: Cinematic vertical videos for Instagram Reels/TikTok\n\nOptions:\n- Veo 3.1 (Google, waitlist, best for sci-fi aesthetic)\n- Runway Gen-3 (available now, $95/month unlimited)\n- Luma Dream Machine ($29/month)\n\nImplementation: ~8-16 hours\n- API integration\n- Prompt engineering for Felix's aesthetic (sci-fi/philosophy)\n- Asset management (videos are large)\n- Fallback handling\n\nThis completes the Echo product vision (journal → video)",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "experience-mining",
     "video",
     "echo-product"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "a0ac0287-03c3-4f5f-b1cf-b956a2680de2",
+      "relativePosition": [
+        -2.1945166790385593,
+        1.1975377010439265
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "743bf11e-ca4e-4c78-bf4f-cc5ec66f59fa"
   ],
@@ -15,11 +26,14 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1771608598254
+    "state": "human-dependent",
+    "comment": "Blocked by service selection decision and API setup - see supporting aim a0ac0287",
+    "date": 1774590173884
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

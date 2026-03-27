@@ -1,0 +1,30 @@
+{
+  "id": "ee7781d4-83fc-4d56-be3f-c901b586ddaf",
+  "text": "Perform clean-clone testing on real machine",
+  "description": "**HUMAN TESTING REQUIRED**\n\nValidate that a new user can successfully run Aimparency locally.\n\n**Test Procedure:**\n1. Use a fresh machine or clean user account\n2. Clone repository: `git clone [repo-url]`\n3. Install: `npm install`\n4. Test dev mode: `npm run dev`\n   - Verify browser UI opens\n   - Verify backend/broker services start\n   - Verify port fallback works if defaults are busy\n   - Verify .bowman project discovery works\n5. Test production mode: `npm run start`\n   - Verify build completes\n   - Verify services start correctly\n   - Verify UI connects to backend\n6. Test with nearby .bowman project:\n   - Create or use existing project with .bowman directory\n   - Verify project appears in UI\n   - Verify can switch to that project\n   - Verify basic operations work\n\n**Document any failures** with exact error messages, environment details (OS, Node version), and steps to reproduce.\n\n**After testing:** Aims 0e5cce7e, 3ea51517 can be marked complete if all tests pass.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "testing",
+    "human-action",
+    "release",
+    "startup"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0e5cce7e-7090-444f-92a6-706f02340b46",
+    "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human to perform end-to-end startup testing",
+    "date": 1774590115450
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

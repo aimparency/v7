@@ -1,7 +1,7 @@
 {
   "id": "6c611056-04f7-4009-90f1-32c1a5da8de4",
   "text": "Use Aimparency aimgraphs as strategic cortex for external autonomous runtimes",
-  "description": "Design Aimparency so external runtimes such as Conway automaton can use the aim graph as a strategic planning and hypothesis-management layer while keeping their own execution/runtime machinery. This would let external agents pursue complex action plans through graph-backed memory, hypotheses, and reflections.",
+  "description": "Design Aimparency so external runtimes (like Conway automaton) can use the aim graph as a strategic planning and hypothesis-management layer while keeping their own execution/runtime machinery.\n\n**HUMAN DECISION REQUIRED:**\n\n**Vision:** External autonomous agents use Aimparency aimgraphs for strategy while running their own execution loops.\n\n**Key questions:**\n1. What's the integration boundary? (API? File-based? MCP server?)\n2. Who owns what state? (Aimparency owns aims/graph, external owns runtime?)\n3. How do external runtimes write reflections/hypotheses back to graph?\n4. Should this be prioritized before or after native Aimparency autonomy?\n\n**Recommendation:** Defer until after native autonomy is proven (aim cffdcd91). This is strategic architecture, not urgent implementation.\n\n**After deciding:** Create detailed integration design document or mark as future work.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -15,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Important long-term direction; integration boundary and ownership split still need design.",
-    "date": 1773964260967
+    "state": "human-dependent",
+    "comment": "Requires human architectural decision about external runtime integration",
+    "date": 1774590323543
   },
   "intrinsicValue": 0,
   "cost": 1,

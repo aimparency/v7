@@ -1,0 +1,28 @@
+{
+  "id": "602128b3-168d-4347-95b5-f90c400e31e0",
+  "text": "Upgrade Gemini API tier and configure payment",
+  "description": "**HUMAN ACTION REQUIRED**\n\nImage generation is currently blocked due to free tier quota exhaustion (0 remaining).\n\n**Steps:**\n1. Visit https://makersuite.google.com/app/apikey or Google Cloud Console\n2. Upgrade to Gemini Pro paid tier\n3. Expected cost: ~$0.04/image\n4. Update API key in project configuration if needed\n\n**Alternative:** Consider switching to DALL-E 3 or Stable Diffusion if Gemini pricing is not acceptable\n\n**After setup:** Image generation in experience-mining will work, unblocking visual content creation for Instagram/Twitter.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "payment",
+    "human-action",
+    "api-quota"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fa4ba8b1-ff99-4d97-b76d-d6ea95fe5f7c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human to upgrade Gemini API tier",
+    "date": 1774590114931
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

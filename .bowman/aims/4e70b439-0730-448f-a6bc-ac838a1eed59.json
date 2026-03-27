@@ -10,7 +10,16 @@
     "unclear",
     "future-direction"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "29cf2906-3646-4037-a7f7-b8b1e8626e1d",
+      "relativePosition": [
+        2.3948415763276625,
+        0.7174495273483952
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "93fbe6f4-a11a-45e3-9441-39aaba18e458"
   ],
@@ -18,9 +27,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "unclear",
-    "comment": "Future voice direction captured from user guidance. Not a release blocker.",
-    "date": 1773916777032
+    "state": "human-dependent",
+    "comment": "See detailed decision options in supporting aim",
+    "date": 1774590241129
   },
   "intrinsicValue": 0,
   "cost": 1,

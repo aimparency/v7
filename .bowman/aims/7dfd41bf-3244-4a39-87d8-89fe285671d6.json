@@ -1,6 +1,8 @@
 {
   "id": "7dfd41bf-3244-4a39-87d8-89fe285671d6",
   "text": "Build Economic Dashboard with real financial integration",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "economics",
     "infrastructure",
@@ -12,11 +14,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768829040029
+    "state": "human-dependent",
+    "comment": "Blocked by real financial integration setup - see aims 365e78d0, 55020962, fe5c759d",
+    "date": 1774590240184
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "description": "Build an economic dashboard that shows real financial data instead of mocked values. Displays autonomy ratio, API costs (Anthropic/Google), revenue streams (grants, trading, social posting), and PayPal/crypto balances.\n\n**Blocked by:** Real financial integration (PayPal/crypto setup) must be completed first."
 }

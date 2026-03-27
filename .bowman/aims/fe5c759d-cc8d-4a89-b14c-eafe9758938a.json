@@ -1,0 +1,30 @@
+{
+  "id": "fe5c759d-cc8d-4a89-b14c-eafe9758938a",
+  "text": "Set up PayPal and crypto wallet integration for real autonomy",
+  "description": "**HUMAN ACTION REQUIRED**\n\nReplace mocked economic system with real financial capabilities.\n\n**PayPal Setup:**\n1. Create/designate PayPal developer account\n2. Visit https://developer.paypal.com/dashboard/\n3. Create REST API credentials (Client ID + Secret)\n4. Consider multiple accounts for risk distribution\n5. Configure webhook endpoints for payment notifications\n\n**Crypto Wallet Setup:**\n1. Generate ETH/BTC wallet addresses for decentralized autonomy\n2. Securely store private keys (consider hardware wallet)\n3. Set up read-only API access for balance monitoring\n4. Document wallet addresses in secure configuration\n\n**Integration Points:**\n- Add credentials to autonomy configuration\n- Wire up real cost tracking (Anthropic/Google API usage)\n- Wire up real revenue tracking (grant income, trading, social posting)\n- Enable autonomy ratio dashboard (earned/consumed)\n\n**After setup:** Aims 365e78d0, 55020962, 7dfd41bf can proceed with real financial integration.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "payment",
+    "human-action",
+    "crypto",
+    "autonomy"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "365e78d0-ed64-47d7-9902-b575d493c6e4",
+    "55020962-54d2-43a5-8bcd-5cbccc6b539a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human to set up payment accounts and credentials",
+    "date": 1774590115058
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

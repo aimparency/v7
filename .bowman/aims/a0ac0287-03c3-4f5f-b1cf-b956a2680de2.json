@@ -1,0 +1,29 @@
+{
+  "id": "a0ac0287-03c3-4f5f-b1cf-b956a2680de2",
+  "text": "Select and set up video generation service (Veo/Runway/Luma)",
+  "description": "**HUMAN DECISION + ACTION REQUIRED**\n\nChoose a video generation service for Instagram Reels/TikTok content:\n\n**Option 1: Veo 3.1 (Google)**\n- Best for sci-fi aesthetic\n- Currently on waitlist\n- Join waitlist: https://deepmind.google/technologies/veo/veo-3/\n- Free tier available but limited\n\n**Option 2: Runway Gen-3** (RECOMMENDED for immediate start)\n- Available now\n- $95/month unlimited plan\n- Good quality, reliable API\n- Sign up: https://runwayml.com/\n\n**Option 3: Luma Dream Machine**\n- $29/month (most affordable)\n- Lower quality than Runway\n- Sign up: https://lumalabs.ai/dream-machine\n\n**After choosing:**\n1. Create account and subscribe\n2. Generate API key\n3. Add credentials to project configuration\n4. Test with sample prompt\n\n**After setup:** Aim 12d8696a can proceed with video generation integration.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "payment",
+    "human-decision",
+    "video",
+    "api"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "12d8696a-8714-41da-bdab-222074ee6dc5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human to select service and set up account",
+    "date": 1774590115202
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

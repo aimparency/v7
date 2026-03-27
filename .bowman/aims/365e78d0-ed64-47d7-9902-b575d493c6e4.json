@@ -10,7 +10,16 @@
     "asi",
     "infrastructure"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "fe5c759d-cc8d-4a89-b14c-eafe9758938a",
+      "relativePosition": [
+        -0.18509430525359374,
+        -2.493138603881198
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "3253bc9e-14fe-4c9b-9849-588620518517"
   ],
@@ -18,9 +27,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Started with a concrete pipeline reliability slice linked to financial/content loop: fixed publish target resolution so actionable posts are not skipped by run-limit behavior (aim 862b2c32-afe0-41d7-acbf-e62e9a94eb15, done). Remaining work requires live payment/crypto API integration and credentials.",
-    "date": 1772454654185
+    "state": "human-dependent",
+    "comment": "Blocked by missing PayPal/crypto credentials - see supporting aim fe5c759d",
+    "date": 1774590173742
   },
   "intrinsicValue": 0,
   "cost": 1,

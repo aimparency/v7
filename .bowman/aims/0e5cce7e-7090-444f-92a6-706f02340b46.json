@@ -1,7 +1,7 @@
 {
   "id": "0e5cce7e-7090-444f-92a6-706f02340b46",
   "text": "Make clean-clone local startup reliable",
-  "description": "A new user should be able to clone the repo, run npm install, run npm run dev or npm run start, and get a working local service plus browser UI without manual scavenger hunting. Includes build-mode startup, background service wiring, and sensible port behavior.",
+  "description": "A new user should be able to clone the repo, run npm install, run npm run dev or npm run start, and get a working local service plus browser UI without manual scavenger hunting. Includes build-mode startup, background service wiring, and sensible port behavior.\n\n**Current state:** Port fallback/reporting is validated and documented. Implementation appears complete but requires end-to-end human verification on a real machine (cannot be tested in sandbox).",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -13,32 +13,40 @@
     {
       "aimId": "2db9fb3e-4a0b-4bbe-b454-f1d5cdecb83a",
       "relativePosition": [
-        1.9155431369742297,
-        -1.6064540112903722
+        1.535011376077025,
+        1.9732562112696157
       ],
       "weight": 1
     },
     {
       "aimId": "cf93ddfc-5ed5-4d80-be27-cf6623b67545",
       "relativePosition": [
-        -0.5992194602976841,
-        -2.4271250561931397
+        -2.4950693965712167,
+        0.15693535705424866
       ],
       "weight": 1
     },
     {
       "aimId": "af58ebb0-1e0f-4f7e-b182-754e918ca30e",
       "relativePosition": [
-        1.0084954269870088,
-        -2.2875613595587527
+        -0.11162982074315068,
+        -2.497506513128815
       ],
       "weight": 1
     },
     {
       "aimId": "b7c8b678-fb5a-48e5-95c3-3b1c961fef39",
       "relativePosition": [
-        1.9898065827630043,
-        -1.513495874851668
+        2.430060123165025,
+        -0.5872033700543476
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ee7781d4-83fc-4d56-be3f-c901b586ddaf",
+      "relativePosition": [
+        -0.6305581813950022,
+        -2.4191726643370925
       ],
       "weight": 1
     }
@@ -51,9 +59,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Port fallback/reporting is now validated and documented. Remaining release-prep blocker is end-to-end clean-clone verification of npm install, npm run dev, and npm run start on a normal machine.",
-    "date": 1774386925097
+    "state": "human-dependent",
+    "comment": "Blocked by need for real-machine clean-clone testing - see supporting aim ee7781d4",
+    "date": 1774590174173
   },
   "intrinsicValue": 0,
   "cost": 1,

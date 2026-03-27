@@ -1,0 +1,28 @@
+{
+  "id": "254f8ae4-cb52-4a64-b565-5fc6aae0c33c",
+  "text": "Record screen footage for demo video",
+  "description": "**HUMAN ACTION REQUIRED**\n\nCapture screen recordings for demo video production.\n\n**Footage Needed:**\n1. **Graph View Demo** (30-60 seconds)\n   - Show aim graph with connections\n   - Demonstrate zooming/panning\n   - Show creating/editing aims\n   - Show phase organization\n\n2. **Watchdog Demo** (30-60 seconds)\n   - Show watchdog panel active\n   - Show terminal outputs from different models\n   - Demonstrate autonomy in action\n   - Show aim completion workflow\n\n3. **Economics Panel Demo** (20-30 seconds)\n   - Show autonomy ratio dashboard\n   - Show compute credits/funds (even if mocked)\n   - Show economic status\n\n**Recording Tools:**\n- OBS Studio (free, cross-platform)\n- macOS: QuickTime Screen Recording\n- Linux: SimpleScreenRecorder\n- Windows: Built-in Game Bar (Win+G)\n\n**After recording:** Upload footage and reference location in aim e9f7d467 for video editing.\n\n**Reference:** Script exists at `video-pitch-script.md` (if still present)",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "video",
+    "human-action",
+    "demo"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e9f7d467-e347-41aa-a3cb-ad09cbd4b230"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human to record screen footage",
+    "date": 1774590115720
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

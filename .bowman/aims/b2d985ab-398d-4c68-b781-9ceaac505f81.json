@@ -9,7 +9,16 @@
     "quality",
     "decision"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "ba2346e1-3f7f-4d06-9446-9dea7335467b",
+      "relativePosition": [
+        2.2646047641833627,
+        1.0590397830289555
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "a88bcf3b-e6c1-4ad5-b89c-6cd6081668fe"
   ],
@@ -17,9 +26,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "unclear",
-    "comment": "Not a release blocker. The current hashed local embedding path is acceptable for the open-source local-first release, but model quality and dependency cost need a deliberate product/engineering decision.",
-    "date": 1773917291044
+    "state": "human-dependent",
+    "comment": "See detailed decision options in supporting aim",
+    "date": 1774590240969
   },
   "intrinsicValue": 0,
   "cost": 1,

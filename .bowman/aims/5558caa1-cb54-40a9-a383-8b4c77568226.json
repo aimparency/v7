@@ -1,7 +1,7 @@
 {
   "id": "5558caa1-cb54-40a9-a383-8b4c77568226",
   "text": "Persist watchdog connection and animator state across frontend reloads",
-  "description": "If a watchdog session was connected and the animator/watchdog was enabled, a frontend hot reload or full page reload should reconnect to the running session automatically, restore terminal buffers, and show the correct enabled/emergency state without stopping the background animator loop.",
+  "description": "If a watchdog session was connected and the animator/watchdog was enabled, a frontend hot reload or full page reload should reconnect to the running session automatically, restore terminal buffers, and show the correct enabled/emergency state without stopping the background animator loop.\n\n**Current state:** Implementation complete (auto-resume, state restoration, terminal hydration). Frontend type-check/build and session builds pass. Needs end-to-end browser reload verification on a real local machine (cannot be tested in sandbox).",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -10,7 +10,16 @@
     "ux",
     "session"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "afd3e0ff-5169-4888-bde4-5d7ee42ae89c",
+      "relativePosition": [
+        -1.6703160205587504,
+        1.860119456235212
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "5bd5869e-9cfb-4760-8fdc-a6a941d9648e",
     "69321b93-d540-45a9-9a25-8f2d5254d43c",
@@ -20,9 +29,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Implemented frontend auto-resume for previously connected watchdog sessions, restored session-owned animator state on reconnect, and added Claude terminal hydration to match Codex/Gemini. Frontend type-check/build and session builds pass, but end-to-end browser reload verification still needs a normal local machine because the sandbox cannot run the live stack.",
-    "date": 1773906609271
+    "state": "human-dependent",
+    "comment": "Blocked by need for browser reload testing on real machine - see supporting aim afd3e0ff",
+    "date": 1774590174435
   },
   "intrinsicValue": 0,
   "cost": 1,

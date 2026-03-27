@@ -1,0 +1,29 @@
+{
+  "id": "afd3e0ff-5169-4888-bde4-5d7ee42ae89c",
+  "text": "Test watchdog reconnection after browser reload",
+  "description": "**HUMAN TESTING REQUIRED**\n\nValidate that watchdog state persists across frontend reloads.\n\n**Test Procedure:**\n1. Start Aimparency locally (`npm run dev`)\n2. Connect to watchdog session in browser\n3. Enable animator/watchdog\n4. Wait for at least one watchdog iteration to complete\n5. Perform hard browser reload (Ctrl+Shift+R or Cmd+Shift+R)\n6. **Expected behavior:**\n   - Watchdog session auto-reconnects\n   - Terminal buffers (Claude/Codex/Gemini) restore previous content\n   - Animator shows correct enabled/emergency state\n   - Background animator loop continues without stopping\n7. Test hot reload scenario:\n   - Make a small frontend code change\n   - Let Vite hot-reload trigger\n   - Verify same reconnection behavior\n\n**Document any failures:** Lost state, disconnection, missing terminal content, incorrect animator state, etc.\n\n**After testing:** Aim 5558caa1 can be marked complete if reconnection works correctly.\n\n**Note:** This test requires running on a real local machine, not in sandbox/Claude environment.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "testing",
+    "human-action",
+    "watchdog",
+    "reconnect"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5558caa1-cb54-40a9-a383-8b4c77568226"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human to test browser reload reconnection",
+    "date": 1774590115577
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

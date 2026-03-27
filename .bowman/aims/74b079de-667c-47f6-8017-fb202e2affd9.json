@@ -1,7 +1,7 @@
 {
   "id": "74b079de-667c-47f6-8017-fb202e2affd9",
   "text": "Evaluate integration boundary with Conway automaton-style runtimes",
-  "description": "Identify which pieces should be borrowed or made compatible with Conway automaton-like systems: heartbeat daemon, identity/soul file, self-modification/audit model, economic survival loop, and replication semantics. Decide what should remain native to Aimparency versus external integration.",
+  "description": "Evaluate integration boundary with Conway automaton-style runtimes: identify which pieces should be borrowed or made compatible (heartbeat daemon, identity/soul file, self-modification/audit model, economic survival loop, and replication semantics).\n\n**HUMAN DECISION REQUIRED:**\n\n**Background:** Conway automaton is a separate autonomous system design with its own runtime architecture.\n\n**Decision needed:** What should remain native to Aimparency vs external integration?\n\n**Key questions:**\n1. Should Aimparency adopt Conway's heartbeat daemon pattern?\n2. Should identity/soul be file-based like Conway or stay in .bowman structure?\n3. Should we build compatibility layer or keep systems separate?\n4. Does this block current native Aimparency autonomy work?\n\n**Recommendation:** This should NOT block native Aimparency autonomy work (aim 9594aa9b). Treat as future integration exploration after core autonomy is stable.\n\n**After deciding:** Document integration strategy or mark as deferred future work.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -17,9 +17,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "unclear",
-    "comment": "Needs architectural judgment and probably should not block native Aimparency autonomy work.",
-    "date": 1773962041620
+    "state": "human-dependent",
+    "comment": "Requires human architectural decision about Conway automaton integration",
+    "date": 1774590323301
   },
   "intrinsicValue": 0,
   "cost": 1,

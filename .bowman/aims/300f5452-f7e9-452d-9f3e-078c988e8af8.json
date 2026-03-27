@@ -9,7 +9,16 @@
     "runtime",
     "git"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "8860a72e-00db-4a02-bff6-3d3a098979b5",
+      "relativePosition": [
+        -2.439633912921581,
+        -0.5460644384346374
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
   ],
@@ -17,9 +26,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "unclear",
-    "comment": "",
-    "date": 1773965555869
+    "state": "human-dependent",
+    "comment": "See detailed decision options in supporting aim",
+    "date": 1774590240842
   },
   "intrinsicValue": 0,
   "cost": 1,

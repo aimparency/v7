@@ -1,0 +1,28 @@
+{
+  "id": "ba2346e1-3f7f-4d06-9446-9dea7335467b",
+  "text": "Decide on Node embedding quality vs dependency tradeoff",
+  "description": "**HUMAN DECISION REQUIRED**\n\nCurrent local architecture uses deterministic in-process Node embedding generator (hashed, fast, no dependencies). \n\n**Decision needed:** Should future local releases adopt higher-quality model-backed embeddings?\n\n**Current approach: Hash-based local embeddings**\n- Pro: Zero external dependencies (no Python)\n- Pro: Fast, deterministic\n- Pro: Works offline\n- Con: Lower semantic search quality\n- Con: Less intelligent aim similarity\n\n**Option A: Upgrade to Node-native transformer model**\n- Use @xenova/transformers (ONNX Runtime in Node)\n- Pro: Better semantic search quality\n- Pro: Still Node-only (no Python)\n- Con: ~100-200MB model download on first run\n- Con: Slower embedding generation\n- Con: Requires ~1GB RAM for model\n\n**Option B: Keep hash-based for default, add optional model path**\n- Default: Fast hashed embeddings\n- Advanced users: Can configure model path\n- Pro: Best of both worlds\n- Con: More configuration complexity\n\n**Option C: Keep current approach**\n- Accept lower quality for simplicity\n- Pro: Simplest, most reliable\n- Con: Search quality ceiling\n\n**After deciding:** Update embedding configuration, document in README, implement if upgrading.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "decision",
+    "embedding",
+    "quality"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b2d985ab-398d-4c68-b781-9ceaac505f81"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human product/engineering decision",
+    "date": 1774590240513
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

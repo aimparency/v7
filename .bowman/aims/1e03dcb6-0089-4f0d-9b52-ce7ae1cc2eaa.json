@@ -1,0 +1,29 @@
+{
+  "id": "1e03dcb6-0089-4f0d-9b52-ce7ae1cc2eaa",
+  "text": "Set up Stripe account for Echo MVP payment processing",
+  "description": "**HUMAN DECISION + ACTION REQUIRED**\n\nEcho service (journal → video) needs payment processing.\n\n**Stripe Setup:**\n1. Create Stripe account: https://dashboard.stripe.com/register\n2. Complete business verification (required for production)\n3. Get API keys: Dashboard → Developers → API keys\n   - Publishable key (public)\n   - Secret key (private, secure storage)\n4. Configure webhook endpoint for subscription events\n5. Create product tiers in Stripe:\n   - Spark (Free): 1 Echo/month, watermarked, SD\n   - Flame ($19/mo): 4 Echos/month, HD\n   - Blaze ($49/mo): 15 Echos/month, voice clone\n\n**Product Decisions Needed:**\n- Confirm pricing tiers acceptable\n- Decide on trial period (if any)\n- Choose refund policy\n- Determine feature limits enforcement strategy\n\n**After setup:** Aim 8803f635 can proceed with Echo MVP implementation.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "payment",
+    "human-decision",
+    "stripe",
+    "echo-product"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8803f635-b219-4053-9958-760e6a0c339c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human to set up Stripe and confirm pricing",
+    "date": 1774590115327
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

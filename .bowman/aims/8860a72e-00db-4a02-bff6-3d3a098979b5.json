@@ -1,0 +1,28 @@
+{
+  "id": "8860a72e-00db-4a02-bff6-3d3a098979b5",
+  "text": "Decide .bowman/runtime gitignore policy",
+  "description": "**HUMAN DECISION REQUIRED**\n\nWatchdog runtime state is now written under `.bowman/runtime` and the default `.bowman/.gitignore` ignores `runtime/`.\n\n**Decision needed:** Should all runtime files remain local operational state, or should some future autonomy/policy/audit files become durable and commit-worthy?\n\n**Options:**\n\n**Option A: Keep all runtime/ ignored (current)**\n- Pro: Clean separation between project state and runtime state\n- Pro: Avoids polluting git history with session logs\n- Con: Autonomy policy/constitution changes not versioned\n- Con: Audit trails lost on machine change\n\n**Option B: Move durable autonomy state out of runtime/**\n- Create `.bowman/autonomy/` for: identity, constitution, policy, audit logs\n- Keep `.bowman/runtime/` for: heartbeat, temp session state, locks\n- Pro: Important autonomy decisions become version-controlled\n- Pro: Audit trails preserved across machines\n- Con: More directory structure complexity\n\n**Option C: Selective gitignore**\n- Keep most runtime/ ignored\n- Un-ignore specific files like `runtime/policy.json`, `runtime/constitution.json`\n- Pro: Minimal changes to current structure\n- Con: Harder to reason about what's versioned\n\n**After deciding:** Update `.bowman/.gitignore`, move files if needed, document policy in README.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "decision",
+    "architecture",
+    "git"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "300f5452-f7e9-452d-9f3e-078c988e8af8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human architectural decision",
+    "date": 1774590240339
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,7 +1,9 @@
 {
   "id": "44c0bd21-c008-46e7-ab37-0894f78f05a4",
   "text": "participate in metaculus tournaments",
-  "description": "https://www.metaculus.com/tournament/bridgewater/",
+  "description": "Participate in Metaculus prediction tournaments to earn prizes and demonstrate forecasting capability.\n\n**HUMAN ACTION REQUIRED:**\n1. Visit https://www.metaculus.com/tournament/bridgewater/\n2. Create Metaculus account if needed\n3. Review tournament rules and prize structure\n4. Begin making predictions on tournament questions\n5. Optional: Set up automation to assist with predictions (research, model-based forecasting)\n\n**After registration:** AI can help with research and prediction calibration, but human must submit predictions.",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -9,11 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769023223469
+    "state": "human-dependent",
+    "comment": "Requires human to register and participate in Metaculus tournament",
+    "date": 1774590260281
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

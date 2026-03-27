@@ -1,7 +1,9 @@
 {
   "id": "93149e0b-ef1a-424d-b9db-ffef9f50957d",
   "text": "build a conversational voice interface (Native Android) to aimparency v7",
-  "description": "should work on mobile, mobile app. simple => cross platform but no apple build right now because we're developing on linux",
+  "description": "Build a conversational voice interface (Native Android) to aimparency v7. Should work on mobile as a mobile app.\n\n**HUMAN DECISION REQUIRED:**\n\n**Current state:** User explicitly requested this be a native Android application (not web). Web prototype exists but needs to become native app.\n\n**Key decisions needed:**\n1. **Tech stack:** Kotlin? React Native? Flutter?\n   - Kotlin: Most native, best performance, Android-only\n   - React Native: Cross-platform potential, but user is on Linux (no iOS build anyway)\n   - Flutter: Cross-platform, good voice support\n\n2. **Voice API:** Which service?\n   - Google Cloud Speech-to-Text + TTS (Android native)\n   - OpenAI Whisper + TTS\n   - Local on-device (privacy, offline)\n\n3. **LLM model:** Currently references gpt-oss-120b (aim 62c2ab13)\n   - Should mobile use different model than desktop?\n   - Cloud API or local model?\n\n4. **Project connectivity:** How does mobile app connect to .bowman projects?\n   - Local filesystem access\n   - Sync with desktop via network\n   - Cloud sync\n\n5. **Priority:** When should this happen relative to other aims?\n   - After open-source release?\n   - After autonomy features?\n\n**Time estimate:** Native Android app: 40-80 hours of development\n\n**After deciding:** Create detailed mobile app specification and prioritize in roadmap.",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -61,11 +63,14 @@
     "61ebf544-cd45-48d1-9c11-9763e8674ce1"
   ],
   "status": {
-    "state": "open",
-    "comment": "User requested this to be a native Android application. The current web implementation is a prototype. Re-opening to address native mobile requirement.",
-    "date": 1766052562641
+    "state": "human-dependent",
+    "comment": "Requires human decision on mobile strategy and substantial development time",
+    "date": 1774590323758
   },
   "intrinsicValue": 5,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

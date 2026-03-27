@@ -2,23 +2,40 @@
   "id": "ecb39043-b233-4f13-8150-4cdcf9ad2a7e",
   "text": "Manual steps towards content engine",
   "description": "1. Configure API credentials in subdev/experience-mining/.secrets:\n\n  - TWITTER_API_KEY\n  - TWITTER_API_SECRET\n  - TWITTER_ACCESS_TOKEN\n  - TWITTER_ACCESS_SECRET\n  - INSTAGRAM_BUSINESS_ACCOUNT_ID\n  - INSTAGRAM_ACCESS_TOKEN\n\n  2. Set up Instagram image hosting (required by Graph API):\n\n  - Pick one: Cloudinary or S3/public CDN.\n  - Ensure generated image paths used for IG are publicly reachable URLs (not local paths).\n\n  3. Verify content exists:\n\n  - Confirm subdev/experience-mining/output/content.json has items to publish.\n  - If needed, run generation/review flow first.\n\n  4. Run first real publishes (no dry-run):\n\n  - cd subdev/experience-mining\n  - npm run publish:twitter\n  - npm run publish:instagram\n\n  5. Confirm publish tracking updated:\n\n  - Check subdev/experience-mining/.published contains twitterId / instagramId for posted item(s).\n\n  6. Re-run weekly check:\n\n  - node --import tsx weekly-workflow.ts\n  - Expected after success: coverage flips to yes for posted platform(s).\n\n  Once these are done, I can continue by automating the remaining manual parts (especially IG public asset URL flow and scheduling/\n  orchestration).",
-  "tags": [],
   "reflections": [],
-  "supportingConnections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "3a7b2519-02e3-45e8-bf85-1dfd74efb5e7",
+      "relativePosition": [
+        -1.461402638438378,
+        -2.0283743067701647
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0f3eea29-01c4-4fba-b63b-a3365ee34486",
+      "relativePosition": [
+        -0.4625224625726938,
+        2.456842072990385
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [],
   "committedIn": [
     "ce8516bc-df20-44d3-9fea-6784401e8276"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1772464024316
+    "state": "human-dependent",
+    "comment": "Blocked by missing API credentials - see supporting aim 3a7b2519",
+    "date": 1774590173318
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "archived": false
+  "valueVariance": 0
 }

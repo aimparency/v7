@@ -1,0 +1,29 @@
+{
+  "id": "3a7b2519-02e3-45e8-bf85-1dfd74efb5e7",
+  "text": "Set up API credentials for content publishing",
+  "description": "**HUMAN ACTION REQUIRED**\n\nNavigate to `/home/felix/dev/aimparency/v7/subdev/experience-mining/` and create a `.secrets` file with:\n\n```\nTWITTER_API_KEY=your_twitter_api_key\nTWITTER_API_SECRET=your_twitter_api_secret\nTWITTER_ACCESS_TOKEN=your_twitter_access_token\nTWITTER_ACCESS_SECRET=your_twitter_access_secret\nINSTAGRAM_BUSINESS_ACCOUNT_ID=your_instagram_business_id\nINSTAGRAM_ACCESS_TOKEN=your_instagram_access_token\n```\n\n**How to obtain:**\n- Twitter: https://developer.twitter.com/en/portal/dashboard → Create app → Keys and tokens\n- Instagram: https://developers.facebook.com/docs/instagram-api/getting-started → Get access token for your business account\n\n**After setup:** Mark aims ecb39043 and d31b36da as ready to proceed.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "credentials",
+    "human-action",
+    "social-media"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "ecb39043-b233-4f13-8150-4cdcf9ad2a7e",
+    "d31b36da-9406-4ddb-96ca-b54efa48c016"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Waiting for human to configure API credentials",
+    "date": 1774590114787
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
