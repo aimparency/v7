@@ -187,7 +187,7 @@ onMounted(() => {
 })
 
 watch(
-  [() => projectStore.projectPath, () => store.currentProjectSession?.port ?? null],
+  () => projectStore.projectPath,
   () => {
     void store.restorePreviousConnection()
   }
