@@ -1,7 +1,9 @@
 {
   "id": "62c2ab13-3fb0-4554-8119-e480500f8f72",
   "text": "switch back to gpt-oss-120b model, as it's good with finance",
-  "description": "",
+  "description": "Switch mobile voice interface back to gpt-oss-120b model (noted as good with finance).\n\n**Part of:** Native Android voice interface (aim 93149e0b)\n\n**Blocked by:** Parent aim requires human decisions on mobile app strategy, tech stack, and LLM model choice.\n\n**Context:** This is a model selection preference for the mobile app. The broader mobile strategy needs to be decided first.",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -9,11 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766432715087
+    "state": "human-dependent",
+    "comment": "Blocked by parent mobile app strategy - see aim 93149e0b",
+    "date": 1774590820694
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

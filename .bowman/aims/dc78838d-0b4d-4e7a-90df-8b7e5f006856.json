@@ -1,7 +1,9 @@
 {
   "id": "dc78838d-0b4d-4e7a-90df-8b7e5f006856",
   "text": "implement projects selection for mobile app. path to the .bowman directory...",
-  "description": "",
+  "description": "Implement project/directory selection UI for the native Android mobile app to let users choose which .bowman directory to open.\n\n**Part of:** Native Android voice interface (aim 93149e0b)\n\n**Blocked by:** Parent aim requires human decisions on tech stack, voice API, connectivity model, and overall mobile strategy.\n\n**Implementation notes when unblocked:**\n- Android file picker for directory selection\n- Persist selected project path in app preferences\n- Validate .bowman directory structure\n- Handle permissions for filesystem access",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -9,11 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766498833139
+    "state": "human-dependent",
+    "comment": "Blocked by parent mobile app strategy decisions - see aim 93149e0b",
+    "date": 1774590800736
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

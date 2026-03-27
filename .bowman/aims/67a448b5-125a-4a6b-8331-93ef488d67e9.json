@@ -1,22 +1,53 @@
 {
   "id": "67a448b5-125a-4a6b-8331-93ef488d67e9",
   "text": "Make content engine usable: journal → Instagram workflow",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "content-engine",
     "product",
     "ux"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "3a7b2519-02e3-45e8-bf85-1dfd74efb5e7",
+      "relativePosition": [
+        -2.4958457290120286,
+        0.14406282300585635
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0f3eea29-01c4-4fba-b63b-a3365ee34486",
+      "relativePosition": [
+        -0.8530235338395891,
+        -2.349968265895482
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "602128b3-168d-4347-95b5-f90c400e31e0",
+      "relativePosition": [
+        0.7830432107919955,
+        2.3742037254693544
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "9de71f50-9ee4-423e-a79e-d3c9f493a79d"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768829060869
+    "state": "human-dependent",
+    "comment": "Blocked by API credentials and hosting setup - see aims 3a7b2519, 0f3eea29, 602128b3",
+    "date": 1774590800598
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "description": "Make the content engine workflow usable end-to-end: journal entries → Instagram posts.\n\n**Currently blocked by:**\n- Missing API credentials (aim 3a7b2519)\n- Missing public image hosting setup (aim 0f3eea29)\n- Gemini API quota exhaustion (aim 602128b3)\n\n**When unblocked:** Can implement the workflow automation connecting journal writing to social posting."
 }
