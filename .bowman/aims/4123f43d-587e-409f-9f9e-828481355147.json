@@ -1,23 +1,37 @@
 {
   "id": "4123f43d-587e-409f-9f9e-828481355147",
   "text": "AI conflict resolution service as third-party arbitrator",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "ai",
     "legal-tech",
     "conflict-resolution",
     "separate-service"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "8fa9f430-ef88-4f2c-b529-2299132164ac",
+      "relativePosition": [
+        1.7784134050766098,
+        -1.7570559924612017
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "045d0879-46f3-4e2a-b13c-08ec339f03c2"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769747797030
+    "state": "human-dependent",
+    "comment": "Blocked by strategic decision on whether to pursue - see supporting aim 8fa9f430",
+    "date": 1774590689915
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

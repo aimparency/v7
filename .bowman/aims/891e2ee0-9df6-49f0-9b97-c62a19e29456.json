@@ -1,0 +1,24 @@
+{
+  "id": "891e2ee0-9df6-49f0-9b97-c62a19e29456",
+  "text": "Decide UI approach for aims with multiple parents in phase view",
+  "description": "**HUMAN DECISION REQUIRED:**\n\n**Context:**\nAim a05ea545 proposes: \"When an aim with a parent is shown at the first level of a phase, prepend ~20 chars from parent title + / to provide context.\"\n\n**Problem:**\nAims can have multiple parents in the graph. The current proposal doesn't specify how to handle this.\n\n**Options:**\n1. **Pick first parent** - Use alphabetically first or oldest parent aim\n2. **Pick most relevant parent** - Use parent that's also committed to the same phase (if any)\n3. **Show multiple prefixes** - \"Parent1/Parent2/Aim Title\" (could get long)\n4. **Skip multi-parent aims** - Only add prefix when aim has exactly one parent\n5. **Different approach entirely** - Maybe use tooltips, icons, or indentation instead of prefix\n\n**Decision needed:**\nWhich option makes the most UX sense? Or should we abandon this feature entirely if multi-parent handling is too complex?\n\n**After decision:** Update aim a05ea545 with chosen approach and mark it ready for implementation.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "a05ea545-0395-4e9a-941f-159ca60c60e1"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Needs architectural decision on multi-parent UX pattern",
+    "date": 1774590682106
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
