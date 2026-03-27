@@ -1,0 +1,26 @@
+{
+  "id": "be32e3a6-2240-4632-8f53-d305fe25a7fb",
+  "text": "Add human-dependend state to default initial states",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "dec5c82b-c2cc-4d56-a2b4-8c0fa981a7cc"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774589935676
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

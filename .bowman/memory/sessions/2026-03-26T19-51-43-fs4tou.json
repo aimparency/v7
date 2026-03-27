@@ -1,0 +1,12 @@
+{
+  "sessionId": "2026-03-26T19-51-43-fs4tou",
+  "timestamp": 1774554703988,
+  "duration": 1595966,
+  "aimsWorked": [
+    "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2"
+  ],
+  "outcomes": "❯ Before compacting, make a git commit for the work completed so far. Review git status, stage the intended files, create the      ",
+  "patterns": "",
+  "lessonsLearned": "",
+  "rawReflection": "mit)                                                                        \n                                                                                                                                   \n  The only untracked file is .bowman/memory/sessions/2026-03-26T19-51-43-fs4tou.json which is a runtime session file that shouldn't\n   be committed.                                                                                                                   \n                                                                                                                                   \n  Ready for /compact.                                                                                                              \n                                                                                                                                   \n✻ Sautéed for 32s                                                                                                                  \n                                                                                                                                   \n● How is Claude doing this session? (optional)                                                                                     \n  1: Bad    2: Fine   3: Good   0: Dismiss                                                                                         \n                                                                                                                                   \n───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n❯                                                                                                                                  \n───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n  -- INSERT -- ⏵⏵ bypass permissions on (shift+Tab to cycle) · 1 file +0 -0"
+}
