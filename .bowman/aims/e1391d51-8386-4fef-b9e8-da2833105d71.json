@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "State-specific prompts for supervisor",
-    "date": 1774790361693
+    "state": "done",
+    "comment": "Prompt templates created in animator-prompts.ts",
+    "date": 1774793302825
   },
   "intrinsicValue": 0,
   "cost": 1,

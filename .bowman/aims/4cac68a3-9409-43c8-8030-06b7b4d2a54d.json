@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Foundation for state machine",
-    "date": 1774790361258
+    "state": "done",
+    "comment": "AnimatorState class implemented in animator-state.ts",
+    "date": 1774793301894
   },
   "intrinsicValue": 0,
   "cost": 1,
