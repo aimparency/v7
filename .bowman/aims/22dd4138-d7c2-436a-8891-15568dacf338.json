@@ -1,0 +1,41 @@
+{
+  "id": "22dd4138-d7c2-436a-8891-15568dacf338",
+  "text": "UI",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "6bbb740c-2281-4dbb-83c8-a391e626312a",
+      "relativePosition": [
+        3.776466722462367,
+        0.13365629410639537
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
+      "relativePosition": [
+        -1.4311698126272883,
+        -3.5101182866911924
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774783343054
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

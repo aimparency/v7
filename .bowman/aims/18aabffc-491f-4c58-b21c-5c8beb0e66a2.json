@@ -1,0 +1,27 @@
+{
+  "id": "18aabffc-491f-4c58-b21c-5c8beb0e66a2",
+  "text": "Implement action execution logic for state machine",
+  "description": "Build executeAction method that handles all state machine actions: start_work (send work prompt to supervised), proceed (motivate/option_select/none), wrap_up (transition), verify (complete/incomplete with commit+reflect+compact sequence), break_down (create sub-aims), ideate (research/new aims). Each action prompts supervised session appropriately and logs execution.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "actions",
+    "execution"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "31e7e8b7-bc95-4968-bd4f-44e7963a93fd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Core action handling",
+    "date": 1774790362154
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

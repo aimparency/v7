@@ -1,0 +1,27 @@
+{
+  "id": "eca92d1b-d6e7-40dd-9f35-c01730d569c2",
+  "text": "Implement user input detection and option selection in WORKING state",
+  "description": "Detect when supervised session prompts for user input (patterns: (A) option (B) option, yes/no prompts, press key to continue). Extract options, present to supervisor in context, supervisor chooses via JSON action, send choice to supervised stdin. Handle critical decisions by escalating to human. Already have some detection logic in current watchdog - enhance and integrate with state machine.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "user-input",
+    "automation"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "31e7e8b7-bc95-4968-bd4f-44e7963a93fd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Enable automated decision-making",
+    "date": 1774790363097
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

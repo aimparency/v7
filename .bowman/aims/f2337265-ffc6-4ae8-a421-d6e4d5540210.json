@@ -240,9 +240,9 @@
     }
   ],
   "supportedAims": [
-    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
     "33be4e0c-fa52-42ba-a86b-4c209b34e2be",
-    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
+    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b",
+    "22dd4138-d7c2-436a-8891-15568dacf338"
   ],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"

@@ -11,8 +11,8 @@
     {
       "aimId": "e95abe3f-9cd4-4bb3-9b3b-a4afe015fa83",
       "relativePosition": [
-        1.0728524006940197,
-        -2.2580938258462777
+        -0.5883423473575428,
+        -2.153556177428377
       ],
       "weight": 1
     },
@@ -29,22 +29,6 @@
       "relativePosition": [
         -1.4912459167858145,
         -2.006535724992116
-      ],
-      "weight": 1
-    },
-    {
-      "aimId": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
-      "relativePosition": [
-        -1.3444482181476212,
-        -6.205193595426652
-      ],
-      "weight": 2
-    },
-    {
-      "aimId": "6bbb740c-2281-4dbb-83c8-a391e626312a",
-      "relativePosition": [
-        6.8330773244317875,
-        1.6385985545641455
       ],
       "weight": 1
     },
@@ -71,6 +55,14 @@
         0.12911710346803176
       ],
       "weight": 1
+    },
+    {
+      "aimId": "22dd4138-d7c2-436a-8891-15568dacf338",
+      "relativePosition": [
+        1.8779153888037583,
+        -1.8893477371926135
+      ],
+      "weight": 5
     }
   ],
   "supportedAims": [
@@ -82,7 +74,7 @@
     "comment": "",
     "date": 1768763893265
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 20,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,

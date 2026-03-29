@@ -1,0 +1,27 @@
+{
+  "id": "e1391d51-8386-4fef-b9e8-da2833105d71",
+  "text": "Create supervisor prompt templates for each state",
+  "description": "Build prompt template functions for EXPLORING, WORKING, WRAPPING_UP, ERROR states. Each template receives context (supervised session output, project info, timing) and generates focused prompt with only relevant actions. Format: [STATE: X], context, available actions as JSON examples, request for JSON response. Minimal, focused prompts replacing current 95-line INSTRUCT.md.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "prompts",
+    "templates"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "31e7e8b7-bc95-4968-bd4f-44e7963a93fd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "State-specific prompts for supervisor",
+    "date": 1774790361693
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

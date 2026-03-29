@@ -1,0 +1,27 @@
+{
+  "id": "4cac68a3-9409-43c8-8030-06b7b4d2a54d",
+  "text": "Build AnimatorState class with in-memory state tracking",
+  "description": "Create TypeScript class to manage state machine state in memory. Track: currentState (EXPLORING|WORKING|WRAPPING_UP|ERROR), context (aimId, aimText, strategy, timestamps), history (state transitions). Include state transition logic, validation, and helper methods. No file persistence needed - lives in session process memory.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "state-management",
+    "typescript"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "31e7e8b7-bc95-4968-bd4f-44e7963a93fd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Foundation for state machine",
+    "date": 1774790361258
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

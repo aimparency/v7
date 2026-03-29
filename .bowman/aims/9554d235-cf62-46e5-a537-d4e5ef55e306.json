@@ -1,0 +1,27 @@
+{
+  "id": "9554d235-cf62-46e5-a537-d4e5ef55e306",
+  "text": "Add ERROR state with exponential backoff handling",
+  "description": "Implement ERROR state triggered by timeouts, stuck states, or failures. Exponential backoff: 1min, 2min, 4min, 8min, 15min (max). Send health checks to supervisor at intervals, attempt recovery or reset to EXPLORING. Log error counts, track last check times. User can always manually override (start/stop/chat).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "error-handling",
+    "resilience"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "31e7e8b7-bc95-4968-bd4f-44e7963a93fd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Graceful error handling",
+    "date": 1774790362628
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

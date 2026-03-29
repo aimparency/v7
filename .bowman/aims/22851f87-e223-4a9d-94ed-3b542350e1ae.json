@@ -1,0 +1,26 @@
+{
+  "id": "22851f87-e223-4a9d-94ed-3b542350e1ae",
+  "text": "auto-relax feature für relative positionen",
+  "description": "- die winkel aller children evenly spacen. \n- die relativen positions updaten auf die aktuellen frontend positions\n\n\nfragen: confirm, cancel, bevor es persisted wird (denn theoretisch werden alle aims dabei upgedated)\n\nrelative positionen nur bei > 3% change updaten",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774776777929
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

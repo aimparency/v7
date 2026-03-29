@@ -1,0 +1,71 @@
+{
+  "id": "31e7e8b7-bc95-4968-bd4f-44e7963a93fd",
+  "text": "Implement animator state machine for structured autonomous loop",
+  "description": "Replace current instruction-based autonomy with explicit state machine. Four states: EXPLORING (find work, break down, ideate), WORKING (push supervised session to complete aim), WRAPPING_UP (verify ~80% complete, commit, reflect, compact), ERROR (exponential backoff on timeouts). Supervisor session prompts itself with state-relevant actions only, responds with JSON, actions executed in supervised session. In-memory state tracking. User can always override (start/stop/manual chat). See packages/wrapped-agents/animator-state-machine-v2.md for complete spec.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "state-machine",
+    "autonomy",
+    "animator",
+    "core-capability",
+    "high-priority"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "4cac68a3-9409-43c8-8030-06b7b4d2a54d",
+      "relativePosition": [
+        -2.0428057936970134,
+        1.4411608131079316
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "e1391d51-8386-4fef-b9e8-da2833105d71",
+      "relativePosition": [
+        2.4888938299399124,
+        -0.2353879845850988
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "18aabffc-491f-4c58-b21c-5c8beb0e66a2",
+      "relativePosition": [
+        -2.068450273486702,
+        1.4041059312291178
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9554d235-cf62-46e5-a537-d4e5ef55e306",
+      "relativePosition": [
+        1.3395726461205641,
+        -2.110816222641268
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "eca92d1b-d6e7-40dd-9f35-c01730d569c2",
+      "relativePosition": [
+        -2.2798131782896442,
+        1.0258907700612534
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Core transformation for observable, structured autonomy",
+    "date": 1774790320384
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
