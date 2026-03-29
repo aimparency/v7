@@ -1,0 +1,44 @@
+{
+  "id": "3045f505-1214-4618-82f3-d36544327059",
+  "text": "Maintain information streams for autonomous agent context",
+  "description": "Enable agent to subscribe to and consume information from external sources beyond the codebase. Agent should actively pull in context from RSS feeds, web research, documentation updates, GitHub issues, and other streams to inform decision-making during DISCOVERING state. This transforms the agent from being purely reactive (waiting for aims) to proactive (discovering work from information streams).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "information-streams",
+    "autonomy",
+    "discovery",
+    "future"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "7a0dc490-5a57-4dc5-8f7c-e9bf77f2d2b4",
+      "relativePosition": [
+        -0.32615977618655323,
+        2.4786326473275415
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "88f897c3-bd85-43cf-a200-41366f9c3b97",
+      "relativePosition": [
+        0.7533987736831937,
+        -2.383776476059083
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Foundation for information-rich autonomous operation",
+    "date": 1774774152342
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

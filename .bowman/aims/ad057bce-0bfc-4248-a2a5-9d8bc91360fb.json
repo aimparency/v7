@@ -1,0 +1,30 @@
+{
+  "id": "ad057bce-0bfc-4248-a2a5-9d8bc91360fb",
+  "text": "Integrate ERC-8004 trust signals for agent collaboration",
+  "description": "BONUS FEATURE: Implement trust-based agent selection and collaboration. Agent should read ERC-8004 reputation scores, refuse low-trust collaborators, update reputation after task completion, and participate in trust networks. Enables secure multi-agent coordination based on verifiable track records.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "trust",
+    "ERC-8004",
+    "collaboration",
+    "bonus",
+    "reputation"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Bonus 5% scoring - enables agent ecosystems",
+    "date": 1774771792365
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

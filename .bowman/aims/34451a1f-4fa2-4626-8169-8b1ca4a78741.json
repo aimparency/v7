@@ -1,23 +1,32 @@
 {
   "id": "34451a1f-4fa2-4626-8169-8b1ca4a78741",
   "text": "Build 'Echo' Web Interface (Landing & Dashboard)",
-  "committedIn": [],
-  "status": {
-    "state": "done",
-    "comment": "Built 'Echo' Web Interface (Landing & Dashboard) in subdev/revenue/web using Vue 3 + TypeScript. Includes Landing Page (Home.vue) with pricing and Dashboard (Dashboard.vue) with mock content generation UI. Verified with build.",
-    "date": 1765018127191
-  },
+  "reflections": [],
+  "archived": false,
+  "tags": [],
   "supportingConnections": [
     {
       "aimId": "64001445-cd71-4f01-9f6e-e51a1a21dc23",
       "relativePosition": [
-        -1.5003162342028893,
-        -1.9997627852791093
+        2.6474134892065186,
+        -1.540734291826689
       ],
       "weight": 1
     }
   ],
   "supportedAims": [
     "b9596362-3fab-4b4b-8834-df81f48930cc"
-  ]
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Built 'Echo' Web Interface (Landing & Dashboard) in subdev/revenue/web using Vue 3 + TypeScript. Includes Landing Page (Home.vue) with pricing and Dashboard (Dashboard.vue) with mock content generation UI. Verified with build.",
+    "date": 1765018127191
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

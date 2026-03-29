@@ -1,0 +1,28 @@
+{
+  "id": "5cc73338-d648-4440-98ef-035217d06fcd",
+  "text": "Create machine-readable agent capability manifest (agent.json)",
+  "description": "Generate standardized agent.json file declaring Bowman's capabilities, constraints, and operational parameters. Include: agent name, operator wallet, ERC-8004 identity, supported tools (git, npm, file ops, API calls), supported tech stacks (Node.js, TypeScript, Vue), compute constraints, and supported task categories (code generation, project management, testing).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "manifest",
+    "capabilities",
+    "standardization"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Enables agent discovery and capability advertising",
+    "date": 1774771791323
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

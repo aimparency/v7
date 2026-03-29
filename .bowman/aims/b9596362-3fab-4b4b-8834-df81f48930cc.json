@@ -2,29 +2,31 @@
   "id": "b9596362-3fab-4b4b-8834-df81f48930cc",
   "text": "Define sustainable revenue model: 'Echo' Service (Journal -> Cinema)",
   "description": "blabla",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
       "aimId": "1b77783f-747e-4f90-a983-efe8be6cadb7",
       "relativePosition": [
-        -1.9636765146775241,
-        1.5472474093382513
+        2.165836068350992,
+        -2.3707420481801633
       ],
       "weight": 1
     },
     {
       "aimId": "5a0ca937-9951-40de-b647-809a2cadcf95",
       "relativePosition": [
-        -2.2632137945575,
-        -1.0620090960649262
+        3.393896984472412,
+        -0.27391035562152827
       ],
       "weight": 1
     },
     {
       "aimId": "f86a45b5-f303-41ea-a006-4ce82da77890",
       "relativePosition": [
-        -0.5558707423601708,
-        -2.4374182484317197
+        1.7882181673632105,
+        0.41403411744419016
       ],
       "weight": 1
     },
@@ -50,5 +52,8 @@
   },
   "intrinsicValue": 2,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

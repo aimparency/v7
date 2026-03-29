@@ -1,6 +1,7 @@
 {
   "id": "67a448b5-125a-4a6b-8331-93ef488d67e9",
   "text": "Make content engine usable: journal → Instagram workflow",
+  "description": "Make the content engine workflow usable end-to-end: journal entries → Instagram posts.\n\n**Currently blocked by:**\n- Missing API credentials (aim 3a7b2519)\n- Missing public image hosting setup (aim 0f3eea29)\n- Gemini API quota exhaustion (aim 602128b3)\n\n**When unblocked:** Can implement the workflow automation connecting journal writing to social posting.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -12,8 +13,8 @@
     {
       "aimId": "3a7b2519-02e3-45e8-bf85-1dfd74efb5e7",
       "relativePosition": [
-        -2.4958457290120286,
-        0.14406282300585635
+        -2.8057958857769423,
+        5.952192656405035
       ],
       "weight": 1
     },
@@ -48,6 +49,5 @@
   "loopWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "description": "Make the content engine workflow usable end-to-end: journal entries → Instagram posts.\n\n**Currently blocked by:**\n- Missing API credentials (aim 3a7b2519)\n- Missing public image hosting setup (aim 0f3eea29)\n- Gemini API quota exhaustion (aim 602128b3)\n\n**When unblocked:** Can implement the workflow automation connecting journal writing to social posting."
+  "valueVariance": 0
 }

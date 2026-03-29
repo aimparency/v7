@@ -1,0 +1,43 @@
+{
+  "id": "9fa43c99-d00c-4b4a-883e-5410cbe689dd",
+  "text": "custom aim colors",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "4a05d4ff-51c8-4946-b174-72d59c685b12",
+      "relativePosition": [
+        2.1950899521759903,
+        -0.7193021188203499
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "667df056-3263-4179-9ed5-7fb9d778f666",
+      "relativePosition": [
+        2.424070310740202,
+        0.6895248151607082
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774594207612
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

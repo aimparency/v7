@@ -1,6 +1,8 @@
 {
   "id": "1874f90a-2b67-42b5-a107-29f125b2e8a2",
   "text": "Establish Economic Engines (Echo & Market Alpha)",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -14,8 +16,8 @@
     {
       "aimId": "b9596362-3fab-4b4b-8834-df81f48930cc",
       "relativePosition": [
-        -1.925208705635052,
-        1.5948578117647378
+        1.5267873909325838,
+        1.8783895065806113
       ],
       "weight": 1
     },
@@ -56,5 +58,8 @@
   },
   "intrinsicValue": 2,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

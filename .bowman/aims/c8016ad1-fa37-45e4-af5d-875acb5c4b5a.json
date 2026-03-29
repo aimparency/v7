@@ -1,0 +1,28 @@
+{
+  "id": "c8016ad1-fa37-45e4-af5d-875acb5c4b5a",
+  "text": "Build multi-tool orchestration capability",
+  "description": "Enable agent to coordinate multiple tools/APIs in service of complex goals. Current tools include: code generation, GitHub operations, file system, npm/build tools, API calls. Must demonstrate intelligent tool selection, proper sequencing, error handling across tools, and fallback strategies. Multi-tool orchestration scores higher than single-tool use.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "tools",
+    "orchestration",
+    "integration"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Demonstrates intelligence beyond simple automation",
+    "date": 1774771791765
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

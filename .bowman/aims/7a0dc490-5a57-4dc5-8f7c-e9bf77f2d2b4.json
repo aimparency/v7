@@ -1,0 +1,29 @@
+{
+  "id": "7a0dc490-5a57-4dc5-8f7c-e9bf77f2d2b4",
+  "text": "Build RSS subscription engine for agent information streams",
+  "description": "Implement subscription management system where agent can subscribe to RSS/Atom feeds and check them during DISCOVERING state. Store subscriptions in .bowman/subscriptions.json with feed URL, tags, check frequency, last checked timestamp. During discovery, fetch new items from feeds and generate aims or context from relevant content. Examples: blog posts about tech stack, library release notes, documentation updates.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "rss",
+    "feeds",
+    "subscriptions",
+    "future"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3045f505-1214-4618-82f3-d36544327059"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Enables agent to pull external context",
+    "date": 1774774168280
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,26 @@
+{
+  "id": "5508ce83-89b2-42c9-90f9-9a6c15f04f54",
+  "text": "show subphases of multiple parent phases in columns",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774775514209
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

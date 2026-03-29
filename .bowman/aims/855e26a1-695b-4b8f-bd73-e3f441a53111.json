@@ -1,0 +1,27 @@
+{
+  "id": "855e26a1-695b-4b8f-bd73-e3f441a53111",
+  "text": "parent child navigation in aim search results",
+  "description": "in aim search, let's introduce navigation feature:  h shows list of supported aims, l shos list of supporting aims. This is relevant, because sometimes we find an aim but then want to select one of it's children.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "891e2ee0-9df6-49f0-9b97-c62a19e29456",
+    "1c27fb5d-0a77-470e-a3f2-d5c8023d4464"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774775922430
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,37 @@
+{
+  "id": "0622adb1-e79d-483c-b894-199d92ca199d",
+  "text": "Implement autonomous execution loop with task decomposition and self-correction",
+  "description": "Build the core autonomy loop: discover problems → plan solutions → execute tasks → verify outcomes → submit results. Must include automatic task decomposition (breaking complex aims into sub-aims), autonomous decision-making without human prompts, and self-correction when errors occur. The agent should recover from failures and adapt its strategy.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "loop",
+    "core-capability"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "b03ad58e-4518-455f-8a35-36f58eb8ee7d",
+      "relativePosition": [
+        -0.8329709290788944,
+        2.3571507018664386
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Core capability - highest priority",
+    "date": 1774771790833
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

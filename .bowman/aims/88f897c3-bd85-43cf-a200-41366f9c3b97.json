@@ -1,0 +1,29 @@
+{
+  "id": "88f897c3-bd85-43cf-a200-41366f9c3b97",
+  "text": "Add occasional web research capability to discovery loop",
+  "description": "Enable agent to perform targeted web research when encountering unknowns or needing current best practices. During PLANNING or DISCOVERING states, agent can search for documentation, tutorials, Stack Overflow discussions, library comparisons, etc. Research results inform strategy and create context for decisions. Should be occasional/on-demand, not constant - agent decides when research is needed based on knowledge gaps.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "web-research",
+    "discovery",
+    "learning",
+    "future"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3045f505-1214-4618-82f3-d36544327059"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Complements RSS with on-demand research",
+    "date": 1774774168661
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

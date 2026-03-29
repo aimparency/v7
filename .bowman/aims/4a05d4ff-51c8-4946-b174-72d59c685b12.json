@@ -1,0 +1,24 @@
+{
+  "id": "4a05d4ff-51c8-4946-b174-72d59c685b12",
+  "text": "add color to aim data model",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9fa43c99-d00c-4b4a-883e-5410cbe689dd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774594224088
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

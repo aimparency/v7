@@ -1,0 +1,24 @@
+{
+  "id": "667df056-3263-4179-9ed5-7fb9d778f666",
+  "text": "render arrows in supporting aim color",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9fa43c99-d00c-4b4a-883e-5410cbe689dd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774594262230
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

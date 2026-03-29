@@ -1,0 +1,26 @@
+{
+  "id": "e81b11c3-8eca-4f7d-8ca3-578179d24225",
+  "text": "inter-repository links",
+  "description": "enable linking to aims from other repositories. maybe treating repositories themselves as aims (economically/mathmatically). Usually the owner of such a connection is the repository. So only \"this other repo supports this aim here\" connections can be defined in the repo == Can't assume some other repo needs something.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774773382131
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

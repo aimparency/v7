@@ -51,9 +51,24 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   // Track which agent type we're currently connected to
   const connectedAgentType = ref<AgentType | null>(null)
 
-  // Terminal buffers
-  const workerOutput = ref('')
-  const watchdogOutput = ref('')
+  // Terminal buffers - per-agent structure
+  const agentBuffers = ref<Record<AgentType, { worker: string; watchdog: string }>>({
+    claude: { worker: '', watchdog: '' },
+    gemini: { worker: '', watchdog: '' },
+    codex: { worker: '', watchdog: '' }
+  })
+
+  // Computed accessors for backward compatibility
+  const workerOutput = computed(() => {
+    const agent = connectedAgentType.value || selectedAgentType.value
+    return agentBuffers.value[agent].worker
+  })
+
+  const watchdogOutput = computed(() => {
+    const agent = connectedAgentType.value || selectedAgentType.value
+    return agentBuffers.value[agent].watchdog
+  })
+
   const spawningLog = ref<string[]>([])
 
   const logStatus = (msg: string) => {
@@ -202,8 +217,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     if (socket.value || connectionState.value === 'spawning' || connectionState.value === 'connecting') return false
 
     logStatus(`${reason} ${session.agentType} session on port ${session.port}...`)
-    workerOutput.value = ''
-    watchdogOutput.value = ''
+    // Don't clear buffers - preserve existing agent output when reconnecting
     connectToSocket(session.port, session.projectPath, session.agentType)
     return true
   }
@@ -228,10 +242,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     connectionState.value = 'spawning'
     logStatus(`Spawning ${agentType} session for path: ${targetPath}...`)
-    
-    // Clear buffers to avoid duplication/stale data on reconnect
-    workerOutput.value = ''
-    watchdogOutput.value = ''
+
+    // Clear only this agent's buffers to avoid duplication/stale data on reconnect
+    agentBuffers.value[agentType] = { worker: '', watchdog: '' }
 
     try {
         // 1. Ask broker to start the process
@@ -364,9 +377,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
 
     connectionState.value = 'spawning'
-    // Clear buffers for fresh start
-    workerOutput.value = ''
-    watchdogOutput.value = ''
+    // Clear only this agent's buffers for fresh start
+    agentBuffers.value[agentType] = { worker: '', watchdog: '' }
 
     try {
         const { port } = await trpcWatchdog.watchdog.relaunch.mutate({
@@ -534,18 +546,18 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       stopReason.value = reason
     })
 
-    // Data handling
+    // Data handling - write to specific agent's buffer using closure-captured agentType
     socket.value.on('worker-data', (data: string) => {
-      workerOutput.value += data
-      if (workerOutput.value.length > 100000) {
-        workerOutput.value = workerOutput.value.slice(-100000)
+      agentBuffers.value[agentType].worker += data
+      if (agentBuffers.value[agentType].worker.length > 100000) {
+        agentBuffers.value[agentType].worker = agentBuffers.value[agentType].worker.slice(-100000)
       }
     })
 
     socket.value.on('watchdog-data', (data: string) => {
-      watchdogOutput.value += data
-      if (watchdogOutput.value.length > 100000) {
-        watchdogOutput.value = watchdogOutput.value.slice(-100000)
+      agentBuffers.value[agentType].watchdog += data
+      if (agentBuffers.value[agentType].watchdog.length > 100000) {
+        agentBuffers.value[agentType].watchdog = agentBuffers.value[agentType].watchdog.slice(-100000)
       }
     })
   }

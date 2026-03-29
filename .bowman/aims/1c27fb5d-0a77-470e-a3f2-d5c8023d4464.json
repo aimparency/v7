@@ -1,0 +1,35 @@
+{
+  "id": "1c27fb5d-0a77-470e-a3f2-d5c8023d4464",
+  "text": "aim search",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "855e26a1-695b-4b8f-bd73-e3f441a53111",
+      "relativePosition": [
+        -2.175591257329726,
+        -1.935419617663213
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774775945185
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

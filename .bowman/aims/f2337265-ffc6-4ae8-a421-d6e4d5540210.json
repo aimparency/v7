@@ -213,6 +213,30 @@
         -2.4090832811353735
       ],
       "weight": 1
+    },
+    {
+      "aimId": "9fa43c99-d00c-4b4a-883e-5410cbe689dd",
+      "relativePosition": [
+        -0.3912258796005255,
+        -3.2664945029760366
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "44ccf082-6032-49c7-a0dd-e5b4681be2cd",
+      "relativePosition": [
+        1.7220048387161442,
+        -1.8123739502205902
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "47cccbd6-8fe1-4fae-8530-1f66c489a05a",
+      "relativePosition": [
+        2.880797107592561,
+        4.083647803904299
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [

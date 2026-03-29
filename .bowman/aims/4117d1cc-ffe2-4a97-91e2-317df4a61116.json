@@ -1,0 +1,26 @@
+{
+  "id": "4117d1cc-ffe2-4a97-91e2-317df4a61116",
+  "text": "loadable aims",
+  "description": "non-filled, circle only, click to load supported aims as loadable and supporting aims as normal aims.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "4f71c8f8-29ff-444d-9d1b-00ae84fc1abe"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774769913677
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

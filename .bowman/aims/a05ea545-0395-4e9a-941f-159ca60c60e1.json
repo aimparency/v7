@@ -1,7 +1,7 @@
 {
   "id": "a05ea545-0395-4e9a-941f-159ca60c60e1",
   "text": "feature: if aim has a parent but when showing on the first level of a phase it is committed to, add 20 chars from the parent aim title + / in the beginning of the aim title.",
-  "description": "This should help prvoide context for short aim titles like \"add text\" that only make sense with their parent. But this is still unclear, because how do we treat multiple parents",
+  "description": "This should help prvoide context for short aim titles like \"add text\" that only make sense with their parent. But this is still unclear, because how do we treat multiple parents\n\n\nHUMAN GUIDANCE: \nin aim search, let's introduce navigation feature: \nh shows list of supported aims, l shos list of supporting aims. This is relevant, because sometimes we find an aim but then want to select one of it's children. \n\ntherefore this was cancelled. ",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -20,9 +20,9 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "human-dependent",
+    "state": "cancelled",
     "comment": "Blocked by UX decision on multi-parent handling - see supporting aim 891e2ee0",
-    "date": 1774590689818
+    "date": 1774775808475
   },
   "intrinsicValue": 0,
   "cost": 1,

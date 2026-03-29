@@ -1,0 +1,35 @@
+{
+  "id": "4f71c8f8-29ff-444d-9d1b-00ae84fc1abe",
+  "text": "Feature: filter graph aims by phase.",
+  "description": "maybe on keypress p, allow searching for a phase (\"filter for phase\"). Then, only those aims are being shown, that are committed in the selected phase or aims that support those aims. also show 1 level of supported/parent aims => show them as loadable aims (non-filled, circle only, click loads their supported and supporting aims). So the set of viewed aims and loadable aims get's calculated when confirming phase selection. Then can get expanded by clicking loadable aims (load their supported aims as loadable again).",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "4117d1cc-ffe2-4a97-91e2-317df4a61116",
+      "relativePosition": [
+        1.7773988387156567,
+        -1.111691437222926
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774769861173
+  },
+  "intrinsicValue": 1,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,29 @@
+{
+  "id": "1fd5ede2-5d81-4f38-8645-924887ab48ef",
+  "text": "Establish agent identity with ERC-8004 registration",
+  "description": "Register Bowman agent with unique ERC-8004 identity linked to operator wallet. This creates verifiable onchain identity enabling trust-based ecosystems, reputation systems, and agent-to-agent collaboration. Includes: agent identity creation, operator wallet association, ERC-8004 registration transaction on appropriate chain.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "identity",
+    "ERC-8004",
+    "onchain",
+    "trust"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Required for trust and reputation systems",
+    "date": 1774771791115
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

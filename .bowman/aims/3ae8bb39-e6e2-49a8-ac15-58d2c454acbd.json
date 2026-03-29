@@ -1,0 +1,29 @@
+{
+  "id": "3ae8bb39-e6e2-49a8-ac15-58d2c454acbd",
+  "text": "Add compute budget awareness and resource management",
+  "description": "Implement cost-conscious operation within defined compute budgets. Agent must track API calls, compute usage, avoid runaway loops, optimize for efficiency, and gracefully degrade when approaching limits. Currently shown in .bowman/meta.json system status (computeCredits, funds). Make agent aware of and responsive to these constraints.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "compute",
+    "budget",
+    "efficiency",
+    "sustainability"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Mirrors real-world constraint environments",
+    "date": 1774771792169
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

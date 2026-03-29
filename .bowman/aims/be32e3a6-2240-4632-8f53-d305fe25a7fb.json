@@ -1,7 +1,7 @@
 {
   "id": "be32e3a6-2240-4632-8f53-d305fe25a7fb",
   "text": "Add human-dependend state to default initial states",
-  "description": "Add \"human-dependent\" status to the default initial statuses when creating new .bowman projects.\n\n**HUMAN REVIEW REQUIRED:**\nCurrent default statuses in new projects: open, done, cancelled, partially, failed, unclear\n\n**Should we add:**\n- human-dependent (for aims blocked by human action/decision)\n\n**Questions:**\n1. Should this be in default statuses for all new projects?\n2. Should we add any other useful default statuses?\n3. Color choice for human-dependent: #bf409f (current in this project) - acceptable?\n\n**After approval:** Update project initialization code to include human-dependent in default status set.",
+  "description": "Add \"human-dependent\" status to the default initial statuses when creating new .bowman projects.\n\n**HUMAN REVIEW REQUIRED:**\nCurrent default statuses in new projects: open, done, cancelled, partially, failed, unclear\n\n**Should we add:**\n- human-dependent (for aims blocked by human action/decision)\n-> yes\n\n**Questions:**\n1. Should this be in default statuses for all new projects?\n-> exactly\n2. Should we add any other useful default statuses?\n-> we add only human-dependent to the current list\n3. Color choice for human-dependent: #bf409f (current in this project) - acceptable?\n-> acceptable!",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -13,9 +13,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Needs human review of default statuses in meta.json before implementing",
-    "date": 1774590323016
+    "state": "open",
+    "comment": "All open questions answered in description",
+    "date": 1774770146541
   },
   "intrinsicValue": 0,
   "cost": 1,

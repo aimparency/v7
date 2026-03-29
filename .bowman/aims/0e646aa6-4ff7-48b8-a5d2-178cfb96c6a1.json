@@ -1,0 +1,30 @@
+{
+  "id": "0e646aa6-4ff7-48b8-a5d2-178cfb96c6a1",
+  "text": "Design multi-agent coordination with specialized roles",
+  "description": "BONUS FEATURE: Create agent swarm architecture with specialized roles - planner agent (decomposes aims), developer agent (writes code), QA agent (tests/verifies), deployment agent (ships). Agents coordinate through shared .bowman state, passing work via aims, with trust-based handoffs. Demonstrates coordination at scale.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "multi-agent",
+    "coordination",
+    "swarm",
+    "bonus",
+    "specialization"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Bonus feature - shows scalable coordination",
+    "date": 1774771792586
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

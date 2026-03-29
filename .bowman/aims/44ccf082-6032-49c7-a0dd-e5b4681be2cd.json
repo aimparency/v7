@@ -1,0 +1,26 @@
+{
+  "id": "44ccf082-6032-49c7-a0dd-e5b4681be2cd",
+  "text": "convenience: In edit mode: make description text area so large that shows all lines of the initially loaded description.",
+  "description": "Don't update height dynamically (once on modal mount/data available). On create aim, current height is fine.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [
+    "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774770217679
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
