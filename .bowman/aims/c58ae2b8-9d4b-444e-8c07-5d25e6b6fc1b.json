@@ -2,6 +2,8 @@
   "id": "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b",
   "text": "watchdog enhancements",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -17,14 +19,6 @@
       "relativePosition": [
         1.5910569392384444,
         1.906569237683971
-      ],
-      "weight": 1
-    },
-    {
-      "aimId": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
-      "relativePosition": [
-        11.000954215067873,
-        -12.968821898040877
       ],
       "weight": 1
     },
@@ -69,7 +63,9 @@
       "weight": 1
     }
   ],
-  "supportedAims": [],
+  "supportedAims": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
@@ -80,5 +76,8 @@
   },
   "intrinsicValue": 3,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

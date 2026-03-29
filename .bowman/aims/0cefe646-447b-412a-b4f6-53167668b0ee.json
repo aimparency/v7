@@ -1,6 +1,8 @@
 {
   "id": "0cefe646-447b-412a-b4f6-53167668b0ee",
   "text": "Scale Experience Mining to Mass Audience (Establish Brand)",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -36,7 +38,9 @@
       "weight": 1
     }
   ],
-  "supportedAims": [],
+  "supportedAims": [
+    "629396d0-891d-42c7-b2b2-1be5423de649"
+  ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
@@ -47,5 +51,8 @@
   },
   "intrinsicValue": 20,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

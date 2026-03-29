@@ -1,0 +1,24 @@
+{
+  "id": "ca0cd74f-fe9c-44d1-9fa9-85fca97439de",
+  "text": "Integrate ERC-8004",
+  "description": "read the source: https://eips.ethereum.org/EIPS/eip-8004",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774813549222
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

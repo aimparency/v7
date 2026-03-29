@@ -2,29 +2,31 @@
   "id": "c254d8bd-d7ba-494e-8a97-8c46636fdb2f",
   "text": "LLM integration",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
       "aimId": "abc3d503-5945-45eb-8122-be5e33b2ccea",
       "relativePosition": [
-        3.4383240167775124,
-        5.281390449709296
+        1.3332624745574055,
+        1.8278703479558556
       ],
       "weight": 1
     },
     {
       "aimId": "93149e0b-ef1a-424d-b9db-ffef9f50957d",
       "relativePosition": [
-        -2.433290412420133,
-        4.916123086864051
+        -1.3959369809692581,
+        3.541896058095641
       ],
       "weight": 1
     },
     {
       "aimId": "8921cf33-d9ff-40d0-b106-e725c754a5f5",
       "relativePosition": [
-        -5.226673537512774,
-        1.5962286780233066
+        -2.5203761843809747,
+        0.7913632833954758
       ],
       "weight": 1
     }
@@ -42,5 +44,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

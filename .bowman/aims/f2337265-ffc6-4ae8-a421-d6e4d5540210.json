@@ -129,8 +129,8 @@
     {
       "aimId": "d59d03c1-45dd-48db-98c2-49b61b481f07",
       "relativePosition": [
-        6.841971277503797,
-        -0.7803536799634095
+        2.219145998451428,
+        -2.4925134281006422
       ],
       "weight": 1
     },
@@ -241,7 +241,6 @@
   ],
   "supportedAims": [
     "33be4e0c-fa52-42ba-a86b-4c209b34e2be",
-    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b",
     "22dd4138-d7c2-436a-8891-15568dacf338"
   ],
   "committedIn": [
@@ -252,7 +251,7 @@
     "comment": "",
     "date": 1768593096135
   },
-  "intrinsicValue": 50,
+  "intrinsicValue": 10,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
