@@ -13,8 +13,16 @@
     {
       "aimId": "b03ad58e-4518-455f-8a35-36f58eb8ee7d",
       "relativePosition": [
-        -0.8329709290788944,
-        2.3571507018664386
+        1.7463873520386552,
+        -0.6266153434442487
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "e2dd4a42-6137-4e38-b011-e60298f90cea",
+      "relativePosition": [
+        1.0448807613453024,
+        1.115184686432207
       ],
       "weight": 1
     }
@@ -28,7 +36,7 @@
     "comment": "Core capability - highest priority",
     "date": 1774771790833
   },
-  "intrinsicValue": 0,
+  "intrinsicValue": 20,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
