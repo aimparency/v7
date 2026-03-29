@@ -1,0 +1,14 @@
+{
+  "name": "@aimparency/wrapped-agents-common",
+  "version": "1.0.0",
+  "description": "Shared code for wrapped agents",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "keywords": ["aimparency", "agents", "state-machine"],
+  "author": "",
+  "license": "ISC"
+}

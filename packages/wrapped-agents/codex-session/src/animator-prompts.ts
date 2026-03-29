@@ -1,11 +1,11 @@
 /**
  * Animator State Machine Prompts
  *
- * Generates focused prompts dynamically from state machine definition.
+ * Generates prompts dynamically from state machine definition.
  */
 
 import type { AnimatorStateName, StateContext } from './animator-state'
-import { getStateDefinition, getValidActionNames, isValidActionForState, STATE_MACHINE } from './state-machine-definition'
+import { getState, type State, type Action } from '@aimparency/wrapped-agents-common'
 
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks)."
 
@@ -23,112 +23,143 @@ export interface PromptContext {
 }
 
 /**
- * Generate supervisor prompt for current state (using state machine definition)
+ * Generate supervisor prompt for current state
+ *
+ * Format:
+ * - You are supervising a coding assistant. The current situation is this: <current situation>.
+ * - <state specific instruction>
+ * - answer with json and some of the available action types: <list of actions>
+ * - for example: <examples>
  */
 export function generateSupervisorPrompt(promptContext: PromptContext, requestId: string): string {
   const marker = `${PROMPT_MARKER} [${requestId}]`
-  const stateDefinition = getStateDefinition(promptContext.state)
+  const state = getState(promptContext.state)
 
-  if (!stateDefinition) {
+  if (!state) {
     throw new Error(`Unknown state: ${promptContext.state}`)
   }
 
-  // Build context section based on state
-  let contextSection = buildContextSection(promptContext)
+  // Build current situation
+  const situation = buildSituation(promptContext)
 
-  // Build actions section from state definition
-  let actionsSection = buildActionsSection(stateDefinition)
+  // State-specific instructions
+  const instructions = state.instructions
 
-  // Combine into final prompt
-  return `[STATE: ${stateDefinition.name}]
+  // List of actions
+  const actionsList = buildActionsList(state)
 
-${stateDefinition.description}
+  // Examples
+  const examples = buildExamples(state)
 
-${contextSection}
+  return `You are supervising a coding assistant. The current situation is this:
 
-Available actions:
+${situation}
 
-${actionsSection}
+${instructions}
+
+Answer with json using one of the available action types:
+
+${actionsList}
+
+For example:
+${examples}
 
 ${marker}`
 }
 
 /**
- * Build context section based on state and available data
+ * Build current situation description
  */
-function buildContextSection(ctx: PromptContext): string {
+function buildSituation(ctx: PromptContext): string {
   let lines: string[] = []
 
-  // Supervised session context (always shown)
-  lines.push('Supervised session context:')
+  // Always show supervised session context
+  lines.push('Supervised session:')
   lines.push(ctx.supervisedContext)
   lines.push('')
 
-  // State-specific context
+  // State-specific situation details
   if (ctx.state === 'EXPLORING') {
-    lines.push('Current project status:')
-    lines.push(`- Active phases: ${ctx.activePhases?.join(', ') || 'unknown'}`)
-    lines.push(`- Open aims: ${ctx.openAimsCount ?? 'unknown'}`)
-    lines.push(`- Compute budget: ${ctx.computeCredits ?? 'unknown'} credits`)
+    if (ctx.activePhases && ctx.activePhases.length > 0) {
+      lines.push(`Active phases: ${ctx.activePhases.join(', ')}`)
+    }
+    if (ctx.openAimsCount !== undefined) {
+      lines.push(`Open aims: ${ctx.openAimsCount}`)
+    }
+    if (ctx.computeCredits !== undefined) {
+      lines.push(`Compute budget: ${ctx.computeCredits} credits`)
+    }
   } else if (ctx.state === 'WORKING') {
-    lines.push(`Currently working on: ${ctx.aimText || 'unknown'}`)
-    lines.push(`Time elapsed: ${ctx.workDuration || 'unknown'}`)
-    lines.push(`Supervised session status: ${ctx.supervisedStatus || 'unknown'}`)
+    if (ctx.aimText) {
+      lines.push(`Currently working on: ${ctx.aimText}`)
+    }
+    if (ctx.workDuration) {
+      lines.push(`Time elapsed: ${ctx.workDuration}`)
+    }
   } else if (ctx.state === 'WRAPPING_UP') {
-    lines.push(`Completed aim: ${ctx.aimText || 'unknown'}`)
+    if (ctx.aimText) {
+      lines.push(`Completed aim: ${ctx.aimText}`)
+    }
     if (ctx.workSummary) {
-      lines.push(`Work summary: ${ctx.workSummary}`)
+      lines.push(`Summary: ${ctx.workSummary}`)
     }
     lines.push('')
-    lines.push('Question: Has ~80% of the aim requirements been met?')
-    lines.push('(Good enough, not perfect - avoid overengineering)')
+    lines.push('Question: Has ~80% of the aim requirements been met? (Good enough, not perfect)')
   } else if (ctx.state === 'ERROR') {
     lines.push(`Error count: ${ctx.metadata?.errorCount ?? 1}`)
     lines.push(`Last error: ${ctx.metadata?.lastError ?? 'unknown'}`)
-    lines.push(`Previous state: ${ctx.metadata?.previousState ?? 'unknown'}`)
   }
 
   return lines.join('\n')
 }
 
 /**
- * Build actions section from state definition
+ * Build list of available actions with descriptions and parameters
  */
-function buildActionsSection(stateDefinition: any): string {
-  return stateDefinition.actions.map((action: any, index: number) => {
-    let section = `${index + 1}. ${action.name} - ${action.description}\n`
+function buildActionsList(state: State): string {
+  return state.actions.map((sa, index) => {
+    const action = sa.action
+    let text = `${index + 1}. ${action.name} - ${action.description}`
 
-    // Show parameters
     if (action.parameters.length > 0) {
-      section += '   Parameters:\n'
-      action.parameters.forEach((param: any) => {
-        const required = param.required ? 'required' : 'optional'
-        section += `   - ${param.name} (${required}): ${param.description}\n`
+      text += '\n   Parameters:'
+      action.parameters.forEach(param => {
+        const req = param.required ? 'required' : 'optional'
+        text += `\n   - ${param.name} (${req}): ${param.description}`
       })
     }
 
-    // Show examples
-    if (action.examples.length > 0) {
-      section += '   Examples:\n'
-      action.examples.forEach((example: string) => {
-        section += `   ${example}\n`
-      })
-    }
-
-    return section
-  }).join('\n')
+    return text
+  }).join('\n\n')
 }
 
 /**
- * Extract valid action types for current state (from state machine definition)
+ * Build examples from all actions in state
+ */
+function buildExamples(state: State): string {
+  const allExamples: string[] = []
+
+  state.actions.forEach(sa => {
+    // Take first example from each action (max 3 total)
+    if (sa.action.examples.length > 0 && allExamples.length < 3) {
+      allExamples.push(sa.action.examples[0])
+    }
+  })
+
+  return allExamples.join('\n')
+}
+
+/**
+ * Extract valid action types for current state
  */
 export function getValidActionsForState(state: AnimatorStateName): string[] {
-  return getValidActionNames(state)
+  const stateObj = getState(state)
+  return stateObj?.actions.map(sa => sa.action.name) || []
 }
 
 /**
- * Validate if action is allowed in current state (from state machine definition)
+ * Validate if action is allowed in current state
  */
 export function isValidAction(state: AnimatorStateName, actionType: string): boolean {
-  return isValidActionForState(state, actionType)
+  return getValidActionsForState(state).includes(actionType)
 }
