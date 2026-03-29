@@ -58,9 +58,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Core implementation complete - AnimatorState class, prompt templates, action executors, integration guide. Ready for integration into watchdog.ts. Next: follow INTEGRATION-GUIDE.md to connect to actual watchdog.",
-    "date": 1774793288778
+    "state": "done",
+    "comment": "State machine integrated into watchdog.ts! askWatchdog() now generates state-specific prompts, processDecision() routes to state machine actions, all action executors implemented. Ready to test autonomous loop.",
+    "date": 1774794499080
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -2,6 +2,8 @@ import { Agent } from './agent';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SessionMemory } from './session-memory';
+import { AnimatorState } from './animator-state';
+import { generateSupervisorPrompt, isValidAction, type PromptContext } from './animator-prompts';
 
 // Load instruction text for autonomous guidance
 const INSTRUCT_PATH = path.join(__dirname, '../../INSTRUCT.md');
@@ -79,8 +81,11 @@ export class WatchdogService {
   private sessionMemory: SessionMemory | null = null;
   private instructTextWithMemory: string = INSTRUCT_TEXT;
   private workingTowardsCommit = false;
+  private animatorState: AnimatorState = new AnimatorState();
+  private projectPath?: string;
 
   constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1, projectPath?: string) {
+    this.projectPath = projectPath;
     this.worker = worker;
     this.watchdog = watchdog;
     this.expectedModel = expectedModel;
@@ -481,7 +486,7 @@ export class WatchdogService {
   }
 
   async askWatchdog() {
-    this.log("Asking Watchdog for guidance...");
+    this.log("Asking Watchdog for guidance (STATE MACHINE)...");
 
     // Safety check
     if (!this.worker || !this.watchdog) {
@@ -497,88 +502,54 @@ export class WatchdogService {
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
 
     const rawContext = stripAnsi(this.worker.getLines(40));
-    const context = rawContext.replace(/\s+/g, ' ').trim();
+    const supervisedContext = rawContext.replace(/\s+/g, ' ').trim();
 
-    this.log(`DEBUG: Worker context length: ${context.length} chars`);
-    this.log(`DEBUG: Worker context (first 200 chars): ${context.substring(0, 200)}`);
+    // Get current state
+    const currentState = this.animatorState.getState();
+    const stateContext = this.animatorState.getContext();
 
+    this.log(`[StateMachine] Current state: ${currentState}`);
+    this.log(`DEBUG: Worker context length: ${supervisedContext.length} chars`);
+
+    // Build prompt context
+    const promptContext: PromptContext = {
+      state: currentState,
+      supervisedContext,
+      // TODO: Get these from MCP
+      activePhases: [],
+      openAimsCount: 0,
+      computeCredits: 0
+    };
+
+    // Add state-specific context
+    if (currentState === 'WORKING' || currentState === 'WRAPPING_UP') {
+      promptContext.aimText = stateContext.aimText;
+      const workDuration = this.animatorState.getWorkDuration();
+      if (workDuration !== null) {
+        const minutes = Math.floor(workDuration / 60000);
+        const seconds = Math.floor((workDuration % 60000) / 1000);
+        promptContext.workDuration = `${minutes}m ${seconds}s`;
+      }
+      promptContext.supervisedStatus = this.isGenerating(this.worker) ? 'busy' : 'idle';
+    }
+
+    if (currentState === 'ERROR') {
+      promptContext.metadata = {
+        errorCount: stateContext.errorCount,
+        lastError: stateContext.lastError,
+        previousState: stateContext.previousState
+      };
+    }
+
+    // Generate request ID and prompt using state machine
     const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    this.currentPromptMarker = `${PROMPT_MARKER} [${requestId}]`;
+    const question = generateSupervisorPrompt(promptContext, requestId);
+    this.currentPromptMarker = `Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks). [${requestId}]`;
 
-    const wrapUpGuidance = this.workingTowardsCommit
-      ? `WRAP-UP ACTIVE:
-- A wrap-up was already requested. Your job now is to guide Codex through finishing the git commit.
-- When the commit has clearly been finished, answer with {"action": {"type": "commit-done"}}. You may also use {"action": {"type": "compact"}} if needed; it is treated as commit completion.
-- Prefer select-option actions and short plain send-prompt actions that help Codex complete the commit cleanly.
-- Do NOT use "instruct": true while wrap-up is active.
-- Never tell Codex to paste system, developer, tool, or permissions instructions back into the session.
-- If Codex is showing an approval or confirmation menu, choose the visible option directly instead of sending more prose.
-- Do NOT start new feature work while wrap-up is active.`
-      : `WRAP-UP RULE:
-- ${WRAP_UP_THRESHOLD_GUIDANCE}
-- Prefer {"action": {"type": "wrap-up"}} over {"action": {"type": "compact"}} only when wrap-up is actually warranted.
-- Choose {"action": {"type": "wrap-up"}} only if:
-  1. a major milestone or coherent batch of work is complete
-  2. there is no obvious immediate next implementation or verification step that Codex should continue with right now
-  3. Codex is not merely pausing between small steps, reading context, or about to continue naturally
-- If there is still an obvious next task in the current thread, prefer a normal prompt or wait instead of wrap-up.
-- wrap-up means: tell Codex to prepare and make a git commit. The later compact is handled separately by this animator.`;
-
-    const question = `You are supervising a Codex session. Look at what Codex is doing and decide the next action.
-
-Current screen:
-${context}
-
-Actions available:
-- send-prompt: Send text to Codex. Add "instruct": true ONLY if Codex has reached completion and explicitly needs direction.
-- select-option: Choose a numbered option or a shortcut key shown in the prompt (use when Codex presents choices)
-- interrupt: Send two ESC key presses to interrupt a stuck worker generation
-- wrap-up: Tell Codex to prepare and make a git commit for completed work
-- commit-done: The git commit wrap-up is complete; clear commit mode and run /compact now
-- compact: Run /compact to free up context
-- stop: Stop supervision (use when ALL aims are done and verified complete)
-- wait: Pause supervision briefly
-
-IMPORTANT:
-- ${WRAP_UP_THRESHOLD_GUIDANCE}
-- Treat wrap-up as the normal path to compacting when compacting is actually warranted. Do not use it for every small success or pause.
-- Use compact directly only after a wrap-up is already in progress and the commit is finished.
-- ${wrapUpGuidance}
-- If Codex is blocked on a visible confirmation/approval menu, prefer select-option immediately over sending another prompt.
-- This includes command/edit approval prompts like "Would you like to run the following command?" with visible options such as (y), (p), or (esc).
-- For approval menus that show shortcut keys like (y), (p), (a), or (esc), use select-option with the shortcut key instead of the numeric list position.
-- Use "instruct": true ONLY when:
-  1. Codex explicitly asks "what should I do next?" or similar
-  2. Codex has clearly completed all current work and is idle
-  3. Codex shows signs of being stuck or unsure how to proceed
-- DO NOT use "instruct": true if:
-  1. Codex is actively working (writing code, running tests, reading files)
-  2. Codex just needs a simple nudge like "continue" or "run the tests"
-  3. Codex is in the middle of a task
-- Only use stop when you've verified ALL open aims are complete (not just the current task).
-
-Return a JSON object with your decision. Examples:
-{"action": {"type": "send-prompt", "text": "continue working on aims", "instruct": true}}  ← ONLY if truly idle
-{"action": {"type": "send-prompt", "text": "run the tests"}}  ← Prefer this for simple nudges
-{"action": {"type": "send-prompt", "text": "continue working"}}
-{"action": {"type": "select-option", "number": 1}}
-{"action": {"type": "select-option", "key": "y"}}
-{"action": {"type": "interrupt"}}
-{"action": {"type": "wrap-up"}}
-{"action": {"type": "commit-done"}}
-{"action": {"type": "compact"}}
-{"action": {"type": "stop", "reason": "all aims verified complete"}}
-
-${this.currentPromptMarker}`;
-
-    this.log(`DEBUG: Prepared question length: ${question.length} chars`);
+    this.log(`[StateMachine] Generated ${currentState} prompt, length: ${question.length} chars`);
     this.log(`DEBUG: Question (first 500 chars):\n${question.substring(0, 500)}`);
-    this.log(`DEBUG: Question (last 200 chars):\n${question.substring(question.length - 200)}`);
 
-    // Capture screen BEFORE posting
-    const screenBefore = this.watchdog.getLines(50);
-    this.log(`DEBUG: Watchdog screen BEFORE post (last 300 chars):\n${screenBefore.substring(Math.max(0, screenBefore.length - 300))}`);
-
+    // Post the state-based question
     await this.post(this.watchdog, question);
 
     // Capture screen AFTER posting
@@ -601,7 +572,19 @@ ${this.currentPromptMarker}`;
        jsonString = jsonString.replace(/[\r\n]+/g, ' ');
        const decision = JSON.parse(jsonString);
        if (decision.action) {
-         await this.executeAction(decision.action);
+         // Check if this is a state machine action
+         const actionType = decision.action.type;
+         const currentState = this.animatorState.getState();
+
+         if (isValidAction(currentState, actionType)) {
+           // State machine action - process via state machine
+           this.log(`[StateMachine] Processing state machine action: ${actionType}`);
+           await this.processStateMachineAction(decision.action);
+         } else {
+           // Fall back to old action handling for legacy actions
+           this.log(`[Legacy] Processing legacy action: ${actionType}`);
+           await this.executeAction(decision.action);
+         }
        }
     } catch (e: any) {
        this.log(`Error parsing JSON decision: ${e.message}`);
@@ -856,5 +839,209 @@ ${this.currentPromptMarker}`;
        this.stop(`Max retries (${MAX_RETRIES}) reached. JSON parsing failed repeatedly.`);
        // Do not kill the worker or exit process, just disable watchdog
      }
+  }
+
+  // ========== STATE MACHINE METHODS ==========
+
+  async processStateMachineAction(action: any): Promise<void> {
+    const actionType = action.type;
+    const currentState = this.animatorState.getState();
+
+    this.log(`[StateMachine] Processing action "${actionType}" in state "${currentState}"`);
+
+    // Execute based on state
+    switch (currentState) {
+      case 'EXPLORING':
+        await this.handleExploringAction(action);
+        break;
+      case 'WORKING':
+        await this.handleWorkingAction(action);
+        break;
+      case 'WRAPPING_UP':
+        await this.handleWrappingUpAction(action);
+        break;
+      case 'ERROR':
+        await this.handleErrorAction(action);
+        break;
+    }
+
+    this.nextCheckTime = Date.now() + POST_ACTION_COOLDOWN;
+  }
+
+  private async handleExploringAction(action: any): Promise<void> {
+    switch (action.type) {
+      case 'start_work':
+        await this.executeStartWork(action.aim_id, action.aim_text, action.strategy);
+        this.animatorState.startWork(action.aim_id, action.aim_text, action.strategy);
+        this.animatorState.transition('WORKING', 'start_work', action);
+        break;
+
+      case 'break_down':
+        await this.executeBreakDown(action.aim_id);
+        break;
+
+      case 'ideate':
+        await this.executeIdeate(action.ideation_type);
+        break;
+
+      case 'wait':
+        this.log(`[StateMachine] Waiting: ${action.reason || 'no reason'}`);
+        break;
+    }
+  }
+
+  private async handleWorkingAction(action: any): Promise<void> {
+    switch (action.type) {
+      case 'proceed':
+        await this.executeProceed(action);
+        break;
+
+      case 'wrap_up':
+        this.log(`[StateMachine] Wrapping up: ${action.summary || 'no summary'}`);
+        this.animatorState.updateContext({ metadata: { workSummary: action.summary } });
+        this.animatorState.transition('WRAPPING_UP', 'wrap_up', action);
+        break;
+    }
+  }
+
+  private async handleWrappingUpAction(action: any): Promise<void> {
+    switch (action.type) {
+      case 'verify_complete':
+        await this.executeVerifyComplete(action.notes);
+        this.animatorState.transition('EXPLORING', 'verify_complete', action);
+        break;
+
+      case 'verify_incomplete':
+        await this.executeVerifyIncomplete(action.missing);
+        this.animatorState.transition('WORKING', 'verify_incomplete', action);
+        break;
+    }
+  }
+
+  private async handleErrorAction(action: any): Promise<void> {
+    const context = this.animatorState.getContext();
+    const previousState = context.previousState || 'EXPLORING';
+
+    switch (action.type) {
+      case 'retry':
+        this.log(`[StateMachine] Retrying, returning to ${previousState}`);
+        this.animatorState.transition(previousState, 'retry', action);
+        break;
+
+      case 'reset':
+        this.log(`[StateMachine] Resetting to EXPLORING`);
+        this.animatorState.transition('EXPLORING', 'reset', action);
+        break;
+
+      case 'abort':
+        this.log(`[StateMachine] Aborting: ${action.reason || 'no reason'}`);
+        this.animatorState.transition('EXPLORING', 'abort', action);
+        break;
+    }
+  }
+
+  // ========== ACTION EXECUTORS ==========
+
+  private async executeStartWork(aimId: string, aimText: string, strategy: string): Promise<void> {
+    this.log(`[StateMachine] Starting work on: ${aimText}`);
+
+    const prompt = `${this.instructTextWithMemory}
+
+---
+
+Work on this aim:
+ID: ${aimId}
+Text: ${aimText}
+Strategy: ${strategy}
+
+Begin implementation.`;
+
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeBreakDown(aimId: string): Promise<void> {
+    this.log(`[StateMachine] Breaking down aim: ${aimId}`);
+
+    const prompt = `Break down this aim into smaller sub-aims. Use create_aim MCP tool with supportedAims array pointing to parent: ${aimId}`;
+
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeIdeate(ideationType: string): Promise<void> {
+    this.log(`[StateMachine] Ideating: ${ideationType}`);
+
+    const prompts: Record<string, string> = {
+      research: 'Do web research on relevant topics. Create aims for insights.',
+      new_aims: 'Review codebase and create aims for improvements: refactoring, tests, docs, security, performance.',
+      improvements: 'Review recent work and suggest optimizations as aims.'
+    };
+
+    const prompt = prompts[ideationType] || 'Think about improvements and create aims.';
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeProceed(action: any): Promise<void> {
+    const proceedType = action.proceed_type;
+
+    switch (proceedType) {
+      case 'none':
+        this.log(`[StateMachine] Monitoring (no action)`);
+        break;
+
+      case 'motivate':
+        this.log(`[StateMachine] Sending motivation`);
+        await this.post(this.worker, action.text || 'Keep working on the aim.');
+        break;
+
+      case 'option_select':
+        this.log(`[StateMachine] Selecting option: ${action.choice}`);
+        await this.post(this.worker, action.choice);
+        break;
+
+      case 'escalate':
+        this.log(`[StateMachine] Escalating: ${action.question}`);
+        // TODO: Implement human escalation
+        break;
+    }
+  }
+
+  private async executeVerifyComplete(notes: string): Promise<void> {
+    this.log(`[StateMachine] Verify complete: ${notes}`);
+
+    // Step 1: Verify
+    await this.post(this.worker, 'Use get_aim_context to verify aim is complete.');
+    await this.waitForWorkerIdle();
+
+    // Step 2: Commit
+    await this.post(this.worker, 'Create git commit. Use git add -u, then git add for new files, then commit.');
+    await this.waitForWorkerIdle();
+
+    // Step 3: Reflect
+    await this.post(this.worker, 'Add reflection using addReflection MCP tool.');
+    await this.waitForWorkerIdle();
+
+    // Step 4: Compact
+    this.turnCount = 0;
+    await this.post(this.watchdog, '/compact');
+  }
+
+  private async executeVerifyIncomplete(missing: string): Promise<void> {
+    this.log(`[StateMachine] Incomplete: ${missing}`);
+
+    const prompt = `Work not complete. Missing: ${missing}. Continue working.`;
+    await this.post(this.worker, prompt);
+  }
+
+  private async waitForWorkerIdle(): Promise<void> {
+    await this.wait(2000);
+    for (let i = 0; i < 60; i++) {
+      if (!this.isGenerating(this.worker)) {
+        const lines = this.worker.getLines(10);
+        await this.wait(1000);
+        if (lines === this.worker.getLines(10)) return;
+      }
+      await this.wait(1000);
+    }
+    this.log('[StateMachine] Warning: timeout waiting for worker idle');
   }
 }

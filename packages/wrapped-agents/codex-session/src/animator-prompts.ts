@@ -18,6 +18,7 @@ export interface PromptContext {
   workDuration?: string
   supervisedStatus?: string
   workSummary?: string
+  metadata?: Record<string, any>
 }
 
 /**
