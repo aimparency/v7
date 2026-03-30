@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/aimparency/v7/tree/main/packages/wrapped-agents/claude-session",
   "dependencies": {
+    "@aimparency/wrapped-agents-common": "file:../common",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.0.1",
     "@xterm/headless": "^5.5.0",
