@@ -9,8 +9,7 @@
  */
 
 import type { Agent } from './agent'
-import { AnimatorState, type AnimatorStateName, type Action as StateAction } from './animator-state'
-import { generateSupervisorPrompt, isValidAction, type PromptContext } from './animator-prompts'
+import { AnimatorState, type AnimatorStateName, type Action as StateAction, generateSupervisorPrompt, isValidAction, type PromptContext } from '@aimparency/wrapped-agents-common'
 
 const INSTRUCT_PATH = require('path').join(__dirname, '../../INSTRUCT.md')
 let INSTRUCT_TEXT = ''

@@ -38,7 +38,7 @@ export interface StateTransition {
   data?: any
 }
 
-export interface Action {
+export interface ActionMessage {
   type: string
   [key: string]: any
 }

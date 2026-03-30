@@ -5,7 +5,7 @@
  */
 
 import type { AnimatorStateName, StateContext } from './animator-state'
-import { getState, type State, type Action } from '@aimparency/wrapped-agents-common'
+import { getState, type State, type Action } from './state-machine-definition'
 
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks)."
 

@@ -2,8 +2,7 @@ import { Agent } from './agent';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SessionMemory } from './session-memory';
-import { AnimatorState } from './animator-state';
-import { generateSupervisorPrompt, isValidAction, type PromptContext } from './animator-prompts';
+import { AnimatorState, generateSupervisorPrompt, isValidAction, type PromptContext } from '@aimparency/wrapped-agents-common';
 
 // Load instruction text for autonomous guidance
 const INSTRUCT_PATH = path.join(__dirname, '../../INSTRUCT.md');
