@@ -9,6 +9,7 @@ const socket = ref<Socket | null>(null);
 const status = ref('stopped');
 const emergencyStopped = ref(false);
 const stopReason = ref('');
+const animatorState = ref<{ state: string; color: string }>({ state: 'EXPLORING', color: '#a8dadc' });
 
 type AgentType = 'claude' | 'gemini' | 'codex';
 
@@ -116,6 +117,9 @@ function setupSocket(s: Socket) {
     emergencyStopped.value = true;
     stopReason.value = 'Emergency Stop';
   });
+  s.on('animator-state', (data: { state: string; color: string }) => {
+    animatorState.value = data;
+  });
   s.on('status', (s: string) => status.value = s === 'running' ? 'running' : 'stopped');
 }
 
@@ -179,7 +183,8 @@ onMounted(() => {
         </div>
         <div class="watchdog-pane">
         <div class="header">
-            Watchdog
+            Watchdog (Animator)
+            <span class="state-badge" :style="{ backgroundColor: animatorState.color }">{{ animatorState.state }}</span>
             <span v-if="status === 'stopped' && stopReason" style="color: #fa0; font-weight: bold; margin: 0 10px;">stopped: {{ stopReason }}</span>
             <button @click="toggleWatchdog" :class="{ running: status === 'running' }">
             {{ status === 'running' ? 'Disable Watchdog' : 'Enable Watchdog' }}
@@ -232,16 +237,27 @@ html, body, #app { margin: 0; height: 100%; width: 100%; background: #000; color
 .worker-pane { flex: 3; display: flex; flex-direction: column; border-bottom: 1px solid #333; min-height: 0; position: relative; }
 .watchdog-pane { flex: 2; display: flex; flex-direction: column; min-height: 0; position: relative; }
 
-.header { 
-  background: #333; 
-  padding: 5px 10px; 
-  font-family: monospace; 
-  font-weight: bold; 
-  font-size: 12px; 
+.header {
+  background: #333;
+  padding: 5px 10px;
+  font-family: monospace;
+  font-weight: bold;
+  font-size: 12px;
   flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
+}
+
+.state-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #000;
+  text-transform: uppercase;
 }
 
 button {

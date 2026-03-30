@@ -255,6 +255,7 @@ if (existingRuntimeState) {
 }
 watchdogService.onStateChange = () => {
   persistWatchdogRuntimeState(watchdogService!);
+  io.emit('animator-state', watchdogService!.getAnimatorStateInfo());
 };
 persistWatchdogRuntimeState(watchdogService);
 
@@ -273,6 +274,7 @@ io.on('connection', (socket) => {
   socket.emit('watchdog-state', watchdogService.enabled);
   socket.emit('emergency-state', watchdogService.emergencyStopped);
   socket.emit('watchdog-stop-reason', watchdogService.lastStopReason);
+  socket.emit('animator-state', watchdogService.getAnimatorStateInfo());
   // Hydrate terminal panes on (re)connect so UI can restore full visible context.
   socket.emit('worker-data', worker.getLines(1000));
   socket.emit('watchdog-data', watchdog.getLines(1000));

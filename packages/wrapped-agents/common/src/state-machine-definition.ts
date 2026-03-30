@@ -26,6 +26,7 @@ export interface StateAction {
 export interface State {
   name: string
   instructions: string  // State-specific guidance for supervisor
+  color: string  // Pastel color as #hex for UI display
   actions: StateAction[]
 }
 
@@ -176,6 +177,7 @@ export const abort: Action = {
 export const exploring: State = {
   name: 'EXPLORING',
   instructions: 'Take a look at the open aims and see if there is something you can work on. If not, choose a high level aim to break down, or come up with new hypotheses and ideas - maybe browse the web for inspiration.',
+  color: '#a8dadc',  // Pastel cyan - exploring, discovering
   actions: [
     { action: startWork, targetState: 'WORKING' },
     { action: breakDown, targetState: 'EXPLORING' },
@@ -187,6 +189,7 @@ export const exploring: State = {
 export const working: State = {
   name: 'WORKING',
   instructions: 'Actively working on an aim. Monitor progress and help the worker complete the task. When the work looks complete, use wrap_up to begin verification.',
+  color: '#a8e6a3',  // Pastel green - active work
   actions: [
     { action: proceed, targetState: 'WORKING' },
     { action: wrapUp, targetState: 'WRAPPING_UP' }
@@ -196,6 +199,7 @@ export const working: State = {
 export const wrappingUp: State = {
   name: 'WRAPPING_UP',
   instructions: 'Verify work completion using ~80% threshold (good enough, not perfect). If complete, will trigger commit → reflect → compact → explore. If incomplete, return to working.',
+  color: '#ffe5a3',  // Pastel yellow - completion phase
   actions: [
     { action: verifyComplete, targetState: 'EXPLORING' },
     { action: verifyIncomplete, targetState: 'WORKING' }
@@ -205,6 +209,7 @@ export const wrappingUp: State = {
 export const errorState: State = {
   name: 'ERROR',
   instructions: 'Error occurred (timeout, parse failure, etc.). Exponential backoff active. Decide whether to retry, reset, or abort.',
+  color: '#ffb3ba',  // Pastel red/pink - error state
   actions: [
     { action: retry, targetState: 'PREVIOUS' },  // Special: returns to previous state
     { action: reset, targetState: 'EXPLORING' },

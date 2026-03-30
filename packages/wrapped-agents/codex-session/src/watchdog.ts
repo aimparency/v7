@@ -2,7 +2,7 @@ import { Agent } from './agent';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SessionMemory } from './session-memory';
-import { AnimatorState, generateSupervisorPrompt, isValidAction, type PromptContext } from '@aimparency/wrapped-agents-common';
+import { AnimatorState, generateSupervisorPrompt, isValidAction, getState, type PromptContext } from '@aimparency/wrapped-agents-common';
 
 // Load instruction text for autonomous guidance
 const INSTRUCT_PATH = path.join(__dirname, '../../INSTRUCT.md');
@@ -176,6 +176,15 @@ export class WatchdogService {
           this.onEmergencyStop();
       }
       this.onStateChange?.();
+  }
+
+  getAnimatorStateInfo() {
+      const stateName = this.animatorState.getState();
+      const stateDefinition = getState(stateName);
+      return {
+          state: stateName,
+          color: stateDefinition?.color ?? '#cccccc'
+      };
   }
 
   onWorkerData(data: string) {
@@ -873,6 +882,7 @@ export class WatchdogService {
         await this.executeStartWork(action.aim_id, action.aim_text, action.strategy);
         this.animatorState.startWork(action.aim_id, action.aim_text, action.strategy);
         this.animatorState.transition('WORKING', 'start_work', action);
+        this.onStateChange?.();
         break;
 
       case 'break_down':
@@ -899,6 +909,7 @@ export class WatchdogService {
         this.log(`[StateMachine] Wrapping up: ${action.summary || 'no summary'}`);
         this.animatorState.updateContext({ metadata: { workSummary: action.summary } });
         this.animatorState.transition('WRAPPING_UP', 'wrap_up', action);
+        this.onStateChange?.();
         break;
     }
   }
@@ -908,11 +919,13 @@ export class WatchdogService {
       case 'verify_complete':
         await this.executeVerifyComplete(action.notes);
         this.animatorState.transition('EXPLORING', 'verify_complete', action);
+        this.onStateChange?.();
         break;
 
       case 'verify_incomplete':
         await this.executeVerifyIncomplete(action.missing);
         this.animatorState.transition('WORKING', 'verify_incomplete', action);
+        this.onStateChange?.();
         break;
     }
   }
@@ -925,16 +938,19 @@ export class WatchdogService {
       case 'retry':
         this.log(`[StateMachine] Retrying, returning to ${previousState}`);
         this.animatorState.transition(previousState, 'retry', action);
+        this.onStateChange?.();
         break;
 
       case 'reset':
         this.log(`[StateMachine] Resetting to EXPLORING`);
         this.animatorState.transition('EXPLORING', 'reset', action);
+        this.onStateChange?.();
         break;
 
       case 'abort':
         this.log(`[StateMachine] Aborting: ${action.reason || 'no reason'}`);
         this.animatorState.transition('EXPLORING', 'abort', action);
+        this.onStateChange?.();
         break;
     }
   }
