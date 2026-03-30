@@ -579,24 +579,28 @@ export class WatchdogService {
        this.log(`Parsing JSON: ${jsonString}`);
        jsonString = jsonString.replace(/[\r\n]+/g, ' ');
        const decision = JSON.parse(jsonString);
-       if (decision.action) {
-         // Check if this is a state machine action
-         const actionType = decision.action.type;
-         const currentState = this.animatorState.getState();
 
-         if (isValidAction(currentState, actionType)) {
-           // State machine action - process via state machine
-           this.log(`[StateMachine] Processing state machine action: ${actionType}`);
-           await this.processStateMachineAction(decision.action);
+       if (decision.action) {
+         // Attempt action through state machine
+         const result = this.animatorState.attemptAction(decision.action);
+
+         if (result.success) {
+           // Valid action - execute agent-specific side effects
+           this.log(`[StateMachine] Executing ${decision.action.type} → ${result.newState}`);
+           await this.executeActionSideEffects(decision.action);
+           this.onStateChange?.();
          } else {
-           // Fall back to old action handling for legacy actions
-           this.log(`[Legacy] Processing legacy action: ${actionType}`);
-           await this.executeAction(decision.action);
+           // Invalid action - urge supervisor to stick to available actions
+           this.log(`[StateMachine] Invalid action: ${result.error}`);
+           await this.urgeSupervisorToStickToAvailableActions(
+             decision.action.type,
+             result.validActions || []
+           );
          }
        }
     } catch (e: any) {
        this.log(`Error parsing JSON decision: ${e.message}`);
-       this.retry(e.message);
+       await this.urgeSupervisorToStickToJSONFormat(e.message);
     }
   }
 
@@ -831,13 +835,13 @@ export class WatchdogService {
     // Don't increment turn count, this is maintenance
   }
 
-  async retry(error: string) {
+  async urgeSupervisorToStickToJSONFormat(error: string) {
      this.retryCount++;
      if (this.retryCount < MAX_RETRIES) {
-       this.log(`Retrying watchdog request (Count: ${this.retryCount}). Error: ${error}`);
+       this.log(`Urging supervisor to fix JSON (Count: ${this.retryCount}). Error: ${error}`);
        await this.wait(1000);
-       const retryMessage = `ERROR: Invalid JSON. Error: ${error}. Retry with valid JSON.`;
-       await this.post(this.watchdog, retryMessage);
+       const message = `ERROR: Invalid JSON. Error: ${error}. Retry with valid JSON.`;
+       await this.post(this.watchdog, message);
 
        this.waitingForResponseStart = false;
        this.waitingForResponse = true;
@@ -845,44 +849,47 @@ export class WatchdogService {
      } else {
        console.error(`[WatchdogService] Max retries (${MAX_RETRIES}) reached. Stopping Watchdog.`);
        this.stop(`Max retries (${MAX_RETRIES}) reached. JSON parsing failed repeatedly.`);
-       // Do not kill the worker or exit process, just disable watchdog
      }
+  }
+
+  async urgeSupervisorToStickToAvailableActions(attemptedAction: string, validActions: string[]) {
+    this.log(`Urging supervisor: invalid action "${attemptedAction}"`);
+
+    const currentState = this.animatorState.getState();
+    const message = `ERROR: Action "${attemptedAction}" is not valid in ${currentState} state.
+
+Valid actions for ${currentState}: ${validActions.join(', ')}
+
+Please choose one of the valid actions and respond with correct JSON.`;
+
+    await this.post(this.watchdog, message);
+
+    this.waitingForResponseStart = false;
+    this.waitingForResponse = true;
+    this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
+  }
+
+  async retry(error: string) {
+     // Deprecated: use urgeSupervisorToStickToJSONFormat instead
+     await this.urgeSupervisorToStickToJSONFormat(error);
   }
 
   // ========== STATE MACHINE METHODS ==========
 
-  async processStateMachineAction(action: any): Promise<void> {
+  /**
+   * Execute agent-specific side effects for an action
+   * Note: State transition already happened in attemptAction()
+   */
+  async executeActionSideEffects(action: any): Promise<void> {
     const actionType = action.type;
-    const currentState = this.animatorState.getState();
 
-    this.log(`[StateMachine] Processing action "${actionType}" in state "${currentState}"`);
+    this.log(`[StateMachine] Executing side effects for "${actionType}"`);
 
-    // Execute based on state
-    switch (currentState) {
-      case 'EXPLORING':
-        await this.handleExploringAction(action);
-        break;
-      case 'WORKING':
-        await this.handleWorkingAction(action);
-        break;
-      case 'WRAPPING_UP':
-        await this.handleWrappingUpAction(action);
-        break;
-      case 'ERROR':
-        await this.handleErrorAction(action);
-        break;
-    }
-
-    this.nextCheckTime = Date.now() + POST_ACTION_COOLDOWN;
-  }
-
-  private async handleExploringAction(action: any): Promise<void> {
-    switch (action.type) {
+    // Update context for specific actions
+    switch (actionType) {
       case 'start_work':
-        await this.executeStartWork(action.aim_id, action.aim_text, action.strategy);
         this.animatorState.startWork(action.aim_id, action.aim_text, action.strategy);
-        this.animatorState.transition('WORKING', 'start_work', action);
-        this.onStateChange?.();
+        await this.executeStartWork(action.aim_id, action.aim_text, action.strategy);
         break;
 
       case 'break_down':
@@ -890,17 +897,13 @@ export class WatchdogService {
         break;
 
       case 'ideate':
-        await this.executeIdeate(action.ideation_type);
+        await this.executeIdeate(action.approach);
         break;
 
       case 'wait':
         this.log(`[StateMachine] Waiting: ${action.reason || 'no reason'}`);
         break;
-    }
-  }
 
-  private async handleWorkingAction(action: any): Promise<void> {
-    switch (action.type) {
       case 'proceed':
         await this.executeProceed(action);
         break;
@@ -908,51 +911,33 @@ export class WatchdogService {
       case 'wrap_up':
         this.log(`[StateMachine] Wrapping up: ${action.summary || 'no summary'}`);
         this.animatorState.updateContext({ metadata: { workSummary: action.summary } });
-        this.animatorState.transition('WRAPPING_UP', 'wrap_up', action);
-        this.onStateChange?.();
         break;
-    }
-  }
 
-  private async handleWrappingUpAction(action: any): Promise<void> {
-    switch (action.type) {
       case 'verify_complete':
         await this.executeVerifyComplete(action.notes);
-        this.animatorState.transition('EXPLORING', 'verify_complete', action);
-        this.onStateChange?.();
         break;
 
       case 'verify_incomplete':
         await this.executeVerifyIncomplete(action.missing);
-        this.animatorState.transition('WORKING', 'verify_incomplete', action);
-        this.onStateChange?.();
         break;
-    }
-  }
 
-  private async handleErrorAction(action: any): Promise<void> {
-    const context = this.animatorState.getContext();
-    const previousState = context.previousState || 'EXPLORING';
-
-    switch (action.type) {
       case 'retry':
-        this.log(`[StateMachine] Retrying, returning to ${previousState}`);
-        this.animatorState.transition(previousState, 'retry', action);
-        this.onStateChange?.();
+        this.log(`[StateMachine] Retrying from ERROR state`);
         break;
 
       case 'reset':
-        this.log(`[StateMachine] Resetting to EXPLORING`);
-        this.animatorState.transition('EXPLORING', 'reset', action);
-        this.onStateChange?.();
+        this.log(`[StateMachine] Resetting to EXPLORING from ERROR`);
         break;
 
       case 'abort':
         this.log(`[StateMachine] Aborting: ${action.reason || 'no reason'}`);
-        this.animatorState.transition('EXPLORING', 'abort', action);
-        this.onStateChange?.();
         break;
+
+      default:
+        this.log(`[StateMachine] Unknown action type: ${actionType}`);
     }
+
+    this.nextCheckTime = Date.now() + POST_ACTION_COOLDOWN;
   }
 
   // ========== ACTION EXECUTORS ==========

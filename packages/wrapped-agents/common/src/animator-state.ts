@@ -8,7 +8,16 @@
  * - ERROR: Handle timeouts with exponential backoff
  */
 
+import { getTargetState, getValidActionNames } from './state-machine-definition'
+
 export type AnimatorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP' | 'ERROR'
+
+export interface TransitionResult {
+  success: boolean
+  newState?: AnimatorStateName
+  validActions?: string[]
+  error?: string
+}
 
 export interface StateContext {
   // Current aim being worked on
@@ -123,6 +132,42 @@ export class AnimatorState {
     }
 
     this.currentState = newState
+  }
+
+  /**
+   * Attempt to perform an action and transition
+   * Validates action is allowed in current state
+   * Returns result indicating success/failure
+   */
+  attemptAction(action: ActionMessage): TransitionResult {
+    const actionType = action.type
+    const currentState = this.currentState
+
+    // Get target state for this action
+    const targetState = getTargetState(currentState, actionType)
+
+    if (!targetState) {
+      // Action not valid for current state
+      const validActions = getValidActionNames(currentState)
+      return {
+        success: false,
+        validActions,
+        error: `Action "${actionType}" is not valid in ${currentState} state`
+      }
+    }
+
+    // Handle special PREVIOUS state (for ERROR retry)
+    const newState = targetState === 'PREVIOUS'
+      ? (this.context.previousState || 'EXPLORING')
+      : targetState as AnimatorStateName
+
+    // Valid action - perform transition
+    this.transition(newState, actionType, action)
+
+    return {
+      success: true,
+      newState
+    }
   }
 
   /**
