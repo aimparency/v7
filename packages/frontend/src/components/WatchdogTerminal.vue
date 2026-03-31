@@ -19,6 +19,9 @@ let fitAddon: FitAddon;
 let resizeObserver: ResizeObserver;
 let scrollTimeout: any = null;
 
+const BRACKETED_PASTE_START = '\x1b[200~';
+const BRACKETED_PASTE_END = '\x1b[201~';
+
 const emit = defineEmits<{
   (e: 'resize', dimensions: { cols: number, rows: number }): void
 }>();
@@ -35,6 +38,19 @@ const clear = () => {
   term?.clear();
 };
 
+const handlePaste = (event: ClipboardEvent) => {
+  if (!props.onData) return;
+
+  const pastedText = event.clipboardData?.getData('text/plain');
+  if (!pastedText) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const normalizedText = pastedText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  props.onData(`${BRACKETED_PASTE_START}${normalizedText}${BRACKETED_PASTE_END}`);
+};
+
 onMounted(() => {
   term = new Terminal({
     cursorBlink: true,
@@ -47,6 +63,7 @@ onMounted(() => {
   term.loadAddon(fitAddon);
   
   if (terminalContainer.value) {
+    terminalContainer.value.addEventListener('paste', handlePaste, true);
     term.open(terminalContainer.value);
     fitAddon.fit();
     
@@ -100,6 +117,7 @@ const fit = () => {
 }
 
 onUnmounted(() => {
+  terminalContainer.value?.removeEventListener('paste', handlePaste, true);
   resizeObserver?.disconnect();
   term?.dispose();
 });

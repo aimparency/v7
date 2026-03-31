@@ -11,19 +11,15 @@ const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line
 
 export interface PromptContext {
   state: AnimatorStateName
-  supervisedContext: string  // Last N lines from supervised session
-  activePhases?: string[]
-  openAimsCount?: number
-  computeCredits?: number
+  supervisedContext: string  // Last N lines from worker session
   aimText?: string
   workDuration?: string
   supervisedStatus?: string
   workSummary?: string
-  metadata?: Record<string, any>
 }
 
 /**
- * Generate supervisor prompt for current state
+ * Generate watchdog prompt for current state
  *
  * Format:
  * - You are supervising a coding assistant. The current situation is this: <current situation>.
@@ -51,17 +47,17 @@ export function generateSupervisorPrompt(promptContext: PromptContext, requestId
   // Examples
   const examples = buildExamples(state)
 
-  return `You are supervising a coding assistant. The current situation is this:
+  return `You are guiding a worker. the current situation is this:
 
 ${situation}
 
 ${instructions}
 
-Answer with json using one of the available action types:
+answer with json using one of the available action types:
 
 ${actionsList}
 
-For example:
+for example:
 ${examples}
 
 ${marker}`
@@ -74,40 +70,31 @@ function buildSituation(ctx: PromptContext): string {
   let lines: string[] = []
 
   // Always show supervised session context
-  lines.push('Supervised session:')
+  lines.push('worker session:')
   lines.push(ctx.supervisedContext)
   lines.push('')
 
+  if (ctx.supervisedStatus) {
+    lines.push(`worker status: ${ctx.supervisedStatus}`)
+  }
+
   // State-specific situation details
-  if (ctx.state === 'EXPLORING') {
-    if (ctx.activePhases && ctx.activePhases.length > 0) {
-      lines.push(`Active phases: ${ctx.activePhases.join(', ')}`)
-    }
-    if (ctx.openAimsCount !== undefined) {
-      lines.push(`Open aims: ${ctx.openAimsCount}`)
-    }
-    if (ctx.computeCredits !== undefined) {
-      lines.push(`Compute budget: ${ctx.computeCredits} credits`)
-    }
-  } else if (ctx.state === 'WORKING') {
+  if (ctx.state === 'WORKING') {
     if (ctx.aimText) {
-      lines.push(`Currently working on: ${ctx.aimText}`)
+      lines.push(`current focus: ${ctx.aimText}`)
     }
     if (ctx.workDuration) {
-      lines.push(`Time elapsed: ${ctx.workDuration}`)
+      lines.push(`time elapsed: ${ctx.workDuration}`)
     }
   } else if (ctx.state === 'WRAPPING_UP') {
     if (ctx.aimText) {
-      lines.push(`Completed aim: ${ctx.aimText}`)
+      lines.push(`current focus: ${ctx.aimText}`)
     }
     if (ctx.workSummary) {
-      lines.push(`Summary: ${ctx.workSummary}`)
+      lines.push(`summary: ${ctx.workSummary}`)
     }
     lines.push('')
-    lines.push('Question: Has ~80% of the aim requirements been met? (Good enough, not perfect)')
-  } else if (ctx.state === 'ERROR') {
-    lines.push(`Error count: ${ctx.metadata?.errorCount ?? 1}`)
-    lines.push(`Last error: ${ctx.metadata?.lastError ?? 'unknown'}`)
+    lines.push('question: should the worker go back to implementation, finish wrap-up tasks, or move on to exploring?')
   }
 
   return lines.join('\n')

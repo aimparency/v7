@@ -76,26 +76,25 @@ async function onAgentTypeChange(e: Event) {
   }
 }
 
-const runtimeOwnerLabel = computed(() => {
-  if (!store.autonomyPolicy || !store.runtimeMetadata) return 'Unknown'
-  const mode = store.autonomyPolicy.autonomyMode
-  const preferredAgent = store.autonomyPolicy.preferredAgentType || store.runtimeMetadata.preferredAgentType
-  if (mode === 'autonomous' && preferredAgent) {
-    return `${preferredAgent.charAt(0).toUpperCase() + preferredAgent.slice(1)} (Autonomous)`
-  }
-  if (mode === 'supervised') {
-    return 'Supervised'
-  }
-  return 'Manual'
+const leaseLabel = computed(() => {
+  const minutes = store.autonomyPolicy?.sessionLeaseMinutes
+  return minutes ? `Lease: ${minutes}min` : null
 })
 
-const animatorStateLabel = computed(() => {
-  if (!store.runtimeMetadata) return 'Unknown'
-  const agentState = store.runtimeMetadata.agents[store.selectedAgentType]
-  if (!agentState) return 'No state'
-  if (agentState.emergencyStopped) return 'Emergency Stopped'
-  if (agentState.enabled) return 'Enabled'
-  return 'Disabled'
+const supervisorStateLabel = computed(() => {
+  if (store.supervisorState?.state) return store.supervisorState.state.toLowerCase()
+  const agentState = store.runtimeMetadata?.agents[store.selectedAgentType]
+  if (agentState?.emergencyStopped) return 'emergency stopped'
+  if (store.connectionState === 'connecting' || store.connectionState === 'spawning') return 'connecting'
+  if (store.isConnected) return 'connected'
+  if (store.stopReason) return 'stopped'
+  return 'idle'
+})
+
+const supervisorStateStyle = computed(() => {
+  return store.supervisorState?.color
+    ? { color: store.supervisorState.color }
+    : undefined
 })
 
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -310,39 +309,16 @@ defineExpose({
         </div>
       </div>
 
-      <!-- Right: Animator Toggle + Stop Reason -->
+      <span v-if="leaseLabel" class="lease-status">{{ leaseLabel }}</span>
+      
+      <!-- Right: Stop Reason -->
       <div class="header-right">
         <span v-if="store.stopReason" class="stop-reason">{{ store.stopReason }}</span>
-        <button
-          @click="toggle"
-          class="action-btn toggle-btn"
-          :class="{ running: store.isEnabled }"
-          :disabled="!store.isConnected"
-        >
-          {{ store.isEnabled ? 'Disable Animator' : 'Enable Animator' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Runtime Ownership Info Bar -->
-    <div v-if="store.isConnected && store.autonomyPolicy && store.runtimeMetadata" class="runtime-info-bar">
-      <div class="runtime-info-item">
-        <span class="info-label">Owner:</span>
-        <span class="info-value">{{ runtimeOwnerLabel }}</span>
-      </div>
-      <div class="runtime-info-item">
-        <span class="info-label">Animator State:</span>
-        <span class="info-value">{{ animatorStateLabel }}</span>
-      </div>
-      <div v-if="store.autonomyPolicy.sessionLeaseMinutes" class="runtime-info-item">
-        <span class="info-label">Lease:</span>
-        <span class="info-value">{{ store.autonomyPolicy.sessionLeaseMinutes }}min</span>
       </div>
     </div>
 
     <div class="terminals" v-show="store.isConnected">
       <div class="term-col">
-        <div class="term-label">Worker (Main Agent)</div>
         <WatchdogTerminal 
           ref="workerTerm" 
           :initial-content="store.workerOutput"
@@ -351,7 +327,18 @@ defineExpose({
         />
       </div>
       <div class="term-col">
-        <div class="term-label">Watchdog (Animator)</div>
+        <div class="term-label term-label-supervisor">
+          <span class="term-title">Supervisor</span>
+          <span class="term-state" :style="supervisorStateStyle">State: {{ supervisorStateLabel }}</span>
+          <button
+            @click="toggle"
+            class="action-btn toggle-btn"
+            :class="{ running: store.isEnabled }"
+            :disabled="!store.isConnected"
+          >
+            {{ store.isEnabled ? 'stop' : 'automate' }}
+          </button>
+        </div>
         <WatchdogTerminal 
           ref="watchdogTerm" 
           :initial-content="store.watchdogOutput"
@@ -405,6 +392,7 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-left: auto;
 }
 
 .session-controls {
@@ -438,6 +426,15 @@ defineExpose({
   gap: 0.4rem;
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.8);
+}
+
+.lease-status {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.82);
+  padding-left: 0.75rem;
+  margin-left: 0.25rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
 }
 
 .dot {
@@ -548,32 +545,6 @@ defineExpose({
   }
 }
 
-.runtime-info-bar {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 0.4rem 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid #333;
-  font-size: 0.8rem;
-}
-
-.runtime-info-item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.info-label {
-  color: #888;
-  font-weight: 500;
-}
-
-.info-value {
-  color: #d4d4d4;
-  font-family: monospace;
-}
-
 .terminals {
   flex: 1;
   display: flex;
@@ -598,6 +569,22 @@ defineExpose({
   color: #888;
   background: #1e1e1e;
   border-bottom: 1px solid #333;
+}
+
+.term-label-supervisor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.term-title {
+  color: #888;
+  font-weight: 600;
+}
+
+.term-state {
+  flex: 1;
+  color: #d4d4d4;
 }
 
 .spawning-log {

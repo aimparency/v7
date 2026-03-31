@@ -1,16 +1,15 @@
 /**
  * Animator State Machine
  *
- * Manages the autonomous loop state with 4 explicit states:
+ * Manages the autonomous loop state with 3 explicit states:
  * - EXPLORING: Find work, break down aims, ideate
  * - WORKING: Push supervised session to complete aim
- * - WRAPPING_UP: Verify ~80% complete, commit, reflect, compact
- * - ERROR: Handle timeouts with exponential backoff
+ * - WRAPPING_UP: Verify, update state/reflection, commit, and go explore again
  */
 
 import { getTargetState, getValidActionNames } from './state-machine-definition'
 
-export type AnimatorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP' | 'ERROR'
+export type AnimatorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP'
 
 export interface TransitionResult {
   success: boolean
@@ -20,20 +19,15 @@ export interface TransitionResult {
 }
 
 export interface StateContext {
-  // Current aim being worked on
-  aimId?: string
+  // Current work being tracked
   aimText?: string
+  task?: string
+  reference?: string
   strategy?: string
 
   // Timing
   workStartedAt?: number
   stateEnteredAt: number
-
-  // Error handling
-  errorCount: number
-  lastCheckAt: number
-  lastError?: string
-  previousState?: AnimatorStateName
 
   // Other context
   metadata?: Record<string, any>
@@ -62,9 +56,7 @@ export class AnimatorState {
 
   constructor() {
     this.context = {
-      stateEnteredAt: Date.now(),
-      errorCount: 0,
-      lastCheckAt: Date.now()
+      stateEnteredAt: Date.now()
     }
   }
 
@@ -112,20 +104,11 @@ export class AnimatorState {
     if (newState !== this.currentState) {
       this.context.stateEnteredAt = Date.now()
 
-      // Reset error count when transitioning out of ERROR
-      if (this.currentState === 'ERROR' && newState !== 'ERROR') {
-        this.context.errorCount = 0
-      }
-
-      // Save previous state when entering ERROR
-      if (newState === 'ERROR') {
-        this.context.previousState = this.currentState
-      }
-
-      // Clear aim context when returning to EXPLORING
+      // Clear work context when returning to EXPLORING
       if (newState === 'EXPLORING') {
-        this.context.aimId = undefined
         this.context.aimText = undefined
+        this.context.task = undefined
+        this.context.reference = undefined
         this.context.strategy = undefined
         this.context.workStartedAt = undefined
       }
@@ -156,10 +139,7 @@ export class AnimatorState {
       }
     }
 
-    // Handle special PREVIOUS state (for ERROR retry)
-    const newState = targetState === 'PREVIOUS'
-      ? (this.context.previousState || 'EXPLORING')
-      : targetState as AnimatorStateName
+    const newState = targetState as AnimatorStateName
 
     // Valid action - perform transition
     this.transition(newState, actionType, action)
@@ -178,44 +158,14 @@ export class AnimatorState {
   }
 
   /**
-   * Start working on an aim
+   * Start tracking a concrete task
    */
-  startWork(aimId: string, aimText: string, strategy: string): void {
-    this.context.aimId = aimId
-    this.context.aimText = aimText
+  startWork(task: string, strategy?: string, reference?: string): void {
+    this.context.aimText = task
+    this.context.task = task
+    this.context.reference = reference
     this.context.strategy = strategy
     this.context.workStartedAt = Date.now()
-  }
-
-  /**
-   * Enter ERROR state with exponential backoff
-   */
-  enterError(error: string): void {
-    this.context.errorCount++
-    this.context.lastError = error
-    this.context.lastCheckAt = Date.now()
-    this.transition('ERROR', 'error_occurred', { error })
-  }
-
-  /**
-   * Get next check delay for ERROR state (exponential backoff)
-   * Returns delay in milliseconds
-   */
-  getErrorBackoffDelay(): number {
-    // Exponential backoff: 1min, 2min, 4min, 8min, 15min (max)
-    const delays = [60000, 120000, 240000, 480000, 900000]
-    const delay = delays[Math.min(this.context.errorCount - 1, delays.length - 1)]
-    return delay
-  }
-
-  /**
-   * Check if enough time has passed for next error check
-   */
-  shouldCheckError(): boolean {
-    if (this.currentState !== 'ERROR') return false
-    const delay = this.getErrorBackoffDelay()
-    const elapsed = Date.now() - this.context.lastCheckAt
-    return elapsed >= delay
   }
 
   /**

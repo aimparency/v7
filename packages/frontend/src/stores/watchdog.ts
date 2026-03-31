@@ -21,6 +21,11 @@ interface WatchdogRuntimeState {
   agents: Partial<Record<AgentType, WatchdogRuntimeAgentState>>
 }
 
+interface AnimatorStateInfo {
+  state: string
+  color?: string
+}
+
 interface AutonomyPolicy {
   version: number
   autonomyMode: 'manual' | 'supervised' | 'autonomous'
@@ -39,6 +44,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const isEnabled = ref(false)
   const isEmergencyStopped = ref(false)
   const stopReason = ref('')
+  const supervisorState = ref<AnimatorStateInfo | null>(null)
   const showActionsOverlay = ref(false)
   const focusRequestCounter = ref(0)
   const autonomyPolicy = ref<AutonomyPolicy | null>(null)
@@ -274,6 +280,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     isConnected.value = false
     connectionState.value = 'idle'
     connectedAgentType.value = null
+    supervisorState.value = null
     localStorage.setItem('aimparency-show-watchdog', 'false')
     localStorage.setItem('aimparency-watchdog-should-connect', 'false')
     stopKeepalive()
@@ -297,6 +304,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     isConnected.value = false
     connectionState.value = 'idle'
     connectedAgentType.value = null
+    supervisorState.value = null
     logStatus('Cancelled watchdog connection attempt.')
 
     if (projectPath) {
@@ -353,6 +361,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       logStatus(`Session stopped.`)
       connectionState.value = 'idle'
       connectedAgentType.value = null
+      supervisorState.value = null
       localStorage.setItem('aimparency-watchdog-should-connect', 'false')
       // Refresh session list
       await fetchSessions()
@@ -396,6 +405,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         logStatus(`Relaunch failed: ${e.message}`)
         connectionState.value = 'error'
         connectedAgentType.value = null
+        supervisorState.value = null
     }
   }
 
@@ -449,6 +459,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         isEnabled.value = agentState?.enabled ?? false
         isEmergencyStopped.value = agentState?.emergencyStopped ?? false
         stopReason.value = agentState?.stopReason ?? ''
+        supervisorState.value = null
       }
 
       return runtimeState
@@ -546,6 +557,10 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       stopReason.value = reason
     })
 
+    socket.value.on('animator-state', (state: AnimatorStateInfo) => {
+      supervisorState.value = state
+    })
+
     // Data handling - write to specific agent's buffer using closure-captured agentType
     socket.value.on('worker-data', (data: string) => {
       agentBuffers.value[agentType].worker += data
@@ -569,6 +584,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     isEnabled,
     isEmergencyStopped,
     stopReason,
+    supervisorState,
     workerOutput,
     watchdogOutput,
     spawningLog,

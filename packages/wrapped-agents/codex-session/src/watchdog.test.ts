@@ -106,6 +106,27 @@ test('isGenerating detects cancel-style busy indicator', () => {
   assert.equal(generating, true);
 });
 
+test('isGenerating treats visible numbered choice menu as not generating even with esc to cancel footer', () => {
+  const service = createService('CURRENT_MARKER');
+  const agent = {
+    getLastLine: () => 'enter to submit | esc to cancel',
+    getLines: () => `Allow the aimparency MCP server to run tool "search_aims"?
+
+  limit: 10
+  projectPath: /home/felix/dev/aimparency/v7/.bowman
+  query: fix watchdog ideate guidance propagation so returned text...
+
+  › 1. Allow                   Run the tool and continue.
+    2. Allow for this session  Run the tool and remember this choice for this session.
+    3. Always allow            Run the tool and remember this choice for future tool calls.
+    4. Cancel                  Cancel this tool call
+  enter to submit | esc to cancel`,
+  };
+
+  const generating = service.isGenerating(agent as any);
+  assert.equal(generating, false);
+});
+
 test('hasVisibleChoiceMenu detects command approval prompt with shortcut keys', () => {
   const service = createService('CURRENT_MARKER');
   const agent = {
@@ -118,6 +139,23 @@ test('hasVisibleChoiceMenu detects command approval prompt with shortcut keys', 
 › 1. Yes, proceed (y)
   2. Yes, and don't ask again for commands that start with \`git add -u\` (p)
   3. No, and tell Codex what to do differently (esc)`,
+  };
+
+  const detected = (service as any).hasVisibleChoiceMenu(agent);
+  assert.equal(detected, true);
+});
+
+test('hasVisibleChoiceMenu detects MCP approval prompt with numbered options', () => {
+  const service = createService('CURRENT_MARKER');
+  const agent = {
+    getLines: () => `Allow the aimparency MCP server to run tool "create_aim"?
+
+description: Ensure every supported session runtime exposes the current...
+
+> 1. Allow
+  2. Allow for this session
+  3. Always allow
+  4. Cancel`,
   };
 
   const detected = (service as any).hasVisibleChoiceMenu(agent);
@@ -277,6 +315,7 @@ test('tick asks watchdog after bootstrap timeout when no busy phase has been obs
 
 test('tick executes wrapped JSON response after marker when output is zoom/wrap-like', async () => {
   const workerWrites: string[] = [];
+  const watchdogWrites: string[] = [];
   const worker = {
     getLines: () => '',
     getLastLine: () => '',
@@ -294,6 +333,9 @@ test('tick executes wrapped JSON response after marker when output is zoom/wrap-
   (service as any).currentPromptMarker = 'CURRENT_MARKER';
   (service as any).wait = async () => {};
   (service as any).waitForIdle = async () => true;
+  (service as any).post = async (agent: any, text: string) => {
+    if (agent === watchdog) watchdogWrites.push(text);
+  };
   service.setEnabled(true);
   service.waitingForResponseStart = true;
   service.waitingForResponse = false;
@@ -303,9 +345,10 @@ test('tick executes wrapped JSON response after marker when output is zoom/wrap-
   await service.tick();
 
   const fullWrite = workerWrites.join('');
-  assert.match(fullWrite, /Run follow-up 3 now: execute codex watchdog e2e/);
+  assert.equal(fullWrite, '');
+  assert.match(watchdogWrites.join('\n'), /Action "send-prompt" is not valid/i);
   assert.equal(service.waitingForResponseStart, false);
-  assert.equal(service.waitingForResponse, false);
+  assert.equal(service.waitingForResponse, true);
 });
 
 test('executeAction interrupt sends double ESC to worker', async () => {
@@ -334,6 +377,38 @@ test('executeAction select-option supports shortcut keys', async () => {
   await service.executeAction({ type: 'select-option', key: 'y' });
 
   assert.deepEqual(writes, ['y']);
+});
+
+test('executeAction choice supports numbered choices', async () => {
+  const writes: string[] = [];
+  const service = createService('CURRENT_MARKER');
+  (service as any).worker = {
+    write: (chunk: string) => writes.push(chunk),
+  };
+  (service as any).watchdog = {};
+  (service as any).wait = async () => {};
+
+  await service.executeAction({ type: 'choice', choice: '2' });
+
+  assert.deepEqual(writes, ['2']);
+});
+
+test('executeActionSideEffects ideate includes returned text guidance', async () => {
+  const posts: string[] = [];
+  const service = createService('CURRENT_MARKER');
+  (service as any).worker = {};
+  (service as any).watchdog = {};
+  (service as any).post = async (_agent: any, text: string) => {
+    posts.push(text);
+  };
+
+  await service.executeActionSideEffects({
+    type: 'ideate',
+    text: 'look for follow-up cleanup or validation work after the three-state watchdog simplification'
+  });
+
+  assert.match(posts[0] || '', /Look for the next concrete task to start\./);
+  assert.match(posts[0] || '', /follow-up cleanup or validation work/i);
 });
 
 test('executeAction select-option maps esc shortcut to escape byte', async () => {
@@ -367,7 +442,7 @@ test('executeAction wrap-up posts commit prompt and plans compact', async () => 
   assert.doesNotMatch(posts[0] || '', /wait for \/compact/i);
 });
 
-test('askWatchdog uses conservative wrap-up guidance when not already wrapping up', async () => {
+test('askWatchdog uses exploring prompt by default', async () => {
   const posts: string[] = [];
   const worker = {
     getLines: () => 'worker is between steps',
@@ -388,15 +463,14 @@ test('askWatchdog uses conservative wrap-up guidance when not already wrapping u
   await service.askWatchdog();
 
   const prompt = posts[0] || '';
-  assert.match(prompt, /Use wrap-up conservatively/i);
-  assert.match(prompt, /Choose .*wrap-up.* only if:/i);
-  assert.match(prompt, /major milestone or coherent batch of work is complete/i);
-  assert.match(prompt, /prefer a normal prompt or wait instead of wrap-up/i);
-  assert.doesNotMatch(prompt, /about to start looking for new work/i);
-  assert.doesNotMatch(prompt, /whenever Codex completes a significant chunk of work/i);
+  assert.match(prompt, /You are guiding a worker\./);
+  assert.match(prompt, /worker session:/);
+  assert.match(prompt, /start_work - Use when the worker has found something concrete/i);
+  assert.match(prompt, /break_down - Use when the worker needs to split vague or high-level work/i);
+  assert.match(prompt, /ideate - Use when the worker should look for useful work/i);
 });
 
-test('askWatchdog commit mode prompt focuses on finishing the commit', async () => {
+test('askWatchdog wrapping-up prompt focuses on finishing wrap-up work', async () => {
   const posts: string[] = [];
   const worker = {
     getLines: () => 'git commit in progress',
@@ -410,6 +484,7 @@ test('askWatchdog commit mode prompt focuses on finishing the commit', async () 
   };
   const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
   (service as any).workingTowardsCommit = true;
+  (service as any).animatorState.transition('WRAPPING_UP', 'verify');
   (service as any).post = async (_agent: any, text: string) => {
     posts.push(text);
   };
@@ -418,9 +493,11 @@ test('askWatchdog commit mode prompt focuses on finishing the commit', async () 
   await service.askWatchdog();
 
   const prompt = posts[0] || '';
-  assert.match(prompt, /WRAP-UP ACTIVE:/);
-  assert.match(prompt, /guide Codex through finishing the git commit/i);
-  assert.match(prompt, /commit-done/i);
+  assert.match(prompt, /You are guiding a worker\./);
+  assert.match(prompt, /git commit in progress/i);
+  assert.match(prompt, /You are watching a coding agent wrapping up work/i);
+  assert.match(prompt, /commit - Prompt the worker to create a git commit/i);
+  assert.match(prompt, /waiting_for_committed - Use when the worker is in the middle of committing/i);
 });
 
 test('executeAction compact without wrap-up plan converts to wrap-up first', async () => {
@@ -501,6 +578,7 @@ test('askWatchdog includes wrap-up guidance when commit mode is active', async (
   };
   const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
   (service as any).workingTowardsCommit = true;
+  (service as any).animatorState.transition('WRAPPING_UP', 'verify');
   (service as any).post = async (_agent: any, text: string) => {
     prompts.push(text);
   };
@@ -509,16 +587,11 @@ test('askWatchdog includes wrap-up guidance when commit mode is active', async (
   await service.askWatchdog();
 
   const prompt = prompts[0] || '';
-  assert.match(prompt, /WRAP-UP ACTIVE/);
-  assert.match(prompt, /answer with .*commit-done/i);
-  assert.match(prompt, /You may also use .*compact.* if needed/i);
-  assert.match(prompt, /Do NOT start new feature work while wrap-up is active/);
-  assert.match(prompt, /Do NOT use .*instruct.* true while wrap-up is active/i);
-  assert.match(prompt, /Never tell Codex to paste system, developer, tool, or permissions instructions/);
-  assert.match(prompt, /commit-done/);
-  assert.match(prompt, /shortcut keys like \(y\), \(p\), \(a\), or \(esc\)/);
-  assert.match(prompt, /select-option/i);
-  assert.match(prompt, /key": "y"/);
+  assert.match(prompt, /You are guiding a worker\./);
+  assert.match(prompt, /worker is asking about commit details/i);
+  assert.match(prompt, /wrap_up - Prompt the worker to update aim status\/comment and reflection/i);
+  assert.match(prompt, /commit - Prompt the worker to create a git commit/i);
+  assert.match(prompt, /waiting_for_committed - Use when the worker is in the middle of committing/i);
 });
 
 test('askWatchdog includes wrap-up rule when commit mode is inactive', async () => {
@@ -534,6 +607,7 @@ test('askWatchdog includes wrap-up rule when commit mode is inactive', async () 
     write: () => {},
   };
   const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  (service as any).animatorState.transition('WRAPPING_UP', 'verify');
   (service as any).post = async (_agent: any, text: string) => {
     prompts.push(text);
   };
@@ -542,9 +616,8 @@ test('askWatchdog includes wrap-up rule when commit mode is inactive', async () 
   await service.askWatchdog();
 
   const prompt = prompts[0] || '';
-  assert.match(prompt, /WRAP-UP RULE/);
-  assert.match(prompt, /Use wrap-up conservatively/i);
-  assert.match(prompt, /Choose .*wrap-up.* only if:/i);
-  assert.match(prompt, /there is no obvious immediate next implementation or verification step/i);
-  assert.match(prompt, /The later compact is handled separately by this animator/);
+  assert.match(prompt, /You are guiding a worker\./);
+  assert.match(prompt, /major implementation finished and worker is idle/i);
+  assert.match(prompt, /revisit - Return from wrapping up to implementation/i);
+  assert.match(prompt, /explore - Prompt the worker to explore open work again/i);
 });

@@ -374,6 +374,9 @@ export class WatchdogService {
   isGenerating(agent: Agent): boolean {
     const lastLine = agent.getLastLine();
     const recentLines = stripAnsi(agent.getLines(8));
+    if (this.hasVisibleChoiceMenu(agent)) {
+      return false;
+    }
     const hasSpinner = SPINNER_CHARS.some(char => lastLine.includes(char));
     // Codex shows "esc to interrupt" while it is actively generating.
     // Check recent lines because zoom/terminal wrapping can move this off the last line.
@@ -425,14 +428,11 @@ export class WatchdogService {
 
   private hasVisibleChoiceMenu(agent: Agent): boolean {
     const recentLines = stripAnsi(agent.getLines(24));
-    const hasApprovalHeading =
-      /Would you like to run the following command\?/i.test(recentLines) ||
-      /Would you like to make the following edits\?/i.test(recentLines) ||
-      /Would you like to /i.test(recentLines);
-    const hasSelectedOption = /^\s*›\s*\d+\./m.test(recentLines);
-    const hasShortcutOptions = /\((?:y|p|a|esc)\)/i.test(recentLines);
+    const numberedLines = recentLines.match(/^\s*[›>]?\s*\d+\.\s.+$/gm) || [];
+    const hasSelectedOption = /^\s*[›>]\s*\d+\./m.test(recentLines);
+    const hasMultipleOptions = numberedLines.length >= 2;
 
-    return hasApprovalHeading && hasSelectedOption && hasShortcutOptions;
+    return hasSelectedOption && hasMultipleOptions;
   }
 
   private getWorkerProcessingDurationMs(): number | null {
@@ -523,10 +523,7 @@ export class WatchdogService {
     const promptContext: PromptContext = {
       state: currentState,
       supervisedContext,
-      // TODO: Get these from MCP
-      activePhases: [],
-      openAimsCount: 0,
-      computeCredits: 0
+      supervisedStatus: this.isGenerating(this.worker) ? 'busy' : 'idle'
     };
 
     // Add state-specific context
@@ -538,15 +535,6 @@ export class WatchdogService {
         const seconds = Math.floor((workDuration % 60000) / 1000);
         promptContext.workDuration = `${minutes}m ${seconds}s`;
       }
-      promptContext.supervisedStatus = this.isGenerating(this.worker) ? 'busy' : 'idle';
-    }
-
-    if (currentState === 'ERROR') {
-      promptContext.metadata = {
-        errorCount: stateContext.errorCount,
-        lastError: stateContext.lastError,
-        previousState: stateContext.previousState
-      };
     }
 
     // Generate request ID and prompt using state machine
@@ -581,6 +569,16 @@ export class WatchdogService {
        const decision = JSON.parse(jsonString);
 
        if (decision.action) {
+         if (decision.action.type === 'choice' && this.hasVisibleChoiceMenu(this.worker)) {
+           this.log(`[StateMachine] Executing choice outside normal state validation`);
+           await this.executeAction({
+             type: 'choice',
+             choice: decision.action.choice ?? decision.action.key ?? decision.action.number
+           });
+           this.onStateChange?.();
+           return;
+         }
+
          // Attempt action through state machine
          const result = this.animatorState.attemptAction(decision.action);
 
@@ -772,15 +770,18 @@ export class WatchdogService {
         await this.performCompact();
     } else if (action.type === 'enter') {
         this.worker.write('\r');
-    } else if (action.type === 'select-option') {
+    } else if (action.type === 'select-option' || action.type === 'choose_option' || action.type === 'choice') {
         const rawSelection = action.key ?? action.text ?? action.number;
+        const choiceSelection = action.choice;
         const selection =
+          typeof choiceSelection === 'number' ? String(choiceSelection) :
+          typeof choiceSelection === 'string' ? choiceSelection :
           typeof rawSelection === 'number' ? String(rawSelection) :
           typeof rawSelection === 'string' ? rawSelection :
           '';
 
         if (!selection) {
-          this.log('select-option action missing number/key/text; skipping.');
+          this.log(`${action.type} action missing choice/number/key/text; skipping.`);
           this.nextCheckTime = Date.now() + POST_ACTION_COOLDOWN;
           return;
         }
@@ -888,49 +889,61 @@ Please choose one of the valid actions and respond with correct JSON.`;
     // Update context for specific actions
     switch (actionType) {
       case 'start_work':
-        this.animatorState.startWork(action.aim_id, action.aim_text, action.strategy);
-        await this.executeStartWork(action.aim_id, action.aim_text, action.strategy);
+        this.animatorState.startWork(
+          action.task ?? 'current task',
+          action.strategy,
+          action.reference
+        );
+        await this.executeStartWork(
+          action.task ?? 'current task',
+          action.strategy,
+          action.reference
+        );
         break;
 
       case 'break_down':
-        await this.executeBreakDown(action.aim_id);
+        await this.executeBreakDown(action.focus ?? action.task ?? 'current task');
         break;
 
       case 'ideate':
-        await this.executeIdeate(action.approach);
+        await this.executeIdeate(action.text ?? action.approach);
         break;
 
-      case 'wait':
-        this.log(`[StateMachine] Waiting: ${action.reason || 'no reason'}`);
+      case 'text_prompt':
+        await this.executeTextPrompt(action.text);
         break;
 
-      case 'proceed':
-        await this.executeProceed(action);
+      case 'choose_option':
+      case 'choice':
+        await this.executeAction({
+          type: 'choice',
+          choice: action.choice ?? action.key ?? action.number
+        });
+        break;
+
+      case 'verify':
+        await this.executeVerify(action.text);
+        break;
+
+      case 'revisit':
+        await this.executeRevisit(action.text);
         break;
 
       case 'wrap_up':
-        this.log(`[StateMachine] Wrapping up: ${action.summary || 'no summary'}`);
-        this.animatorState.updateContext({ metadata: { workSummary: action.summary } });
+        await this.executeWrapUp(action.text);
         break;
 
-      case 'verify_complete':
-        await this.executeVerifyComplete(action.notes);
+      case 'commit':
+        await this.executeCommit(action.text);
         break;
 
-      case 'verify_incomplete':
-        await this.executeVerifyIncomplete(action.missing);
-        break;
+      case 'waiting_for_committed':
+        this.log(`[StateMachine] Waiting for committed: ${action.reason || 'no reason'}`);
+        this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
+        return;
 
-      case 'retry':
-        this.log(`[StateMachine] Retrying from ERROR state`);
-        break;
-
-      case 'reset':
-        this.log(`[StateMachine] Resetting to EXPLORING from ERROR`);
-        break;
-
-      case 'abort':
-        this.log(`[StateMachine] Aborting: ${action.reason || 'no reason'}`);
+      case 'explore':
+        await this.executeExplore(action.text);
         break;
 
       default:
@@ -942,93 +955,73 @@ Please choose one of the valid actions and respond with correct JSON.`;
 
   // ========== ACTION EXECUTORS ==========
 
-  private async executeStartWork(aimId: string, aimText: string, strategy: string): Promise<void> {
-    this.log(`[StateMachine] Starting work on: ${aimText}`);
+  private async executeStartWork(task: string, strategy?: string, reference?: string): Promise<void> {
+    this.log(`[StateMachine] Starting work on: ${task}`);
 
     const prompt = `${this.instructTextWithMemory}
 
 ---
 
-Work on this aim:
-ID: ${aimId}
-Text: ${aimText}
-Strategy: ${strategy}
+Move into execution for this work:
+- Focus: ${task}
+${strategy ? `- Strategy: ${strategy}` : ''}
+${reference ? `- Reference: ${reference}` : ''}
 
-Begin implementation.`;
-
-    await this.post(this.worker, prompt);
-  }
-
-  private async executeBreakDown(aimId: string): Promise<void> {
-    this.log(`[StateMachine] Breaking down aim: ${aimId}`);
-
-    const prompt = `Break down this aim into smaller sub-aims. Use create_aim MCP tool with supportedAims array pointing to parent: ${aimId}`;
+Use the project tools you have available. Start implementation, keep changes coherent, and surface blockers explicitly if you hit one.`;
 
     await this.post(this.worker, prompt);
   }
 
-  private async executeIdeate(ideationType: string): Promise<void> {
-    this.log(`[StateMachine] Ideating: ${ideationType}`);
+  private async executeBreakDown(focus: string): Promise<void> {
+    this.log(`[StateMachine] Breaking down focus: ${focus}`);
 
-    const prompts: Record<string, string> = {
-      research: 'Do web research on relevant topics. Create aims for insights.',
-      new_aims: 'Review codebase and create aims for improvements: refactoring, tests, docs, security, performance.',
-      improvements: 'Review recent work and suggest optimizations as aims.'
-    };
+    const prompt = focus
+      ? `Break down the current high-level work into smaller concrete steps, then continue with the next best step. Current focus: ${focus}`
+      : 'Break the current high-level work into smaller concrete steps, then continue with the next best step.';
 
-    const prompt = prompts[ideationType] || 'Think about improvements and create aims.';
     await this.post(this.worker, prompt);
   }
 
-  private async executeProceed(action: any): Promise<void> {
-    const proceedType = action.proceed_type;
+  private async executeIdeate(text?: string): Promise<void> {
+    this.log('[StateMachine] Ideating');
 
-    switch (proceedType) {
-      case 'none':
-        this.log(`[StateMachine] Monitoring (no action)`);
-        break;
-
-      case 'motivate':
-        this.log(`[StateMachine] Sending motivation`);
-        await this.post(this.worker, action.text || 'Keep working on the aim.');
-        break;
-
-      case 'option_select':
-        this.log(`[StateMachine] Selecting option: ${action.choice}`);
-        await this.post(this.worker, action.choice);
-        break;
-
-      case 'escalate':
-        this.log(`[StateMachine] Escalating: ${action.question}`);
-        // TODO: Implement human escalation
-        break;
-    }
+    const defaultPrompt = 'Look for the next concrete task to start.';
+    const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
+    await this.post(this.worker, prompt);
   }
 
-  private async executeVerifyComplete(notes: string): Promise<void> {
-    this.log(`[StateMachine] Verify complete: ${notes}`);
-
-    // Step 1: Verify
-    await this.post(this.worker, 'Use get_aim_context to verify aim is complete.');
-    await this.waitForWorkerIdle();
-
-    // Step 2: Commit
-    await this.post(this.worker, 'Create git commit. Use git add -u, then git add for new files, then commit.');
-    await this.waitForWorkerIdle();
-
-    // Step 3: Reflect
-    await this.post(this.worker, 'Add reflection using addReflection MCP tool.');
-    await this.waitForWorkerIdle();
-
-    // Step 4: Compact
-    this.turnCount = 0;
-    await this.post(this.watchdog, '/compact');
+  private async executeTextPrompt(text?: string): Promise<void> {
+    const prompt = text || 'Keep advancing the work.';
+    await this.post(this.worker, prompt);
   }
 
-  private async executeVerifyIncomplete(missing: string): Promise<void> {
-    this.log(`[StateMachine] Incomplete: ${missing}`);
+  private async executeVerify(text?: string): Promise<void> {
+    const defaultPrompt = 'verify that more than 80% of the tackled requirements have been met.';
+    const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
+    this.animatorState.updateContext({ metadata: { workSummary: text || defaultPrompt } });
+    await this.post(this.worker, prompt);
+  }
 
-    const prompt = `Work not complete. Missing: ${missing}. Continue working.`;
+  private async executeRevisit(text?: string): Promise<void> {
+    const prompt = text ? `finish implementation. ${text}` : 'finish implementation';
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeWrapUp(text?: string): Promise<void> {
+    const defaultPrompt = 'update aim status and comment and reflection if not done already';
+    const prompt = text ? `${defaultPrompt}. ${text}` : defaultPrompt;
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeCommit(text?: string): Promise<void> {
+    const prompt = text
+      ? `Track changes and make a git commit for the completed work. ${text}`
+      : WRAP_UP_PROMPT;
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeExplore(text?: string): Promise<void> {
+    const prompt = text || 'explore open aims and see if there is something you can work on';
     await this.post(this.worker, prompt);
   }
 

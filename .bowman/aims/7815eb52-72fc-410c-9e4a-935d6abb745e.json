@@ -1,0 +1,26 @@
+{
+  "id": "7815eb52-72fc-410c-9e4a-935d6abb745e",
+  "text": "weigh graph node connection force by connection size (how much value is transported by it)",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1774943321231
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

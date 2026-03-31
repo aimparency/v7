@@ -249,6 +249,7 @@ if (existingRuntimeState) {
 }
 watchdogService.onStateChange = () => {
   persistWatchdogRuntimeState(watchdogService);
+  io.emit('animator-state', watchdogService.getAnimatorStateInfo());
 };
 persistWatchdogRuntimeState(watchdogService);
 
@@ -267,6 +268,7 @@ io.on('connection', (socket) => {
   socket.emit('watchdog-state', watchdogService.enabled);
   socket.emit('emergency-state', watchdogService.emergencyStopped);
   socket.emit('watchdog-stop-reason', watchdogService.lastStopReason);
+  socket.emit('animator-state', watchdogService.getAnimatorStateInfo());
   socket.emit('worker-data', worker.getLines(1000));
   socket.emit('watchdog-data', watchdog.getLines(1000));
 
@@ -275,6 +277,7 @@ io.on('connection', (socket) => {
     io.emit('watchdog-state', enabled);
     io.emit('emergency-state', watchdogService.emergencyStopped);
     io.emit('watchdog-stop-reason', watchdogService.lastStopReason);
+    io.emit('animator-state', watchdogService.getAnimatorStateInfo());
   });
 
   socket.on('worker-input', (data) => worker.write(data));

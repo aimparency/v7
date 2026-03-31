@@ -352,10 +352,7 @@ export class WatchdogService {
     const promptContext: PromptContext = {
       state: currentState,
       supervisedContext,
-      // TODO: Get these from MCP
-      activePhases: [],
-      openAimsCount: 0,
-      computeCredits: 0
+      supervisedStatus: this.isGenerating(this.worker) ? 'busy' : 'idle'
     };
 
     // Add state-specific context
@@ -367,15 +364,6 @@ export class WatchdogService {
         const seconds = Math.floor((workDuration % 60000) / 1000);
         promptContext.workDuration = `${minutes}m ${seconds}s`;
       }
-      promptContext.supervisedStatus = this.isGenerating(this.worker) ? 'busy' : 'idle';
-    }
-
-    if (currentState === 'ERROR') {
-      promptContext.metadata = {
-        errorCount: stateContext.errorCount,
-        lastError: stateContext.lastError,
-        previousState: stateContext.previousState
-      };
     }
 
     // Generate request ID and prompt using state machine
@@ -582,49 +570,45 @@ Please choose one of the valid actions and respond with correct JSON.`;
     // Update context and execute side effects for each action
     switch (actionType) {
       case 'start_work':
-        this.animatorState.startWork(action.aim_id, action.aim_text, action.strategy);
-        await this.executeStartWork(action.aim_id, action.aim_text, action.strategy);
+        this.animatorState.startWork(action.task ?? 'current task', action.strategy, action.reference);
+        await this.executeStartWork(action.task ?? 'current task', action.strategy, action.reference);
         break;
 
       case 'break_down':
-        await this.executeBreakDown(action.aim_id);
+        await this.executeBreakDown(action.focus ?? action.task ?? 'current task');
         break;
 
       case 'ideate':
-        await this.executeIdeate(action.approach);
+        await this.executeIdeate(action.text ?? action.approach);
         break;
 
-      case 'wait':
-        this.log(`[StateMachine] Waiting: ${action.reason || 'no reason'}`);
+      case 'text_prompt':
+        await this.executeTextPrompt(action.text);
         break;
 
-      case 'proceed':
-        await this.executeProceed(action);
+      case 'verify':
+        await this.executeVerify(action.text);
+        break;
+
+      case 'revisit':
+        await this.executeRevisit(action.text);
         break;
 
       case 'wrap_up':
-        this.log(`[StateMachine] Wrapping up: ${action.summary || 'no summary'}`);
-        this.animatorState.updateContext({ metadata: { workSummary: action.summary } });
+        await this.executeWrapUp(action.text);
         break;
 
-      case 'verify_complete':
-        await this.executeVerifyComplete(action.notes);
+      case 'commit':
+        await this.executeCommit(action.text);
         break;
 
-      case 'verify_incomplete':
-        await this.executeVerifyIncomplete(action.missing);
-        break;
+      case 'waiting_for_committed':
+        this.log(`[StateMachine] Waiting for committed: ${action.reason || 'no reason'}`);
+        this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
+        return;
 
-      case 'retry':
-        this.log(`[StateMachine] Retrying from ERROR state`);
-        break;
-
-      case 'reset':
-        this.log(`[StateMachine] Resetting to EXPLORING from ERROR`);
-        break;
-
-      case 'abort':
-        this.log(`[StateMachine] Aborting: ${action.reason || 'no reason'}`);
+      case 'explore':
+        await this.executeExplore(action.text);
         break;
 
       default:
@@ -636,107 +620,73 @@ Please choose one of the valid actions and respond with correct JSON.`;
 
   // ========== STATE MACHINE ACTION EXECUTORS ==========
 
-  private async executeStartWork(aimId: string, aimText: string, strategy: string): Promise<void> {
-    this.log(`[StateMachine] Starting work on: ${aimText}`);
+  private async executeStartWork(task: string, strategy?: string, reference?: string): Promise<void> {
+    this.log(`[StateMachine] Starting work on: ${task}`);
 
     const prompt = `${this.instructTextWithMemory}
 
 ---
 
-Work on this aim:
-ID: ${aimId}
-Text: ${aimText}
-Strategy: ${strategy}
+Move into execution for this work:
+- Focus: ${task}
+${strategy ? `- Strategy: ${strategy}` : ''}
+${reference ? `- Reference: ${reference}` : ''}
 
-Begin implementation.`;
-
-    await this.post(this.worker, prompt);
-  }
-
-  private async executeBreakDown(aimId: string): Promise<void> {
-    this.log(`[StateMachine] Breaking down aim: ${aimId}`);
-
-    const prompt = `Break down this aim into smaller sub-aims. Use create_aim MCP tool with supportedAims array pointing to parent: ${aimId}`;
+Use the project tools you have available. Start implementation, keep changes coherent, and surface blockers explicitly if you hit one.`;
 
     await this.post(this.worker, prompt);
   }
 
-  private async executeIdeate(approach: string): Promise<void> {
-    this.log(`[StateMachine] Ideating: ${approach}`);
+  private async executeBreakDown(focus: string): Promise<void> {
+    this.log(`[StateMachine] Breaking down focus: ${focus}`);
 
-    const prompts: Record<string, string> = {
-      web_research: 'Do web research on relevant topics. Create aims for insights.',
-      codebase_scan: 'Review the codebase for potential improvements. Create aims for findings.',
-      review_recent: 'Analyze recent work and identify next steps. Create aims for follow-ups.'
-    };
+    const prompt = focus
+      ? `Break down the current high-level work into smaller concrete steps, then continue with the next best step. Current focus: ${focus}`
+      : 'Break the current high-level work into smaller concrete steps, then continue with the next best step.';
 
-    const prompt = prompts[approach] || 'Ideate on what to work on next. Create aims for ideas.';
     await this.post(this.worker, prompt);
   }
 
-  private async executeProceed(action: any): Promise<void> {
-    const mode = action.mode;
+  private async executeIdeate(text?: string): Promise<void> {
+    this.log('[StateMachine] Ideating');
 
-    switch (mode) {
-      case 'monitor':
-        this.log(`[StateMachine] Monitoring worker progress...`);
-        // Do nothing, just observe
-        break;
-
-      case 'nudge':
-        const text = action.text || 'Keep going!';
-        this.log(`[StateMachine] Nudging worker: ${text}`);
-        await this.post(this.worker, text);
-        break;
-
-      case 'select':
-        const choice = action.choice;
-        this.log(`[StateMachine] Selecting option: ${choice}`);
-        this.worker.write(String(choice));
-        await this.wait(100);
-        break;
-
-      case 'escalate':
-        this.log(`[StateMachine] Escalating to human: ${action.question}`);
-        // For now, just log - could implement human interaction later
-        break;
-
-      default:
-        this.log(`[StateMachine] Unknown proceed mode: ${mode}`);
-    }
-  }
-
-  private async executeVerifyComplete(notes: string): Promise<void> {
-    this.log(`[StateMachine] Verifying completion: ${notes}`);
-
-    // Step 1: Check if work is committed
-    const prompt = 'Check git status. If there are uncommitted changes, create a git commit. If already committed, reply "committed".';
+    const defaultPrompt = 'Look for the next concrete task to start.';
+    const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
     await this.post(this.worker, prompt);
-
-    // TODO: Wait for response and verify
-
-    // Step 2: Reflection
-    const aimId = this.animatorState.getContext().aimId;
-    if (aimId && this.projectPath) {
-      const reflectionPrompt = `Use addReflection MCP tool for aim ${aimId}. Reflect on what you learned while completing this aim.`;
-      await this.post(this.worker, reflectionPrompt);
-    }
-
-    // Step 3: Update aim status
-    if (aimId && this.projectPath) {
-      const updatePrompt = `Use update_aim MCP tool to mark aim ${aimId} as done with status comment: "${notes}"`;
-      await this.post(this.worker, updatePrompt);
-    }
-
-    // Step 4: Compact
-    this.turnCount = 0;
-    await this.post(this.worker, '/compact');
   }
 
-  private async executeVerifyIncomplete(missing: string): Promise<void> {
-    this.log(`[StateMachine] Work incomplete: ${missing}`);
+  private async executeTextPrompt(text?: string): Promise<void> {
+    const prompt = text || 'Keep advancing the work.';
+    await this.post(this.worker, prompt);
+  }
 
-    const prompt = `The work is not complete yet. Missing: ${missing}. Please continue working on this.`;
+  private async executeVerify(text?: string): Promise<void> {
+    const defaultPrompt = 'verify that more than 80% of the tackled requirements have been met.';
+    const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
+    this.animatorState.updateContext({ metadata: { workSummary: text || defaultPrompt } });
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeRevisit(text?: string): Promise<void> {
+    const prompt = text ? `finish implementation. ${text}` : 'finish implementation';
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeWrapUp(text?: string): Promise<void> {
+    const defaultPrompt = 'update aim status and comment and reflection if not done already';
+    const prompt = text ? `${defaultPrompt}. ${text}` : defaultPrompt;
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeCommit(text?: string): Promise<void> {
+    const prompt = text
+      ? `Track changes and make a git commit for the completed work. ${text}`
+      : WRAP_UP_PROMPT;
+    await this.post(this.worker, prompt);
+  }
+
+  private async executeExplore(text?: string): Promise<void> {
+    const prompt = text || 'explore open aims and see if there is something you can work on';
     await this.post(this.worker, prompt);
   }
 }

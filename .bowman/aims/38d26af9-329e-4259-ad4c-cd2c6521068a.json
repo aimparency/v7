@@ -1,0 +1,31 @@
+{
+  "id": "38d26af9-329e-4259-ad4c-cd2c6521068a",
+  "text": "Add regression coverage for watchdog panel supervisor header semantics",
+  "description": "Add focused tests that verify the watchdog panel renders lease placement, supervisor naming, automate/stop wording, state text/color, and absence of obsolete owner/worker header UI. Cover both hydrated runtime state and live socket-driven state updates where practical.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "frontend",
+    "testing",
+    "watchdog",
+    "ui"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Current fixes are covered by a narrow component spec; this should become a stable regression target for future watchdog UI changes.",
+    "date": 1774857734156
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

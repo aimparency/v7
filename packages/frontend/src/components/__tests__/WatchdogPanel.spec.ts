@@ -13,8 +13,10 @@ const watchdogStore = reactive({
   ],
   autonomyPolicy: null as any,
   runtimeMetadata: null as any,
+  supervisorState: null as any,
   workerOutput: '',
   watchdogOutput: '',
+  spawningLog: [] as string[],
   showActionsOverlay: false,
   focusRequestCounter: 0,
   stopReason: '',
@@ -89,6 +91,11 @@ describe('WatchdogPanel', () => {
     watchdogStore.hydrateAutonomyPolicy.mockResolvedValue(null)
     watchdogStore.hydrateRuntimeState.mockResolvedValue(null)
     watchdogStore.connect.mockResolvedValue(undefined)
+    watchdogStore.autonomyPolicy = null
+    watchdogStore.runtimeMetadata = null
+    watchdogStore.supervisorState = null
+    watchdogStore.stopReason = ''
+    watchdogStore.isEnabled = false
   })
 
   it('does not auto-restore the previous session when the selected agent type changes', async () => {
@@ -156,5 +163,50 @@ describe('WatchdogPanel', () => {
     await nextTick()
 
     expect(events).toEqual(['set:codex', 'disconnect'])
+  })
+
+  it('renders lease in the wrapper header and supervisor controls in the supervisor header', async () => {
+    watchdogStore.autonomyPolicy = {
+      sessionLeaseMinutes: 45
+    }
+    watchdogStore.runtimeMetadata = {
+      agents: {
+        claude: {
+          enabled: false,
+          emergencyStopped: false,
+          stopReason: null,
+          updatedAt: 1
+        }
+      }
+    }
+    watchdogStore.supervisorState = { state: 'EXPLORING' }
+
+    const wrapper = mount(WatchdogPanel, {
+      global: {
+        stubs: {
+          WatchdogTerminal: {
+            template: '<div />',
+            methods: {
+              write() {},
+              clear() {},
+              focus() {}
+            }
+          },
+          WatchdogActionsOverlay: true
+        }
+      }
+    })
+
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Lease: 45min')
+    expect(wrapper.text()).toContain('Supervisor')
+    expect(wrapper.text()).toContain('State: exploring')
+    expect(wrapper.text()).toContain('automate')
+    expect(wrapper.text()).not.toContain('Worker (Main Agent)')
+    expect(wrapper.text()).not.toContain('Owner:')
+    expect(wrapper.text()).not.toContain('Watchdog (Animator)')
+    expect(wrapper.text()).not.toContain('Enable Animator')
+    expect(wrapper.text()).not.toContain('Animator State:')
   })
 })

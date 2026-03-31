@@ -19,31 +19,12 @@
 
 ---
 
-## State Machine (4 States)
+## State Machine
+initial session state exploring. 
+actions:
+  - 
 
-```
-┌────────────┐
-│  EXPLORING │ ←──────────────┐
-└─────┬──────┘                │
-      │                       │
-      ↓                       │
-┌────────────┐                │
-│  WORKING   │ ←──┐           │
-└─────┬──────┘   │           │
-      │          │           │
-      ↓          │           │
-┌────────────┐   │           │
-│WRAPPING-UP │───┘           │
-└─────┬──────┘               │
-      │                      │
-      └──────────────────────┘
-
-      Any state can go to ERROR
-           ↓
-     ┌────────────┐
-     │   ERROR    │ (exponential backoff)
-     └────────────┘
-```
+wrapping up leads back to exploring. exploring either creates aims (loop to exploring), chooses an aim to work on
 
 ---
 

@@ -34,141 +34,134 @@ export interface State {
 
 export const startWork: Action = {
   name: 'start_work',
-  description: 'Begin working on a specific aim. Use when you find an open aim that needs implementation.',
+  description: 'Use when the worker has found something concrete to tackle and should move into execution.',
   parameters: [
-    { name: 'aim_id', description: 'UUID of the aim to work on', required: true },
-    { name: 'aim_text', description: 'Text description of the aim', required: true },
-    { name: 'strategy', description: 'Approach to take for implementing this aim', required: true }
+    { name: 'task', description: 'Short description of the task to work on', required: true },
+    { name: 'strategy', description: 'Optional approach the worker should take', required: false }
   ],
   examples: [
-    '{"action": {"type": "start_work", "aim_id": "abc-123", "aim_text": "Add unit tests for auth module", "strategy": "Write Jest tests covering login, logout, and token refresh"}}',
-    '{"action": {"type": "start_work", "aim_id": "def-456", "aim_text": "Implement dark mode toggle", "strategy": "Add CSS variables for theming and toggle component"}}'
+    '{"action": {"type": "start_work", "task": "add unit tests for auth module", "strategy": "cover login, logout, and token refresh"}}',
+    '{"action": {"type": "start_work", "task": "implement dark mode toggle"}}'
   ]
 }
 
 export const breakDown: Action = {
   name: 'break_down',
-  description: 'Decompose a complex aim into smaller sub-aims. Use when an aim is too large to implement directly.',
+  description: 'Use when the worker needs to split vague or high-level work into smaller concrete steps.',
   parameters: [
-    { name: 'aim_id', description: 'UUID of the aim to break down into sub-aims', required: true },
-    { name: 'reason', description: 'Why this aim needs to be broken down', required: true }
+    { name: 'focus', description: 'Short description of the work being broken down', required: false }
   ],
   examples: [
-    '{"action": {"type": "break_down", "aim_id": "abc-123", "reason": "This aim is too complex, needs to be split into smaller tasks"}}',
-    '{"action": {"type": "break_down", "aim_id": "complex-feature", "reason": "Unclear how to implement, need to break into concrete steps"}}'
+    '{"action": {"type": "break_down", "focus": "authentication refactor"}}',
+    '{"action": {"type": "break_down"}}'
   ]
 }
 
 export const ideate: Action = {
   name: 'ideate',
-  description: 'Generate new aims through research, codebase review, or improvements. Use when no obvious work exists.',
+  description: 'Use when the worker should look for useful work because nothing concrete is queued yet.',
   parameters: [
-    { name: 'approach', description: 'How to ideate: "web_research" (research topics online), "codebase_scan" (review code for improvements), "review_recent" (analyze recent work for next steps)', required: true }
+    { name: 'text', description: 'Optional additional guidance for how to ideate', required: false }
   ],
   examples: [
-    '{"action": {"type": "ideate", "approach": "web_research"}}',
-    '{"action": {"type": "ideate", "approach": "codebase_scan"}}',
-    '{"action": {"type": "ideate", "approach": "review_recent"}}'
+    '{"action": {"type": "ideate"}}',
+    '{"action": {"type": "ideate", "text": "scan the codebase for the next concrete improvement"}}'
   ]
 }
 
-export const wait: Action = {
-  name: 'wait',
-  description: 'Do nothing right now. Use when there is truly no work available and ideation is not appropriate.',
+export const textPrompt: Action = {
+  name: 'text_prompt',
+  description: 'Prompt the worker to keep advancing the work.',
   parameters: [
-    { name: 'reason', description: 'Why waiting (e.g., "no open aims", "all aims blocked")', required: true }
+    { name: 'text', description: 'Text to send to the worker. If omitted, a default keep-working prompt is used.', required: false }
   ],
   examples: [
-    '{"action": {"type": "wait", "reason": "no open aims available"}}',
-    '{"action": {"type": "wait", "reason": "all aims are blocked by dependencies"}}'
+    '{"action": {"type": "text_prompt"}}',
+    '{"action": {"type": "text_prompt", "text": "keep advancing and surface blockers explicitly"}}'
   ]
 }
 
-export const proceed: Action = {
-  name: 'proceed',
-  description: 'Continue working. Send guidance, select options, or just monitor progress.',
+export const verify: Action = {
+  name: 'verify',
+  description: 'Use when the worker reports being done or looks ready for a verification pass.',
   parameters: [
-    { name: 'mode', description: '"monitor" (just watch), "nudge" (send encouraging text), "select" (choose menu option), "escalate" (ask human)', required: true },
-    { name: 'text', description: 'Text to send (only for mode=nudge)', required: false },
-    { name: 'choice', description: 'Option to select: number or letter (only for mode=select)', required: false },
-    { name: 'question', description: 'Question for human (only for mode=escalate)', required: false }
+    { name: 'text', description: 'Optional extra verification guidance to append to the default verification prompt', required: false }
   ],
   examples: [
-    '{"action": {"type": "proceed", "mode": "monitor"}}',
-    '{"action": {"type": "proceed", "mode": "nudge", "text": "Looking good, keep going!"}}',
-    '{"action": {"type": "proceed", "mode": "select", "choice": "1"}}'
+    '{"action": {"type": "verify"}}',
+    '{"action": {"type": "verify", "text": "double-check the acceptance criteria against the current output"}}'
+  ]
+}
+
+export const choice: Action = {
+  name: 'choice',
+  description: 'Choose one of the currently visible options in the worker terminal when selecting an option is the best next step.',
+  parameters: [
+    { name: 'choice', description: 'Visible option to select, usually a number or shortcut key', required: true }
+  ],
+  examples: [
+    '{"action": {"type": "choice", "choice": "1"}}',
+    '{"action": {"type": "choice", "choice": "2"}}',
+    '{"action": {"type": "choice", "choice": "esc"}}'
+  ]
+}
+
+export const revisit: Action = {
+  name: 'revisit',
+  description: 'Return from wrapping up to implementation because more work is still needed.',
+  parameters: [
+    { name: 'text', description: 'Optional extra message to send with the revisit prompt', required: false }
+  ],
+  examples: [
+    '{"action": {"type": "revisit"}}',
+    '{"action": {"type": "revisit", "text": "finish implementation of the missing edge case handling"}}'
   ]
 }
 
 export const wrapUp: Action = {
   name: 'wrap_up',
-  description: 'Work appears complete. Transition to verification. Use when the aim implementation looks done.',
+  description: 'Prompt the worker to update aim status/comment and reflection if not done already.',
   parameters: [
-    { name: 'summary', description: 'Brief summary of what was accomplished', required: true }
+    { name: 'text', description: 'Optional extra wrap-up guidance', required: false }
   ],
   examples: [
-    '{"action": {"type": "wrap_up", "summary": "Implemented login form with validation and error handling"}}',
-    '{"action": {"type": "wrap_up", "summary": "Added unit tests, all passing"}}'
+    '{"action": {"type": "wrap_up"}}',
+    '{"action": {"type": "wrap_up", "text": "make sure the status comment reflects what was actually completed"}}'
   ]
 }
 
-export const verifyComplete: Action = {
-  name: 'verify_complete',
-  description: 'Work meets ~80% of requirements (good enough, not perfect). Triggers: verify → commit → reflect → compact → explore.',
+export const commit: Action = {
+  name: 'commit',
+  description: 'Prompt the worker to create a git commit for the current batch of work.',
   parameters: [
-    { name: 'notes', description: 'What looks good about the implementation', required: true }
+    { name: 'text', description: 'Optional extra commit guidance', required: false }
   ],
   examples: [
-    '{"action": {"type": "verify_complete", "notes": "Core functionality works, tests passing, good enough"}}',
-    '{"action": {"type": "verify_complete", "notes": "Feature complete as requested, basic validation in place"}}'
+    '{"action": {"type": "commit"}}',
+    '{"action": {"type": "commit", "text": "include only the intentional changes in the commit"}}'
   ]
 }
 
-export const verifyIncomplete: Action = {
-  name: 'verify_incomplete',
-  description: 'Work does not meet ~80% threshold. Return to WORKING state with guidance.',
+export const waitingForCommitted: Action = {
+  name: 'waiting_for_committed',
+  description: 'Use when the worker is in the middle of committing and should simply be left to finish that step.',
   parameters: [
-    { name: 'missing', description: 'What is not complete yet', required: true }
+    { name: 'reason', description: 'Optional reason for waiting', required: false }
   ],
   examples: [
-    '{"action": {"type": "verify_incomplete", "missing": "Tests are failing, need to fix validation logic"}}',
-    '{"action": {"type": "verify_incomplete", "missing": "Feature works but missing error handling"}}'
+    '{"action": {"type": "waiting_for_committed"}}'
   ]
 }
 
-export const retry: Action = {
-  name: 'retry',
-  description: 'Try to continue from previous state. Use when the worker looks responsive again.',
+export const explore: Action = {
+  name: 'explore',
+  description: 'Prompt the worker to explore open work again and return to the exploring phase.',
   parameters: [
-    { name: 'reason', description: 'Why retrying is appropriate', required: true }
+    { name: 'text', description: 'Optional extra exploration guidance', required: false }
   ],
   examples: [
-    '{"action": {"type": "retry", "reason": "Worker is responding now"}}',
-    '{"action": {"type": "retry", "reason": "Timeout was temporary"}}'
-  ]
-}
-
-export const reset: Action = {
-  name: 'reset',
-  description: 'Give up on current work, return to EXPLORING. Use when work is stuck.',
-  parameters: [
-    { name: 'reason', description: 'Why resetting is necessary', required: true }
-  ],
-  examples: [
-    '{"action": {"type": "reset", "reason": "Worker is stuck, start over"}}',
-    '{"action": {"type": "reset", "reason": "Too many errors"}}'
-  ]
-}
-
-export const abort: Action = {
-  name: 'abort',
-  description: 'Abort and return to EXPLORING. For unrecoverable errors.',
-  parameters: [
-    { name: 'reason', description: 'Why aborting', required: true }
-  ],
-  examples: [
-    '{"action": {"type": "abort", "reason": "Unrecoverable error"}}',
-    '{"action": {"type": "abort", "reason": "Critical failure"}}'
+    '{"action": {"type": "explore"}}',
+    '{"action": {"type": "explore", "text": "look for the next concrete task that can be started now"}}'
   ]
 }
 
@@ -176,44 +169,36 @@ export const abort: Action = {
 
 export const exploring: State = {
   name: 'EXPLORING',
-  instructions: 'Take a look at the open aims and see if there is something you can work on. If not, choose a high level aim to break down, or come up with new hypotheses and ideas - maybe browse the web for inspiration.',
+  instructions: 'You are watching a coding agent that is exploring for the next task. If the worker has found something concrete, use start_work. Otherwise use break_down or ideate to keep discovery moving.',
   color: '#a8dadc',  // Pastel cyan - exploring, discovering
   actions: [
     { action: startWork, targetState: 'WORKING' },
     { action: breakDown, targetState: 'EXPLORING' },
-    { action: ideate, targetState: 'EXPLORING' },
-    { action: wait, targetState: 'EXPLORING' }
+    { action: ideate, targetState: 'EXPLORING' }
   ]
 }
 
 export const working: State = {
   name: 'WORKING',
-  instructions: 'Actively working on an aim. Monitor progress and help the worker complete the task. When the work looks complete, use wrap_up to begin verification.',
+  instructions: 'You are watching a coding agent at work. Prompt him to keep advancing. If offered choices, chose one that advances the work. If the worker reports to be done, switch into wrapping up mode.',
   color: '#a8e6a3',  // Pastel green - active work
   actions: [
-    { action: proceed, targetState: 'WORKING' },
-    { action: wrapUp, targetState: 'WRAPPING_UP' }
+    { action: textPrompt, targetState: 'WORKING' },
+    { action: choice, targetState: 'WORKING' },
+    { action: verify, targetState: 'WRAPPING_UP' }
   ]
 }
 
 export const wrappingUp: State = {
   name: 'WRAPPING_UP',
-  instructions: 'Verify work completion using ~80% threshold (good enough, not perfect). If complete, will trigger commit → reflect → compact → explore. If incomplete, return to working.',
+  instructions: 'You are watching a coding agent wrapping up work. If more implementation is needed, use revisit. Otherwise guide the worker through aim updates/reflection, then commit, then return to exploring.',
   color: '#ffe5a3',  // Pastel yellow - completion phase
   actions: [
-    { action: verifyComplete, targetState: 'EXPLORING' },
-    { action: verifyIncomplete, targetState: 'WORKING' }
-  ]
-}
-
-export const errorState: State = {
-  name: 'ERROR',
-  instructions: 'Error occurred (timeout, parse failure, etc.). Exponential backoff active. Decide whether to retry, reset, or abort.',
-  color: '#ffb3ba',  // Pastel red/pink - error state
-  actions: [
-    { action: retry, targetState: 'PREVIOUS' },  // Special: returns to previous state
-    { action: reset, targetState: 'EXPLORING' },
-    { action: abort, targetState: 'EXPLORING' }
+    { action: revisit, targetState: 'WORKING' },
+    { action: wrapUp, targetState: 'WRAPPING_UP' },
+    { action: commit, targetState: 'WRAPPING_UP' },
+    { action: waitingForCommitted, targetState: 'WRAPPING_UP' },
+    { action: explore, targetState: 'EXPLORING' }
   ]
 }
 
@@ -222,8 +207,7 @@ export const errorState: State = {
 export const STATE_MACHINE: Record<string, State> = {
   EXPLORING: exploring,
   WORKING: working,
-  WRAPPING_UP: wrappingUp,
-  ERROR: errorState
+  WRAPPING_UP: wrappingUp
 }
 
 // ========== HELPER FUNCTIONS ==========

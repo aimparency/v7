@@ -1,0 +1,31 @@
+{
+  "id": "f09a7c0a-b880-4448-a433-eef89c1f27bc",
+  "text": "Emit and hydrate supervisor state-machine state across all session runtimes",
+  "description": "Ensure every supported session runtime exposes the current state-engine state (for example EXPLORING, WORKING, WRAPPING_UP, ERROR) on connect and on transition, and ensure the frontend can hydrate that state reliably instead of falling back to generic connection labels.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "watchdog",
+    "autonomy",
+    "runtime",
+    "ui"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Created from watchdog panel work: UI currently falls back to connection state when runtime state is not emitted or hydrated.",
+    "date": 1774857742236
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
