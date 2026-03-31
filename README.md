@@ -1,16 +1,17 @@
 # Aimparency
 
-Aimparency is a local-first planning and coordination tool for work that lives next to real repositories.
+Aimparency is a local-first planning and coordination tool that lives next to real repositories.
 
-It runs as a browser app on your machine and stores project state in a `.bowman` directory inside the repo or workspace you point it at. It can also start local agent sessions on demand through the broker.
+It runs as a browser app on your machine, stores project state in a `.bowman` directory inside the repo or workspace you point it at, and can start local agent sessions through the broker.
 
-The intended open source workflow is simple:
+The longer-term vision is bigger than a single repo planner. Aimparency is intended to become a planning layer for open source projects in general, with project-local state by default and cross-repository references over time. That points toward a global planning graph for the open source software landscape, while still keeping ownership and control inside ordinary repositories.
 
-1. clone this repository
-2. run `npm install`
-3. run `npm run dev` while developing on Aimparency itself
-4. run `npm run start` for lower-overhead local usage
-5. open a nearby repo or workspace in the UI and let Aimparency use its `.bowman` directory
+Git is a large part of why this model is attractive:
+
+- permissions come from the repositories and workflows teams already use
+- version control comes for free because aims, phases, and code live in the same history
+- code changes and aim/status updates can be committed together, making it much easier to see what changed and why
+- that paired history may also become useful training material for intent, hypothesis, planning, and execution loops in future LLM systems
 
 ## What This Repo Contains
 
@@ -26,72 +27,66 @@ The intended open source workflow is simple:
 - Node.js 20+
 - npm
 
-Optional, depending on how you use the project:
+Optional:
 
 - Claude CLI for Claude-backed sessions
 - Gemini tooling for Gemini-backed sessions
 - Codex tooling for Codex-backed sessions
 
-The core app should still start without those optional agent CLIs installed. They are only needed when you want to launch the corresponding local session type.
+The core app still starts without those agent CLIs. They are only needed when you want to launch that session type.
 
 ## Quickstart
 
 ```bash
 npm install
-```
-
-Copy the example environment file if you want to customize ports:
-
-```bash
-cp .env.example .env
-```
-
-The defaults are fine for most local runs.
-
-Start the default development stack with watch mode:
-
-```bash
 npm run dev
 ```
 
-That starts the core local product: frontend, backend, broker, and wrapped-agent session servers.
+Then open:
 
-If you are actively working on optional integrations or internal tooling, use:
+```text
+http://localhost:4000
+```
+
+`4000` is the default frontend port in a fresh checkout. If you want custom ports, copy `.env.example` to `.env` and override them there.
+
+`npm run dev` starts the core local stack: frontend, backend, broker, and wrapped-agent session servers.
+
+If you need optional integrations too, use:
 
 ```bash
 npm run dev:full
 ```
 
-That additionally starts the dev-only broker inspector, MCP server, and voice bridge.
+That also starts the dev-only broker inspector, MCP server, and voice bridge.
 
-Voice remains opt-in in the browser UI. To expose the voice view in launcher-based runs, set `AIMPARENCY_ENABLE_VOICE=true` before `npm run dev` or `npm run start`. If you run the frontend directly, use `VITE_ENABLE_VOICE=true`.
+Voice remains opt-in in the browser UI. To expose it in launcher-based runs, set `AIMPARENCY_ENABLE_VOICE=true` before `npm run dev` or `npm run start`. If you run the frontend directly, use `VITE_ENABLE_VOICE=true`.
 
-Start the lighter build-mode local stack:
+For a lighter build-mode local stack:
 
 ```bash
 npm run start
 ```
 
-If you already built everything and want to skip rebuilding first:
+If you already built everything and want to skip rebuilding:
 
 ```bash
 npm run start:fast
 ```
 
-If you want an explicit core-package build without starting the stack, run:
+If you want to build without starting the stack:
 
 ```bash
 npm run build
 ```
 
-If you are working on optional integrations too, use:
+For optional integrations too:
 
 ```bash
 npm run build:all
 ```
 
-The main visible URL is the frontend, usually `http://localhost:4000`. Backend, broker, and session ports stay in the background and are not the main user-facing interface.
-The launcher prints the resolved frontend, backend, broker, and session ports at startup and writes the same values to `packages/frontend/public/runtime-config.json`.
+The main visible URL is the frontend, usually `http://localhost:4000`. Backend, broker, and session ports stay in the background. The launcher prints the resolved ports at startup and writes them to `packages/frontend/public/runtime-config.json`.
 
 To validate the local launcher and runtime-config fallback behavior without starting the full stack, run:
 
@@ -99,20 +94,20 @@ To validate the local launcher and runtime-config fallback behavior without star
 npm run validate:local-runtime
 ```
 
-That script exercises both the default-port and occupied-port paths and verifies that the generated runtime config stays internally consistent.
+That script checks both default-port and occupied-port cases and verifies that runtime config stays internally consistent.
 
 ## Local Workflow
 
-Aimparency is meant to be pointed at a local repo or workspace. In the UI, enter the project base folder path, not the `.bowman` path itself.
+Point Aimparency at a local repo or workspace. In the UI, enter the project base folder path, not the `.bowman` path itself.
 
 Example:
 
 - repo root: `/home/user/my-repo`
 - Aimparency data directory inside it: `/home/user/my-repo/.bowman`
 
-The backend normalizes the path and will create `.bowman` if needed. That directory becomes the local storage root for aims, phases, metadata, and generated search artifacts.
+The backend normalizes the path and creates `.bowman` if needed. That directory becomes the local storage root for aims, phases, metadata, and generated search artifacts.
 
-This makes the project git-friendly:
+This keeps the workflow git-friendly:
 
 - Aimparency state lives next to the code it describes
 - the checked-in shape is plain files
@@ -120,7 +115,7 @@ This makes the project git-friendly:
 
 ## `.bowman` Layout
 
-Aimparency writes its project data into a `.bowman` directory in the target repo or workspace. That includes aims, phases, caches, and vector/search data.
+Aimparency writes project data into a `.bowman` directory in the target repo or workspace.
 
 Typical structure:
 
@@ -146,11 +141,11 @@ What each part is for:
 - `.gitignore`: generated `.bowman` artifacts that should not be committed
 - `vectors.json`, `cache.db`, `semantic-graph.json`: generated search/cache data
 
-The backend maintains `.bowman/.gitignore` entries for generated artifacts automatically.
-
 ## Git Workflow
 
 Aimparency is designed so the important project state can live next to the code it describes.
+
+In the intended workflow, code edits and planning updates travel together. A commit can contain both the implementation and the corresponding aim changes, status changes, comments, or reflections. That gives you a much clearer history of intent, execution, and outcome than code diffs alone.
 
 In normal use, these files are user-authored project state and are reasonable to commit:
 
@@ -168,7 +163,7 @@ These files are generated runtime/search artifacts and should usually stay uncom
 
 The backend keeps those generated artifacts listed in `.bowman/.gitignore` automatically.
 
-One exception to the “everything stays in `.bowman`” rule is agent-instruction injection. If you trigger that feature, Aimparency may also update repo-root agent config files such as:
+One exception to the “everything stays in `.bowman`” rule is agent-instruction injection. If you use that feature, Aimparency may also update repo-root agent config files such as:
 
 - `CLAUDE.md`
 - `.gemini/GEMINI.md`
@@ -177,19 +172,6 @@ One exception to the “everything stays in `.bowman`” rule is agent-instructi
 Those files are normal repository files, not generated cache output. Review and commit them intentionally if you want the injected instructions to travel with the repo.
 
 If you use one Aimparency instance with multiple repos or workspaces, each target gets its own separate `.bowman` directory. Aimparency does not merge those project states together on disk.
-
-## Current Release Direction
-
-The intended open source usage is:
-
-1. clone the repository
-2. run `npm install`
-3. use `npm run dev` while developing
-4. use `npm run start` for normal local usage
-
-This repo is not currently optimized for global install or hosted deployment. Optional integrations such as MCP and voice are secondary to the local-first workflow and are not part of the default `npm run dev`, `npm run build`, or `npm run start` path.
-
-Those optional packages still live in the main workspace for contributor ergonomics, but the core launcher/build flow no longer depends on building them first.
 
 ## Optional Integrations
 
