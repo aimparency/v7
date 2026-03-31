@@ -95,7 +95,7 @@ export const verify: Action = {
 
 export const choice: Action = {
   name: 'choice',
-  description: 'Choose one of the currently visible options in the worker terminal when selecting an option is the best next step.',
+  description: 'Choose one of the currently visible options in the worker terminal. If the agent prompts for a choice, you have to take this choice action. Example context: "› 1. Allow ... 2. Allow for this session ... 3. Always allow ... 4. Cancel ... enter to submit | esc to cancel".',
   parameters: [
     { name: 'choice', description: 'Visible option to select, usually a number or shortcut key', required: true }
   ],
@@ -174,7 +174,8 @@ export const exploring: State = {
   actions: [
     { action: startWork, targetState: 'WORKING' },
     { action: breakDown, targetState: 'EXPLORING' },
-    { action: ideate, targetState: 'EXPLORING' }
+    { action: ideate, targetState: 'EXPLORING' },
+    { action: choice, targetState: 'EXPLORING' }
   ]
 }
 
@@ -194,6 +195,7 @@ export const wrappingUp: State = {
   instructions: 'You are watching a coding agent wrapping up work. If more implementation is needed, use revisit. Otherwise guide the worker through aim updates/reflection, then commit, then return to exploring.',
   color: '#ffe5a3',  // Pastel yellow - completion phase
   actions: [
+    { action: choice, targetState: 'WRAPPING_UP' },
     { action: revisit, targetState: 'WORKING' },
     { action: wrapUp, targetState: 'WRAPPING_UP' },
     { action: commit, targetState: 'WRAPPING_UP' },

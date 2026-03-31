@@ -1,0 +1,31 @@
+{
+  "id": "bb3d85e5-3667-48d4-8d91-9bf73008bb49",
+  "text": "Add explicit ordering fields to the phase data model",
+  "description": "Replace time-based phase positioning with explicit sibling order. Introduce stable ordering for root phases and child phases so hierarchy navigation no longer depends on from/to timestamps. Include migration strategy for existing phase JSON files and any persistence helpers that currently sort by midpoint.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "phase-refactor",
+    "backend",
+    "schema",
+    "migration"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Foundational schema and migration work for the refactor.",
+    "date": 1774951286101
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

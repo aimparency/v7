@@ -1,0 +1,32 @@
+{
+  "id": "648a2ea8-9692-4945-9232-4451e4df3ff0",
+  "text": "Remove temporal phase UI and tests",
+  "description": "Delete time-based phase rendering and progress concepts from the product. Remove date ranges, progress bars derived from now/from/to, smart-date helpers, and associated backend/frontend/e2e tests. Replace them with tests for explicit ordering and cursor-based active path behavior.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "phase-refactor",
+    "cleanup",
+    "tests",
+    "frontend",
+    "backend"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Cleanup pass after ordered cursor behavior is in place.",
+    "date": 1774951307014
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

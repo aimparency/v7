@@ -13,6 +13,54 @@
         0.9783175263619054
       ],
       "weight": 1
+    },
+    {
+      "aimId": "bb3d85e5-3667-48d4-8d91-9bf73008bb49",
+      "relativePosition": [
+        2.0878580143206,
+        1.3750814201483634
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "7a870c2e-c91f-453b-86e1-130e17a3cfbd",
+      "relativePosition": [
+        -2.3943740216534577,
+        -0.7190083757725274
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "687a7c08-d9ce-426a-a30d-51d03d1c8fdd",
+      "relativePosition": [
+        -0.9149018290927152,
+        2.3265757333735784
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "fe0e0aaf-1507-4b9f-8699-0d29e213c8e9",
+      "relativePosition": [
+        0.9196106878849792,
+        -2.3247185168806386
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "648a2ea8-9692-4945-9232-4451e4df3ff0",
+      "relativePosition": [
+        2.2482455742891987,
+        1.0933397631518895
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "dba842e7-aee0-45c8-8efb-b60e2a4d837e",
+      "relativePosition": [
+        0.9453362916361043,
+        2.3143766538132247
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [

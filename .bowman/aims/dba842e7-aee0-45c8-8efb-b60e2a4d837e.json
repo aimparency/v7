@@ -1,0 +1,32 @@
+{
+  "id": "dba842e7-aee0-45c8-8efb-b60e2a4d837e",
+  "text": "Specify concatenated child-phase windowing and artificial scrolling behavior",
+  "description": "Clarify exactly how a column should display child phases when visible phases are produced by concatenating children of consecutive parent phases on the active path. Define which parent ranges contribute, how the visible window is computed, how cursor movement affects the window, and what counts as the currently active versus merely visible phase.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "phase-refactor",
+    "ui",
+    "scrolling",
+    "unclear",
+    "spec"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "unclear",
+    "comment": "Rendering/window semantics are directionally clear but still underspecified for implementation.",
+    "date": 1774951313769
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

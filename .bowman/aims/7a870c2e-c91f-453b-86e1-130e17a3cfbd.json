@@ -1,0 +1,32 @@
+{
+  "id": "7a870c2e-c91f-453b-86e1-130e17a3cfbd",
+  "text": "Persist phase cursor state in project-local metadata",
+  "description": "Store one active cursor index per hierarchy level in .bowman project metadata. Define how the frontend reads and writes this shared current-path state so active phase queries become cursor-based rather than time-based.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "phase-refactor",
+    "cursor",
+    "metadata",
+    "backend",
+    "frontend"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Replaces time-based active-phase selection with durable cursor state.",
+    "date": 1774951289858
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
