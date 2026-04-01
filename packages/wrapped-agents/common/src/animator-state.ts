@@ -160,11 +160,11 @@ export class AnimatorState {
   /**
    * Start tracking a concrete task
    */
-  startWork(task: string, strategy?: string, reference?: string): void {
-    this.context.aimText = task
-    this.context.task = task
-    this.context.reference = reference
-    this.context.strategy = strategy
+  startWork(message: string): void {
+    this.context.aimText = message
+    this.context.task = message
+    this.context.reference = undefined
+    this.context.strategy = undefined
     this.context.workStartedAt = Date.now()
   }
 

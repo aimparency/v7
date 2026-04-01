@@ -36,12 +36,11 @@ export const startWork: Action = {
   name: 'start_work',
   description: 'Use when the worker has found something concrete to tackle and should move into execution.',
   parameters: [
-    { name: 'task', description: 'Short description of the task to work on', required: true },
-    { name: 'strategy', description: 'Optional approach the worker should take', required: false }
+    { name: 'message', description: 'A message that motivates the worker to start working', required: true }
   ],
   examples: [
-    '{"action": {"type": "start_work", "task": "add unit tests for auth module", "strategy": "cover login, logout, and token refresh"}}',
-    '{"action": {"type": "start_work", "task": "implement dark mode toggle"}}'
+    '{"action": {"type": "start_work", "message": "check Aimparency MCP for the next open aim and start implementing it"}}',
+    '{"action": {"type": "start_work", "message": "start working on the next concrete task you found"}}'
   ]
 }
 
@@ -49,10 +48,10 @@ export const breakDown: Action = {
   name: 'break_down',
   description: 'Use when the worker needs to split vague or high-level work into smaller concrete steps.',
   parameters: [
-    { name: 'focus', description: 'Short description of the work being broken down', required: false }
+    { name: 'message', description: 'Free-text guidance for how the worker should break the work down', required: false }
   ],
   examples: [
-    '{"action": {"type": "break_down", "focus": "authentication refactor"}}',
+    '{"action": {"type": "break_down", "message": "use Aimparency MCP to break the current high-level aim into smaller concrete sub-aims"}}',
     '{"action": {"type": "break_down"}}'
   ]
 }

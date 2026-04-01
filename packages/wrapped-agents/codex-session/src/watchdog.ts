@@ -889,20 +889,14 @@ Please choose one of the valid actions and respond with correct JSON.`;
     // Update context for specific actions
     switch (actionType) {
       case 'start_work':
-        this.animatorState.startWork(
-          action.task ?? 'current task',
-          action.strategy,
-          action.reference
-        );
+        this.animatorState.startWork(action.message ?? 'start working');
         await this.executeStartWork(
-          action.task ?? 'current task',
-          action.strategy,
-          action.reference
+          action.message ?? 'start working'
         );
         break;
 
       case 'break_down':
-        await this.executeBreakDown(action.focus ?? action.task ?? 'current task');
+        await this.executeBreakDown(action.message);
         break;
 
       case 'ideate':
@@ -955,29 +949,23 @@ Please choose one of the valid actions and respond with correct JSON.`;
 
   // ========== ACTION EXECUTORS ==========
 
-  private async executeStartWork(task: string, strategy?: string, reference?: string): Promise<void> {
-    this.log(`[StateMachine] Starting work on: ${task}`);
+  private async executeStartWork(message: string): Promise<void> {
+    this.log(`[StateMachine] Starting work`);
 
     const prompt = `${this.instructTextWithMemory}
 
 ---
 
-Move into execution for this work:
-- Focus: ${task}
-${strategy ? `- Strategy: ${strategy}` : ''}
-${reference ? `- Reference: ${reference}` : ''}
-
-Use the project tools you have available. Start implementation, keep changes coherent, and surface blockers explicitly if you hit one.`;
+Check Aimparency MCP for open aims or the current assigned aim, then start working. ${message}`;
 
     await this.post(this.worker, prompt);
   }
 
-  private async executeBreakDown(focus: string): Promise<void> {
-    this.log(`[StateMachine] Breaking down focus: ${focus}`);
+  private async executeBreakDown(message?: string): Promise<void> {
+    this.log('[StateMachine] Breaking down work');
 
-    const prompt = focus
-      ? `Break down the current high-level work into smaller concrete steps, then continue with the next best step. Current focus: ${focus}`
-      : 'Break the current high-level work into smaller concrete steps, then continue with the next best step.';
+    const defaultPrompt = 'Check Aimparency MCP for the current open aim, break it down into smaller concrete sub-aims or tasks, then continue with the next best step.';
+    const prompt = message ? `${defaultPrompt} ${message}` : defaultPrompt;
 
     await this.post(this.worker, prompt);
   }
@@ -985,7 +973,7 @@ Use the project tools you have available. Start implementation, keep changes coh
   private async executeIdeate(text?: string): Promise<void> {
     this.log('[StateMachine] Ideating');
 
-    const defaultPrompt = 'Look for the next concrete task to start.';
+    const defaultPrompt = 'Check Aimparency MCP for open aims and look for the next concrete task to start.';
     const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
     await this.post(this.worker, prompt);
   }
@@ -996,7 +984,7 @@ Use the project tools you have available. Start implementation, keep changes coh
   }
 
   private async executeVerify(text?: string): Promise<void> {
-    const defaultPrompt = 'verify that more than 80% of the tackled requirements have been met.';
+    const defaultPrompt = 'verify that more than 80% of the tackled requirements have been met. If the work is good enough, prepare to update the aim via Aimparency MCP.';
     const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
     this.animatorState.updateContext({ metadata: { workSummary: text || defaultPrompt } });
     await this.post(this.worker, prompt);
@@ -1008,7 +996,7 @@ Use the project tools you have available. Start implementation, keep changes coh
   }
 
   private async executeWrapUp(text?: string): Promise<void> {
-    const defaultPrompt = 'update aim status and comment and reflection if not done already';
+    const defaultPrompt = 'use Aimparency MCP to update aim status and comment and reflection if not done already';
     const prompt = text ? `${defaultPrompt}. ${text}` : defaultPrompt;
     await this.post(this.worker, prompt);
   }
@@ -1021,7 +1009,7 @@ Use the project tools you have available. Start implementation, keep changes coh
   }
 
   private async executeExplore(text?: string): Promise<void> {
-    const prompt = text || 'explore open aims and see if there is something you can work on';
+    const prompt = text || 'check Aimparency MCP for open aims and see if there is something you can work on';
     await this.post(this.worker, prompt);
   }
 

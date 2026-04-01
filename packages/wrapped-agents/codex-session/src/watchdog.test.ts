@@ -407,7 +407,7 @@ test('executeActionSideEffects ideate includes returned text guidance', async ()
     text: 'look for follow-up cleanup or validation work after the three-state watchdog simplification'
   });
 
-  assert.match(posts[0] || '', /Look for the next concrete task to start\./);
+  assert.match(posts[0] || '', /Check Aimparency MCP for open aims and look for the next concrete task to start\./);
   assert.match(posts[0] || '', /follow-up cleanup or validation work/i);
 });
 
