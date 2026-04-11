@@ -3,7 +3,7 @@ import { WebSocket } from "ws";
 import type { AppRouter } from "backend";
 
 // Create WebSocket client
-const wsClient = createWSClient({
+export const wsClient = createWSClient({
   url: `ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
 });
 
