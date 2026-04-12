@@ -262,6 +262,32 @@ test('list - filters aims by status and phase', async () => {
   assert.equal(filteredAims.length, 1);
 });
 
+test('phase.list skips malformed phase files', async () => {
+  const validPhase = await caller.phase.create({
+    projectPath: testProjectPath,
+    phase: {
+      name: 'Valid Phase',
+      from: Date.now(),
+      to: Date.now() + 1000,
+      parent: null,
+      commitments: []
+    }
+  });
+
+  const malformedPhaseId = uuidv4();
+  const malformedPhasePath = path.join(testProjectPath, 'phases', `${malformedPhaseId}.json`);
+  await fs.ensureDir(path.dirname(malformedPhasePath));
+  await fs.writeFile(malformedPhasePath, '{');
+
+  const phases = await caller.phase.list({
+    projectPath: testProjectPath,
+    parentPhaseId: null
+  });
+
+  assert.equal(phases.length, 1);
+  assert.equal(phases[0]?.id, validPhase.id);
+});
+
 test('search - matches aims using search index', async () => {
   // Create test aims
   await caller.aim.createFloatingAim({

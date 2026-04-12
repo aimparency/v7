@@ -49,11 +49,9 @@ describe('list store phase selection', () => {
     } as any
     dataStore.childrenByParentId.null = ['root-1', 'root-2']
 
-    uiStore.columnParentPhaseId[0] = null
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'root-1'
 
-    uiStore.columnParentPhaseId[1] = 'root-1'
     uiStore.selectedPhaseByColumn[1] = 1
     uiStore.selectedPhaseIdByColumn[1] = 'child-b'
 

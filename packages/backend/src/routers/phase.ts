@@ -117,19 +117,10 @@ export const createPhaseRouter = (
     list: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        parentPhaseId: z.string().uuid().nullable().optional(),
-        activeAt: z.number().optional(),
-        all: z.boolean().optional()
+        parentPhaseId: z.string().uuid().nullable().optional()
       }))
       .query(async ({ input }: any) => {
-        let phases = await listPhases(input.projectPath, input.parentPhaseId);
-
-        if (input.all) {
-            return phases;
-        }
-
-        const time = input.activeAt ?? Date.now();
-        return phases.filter((p: Phase) => p.from <= time && p.to >= time);
+        return await listPhases(input.projectPath, input.parentPhaseId);
       }),
 
     update: delayedProcedure

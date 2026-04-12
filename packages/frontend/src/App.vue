@@ -253,7 +253,6 @@ watch(() => [
   uiStore.selectedColumn,
   uiStore.selectedPhaseByColumn,
   uiStore.selectedPhaseIdByColumn,
-  uiStore.columnParentPhaseId,
   uiStore.floatingAimIndex,
   uiStore.viewportStart,
   uiStore.lastSelectedSubPhaseIndexByPhase
@@ -261,7 +260,6 @@ watch(() => [
   localStorage.setItem('aimparency-selected-column', uiStore.selectedColumn.toString())
   localStorage.setItem('aimparency-selected-phases', JSON.stringify(uiStore.selectedPhaseByColumn))
   localStorage.setItem('aimparency-selected-phase-ids', JSON.stringify(uiStore.selectedPhaseIdByColumn))
-  localStorage.setItem('aimparency-column-parents', JSON.stringify(uiStore.columnParentPhaseId))
   localStorage.setItem('aimparency-floating-index', uiStore.floatingAimIndex.toString())
   localStorage.setItem('aimparency-viewport-start', uiStore.viewportStart.toString())
   localStorage.setItem('aimparency-last-sub-phase-index', JSON.stringify(uiStore.lastSelectedSubPhaseIndexByPhase))

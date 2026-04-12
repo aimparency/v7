@@ -43,6 +43,8 @@ function logNav(event: string, details: Record<string, unknown> = {}) {
   console.log(`[PhaseNav] ${event}`, details)
 }
 
+type PhaseMoveDirection = 'forward' | 'backward' | 'preserve'
+
 export const useListStore = defineStore('ui', {
   state: () => ({
     // Navigation mode system
@@ -55,7 +57,6 @@ export const useListStore = defineStore('ui', {
     // Phase selection by column
     selectedPhaseByColumn: JSON.parse(localStorage.getItem('aimparency-selected-phases') || '{}') as Record<number, number>, // columnIndex -> phaseIndex
     selectedPhaseIdByColumn: JSON.parse(localStorage.getItem('aimparency-selected-phase-ids') || '{}') as Record<number, string>, // columnIndex -> phaseId
-    columnParentPhaseId: JSON.parse(localStorage.getItem('aimparency-column-parents') || '{"0":null}') as Record<number, string | null>, // columnIndex -> parent phase ID whose children this column shows (0 = root phases)
 
     // Root aims selection (for column -1)
     floatingAimIndex: parseInt(localStorage.getItem('aimparency-floating-index') || '0'),
@@ -63,9 +64,6 @@ export const useListStore = defineStore('ui', {
     // Viewport for column scrolling
     viewportStart: parseInt(localStorage.getItem('aimparency-viewport-start') || '-1'), // Left edge of visible window
     viewportSize: parseInt(localStorage.getItem('aimparency-viewport-size') || '3'), // Number of columns visible at once
-
-    // Phase reload trigger (increment to force reload)
-    phaseReloadTrigger: 0,
 
     // Delete pending states
     pendingDeletePhaseId: null as string | null,
@@ -522,7 +520,8 @@ export const useListStore = defineStore('ui', {
         phaseActiveLevel
       })
 
-      await this.loadPhaseLevel(0)
+      const visibleRightmost = this.getVisibleRightmostPhaseColumn()
+      await this.ensurePhaseLevelsLoaded(visibleRightmost)
       const rootEntries = dataStore.getSelectablePhaseLevelEntries(0)
       if (rootEntries.length === 0) {
         this.setRightmostColumn(0)
@@ -532,45 +531,21 @@ export const useListStore = defineStore('ui', {
 
       let deepestRestoredLevel = 0
 
-      for (let level = 0; ; level++) {
-        await this.loadPhaseLevel(level)
+      for (let level = 0; level <= visibleRightmost; level++) {
         const entries = dataStore.getSelectablePhaseLevelEntries(level)
         if (entries.length === 0) {
-          this.setRightmostColumn(level)
           break
         }
 
         const requestedIndex = phaseCursors?.[String(level)] ?? 0
         const clampedIndex = Math.max(0, Math.min(requestedIndex, entries.length - 1))
-        const entry = entries[clampedIndex]
-        if (!entry) {
-          this.setRightmostColumn(level)
-          break
-        }
-
-        this.setSelection(level, clampedIndex)
-        this.columnParentPhaseId[level] = level > 0 ? (this.selectedPhaseIdByColumn[level - 1] ?? null) : null
+        this.selectedPhaseByColumn[level] = clampedIndex
         deepestRestoredLevel = level
-
-        if (entry.type !== 'phase') {
-          this.setRightmostColumn(level)
-          break
-        }
-
-        await this.loadPhaseLevel(level + 1)
-        const nextEntries = dataStore.getSelectablePhaseLevelEntries(level + 1)
-        if (nextEntries.length === 0) {
-          this.columnParentPhaseId[level + 1] = entry.phase.id
-          this.setRightmostColumn(level + 1)
-          break
-        }
-
-        this.columnParentPhaseId[level + 1] = entry.phase.id
-        this.setMinRightmost(level + 1)
       }
 
       const targetLevel = phaseActiveLevel ?? deepestRestoredLevel
-      this.setSelectedColumn(Math.max(0, Math.min(targetLevel, this.rightmostColumnIndex)))
+      this.setSelectedColumn(Math.max(0, Math.min(targetLevel, visibleRightmost)))
+      await this.reconcilePhaseSelection(this.selectedColumn, 'preserve')
       logNav('restorePhaseCursorsFromMeta:done', {
         selectedColumn: this.selectedColumn,
         selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
@@ -605,191 +580,245 @@ export const useListStore = defineStore('ui', {
       })
     },
 
-    syncParentSelectionsForEntry(columnIndex: number, parentPhaseId: string | null) {
-      if (columnIndex <= 0 || !parentPhaseId) {
-        return
-      }
-
-      const dataStore = useDataStore()
-      let currentParentId: string | null = parentPhaseId
-
-      for (let level = columnIndex - 1; level >= 0 && currentParentId; level--) {
-        const parentEntries = dataStore.getSelectablePhaseLevelEntries(level)
-        const parentIndex = parentEntries.findIndex((entry) => entry.type === 'phase' && entry.phase.id === currentParentId)
-        if (parentIndex < 0) {
-          break
-        }
-
-        const parentEntry = parentEntries[parentIndex]
-        if (!parentEntry || parentEntry.type !== 'phase') {
-          break
-        }
-        this.selectedPhaseByColumn[level] = parentIndex
-        this.selectedPhaseIdByColumn[level] = currentParentId
-        this.columnParentPhaseId[level] = level > 0 ? (this.selectedPhaseIdByColumn[level - 1] ?? null) : null
-        logNav('syncParentSelectionsForEntry', {
-          sourceColumn: columnIndex,
-          updatedLevel: level,
-          parentPhaseId: currentParentId,
-          parentIndex
-        })
-        currentParentId = parentEntry.parentPhaseId
-      }
+    getVisibleRightmostPhaseColumn() {
+      return Math.max(0, this.viewportStart + this.viewportSize - 1)
     },
 
-    async selectPhase(columnIndex: number, phaseIndex: number, isTopLevel = true) {
+    getSelectableEntries(columnIndex: number): Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry> {
       const dataStore = useDataStore()
-      logNav('selectPhase:start', {
-        columnIndex,
-        requestedPhaseIndex: phaseIndex,
-        isTopLevel,
-        selectedColumn: this.selectedColumn,
-        selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
-        selectedPhaseIdByColumn: { ...this.selectedPhaseIdByColumn }
-      })
-      try {
-        if (isTopLevel) {
-          this.setSelectedColumn(columnIndex)
-        }
-
-        await this.loadPhaseLevel(columnIndex)
-
-        const selectableEntries = dataStore.getSelectablePhaseLevelEntries(columnIndex)
-        if (selectableEntries.length === 0) {
-          this.selectedPhaseByColumn[columnIndex] = 0
-          delete this.selectedPhaseIdByColumn[columnIndex]
-          this.setRightmostColumn(columnIndex)
-          return
-        }
-
-        const clampedIndex = Math.max(0, Math.min(phaseIndex, selectableEntries.length - 1))
-        const selectedEntry = selectableEntries[clampedIndex]
-        if (!selectedEntry) {
-          this.setRightmostColumn(columnIndex)
-          return
-        }
-        const phaseId = selectedEntry.type === 'phase' ? selectedEntry.phase.id : undefined
-
-        const oldPhaseId = this.selectedPhaseIdByColumn[columnIndex]
-        if (oldPhaseId && oldPhaseId !== phaseId && columnIndex >= 0) {
-          const nextColumnEntries = dataStore.getSelectablePhaseLevelEntries(columnIndex + 1)
-          const nextSelection = nextColumnEntries[this.selectedPhaseByColumn[columnIndex + 1] ?? 0]
-          if (nextSelection && nextSelection.parentPhaseId === oldPhaseId) {
-            this.lastSelectedSubPhaseIndexByPhase[oldPhaseId] = nextSelection.childIndex
-          }
-        }
-
-        this.syncParentSelectionsForEntry(columnIndex, selectedEntry.parentPhaseId)
-
-        this.selectedPhaseByColumn[columnIndex] = clampedIndex
-        this.columnParentPhaseId[columnIndex] = columnIndex > 0 ? (this.selectedPhaseIdByColumn[columnIndex - 1] ?? null) : null
-        if (phaseId) {
-          this.selectedPhaseIdByColumn[columnIndex] = phaseId
-        } else {
-          delete this.selectedPhaseIdByColumn[columnIndex]
-        }
-        logNav('selectPhase:updateCurrentLevel', {
-          columnIndex,
-          clampedIndex,
-          selectedEntryType: selectedEntry.type,
-          phaseId,
-          parentPhaseId: selectedEntry.parentPhaseId
-        })
-
-        if (selectedEntry.type !== 'phase') {
-          this.setRightmostColumn(columnIndex)
-          logNav('selectPhase:placeholderSelected', {
-            columnIndex,
-            clampedIndex,
-            selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
-            selectedPhaseIdByColumn: { ...this.selectedPhaseIdByColumn }
-          })
-          return
-        }
-
-        const selectedPhaseId = selectedEntry.phase.id
-
-        await this.loadPhaseLevel(columnIndex + 1)
-        const nextColumnEntries = dataStore.getSelectablePhaseLevelEntries(columnIndex + 1)
-        const ownedEntries = nextColumnEntries.filter((entry) => entry.parentPhaseId === selectedPhaseId)
-        if (ownedEntries.length === 0) {
-          this.setRightmostColumn(columnIndex + 1)
-          this.columnParentPhaseId[columnIndex + 1] = selectedPhaseId
-          logNav('selectPhase:noChildren', {
-            columnIndex,
-            selectedPhaseId,
-            nextColumn: columnIndex + 1
-          })
-          return
-        }
-
-        const rememberedChildIndex = this.lastSelectedSubPhaseIndexByPhase[selectedPhaseId] ?? 0
-        const targetChildIndex = Math.min(rememberedChildIndex, ownedEntries.length - 1)
-        const targetEntry = ownedEntries.find((entry) => entry.childIndex === targetChildIndex) ?? ownedEntries[targetChildIndex]
-        if (!targetEntry) {
-          this.setRightmostColumn(columnIndex)
-          return
-        }
-        const globalIndex = nextColumnEntries.findIndex((entry) => entry.key === targetEntry.key)
-        if (globalIndex < 0) {
-          this.setRightmostColumn(columnIndex)
-          return
-        }
-
-        this.columnParentPhaseId[columnIndex + 1] = selectedPhaseId
-        this.setMinRightmost(columnIndex + 1)
-        logNav('selectPhase:recurseChild', {
-          columnIndex,
-          selectedPhaseId,
-          nextColumn: columnIndex + 1,
-          childGlobalIndex: globalIndex,
-          rememberedChildIndex
-        })
-        await this.selectPhase(columnIndex + 1, globalIndex, false)
-        logNav('selectPhase:done', {
-          columnIndex,
-          selectedColumn: this.selectedColumn,
-          selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
-          selectedPhaseIdByColumn: { ...this.selectedPhaseIdByColumn },
-          rightmostColumnIndex: this.rightmostColumnIndex
-        })
-      } catch (error) {
-        console.error('[PhaseNav] selectPhase:error', {
-          columnIndex,
-          phaseIndex,
-          isTopLevel,
-          error
-        })
-        throw error
-      }
+      return dataStore.getSelectablePhaseLevelEntries(columnIndex)
     },
 
-    // Set selection without loading (j/k navigation)
-    setSelection(columnIndex: number, phaseIndex: number) {
-      const dataStore = useDataStore()
-      const entries = dataStore.getSelectablePhaseLevelEntries(columnIndex)
-      const entry = entries[phaseIndex]
+    getSelectedPhaseEntry(columnIndex: number): PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry | undefined {
+      const entries = this.getSelectableEntries(columnIndex)
+      return entries[this.getSelectedPhase(columnIndex)]
+    },
 
-      this.selectedPhaseByColumn[columnIndex] = phaseIndex
-      if (entry?.type === 'phase') {
+    getOwnedEntries(columnIndex: number, parentPhaseId: string) {
+      return this.getSelectableEntries(columnIndex).filter((entry) => entry.parentPhaseId === parentPhaseId)
+    },
+
+    findSelectableIndexForPhase(columnIndex: number, phaseId: string): number {
+      return this.getSelectableEntries(columnIndex).findIndex((entry) => entry.type === 'phase' && entry.phase.id === phaseId)
+    },
+
+    applyPhaseSelection(columnIndex: number, phaseIndex: number) {
+      const entries = this.getSelectableEntries(columnIndex)
+      if (entries.length === 0) {
+        this.selectedPhaseByColumn[columnIndex] = 0
+        delete this.selectedPhaseIdByColumn[columnIndex]
+        return undefined
+      }
+
+      const clampedIndex = Math.max(0, Math.min(phaseIndex, entries.length - 1))
+      const entry = entries[clampedIndex]
+      if (!entry) {
+        return undefined
+      }
+
+      this.selectedPhaseByColumn[columnIndex] = clampedIndex
+      if (entry.type === 'phase') {
         this.selectedPhaseIdByColumn[columnIndex] = entry.phase.id
       } else {
         delete this.selectedPhaseIdByColumn[columnIndex]
       }
 
-      if (columnIndex > 0) {
-        const parentColumn = columnIndex - 1
-        const parentPhaseId = this.selectedPhaseIdByColumn[parentColumn] ?? entry?.parentPhaseId
-        if (parentPhaseId && entry) {
-          this.lastSelectedSubPhaseIndexByPhase[parentPhaseId] = entry.childIndex
+      if (columnIndex > 0 && entry.parentPhaseId) {
+        this.lastSelectedSubPhaseIndexByPhase[entry.parentPhaseId] = entry.childIndex
+      }
+
+      logNav('applyPhaseSelection', {
+        columnIndex,
+        clampedIndex,
+        selectedEntryType: entry.type,
+        phaseId: entry.type === 'phase' ? entry.phase.id : null,
+        parentPhaseId: entry.parentPhaseId ?? null
+      })
+
+      return entry
+    },
+
+    async ensurePhaseLevelsLoaded(maxLevel: number) {
+      for (let level = 0; level <= maxLevel; level++) {
+        await this.loadPhaseLevel(level)
+      }
+    },
+
+    repairSelectionLeft(fromLevel: number) {
+      let currentParentId = this.getSelectedPhaseEntry(fromLevel)?.parentPhaseId ?? null
+      for (let level = fromLevel - 1; level >= 0 && currentParentId; level--) {
+        const parentIndex = this.findSelectableIndexForPhase(level, currentParentId)
+        if (parentIndex < 0) {
+          break
+        }
+
+        const parentEntry = this.applyPhaseSelection(level, parentIndex)
+        logNav('repairSelectionLeft', {
+          sourceLevel: fromLevel,
+          updatedLevel: level,
+          parentPhaseId: currentParentId,
+          parentIndex
+        })
+        if (!parentEntry || parentEntry.type !== 'phase') {
+          break
+        }
+        currentParentId = parentEntry.parentPhaseId
+      }
+    },
+
+    chooseOwnedEntry(
+      entries: Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry>,
+      currentEntry: PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry | undefined,
+      parentPhaseId: string,
+      direction: PhaseMoveDirection
+    ) {
+      if (entries.length === 0) {
+        return undefined
+      }
+
+      const rememberedChildIndex = this.lastSelectedSubPhaseIndexByPhase[parentPhaseId]
+      if (rememberedChildIndex !== undefined) {
+        const rememberedEntry = entries.find((entry) => entry.childIndex === rememberedChildIndex)
+        if (rememberedEntry) {
+          return rememberedEntry
         }
       }
-      logNav('setSelection', {
-        columnIndex,
-        phaseIndex,
-        phaseId: entry?.type === 'phase' ? entry.phase.id : null,
-        parentPhaseId: entry?.parentPhaseId ?? null
+
+      if (currentEntry && currentEntry.parentPhaseId === parentPhaseId) {
+        const currentMatch = entries.find((entry) => entry.key === currentEntry.key)
+        if (currentMatch) {
+          return currentMatch
+        }
+
+        if (currentEntry.childIndex >= 0 && currentEntry.childIndex < entries.length) {
+          return entries[currentEntry.childIndex]
+        }
+      }
+
+      return direction === 'backward' ? entries[entries.length - 1] : entries[0]
+    },
+
+    async repairSelectionRight(fromLevel: number, direction: PhaseMoveDirection) {
+      const maxVisibleLevel = this.getVisibleRightmostPhaseColumn()
+      let lastVisibleLevel = Math.max(0, Math.min(fromLevel, maxVisibleLevel))
+
+      for (let level = fromLevel + 1; level <= maxVisibleLevel; level++) {
+        const parentPhaseId = this.selectedPhaseIdByColumn[level - 1]
+        if (!parentPhaseId) {
+          break
+        }
+
+        await this.loadPhaseLevel(level)
+        const ownedEntries = this.getOwnedEntries(level, parentPhaseId)
+        if (ownedEntries.length === 0) {
+          break
+        }
+
+        const targetEntry = this.chooseOwnedEntry(
+          ownedEntries,
+          this.getSelectedPhaseEntry(level),
+          parentPhaseId,
+          direction
+        )
+        if (!targetEntry) {
+          break
+        }
+
+        const globalIndex = this.getSelectableEntries(level).findIndex((entry) => entry.key === targetEntry.key)
+        if (globalIndex < 0) {
+          break
+        }
+
+        this.applyPhaseSelection(level, globalIndex)
+        lastVisibleLevel = level
+        logNav('repairSelectionRight', {
+          fromLevel,
+          updatedLevel: level,
+          parentPhaseId,
+          globalIndex,
+          direction
+        })
+      }
+
+      this.rightmostColumnIndex = lastVisibleLevel
+    },
+
+    async reconcilePhaseSelection(fromLevel: number, direction: PhaseMoveDirection = 'preserve') {
+      this.repairSelectionLeft(fromLevel)
+      await this.repairSelectionRight(fromLevel, direction)
+      this.rightmostColumnIndex = Math.max(fromLevel, this.rightmostColumnIndex)
+      logNav('reconcilePhaseSelection', {
+        fromLevel,
+        direction,
+        selectedColumn: this.selectedColumn,
+        selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
+        selectedPhaseIdByColumn: { ...this.selectedPhaseIdByColumn },
+        rightmostColumnIndex: this.rightmostColumnIndex
       })
+    },
+
+    async selectPhase(
+      columnIndex: number,
+      phaseIndex: number,
+      direction: PhaseMoveDirection = 'preserve',
+      alreadyLoaded: boolean = false
+    ) {
+      logNav('selectPhase:start', {
+        columnIndex,
+        requestedPhaseIndex: phaseIndex,
+        direction,
+        alreadyLoaded,
+        selectedColumn: this.selectedColumn,
+        selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
+        selectedPhaseIdByColumn: { ...this.selectedPhaseIdByColumn }
+      })
+
+      this.setSelectedColumn(columnIndex)
+      if (!alreadyLoaded) {
+        await this.loadPhaseLevel(columnIndex)
+      }
+      const selectedEntry = this.applyPhaseSelection(columnIndex, phaseIndex)
+      if (!selectedEntry) {
+        this.setRightmostColumn(columnIndex)
+        return
+      }
+
+      await this.reconcilePhaseSelection(columnIndex, direction)
+      logNav('selectPhase:done', {
+        columnIndex,
+        selectedColumn: this.selectedColumn,
+        selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
+        selectedPhaseIdByColumn: { ...this.selectedPhaseIdByColumn },
+        rightmostColumnIndex: this.rightmostColumnIndex
+      })
+    },
+
+    async moveActivePhase(delta: number) {
+      const columnIndex = this.selectedColumn
+      if (columnIndex < 0) {
+        return false
+      }
+
+      const direction: PhaseMoveDirection = delta < 0 ? 'backward' : 'forward'
+      await this.loadPhaseLevel(columnIndex)
+      const entries = this.getSelectableEntries(columnIndex)
+      if (entries.length === 0) {
+        return false
+      }
+
+      const currentIndex = this.getSelectedPhase(columnIndex)
+      const nextIndex = currentIndex + delta
+      if (nextIndex < 0 || nextIndex >= entries.length) {
+        return false
+      }
+
+      await this.selectPhase(columnIndex, nextIndex, direction, true)
+      return true
+    },
+
+    // Set selection without loading (j/k navigation)
+    setSelection(columnIndex: number, phaseIndex: number) {
+      this.applyPhaseSelection(columnIndex, phaseIndex)
     },
 
     // Click-to-select by aim ID (finds top-level index automatically)
@@ -872,10 +901,6 @@ export const useListStore = defineStore('ui', {
 
       this.navigatingAims = true
       this.setCurrentAimIndex(aimIndex, dataStore)
-    },
-
-    triggerPhaseReload() {
-      this.phaseReloadTrigger++
     },
 
     setPendingDeletePhase(phaseId: string | null) {
@@ -976,8 +1001,7 @@ export const useListStore = defineStore('ui', {
             this.setSelection(i, index)
             if (i < phasePath.length - 1) {
               await dataStore.loadPhases(projectStore.projectPath, p.id)
-              this.columnParentPhaseId[i + 1] = p.id
-            }
+                          }
           }
         }
 

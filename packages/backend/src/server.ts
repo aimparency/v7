@@ -397,11 +397,21 @@ function normalizePhase(rawPhase: unknown, fallbackOrder?: number): Phase {
   };
 }
 
-async function readPhase(rawProjectPath: string, phaseId: string): Promise<Phase> {
+async function readPhaseFile(rawProjectPath: string, phaseId: string): Promise<Phase> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const phasePath = path.join(projectPath, 'phases', `${phaseId}.json`);
-  const data = await fs.readJson(phasePath);
-  return normalizePhase(data);
+
+  try {
+    const data = await fs.readJson(phasePath);
+    return normalizePhase(data);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${phasePath}: ${message}`);
+  }
+}
+
+async function readPhase(rawProjectPath: string, phaseId: string): Promise<Phase> {
+  return await readPhaseFile(rawProjectPath, phaseId);
 }
 
 async function listPhases(rawProjectPath: string, parentPhaseId?: string | null): Promise<Phase[]> {
@@ -415,10 +425,15 @@ async function listPhases(rawProjectPath: string, parentPhaseId?: string | null)
   
   for (const file of files) {
     if (file.endsWith('.json')) {
-      const rawPhase = await fs.readJson(path.join(phasesDir, file));
-      const normalized = normalizePhase(rawPhase);
-      rawPhases.set(normalized.id, rawPhase);
-      allPhases.push(normalized);
+      const phaseId = path.basename(file, '.json');
+      try {
+        const rawPhase = await fs.readJson(path.join(phasesDir, file));
+        const normalized = normalizePhase(rawPhase);
+        rawPhases.set(normalized.id, rawPhase);
+        allPhases.push(normalized);
+      } catch (error) {
+        console.warn(`[Phase] Skipping malformed phase file ${phaseId} in ${projectPath}:`, error);
+      }
     }
   }
 

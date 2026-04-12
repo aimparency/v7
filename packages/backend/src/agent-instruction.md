@@ -4,7 +4,7 @@ You are working in a project managed by Aimparency.
 Aimparency organizes work into **Aims** (goals/tasks) and **Phases** (time-boxed iterations).
 
 ## Core Workflow
-1.  **Discovery:** Use `list_phases` (with `activeAt: Date.now()`) to find the current phase. Then `list_aims` (with `phaseId` and `status='open'`) to find open tasks.
+1.  **Discovery:** Use `list_phases` to inspect the ordered phase tree. Then `list_aims` (with `phaseId` and `status='open'`) to find open tasks.
 2.  **Context:** Before starting work on any aim, use `get_aim_context(aimId)` to understand the aim, its parents (why), and its children (how/dependencies).
 3.  **Execution:** Implement the necessary changes.
 4.  **Update:** Use `update_aim` to mark the aim as `done` and provide a comment explaining what was done.

@@ -238,7 +238,6 @@ describe('UI teleport cut/paste', () => {
 
     uiStore.navigatingAims = false
     uiStore.selectedColumn = 0
-    uiStore.columnParentPhaseId[0] = null
     dataStore.childrenByParentId['null'] = []
 
     await uiStore.handleColumnNavigationKeys(keyEvent('i'), dataStore)
@@ -252,7 +251,6 @@ describe('UI teleport cut/paste', () => {
 
     uiStore.navigatingAims = false
     uiStore.selectedColumn = 0
-    uiStore.columnParentPhaseId[0] = null
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
     dataStore.childrenByParentId['null'] = ['phase-empty']

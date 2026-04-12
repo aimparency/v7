@@ -31,7 +31,10 @@
       "color": "#bf409f"
     }
   ],
-  "phaseCursors": {},
+  "phaseCursors": {
+    "0": 0,
+    "1": 7
+  },
   "phaseActiveLevel": 0,
   "rootPhaseIds": [
     "d4bf28d6-b751-4315-a151-dd2ce5d8c420",

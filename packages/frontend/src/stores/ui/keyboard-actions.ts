@@ -41,21 +41,16 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
   switch (event.key) {
     case 'j':
       if (col >= 0) {
-        const currentIndex = uiStore.getSelectedPhase(col)
-        const phaseCount = uiStore.getPhaseCount(col)
-        if (currentIndex < phaseCount - 1) {
-          await uiStore.selectPhase(col, currentIndex + 1)
-        } else {
+        const moved = await uiStore.moveActivePhase(1)
+        if (!moved) {
           uiStore.requestColumnScroll(col, 'bottom')
         }
       }
       break
     case 'k':
       if (col >= 0) {
-        const currentIndex = uiStore.getSelectedPhase(col)
-        if (currentIndex > 0) {
-          await uiStore.selectPhase(col, currentIndex - 1)
-        } else {
+        const moved = await uiStore.moveActivePhase(-1)
+        if (!moved) {
           uiStore.requestColumnScroll(col, 'top')
         }
       }
@@ -64,24 +59,28 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       event.preventDefault()
       if (col >= 0) {
         uiStore.pendingDeletePhaseId = null
-        if (col === uiStore.viewportStart && uiStore.viewportStart > -1) {
-          uiStore.viewportStart--
+        const nextColumn = col - 1
+        if (nextColumn >= 0) {
+          if (nextColumn < uiStore.viewportStart) {
+            uiStore.viewportStart = nextColumn
+          }
+          uiStore.setSelectedColumn(nextColumn)
         }
-        uiStore.setSelectedColumn(col - 1)
       }
       break
     case 'l':
       event.preventDefault()
       if (col < uiStore.rightmostColumnIndex) {
         uiStore.pendingDeletePhaseId = null
+        const nextColumn = col + 1
         const viewportEnd = uiStore.viewportStart + uiStore.viewportSize - 1
-        if (col === viewportEnd) {
+        if (nextColumn > viewportEnd) {
           const maxViewportStart = Math.max(0, uiStore.rightmostColumnIndex - uiStore.viewportSize + 1)
           if (uiStore.viewportStart < maxViewportStart) {
             uiStore.viewportStart++
           }
         }
-        uiStore.setSelectedColumn(col + 1)
+        uiStore.setSelectedColumn(nextColumn)
       }
       break
     case 'i': {
