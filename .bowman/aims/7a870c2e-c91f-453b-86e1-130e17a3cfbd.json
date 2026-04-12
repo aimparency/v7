@@ -1,7 +1,7 @@
 {
   "id": "7a870c2e-c91f-453b-86e1-130e17a3cfbd",
   "text": "Persist phase cursor state in project-local metadata",
-  "description": "Store one active cursor index per hierarchy level in .bowman project metadata. Define how the frontend reads and writes this shared current-path state so active phase queries become cursor-based rather than time-based.",
+  "description": "Store one active cursor index per hierarchy level in .bowman project metadata. Define how the frontend reads and writes this shared current-path state so active phase queries become cursor-based rather than time-based. Introduce this metadata lazily so older projects without cursor state still open correctly and acquire cursor data only when the new navigation state is first persisted.",
   "reflections": [],
   "archived": false,
   "tags": [

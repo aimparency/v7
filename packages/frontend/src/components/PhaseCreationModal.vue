@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, onMounted, computed } from 'vue'
-import type { Phase } from 'shared'
+import { ref, nextTick, watch } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
-import { timestampToLocalDate, timestampToLocalTime, localDateTimeToTimestamp } from 'shared'
-import TimePicker from './TimePicker.vue'
 import PhaseSearchModal from './PhaseSearchModal.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 
@@ -18,31 +15,33 @@ const dataStore = useDataStore()
 
 const phaseNameInput = ref<HTMLInputElement>()
 const submitBtn = ref<HTMLButtonElement>()
-const dateWarning = ref<string>('')
-const focusedField = ref<string | null>(null)
 const showPhaseSearch = ref(false)
 const selectedParentName = ref<string>('Root (No Parent)')
 const parentSelectorBtn = ref<HTMLButtonElement>()
 const parentSelectorDisplay = ref<HTMLDivElement>()
 
-const startTimestamp = computed(() => localDateTimeToTimestamp(modalStore.newPhaseStartDate, modalStore.newPhaseStartTime))
-const endTimestamp = computed(() => localDateTimeToTimestamp(modalStore.newPhaseEndDate, modalStore.newPhaseEndTime))
-const isRangeInvalid = computed(() => startTimestamp.value > endTimestamp.value)
+const getSelectedLevelEntry = (columnIndex: number) => {
+  const entries = dataStore.getSelectablePhaseLevelEntries(columnIndex)
+  const selectedIndex = uiStore.getSelectedPhase(columnIndex)
+  return entries[selectedIndex] ?? entries[0]
+}
 
 const createPhase = async () => {
   if (!modalStore.newPhaseName.trim()) return
 
   try {
     const columnIndex = uiStore.selectedColumn
-    let parentPhaseId: string | null = null
-    if (columnIndex > 0) {
-      parentPhaseId = uiStore.getSelectedPhaseId(columnIndex - 1) ?? null
-    }
+    const selectedEntry = getSelectedLevelEntry(columnIndex)
+    const parentPhaseId = selectedEntry?.parentPhaseId ?? null
+    const order = selectedEntry
+      ? selectedEntry.childIndex + (modalStore.phaseModalInsertPosition === 'after' ? 1 : 0)
+      : 0
 
     await dataStore.createAndSelectPhase(projectStore.projectPath, {
       name: modalStore.newPhaseName.trim(),
-      from: localDateTimeToTimestamp(modalStore.newPhaseStartDate, modalStore.newPhaseStartTime),
-      to: localDateTimeToTimestamp(modalStore.newPhaseEndDate, modalStore.newPhaseEndTime),
+      from: 0,
+      to: 0,
+      order,
       parent: parentPhaseId,
       commitments: []
     }, columnIndex)
@@ -65,8 +64,6 @@ const updatePhase = async () => {
       phaseId: modalStore.phaseModalEditingPhaseId,
       phase: {
         name: modalStore.newPhaseName.trim(),
-        from: localDateTimeToTimestamp(modalStore.newPhaseStartDate, modalStore.newPhaseStartTime),
-        to: localDateTimeToTimestamp(modalStore.newPhaseEndDate, modalStore.newPhaseEndTime),
         parent: modalStore.phaseModalEditingParentId
       }
     })
@@ -85,7 +82,8 @@ const updatePhase = async () => {
 
       // Rebuild visible phase columns from root selection to avoid stale column caches.
       // This ensures moved phases appear immediately in the destination sibling column.
-      const rootPhases = dataStore.getPhasesByParentId(null)
+      const rootEntries = dataStore.getSelectablePhaseLevelEntries(0)
+      const rootPhases = rootEntries.filter((entry) => entry.type === 'phase').map((entry) => entry.phase)
       if (rootPhases.length > 0) {
         const previousFocusedColumn = uiStore.selectedColumn
         const selectedRootId = uiStore.getSelectedPhaseId(0)
@@ -126,11 +124,13 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
-// Calculate smart date ranges when modal opens (only for create mode)
 watch(() => modalStore.showPhaseModal, async (newVal) => {
   if (newVal) {
     if (modalStore.phaseModalMode === 'create') {
-      await calculateSmartDateRanges()
+      const selectedEntry = getSelectedLevelEntry(uiStore.selectedColumn)
+      selectedParentName.value = selectedEntry?.parentPhaseId
+        ? (dataStore.phases[selectedEntry.parentPhaseId]?.name || 'Unknown Parent')
+        : 'Root (No Parent)'
       await nextTick()
       phaseNameInput.value?.focus()
     } else if (modalStore.phaseModalMode === 'edit') {
@@ -153,87 +153,6 @@ watch(() => modalStore.showPhaseModal, async (newVal) => {
     }
   }
 })
-
-const calculateSmartDateRanges = async () => {
-  dateWarning.value = ''
-  console.log('[PhaseCreation] Calc Smart Dates. Col:', uiStore.selectedColumn)
-  
-  // Priority 1: Copy from currently selected phase (Only for root phases - Column 0)
-  // For sub-phases, we prefer Priority 2 (Smart Logic from Parent)
-  if (uiStore.selectedColumn === 0) {
-    const selectedPhaseId = uiStore.getSelectedPhaseId(uiStore.selectedColumn)
-    if (selectedPhaseId) {
-      try {
-        const selectedPhase = await trpc.phase.get.query({
-          projectPath: projectStore.projectPath,
-          phaseId: selectedPhaseId
-        })
-        if (selectedPhase) {
-          // Extract local date and time from timestamps
-          modalStore.newPhaseStartDate = timestampToLocalDate(selectedPhase.from) || ''
-          modalStore.newPhaseStartTime = timestampToLocalTime(selectedPhase.from) || ''
-          modalStore.newPhaseEndDate = timestampToLocalDate(selectedPhase.to) || ''
-          modalStore.newPhaseEndTime = timestampToLocalTime(selectedPhase.to) || ''
-          return
-        }
-      } catch (error) {
-        console.error('Failed to get selected phase dates:', error)
-      }
-    }
-  }
-
-  // Priority 2: Copy from parent phase (one column to the left)
-  if (uiStore.selectedColumn > 0) {
-    const parentColumn = uiStore.selectedColumn - 1
-    const parentPhaseIdFromColumn = uiStore.getSelectedPhaseId(parentColumn)
-    if (parentPhaseIdFromColumn) {
-      try {
-        const parentPhase = await trpc.phase.get.query({
-          projectPath: projectStore.projectPath,
-          phaseId: parentPhaseIdFromColumn
-        })
-        if (parentPhase) {
-          // Use backend smart calculation
-          try {
-            const suggestion = await trpc.phase.suggestSubPhaseConfig.query({
-              projectPath: projectStore.projectPath,
-              parentPhaseId: parentPhase.id
-            })
-
-            console.log('[PhaseCreation] Smart Suggestion:', suggestion, 
-              'Start:', timestampToLocalDate(suggestion.from), timestampToLocalTime(suggestion.from),
-              'End:', timestampToLocalDate(suggestion.to), timestampToLocalTime(suggestion.to)
-            );
-            
-            modalStore.newPhaseStartDate = timestampToLocalDate(suggestion.from)
-            modalStore.newPhaseStartTime = timestampToLocalTime(suggestion.from)
-            modalStore.newPhaseEndDate = timestampToLocalDate(suggestion.to)
-            modalStore.newPhaseEndTime = timestampToLocalTime(suggestion.to)
-          } catch (e) {
-            console.error('Failed to get smart dates:', e)
-            // Fallback to parent bounds
-            modalStore.newPhaseStartDate = timestampToLocalDate(parentPhase.from)
-            modalStore.newPhaseStartTime = timestampToLocalTime(parentPhase.from)
-            modalStore.newPhaseEndDate = timestampToLocalDate(parentPhase.to)
-            modalStore.newPhaseEndTime = timestampToLocalTime(parentPhase.to)
-          }
-          return
-        }
-      } catch (error) {
-        console.error('Failed to get parent phase dates:', error)
-      }
-    }
-  }
-
-  // Priority 3: Default for root phases (column 1, "very first phase" scenario)
-  // Current date 00:00 to current date + 7 days 00:00
-  const now = new Date()
-  modalStore.newPhaseStartDate = now.toISOString().split('T')[0] || '' // YYYY-MM-DD
-  modalStore.newPhaseStartTime = '00:00'
-  const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-  modalStore.newPhaseEndDate = sevenDaysLater.toISOString().split('T')[0] || ''
-  modalStore.newPhaseEndTime = '00:00'
-}
 
 const onParentSelected = (payload: PhaseSearchSelection) => {
     if (payload.type !== 'phase') {
@@ -324,47 +243,12 @@ const handleSearchClose = () => {
           </div>
         </div>
         
-        <div class="form-row">
-          <div class="form-group">
-            <label>Start Date</label>
-            <input 
-              v-model="modalStore.newPhaseStartDate"
-              type="date" 
-              :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('start') }"
-              @keydown="handleKeydown"
-              @focus="focusedField = 'startDate'"
-              @blur="focusedField = null"
-            />
-            <TimePicker
-              v-model="modalStore.newPhaseStartTime"
-              :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('start') }"
-              @keydown.native="handleKeydown"
-              @focus="focusedField = 'startTime'"
-              @blur="focusedField = null"
-            />
-          </div>
-          <div class="form-group">
-            <label>End Date</label>
-            <input 
-              v-model="modalStore.newPhaseEndDate"
-              type="date" 
-              :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('end') }"
-              @keydown="handleKeydown"
-              @focus="focusedField = 'endDate'"
-              @blur="focusedField = null"
-            />
-            <TimePicker
-              v-model="modalStore.newPhaseEndTime"
-              :class="{ 'invalid-range': isRangeInvalid && !focusedField?.startsWith('end') }"
-              @keydown.native="handleKeydown"
-              @focus="focusedField = 'endTime'"
-              @blur="focusedField = null"
-            />
-          </div>
-        </div>
-
-        <div v-if="isRangeInvalid" class="warning">
-          Start date must be before end date.
+        <div v-if="modalStore.phaseModalMode === 'create'" class="phase-insert-hint">
+          {{
+            modalStore.phaseModalInsertPosition === 'after'
+              ? 'New phase will be inserted after the selected item on this level.'
+              : 'New phase will be inserted before the selected item on this level.'
+          }}
         </div>
       </div>
       
@@ -376,7 +260,7 @@ const handleSearchClose = () => {
           ref="submitBtn"
           @click="handleSubmit"
           class="btn-primary"
-          :disabled="!modalStore.newPhaseName.trim() || isRangeInvalid"
+          :disabled="!modalStore.newPhaseName.trim()"
           @keydown.tab.exact.prevent="phaseNameInput?.focus()"
         >
           {{ modalStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}

@@ -1,7 +1,7 @@
 {
   "id": "bb3d85e5-3667-48d4-8d91-9bf73008bb49",
-  "text": "Add explicit ordering fields to the phase data model",
-  "description": "Replace time-based phase positioning with explicit sibling order. Introduce stable ordering for root phases and child phases so hierarchy navigation no longer depends on from/to timestamps. Include migration strategy for existing phase JSON files and any persistence helpers that currently sort by midpoint.",
+  "text": "Refactor phase persistence to parent-owned child arrays with lazy migration",
+  "description": "Replace child-side ordering as the canonical phase structure. Project metadata should store `rootPhaseIds: string[]` for root ordering, each phase should store `childPhaseIds: string[]` for ordered children, and each phase should retain `parent: string | null` as a backlink for fast upward traversal. Order must come exclusively from the containing array (`meta.rootPhaseIds` or `parent.childPhaseIds`), not from `from`/`to` or child-side `order`. Implement lazy migration from legacy date-based and temporary child-order data: when reading project data, derive missing ordered child arrays from existing sibling temporal/order sort, persist them incrementally, and keep parent/child links consistent in both directions.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -19,8 +19,8 @@
   ],
   "status": {
     "state": "open",
-    "comment": "Foundational schema and migration work for the refactor.",
-    "date": 1774951286101
+    "comment": "Ordering now also requires lazy compatibility migration from legacy temporal phase files.",
+    "date": 1775935227762
   },
   "intrinsicValue": 0,
   "cost": 1,

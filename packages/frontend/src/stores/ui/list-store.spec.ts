@@ -50,7 +50,6 @@ describe('list store phase selection', () => {
     dataStore.childrenByParentId.null = ['root-1', 'root-2']
 
     uiStore.columnParentPhaseId[0] = null
-    uiStore.phaseCountByColumn[0] = 2
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'root-1'
 

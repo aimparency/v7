@@ -13,6 +13,32 @@ export type Phase = BasePhase & {
   lastSelectedSubPhaseIndex?: number
 }
 
+export type PhaseLevelPhaseEntry = {
+  type: 'phase'
+  key: string
+  phase: Phase
+  parentPhaseId: string | null
+  childIndex: number
+}
+
+export type PhaseLevelPlaceholderEntry = {
+  type: 'placeholder'
+  key: string
+  parentPhaseId: string
+  childIndex: number
+}
+
+export type PhaseLevelSeparatorEntry = {
+  type: 'separator'
+  key: string
+  parentPhaseId: string | null
+}
+
+export type PhaseLevelEntry =
+  | PhaseLevelPhaseEntry
+  | PhaseLevelPlaceholderEntry
+  | PhaseLevelSeparatorEntry
+
 // Extend Aim type with UI-only properties
 export type Aim = BaseAim & {
   expanded?: boolean
@@ -29,6 +55,77 @@ export type AimCreationParams = Omit<BaseAim, 'id' | 'incoming' | 'committedIn' 
     relativePosition?: [number, number]
     explanation?: string
   }>
+}
+
+function getSortedPhasesByParentId(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, parentId: string | null): Phase[] {
+  const key = parentId ?? 'null'
+  const childIds = state.childrenByParentId[key] || []
+  return childIds
+    .map(id => state.phases[id])
+    .filter((p): p is Phase => !!p)
+}
+
+function getActualPhasesForLevel(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, level: number): Phase[] {
+  if (level === 0) {
+    return getSortedPhasesByParentId(state, null)
+  }
+
+  const parentLevelPhases = getActualPhasesForLevel(state, level - 1)
+  const phases: Phase[] = []
+
+  for (const parentPhase of parentLevelPhases) {
+    phases.push(...getSortedPhasesByParentId(state, parentPhase.id))
+  }
+
+  return phases
+}
+
+function buildPhaseLevelEntries(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, level: number): PhaseLevelEntry[] {
+  if (level === 0) {
+    return getActualPhasesForLevel(state, 0).map((phase, index) => ({
+      type: 'phase' as const,
+      key: `phase:${phase.id}`,
+      phase,
+      parentPhaseId: null,
+      childIndex: index
+    }))
+  }
+
+  const parentLevelPhases = getActualPhasesForLevel(state, level - 1)
+  const entries: PhaseLevelEntry[] = []
+
+  parentLevelPhases.forEach((parentPhase, parentIndex) => {
+    if (parentIndex > 0) {
+      entries.push({
+        type: 'separator',
+        key: `separator:${level}:${parentPhase.id}`,
+        parentPhaseId: parentPhase.id
+      })
+    }
+
+    const children = getSortedPhasesByParentId(state, parentPhase.id)
+    if (children.length === 0) {
+      entries.push({
+        type: 'placeholder',
+        key: `placeholder:${parentPhase.id}`,
+        parentPhaseId: parentPhase.id,
+        childIndex: 0
+      })
+      return
+    }
+
+    children.forEach((phase, childIndex) => {
+      entries.push({
+        type: 'phase',
+        key: `phase:${phase.id}`,
+        phase,
+        parentPhaseId: parentPhase.id,
+        childIndex
+      })
+    })
+  })
+
+  return entries
 }
 
 export const useDataStore = defineStore('data', {
@@ -70,15 +167,16 @@ export const useDataStore = defineStore('data', {
 
   getters: {
     getPhasesByParentId: (state) => (parentId: string | null): Phase[] => {
-      const key = parentId ?? 'null'
-      const childIds = state.childrenByParentId[key] || []
-      return childIds.map(id => state.phases[id]).filter((p): p is Phase => !!p).sort((a, b) => {
-        // Sort by midpoint (average of start and end)
-        if (!a || !b) return 0
-        const aMid = (a.from + a.to) / 2
-        const bMid = (b.from + b.to) / 2
-        return aMid - bMid
-      })
+      return getSortedPhasesByParentId(state, parentId)
+    },
+    getPhaseLevelEntries: (state) => (level: number): PhaseLevelEntry[] => {
+      return buildPhaseLevelEntries(state, level)
+    },
+    getSelectablePhaseLevelEntries: (state) => (level: number): Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry> => {
+      return buildPhaseLevelEntries(state, level).filter((entry): entry is PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry => entry.type !== 'separator')
+    },
+    getActualPhasesForLevel: (state) => (level: number): Phase[] => {
+      return getActualPhasesForLevel(state, level)
     },
     floatingAims(state): Aim[] {
       return state.floatingAimsIds.map(id => state.aims[id]).filter((a): a is Aim => !!a);
@@ -263,10 +361,13 @@ export const useDataStore = defineStore('data', {
       const { id: newPhaseId } = await trpc.phase.create.mutate({ projectPath, phase: phaseData });
 
       await this.loadPhases(projectPath, phaseData.parent);
+      if (columnIndex > 0) {
+        await Promise.all(this.getActualPhasesForLevel(columnIndex - 1).map((phase) => this.loadPhases(projectPath, phase.id)));
+      }
 
       const uiStore = useUIStore();
-      const newPhases = this.getPhasesByParentId(phaseData.parent);
-      const newPhaseIndex = newPhases.findIndex(p => p && p.id === newPhaseId);
+      const newEntries = this.getSelectablePhaseLevelEntries(columnIndex);
+      const newPhaseIndex = newEntries.findIndex((entry) => entry.type === 'phase' && entry.phase.id === newPhaseId);
 
       if (newPhaseIndex !== -1) {
           uiStore.selectPhase(columnIndex, newPhaseIndex);
@@ -287,7 +388,10 @@ export const useDataStore = defineStore('data', {
       const oldSelectedSubPhaseIndex = oldPhase?.lastSelectedSubPhaseIndex
 
       // Replace with new data
-      this.phases[phaseId] = newPhase as Phase
+      this.phases[phaseId] = {
+        ...(newPhase as Phase),
+        childPhaseIds: newPhase.childPhaseIds || []
+      }
 
       // Restore validated UI state
       if (oldSelectedAimIndex !== undefined && newPhase.commitments.length > 0) {
@@ -688,9 +792,13 @@ export const useDataStore = defineStore('data', {
 
     async updateProjectMeta(projectPath: string, meta: any) {
       try {
+        const nextMeta = {
+          ...(this.meta || {}),
+          ...meta
+        }
         const updated = await trpc.project.updateMeta.mutate({
           projectPath,
-          meta
+          meta: nextMeta
         });
         this.meta = updated;
       } catch (error) {
@@ -762,23 +870,10 @@ export const useDataStore = defineStore('data', {
                  await this.loadAims(projectPath, missingAimIds);
                }
 
-               // Update childrenByParentId to ensure list consistency
                const parentId = phase.parent ?? 'null';
-               if (!this.childrenByParentId[parentId]) {
-                 this.childrenByParentId[parentId] = [];
-               }
-               if (!this.childrenByParentId[parentId].includes(phase.id)) {
-                 this.childrenByParentId[parentId].push(phase.id);
-                 
-                 // Re-sort the list by time
-                 this.childrenByParentId[parentId].sort((aId, bId) => {
-                    const a = this.phases[aId];
-                    const b = this.phases[bId];
-                    if (!a || !b) return 0;
-                    const aMid = (a.from + a.to) / 2;
-                    const bMid = (b.from + b.to) / 2;
-                    return aMid - bMid;
-                 });
+               const current = this.childrenByParentId[parentId] || [];
+               if (!current.includes(phase.id)) {
+                 this.childrenByParentId[parentId] = [...current, phase.id];
                }
              } catch (e) {
                if (this.phases[data.id]) delete this.phases[data.id];

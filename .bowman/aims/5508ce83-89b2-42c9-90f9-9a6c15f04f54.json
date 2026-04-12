@@ -1,7 +1,7 @@
 {
   "id": "5508ce83-89b2-42c9-90f9-9a6c15f04f54",
   "text": "show subphases of multiple parent phases in columns",
-  "description": "",
+  "description": "At each level, show a conceptual flat list containing the children of all parent-level phases in order, not just the currently selected parent or the active path. Insert visible non-selectable separators between consecutive parent-owned child ranges so users can understand when items stop belonging to one parent and start belonging to the next. For performance, rendering/loading may be limited to nearby parent groups around the selected-path item, but the interaction model must behave as if the entire concatenated list exists. j/k navigation may traverse across these parent boundaries, and when that happens the affected parent selections update recursively upward.",
   "reflections": [],
   "archived": false,
   "tags": [],

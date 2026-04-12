@@ -198,6 +198,15 @@ export const createProjectRouter = (
           if (!meta.statuses) {
               meta.statuses = INITIAL_STATES;
           }
+          if (!meta.phaseCursors) {
+              meta.phaseCursors = {};
+          }
+          if (meta.phaseActiveLevel === undefined) {
+              meta.phaseActiveLevel = 0;
+          }
+          if (!meta.rootPhaseIds) {
+              meta.rootPhaseIds = [];
+          }
           return meta;
         }
 
@@ -208,7 +217,10 @@ export const createProjectRouter = (
         meta = {
             name,
             color: '#007acc',
-            statuses: INITIAL_STATES
+            statuses: INITIAL_STATES,
+            phaseCursors: {},
+            phaseActiveLevel: 0,
+            rootPhaseIds: []
         };
 
         try {
@@ -366,7 +378,10 @@ export const createProjectRouter = (
         meta: z.object({
           name: z.string(),
           color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-          statuses: z.array(z.any()).optional()
+          statuses: z.array(z.any()).optional(),
+          phaseCursors: z.record(z.string(), z.number().int()).optional(),
+          phaseActiveLevel: z.number().int().min(0).optional(),
+          rootPhaseIds: z.array(z.string()).optional()
         })
       }))
       .mutation(async ({ input }: any) => {

@@ -313,19 +313,95 @@ function populateAimValues(projectPath: string, aims: Aim[]) {
     }
 }
 
-async function writePhase(rawProjectPath: string, phase: Phase): Promise<void> {
+async function writePhase(rawProjectPath: string, phase: Phase, emitChange = true): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   const phasePath = path.join(projectPath, 'phases', `${phase.id}.json`);
   await fs.writeJson(phasePath, phase, { spaces: 2 });
-  ee.emit('change', { type: 'phase', id: phase.id, projectPath });
+  if (emitChange) {
+    ee.emit('change', { type: 'phase', id: phase.id, projectPath });
+  }
+}
+
+async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  const metaPath = path.join(projectPath, 'meta.json');
+
+  let meta: ProjectMeta;
+  if (await fs.pathExists(metaPath)) {
+    meta = await fs.readJson(metaPath);
+  } else {
+    const parentDir = path.dirname(projectPath);
+    const name = path.basename(parentDir) || 'Project';
+    meta = {
+      name,
+      color: '#007acc',
+      statuses: INITIAL_STATES,
+      phaseCursors: {},
+      phaseActiveLevel: 0,
+      rootPhaseIds: []
+    };
+  }
+
+  if (!meta.statuses) meta.statuses = INITIAL_STATES;
+  if (!meta.phaseCursors) meta.phaseCursors = {};
+  if (meta.phaseActiveLevel === undefined) meta.phaseActiveLevel = 0;
+  if (!meta.rootPhaseIds) meta.rootPhaseIds = [];
+
+  return meta;
+}
+
+async function writeProjectMeta(rawProjectPath: string, meta: ProjectMeta): Promise<void> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  const metaPath = path.join(projectPath, 'meta.json');
+  await fs.writeJson(metaPath, meta, { spaces: 2 });
+}
+
+function getPhaseSortValue(phase: Partial<Phase>): number {
+  if (typeof phase.order === 'number') {
+    return phase.order;
+  }
+
+  if (typeof phase.from === 'number' && typeof phase.to === 'number') {
+    return (phase.from + phase.to) / 2;
+  }
+
+  return Number.MAX_SAFE_INTEGER;
+}
+
+function normalizePhase(rawPhase: unknown, fallbackOrder?: number): Phase {
+  const parsed = PhaseSchema.partial().parse(rawPhase);
+
+  if (
+    !parsed.id ||
+    typeof parsed.from !== 'number' ||
+    typeof parsed.to !== 'number' ||
+    parsed.parent === undefined ||
+    !parsed.commitments ||
+    !parsed.name
+  ) {
+    throw new Error('Invalid phase data');
+  }
+
+  return {
+    id: parsed.id,
+    from: parsed.from,
+    to: parsed.to,
+    order: parsed.order ?? fallbackOrder,
+    parent: parsed.parent,
+    childPhaseIds: parsed.childPhaseIds ?? [],
+    commitments: parsed.commitments,
+    name: parsed.name
+  };
 }
 
 async function readPhase(rawProjectPath: string, phaseId: string): Promise<Phase> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const phasePath = path.join(projectPath, 'phases', `${phaseId}.json`);
   const data = await fs.readJson(phasePath);
-  return PhaseSchema.parse(data);
+  return normalizePhase(data);
 }
 
 async function listPhases(rawProjectPath: string, parentPhaseId?: string | null): Promise<Phase[]> {
@@ -334,18 +410,82 @@ async function listPhases(rawProjectPath: string, parentPhaseId?: string | null)
   if (!await fs.pathExists(phasesDir)) return [];
   
   const files = await fs.readdir(phasesDir);
-  const phases: Phase[] = [];
+  const allPhases: Phase[] = [];
+  const rawPhases = new Map<string, any>();
   
   for (const file of files) {
     if (file.endsWith('.json')) {
-      const phase = await fs.readJson(path.join(phasesDir, file));
-      if (parentPhaseId === undefined || phase.parent === parentPhaseId) {
-        phases.push(phase);
-      }
+      const rawPhase = await fs.readJson(path.join(phasesDir, file));
+      const normalized = normalizePhase(rawPhase);
+      rawPhases.set(normalized.id, rawPhase);
+      allPhases.push(normalized);
     }
   }
-  
-  return phases;
+
+  const meta = await readProjectMeta(projectPath);
+  const phaseMap = new Map(allPhases.map((phase) => [phase.id, phase]));
+  const childrenByParent = new Map<string | null, Phase[]>();
+
+  for (const phase of allPhases) {
+    const bucket = childrenByParent.get(phase.parent) ?? [];
+    bucket.push(phase);
+    childrenByParent.set(phase.parent, bucket);
+  }
+
+  const sortLegacyChildren = (phases: Phase[]) => [...phases].sort((a, b) => getPhaseSortValue(a) - getPhaseSortValue(b));
+
+  const migratedPhaseIds = new Set<string>();
+
+  const currentRootIds = meta.rootPhaseIds ?? [];
+  const desiredRootIds = currentRootIds.length > 0
+    ? currentRootIds.filter((id) => {
+        const phase = phaseMap.get(id);
+        return phase && phase.parent === null;
+      })
+    : sortLegacyChildren(childrenByParent.get(null) ?? []).map((phase) => phase.id);
+
+  const missingRootIds = sortLegacyChildren(childrenByParent.get(null) ?? [])
+    .map((phase) => phase.id)
+    .filter((id) => !desiredRootIds.includes(id));
+  const nextRootIds = [...desiredRootIds, ...missingRootIds];
+
+  if (JSON.stringify(currentRootIds) !== JSON.stringify(nextRootIds)) {
+    meta.rootPhaseIds = nextRootIds;
+    await writeProjectMeta(projectPath, meta);
+  }
+
+  for (const phase of allPhases) {
+    const legacyChildren = sortLegacyChildren(childrenByParent.get(phase.id) ?? []).map((child) => child.id);
+    const desiredChildIds = (phase.childPhaseIds ?? []).filter((id) => {
+      const child = phaseMap.get(id);
+      return child && child.parent === phase.id;
+    });
+    const missingChildIds = legacyChildren.filter((id) => !desiredChildIds.includes(id));
+    const nextChildIds = desiredChildIds.length > 0 ? [...desiredChildIds, ...missingChildIds] : legacyChildren;
+
+    if (JSON.stringify(phase.childPhaseIds ?? []) !== JSON.stringify(nextChildIds)) {
+      phase.childPhaseIds = nextChildIds;
+      migratedPhaseIds.add(phase.id);
+    }
+  }
+
+  if (migratedPhaseIds.size > 0) {
+    await Promise.all(
+      [...migratedPhaseIds].map((phaseId) => writePhase(projectPath, phaseMap.get(phaseId)!, false))
+    );
+  }
+
+  if (parentPhaseId === undefined) {
+    return allPhases;
+  }
+
+  const orderedIds = parentPhaseId === null
+    ? (meta.rootPhaseIds ?? [])
+    : (phaseMap.get(parentPhaseId)?.childPhaseIds ?? []);
+
+  return orderedIds
+    .map((id) => phaseMap.get(id))
+    .filter((phase): phase is Phase => !!phase && phase.parent === parentPhaseId);
 }
 
 async function cleanupCommitments(rawProjectPath: string, specificPhaseId?: string): Promise<number> {
@@ -558,71 +698,6 @@ async function migrateCommittedInField(projectPath: string): Promise<void> {
 }
 
 // Helper to calculate smart sub-phase dates
-async function calculateSmartSubPhaseDates(projectPath: string, parentId: string): Promise<{ from: number, to: number }> {
-    const parentPhase = await readPhase(projectPath, parentId);
-    // listPhases filters by parent if provided
-    const siblings = await listPhases(projectPath, parentId);
-    siblings.sort((a, b) => a.from - b.from);
-
-    // 1. Calculate Target Duration
-    let targetDuration = 0;
-    if (siblings.length > 0) {
-        const totalDuration = siblings.reduce((sum, p) => sum + (p.to - p.from), 0);
-        targetDuration = totalDuration / siblings.length;
-    } else {
-        // Default: 1/4 of parent duration
-        targetDuration = (parentPhase.to - parentPhase.from) / 4;
-    }
-
-    // 2. Find Largest Gap
-    let maxGap = { start: parentPhase.from, duration: 0 };
-    let currentCheck = parentPhase.from;
-
-    // Check gaps between siblings
-    for (const sibling of siblings) {
-        // Gap is between currentCheck and sibling.from
-        // Ensure we don't go backwards if siblings overlap parent start (shouldn't happen but safe)
-        const gapStart = Math.max(currentCheck, parentPhase.from);
-        const gapEnd = Math.min(sibling.from, parentPhase.to);
-        
-        const gapDuration = Math.max(0, gapEnd - gapStart);
-        
-        if (gapDuration > maxGap.duration) {
-            maxGap = { start: gapStart, duration: gapDuration };
-        }
-        // Move check to end of this sibling
-        currentCheck = Math.max(currentCheck, sibling.to);
-    }
-
-    // Check final gap (after last sibling)
-    const finalGapStart = Math.max(currentCheck, parentPhase.from);
-    const finalGapEnd = parentPhase.to;
-    const finalGapDuration = Math.max(0, finalGapEnd - finalGapStart);
-
-    if (finalGapDuration >= maxGap.duration) { // Prefer later gaps if equal? Or earlier? ">= " takes later. Let's use ">" for earlier.
-        // Actually, usually filling from left to right is better. 
-        // But the requirement says "largest gap". 
-        // If strict >: First largest.
-        // If >=: Last largest.
-        // Let's use strict > to preserve the first available large slot.
-    }
-    // Correction: I want to include final gap check
-    if (finalGapDuration > maxGap.duration) {
-         maxGap = { start: finalGapStart, duration: finalGapDuration };
-    }
-
-    // 3. Determine Result
-    const newFrom = maxGap.start;
-    let newTo = newFrom + targetDuration;
-
-    // 4. Cap at Parent End
-    if (newTo > parentPhase.to) {
-        newTo = parentPhase.to;
-    }
-
-    return { from: newFrom, to: newTo };
-}
-
 // Create the actual tRPC router
 const appRouter = t.router({
   aim: createAimRouter(
@@ -655,7 +730,6 @@ const appRouter = t.router({
     readPhase,
     listPhases,
     writePhase,
-    calculateSmartSubPhaseDates,
     normalizeProjectPath,
     cleanupCommitments,
     addPhaseToIndex,

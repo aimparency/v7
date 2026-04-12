@@ -3,6 +3,9 @@
   "from": 1765756800000,
   "to": 1766361600000,
   "parent": "f51f8930-c937-4c66-9db8-d4d313e6d286",
+  "childPhaseIds": [
+    "501c8098-2757-434d-b3fe-f0a3358408c2"
+  ],
   "commitments": [
     "93149e0b-ef1a-424d-b9db-ffef9f50957d",
     "c4a9ed05-3fd6-4662-a584-8cbdb2cab8c8",

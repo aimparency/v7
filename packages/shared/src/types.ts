@@ -60,7 +60,9 @@ export const PhaseSchema = z.object({
   id: z.string().uuid(),
   from: z.number(), // Date.now() timestamp
   to: z.number(), // Date.now() timestamp
+  order: z.number().int().nonnegative().optional(),
   parent: z.string().uuid().nullable(),
+  childPhaseIds: z.array(z.string().uuid()).optional(),
   commitments: z.array(z.string().uuid()),
   name: z.string()
 });
@@ -74,7 +76,10 @@ export const AimStateSchema = z.object({
 export const ProjectMetaSchema = z.object({
   name: z.string(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/), // hex color
-  statuses: z.array(AimStateSchema).optional()
+  statuses: z.array(AimStateSchema).optional(),
+  phaseCursors: z.record(z.string(), z.number().int()).optional(),
+  phaseActiveLevel: z.number().int().min(0).optional(),
+  rootPhaseIds: z.array(z.string().uuid()).optional()
 });
 
 export const SystemStatusSchema = z.object({

@@ -191,7 +191,12 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  uiStore.handleGlobalKeydown(event, dataStore)
+  void uiStore.handleGlobalKeydown(event, dataStore).catch((error: unknown) => {
+    console.error('[PhaseNav] handleGlobalKeydown:error', {
+      key: event.key,
+      error
+    })
+  })
 }
 
 // Update keyboard hints based on navigation state and selected column
@@ -260,6 +265,9 @@ watch(() => [
   localStorage.setItem('aimparency-floating-index', uiStore.floatingAimIndex.toString())
   localStorage.setItem('aimparency-viewport-start', uiStore.viewportStart.toString())
   localStorage.setItem('aimparency-last-sub-phase-index', JSON.stringify(uiStore.lastSelectedSubPhaseIndexByPhase))
+  if (projectStore.projectPath) {
+    uiStore.schedulePhaseCursorPersist()
+  }
 }, { deep: true })
 
 onMounted(async () => {
@@ -267,34 +275,19 @@ onMounted(async () => {
   window.addEventListener('keydown', handleGlobalKeydown)
 
   if (projectStore.projectPath) {
-    // Save restored column because selectPhase(0) resets it
-    const restoredColumn = uiStore.selectedColumn
-
     // Load all project data first
     await dataStore.loadProject(projectStore.projectPath);
-
-    const rootPhases = dataStore.getPhasesByParentId(null)
-    const selectedRootId = uiStore.getSelectedPhaseId(0)
-    const fallbackRootIndex = uiStore.selectedPhaseByColumn[0] ?? 0
-    const rootIndex = selectedRootId
-      ? rootPhases.findIndex((phase) => phase.id === selectedRootId)
-      : fallbackRootIndex
-    const clampedRootIndex = Math.min(
-      Math.max(rootIndex >= 0 ? rootIndex : fallbackRootIndex, 0),
-      Math.max(rootPhases.length - 1, 0)
-    )
 
     // Build search index
     await trpc.project.buildSearchIndex.mutate({
       projectPath: projectStore.projectPath
     });
 
-    // Then, select the first root phase (index 0 in column 0) to kick off the cascade
-    await uiStore.selectPhase(0, clampedRootIndex);
-    
-    // Restore column focus
-    uiStore.setSelectedColumn(restoredColumn);
-    
+    await uiStore.restorePhaseCursorsFromMeta(
+      dataStore.meta?.phaseCursors,
+      dataStore.meta?.phaseActiveLevel
+    )
+
     uiStore.ensureSelectionVisible();
   } else {
     // Set initial focus to the first phase column

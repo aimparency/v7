@@ -6,7 +6,6 @@ import { useScrollIntoView } from '../composables/useScrollIntoView'
 import PhaseComponent from './Phase.vue'
 
 interface Props {
-  parentPhaseId: string | null
   columnIndex: number
   isSelected: boolean
   isActive: boolean
@@ -20,8 +19,12 @@ const uiStore = useUIStore()
 
 const phaseListRef = ref<HTMLElement | null>(null)
 
-// Compute phases for this column based on parent phase ID
-const phases = computed(() => dataStore.getPhasesByParentId(props.parentPhaseId))
+const entries = computed(() => dataStore.getPhaseLevelEntries(props.columnIndex))
+const selectableEntries = computed(() => dataStore.getSelectablePhaseLevelEntries(props.columnIndex))
+
+const getSelectableIndex = (entryKey: string) => {
+  return selectableEntries.value.findIndex((entry) => entry.key === entryKey)
+}
 
 // Handle scroll requests from child components
 const { handleScrollRequest } = useScrollIntoView(phaseListRef)
@@ -40,19 +43,31 @@ watch(() => uiStore.columnScrollRequest, (req) => {
 
 <template>
   <div class="phase-column" :class="{ 'active': isActive, 'selected': isSelected }">
-    <div v-if="phases.length === 0" class="empty-state">
+    <div v-if="entries.length === 0" class="empty-state">
       No sub phases, create one with o
     </div>
 
     <div v-else ref="phaseListRef" class="phase-list">
-      <template v-for="(phase, index) in phases" :key="phase.id">
+      <template v-for="entry in entries" :key="entry.key">
+        <hr v-if="entry.type === 'separator'" class="parent-separator" />
+        <div
+          v-else-if="entry.type === 'placeholder'"
+          class="phase-placeholder"
+          :class="{
+            'selected-item': getSelectableIndex(entry.key) === selectedPhaseIndex,
+            'active-item': getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.selectedColumn === columnIndex
+          }"
+          @click="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
+        >
+          no sub phases yet. press o to create one
+        </div>
         <PhaseComponent
-          v-if="phase"
-          :phase="phase"
-          :is-selected="index === selectedPhaseIndex"
-          :is-active="index === selectedPhaseIndex && uiStore.selectedColumn === columnIndex"
-          @phase-clicked="() => uiStore.selectPhase(columnIndex, index)"
-          @aim-clicked="(aimId) => uiStore.selectAimById(columnIndex, phase.id, aimId)"
+          v-else
+          :phase="entry.phase"
+          :is-selected="getSelectableIndex(entry.key) === selectedPhaseIndex"
+          :is-active="getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.selectedColumn === columnIndex"
+          @phase-clicked="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
+          @aim-clicked="(aimId) => uiStore.selectAimById(columnIndex, entry.phase.id, aimId)"
           @scroll-request="handleScrollRequest"
         />
       </template>
@@ -105,6 +120,33 @@ watch(() => uiStore.columnScrollRequest, (req) => {
   /* Firefox scrollbar */
   scrollbar-width: thin;
   scrollbar-color: #555 #1a1a1a;
+}
+
+.parent-separator {
+  border: 0;
+  border-top: 1px solid #555;
+  margin: 0.5rem 0;
+}
+
+.phase-placeholder {
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  border: 1px dashed #555;
+  border-radius: 0.25rem;
+  color: #888;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.phase-placeholder.selected-item {
+  outline-width: 0.15rem;
+  outline-style: solid;
+  outline-offset: -0.15rem;
+  outline-color: #888;
+}
+
+.phase-placeholder.active-item {
+  outline-color: #007acc;
 }
 
 .empty-state {

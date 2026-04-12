@@ -3,6 +3,9 @@
   "from": 1772323200000,
   "to": 1774994400000,
   "parent": "618b92d0-70cc-434c-b2b5-ee9fcfefc25a",
+  "childPhaseIds": [
+    "ce8516bc-df20-44d3-9fea-6784401e8276"
+  ],
   "commitments": [],
   "name": "go online"
 }

@@ -27,10 +27,6 @@ export const useUIModalStore = defineStore('ui-modal', {
     phaseModalEditingPhaseId: null as string | null,
     phaseModalEditingParentId: null as string | null,
     newPhaseName: '',
-    newPhaseStartDate: '',
-    newPhaseStartTime: '',
-    newPhaseEndDate: '',
-    newPhaseEndTime: '',
     phaseModalInsertPosition: 'before' as RelativePosition,
 
     showAimModal: false,
@@ -67,18 +63,16 @@ export const useUIModalStore = defineStore('ui-modal', {
   }),
 
   actions: {
-    openPhaseModal() {
-      openPhaseCreateModalHelper(this)
+    openPhaseModal(insertPosition: RelativePosition = 'before') {
+      openPhaseCreateModalHelper(this, insertPosition)
     },
 
     openPhaseEditModal(
       phaseId: string,
       phaseName: string,
-      phaseFrom: number,
-      phaseTo: number,
       parentPhaseId: string | null
     ) {
-      openPhaseEditModalHelper(this, phaseId, phaseName, phaseFrom, phaseTo, parentPhaseId)
+      openPhaseEditModalHelper(this, phaseId, phaseName, parentPhaseId)
     },
 
     closePhaseModal() {

@@ -30,5 +30,13 @@
       "key": "human-dependent",
       "color": "#bf409f"
     }
+  ],
+  "phaseCursors": {},
+  "phaseActiveLevel": 0,
+  "rootPhaseIds": [
+    "d4bf28d6-b751-4315-a151-dd2ce5d8c420",
+    "91e510e1-208a-4c5c-b93b-91c6525020bf",
+    "f51f8930-c937-4c66-9db8-d4d313e6d286",
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ]
 }

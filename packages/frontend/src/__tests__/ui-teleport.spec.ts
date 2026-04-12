@@ -77,7 +77,6 @@ describe('UI teleport cut/paste', () => {
     uiStore.selectedColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
     uiStore.selectedPhaseByColumn[0] = 0
-    uiStore.phaseCountByColumn[0] = 1
     dataStore.childrenByParentId['null'] = ['phase-1']
 
     dataStore.phases['phase-1'] = {
@@ -133,7 +132,6 @@ describe('UI teleport cut/paste', () => {
     uiStore.selectedColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
     uiStore.selectedPhaseByColumn[0] = 0
-    uiStore.phaseCountByColumn[0] = 1
     dataStore.childrenByParentId['null'] = ['phase-1']
 
     const parentA = baseAim('parent-a', 'Parent A') as any
@@ -257,7 +255,6 @@ describe('UI teleport cut/paste', () => {
     uiStore.columnParentPhaseId[0] = null
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
-    uiStore.phaseCountByColumn[0] = 1
     dataStore.childrenByParentId['null'] = ['phase-empty']
     dataStore.phases['phase-empty'] = {
       id: 'phase-empty',
@@ -283,7 +280,6 @@ describe('UI teleport cut/paste', () => {
     uiStore.selectedColumn = 0
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
-    uiStore.phaseCountByColumn[0] = 1
     dataStore.childrenByParentId['null'] = ['phase-1']
     dataStore.phases['phase-1'] = {
       id: 'phase-1',

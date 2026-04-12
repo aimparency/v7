@@ -91,14 +91,14 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       uiStore.pendingDeleteAimId = null
 
       if (uiStore.selectedColumn >= 0) {
-        const parentId = uiStore.columnParentPhaseId[uiStore.selectedColumn] ?? null
-        const phases = localDataStore.getPhasesByParentId(parentId)
-        if (phases.length > 0) {
+        const selectableEntries = localDataStore.getSelectablePhaseLevelEntries(uiStore.selectedColumn)
+        if (selectableEntries.length > 0) {
           const selectedIndex = uiStore.getSelectedPhase(uiStore.selectedColumn)
-          const selectedPhase = phases[selectedIndex] ?? phases[0]
-          if (selectedPhase) {
-            uiStore.selectedPhaseByColumn[uiStore.selectedColumn] = phases.indexOf(selectedPhase)
-            uiStore.selectedPhaseIdByColumn[uiStore.selectedColumn] = selectedPhase.id
+          const selectedEntry = selectableEntries[selectedIndex] ?? selectableEntries[0]
+          if (selectedEntry?.type === 'phase') {
+            uiStore.selectedPhaseByColumn[uiStore.selectedColumn] = selectableEntries.indexOf(selectedEntry)
+            uiStore.selectedPhaseIdByColumn[uiStore.selectedColumn] = selectedEntry.phase.id
+            const selectedPhase = selectedEntry.phase
             const aims = localDataStore.getAimsForPhase(selectedPhase.id)
             if (aims.length > 0 && selectedPhase.selectedAimIndex === undefined) {
               selectedPhase.selectedAimIndex = 0
@@ -136,8 +136,6 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       modalStore.openPhaseEditModal(
         selectedPhase.id,
         selectedPhase.name,
-        selectedPhase.from,
-        selectedPhase.to,
         selectedPhase.parent
       )
       break
@@ -148,7 +146,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       if (uiStore.selectedColumn === -1) {
         modalStore.openAimModal()
       } else {
-        modalStore.openPhaseModal()
+        modalStore.openPhaseModal(event.key === 'o' ? 'after' : 'before')
       }
       break
     case 'd': {
@@ -190,11 +188,11 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
 
           await dataStore.loadPhases(projectStore.projectPath, parentId)
 
-          const phases = dataStore.getPhasesByParentId(parentId)
-          uiStore.phaseCountByColumn[currentCol] = phases.length
-          const newIndex = Math.min(uiStore.selectedPhaseByColumn[currentCol] || 0, Math.max(0, phases.length - 1))
+          await uiStore.loadPhaseLevel(currentCol)
+          const selectableEntries = dataStore.getSelectablePhaseLevelEntries(currentCol)
+          const newIndex = Math.min(uiStore.selectedPhaseByColumn[currentCol] || 0, Math.max(0, selectableEntries.length - 1))
 
-          if (phases.length > 0) {
+          if (selectableEntries.length > 0) {
             await uiStore.selectPhase(currentCol, newIndex)
           } else {
             uiStore.selectedPhaseByColumn[currentCol] = 0
@@ -385,7 +383,23 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
 export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
-  console.log('pressed', event.key, '. nav aims? ', uiStore.navigatingAims)
+  console.log('[PhaseNav] keydown', {
+    key: event.key,
+    selectedColumn: uiStore.selectedColumn,
+    navigatingAims: uiStore.navigatingAims,
+    ctrl: event.ctrlKey,
+    meta: event.metaKey,
+    alt: event.altKey,
+    shift: event.shiftKey,
+    view: projectStore.currentView,
+    modalOpen:
+      modalStore.showPhaseModal ||
+      modalStore.showAimModal ||
+      modalStore.showAimSearch ||
+      modalStore.showPhaseSearchPrompt ||
+      modalStore.showAimEditModal ||
+      modalStore.showSettingsModal
+  })
 
   if (event.ctrlKey || event.metaKey) return
 

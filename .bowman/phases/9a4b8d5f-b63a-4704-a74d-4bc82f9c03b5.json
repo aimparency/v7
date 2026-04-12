@@ -3,6 +3,10 @@
   "from": 1767225600000,
   "to": 1798761599000,
   "parent": null,
+  "childPhaseIds": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a",
+    "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
+  ],
   "commitments": [
     "895ec1c1-c8b3-4258-b7be-62831819bf86",
     "75d48504-226a-4316-a395-e3f0a1aa87d4",

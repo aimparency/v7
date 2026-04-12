@@ -1,4 +1,3 @@
-import { timestampToLocalDate, timestampToLocalTime } from 'shared'
 import type { AimSearchAdditionalOption, AimSearchModalOptions, AimSearchPickPayload } from './aim-search-types'
 
 type RelativePosition = 'before' | 'after'
@@ -16,10 +15,6 @@ export type UIModalState = {
   phaseModalEditingPhaseId: string | null
   phaseModalEditingParentId: string | null
   newPhaseName: string
-  newPhaseStartDate: string
-  newPhaseStartTime: string
-  newPhaseEndDate: string
-  newPhaseEndTime: string
   phaseModalInsertPosition: RelativePosition
   showAimModal: boolean
   aimModalMode: 'create' | 'edit'
@@ -42,11 +37,12 @@ export type UIModalState = {
   movingAimId: string | null
 }
 
-export function openPhaseCreateModal(state: UIModalState): void {
+export function openPhaseCreateModal(state: UIModalState, insertPosition: RelativePosition = 'before'): void {
   state.showPhaseModal = true
   state.phaseModalMode = 'create'
   state.phaseModalEditingPhaseId = null
   state.phaseModalEditingParentId = null
+  state.phaseModalInsertPosition = insertPosition
   state.newPhaseName = ''
 }
 
@@ -54,19 +50,14 @@ export function openPhaseEditModal(
   state: UIModalState,
   phaseId: string,
   phaseName: string,
-  phaseFrom: number,
-  phaseTo: number,
   parentPhaseId: string | null
 ): void {
   state.showPhaseModal = true
   state.phaseModalMode = 'edit'
   state.phaseModalEditingPhaseId = phaseId
   state.phaseModalEditingParentId = parentPhaseId
+  state.phaseModalInsertPosition = 'before'
   state.newPhaseName = phaseName
-  state.newPhaseStartDate = timestampToLocalDate(phaseFrom)
-  state.newPhaseStartTime = timestampToLocalTime(phaseFrom)
-  state.newPhaseEndDate = timestampToLocalDate(phaseTo)
-  state.newPhaseEndTime = timestampToLocalTime(phaseTo)
 }
 
 export function closePhaseModal(state: UIModalState): void {
@@ -75,10 +66,7 @@ export function closePhaseModal(state: UIModalState): void {
   state.phaseModalEditingPhaseId = null
   state.phaseModalEditingParentId = null
   state.newPhaseName = ''
-  state.newPhaseStartDate = ''
-  state.newPhaseStartTime = ''
-  state.newPhaseEndDate = ''
-  state.newPhaseEndTime = ''
+  state.phaseModalInsertPosition = 'before'
 }
 
 export function openAimCreateModal(state: UIModalState, source: 'columns' | 'graph' = 'columns'): void {
