@@ -21,7 +21,7 @@ const parentSelectorBtn = ref<HTMLButtonElement>()
 const parentSelectorDisplay = ref<HTMLDivElement>()
 
 const getSelectedLevelEntry = (columnIndex: number) => {
-  const entries = dataStore.getSelectablePhaseLevelEntries(columnIndex)
+  const entries = dataStore.getSelectableColumnEntries(columnIndex)
   const selectedIndex = uiStore.getSelectedPhase(columnIndex)
   return entries[selectedIndex] ?? entries[0]
 }
@@ -30,7 +30,7 @@ const createPhase = async () => {
   if (!modalStore.newPhaseName.trim()) return
 
   try {
-    const columnIndex = uiStore.selectedColumn
+    const columnIndex = uiStore.activeColumn
     const selectedEntry = getSelectedLevelEntry(columnIndex)
     const parentPhaseId = selectedEntry?.parentPhaseId ?? null
     const order = selectedEntry
@@ -82,10 +82,10 @@ const updatePhase = async () => {
 
       // Rebuild visible phase columns from root selection to avoid stale column caches.
       // This ensures moved phases appear immediately in the destination sibling column.
-      const rootEntries = dataStore.getSelectablePhaseLevelEntries(0)
+      const rootEntries = dataStore.getSelectableColumnEntries(0)
       const rootPhases = rootEntries.filter((entry) => entry.type === 'phase').map((entry) => entry.phase)
       if (rootPhases.length > 0) {
-        const previousFocusedColumn = uiStore.selectedColumn
+        const previousFocusedColumn = uiStore.activeColumn
         const selectedRootId = uiStore.getSelectedPhaseId(0)
         const fallbackRootIndex = uiStore.selectedPhaseByColumn[0] ?? 0
         const selectedRootIndex = selectedRootId
@@ -97,7 +97,7 @@ const updatePhase = async () => {
         )
 
         await uiStore.selectPhase(0, clampedRootIndex)
-        uiStore.setSelectedColumn(Math.min(previousFocusedColumn, uiStore.rightmostColumnIndex))
+        uiStore.setActiveColumn(Math.min(previousFocusedColumn, uiStore.maxColumn))
         uiStore.ensureSelectionVisible()
       }
     }
@@ -127,7 +127,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 watch(() => modalStore.showPhaseModal, async (newVal) => {
   if (newVal) {
     if (modalStore.phaseModalMode === 'create') {
-      const selectedEntry = getSelectedLevelEntry(uiStore.selectedColumn)
+      const selectedEntry = getSelectedLevelEntry(uiStore.activeColumn)
       selectedParentName.value = selectedEntry?.parentPhaseId
         ? (dataStore.phases[selectedEntry.parentPhaseId]?.name || 'Unknown Parent')
         : 'Root (No Parent)'

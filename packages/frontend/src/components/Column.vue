@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch, type ComponentPublicInstance } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useScrollIntoView } from '../composables/useScrollIntoView'
@@ -18,18 +18,48 @@ const dataStore = useDataStore()
 const uiStore = useUIStore()
 
 const phaseListRef = ref<HTMLElement | null>(null)
+const entryElements = ref(new Map<string, HTMLElement>())
 
-const entries = computed(() => dataStore.getPhaseLevelEntries(props.columnIndex))
-const selectableEntries = computed(() => dataStore.getSelectablePhaseLevelEntries(props.columnIndex))
+const entries = computed(() => dataStore.getColumnEntries(props.columnIndex))
+const selectableEntries = computed(() => dataStore.getSelectableColumnEntries(props.columnIndex))
 
 const getSelectableIndex = (entryKey: string) => {
   return selectableEntries.value.findIndex((entry) => entry.key === entryKey)
 }
 
+const setEntryElement = (
+  entryKey: string,
+  element: Element | ComponentPublicInstance | null
+) => {
+  const resolvedElement =
+    element instanceof HTMLElement
+      ? element
+      : element && '$el' in element && element.$el instanceof HTMLElement
+        ? element.$el
+        : null
+
+  if (resolvedElement) {
+    entryElements.value.set(entryKey, resolvedElement)
+  } else {
+    entryElements.value.delete(entryKey)
+  }
+}
+
+const scrollSelectedEntryIntoView = async () => {
+  await nextTick()
+  const selectedEntry = selectableEntries.value[props.selectedPhaseIndex]
+  if (!selectedEntry) return
+
+  const element = entryElements.value.get(selectedEntry.key)
+  if (!element) return
+
+  handleScrollRequest(element)
+}
+
 // Handle scroll requests from child components
 const { handleScrollRequest } = useScrollIntoView(phaseListRef)
 
-watch(() => uiStore.columnScrollRequest, (req) => {
+watch(() => uiStore.columnScrollIntent, (req) => {
   if (req && req.col === props.columnIndex && phaseListRef.value) {
     const behavior = 'smooth'
     if (req.direction === 'bottom') {
@@ -39,51 +69,67 @@ watch(() => uiStore.columnScrollRequest, (req) => {
     }
   }
 })
+
+watch(
+  () => [props.selectedPhaseIndex, props.isSelected, entries.value.map((entry) => entry.key).join('|')],
+  () => {
+    if (props.isSelected) {
+      void scrollSelectedEntryIntoView()
+    }
+  },
+  { flush: 'post' }
+)
 </script>
 
 <template>
-  <div class="phase-column" :class="{ 'active': isActive, 'selected': isSelected }">
+  <div class="column-panel" :class="{ 'active': isActive, 'selected': isSelected }">
     <div v-if="entries.length === 0" class="empty-state">
       No sub phases, create one with o
     </div>
 
-    <div v-else ref="phaseListRef" class="phase-list">
+    <div v-else ref="phaseListRef" class="column-list">
       <template v-for="entry in entries" :key="entry.key">
         <hr v-if="entry.type === 'separator'" class="parent-separator" />
         <div
           v-else-if="entry.type === 'placeholder'"
-          class="phase-placeholder"
+          :ref="(element) => setEntryElement(entry.key, element)"
+          class="column-placeholder"
           :class="{
             'selected-item': getSelectableIndex(entry.key) === selectedPhaseIndex,
-            'active-item': getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.selectedColumn === columnIndex
+            'active-item': getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex
           }"
           @click="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
         >
           no sub phases yet. press o to create one
         </div>
-        <PhaseComponent
+        <div
           v-else
-          :phase="entry.phase"
-          :is-selected="getSelectableIndex(entry.key) === selectedPhaseIndex"
-          :is-active="getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.selectedColumn === columnIndex"
-          @phase-clicked="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
-          @aim-clicked="(aimId) => uiStore.selectAimById(columnIndex, entry.phase.id, aimId)"
-          @scroll-request="handleScrollRequest"
-        />
+          :ref="(element) => setEntryElement(entry.key, element)"
+          class="column-entry"
+        >
+          <PhaseComponent
+            :phase="entry.phase"
+            :is-selected="getSelectableIndex(entry.key) === selectedPhaseIndex"
+            :is-active="getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex"
+            @phase-clicked="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
+            @aim-clicked="(aimId) => uiStore.selectAimById(columnIndex, entry.phase.id, aimId)"
+            @scroll-request="handleScrollRequest"
+          />
+        </div>
       </template>
     </div>
   </div>
 </template>
 
 <style scoped>
-.phase-column {
+.column-panel {
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.phase-column.selected {
+.column-panel.selected {
   outline-width: 0.15rem;
   outline-style: solid;
   outline-offset: -0.15rem;
@@ -94,7 +140,7 @@ watch(() => uiStore.columnScrollRequest, (req) => {
   }
 }
 
-.phase-list {
+.column-list {
   flex: 1;
   overflow-y: auto;
   padding: 0.5rem;
@@ -128,8 +174,11 @@ watch(() => uiStore.columnScrollRequest, (req) => {
   margin: 0.5rem 0;
 }
 
-.phase-placeholder {
+.column-entry {
   margin-bottom: 0.5rem;
+}
+
+.column-placeholder {
   padding: 0.75rem;
   border: 1px dashed #555;
   border-radius: 0.25rem;
@@ -138,14 +187,14 @@ watch(() => uiStore.columnScrollRequest, (req) => {
   cursor: pointer;
 }
 
-.phase-placeholder.selected-item {
+.column-placeholder.selected-item {
   outline-width: 0.15rem;
   outline-style: solid;
   outline-offset: -0.15rem;
   outline-color: #888;
 }
 
-.phase-placeholder.active-item {
+.column-placeholder.active-item {
   outline-color: #007acc;
 }
 

@@ -200,7 +200,7 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
 }
 
 // Update keyboard hints based on navigation state and selected column
-watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, selectedColumn]) => {
+watch(() => [uiStore.navigatingAims, uiStore.activeColumn], ([navigatingAims, activeColumn]) => {
   if (!navigatingAims) {
     const hints = [
       { key: '/', action: 'search' },
@@ -214,7 +214,7 @@ watch(() => [uiStore.navigatingAims, uiStore.selectedColumn], ([navigatingAims, 
       hints.push({ key: 'v', action: 'voice mode' })
     }
 
-    if (selectedColumn === 0) {
+    if (activeColumn === 0) {
       // Root aims column
       hints.push({ key: 'd', action: 'delete aim' })
     } else {
@@ -250,18 +250,18 @@ watch(() => [modalStore.showPhaseModal, modalStore.showAimModal], async () => {
 
 // Persist selection state
 watch(() => [
-  uiStore.selectedColumn,
+  uiStore.activeColumn,
   uiStore.selectedPhaseByColumn,
   uiStore.selectedPhaseIdByColumn,
   uiStore.floatingAimIndex,
-  uiStore.viewportStart,
+  uiStore.windowStart,
   uiStore.lastSelectedSubPhaseIndexByPhase
 ], () => {
-  localStorage.setItem('aimparency-selected-column', uiStore.selectedColumn.toString())
+  localStorage.setItem('aimparency-active-column', uiStore.activeColumn.toString())
   localStorage.setItem('aimparency-selected-phases', JSON.stringify(uiStore.selectedPhaseByColumn))
   localStorage.setItem('aimparency-selected-phase-ids', JSON.stringify(uiStore.selectedPhaseIdByColumn))
   localStorage.setItem('aimparency-floating-index', uiStore.floatingAimIndex.toString())
-  localStorage.setItem('aimparency-viewport-start', uiStore.viewportStart.toString())
+  localStorage.setItem('aimparency-window-start', uiStore.windowStart.toString())
   localStorage.setItem('aimparency-last-sub-phase-index', JSON.stringify(uiStore.lastSelectedSubPhaseIndexByPhase))
   if (projectStore.projectPath) {
     uiStore.schedulePhaseCursorPersist()
@@ -289,7 +289,7 @@ onMounted(async () => {
     uiStore.ensureSelectionVisible();
   } else {
     // Set initial focus to the first phase column
-    uiStore.setSelectedColumn(0);
+    uiStore.setActiveColumn(0);
     await refreshDiscoveredProjects()
   }
 })
@@ -311,9 +311,9 @@ onUnmounted(() => {
         </span>
         
         <div class="column-controls" v-if="projectStore.currentView === 'columns'">
-          <button @click="uiStore.setViewportSize(uiStore.viewportSize - 1)" class="icon-btn" title="Decrease columns">-</button>
-          <span>{{ uiStore.viewportSize }} columns</span>
-          <button @click="uiStore.setViewportSize(uiStore.viewportSize + 1)" class="icon-btn" title="Increase columns">+</button>
+          <button @click="uiStore.setWindowSize(uiStore.windowSize - 1)" class="icon-btn" title="Decrease columns">-</button>
+          <span>{{ uiStore.windowSize }} columns</span>
+          <button @click="uiStore.setWindowSize(uiStore.windowSize + 1)" class="icon-btn" title="Increase columns">+</button>
         </div>
 
         <div class="view-controls">

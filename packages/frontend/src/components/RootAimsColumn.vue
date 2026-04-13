@@ -8,8 +8,8 @@ import AimsList from './AimsList.vue'
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 
-const isSelected = computed(() => uiStore.selectedColumn === -1)
-const isActive = computed(() => uiStore.selectedColumn === -1)
+const isSelected = computed(() => uiStore.activeColumn === -1)
+const isActive = computed(() => uiStore.activeColumn === -1)
 
 const rootColumnRef = ref<HTMLElement | null>(null)
 

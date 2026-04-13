@@ -74,7 +74,7 @@ describe('UI teleport cut/paste', () => {
 
     projectStore.projectPath = '/tmp/project'
     uiStore.navigatingAims = true
-    uiStore.selectedColumn = 0
+    uiStore.activeColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
     uiStore.selectedPhaseByColumn[0] = 0
     dataStore.childrenByParentId['null'] = ['phase-1']
@@ -129,7 +129,7 @@ describe('UI teleport cut/paste', () => {
 
     projectStore.projectPath = '/tmp/project'
     uiStore.navigatingAims = true
-    uiStore.selectedColumn = 0
+    uiStore.activeColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
     uiStore.selectedPhaseByColumn[0] = 0
     dataStore.childrenByParentId['null'] = ['phase-1']
@@ -212,7 +212,7 @@ describe('UI teleport cut/paste', () => {
 
     uiStore.navigatingAims = true
     modalStore.showAimModal = false
-    uiStore.selectedColumn = 0
+    uiStore.activeColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
 
     dataStore.phases['phase-empty'] = {
@@ -237,7 +237,7 @@ describe('UI teleport cut/paste', () => {
     const uiStore = useUIStore()
 
     uiStore.navigatingAims = false
-    uiStore.selectedColumn = 0
+    uiStore.activeColumn = 0
     dataStore.childrenByParentId['null'] = []
 
     await uiStore.handleColumnNavigationKeys(keyEvent('i'), dataStore)
@@ -250,7 +250,7 @@ describe('UI teleport cut/paste', () => {
     const uiStore = useUIStore()
 
     uiStore.navigatingAims = false
-    uiStore.selectedColumn = 0
+    uiStore.activeColumn = 0
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
     dataStore.childrenByParentId['null'] = ['phase-empty']
@@ -275,7 +275,7 @@ describe('UI teleport cut/paste', () => {
     const projectStore = useProjectStore()
 
     projectStore.projectPath = '/tmp/project'
-    uiStore.selectedColumn = 0
+    uiStore.activeColumn = 0
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
     dataStore.childrenByParentId['null'] = ['phase-1']

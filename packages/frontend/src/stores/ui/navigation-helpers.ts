@@ -220,7 +220,7 @@ export function makeSelectedAimPath(aim: Aim, path: Aim[], dataStore: DataStore)
 
 export function getSelectionPathFromState(
   navigatingAims: boolean,
-  selectedColumn: number,
+  activeColumn: number,
   floatingAimIndex: number,
   getSelectedPhaseId: (columnIndex: number) => string | undefined
 ): SelectionPath {
@@ -229,7 +229,7 @@ export function getSelectionPathFromState(
     return { phase: undefined, aims: [] }
   }
 
-  if (selectedColumn === -1) {
+  if (activeColumn === -1) {
     const floatingAims = dataStore.floatingAims
     if (!floatingAims.length) {
       return { phase: undefined, aims: [] }
@@ -246,7 +246,7 @@ export function getSelectionPathFromState(
     return { phase: undefined, aims: aimPath }
   }
 
-  const phaseId = getSelectedPhaseId(selectedColumn)
+  const phaseId = getSelectedPhaseId(activeColumn)
   if (!phaseId) {
     return { phase: undefined, aims: [] }
   }
@@ -266,18 +266,18 @@ export function getSelectionPathFromState(
 }
 
 export function setCurrentAimIndexInState(
-  selectedColumn: number,
+  activeColumn: number,
   getSelectedPhaseId: (columnIndex: number) => string | undefined,
   setFloatingAimIndex: (index: number) => void,
   aimIndex: number,
   dataStore: DataStore
 ): void {
-  if (selectedColumn === -1) {
+  if (activeColumn === -1) {
     setFloatingAimIndex(aimIndex)
     return
   }
 
-  const phaseId = getSelectedPhaseId(selectedColumn)
+  const phaseId = getSelectedPhaseId(activeColumn)
   if (!phaseId) {
     return
   }

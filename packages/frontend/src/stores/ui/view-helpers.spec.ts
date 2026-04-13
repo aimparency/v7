@@ -3,8 +3,8 @@ import {
   resetViewState,
   setGraphColorMode,
   setGraphPanelWidth,
+  setWindowSize,
   setView,
-  setViewportSize,
   toggleGraphShowLabels,
   type GraphColorMode,
   type UIViewMode
@@ -16,14 +16,14 @@ describe('view helpers', () => {
   })
 
   it('clamps and persists viewport size', () => {
-    const state = { viewportSize: 3, currentView: 'columns' as UIViewMode, graphSelectedAimId: null as string | null }
-    expect(setViewportSize(state, 99)).toBe(10)
-    expect(state.viewportSize).toBe(10)
-    expect(localStorage.getItem('aimparency-viewport-size')).toBe('10')
+    const state = { windowSize: 3, currentView: 'columns' as UIViewMode, graphSelectedAimId: null as string | null }
+    expect(setWindowSize(state, 99)).toBe(10)
+    expect(state.windowSize).toBe(10)
+    expect(localStorage.getItem('aimparency-window-size')).toBe('10')
   })
 
   it('syncs between list and graph view selection', () => {
-    const state = { viewportSize: 3, currentView: 'columns' as UIViewMode, graphSelectedAimId: null as string | null }
+    const state = { windowSize: 3, currentView: 'columns' as UIViewMode, graphSelectedAimId: null as string | null }
     const navigateToAim = vi.fn()
 
     setView(state, 'graph', () => 'a1', navigateToAim)
@@ -47,19 +47,19 @@ describe('view helpers', () => {
     expect(localStorage.getItem('aimparency-graph-show-labels')).toBe('false')
 
     const state = {
-      selectedColumn: 9,
-      viewportStart: 4,
-      viewportSize: 6,
-      rightmostColumnIndex: 8,
+      activeColumn: 9,
+      windowStart: 4,
+      windowSize: 6,
+      maxColumn: 8,
       floatingAimIndex: 5,
       navigatingAims: true,
       graphSelectedAimId: 'x',
       selectedLink: { parentId: 'p', childId: 'c' }
     }
     resetViewState(state)
-    expect(state.selectedColumn).toBe(0)
-    expect(state.viewportSize).toBe(2)
+    expect(state.activeColumn).toBe(0)
+    expect(state.windowSize).toBe(2)
     expect(state.graphSelectedAimId).toBe(null)
-    expect(localStorage.getItem('aimparency-selected-column')).toBe('0')
+    expect(localStorage.getItem('aimparency-active-column')).toBe('0')
   })
 })

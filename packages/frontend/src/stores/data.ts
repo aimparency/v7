@@ -65,24 +65,24 @@ function getSortedPhasesByParentId(state: { childrenByParentId: Record<string, s
     .filter((p): p is Phase => !!p)
 }
 
-function getActualPhasesForLevel(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, level: number): Phase[] {
-  if (level === 0) {
+function getActualPhasesForColumn(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, columnIndex: number): Phase[] {
+  if (columnIndex === 0) {
     return getSortedPhasesByParentId(state, null)
   }
 
-  const parentLevelPhases = getActualPhasesForLevel(state, level - 1)
+  const parentColumnPhases = getActualPhasesForColumn(state, columnIndex - 1)
   const phases: Phase[] = []
 
-  for (const parentPhase of parentLevelPhases) {
+  for (const parentPhase of parentColumnPhases) {
     phases.push(...getSortedPhasesByParentId(state, parentPhase.id))
   }
 
   return phases
 }
 
-function buildPhaseLevelEntries(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, level: number): PhaseLevelEntry[] {
-  if (level === 0) {
-    return getActualPhasesForLevel(state, 0).map((phase, index) => ({
+function buildColumnEntries(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, columnIndex: number): PhaseLevelEntry[] {
+  if (columnIndex === 0) {
+    return getActualPhasesForColumn(state, 0).map((phase, index) => ({
       type: 'phase' as const,
       key: `phase:${phase.id}`,
       phase,
@@ -91,14 +91,14 @@ function buildPhaseLevelEntries(state: { childrenByParentId: Record<string, stri
     }))
   }
 
-  const parentLevelPhases = getActualPhasesForLevel(state, level - 1)
+  const parentColumnPhases = getActualPhasesForColumn(state, columnIndex - 1)
   const entries: PhaseLevelEntry[] = []
 
-  parentLevelPhases.forEach((parentPhase, parentIndex) => {
+  parentColumnPhases.forEach((parentPhase, parentIndex) => {
     if (parentIndex > 0) {
       entries.push({
         type: 'separator',
-        key: `separator:${level}:${parentPhase.id}`,
+        key: `separator:${columnIndex}:${parentPhase.id}`,
         parentPhaseId: parentPhase.id
       })
     }
@@ -169,14 +169,14 @@ export const useDataStore = defineStore('data', {
     getPhasesByParentId: (state) => (parentId: string | null): Phase[] => {
       return getSortedPhasesByParentId(state, parentId)
     },
-    getPhaseLevelEntries: (state) => (level: number): PhaseLevelEntry[] => {
-      return buildPhaseLevelEntries(state, level)
+    getColumnEntries: (state) => (level: number): PhaseLevelEntry[] => {
+      return buildColumnEntries(state, level)
     },
-    getSelectablePhaseLevelEntries: (state) => (level: number): Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry> => {
-      return buildPhaseLevelEntries(state, level).filter((entry): entry is PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry => entry.type !== 'separator')
+    getSelectableColumnEntries: (state) => (level: number): Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry> => {
+      return buildColumnEntries(state, level).filter((entry): entry is PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry => entry.type !== 'separator')
     },
-    getActualPhasesForLevel: (state) => (level: number): Phase[] => {
-      return getActualPhasesForLevel(state, level)
+    getActualPhasesForColumn: (state) => (level: number): Phase[] => {
+      return getActualPhasesForColumn(state, level)
     },
     floatingAims(state): Aim[] {
       return state.floatingAimsIds.map(id => state.aims[id]).filter((a): a is Aim => !!a);
@@ -362,19 +362,19 @@ export const useDataStore = defineStore('data', {
 
       await this.loadPhases(projectPath, phaseData.parent);
       if (columnIndex > 0) {
-        await Promise.all(this.getActualPhasesForLevel(columnIndex - 1).map((phase) => this.loadPhases(projectPath, phase.id)));
+        await Promise.all(this.getActualPhasesForColumn(columnIndex - 1).map((phase) => this.loadPhases(projectPath, phase.id)));
       }
 
       const uiStore = useUIStore();
-      const newEntries = this.getSelectablePhaseLevelEntries(columnIndex);
+      const newEntries = this.getSelectableColumnEntries(columnIndex);
       const newPhaseIndex = newEntries.findIndex((entry) => entry.type === 'phase' && entry.phase.id === newPhaseId);
 
       if (newPhaseIndex !== -1) {
           uiStore.selectPhase(columnIndex, newPhaseIndex);
       }
 
-      if (columnIndex >= uiStore.rightmostColumnIndex) {
-          uiStore.setMinRightmost(columnIndex + 1);
+      if (columnIndex >= uiStore.maxColumn) {
+          uiStore.ensureMaxColumn(columnIndex + 1);
       }
     },
 

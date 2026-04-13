@@ -113,7 +113,7 @@ export async function moveAimDownAction(uiStore: any) {
           nextPh.selectedAimIndex = 0
         }
 
-        const col = uiStore.selectedColumn
+        const col = uiStore.activeColumn
         if (col >= 0) {
           await uiStore.selectPhase(col, currentPhaseIndex + 1)
         }
@@ -252,7 +252,7 @@ export async function moveAimUpAction(uiStore: any) {
           prevPh.selectedAimIndex = newIndex
         }
 
-        const col = uiStore.selectedColumn
+        const col = uiStore.activeColumn
         if (col >= 0) {
           await uiStore.selectPhase(col, currentPhaseIndex - 1)
         }
@@ -600,7 +600,7 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
   } else if (path.phase) {
     destinationPhaseId = path.phase.id
     insertionIndex = (path.phase.selectedAimIndex ?? -1) + 1
-  } else if (uiStore.selectedColumn === -1) {
+  } else if (uiStore.activeColumn === -1) {
     destinationFloating = true
     insertionIndex = uiStore.floatingAimIndex + 1
   } else {

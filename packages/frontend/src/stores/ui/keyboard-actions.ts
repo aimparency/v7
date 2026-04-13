@@ -37,7 +37,7 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
 export async function handleColumnNavigationKeysAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
-  const col = uiStore.selectedColumn
+  const col = uiStore.activeColumn
   switch (event.key) {
     case 'j':
       if (col >= 0) {
@@ -61,26 +61,37 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         uiStore.pendingDeletePhaseId = null
         const nextColumn = col - 1
         if (nextColumn >= 0) {
-          if (nextColumn < uiStore.viewportStart) {
-            uiStore.viewportStart = nextColumn
+          if (nextColumn < uiStore.windowStart) {
+            uiStore.windowStart = nextColumn
           }
-          uiStore.setSelectedColumn(nextColumn)
+          uiStore.setActiveColumn(nextColumn)
         }
       }
       break
     case 'l':
       event.preventDefault()
-      if (col < uiStore.rightmostColumnIndex) {
+      if (col >= 0) {
         uiStore.pendingDeletePhaseId = null
         const nextColumn = col + 1
-        const viewportEnd = uiStore.viewportStart + uiStore.viewportSize - 1
-        if (nextColumn > viewportEnd) {
-          const maxViewportStart = Math.max(0, uiStore.rightmostColumnIndex - uiStore.viewportSize + 1)
-          if (uiStore.viewportStart < maxViewportStart) {
-            uiStore.viewportStart++
+
+        if (nextColumn > uiStore.maxColumn) {
+          await uiStore.loadColumn(nextColumn)
+          const discoveredEntries = dataStore.getSelectableColumnEntries(nextColumn)
+          if (discoveredEntries.length > 0) {
+            uiStore.ensureMaxColumn(nextColumn)
           }
         }
-        uiStore.setSelectedColumn(nextColumn)
+
+        if (nextColumn <= uiStore.maxColumn) {
+          const windowEnd = uiStore.windowStart + uiStore.windowSize - 1
+          if (nextColumn > windowEnd) {
+            const maxWindowStart = Math.max(0, uiStore.maxColumn - uiStore.windowSize + 1)
+            if (uiStore.windowStart < maxWindowStart) {
+              uiStore.windowStart++
+            }
+          }
+          uiStore.setActiveColumn(nextColumn)
+        }
       }
       break
     case 'i': {
@@ -89,14 +100,14 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
 
       uiStore.pendingDeleteAimId = null
 
-      if (uiStore.selectedColumn >= 0) {
-        const selectableEntries = localDataStore.getSelectablePhaseLevelEntries(uiStore.selectedColumn)
+      if (uiStore.activeColumn >= 0) {
+        const selectableEntries = localDataStore.getSelectableColumnEntries(uiStore.activeColumn)
         if (selectableEntries.length > 0) {
-          const selectedIndex = uiStore.getSelectedPhase(uiStore.selectedColumn)
+          const selectedIndex = uiStore.getSelectedPhase(uiStore.activeColumn)
           const selectedEntry = selectableEntries[selectedIndex] ?? selectableEntries[0]
           if (selectedEntry?.type === 'phase') {
-            uiStore.selectedPhaseByColumn[uiStore.selectedColumn] = selectableEntries.indexOf(selectedEntry)
-            uiStore.selectedPhaseIdByColumn[uiStore.selectedColumn] = selectedEntry.phase.id
+            uiStore.selectedPhaseByColumn[uiStore.activeColumn] = selectableEntries.indexOf(selectedEntry)
+            uiStore.selectedPhaseIdByColumn[uiStore.activeColumn] = selectedEntry.phase.id
             const selectedPhase = selectedEntry.phase
             const aims = localDataStore.getAimsForPhase(selectedPhase.id)
             if (aims.length > 0 && selectedPhase.selectedAimIndex === undefined) {
@@ -118,7 +129,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
     }
     case 'e': {
       event.preventDefault()
-      const currentCol = uiStore.selectedColumn
+      const currentCol = uiStore.activeColumn
 
       if (currentCol === -1) break
 
@@ -142,7 +153,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
     case 'o':
     case 'O':
       event.preventDefault()
-      if (uiStore.selectedColumn === -1) {
+      if (uiStore.activeColumn === -1) {
         modalStore.openAimModal()
       } else {
         modalStore.openPhaseModal(event.key === 'o' ? 'after' : 'before')
@@ -150,7 +161,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       break
     case 'd': {
       event.preventDefault()
-      const currentCol = uiStore.selectedColumn
+      const currentCol = uiStore.activeColumn
 
       if (currentCol === -1) {
         if (uiStore.navigatingAims) {
@@ -187,8 +198,8 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
 
           await dataStore.loadPhases(projectStore.projectPath, parentId)
 
-          await uiStore.loadPhaseLevel(currentCol)
-          const selectableEntries = dataStore.getSelectablePhaseLevelEntries(currentCol)
+          await uiStore.loadColumn(currentCol)
+          const selectableEntries = dataStore.getSelectableColumnEntries(currentCol)
           const newIndex = Math.min(uiStore.selectedPhaseByColumn[currentCol] || 0, Math.max(0, selectableEntries.length - 1))
 
           if (selectableEntries.length > 0) {
@@ -196,7 +207,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
           } else {
             uiStore.selectedPhaseByColumn[currentCol] = 0
             delete uiStore.selectedPhaseIdByColumn[currentCol]
-            uiStore.setRightmostColumn(currentCol)
+            uiStore.setMaxColumn(currentCol)
           }
         } else {
           uiStore.setPendingDeletePhase(selectedPhase.id)
@@ -384,7 +395,7 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
   const projectStore = useProjectStore()
   console.log('[PhaseNav] keydown', {
     key: event.key,
-    selectedColumn: uiStore.selectedColumn,
+    activeColumn: uiStore.activeColumn,
     navigatingAims: uiStore.navigatingAims,
     ctrl: event.ctrlKey,
     meta: event.metaKey,

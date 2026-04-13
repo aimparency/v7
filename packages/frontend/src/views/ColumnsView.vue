@@ -2,18 +2,18 @@
 import { computed } from 'vue'
 import { useUIStore } from '../stores/ui'
 import RootAimsColumn from '../components/RootAimsColumn.vue'
-import PhaseColumn from '../components/PhaseColumn.vue'
+import Column from '../components/Column.vue'
 
 const uiStore = useUIStore()
 
 const containerOffset = computed(() => {
-  const columnWidth = 100 / uiStore.viewportSize
-  const columnsToShift = uiStore.viewportStart + 1
+  const columnWidth = 100 / uiStore.windowSize
+  const columnsToShift = uiStore.windowStart + 1
   const offset = columnsToShift * columnWidth
   return `translateX(-${offset}%)`
 })
 
-const columnWidth = computed(() => `${100 / uiStore.viewportSize}%`)
+const columnWidth = computed(() => `${100 / uiStore.windowSize}%`)
 </script>
 
 <template>
@@ -23,13 +23,13 @@ const columnWidth = computed(() => `${100 / uiStore.viewportSize}%`)
   >
     <RootAimsColumn class="column-aims" />
 
-    <PhaseColumn
-      v-for="colIndex in [...Array(uiStore.rightmostColumnIndex + 1).keys()]"
+    <Column
+      v-for="colIndex in [...Array(uiStore.maxColumn + 1).keys()]"
       :key="colIndex"
       :column-index="colIndex"
       class="column"
-      :is-selected="uiStore.selectedColumn === colIndex"
-      :is-active="uiStore.selectedColumn === colIndex"
+      :is-selected="uiStore.activeColumn === colIndex"
+      :is-active="uiStore.activeColumn === colIndex"
       :selected-phase-index="uiStore.getSelectedPhase(colIndex)"
     />
   </div>

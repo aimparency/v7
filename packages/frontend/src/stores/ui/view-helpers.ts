@@ -2,7 +2,7 @@ export type UIViewMode = 'columns' | 'graph' | 'voice'
 export type GraphColorMode = 'status' | 'priority'
 
 type ViewState = {
-  viewportSize: number
+  windowSize: number
   currentView: UIViewMode
   graphSelectedAimId: string | null
 }
@@ -14,20 +14,20 @@ type GraphState = {
 }
 
 type ResettableViewState = {
-  selectedColumn: number
-  viewportStart: number
-  viewportSize: number
-  rightmostColumnIndex: number
+  activeColumn: number
+  windowStart: number
+  windowSize: number
+  maxColumn: number
   floatingAimIndex: number
   navigatingAims: boolean
   graphSelectedAimId: string | null
   selectedLink: { parentId: string; childId: string } | null
 }
 
-export function setViewportSize(state: ViewState, size: number): number {
+export function setWindowSize(state: ViewState, size: number): number {
   const clamped = Math.max(1, Math.min(size, 10))
-  state.viewportSize = clamped
-  localStorage.setItem('aimparency-viewport-size', clamped.toString())
+  state.windowSize = clamped
+  localStorage.setItem('aimparency-window-size', clamped.toString())
   return clamped
 }
 
@@ -66,13 +66,13 @@ export function toggleGraphShowLabels(state: GraphState): boolean {
 }
 
 export function resetViewState(state: ResettableViewState): void {
-  state.selectedColumn = 0
-  state.viewportStart = 0
-  state.viewportSize = 2
-  state.rightmostColumnIndex = 0
+  state.activeColumn = 0
+  state.windowStart = 0
+  state.windowSize = 2
+  state.maxColumn = 0
   state.floatingAimIndex = -1
   state.navigatingAims = false
   state.graphSelectedAimId = null
   state.selectedLink = null
-  localStorage.setItem('aimparency-selected-column', '0')
+  localStorage.setItem('aimparency-active-column', '0')
 }

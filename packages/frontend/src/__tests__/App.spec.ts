@@ -109,7 +109,7 @@ describe('App', () => {
         stubs: {
           // Stub complex components if needed to speed up test
           WatchdogPanel: true,
-          PhaseColumn: true,
+          Column: true,
           GraphView: true,
           VoiceAgent: true
         }
