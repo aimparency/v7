@@ -653,8 +653,9 @@ export const useListStore = defineStore('ui', {
     },
 
     repairSelectionLeft(fromLevel: number) {
+      const minVisibleLevel = Math.max(0, this.windowStart)
       let currentParentId = this.getSelectedPhaseEntry(fromLevel)?.parentPhaseId ?? null
-      for (let level = fromLevel - 1; level >= 0 && currentParentId; level--) {
+      for (let level = fromLevel - 1; level >= minVisibleLevel && currentParentId; level--) {
         const parentIndex = this.findSelectableIndexForPhase(level, currentParentId)
         if (parentIndex < 0) {
           break
@@ -808,15 +809,19 @@ export const useListStore = defineStore('ui', {
       }
 
       const direction: PhaseMoveDirection = delta < 0 ? 'backward' : 'forward'
-      await this.loadColumn(columnIndex)
       const entries = this.getSelectableEntries(columnIndex)
       if (entries.length === 0) {
+        await this.loadColumn(columnIndex)
+      }
+
+      const refreshedEntries = this.getSelectableEntries(columnIndex)
+      if (refreshedEntries.length === 0) {
         return false
       }
 
       const currentIndex = this.getSelectedPhase(columnIndex)
       const nextIndex = currentIndex + delta
-      if (nextIndex < 0 || nextIndex >= entries.length) {
+      if (nextIndex < 0 || nextIndex >= refreshedEntries.length) {
         return false
       }
 
