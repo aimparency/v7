@@ -55,6 +55,7 @@ const delayMiddleware = t.middleware(async ({ next }) => {
 const delayedProcedure = t.procedure.use(delayMiddleware);
 
 const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\nruntime/\n';
+const CURRENT_PHASE_DATA_MODEL_VERSION = 2;
 const DEFAULT_AUTONOMY_POLICY = {
   version: 1,
   autonomyMode: 'supervised',
@@ -313,11 +314,21 @@ function populateAimValues(projectPath: string, aims: Aim[]) {
     }
 }
 
+async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
+  const dir = path.dirname(filePath);
+  const tempPath = path.join(
+    dir,
+    `.${path.basename(filePath)}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  );
+  await fs.writeJson(tempPath, data, { spaces: 2 });
+  await fs.move(tempPath, filePath, { overwrite: true });
+}
+
 async function writePhase(rawProjectPath: string, phase: Phase, emitChange = true): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   const phasePath = path.join(projectPath, 'phases', `${phase.id}.json`);
-  await fs.writeJson(phasePath, phase, { spaces: 2 });
+  await writeJsonAtomic(phasePath, phase);
   if (emitChange) {
     ee.emit('change', { type: 'phase', id: phase.id, projectPath });
   }
@@ -338,6 +349,7 @@ async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
       name,
       color: '#007acc',
       statuses: INITIAL_STATES,
+      dataModelVersion: CURRENT_PHASE_DATA_MODEL_VERSION,
       phaseCursors: {},
       phaseActiveLevel: 0,
       rootPhaseIds: []
@@ -345,6 +357,7 @@ async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
   }
 
   if (!meta.statuses) meta.statuses = INITIAL_STATES;
+  if (meta.dataModelVersion === undefined) meta.dataModelVersion = 1;
   if (!meta.phaseCursors) meta.phaseCursors = {};
   if (meta.phaseActiveLevel === undefined) meta.phaseActiveLevel = 0;
   if (!meta.rootPhaseIds) meta.rootPhaseIds = [];
@@ -356,7 +369,7 @@ async function writeProjectMeta(rawProjectPath: string, meta: ProjectMeta): Prom
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   const metaPath = path.join(projectPath, 'meta.json');
-  await fs.writeJson(metaPath, meta, { spaces: 2 });
+  await writeJsonAtomic(metaPath, meta);
 }
 
 function getPhaseSortValue(phase: Partial<Phase>): number {
@@ -449,54 +462,24 @@ async function listPhases(rawProjectPath: string, parentPhaseId?: string | null)
 
   const sortLegacyChildren = (phases: Phase[]) => [...phases].sort((a, b) => getPhaseSortValue(a) - getPhaseSortValue(b));
 
-  const migratedPhaseIds = new Set<string>();
-
-  const currentRootIds = meta.rootPhaseIds ?? [];
-  const desiredRootIds = currentRootIds.length > 0
-    ? currentRootIds.filter((id) => {
-        const phase = phaseMap.get(id);
-        return phase && phase.parent === null;
-      })
-    : sortLegacyChildren(childrenByParent.get(null) ?? []).map((phase) => phase.id);
-
-  const missingRootIds = sortLegacyChildren(childrenByParent.get(null) ?? [])
-    .map((phase) => phase.id)
-    .filter((id) => !desiredRootIds.includes(id));
-  const nextRootIds = [...desiredRootIds, ...missingRootIds];
-
-  if (JSON.stringify(currentRootIds) !== JSON.stringify(nextRootIds)) {
-    meta.rootPhaseIds = nextRootIds;
-    await writeProjectMeta(projectPath, meta);
-  }
-
-  for (const phase of allPhases) {
-    const legacyChildren = sortLegacyChildren(childrenByParent.get(phase.id) ?? []).map((child) => child.id);
-    const desiredChildIds = (phase.childPhaseIds ?? []).filter((id) => {
-      const child = phaseMap.get(id);
-      return child && child.parent === phase.id;
-    });
-    const missingChildIds = legacyChildren.filter((id) => !desiredChildIds.includes(id));
-    const nextChildIds = desiredChildIds.length > 0 ? [...desiredChildIds, ...missingChildIds] : legacyChildren;
-
-    if (JSON.stringify(phase.childPhaseIds ?? []) !== JSON.stringify(nextChildIds)) {
-      phase.childPhaseIds = nextChildIds;
-      migratedPhaseIds.add(phase.id);
-    }
-  }
-
-  if (migratedPhaseIds.size > 0) {
-    await Promise.all(
-      [...migratedPhaseIds].map((phaseId) => writePhase(projectPath, phaseMap.get(phaseId)!, false))
-    );
-  }
-
   if (parentPhaseId === undefined) {
     return allPhases;
   }
 
-  const orderedIds = parentPhaseId === null
-    ? (meta.rootPhaseIds ?? [])
-    : (phaseMap.get(parentPhaseId)?.childPhaseIds ?? []);
+  const isVersionedTreeModel = (meta.dataModelVersion ?? 1) >= CURRENT_PHASE_DATA_MODEL_VERSION;
+  const orderedIds = isVersionedTreeModel
+    ? (
+        parentPhaseId === null
+          ? (meta.rootPhaseIds ?? []).filter((id) => {
+              const phase = phaseMap.get(id);
+              return phase && phase.parent === null;
+            })
+          : (phaseMap.get(parentPhaseId)?.childPhaseIds ?? []).filter((id) => {
+              const child = phaseMap.get(id);
+              return child && child.parent === parentPhaseId;
+            })
+      )
+    : sortLegacyChildren(childrenByParent.get(parentPhaseId ?? null) ?? []).map((phase) => phase.id);
 
   return orderedIds
     .map((id) => phaseMap.get(id))

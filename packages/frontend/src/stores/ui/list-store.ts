@@ -1083,10 +1083,7 @@ export const useListStore = defineStore('ui', {
 
       if (path.aims.length === 0) {
         if (path.phase && col >= 0) {
-          const currentPhaseIndex = this.getSelectedPhase(col)
-          const phaseCount = this.getPhaseCount(col)
-          if (currentPhaseIndex < phaseCount - 1) {
-            await this.selectPhase(col, currentPhaseIndex + 1)
+          if (await this.moveActivePhase(1)) {
             const newPhaseId = this.getSelectedPhaseId(col)
             if (newPhaseId) {
               const newPhase = dataStore.phases[newPhaseId]
@@ -1108,10 +1105,7 @@ export const useListStore = defineStore('ui', {
           if (path.phase.selectedAimIndex! < path.phase.commitments.length - 1) {
             path.phase.selectedAimIndex!++
           } else if (col >= 0) {
-            const currentPhaseIndex = this.getSelectedPhase(col)
-            const phaseCount = this.getPhaseCount(col)
-            if (currentPhaseIndex < phaseCount - 1) {
-              await this.selectPhase(col, currentPhaseIndex + 1)
+            if (await this.moveActivePhase(1)) {
               const newPhaseId = this.getSelectedPhaseId(col)
               if (newPhaseId) {
                 const newPhase = dataStore.phases[newPhaseId]
@@ -1140,10 +1134,7 @@ export const useListStore = defineStore('ui', {
             if (path.phase.selectedAimIndex! < path.phase.commitments.length - 1) {
               path.phase.selectedAimIndex!++
             } else if (col >= 0) {
-              const currentPhaseIndex = this.getSelectedPhase(col)
-              const phaseCount = this.getPhaseCount(col)
-              if (currentPhaseIndex < phaseCount - 1) {
-                await this.selectPhase(col, currentPhaseIndex + 1)
+              if (await this.moveActivePhase(1)) {
                 const newPhaseId = this.getSelectedPhaseId(col)
                 if (newPhaseId) {
                   const newPhase = dataStore.phases[newPhaseId]
@@ -1174,9 +1165,7 @@ export const useListStore = defineStore('ui', {
 
       if (path.aims.length === 0) {
         if (path.phase && col >= 0) {
-          const currentPhaseIndex = this.getSelectedPhase(col)
-          if (currentPhaseIndex > 0) {
-            await this.selectPhase(col, currentPhaseIndex - 1)
+          if (await this.moveActivePhase(-1)) {
             const newPhaseId = this.getSelectedPhaseId(col)
             if (newPhaseId) {
               const newPhase = dataStore.phases[newPhaseId]
@@ -1208,9 +1197,7 @@ export const useListStore = defineStore('ui', {
               this.goToLastChildAim(target)
             }
           } else {
-            const currentPhaseIndex = this.getSelectedPhase(col)
-            if (currentPhaseIndex > 0) {
-              await this.selectPhase(col, currentPhaseIndex - 1)
+            if (await this.moveActivePhase(-1)) {
               const newPhaseId = this.getSelectedPhaseId(col)
               if (newPhaseId) {
                 const newPhase = dataStore.phases[newPhaseId]

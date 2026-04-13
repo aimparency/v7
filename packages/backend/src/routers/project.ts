@@ -47,6 +47,18 @@ const DISCOVERY_IGNORED_DIRS = new Set([
   '.turbo'
 ]);
 
+const CURRENT_PHASE_DATA_MODEL_VERSION = 2;
+
+async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
+  const dir = path.dirname(filePath);
+  const tempPath = path.join(
+    dir,
+    `.${path.basename(filePath)}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  );
+  await fs.writeJson(tempPath, data, { spaces: 2 });
+  await fs.move(tempPath, filePath, { overwrite: true });
+}
+
 export const createProjectRouter = (
   t: RouterBuilder,
   delayedProcedure: BaseProcedure,
@@ -198,6 +210,9 @@ export const createProjectRouter = (
           if (!meta.statuses) {
               meta.statuses = INITIAL_STATES;
           }
+          if (meta.dataModelVersion === undefined) {
+              meta.dataModelVersion = 1;
+          }
           if (!meta.phaseCursors) {
               meta.phaseCursors = {};
           }
@@ -218,6 +233,7 @@ export const createProjectRouter = (
             name,
             color: '#007acc',
             statuses: INITIAL_STATES,
+            dataModelVersion: CURRENT_PHASE_DATA_MODEL_VERSION,
             phaseCursors: {},
             phaseActiveLevel: 0,
             rootPhaseIds: []
@@ -225,7 +241,7 @@ export const createProjectRouter = (
 
         try {
             await ensureProjectStructure(projectPath);
-            await fs.writeJson(metaPath, meta, { spaces: 2 });
+            await writeJsonAtomic(metaPath, meta);
         } catch (e) {
             console.error("Failed to initialize meta.json", e);
         }
@@ -379,6 +395,7 @@ export const createProjectRouter = (
           name: z.string(),
           color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
           statuses: z.array(z.any()).optional(),
+          dataModelVersion: z.number().int().positive().optional(),
           phaseCursors: z.record(z.string(), z.number().int()).optional(),
           phaseActiveLevel: z.number().int().min(0).optional(),
           rootPhaseIds: z.array(z.string()).optional()
@@ -388,8 +405,12 @@ export const createProjectRouter = (
         const projectPath = normalizeProjectPath(input.projectPath);
         await ensureProjectStructure(projectPath);
         const metaPath = path.join(projectPath, 'meta.json');
-        await fs.writeJson(metaPath, input.meta, { spaces: 2 });
-        return input.meta;
+        const nextMeta = {
+          ...input.meta,
+          dataModelVersion: input.meta.dataModelVersion ?? CURRENT_PHASE_DATA_MODEL_VERSION
+        };
+        await writeJsonAtomic(metaPath, nextMeta);
+        return nextMeta;
       }),
 
     injectAgentInstructions: delayedProcedure
