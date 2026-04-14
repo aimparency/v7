@@ -2,11 +2,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const packageRoot = path.resolve(__dirname, '..');
 const srcRoot = path.join(packageRoot, 'src');
+const require = createRequire(import.meta.url);
+const tsxPackageJsonPath = require.resolve('tsx/package.json');
+const tsxCliPath = path.join(path.dirname(tsxPackageJsonPath), 'dist', 'cli.mjs');
 
 function findTestFiles(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -40,7 +44,7 @@ const env = {
 
 const result = spawnSync(
   process.execPath,
-  ['--import', 'tsx', '--test', ...testFiles],
+  [tsxCliPath, '--tsconfig', 'tsconfig.dev.json', '--test', ...testFiles],
   {
     cwd: packageRoot,
     stdio: 'inherit',

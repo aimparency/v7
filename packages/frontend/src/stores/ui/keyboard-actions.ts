@@ -45,8 +45,12 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
     const selectedEntry = uiStore.getSelectedPhaseEntry(col)
     if (!selectedEntry || selectedEntry.type !== 'phase') return
 
-    const siblingCount = dataStore.getPhasesByParentId(selectedEntry.parentPhaseId).length
-    const targetIndex = selectedEntry.childIndex + delta
+    const siblingIds = dataStore.getOrderedSiblingIds(selectedEntry.parentPhaseId)
+    const currentIndex = siblingIds.indexOf(selectedEntry.phase.id)
+    if (currentIndex < 0) return
+
+    const targetIndex = currentIndex + delta
+    const siblingCount = siblingIds.length
     if (targetIndex < 0 || targetIndex >= siblingCount) return
 
     await dataStore.reorderPhase(projectStore.projectPath, selectedEntry.phase.id, targetIndex)

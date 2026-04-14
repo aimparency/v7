@@ -49,6 +49,14 @@ export const createPhaseRouter = (
     await fs.writeJson(metaPath, meta, { spaces: 2 });
   };
 
+  const emitOwnerChange = (projectPath: string, ownerParentId: string | null) => {
+    if (ownerParentId) {
+      ee.emit('change', { type: 'phase', id: ownerParentId, projectPath });
+    } else {
+      ee.emit('change', { type: 'project', id: 'meta', projectPath });
+    }
+  };
+
   return t.router({
     create: delayedProcedure
       .input(z.object({
@@ -102,6 +110,8 @@ export const createPhaseRouter = (
           await writeMeta(input.projectPath, meta);
         }
         addPhaseToIndex(input.projectPath, phase);
+        ee.emit('change', { type: 'phase', id: phaseId, projectPath: input.projectPath });
+        emitOwnerChange(input.projectPath, phase.parent ?? null);
         return { id: phaseId };
       }),
 
@@ -179,6 +189,9 @@ export const createPhaseRouter = (
 
         await writePhase(input.projectPath, updatedPhase);
         updatePhaseInIndex(input.projectPath, updatedPhase);
+        ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath });
+        emitOwnerChange(input.projectPath, oldParentId);
+        emitOwnerChange(input.projectPath, updatedPhase.parent ?? null);
         return updatedPhase;
       }),
 
@@ -213,6 +226,7 @@ export const createPhaseRouter = (
         }
 
         ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath });
+        emitOwnerChange(input.projectPath, parentId);
         return { success: true };
       }),
 
@@ -242,6 +256,7 @@ export const createPhaseRouter = (
 
         removePhaseFromIndex(input.projectPath, input.phaseId);
         ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath });
+        emitOwnerChange(input.projectPath, phase.parent ?? null);
         return { success: true };
       }),
 

@@ -71,6 +71,15 @@ function getSortedPhasesByParentId(
     .filter((p: Phase | undefined): p is Phase => !!p)
 }
 
+function getOrderedSiblingIds(
+  state: { phases: Record<string, Phase>, meta: any | null },
+  parentId: string | null
+): string[] {
+  return parentId === null
+    ? (state.meta?.rootPhaseIds || [])
+    : (state.phases[parentId]?.childPhaseIds || [])
+}
+
 function getActualPhasesForColumn(
   state: { phases: Record<string, Phase>, meta: any | null },
   columnIndex: number
@@ -179,6 +188,12 @@ export const useDataStore = defineStore('data', {
   }),
 
   getters: {
+    getOrderedSiblingIds: (state) => (parentId: string | null): string[] => {
+      return [...getOrderedSiblingIds(state, parentId)]
+    },
+    getPhaseSiblingIndex: (state) => (parentId: string | null, phaseId: string): number => {
+      return getOrderedSiblingIds(state, parentId).indexOf(phaseId)
+    },
     getPhasesByParentId: (state) => (parentId: string | null): Phase[] => {
       return getSortedPhasesByParentId(state, parentId)
     },
@@ -874,7 +889,15 @@ export const useDataStore = defineStore('data', {
           if (eventPath !== myPath) return;
 
           console.log('Received update:', data);
-          if (data.type === 'aim') {
+          if (data.type === 'project') {
+             try {
+               const meta = await trpc.project.getMeta.query({ projectPath })
+               this.meta = meta
+               this.invalidatePhaseChildren(null)
+             } catch (e) {
+               console.error('Failed to refresh project meta from update:', e)
+             }
+          } else if (data.type === 'aim') {
              if (this.deletedAims.has(data.id)) return;
              try {
                const aim = await trpc.aim.get.query({ projectPath, aimId: data.id });

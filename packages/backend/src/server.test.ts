@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'path';
 import { appRouter } from './server';
 import { clearIndices } from './search';
+import type { Phase, ProjectMeta } from 'shared';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -286,6 +287,118 @@ test('phase.list skips malformed phase files', async () => {
 
   assert.equal(phases.length, 1);
   assert.equal(phases[0]?.id, validPhase.id);
+});
+
+test('phase reorder preserves canonical parent-owned order for roots and children', async () => {
+  const projectPath = testProjectPath;
+
+  const rootA = await caller.phase.create({
+    projectPath,
+    phase: {
+      name: 'A',
+      from: 0,
+      to: 0,
+      parent: null,
+      commitments: []
+    }
+  });
+
+  const rootB = await caller.phase.create({
+    projectPath,
+    phase: {
+      name: 'B',
+      from: 0,
+      to: 0,
+      parent: null,
+      commitments: []
+    }
+  });
+
+  const childC = await caller.phase.create({
+    projectPath,
+    phase: {
+      name: 'C',
+      from: 0,
+      to: 0,
+      parent: rootA.id,
+      commitments: []
+    }
+  });
+
+  const rootAAfterC = await caller.phase.get({
+    projectPath,
+    phaseId: rootA.id
+  });
+  const rootAFileAfterC = await fs.readJson(path.join(projectPath, 'phases', `${rootA.id}.json`)) as Phase;
+  assert.deepEqual(rootAAfterC.childPhaseIds, [childC.id]);
+
+  const childD = await caller.phase.create({
+    projectPath,
+    phase: {
+      name: 'D',
+      from: 0,
+      to: 0,
+      parent: rootA.id,
+      commitments: []
+    }
+  });
+
+  const rootAAfterD = await caller.phase.get({
+    projectPath,
+    phaseId: rootA.id
+  });
+  const rootAFile = await fs.readJson(path.join(projectPath, 'phases', `${rootA.id}.json`)) as Phase;
+  const metaFile = await fs.readJson(path.join(projectPath, 'meta.json')) as ProjectMeta;
+  assert.deepEqual(rootAAfterD.childPhaseIds, [childC.id, childD.id]);
+  assert.deepEqual(rootAFile.childPhaseIds, [childC.id, childD.id]);
+  assert.deepEqual(metaFile.rootPhaseIds, [rootA.id, rootB.id]);
+
+  const rootsInitial = await caller.phase.list({
+    projectPath,
+    parentPhaseId: null
+  });
+  assert.deepEqual(rootsInitial.map((phase) => phase.name), ['A', 'B']);
+
+  const childrenInitial = await caller.phase.list({
+    projectPath,
+    parentPhaseId: rootA.id
+  });
+  assert.deepEqual(childrenInitial.map((phase) => phase.name), ['C', 'D']);
+
+  await caller.phase.reorder({
+    projectPath,
+    phaseId: rootA.id,
+    newIndex: 1
+  });
+
+  const rootsAfterRootReorder = await caller.phase.list({
+    projectPath,
+    parentPhaseId: null
+  });
+  assert.deepEqual(rootsAfterRootReorder.map((phase) => phase.name), ['B', 'A']);
+
+  await caller.phase.reorder({
+    projectPath,
+    phaseId: childC.id,
+    newIndex: 1
+  });
+
+  const childrenAfterChildReorder = await caller.phase.list({
+    projectPath,
+    parentPhaseId: rootA.id
+  });
+  assert.deepEqual(childrenAfterChildReorder.map((phase) => phase.name), ['D', 'C']);
+
+  const rootAAfter = await caller.phase.get({
+    projectPath,
+    phaseId: rootA.id
+  });
+  assert.deepEqual(rootAAfter.childPhaseIds, [childD.id, childC.id]);
+
+  const meta = await caller.project.getMeta({
+    projectPath
+  });
+  assert.deepEqual(meta.rootPhaseIds, [rootB.id, rootA.id]);
 });
 
 test('search - matches aims using search index', async () => {

@@ -5,7 +5,7 @@
   "description": "Optional voice integration services for Aimparency.",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx --tsconfig tsconfig.dev.json watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },

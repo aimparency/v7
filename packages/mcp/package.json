@@ -10,9 +10,9 @@
   "scripts": {
     "build": "rm -rf build && tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "watch": "tsc -w",
-    "dev": "tsx watch src/index.ts",
-    "expose": "tsx scripts/expose.ts",
-    "test": "NODE_ENV=test tsx --test src/**/*.test.ts"
+    "dev": "tsx --tsconfig tsconfig.dev.json watch src/index.ts",
+    "expose": "tsx --tsconfig tsconfig.dev.json scripts/expose.ts",
+    "test": "NODE_ENV=test tsx --tsconfig tsconfig.dev.json --test src/**/*.test.ts"
   },
   "files": [
     "build"

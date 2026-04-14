@@ -33,9 +33,18 @@ const createPhase = async () => {
     const columnIndex = uiStore.activeColumn
     const selectedEntry = getSelectedLevelEntry(columnIndex)
     const parentPhaseId = selectedEntry?.parentPhaseId ?? null
-    const order = selectedEntry
-      ? selectedEntry.childIndex + (modalStore.phaseModalInsertPosition === 'after' ? 1 : 0)
-      : 0
+    let order = 0
+
+    if (selectedEntry) {
+      if (selectedEntry.type === 'phase') {
+        const siblingIndex = dataStore.getPhaseSiblingIndex(parentPhaseId, selectedEntry.phase.id)
+        if (siblingIndex >= 0) {
+          order = siblingIndex + (modalStore.phaseModalInsertPosition === 'after' ? 1 : 0)
+        }
+      } else {
+        order = 0
+      }
+    }
 
     await dataStore.createAndSelectPhase(projectStore.projectPath, {
       name: modalStore.newPhaseName.trim(),
