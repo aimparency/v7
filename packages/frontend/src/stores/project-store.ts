@@ -20,7 +20,7 @@ export const useProjectStore = defineStore('project', {
     projectPath: getInitialProjectPath(),
     connectionStatus: 'connecting' as 'connecting' | 'connected' | 'no connection',
     projectHistory: JSON.parse(localStorage.getItem('aimparency-project-history') || '[]') as ProjectHistoryEntry[],
-    currentView: (localStorage.getItem('aimparency-current-view') || 'columns') as 'columns' | 'graph' | 'voice',
+    currentView: 'columns' as 'columns' | 'graph' | 'voice',
     showWatchdog: localStorage.getItem('aimparency-show-watchdog') === 'true',
     watchdogMaximized: false,
     keyboardHints: [] as Hint[]
@@ -67,7 +67,6 @@ export const useProjectStore = defineStore('project', {
 
     setCurrentView(view: 'columns' | 'graph' | 'voice') {
       this.currentView = view
-      localStorage.setItem('aimparency-current-view', view)
     },
 
     setKeyboardHints(hints: Hint[]) {

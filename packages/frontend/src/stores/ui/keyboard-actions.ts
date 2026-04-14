@@ -38,43 +38,34 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
   const col = uiStore.activeColumn
+
+  const reorderSelectedPhase = async (delta: -1 | 1) => {
+    if (col < 0) return
+
+    const selectedEntry = uiStore.getSelectedPhaseEntry(col)
+    if (!selectedEntry || selectedEntry.type !== 'phase') return
+
+    const siblingCount = dataStore.getPhasesByParentId(selectedEntry.parentPhaseId).length
+    const targetIndex = selectedEntry.childIndex + delta
+    if (targetIndex < 0 || targetIndex >= siblingCount) return
+
+    await dataStore.reorderPhase(projectStore.projectPath, selectedEntry.phase.id, targetIndex)
+    await uiStore.loadColumn(col)
+    const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedEntry.phase.id)
+    if (nextIndex >= 0) {
+      uiStore.setSelection(col, nextIndex)
+    }
+  }
+
   switch (event.key) {
     case 'J':
       event.preventDefault()
-      if (col >= 0) {
-        const selectedPhaseId = uiStore.getSelectedPhaseId(col)
-        const currentIndex = uiStore.getSelectedPhase(col)
-        if (selectedPhaseId) {
-          const entries = dataStore.getSelectableColumnEntries(col)
-          if (currentIndex < entries.length - 1) {
-            await dataStore.reorderPhase(projectStore.projectPath, selectedPhaseId, currentIndex + 1)
-            await uiStore.loadColumn(col)
-            const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedPhaseId)
-            if (nextIndex >= 0) {
-              uiStore.setSelection(col, nextIndex)
-            }
-          }
-        }
-      }
+      await reorderSelectedPhase(1)
       break
     case 'j':
       if (event.shiftKey) {
         event.preventDefault()
-        if (col >= 0) {
-          const selectedPhaseId = uiStore.getSelectedPhaseId(col)
-          const currentIndex = uiStore.getSelectedPhase(col)
-          if (selectedPhaseId) {
-            const entries = dataStore.getSelectableColumnEntries(col)
-            if (currentIndex < entries.length - 1) {
-              await dataStore.reorderPhase(projectStore.projectPath, selectedPhaseId, currentIndex + 1)
-              await uiStore.loadColumn(col)
-              const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedPhaseId)
-              if (nextIndex >= 0) {
-                uiStore.setSelection(col, nextIndex)
-              }
-            }
-          }
-        }
+        await reorderSelectedPhase(1)
         break
       }
       if (col >= 0) {
@@ -86,34 +77,12 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       break
     case 'K':
       event.preventDefault()
-      if (col >= 0) {
-        const selectedPhaseId = uiStore.getSelectedPhaseId(col)
-        const currentIndex = uiStore.getSelectedPhase(col)
-        if (selectedPhaseId && currentIndex > 0) {
-          await dataStore.reorderPhase(projectStore.projectPath, selectedPhaseId, currentIndex - 1)
-          await uiStore.loadColumn(col)
-          const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedPhaseId)
-          if (nextIndex >= 0) {
-            uiStore.setSelection(col, nextIndex)
-          }
-        }
-      }
+      await reorderSelectedPhase(-1)
       break
     case 'k':
       if (event.shiftKey) {
         event.preventDefault()
-        if (col >= 0) {
-          const selectedPhaseId = uiStore.getSelectedPhaseId(col)
-          const currentIndex = uiStore.getSelectedPhase(col)
-          if (selectedPhaseId && currentIndex > 0) {
-            await dataStore.reorderPhase(projectStore.projectPath, selectedPhaseId, currentIndex - 1)
-            await uiStore.loadColumn(col)
-            const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedPhaseId)
-            if (nextIndex >= 0) {
-              uiStore.setSelection(col, nextIndex)
-            }
-          }
-        }
+        await reorderSelectedPhase(-1)
         break
       }
       if (col >= 0) {

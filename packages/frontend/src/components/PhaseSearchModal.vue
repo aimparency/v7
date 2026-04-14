@@ -52,15 +52,6 @@ const performSearch = async (query: string) => {
       results = results.filter(phase => phase.id !== props.excludePhaseId)
     }
 
-    const now = Date.now()
-    results.sort((a, b) => {
-      const aActive = a.from <= now && a.to >= now
-      const bActive = b.from <= now && b.to >= now
-      if (aActive && !bActive) return -1
-      if (!aActive && bActive) return 1
-      return b.from - a.from
-    })
-
     searchResults.value = results
     selectedIndex.value = 0
   } catch (error) {

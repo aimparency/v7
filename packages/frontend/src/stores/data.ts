@@ -791,6 +791,7 @@ export const useDataStore = defineStore('data', {
 
         // Reset view state when switching projects
         uiStore.resetViewState();
+        projectStore.setCurrentView('columns');
         mapStore.resetView();
 
         // Repair project state (clean up invalid commitments)

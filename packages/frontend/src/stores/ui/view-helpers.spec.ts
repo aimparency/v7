@@ -15,11 +15,10 @@ describe('view helpers', () => {
     localStorage.clear()
   })
 
-  it('clamps and persists viewport size', () => {
+  it('clamps viewport size', () => {
     const state = { windowSize: 3, currentView: 'columns' as UIViewMode, graphSelectedAimId: null as string | null }
     expect(setWindowSize(state, 99)).toBe(10)
     expect(state.windowSize).toBe(10)
-    expect(localStorage.getItem('aimparency-window-size')).toBe('10')
   })
 
   it('syncs between list and graph view selection', () => {
@@ -34,17 +33,17 @@ describe('view helpers', () => {
     expect(navigateToAim).toHaveBeenCalledWith('a2')
   })
 
-  it('persists graph display options and reset state', () => {
+  it('updates graph display options and resets state', () => {
     const graphState = { graphColorMode: 'status' as GraphColorMode, graphPanelWidth: 300, graphShowLabels: true }
     setGraphColorMode(graphState, 'priority')
-    expect(localStorage.getItem('aimparency-graph-color-mode')).toBe('priority')
+    expect(graphState.graphColorMode).toBe('priority')
 
     expect(setGraphPanelWidth(graphState, 999)).toBe(600)
-    expect(localStorage.getItem('aimparency-graph-panel-width')).toBe('600')
+    expect(graphState.graphPanelWidth).toBe(600)
 
     const labels = toggleGraphShowLabels(graphState)
     expect(labels).toBe(false)
-    expect(localStorage.getItem('aimparency-graph-show-labels')).toBe('false')
+    expect(graphState.graphShowLabels).toBe(false)
 
     const state = {
       activeColumn: 9,
@@ -60,6 +59,5 @@ describe('view helpers', () => {
     expect(state.activeColumn).toBe(0)
     expect(state.windowSize).toBe(2)
     expect(state.graphSelectedAimId).toBe(null)
-    expect(localStorage.getItem('aimparency-active-column')).toBe('0')
   })
 })

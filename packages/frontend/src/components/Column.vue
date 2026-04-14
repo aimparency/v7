@@ -145,11 +145,18 @@ const getSelectedEntryIndexInColumn = () => {
   return entries.value.findIndex((entry) => entry.key === selectedEntry.key)
 }
 
-const updateViewportMetrics = () => {
+const updateViewportMetrics = (persistScroll: boolean = hasInitialAnchorPosition.value) => {
   const container = phaseListRef.value
   if (!container) return
   scrollTop.value = container.scrollTop
   viewportHeight.value = container.clientHeight
+  if (persistScroll) {
+    uiStore.setColumnScrollTop(props.columnIndex, container.scrollTop)
+  }
+}
+
+const handleColumnScroll = () => {
+  updateViewportMetrics(true)
 }
 
 const queueSelectionRealign = (behavior: ScrollBehavior = 'smooth', delayMs: number = 90) => {
@@ -169,7 +176,7 @@ const adjustScrollForHeightChange = (entryIndex: number, delta: number) => {
   const selectedEntryIndex = getSelectedEntryIndexInColumn()
   if (selectedEntryIndex < 0 || entryIndex >= selectedEntryIndex) return
   container.scrollTop += delta
-  updateViewportMetrics()
+  updateViewportMetrics(true)
   queueSelectionRealign('smooth')
 }
 
@@ -223,8 +230,25 @@ const setInitialAnchorScrollIfNeeded = async () => {
 
   await nextTick()
   const container = phaseListRef.value
-  const entryIndex = getSelectedEntryIndexInColumn()
-  if (!container || entryIndex < 0) return
+  if (!container) return
+
+  let entryIndex = getSelectedEntryIndexInColumn()
+  if (entryIndex < 0) {
+    uiStore.initializeColumnSelection(props.columnIndex)
+    await nextTick()
+    entryIndex = getSelectedEntryIndexInColumn()
+  }
+  if (entryIndex < 0) return
+
+  const persistedScrollTop = uiStore.isRestoringUIState
+    ? uiStore.consumeRestoredColumnScrollTop(props.columnIndex)
+    : undefined
+  if (persistedScrollTop !== undefined) {
+    container.scrollTop = persistedScrollTop
+    hasInitialAnchorPosition.value = true
+    updateViewportMetrics(true)
+    return
+  }
 
   const estimatedTop = offsets.value[entryIndex] ?? 0
   const estimatedHeight = heights.value[entryIndex] ?? 0
@@ -232,7 +256,7 @@ const setInitialAnchorScrollIfNeeded = async () => {
 
   container.scrollTop = targetTop
   hasInitialAnchorPosition.value = true
-  updateViewportMetrics()
+  updateViewportMetrics(true)
   queueSelectionRealign('smooth', 120)
 }
 
@@ -302,11 +326,11 @@ watch(() => entries.value.map((entry) => entry.key).join('|'), async () => {
     hasInitialAnchorPosition.value = false
   }
   await nextTick()
-  updateViewportMetrics()
+  updateViewportMetrics(false)
 }, { flush: 'post' })
 
 onMounted(() => {
-  updateViewportMetrics()
+  updateViewportMetrics(false)
   resizeObserver.value = new ResizeObserver((observedEntries) => {
     for (const observedEntry of observedEntries) {
       const element = observedEntry.target
@@ -342,7 +366,7 @@ onBeforeUnmount(() => {
       v-else
       ref="phaseListRef"
       class="column-list"
-      @scroll="updateViewportMetrics"
+      @scroll="handleColumnScroll"
     >
       <div class="virtual-column-space" :style="{ height: `${totalHeight}px` }">
         <template v-for="entry in visibleEntries" :key="entry.key">

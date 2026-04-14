@@ -28,14 +28,7 @@ import { useGraphUIStore } from './graph-store'
 import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
 import { trpc } from '../../trpc'
-
-function getStoredInt(nextKey: string, legacyKey: string, fallback: number) {
-  const stored = localStorage.getItem(nextKey) ?? localStorage.getItem(legacyKey)
-  if (stored === null) return fallback
-
-  const parsed = parseInt(stored, 10)
-  return Number.isFinite(parsed) ? parsed : fallback
-}
+import type { PersistedGraphViewState } from './graph-store'
 
 type TeleportSource = {
   parentAimId?: string
@@ -53,6 +46,28 @@ function logNav(event: string, details: Record<string, unknown> = {}) {
 
 type PhaseMoveDirection = 'forward' | 'backward' | 'preserve'
 
+type PersistedListViewState = {
+  activeColumn: number
+  maxColumn: number
+  windowStart: number
+  windowSize: number
+  selectedPhaseByColumn: Record<number, number>
+  selectedPhaseIdByColumn: Record<number, string>
+  floatingAimIndex: number
+  lastSelectedSubPhaseIndexByPhase: Record<string, number>
+  navigatingAims: boolean
+  scrollTopByColumn: Record<number, number>
+  selectedAimIndexByPhaseId: Record<string, number>
+  selectedIncomingIndexByAimId: Record<string, number>
+  expandedAimIds: string[]
+}
+
+type PersistedUIState = {
+  currentView?: 'columns' | 'graph' | 'voice'
+  listViewState?: PersistedListViewState
+  graphViewState?: PersistedGraphViewState
+}
+
 export const useListStore = defineStore('ui', {
   state: () => ({
     // Navigation mode system
@@ -60,18 +75,18 @@ export const useListStore = defineStore('ui', {
     
     // Column tracking for navigation
     maxColumn: 0,
-    activeColumn: getStoredInt('aimparency-active-column', 'aimparency-selected-column', 0),
+    activeColumn: 0,
 
     // Phase selection by column
-    selectedPhaseByColumn: JSON.parse(localStorage.getItem('aimparency-selected-phases') || '{}') as Record<number, number>, // columnIndex -> phaseIndex
-    selectedPhaseIdByColumn: JSON.parse(localStorage.getItem('aimparency-selected-phase-ids') || '{}') as Record<number, string>, // columnIndex -> phaseId
+    selectedPhaseByColumn: {} as Record<number, number>, // columnIndex -> phaseIndex
+    selectedPhaseIdByColumn: {} as Record<number, string>, // columnIndex -> phaseId
 
     // Root aims selection (for column -1)
-    floatingAimIndex: parseInt(localStorage.getItem('aimparency-floating-index') || '0'),
+    floatingAimIndex: 0,
 
     // Viewport for column scrolling
-    windowStart: getStoredInt('aimparency-window-start', 'aimparency-viewport-start', -1),
-    windowSize: getStoredInt('aimparency-window-size', 'aimparency-viewport-size', 3),
+    windowStart: 0,
+    windowSize: 3,
 
     // Delete pending states
     pendingDeletePhaseId: null as string | null,
@@ -81,14 +96,20 @@ export const useListStore = defineStore('ui', {
     columnScrollIntent: null as { col: number, direction: 'bottom' | 'top' } | null,
 
     // Remember last selected sub-phase index per parent phase
-    lastSelectedSubPhaseIndexByPhase: JSON.parse(localStorage.getItem('aimparency-last-sub-phase-index') || '{}') as Record<string, number>,
+    lastSelectedSubPhaseIndexByPhase: {} as Record<string, number>,
+    scrollTopByColumn: {} as Record<number, number>,
 
-    // Debounced shared cursor persistence to project meta
-    phaseCursorPersistTimeout: null as ReturnType<typeof setTimeout> | null,
+    uiStatePersistTimeout: null as ReturnType<typeof setTimeout> | null,
+    isRestoringUIState: false,
+    pendingRestoredScrollByColumn: {} as Record<number, number>,
   }),
   
   getters: {
     isInProjectSelection: () => useProjectStore().isInProjectSelection,
+
+    getRememberedPhase: (state) => (columnIndex: number): number => {
+      return state.selectedPhaseByColumn[columnIndex] ?? 0
+    },
 
     // Reactive phase selection getters
     getSelectedPhase: (state) => (columnIndex: number): number => {
@@ -122,6 +143,163 @@ export const useListStore = defineStore('ui', {
   },
   
   actions: {
+    beginUIStateRestore() {
+      this.isRestoringUIState = true
+    },
+
+    endUIStateRestore() {
+      this.isRestoringUIState = false
+    },
+
+    getPersistedUIStateKey(projectPath: string) {
+      return `aimparency-ui-state:${projectPath}`
+    },
+
+    setColumnScrollTop(columnIndex: number, top: number) {
+      this.scrollTopByColumn[columnIndex] = top
+    },
+
+    getColumnScrollTop(columnIndex: number) {
+      return this.scrollTopByColumn[columnIndex]
+    },
+
+    consumeRestoredColumnScrollTop(columnIndex: number) {
+      const top = this.pendingRestoredScrollByColumn[columnIndex]
+      if (top === undefined) return undefined
+      delete this.pendingRestoredScrollByColumn[columnIndex]
+      return top
+    },
+
+    getListViewStateSnapshot(): PersistedListViewState {
+      const dataStore = useDataStore()
+      const selectedAimIndexByPhaseId: Record<string, number> = {}
+      const selectedIncomingIndexByAimId: Record<string, number> = {}
+      const expandedAimIds: string[] = []
+
+      for (const phase of Object.values(dataStore.phases)) {
+        if (phase?.selectedAimIndex !== undefined) {
+          selectedAimIndexByPhaseId[phase.id] = phase.selectedAimIndex
+        }
+      }
+
+      for (const aim of Object.values(dataStore.aims)) {
+        if (!aim) continue
+        if (aim.selectedIncomingIndex !== undefined) {
+          selectedIncomingIndexByAimId[aim.id] = aim.selectedIncomingIndex
+        }
+        if (aim.expanded) {
+          expandedAimIds.push(aim.id)
+        }
+      }
+
+      return {
+        activeColumn: this.activeColumn,
+        maxColumn: this.maxColumn,
+        windowStart: this.windowStart,
+        windowSize: this.windowSize,
+        selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
+        selectedPhaseIdByColumn: { ...this.selectedPhaseIdByColumn },
+        floatingAimIndex: this.floatingAimIndex,
+        lastSelectedSubPhaseIndexByPhase: { ...this.lastSelectedSubPhaseIndexByPhase },
+        navigatingAims: this.navigatingAims,
+        scrollTopByColumn: { ...this.scrollTopByColumn },
+        selectedAimIndexByPhaseId,
+        selectedIncomingIndexByAimId,
+        expandedAimIds
+      }
+    },
+
+    async persistProjectUIState() {
+      const projectStore = useProjectStore()
+      if (!projectStore.projectPath) return
+
+      const graphStore = useGraphUIStore()
+      const state: PersistedUIState = {
+        currentView: projectStore.currentView,
+        listViewState: this.getListViewStateSnapshot(),
+        graphViewState: graphStore.getPersistedGraphViewState()
+      }
+
+      localStorage.setItem(this.getPersistedUIStateKey(projectStore.projectPath), JSON.stringify(state))
+    },
+
+    scheduleProjectUIStatePersist() {
+      if (this.isRestoringUIState) return
+      if (this.uiStatePersistTimeout) {
+        clearTimeout(this.uiStatePersistTimeout)
+      }
+
+      this.uiStatePersistTimeout = setTimeout(() => {
+        this.uiStatePersistTimeout = null
+        void this.persistProjectUIState()
+      }, 150)
+    },
+
+    async restoreProjectUIState() {
+      const projectStore = useProjectStore()
+      const dataStore = useDataStore()
+      const graphStore = useGraphUIStore()
+
+      if (!projectStore.projectPath) return
+
+      const raw = localStorage.getItem(this.getPersistedUIStateKey(projectStore.projectPath))
+      if (!raw) return
+
+      let parsed: PersistedUIState | null = null
+      try {
+        parsed = JSON.parse(raw) as PersistedUIState
+      } catch {
+        return
+      }
+
+      this.beginUIStateRestore()
+      try {
+        if (parsed.currentView) {
+          projectStore.setCurrentView(parsed.currentView)
+        }
+
+        const listViewState = parsed.listViewState
+        if (listViewState) {
+          this.windowSize = listViewState.windowSize
+          this.windowStart = listViewState.windowStart
+          this.activeColumn = listViewState.activeColumn
+          this.maxColumn = listViewState.maxColumn
+          this.selectedPhaseByColumn = { ...listViewState.selectedPhaseByColumn }
+          this.selectedPhaseIdByColumn = { ...listViewState.selectedPhaseIdByColumn }
+          this.floatingAimIndex = listViewState.floatingAimIndex
+          this.lastSelectedSubPhaseIndexByPhase = { ...listViewState.lastSelectedSubPhaseIndexByPhase }
+          this.navigatingAims = listViewState.navigatingAims
+          this.scrollTopByColumn = { ...listViewState.scrollTopByColumn }
+          this.pendingRestoredScrollByColumn = { ...listViewState.scrollTopByColumn }
+
+          const visibleMaxColumn = Math.max(this.activeColumn, this.getVisibleMaxColumn())
+          await this.ensureColumnsLoaded(visibleMaxColumn)
+
+          for (const [phaseId, selectedAimIndex] of Object.entries(listViewState.selectedAimIndexByPhaseId)) {
+            const phase = dataStore.phases[phaseId]
+            if (phase) {
+              phase.selectedAimIndex = selectedAimIndex
+            }
+          }
+
+          const expandedAimIds = new Set(listViewState.expandedAimIds)
+          for (const aim of Object.values(dataStore.aims)) {
+            if (!aim) continue
+            aim.expanded = expandedAimIds.has(aim.id)
+            if (listViewState.selectedIncomingIndexByAimId[aim.id] !== undefined) {
+              aim.selectedIncomingIndex = listViewState.selectedIncomingIndexByAimId[aim.id]
+            }
+          }
+
+          this.ensureSelectionVisible()
+        }
+
+        graphStore.applyPersistedGraphViewState(parsed.graphViewState)
+      } finally {
+        this.endUIStateRestore()
+      }
+    },
+
     requestColumnScroll(col: number, direction: 'bottom' | 'top') {
       this.columnScrollIntent = { col, direction }
       setTimeout(() => { 
@@ -467,101 +645,6 @@ export const useListStore = defineStore('ui', {
       )
     },
 
-    getPhaseCursorSnapshot() {
-      const phaseCursors: Record<string, number> = {}
-      for (let level = 0; level <= this.maxColumn; level++) {
-        const index = this.selectedPhaseByColumn[level]
-        if (index !== undefined) {
-          phaseCursors[String(level)] = index
-        }
-      }
-
-      return {
-        phaseCursors,
-        phaseActiveLevel: Math.max(0, this.activeColumn)
-      }
-    },
-
-    async persistPhaseCursorState() {
-      const dataStore = useDataStore()
-      const projectStore = useProjectStore()
-
-      if (!projectStore.projectPath || !dataStore.meta) {
-        return
-      }
-
-      const { phaseCursors, phaseActiveLevel } = this.getPhaseCursorSnapshot()
-      const nextMeta = {
-        ...dataStore.meta,
-        phaseCursors,
-        phaseActiveLevel
-      }
-
-      const currentCursors = JSON.stringify(dataStore.meta.phaseCursors || {})
-      const nextCursors = JSON.stringify(phaseCursors)
-      if (currentCursors === nextCursors && dataStore.meta.phaseActiveLevel === phaseActiveLevel) {
-        return
-      }
-
-      logNav('persistPhaseCursorState', {
-        phaseCursors,
-        phaseActiveLevel
-      })
-      await dataStore.updateProjectMeta(projectStore.projectPath, nextMeta)
-    },
-
-    schedulePhaseCursorPersist() {
-      if (this.phaseCursorPersistTimeout) {
-        clearTimeout(this.phaseCursorPersistTimeout)
-      }
-
-      this.phaseCursorPersistTimeout = setTimeout(() => {
-        this.phaseCursorPersistTimeout = null
-        void this.persistPhaseCursorState()
-      }, 150)
-    },
-
-    async restorePhaseCursorsFromMeta(phaseCursors?: Record<string, number>, phaseActiveLevel?: number) {
-      const dataStore = useDataStore()
-      logNav('restorePhaseCursorsFromMeta:start', {
-        phaseCursors,
-        phaseActiveLevel
-      })
-
-      const visibleMaxColumn = this.getVisibleMaxColumn()
-      await this.ensureColumnsLoaded(visibleMaxColumn)
-      const rootEntries = dataStore.getSelectableColumnEntries(0)
-      if (rootEntries.length === 0) {
-        this.setMaxColumn(0)
-        this.setActiveColumn(0)
-        return
-      }
-
-      let deepestRestoredLevel = 0
-
-      for (let level = 0; level <= visibleMaxColumn; level++) {
-        const entries = dataStore.getSelectableColumnEntries(level)
-        if (entries.length === 0) {
-          break
-        }
-
-        const requestedIndex = phaseCursors?.[String(level)] ?? 0
-        const clampedIndex = Math.max(0, Math.min(requestedIndex, entries.length - 1))
-        this.selectedPhaseByColumn[level] = clampedIndex
-        deepestRestoredLevel = level
-      }
-
-      const targetLevel = phaseActiveLevel ?? deepestRestoredLevel
-      this.setActiveColumn(Math.max(0, Math.min(targetLevel, visibleMaxColumn)))
-      await this.reconcilePhaseSelection(this.activeColumn, 'preserve')
-      logNav('restorePhaseCursorsFromMeta:done', {
-        activeColumn: this.activeColumn,
-        selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
-        selectedPhaseIdByColumn: { ...this.selectedPhaseIdByColumn },
-        maxColumn: this.maxColumn
-      })
-    },
-
     async loadColumn(columnIndex: number) {
       const dataStore = useDataStore()
       const projectStore = useProjectStore()
@@ -600,6 +683,44 @@ export const useListStore = defineStore('ui', {
     getSelectedPhaseEntry(columnIndex: number): PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry | undefined {
       const entries = this.getSelectableEntries(columnIndex)
       return entries[this.getSelectedPhase(columnIndex)]
+    },
+
+    initializeColumnSelection(columnIndex: number, direction: PhaseMoveDirection = 'preserve') {
+      if (this.selectedPhaseByColumn[columnIndex] !== undefined) {
+        return this.getSelectedPhaseEntry(columnIndex)
+      }
+
+      const entries = this.getSelectableEntries(columnIndex)
+      if (entries.length === 0) {
+        return undefined
+      }
+
+      if (columnIndex === 0) {
+        return this.applyPhaseSelection(0, 0)
+      }
+
+      const parentPhaseId = this.selectedPhaseIdByColumn[columnIndex - 1]
+      if (!parentPhaseId) {
+        return undefined
+      }
+
+      const ownedEntries = this.getOwnedEntries(columnIndex, parentPhaseId)
+      const targetEntry = this.chooseOwnedEntry(
+        ownedEntries,
+        undefined,
+        parentPhaseId,
+        direction
+      )
+      if (!targetEntry) {
+        return undefined
+      }
+
+      const globalIndex = entries.findIndex((entry) => entry.key === targetEntry.key)
+      if (globalIndex < 0) {
+        return undefined
+      }
+
+      return this.applyPhaseSelection(columnIndex, globalIndex)
     },
 
     getOwnedEntries(columnIndex: number, parentPhaseId: string) {
@@ -1350,14 +1471,18 @@ export const useListStore = defineStore('ui', {
       this.maxColumn = 0
       this.floatingAimIndex = -1
       this.navigatingAims = false
-      if (this.phaseCursorPersistTimeout) {
-        clearTimeout(this.phaseCursorPersistTimeout)
-        this.phaseCursorPersistTimeout = null
+      if (this.uiStatePersistTimeout) {
+        clearTimeout(this.uiStatePersistTimeout)
+        this.uiStatePersistTimeout = null
       }
+      this.selectedPhaseByColumn = {}
+      this.selectedPhaseIdByColumn = {}
+      this.lastSelectedSubPhaseIndexByPhase = {}
+      this.scrollTopByColumn = {}
+      this.pendingRestoredScrollByColumn = {}
       const graphStore = useGraphUIStore()
       graphStore.deselectLink()
       graphStore.clearGraphSelection()
-      localStorage.setItem('aimparency-active-column', '0')
     },
   }
 })

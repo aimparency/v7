@@ -119,12 +119,17 @@ const projectPathInput = ref('')
 
 const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
+  uiStore.beginUIStateRestore()
   await dataStore.loadProject(path)
   await trpc.project.buildSearchIndex.mutate({
     projectPath: path
   });
-  await uiStore.selectPhase(0, 0)
-  uiStore.ensureSelectionVisible()
+  await uiStore.restoreProjectUIState()
+  if (!Object.keys(uiStore.selectedPhaseByColumn).length) {
+    await uiStore.selectPhase(0, 0)
+    uiStore.ensureSelectionVisible()
+    uiStore.endUIStateRestore()
+  }
 }
 
 const refreshDiscoveredProjects = async () => {
@@ -146,12 +151,17 @@ const refreshDiscoveredProjects = async () => {
 
 const openProjectFromHistory = async (path: string) => {
   projectPathInput.value = path
+  uiStore.beginUIStateRestore()
   await dataStore.loadProject(path)
   await trpc.project.buildSearchIndex.mutate({
     projectPath: path
   });
-  await uiStore.selectPhase(0, 0)
-  uiStore.ensureSelectionVisible()
+  await uiStore.restoreProjectUIState()
+  if (!Object.keys(uiStore.selectedPhaseByColumn).length) {
+    await uiStore.selectPhase(0, 0)
+    uiStore.ensureSelectionVisible()
+    uiStore.endUIStateRestore()
+  }
 }
 
 const openDiscoveredProject = async (path: string) => {
@@ -248,23 +258,26 @@ watch(() => [modalStore.showPhaseModal, modalStore.showAimModal], async () => {
   // because we use window listener now.
 })
 
-// Persist selection state
 watch(() => [
   uiStore.activeColumn,
+  uiStore.maxColumn,
   uiStore.selectedPhaseByColumn,
   uiStore.selectedPhaseIdByColumn,
   uiStore.floatingAimIndex,
   uiStore.windowStart,
-  uiStore.lastSelectedSubPhaseIndexByPhase
+  uiStore.windowSize,
+  uiStore.lastSelectedSubPhaseIndexByPhase,
+  uiStore.navigatingAims,
+  uiStore.scrollTopByColumn,
+  projectStore.currentView,
+  graphUIStore.graphSelectedAimId,
+  graphUIStore.selectedLink,
+  graphUIStore.graphColorMode,
+  graphUIStore.graphPanelWidth,
+  graphUIStore.graphShowLabels
 ], () => {
-  localStorage.setItem('aimparency-active-column', uiStore.activeColumn.toString())
-  localStorage.setItem('aimparency-selected-phases', JSON.stringify(uiStore.selectedPhaseByColumn))
-  localStorage.setItem('aimparency-selected-phase-ids', JSON.stringify(uiStore.selectedPhaseIdByColumn))
-  localStorage.setItem('aimparency-floating-index', uiStore.floatingAimIndex.toString())
-  localStorage.setItem('aimparency-window-start', uiStore.windowStart.toString())
-  localStorage.setItem('aimparency-last-sub-phase-index', JSON.stringify(uiStore.lastSelectedSubPhaseIndexByPhase))
   if (projectStore.projectPath) {
-    uiStore.schedulePhaseCursorPersist()
+    uiStore.scheduleProjectUIStatePersist()
   }
 }, { deep: true })
 
@@ -273,6 +286,7 @@ onMounted(async () => {
   window.addEventListener('keydown', handleGlobalKeydown)
 
   if (projectStore.projectPath) {
+    uiStore.beginUIStateRestore()
     // Load all project data first
     await dataStore.loadProject(projectStore.projectPath);
 
@@ -281,11 +295,12 @@ onMounted(async () => {
       projectPath: projectStore.projectPath
     });
 
-    await uiStore.restorePhaseCursorsFromMeta(
-      dataStore.meta?.phaseCursors,
-      dataStore.meta?.phaseActiveLevel
-    )
+    await uiStore.restoreProjectUIState()
 
+    if (!Object.keys(uiStore.selectedPhaseByColumn).length) {
+      await uiStore.selectPhase(0, 0)
+      uiStore.endUIStateRestore()
+    }
     uiStore.ensureSelectionVisible();
   } else {
     // Set initial focus to the first phase column

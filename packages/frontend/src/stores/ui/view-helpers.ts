@@ -27,7 +27,6 @@ type ResettableViewState = {
 export function setWindowSize(state: ViewState, size: number): number {
   const clamped = Math.max(1, Math.min(size, 10))
   state.windowSize = clamped
-  localStorage.setItem('aimparency-window-size', clamped.toString())
   return clamped
 }
 
@@ -44,24 +43,20 @@ export function setView(
   }
 
   state.currentView = view
-  localStorage.setItem('aimparency-current-view', view)
 }
 
 export function setGraphColorMode(state: GraphState, mode: GraphColorMode): void {
   state.graphColorMode = mode
-  localStorage.setItem('aimparency-graph-color-mode', mode)
 }
 
 export function setGraphPanelWidth(state: GraphState, width: number): number {
   const clamped = Math.max(200, Math.min(width, 600))
   state.graphPanelWidth = clamped
-  localStorage.setItem('aimparency-graph-panel-width', clamped.toString())
   return clamped
 }
 
 export function toggleGraphShowLabels(state: GraphState): boolean {
   state.graphShowLabels = !state.graphShowLabels
-  localStorage.setItem('aimparency-graph-show-labels', String(state.graphShowLabels))
   return state.graphShowLabels
 }
 
@@ -74,5 +69,4 @@ export function resetViewState(state: ResettableViewState): void {
   state.navigatingAims = false
   state.graphSelectedAimId = null
   state.selectedLink = null
-  localStorage.setItem('aimparency-active-column', '0')
 }

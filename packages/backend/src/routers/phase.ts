@@ -191,31 +191,24 @@ export const createPhaseRouter = (
       .mutation(async ({ input }: any) => {
         const phase = await readPhase(input.projectPath, input.phaseId);
         const parentId = phase.parent ?? null;
+        const siblingPhases = await listPhases(input.projectPath, parentId);
+        const siblingIds = siblingPhases.map((sibling) => sibling.id);
+        const currentIndex = siblingIds.indexOf(input.phaseId);
+
+        if (currentIndex === -1) {
+          throw new Error(`Phase ${input.phaseId} not found in sibling list`);
+        }
+
+        siblingIds.splice(currentIndex, 1);
+        const targetIndex = Math.min(input.newIndex, siblingIds.length);
+        siblingIds.splice(targetIndex, 0, input.phaseId);
 
         if (parentId) {
           const parent = await readPhase(input.projectPath, parentId);
-          const childPhaseIds = [...(parent.childPhaseIds ?? [])];
-          const currentIndex = childPhaseIds.indexOf(input.phaseId);
-          if (currentIndex === -1) {
-            throw new Error(`Phase ${input.phaseId} not found in parent ${parentId} child list`);
-          }
-
-          childPhaseIds.splice(currentIndex, 1);
-          const targetIndex = Math.min(input.newIndex, childPhaseIds.length);
-          childPhaseIds.splice(targetIndex, 0, input.phaseId);
-          await writePhase(input.projectPath, { ...parent, childPhaseIds });
+          await writePhase(input.projectPath, { ...parent, childPhaseIds: siblingIds });
         } else {
           const meta = await readMeta(input.projectPath);
-          const rootPhaseIds = [...(meta.rootPhaseIds ?? [])];
-          const currentIndex = rootPhaseIds.indexOf(input.phaseId);
-          if (currentIndex === -1) {
-            throw new Error(`Root phase ${input.phaseId} not found in meta.rootPhaseIds`);
-          }
-
-          rootPhaseIds.splice(currentIndex, 1);
-          const targetIndex = Math.min(input.newIndex, rootPhaseIds.length);
-          rootPhaseIds.splice(targetIndex, 0, input.phaseId);
-          meta.rootPhaseIds = rootPhaseIds;
+          meta.rootPhaseIds = siblingIds;
           await writeMeta(input.projectPath, meta);
         }
 

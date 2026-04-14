@@ -372,19 +372,7 @@ async function writeProjectMeta(rawProjectPath: string, meta: ProjectMeta): Prom
   await writeJsonAtomic(metaPath, meta);
 }
 
-function getPhaseSortValue(phase: Partial<Phase>): number {
-  if (typeof phase.order === 'number') {
-    return phase.order;
-  }
-
-  if (typeof phase.from === 'number' && typeof phase.to === 'number') {
-    return (phase.from + phase.to) / 2;
-  }
-
-  return Number.MAX_SAFE_INTEGER;
-}
-
-function normalizePhase(rawPhase: unknown, fallbackOrder?: number): Phase {
+function normalizePhase(rawPhase: unknown): Phase {
   const parsed = PhaseSchema.partial().parse(rawPhase);
 
   if (
@@ -402,7 +390,7 @@ function normalizePhase(rawPhase: unknown, fallbackOrder?: number): Phase {
     id: parsed.id,
     from: parsed.from,
     to: parsed.to,
-    order: parsed.order ?? fallbackOrder,
+    order: parsed.order,
     parent: parsed.parent,
     childPhaseIds: parsed.childPhaseIds ?? [],
     commitments: parsed.commitments,
@@ -460,26 +448,28 @@ async function listPhases(rawProjectPath: string, parentPhaseId?: string | null)
     childrenByParent.set(phase.parent, bucket);
   }
 
-  const sortLegacyChildren = (phases: Phase[]) => [...phases].sort((a, b) => getPhaseSortValue(a) - getPhaseSortValue(b));
-
   if (parentPhaseId === undefined) {
     return allPhases;
   }
 
-  const isVersionedTreeModel = (meta.dataModelVersion ?? 1) >= CURRENT_PHASE_DATA_MODEL_VERSION;
-  const orderedIds = isVersionedTreeModel
-    ? (
-        parentPhaseId === null
-          ? (meta.rootPhaseIds ?? []).filter((id) => {
-              const phase = phaseMap.get(id);
-              return phase && phase.parent === null;
-            })
-          : (phaseMap.get(parentPhaseId)?.childPhaseIds ?? []).filter((id) => {
-              const child = phaseMap.get(id);
-              return child && child.parent === parentPhaseId;
-            })
-      )
-    : sortLegacyChildren(childrenByParent.get(parentPhaseId ?? null) ?? []).map((phase) => phase.id);
+  const siblingPhases = childrenByParent.get(parentPhaseId ?? null) ?? [];
+  const orderedIdsFromTree =
+    parentPhaseId === null
+      ? (meta.rootPhaseIds ?? []).filter((id) => {
+          const phase = phaseMap.get(id);
+          return phase && phase.parent === null;
+        })
+      : (phaseMap.get(parentPhaseId)?.childPhaseIds ?? []).filter((id) => {
+          const child = phaseMap.get(id);
+          return child && child.parent === parentPhaseId;
+        });
+
+  const orderedSet = new Set(orderedIdsFromTree);
+  const missingSiblingIds = siblingPhases
+    .map((phase) => phase.id)
+    .filter((id) => !orderedSet.has(id));
+
+  const orderedIds = [...orderedIdsFromTree, ...missingSiblingIds];
 
   return orderedIds
     .map((id) => phaseMap.get(id))

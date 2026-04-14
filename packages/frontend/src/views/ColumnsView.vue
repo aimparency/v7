@@ -30,7 +30,7 @@ const columnWidth = computed(() => `${100 / uiStore.windowSize}%`)
       class="column"
       :is-selected="uiStore.activeColumn === colIndex"
       :is-active="uiStore.activeColumn === colIndex"
-      :selected-phase-index="uiStore.getSelectedPhase(colIndex)"
+      :selected-phase-index="uiStore.getRememberedPhase(colIndex)"
     />
   </div>
 </template>
