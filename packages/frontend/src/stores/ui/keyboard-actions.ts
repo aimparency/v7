@@ -61,15 +61,10 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         uiStore.pendingDeletePhaseId = null
         const nextColumn = col - 1
         if (nextColumn >= 0) {
-          let shiftedWindow = false
           if (nextColumn < uiStore.windowStart) {
             uiStore.windowStart = nextColumn
-            shiftedWindow = true
           }
           uiStore.setActiveColumn(nextColumn)
-          if (shiftedWindow) {
-            await uiStore.reconcilePhaseSelection(uiStore.activeColumn, 'preserve')
-          }
         }
       }
       break
@@ -88,19 +83,14 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         }
 
         if (nextColumn <= uiStore.maxColumn) {
-          let shiftedWindow = false
           const windowEnd = uiStore.windowStart + uiStore.windowSize - 1
           if (nextColumn > windowEnd) {
             const maxWindowStart = Math.max(0, uiStore.maxColumn - uiStore.windowSize + 1)
             if (uiStore.windowStart < maxWindowStart) {
               uiStore.windowStart++
-              shiftedWindow = true
             }
           }
           uiStore.setActiveColumn(nextColumn)
-          if (shiftedWindow) {
-            await uiStore.reconcilePhaseSelection(uiStore.activeColumn, 'preserve')
-          }
         }
       }
       break
@@ -206,7 +196,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
           await dataStore.deletePhase(selectedPhase.id, parentId)
           uiStore.pendingDeletePhaseId = null
 
-          await dataStore.loadPhases(projectStore.projectPath, parentId)
+          await dataStore.loadPhases(projectStore.projectPath, parentId, { force: true })
 
           await uiStore.loadColumn(currentCol)
           const selectableEntries = dataStore.getSelectableColumnEntries(currentCol)

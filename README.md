@@ -1,17 +1,35 @@
 # Aimparency
 
-Aimparency is a local-first planning and coordination tool that lives next to real repositories.
+Aimparency is a local-first tool for cartographing ideas next to real repositories.
 
-It runs as a browser app on your machine, stores project state in a `.bowman` directory inside the repo or workspace you point it at, and can start local agent sessions through the broker.
+It runs as a browser app on your machine, stores project state in a `.bowman` directory inside the repo or workspace you point it at, and can start local agent sessions through the broker. The current data model still uses the word `aim` in many places, but the broader point is optional ideas: things people or agents may want to realize, explore, defer, split, merge, or abandon.
 
-The longer-term vision is bigger than a single repo planner. Aimparency is intended to become a planning layer for open source projects in general, with project-local state by default and cross-repository references over time. That points toward a global planning graph for the open source software landscape, while still keeping ownership and control inside ordinary repositories.
+The longer-term vision is bigger than a single repo planner. Aimparency is intended to become a graph for breaking ideas down into realizable steps, with project-local state by default and cross-repository references over time. That can grow from software planning into a general interface for mapping how complex projects get realized, while still keeping ownership and control inside ordinary repositories.
 
 Git is a large part of why this model is attractive:
 
 - permissions come from the repositories and workflows teams already use
-- version control comes for free because aims, phases, and code live in the same history
-- code changes and aim/status updates can be committed together, making it much easier to see what changed and why
+- version control comes for free because ideas, aims, phases, and code can live in the same history
+- code changes and graph/status updates can be committed together, making it much easier to see what changed and why
 - that paired history may also become useful training material for intent, hypothesis, planning, and execution loops in future LLM systems
+
+## Direction
+
+Aimparency is built around three possible long-term outcomes for AI integration:
+
+1. People use AI to realize their ideas, including large physical or organizational projects. The graph exists to break ideas into steps that can actually be carried out.
+2. AI develops greater autonomy, forms its own ideas and hypotheses, and uses the graph as part of its own planning and execution loop.
+3. AI learns to read the needs of human individuals and help realize them, as long as those paths do not conflict too heavily with other people's ideas.
+
+In that sense, the graph is not only for tasks. It is a coordination surface between human intention, machine planning, and the real constraints of the world.
+
+## Philosophy
+
+- freedom means being able to move along ideas
+- deadlines are chances to make the current state presentable, not the ultimate measure of value
+- speed matters more than time: the point is to spend effort on the things you most want to do
+- priority matters more than rigid schedules
+- all ideas are optional, and priorities can shift
 
 ## What This Repo Contains
 
@@ -105,7 +123,7 @@ Example:
 - repo root: `/home/user/my-repo`
 - Aimparency data directory inside it: `/home/user/my-repo/.bowman`
 
-The backend normalizes the path and creates `.bowman` if needed. That directory becomes the local storage root for aims, phases, metadata, and generated search artifacts.
+The backend normalizes the path and creates `.bowman` if needed. That directory becomes the local storage root for ideas represented as aims, phases, metadata, and generated search artifacts.
 
 This keeps the workflow git-friendly:
 

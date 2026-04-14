@@ -133,6 +133,8 @@ export const useDataStore = defineStore('data', {
     phases: {} as Record<string, Phase>,
     aims: {} as Record<string, Aim>,
     childrenByParentId: {} as Record<string, string[]>,
+    loadedPhaseChildrenByParentId: {} as Record<string, boolean>,
+    phaseChildrenLoadPromises: {} as Record<string, Promise<Phase[]>>,
     loading: false,
     error: null as string | null,
     migrated: false, // Track if we've run the migration
@@ -296,6 +298,16 @@ export const useDataStore = defineStore('data', {
   },
 
   actions: {
+    getPhaseChildrenCacheKey(parentId: string | null) {
+      return parentId ?? 'null'
+    },
+
+    invalidatePhaseChildren(parentId: string | null) {
+      const key = this.getPhaseChildrenCacheKey(parentId)
+      delete this.loadedPhaseChildrenByParentId[key]
+      delete this.phaseChildrenLoadPromises[key]
+    },
+
     recalculateValues() {
         if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout)
         
@@ -360,10 +372,7 @@ export const useDataStore = defineStore('data', {
       
       const { id: newPhaseId } = await trpc.phase.create.mutate({ projectPath, phase: phaseData });
 
-      await this.loadPhases(projectPath, phaseData.parent);
-      if (columnIndex > 0) {
-        await Promise.all(this.getActualPhasesForColumn(columnIndex - 1).map((phase) => this.loadPhases(projectPath, phase.id)));
-      }
+      await this.loadPhases(projectPath, phaseData.parent, { force: true });
 
       const uiStore = useUIStore();
       const newEntries = this.getSelectableColumnEntries(columnIndex);
@@ -684,9 +693,22 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async loadPhases(projectPath: string, parentId: string | null): Promise<Phase[]> {
+    async loadPhases(projectPath: string, parentId: string | null, options: { force?: boolean } = {}): Promise<Phase[]> {
       if (!projectPath) return [];
+      const key = this.getPhaseChildrenCacheKey(parentId)
+      const force = options.force === true
+
+      if (!force && this.loadedPhaseChildrenByParentId[key]) {
+        const childIds = this.childrenByParentId[key] || []
+        return childIds.map((id) => this.phases[id]).filter((phase): phase is Phase => !!phase)
+      }
+
+      if (!force && this.phaseChildrenLoadPromises[key]) {
+        return await this.phaseChildrenLoadPromises[key]
+      }
+
       this.loading = true;
+      const loadPromise = (async () => {
       try {
         const phases = await trpc.phase.list.query({ projectPath, parentPhaseId: parentId });
         const childIds: string[] = [];
@@ -694,15 +716,21 @@ export const useDataStore = defineStore('data', {
           this.replacePhase(phase.id, phase);
           childIds.push(phase.id);
         }
-        this.childrenByParentId[parentId ?? 'null'] = childIds;
+        this.childrenByParentId[key] = childIds;
+        this.loadedPhaseChildrenByParentId[key] = true;
         return phases;
       } catch (error) {
         this.error = 'Failed to load phases';
         console.error(this.error, error);
         return [];
       } finally {
+        delete this.phaseChildrenLoadPromises[key]
         this.loading = false;
       }
+      })()
+
+      this.phaseChildrenLoadPromises[key] = loadPromise
+      return await loadPromise
     },
 
     async loadAllAims(projectPath: string) {
@@ -757,6 +785,9 @@ export const useDataStore = defineStore('data', {
       try {
         projectStore.setProjectPath(projectPath);
         projectStore.setConnectionStatus('connecting');
+        this.childrenByParentId = {}
+        this.loadedPhaseChildrenByParentId = {}
+        this.phaseChildrenLoadPromises = {}
 
         // Reset view state when switching projects
         uiStore.resetViewState();
@@ -861,6 +892,7 @@ export const useDataStore = defineStore('data', {
              }
           } else if (data.type === 'phase') {
              try {
+               const previousPhase = this.phases[data.id]
                const phase = await trpc.phase.get.query({ projectPath, phaseId: data.id });
                this.replacePhase(phase.id, phase);
 
@@ -870,13 +902,20 @@ export const useDataStore = defineStore('data', {
                  await this.loadAims(projectPath, missingAimIds);
                }
 
+               this.invalidatePhaseChildren(previousPhase?.parent ?? null)
+               this.invalidatePhaseChildren(phase.parent ?? null)
+               this.invalidatePhaseChildren(phase.id)
+
                const parentId = phase.parent ?? 'null';
                const current = this.childrenByParentId[parentId] || [];
                if (!current.includes(phase.id)) {
                  this.childrenByParentId[parentId] = [...current, phase.id];
                }
              } catch (e) {
+               const previousPhase = this.phases[data.id]
                if (this.phases[data.id]) delete this.phases[data.id];
+               this.invalidatePhaseChildren(previousPhase?.parent ?? null)
+               this.invalidatePhaseChildren(data.id)
              }
           }
         },
@@ -907,6 +946,9 @@ export const useDataStore = defineStore('data', {
           projectPath: projectStore.projectPath,
           phaseId: phaseId
         });
+
+        this.invalidatePhaseChildren(parentPhaseId)
+        this.invalidatePhaseChildren(phaseId)
       } catch (error) {
         console.error('Failed to delete phase:', error);
       }

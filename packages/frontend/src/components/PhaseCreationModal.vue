@@ -73,11 +73,11 @@ const updatePhase = async () => {
       dataStore.phases[updatedPhase.id] = updatedPhase
       
       // Reload the new parent's children
-      await dataStore.loadPhases(projectStore.projectPath, updatedPhase.parent)
+      await dataStore.loadPhases(projectStore.projectPath, updatedPhase.parent, { force: true })
       
       // If parent changed, reload the old parent's children too to remove the ghost entry
       if (oldParentId !== updatedPhase.parent) {
-        await dataStore.loadPhases(projectStore.projectPath, oldParentId)
+        await dataStore.loadPhases(projectStore.projectPath, oldParentId, { force: true })
       }
 
       // Rebuild visible phase columns from root selection to avoid stale column caches.

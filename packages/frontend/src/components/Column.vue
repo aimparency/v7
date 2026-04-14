@@ -24,6 +24,7 @@ const measuredHeightByKey = ref(new Map<string, number>())
 const scrollTop = ref(0)
 const viewportHeight = ref(0)
 const resizeObserver = ref<ResizeObserver | null>(null)
+const hasInitialAnchorPosition = ref(false)
 
 const ESTIMATED_PHASE_HEIGHT = 180
 const ESTIMATED_PLACEHOLDER_HEIGHT = 56
@@ -135,6 +136,14 @@ const getSelectableIndex = (entryKey: string) => {
   return selectableEntries.value.findIndex((entry) => entry.key === entryKey)
 }
 
+const getSelectedEntry = () => selectableEntries.value[props.selectedPhaseIndex]
+
+const getSelectedEntryIndexInColumn = () => {
+  const selectedEntry = getSelectedEntry()
+  if (!selectedEntry) return -1
+  return entries.value.findIndex((entry) => entry.key === selectedEntry.key)
+}
+
 const updateViewportMetrics = () => {
   const container = phaseListRef.value
   if (!container) return
@@ -142,11 +151,13 @@ const updateViewportMetrics = () => {
   viewportHeight.value = container.clientHeight
 }
 
-const adjustScrollForHeightChange = (elementTop: number, delta: number) => {
+const adjustScrollForHeightChange = (entryIndex: number, delta: number) => {
   const container = phaseListRef.value
   if (!container || delta === 0) return
-  if (elementTop >= container.scrollTop) return
+  const selectedEntryIndex = getSelectedEntryIndexInColumn()
+  if (selectedEntryIndex < 0 || entryIndex >= selectedEntryIndex) return
   container.scrollTop += delta
+  updateViewportMetrics()
 }
 
 const getOuterHeight = (element: HTMLElement) => {
@@ -166,7 +177,7 @@ const measureEntryElement = (entryKey: string, element: HTMLElement) => {
 
   measuredHeightByKey.value.set(entryKey, measuredHeight)
   if (entryIndex >= 0) {
-    adjustScrollForHeightChange(offsets.value[entryIndex] ?? 0, measuredHeight - previousHeight)
+    adjustScrollForHeightChange(entryIndex, measuredHeight - previousHeight)
   }
 }
 
@@ -194,9 +205,26 @@ const setEntryElement = (
   }
 }
 
+const setInitialAnchorScrollIfNeeded = async () => {
+  if (hasInitialAnchorPosition.value) return
+
+  await nextTick()
+  const container = phaseListRef.value
+  const entryIndex = getSelectedEntryIndexInColumn()
+  if (!container || entryIndex < 0) return
+
+  const estimatedTop = offsets.value[entryIndex] ?? 0
+  const estimatedHeight = heights.value[entryIndex] ?? 0
+  const targetTop = Math.max(0, estimatedTop - container.clientHeight * 0.25 + estimatedHeight * 0.5)
+
+  container.scrollTop = targetTop
+  hasInitialAnchorPosition.value = true
+  updateViewportMetrics()
+}
+
 const scrollSelectedEntryIntoView = async () => {
   await nextTick()
-  const selectedEntry = selectableEntries.value[props.selectedPhaseIndex]
+  const selectedEntry = getSelectedEntry()
   if (!selectedEntry) return
 
   const entryIndex = entries.value.findIndex((entry) => entry.key === selectedEntry.key)
@@ -246,14 +274,19 @@ watch(() => uiStore.columnScrollIntent, (req) => {
 watch(
   () => [props.selectedPhaseIndex, props.isSelected, entries.value.map((entry) => entry.key).join('|')],
   () => {
-    if (props.isSelected) {
-      void scrollSelectedEntryIntoView()
+    if (!hasInitialAnchorPosition.value) {
+      void setInitialAnchorScrollIfNeeded()
+      return
     }
+    void scrollSelectedEntryIntoView()
   },
   { flush: 'post' }
 )
 
 watch(() => entries.value.map((entry) => entry.key).join('|'), async () => {
+  if (entries.value.length === 0) {
+    hasInitialAnchorPosition.value = false
+  }
   await nextTick()
   updateViewportMetrics()
 }, { flush: 'post' })
@@ -272,6 +305,7 @@ onMounted(() => {
       }
     }
   })
+  void setInitialAnchorScrollIfNeeded()
 })
 
 onBeforeUnmount(() => {
