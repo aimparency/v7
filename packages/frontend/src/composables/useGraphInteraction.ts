@@ -523,7 +523,7 @@ export function useGraphInteraction(
             // Deselect to ensure creating floating aim
             graphUIStore.setGraphSelection(null)
             uiStore.deselectAim()
-            uiStore.setFocusedColumn(-1)
+            uiStore.setActiveColumn(-1)
 
             modalStore.aimCreationCallback = (id) => {
                  const node = nodeMap.get(id)

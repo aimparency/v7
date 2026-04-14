@@ -57,15 +57,24 @@ export type AimCreationParams = Omit<BaseAim, 'id' | 'incoming' | 'committedIn' 
   }>
 }
 
-function getSortedPhasesByParentId(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, parentId: string | null): Phase[] {
-  const key = parentId ?? 'null'
-  const childIds = state.childrenByParentId[key] || []
+function getSortedPhasesByParentId(
+  state: { phases: Record<string, Phase>, meta: any | null },
+  parentId: string | null
+): Phase[] {
+  const childIds =
+    parentId === null
+      ? (state.meta?.rootPhaseIds || [])
+      : (state.phases[parentId]?.childPhaseIds || [])
+
   return childIds
-    .map(id => state.phases[id])
-    .filter((p): p is Phase => !!p)
+    .map((id: string) => state.phases[id])
+    .filter((p: Phase | undefined): p is Phase => !!p)
 }
 
-function getActualPhasesForColumn(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, columnIndex: number): Phase[] {
+function getActualPhasesForColumn(
+  state: { phases: Record<string, Phase>, meta: any | null },
+  columnIndex: number
+): Phase[] {
   if (columnIndex === 0) {
     return getSortedPhasesByParentId(state, null)
   }
@@ -80,7 +89,10 @@ function getActualPhasesForColumn(state: { childrenByParentId: Record<string, st
   return phases
 }
 
-function buildColumnEntries(state: { childrenByParentId: Record<string, string[]>, phases: Record<string, Phase> }, columnIndex: number): PhaseLevelEntry[] {
+function buildColumnEntries(
+  state: { phases: Record<string, Phase>, meta: any | null },
+  columnIndex: number
+): PhaseLevelEntry[] {
   if (columnIndex === 0) {
     return getActualPhasesForColumn(state, 0).map((phase, index) => ({
       type: 'phase' as const,
@@ -132,7 +144,6 @@ export const useDataStore = defineStore('data', {
   state: () => ({
     phases: {} as Record<string, Phase>,
     aims: {} as Record<string, Aim>,
-    childrenByParentId: {} as Record<string, string[]>,
     loadedPhaseChildrenByParentId: {} as Record<string, boolean>,
     phaseChildrenLoadPromises: {} as Record<string, Promise<Phase[]>>,
     loading: false,
@@ -699,8 +710,7 @@ export const useDataStore = defineStore('data', {
       const force = options.force === true
 
       if (!force && this.loadedPhaseChildrenByParentId[key]) {
-        const childIds = this.childrenByParentId[key] || []
-        return childIds.map((id) => this.phases[id]).filter((phase): phase is Phase => !!phase)
+        return this.getPhasesByParentId(parentId)
       }
 
       if (!force && this.phaseChildrenLoadPromises[key]) {
@@ -716,7 +726,17 @@ export const useDataStore = defineStore('data', {
           this.replacePhase(phase.id, phase);
           childIds.push(phase.id);
         }
-        this.childrenByParentId[key] = childIds;
+        if (parentId === null) {
+          this.meta = {
+            ...(this.meta || {}),
+            rootPhaseIds: childIds
+          }
+        } else if (this.phases[parentId]) {
+          this.phases[parentId] = {
+            ...this.phases[parentId],
+            childPhaseIds: childIds
+          }
+        }
         this.loadedPhaseChildrenByParentId[key] = true;
         return phases;
       } catch (error) {
@@ -785,7 +805,6 @@ export const useDataStore = defineStore('data', {
       try {
         projectStore.setProjectPath(projectPath);
         projectStore.setConnectionStatus('connecting');
-        this.childrenByParentId = {}
         this.loadedPhaseChildrenByParentId = {}
         this.phaseChildrenLoadPromises = {}
 
@@ -907,11 +926,6 @@ export const useDataStore = defineStore('data', {
                this.invalidatePhaseChildren(phase.parent ?? null)
                this.invalidatePhaseChildren(phase.id)
 
-               const parentId = phase.parent ?? 'null';
-               const current = this.childrenByParentId[parentId] || [];
-               if (!current.includes(phase.id)) {
-                 this.childrenByParentId[parentId] = [...current, phase.id];
-               }
              } catch (e) {
                const previousPhase = this.phases[data.id]
                if (this.phases[data.id]) delete this.phases[data.id];

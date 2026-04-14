@@ -77,7 +77,7 @@ describe('UI teleport cut/paste', () => {
     uiStore.activeColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
     uiStore.selectedPhaseByColumn[0] = 0
-    dataStore.childrenByParentId['null'] = ['phase-1']
+    dataStore.meta = { rootPhaseIds: ['phase-1'] }
 
     dataStore.phases['phase-1'] = {
       id: 'phase-1',
@@ -85,6 +85,7 @@ describe('UI teleport cut/paste', () => {
       from: 0,
       to: 1,
       parent: null,
+      childPhaseIds: [],
       commitments: ['aim-1', 'aim-2'],
       selectedAimIndex: 1
     } as any
@@ -132,7 +133,7 @@ describe('UI teleport cut/paste', () => {
     uiStore.activeColumn = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
     uiStore.selectedPhaseByColumn[0] = 0
-    dataStore.childrenByParentId['null'] = ['phase-1']
+    dataStore.meta = { rootPhaseIds: ['phase-1'] }
 
     const parentA = baseAim('parent-a', 'Parent A') as any
     parentA.supportingConnections = [{ aimId: 'child', weight: 1, relativePosition: [0, 0] }]
@@ -160,6 +161,7 @@ describe('UI teleport cut/paste', () => {
       from: 0,
       to: 1,
       parent: null,
+      childPhaseIds: [],
       commitments: ['parent-b'],
       selectedAimIndex: 0
     } as any
@@ -238,7 +240,7 @@ describe('UI teleport cut/paste', () => {
 
     uiStore.navigatingAims = false
     uiStore.activeColumn = 0
-    dataStore.childrenByParentId['null'] = []
+    dataStore.meta = { rootPhaseIds: [] }
 
     await uiStore.handleColumnNavigationKeys(keyEvent('i'), dataStore)
 
@@ -253,13 +255,14 @@ describe('UI teleport cut/paste', () => {
     uiStore.activeColumn = 0
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
-    dataStore.childrenByParentId['null'] = ['phase-empty']
+    dataStore.meta = { rootPhaseIds: ['phase-empty'] }
     dataStore.phases['phase-empty'] = {
       id: 'phase-empty',
       name: 'Empty',
       from: 0,
       to: 1,
       parent: null,
+      childPhaseIds: [],
       commitments: [],
       selectedAimIndex: undefined
     } as any
@@ -278,13 +281,14 @@ describe('UI teleport cut/paste', () => {
     uiStore.activeColumn = 0
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
-    dataStore.childrenByParentId['null'] = ['phase-1']
+    dataStore.meta = { rootPhaseIds: ['phase-1'] }
     dataStore.phases['phase-1'] = {
       id: 'phase-1',
       name: 'P1',
       from: 0,
       to: 1,
       parent: null,
+      childPhaseIds: [],
       commitments: []
     } as any
 

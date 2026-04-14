@@ -274,6 +274,7 @@ export const useListStore = defineStore('ui', {
 
           const visibleMaxColumn = Math.max(this.activeColumn, this.getVisibleMaxColumn())
           await this.ensureColumnsLoaded(visibleMaxColumn)
+          this.ensureVisibleColumnSelections('preserve')
 
           for (const [phaseId, selectedAimIndex] of Object.entries(listViewState.selectedAimIndexByPhaseId)) {
             const phase = dataStore.phases[phaseId]
@@ -603,14 +604,6 @@ export const useListStore = defineStore('ui', {
       this.maxColumn = Math.max(this.maxColumn, columnIndex)
     },
 
-    setFocusedColumn(columnIndex: number) {
-      logNav('setFocusedColumn', {
-        from: this.activeColumn,
-        to: columnIndex
-      })
-      this.activeColumn = columnIndex
-    },
-
     setActiveColumn(columnIndex: number) {
       logNav('setActiveColumn', {
         from: this.activeColumn,
@@ -770,6 +763,13 @@ export const useListStore = defineStore('ui', {
     async ensureColumnsLoaded(maxLevel: number) {
       for (let level = 0; level <= maxLevel; level++) {
         await this.loadColumn(level)
+      }
+    },
+
+    ensureVisibleColumnSelections(direction: PhaseMoveDirection = 'preserve') {
+      const maxVisibleColumn = Math.min(this.maxColumn, this.getVisibleMaxColumn())
+      for (let columnIndex = 0; columnIndex <= maxVisibleColumn; columnIndex++) {
+        this.initializeColumnSelection(columnIndex, direction)
       }
     },
 

@@ -45,9 +45,13 @@ describe('list store phase selection', () => {
       from: 10,
       to: 20,
       parent: null,
+      childPhaseIds: [],
       commitments: []
     } as any
-    dataStore.childrenByParentId.null = ['root-1', 'root-2']
+    const root1 = dataStore.phases['root-1']
+    if (!root1) throw new Error('root-1 should exist in test setup')
+    root1.childPhaseIds = []
+    dataStore.meta = { rootPhaseIds: ['root-1', 'root-2'] }
 
     uiStore.selectedPhaseByColumn[0] = 0
     uiStore.selectedPhaseIdByColumn[0] = 'root-1'

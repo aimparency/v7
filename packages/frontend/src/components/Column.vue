@@ -232,12 +232,7 @@ const setInitialAnchorScrollIfNeeded = async () => {
   const container = phaseListRef.value
   if (!container) return
 
-  let entryIndex = getSelectedEntryIndexInColumn()
-  if (entryIndex < 0) {
-    uiStore.initializeColumnSelection(props.columnIndex)
-    await nextTick()
-    entryIndex = getSelectedEntryIndexInColumn()
-  }
+  const entryIndex = getSelectedEntryIndexInColumn()
   if (entryIndex < 0) return
 
   const persistedScrollTop = uiStore.isRestoringUIState

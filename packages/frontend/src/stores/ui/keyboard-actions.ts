@@ -116,6 +116,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
           const discoveredEntries = dataStore.getSelectableColumnEntries(nextColumn)
           if (discoveredEntries.length > 0) {
             uiStore.ensureMaxColumn(nextColumn)
+            uiStore.initializeColumnSelection(nextColumn)
           }
         }
 
@@ -128,6 +129,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
             }
           }
           uiStore.setActiveColumn(nextColumn)
+          uiStore.ensureVisibleColumnSelections('preserve')
         }
       }
       break
