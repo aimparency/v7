@@ -39,7 +39,44 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
   const projectStore = useProjectStore()
   const col = uiStore.activeColumn
   switch (event.key) {
+    case 'J':
+      event.preventDefault()
+      if (col >= 0) {
+        const selectedPhaseId = uiStore.getSelectedPhaseId(col)
+        const currentIndex = uiStore.getSelectedPhase(col)
+        if (selectedPhaseId) {
+          const entries = dataStore.getSelectableColumnEntries(col)
+          if (currentIndex < entries.length - 1) {
+            await dataStore.reorderPhase(projectStore.projectPath, selectedPhaseId, currentIndex + 1)
+            await uiStore.loadColumn(col)
+            const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedPhaseId)
+            if (nextIndex >= 0) {
+              uiStore.setSelection(col, nextIndex)
+            }
+          }
+        }
+      }
+      break
     case 'j':
+      if (event.shiftKey) {
+        event.preventDefault()
+        if (col >= 0) {
+          const selectedPhaseId = uiStore.getSelectedPhaseId(col)
+          const currentIndex = uiStore.getSelectedPhase(col)
+          if (selectedPhaseId) {
+            const entries = dataStore.getSelectableColumnEntries(col)
+            if (currentIndex < entries.length - 1) {
+              await dataStore.reorderPhase(projectStore.projectPath, selectedPhaseId, currentIndex + 1)
+              await uiStore.loadColumn(col)
+              const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedPhaseId)
+              if (nextIndex >= 0) {
+                uiStore.setSelection(col, nextIndex)
+              }
+            }
+          }
+        }
+        break
+      }
       if (col >= 0) {
         const moved = await uiStore.moveActivePhase(1)
         if (!moved) {
@@ -47,7 +84,38 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         }
       }
       break
+    case 'K':
+      event.preventDefault()
+      if (col >= 0) {
+        const selectedPhaseId = uiStore.getSelectedPhaseId(col)
+        const currentIndex = uiStore.getSelectedPhase(col)
+        if (selectedPhaseId && currentIndex > 0) {
+          await dataStore.reorderPhase(projectStore.projectPath, selectedPhaseId, currentIndex - 1)
+          await uiStore.loadColumn(col)
+          const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedPhaseId)
+          if (nextIndex >= 0) {
+            uiStore.setSelection(col, nextIndex)
+          }
+        }
+      }
+      break
     case 'k':
+      if (event.shiftKey) {
+        event.preventDefault()
+        if (col >= 0) {
+          const selectedPhaseId = uiStore.getSelectedPhaseId(col)
+          const currentIndex = uiStore.getSelectedPhase(col)
+          if (selectedPhaseId && currentIndex > 0) {
+            await dataStore.reorderPhase(projectStore.projectPath, selectedPhaseId, currentIndex - 1)
+            await uiStore.loadColumn(col)
+            const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedPhaseId)
+            if (nextIndex >= 0) {
+              uiStore.setSelection(col, nextIndex)
+            }
+          }
+        }
+        break
+      }
       if (col >= 0) {
         const moved = await uiStore.moveActivePhase(-1)
         if (!moved) {

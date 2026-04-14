@@ -1187,6 +1187,23 @@ export const useDataStore = defineStore('data', {
       }
     },
 
+    async reorderPhase(projectPath: string, phaseId: string, newIndex: number) {
+      try {
+        const phase = this.phases[phaseId]
+        if (!phase) return
+
+        await trpc.phase.reorder.mutate({
+          projectPath,
+          phaseId,
+          newIndex
+        })
+
+        await this.loadPhases(projectPath, phase.parent ?? null, { force: true })
+      } catch (error) {
+        console.error('Failed to reorder phase:', error)
+      }
+    },
+
     async checkConsistency(projectPath: string) {
         if (!projectPath) return;
         try {

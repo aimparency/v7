@@ -1167,6 +1167,7 @@ export const useListStore = defineStore('ui', {
     // Universal navigation up (k) - works on selection path
     async navigateUp() {
       const dataStore = useDataStore()
+      const projectStore = useProjectStore()
       this.pendingDeleteAimId = null
       logNav('navigateUp:start', {
         activeColumn: this.activeColumn,
@@ -1181,6 +1182,7 @@ export const useListStore = defineStore('ui', {
           if (await this.moveActivePhase(-1)) {
             const newPhaseId = this.getSelectedPhaseId(col)
             if (newPhaseId) {
+              await dataStore.loadPhaseAims(projectStore.projectPath, newPhaseId)
               const newPhase = dataStore.phases[newPhaseId]
               if (newPhase && newPhase.commitments.length > 0) {
                 newPhase.selectedAimIndex = newPhase.commitments.length - 1
@@ -1213,6 +1215,7 @@ export const useListStore = defineStore('ui', {
             if (await this.moveActivePhase(-1)) {
               const newPhaseId = this.getSelectedPhaseId(col)
               if (newPhaseId) {
+                await dataStore.loadPhaseAims(projectStore.projectPath, newPhaseId)
                 const newPhase = dataStore.phases[newPhaseId]
                 if (newPhase && newPhase.commitments.length > 0) {
                   newPhase.selectedAimIndex = newPhase.commitments.length - 1

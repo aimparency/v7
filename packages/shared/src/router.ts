@@ -114,6 +114,16 @@ export const appRouter = router({
         throw new Error('Not implemented');
       }),
 
+    reorder: publicProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        phaseId: z.string().uuid(),
+        newIndex: z.number().int().nonnegative()
+      }))
+      .mutation(async ({ input }) => {
+        throw new Error('Not implemented');
+      }),
+
     delete: publicProcedure
       .input(z.object({
         projectPath: z.string(),

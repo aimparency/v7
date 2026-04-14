@@ -182,6 +182,47 @@ export const createPhaseRouter = (
         return updatedPhase;
       }),
 
+    reorder: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        phaseId: z.string().uuid(),
+        newIndex: z.number().int().nonnegative()
+      }))
+      .mutation(async ({ input }: any) => {
+        const phase = await readPhase(input.projectPath, input.phaseId);
+        const parentId = phase.parent ?? null;
+
+        if (parentId) {
+          const parent = await readPhase(input.projectPath, parentId);
+          const childPhaseIds = [...(parent.childPhaseIds ?? [])];
+          const currentIndex = childPhaseIds.indexOf(input.phaseId);
+          if (currentIndex === -1) {
+            throw new Error(`Phase ${input.phaseId} not found in parent ${parentId} child list`);
+          }
+
+          childPhaseIds.splice(currentIndex, 1);
+          const targetIndex = Math.min(input.newIndex, childPhaseIds.length);
+          childPhaseIds.splice(targetIndex, 0, input.phaseId);
+          await writePhase(input.projectPath, { ...parent, childPhaseIds });
+        } else {
+          const meta = await readMeta(input.projectPath);
+          const rootPhaseIds = [...(meta.rootPhaseIds ?? [])];
+          const currentIndex = rootPhaseIds.indexOf(input.phaseId);
+          if (currentIndex === -1) {
+            throw new Error(`Root phase ${input.phaseId} not found in meta.rootPhaseIds`);
+          }
+
+          rootPhaseIds.splice(currentIndex, 1);
+          const targetIndex = Math.min(input.newIndex, rootPhaseIds.length);
+          rootPhaseIds.splice(targetIndex, 0, input.phaseId);
+          meta.rootPhaseIds = rootPhaseIds;
+          await writeMeta(input.projectPath, meta);
+        }
+
+        ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath });
+        return { success: true };
+      }),
+
     delete: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
