@@ -25,6 +25,7 @@ const scrollTop = ref(0)
 const viewportHeight = ref(0)
 const resizeObserver = ref<ResizeObserver | null>(null)
 const hasInitialAnchorPosition = ref(false)
+const pendingSelectionRealignTimeout = ref<number | null>(null)
 
 const ESTIMATED_PHASE_HEIGHT = 180
 const ESTIMATED_PLACEHOLDER_HEIGHT = 56
@@ -151,6 +152,17 @@ const updateViewportMetrics = () => {
   viewportHeight.value = container.clientHeight
 }
 
+const queueSelectionRealign = (behavior: ScrollBehavior = 'smooth', delayMs: number = 90) => {
+  if (pendingSelectionRealignTimeout.value !== null) {
+    window.clearTimeout(pendingSelectionRealignTimeout.value)
+  }
+
+  pendingSelectionRealignTimeout.value = window.setTimeout(() => {
+    pendingSelectionRealignTimeout.value = null
+    void scrollSelectedEntryIntoView(behavior)
+  }, delayMs)
+}
+
 const adjustScrollForHeightChange = (entryIndex: number, delta: number) => {
   const container = phaseListRef.value
   if (!container || delta === 0) return
@@ -158,6 +170,7 @@ const adjustScrollForHeightChange = (entryIndex: number, delta: number) => {
   if (selectedEntryIndex < 0 || entryIndex >= selectedEntryIndex) return
   container.scrollTop += delta
   updateViewportMetrics()
+  queueSelectionRealign('smooth')
 }
 
 const getOuterHeight = (element: HTMLElement) => {
@@ -220,9 +233,10 @@ const setInitialAnchorScrollIfNeeded = async () => {
   container.scrollTop = targetTop
   hasInitialAnchorPosition.value = true
   updateViewportMetrics()
+  queueSelectionRealign('smooth', 120)
 }
 
-const scrollSelectedEntryIntoView = async () => {
+const scrollSelectedEntryIntoView = async (behavior: ScrollBehavior = 'smooth') => {
   await nextTick()
   const selectedEntry = getSelectedEntry()
   if (!selectedEntry) return
@@ -240,12 +254,12 @@ const scrollSelectedEntryIntoView = async () => {
   const bandBottom = viewTop + container.clientHeight * 0.75
 
   if (top < bandTop) {
-    container.scrollTo({ top: Math.max(0, top - container.clientHeight * 0.2), behavior: 'smooth' })
+    container.scrollTo({ top: Math.max(0, top - container.clientHeight * 0.2), behavior })
     return
   }
 
   if (bottom > bandBottom) {
-    container.scrollTo({ top: Math.max(0, bottom - container.clientHeight * 0.8), behavior: 'smooth' })
+    container.scrollTo({ top: Math.max(0, bottom - container.clientHeight * 0.8), behavior })
     return
   }
 
@@ -309,6 +323,10 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  if (pendingSelectionRealignTimeout.value !== null) {
+    window.clearTimeout(pendingSelectionRealignTimeout.value)
+    pendingSelectionRealignTimeout.value = null
+  }
   resizeObserver.value?.disconnect()
   resizeObserver.value = null
 })
@@ -328,31 +346,33 @@ onBeforeUnmount(() => {
     >
       <div class="virtual-column-space" :style="{ height: `${totalHeight}px` }">
         <template v-for="entry in visibleEntries" :key="entry.key">
-        <hr
-          v-if="entry.type === 'separator'"
-          class="parent-separator virtual-entry"
-          :style="{ transform: `translateY(${entry.top}px)` }"
-        />
         <div
-          v-else-if="entry.type === 'placeholder'"
           :ref="(element) => setEntryElement(entry.key, element)"
-          class="column-placeholder virtual-entry"
-          :style="{ transform: `translateY(${entry.top}px)` }"
+          class="entry-shell virtual-entry"
           :class="{
-            'selected-item': getSelectableIndex(entry.key) === selectedPhaseIndex,
-            'active-item': getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex
+            'separator-entry': entry.type === 'separator',
+            'placeholder-entry': entry.type === 'placeholder',
+            'phase-entry': entry.type === 'phase'
           }"
-          @click="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
-        >
-          no sub phases yet. press o to create one
-        </div>
-        <div
-          v-else
-          :ref="(element) => setEntryElement(entry.key, element)"
-          class="column-entry virtual-entry"
           :style="{ transform: `translateY(${entry.top}px)` }"
         >
+          <div
+            v-if="entry.type === 'separator'"
+            class="separator-line"
+          ></div>
+          <div
+            v-else-if="entry.type === 'placeholder'"
+            class="column-placeholder"
+            :class="{
+              'selected-item': getSelectableIndex(entry.key) === selectedPhaseIndex,
+              'active-item': getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex
+            }"
+            @click="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
+          >
+            no sub phases yet. press o to create one
+          </div>
           <PhaseComponent
+            v-else
             :phase="entry.phase"
             :is-selected="getSelectableIndex(entry.key) === selectedPhaseIndex"
             :is-active="getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex"
@@ -426,15 +446,21 @@ onBeforeUnmount(() => {
   right: 0;
 }
 
-.parent-separator {
-  border: 0;
-  border-top: 1px solid #555;
-  margin: 0.5rem 0;
+.entry-shell {
   box-sizing: border-box;
+  padding: 0.25rem 0;
 }
 
-.column-entry {
-  margin-bottom: 0.5rem;
+.separator-entry {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.separator-line {
+  width: 100%;
+  border-top: 1px solid #555;
 }
 
 .column-placeholder {

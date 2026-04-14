@@ -80,7 +80,7 @@ const isPendingDelete = computed(() => {
 <style scoped>
 .phase-container {
   padding: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   border: 1px solid #444;
   border-radius: 0.25rem;
   background: rgba(255, 255, 255, 0.1);
