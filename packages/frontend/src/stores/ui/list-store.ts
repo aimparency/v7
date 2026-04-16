@@ -665,7 +665,7 @@ export const useListStore = defineStore('ui', {
     },
 
     getVisibleMaxColumn() {
-      return Math.max(0, this.windowStart + this.windowSize - 1)
+      return this.windowStart + this.windowSize - 1
     },
 
     getSelectableEntries(columnIndex: number): Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry> {
@@ -950,6 +950,46 @@ export const useListStore = defineStore('ui', {
       return true
     },
 
+    async continueAimBoundaryPhaseMove(delta: -1 | 1) {
+      const dataStore = useDataStore()
+      const projectStore = useProjectStore()
+      const col = this.activeColumn
+      const selectLastAim = delta < 0
+
+      while (await this.moveActivePhase(delta)) {
+        const selectedEntry = this.getSelectedPhaseEntry(col)
+        if (!selectedEntry) {
+          return false
+        }
+
+        if (selectedEntry.type !== 'phase') {
+          continue
+        }
+
+        await dataStore.loadPhaseAims(projectStore.projectPath, selectedEntry.phase.id)
+        const newPhase = dataStore.phases[selectedEntry.phase.id]
+        if (!newPhase) {
+          return false
+        }
+
+        if (newPhase.commitments.length > 0) {
+          newPhase.selectedAimIndex = selectLastAim ? newPhase.commitments.length - 1 : 0
+
+          if (selectLastAim) {
+            const aims = dataStore.getAimsForPhase(selectedEntry.phase.id)
+            const target = aims[newPhase.selectedAimIndex]
+            if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
+              this.goToLastChildAim(target)
+            }
+          }
+        }
+
+        return true
+      }
+
+      return false
+    },
+
     // Set selection without loading (j/k navigation)
     setSelection(columnIndex: number, phaseIndex: number) {
       this.applyPhaseSelection(columnIndex, phaseIndex)
@@ -1216,16 +1256,8 @@ export const useListStore = defineStore('ui', {
       const path = this.getSelectionPath()
 
       if (path.aims.length === 0) {
-        if (path.phase && col >= 0) {
-          if (await this.moveActivePhase(1)) {
-            const newPhaseId = this.getSelectedPhaseId(col)
-            if (newPhaseId) {
-              const newPhase = dataStore.phases[newPhaseId]
-              if (newPhase) {
-                newPhase.selectedAimIndex = 0
-              }
-            }
-          }
+        if (col >= 0) {
+          await this.continueAimBoundaryPhaseMove(1)
         }
         return
       }
@@ -1239,15 +1271,7 @@ export const useListStore = defineStore('ui', {
           if (path.phase.selectedAimIndex! < path.phase.commitments.length - 1) {
             path.phase.selectedAimIndex!++
           } else if (col >= 0) {
-            if (await this.moveActivePhase(1)) {
-              const newPhaseId = this.getSelectedPhaseId(col)
-              if (newPhaseId) {
-                const newPhase = dataStore.phases[newPhaseId]
-                if (newPhase && newPhase.commitments.length > 0) {
-                  newPhase.selectedAimIndex = 0
-                }
-              }
-            }
+            await this.continueAimBoundaryPhaseMove(1)
           }
         }
       } else {
@@ -1268,15 +1292,7 @@ export const useListStore = defineStore('ui', {
             if (path.phase.selectedAimIndex! < path.phase.commitments.length - 1) {
               path.phase.selectedAimIndex!++
             } else if (col >= 0) {
-              if (await this.moveActivePhase(1)) {
-                const newPhaseId = this.getSelectedPhaseId(col)
-                if (newPhaseId) {
-                  const newPhase = dataStore.phases[newPhaseId]
-                  if (newPhase && newPhase.commitments.length > 0) {
-                    newPhase.selectedAimIndex = 0
-                  }
-                }
-              }
+              await this.continueAimBoundaryPhaseMove(1)
             }
           } else if (this.floatingAimIndex < dataStore.floatingAims.length - 1) {
             this.floatingAimIndex++
@@ -1299,17 +1315,8 @@ export const useListStore = defineStore('ui', {
       const col = this.activeColumn
 
       if (path.aims.length === 0) {
-        if (path.phase && col >= 0) {
-          if (await this.moveActivePhase(-1)) {
-            const newPhaseId = this.getSelectedPhaseId(col)
-            if (newPhaseId) {
-              await dataStore.loadPhaseAims(projectStore.projectPath, newPhaseId)
-              const newPhase = dataStore.phases[newPhaseId]
-              if (newPhase && newPhase.commitments.length > 0) {
-                newPhase.selectedAimIndex = newPhase.commitments.length - 1
-              }
-            }
-          }
+        if (col >= 0) {
+          await this.continueAimBoundaryPhaseMove(-1)
         }
         return
       }
@@ -1333,21 +1340,7 @@ export const useListStore = defineStore('ui', {
               this.goToLastChildAim(target)
             }
           } else {
-            if (await this.moveActivePhase(-1)) {
-              const newPhaseId = this.getSelectedPhaseId(col)
-              if (newPhaseId) {
-                await dataStore.loadPhaseAims(projectStore.projectPath, newPhaseId)
-                const newPhase = dataStore.phases[newPhaseId]
-                if (newPhase && newPhase.commitments.length > 0) {
-                  newPhase.selectedAimIndex = newPhase.commitments.length - 1
-                  const aims = dataStore.getAimsForPhase(newPhaseId)
-                  const target = aims[newPhase.selectedAimIndex]
-                  if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
-                    this.goToLastChildAim(target)
-                  }
-                }
-              }
-            }
+            await this.continueAimBoundaryPhaseMove(-1)
           }
         }
       } else {

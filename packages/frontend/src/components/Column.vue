@@ -26,9 +26,9 @@ const viewportHeight = ref(0)
 const resizeObserver = ref<ResizeObserver | null>(null)
 const hasInitialAnchorPosition = ref(false)
 const pendingSelectionRealignTimeout = ref<number | null>(null)
+const revealedPlaceholderKey = ref<string | null>(null)
 
 const ESTIMATED_PHASE_HEIGHT = 180
-const ESTIMATED_PLACEHOLDER_HEIGHT = 56
 const ESTIMATED_SEPARATOR_HEIGHT = 17
 const OVERSCAN_COUNT = 4
 
@@ -37,7 +37,7 @@ const selectableEntries = computed(() => dataStore.getSelectableColumnEntries(pr
 
 const getEstimatedHeight = (entry: PhaseLevelEntry) => {
   if (entry.type === 'phase') return ESTIMATED_PHASE_HEIGHT
-  if (entry.type === 'placeholder') return ESTIMATED_PLACEHOLDER_HEIGHT
+  if (entry.type === 'placeholder') return 44
   return ESTIMATED_SEPARATOR_HEIGHT
 }
 
@@ -192,6 +192,7 @@ const measureEntryElement = (entryKey: string, element: HTMLElement) => {
   if (measuredHeight <= 0) return
 
   const entryIndex = entries.value.findIndex((entry) => entry.key === entryKey)
+  const entry = entryIndex >= 0 ? entries.value[entryIndex] : undefined
   const previousHeight = measuredHeightByKey.value.get(entryKey) ?? (entryIndex >= 0 ? getEstimatedHeight(entries.value[entryIndex]!) : measuredHeight)
   if (previousHeight === measuredHeight) return
 
@@ -293,6 +294,18 @@ const scrollSelectedEntryIntoView = async (behavior: ScrollBehavior = 'smooth') 
 // Handle scroll requests from child components
 const { handleScrollRequest } = useScrollIntoView(phaseListRef)
 
+const updateRevealedPlaceholder = async () => {
+  const selectedEntry = getSelectedEntry()
+  if (!selectedEntry || selectedEntry.type !== 'placeholder') {
+    revealedPlaceholderKey.value = null
+    return
+  }
+
+  revealedPlaceholderKey.value = null
+  await nextTick()
+  revealedPlaceholderKey.value = selectedEntry.key
+}
+
 watch(() => uiStore.columnScrollIntent, (req) => {
   if (req && req.col === props.columnIndex && phaseListRef.value) {
     const behavior = 'smooth'
@@ -307,6 +320,7 @@ watch(() => uiStore.columnScrollIntent, (req) => {
 watch(
   () => [props.selectedPhaseIndex, props.isSelected, entries.value.map((entry) => entry.key).join('|')],
   () => {
+    void updateRevealedPlaceholder()
     if (!hasInitialAnchorPosition.value) {
       void setInitialAnchorScrollIfNeeded()
       return
@@ -338,6 +352,7 @@ onMounted(() => {
       }
     }
   })
+  void updateRevealedPlaceholder()
   void setInitialAnchorScrollIfNeeded()
 })
 
@@ -388,7 +403,14 @@ onBeforeUnmount(() => {
             }"
             @click="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
           >
-            no sub phases yet. press o to create one
+            <span
+              class="placeholder-text"
+              :class="{
+                'is-visible': getSelectableIndex(entry.key) === selectedPhaseIndex && revealedPlaceholderKey === entry.key
+              }"
+            >
+              no sub phases yet. press 'o' to create one
+            </span>
           </div>
           <PhaseComponent
             v-else
@@ -483,12 +505,26 @@ onBeforeUnmount(() => {
 }
 
 .column-placeholder {
+  box-sizing: border-box;
+  min-height: 2.5rem;
   padding: 0.75rem;
   border: 1px dashed #555;
   border-radius: 0.25rem;
   color: #888;
   font-style: italic;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.placeholder-text {
+  opacity: 0;
+  transition: opacity 140ms ease;
+  pointer-events: none;
+}
+
+.placeholder-text.is-visible {
+  opacity: 1;
 }
 
 .column-placeholder.selected-item {

@@ -101,7 +101,10 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       if (col >= 0) {
         uiStore.pendingDeletePhaseId = null
         const nextColumn = col - 1
-        if (nextColumn >= 0) {
+        if (nextColumn < 0) {
+          uiStore.setActiveColumn(-1)
+          uiStore.ensureSelectionVisible()
+        } else {
           if (nextColumn < uiStore.windowStart) {
             uiStore.windowStart = nextColumn
           }
@@ -111,8 +114,22 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       break
     case 'l':
       event.preventDefault()
+      uiStore.pendingDeletePhaseId = null
+
+      if (col === -1) {
+        await uiStore.loadColumn(0)
+        const rootEntries = dataStore.getSelectableColumnEntries(0)
+        if (rootEntries.length > 0) {
+          uiStore.ensureMaxColumn(0)
+          uiStore.initializeColumnSelection(0)
+          uiStore.setActiveColumn(0)
+          uiStore.ensureSelectionVisible()
+          uiStore.ensureVisibleColumnSelections('preserve')
+        }
+        break
+      }
+
       if (col >= 0) {
-        uiStore.pendingDeletePhaseId = null
         const nextColumn = col + 1
 
         if (nextColumn > uiStore.maxColumn) {
@@ -414,6 +431,12 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
     }
     case 'l': {
       event.preventDefault()
+      if (uiStore.activeColumn === -1) {
+        uiStore.navigatingAims = false
+        await handleColumnNavigationKeysAction(uiStore, event, dataStore)
+        return
+      }
+
       const selectedAim = uiStore.getCurrentAim()
       if (selectedAim) {
         if (!selectedAim.expanded) {

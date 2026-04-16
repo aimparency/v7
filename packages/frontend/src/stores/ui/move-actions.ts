@@ -115,7 +115,10 @@ export async function moveAimDownAction(uiStore: any) {
 
         const col = uiStore.activeColumn
         if (col >= 0) {
-          await uiStore.selectPhase(col, currentPhaseIndex + 1)
+          const nextPhaseIndex = uiStore.findSelectableIndexForPhase(col, nextPhaseId)
+          if (nextPhaseIndex >= 0) {
+            await uiStore.selectPhase(col, nextPhaseIndex, 'preserve', true)
+          }
         }
 
         try {
@@ -254,7 +257,10 @@ export async function moveAimUpAction(uiStore: any) {
 
         const col = uiStore.activeColumn
         if (col >= 0) {
-          await uiStore.selectPhase(col, currentPhaseIndex - 1)
+          const prevPhaseIndex = uiStore.findSelectableIndexForPhase(col, prevPhaseId)
+          if (prevPhaseIndex >= 0) {
+            await uiStore.selectPhase(col, prevPhaseIndex, 'preserve', true)
+          }
         }
 
         try {
