@@ -45,10 +45,12 @@ function logNav(event: string, details: Record<string, unknown> = {}) {
 }
 
 type PhaseMoveDirection = 'forward' | 'backward' | 'preserve'
+type ColumnSelectionToken =
+  | { type: 'phase'; phaseId: string }
+  | { type: 'placeholder'; parentPhaseId: string }
 
 type PersistedListViewState = {
   activeColumn: number
-  maxColumn: number
   windowStart: number
   windowSize: number
   selectedPhaseByColumn: Record<number, number>
@@ -56,7 +58,6 @@ type PersistedListViewState = {
   floatingAimIndex: number
   lastSelectedSubPhaseIndexByPhase: Record<string, number>
   navigatingAims: boolean
-  scrollTopByColumn: Record<number, number>
   selectedAimIndexByPhaseId: Record<string, number>
   selectedIncomingIndexByAimId: Record<string, number>
   expandedAimIds: string[]
@@ -101,7 +102,7 @@ export const useListStore = defineStore('ui', {
 
     uiStatePersistTimeout: null as ReturnType<typeof setTimeout> | null,
     isRestoringUIState: false,
-    pendingRestoredScrollByColumn: {} as Record<number, number>,
+    restoreGeneration: 0,
   }),
   
   getters: {
@@ -145,10 +146,18 @@ export const useListStore = defineStore('ui', {
   actions: {
     beginUIStateRestore() {
       this.isRestoringUIState = true
+      this.restoreGeneration++
     },
 
     endUIStateRestore() {
       this.isRestoringUIState = false
+      this.restoreGeneration++
+    },
+
+    interruptUIStateRestore() {
+      if (this.isRestoringUIState) {
+        this.endUIStateRestore()
+      }
     },
 
     getPersistedUIStateKey(projectPath: string) {
@@ -157,17 +166,6 @@ export const useListStore = defineStore('ui', {
 
     setColumnScrollTop(columnIndex: number, top: number) {
       this.scrollTopByColumn[columnIndex] = top
-    },
-
-    getColumnScrollTop(columnIndex: number) {
-      return this.scrollTopByColumn[columnIndex]
-    },
-
-    consumeRestoredColumnScrollTop(columnIndex: number) {
-      const top = this.pendingRestoredScrollByColumn[columnIndex]
-      if (top === undefined) return undefined
-      delete this.pendingRestoredScrollByColumn[columnIndex]
-      return top
     },
 
     getListViewStateSnapshot(): PersistedListViewState {
@@ -194,7 +192,6 @@ export const useListStore = defineStore('ui', {
 
       return {
         activeColumn: this.activeColumn,
-        maxColumn: this.maxColumn,
         windowStart: this.windowStart,
         windowSize: this.windowSize,
         selectedPhaseByColumn: { ...this.selectedPhaseByColumn },
@@ -202,7 +199,6 @@ export const useListStore = defineStore('ui', {
         floatingAimIndex: this.floatingAimIndex,
         lastSelectedSubPhaseIndexByPhase: { ...this.lastSelectedSubPhaseIndexByPhase },
         navigatingAims: this.navigatingAims,
-        scrollTopByColumn: { ...this.scrollTopByColumn },
         selectedAimIndexByPhaseId,
         selectedIncomingIndexByAimId,
         expandedAimIds
@@ -240,19 +236,20 @@ export const useListStore = defineStore('ui', {
       const dataStore = useDataStore()
       const graphStore = useGraphUIStore()
 
-      if (!projectStore.projectPath) return
+      if (!projectStore.projectPath) return false
 
       const raw = localStorage.getItem(this.getPersistedUIStateKey(projectStore.projectPath))
-      if (!raw) return
+      if (!raw) return false
 
       let parsed: PersistedUIState | null = null
       try {
         parsed = JSON.parse(raw) as PersistedUIState
       } catch {
-        return
+        return false
       }
 
       this.beginUIStateRestore()
+      const restoreGeneration = this.restoreGeneration
       try {
         if (parsed.currentView) {
           projectStore.setCurrentView(parsed.currentView)
@@ -263,18 +260,64 @@ export const useListStore = defineStore('ui', {
           this.windowSize = listViewState.windowSize
           this.windowStart = listViewState.windowStart
           this.activeColumn = listViewState.activeColumn
-          this.maxColumn = listViewState.maxColumn
+          this.maxColumn = Math.max(-1, this.activeColumn)
           this.selectedPhaseByColumn = { ...listViewState.selectedPhaseByColumn }
           this.selectedPhaseIdByColumn = { ...listViewState.selectedPhaseIdByColumn }
           this.floatingAimIndex = listViewState.floatingAimIndex
           this.lastSelectedSubPhaseIndexByPhase = { ...listViewState.lastSelectedSubPhaseIndexByPhase }
           this.navigatingAims = listViewState.navigatingAims
-          this.scrollTopByColumn = { ...listViewState.scrollTopByColumn }
-          this.pendingRestoredScrollByColumn = { ...listViewState.scrollTopByColumn }
+          this.scrollTopByColumn = {}
 
-          const visibleMaxColumn = Math.max(this.activeColumn, this.getVisibleMaxColumn())
-          await this.ensureColumnsLoaded(visibleMaxColumn)
-          this.ensureVisibleColumnSelections('preserve')
+          const shouldContinue = () => this.isRestoringUIState && this.restoreGeneration === restoreGeneration
+          const restoreVisibleMax = Math.max(this.activeColumn, this.getVisibleMaxColumn())
+
+          if (this.windowStart < 0) {
+            this.maxColumn = Math.max(this.maxColumn, -1)
+          }
+
+          if (restoreVisibleMax >= 0) {
+            await this.loadColumn(0)
+            if (!shouldContinue()) return true
+
+            const rootSelectedId = this.selectedPhaseIdByColumn[0]
+            if (rootSelectedId) {
+              const rootIndex = this.findSelectableIndexForPhase(0, rootSelectedId)
+              if (rootIndex >= 0) {
+                this.applyPhaseSelection(0, rootIndex)
+              } else {
+                this.initializeColumnSelection(0, 'preserve')
+              }
+            } else {
+              this.initializeColumnSelection(0, 'preserve')
+            }
+
+            for (let columnIndex = 1; columnIndex <= restoreVisibleMax; columnIndex++) {
+              const parentPhaseId = this.selectedPhaseIdByColumn[columnIndex - 1]
+              if (!parentPhaseId) {
+                break
+              }
+
+              await this.loadColumn(columnIndex)
+              if (!shouldContinue()) return true
+
+              const selectedPhaseId = this.selectedPhaseIdByColumn[columnIndex]
+              if (selectedPhaseId) {
+                const selectedIndex = this.findSelectableIndexForPhase(columnIndex, selectedPhaseId)
+                if (selectedIndex >= 0) {
+                  this.applyPhaseSelection(columnIndex, selectedIndex)
+                } else {
+                  this.initializeColumnSelection(columnIndex, 'preserve')
+                }
+              } else {
+                this.initializeColumnSelection(columnIndex, 'preserve')
+              }
+
+              if (this.getSelectableEntries(columnIndex).length === 0) {
+                break
+              }
+              this.maxColumn = Math.max(this.maxColumn, columnIndex)
+            }
+          }
 
           for (const [phaseId, selectedAimIndex] of Object.entries(listViewState.selectedAimIndexByPhaseId)) {
             const phase = dataStore.phases[phaseId]
@@ -292,12 +335,30 @@ export const useListStore = defineStore('ui', {
             }
           }
 
+          if (this.navigatingAims && this.activeColumn >= 0) {
+            const activePhaseId = this.selectedPhaseIdByColumn[this.activeColumn]
+            if (activePhaseId) {
+              await dataStore.loadPhaseAims(projectStore.projectPath, activePhaseId)
+              if (!shouldContinue()) return true
+              const phase = dataStore.phases[activePhaseId]
+              if (phase && listViewState.selectedAimIndexByPhaseId[activePhaseId] !== undefined) {
+                phase.selectedAimIndex = Math.min(
+                  listViewState.selectedAimIndexByPhaseId[activePhaseId]!,
+                  Math.max(0, phase.commitments.length - 1)
+                )
+              }
+            }
+          }
+
           this.ensureSelectionVisible()
         }
 
         graphStore.applyPersistedGraphViewState(parsed.graphViewState)
+        return true
       } finally {
-        this.endUIStateRestore()
+        if (this.restoreGeneration === restoreGeneration && this.isRestoringUIState) {
+          this.endUIStateRestore()
+        }
       }
     },
 
@@ -653,8 +714,18 @@ export const useListStore = defineStore('ui', {
       if (columnIndex === 0) {
         await dataStore.loadPhases(projectStore.projectPath, null)
       } else {
-        const parentLevelPhases = dataStore.getActualPhasesForColumn(columnIndex - 1)
-        await Promise.all(parentLevelPhases.map((phase) => dataStore.loadPhases(projectStore.projectPath, phase.id)))
+        const selectedParentId = this.selectedPhaseIdByColumn[columnIndex - 1]
+        if (selectedParentId) {
+          await dataStore.loadPhases(projectStore.projectPath, selectedParentId)
+        }
+      }
+
+      if (columnIndex > 0 && this.selectedPhaseByColumn[columnIndex] === undefined) {
+        this.initializeColumnSelection(columnIndex)
+      }
+
+      if (columnIndex >= 0) {
+        await this.ensureColumnNeighborhoodLoaded(columnIndex)
       }
 
       logNav('loadColumn', {
@@ -668,6 +739,14 @@ export const useListStore = defineStore('ui', {
       return this.windowStart + this.windowSize - 1
     },
 
+    getEstimatedEntryHeight(entry: PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry) {
+      return entry.type === 'phase' ? 180 : 44
+    },
+
+    getEstimatedSelectableHeight(columnIndex: number) {
+      return this.getSelectableEntries(columnIndex).reduce((sum, entry) => sum + this.getEstimatedEntryHeight(entry), 0)
+    },
+
     getSelectableEntries(columnIndex: number): Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry> {
       const dataStore = useDataStore()
       return dataStore.getSelectableColumnEntries(columnIndex)
@@ -676,6 +755,36 @@ export const useListStore = defineStore('ui', {
     getSelectedPhaseEntry(columnIndex: number): PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry | undefined {
       const entries = this.getSelectableEntries(columnIndex)
       return entries[this.getSelectedPhase(columnIndex)]
+    },
+
+    getCurrentSelectionToken(columnIndex: number): ColumnSelectionToken | undefined {
+      const entry = this.getSelectedPhaseEntry(columnIndex)
+      if (!entry) return undefined
+      if (entry.type === 'phase') {
+        return { type: 'phase', phaseId: entry.phase.id }
+      }
+      return { type: 'placeholder', parentPhaseId: entry.parentPhaseId }
+    },
+
+    findSelectableIndexForPlaceholderParent(columnIndex: number, parentPhaseId: string): number {
+      return this.getSelectableEntries(columnIndex).findIndex((entry) => entry.type === 'placeholder' && entry.parentPhaseId === parentPhaseId)
+    },
+
+    restoreColumnSelectionFromToken(columnIndex: number, token: ColumnSelectionToken | undefined) {
+      if (!token) return undefined
+      const index = token.type === 'phase'
+        ? this.findSelectableIndexForPhase(columnIndex, token.phaseId)
+        : this.findSelectableIndexForPlaceholderParent(columnIndex, token.parentPhaseId)
+      if (index < 0) return undefined
+      return this.applyPhaseSelection(columnIndex, index)
+    },
+
+    getParentPhasesForColumn(columnIndex: number) {
+      const dataStore = useDataStore()
+      if (columnIndex <= 0) {
+        return []
+      }
+      return dataStore.getActualPhasesForColumn(columnIndex - 1)
     },
 
     initializeColumnSelection(columnIndex: number, direction: PhaseMoveDirection = 'preserve') {
@@ -724,6 +833,88 @@ export const useListStore = defineStore('ui', {
       return this.getSelectableEntries(columnIndex).findIndex((entry) => entry.type === 'phase' && entry.phase.id === phaseId)
     },
 
+    async ensureColumnNeighborhoodLoaded(columnIndex: number) {
+      const dataStore = useDataStore()
+      const projectStore = useProjectStore()
+
+      if (columnIndex < 0) return
+      if (columnIndex === 0) {
+        await dataStore.loadPhases(projectStore.projectPath, null)
+        return
+      }
+
+      const parentPhases = this.getParentPhasesForColumn(columnIndex)
+      if (parentPhases.length === 0) return
+
+      const currentToken = this.getCurrentSelectionToken(columnIndex)
+      const selectedParentPhaseId =
+        currentToken?.type === 'placeholder'
+          ? currentToken.parentPhaseId
+          : this.getSelectedPhaseEntry(columnIndex)?.parentPhaseId ?? this.selectedPhaseIdByColumn[columnIndex - 1]
+
+      if (!selectedParentPhaseId) return
+
+      const selectedParentIndex = parentPhases.findIndex((phase) => phase.id === selectedParentPhaseId)
+      if (selectedParentIndex < 0) return
+
+      let leftIndex = selectedParentIndex
+      let rightIndex = selectedParentIndex
+      const targetHeight = typeof window !== 'undefined' ? window.innerHeight * 2 : 1600
+
+      await dataStore.loadPhases(projectStore.projectPath, selectedParentPhaseId)
+      this.restoreColumnSelectionFromToken(columnIndex, currentToken)
+
+      while (true) {
+        const entries = this.getSelectableEntries(columnIndex)
+        const currentIndex = entries.findIndex((entry) => {
+          if (!currentToken) return false
+          return currentToken.type === 'phase'
+            ? entry.type === 'phase' && entry.phase.id === currentToken.phaseId
+            : entry.type === 'placeholder' && entry.parentPhaseId === currentToken.parentPhaseId
+        })
+
+        const effectiveIndex = currentIndex >= 0 ? currentIndex : this.getSelectedPhase(columnIndex)
+        const hasBefore = effectiveIndex > 0 || leftIndex === 0
+        const hasAfter = (effectiveIndex >= 0 && effectiveIndex < entries.length - 1) || rightIndex === parentPhases.length - 1
+        const hasVisualPadding = this.getEstimatedSelectableHeight(columnIndex) >= targetHeight || (leftIndex === 0 && rightIndex === parentPhases.length - 1)
+
+        if (hasBefore && hasAfter && hasVisualPadding) {
+          break
+        }
+
+        let progressed = false
+
+        if ((!hasBefore || !hasVisualPadding) && leftIndex > 0) {
+          leftIndex--
+          await dataStore.loadPhases(projectStore.projectPath, parentPhases[leftIndex]!.id)
+          progressed = true
+          this.restoreColumnSelectionFromToken(columnIndex, currentToken)
+        }
+
+        const entriesAfterLeft = this.getSelectableEntries(columnIndex)
+        const currentIndexAfterLeft = entriesAfterLeft.findIndex((entry) => {
+          if (!currentToken) return false
+          return currentToken.type === 'phase'
+            ? entry.type === 'phase' && entry.phase.id === currentToken.phaseId
+            : entry.type === 'placeholder' && entry.parentPhaseId === currentToken.parentPhaseId
+        })
+        const effectiveIndexAfterLeft = currentIndexAfterLeft >= 0 ? currentIndexAfterLeft : this.getSelectedPhase(columnIndex)
+        const hasAfterAfterLeft = (effectiveIndexAfterLeft >= 0 && effectiveIndexAfterLeft < entriesAfterLeft.length - 1) || rightIndex === parentPhases.length - 1
+        const hasVisualPaddingAfterLeft = this.getEstimatedSelectableHeight(columnIndex) >= targetHeight || (leftIndex === 0 && rightIndex === parentPhases.length - 1)
+
+        if ((!hasAfterAfterLeft || !hasVisualPaddingAfterLeft) && rightIndex < parentPhases.length - 1) {
+          rightIndex++
+          await dataStore.loadPhases(projectStore.projectPath, parentPhases[rightIndex]!.id)
+          progressed = true
+          this.restoreColumnSelectionFromToken(columnIndex, currentToken)
+        }
+
+        if (!progressed) {
+          break
+        }
+      }
+    },
+
     applyPhaseSelection(columnIndex: number, phaseIndex: number) {
       const entries = this.getSelectableEntries(columnIndex)
       if (entries.length === 0) {
@@ -770,6 +961,48 @@ export const useListStore = defineStore('ui', {
       const maxVisibleColumn = Math.min(this.maxColumn, this.getVisibleMaxColumn())
       for (let columnIndex = 0; columnIndex <= maxVisibleColumn; columnIndex++) {
         this.initializeColumnSelection(columnIndex, direction)
+      }
+    },
+
+    async realignVisibleColumnsFrom(fromColumn: number, direction: PhaseMoveDirection = 'preserve') {
+      const maxVisibleColumn = Math.min(this.maxColumn, this.getVisibleMaxColumn())
+
+      for (let columnIndex = Math.max(0, fromColumn); columnIndex <= maxVisibleColumn; columnIndex++) {
+        await this.loadColumn(columnIndex)
+
+        if (columnIndex === 0) {
+          if (this.selectedPhaseByColumn[0] === undefined) {
+            this.initializeColumnSelection(0, direction)
+          }
+          continue
+        }
+
+        const parentPhaseId = this.selectedPhaseIdByColumn[columnIndex - 1]
+        if (!parentPhaseId) {
+          break
+        }
+
+        const ownedEntries = this.getOwnedEntries(columnIndex, parentPhaseId)
+        if (ownedEntries.length === 0) {
+          break
+        }
+
+        const targetEntry = this.chooseOwnedEntry(
+          ownedEntries,
+          this.getSelectedPhaseEntry(columnIndex),
+          parentPhaseId,
+          direction
+        )
+        if (!targetEntry) {
+          break
+        }
+
+        const globalIndex = this.getSelectableEntries(columnIndex).findIndex((entry) => entry.key === targetEntry.key)
+        if (globalIndex < 0) {
+          break
+        }
+
+        this.applyPhaseSelection(columnIndex, globalIndex)
       }
     },
 
@@ -935,15 +1168,21 @@ export const useListStore = defineStore('ui', {
         await this.loadColumn(columnIndex)
       }
 
-      const refreshedEntries = this.getSelectableEntries(columnIndex)
+      let refreshedEntries = this.getSelectableEntries(columnIndex)
       if (refreshedEntries.length === 0) {
         return false
       }
 
-      const currentIndex = this.getSelectedPhase(columnIndex)
-      const nextIndex = currentIndex + delta
+      let currentIndex = this.getSelectedPhase(columnIndex)
+      let nextIndex = currentIndex + delta
       if (nextIndex < 0 || nextIndex >= refreshedEntries.length) {
-        return false
+        await this.ensureColumnNeighborhoodLoaded(columnIndex)
+        refreshedEntries = this.getSelectableEntries(columnIndex)
+        currentIndex = this.getSelectedPhase(columnIndex)
+        nextIndex = currentIndex + delta
+        if (nextIndex < 0 || nextIndex >= refreshedEntries.length) {
+          return false
+        }
       }
 
       await this.selectPhase(columnIndex, nextIndex, direction, true)
@@ -1472,7 +1711,6 @@ export const useListStore = defineStore('ui', {
       this.selectedPhaseIdByColumn = {}
       this.lastSelectedSubPhaseIndexByPhase = {}
       this.scrollTopByColumn = {}
-      this.pendingRestoredScrollByColumn = {}
       const graphStore = useGraphUIStore()
       graphStore.deselectLink()
       graphStore.clearGraphSelection()

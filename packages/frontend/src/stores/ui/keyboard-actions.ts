@@ -124,13 +124,15 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
           uiStore.initializeColumnSelection(0)
           uiStore.setActiveColumn(0)
           uiStore.ensureSelectionVisible()
-          uiStore.ensureVisibleColumnSelections('preserve')
+          await uiStore.realignVisibleColumnsFrom(0, 'preserve')
         }
         break
       }
 
       if (col >= 0) {
         const nextColumn = col + 1
+        const windowEnd = uiStore.windowStart + uiStore.windowSize - 1
+        const wasVisible = nextColumn <= windowEnd
 
         if (nextColumn > uiStore.maxColumn) {
           await uiStore.loadColumn(nextColumn)
@@ -142,7 +144,6 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         }
 
         if (nextColumn <= uiStore.maxColumn) {
-          const windowEnd = uiStore.windowStart + uiStore.windowSize - 1
           if (nextColumn > windowEnd) {
             const maxWindowStart = Math.max(0, uiStore.maxColumn - uiStore.windowSize + 1)
             if (uiStore.windowStart < maxWindowStart) {
@@ -150,7 +151,11 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
             }
           }
           uiStore.setActiveColumn(nextColumn)
-          uiStore.ensureVisibleColumnSelections('preserve')
+          if (wasVisible) {
+            uiStore.ensureVisibleColumnSelections('preserve')
+          } else {
+            await uiStore.realignVisibleColumnsFrom(nextColumn, 'preserve')
+          }
         }
       }
       break

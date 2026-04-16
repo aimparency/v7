@@ -121,11 +121,14 @@ const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
   uiStore.beginUIStateRestore()
   await dataStore.loadProject(path)
-  await trpc.project.buildSearchIndex.mutate({
+  void trpc.project.buildSearchIndex.mutate({
     projectPath: path
-  });
-  await uiStore.restoreProjectUIState()
-  if (!Object.keys(uiStore.selectedPhaseByColumn).length) {
+  }).catch((error) => {
+    console.error('Failed to build search index', error)
+  })
+  const restored = await uiStore.restoreProjectUIState()
+  if (!restored && !Object.keys(uiStore.selectedPhaseByColumn).length) {
+    uiStore.beginUIStateRestore()
     await uiStore.selectPhase(0, 0)
     uiStore.ensureSelectionVisible()
     uiStore.endUIStateRestore()
@@ -153,11 +156,14 @@ const openProjectFromHistory = async (path: string) => {
   projectPathInput.value = path
   uiStore.beginUIStateRestore()
   await dataStore.loadProject(path)
-  await trpc.project.buildSearchIndex.mutate({
+  void trpc.project.buildSearchIndex.mutate({
     projectPath: path
-  });
-  await uiStore.restoreProjectUIState()
-  if (!Object.keys(uiStore.selectedPhaseByColumn).length) {
+  }).catch((error) => {
+    console.error('Failed to build search index', error)
+  })
+  const restored = await uiStore.restoreProjectUIState()
+  if (!restored && !Object.keys(uiStore.selectedPhaseByColumn).length) {
+    uiStore.beginUIStateRestore()
     await uiStore.selectPhase(0, 0)
     uiStore.ensureSelectionVisible()
     uiStore.endUIStateRestore()
@@ -188,6 +194,10 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
   const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
   
   if (isInput) return
+
+  if (uiStore.isRestoringUIState) {
+    uiStore.interruptUIStateRestore()
+  }
 
   // Watchdog toggle
   if (event.key === 'w' && !event.ctrlKey && !event.metaKey && !event.altKey) {
@@ -268,7 +278,6 @@ watch(() => [
   uiStore.windowSize,
   uiStore.lastSelectedSubPhaseIndexByPhase,
   uiStore.navigatingAims,
-  uiStore.scrollTopByColumn,
   projectStore.currentView,
   graphUIStore.graphSelectedAimId,
   graphUIStore.selectedLink,
@@ -290,14 +299,16 @@ onMounted(async () => {
     // Load all project data first
     await dataStore.loadProject(projectStore.projectPath);
 
-    // Build search index
-    await trpc.project.buildSearchIndex.mutate({
+    void trpc.project.buildSearchIndex.mutate({
       projectPath: projectStore.projectPath
-    });
+    }).catch((error) => {
+      console.error('Failed to build search index', error)
+    })
 
-    await uiStore.restoreProjectUIState()
+    const restored = await uiStore.restoreProjectUIState()
 
-    if (!Object.keys(uiStore.selectedPhaseByColumn).length) {
+    if (!restored && !Object.keys(uiStore.selectedPhaseByColumn).length) {
+      uiStore.beginUIStateRestore()
       await uiStore.selectPhase(0, 0)
       uiStore.endUIStateRestore()
     }

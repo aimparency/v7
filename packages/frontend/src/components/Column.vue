@@ -45,6 +45,11 @@ const heights = computed(() => entries.value.map((entry) => (
   measuredHeightByKey.value.get(entry.key) ?? getEstimatedHeight(entry)
 )))
 
+const restoreTopReserve = computed(() => {
+  if (!uiStore.isRestoringUIState) return 0
+  return Math.max(viewportHeight.value * 10, 4000)
+})
+
 const offsets = computed(() => {
   const nextOffsets: number[] = new Array(entries.value.length)
   let runningTop = 0
@@ -60,8 +65,11 @@ const offsets = computed(() => {
 const totalHeight = computed(() => {
   if (entries.value.length === 0) return 0
   const lastIndex = entries.value.length - 1
-  return (offsets.value[lastIndex] ?? 0) + (heights.value[lastIndex] ?? 0)
+  return restoreTopReserve.value + (offsets.value[lastIndex] ?? 0) + (heights.value[lastIndex] ?? 0)
 })
+
+const getRenderedTop = (index: number) => restoreTopReserve.value + (offsets.value[index] ?? 0)
+const getRenderedBottom = (index: number) => getRenderedTop(index) + (heights.value[index] ?? 0)
 
 const findFirstVisibleIndex = (targetTop: number) => {
   let low = 0
@@ -70,7 +78,7 @@ const findFirstVisibleIndex = (targetTop: number) => {
 
   while (low <= high) {
     const mid = Math.floor((low + high) / 2)
-    const rowBottom = (offsets.value[mid] ?? 0) + (heights.value[mid] ?? 0)
+    const rowBottom = getRenderedBottom(mid)
     if (rowBottom > targetTop) {
       answer = mid
       high = mid - 1
@@ -89,7 +97,7 @@ const findLastVisibleIndex = (targetBottom: number) => {
 
   while (low <= high) {
     const mid = Math.floor((low + high) / 2)
-    const rowTop = offsets.value[mid] ?? 0
+    const rowTop = getRenderedTop(mid)
     if (rowTop < targetBottom) {
       answer = mid
       low = mid + 1
@@ -127,7 +135,7 @@ const visibleEntries = computed(() => {
     rendered.push({
       ...entry,
       index,
-      top: offsets.value[index] ?? 0
+      top: getRenderedTop(index)
     })
   }
   return rendered
@@ -160,6 +168,7 @@ const handleColumnScroll = () => {
 }
 
 const queueSelectionRealign = (behavior: ScrollBehavior = 'smooth', delayMs: number = 90) => {
+  if (uiStore.isRestoringUIState) return
   if (pendingSelectionRealignTimeout.value !== null) {
     window.clearTimeout(pendingSelectionRealignTimeout.value)
   }
@@ -177,7 +186,9 @@ const adjustScrollForHeightChange = (entryIndex: number, delta: number) => {
   if (selectedEntryIndex < 0 || entryIndex >= selectedEntryIndex) return
   container.scrollTop += delta
   updateViewportMetrics(true)
-  queueSelectionRealign('smooth')
+  if (!uiStore.isRestoringUIState) {
+    queueSelectionRealign('smooth')
+  }
 }
 
 const getOuterHeight = (element: HTMLElement) => {
@@ -236,24 +247,19 @@ const setInitialAnchorScrollIfNeeded = async () => {
   const entryIndex = getSelectedEntryIndexInColumn()
   if (entryIndex < 0) return
 
-  const persistedScrollTop = uiStore.isRestoringUIState
-    ? uiStore.consumeRestoredColumnScrollTop(props.columnIndex)
-    : undefined
-  if (persistedScrollTop !== undefined) {
-    container.scrollTop = persistedScrollTop
-    hasInitialAnchorPosition.value = true
-    updateViewportMetrics(true)
-    return
-  }
-
-  const estimatedTop = offsets.value[entryIndex] ?? 0
-  const estimatedHeight = heights.value[entryIndex] ?? 0
-  const targetTop = Math.max(0, estimatedTop - container.clientHeight * 0.25 + estimatedHeight * 0.5)
+  const targetTop = uiStore.isRestoringUIState
+    ? Math.max(0, getRenderedTop(entryIndex) - container.clientHeight * 0.25 + (heights.value[entryIndex] ?? 0) * 0.5)
+    : Math.max(
+        0,
+        getRenderedTop(entryIndex) - container.clientHeight * 0.25 + (heights.value[entryIndex] ?? 0) * 0.5
+      )
 
   container.scrollTop = targetTop
   hasInitialAnchorPosition.value = true
   updateViewportMetrics(true)
-  queueSelectionRealign('smooth', 120)
+  if (!uiStore.isRestoringUIState) {
+    queueSelectionRealign('smooth', 120)
+  }
 }
 
 const scrollSelectedEntryIntoView = async (behavior: ScrollBehavior = 'smooth') => {
@@ -265,7 +271,7 @@ const scrollSelectedEntryIntoView = async (behavior: ScrollBehavior = 'smooth') 
   if (entryIndex < 0 || !phaseListRef.value) return
 
   const container = phaseListRef.value
-  const top = offsets.value[entryIndex] ?? 0
+  const top = getRenderedTop(entryIndex)
   const height = heights.value[entryIndex] ?? 0
   const bottom = top + height
   const viewTop = container.scrollTop
@@ -284,6 +290,11 @@ const scrollSelectedEntryIntoView = async (behavior: ScrollBehavior = 'smooth') 
   }
 
   if (top < viewTop || bottom > viewBottom) {
+    if (uiStore.isRestoringUIState) {
+      container.scrollTo({ top: Math.max(0, top - container.clientHeight * 0.2), behavior: 'auto' })
+      return
+    }
+
     const element = entryElements.value.get(selectedEntry.key)
     if (element) {
       handleScrollRequest(element)
@@ -325,7 +336,7 @@ watch(
       void setInitialAnchorScrollIfNeeded()
       return
     }
-    void scrollSelectedEntryIntoView()
+    void scrollSelectedEntryIntoView(uiStore.isRestoringUIState ? 'auto' : 'smooth')
   },
   { flush: 'post' }
 )
