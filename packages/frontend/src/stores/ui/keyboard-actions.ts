@@ -463,7 +463,7 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
 export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
-  if (hasQueryFlag('phaseNavDebug')) {
+  if (hasQueryFlag('logkeys')) {
     console.log('[PhaseNav] keydown', {
       key: event.key,
       activeColumn: uiStore.activeColumn,
