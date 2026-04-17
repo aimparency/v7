@@ -30,8 +30,6 @@ export const useUIModalStore = defineStore('ui-modal', {
     phaseModalInsertPosition: 'before' as RelativePosition,
 
     showAimModal: false,
-    aimModalMode: 'create' as 'create' | 'edit',
-    aimModalEditingAimId: null as string | null,
     aimModalInsertPosition: 'before' as RelativePosition,
     aimModalSource: 'columns' as 'columns' | 'graph',
 

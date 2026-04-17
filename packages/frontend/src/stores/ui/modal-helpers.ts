@@ -17,8 +17,6 @@ export type UIModalState = {
   newPhaseName: string
   phaseModalInsertPosition: RelativePosition
   showAimModal: boolean
-  aimModalMode: 'create' | 'edit'
-  aimModalEditingAimId: string | null
   aimModalInsertPosition: RelativePosition
   aimModalSource: 'columns' | 'graph'
   showAimSearch: boolean
@@ -71,14 +69,11 @@ export function closePhaseModal(state: UIModalState): void {
 
 export function openAimCreateModal(state: UIModalState, source: 'columns' | 'graph' = 'columns'): void {
   state.showAimModal = true
-  state.aimModalMode = 'create'
   state.aimModalSource = source
 }
 
 export function closeAimModal(state: UIModalState): void {
   state.showAimModal = false
-  state.aimModalMode = 'create'
-  state.aimModalEditingAimId = null
   state.aimModalSource = 'columns'
 }
 

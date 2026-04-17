@@ -20,8 +20,6 @@ const createState = (): UIModalState => ({
   newPhaseName: '',
   phaseModalInsertPosition: 'before',
   showAimModal: false,
-  aimModalMode: 'create',
-  aimModalEditingAimId: null,
   aimModalInsertPosition: 'before',
   aimModalSource: 'columns',
   showAimSearch: false,

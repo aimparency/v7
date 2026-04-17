@@ -231,6 +231,17 @@ export const useListStore = defineStore('ui', {
       }, 150)
     },
 
+    async flushProjectUIStatePersist() {
+      if (this.uiStatePersistTimeout) {
+        clearTimeout(this.uiStatePersistTimeout)
+        this.uiStatePersistTimeout = null
+      }
+
+      if (!this.isRestoringUIState) {
+        await this.persistProjectUIState()
+      }
+    },
+
     async restoreProjectUIState() {
       const projectStore = useProjectStore()
       const dataStore = useDataStore()
@@ -1251,8 +1262,7 @@ export const useListStore = defineStore('ui', {
         const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
         const aimIndex = aims.findIndex((a: any) => a && a.id === aimId)
         if (aimIndex !== -1) {
-          modalStore.showAimModal = true
-          modalStore.aimModalMode = 'edit'
+          modalStore.openAimEditModal(aimId)
         }
         return
       }

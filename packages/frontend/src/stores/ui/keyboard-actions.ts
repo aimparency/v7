@@ -383,11 +383,9 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
 
   if (creationPos !== undefined && currentAim) {
     modalStore.showAimModal = true
-    modalStore.aimModalMode = 'create'
     modalStore.aimModalInsertPosition = creationPos
   } else if (creationPos !== undefined && path.phase) {
     modalStore.showAimModal = true
-    modalStore.aimModalMode = 'create'
     modalStore.aimModalInsertPosition = creationPos
   }
 

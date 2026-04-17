@@ -184,6 +184,18 @@ const closeProject = () => {
   projectStore.setProjectPath('')
 }
 
+const flushPersistedUIState = () => {
+  if (projectStore.projectPath) {
+    void uiStore.flushProjectUIStatePersist()
+  }
+}
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'hidden') {
+    flushPersistedUIState()
+  }
+}
+
 // Global keydown handler
 const handleGlobalKeydown = (event: KeyboardEvent) => {
   // Ignore if in project selection screen
@@ -293,6 +305,9 @@ watch(() => [
 onMounted(async () => {
   // Register global keydown listener
   window.addEventListener('keydown', handleGlobalKeydown)
+  window.addEventListener('pagehide', flushPersistedUIState)
+  window.addEventListener('beforeunload', flushPersistedUIState)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 
   if (projectStore.projectPath) {
     uiStore.beginUIStateRestore()
@@ -322,6 +337,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleGlobalKeydown)
+  window.removeEventListener('pagehide', flushPersistedUIState)
+  window.removeEventListener('beforeunload', flushPersistedUIState)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
 </script>

@@ -230,7 +230,6 @@ describe('UI teleport cut/paste', () => {
     await uiStore.handleAimNavigationKeys(keyEvent('o'), dataStore)
 
     expect(modalStore.showAimModal).toBe(true)
-    expect(modalStore.aimModalMode).toBe('create')
     expect(modalStore.aimModalInsertPosition).toBe('after')
   })
 

@@ -4,9 +4,8 @@ import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
-import { trpc } from '../trpc'
 import FormModalShell from './FormModalShell.vue'
-import type { Aim, AimStatusState, SearchAimResult } from 'shared'
+import type { Aim, SearchAimResult } from 'shared'
 import TagInput from './TagInput.vue'
 import { AIM_DEFAULTS } from '../constants/aimDefaults'
 import AimSearchPicker from './AimSearchPicker.vue'
@@ -24,28 +23,16 @@ const aimIntrinsicValue = ref(AIM_DEFAULTS.intrinsicValue)
 const aimCost = ref(AIM_DEFAULTS.cost)
 const aimLoopWeight = ref(AIM_DEFAULTS.loopWeight)
 const aimTags = ref<string[]>([...AIM_DEFAULTS.tags])
-const selectedStatus = ref<AimStatusState>(AIM_DEFAULTS.status.state)
-const statusComment = ref(AIM_DEFAULTS.status.comment)
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
 const supportingConnectionsList = ref<{ id: string, text: string, weight: number }[]>([])
 const searchSelection = ref<{ type: 'aim'; data: SearchAimResult } | { type: 'option'; data: AimSearchAdditionalOption } | null>(null)
 const aimSearchPicker = ref<InstanceType<typeof AimSearchPicker>>()
 
-const availableStatuses = computed(() => dataStore.getStatuses)
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
-const intrinsicValueInput = ref<HTMLInputElement>()
-const costInput = ref<HTMLInputElement>()
 const loopWeightInput = ref<HTMLInputElement>()
-const statusSelect = ref<HTMLSelectElement>()
-const statusCommentInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
-
-const currentAimId = computed(() => {
-  if (modalStore.aimModalMode !== 'edit') return null
-  return uiStore.getCurrentAim()?.id ?? null
-})
 
 const openParentSearch = () => {
   modalStore.openAimSearch('pick', (payload) => {
@@ -120,44 +107,14 @@ const createAim = async () => {
   }
 }
 
-const updateAim = async () => {
-  const aim = uiStore.getCurrentAim()
-
-  if(aim) {
-    await dataStore.updateAim(projectStore.projectPath, aim.id, {
-      text: aimText.value.trim(),
-      description: aimDescription.value.trim(),
-      tags: aimTags.value,
-      status: {
-        state: selectedStatus.value,
-        comment: statusComment.value,
-        date: Date.now()
-      },
-      intrinsicValue: aimIntrinsicValue.value,
-      cost: aimCost.value,
-      loopWeight: aimLoopWeight.value,
-      supportedAims: supportedAimsList.value.map(a => a.id)
-    })
-
-    modalStore.closeAimModal()
-  } else {
-    console.error('Failed to update aim: no current aim')
-  }
-}
-
 const handleSubmit = () => {
-  if (modalStore.aimModalMode === 'edit') {
-    updateAim()
-  } else {
-    createAim()
-  }
+  createAim()
 }
 
 const handleInputKeydown = (event: KeyboardEvent) => {
   if (
     event.key === 'Tab' &&
     !event.shiftKey &&
-    modalStore.aimModalMode === 'create' &&
     hasSearchText.value
   ) {
     event.preventDefault()
@@ -199,11 +156,7 @@ const focusAimTextInput = () => {
 }
 
 const handleTagPrev = () => {
-  if (modalStore.aimModalMode === 'edit') {
-    statusCommentInput.value?.focus()
-  } else {
-    loopWeightInput.value?.focus()
-  }
+  loopWeightInput.value?.focus()
 }
 
 const handleTagNext = () => {
@@ -213,28 +166,12 @@ const handleTagNext = () => {
 const handleLoopWeightNext = (event: KeyboardEvent) => {
   if (event.key === 'Tab' && !event.shiftKey) {
     event.preventDefault()
-    if (modalStore.aimModalMode === 'edit') {
-      statusSelect.value?.focus()
-    } else {
-      // Tags? TagInput doesn't have a focus method easily accessible here 
-      // but I can try to find the input inside it.
-      // Better: let's just use the @next-field logic if I can.
-      // For now, I'll just let default tab work if I don't prevent it?
-      // But I want consistent control.
-      document.querySelector<HTMLElement>('.tag-input-container input')?.focus()
-    }
-  }
-}
-
-const handleStatusCommentNext = (event: KeyboardEvent) => {
-  if (event.key === 'Tab' && !event.shiftKey) {
-    event.preventDefault()
-    addParentBtn.value?.focus()
+    document.querySelector<HTMLElement>('.tag-input-container input')?.focus()
   }
 }
 
 const handleModalKeydown = (event: KeyboardEvent) => {
-  if (modalStore.aimModalMode !== 'edit' || event.key !== 'Enter') return
+  if (event.key !== 'Enter') return
 
   const target = event.target as HTMLElement | null
   if (!target) return
@@ -259,74 +196,35 @@ const handleModalKeydown = (event: KeyboardEvent) => {
 }
 
 onMounted(async () => {
-  let aim
   supportedAimsList.value = []
 
-  if (modalStore.aimModalMode === 'edit') {
-    aim = uiStore.getCurrentAim()
-  } else {
-    // Create mode: identify potential parent
-    const path = uiStore.getSelectionPath()
-    if (path.aims.length > 0) {
-        let parentAim: Aim | undefined
-        const currentAim = path.aims[path.aims.length - 1]
-        
-        if (currentAim && currentAim.expanded && modalStore.aimModalInsertPosition === 'after') {
-            parentAim = currentAim
-        } else if (path.aims.length > 1) {
-            parentAim = path.aims[path.aims.length - 2]
-        }
-        
-        if (parentAim) {
-            supportedAimsList.value.push({
-                id: parentAim.id,
-                text: parentAim.text,
-                weight: 1
-            })
-        }
+  const path = uiStore.getSelectionPath()
+  if (path.aims.length > 0) {
+    let parentAim: Aim | undefined
+    const currentAim = path.aims[path.aims.length - 1]
+    
+    if (currentAim && currentAim.expanded && modalStore.aimModalInsertPosition === 'after') {
+      parentAim = currentAim
+    } else if (path.aims.length > 1) {
+      parentAim = path.aims[path.aims.length - 2]
+    }
+    
+    if (parentAim) {
+      supportedAimsList.value.push({
+        id: parentAim.id,
+        text: parentAim.text,
+        weight: 1
+      })
     }
   }
 
-  console.log('Loaded aim for editing:', aim) 
-
-  if (aim) {
-    aimText.value = aim.text
-    aimDescription.value = aim.description || ''
-    aimTags.value = [...(aim.tags || [])]
-    aimIntrinsicValue.value = aim.intrinsicValue ?? 0
-    aimCost.value = aim.cost ?? 0
-    aimLoopWeight.value = aim.loopWeight ?? 0
-    selectedStatus.value = aim.status.state
-    statusComment.value = aim.status.comment
-
-    // Load supported aims (Parents) to prevent data loss
-    if (aim.supportedAims && aim.supportedAims.length > 0) {
-      try {
-        const parents = await trpc.aim.list.query({
-          projectPath: projectStore.projectPath,
-          ids: aim.supportedAims
-        })
-        supportedAimsList.value = parents.map(p => ({
-          id: p.id,
-          text: p.text,
-          weight: 1 // Placeholder weight as we can't easily fetch inbound weight
-        }))
-      } catch (e) {
-        console.error("Failed to load supported aims", e)
-      }
-    }
-  } else {
-    // Reset for create mode using defaults
-    aimText.value = AIM_DEFAULTS.text
-    aimDescription.value = AIM_DEFAULTS.description
-    aimTags.value = [...AIM_DEFAULTS.tags]
-    aimIntrinsicValue.value = AIM_DEFAULTS.intrinsicValue
-    aimCost.value = AIM_DEFAULTS.cost
-    aimLoopWeight.value = AIM_DEFAULTS.loopWeight
-    selectedStatus.value = AIM_DEFAULTS.status.state
-    statusComment.value = AIM_DEFAULTS.status.comment
-    searchSelection.value = null
-  }
+  aimText.value = AIM_DEFAULTS.text
+  aimDescription.value = AIM_DEFAULTS.description
+  aimTags.value = [...AIM_DEFAULTS.tags]
+  aimIntrinsicValue.value = AIM_DEFAULTS.intrinsicValue
+  aimCost.value = AIM_DEFAULTS.cost
+  aimLoopWeight.value = AIM_DEFAULTS.loopWeight
+  searchSelection.value = null
   await nextTick()
   aimTextInput.value?.focus()
 })
@@ -336,8 +234,7 @@ onMounted(async () => {
 <template>
   <FormModalShell
     :show="true"
-    :title="modalStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim'"
-    :entity-id="currentAimId"
+    title="Add Aim"
     @request-close="modalStore.closeAimModal()"
   >
     <div @keydown.capture="handleModalKeydown">
@@ -355,7 +252,7 @@ onMounted(async () => {
 
         <!-- Search Results (create mode only) -->
         <div
-          v-if="modalStore.aimModalMode === 'create' && hasSearchText"
+          v-if="hasSearchText"
           class="search-results"
           @keydown.shift.tab.exact.prevent="focusAimTextInput"
         >
@@ -391,33 +288,6 @@ onMounted(async () => {
           ></textarea>
         </div>
 
-        <!-- Status fields (edit mode only) -->
-        <div v-if="modalStore.aimModalMode === 'edit'">
-          <div class="form-group">
-            <label>Status</label>
-                      <select
-                        ref="statusSelect"
-                        v-model="selectedStatus"
-                        class="status-select"
-                        @keydown="handleInputKeydown"
-                      >
-                        <option v-for="status in availableStatuses" :key="status.key" :value="status.key">
-                          {{ status.key }}
-                        </option>
-                      </select>
-                    </div>
-                    <div class="form-group">            <label>Status Comment (optional)</label>
-            <input
-              ref="statusCommentInput"
-              v-model="statusComment"
-              type="text"
-              placeholder="Add a comment about the status"
-              @keydown="handleInputKeydown"
-              @keydown.tab.exact="handleStatusCommentNext"
-            />
-          </div>
-        </div>
-
         <div class="form-group">
             <div class="label-row">
                 <label>Supports (Parents)</label>
@@ -433,7 +303,7 @@ onMounted(async () => {
             </div>
         </div>
 
-        <div class="form-group" v-if="modalStore.aimModalMode === 'create'">
+        <div class="form-group">
             <div class="label-row">
                 <label>Supporting (Children)</label>
                 <button @click="openChildSearch" class="btn-small" title="Add Child">+</button>
@@ -505,7 +375,7 @@ onMounted(async () => {
           :disabled="!aimText.trim() && !selectedSearchResult"
           @keydown.tab.exact.prevent="aimTextInput?.focus()"
         >
-          {{ modalStore.aimModalMode === 'edit' ? 'Update' : (selectedSearchResult ? 'Link Existing' : 'Create New') }}
+          {{ selectedSearchResult ? 'Link Existing' : 'Create New' }}
         </button>
     </template>
   </FormModalShell>

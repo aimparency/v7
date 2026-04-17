@@ -4,7 +4,6 @@ import { createTestingPinia } from '@pinia/testing'
 import AimCreationModal from '../AimCreationModal.vue'
 import { useUIStore } from '../../stores/ui'
 import { useUIModalStore } from '../../stores/ui/modal-store'
-import { useDataStore } from '../../stores/data'
 import { trpc } from '../../trpc'
 
 // Mock TRPC
@@ -23,45 +22,12 @@ describe('AimCreationModal', () => {
   let uiStore: any
   let modalStore: any
 
-  const mountEditModal = () => {
-    const pinia = createTestingPinia({
-      createSpy: vi.fn,
-      initialState: {
-        'ui-modal': { aimModalMode: 'edit' },
-        'ui-project': { projectPath: '/test/project' },
-        data: { meta: { statuses: [{ key: 'open', color: '#fff' }, { key: 'done', color: '#0f0' }] } }
-      }
-    })
-
-    const editUiStore = useUIStore(pinia)
-    const editModalStore = useUIModalStore(pinia)
-    ;(editUiStore.getCurrentAim as any).mockReturnValue({
-      id: 'aim-1',
-      text: 'Old Title',
-      description: '',
-      tags: [],
-      status: { state: 'open', comment: '' },
-      intrinsicValue: 0,
-      cost: 1,
-      loopWeight: 1,
-      supportedAims: []
-    })
-
-    const editWrapper = mount(AimCreationModal, {
-      global: { plugins: [pinia] }
-    })
-
-    const editDataStore: any = useDataStore(pinia)
-    return { editWrapper, editDataStore, editModalStore }
-  }
-
   beforeEach(() => {
     vi.useFakeTimers()
     const pinia = createTestingPinia({
       createSpy: vi.fn,
       initialState: {
         'ui-modal': {
-          aimModalMode: 'create',
         },
         'ui-project': {
           projectPath: '/test/project'
@@ -92,7 +58,7 @@ describe('AimCreationModal', () => {
   })
 
   it('renders correctly', () => {
-    expect(wrapper.find('.modal-header h3').text()).toBe('Add Aim')
+    expect(wrapper.text()).toContain('Add Aim')
   })
 
   it('handles text input and creation', async () => {
@@ -345,47 +311,5 @@ describe('AimCreationModal', () => {
     await input.setValue('jk')
 
     expect((input.element as HTMLInputElement).value).toBe('jk')
-  })
-
-  it('saves on Enter for edit mode input fields', async () => {
-    const { editWrapper, editDataStore, editModalStore } = mountEditModal()
-
-    const titleInput = editWrapper.find('input[placeholder="Enter aim text"]')
-    await titleInput.setValue('Updated Title')
-    await titleInput.trigger('keydown', { key: 'Enter' })
-    await editWrapper.vm.$nextTick()
-
-    expect(editDataStore.updateAim).toHaveBeenCalled()
-    expect(editModalStore.closeAimModal).toHaveBeenCalled()
-  })
-
-  it('saves on Enter for edit mode status select', async () => {
-    const { editWrapper, editDataStore, editModalStore } = mountEditModal()
-
-    const statusSelect = editWrapper.find('select.status-select')
-    await statusSelect.setValue('done')
-    await statusSelect.trigger('keydown', { key: 'Enter' })
-    await editWrapper.vm.$nextTick()
-
-    expect(editDataStore.updateAim).toHaveBeenCalled()
-    expect(editModalStore.closeAimModal).toHaveBeenCalled()
-  })
-
-  it('does not save on plain Enter in description textarea but saves on Ctrl+Enter', async () => {
-    const { editWrapper, editDataStore, editModalStore } = mountEditModal()
-
-    const description = editWrapper.find('textarea[placeholder="Enter aim description"]')
-    await description.setValue('Line one')
-    await description.trigger('keydown', { key: 'Enter' })
-    await editWrapper.vm.$nextTick()
-
-    expect(editDataStore.updateAim).not.toHaveBeenCalled()
-    expect(editModalStore.closeAimModal).not.toHaveBeenCalled()
-
-    await description.trigger('keydown', { key: 'Enter', ctrlKey: true })
-    await editWrapper.vm.$nextTick()
-
-    expect(editDataStore.updateAim).toHaveBeenCalled()
-    expect(editModalStore.closeAimModal).toHaveBeenCalled()
   })
 })
