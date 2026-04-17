@@ -5,6 +5,7 @@ import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
+import FormModalShell from './FormModalShell.vue'
 import type { Aim, AimStatusState, SearchAimResult } from 'shared'
 import TagInput from './TagInput.vue'
 import { AIM_DEFAULTS } from '../constants/aimDefaults'
@@ -40,8 +41,6 @@ const statusSelect = ref<HTMLSelectElement>()
 const statusCommentInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
-const aimIdCopied = ref(false)
-let aimIdCopiedTimeout: ReturnType<typeof setTimeout> | null = null
 
 const currentAimId = computed(() => {
   if (modalStore.aimModalMode !== 'edit') return null
@@ -259,25 +258,6 @@ const handleModalKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const copyAimId = async () => {
-  const aimId = currentAimId.value
-  if (!aimId) return
-
-  try {
-    await navigator.clipboard.writeText(aimId)
-    aimIdCopied.value = true
-    if (aimIdCopiedTimeout) {
-      clearTimeout(aimIdCopiedTimeout)
-    }
-    aimIdCopiedTimeout = setTimeout(() => {
-      aimIdCopied.value = false
-      aimIdCopiedTimeout = null
-    }, 1200)
-  } catch (error) {
-    console.error('Failed to copy aim id:', error)
-  }
-}
-
 onMounted(async () => {
   let aim
   supportedAimsList.value = []
@@ -354,24 +334,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="modal-overlay">
-    <div class="modal" @keydown.capture="handleModalKeydown">
-      <div class="modal-header">
-        <h3>{{ modalStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim' }}</h3>
-        <button
-          v-if="currentAimId"
-          class="aim-id-chip"
-          type="button"
-          @click="copyAimId"
-          :title="aimIdCopied ? 'Copied' : 'Click to copy aim id'"
-        >
-          <span class="aim-id-label">ID</span>
-          <code>{{ currentAimId }}</code>
-          <span class="aim-id-status">{{ aimIdCopied ? 'Copied' : 'Copy' }}</span>
-        </button>
-      </div>
-
-      <div class="modal-body">
+  <FormModalShell
+    :show="true"
+    :title="modalStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim'"
+    :entity-id="currentAimId"
+    @request-close="modalStore.closeAimModal()"
+  >
+    <div @keydown.capture="handleModalKeydown">
         <div class="form-group">
           <label>Aim Text</label>
           <input
@@ -523,11 +492,9 @@ onMounted(async () => {
             @prev-field="handleTagPrev"
           />
         </div>
-
-
-      </div>
+    </div>
       
-      <div class="modal-footer">
+    <template #footer>
         <button @click="modalStore.closeAimModal" class="btn-secondary">
           Cancel
         </button>
@@ -540,170 +507,92 @@ onMounted(async () => {
         >
           {{ modalStore.aimModalMode === 'edit' ? 'Update' : (selectedSearchResult ? 'Link Existing' : 'Create New') }}
         </button>
-      </div>
-    </div>
-  </div>
+    </template>
+  </FormModalShell>
 </template>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
+.form-group {
+  margin-bottom: 0.75rem;
 }
 
-.modal {
-  background: #2d2d2d;
+.form-group label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-weight: bold;
+  color: #ccc;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  background: #1a1a1a;
   border: 1px solid #555;
-  border-radius: 0.3125rem;
-  width: 31.25rem;
-  max-width: 90vw;
-  max-height: 90vh;
+  border-radius: 0.1875rem;
+  color: #e0e0e0;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: #666;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.form-group select {
+  cursor: pointer;
+}
+
+.form-row {
   display: flex;
-  flex-direction: column;
+  gap: 0.75rem;
+}
 
-  .modal-header {
-    padding: 1rem;
-    border-bottom: 1px solid #555;
-    flex-shrink: 0;
-    
-    h3 {
-      margin: 0;
-    }
+.form-row .form-group {
+  flex: 1;
+}
 
-    .aim-id-chip {
-      margin-top: 0.375rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0;
-      border: none;
-      background: transparent;
-      color: #7a7a7a;
-      cursor: pointer;
-      font-size: 0.5rem;
+.btn-primary,
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.1875rem;
+  cursor: pointer;
+}
 
-      &:hover,
-      &:focus {
-        color: #9a9a9a;
-        outline: none;
-      }
+.btn-primary {
+  background: #007acc;
+  color: white;
+}
 
-      code {
-        font-size: 0.5rem;
-        color: inherit;
-      }
+.btn-primary:hover:not(:disabled) {
+  background: #005a99;
+}
 
-      .aim-id-label,
-      .aim-id-status {
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
+.btn-primary:disabled {
+  background: #444;
+  color: #666;
+  cursor: not-allowed;
+}
 
-      .aim-id-status {
-        color: #8a8a8a;
-      }
-    }
-  }
-  
-  .modal-body {
-    padding: 1rem;
-    flex: 1;
-    overflow-y: auto;
-    
-    .form-group {
-      margin-bottom: 1rem;
-      
-      label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: bold;
-        color: #ccc;
-      }
-      
-      input, select, textarea {
-        width: 100%;
-        padding: 0.5rem;
-        background: #1a1a1a;
-        border: 1px solid #555;
-        border-radius: 0.1875rem;
-        color: #e0e0e0;
+.btn-secondary {
+  background: #444;
+  color: #e0e0e0;
+}
 
-        &:focus {
-          outline: none;
-          border-color: #007acc;
-        }
-
-        &::placeholder {
-          color: #666;
-        }
-      }
-
-      textarea {
-        resize: vertical;
-      }
-
-      select {
-        cursor: pointer;
-      }
-    }
-
-    .form-row {
-      display: flex;
-      gap: 1rem;
-      
-      .form-group {
-        flex: 1;
-      }
-    }
-  }
-  
-  .modal-footer {
-    padding: 1rem;
-    border-top: 1px solid #555;
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-    flex-shrink: 0;
-    
-    button {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 0.1875rem;
-      cursor: pointer;
-      
-      &.btn-primary {
-        background: #007acc;
-        color: white;
-        
-        &:hover:not(:disabled) {
-          background: #005a99;
-        }
-        
-        &:disabled {
-          background: #444;
-          color: #666;
-          cursor: not-allowed;
-        }
-      }
-      
-      &.btn-secondary {
-        background: #444;
-        color: #e0e0e0;
-        
-        &:hover {
-          background: #555;
-        }
-      }
-    }
-  }
+.btn-secondary:hover {
+  background: #555;
 }
 
 .search-results {

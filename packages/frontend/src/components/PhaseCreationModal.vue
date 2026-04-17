@@ -5,6 +5,7 @@ import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
+import FormModalShell from './FormModalShell.vue'
 import PhaseSearchModal from './PhaseSearchModal.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 
@@ -19,8 +20,6 @@ const showPhaseSearch = ref(false)
 const selectedParentName = ref<string>('Root (No Parent)')
 const parentSelectorBtn = ref<HTMLButtonElement>()
 const parentSelectorDisplay = ref<HTMLDivElement>()
-const phaseIdCopied = ref(false)
-let phaseIdCopiedTimeout: ReturnType<typeof setTimeout> | null = null
 
 const getSelectedLevelEntry = (columnIndex: number) => {
   const entries = dataStore.getSelectableColumnEntries(columnIndex)
@@ -79,20 +78,14 @@ const updatePhase = async () => {
       }
     })
 
-    // Update the local store with the updated phase
     if (updatedPhase) {
       dataStore.phases[updatedPhase.id] = updatedPhase
-      
-      // Reload the new parent's children
       await dataStore.loadPhases(projectStore.projectPath, updatedPhase.parent, { force: true })
-      
-      // If parent changed, reload the old parent's children too to remove the ghost entry
+
       if (oldParentId !== updatedPhase.parent) {
         await dataStore.loadPhases(projectStore.projectPath, oldParentId, { force: true })
       }
 
-      // Rebuild visible phase columns from root selection to avoid stale column caches.
-      // This ensures moved phases appear immediately in the destination sibling column.
       const rootEntries = dataStore.getSelectableColumnEntries(0)
       const rootPhases = rootEntries.filter((entry) => entry.type === 'phase').map((entry) => entry.phase)
       if (rootPhases.length > 0) {
@@ -145,19 +138,18 @@ watch(() => modalStore.showPhaseModal, async (newVal) => {
       await nextTick()
       phaseNameInput.value?.focus()
     } else if (modalStore.phaseModalMode === 'edit') {
-      // Resolve parent name
       if (modalStore.phaseModalEditingParentId) {
-          try {
-              const p = await trpc.phase.get.query({ 
-                  projectPath: projectStore.projectPath,
-                  phaseId: modalStore.phaseModalEditingParentId
-              })
-              selectedParentName.value = p.name
-          } catch {
-              selectedParentName.value = 'Unknown Parent'
-          }
+        try {
+          const p = await trpc.phase.get.query({
+            projectPath: projectStore.projectPath,
+            phaseId: modalStore.phaseModalEditingParentId
+          })
+          selectedParentName.value = p.name
+        } catch {
+          selectedParentName.value = 'Unknown Parent'
+        }
       } else {
-          selectedParentName.value = 'Root (No Parent)'
+        selectedParentName.value = 'Root (No Parent)'
       }
       await nextTick()
       phaseNameInput.value?.focus()
@@ -166,374 +158,248 @@ watch(() => modalStore.showPhaseModal, async (newVal) => {
 })
 
 const onParentSelected = (payload: PhaseSearchSelection) => {
-    if (payload.type !== 'phase') {
-        return
-    }
+  if (payload.type !== 'phase') {
+    return
+  }
 
-    const phase = payload.data
-    // Check for self-reference
-    if (modalStore.phaseModalMode === 'edit' && phase.id === modalStore.phaseModalEditingPhaseId) {
-        alert("Cannot set phase as its own parent.")
-        return
-    }
-    
-    // Cycle check (simple depth check or rely on backend? Let's rely on backend check or user common sense for now to be fast)
-    // TODO: Implement cycle check
-    
-    modalStore.phaseModalEditingParentId = phase.id
-    selectedParentName.value = phase.name
+  const phase = payload.data
+  if (modalStore.phaseModalMode === 'edit' && phase.id === modalStore.phaseModalEditingPhaseId) {
+    alert('Cannot set phase as its own parent.')
+    return
+  }
+
+  modalStore.phaseModalEditingParentId = phase.id
+  selectedParentName.value = phase.name
 }
 
 const clearParent = () => {
-    modalStore.phaseModalEditingParentId = null
-    selectedParentName.value = 'Root (No Parent)'
-}
-
-const copyPhaseId = async () => {
-  const phaseId = modalStore.phaseModalEditingPhaseId
-  if (!phaseId) return
-
-  try {
-    await navigator.clipboard.writeText(phaseId)
-    phaseIdCopied.value = true
-    if (phaseIdCopiedTimeout) {
-      clearTimeout(phaseIdCopiedTimeout)
-    }
-    phaseIdCopiedTimeout = setTimeout(() => {
-      phaseIdCopied.value = false
-      phaseIdCopiedTimeout = null
-    }, 1200)
-  } catch (error) {
-    console.error('Failed to copy phase id:', error)
-  }
+  modalStore.phaseModalEditingParentId = null
+  selectedParentName.value = 'Root (No Parent)'
 }
 
 const handleSearchClose = () => {
-    showPhaseSearch.value = false
-    nextTick(() => {
-        // Focus back on the appropriate element
-        if (modalStore.phaseModalEditingParentId) {
-            parentSelectorDisplay.value?.focus()
-        } else {
-            parentSelectorBtn.value?.focus()
-        }
-    })
+  showPhaseSearch.value = false
+  nextTick(() => {
+    if (modalStore.phaseModalEditingParentId) {
+      parentSelectorDisplay.value?.focus()
+    } else {
+      parentSelectorBtn.value?.focus()
+    }
+  })
 }
 </script>
 
 <template>
-  <div v-if="modalStore.showPhaseModal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>{{ modalStore.phaseModalMode === 'edit' ? 'Edit Phase' : 'Create New Phase' }}</h3>
-        <button
-          v-if="modalStore.phaseModalMode === 'edit' && modalStore.phaseModalEditingPhaseId"
-          class="phase-id-chip"
-          type="button"
-          @click="copyPhaseId"
-          :title="phaseIdCopied ? 'Copied' : 'Click to copy phase id'"
-        >
-          <span class="phase-id-label">ID</span>
-          <code>{{ modalStore.phaseModalEditingPhaseId }}</code>
-          <span class="phase-id-status">{{ phaseIdCopied ? 'Copied' : 'Copy' }}</span>
-        </button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Phase Name</label>
-          <input 
-            ref="phaseNameInput"
-            v-model="modalStore.newPhaseName"
-            type="text" 
-            placeholder="Enter phase name"
-            @keydown.enter="handleKeydown"
-            @keydown.esc="handleKeydown"
-            @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
-          />
-        </div>
+  <FormModalShell
+    :show="modalStore.showPhaseModal"
+    :title="modalStore.phaseModalMode === 'edit' ? 'Edit Phase' : 'Create New Phase'"
+    :entity-id="modalStore.phaseModalMode === 'edit' ? modalStore.phaseModalEditingPhaseId : null"
+    @request-close="modalStore.closePhaseModal()"
+  >
+    <div class="form-group">
+      <label>Phase Name</label>
+      <input
+        ref="phaseNameInput"
+        v-model="modalStore.newPhaseName"
+        type="text"
+        placeholder="Enter phase name"
+        @keydown.enter="handleKeydown"
+        @keydown.esc="handleKeydown"
+        @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
+      />
+    </div>
 
-        <div v-if="modalStore.phaseModalMode === 'edit'" class="form-group">
-          <label>Parent Phase</label>
-          
-          <button 
-            v-if="!modalStore.phaseModalEditingParentId"
-            ref="parentSelectorBtn"
-            class="btn-select-parent"
-            @click="showPhaseSearch = true"
-            @keydown.space.prevent="showPhaseSearch = true"
-            @keydown.esc="handleKeydown"
-          >
-            + Add Parent Phase
-          </button>
-          
-          <div 
-            v-else
-            ref="parentSelectorDisplay"
-            class="parent-selector" 
-            @click="showPhaseSearch = true" 
-            tabindex="0" 
-            @keydown.enter="showPhaseSearch = true"
-            @keydown.space.prevent="showPhaseSearch = true"
-            @keydown.esc="handleKeydown"
-          >
-              <div class="selected-parent">{{ selectedParentName }}</div>
-              <div class="parent-actions">
-                <button @click.stop="clearParent" class="btn-icon btn-danger" title="Clear parent">✕</button>
-              </div>
-          </div>
+    <div v-if="modalStore.phaseModalMode === 'edit'" class="form-group">
+      <label>Parent Phase</label>
+
+      <button
+        v-if="!modalStore.phaseModalEditingParentId"
+        ref="parentSelectorBtn"
+        class="btn-select-parent"
+        @click="showPhaseSearch = true"
+        @keydown.space.prevent="showPhaseSearch = true"
+        @keydown.esc="handleKeydown"
+      >
+        + Add Parent Phase
+      </button>
+
+      <div
+        v-else
+        ref="parentSelectorDisplay"
+        class="parent-selector"
+        @click="showPhaseSearch = true"
+        tabindex="0"
+        @keydown.enter="showPhaseSearch = true"
+        @keydown.space.prevent="showPhaseSearch = true"
+        @keydown.esc="handleKeydown"
+      >
+        <div class="selected-parent">{{ selectedParentName }}</div>
+        <div class="parent-actions">
+          <button @click.stop="clearParent" class="btn-icon btn-danger" title="Clear parent">✕</button>
         </div>
-        
-        <div v-if="modalStore.phaseModalMode === 'create'" class="phase-insert-hint">
-          {{
-            modalStore.phaseModalInsertPosition === 'after'
-              ? 'New phase will be inserted after the selected item on this level.'
-              : 'New phase will be inserted before the selected item on this level.'
-          }}
-        </div>
-      </div>
-      
-      <div class="modal-footer">
-        <button @click="modalStore.closePhaseModal" class="btn-secondary">
-          Cancel
-        </button>
-        <button
-          ref="submitBtn"
-          @click="handleSubmit"
-          class="btn-primary"
-          :disabled="!modalStore.newPhaseName.trim()"
-          @keydown.tab.exact.prevent="phaseNameInput?.focus()"
-        >
-          {{ modalStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
-        </button>
       </div>
     </div>
-    
-    <PhaseSearchModal 
-        v-if="showPhaseSearch" 
-        :exclude-phase-id="modalStore.phaseModalEditingPhaseId"
-        @select="onParentSelected" 
-        @close="handleSearchClose" 
-    />
-  </div>
+
+    <div v-if="modalStore.phaseModalMode === 'create'" class="phase-insert-hint">
+      {{
+        modalStore.phaseModalInsertPosition === 'after'
+          ? 'New phase will be inserted after the selected item on this level.'
+          : 'New phase will be inserted before the selected item on this level.'
+      }}
+    </div>
+
+    <template #footer>
+      <button @click="modalStore.closePhaseModal" class="btn-secondary">
+        Cancel
+      </button>
+      <button
+        ref="submitBtn"
+        @click="handleSubmit"
+        class="btn-primary"
+        :disabled="!modalStore.newPhaseName.trim()"
+        @keydown.tab.exact.prevent="phaseNameInput?.focus()"
+      >
+        {{ modalStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
+      </button>
+    </template>
+  </FormModalShell>
+
+  <PhaseSearchModal
+    v-if="showPhaseSearch"
+    :exclude-phase-id="modalStore.phaseModalEditingPhaseId"
+    @select="onParentSelected"
+    @close="handleSearchClose"
+  />
 </template>
 
 <style scoped>
-.invalid-range {
-  border-color: #ff4444 !important;
-  background-color: rgba(255, 0, 0, 0.1) !important;
+.form-group {
+  margin-bottom: 0.75rem;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
+.form-group label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-weight: bold;
+  color: #ccc;
 }
 
-.modal {
-  background: #2d2d2d;
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.5rem;
+  background: #1a1a1a;
   border: 1px solid #555;
-  border-radius: 0.3125rem;
-  width: 25rem;
-  max-width: 90vw;
-  max-height: 90vh;
+  border-radius: 0.1875rem;
+  color: #e0e0e0;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.form-group select {
+  cursor: pointer;
+}
+
+.btn-select-parent {
+  width: 100%;
+  padding: 0.5rem;
+  background: #333;
+  border: 1px dashed #555;
+  color: #aaa;
+  border-radius: 0.1875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-select-parent:hover,
+.btn-select-parent:focus {
+  background: #444;
+  border-color: #777;
+  color: #fff;
+  outline: none;
+}
+
+.parent-selector {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  padding: 0.5rem;
+  border-radius: 0.1875rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
 
-  .modal-header {
-    padding: 1rem;
-    border-bottom: 1px solid #555;
-    flex-shrink: 0;
-    
-    h3 {
-      margin: 0;
-    }
+.parent-selector:hover,
+.parent-selector:focus {
+  border-color: #007acc;
+  outline: none;
+}
 
-    .phase-id-chip {
-      margin-top: 0.375rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      padding: 0;
-      border: none;
-      background: transparent;
-      color: #7a7a7a;
-      cursor: pointer;
-      font-size: 0.5rem;
+.selected-parent {
+  color: #e0e0e0;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 10px;
+}
 
-      &:hover,
-      &:focus {
-        color: #9a9a9a;
-        outline: none;
-      }
+.parent-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
-      code {
-        font-size: 0.5rem;
-        color: inherit;
-      }
+.btn-icon {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 3px;
+}
 
-      .phase-id-label,
-      .phase-id-status {
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
+.btn-icon:hover {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+}
 
-      .phase-id-status {
-        color: #8a8a8a;
-      }
-    }
-  }
-  
-  .modal-body {
-    padding: 1rem;
-    flex: 1;
-    overflow-y: auto;
-    
-    .form-group {
-      margin-bottom: 1rem;
-      
-      label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: bold;
-        color: #ccc;
-      }
-      
-      select {
-        cursor: pointer;
-      }
+.btn-primary,
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
 
-      .btn-select-parent {
-          width: 100%;
-          padding: 0.5rem;
-          background: #333;
-          border: 1px dashed #555;
-          color: #aaa;
-          border-radius: 0.1875rem;
-          cursor: pointer;
-          transition: all 0.2s;
+.btn-primary {
+  background: #007acc;
+  color: white;
+}
 
-          &:hover, &:focus {
-              background: #444;
-              border-color: #777;
-              color: #fff;
-              outline: none;
-          }
-      }
+.btn-primary:hover:not(:disabled) {
+  background: #005a99;
+}
 
-      .parent-selector {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          background: #1a1a1a;
-          border: 1px solid #555;
-          padding: 0.5rem;
-          border-radius: 0.1875rem;
-          cursor: pointer;
-          transition: border-color 0.2s;
+.btn-primary:disabled {
+  background: #444;
+  color: #666;
+  cursor: not-allowed;
+}
 
-          &:hover, &:focus {
-             border-color: #007acc;
-             outline: none;
-          }
+.btn-secondary {
+  background: #444;
+  color: #e0e0e0;
+}
 
-          .selected-parent {
-              color: #e0e0e0;
-              flex: 1;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              margin-right: 10px;
-          }
-
-          .parent-actions {
-              display: flex;
-              gap: 8px;
-              align-items: center;
-          }
-
-          .btn-icon {
-              background: transparent;
-              border: none;
-              color: #888;
-              font-size: 1rem;
-              cursor: pointer;
-              padding: 0 4px;
-              border-radius: 3px;
-
-              &:hover {
-                  color: #ff4444;
-                  background: rgba(255, 68, 68, 0.1);
-              }
-          }
-      }
-    }
-    
-    .form-row {
-      display: flex;
-      gap: 1rem;
-
-      .form-group {
-        flex: 1;
-      }
-    }
-
-    .warning {
-      margin-top: 1rem;
-      padding: 0.5rem;
-      background: #4a2400;
-      border: 1px solid #ffa566;
-      border-radius: 0.1875rem;
-      color: #ffa566;
-      font-size: 0.9rem;
-    }
-  }
-  
-  .modal-footer {
-    padding: 1rem;
-    border-top: 1px solid #555;
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-    flex-shrink: 0;
-    
-    button {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-      
-      &.btn-primary {
-        background: #007acc;
-        color: white;
-        
-        &:hover:not(:disabled) {
-          background: #005a99;
-        }
-        
-        &:disabled {
-          background: #444;
-          color: #666;
-          cursor: not-allowed;
-        }
-      }
-      
-      &.btn-secondary {
-        background: #444;
-        color: #e0e0e0;
-        
-        &:hover {
-          background: #555;
-        }
-      }
-    }
-  }
+.btn-secondary:hover {
+  background: #555;
 }
 </style>

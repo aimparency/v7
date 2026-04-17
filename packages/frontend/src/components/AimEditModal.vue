@@ -4,6 +4,7 @@ import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { trpc } from '../trpc'
+import FormModalShell from './FormModalShell.vue'
 import TagInput from './TagInput.vue'
 import NumericTextInput from './NumericTextInput.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
@@ -14,7 +15,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  'close': []
+  close: []
 }>()
 
 const dataStore = useDataStore()
@@ -28,7 +29,6 @@ const aim = computed(() => {
 
 const statuses = computed(() => dataStore.getStatuses)
 
-// Form state
 const aimText = ref('')
 const aimDescription = ref('')
 const aimIntrinsicValue = ref(0)
@@ -44,30 +44,24 @@ const confirmRemoveParentId = ref<string | null>(null)
 const confirmRemovePhaseId = ref<string | null>(null)
 const originalCommittedPhaseIds = ref<string[]>([])
 
-// Template refs
-const modalOverlay = ref<HTMLDivElement>()
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
-const statusSelect = ref<HTMLSelectElement>()
 const statusCommentInput = ref<HTMLInputElement>()
 const reflectionInput = ref<HTMLTextAreaElement>()
-const intrinsicValueInput = ref<HTMLInputElement>()
-const costInput = ref<HTMLInputElement>()
 const loopWeightInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const addPhaseBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 
-// Track which button opened a search modal so we can restore focus
 const pendingFocusRestore = ref<'parent' | 'phase' | null>(null)
 
 const openParentSearch = () => {
   pendingFocusRestore.value = 'parent'
   modalStore.openAimSearch('pick', (payload) => {
     if (payload.type !== 'aim') return
-    const aim = payload.data
-    if (!supportedAimsList.value.some(a => a.id === aim.id)) {
-      supportedAimsList.value.push({ id: aim.id, text: aim.text, weight: 1 })
+    const selectedAim = payload.data
+    if (!supportedAimsList.value.some((entry) => entry.id === selectedAim.id)) {
+      supportedAimsList.value.push({ id: selectedAim.id, text: selectedAim.text, weight: 1 })
     }
   }, undefined, {
     title: 'Select Supported Aim',
@@ -80,7 +74,7 @@ const openPhaseSearch = () => {
   modalStore.openPhaseSearchPrompt((payload: PhaseSearchSelection) => {
     if (payload.type !== 'phase') return
     const phase = payload.data
-    if (!committedPhasesList.value.some(entry => entry.id === phase.id)) {
+    if (!committedPhasesList.value.some((entry) => entry.id === phase.id)) {
       committedPhasesList.value.push({ id: phase.id, name: phase.name })
     }
   }, {
@@ -95,7 +89,7 @@ const removeParent = (parentId: string) => {
     return
   }
 
-  supportedAimsList.value = supportedAimsList.value.filter(parent => parent.id !== parentId)
+  supportedAimsList.value = supportedAimsList.value.filter((parent) => parent.id !== parentId)
   confirmRemoveParentId.value = null
 }
 
@@ -105,7 +99,7 @@ const removeCommittedPhase = (phaseId: string) => {
     return
   }
 
-  committedPhasesList.value = committedPhasesList.value.filter(phase => phase.id !== phaseId)
+  committedPhasesList.value = committedPhasesList.value.filter((phase) => phase.id !== phaseId)
   confirmRemovePhaseId.value = null
 }
 
@@ -123,30 +117,30 @@ watch(() => props.show, async (show) => {
     statusComment.value = aim.value.status.comment
     reflection.value = aim.value.reflection || ''
 
-    // Load supported aims (Parents)
     supportedAimsList.value = []
     committedPhasesList.value = []
     originalCommittedPhaseIds.value = [...(aim.value.committedIn || [])]
+
     if (aim.value.supportedAims && aim.value.supportedAims.length > 0) {
       try {
         const parents = await trpc.aim.list.query({
           projectPath: projectStore.projectPath,
           ids: aim.value.supportedAims
         })
-        supportedAimsList.value = parents.map(p => ({
-          id: p.id,
-          text: p.text,
+        supportedAimsList.value = parents.map((parent) => ({
+          id: parent.id,
+          text: parent.text,
           weight: 1
         }))
-      } catch (e) {
-        console.error("Failed to load supported aims", e)
+      } catch (error) {
+        console.error('Failed to load supported aims', error)
       }
     }
 
     if (aim.value.committedIn && aim.value.committedIn.length > 0) {
       try {
         const phases = await Promise.all(
-          aim.value.committedIn.map(phaseId =>
+          aim.value.committedIn.map((phaseId) =>
             trpc.phase.get.query({
               projectPath: projectStore.projectPath,
               phaseId
@@ -156,22 +150,20 @@ watch(() => props.show, async (show) => {
 
         committedPhasesList.value = phases
           .filter((phase): phase is NonNullable<typeof phase> => phase !== null)
-          .map(phase => ({
+          .map((phase) => ({
             id: phase.id,
             name: phase.name
           }))
-      } catch (e) {
-        console.error('Failed to load committed phases', e)
+      } catch (error) {
+        console.error('Failed to load committed phases', error)
       }
     }
 
-    // Focus title input after modal opens
     await nextTick()
     aimTextInput.value?.focus()
   }
 })
 
-// Watch for search modals closing and restore focus to the button that opened them
 watch(() => modalStore.showAimSearch, async (isOpen, wasOpen) => {
   if (!isOpen && wasOpen && pendingFocusRestore.value === 'parent' && props.show) {
     await nextTick()
@@ -189,7 +181,6 @@ watch(() => modalStore.showPhaseSearchPrompt, async (isOpen, wasOpen) => {
 })
 
 const handleModalKeydown = (event: KeyboardEvent) => {
-  // Stop ALL keyboard events from leaking through the modal
   event.stopPropagation()
 
   if (event.key === 'Escape') {
@@ -269,12 +260,12 @@ const handleSave = async () => {
       date: Date.now()
     },
     reflection: reflection.value || undefined,
-    supportedAims: supportedAimsList.value.map(a => a.id)
+    supportedAims: supportedAimsList.value.map((entry) => entry.id)
   })
 
-  const currentCommittedPhaseIds = committedPhasesList.value.map(phase => phase.id)
-  const phasesToRemove = originalCommittedPhaseIds.value.filter(phaseId => !currentCommittedPhaseIds.includes(phaseId))
-  const phasesToAdd = currentCommittedPhaseIds.filter(phaseId => !originalCommittedPhaseIds.value.includes(phaseId))
+  const currentCommittedPhaseIds = committedPhasesList.value.map((phase) => phase.id)
+  const phasesToRemove = originalCommittedPhaseIds.value.filter((phaseId) => !currentCommittedPhaseIds.includes(phaseId))
+  const phasesToAdd = currentCommittedPhaseIds.filter((phaseId) => !originalCommittedPhaseIds.value.includes(phaseId))
 
   for (const phaseId of phasesToRemove) {
     await dataStore.removeAimFromPhase(projectStore.projectPath, aim.value.id, phaseId)
@@ -290,14 +281,16 @@ const handleSave = async () => {
 const handleCancel = () => {
   emit('close')
 }
-
 </script>
 
 <template>
-  <div v-if="show" ref="modalOverlay" class="modal-overlay" tabindex="-1" @click.self="handleCancel" @keydown="handleModalKeydown">
-    <div class="modal-content">
-      <h2>Edit Aim</h2>
-
+  <FormModalShell
+    :show="show"
+    title="Edit Aim"
+    :entity-id="aimId"
+    @request-close="handleCancel"
+  >
+    <div class="modal-content-root" tabindex="-1" @keydown.capture="handleModalKeydown">
       <div class="form-section">
         <label>Title</label>
         <input
@@ -326,7 +319,6 @@ const handleCancel = () => {
       <div class="form-section">
         <label>Status</label>
         <select
-          ref="statusSelect"
           v-model="selectedStatus"
           class="status-select"
           @keydown="handleInputKeydown"
@@ -423,7 +415,6 @@ const handleCancel = () => {
         <div class="form-group">
           <label>Intrinsic Value</label>
           <input
-            ref="intrinsicValueInput"
             v-model.number="aimIntrinsicValue"
             type="text"
             placeholder="0"
@@ -435,7 +426,6 @@ const handleCancel = () => {
         <div class="form-group">
           <label>Cost</label>
           <input
-            ref="costInput"
             v-model.number="aimCost"
             type="text"
             placeholder="0"
@@ -466,74 +456,44 @@ const handleCancel = () => {
           @prev-field="handleTagPrev"
         />
       </div>
-
-      <div class="modal-actions">
-        <button @click="handleCancel" class="btn-cancel">Cancel</button>
-        <button
-          ref="submitBtn"
-          @click="handleSave"
-          class="btn-save"
-          @keydown.tab.exact.prevent="aimTextInput?.focus()"
-        >
-          Save
-        </button>
-      </div>
     </div>
-  </div>
+
+    <template #footer>
+      <button @click="handleCancel" class="btn-cancel">Cancel</button>
+      <button
+        ref="submitBtn"
+        @click="handleSave"
+        class="btn-save"
+        @keydown.tab.exact.prevent="aimTextInput?.focus()"
+      >
+        Save
+      </button>
+    </template>
+  </FormModalShell>
 </template>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #1f1d1a;
-  border: 1px solid #575047;
-  border-radius: 10px;
-  padding: 1.5rem;
-  min-width: 500px;
-  max-width: 600px;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
-}
-
-h2 {
-  margin: 0 0 1rem 0;
-  color: #f0eadf;
-  font-size: 1.2rem;
-}
-
 .form-section {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 label {
   display: block;
-  margin-bottom: 0.5rem;
-  color: #d4cbbe;
+  margin-bottom: 0.375rem;
+  color: #ccc;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .status-select,
-.text-input {
+.text-input,
+.textarea-input {
   width: 100%;
   padding: 0.5rem;
-  background: #2b2824;
-  border: 1px solid #575047;
-  border-radius: 6px;
-  color: #f0eadf;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  border-radius: 0.1875rem;
+  color: #e0e0e0;
   font-size: 0.9rem;
 }
 
@@ -541,18 +501,10 @@ label {
 .text-input:focus,
 .textarea-input:focus {
   outline: none;
-  border-color: #b09a72;
-  box-shadow: 0 0 0 1px rgba(176, 154, 114, 0.25);
+  border-color: #007acc;
 }
 
 .textarea-input {
-  width: 100%;
-  padding: 0.5rem;
-  background: #2b2824;
-  border: 1px solid #575047;
-  border-radius: 6px;
-  color: #f0eadf;
-  font-size: 0.9rem;
   font-family: inherit;
   resize: vertical;
 }
@@ -560,7 +512,7 @@ label {
 .entry-list {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .entry-row {
@@ -568,20 +520,16 @@ label {
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.65rem;
-  padding: 0;
-  background: transparent;
-  border: 0;
-  border-radius: 0;
 }
 
 .entry-name {
   min-width: 0;
   display: block;
-  padding: 0.5rem 0.7rem;
-  background: #2a2723;
-  border: 1px solid #4f4942;
-  border-radius: 8px;
-  color: #f0eadf;
+  padding: 0.45rem 0.6rem;
+  background: #252525;
+  border: 1px solid #444;
+  border-radius: 0.1875rem;
+  color: #ddd;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -590,9 +538,9 @@ label {
 .entry-meta {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
   margin-bottom: 0;
-  color: #c8bcaa;
+  color: #bbb;
   white-space: nowrap;
 }
 
@@ -600,41 +548,35 @@ label {
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #a99a84;
+  color: #888;
 }
 
 .entry-inline-input {
   width: 4.5rem;
-  padding: 0.35rem 0.45rem;
-  background: #24211d;
-  border: 1px solid #575047;
-  border-radius: 6px;
-  color: #f0eadf;
+  padding: 0.3rem 0.4rem;
+  background: #1a1a1a;
+  border: 1px solid #555;
+  border-radius: 0.1875rem;
+  color: #e0e0e0;
   font-size: 0.85rem;
-}
-
-.entry-inline-input:focus {
-  outline: none;
-  border-color: #b09a72;
-  box-shadow: 0 0 0 1px rgba(176, 154, 114, 0.25);
 }
 
 .entry-badge {
   justify-self: start;
-  padding: 0.28rem 0.55rem;
-  background: #2d2a25;
-  border: 1px solid #5f574d;
+  padding: 0.2rem 0.45rem;
+  background: #252525;
+  border: 1px solid #444;
   border-radius: 999px;
   font-size: 0.78rem;
-  color: #d8cebf;
+  color: #bbb;
 }
 
 .entry-action,
 .entry-placeholder {
   appearance: none;
   display: block;
-  border: 1px solid #5f574d;
-  border-radius: 8px;
+  border: 1px solid #555;
+  border-radius: 0.1875rem;
   font-size: 0.85rem;
   font-family: inherit;
   line-height: 1.2;
@@ -643,84 +585,81 @@ label {
 }
 
 .entry-action {
-  padding: 0.45rem 0.75rem;
-  background: #2f2b26;
-  color: #dfd4c5;
+  padding: 0.4rem 0.65rem;
+  background: #444;
+  color: #e0e0e0;
 }
 
 .entry-action:hover {
-  background: #38332d;
+  background: #555;
 }
 
 .entry-action.confirm {
-  background: #5a4738;
-  border-color: #87684f;
-  color: #fff3e5;
+  background: #6a3a3a;
+  border-color: #8a4a4a;
+  color: #fff;
 }
 
 .entry-action.confirm:hover {
-  background: #675140;
+  background: #7a4545;
 }
 
 .entry-placeholder {
   width: 100%;
-  padding: 0.7rem 0.8rem;
+  padding: 0.55rem 0.7rem;
   background: transparent;
-  color: #c8bcaa;
+  color: #aaa;
   text-align: left;
 }
 
 .entry-placeholder:hover,
 .entry-placeholder:focus {
-  background: #2a2723;
-  border-color: #776b5d;
-  color: #f0eadf;
+  background: #333;
+  border-color: #666;
+  color: #fff;
   outline: none;
 }
 
 .modal-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.375rem;
   justify-content: flex-end;
-  margin-top: 1.5rem;
 }
 
 .btn-cancel,
 .btn-save {
   appearance: none;
   padding: 0.5rem 1rem;
-  border: 1px solid #5f574d;
-  border-radius: 6px;
+  border: none;
+  border-radius: 0.1875rem;
   font-size: 0.9rem;
   font-family: inherit;
   line-height: 1.2;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
 }
 
 .btn-cancel {
-  background: #2d2a26;
-  color: #e7ddd0;
+  background: #444;
+  color: #e0e0e0;
 }
 
 .btn-cancel:hover {
-  background: #393530;
+  background: #555;
 }
 
 .btn-save {
-  background: #867256;
-  border-color: #9a8567;
-  color: #fff8ef;
+  background: #007acc;
+  color: white;
 }
 
 .btn-save:hover {
-  background: #978265;
+  background: #005a99;
 }
 
 .form-row {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .form-group {
@@ -730,6 +669,6 @@ label {
 }
 
 .form-group label {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
 }
 </style>

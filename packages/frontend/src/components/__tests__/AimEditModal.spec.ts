@@ -182,13 +182,13 @@ describe('AimEditModal keyboard save behavior', () => {
     expect(dataStore.updateAim).not.toHaveBeenCalled()
   })
 
-  it('saves on Enter from the modal overlay when no field handles it', async () => {
+  it('saves on Enter from the modal content root when no field handles it', async () => {
     const { wrapper, dataStore } = mountEditModal()
 
     await wrapper.setProps({ show: true })
     await wrapper.vm.$nextTick()
 
-    await wrapper.find('.modal-overlay').trigger('keydown', { key: 'Enter' })
+    await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
     await wrapper.vm.$nextTick()
 
     expect(dataStore.updateAim).toHaveBeenCalled()
