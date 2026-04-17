@@ -7,14 +7,17 @@ export type ProjectHistoryEntry = {
 }
 
 export function normalizeProjectPath(path: string): string {
-  const trimmedPath = path.endsWith('/') ? path.slice(0, -1) : path
-  const suffix = `/${AIMPARENCY_DIR_NAME}`
-  if (trimmedPath.endsWith(suffix)) {
-    return trimmedPath.slice(0, -suffix.length)
+  const trimmedPath = path.replace(/\/+$/, '')
+  const directoryNames = new Set(['.bowman'])
+  if (AIMPARENCY_DIR_NAME) {
+    directoryNames.add(AIMPARENCY_DIR_NAME)
   }
 
-  if (trimmedPath.endsWith(AIMPARENCY_DIR_NAME)) {
-    return trimmedPath.slice(0, -AIMPARENCY_DIR_NAME.length)
+  for (const directoryName of directoryNames) {
+    const suffix = `/${directoryName}`
+    if (trimmedPath.endsWith(suffix)) {
+      return trimmedPath.slice(0, -suffix.length)
+    }
   }
 
   return trimmedPath

@@ -19,6 +19,8 @@ const showPhaseSearch = ref(false)
 const selectedParentName = ref<string>('Root (No Parent)')
 const parentSelectorBtn = ref<HTMLButtonElement>()
 const parentSelectorDisplay = ref<HTMLDivElement>()
+const phaseIdCopied = ref(false)
+let phaseIdCopiedTimeout: ReturnType<typeof setTimeout> | null = null
 
 const getSelectedLevelEntry = (columnIndex: number) => {
   const entries = dataStore.getSelectableColumnEntries(columnIndex)
@@ -187,6 +189,25 @@ const clearParent = () => {
     selectedParentName.value = 'Root (No Parent)'
 }
 
+const copyPhaseId = async () => {
+  const phaseId = modalStore.phaseModalEditingPhaseId
+  if (!phaseId) return
+
+  try {
+    await navigator.clipboard.writeText(phaseId)
+    phaseIdCopied.value = true
+    if (phaseIdCopiedTimeout) {
+      clearTimeout(phaseIdCopiedTimeout)
+    }
+    phaseIdCopiedTimeout = setTimeout(() => {
+      phaseIdCopied.value = false
+      phaseIdCopiedTimeout = null
+    }, 1200)
+  } catch (error) {
+    console.error('Failed to copy phase id:', error)
+  }
+}
+
 const handleSearchClose = () => {
     showPhaseSearch.value = false
     nextTick(() => {
@@ -205,6 +226,17 @@ const handleSearchClose = () => {
     <div class="modal">
       <div class="modal-header">
         <h3>{{ modalStore.phaseModalMode === 'edit' ? 'Edit Phase' : 'Create New Phase' }}</h3>
+        <button
+          v-if="modalStore.phaseModalMode === 'edit' && modalStore.phaseModalEditingPhaseId"
+          class="phase-id-chip"
+          type="button"
+          @click="copyPhaseId"
+          :title="phaseIdCopied ? 'Copied' : 'Click to copy phase id'"
+        >
+          <span class="phase-id-label">ID</span>
+          <code>{{ modalStore.phaseModalEditingPhaseId }}</code>
+          <span class="phase-id-status">{{ phaseIdCopied ? 'Copied' : 'Copy' }}</span>
+        </button>
       </div>
       
       <div class="modal-body">
@@ -322,6 +354,40 @@ const handleSearchClose = () => {
     
     h3 {
       margin: 0;
+    }
+
+    .phase-id-chip {
+      margin-top: 0.375rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: #7a7a7a;
+      cursor: pointer;
+      font-size: 0.5rem;
+
+      &:hover,
+      &:focus {
+        color: #9a9a9a;
+        outline: none;
+      }
+
+      code {
+        font-size: 0.5rem;
+        color: inherit;
+      }
+
+      .phase-id-label,
+      .phase-id-status {
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .phase-id-status {
+        color: #8a8a8a;
+      }
     }
   }
   

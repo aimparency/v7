@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia'
+import type { inferRouterOutputs } from '@trpc/server'
+import type { AppRouter } from 'backend'
 import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
 import { calculateAimValues, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
 import { trpc } from '../trpc'
@@ -6,6 +8,9 @@ import { useUIStore } from './ui'
 import { useMapStore } from './map'
 import { useProjectStore } from './project-store'
 import { loadAllAimsCache, saveAims } from '../utils/db'
+
+type RouterOutputs = inferRouterOutputs<AppRouter>
+type ConsistencyIssue = RouterOutputs['project']['checkConsistency']['issues'][number]
 
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
@@ -182,6 +187,7 @@ export const useDataStore = defineStore('data', {
 
     // Consistency
     consistencyErrors: [] as string[],
+    consistencyIssues: [] as ConsistencyIssue[],
 
     // Project Meta
     meta: null as BaseAim['status'] | any | null, // ProjectMeta
@@ -1245,9 +1251,13 @@ export const useDataStore = defineStore('data', {
     async checkConsistency(projectPath: string) {
         if (!projectPath) return;
         try {
-            // @ts-ignore - checkConsistency is in project router
             const result = await trpc.project.checkConsistency.query({ projectPath });
             this.consistencyErrors = result.errors;
+            this.consistencyIssues = result.issues ?? result.errors.map((message) => ({
+                code: 'legacy',
+                message,
+                suggestedAction: 'Auto-fix'
+            } as ConsistencyIssue));
         } catch (e) {
             console.error('Failed to check consistency', e);
         }
@@ -1256,11 +1266,11 @@ export const useDataStore = defineStore('data', {
     async fixConsistency(projectPath: string) {
         if (!projectPath) return;
         try {
-            // @ts-ignore - fixConsistency is in project router
             const result = await trpc.project.fixConsistency.mutate({ projectPath });
             // Reload everything after fix
             await this.loadProject(projectPath);
             this.consistencyErrors = [];
+            this.consistencyIssues = [];
             return result.fixes;
         } catch (e) {
             console.error('Failed to fix consistency', e);

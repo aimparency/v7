@@ -40,6 +40,13 @@ const statusSelect = ref<HTMLSelectElement>()
 const statusCommentInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
+const aimIdCopied = ref(false)
+let aimIdCopiedTimeout: ReturnType<typeof setTimeout> | null = null
+
+const currentAimId = computed(() => {
+  if (modalStore.aimModalMode !== 'edit') return null
+  return uiStore.getCurrentAim()?.id ?? null
+})
 
 const openParentSearch = () => {
   modalStore.openAimSearch('pick', (payload) => {
@@ -252,6 +259,25 @@ const handleModalKeydown = (event: KeyboardEvent) => {
   }
 }
 
+const copyAimId = async () => {
+  const aimId = currentAimId.value
+  if (!aimId) return
+
+  try {
+    await navigator.clipboard.writeText(aimId)
+    aimIdCopied.value = true
+    if (aimIdCopiedTimeout) {
+      clearTimeout(aimIdCopiedTimeout)
+    }
+    aimIdCopiedTimeout = setTimeout(() => {
+      aimIdCopied.value = false
+      aimIdCopiedTimeout = null
+    }, 1200)
+  } catch (error) {
+    console.error('Failed to copy aim id:', error)
+  }
+}
+
 onMounted(async () => {
   let aim
   supportedAimsList.value = []
@@ -332,6 +358,17 @@ onMounted(async () => {
     <div class="modal" @keydown.capture="handleModalKeydown">
       <div class="modal-header">
         <h3>{{ modalStore.aimModalMode === 'edit' ? 'Edit Aim' : 'Add Aim' }}</h3>
+        <button
+          v-if="currentAimId"
+          class="aim-id-chip"
+          type="button"
+          @click="copyAimId"
+          :title="aimIdCopied ? 'Copied' : 'Click to copy aim id'"
+        >
+          <span class="aim-id-label">ID</span>
+          <code>{{ currentAimId }}</code>
+          <span class="aim-id-status">{{ aimIdCopied ? 'Copied' : 'Copy' }}</span>
+        </button>
       </div>
 
       <div class="modal-body">
@@ -539,6 +576,40 @@ onMounted(async () => {
     
     h3 {
       margin: 0;
+    }
+
+    .aim-id-chip {
+      margin-top: 0.375rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: #7a7a7a;
+      cursor: pointer;
+      font-size: 0.5rem;
+
+      &:hover,
+      &:focus {
+        color: #9a9a9a;
+        outline: none;
+      }
+
+      code {
+        font-size: 0.5rem;
+        color: inherit;
+      }
+
+      .aim-id-label,
+      .aim-id-status {
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      .aim-id-status {
+        color: #8a8a8a;
+      }
     }
   }
   

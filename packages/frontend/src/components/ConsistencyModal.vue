@@ -10,9 +10,20 @@ const projectStore = useProjectStore()
 
 const isFixing = ref(false)
 const fixesApplied = ref<string[]>([])
+const consistencyIssues = computed(() => {
+  if (dataStore.consistencyIssues.length > 0) {
+    return dataStore.consistencyIssues
+  }
+
+  return dataStore.consistencyErrors.map((message) => ({
+    code: 'legacy',
+    message,
+    suggestedAction: message.startsWith('Cycle detected') ? 'Manual Fix Required' : 'Auto-fix'
+  }))
+})
 
 const hasAutoFixableErrors = computed(() => {
-    return dataStore.consistencyErrors.some(e => !e.startsWith('Cycle detected'))
+    return consistencyIssues.value.some((issue) => issue.suggestedAction !== 'Manual Fix Required')
 })
 
 const handleFix = async () => {
@@ -27,17 +38,6 @@ const handleFix = async () => {
   } finally {
     isFixing.value = false
   }
-}
-
-const getActionForError = (error: string) => {
-    if (error.includes('non-existent phase')) return 'Remove invalid phase link'
-    if (error.includes('does not have it in commitments')) return 'Add to phase commitments'
-    if (error.includes('non-existent supporting connection')) return 'Remove invalid child link'
-    if (error.includes('non-existent supportedAims')) return 'Remove invalid parent link'
-    if (error.includes('does not list')) return 'Sync bidirectional link'
-    if (error.includes('Orphaned embedding')) return 'Delete orphaned embedding'
-    if (error.includes('Cycle detected')) return 'Manual Fix Required'
-    return 'Auto-fix'
 }
 
 const close = () => {
@@ -60,28 +60,28 @@ const close = () => {
         </div>
 
         <!-- Errors -->
-        <div v-if="dataStore.consistencyErrors.length > 0" class="section">
+        <div v-if="consistencyIssues.length > 0" class="section">
             <h3 v-if="fixesApplied.length > 0" class="warning-header">⚠️ Remaining Issues (Manual Fix Required)</h3>
             <div class="error-list">
-                <div v-for="(error, i) in dataStore.consistencyErrors" :key="i" class="error-item">
+                <div v-for="(issue, i) in consistencyIssues" :key="`${issue.code}-${i}`" class="error-item">
                     <span class="icon">⚠️</span>
                     <div class="text-col">
-                        <span class="text">{{ error }}</span>
-                        <span class="action-hint" v-if="getActionForError(error) !== 'Manual Fix Required'">
-                            🛠️ Will: {{ getActionForError(error) }}
+                        <span class="text">{{ issue.message }}</span>
+                        <span class="action-hint" v-if="issue.suggestedAction !== 'Manual Fix Required'">
+                            🛠️ Will: {{ issue.suggestedAction }}
                         </span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div v-if="dataStore.consistencyErrors.length === 0 && fixesApplied.length === 0" class="no-errors">
+        <div v-if="consistencyIssues.length === 0 && fixesApplied.length === 0" class="no-errors">
             No inconsistencies found.
         </div>
       </div>
 
       <div class="actions">
-        <button class="secondary-btn" @click="close">{{ dataStore.consistencyErrors.length === 0 ? 'Close' : 'Cancel' }}</button>
+        <button class="secondary-btn" @click="close">{{ consistencyIssues.length === 0 ? 'Close' : 'Cancel' }}</button>
         <button 
             v-if="hasAutoFixableErrors"
             class="primary-btn danger" 

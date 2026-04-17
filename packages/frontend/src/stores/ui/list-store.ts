@@ -758,6 +758,11 @@ export const useListStore = defineStore('ui', {
     },
 
     getCurrentSelectionToken(columnIndex: number): ColumnSelectionToken | undefined {
+      const rememberedPhaseId = this.selectedPhaseIdByColumn[columnIndex]
+      if (rememberedPhaseId) {
+        return { type: 'phase', phaseId: rememberedPhaseId }
+      }
+
       const entry = this.getSelectedPhaseEntry(columnIndex)
       if (!entry) return undefined
       if (entry.type === 'phase') {

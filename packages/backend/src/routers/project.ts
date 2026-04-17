@@ -49,6 +49,43 @@ const DISCOVERY_IGNORED_DIRS = new Set([
 
 const CURRENT_PHASE_DATA_MODEL_VERSION = 2;
 
+type ConsistencyIssueCode =
+  | 'aim_nonexistent_phase'
+  | 'aim_missing_phase_commitment'
+  | 'phase_nonexistent_aim'
+  | 'phase_missing_aim_committed_in'
+  | 'aim_nonexistent_child'
+  | 'aim_missing_child_supported_aim'
+  | 'aim_nonexistent_parent'
+  | 'aim_missing_parent_supporting_connection'
+  | 'orphaned_embedding';
+
+type ConsistencyIssue = {
+  code: ConsistencyIssueCode;
+  message: string;
+  suggestedAction: string;
+};
+
+const CONSISTENCY_ACTIONS: Record<ConsistencyIssueCode, string> = {
+  aim_nonexistent_phase: 'Remove invalid phase link',
+  aim_missing_phase_commitment: 'Add to phase commitments',
+  phase_nonexistent_aim: 'Remove invalid aim commitment',
+  phase_missing_aim_committed_in: 'Add to aim committedIn',
+  aim_nonexistent_child: 'Remove invalid child link',
+  aim_missing_child_supported_aim: 'Sync bidirectional link',
+  aim_nonexistent_parent: 'Remove invalid parent link',
+  aim_missing_parent_supporting_connection: 'Sync bidirectional link',
+  orphaned_embedding: 'Delete orphaned embedding'
+};
+
+function createConsistencyIssue(code: ConsistencyIssueCode, message: string): ConsistencyIssue {
+  return {
+    code,
+    message,
+    suggestedAction: CONSISTENCY_ACTIONS[code]
+  };
+}
+
 async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
   const dir = path.dirname(filePath);
   const tempPath = path.join(
@@ -532,7 +569,7 @@ export const createProjectRouter = (
       .query(async ({ input }: any) => {
         const aims = await listAims(input.projectPath);
         const phases = await listPhases(input.projectPath);
-        const errors: string[] = [];
+        const issues: ConsistencyIssue[] = [];
 
         const aimMap = new Map(aims.map((a: Aim) => [a.id, a]));
         const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
@@ -541,11 +578,17 @@ export const createProjectRouter = (
         for (const aim of aims) {
           for (const phaseId of aim.committedIn) {
             if (!phaseMap.has(phaseId)) {
-              errors.push(`Aim ${aim.id} claims to be committed in non-existent phase ${phaseId}`);
+              issues.push(createConsistencyIssue(
+                'aim_nonexistent_phase',
+                `Aim ${aim.id} claims to be committed in non-existent phase ${phaseId}`
+              ));
             } else {
               const phase = phaseMap.get(phaseId)!;
               if (!phase.commitments.includes(aim.id)) {
-                errors.push(`Aim ${aim.id} says committed in Phase ${phaseId}, but Phase does not have it in commitments`);
+                issues.push(createConsistencyIssue(
+                  'aim_missing_phase_commitment',
+                  `Aim ${aim.id} says committed in Phase ${phaseId}, but Phase does not have it in commitments`
+                ));
               }
             }
           }
@@ -554,11 +597,17 @@ export const createProjectRouter = (
         for (const phase of phases) {
           for (const aimId of phase.commitments) {
             if (!aimMap.has(aimId)) {
-              errors.push(`Phase ${phase.id} commits to non-existent aim ${aimId}`);
+              issues.push(createConsistencyIssue(
+                'phase_nonexistent_aim',
+                `Phase ${phase.id} commits to non-existent aim ${aimId}`
+              ));
             } else {
               const aim = aimMap.get(aimId)!;
               if (!aim.committedIn.includes(phase.id)) {
-                errors.push(`Phase ${phase.id} commits to Aim ${aimId}, but Aim does not say committed in Phase`);
+                issues.push(createConsistencyIssue(
+                  'phase_missing_aim_committed_in',
+                  `Phase ${phase.id} commits to Aim ${aimId}, but Aim does not say committed in Phase`
+                ));
               }
             }
           }
@@ -571,11 +620,17 @@ export const createProjectRouter = (
             for (const conn of aim.supportingConnections) {
                 const childId = conn.aimId;
                 if (!aimMap.has(childId)) {
-                errors.push(`Aim ${aim.id} has non-existent supporting connection (child) ${childId}`);
+                issues.push(createConsistencyIssue(
+                  'aim_nonexistent_child',
+                  `Aim ${aim.id} has non-existent supporting connection (child) ${childId}`
+                ));
                 } else {
                 const child = aimMap.get(childId)!;
                 if (!child.supportedAims.includes(aim.id)) {
-                    errors.push(`Aim ${aim.id} lists ${childId} as supporting, but ${childId} does not list ${aim.id} as supportedAims`);
+                    issues.push(createConsistencyIssue(
+                      'aim_missing_child_supported_aim',
+                      `Aim ${aim.id} lists ${childId} as supporting, but ${childId} does not list ${aim.id} as supportedAims`
+                    ));
                 }
                 }
             }
@@ -584,12 +639,18 @@ export const createProjectRouter = (
           // supportedAims (Parents)
           for (const parentId of aim.supportedAims) {
             if (!aimMap.has(parentId)) {
-              errors.push(`Aim ${aim.id} has non-existent supportedAims (parent) ${parentId}`);
+              issues.push(createConsistencyIssue(
+                'aim_nonexistent_parent',
+                `Aim ${aim.id} has non-existent supportedAims (parent) ${parentId}`
+              ));
             } else {
               const parent = aimMap.get(parentId)!;
               const parentHasConnection = parent.supportingConnections?.some((c: any) => c.aimId === aim.id);
               if (!parentHasConnection) {
-                errors.push(`Aim ${aim.id} lists ${parentId} as supportedAims, but ${parentId} does not list ${aim.id} in supportingConnections`);
+                issues.push(createConsistencyIssue(
+                  'aim_missing_parent_supporting_connection',
+                  `Aim ${aim.id} lists ${parentId} as supportedAims, but ${parentId} does not list ${aim.id} in supportingConnections`
+                ));
               }
             }
           }
@@ -599,11 +660,14 @@ export const createProjectRouter = (
         const vectorStore = await loadVectorStore(input.projectPath);
         for (const aimId of Object.keys(vectorStore)) {
             if (!aimMap.has(aimId)) {
-                errors.push(`Orphaned embedding found for Aim ${aimId}`);
+                issues.push(createConsistencyIssue(
+                  'orphaned_embedding',
+                  `Orphaned embedding found for Aim ${aimId}`
+                ));
             }
         }
 
-        return { valid: errors.length === 0, errors };
+        return { valid: issues.length === 0, errors: issues.map((issue) => issue.message), issues };
       }),
 
     fixConsistency: delayedProcedure

@@ -20,9 +20,10 @@ export interface MockPhase {
   to?: number;
   commitments?: string[];
   parent?: string | null;
+  childPhaseIds?: string[];
 }
 
-export function seedProject(projectPath: string, data: { phases?: MockPhase[], aims?: MockAim[], meta?: { name?: string, color?: string, statuses?: any[] } }) {
+export function seedProject(projectPath: string, data: { phases?: MockPhase[], aims?: MockAim[], meta?: { name?: string, color?: string, statuses?: any[], rootPhaseIds?: string[], dataModelVersion?: number } }) {
   const bowmanPath = join(projectPath, AIMPARENCY_DIR_NAME);
   mkdirSync(join(bowmanPath, 'aims'), { recursive: true });
   mkdirSync(join(bowmanPath, 'phases'), { recursive: true });
@@ -31,7 +32,9 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
   writeFileSync(join(bowmanPath, 'meta.json'), JSON.stringify({
     name: data.meta?.name || 'Test Project',
     color: data.meta?.color || '#ff0000',
-    statuses: data.meta?.statuses || []
+    statuses: data.meta?.statuses || [],
+    rootPhaseIds: data.meta?.rootPhaseIds || [],
+    dataModelVersion: data.meta?.dataModelVersion ?? 2
   }, null, 2));
 
   // Write Phases
@@ -47,6 +50,7 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
       from: p.from || Date.now(),
       to: p.to || Date.now() + 1000000,
       parent: p.parent || null,
+      childPhaseIds: p.childPhaseIds || [],
       commitments: p.commitments || []
     };
     

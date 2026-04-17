@@ -1,4 +1,5 @@
 import process from 'node:process'
+import { existsSync } from 'node:fs'
 import { defineConfig, devices } from '@playwright/test'
 import dotenv from 'dotenv'
 
@@ -9,6 +10,25 @@ import dotenv from 'dotenv'
 dotenv.config();
 
 const PORT = process.env.PORT_FRONTEND || 4000;
+
+function resolveExecutablePath(explicitPath: string | undefined, candidates: string[]): string | undefined {
+  if (explicitPath) {
+    return explicitPath
+  }
+
+  return candidates.find((candidate) => existsSync(candidate))
+}
+
+const chromiumExecutablePath = resolveExecutablePath(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, [
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/google-chrome'
+])
+
+const firefoxExecutablePath = resolveExecutablePath(process.env.PLAYWRIGHT_FIREFOX_EXECUTABLE_PATH, [
+  '/usr/bin/firefox'
+])
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -47,12 +67,22 @@ const baseConfig = {
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+        launchOptions: chromiumExecutablePath
+          ? {
+              executablePath: chromiumExecutablePath
+            }
+          : undefined,
       },
     },
     // {
     //   name: 'firefox',
     //   use: {
     //     ...devices['Desktop Firefox'],
+    //     launchOptions: firefoxExecutablePath
+    //       ? {
+    //           executablePath: firefoxExecutablePath
+    //         }
+    //       : undefined,
     //   },
     // },
     // {
