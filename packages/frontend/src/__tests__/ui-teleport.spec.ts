@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 const { mockTrpc } = vi.hoisted(() => ({
   mockTrpc: {
     aim: {
+      getMany: { query: vi.fn() },
       get: { query: vi.fn() },
       update: { mutate: vi.fn() },
       commitToPhase: { mutate: vi.fn() },

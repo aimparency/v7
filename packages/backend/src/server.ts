@@ -415,6 +415,10 @@ async function readPhase(rawProjectPath: string, phaseId: string): Promise<Phase
   return await readPhaseFile(rawProjectPath, phaseId);
 }
 
+// Enumeration convenience endpoint.
+// Interactive UI loading should prefer project meta + phase.get and follow the
+// tree structure via rootPhaseIds / childPhaseIds instead of calling listPhases
+// on the hot path.
 async function listPhases(rawProjectPath: string, parentPhaseId?: string | null): Promise<Phase[]> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const phasesDir = path.join(projectPath, 'phases');

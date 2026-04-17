@@ -22,6 +22,7 @@ import WatchdogPanel from './components/WatchdogPanel.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 import { getRuntimeConfig } from './utils/runtime-config'
+import { hasQueryFlag, installPerfLoggingControls, perfLog } from './utils/perf-log'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
@@ -119,20 +120,7 @@ const projectPathInput = ref('')
 
 const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
-  uiStore.beginUIStateRestore()
-  await dataStore.loadProject(path)
-  void trpc.project.buildSearchIndex.mutate({
-    projectPath: path
-  }).catch((error) => {
-    console.error('Failed to build search index', error)
-  })
-  const restored = await uiStore.restoreProjectUIState()
-  if (!restored && !Object.keys(uiStore.selectedPhaseByColumn).length) {
-    uiStore.beginUIStateRestore()
-    await uiStore.selectPhase(0, 0)
-    uiStore.ensureSelectionVisible()
-    uiStore.endUIStateRestore()
-  }
+  await runProjectRestore(path)
 }
 
 const refreshDiscoveredProjects = async () => {
@@ -154,20 +142,7 @@ const refreshDiscoveredProjects = async () => {
 
 const openProjectFromHistory = async (path: string) => {
   projectPathInput.value = path
-  uiStore.beginUIStateRestore()
-  await dataStore.loadProject(path)
-  void trpc.project.buildSearchIndex.mutate({
-    projectPath: path
-  }).catch((error) => {
-    console.error('Failed to build search index', error)
-  })
-  const restored = await uiStore.restoreProjectUIState()
-  if (!restored && !Object.keys(uiStore.selectedPhaseByColumn).length) {
-    uiStore.beginUIStateRestore()
-    await uiStore.selectPhase(0, 0)
-    uiStore.ensureSelectionVisible()
-    uiStore.endUIStateRestore()
-  }
+  await runProjectRestore(path)
 }
 
 const openDiscoveredProject = async (path: string) => {
@@ -182,6 +157,18 @@ const removeFromHistory = (path: string) => {
 const closeProject = () => {
   // Just clearing the project path will reset the app state
   projectStore.setProjectPath('')
+}
+
+const runProjectRestore = async (path: string) => {
+  uiStore.beginUIStateRestore()
+  await dataStore.loadProject(path)
+  const restored = await uiStore.restoreProjectUIState()
+  if (!restored && !Object.keys(uiStore.selectedPhaseByColumn).length) {
+    uiStore.beginUIStateRestore()
+    await uiStore.selectPhase(0, 0)
+    uiStore.ensureSelectionVisible()
+    uiStore.endUIStateRestore()
+  }
 }
 
 const flushPersistedUIState = () => {
@@ -224,10 +211,12 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
   }
 
   void uiStore.handleGlobalKeydown(event, dataStore).catch((error: unknown) => {
-    console.error('[PhaseNav] handleGlobalKeydown:error', {
-      key: event.key,
-      error
-    })
+    if (hasQueryFlag('phaseNavDebug')) {
+      console.error('[PhaseNav] handleGlobalKeydown:error', {
+        key: event.key,
+        error
+      })
+    }
   })
 }
 
@@ -303,6 +292,8 @@ watch(() => [
 }, { deep: true })
 
 onMounted(async () => {
+  installPerfLoggingControls()
+  perfLog('app.mounted')
   // Register global keydown listener
   window.addEventListener('keydown', handleGlobalKeydown)
   window.addEventListener('pagehide', flushPersistedUIState)
@@ -310,23 +301,7 @@ onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
   if (projectStore.projectPath) {
-    uiStore.beginUIStateRestore()
-    // Load all project data first
-    await dataStore.loadProject(projectStore.projectPath);
-
-    void trpc.project.buildSearchIndex.mutate({
-      projectPath: projectStore.projectPath
-    }).catch((error) => {
-      console.error('Failed to build search index', error)
-    })
-
-    const restored = await uiStore.restoreProjectUIState()
-
-    if (!restored && !Object.keys(uiStore.selectedPhaseByColumn).length) {
-      uiStore.beginUIStateRestore()
-      await uiStore.selectPhase(0, 0)
-      uiStore.endUIStateRestore()
-    }
+    await runProjectRestore(projectStore.projectPath)
     uiStore.ensureSelectionVisible();
   } else {
     // Set initial focus to the first phase column

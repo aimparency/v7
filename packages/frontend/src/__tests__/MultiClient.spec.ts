@@ -20,6 +20,7 @@ const { mockTrpc } = vi.hoisted(() => {
       },
       aim: {
         list: { query: vi.fn() },
+        getMany: { query: vi.fn() },
         get: { query: vi.fn() },
         createFloatingAim: { mutate: vi.fn() },
         update: { mutate: vi.fn() },
@@ -88,8 +89,8 @@ describe('Multi-Client Synchronization', () => {
     }
 
     // Mock initial load responses
+    mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
     mockTrpc.aim.list.query.mockResolvedValue([initialAim])
-    mockTrpc.phase.list.query.mockResolvedValue([initialPhase])
     mockTrpc.phase.get.query.mockImplementation(({phaseId: id}: any) => {
         if (id === phaseId) return Promise.resolve(initialPhase)
         return Promise.resolve(null)
@@ -154,15 +155,13 @@ describe('Multi-Client Synchronization', () => {
     const updatedPhase = { ...initialPhase, commitments: [aimId] }
     const newAim = { id: aimId, text: 'New Aim', status: { state: 'open' }, committedIn: [phaseId], supportingConnections: [], supportedAims: [] }
 
-    mockTrpc.phase.list.query.mockResolvedValue([initialPhase])
+    mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
     mockTrpc.aim.list.query.mockResolvedValue([]) // No aims initially
     mockTrpc.phase.get.query.mockResolvedValue(updatedPhase)
     mockTrpc.aim.get.query.mockResolvedValue(newAim)
     
-    // We need to ensure loadAims triggers a list query
-    // loadAims calls trpc.aim.list.query with ids
-    mockTrpc.aim.list.query.mockImplementation((args: any) => {
-        if (args.ids && args.ids.includes(aimId)) return Promise.resolve([newAim])
+    mockTrpc.aim.getMany.query.mockImplementation(({ aimIds }: any) => {
+        if (aimIds && aimIds.includes(aimId)) return Promise.resolve([newAim])
         return Promise.resolve([])
     })
 
@@ -172,8 +171,8 @@ describe('Multi-Client Synchronization', () => {
     await subscriptionCallback({ type: 'phase', id: phaseId, projectPath })
 
     // Check: loadAims should have been called for the missing aim
-    expect(mockTrpc.aim.list.query).toHaveBeenCalledWith(expect.objectContaining({
-      ids: [aimId]
+    expect(mockTrpc.aim.getMany.query).toHaveBeenCalledWith(expect.objectContaining({
+      aimIds: [aimId]
     }))
 
     // Check: Now in phase

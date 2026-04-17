@@ -3,6 +3,7 @@ import { useDataStore } from '../data'
 import { useGraphUIStore } from './graph-store'
 import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
+import { hasQueryFlag } from '../../utils/perf-log'
 
 export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const graphStore = useGraphUIStore()
@@ -462,23 +463,25 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
 export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
-  console.log('[PhaseNav] keydown', {
-    key: event.key,
-    activeColumn: uiStore.activeColumn,
-    navigatingAims: uiStore.navigatingAims,
-    ctrl: event.ctrlKey,
-    meta: event.metaKey,
-    alt: event.altKey,
-    shift: event.shiftKey,
-    view: projectStore.currentView,
-    modalOpen:
-      modalStore.showPhaseModal ||
-      modalStore.showAimModal ||
-      modalStore.showAimSearch ||
-      modalStore.showPhaseSearchPrompt ||
-      modalStore.showAimEditModal ||
-      modalStore.showSettingsModal
-  })
+  if (hasQueryFlag('phaseNavDebug')) {
+    console.log('[PhaseNav] keydown', {
+      key: event.key,
+      activeColumn: uiStore.activeColumn,
+      navigatingAims: uiStore.navigatingAims,
+      ctrl: event.ctrlKey,
+      meta: event.metaKey,
+      alt: event.altKey,
+      shift: event.shiftKey,
+      view: projectStore.currentView,
+      modalOpen:
+        modalStore.showPhaseModal ||
+        modalStore.showAimModal ||
+        modalStore.showAimSearch ||
+        modalStore.showPhaseSearchPrompt ||
+        modalStore.showAimEditModal ||
+        modalStore.showSettingsModal
+    })
+  }
 
   if (event.ctrlKey || event.metaKey) return
 

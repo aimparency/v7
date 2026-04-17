@@ -39,6 +39,15 @@ export const createAimRouter = (
         return await readAim(input.projectPath, input.aimId);
       }),
 
+    getMany: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimIds: z.array(z.string().uuid())
+      }))
+      .query(async ({ input }: any) => {
+        return await Promise.all(input.aimIds.map((aimId: string) => readAim(input.projectPath, aimId)));
+      }),
+
     list: delayedProcedure
       .input(z.object({
         projectPath: z.string(),

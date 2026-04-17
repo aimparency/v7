@@ -81,8 +81,16 @@ export const createPhaseRouter = (
           to = from;
         }
 
-        const siblingPhases = await listPhases(input.projectPath, input.phase.parent ?? null);
-        const targetOrder = input.phase.order ?? siblingPhases.length;
+        let targetOrder = input.phase.order;
+        if (targetOrder === undefined) {
+          if (input.phase.parent) {
+            const parent = await readPhase(input.projectPath, input.phase.parent);
+            targetOrder = (parent.childPhaseIds ?? []).length;
+          } else {
+            const meta = await readMeta(input.projectPath);
+            targetOrder = (meta.rootPhaseIds ?? []).length;
+          }
+        }
 
         const phaseId = uuidv4();
         const phase: Phase = {
@@ -204,8 +212,9 @@ export const createPhaseRouter = (
       .mutation(async ({ input }: any) => {
         const phase = await readPhase(input.projectPath, input.phaseId);
         const parentId = phase.parent ?? null;
-        const siblingPhases = await listPhases(input.projectPath, parentId);
-        const siblingIds = siblingPhases.map((sibling) => sibling.id);
+        const siblingIds = parentId
+          ? [...((await readPhase(input.projectPath, parentId)).childPhaseIds ?? [])]
+          : [...((await readMeta(input.projectPath)).rootPhaseIds ?? [])];
         const currentIndex = siblingIds.indexOf(input.phaseId);
 
         if (currentIndex === -1) {

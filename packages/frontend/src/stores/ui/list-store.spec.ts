@@ -3,8 +3,11 @@ import { createPinia, setActivePinia } from 'pinia'
 
 const { mockTrpc } = vi.hoisted(() => ({
   mockTrpc: {
+    project: {
+      getMeta: { query: vi.fn() }
+    },
     phase: {
-      list: { query: vi.fn() }
+      get: { query: vi.fn() }
     }
   }
 }))
@@ -37,6 +40,7 @@ describe('list store phase selection', () => {
       from: 0,
       to: 10,
       parent: null,
+      childPhaseIds: ['child-a', 'child-b'],
       commitments: []
     } as any
     dataStore.phases['root-2'] = {
@@ -48,9 +52,6 @@ describe('list store phase selection', () => {
       childPhaseIds: [],
       commitments: []
     } as any
-    const root1 = dataStore.phases['root-1']
-    if (!root1) throw new Error('root-1 should exist in test setup')
-    root1.childPhaseIds = []
     dataStore.meta = { rootPhaseIds: ['root-1', 'root-2'] }
 
     uiStore.selectedPhaseByColumn[0] = 0
@@ -61,19 +62,17 @@ describe('list store phase selection', () => {
 
     uiStore.lastSelectedSubPhaseIndexByPhase['root-1'] = 0
 
-    mockTrpc.phase.list.query.mockImplementation(({ parentPhaseId }: { parentPhaseId: string | null }) => {
-      if (parentPhaseId === 'root-1') {
-        return Promise.resolve([
-          { id: 'child-a', name: 'Child A', from: 0, to: 5, parent: 'root-1', commitments: [] },
-          { id: 'child-b', name: 'Child B', from: 5, to: 10, parent: 'root-1', commitments: [] }
-        ])
+    mockTrpc.phase.get.query.mockImplementation(({ phaseId }: { phaseId: string }) => {
+      if (phaseId === 'root-1') {
+        return Promise.resolve({ id: 'root-1', name: 'Root 1', from: 0, to: 10, parent: null, childPhaseIds: ['child-a', 'child-b'], commitments: [] })
       }
-
-      if (parentPhaseId === 'child-b') {
-        return Promise.resolve([])
+      if (phaseId === 'child-a') {
+        return Promise.resolve({ id: 'child-a', name: 'Child A', from: 0, to: 5, parent: 'root-1', childPhaseIds: [], commitments: [] })
       }
-
-      return Promise.resolve([])
+      if (phaseId === 'child-b') {
+        return Promise.resolve({ id: 'child-b', name: 'Child B', from: 5, to: 10, parent: 'root-1', childPhaseIds: [], commitments: [] })
+      }
+      throw new Error(`unexpected phase ${phaseId}`)
     })
 
     await uiStore.selectPhase(0, 0)
@@ -148,26 +147,21 @@ describe('list store phase selection', () => {
 
     restoredProjectStore.projectPath = '/tmp/project'
 
-    mockTrpc.phase.list.query.mockImplementation(({ parentPhaseId }: { parentPhaseId: string | null }) => {
-      if (parentPhaseId === null) {
-        return Promise.resolve([
-          { id: 'root-1', name: 'Root 1', from: 0, to: 10, parent: null, childPhaseIds: [], commitments: [] },
-          { id: 'root-2', name: 'Root 2', from: 10, to: 20, parent: null, childPhaseIds: ['child-a', 'child-b'], commitments: [] }
-        ])
+    mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: ['root-1', 'root-2'] })
+    mockTrpc.phase.get.query.mockImplementation(({ phaseId }: { phaseId: string }) => {
+      if (phaseId === 'root-1') {
+        return Promise.resolve({ id: 'root-1', name: 'Root 1', from: 0, to: 10, parent: null, childPhaseIds: [], commitments: [] })
       }
-
-      if (parentPhaseId === 'root-1') {
-        return Promise.resolve([])
+      if (phaseId === 'root-2') {
+        return Promise.resolve({ id: 'root-2', name: 'Root 2', from: 10, to: 20, parent: null, childPhaseIds: ['child-a', 'child-b'], commitments: [] })
       }
-
-      if (parentPhaseId === 'root-2') {
-        return Promise.resolve([
-          { id: 'child-a', name: 'Child A', from: 0, to: 5, parent: 'root-2', childPhaseIds: [], commitments: [] },
-          { id: 'child-b', name: 'Child B', from: 5, to: 10, parent: 'root-2', childPhaseIds: [], commitments: [] }
-        ])
+      if (phaseId === 'child-a') {
+        return Promise.resolve({ id: 'child-a', name: 'Child A', from: 0, to: 5, parent: 'root-2', childPhaseIds: [], commitments: [] })
       }
-
-      return Promise.resolve([])
+      if (phaseId === 'child-b') {
+        return Promise.resolve({ id: 'child-b', name: 'Child B', from: 5, to: 10, parent: 'root-2', childPhaseIds: [], commitments: [] })
+      }
+      throw new Error(`unexpected phase ${phaseId}`)
     })
 
     const restored = await restoredUIStore.restoreProjectUIState()

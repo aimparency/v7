@@ -28,6 +28,7 @@ import { useGraphUIStore } from './graph-store'
 import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
 import { trpc } from '../../trpc'
+import { hasQueryFlag, perfLog } from '../../utils/perf-log'
 import type { PersistedGraphViewState } from './graph-store'
 
 type TeleportSource = {
@@ -41,6 +42,7 @@ export type AimPath = {
 }
 
 function logNav(event: string, details: Record<string, unknown> = {}) {
+  if (!hasQueryFlag('phaseNavDebug')) return
   console.log(`[PhaseNav] ${event}`, details)
 }
 
@@ -243,6 +245,8 @@ export const useListStore = defineStore('ui', {
     },
 
     async restoreProjectUIState() {
+      const restoreStartedAt = performance.now()
+      perfLog('ui.restoreProjectUIState:start', { projectPath: useProjectStore().projectPath })
       const projectStore = useProjectStore()
       const dataStore = useDataStore()
       const graphStore = useGraphUIStore()
@@ -365,6 +369,14 @@ export const useListStore = defineStore('ui', {
         }
 
         graphStore.applyPersistedGraphViewState(parsed.graphViewState)
+        perfLog('ui.restoreProjectUIState:done', {
+          projectPath: projectStore.projectPath,
+          durationMs: Math.round((performance.now() - restoreStartedAt) * 10) / 10,
+          activeColumn: this.activeColumn,
+          windowStart: this.windowStart,
+          windowSize: this.windowSize,
+          maxColumn: this.maxColumn
+        })
         return true
       } finally {
         if (this.restoreGeneration === restoreGeneration && this.isRestoringUIState) {
@@ -711,6 +723,7 @@ export const useListStore = defineStore('ui', {
     },
 
     async loadColumn(columnIndex: number) {
+      const startedAt = performance.now()
       const dataStore = useDataStore()
       const projectStore = useProjectStore()
       logNav('loadColumn:start', {
@@ -739,6 +752,12 @@ export const useListStore = defineStore('ui', {
         await this.ensureColumnNeighborhoodLoaded(columnIndex)
       }
 
+      perfLog('ui.loadColumn:done', {
+        columnIndex,
+        durationMs: Math.round((performance.now() - startedAt) * 10) / 10,
+        entries: dataStore.getSelectableColumnEntries(columnIndex).length,
+        selectedPhaseId: this.selectedPhaseIdByColumn[columnIndex]
+      })
       logNav('loadColumn', {
         columnIndex,
         phaseCount: dataStore.getSelectableColumnEntries(columnIndex).length,
@@ -804,16 +823,18 @@ export const useListStore = defineStore('ui', {
     },
 
     initializeColumnSelection(columnIndex: number, direction: PhaseMoveDirection = 'preserve') {
-      if (this.selectedPhaseByColumn[columnIndex] !== undefined) {
-        return this.getSelectedPhaseEntry(columnIndex)
-      }
-
       const entries = this.getSelectableEntries(columnIndex)
       if (entries.length === 0) {
         return undefined
       }
 
       if (columnIndex === 0) {
+        if (this.selectedPhaseByColumn[0] !== undefined) {
+          const rememberedRootEntry = this.getSelectedPhaseEntry(0)
+          if (rememberedRootEntry) {
+            return rememberedRootEntry
+          }
+        }
         return this.applyPhaseSelection(0, 0)
       }
 
@@ -823,6 +844,14 @@ export const useListStore = defineStore('ui', {
       }
 
       const ownedEntries = this.getOwnedEntries(columnIndex, parentPhaseId)
+      const rememberedEntry = this.getRememberedOwnedEntry(columnIndex, parentPhaseId, ownedEntries)
+      if (rememberedEntry) {
+        const rememberedIndex = entries.findIndex((entry) => entry.key === rememberedEntry.key)
+        if (rememberedIndex >= 0) {
+          return this.applyPhaseSelection(columnIndex, rememberedIndex)
+        }
+      }
+
       const targetEntry = this.chooseOwnedEntry(
         ownedEntries,
         undefined,
@@ -845,11 +874,41 @@ export const useListStore = defineStore('ui', {
       return this.getSelectableEntries(columnIndex).filter((entry) => entry.parentPhaseId === parentPhaseId)
     },
 
+    getRememberedOwnedEntry(
+      columnIndex: number,
+      parentPhaseId: string,
+      entries: Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry>
+    ) {
+      const rememberedPhaseId = this.selectedPhaseIdByColumn[columnIndex]
+      if (rememberedPhaseId) {
+        const rememberedPhaseEntry = entries.find(
+          (entry) => entry.type === 'phase' && entry.phase.id === rememberedPhaseId && entry.parentPhaseId === parentPhaseId
+        )
+        if (rememberedPhaseEntry) {
+          return rememberedPhaseEntry
+        }
+      }
+
+      const rememberedIndex = this.selectedPhaseByColumn[columnIndex]
+      if (rememberedIndex !== undefined) {
+        const rememberedEntry = this.getSelectableEntries(columnIndex)[rememberedIndex]
+        if (rememberedEntry && rememberedEntry.parentPhaseId === parentPhaseId) {
+          const ownedMatch = entries.find((entry) => entry.key === rememberedEntry.key)
+          if (ownedMatch) {
+            return ownedMatch
+          }
+        }
+      }
+
+      return undefined
+    },
+
     findSelectableIndexForPhase(columnIndex: number, phaseId: string): number {
       return this.getSelectableEntries(columnIndex).findIndex((entry) => entry.type === 'phase' && entry.phase.id === phaseId)
     },
 
     async ensureColumnNeighborhoodLoaded(columnIndex: number) {
+      const startedAt = performance.now()
       const dataStore = useDataStore()
       const projectStore = useProjectStore()
 
@@ -880,6 +939,7 @@ export const useListStore = defineStore('ui', {
       await dataStore.loadPhases(projectStore.projectPath, selectedParentPhaseId)
       this.restoreColumnSelectionFromToken(columnIndex, currentToken)
 
+      let groupsLoaded = 1
       while (true) {
         const entries = this.getSelectableEntries(columnIndex)
         const currentIndex = entries.findIndex((entry) => {
@@ -903,6 +963,7 @@ export const useListStore = defineStore('ui', {
         if ((!hasBefore || !hasVisualPadding) && leftIndex > 0) {
           leftIndex--
           await dataStore.loadPhases(projectStore.projectPath, parentPhases[leftIndex]!.id)
+          groupsLoaded++
           progressed = true
           this.restoreColumnSelectionFromToken(columnIndex, currentToken)
         }
@@ -921,6 +982,7 @@ export const useListStore = defineStore('ui', {
         if ((!hasAfterAfterLeft || !hasVisualPaddingAfterLeft) && rightIndex < parentPhases.length - 1) {
           rightIndex++
           await dataStore.loadPhases(projectStore.projectPath, parentPhases[rightIndex]!.id)
+          groupsLoaded++
           progressed = true
           this.restoreColumnSelectionFromToken(columnIndex, currentToken)
         }
@@ -1005,7 +1067,7 @@ export const useListStore = defineStore('ui', {
 
         const targetEntry = this.chooseOwnedEntry(
           ownedEntries,
-          this.getSelectedPhaseEntry(columnIndex),
+          this.getRememberedOwnedEntry(columnIndex, parentPhaseId, ownedEntries) ?? this.getSelectedPhaseEntry(columnIndex),
           parentPhaseId,
           direction
         )
@@ -1095,7 +1157,7 @@ export const useListStore = defineStore('ui', {
 
         const targetEntry = this.chooseOwnedEntry(
           ownedEntries,
-          this.getSelectedPhaseEntry(level),
+          this.getRememberedOwnedEntry(level, parentPhaseId, ownedEntries) ?? this.getSelectedPhaseEntry(level),
           parentPhaseId,
           direction
         )

@@ -4,6 +4,7 @@ import { useDataStore, type Phase} from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useProjectStore } from '../stores/project-store'
 import AimsList from './AimsList.vue'
+import { perfLog } from '../utils/perf-log'
 
 interface Props {
   phase: Phase
@@ -37,6 +38,12 @@ watch(() => props.isActive || props.isSelected, (shouldScroll) => {
 
 // Load aims and scroll on mount
 onMounted(() => {
+  perfLog('phase.mount', {
+    phaseId: props.phase.id,
+    phaseName: props.phase.name,
+    isSelected: props.isSelected,
+    isActive: props.isActive
+  })
   dataStore.loadPhaseAims(projectStore.projectPath, props.phase.id)
 
   if ((props.isActive || props.isSelected) && phaseContainerRef.value) {

@@ -4,6 +4,7 @@ import type { AppRouter } from 'backend'
 import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
 import { calculateAimValues, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
 import { trpc } from '../trpc'
+import { perfLog } from '../utils/perf-log'
 import { useUIStore } from './ui'
 import { useMapStore } from './map'
 import { useProjectStore } from './project-store'
@@ -340,6 +341,33 @@ export const useDataStore = defineStore('data', {
       delete this.phaseChildrenLoadPromises[key]
     },
 
+    async ensureProjectMeta(projectPath: string, options: { force?: boolean } = {}) {
+      if (!projectPath) return this.meta
+      if (!options.force && this.meta) {
+        return this.meta
+      }
+
+      const meta = await trpc.project.getMeta.query({ projectPath })
+      this.meta = meta
+      return meta
+    },
+
+    async loadPhaseById(projectPath: string, phaseId: string, options: { force?: boolean } = {}): Promise<Phase | null> {
+      if (!projectPath || !phaseId) return null
+      if (!options.force && this.phases[phaseId]) {
+        return this.phases[phaseId] ?? null
+      }
+
+      try {
+        const phase = await trpc.phase.get.query({ projectPath, phaseId })
+        this.replacePhase(phase.id, phase)
+        return this.phases[phase.id] ?? null
+      } catch (error) {
+        console.error(`Failed to load phase ${phaseId}:`, error)
+        return null
+      }
+    },
+
     recalculateValues() {
         if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout)
         
@@ -359,6 +387,8 @@ export const useDataStore = defineStore('data', {
 
     async loadFloatingAims(projectPath: string) {
       if (!projectPath) return;
+      const startedAt = performance.now();
+      perfLog('data.loadFloatingAims:start', { projectPath });
       
       // Only load if not loaded? Or always reload to be fresh?
       // Let's reload to be safe, but we can check if we have them.
@@ -377,6 +407,7 @@ export const useDataStore = defineStore('data', {
           this.floatingAimsIds.push(aim.id);
         }
         this.recalculateValues();
+        perfLog('data.loadFloatingAims:done', { projectPath, aimCount: aims.length, durationMs: Math.round((performance.now() - startedAt) * 10) / 10 });
       } catch (error) {
         console.error('Failed to load floating aims:', error);
       } finally {
@@ -727,6 +758,7 @@ export const useDataStore = defineStore('data', {
 
     async loadPhases(projectPath: string, parentId: string | null, options: { force?: boolean } = {}): Promise<Phase[]> {
       if (!projectPath) return [];
+      perfLog('data.loadPhases:request', { projectPath, parentId, force: options.force === true });
       const key = this.getPhaseChildrenCacheKey(parentId)
       const force = options.force === true
 
@@ -741,12 +773,27 @@ export const useDataStore = defineStore('data', {
       this.loading = true;
       const loadPromise = (async () => {
       try {
-        const phases = await trpc.phase.list.query({ projectPath, parentPhaseId: parentId });
-        const childIds: string[] = [];
-        for (const phase of phases) {
-          this.replacePhase(phase.id, phase);
-          childIds.push(phase.id);
+        let childIds: string[] = []
+
+        if (parentId === null) {
+          const meta = (force || !this.meta)
+            ? await this.ensureProjectMeta(projectPath, { force })
+            : this.meta
+          childIds = [...(meta?.rootPhaseIds ?? [])]
+        } else {
+          const parentPhase = force || !this.phases[parentId]
+            ? await this.loadPhaseById(projectPath, parentId, { force })
+            : this.phases[parentId]
+          childIds = [...(parentPhase?.childPhaseIds ?? [])]
         }
+
+        const loadedPhases = await Promise.allSettled(
+          childIds.map((childId) => this.loadPhaseById(projectPath, childId, { force }))
+        )
+
+        const phases = loadedPhases
+          .flatMap((result) => (result.status === 'fulfilled' && result.value ? [result.value] : []))
+
         if (parentId === null) {
           this.meta = {
             ...(this.meta || {}),
@@ -758,9 +805,12 @@ export const useDataStore = defineStore('data', {
             childPhaseIds: childIds
           }
         }
+
         this.loadedPhaseChildrenByParentId[key] = true;
+        perfLog('data.loadPhases:done', { projectPath, parentId, phaseCount: phases.length })
         return phases;
       } catch (error) {
+        perfLog('data.loadPhases:error', { projectPath, parentId, error })
         this.error = 'Failed to load phases';
         console.error(this.error, error);
         return [];
@@ -818,6 +868,7 @@ export const useDataStore = defineStore('data', {
 
     async loadProject(projectPath: string) {
       const uiStore = useUIStore();
+      perfLog('data.loadProject:start', { projectPath });
       const projectStore = useProjectStore();
       const mapStore = useMapStore();
 
@@ -834,11 +885,7 @@ export const useDataStore = defineStore('data', {
         projectStore.setCurrentView('columns');
         mapStore.resetView();
 
-        // Repair project state (clean up invalid commitments)
-        const [meta] = await Promise.all([
-          trpc.project.getMeta.query({ projectPath }),
-          trpc.project.repair.mutate({ projectPath })
-        ]);
+        const meta = await trpc.project.getMeta.query({ projectPath });
 
         this.meta = meta;
 
@@ -849,13 +896,17 @@ export const useDataStore = defineStore('data', {
         await this.loadFloatingAims(projectPath);
         await this.loadPhases(projectPath, null); // Load root phases
 
-        // Check consistency
-        this.checkConsistency(projectPath);
+        perfLog('data.loadProject:done', {
+          projectPath,
+          rootPhases: this.meta?.rootPhaseIds?.length ?? 0,
+          floatingAims: this.floatingAimsIds.length
+        })
 
         projectStore.setConnectionStatus('connected');
         projectStore.addProjectToHistory(projectPath);
         projectStore.clearProjectFailure(projectPath);
       } catch (error) {
+        perfLog('data.loadProject:error', { projectPath, error })
         console.error('Failed to load project:', error);
         projectStore.setConnectionStatus('no connection');
         projectStore.markProjectAsFailed(projectPath);
@@ -971,11 +1022,11 @@ export const useDataStore = defineStore('data', {
       const projectStore = useProjectStore();
 
       try {
-        // Get child phases and update their parent
-        const childPhases = await trpc.phase.list.query({
-          projectPath: projectStore.projectPath,
-          parentPhaseId: phaseId
-        });
+        const phase = await this.loadPhaseById(projectStore.projectPath, phaseId, { force: true })
+        const childPhaseIds = [...(phase?.childPhaseIds ?? [])]
+        const childPhases = (
+          await Promise.all(childPhaseIds.map((childId) => this.loadPhaseById(projectStore.projectPath, childId, { force: true })))
+        ).filter((child): child is Phase => !!child)
 
         for (const child of childPhases) {
           await trpc.phase.update.mutate({
@@ -1144,6 +1195,7 @@ export const useDataStore = defineStore('data', {
 
     async loadPhaseAims(projectPath: string, phaseId: string) {
       if (!projectPath) return;
+      perfLog('data.loadPhaseAims:start', { projectPath, phaseId });
 
       try {
         if (phaseId === 'null') {
@@ -1154,35 +1206,34 @@ export const useDataStore = defineStore('data', {
           const phase = await trpc.phase.get.query({ projectPath, phaseId });
           if (phase) {
             this.replacePhase(phaseId, phase);
-            
-            // NEW: Actually fetch the aims content for this phase!
-            // We can fetch specifically aims committed to this phase
-            const phaseAims = await trpc.aim.list.query({ 
-              projectPath, 
-              phaseId: phaseId 
-            });
-            
+
+            const phaseAims = phase.commitments.length > 0
+              ? await trpc.aim.getMany.query({
+                  projectPath,
+                  aimIds: phase.commitments
+                })
+              : [];
+
             for (const aim of phaseAims) {
               this.replaceAim(aim.id, aim);
             }
             this.recalculateValues();
+            perfLog('data.loadPhaseAims:done', { projectPath, phaseId, aimCount: phaseAims.length, commitmentCount: phase.commitments.length });
           }
         }
       } catch (error) {
+        perfLog('data.loadPhaseAims:error', { projectPath, phaseId, error })
         console.error('Failed to load phase aims:', error);
       }
     },
 
     async loadAims(projectPath: string, aimIds: string[]) {
       if (!projectPath || aimIds.length === 0) return;
-      
-      // Always reload to ensure freshness, especially for deep path expansion
-      // where we need the latest 'incoming' arrays.
 
       try {
-        const aims = await trpc.aim.list.query({
+        const aims = await trpc.aim.getMany.query({
           projectPath,
-          ids: aimIds
+          aimIds
         });
 
         for (const aim of aims) {
@@ -1250,6 +1301,8 @@ export const useDataStore = defineStore('data', {
 
     async checkConsistency(projectPath: string) {
         if (!projectPath) return;
+        const startedAt = performance.now();
+        perfLog('data.checkConsistency:start', { projectPath });
         try {
             const result = await trpc.project.checkConsistency.query({ projectPath });
             this.consistencyErrors = result.errors;
@@ -1258,6 +1311,7 @@ export const useDataStore = defineStore('data', {
                 message,
                 suggestedAction: 'Auto-fix'
             } as ConsistencyIssue));
+            perfLog('data.checkConsistency:done', { projectPath, errorCount: result.errors.length, issueCount: this.consistencyIssues.length, durationMs: Math.round((performance.now() - startedAt) * 10) / 10 });
         } catch (e) {
             console.error('Failed to check consistency', e);
         }

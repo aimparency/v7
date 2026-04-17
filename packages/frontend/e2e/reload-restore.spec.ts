@@ -117,9 +117,9 @@ test.describe('Reload restore', () => {
     const activeColumnBeforeReload = await page.locator('.column-panel.active .phase-container.selected .phase-name').textContent();
     expect(activeColumnBeforeReload).toBe('Grandchild B');
 
-    const selectedRootBeforeReload = page.locator('.phase-container.selected .phase-name', { hasText: 'Root B' });
-    const selectedChildBeforeReload = page.locator('.phase-container.selected .phase-name', { hasText: 'Child B' });
-    const selectedGrandchildBeforeReload = page.locator('.phase-container.selected .phase-name', { hasText: 'Grandchild B' });
+    const selectedRootBeforeReload = page.locator('.phase-container.selected .phase-name', { hasText: /^Root B$/ });
+    const selectedChildBeforeReload = page.locator('.phase-container.selected .phase-name', { hasText: /^Child B$/ });
+    const selectedGrandchildBeforeReload = page.locator('.phase-container.selected .phase-name', { hasText: /^Grandchild B$/ });
 
     expect(await isHorizontallyVisible(page, selectedRootBeforeReload)).toBe(false);
     expect(await isHorizontallyVisible(page, selectedChildBeforeReload)).toBe(true);
@@ -137,9 +137,9 @@ test.describe('Reload restore', () => {
     const activeColumnAfterReload = await page.locator('.column-panel.active .phase-container.selected .phase-name').textContent();
     expect(activeColumnAfterReload).toBe(activeColumnBeforeReload);
 
-    const selectedRootAfterReload = page.locator('.phase-container.selected .phase-name', { hasText: 'Root B' });
-    const selectedChildAfterReload = page.locator('.phase-container.selected .phase-name', { hasText: 'Child B' });
-    const selectedGrandchildAfterReload = page.locator('.phase-container.selected .phase-name', { hasText: 'Grandchild B' });
+    const selectedRootAfterReload = page.locator('.phase-container.selected .phase-name', { hasText: /^Root B$/ });
+    const selectedChildAfterReload = page.locator('.phase-container.selected .phase-name', { hasText: /^Child B$/ });
+    const selectedGrandchildAfterReload = page.locator('.phase-container.selected .phase-name', { hasText: /^Grandchild B$/ });
 
     expect(await isHorizontallyVisible(page, selectedRootAfterReload)).toBe(false);
     expect(await isHorizontallyVisible(page, selectedChildAfterReload)).toBe(true);
