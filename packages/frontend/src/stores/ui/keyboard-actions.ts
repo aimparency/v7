@@ -152,9 +152,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
             }
           }
           uiStore.setActiveColumn(nextColumn)
-          if (wasVisible) {
-            uiStore.ensureVisibleColumnSelections('preserve')
-          } else {
+          if (!wasVisible) {
             await uiStore.realignVisibleColumnsFrom(nextColumn, 'preserve')
           }
         }

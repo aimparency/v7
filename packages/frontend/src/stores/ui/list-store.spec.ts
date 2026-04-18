@@ -177,4 +177,74 @@ describe('list store phase selection', () => {
     const selectedEntry = restoredUIStore.getSelectedPhaseEntry(1)
     expect(selectedEntry && selectedEntry.type === 'phase' ? selectedEntry.phase.id : null).toBe('child-b')
   })
+
+  it('keeps the current visible child selection when moving right into an already visible column', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
+
+    projectStore.projectPath = '/tmp/project'
+    projectStore.currentView = 'columns'
+
+    dataStore.meta = { rootPhaseIds: ['root-1'] } as any
+    dataStore.phases['root-1'] = {
+      id: 'root-1',
+      name: 'Root 1',
+      from: 0,
+      to: 10,
+      parent: null,
+      childPhaseIds: ['child-a', 'child-b', 'child-c'],
+      commitments: []
+    } as any
+    dataStore.phases['child-a'] = {
+      id: 'child-a',
+      name: 'Child A',
+      from: 0,
+      to: 1,
+      parent: 'root-1',
+      childPhaseIds: [],
+      commitments: []
+    } as any
+    dataStore.phases['child-b'] = {
+      id: 'child-b',
+      name: 'Child B',
+      from: 1,
+      to: 2,
+      parent: 'root-1',
+      childPhaseIds: [],
+      commitments: []
+    } as any
+    dataStore.phases['child-c'] = {
+      id: 'child-c',
+      name: 'Child C',
+      from: 2,
+      to: 3,
+      parent: 'root-1',
+      childPhaseIds: [],
+      commitments: []
+    } as any
+
+    uiStore.windowStart = 0
+    uiStore.windowSize = 2
+    uiStore.maxColumn = 1
+    uiStore.activeColumn = 0
+
+    uiStore.selectedPhaseByColumn[0] = 0
+    uiStore.selectedPhaseIdByColumn[0] = 'root-1'
+
+    uiStore.selectedPhaseByColumn[1] = 2
+    uiStore.selectedPhaseIdByColumn[1] = 'child-c'
+
+    // Simulate older remembered child position that should not override the visible selection.
+    uiStore.lastSelectedSubPhaseIndexByPhase['root-1'] = 0
+
+    await uiStore.handleColumnNavigationKeys({
+      key: 'l',
+      preventDefault: vi.fn()
+    } as any, dataStore)
+
+    expect(uiStore.activeColumn).toBe(1)
+    expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-c')
+    expect(uiStore.selectedPhaseByColumn[1]).toBe(2)
+  })
 })

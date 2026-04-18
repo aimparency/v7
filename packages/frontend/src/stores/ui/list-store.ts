@@ -889,17 +889,6 @@ export const useListStore = defineStore('ui', {
         }
       }
 
-      const rememberedIndex = this.selectedPhaseByColumn[columnIndex]
-      if (rememberedIndex !== undefined) {
-        const rememberedEntry = this.getSelectableEntries(columnIndex)[rememberedIndex]
-        if (rememberedEntry && rememberedEntry.parentPhaseId === parentPhaseId) {
-          const ownedMatch = entries.find((entry) => entry.key === rememberedEntry.key)
-          if (ownedMatch) {
-            return ownedMatch
-          }
-        }
-      }
-
       return undefined
     },
 

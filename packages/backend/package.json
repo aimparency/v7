@@ -12,8 +12,8 @@
     }
   },
   "scripts": {
-    "dev": "tsx --tsconfig tsconfig.dev.json watch src/server.ts",
-    "dev:delay": "DEV_DELAY=true tsx --tsconfig tsconfig.dev.json watch src/server.ts",
+    "dev": "tsx watch --tsconfig tsconfig.dev.json src/server.ts",
+    "dev:delay": "DEV_DELAY=true tsx watch --tsconfig tsconfig.dev.json src/server.ts",
     "build": "rm -rf dist && tsc",
     "start": "node dist/server.js",
     "test": "NODE_ENV=test node scripts/run-tests.mjs"
