@@ -1,4 +1,4 @@
-import { test, beforeEach, afterEach, after } from 'node:test';
+import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { registerResources } from '../resources.js';
 import { MockServer, caller, createCallerProxy, createTestContext } from './test-utils.js';
@@ -13,8 +13,6 @@ beforeEach(async () => {
 afterEach(async () => {
   await ctx.teardown();
 });
-
-after(() => process.exit(0));
 
 test('MCP Resources - List & Read', async () => {
   const server = new MockServer();

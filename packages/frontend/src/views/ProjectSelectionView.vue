@@ -29,6 +29,10 @@ const onInput = (event: Event) => {
   emit('update:modelValue', target.value)
 }
 
+const loadPathIntoInput = (path: string) => {
+  emit('update:modelValue', path)
+}
+
 const formatRelativeTime = (timestamp: number): string => {
   const now = Date.now()
   const diff = now - timestamp
@@ -61,62 +65,87 @@ const formatRelativeTime = (timestamp: number): string => {
       <button @click="emit('select-project')" class="select-project">Open Project</button>
     </div>
 
-    <div class="project-discovery">
-      <div class="section-header">
-        <h3>Nearby .bowman Projects</h3>
-        <button
-          class="refresh-button"
-          :disabled="props.isRefreshingDiscoveredProjects"
-          @click="emit('refresh-discovered-projects')"
-        >
-          {{ props.isRefreshingDiscoveredProjects ? 'Refreshing…' : 'Refresh' }}
-        </button>
-      </div>
-
-      <p class="discovery-hint" v-if="props.scannedRoots.length > 0">
-        Scanned {{ props.scannedRoots.join(', ') }}
-      </p>
-
-      <div v-if="props.discoveredProjects.length > 0" class="history-list">
-        <button
-          v-for="project in props.discoveredProjects"
-          :key="project.path"
-          type="button"
-          class="history-item discovered-item"
-          @click="emit('open-discovered-project', project.path)"
-        >
-          <div class="history-item-content">
-            <div class="history-primary">
-              <div class="history-path">{{ project.path }}</div>
-              <div class="history-bowman">{{ project.bowmanPath }}</div>
-            </div>
-            <div class="history-time">from {{ project.sourceRoot }}</div>
+    <div class="project-lists">
+      <div v-if="props.projectHistory.length > 0" class="project-history">
+        <h3>Recent Projects</h3>
+        <div class="history-list">
+          <div
+            v-for="project in props.projectHistory"
+            :key="project.path"
+            class="history-item"
+            :class="{ failed: project.failedToLoad }"
+          >
+            <button
+              type="button"
+              class="edit-button"
+              title="Edit path before opening"
+              aria-label="Edit path before opening"
+              @click.stop="loadPathIntoInput(project.path)"
+            >✎</button>
+            <button
+              type="button"
+              class="history-open-button"
+              @click="emit('open-project-from-history', project.path)"
+            >
+              <div class="history-item-content">
+                <div class="history-path">{{ project.path }}</div>
+                <div class="history-time">{{ formatRelativeTime(project.lastOpened) }}</div>
+              </div>
+            </button>
+            <button
+              class="remove-button"
+              @click.stop="emit('remove-from-history', project.path)"
+              title="Remove from history"
+            >×</button>
           </div>
-        </button>
-      </div>
-      <p v-else class="empty-state">No nearby projects found yet.</p>
-    </div>
-
-    <div v-if="props.projectHistory.length > 0" class="project-history">
-      <h3>Recent Projects</h3>
-      <div class="history-list">
-        <div
-          v-for="project in props.projectHistory"
-          :key="project.path"
-          class="history-item"
-          :class="{ failed: project.failedToLoad }"
-          @click="emit('open-project-from-history', project.path)"
-        >
-          <div class="history-item-content">
-            <div class="history-path">{{ project.path }}</div>
-            <div class="history-time">{{ formatRelativeTime(project.lastOpened) }}</div>
-          </div>
-          <button
-            class="remove-button"
-            @click.stop="emit('remove-from-history', project.path)"
-            title="Remove from history"
-          >×</button>
         </div>
+      </div>
+
+      <div class="project-discovery">
+        <div class="section-header">
+          <h3>Nearby .bowman Projects</h3>
+          <button
+            class="refresh-button"
+            :disabled="props.isRefreshingDiscoveredProjects"
+            @click="emit('refresh-discovered-projects')"
+          >
+            {{ props.isRefreshingDiscoveredProjects ? 'Refreshing…' : 'Refresh' }}
+          </button>
+        </div>
+
+        <p class="discovery-hint" v-if="props.scannedRoots.length > 0">
+          Scanned {{ props.scannedRoots.join(', ') }}
+        </p>
+
+        <div v-if="props.discoveredProjects.length > 0" class="history-list">
+          <div
+            v-for="project in props.discoveredProjects"
+            :key="project.path"
+            class="history-item discovered-item"
+          >
+            <button
+              type="button"
+              class="edit-button"
+              title="Edit path before opening"
+              aria-label="Edit path before opening"
+              @click.stop="loadPathIntoInput(project.path)"
+            >✎</button>
+            <button
+              type="button"
+              class="history-open-button"
+              @click="emit('open-discovered-project', project.path)"
+            >
+              <div class="history-item-content">
+                <div class="history-primary">
+                  <div class="history-path">{{ project.path }}</div>
+                  <div class="history-bowman">{{ project.bowmanPath }}</div>
+                </div>
+                <div class="history-time">from {{ project.sourceRoot }}</div>
+              </div>
+            </button>
+          </div>
+        </div>
+        <p v-else class="empty-state">No nearby projects found yet.</p>
       </div>
     </div>
   </div>
@@ -183,6 +212,18 @@ const formatRelativeTime = (timestamp: number): string => {
   gap: 1rem;
 }
 
+.project-lists {
+  width: 100%;
+  max-height: 20rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: #555 #1a1a1a;
+}
+
 .project-discovery {
   width: 100%;
   display: flex;
@@ -230,29 +271,25 @@ const formatRelativeTime = (timestamp: number): string => {
 }
 
 .history-list {
-  max-height: 20rem;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  scrollbar-width: thin;
-  scrollbar-color: #555 #1a1a1a;
 }
 
-.history-list::-webkit-scrollbar {
+.project-lists::-webkit-scrollbar {
   width: 0.375rem;
 }
 
-.history-list::-webkit-scrollbar-track {
+.project-lists::-webkit-scrollbar-track {
   background: #1a1a1a;
 }
 
-.history-list::-webkit-scrollbar-thumb {
+.project-lists::-webkit-scrollbar-thumb {
   background: #555;
   border-radius: 0.1875rem;
 }
 
-.history-list::-webkit-scrollbar-thumb:hover {
+.project-lists::-webkit-scrollbar-thumb:hover {
   background: #666;
 }
 
@@ -260,18 +297,15 @@ const formatRelativeTime = (timestamp: number): string => {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
   background: #2d2d2d;
   border: 1px solid #444;
   border-radius: 0.3125rem;
-  cursor: pointer;
   transition: background 0.2s;
+  overflow: hidden;
 }
 
 .discovered-item {
   border-color: #3b5269;
-  text-align: left;
 }
 
 .history-item:hover {
@@ -284,6 +318,19 @@ const formatRelativeTime = (timestamp: number): string => {
 
 .history-item.failed .history-path {
   color: #ff6666;
+}
+
+.history-open-button {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem 0.75rem 0.25rem;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 
 .history-item-content {
@@ -320,13 +367,33 @@ const formatRelativeTime = (timestamp: number): string => {
   white-space: nowrap;
 }
 
+.edit-button {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 2.5rem;
+  background: transparent;
+  border: none;
+  border-right: 1px solid #3b3b3b;
+  color: #8ea9c4;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.edit-button:hover {
+  background: #253140;
+  color: #d6e6f7;
+}
+
 .remove-button {
+  flex: 0 0 auto;
   background: transparent;
   border: none;
   color: #888;
   font-size: 1.5rem;
   cursor: pointer;
-  padding: 0 0.5rem;
+  align-self: stretch;
+  padding: 0 0.75rem;
   line-height: 1;
   transition: color 0.2s;
 }

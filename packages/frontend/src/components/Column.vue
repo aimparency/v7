@@ -27,10 +27,14 @@ const resizeObserver = ref<ResizeObserver | null>(null)
 const hasInitialAnchorPosition = ref(false)
 const pendingSelectionRealignTimeout = ref<number | null>(null)
 const revealedPlaceholderKey = ref<string | null>(null)
+const selectionTravelDirection = ref<'forward' | 'backward' | 'preserve'>('preserve')
 
 const ESTIMATED_PHASE_HEIGHT = 180
 const ESTIMATED_SEPARATOR_HEIGHT = 17
 const OVERSCAN_COUNT = 4
+const EDGE_PADDING_RATIO = 0.1
+const PAGE_STEP_RATIO = 0.5
+const SNAP_THRESHOLD_RATIO = 0.8
 
 const entries = computed(() => dataStore.getColumnEntries(props.columnIndex))
 const selectableEntries = computed(() => dataStore.getSelectableColumnEntries(props.columnIndex))
@@ -167,7 +171,11 @@ const handleColumnScroll = () => {
   updateViewportMetrics(true)
 }
 
-const queueSelectionRealign = (behavior: ScrollBehavior = 'smooth', delayMs: number = 90) => {
+const queueSelectionRealign = (
+  behavior: ScrollBehavior = 'smooth',
+  delayMs: number = 90,
+  direction: 'forward' | 'backward' | 'preserve' = selectionTravelDirection.value
+) => {
   if (uiStore.isRestoringUIState) return
   if (pendingSelectionRealignTimeout.value !== null) {
     window.clearTimeout(pendingSelectionRealignTimeout.value)
@@ -175,7 +183,7 @@ const queueSelectionRealign = (behavior: ScrollBehavior = 'smooth', delayMs: num
 
   pendingSelectionRealignTimeout.value = window.setTimeout(() => {
     pendingSelectionRealignTimeout.value = null
-    void scrollSelectedEntryIntoView(behavior)
+    void scrollSelectedEntryIntoView(behavior, direction)
   }, delayMs)
 }
 
@@ -258,11 +266,14 @@ const setInitialAnchorScrollIfNeeded = async () => {
   hasInitialAnchorPosition.value = true
   updateViewportMetrics(true)
   if (!uiStore.isRestoringUIState) {
-    queueSelectionRealign('smooth', 120)
+    queueSelectionRealign('smooth', 120, selectionTravelDirection.value)
   }
 }
 
-const scrollSelectedEntryIntoView = async (behavior: ScrollBehavior = 'smooth') => {
+const scrollSelectedEntryIntoView = async (
+  behavior: ScrollBehavior = 'smooth',
+  direction: 'forward' | 'backward' | 'preserve' = selectionTravelDirection.value
+) => {
   await nextTick()
   const selectedEntry = getSelectedEntry()
   if (!selectedEntry) return
@@ -275,23 +286,71 @@ const scrollSelectedEntryIntoView = async (behavior: ScrollBehavior = 'smooth') 
   const height = heights.value[entryIndex] ?? 0
   const bottom = top + height
   const viewTop = container.scrollTop
-  const viewBottom = viewTop + container.clientHeight
-  const bandTop = viewTop + container.clientHeight * 0.25
-  const bandBottom = viewTop + container.clientHeight * 0.75
+  const viewport = container.clientHeight
+  const viewBottom = viewTop + viewport
+  const edgePadding = viewport * EDGE_PADDING_RATIO
+  const topAligned = Math.max(0, top - edgePadding)
+  const bottomAligned = Math.max(0, bottom - (viewport - edgePadding))
+  const pageStep = viewport * PAGE_STEP_RATIO
+  const snapThreshold = viewport * SNAP_THRESHOLD_RATIO
 
-  if (top < bandTop) {
-    container.scrollTo({ top: Math.max(0, top - container.clientHeight * 0.2), behavior })
+  const scrollToClamped = (targetTop: number, scrollBehavior: ScrollBehavior) => {
+    const maxScrollTop = Math.max(0, container.scrollHeight - viewport)
+    container.scrollTo({
+      top: Math.max(0, Math.min(targetTop, maxScrollTop)),
+      behavior: scrollBehavior
+    })
+  }
+
+  if (direction === 'forward') {
+    if (top < viewTop + edgePadding || top >= viewBottom) {
+      scrollToClamped(topAligned, behavior)
+      return
+    }
+
+    if (bottom > viewBottom - edgePadding) {
+      const remainingToBottomAlign = bottomAligned - viewTop
+      const targetTop = remainingToBottomAlign <= snapThreshold
+        ? bottomAligned
+        : viewTop + pageStep
+      scrollToClamped(targetTop, behavior)
+      return
+    }
+
     return
   }
 
-  if (bottom > bandBottom) {
-    container.scrollTo({ top: Math.max(0, bottom - container.clientHeight * 0.8), behavior })
+  if (direction === 'backward') {
+    if (bottom > viewBottom - edgePadding || bottom <= viewTop) {
+      scrollToClamped(bottomAligned, behavior)
+      return
+    }
+
+    if (top < viewTop + edgePadding) {
+      const remainingToTopAlign = viewTop - topAligned
+      const targetTop = remainingToTopAlign <= snapThreshold
+        ? topAligned
+        : viewTop - pageStep
+      scrollToClamped(targetTop, behavior)
+      return
+    }
+
+    return
+  }
+
+  if (top < viewTop + edgePadding) {
+    scrollToClamped(topAligned, behavior)
+    return
+  }
+
+  if (bottom > viewBottom - edgePadding) {
+    scrollToClamped(bottomAligned, behavior)
     return
   }
 
   if (top < viewTop || bottom > viewBottom) {
     if (uiStore.isRestoringUIState) {
-      container.scrollTo({ top: Math.max(0, top - container.clientHeight * 0.2), behavior: 'auto' })
+      scrollToClamped(topAligned, 'auto')
       return
     }
 
@@ -329,14 +388,44 @@ watch(() => uiStore.columnScrollIntent, (req) => {
 })
 
 watch(
-  () => [props.selectedPhaseIndex, props.isSelected, entries.value.map((entry) => entry.key).join('|')],
   () => {
+    const selectedEntry = getSelectedEntry()
+    return [
+      props.selectedPhaseIndex,
+      selectedEntry?.key ?? '',
+      props.isSelected,
+      entries.value.map((entry) => entry.key).join('|')
+    ] as const
+  },
+  ([selectedPhaseIndex, selectedEntryKey], previousValue) => {
+    const previousSelectedPhaseIndex = previousValue?.[0] ?? selectedPhaseIndex
+    const previousSelectedEntryKey = previousValue?.[1] ?? selectedEntryKey
+
+    if (selectedEntryKey && previousSelectedEntryKey && selectedEntryKey !== previousSelectedEntryKey) {
+      const currentSelectableEntries = selectableEntries.value
+      const currentSelectedIndex = currentSelectableEntries.findIndex((entry) => entry.key === selectedEntryKey)
+      const previousSelectedIndex = currentSelectableEntries.findIndex((entry) => entry.key === previousSelectedEntryKey)
+
+      if (currentSelectedIndex >= 0 && previousSelectedIndex >= 0) {
+        selectionTravelDirection.value = currentSelectedIndex > previousSelectedIndex ? 'forward' : 'backward'
+      } else if (selectedPhaseIndex !== previousSelectedPhaseIndex) {
+        selectionTravelDirection.value = selectedPhaseIndex > previousSelectedPhaseIndex ? 'forward' : 'backward'
+      } else {
+        selectionTravelDirection.value = 'preserve'
+      }
+    } else if (!previousValue) {
+      selectionTravelDirection.value = 'preserve'
+    }
+
     void updateRevealedPlaceholder()
     if (!hasInitialAnchorPosition.value) {
       void setInitialAnchorScrollIfNeeded()
       return
     }
-    void scrollSelectedEntryIntoView(uiStore.isRestoringUIState ? 'auto' : 'smooth')
+    void scrollSelectedEntryIntoView(
+      uiStore.isRestoringUIState ? 'auto' : 'smooth',
+      selectionTravelDirection.value
+    )
   },
   { flush: 'post' }
 )

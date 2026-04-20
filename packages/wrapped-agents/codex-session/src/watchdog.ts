@@ -300,6 +300,10 @@ export class WatchdogService {
 
       // Approval/confirmation menus should be handled immediately.
       if (this.hasVisibleChoiceMenu(this.worker)) {
+        if (await this.tryAutoApproveAimparencyMcpPrompt()) {
+          this.processing = false;
+          return;
+        }
         this.log('Detected visible worker choice menu. Asking watchdog for immediate selection.');
         await this.askWatchdog();
         this.processing = false;
@@ -433,6 +437,29 @@ export class WatchdogService {
     const hasMultipleOptions = numberedLines.length >= 2;
 
     return hasSelectedOption && hasMultipleOptions;
+  }
+
+  private getAimparencyMcpApprovalChoice(agent: Agent): string | null {
+    const recentLines = stripAnsi(agent.getLines(40));
+    if (!/Allow the aimparency MCP server to run tool/i.test(recentLines)) {
+      return null;
+    }
+
+    if (/^\s*\d+\.\s+Always allow\b/m.test(recentLines)) return '3';
+    if (/^\s*\d+\.\s+Allow for this session\b/m.test(recentLines)) return '2';
+    if (/^\s*[›>]?\s*\d+\.\s+Allow\b/m.test(recentLines)) return '1';
+    return null;
+  }
+
+  private async tryAutoApproveAimparencyMcpPrompt(): Promise<boolean> {
+    if (!this.worker) return false;
+
+    const choice = this.getAimparencyMcpApprovalChoice(this.worker);
+    if (!choice) return false;
+
+    this.log(`Detected Aimparency MCP approval prompt. Auto-selecting option ${choice}.`);
+    await this.executeAction({ type: 'choice', choice });
+    return true;
   }
 
   private getWorkerProcessingDurationMs(): number | null {
@@ -792,6 +819,10 @@ export class WatchdogService {
           this.worker.write('\x1b');
         } else {
           this.worker.write(selection);
+          const recentLines = stripAnsi(this.worker.getLines(24));
+          if (/enter to submit/i.test(recentLines)) {
+            await this.ensureEnter(this.worker);
+          }
         }
         await this.wait(70);
     } else if (action.type === 'interrupt') {

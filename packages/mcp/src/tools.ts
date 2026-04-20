@@ -26,6 +26,9 @@ function formatAims(aims: any[]) {
   return aims.map(formatAim);
 }
 
+const RECOMMENDED_AIM_STRUCTURE_NOTE =
+  "For a healthy graph, aims should usually be both committed to a phase and connected to other aims via supportedAims/supportingConnections. Floating aims are allowed but should usually be temporary."
+
 export function registerTools(server: Server, clientOverride?: any) {
   const trpcClient = clientOverride || trpc;
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -57,7 +60,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "list_aims",
-          description: "List all aims in the project",
+          description: `List all aims in the project. ${RECOMMENDED_AIM_STRUCTURE_NOTE}`,
           inputSchema: {
             type: "object",
             properties: {
@@ -82,7 +85,7 @@ export function registerTools(server: Server, clientOverride?: any) {
               },
               floating: {
                 type: "boolean",
-                description: "Filter for aims that are not committed to any phase and have no parents"
+                description: "Filter for aims that are not committed to any phase and have no parents. Useful for cleanup because aims should usually not remain floating."
               },
               archived: {
                 type: "boolean",
@@ -191,7 +194,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "create_aim",
-          description: "Create a new aim. Date is set automatically. Optionally provide phaseId to commit to a phase in one step.",
+          description: `Create a new aim. Date is set automatically. Optionally provide phaseId to commit to a phase in one step. ${RECOMMENDED_AIM_STRUCTURE_NOTE}`,
           inputSchema: {
             type: "object",
             properties: {
@@ -225,16 +228,16 @@ export function registerTools(server: Server, clientOverride?: any) {
               supportingConnections: {
                 type: "array",
                 items: { type: "string" },
-                description: "UUIDs of aims that support this aim (children/dependencies)",
+                description: "UUIDs of aims that support this aim (children/dependencies). Usually provide relationships so the new aim is not isolated.",
               },
               supportedAims: {
                 type: "array",
                 items: { type: "string" },
-                description: "UUIDs of aims that this aim supports (parents)",
+                description: "UUIDs of aims that this aim supports (parents). Usually provide relationships so the new aim is not isolated.",
               },
               phaseId: {
                 type: "string",
-                description: "Optional: UUID of phase to commit this aim to",
+                description: "Optional: UUID of phase to commit this aim to. Usually recommended so the aim is placed in an active time context.",
               },
             },
             required: ["projectPath", "text"],
@@ -242,7 +245,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "update_aim",
-          description: `Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships. It's recommended, to update aims before using git add for the code changes and ${AIMPARENCY_DIR_NAME}, in order to commit code and related aim changes at the same time.`,
+          description: `Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships. ${RECOMMENDED_AIM_STRUCTURE_NOTE} It's recommended to update aims before using git add for the code changes and ${AIMPARENCY_DIR_NAME}, in order to commit code and related aim changes at the same time.`,
           inputSchema: {
             type: "object",
             properties: {
@@ -267,12 +270,12 @@ export function registerTools(server: Server, clientOverride?: any) {
               supportingConnections: {
                 type: "array",
                 items: { type: "string" },
-                description: "UUIDs of aims that support this aim (children/dependencies)",
+                description: "UUIDs of aims that support this aim (children/dependencies). Use this to keep aims connected instead of isolated.",
               },
               supportedAims: {
                 type: "array",
                 items: { type: "string" },
-                description: "UUIDs of aims that this aim supports (parents)",
+                description: "UUIDs of aims that this aim supports (parents). Use this to keep aims connected instead of isolated.",
               },
             },
             required: ["projectPath", "aimId"],
@@ -367,7 +370,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "commit_aim_to_phase",
-          description: "Commit an existing aim to a phase. Optionally specify insertionIndex for ordering.",
+          description: "Commit an existing aim to a phase. Optionally specify insertionIndex for ordering. This is usually recommended because aims should usually live in a phase as well as in the dependency graph.",
           inputSchema: {
             type: "object",
             properties: {
@@ -384,7 +387,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "remove_aim_from_phase",
-          description: "Remove an aim from a phase. The aim itself is not deleted.",
+          description: "Remove an aim from a phase. The aim itself is not deleted. Use carefully, because aims should usually remain committed to some phase unless they are intentionally temporary or being reorganized.",
           inputSchema: {
             type: "object",
             properties: {
@@ -425,33 +428,6 @@ export function registerTools(server: Server, clientOverride?: any) {
           },
         },
         {
-          name: "get_system_status",
-          description: "Get the current system status including compute credits and funds. Use this to check if the agent has enough resources to continue working or needs to earn more.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "perform_work",
-          description: "Perform work to earn compute credits and funds. Use this when system status shows low resources.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              workType: {
-                type: "string",
-                enum: ["mining", "freelance"],
-                description: "Type of work to perform (default: mining)"
-              }
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
           name: "build_search_index",
           description: "Rebuild the search index and generate embeddings for all aims. Use this if search results seem outdated or missing.",
           inputSchema: {
@@ -485,19 +461,6 @@ export function registerTools(server: Server, clientOverride?: any) {
           },
         },
         {
-          name: "update_system_status",
-          description: "Manually update system status (compute credits, funds). Primarily for administrative use or manual adjustments.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              computeCredits: { type: "number", description: "New compute credits balance" },
-              funds: { type: "number", description: "New funds balance" }
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
           name: "get_prioritized_aims",
           description: "Get all aims from the lowest (deepest) active phase, prioritized by value/cost ratio.",
           inputSchema: {
@@ -505,20 +468,6 @@ export function registerTools(server: Server, clientOverride?: any) {
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               limit: { type: "number", description: "Limit number of results (default 10)" },
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "update_market_config",
-          description: "Update Market Alpha trading hyperparameters (risk, leverage, strategy).",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              risk_level: { type: "number", description: "Risk multiplier (e.g. 1.5)" },
-              leverage: { type: "number", description: "Leverage factor (e.g. 2.0)" },
-              strategy: { type: "string", description: "Trading strategy name" }
             },
             required: ["projectPath"],
           },
@@ -996,35 +945,6 @@ export function registerTools(server: Server, clientOverride?: any) {
           };
         }
 
-        case "get_system_status": {
-          const status = await trpcClient.system.getStatus.query({
-            projectPath: args.projectPath as string,
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(status, null, 2),
-              },
-            ],
-          };
-        }
-
-        case "perform_work": {
-          const result = await trpcClient.system.performWork.mutate({
-            projectPath: args.projectPath as string,
-            workType: (args.workType as "mining" | "freelance") || "mining",
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Work completed successfully.\nEarned: ${result.earned.credits} credits, ${result.earned.funds} funds.\nNew Balance: ${result.computeCredits} credits, ${result.funds} funds.`,
-              },
-            ],
-          };
-        }
-
         case "build_search_index": {
           const result = await trpcClient.project.buildSearchIndex.mutate({
             projectPath: args.projectPath as string,
@@ -1066,25 +986,6 @@ export function registerTools(server: Server, clientOverride?: any) {
                 text: result.fixes.length > 0
                   ? `Consistency repairs completed.\nFixes applied:\n${result.fixes.map((f: any) => `- ${f}`).join('\n')}`
                   : "No inconsistencies found to fix.",
-              },
-            ],
-          };
-        }
-
-        case "update_system_status": {
-          const statusUpdate: any = {};
-          if (args.computeCredits !== undefined) statusUpdate.computeCredits = args.computeCredits;
-          if (args.funds !== undefined) statusUpdate.funds = args.funds;
-
-          const result = await trpcClient.system.updateStatus.mutate({
-            projectPath: args.projectPath as string,
-            status: statusUpdate,
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: `System status updated.\nNew Balance: ${result.computeCredits} credits, ${result.funds} funds.`,
               },
             ],
           };
@@ -1163,27 +1064,6 @@ export function registerTools(server: Server, clientOverride?: any) {
                         cost: a.cost
                     }))
                 }, null, 2),
-              },
-            ],
-          };
-        }
-
-        case "update_market_config": {
-          const config: any = {};
-          if (args.risk_level !== undefined) config.risk_level = args.risk_level;
-          if (args.leverage !== undefined) config.leverage = args.leverage;
-          if (args.strategy !== undefined) config.strategy = args.strategy;
-
-          const result = await trpcClient.market.updateConfig.mutate({
-            projectPath: args.projectPath as string,
-            config
-          });
-
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Market Alpha config updated.\nNew Config: ${JSON.stringify(result, null, 2)}`,
               },
             ],
           };

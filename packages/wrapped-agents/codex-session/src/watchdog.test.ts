@@ -162,6 +162,24 @@ description: Ensure every supported session runtime exposes the current...
   assert.equal(detected, true);
 });
 
+test('getAimparencyMcpApprovalChoice prefers always allow for aimparency MCP prompts', () => {
+  const service = createService('CURRENT_MARKER');
+  const agent = {
+    getLines: () => `Allow the aimparency MCP server to run tool "get_system_status"?
+
+  projectPath: /home/felix/dev/graphics/avonx/artwork/.bowman
+
+  › 1. Allow
+    2. Allow for this session
+    3. Always allow
+    4. Cancel
+  enter to submit | esc to cancel`,
+  };
+
+  const choice = (service as any).getAimparencyMcpApprovalChoice(agent);
+  assert.equal(choice, '3');
+});
+
 test('getWorkerProcessingDurationMs parses wrapped esc-to-cancel timer', () => {
   const service = createService('CURRENT_MARKER');
   (service as any).worker = {
@@ -253,6 +271,41 @@ test('tick asks watchdog immediately when worker shows a visible choice menu', a
   await service.tick();
 
   assert.equal(asked, true);
+});
+
+test('tick auto-approves aimparency MCP permission prompt without asking watchdog', async () => {
+  const writes: string[] = [];
+  const worker = {
+    getLines: () => `Allow the aimparency MCP server to run tool "get_system_status"?
+
+  projectPath: /home/felix/dev/graphics/avonx/artwork/.bowman
+
+  › 1. Allow
+    2. Allow for this session
+    3. Always allow
+    4. Cancel
+  enter to submit | esc to cancel`,
+    getLastLine: () => 'enter to submit | esc to cancel',
+    write: (chunk: string) => writes.push(chunk),
+  };
+  const watchdog = {
+    getLines: () => '',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  let asked = false;
+  (service as any).askWatchdog = async () => {
+    asked = true;
+  };
+  (service as any).wait = async () => {};
+  service.setEnabled(true);
+  (service as any).nextCheckTime = 0;
+
+  await service.tick();
+
+  assert.equal(asked, false);
+  assert.deepEqual(writes, ['3', '\r\n']);
 });
 
 test('tick asks watchdog after a busy-to-idle transition', async () => {
@@ -383,6 +436,7 @@ test('executeAction choice supports numbered choices', async () => {
   const writes: string[] = [];
   const service = createService('CURRENT_MARKER');
   (service as any).worker = {
+    getLines: () => '',
     write: (chunk: string) => writes.push(chunk),
   };
   (service as any).watchdog = {};
@@ -391,6 +445,21 @@ test('executeAction choice supports numbered choices', async () => {
   await service.executeAction({ type: 'choice', choice: '2' });
 
   assert.deepEqual(writes, ['2']);
+});
+
+test('executeAction choice submits numbered menu selections when enter-to-submit footer is visible', async () => {
+  const writes: string[] = [];
+  const service = createService('CURRENT_MARKER');
+  (service as any).worker = {
+    getLines: () => '  1. Allow\n  2. Allow for this session\n  3. Always allow\nenter to submit | esc to cancel',
+    write: (chunk: string) => writes.push(chunk),
+  };
+  (service as any).watchdog = {};
+  (service as any).wait = async () => {};
+
+  await service.executeAction({ type: 'choice', choice: '2' });
+
+  assert.deepEqual(writes, ['2', '\r\n']);
 });
 
 test('executeActionSideEffects ideate includes returned text guidance', async () => {

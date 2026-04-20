@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useDataStore, type Phase} from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useProjectStore } from '../stores/project-store'
@@ -29,13 +29,6 @@ const projectStore = useProjectStore()
 // Get aims from the store
 const phaseAims = computed(() => dataStore.getAimsForPhase(props.phase.id))
 
-// Watch for selection (both active and non-active) and emit scroll request
-watch(() => props.isActive || props.isSelected, (shouldScroll) => {
-  if (shouldScroll && phaseContainerRef.value) {
-    emit('scroll-request', phaseContainerRef.value)
-  }
-}, { flush: 'post' })
-
 // Load aims and scroll on mount
 onMounted(() => {
   perfLog('phase.mount', {
@@ -45,10 +38,6 @@ onMounted(() => {
     isActive: props.isActive
   })
   dataStore.loadPhaseAims(projectStore.projectPath, props.phase.id)
-
-  if ((props.isActive || props.isSelected) && phaseContainerRef.value) {
-    emit('scroll-request', phaseContainerRef.value)
-  }
 })
 
 // Check if this phase is pending delete

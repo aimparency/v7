@@ -66,12 +66,15 @@ const updatePhase = async () => {
   if (!modalStore.phaseModalEditingPhaseId) return
 
   try {
-    const oldPhase = dataStore.phases[modalStore.phaseModalEditingPhaseId]
+    const editingPhaseId = modalStore.phaseModalEditingPhaseId
+    const oldPhase = dataStore.phases[editingPhaseId]
     const oldParentId = oldPhase?.parent ?? null
+    const previousFocusedColumn = uiStore.activeColumn
+    const previousSelectionIds = { ...uiStore.selectedPhaseIdByColumn }
 
     const updatedPhase = await trpc.phase.update.mutate({
       projectPath: projectStore.projectPath,
-      phaseId: modalStore.phaseModalEditingPhaseId,
+      phaseId: editingPhaseId,
       phase: {
         name: modalStore.newPhaseName.trim(),
         parent: modalStore.phaseModalEditingParentId
@@ -79,31 +82,27 @@ const updatePhase = async () => {
     })
 
     if (updatedPhase) {
-      dataStore.phases[updatedPhase.id] = updatedPhase
+      dataStore.replacePhase(updatedPhase.id, updatedPhase)
       await dataStore.loadPhases(projectStore.projectPath, updatedPhase.parent, { force: true })
 
       if (oldParentId !== updatedPhase.parent) {
         await dataStore.loadPhases(projectStore.projectPath, oldParentId, { force: true })
       }
 
-      const rootEntries = dataStore.getSelectableColumnEntries(0)
-      const rootPhases = rootEntries.filter((entry) => entry.type === 'phase').map((entry) => entry.phase)
-      if (rootPhases.length > 0) {
-        const previousFocusedColumn = uiStore.activeColumn
-        const selectedRootId = uiStore.getSelectedPhaseId(0)
-        const fallbackRootIndex = uiStore.selectedPhaseByColumn[0] ?? 0
-        const selectedRootIndex = selectedRootId
-          ? rootPhases.findIndex((p) => p.id === selectedRootId)
-          : fallbackRootIndex
-        const clampedRootIndex = Math.min(
-          Math.max(selectedRootIndex >= 0 ? selectedRootIndex : fallbackRootIndex, 0),
-          rootPhases.length - 1
-        )
+      const maxVisibleColumn = Math.min(uiStore.maxColumn, uiStore.getVisibleMaxColumn())
+      for (let columnIndex = 0; columnIndex <= maxVisibleColumn; columnIndex++) {
+        const selectedPhaseId = previousSelectionIds[columnIndex]
+        if (!selectedPhaseId) continue
 
-        await uiStore.selectPhase(0, clampedRootIndex)
-        uiStore.setActiveColumn(Math.min(previousFocusedColumn, uiStore.maxColumn))
-        uiStore.ensureSelectionVisible()
+        await uiStore.loadColumn(columnIndex)
+        const selectedIndex = uiStore.findSelectableIndexForPhase(columnIndex, selectedPhaseId)
+        if (selectedIndex >= 0) {
+          uiStore.applyPhaseSelection(columnIndex, selectedIndex)
+        }
       }
+
+      uiStore.setActiveColumn(Math.min(previousFocusedColumn, uiStore.maxColumn))
+      uiStore.ensureSelectionVisible()
     }
 
     modalStore.closePhaseModal()

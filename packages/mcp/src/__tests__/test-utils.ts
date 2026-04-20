@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import fs from 'fs-extra';
+import os from 'node:os';
 import path from 'path';
 import { appRouter } from '../../../backend/src/server.js';
 import { closeDb } from '../../../backend/src/db.js';
@@ -71,12 +72,14 @@ export function createCallerProxy(target: any): any {
 
 export const createTestContext = () => {
   const id = uuidv4();
-  const projectPath = path.join(process.cwd(), `test-mcp-project-${id}`, AIMPARENCY_DIR_NAME);
+  const testRootPath = path.join(os.tmpdir(), `test-mcp-project-${id}`);
+  const projectPath = path.join(testRootPath, AIMPARENCY_DIR_NAME);
   
   return {
     projectPath,
+    testRootPath,
     setup: async () => {
-      await fs.remove(projectPath);
+      await fs.remove(testRootPath);
       await fs.ensureDir(projectPath);
     },
     teardown: async () => {
@@ -88,7 +91,7 @@ export const createTestContext = () => {
       // Retry removal if ENOTEMPTY (Windows/Race condition issue)
       for(let i=0; i<3; i++) {
           try {
-            await fs.remove(projectPath);
+            await fs.remove(testRootPath);
             break;
           } catch(e) {
             await new Promise(r => setTimeout(r, 100));

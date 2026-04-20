@@ -1,4 +1,4 @@
-import { test, beforeEach, afterEach, after } from 'node:test';
+import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { registerTools } from '../tools.js';
 import { MockServer, caller, createCallerProxy, createTestContext } from './test-utils.js';
@@ -14,26 +14,17 @@ afterEach(async () => {
   await ctx.teardown();
 });
 
-after(() => process.exit(0));
-
-test('MCP Tools - System Status & Work', async () => {
+test('MCP Tools - Removed system/market tools are not exposed', async () => {
   const server = new MockServer();
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  // 1. Get Status
-  const statusRes = await server.callTool('get_system_status', { projectPath: ctx.projectPath });
-  const status = JSON.parse(statusRes.content[0].text);
-  assert.equal(typeof status.computeCredits, 'number');
+  const list = await server.listTools();
+  const names = list.tools.map((tool: any) => tool.name);
 
-  // 2. Perform Work
-  const workRes = await server.callTool('perform_work', { projectPath: ctx.projectPath, workType: 'mining' });
-  assert.ok(workRes.content[0].text.includes('Work completed successfully'));
-  
-  // Verify status updated
-  const newStatusRes = await server.callTool('get_system_status', { projectPath: ctx.projectPath });
-  const newStatus = JSON.parse(newStatusRes.content[0].text);
-  assert.ok(newStatus.computeCredits > status.computeCredits);
+  assert.ok(!names.includes('perform_work'));
+  assert.ok(!names.includes('update_system_status'));
+  assert.ok(!names.includes('update_market_config'));
 });
 
 test('MCP Tools - Project Meta', async () => {
