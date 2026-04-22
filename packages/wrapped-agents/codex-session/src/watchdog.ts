@@ -38,13 +38,29 @@ const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 // Codex may render spinner-like characters depending on terminal mode
 const SPINNER_CHARS = ['✻', '·', '✢', '○', '◎', '●', '◯'];
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
-const WRAP_UP_PROMPT = "Track changes and make a git commit for the completed work (usually use `git add -u` first, then `git add` for intentional new files).";
+const WRAP_UP_PROMPT = "Before committing, do a short deletion/reduction pass: remove dead code, collapse unnecessary complexity, and keep only intentional changes. Then track changes and make a git commit for the completed work (usually use `git add -u` first, then `git add` for intentional new files).";
 const WRAP_UP_THRESHOLD_GUIDANCE = 'Use wrap-up conservatively. Only choose it after a clearly meaningful milestone is complete and Codex is at a natural stopping point.';
 
 interface WorkerActivityState {
   enabledAt: number;
   observedBusySinceEnabled: boolean;
   lastBusyAt: number;
+  lastSnapshot: string;
+  lastSnapshotAt: number;
+}
+
+interface AgentView {
+  recent8: string;
+  recent12: string;
+  recent24: string;
+  recent30: string;
+  recent40: string;
+}
+
+interface AgentSignals {
+  view: AgentView;
+  hasChoiceMenu: boolean;
+  isGenerating: boolean;
 }
 
 function stripAnsi(str: string): string {
@@ -76,6 +92,8 @@ export class WatchdogService {
     enabledAt: 0,
     observedBusySinceEnabled: false,
     lastBusyAt: 0,
+    lastSnapshot: '',
+    lastSnapshotAt: 0,
   };
   private sessionMemory: SessionMemory | null = null;
   private instructTextWithMemory: string = INSTRUCT_TEXT;
@@ -189,7 +207,6 @@ export class WatchdogService {
 
   onWorkerData(data: string) {
     void data;
-    this.observeWorkerActivity(Date.now());
     if (this.enabled && !this.waitingForResponse && !this.waitingForResponseStart) {
         this.nextCheckTime = Math.max(this.nextCheckTime, Date.now() + IDLE_CHECK_INTERVAL);
     }
@@ -210,10 +227,33 @@ export class WatchdogService {
     this.processing = true;
 
     try {
+      const now = Date.now();
+      const workerSignals = this.captureAgentSignals(this.worker, false);
+      const workerEffectivelyGenerating = this.isWorkerEffectivelyGenerating(workerSignals, now);
+      this.log(`Tick start: waitingForResponseStart=${this.waitingForResponseStart} waitingForResponse=${this.waitingForResponse} nextCheckTime=${this.nextCheckTime} now=${Date.now()}`);
+      this.log(`Choice menu detection result: ${workerSignals.hasChoiceMenu}`);
+
+      if (workerSignals.hasChoiceMenu && (this.waitingForResponseStart || this.waitingForResponse)) {
+        const watchdogSignals = this.captureAgentSignals(this.watchdog, false);
+        if (!watchdogSignals.isGenerating) {
+          this.log('Worker choice menu preempting stale supervisor wait. Resetting response wait state.');
+          this.waitingForResponseStart = false;
+          this.waitingForResponse = false;
+        }
+      }
+
+      if (workerSignals.hasChoiceMenu && !this.waitingForResponseStart && !this.waitingForResponse) {
+        this.log('Detected visible worker choice menu. Asking watchdog for immediate selection.');
+        await this.askWatchdog();
+        this.processing = false;
+        return;
+      }
+
       // Waiting for watchdog generation to actually start
       if (this.waitingForResponseStart) {
-        const isGenerating = this.isGenerating(this.watchdog);
-        if (isGenerating) {
+        this.log('Tick branch: waitingForResponseStart');
+        const watchdogSignals = this.captureAgentSignals(this.watchdog, false);
+        if (watchdogSignals.isGenerating) {
           this.responseSawGenerating = true;
           this.waitingForResponseStart = false;
           this.waitingForResponse = true;
@@ -225,7 +265,7 @@ export class WatchdogService {
 
         const elapsed = Date.now() - this.responseRequestedAt;
         if (elapsed > RESPONSE_START_TIMEOUT) {
-          const screenContent = this.watchdog.getLines(500);
+          const screenContent = this.readAgentLines(this.watchdog, 500);
           const hasResponseCandidate = this.hasResponseCandidateAfterMarker(screenContent);
           if (hasResponseCandidate) {
             this.waitingForResponseStart = false;
@@ -246,10 +286,10 @@ export class WatchdogService {
 
       // Check Watchdog Response
       if (this.waitingForResponse) {
-        const now = Date.now();
-        const isGeneratingNow = this.isGenerating(this.watchdog);
-        if (this.shouldDeferResponseCompletion(isGeneratingNow, now)) {
-          if (!isGeneratingNow) {
+        this.log('Tick branch: waitingForResponse');
+        const watchdogSignals = this.captureAgentSignals(this.watchdog, false);
+        if (this.shouldDeferResponseCompletion(watchdogSignals.isGenerating, now)) {
+          if (!watchdogSignals.isGenerating) {
             const elapsed = now - this.responseRequestedAt;
             this.log(`DEBUG: Deferring response completion check (${elapsed}ms < ${RESPONSE_COMPLETION_GRACE_MS}ms grace).`);
           }
@@ -269,7 +309,7 @@ export class WatchdogService {
 
         // Watchdog is idle (halted), parse the response
         this.log("DEBUG: Watchdog is idle. Attempting to parse response...");
-        const screenContent = this.watchdog.getLines(500);
+        const screenContent = this.readAgentLines(this.watchdog, 500);
 
         this.log(`DEBUG: Screen content length: ${screenContent.length} chars`);
         this.log(`DEBUG: First 400 chars of screen:\n${screenContent.substring(0, 400)}`);
@@ -298,19 +338,8 @@ export class WatchdogService {
         return;
       }
 
-      // Approval/confirmation menus should be handled immediately.
-      if (this.hasVisibleChoiceMenu(this.worker)) {
-        if (await this.tryAutoApproveAimparencyMcpPrompt()) {
-          this.processing = false;
-          return;
-        }
-        this.log('Detected visible worker choice menu. Asking watchdog for immediate selection.');
-        await this.askWatchdog();
-        this.processing = false;
-        return;
-      }
-
-      const workerIdleReason = this.getWorkerIdleEscalationReason(Date.now());
+      const workerIdleReason = this.getWorkerIdleEscalationReason(now, workerEffectivelyGenerating);
+      this.log(`Worker idle escalation reason: ${workerIdleReason ?? 'none'}`);
       if (workerIdleReason) {
         this.log(workerIdleReason);
         await this.askWatchdog();
@@ -324,9 +353,9 @@ export class WatchdogService {
       if (
         workerProcessingDurationMs !== null &&
         workerProcessingDurationMs >= PROCESSING_INTERRUPT_THRESHOLD_MS &&
-        Date.now() - this.lastLongProcessingEscalationAt >= PROCESSING_INTERRUPT_RECHECK_MS
+        now - this.lastLongProcessingEscalationAt >= PROCESSING_INTERRUPT_RECHECK_MS
       ) {
-        this.lastLongProcessingEscalationAt = Date.now();
+        this.lastLongProcessingEscalationAt = now;
         this.log(
           `Detected long worker processing (${Math.round(workerProcessingDurationMs / 1000)}s). Asking watchdog for interrupt decision.`
         );
@@ -335,7 +364,9 @@ export class WatchdogService {
         return;
       }
 
-      const isWorkerIdle = await this.waitForIdle(this.worker);
+      const isWorkerIdle = !workerEffectivelyGenerating;
+      this.log(`waitForIdle snapshot isGenerating=${workerEffectivelyGenerating}`);
+      this.log(`waitForIdle(worker) result: ${isWorkerIdle}`);
 
       if (isWorkerIdle) {
           // Check for context clear
@@ -358,34 +389,12 @@ export class WatchdogService {
   }
 
   async waitForIdle(agent: Agent): Promise<boolean> {
-    let previousContent = agent.getLines(30);
-
-    if (this.isGenerating(agent)) return false;
-
-    for (let i = 0; i < 5; i++) {
-      await this.wait(100);
-      if (this.isGenerating(agent)) return false;
-
-      const currentContent = agent.getLines(30);
-      if (currentContent !== previousContent) {
-        return false;
-      }
-      previousContent = currentContent;
-    }
-    return true;
+    const signals = this.captureAgentSignals(agent, false);
+    return !signals.isGenerating;
   }
 
   isGenerating(agent: Agent): boolean {
-    const lastLine = agent.getLastLine();
-    const recentLines = stripAnsi(agent.getLines(8));
-    if (this.hasVisibleChoiceMenu(agent)) {
-      return false;
-    }
-    const hasSpinner = SPINNER_CHARS.some(char => lastLine.includes(char));
-    // Codex shows "esc to interrupt" while it is actively generating.
-    // Check recent lines because zoom/terminal wrapping can move this off the last line.
-    const hasBusyIndicator = /esc to (interrupt|cancel)/i.test(recentLines);
-    return hasSpinner || hasBusyIndicator;
+    return this.captureAgentSignals(agent, false).isGenerating;
   }
 
   private resetWorkerActivity(now: number) {
@@ -393,19 +402,41 @@ export class WatchdogService {
       enabledAt: now,
       observedBusySinceEnabled: false,
       lastBusyAt: 0,
+      lastSnapshot: '',
+      lastSnapshotAt: 0,
     };
   }
 
-  private observeWorkerActivity(now: number) {
-    if (!this.worker) return;
-    if (!this.isGenerating(this.worker)) return;
+  private observeWorkerActivity(now: number, isWorkerGenerating?: boolean) {
+    const generating = isWorkerGenerating ?? (this.worker ? this.isGenerating(this.worker) : false);
+    if (!generating) return;
 
     this.workerActivity.observedBusySinceEnabled = true;
     this.workerActivity.lastBusyAt = now;
   }
 
-  private getWorkerIdleEscalationReason(now: number): string | null {
-    this.observeWorkerActivity(now);
+  private isWorkerEffectivelyGenerating(signals: AgentSignals, now: number): boolean {
+    if (!signals.isGenerating) {
+      this.workerActivity.lastSnapshot = signals.view.recent30;
+      this.workerActivity.lastSnapshotAt = now;
+      return false;
+    }
+
+    const snapshot = signals.view.recent30;
+    const snapshotUnchanged =
+      snapshot.length > 0 &&
+      snapshot === this.workerActivity.lastSnapshot &&
+      this.workerActivity.lastSnapshotAt !== 0 &&
+      now - this.workerActivity.lastSnapshotAt >= IDLE_CHECK_INTERVAL;
+
+    this.workerActivity.lastSnapshot = snapshot;
+    this.workerActivity.lastSnapshotAt = now;
+
+    return !snapshotUnchanged;
+  }
+
+  private getWorkerIdleEscalationReason(now: number, isWorkerGenerating?: boolean): string | null {
+    this.observeWorkerActivity(now, isWorkerGenerating);
 
     if (this.workerActivity.observedBusySinceEnabled) {
       if (this.workerActivity.lastBusyAt !== 0 && now - this.workerActivity.lastBusyAt >= IDLE_CHECK_INTERVAL) {
@@ -431,40 +462,62 @@ export class WatchdogService {
   }
 
   private hasVisibleChoiceMenu(agent: Agent): boolean {
-    const recentLines = stripAnsi(agent.getLines(24));
+    return this.captureAgentSignals(agent, true).hasChoiceMenu;
+  }
+
+  private readAgentLines(agent: Agent, count: number): string {
+    if (typeof (agent as any).getViewportLines === 'function') {
+      return (agent as any).getViewportLines(count);
+    }
+    if (typeof (agent as any).getLines === 'function') {
+      return agent.getLines(count);
+    }
+    return '';
+  }
+
+  private captureAgentView(agent: Agent): AgentView {
+    return {
+      recent8: stripAnsi(this.readAgentLines(agent, 8)),
+      recent12: stripAnsi(this.readAgentLines(agent, 12)),
+      recent24: stripAnsi(this.readAgentLines(agent, 24)),
+      recent30: stripAnsi(this.readAgentLines(agent, 30)),
+      recent40: stripAnsi(this.readAgentLines(agent, 40)),
+    };
+  }
+
+  private detectVisibleChoiceMenu(recentLines: string, shouldLog: boolean): boolean {
     const numberedLines = recentLines.match(/^\s*[›>]?\s*\d+\.\s.+$/gm) || [];
     const hasSelectedOption = /^\s*[›>]\s*\d+\./m.test(recentLines);
     const hasMultipleOptions = numberedLines.length >= 2;
-
-    return hasSelectedOption && hasMultipleOptions;
+    const hasApprovalCopy = /(allow|cancel|proceed|don't ask again|tool call needs your approval|enter to submit)/i.test(recentLines);
+    if (shouldLog) {
+      this.log(`hasVisibleChoiceMenu check: hasSelectedOption=${hasSelectedOption} numberedLines=${numberedLines.length}`);
+    }
+    return hasMultipleOptions && (hasSelectedOption || hasApprovalCopy);
   }
 
-  private getAimparencyMcpApprovalChoice(agent: Agent): string | null {
-    const recentLines = stripAnsi(agent.getLines(40));
-    if (!/Allow the aimparency MCP server to run tool/i.test(recentLines)) {
-      return null;
+  private detectGenerating(view: AgentView, hasChoiceMenu: boolean): boolean {
+    if (hasChoiceMenu) {
+      return false;
     }
 
-    if (/^\s*\d+\.\s+Always allow\b/m.test(recentLines)) return '3';
-    if (/^\s*\d+\.\s+Allow for this session\b/m.test(recentLines)) return '2';
-    if (/^\s*[›>]?\s*\d+\.\s+Allow\b/m.test(recentLines)) return '1';
-    return null;
+    const lastVisibleLine = view.recent8.split('\n').filter(Boolean).at(-1) || '';
+    const hasSpinner = SPINNER_CHARS.some(char => lastVisibleLine.includes(char));
+    const hasInterruptIndicator = /esc to interrupt/i.test(view.recent8);
+    const hasTimedCancelIndicator = /esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i.test(view.recent8);
+    return hasSpinner || hasInterruptIndicator || hasTimedCancelIndicator;
   }
 
-  private async tryAutoApproveAimparencyMcpPrompt(): Promise<boolean> {
-    if (!this.worker) return false;
-
-    const choice = this.getAimparencyMcpApprovalChoice(this.worker);
-    if (!choice) return false;
-
-    this.log(`Detected Aimparency MCP approval prompt. Auto-selecting option ${choice}.`);
-    await this.executeAction({ type: 'choice', choice });
-    return true;
+  private captureAgentSignals(agent: Agent, shouldLog: boolean = true): AgentSignals {
+    const view = this.captureAgentView(agent);
+    const hasChoiceMenu = this.detectVisibleChoiceMenu(view.recent24, shouldLog);
+    const isGenerating = this.detectGenerating(view, hasChoiceMenu);
+    return { view, hasChoiceMenu, isGenerating };
   }
 
   private getWorkerProcessingDurationMs(): number | null {
     if (!this.worker) return null;
-    const recentLines = stripAnsi(this.worker.getLines(12));
+    const recentLines = stripAnsi(this.readAgentLines(this.worker, 12));
     const durationMatch = recentLines.match(/esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i);
     if (!durationMatch) return null;
 
@@ -480,20 +533,6 @@ export class WatchdogService {
 
   private async wait(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  private async ensureInsertMode(agent: Agent) {
-    await this.wait(70);
-    agent.write('\x1b'); // ESC to Normal Mode
-    await this.wait(70);
-    agent.write('i');    // 'i' to Insert Mode
-    await this.wait(70);
-  }
-
-  private async ensureEnter(agent: Agent): Promise<void> {
-    await this.wait(70);
-    agent.write('\r\n');
-    await this.wait(70);
   }
 
   private async post(agent: Agent, text: string): Promise<void> {
@@ -536,8 +575,8 @@ export class WatchdogService {
     this.responseSawGenerating = false;
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
 
-    const rawContext = stripAnsi(this.worker.getLines(40));
-    const supervisedContext = rawContext.replace(/\s+/g, ' ').trim();
+    const workerSignals = this.captureAgentSignals(this.worker, false);
+    const supervisedContext = workerSignals.view.recent40.replace(/\s+/g, ' ').trim();
 
     // Get current state
     const currentState = this.animatorState.getState();
@@ -550,7 +589,8 @@ export class WatchdogService {
     const promptContext: PromptContext = {
       state: currentState,
       supervisedContext,
-      supervisedStatus: this.isGenerating(this.worker) ? 'busy' : 'idle'
+      supervisedStatus: workerSignals.isGenerating ? 'busy' : 'idle',
+      requiresInput: workerSignals.hasChoiceMenu
     };
 
     // Add state-specific context
@@ -577,11 +617,11 @@ export class WatchdogService {
 
     // Capture screen AFTER posting
     await this.wait(500);
-    const screenAfter = this.watchdog.getLines(100);
+    const screenAfter = this.readAgentLines(this.watchdog, 100);
     this.log(`DEBUG: Watchdog screen AFTER post (last 500 chars):\n${screenAfter.substring(Math.max(0, screenAfter.length - 500))}`);
 
     // Check if Codex is processing (showing spinners)
-    const isProcessing = this.isGenerating(this.watchdog);
+    const isProcessing = this.captureAgentSignals(this.watchdog, false).isGenerating;
     this.log(`DEBUG: Is watchdog generating after post? ${isProcessing}`);
   }
 
@@ -596,8 +636,8 @@ export class WatchdogService {
        const decision = JSON.parse(jsonString);
 
        if (decision.action) {
-         if (decision.action.type === 'choice' && this.hasVisibleChoiceMenu(this.worker)) {
-           this.log(`[StateMachine] Executing choice outside normal state validation`);
+         if (decision.action.type === 'choice') {
+           this.log(`[StateMachine] Executing choice directly`);
            await this.executeAction({
              type: 'choice',
              choice: decision.action.choice ?? decision.action.key ?? decision.action.number
@@ -745,7 +785,15 @@ export class WatchdogService {
 
     const actionSignature = JSON.stringify(action ?? {});
     const now = Date.now();
+    const isImmediateTerminalAction =
+      action?.type === 'choice' ||
+      action?.type === 'select-option' ||
+      action?.type === 'choose_option' ||
+      action?.type === 'enter' ||
+      action?.type === 'interrupt';
+
     if (
+      !isImmediateTerminalAction &&
       actionSignature === this.lastExecutedActionSignature &&
       now - this.lastExecutedActionAt < 15000
     ) {
@@ -796,7 +844,7 @@ export class WatchdogService {
         this.workingTowardsCommit = false;
         await this.performCompact();
     } else if (action.type === 'enter') {
-        this.worker.write('\r');
+        await this.worker.write('\r');
     } else if (action.type === 'select-option' || action.type === 'choose_option' || action.type === 'choice') {
         const rawSelection = action.key ?? action.text ?? action.number;
         const choiceSelection = action.choice;
@@ -816,21 +864,17 @@ export class WatchdogService {
         this.log(`Selecting option: ${selection}`);
         await this.wait(70);
         if (/^(esc|escape)$/i.test(selection)) {
-          this.worker.write('\x1b');
+          await this.worker.write('\x1b');
         } else {
-          this.worker.write(selection);
-          const recentLines = stripAnsi(this.worker.getLines(24));
-          if (/enter to submit/i.test(recentLines)) {
-            await this.ensureEnter(this.worker);
-          }
+          await this.worker.write(selection);
         }
         await this.wait(70);
     } else if (action.type === 'interrupt') {
         this.log('Interrupting worker generation with double ESC.');
         await this.wait(70);
-        this.worker.write('\x1b');
+        await this.worker.write('\x1b');
         await this.wait(70);
-        this.worker.write('\x1b');
+        await this.worker.write('\x1b');
         await this.wait(70);
     } else if (action.type === 'emergency-stop') {
         this.triggerEmergencyStop();
@@ -1027,7 +1071,7 @@ Check Aimparency MCP for open aims or the current assigned aim, then start worki
   }
 
   private async executeWrapUp(text?: string): Promise<void> {
-    const defaultPrompt = 'use Aimparency MCP to update aim status and comment and reflection if not done already';
+    const defaultPrompt = 'use Aimparency MCP to update aim status and comment and reflection if not done already, then do a short deletion/reduction pass: remove dead code, simplify where possible, and confirm the remaining diff is intentional before committing';
     const prompt = text ? `${defaultPrompt}. ${text}` : defaultPrompt;
     await this.post(this.worker, prompt);
   }
@@ -1044,16 +1088,4 @@ Check Aimparency MCP for open aims or the current assigned aim, then start worki
     await this.post(this.worker, prompt);
   }
 
-  private async waitForWorkerIdle(): Promise<void> {
-    await this.wait(2000);
-    for (let i = 0; i < 60; i++) {
-      if (!this.isGenerating(this.worker)) {
-        const lines = this.worker.getLines(10);
-        await this.wait(1000);
-        if (lines === this.worker.getLines(10)) return;
-      }
-      await this.wait(1000);
-    }
-    this.log('[StateMachine] Warning: timeout waiting for worker idle');
-  }
 }

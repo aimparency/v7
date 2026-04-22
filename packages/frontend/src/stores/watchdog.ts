@@ -289,6 +289,19 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
+  function disconnectForProjectSwitch() {
+    if (socket.value) {
+      logStatus('Disconnecting watchdog due to project switch...')
+      socket.value.disconnect()
+      socket.value = null
+    }
+    stopKeepalive()
+    isConnected.value = false
+    connectionState.value = 'idle'
+    connectedAgentType.value = null
+    supervisorState.value = null
+  }
+
   async function cancelConnectionAttempt() {
     const projectStore = useProjectStore()
     const projectPath = projectStore.projectPath
@@ -432,6 +445,34 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     if (!session) return false
     setAgentType(session.agentType)
     return connectToExistingSession(session, 'Restoring detected')
+  }
+
+  async function handleProjectSwitch(newProjectPath: string, oldProjectPath?: string) {
+    const normalizedNewPath = normalizeProjectPathForSession(newProjectPath || '')
+    const normalizedOldPath = normalizeProjectPathForSession(oldProjectPath || '')
+
+    if (normalizedNewPath === normalizedOldPath) return
+
+    const shouldReconnect =
+      !!socket.value ||
+      localStorage.getItem('aimparency-watchdog-should-connect') === 'true'
+
+    disconnectForProjectSwitch()
+
+    if (!newProjectPath) {
+      runtimeMetadata.value = null
+      autonomyPolicy.value = null
+      isEnabled.value = false
+      isEmergencyStopped.value = false
+      stopReason.value = ''
+      return
+    }
+
+    await fetchSessions()
+
+    if (shouldReconnect) {
+      await restorePreviousConnection()
+    }
   }
 
   async function hydrateRuntimeState(overridePath?: string, overrideAgentType?: AgentType) {
@@ -608,6 +649,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     relaunch,
     triggerWorkerFocus,
     restorePreviousConnection,
+    handleProjectSwitch,
     hydrateRuntimeState,
     hydrateAutonomyPolicy
   }

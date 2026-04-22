@@ -94,13 +94,14 @@ export const verify: Action = {
 
 export const choice: Action = {
   name: 'choice',
-  description: 'Choose one of the currently visible options in the worker terminal. If the agent prompts for a choice, you have to take this choice action. Example context: "› 1. Allow ... 2. Allow for this session ... 3. Always allow ... 4. Cancel ... enter to submit | esc to cancel".',
+  description: 'Choose one of the currently visible options in the worker terminal. If the worker is waiting for input, you should usually use this action instead of sending a text prompt. For approval prompts, choose the option that keeps work moving safely. For Aimparency MCP permission prompts, prefer durable allow options like "Always allow" or "Allow for this session" over one-off allow when that is clearly offered.',
   parameters: [
     { name: 'choice', description: 'Visible option to select, usually a number or shortcut key', required: true }
   ],
   examples: [
     '{"action": {"type": "choice", "choice": "1"}}',
     '{"action": {"type": "choice", "choice": "2"}}',
+    '{"action": {"type": "choice", "choice": "3"}}',
     '{"action": {"type": "choice", "choice": "esc"}}'
   ]
 }
@@ -119,7 +120,7 @@ export const revisit: Action = {
 
 export const wrapUp: Action = {
   name: 'wrap_up',
-  description: 'Prompt the worker to update aim status/comment and reflection if not done already.',
+  description: 'Prompt the worker to update aim status/comment and reflection if not done already, then do a short deletion/reduction pass before committing.',
   parameters: [
     { name: 'text', description: 'Optional extra wrap-up guidance', required: false }
   ],
@@ -131,7 +132,7 @@ export const wrapUp: Action = {
 
 export const commit: Action = {
   name: 'commit',
-  description: 'Prompt the worker to create a git commit for the current batch of work.',
+  description: 'Prompt the worker to create a git commit for the current batch of work after the diff has been reduced to the intentional changes.',
   parameters: [
     { name: 'text', description: 'Optional extra commit guidance', required: false }
   ],
@@ -168,7 +169,7 @@ export const explore: Action = {
 
 export const exploring: State = {
   name: 'EXPLORING',
-  instructions: 'You are watching a coding agent that is exploring for the next task. If the worker has found something concrete, use start_work. Otherwise use break_down or ideate to keep discovery moving.',
+  instructions: 'You are watching a coding agent that is exploring for the next task. If the worker is visibly waiting for input or showing a choice menu, respond with choice. If the worker has found something concrete, use start_work. Otherwise use break_down or ideate to keep discovery moving.',
   color: '#a8dadc',  // Pastel cyan - exploring, discovering
   actions: [
     { action: startWork, targetState: 'WORKING' },
@@ -180,7 +181,7 @@ export const exploring: State = {
 
 export const working: State = {
   name: 'WORKING',
-  instructions: 'You are watching a coding agent at work. Prompt him to keep advancing. If offered choices, chose one that advances the work. If the worker reports to be done, switch into wrapping up mode.',
+  instructions: 'You are watching a coding agent at work. If the worker is visibly waiting for input or showing a choice menu, respond with choice and select the option that advances the work safely. For Aimparency MCP permission prompts, prefer the durable allow option when one is offered. Otherwise prompt the worker to keep advancing. If the worker reports to be done, switch into wrapping up mode.',
   color: '#a8e6a3',  // Pastel green - active work
   actions: [
     { action: textPrompt, targetState: 'WORKING' },
@@ -191,7 +192,7 @@ export const working: State = {
 
 export const wrappingUp: State = {
   name: 'WRAPPING_UP',
-  instructions: 'You are watching a coding agent wrapping up work. If more implementation is needed, use revisit. Otherwise guide the worker through aim updates/reflection, then commit, then return to exploring.',
+  instructions: 'You are watching a coding agent wrapping up work. If the worker is visibly waiting for input or showing a choice menu, respond with choice. If more implementation is needed, use revisit. Otherwise guide the worker through aim updates/reflection, a short deletion/reduction pass to remove dead code and simplify the diff, then commit, then return to exploring.',
   color: '#ffe5a3',  // Pastel yellow - completion phase
   actions: [
     { action: choice, targetState: 'WRAPPING_UP' },

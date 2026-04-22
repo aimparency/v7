@@ -184,8 +184,8 @@ onMounted(() => {
 
 watch(
   () => projectStore.projectPath,
-  () => {
-    void store.restorePreviousConnection()
+  (newPath, oldPath) => {
+    void store.handleProjectSwitch(newPath, oldPath)
   }
 )
 

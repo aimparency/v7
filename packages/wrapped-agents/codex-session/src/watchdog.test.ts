@@ -106,6 +106,17 @@ test('isGenerating detects cancel-style busy indicator', () => {
   assert.equal(generating, true);
 });
 
+test('isGenerating ignores plain esc-to-cancel footer without timer or choice menu', () => {
+  const service = createService('CURRENT_MARKER');
+  const agent = {
+    getLastLine: () => 'plain status line',
+    getLines: () => 'some stale footer text\nesc to cancel\nplain status line',
+  };
+
+  const generating = service.isGenerating(agent as any);
+  assert.equal(generating, false);
+});
+
 test('isGenerating treats visible numbered choice menu as not generating even with esc to cancel footer', () => {
   const service = createService('CURRENT_MARKER');
   const agent = {
@@ -162,22 +173,18 @@ description: Ensure every supported session runtime exposes the current...
   assert.equal(detected, true);
 });
 
-test('getAimparencyMcpApprovalChoice prefers always allow for aimparency MCP prompts', () => {
+test('hasVisibleChoiceMenu tolerates approval menus without a visible selected marker', () => {
   const service = createService('CURRENT_MARKER');
   const agent = {
-    getLines: () => `Allow the aimparency MCP server to run tool "get_system_status"?
+    getLines: () => `Tool call needs your approval. Reason: Tool call in payload and encrypted reasoning present — need clarification/consent.
 
-  projectPath: /home/felix/dev/graphics/avonx/artwork/.bowman
-
-  › 1. Allow
-    2. Allow for this session
-    3. Always allow
-    4. Cancel
+  1. Allow   Run the tool and continue.
+  2. Cancel  Cancel this tool call
   enter to submit | esc to cancel`,
   };
 
-  const choice = (service as any).getAimparencyMcpApprovalChoice(agent);
-  assert.equal(choice, '3');
+  const detected = (service as any).hasVisibleChoiceMenu(agent);
+  assert.equal(detected, true);
 });
 
 test('getWorkerProcessingDurationMs parses wrapped esc-to-cancel timer', () => {
@@ -273,24 +280,20 @@ test('tick asks watchdog immediately when worker shows a visible choice menu', a
   assert.equal(asked, true);
 });
 
-test('tick auto-approves aimparency MCP permission prompt without asking watchdog', async () => {
-  const writes: string[] = [];
+test('tick lets a worker choice prompt preempt stale supervisor waiting when watchdog is idle', async () => {
   const worker = {
-    getLines: () => `Allow the aimparency MCP server to run tool "get_system_status"?
+    getLines: () => `Allow the aimparency MCP server to run tool "addReflection"?
 
-  projectPath: /home/felix/dev/graphics/avonx/artwork/.bowman
-
-  › 1. Allow
-    2. Allow for this session
-    3. Always allow
-    4. Cancel
-  enter to submit | esc to cancel`,
-    getLastLine: () => 'enter to submit | esc to cancel',
-    write: (chunk: string) => writes.push(chunk),
+  1. Allow
+  2. Allow for this session
+  3. Always allow
+  4. Cancel`,
+    getLastLine: () => '4. Cancel',
+    write: () => {},
   };
   const watchdog = {
-    getLines: () => '',
-    getLastLine: () => '',
+    getLines: () => 'plain idle watchdog screen',
+    getLastLine: () => 'plain idle watchdog screen',
     write: () => {},
   };
   const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
@@ -298,14 +301,16 @@ test('tick auto-approves aimparency MCP permission prompt without asking watchdo
   (service as any).askWatchdog = async () => {
     asked = true;
   };
-  (service as any).wait = async () => {};
   service.setEnabled(true);
+  service.waitingForResponseStart = true;
+  service.waitingForResponse = false;
   (service as any).nextCheckTime = 0;
 
   await service.tick();
 
-  assert.equal(asked, false);
-  assert.deepEqual(writes, ['3', '\r\n']);
+  assert.equal(asked, true);
+  assert.equal(service.waitingForResponseStart, false);
+  assert.equal(service.waitingForResponse, false);
 });
 
 test('tick asks watchdog after a busy-to-idle transition', async () => {
@@ -358,6 +363,37 @@ test('tick asks watchdog after bootstrap timeout when no busy phase has been obs
     enabledAt: Date.now() - 6000,
     observedBusySinceEnabled: false,
     lastBusyAt: 0,
+  };
+  (service as any).nextCheckTime = 0;
+
+  await service.tick();
+
+  assert.equal(asked, true);
+});
+
+test('tick treats stale busy-looking worker snapshot as idle after one interval', async () => {
+  const worker = {
+    getLines: () => 'status\n✻ processing\nesc to interrupt',
+    getLastLine: () => 'esc to interrupt',
+    write: () => {},
+  };
+  const watchdog = {
+    getLines: () => '',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  let asked = false;
+  (service as any).askWatchdog = async () => {
+    asked = true;
+  };
+  service.setEnabled(true);
+  (service as any).workerActivity = {
+    enabledAt: Date.now() - 10_000,
+    observedBusySinceEnabled: true,
+    lastBusyAt: Date.now(),
+    lastSnapshot: 'status\n✻ processing\nesc to interrupt',
+    lastSnapshotAt: Date.now() - 1000,
   };
   (service as any).nextCheckTime = 0;
 
@@ -447,19 +483,19 @@ test('executeAction choice supports numbered choices', async () => {
   assert.deepEqual(writes, ['2']);
 });
 
-test('executeAction choice submits numbered menu selections when enter-to-submit footer is visible', async () => {
+test('executeAction does not suppress repeated choice actions within duplicate window', async () => {
   const writes: string[] = [];
   const service = createService('CURRENT_MARKER');
   (service as any).worker = {
-    getLines: () => '  1. Allow\n  2. Allow for this session\n  3. Always allow\nenter to submit | esc to cancel',
-    write: (chunk: string) => writes.push(chunk),
+    write: async (chunk: string) => writes.push(chunk),
   };
   (service as any).watchdog = {};
   (service as any).wait = async () => {};
 
   await service.executeAction({ type: 'choice', choice: '2' });
+  await service.executeAction({ type: 'choice', choice: '2' });
 
-  assert.deepEqual(writes, ['2', '\r\n']);
+  assert.deepEqual(writes, ['2', '2']);
 });
 
 test('executeActionSideEffects ideate includes returned text guidance', async () => {
@@ -506,6 +542,7 @@ test('executeAction wrap-up posts commit prompt and plans compact', async () => 
   await service.executeAction({ type: 'wrap-up' });
 
   assert.equal((service as any).workingTowardsCommit, true);
+  assert.match(posts[0] || '', /deletion\/reduction pass/i);
   assert.match(posts[0] || '', /make a git commit/i);
   assert.match(posts[0] || '', /git add -u/i);
   assert.doesNotMatch(posts[0] || '', /wait for \/compact/i);
@@ -658,8 +695,8 @@ test('askWatchdog includes wrap-up guidance when commit mode is active', async (
   const prompt = prompts[0] || '';
   assert.match(prompt, /You are guiding a worker\./);
   assert.match(prompt, /worker is asking about commit details/i);
-  assert.match(prompt, /wrap_up - Prompt the worker to update aim status\/comment and reflection/i);
-  assert.match(prompt, /commit - Prompt the worker to create a git commit/i);
+  assert.match(prompt, /wrap_up - Prompt the worker to update aim status\/comment and reflection if not done already, then do a short deletion\/reduction pass/i);
+  assert.match(prompt, /commit - Prompt the worker to create a git commit for the current batch of work after the diff has been reduced/i);
   assert.match(prompt, /waiting_for_committed - Use when the worker is in the middle of committing/i);
 });
 
@@ -687,6 +724,7 @@ test('askWatchdog includes wrap-up rule when commit mode is inactive', async () 
   const prompt = prompts[0] || '';
   assert.match(prompt, /You are guiding a worker\./);
   assert.match(prompt, /major implementation finished and worker is idle/i);
+  assert.match(prompt, /deletion\/reduction pass to remove dead code and simplify the diff/i);
   assert.match(prompt, /revisit - Return from wrapping up to implementation/i);
   assert.match(prompt, /explore - Prompt the worker to explore open work again/i);
 });

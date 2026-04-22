@@ -16,6 +16,7 @@ export interface PromptContext {
   workDuration?: string
   supervisedStatus?: string
   workSummary?: string
+  requiresInput?: boolean
 }
 
 /**
@@ -76,6 +77,9 @@ function buildSituation(ctx: PromptContext): string {
 
   if (ctx.supervisedStatus) {
     lines.push(`worker status: ${ctx.supervisedStatus}`)
+  }
+  if (ctx.requiresInput !== undefined) {
+    lines.push(`worker requires input: ${ctx.requiresInput ? 'yes' : 'no'}`)
   }
 
   // State-specific situation details

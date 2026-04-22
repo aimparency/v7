@@ -20,6 +20,19 @@ When idle or unsure what to do:
 6. **Reflect on completion**: When you complete an aim, use `addReflection` to record what you learned
 7. **Break down if needed**: If an aim is too large, create sub-aims with `create_aim` and link them as supporting
 
+## When Intent Is Missing
+
+If the AI worker asks questions about missing intent, unclear requirements, or unresolved design decisions, treat that as a genuine ambiguity in the aim rather than normal open work.
+
+- Use `update_aim` to set the aim status to `unclear`
+- Add a short status comment describing what decision or intent is missing
+- If helpful, create a supporting sub-aim for the research, clarification, or decision needed to unblock it
+
+Examples:
+- the worker asks which of multiple UX directions should be chosen
+- the worker asks what behavior is intended in an underspecified edge case
+- the worker cannot proceed because a design tradeoff needs a human decision
+
 ## Go Beyond the Graph
 
 Don't just follow aims passively - **think critically and act proactively**:
@@ -80,6 +93,7 @@ When you complete an aim, call `addReflection` with:
 - The `projectPath` for MCP tools should be the repository path with `/.bowman` appended (e.g., `/path/to/repo/.bowman`)
 - Only mark aims as `done` when truly complete
 - If stuck, create a sub-aim describing the blocker
+- If stuck because intent or design direction is missing, prefer setting the current aim to `unclear` with a precise comment
 - Prefer working on aims from active phases over floating aims
 - Before starting work on an aim, use MCP tool `get_aim_context` for that aim to understand it in its context. You might recursively call `get_aim_context` for its parent aims until you have a good understanding of the intention. 
 
