@@ -197,7 +197,7 @@ test('getWorkerProcessingDurationMs parses wrapped esc-to-cancel timer', () => {
   assert.equal(durationMs, 908000);
 });
 
-test('tick keeps waitingForResponseStart when timeout passes without busy indicator or response candidate', async () => {
+test('tick switches to response inspection when start timeout passes without busy indicator or response candidate', async () => {
   const worker = {
     getLines: () => '',
     getLastLine: () => '',
@@ -218,8 +218,8 @@ test('tick keeps waitingForResponseStart when timeout passes without busy indica
 
   await service.tick();
 
-  assert.equal(service.waitingForResponseStart, true);
-  assert.equal(service.waitingForResponse, false);
+  assert.equal(service.waitingForResponseStart, false);
+  assert.equal(service.waitingForResponse, true);
 });
 
 test('tick asks watchdog when worker processing exceeds interrupt threshold', async () => {
@@ -438,6 +438,43 @@ test('tick executes wrapped JSON response after marker when output is zoom/wrap-
   assert.match(watchdogWrites.join('\n'), /Action "send-prompt" is not valid/i);
   assert.equal(service.waitingForResponseStart, false);
   assert.equal(service.waitingForResponse, true);
+});
+
+test('tick processes visible start_work JSON even when watchdog screen still looks busy', async () => {
+  const workerPosts: string[] = [];
+  const worker = {
+    getLines: () => '',
+    getLastLine: () => '',
+    write: () => {},
+  };
+  const watchdog = {
+    getLines: () => `CURRENT_MARKER {"action":{"type":"start_work","message":"run the requested review now"}}\n✻\nesc to interrupt`,
+    getLastLine: () => 'esc to interrupt',
+    write: () => {},
+  };
+
+  const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
+  (service as any).currentPromptMarker = 'CURRENT_MARKER';
+  (service as any).post = async (agent: any, text: string) => {
+    if (agent === worker) workerPosts.push(text);
+  };
+  service.setEnabled(true);
+  service.waitingForResponseStart = false;
+  service.waitingForResponse = true;
+  (service as any).responseRequestedAt = Date.now() - 9000;
+  (service as any).responseSawGenerating = true;
+  (service as any).watchdogSnapshotState = {
+    lastSnapshot: `CURRENT_MARKER {"action":{"type":"start_work","message":"run the requested review now"}}\n✻\nesc to interrupt`,
+    lastSnapshotAt: Date.now() - 1000,
+  };
+  (service as any).nextCheckTime = 0;
+
+  await service.tick();
+
+  assert.equal(workerPosts.length, 1);
+  assert.match(workerPosts[0] || '', /run the requested review now/i);
+  assert.equal(service.waitingForResponseStart, false);
+  assert.equal(service.waitingForResponse, false);
 });
 
 test('executeAction interrupt sends double ESC to worker', async () => {

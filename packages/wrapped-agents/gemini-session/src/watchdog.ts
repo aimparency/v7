@@ -218,7 +218,7 @@ export class WatchdogService {
   // Checks for idle state: No spinner/cancel for 5 consecutive checks of 100ms
   // Also checks that content hasn't changed
   async waitForIdle(agent: Agent): Promise<boolean> {
-    let previousContent = agent.getLines(100);
+    let previousContent = this.readAgentLines(agent, 100);
 
     if (this.isGenerating(agent)) return false;
 
@@ -226,7 +226,7 @@ export class WatchdogService {
       await this.wait(100);
       if (this.isGenerating(agent)) return false;
 
-      const currentContent = agent.getLines(100);
+      const currentContent = this.readAgentLines(agent, 100);
       if (currentContent !== previousContent) {
         return false;
       }
@@ -236,10 +236,25 @@ export class WatchdogService {
   }
 
   isGenerating(agent: Agent): boolean {
-    const lastLine = agent.getLastLine();
+    const lastLine = this.readAgentLastLine(agent);
+    const recentLines = stripAnsi(this.readAgentLines(agent, 8));
     const hasSpinner = SPINNER_CHARS.some(char => lastLine.includes(char));
-    const hasCancel = /esc to cancel|Cancelling/i.test(lastLine);
+    const hasCancel = /esc to cancel|Cancelling/i.test(recentLines);
     return hasSpinner || hasCancel;
+  }
+
+  private readAgentLines(agent: Agent, count: number): string {
+    if (typeof (agent as any).getViewportLines === 'function') {
+      return (agent as any).getViewportLines(count);
+    }
+    return agent.getLines(count);
+  }
+
+  private readAgentLastLine(agent: Agent): string {
+    if (typeof (agent as any).getViewportLastLine === 'function') {
+      return (agent as any).getViewportLastLine();
+    }
+    return agent.getLastLine();
   }
 
   private async wait(ms: number): Promise<void> {

@@ -69,16 +69,16 @@ export class Agent {
     this.ptyProcess.kill();
   }
 
-  getLines(count: number): string {
+  private getViewportRange(count: number): { start: number; end: number } {
     const buffer = this.terminal.buffer.active;
-    
-    // Use cursor position to determine the end of the content of interest
-    // This ensures we capture what is currently "active" or "visible" at the bottom
-    const cursorIndex = buffer.baseY + buffer.cursorY;
-    
-    const end = Math.min(cursorIndex + 1, buffer.length);
+    const viewportBottom = Math.min(buffer.baseY + this.terminal.rows, buffer.length);
+    const end = Math.max(0, viewportBottom);
     const start = Math.max(0, end - count);
-    
+    return { start, end };
+  }
+
+  private collectLines(start: number, end: number): string {
+    const buffer = this.terminal.buffer.active;
     let output = '';
     for (let i = start; i < end; i++) {
       const line = buffer.getLine(i);
@@ -88,12 +88,36 @@ export class Agent {
     }
     return output.trim();
   }
+
+  getLines(count: number): string {
+    const buffer = this.terminal.buffer.active;
+    
+    // Use cursor position to determine the end of the content of interest
+    // This ensures we capture what is currently "active" or "visible" at the bottom
+    const cursorIndex = buffer.baseY + buffer.cursorY;
+    
+    const end = Math.min(cursorIndex + 1, buffer.length);
+    const start = Math.max(0, end - count);
+    return this.collectLines(start, end);
+  }
+
+  getViewportLines(count: number): string {
+    const { start, end } = this.getViewportRange(count);
+    return this.collectLines(start, end);
+  }
   
   getLastLine(): string {
     const buffer = this.terminal.buffer.active;
     // Get the line at the cursor
     const y = buffer.cursorY + buffer.baseY;
     const line = buffer.getLine(y);
+    return line ? line.translateToString(true) : '';
+  }
+
+  getViewportLastLine(): string {
+    const buffer = this.terminal.buffer.active;
+    const { end } = this.getViewportRange(1);
+    const line = buffer.getLine(Math.max(0, end - 1));
     return line ? line.translateToString(true) : '';
   }
 }

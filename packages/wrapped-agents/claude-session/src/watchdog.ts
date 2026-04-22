@@ -264,7 +264,7 @@ export class WatchdogService {
   }
 
   async waitForIdle(agent: Agent): Promise<boolean> {
-    let previousContent = agent.getLines(30);
+    let previousContent = this.readAgentLines(agent, 30);
 
     if (this.isGenerating(agent)) return false;
 
@@ -272,7 +272,7 @@ export class WatchdogService {
       await this.wait(100);
       if (this.isGenerating(agent)) return false;
 
-      const currentContent = agent.getLines(30);
+      const currentContent = this.readAgentLines(agent, 30);
       if (currentContent !== previousContent) {
         return false;
       }
@@ -282,11 +282,26 @@ export class WatchdogService {
   }
 
   isGenerating(agent: Agent): boolean {
-    const lastLine = agent.getLastLine();
+    const lastLine = this.readAgentLastLine(agent);
+    const recentLines = stripAnsi(this.readAgentLines(agent, 8));
     const hasSpinner = SPINNER_CHARS.some(char => lastLine.includes(char));
     // Claude shows "ctrl+c to interrupt" when busy
-    const hasBusyIndicator = /ctrl\+c to interrupt/i.test(lastLine);
+    const hasBusyIndicator = /ctrl\+c to interrupt/i.test(recentLines);
     return hasSpinner || hasBusyIndicator;
+  }
+
+  private readAgentLines(agent: Agent, count: number): string {
+    if (typeof (agent as any).getViewportLines === 'function') {
+      return (agent as any).getViewportLines(count);
+    }
+    return agent.getLines(count);
+  }
+
+  private readAgentLastLine(agent: Agent): string {
+    if (typeof (agent as any).getViewportLastLine === 'function') {
+      return (agent as any).getViewportLastLine();
+    }
+    return agent.getLastLine();
   }
 
   private async wait(ms: number): Promise<void> {
@@ -338,7 +353,7 @@ export class WatchdogService {
     this.retryCount = 0;
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
 
-    const rawContext = stripAnsi(this.worker.getLines(40));
+    const rawContext = stripAnsi(this.readAgentLines(this.worker, 40));
     const supervisedContext = rawContext.replace(/\s+/g, ' ').trim();
 
     // Get current state
@@ -378,7 +393,7 @@ export class WatchdogService {
 
     // Capture screen AFTER posting
     await this.wait(500);
-    const screenAfter = this.watchdog.getLines(100);
+    const screenAfter = this.readAgentLines(this.watchdog, 100);
     this.log(`DEBUG: Watchdog screen AFTER post (last 500 chars):\n${screenAfter.substring(Math.max(0, screenAfter.length - 500))}`);
 
     // Check if Claude is processing (showing spinners)

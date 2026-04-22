@@ -20,14 +20,12 @@ try {
  * - WATCHDOG_POST_ACTION_COOLDOWN: Cooldown period after posting to watchdog (default: 3000ms)
  * - WATCHDOG_INITIAL_WAIT: Initial wait time after posting before checking idle state (default: 2000ms)
  * - WATCHDOG_IDLE_CHECK_INTERVAL: Interval between idle state checks (default: 500ms)
- * - WATCHDOG_IDLE_DEBOUNCE: Debounce interval for idle detection (default: 100ms)
  * - WATCHDOG_MAX_RETRIES: Maximum retries for JSON parsing failures (default: 5)
  * - DEBUG_WATCHDOG: Enable verbose debug logging (default: false, set to 'true' to enable)
  */
 const POST_ACTION_COOLDOWN = parseInt(process.env.WATCHDOG_POST_ACTION_COOLDOWN || '3000', 10);
 const INITIAL_WAIT_AFTER_POST = parseInt(process.env.WATCHDOG_INITIAL_WAIT || '2000', 10);
 const IDLE_CHECK_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_CHECK_INTERVAL || '500', 10);
-const IDLE_DEBOUNCE_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_DEBOUNCE || '100', 10);
 const MAX_RETRIES = parseInt(process.env.WATCHDOG_MAX_RETRIES || '5', 10);
 const RESPONSE_START_TIMEOUT = parseInt(process.env.WATCHDOG_RESPONSE_START_TIMEOUT || '8000', 10);
 const RESPONSE_COMPLETION_GRACE_MS = parseInt(process.env.WATCHDOG_RESPONSE_COMPLETION_GRACE_MS || '5000', 10);
@@ -49,6 +47,11 @@ interface WorkerActivityState {
   lastSnapshotAt: number;
 }
 
+interface SnapshotState {
+  lastSnapshot: string;
+  lastSnapshotAt: number;
+}
+
 interface AgentView {
   recent8: string;
   recent12: string;
@@ -61,6 +64,7 @@ interface AgentSignals {
   view: AgentView;
   hasChoiceMenu: boolean;
   isGenerating: boolean;
+  hasAuthoritativeBusySignal: boolean;
 }
 
 function stripAnsi(str: string): string {
@@ -88,6 +92,10 @@ export class WatchdogService {
   private lastExecutedActionSignature = '';
   private lastExecutedActionAt = 0;
   private lastLongProcessingEscalationAt = 0;
+  private watchdogSnapshotState: SnapshotState = {
+    lastSnapshot: '',
+    lastSnapshotAt: 0,
+  };
   private workerActivity: WorkerActivityState = {
     enabledAt: 0,
     observedBusySinceEnabled: false,
@@ -160,6 +168,7 @@ export class WatchdogService {
       this.workingTowardsCommit = false;
       this.lastStopReason = '';
       this.resetWorkerActivity(Date.now());
+      this.resetWatchdogSnapshotState();
     } else {
       this.waitingForResponse = false;
       this.waitingForResponseStart = false;
@@ -167,6 +176,7 @@ export class WatchdogService {
       this.workingTowardsCommit = false;
       this.lastStopReason = '';
       this.resetWorkerActivity(0);
+      this.resetWatchdogSnapshotState();
     }
     this.log(`Logic ${enabled ? 'ENABLED' : 'DISABLED'}`);
     this.onStateChange?.();
@@ -207,9 +217,6 @@ export class WatchdogService {
 
   onWorkerData(data: string) {
     void data;
-    if (this.enabled && !this.waitingForResponse && !this.waitingForResponseStart) {
-        this.nextCheckTime = Math.max(this.nextCheckTime, Date.now() + IDLE_CHECK_INTERVAL);
-    }
   }
 
   async tick() {
@@ -253,7 +260,15 @@ export class WatchdogService {
       if (this.waitingForResponseStart) {
         this.log('Tick branch: waitingForResponseStart');
         const watchdogSignals = this.captureAgentSignals(this.watchdog, false);
-        if (watchdogSignals.isGenerating) {
+        const watchdogEffectivelyGenerating = this.isWatchdogEffectivelyGenerating(watchdogSignals, now);
+        const screenContent = this.readAgentLines(this.watchdog, 500);
+        const hasResponseCandidate = this.hasResponseCandidateAfterMarker(screenContent);
+
+        if (hasResponseCandidate) {
+          this.waitingForResponseStart = false;
+          this.waitingForResponse = true;
+          this.log('DEBUG: Watchdog response candidate detected after marker.');
+        } else if (watchdogEffectivelyGenerating) {
           this.responseSawGenerating = true;
           this.waitingForResponseStart = false;
           this.waitingForResponse = true;
@@ -261,26 +276,14 @@ export class WatchdogService {
           this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
           this.processing = false;
           return;
-        }
-
-        const elapsed = Date.now() - this.responseRequestedAt;
-        if (elapsed > RESPONSE_START_TIMEOUT) {
-          const screenContent = this.readAgentLines(this.watchdog, 500);
-          const hasResponseCandidate = this.hasResponseCandidateAfterMarker(screenContent);
-          if (hasResponseCandidate) {
-            this.waitingForResponseStart = false;
-            this.waitingForResponse = true;
-            this.log(`DEBUG: Response start timeout (${RESPONSE_START_TIMEOUT}ms), but detected response candidate after marker. Switching to response wait mode.`);
-          } else {
-            this.log(`DEBUG: Response start timeout (${RESPONSE_START_TIMEOUT}ms) without busy indicator or response candidate. Remaining in response-start wait mode.`);
-            this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
-            this.processing = false;
-            return;
-          }
-        } else {
+        } else if (Date.now() - this.responseRequestedAt <= RESPONSE_START_TIMEOUT) {
           this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
           this.processing = false;
           return;
+        } else {
+          this.waitingForResponseStart = false;
+          this.waitingForResponse = true;
+          this.log(`DEBUG: Response start timeout (${RESPONSE_START_TIMEOUT}ms). Switching to response wait mode and checking buffer directly.`);
         }
       }
 
@@ -288,8 +291,12 @@ export class WatchdogService {
       if (this.waitingForResponse) {
         this.log('Tick branch: waitingForResponse');
         const watchdogSignals = this.captureAgentSignals(this.watchdog, false);
-        if (this.shouldDeferResponseCompletion(watchdogSignals.isGenerating, now)) {
-          if (!watchdogSignals.isGenerating) {
+        const watchdogEffectivelyGenerating = this.isWatchdogEffectivelyGenerating(watchdogSignals, now);
+        const screenContent = this.readAgentLines(this.watchdog, 500);
+        const hasResponseCandidate = this.hasResponseCandidateAfterMarker(screenContent);
+
+        if (!hasResponseCandidate && this.shouldDeferResponseCompletion(watchdogEffectivelyGenerating, now)) {
+          if (!watchdogEffectivelyGenerating) {
             const elapsed = now - this.responseRequestedAt;
             this.log(`DEBUG: Deferring response completion check (${elapsed}ms < ${RESPONSE_COMPLETION_GRACE_MS}ms grace).`);
           }
@@ -298,10 +305,7 @@ export class WatchdogService {
           return;
         }
 
-        // waitForIdle checks isGenerating(), so if it returns true, the watchdog has halted
-        const isIdle = await this.waitForIdle(this.watchdog);
-
-        if (!isIdle) {
+        if (!hasResponseCandidate && watchdogEffectivelyGenerating) {
           this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
           this.processing = false;
           return;
@@ -309,12 +313,8 @@ export class WatchdogService {
 
         // Watchdog is idle (halted), parse the response
         this.log("DEBUG: Watchdog is idle. Attempting to parse response...");
-        const screenContent = this.readAgentLines(this.watchdog, 500);
 
         this.log(`DEBUG: Screen content length: ${screenContent.length} chars`);
-        this.log(`DEBUG: First 400 chars of screen:\n${screenContent.substring(0, 400)}`);
-        this.log(`DEBUG: Last 400 chars of screen:\n${screenContent.substring(Math.max(0, screenContent.length - 400))}`);
-        this.log(`DEBUG: Looking for marker: "${this.currentPromptMarker}"`);
 
         try {
             this.log("Attempting to extract decision JSON...");
@@ -379,18 +379,13 @@ export class WatchdogService {
               await this.askWatchdog();
           }
       } else {
-          this.nextCheckTime = Date.now() + IDLE_DEBOUNCE_INTERVAL;
+          this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
       }
     } catch (e) {
       console.error('[WatchdogService] Error in tick:', e);
     } finally {
       this.processing = false;
     }
-  }
-
-  async waitForIdle(agent: Agent): Promise<boolean> {
-    const signals = this.captureAgentSignals(agent, false);
-    return !signals.isGenerating;
   }
 
   isGenerating(agent: Agent): boolean {
@@ -407,6 +402,13 @@ export class WatchdogService {
     };
   }
 
+  private resetWatchdogSnapshotState() {
+    this.watchdogSnapshotState = {
+      lastSnapshot: '',
+      lastSnapshotAt: 0,
+    };
+  }
+
   private observeWorkerActivity(now: number, isWorkerGenerating?: boolean) {
     const generating = isWorkerGenerating ?? (this.worker ? this.isGenerating(this.worker) : false);
     if (!generating) return;
@@ -415,24 +417,37 @@ export class WatchdogService {
     this.workerActivity.lastBusyAt = now;
   }
 
-  private isWorkerEffectivelyGenerating(signals: AgentSignals, now: number): boolean {
+  private isEffectivelyGenerating(signals: AgentSignals, now: number, snapshotState: SnapshotState): boolean {
     if (!signals.isGenerating) {
-      this.workerActivity.lastSnapshot = signals.view.recent30;
-      this.workerActivity.lastSnapshotAt = now;
+      snapshotState.lastSnapshot = signals.view.recent30;
+      snapshotState.lastSnapshotAt = now;
       return false;
     }
 
     const snapshot = signals.view.recent30;
     const snapshotUnchanged =
       snapshot.length > 0 &&
-      snapshot === this.workerActivity.lastSnapshot &&
-      this.workerActivity.lastSnapshotAt !== 0 &&
-      now - this.workerActivity.lastSnapshotAt >= IDLE_CHECK_INTERVAL;
+      snapshot === snapshotState.lastSnapshot &&
+      snapshotState.lastSnapshotAt !== 0 &&
+      now - snapshotState.lastSnapshotAt >= IDLE_CHECK_INTERVAL;
 
-    this.workerActivity.lastSnapshot = snapshot;
-    this.workerActivity.lastSnapshotAt = now;
+    snapshotState.lastSnapshot = snapshot;
+    snapshotState.lastSnapshotAt = now;
 
     return !snapshotUnchanged;
+  }
+
+  private isWorkerEffectivelyGenerating(signals: AgentSignals, now: number): boolean {
+    if (signals.hasAuthoritativeBusySignal) {
+      this.workerActivity.lastSnapshot = signals.view.recent30;
+      this.workerActivity.lastSnapshotAt = now;
+      return true;
+    }
+    return this.isEffectivelyGenerating(signals, now, this.workerActivity);
+  }
+
+  private isWatchdogEffectivelyGenerating(signals: AgentSignals, now: number): boolean {
+    return this.isEffectivelyGenerating(signals, now, this.watchdogSnapshotState);
   }
 
   private getWorkerIdleEscalationReason(now: number, isWorkerGenerating?: boolean): string | null {
@@ -508,11 +523,19 @@ export class WatchdogService {
     return hasSpinner || hasInterruptIndicator || hasTimedCancelIndicator;
   }
 
+  private detectAuthoritativeBusySignal(view: AgentView): boolean {
+    return (
+      /working\s*\(\s*\d+\s*[smh]/i.test(view.recent12) ||
+      /esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i.test(view.recent12)
+    );
+  }
+
   private captureAgentSignals(agent: Agent, shouldLog: boolean = true): AgentSignals {
     const view = this.captureAgentView(agent);
     const hasChoiceMenu = this.detectVisibleChoiceMenu(view.recent24, shouldLog);
     const isGenerating = this.detectGenerating(view, hasChoiceMenu);
-    return { view, hasChoiceMenu, isGenerating };
+    const hasAuthoritativeBusySignal = this.detectAuthoritativeBusySignal(view);
+    return { view, hasChoiceMenu, isGenerating, hasAuthoritativeBusySignal };
   }
 
   private getWorkerProcessingDurationMs(): number | null {
@@ -573,6 +596,7 @@ export class WatchdogService {
     this.retryCount = 0;
     this.responseRequestedAt = Date.now();
     this.responseSawGenerating = false;
+    this.resetWatchdogSnapshotState();
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
 
     const workerSignals = this.captureAgentSignals(this.worker, false);
