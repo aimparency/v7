@@ -58,6 +58,7 @@ interface AgentView {
   recent24: string;
   recent30: string;
   recent40: string;
+  recent50: string;
 }
 
 interface AgentSignals {
@@ -497,6 +498,7 @@ export class WatchdogService {
       recent24: stripAnsi(this.readAgentLines(agent, 24)),
       recent30: stripAnsi(this.readAgentLines(agent, 30)),
       recent40: stripAnsi(this.readAgentLines(agent, 40)),
+      recent50: stripAnsi(this.readAgentLines(agent, 50)),
     };
   }
 
@@ -532,7 +534,7 @@ export class WatchdogService {
 
   private captureAgentSignals(agent: Agent, shouldLog: boolean = true): AgentSignals {
     const view = this.captureAgentView(agent);
-    const hasChoiceMenu = this.detectVisibleChoiceMenu(view.recent24, shouldLog);
+    const hasChoiceMenu = this.detectVisibleChoiceMenu(view.recent50, shouldLog);
     const isGenerating = this.detectGenerating(view, hasChoiceMenu);
     const hasAuthoritativeBusySignal = this.detectAuthoritativeBusySignal(view);
     return { view, hasChoiceMenu, isGenerating, hasAuthoritativeBusySignal };
@@ -600,7 +602,7 @@ export class WatchdogService {
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
 
     const workerSignals = this.captureAgentSignals(this.worker, false);
-    const supervisedContext = workerSignals.view.recent40.replace(/\s+/g, ' ').trim();
+    const supervisedContext = workerSignals.view.recent50.replace(/\s+/g, ' ').trim();
 
     // Get current state
     const currentState = this.animatorState.getState();

@@ -81,6 +81,7 @@ function buildSituation(ctx: PromptContext): string {
   if (ctx.requiresInput !== undefined) {
     lines.push(`worker requires input: ${ctx.requiresInput ? 'yes' : 'no'}`)
   }
+  lines.push('rule: current terminal/repo-facing evidence is more reliable than prior narrative claims')
 
   // State-specific situation details
   if (ctx.state === 'WORKING') {

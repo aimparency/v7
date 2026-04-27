@@ -732,8 +732,8 @@ test('askWatchdog includes wrap-up guidance when commit mode is active', async (
   const prompt = prompts[0] || '';
   assert.match(prompt, /You are guiding a worker\./);
   assert.match(prompt, /worker is asking about commit details/i);
-  assert.match(prompt, /wrap_up - Prompt the worker to update aim status\/comment and reflection if not done already, then do a short deletion\/reduction pass/i);
-  assert.match(prompt, /commit - Prompt the worker to create a git commit for the current batch of work after the diff has been reduced/i);
+  assert.match(prompt, /wrap_up - Prompt the worker to update aim status\/comment and reflection only after the current repo state has been freshly checked/i);
+  assert.match(prompt, /commit - Prompt the worker to create a git commit only after freshly checking the current repo state/i);
   assert.match(prompt, /waiting_for_committed - Use when the worker is in the middle of committing/i);
 });
 

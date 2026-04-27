@@ -82,7 +82,7 @@ export const textPrompt: Action = {
 
 export const verify: Action = {
   name: 'verify',
-  description: 'Use when the worker reports being done or looks ready for a verification pass.',
+  description: 'Use when the worker claims the work is done or commit-ready and must freshly verify current repo reality before any wrap-up or commit decision.',
   parameters: [
     { name: 'text', description: 'Optional extra verification guidance to append to the default verification prompt', required: false }
   ],
@@ -120,7 +120,7 @@ export const revisit: Action = {
 
 export const wrapUp: Action = {
   name: 'wrap_up',
-  description: 'Prompt the worker to update aim status/comment and reflection if not done already, then do a short deletion/reduction pass before committing.',
+  description: 'Prompt the worker to update aim status/comment and reflection only after the current repo state has been freshly checked, then do a short deletion/reduction pass before committing.',
   parameters: [
     { name: 'text', description: 'Optional extra wrap-up guidance', required: false }
   ],
@@ -132,7 +132,7 @@ export const wrapUp: Action = {
 
 export const commit: Action = {
   name: 'commit',
-  description: 'Prompt the worker to create a git commit for the current batch of work after the diff has been reduced to the intentional changes.',
+  description: 'Prompt the worker to create a git commit only after freshly checking the current repo state, confirming exactly which files belong in this batch, and reducing the diff to the intentional changes.',
   parameters: [
     { name: 'text', description: 'Optional extra commit guidance', required: false }
   ],
@@ -169,7 +169,7 @@ export const explore: Action = {
 
 export const exploring: State = {
   name: 'EXPLORING',
-  instructions: 'You are watching a coding agent that is exploring for the next task. If the worker is visibly waiting for input or showing a choice menu, respond with choice. If the worker has found something concrete, use start_work. Otherwise use break_down or ideate to keep discovery moving.',
+  instructions: 'You are watching a coding agent that is exploring for the next task. Treat the visible terminal context as authoritative over prior claims. If the worker is visibly waiting for input or showing a choice menu, respond with choice. If the worker has found something concrete, use start_work. Otherwise use break_down or ideate to keep discovery moving.',
   color: '#a8dadc',  // Pastel cyan - exploring, discovering
   actions: [
     { action: startWork, targetState: 'WORKING' },
@@ -181,7 +181,7 @@ export const exploring: State = {
 
 export const working: State = {
   name: 'WORKING',
-  instructions: 'You are watching a coding agent at work. If the worker is visibly waiting for input or showing a choice menu, respond with choice and select the option that advances the work safely. For Aimparency MCP permission prompts, prefer the durable allow option when one is offered. Otherwise prompt the worker to keep advancing. If the worker reports to be done, switch into wrapping up mode.',
+  instructions: 'You are watching a coding agent at work. Treat the current terminal output and repo-facing checks as authoritative over earlier narrative claims. If the worker is visibly waiting for input or showing a choice menu, respond with choice and select the option that advances the work safely. For Aimparency MCP permission prompts, prefer the durable allow option when one is offered. Otherwise prompt the worker to keep advancing. If the worker reports being done, use verify to force a fresh reality check before wrapping up.',
   color: '#a8e6a3',  // Pastel green - active work
   actions: [
     { action: textPrompt, targetState: 'WORKING' },
@@ -192,7 +192,7 @@ export const working: State = {
 
 export const wrappingUp: State = {
   name: 'WRAPPING_UP',
-  instructions: 'You are watching a coding agent wrapping up work. If the worker is visibly waiting for input or showing a choice menu, respond with choice. If more implementation is needed, use revisit. Otherwise guide the worker through aim updates/reflection, a short deletion/reduction pass to remove dead code and simplify the diff, then commit, then return to exploring.',
+  instructions: 'You are watching a coding agent wrapping up work. Treat fresh repo state as authoritative; do not rely on inherited claims that tests passed, commits happened, or a batch is ready. If the worker is visibly waiting for input or showing a choice menu, respond with choice. If more implementation is needed, use revisit. Otherwise guide the worker through a fresh verification of current repo state, careful batch selection, aim updates/reflection, a short deletion/reduction pass to remove dead code and simplify the diff, then commit, then return to exploring. Broad metadata-only staging or unclear mixed batches are reasons to revisit, not to commit.',
   color: '#ffe5a3',  // Pastel yellow - completion phase
   actions: [
     { action: choice, targetState: 'WRAPPING_UP' },
