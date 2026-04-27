@@ -76,7 +76,7 @@ app.use(
   createExpressMiddleware({
     router: appRouter,
     createContext,
-  })
+  }) as any
 );
 
 const server = app.listen(HTTP_PORT, () => {

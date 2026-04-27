@@ -6,7 +6,8 @@ export class Agent {
   terminal: Terminal;
   
   constructor(cwd: string, args: string[], onData: (data: string) => void) {
-    this.ptyProcess = pty.spawn('gemini', args, {
+    const command = process.platform === 'win32' ? 'gemini.cmd' : 'gemini';
+    this.ptyProcess = pty.spawn(command, args, {
       name: 'xterm-color',
       cols: 120,
       rows: 30,

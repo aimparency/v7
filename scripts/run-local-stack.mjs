@@ -136,6 +136,7 @@ function runCommand(command, args, env) {
       cwd: repoRoot,
       env,
       stdio: 'inherit',
+      shell: process.platform === 'win32',
     });
 
     child.on('exit', (code, signal) => {

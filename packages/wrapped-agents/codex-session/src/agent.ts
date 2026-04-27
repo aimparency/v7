@@ -6,7 +6,8 @@ export class Agent {
   terminal: Terminal;
 
   constructor(cwd: string, args: string[], onData: (data: string) => void) {
-    this.ptyProcess = pty.spawn('codex', args, {
+    const command = process.platform === 'win32' ? 'codex.cmd' : 'codex';
+    this.ptyProcess = pty.spawn(command, args, {
       name: 'xterm-color',
       cols: 80,
       rows: 30,

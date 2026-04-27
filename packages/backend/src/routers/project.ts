@@ -58,7 +58,8 @@ type ConsistencyIssueCode =
   | 'aim_missing_child_supported_aim'
   | 'aim_nonexistent_parent'
   | 'aim_missing_parent_supporting_connection'
-  | 'orphaned_embedding';
+  | 'orphaned_embedding'
+  | 'legacy';
 
 type ConsistencyIssue = {
   code: ConsistencyIssueCode;
@@ -75,7 +76,8 @@ const CONSISTENCY_ACTIONS: Record<ConsistencyIssueCode, string> = {
   aim_missing_child_supported_aim: 'Sync bidirectional link',
   aim_nonexistent_parent: 'Remove invalid parent link',
   aim_missing_parent_supporting_connection: 'Sync bidirectional link',
-  orphaned_embedding: 'Delete orphaned embedding'
+  orphaned_embedding: 'Delete orphaned embedding',
+  legacy: 'Auto-fix'
 };
 
 function createConsistencyIssue(code: ConsistencyIssueCode, message: string): ConsistencyIssue {

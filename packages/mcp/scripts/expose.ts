@@ -14,10 +14,12 @@ async function main() {
   // We run 'tsx src/sse.ts' directly
   const sseScript = path.resolve(__dirname, '../src/sse.ts');
   
-  const mcp = spawn('npx', ['tsx', sseScript], {
+  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+  const mcp = spawn(npxCmd, ['tsx', sseScript], {
     env: { ...process.env, MCP_PORT: String(MCP_PORT) },
     cwd: path.resolve(__dirname, '..'),
-    stdio: ['ignore', 'pipe', 'inherit'] // Capture stdout for logging
+    stdio: ['ignore', 'pipe', 'inherit'], // Capture stdout for logging
+    shell: process.platform === 'win32'
   });
 
   let ngrokStarted = false;
@@ -81,8 +83,10 @@ async function main() {
         console.log('🔒 Enabling Basic Auth');
     }
 
-    const ngrok = spawn('ngrok', ngrokArgs, {
-        stdio: ['ignore', 'pipe', 'pipe'] // Capture both stdout and stderr
+    const ngrokCmd = process.platform === 'win32' ? 'ngrok.exe' : 'ngrok';
+    const ngrok = spawn(ngrokCmd, ngrokArgs, {
+        stdio: ['ignore', 'pipe', 'pipe'], // Capture both stdout and stderr
+        shell: process.platform === 'win32'
     });
 
     ngrok.stdout?.on('data', (data) => {
