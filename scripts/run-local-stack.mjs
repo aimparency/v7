@@ -10,13 +10,15 @@ const repoRoot = path.resolve(__dirname, '..');
 const frontendPublicDir = path.join(repoRoot, 'packages', 'frontend', 'public');
 const runtimeConfigPath = path.join(frontendPublicDir, 'runtime-config.json');
 
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
 const modes = {
   dev: {
-    preflight: [['npm', ['run', 'dev:mobile:config']]],
+    preflight: [[npmCommand, ['run', 'dev:mobile:config']]],
     script: 'dev:stack',
   },
   start: {
-    preflight: [['npm', ['run', 'build:core']]],
+    preflight: [[npmCommand, ['run', 'build:core']]],
     script: 'start:stack',
   },
   'start:fast': {
@@ -178,7 +180,7 @@ async function main() {
     await runCommand(command, args, env);
   }
 
-  await runCommand('npm', ['run', config.script], env);
+  await runCommand(npmCommand, ['run', config.script], env);
 }
 
 main().catch((error) => {
