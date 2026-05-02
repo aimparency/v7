@@ -1,0 +1,24 @@
+{
+  "id": "033c340d-0c82-4f37-9a0a-987d80b89108",
+  "text": "shortcut 'p' for project => open project load page, enumerate most recent projects with number shortcuts '1', '2', '3'",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1777534785212
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

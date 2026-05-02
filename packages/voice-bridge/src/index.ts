@@ -100,19 +100,30 @@ async function handleToolCall(name: string, args: any, projectPath: string) {
     switch (name) {
       case 'list_aims':
         return await trpc.aim.list.query({ projectPath, ...args });
-      case 'get_prioritized_aims':
-        // Simplified logic for prioritize: get aims from list and sort by value/cost
-        const aims = await trpc.aim.list.query({ projectPath, status: 'open' });
-        return aims
-          .map((a: any) => ({ ...a, priority: (a.intrinsicValue || 0) / (a.cost || 1) }))
-          .sort((a, b) => b.priority - a.priority)
-          .slice(0, args.limit || 5);
-      case 'create_aim':
-        const res = await trpc.aim.createFloatingAim.mutate({ projectPath, aim: { text: args.text } });
+      case 'get_prioritized_aims': {
+        // Fetch aims with open status
+        const aims = await trpc.aim.list.query({ 
+          projectPath, 
+          status: 'open',
+          sortBy: 'priority',
+          sortOrder: 'desc',
+          limit: args.limit || 5
+        });
+        return aims;
+      }
+      case 'create_aim': {
+        const res = await trpc.aim.createFloatingAim.mutate({ 
+          projectPath, 
+          aim: { 
+            text: args.text,
+            status: { state: 'open' }
+          } 
+        });
         if (args.phaseId) {
             await trpc.aim.commitToPhase.mutate({ projectPath, aimId: res.id, phaseId: args.phaseId });
         }
         return res;
+      }
       default:
         throw new Error(`Tool ${name} not implemented in bridge`);
     }

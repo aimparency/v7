@@ -29,10 +29,29 @@ export const appRouter = router({
 
     list: publicProcedure
       .input(z.object({
-        projectPath: z.string()
+        projectPath: z.string(),
+        status: z.union([z.string(), z.array(z.string())]).optional(),
+        archived: z.boolean().optional(),
+        sortBy: z.string().optional(),
+        sortOrder: z.string().optional(),
+        limit: z.number().optional()
       }))
       .query(async ({ input }) => {
         throw new Error('Not implemented');
+      }),
+
+    createFloatingAim: publicProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aim: z.object({
+          text: z.string(),
+          status: z.object({
+            state: z.string().optional()
+          }).optional()
+        })
+      }))
+      .mutation(async ({ input }) => {
+        return { id: 'uuid' };
       }),
 
     update: publicProcedure

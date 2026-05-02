@@ -1,0 +1,24 @@
+{
+  "id": "b3f8518f-9c37-4392-bd64-81a55c6da74c",
+  "text": "shift + j/k should move phases even across parent phase boundries.",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1777534704741
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

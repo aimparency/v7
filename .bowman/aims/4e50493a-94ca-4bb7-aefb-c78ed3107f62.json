@@ -1,0 +1,24 @@
+{
+  "id": "4e50493a-94ca-4bb7-aefb-c78ed3107f62",
+  "text": "allow moving aims across parent phase boundries",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1777206717883
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
