@@ -31,6 +31,7 @@ const statuses = computed(() => dataStore.getStatuses)
 
 const aimText = ref('')
 const aimDescription = ref('')
+const descriptionRows = ref(3)
 const aimIntrinsicValue = ref(0)
 const aimCost = ref(0)
 const aimLoopWeight = ref(0)
@@ -54,6 +55,12 @@ const addPhaseBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 
 const pendingFocusRestore = ref<'parent' | 'phase' | null>(null)
+const defaultDescriptionRows = 3
+
+const getInitialDescriptionRows = (description: string) => {
+  if (!description) return defaultDescriptionRows
+  return Math.max(defaultDescriptionRows, description.split(/\r\n|\r|\n/).length)
+}
 
 const openParentSearch = () => {
   pendingFocusRestore.value = 'parent'
@@ -109,6 +116,7 @@ watch(() => props.show, async (show) => {
     confirmRemovePhaseId.value = null
     aimText.value = aim.value.text
     aimDescription.value = aim.value.description || ''
+    descriptionRows.value = getInitialDescriptionRows(aimDescription.value)
     aimIntrinsicValue.value = aim.value.intrinsicValue ?? 0
     aimCost.value = aim.value.cost ?? 0
     aimLoopWeight.value = aim.value.loopWeight ?? 0
@@ -311,7 +319,7 @@ const handleCancel = () => {
           v-model="aimDescription"
           placeholder="Optional description..."
           class="textarea-input"
-          rows="3"
+          :rows="descriptionRows"
           @keydown="handleTextareaKeydown"
         />
       </div>

@@ -17,7 +17,7 @@ vi.mock('../../trpc', () => ({
   }
 }))
 
-function mountEditModal() {
+function mountEditModal(description = 'Old description') {
   const pinia = createTestingPinia({
     createSpy: vi.fn,
     initialState: {
@@ -29,7 +29,7 @@ function mountEditModal() {
           'aim-1': {
             id: 'aim-1',
             text: 'Old title',
-            description: 'Old description',
+            description,
             tags: [],
             status: { state: 'open', comment: '' },
             intrinsicValue: 0,
@@ -64,7 +64,7 @@ function mountEditModal() {
   dataStore.aims['aim-1'] = {
     id: 'aim-1',
     text: 'Old title',
-    description: 'Old description',
+    description,
     tags: [],
     status: { state: 'open', comment: '', date: Date.now() },
     intrinsicValue: 0,
@@ -115,6 +115,41 @@ describe('AimEditModal keyboard save behavior', () => {
 
     expect(dataStore.updateAim).toHaveBeenCalled()
     expect(wrapper.emitted('close')).toBeTruthy()
+  })
+
+  it('sizes the edit description textarea to all initially loaded lines', async () => {
+    const { wrapper } = mountEditModal('Line one\nLine two\nLine three\nLine four')
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    const description = wrapper.find('textarea[placeholder="Optional description..."]')
+
+    expect(description.attributes('rows')).toBe('4')
+  })
+
+  it('does not dynamically resize the edit description textarea after initial load', async () => {
+    const { wrapper } = mountEditModal('Line one\nLine two\nLine three\nLine four')
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    const description = wrapper.find('textarea[placeholder="Optional description..."]')
+    await description.setValue('Line one\nLine two\nLine three\nLine four\nLine five\nLine six')
+    await wrapper.vm.$nextTick()
+
+    expect(description.attributes('rows')).toBe('4')
+  })
+
+  it('keeps the default edit description textarea height for short descriptions', async () => {
+    const { wrapper } = mountEditModal('One line')
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    const description = wrapper.find('textarea[placeholder="Optional description..."]')
+
+    expect(description.attributes('rows')).toBe('3')
   })
 
   it('adds selected parent aims from search callback to the supports list', async () => {
