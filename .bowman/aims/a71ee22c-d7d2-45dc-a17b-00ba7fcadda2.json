@@ -2,7 +2,16 @@
   "id": "a71ee22c-d7d2-45dc-a17b-00ba7fcadda2",
   "text": "convenience feature: shift enter to add another parent aim / containing phase in the parent aim / containing phase modals after aim creation.",
   "description": "",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1778022663270,
+      "context": "Implement Shift+Enter as an additive keyboard shortcut for parent aim and containing phase picker flows so users can select one item and immediately continue adding another.",
+      "outcome": "Added an optional keepOpen flag to aim and phase search selection payloads, set it only from Shift+Enter keyboard activation, and made app-level modal close handlers respect the flag. Normal Enter and click behavior still close. Added focused modal tests and app-level keep-open tests.",
+      "effectiveness": "The shared payload approach avoided duplicating logic in individual add-parent/add-phase callers and covered both modal-local and app-level close paths. Type-check and the full frontend unit suite pass.",
+      "lesson": "For modal keyboard shortcuts, test both the component that emits the selection and the app shell that owns modal visibility; otherwise a local keep-open event can still be immediately closed by the parent handler.",
+      "pattern": "Propagating explicit intent metadata through existing events is a low-churn way to add modal workflow variants while preserving default behavior."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -13,9 +22,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1775193917286
+    "state": "done",
+    "comment": "Implemented Shift+Enter keep-open selection for aim and phase search modals, preserving normal Enter close behavior; added focused modal and app-level regression tests. Verified with frontend type-check and full frontend unit suite.",
+    "date": 1778022657457
   },
   "intrinsicValue": 0,
   "cost": 1,

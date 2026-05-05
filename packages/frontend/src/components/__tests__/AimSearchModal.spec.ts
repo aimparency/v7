@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, type DOMWrapper } from '@vue/test-utils'
+import { flushPromises, mount, type DOMWrapper } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
+import { nextTick } from 'vue'
 import AimSearchModal from '../AimSearchModal.vue'
 import { trpc } from '../../trpc'
 
@@ -142,5 +143,99 @@ describe('AimSearchModal', () => {
 
     expect(wrapper.text()).toContain('Search failed: Embedder unavailable')
     expect(wrapper.text()).not.toContain('No aims found.')
+  })
+
+  it('keeps pick-mode search open when activating an aim with Shift+Enter', async () => {
+    vi.mocked(trpc.aim.search.query).mockResolvedValue([
+      { id: 'a1', text: 'Parent aim', status: { state: 'open' }, score: 0.8 } as any
+    ])
+    vi.mocked(trpc.aim.searchSemantic.query).mockResolvedValue([])
+    vi.mocked(trpc.aim.get.query).mockResolvedValue({
+      id: 'a1',
+      text: 'Parent aim',
+      status: { state: 'open' }
+    } as any)
+
+    wrapper.unmount()
+    wrapper = mount(AimSearchModal, {
+      global: {
+        plugins: [createTestingPinia({
+          createSpy: vi.fn,
+          initialState: {
+            'ui-modal': {
+              aimSearchMode: 'pick'
+            },
+            data: {
+              meta: { statuses: [{ key: 'open', color: '#fff' }] }
+            },
+            project: {
+              projectPath: '/test',
+              currentView: 'columns'
+            }
+          }
+        })]
+      }
+    })
+
+    const input = wrapper.find('input[placeholder="Go to aim..."]')
+    await input.setValue('parent')
+    await vi.advanceTimersByTimeAsync(200)
+    expect(wrapper.find('.result-item').exists()).toBe(true)
+
+    await input.trigger('keydown', { key: 'Enter', shiftKey: true })
+    await flushPromises()
+    await nextTick()
+
+    expect(wrapper.emitted('select')).toEqual([
+      [{ type: 'aim', data: { id: 'a1', text: 'Parent aim', status: { state: 'open' } }, keepOpen: true }]
+    ])
+    expect(wrapper.emitted('close')).toBeUndefined()
+  })
+
+  it('closes pick-mode search when activating an aim with Enter', async () => {
+    vi.mocked(trpc.aim.search.query).mockResolvedValue([
+      { id: 'a1', text: 'Parent aim', status: { state: 'open' }, score: 0.8 } as any
+    ])
+    vi.mocked(trpc.aim.searchSemantic.query).mockResolvedValue([])
+    vi.mocked(trpc.aim.get.query).mockResolvedValue({
+      id: 'a1',
+      text: 'Parent aim',
+      status: { state: 'open' }
+    } as any)
+
+    wrapper.unmount()
+    wrapper = mount(AimSearchModal, {
+      global: {
+        plugins: [createTestingPinia({
+          createSpy: vi.fn,
+          initialState: {
+            'ui-modal': {
+              aimSearchMode: 'pick'
+            },
+            data: {
+              meta: { statuses: [{ key: 'open', color: '#fff' }] }
+            },
+            project: {
+              projectPath: '/test',
+              currentView: 'columns'
+            }
+          }
+        })]
+      }
+    })
+
+    const input = wrapper.find('input[placeholder="Go to aim..."]')
+    await input.setValue('parent')
+    await vi.advanceTimersByTimeAsync(200)
+    expect(wrapper.find('.result-item').exists()).toBe(true)
+
+    await input.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+    await nextTick()
+
+    expect(wrapper.emitted('select')).toEqual([
+      [{ type: 'aim', data: { id: 'a1', text: 'Parent aim', status: { state: 'open' } } }]
+    ])
+    expect(wrapper.emitted('close')).toEqual([[]])
   })
 })

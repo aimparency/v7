@@ -4,6 +4,7 @@ import { createTestingPinia } from '@pinia/testing'
 import { nextTick } from 'vue'
 import App from '../App.vue'
 import { useProjectStore } from '../stores/project-store'
+import { useUIModalStore } from '../stores/ui/modal-store'
 
 const { mockTrpc } = vi.hoisted(() => ({
   mockTrpc: {
@@ -194,5 +195,84 @@ describe('App', () => {
 
     expect(wrapper.text()).toContain('/workspaces/demo')
     expect(wrapper.text()).toContain('/workspaces')
+  })
+
+  it('keeps aim search mounted after a keepOpen selection', async () => {
+    const callback = vi.fn()
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({
+          createSpy: vi.fn,
+          stubActions: false
+        })],
+        stubs: {
+          WatchdogPanel: true,
+          ColumnsView: true,
+          GraphViewWrapper: true,
+          VoiceView: true,
+          PhaseCreationModal: true,
+          AimCreationModal: true,
+          AimEditModal: true,
+          AimSearchModal: {
+            emits: ['select', 'close'],
+            template: '<button class="emit-aim" @click="$emit(\'select\', { type: \'aim\', data: { id: \'a1\', text: \'Parent aim\', status: { state: \'open\' } }, keepOpen: true })">select aim</button>'
+          },
+          PhaseSearchModal: true,
+          ConsistencyModal: true,
+          ProjectSettingsModal: true,
+          ProjectSelectionView: true
+        }
+      }
+    })
+
+    const modalStore = useUIModalStore()
+    modalStore.showAimSearch = true
+    modalStore.aimSearchMode = 'pick'
+    modalStore.aimSearchCallback = callback
+    await nextTick()
+
+    await wrapper.find('.emit-aim').trigger('click')
+
+    expect(callback).toHaveBeenCalledWith(expect.objectContaining({ type: 'aim', keepOpen: true }))
+    expect(modalStore.showAimSearch).toBe(true)
+  })
+
+  it('keeps phase search mounted after a keepOpen selection', async () => {
+    const callback = vi.fn()
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({
+          createSpy: vi.fn,
+          stubActions: false
+        })],
+        stubs: {
+          WatchdogPanel: true,
+          ColumnsView: true,
+          GraphViewWrapper: true,
+          VoiceView: true,
+          PhaseCreationModal: true,
+          AimCreationModal: true,
+          AimEditModal: true,
+          AimSearchModal: true,
+          PhaseSearchModal: {
+            emits: ['select', 'close'],
+            template: '<button class="emit-phase" @click="$emit(\'select\', { type: \'phase\', data: { id: \'phase-1\', name: \'Release Prep\', from: 0, to: 1, parent: null }, keepOpen: true })">select phase</button>'
+          },
+          ConsistencyModal: true,
+          ProjectSettingsModal: true,
+          ProjectSelectionView: true
+        }
+      }
+    })
+
+    const modalStore = useUIModalStore()
+    modalStore.showPhaseSearchPrompt = true
+    modalStore.phaseSearchPromptCallback = callback
+    await nextTick()
+
+    await wrapper.find('.emit-phase').trigger('click')
+
+    expect(callback).toHaveBeenCalledWith(expect.objectContaining({ type: 'phase', keepOpen: true }))
+    expect(modalStore.showPhaseSearchPrompt).toBe(true)
   })
 })

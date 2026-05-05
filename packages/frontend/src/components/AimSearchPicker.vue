@@ -7,8 +7,8 @@ import type { SearchAimResult } from 'shared'
 import type { AimSearchAdditionalOption } from '../stores/ui/aim-search-types'
 
 type AimSearchSelection =
-  | { type: 'aim'; data: SearchAimResult }
-  | { type: 'option'; data: AimSearchAdditionalOption }
+  | { type: 'aim'; data: SearchAimResult; keepOpen?: boolean }
+  | { type: 'option'; data: AimSearchAdditionalOption; keepOpen?: boolean }
   | null
 
 const props = withDefaults(defineProps<{
@@ -284,9 +284,9 @@ const focusResult = (index: number) => {
   })
 }
 
-const activateSelection = (selection: AimSearchSelection = selectedItem.value) => {
+const activateSelection = (selection: AimSearchSelection = selectedItem.value, keepOpen = false) => {
   if (!selection) return
-  emit('activate', selection)
+  emit('activate', keepOpen ? { ...selection, keepOpen } : selection)
 }
 
 const getEscapeSelection = (): NonNullable<AimSearchSelection> | null => {
@@ -354,7 +354,7 @@ const handleInputKeydown = (event: KeyboardEvent) => {
   if (key === 'Enter' && props.activateOnEnter) {
     event.preventDefault()
     event.stopPropagation()
-    activateSelection()
+    activateSelection(selectedItem.value, event.shiftKey)
   }
 }
 
@@ -409,7 +409,7 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
   }
 
   if (key === 'Enter') {
-    activateSelection(items.value[index] ?? null)
+    activateSelection(items.value[index] ?? null, event.shiftKey)
   }
 }
 

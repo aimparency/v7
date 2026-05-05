@@ -42,7 +42,7 @@ const activeProjectName = computed(() => {
   return segments[segments.length - 1] || projectRoot
 })
 
-const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath } | { type: 'option', data: AimSearchAdditionalOption }) => {
+const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath, keepOpen?: boolean } | { type: 'option', data: AimSearchAdditionalOption, keepOpen?: boolean }) => {
   if (modalStore.aimSearchMode === 'pick') {
     if (modalStore.aimSearchCallback && payload.type !== 'path') {
       modalStore.aimSearchCallback(payload as AimSearchPickPayload)
@@ -60,14 +60,18 @@ const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimP
       uiStore.executeNavigation(payload.data as AimPath)
     }
   }
-  modalStore.closeAimSearch()
+  if (!payload.keepOpen) {
+    modalStore.closeAimSearch()
+  }
 }
 
 const handlePhaseSearchSelect = (payload: PhaseSearchSelection) => {
   if (modalStore.phaseSearchPromptCallback) {
     modalStore.phaseSearchPromptCallback(payload)
   }
-  modalStore.closePhaseSearchPrompt()
+  if (!payload.keepOpen) {
+    modalStore.closePhaseSearchPrompt()
+  }
 }
 
 // Local UI state

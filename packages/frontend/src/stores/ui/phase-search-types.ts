@@ -9,8 +9,8 @@ export type PhaseSearchAdditionalOption = {
 }
 
 export type PhaseSearchSelection =
-  | { type: 'phase'; data: Phase }
-  | { type: 'option'; data: PhaseSearchAdditionalOption }
+  | { type: 'phase'; data: Phase; keepOpen?: boolean }
+  | { type: 'option'; data: PhaseSearchAdditionalOption; keepOpen?: boolean }
 
 export type PhaseSearchModalOptions = {
   title: string

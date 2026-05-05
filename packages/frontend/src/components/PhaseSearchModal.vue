@@ -75,9 +75,13 @@ watch(searchQuery, (newValue) => {
   }, 150)
 })
 
-const selectItem = (payload: PhaseSearchSelection) => {
-  emit('select', payload)
-  emit('close')
+const selectItem = (payload: PhaseSearchSelection, keepOpen = false) => {
+  emit('select', keepOpen ? { ...payload, keepOpen } : payload)
+  if (keepOpen) {
+    nextTick(() => searchInput.value?.focus())
+  } else {
+    emit('close')
+  }
 }
 
 const scrollToItem = (index: number) => {
@@ -147,9 +151,9 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (!selected) return
 
   if (selected.type === 'option') {
-    selectItem({ type: 'option', data: selected.data })
+    selectItem({ type: 'option', data: selected.data }, event.shiftKey)
   } else {
-    selectItem({ type: 'phase', data: selected.data })
+    selectItem({ type: 'phase', data: selected.data }, event.shiftKey)
   }
 }
 
@@ -191,9 +195,9 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
   const selected = items.value[index]
   if (!selected) return
   if (selected.type === 'option') {
-    selectItem({ type: 'option', data: selected.data })
+    selectItem({ type: 'option', data: selected.data }, event.shiftKey)
   } else {
-    selectItem({ type: 'phase', data: selected.data })
+    selectItem({ type: 'phase', data: selected.data }, event.shiftKey)
   }
 }
 </script>

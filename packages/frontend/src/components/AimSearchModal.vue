@@ -10,9 +10,9 @@ import type { AimSearchAdditionalOption } from '../stores/ui/aim-search-types'
 import AimSearchPicker from './AimSearchPicker.vue'
 
 type AimSearchModalPayload =
-  | { type: 'aim'; data: Aim }
-  | { type: 'path'; data: AimPath }
-  | { type: 'option'; data: AimSearchAdditionalOption }
+  | { type: 'aim'; data: Aim; keepOpen?: boolean }
+  | { type: 'path'; data: AimPath; keepOpen?: boolean }
+  | { type: 'option'; data: AimSearchAdditionalOption; keepOpen?: boolean }
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
@@ -90,16 +90,20 @@ const scrollToPath = (index: number) => {
   })
 }
 
-const selectAim = async (aim: Aim) => {
+const selectAim = async (aim: Aim, keepOpen = false) => {
   if (modalStore.aimSearchMode === 'pick') {
     try {
       const fullAim = await trpc.aim.get.query({ projectPath: projectStore.projectPath, aimId: aim.id })
-      emit('select', { type: 'aim', data: fullAim })
+      emit('select', keepOpen ? { type: 'aim', data: fullAim, keepOpen } : { type: 'aim', data: fullAim })
     } catch (error) {
       console.error('Failed to load aim for selection', error)
-      emit('select', { type: 'aim', data: aim })
+      emit('select', keepOpen ? { type: 'aim', data: aim, keepOpen } : { type: 'aim', data: aim })
     }
-    close()
+    if (keepOpen) {
+      nextTick(() => pickerRef.value?.focusInput())
+    } else {
+      close()
+    }
     return
   }
 
@@ -160,14 +164,20 @@ const selectAim = async (aim: Aim) => {
   }
 }
 
-const handlePickerActivate = (payload: { type: 'aim'; data: Aim } | { type: 'option'; data: AimSearchAdditionalOption }) => {
+const handlePickerActivate = (payload: { type: 'aim'; data: Aim; keepOpen?: boolean } | { type: 'option'; data: AimSearchAdditionalOption; keepOpen?: boolean }) => {
+  const shouldKeepOpen = modalStore.aimSearchMode === 'pick' && payload.keepOpen === true
+
   if (payload.type === 'option') {
-    emit('select', payload)
-    close()
+    emit('select', shouldKeepOpen ? payload : { type: 'option', data: payload.data })
+    if (shouldKeepOpen) {
+      nextTick(() => pickerRef.value?.focusInput())
+    } else {
+      close()
+    }
     return
   }
 
-  void selectAim(payload.data)
+  void selectAim(payload.data, shouldKeepOpen)
 }
 
 const selectPath = (path: AimPath) => {

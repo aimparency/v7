@@ -9,8 +9,8 @@ export type AimSearchAdditionalOption = {
 }
 
 export type AimSearchPickPayload =
-  | { type: 'aim'; data: Aim }
-  | { type: 'option'; data: AimSearchAdditionalOption }
+  | { type: 'aim'; data: Aim; keepOpen?: boolean }
+  | { type: 'option'; data: AimSearchAdditionalOption; keepOpen?: boolean }
 
 export type AimSearchModalOptions = {
   title: string
