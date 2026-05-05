@@ -182,6 +182,19 @@ describe('AimEditModal keyboard save behavior', () => {
     expect(dataStore.updateAim).not.toHaveBeenCalled()
   })
 
+  it('closes on Escape handled by the modal shell', async () => {
+    const { wrapper, dataStore } = mountEditModal()
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('.modal-overlay').trigger('keydown', { key: 'Escape' })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted('close')).toBeTruthy()
+    expect(dataStore.updateAim).not.toHaveBeenCalled()
+  })
+
   it('saves on Enter from the modal content root when no field handles it', async () => {
     const { wrapper, dataStore } = mountEditModal()
 

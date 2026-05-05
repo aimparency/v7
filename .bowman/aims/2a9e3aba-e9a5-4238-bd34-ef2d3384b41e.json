@@ -2,7 +2,16 @@
   "id": "2a9e3aba-e9a5-4238-bd34-ef2d3384b41e",
   "text": "esc in a modal should close the modal. childs that handle esc should stop() event bubbling. write UI tests for that to prevent regression.",
   "description": "aim add/edit modal, phase add/edit modals.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1778022147320,
+      "context": "Implement Esc-to-close behavior for aim add/edit and phase add/edit modals, with child controls that own Escape preventing propagation.",
+      "outcome": "Updated FormModalShell to prevent and stop Escape after closing, updated PhaseCreationModal key handling to consume Enter/Escape, preserved AimCreationModal textarea-local Escape behavior, and added focused regression specs for shared shell, aim creation/edit, and phase creation/edit flows.",
+      "effectiveness": "Focused component tests caught an event propagation edge in the description textarea test path, which led to a more explicit capture handler and clearer coverage.",
+      "lesson": "For modal keyboard behavior, test both shell-level Escape and child-owned Escape paths; Vue Test Utils trigger events and native dispatch cover different parts of the behavior, so combine them carefully.",
+      "pattern": "Small shared modal behavior changes are safest when paired with specific modal usage tests."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -11,9 +20,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1775653970672
+    "state": "done",
+    "comment": "Implemented shared modal Escape propagation handling, tightened phase modal key handlers, and added focused regression coverage for aim add/edit and phase add/edit modal Escape behavior.",
+    "date": 1778022141329
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -29,6 +29,8 @@ const handleOverlayClick = () => {
 
 const handleKeydown = (event: KeyboardEvent) => {
   if (props.closeOnEscape && event.key === 'Escape' && !event.defaultPrevented) {
+    event.preventDefault()
+    event.stopPropagation()
     emit('requestClose')
   }
 }

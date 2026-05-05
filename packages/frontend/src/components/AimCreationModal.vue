@@ -137,11 +137,15 @@ const handleTextareaKeydown = (event: KeyboardEvent) => {
     event.preventDefault()
     handleSubmit()
   } else if (event.key === 'Escape') {
-    // Vim-friendly: Esc blurs the field (exits "insert mode") instead of closing modal
     event.preventDefault()
     event.stopPropagation()
-    descriptionInput.value?.blur()
+    handleDescriptionEscape()
   }
+}
+
+const handleDescriptionEscape = () => {
+  // Vim-friendly: Esc blurs the field (exits "insert mode") instead of closing modal.
+  descriptionInput.value?.blur()
 }
 
 const handleSearchActivate = (
@@ -284,7 +288,7 @@ onMounted(async () => {
             v-model="aimDescription"
             placeholder="Enter aim description"
             rows="3"
-            @keydown="handleTextareaKeydown"
+            @keydown.capture="handleTextareaKeydown"
           ></textarea>
         </div>
 

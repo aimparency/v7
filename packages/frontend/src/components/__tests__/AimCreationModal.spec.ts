@@ -240,6 +240,37 @@ describe('AimCreationModal', () => {
     expect(focusSpy).toHaveBeenCalled()
   })
 
+  it('closes on Escape handled by the modal shell', async () => {
+    await wrapper.find('.modal-overlay').trigger('keydown', { key: 'Escape' })
+
+    expect(modalStore.closeAimModal).toHaveBeenCalled()
+  })
+
+  it('keeps description Escape local and does not bubble to close the modal', async () => {
+    const description = wrapper.find('textarea[placeholder="Enter aim description"]')
+    const preventDefault = vi.fn()
+    const stopPropagation = vi.fn()
+
+    await description.trigger('keydown', {
+      key: 'Escape',
+      preventDefault,
+      stopPropagation
+    })
+
+    expect(preventDefault).toHaveBeenCalled()
+    expect(stopPropagation).toHaveBeenCalled()
+
+    modalStore.closeAimModal.mockClear()
+    description.element.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      cancelable: true
+    }))
+    await wrapper.vm.$nextTick()
+
+    expect(modalStore.closeAimModal).not.toHaveBeenCalled()
+  })
+
   it('returns focus to the title input on Shift+Tab from embedded search', async () => {
     ;(trpc.aim.search.query as any).mockResolvedValue([
       { id: 'a1', text: 'Refactor old auth', status: { state: 'open' }, score: 0.9 }

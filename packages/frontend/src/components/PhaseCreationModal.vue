@@ -121,8 +121,12 @@ const handleSubmit = () => {
 
 const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
+    event.preventDefault()
+    event.stopPropagation()
     handleSubmit()
   } else if (event.key === 'Escape') {
+    event.preventDefault()
+    event.stopPropagation()
     modalStore.closePhaseModal()
   }
 }
