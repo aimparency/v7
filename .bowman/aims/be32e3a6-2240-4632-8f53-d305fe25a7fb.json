@@ -13,9 +13,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "open",
-    "comment": "All open questions answered in description",
-    "date": 1774770146541
+    "state": "done",
+    "comment": "Added human-dependent to initial project statuses with requested color.",
+    "date": 1778309100177
   },
   "intrinsicValue": 0,
   "cost": 1,

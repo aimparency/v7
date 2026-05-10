@@ -1299,6 +1299,39 @@ export const useDataStore = defineStore('data', {
       }
     },
 
+    async movePhase(projectPath: string, phaseId: string, parentId: string | null, newIndex: number) {
+      try {
+        const phase = this.phases[phaseId]
+        if (!phase) return
+
+        const oldParentId = phase.parent ?? null
+        if (oldParentId === parentId) {
+          await this.reorderPhase(projectPath, phaseId, newIndex)
+          return
+        }
+
+        const updatedPhase = await trpc.phase.update.mutate({
+          projectPath,
+          phaseId,
+          phase: { parent: parentId }
+        })
+        if (updatedPhase) {
+          this.replacePhase(phaseId, updatedPhase)
+        }
+
+        await trpc.phase.reorder.mutate({
+          projectPath,
+          phaseId,
+          newIndex
+        })
+
+        await this.loadPhases(projectPath, oldParentId, { force: true })
+        await this.loadPhases(projectPath, parentId, { force: true })
+      } catch (error) {
+        console.error('Failed to move phase:', error)
+      }
+    },
+
     async checkConsistency(projectPath: string) {
         if (!projectPath) return;
         const startedAt = performance.now();

@@ -2,7 +2,16 @@
   "id": "38d26af9-329e-4259-ad4c-cd2c6521068a",
   "text": "Add regression coverage for watchdog panel supervisor header semantics",
   "description": "Add focused tests that verify the watchdog panel renders lease placement, supervisor naming, automate/stop wording, state text/color, and absence of obsolete owner/worker header UI. Cover both hydrated runtime state and live socket-driven state updates where practical.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1778023237561,
+      "context": "Add regression coverage for WatchdogPanel supervisor header semantics, especially state color styling and live/reactive state updates, while keeping implementation changes minimal unless tests revealed a gap.",
+      "outcome": "Extended WatchdogPanel.spec.ts with tests for hydrated supervisor state color and reactive updates from EXPLORING to WRAPPING_UP, including both displayed text and color style. No production code changes were needed because the existing component already satisfied the behavior.",
+      "effectiveness": "The test-only change filled the missing coverage without churn. Focused WatchdogPanel tests, frontend type-check, and the full frontend unit suite all pass.",
+      "lesson": "When an aim is coverage-focused, first inspect existing behavior and add tests around the stated gaps; avoid changing implementation unless the new tests fail for a real behavior issue.",
+      "pattern": "Regression aims often complete cleanly by codifying behavior that already exists, especially after nearby implementation work has already landed."
+    }
+  ],
   "archived": false,
   "tags": [
     "frontend",
@@ -18,9 +27,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Current fixes are covered by a narrow component spec; this should become a stable regression target for future watchdog UI changes.",
-    "date": 1774857734156
+    "state": "done",
+    "comment": "Added focused WatchdogPanel regression coverage for supervisor state color styling and reactive live state text/color updates. Existing tests already covered lease placement, supervisor naming, automate wording, and obsolete owner/worker/animator label absence. Verified with focused WatchdogPanel spec, frontend type-check, and full frontend unit suite.",
+    "date": 1778023230688
   },
   "intrinsicValue": 0,
   "cost": 1,

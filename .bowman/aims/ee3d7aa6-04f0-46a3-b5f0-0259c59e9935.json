@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1777208749019
+    "state": "done",
+    "comment": "Implemented graph dd confirmation shortcut for deleting selected connections, with unit coverage.",
+    "date": 1778309100104
   },
   "intrinsicValue": 0,
   "cost": 1,

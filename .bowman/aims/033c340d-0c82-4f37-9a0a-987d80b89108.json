@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1777534785212
+    "state": "done",
+    "comment": "Implemented p shortcut to project selection and numbered recent-project shortcuts.",
+    "date": 1778309100160
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -21,7 +21,8 @@ export const INITIAL_STATES: AimState[] = [
   { key: 'done', color: '#81c784', ongoing: false },
   { key: 'cancelled', color: '#e57373', ongoing: false },
   { key: 'failed', color: '#ba68c8', ongoing: false },
-  { key: 'unclear', color: '#90a4ae', ongoing: false }
+  { key: 'unclear', color: '#90a4ae', ongoing: false },
+  { key: 'human-dependent', color: '#bf409f', ongoing: true }
 ];
 
 

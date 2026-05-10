@@ -8,8 +8,42 @@ import { hasQueryFlag } from '../../utils/perf-log'
 export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const graphStore = useGraphUIStore()
   const modalStore = useUIModalStore()
+  const projectStore = useProjectStore()
   if (event.key === 'd') {
     event.preventDefault()
+    const selectedLink = graphStore.selectedLink
+    if (selectedLink) {
+      const pendingLink = graphStore.pendingDeleteLink
+      const isConfirmed =
+        pendingLink?.parentId === selectedLink.parentId &&
+        pendingLink?.childId === selectedLink.childId
+
+      if (!isConfirmed) {
+        graphStore.setPendingDeleteLink(selectedLink)
+        return
+      }
+
+      const parent = dataStore.aims[selectedLink.parentId]
+      const child = dataStore.aims[selectedLink.childId]
+      if (!parent || !child) return
+
+      const updatedConnections = (parent.supportingConnections || []).filter((connection: any) => connection.aimId !== child.id)
+      const updatedChildSupported = (child.supportedAims || []).filter((aimId: string) => aimId !== parent.id)
+
+      dataStore.replaceAim(parent.id, { ...parent, supportingConnections: updatedConnections })
+      dataStore.replaceAim(child.id, { ...child, supportedAims: updatedChildSupported })
+      dataStore.recalculateValues()
+      graphStore.deselectLink()
+
+      await dataStore.updateAim(projectStore.projectPath, parent.id, {
+        supportingConnections: updatedConnections
+      })
+      await dataStore.updateAim(projectStore.projectPath, child.id, {
+        supportedAims: updatedChildSupported
+      })
+      return
+    }
+
     const aimId = graphStore.graphSelectedAimId
     if (!aimId) return
 
@@ -22,10 +56,13 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
     }
   } else if (event.key === 'Escape') {
     event.preventDefault()
-    if (uiStore.pendingDeleteAimId) {
+    if (graphStore.pendingDeleteLink) {
+      graphStore.setPendingDeleteLink(null)
+    } else if (uiStore.pendingDeleteAimId) {
       uiStore.pendingDeleteAimId = null
     } else {
       graphStore.setGraphSelection(null)
+      graphStore.deselectLink()
     }
   } else if (event.key === 'e') {
     event.preventDefault()
@@ -46,19 +83,39 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
     const selectedEntry = uiStore.getSelectedPhaseEntry(col)
     if (!selectedEntry || selectedEntry.type !== 'phase') return
 
-    const siblingIds = dataStore.getOrderedSiblingIds(selectedEntry.parentPhaseId)
-    const currentIndex = siblingIds.indexOf(selectedEntry.phase.id)
-    if (currentIndex < 0) return
+    const selectableEntries = dataStore.getSelectableColumnEntries(col)
+    const currentSelectableIndex = selectableEntries.findIndex((entry: any) => entry.type === 'phase' && entry.phase.id === selectedEntry.phase.id)
+    if (currentSelectableIndex < 0) return
 
-    const targetIndex = currentIndex + delta
-    const siblingCount = siblingIds.length
-    if (targetIndex < 0 || targetIndex >= siblingCount) return
+    const targetSelectableIndex = currentSelectableIndex + delta
+    const targetEntry = selectableEntries[targetSelectableIndex]
+    if (!targetEntry) return
 
-    await dataStore.reorderPhase(projectStore.projectPath, selectedEntry.phase.id, targetIndex)
+    if (targetEntry.parentPhaseId === selectedEntry.parentPhaseId) {
+      const siblingIds = dataStore.getOrderedSiblingIds(selectedEntry.parentPhaseId)
+      const currentIndex = siblingIds.indexOf(selectedEntry.phase.id)
+      if (currentIndex < 0) return
+
+      const targetIndex = currentIndex + delta
+      const siblingCount = siblingIds.length
+      if (targetIndex < 0 || targetIndex >= siblingCount) return
+
+      await dataStore.reorderPhase(projectStore.projectPath, selectedEntry.phase.id, targetIndex)
+    } else {
+      const targetParentId = targetEntry.parentPhaseId ?? null
+      const targetIndex =
+        delta > 0 && targetEntry.type === 'phase'
+          ? targetEntry.childIndex + 1
+          : targetEntry.childIndex
+
+      await dataStore.movePhase(projectStore.projectPath, selectedEntry.phase.id, targetParentId, targetIndex)
+    }
+
     await uiStore.loadColumn(col)
     const nextIndex = uiStore.findSelectableIndexForPhase(col, selectedEntry.phase.id)
     if (nextIndex >= 0) {
       uiStore.setSelection(col, nextIndex)
+      await uiStore.reconcilePhaseSelection(col, delta > 0 ? 'forward' : 'backward')
     }
   }
 

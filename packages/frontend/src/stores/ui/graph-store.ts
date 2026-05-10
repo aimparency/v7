@@ -14,12 +14,15 @@ export type PersistedGraphViewState = {
   graphShowLabels: boolean
 }
 
-type GraphUIState = PersistedGraphViewState
+type GraphUIState = PersistedGraphViewState & {
+  pendingDeleteLink: { parentId: string; childId: string } | null
+}
 
 export const useGraphUIStore = defineStore('ui-graph', {
   state: (): GraphUIState => ({
     graphSelectedAimId: null,
     selectedLink: null,
+    pendingDeleteLink: null,
     graphColorMode: 'status',
     graphPanelWidth: 300,
     graphShowLabels: true
@@ -61,10 +64,16 @@ export const useGraphUIStore = defineStore('ui-graph', {
 
     selectLink(parentId: string, childId: string) {
       this.selectedLink = { parentId, childId }
+      this.pendingDeleteLink = null
     },
 
     deselectLink() {
       this.selectedLink = null
+      this.pendingDeleteLink = null
+    },
+
+    setPendingDeleteLink(link: { parentId: string; childId: string } | null) {
+      this.pendingDeleteLink = link
     },
 
     setGraphColorMode(mode: GraphColorMode) {

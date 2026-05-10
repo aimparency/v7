@@ -163,6 +163,13 @@ const closeProject = () => {
   projectStore.setProjectPath('')
 }
 
+const openProjectSelection = () => {
+  projectStore.setProjectPath('')
+  nextTick(() => {
+    document.querySelector<HTMLInputElement>('.project-input')?.focus()
+  })
+}
+
 const runProjectRestore = async (path: string) => {
   uiStore.beginUIStateRestore()
   await dataStore.loadProject(path)
@@ -189,17 +196,35 @@ const handleVisibilityChange = () => {
 
 // Global keydown handler
 const handleGlobalKeydown = (event: KeyboardEvent) => {
-  // Ignore if in project selection screen
-  if (projectStore.isInProjectSelection) return
-
-  // Ignore if user is typing in an input (except Escape which might be needed to close modals/search)
   const target = event.target as HTMLElement
   const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
-  
+
+  if (projectStore.isInProjectSelection) {
+    if (isInput || event.ctrlKey || event.metaKey || event.altKey) return
+
+    const historyIndex = Number.parseInt(event.key, 10) - 1
+    const historyEntry = Number.isInteger(historyIndex)
+      ? projectStore.projectHistory[historyIndex]
+      : undefined
+
+    if (historyEntry) {
+      event.preventDefault()
+      void openProjectFromHistory(historyEntry.path)
+    }
+    return
+  }
+
+  // Ignore if user is typing in an input (except Escape which might be needed to close modals/search)
   if (isInput) return
 
   if (uiStore.isRestoringUIState) {
     uiStore.interruptUIStateRestore()
+  }
+
+  if (event.key === 'p' && !uiStore.navigatingAims && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    event.preventDefault()
+    openProjectSelection()
+    return
   }
 
   // Watchdog toggle
@@ -214,7 +239,7 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  void uiStore.handleGlobalKeydown(event, dataStore).catch((error: unknown) => {
+  void Promise.resolve(uiStore.handleGlobalKeydown(event, dataStore)).catch((error: unknown) => {
     if (hasQueryFlag('phaseNavDebug')) {
       console.error('[PhaseNav] handleGlobalKeydown:error', {
         key: event.key,

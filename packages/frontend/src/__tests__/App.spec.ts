@@ -10,7 +10,12 @@ const { mockTrpc } = vi.hoisted(() => ({
   mockTrpc: {
     project: {
       buildSearchIndex: { mutate: vi.fn() },
-      discoverLocalProjects: { query: vi.fn().mockResolvedValue({ rootsScanned: [], projects: [] }) }
+      discoverLocalProjects: { query: vi.fn().mockResolvedValue({ rootsScanned: [], projects: [] }) },
+      getMeta: { query: vi.fn().mockResolvedValue({ name: 'Test', color: '#007acc', rootPhaseIds: [] }) },
+      onUpdate: { subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) }
+    },
+    aim: {
+      list: { query: vi.fn().mockResolvedValue([]) }
     }
   }
 }))
@@ -274,5 +279,52 @@ describe('App', () => {
 
     expect(callback).toHaveBeenCalledWith(expect.objectContaining({ type: 'phase', keepOpen: true }))
     expect(modalStore.showPhaseSearchPrompt).toBe(true)
+  })
+
+  it('opens project selection with p and opens recent projects with number shortcuts', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({
+          createSpy: vi.fn,
+          stubActions: false
+        })],
+        stubs: {
+          WatchdogPanel: true,
+          ColumnsView: true,
+          GraphViewWrapper: true,
+          VoiceView: true,
+          PhaseCreationModal: true,
+          AimCreationModal: true,
+          AimEditModal: true,
+          AimSearchModal: true,
+          PhaseSearchModal: true,
+          ConsistencyModal: true,
+          ProjectSettingsModal: true,
+          ProjectSelectionView: {
+            props: ['projectHistory'],
+            template: '<div class="project-selection-stub">{{ projectHistory.map((p) => p.path).join("|") }}</div>'
+          }
+        }
+      }
+    })
+
+    const projectStore = useProjectStore()
+    projectStore.projectPath = '/workspaces/current'
+    projectStore.projectHistory = [
+      { path: '/workspaces/one', lastOpened: 2, failedToLoad: false },
+      { path: '/workspaces/two', lastOpened: 1, failedToLoad: false }
+    ]
+    await nextTick()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true, cancelable: true }))
+    await nextTick()
+
+    expect(projectStore.projectPath).toBe('')
+    expect(wrapper.text()).toContain('/workspaces/one')
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true, cancelable: true }))
+    await nextTick()
+
+    expect(projectStore.projectPath).toBe('/workspaces/two')
   })
 })

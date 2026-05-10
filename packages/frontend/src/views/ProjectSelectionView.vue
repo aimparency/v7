@@ -70,11 +70,12 @@ const formatRelativeTime = (timestamp: number): string => {
         <h3>Recent Projects</h3>
         <div class="history-list">
           <div
-            v-for="project in props.projectHistory"
+            v-for="(project, index) in props.projectHistory"
             :key="project.path"
             class="history-item"
             :class="{ failed: project.failedToLoad }"
           >
+            <span v-if="index < 9" class="history-shortcut">{{ index + 1 }}</span>
             <button
               type="button"
               class="edit-button"
@@ -318,6 +319,18 @@ const formatRelativeTime = (timestamp: number): string => {
 
 .history-item.failed .history-path {
   color: #ff6666;
+}
+
+.history-shortcut {
+  flex: 0 0 2rem;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid #444;
+  color: #aaa;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .history-open-button {

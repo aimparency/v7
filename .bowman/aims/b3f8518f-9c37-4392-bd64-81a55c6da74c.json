@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1777534704741
+    "state": "done",
+    "comment": "Implemented Shift+J/K phase moves across parent boundaries by changing parent ownership, reordering inside the target parent, and repairing the selected ancestor path back down to the moved phase. Added focused frontend regression coverage.",
+    "date": 1778311894865
   },
   "intrinsicValue": 0,
   "cost": 1,

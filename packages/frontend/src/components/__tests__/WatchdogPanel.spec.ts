@@ -209,4 +209,71 @@ describe('WatchdogPanel', () => {
     expect(wrapper.text()).not.toContain('Enable Animator')
     expect(wrapper.text()).not.toContain('Animator State:')
   })
+
+  it('renders supervisor state color from hydrated state metadata', async () => {
+    watchdogStore.supervisorState = {
+      state: 'WORKING',
+      color: '#f59e0b'
+    }
+
+    const wrapper = mount(WatchdogPanel, {
+      global: {
+        stubs: {
+          WatchdogTerminal: {
+            template: '<div />',
+            methods: {
+              write() {},
+              clear() {},
+              focus() {}
+            }
+          },
+          WatchdogActionsOverlay: true
+        }
+      }
+    })
+
+    await nextTick()
+
+    const state = wrapper.get('.term-label-supervisor .term-state')
+    expect(state.text()).toBe('State: working')
+    expect(state.attributes('style')).toContain('color: rgb(245, 158, 11)')
+  })
+
+  it('reactively updates supervisor state text and color from live state changes', async () => {
+    watchdogStore.supervisorState = {
+      state: 'EXPLORING',
+      color: '#22c55e'
+    }
+
+    const wrapper = mount(WatchdogPanel, {
+      global: {
+        stubs: {
+          WatchdogTerminal: {
+            template: '<div />',
+            methods: {
+              write() {},
+              clear() {},
+              focus() {}
+            }
+          },
+          WatchdogActionsOverlay: true
+        }
+      }
+    })
+
+    await nextTick()
+
+    const state = wrapper.get('.term-label-supervisor .term-state')
+    expect(state.text()).toBe('State: exploring')
+    expect(state.attributes('style')).toContain('color: rgb(34, 197, 94)')
+
+    watchdogStore.supervisorState = {
+      state: 'WRAPPING_UP',
+      color: '#38bdf8'
+    }
+    await nextTick()
+
+    expect(state.text()).toBe('State: wrapping_up')
+    expect(state.attributes('style')).toContain('color: rgb(56, 189, 248)')
+  })
 })
