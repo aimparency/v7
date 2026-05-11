@@ -13,6 +13,11 @@ import { loadAllAimsCache, saveAims } from '../utils/db'
 type RouterOutputs = inferRouterOutputs<AppRouter>
 type ConsistencyIssue = RouterOutputs['project']['checkConsistency']['issues'][number]
 
+const isMissingFileError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error)
+  return message.includes('ENOENT') || message.includes('no such file or directory')
+}
+
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
   selectedAimIndex?: number
@@ -1196,6 +1201,7 @@ export const useDataStore = defineStore('data', {
     async loadPhaseAims(projectPath: string, phaseId: string) {
       if (!projectPath) return;
       perfLog('data.loadPhaseAims:start', { projectPath, phaseId });
+      const projectStore = useProjectStore()
 
       try {
         if (phaseId === 'null') {
@@ -1204,6 +1210,8 @@ export const useDataStore = defineStore('data', {
         } else {
           // Phase aims - load the specific phase to get commitments
           const phase = await trpc.phase.get.query({ projectPath, phaseId });
+          if (projectStore.projectPath !== projectPath) return;
+
           if (phase) {
             this.replacePhase(phaseId, phase);
 
@@ -1213,6 +1221,7 @@ export const useDataStore = defineStore('data', {
                   aimIds: phase.commitments
                 })
               : [];
+            if (projectStore.projectPath !== projectPath) return;
 
             for (const aim of phaseAims) {
               this.replaceAim(aim.id, aim);
@@ -1223,24 +1232,30 @@ export const useDataStore = defineStore('data', {
         }
       } catch (error) {
         perfLog('data.loadPhaseAims:error', { projectPath, phaseId, error })
+        if (projectStore.projectPath !== projectPath || isMissingFileError(error)) return;
+
         console.error('Failed to load phase aims:', error);
       }
     },
 
     async loadAims(projectPath: string, aimIds: string[]) {
       if (!projectPath || aimIds.length === 0) return;
+      const projectStore = useProjectStore()
 
       try {
         const aims = await trpc.aim.getMany.query({
           projectPath,
           aimIds
         });
+        if (projectStore.projectPath !== projectPath) return;
 
         for (const aim of aims) {
           this.replaceAim(aim.id, aim);
         }
         this.recalculateValues();
       } catch (error) {
+        if (projectStore.projectPath !== projectPath || isMissingFileError(error)) return;
+
         console.error('Failed to load specific aims:', error);
       }
     },

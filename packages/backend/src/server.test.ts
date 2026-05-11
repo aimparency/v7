@@ -149,6 +149,26 @@ test('createCommittedAim - creates and commits aim to phase', async () => {
   assert.equal(aim.text, 'Committed Aim');
 });
 
+test('getMany - skips missing aims instead of failing the full batch', async () => {
+  const aimResult = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: {
+      text: 'Existing Aim',
+      status: { state: 'open', comment: '', date: Date.now() }
+    }
+  });
+
+  const results = await caller.aim.getMany({
+    projectPath: testProjectPath,
+    aimIds: [
+      aimResult.id,
+      '00000000-0000-4000-8000-000000000000'
+    ]
+  });
+
+  assert.deepEqual(results.map((aim) => aim.id), [aimResult.id]);
+});
+
 test('connectAims - repositioning existing connections', async () => {
 
   // Create parent aim

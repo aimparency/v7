@@ -327,4 +327,46 @@ describe('App', () => {
 
     expect(projectStore.projectPath).toBe('/workspaces/two')
   })
+
+  it('returns to the open project when Escape cancels project selection', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createTestingPinia({
+          createSpy: vi.fn,
+          stubActions: false
+        })],
+        stubs: {
+          WatchdogPanel: true,
+          ColumnsView: true,
+          GraphViewWrapper: true,
+          VoiceView: true,
+          PhaseCreationModal: true,
+          AimCreationModal: true,
+          AimEditModal: true,
+          AimSearchModal: true,
+          PhaseSearchModal: true,
+          ConsistencyModal: true,
+          ProjectSettingsModal: true,
+          ProjectSelectionView: {
+            template: '<input class="project-input" />'
+          }
+        }
+      }
+    })
+
+    const projectStore = useProjectStore()
+    projectStore.projectPath = '/workspaces/current'
+    await nextTick()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', bubbles: true, cancelable: true }))
+    await nextTick()
+
+    expect(projectStore.projectPath).toBe('')
+    expect(wrapper.find('.project-input').exists()).toBe(true)
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
+    await nextTick()
+
+    expect(projectStore.projectPath).toBe('/workspaces/current')
+  })
 })

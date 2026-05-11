@@ -82,6 +82,7 @@ const isResizingWatchdog = ref(false)
 const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
 const discoveredProjectRoots = ref<string[]>([])
 const isRefreshingDiscoveredProjects = ref(false)
+const projectSelectionReturnPath = ref('')
 
 // Persist watchdog visibility and handle focus
 watch(() => projectStore.showWatchdog, (val) => {
@@ -124,6 +125,7 @@ const projectPathInput = ref('')
 
 const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
+  projectSelectionReturnPath.value = ''
   await runProjectRestore(path)
 }
 
@@ -145,11 +147,13 @@ const refreshDiscoveredProjects = async () => {
 }
 
 const openProjectFromHistory = async (path: string) => {
+  projectSelectionReturnPath.value = ''
   projectPathInput.value = path
   await runProjectRestore(path)
 }
 
 const openDiscoveredProject = async (path: string) => {
+  projectSelectionReturnPath.value = ''
   projectPathInput.value = path
   await handleSelectProject()
 }
@@ -159,15 +163,22 @@ const removeFromHistory = (path: string) => {
 }
 
 const closeProject = () => {
-  // Just clearing the project path will reset the app state
-  projectStore.setProjectPath('')
+  openProjectSelection()
 }
 
 const openProjectSelection = () => {
+  projectSelectionReturnPath.value = projectStore.projectPath
   projectStore.setProjectPath('')
   nextTick(() => {
     document.querySelector<HTMLInputElement>('.project-input')?.focus()
   })
+}
+
+const cancelProjectSelection = () => {
+  if (!projectSelectionReturnPath.value) return
+
+  projectStore.setProjectPath(projectSelectionReturnPath.value)
+  projectSelectionReturnPath.value = ''
 }
 
 const runProjectRestore = async (path: string) => {
@@ -200,6 +211,12 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
   const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
 
   if (projectStore.isInProjectSelection) {
+    if (event.key === 'Escape' && projectSelectionReturnPath.value) {
+      event.preventDefault()
+      cancelProjectSelection()
+      return
+    }
+
     if (isInput || event.ctrlKey || event.metaKey || event.altKey) return
 
     const historyIndex = Number.parseInt(event.key, 10) - 1

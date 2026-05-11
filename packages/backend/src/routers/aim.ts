@@ -45,7 +45,20 @@ export const createAimRouter = (
         aimIds: z.array(z.string().uuid())
       }))
       .query(async ({ input }: any) => {
-        return await Promise.all(input.aimIds.map((aimId: string) => readAim(input.projectPath, aimId)));
+        const results = await Promise.allSettled(
+          input.aimIds.map((aimId: string) => readAim(input.projectPath, aimId))
+        );
+
+        return results.flatMap((result, index) => {
+          if (result.status === 'fulfilled') return [result.value];
+
+          const aimId = input.aimIds[index];
+          const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
+          if (!message.includes('ENOENT')) {
+            console.warn(`Failed to read aim ${aimId}`, result.reason);
+          }
+          return [];
+        });
       }),
 
     list: delayedProcedure
