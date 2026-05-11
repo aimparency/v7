@@ -145,6 +145,34 @@ describe('AimSearchModal', () => {
     expect(wrapper.text()).not.toContain('No aims found.')
   })
 
+  it('renders aim id prefix matches with a highlighted id line', async () => {
+    vi.mocked(trpc.aim.search.query).mockResolvedValue([
+      {
+        id: '12345678-90ab-cdef-1234-567890abcdef',
+        text: 'ID matched aim',
+        status: { state: 'open' },
+        score: 2.08,
+        idMatch: { prefix: '12345678' }
+      } as any
+    ])
+    vi.mocked(trpc.aim.searchSemantic.query).mockResolvedValue([
+      {
+        id: '12345678-90ab-cdef-1234-567890abcdef',
+        text: 'ID matched aim',
+        status: { state: 'open' },
+        score: 0.9
+      } as any
+    ])
+
+    const input = wrapper.find('input[placeholder="Go to aim..."]')
+    await input.setValue('12345678')
+    await vi.advanceTimersByTimeAsync(200)
+
+    const idLine = wrapper.find('.aim-id-match')
+    expect(idLine.text()).toBe('12345678-90ab-cdef-1234-567890abcdef')
+    expect(wrapper.find('.aim-id-prefix').text()).toBe('12345678')
+  })
+
   it('keeps pick-mode search open when activating an aim with Shift+Enter', async () => {
     vi.mocked(trpc.aim.search.query).mockResolvedValue([
       { id: 'a1', text: 'Parent aim', status: { state: 'open' }, score: 0.8 } as any

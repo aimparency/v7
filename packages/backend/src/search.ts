@@ -5,6 +5,19 @@ import type { Aim, Phase, SearchAimResult } from 'shared';
 // FlexSearch indices per project
 const aimIndices = new Map<string, Document<Aim>>();
 const phaseIndices = new Map<string, Document<Phase>>();
+type AimIdPrefixIndex = {
+  aimIds: Set<string>;
+  children: Map<string, AimIdPrefixIndex>;
+};
+
+const aimIdPrefixIndices = new Map<string, AimIdPrefixIndex>();
+
+function createAimIdPrefixIndex(): AimIdPrefixIndex {
+  return {
+    aimIds: new Set<string>(),
+    children: new Map<string, AimIdPrefixIndex>()
+  };
+}
 
 // ... existing getAimIndex ...
 function getAimIndex(projectPath: string): Document<Aim> {
@@ -20,6 +33,64 @@ function getAimIndex(projectPath: string): Document<Aim> {
     aimIndices.set(projectPath, index);
   }
   return aimIndices.get(projectPath)!;
+}
+
+function getAimIdPrefixIndex(projectPath: string): AimIdPrefixIndex {
+  if (!aimIdPrefixIndices.has(projectPath)) {
+    aimIdPrefixIndices.set(projectPath, createAimIdPrefixIndex());
+  }
+  return aimIdPrefixIndices.get(projectPath)!;
+}
+
+function addAimIdToPrefixIndex(projectPath: string, aimId: string): void {
+  const normalizedId = aimId.toLowerCase();
+  let node = getAimIdPrefixIndex(projectPath);
+
+  for (const char of normalizedId) {
+    let child = node.children.get(char);
+    if (!child) {
+      child = createAimIdPrefixIndex();
+      node.children.set(char, child);
+    }
+    child.aimIds.add(aimId);
+    node = child;
+  }
+}
+
+function removeAimIdFromPrefixIndex(projectPath: string, aimId: string): void {
+  const normalizedId = aimId.toLowerCase();
+  const root = getAimIdPrefixIndex(projectPath);
+  const path: Array<{ parent: AimIdPrefixIndex; char: string; node: AimIdPrefixIndex }> = [];
+  let node = root;
+
+  for (const char of normalizedId) {
+    const child = node.children.get(char);
+    if (!child) return;
+    path.push({ parent: node, char, node: child });
+    node = child;
+  }
+
+  for (let i = path.length - 1; i >= 0; i--) {
+    const entry = path[i]!;
+    entry.node.aimIds.delete(aimId);
+    if (entry.node.aimIds.size === 0 && entry.node.children.size === 0) {
+      entry.parent.children.delete(entry.char);
+    }
+  }
+}
+
+function searchAimIdsByPrefix(projectPath: string, query: string): string[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (normalizedQuery.length < 8) return [];
+
+  let node = getAimIdPrefixIndex(projectPath);
+  for (const char of normalizedQuery) {
+    const child = node.children.get(char);
+    if (!child) return [];
+    node = child;
+  }
+
+  return Array.from(node.aimIds);
 }
 
 // ... existing getPhaseIndex ...
@@ -48,6 +119,9 @@ export function indexAims(projectPath: string, aims: Aim[]): void {
   const index = getAimIndex(projectPath);
   for (const aim of aims) index.remove(aim.id);
   for (const aim of aims) index.add(aim);
+
+  aimIdPrefixIndices.set(projectPath, createAimIdPrefixIndex());
+  for (const aim of aims) addAimIdToPrefixIndex(projectPath, aim.id);
 }
 
 export function indexPhases(projectPath: string, phases: Phase[]): void {
@@ -59,16 +133,20 @@ export function indexPhases(projectPath: string, phases: Phase[]): void {
 export function addAimToIndex(projectPath: string, aim: Aim): void {
   const index = getAimIndex(projectPath);
   index.add(aim);
+  addAimIdToPrefixIndex(projectPath, aim.id);
 }
 
 export function updateAimInIndex(projectPath: string, aim: Aim): void {
   const index = getAimIndex(projectPath);
   index.update(aim);
+  removeAimIdFromPrefixIndex(projectPath, aim.id);
+  addAimIdToPrefixIndex(projectPath, aim.id);
 }
 
 export function removeAimFromIndex(projectPath: string, aimId: string): void {
   const index = getAimIndex(projectPath);
   index.remove(aimId);
+  removeAimIdFromPrefixIndex(projectPath, aimId);
 }
 
 export function addPhaseToIndex(projectPath: string, phase: Phase): void {
@@ -94,6 +172,7 @@ export async function searchAims(projectPath: string, query: string, allAims: Ai
 
   const index = getAimIndex(projectPath);
   const results = await index.searchAsync(query, { limit: 100 });
+  const normalizedQuery = query.trim().toLowerCase();
 
   // FlexSearch returns array of results with field name
   const aimIds = new Set<string>();
@@ -115,14 +194,27 @@ export async function searchAims(projectPath: string, query: string, allAims: Ai
     }
   }
 
+  const aimsById = new Map(allAims.map(aim => [aim.id, aim]));
+  const idMatches = searchAimIdsByPrefix(projectPath, query)
+    .map(aimId => aimsById.get(aimId))
+    .filter((aim): aim is Aim => Boolean(aim))
+    .map(aim => ({
+      ...aim,
+      score: 2 + (normalizedQuery.length / 100),
+      idMatch: { prefix: aim.id.slice(0, normalizedQuery.length) }
+    }));
+
   // Return aims in order of search results with scores
-  return allAims
+  return [
+    ...idMatches,
+    ...allAims
     .filter(aim => aimIds.has(aim.id))
     .map(aim => ({
       ...aim,
       score: scores.get(aim.id)
     }))
-    .sort((a, b) => (b.score || 0) - (a.score || 0));
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+  ];
 }
 
 // Search phases by name (Fuzzy search using Fuse.js)
@@ -152,4 +244,5 @@ export async function searchPhases(projectPath: string, query: string, allPhases
 export function clearIndices(projectPath: string): void {
   aimIndices.delete(projectPath);
   phaseIndices.delete(projectPath);
+  aimIdPrefixIndices.delete(projectPath);
 }

@@ -4,6 +4,11 @@
   "to": 1782856800000,
   "order": 16,
   "parent": "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5",
+  "childPhaseIds": [
+    "73459692-c881-4386-80cd-a412f916af76",
+    "f5169116-c52e-43e6-b474-29d08dcc5746",
+    "9c58e327-ff8e-4a7b-b981-bd4cefae8316"
+  ],
   "commitments": [
     "44ccf082-6032-49c7-a0dd-e5b4681be2cd"
   ],

@@ -432,6 +432,39 @@ test('search - matches aims using search index', async () => {
   assert.ok(texts.includes('Apple Cider'), 'Should find Apple Cider');
 });
 
+test('search - returns aim id prefix matches first with match metadata', async () => {
+  const target = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: { text: 'Unrelated target', status: { state: 'open', comment: '', date: Date.now() } }
+  });
+  await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: { text: 'Target by text only', status: { state: 'open', comment: '', date: Date.now() } }
+  });
+
+  const query = target.id.slice(0, 8);
+  const results = await caller.aim.search({
+    projectPath: testProjectPath,
+    query
+  });
+
+  assert.equal(results[0]?.id, target.id);
+  assert.equal(results[0]?.idMatch?.prefix, query);
+
+  const rootPathResults = await caller.aim.search({
+    projectPath: testRootPath,
+    query
+  });
+  assert.equal(rootPathResults[0]?.id, target.id);
+  assert.equal(rootPathResults[0]?.idMatch?.prefix, query);
+
+  const shortResults = await caller.aim.search({
+    projectPath: testProjectPath,
+    query: target.id.slice(0, 7)
+  });
+  assert.ok(shortResults.every(result => !result.idMatch));
+});
+
 test('createFloatingAim - sets and persists intrinsicValue', async () => {
   const aimResult = await caller.aim.createFloatingAim({
     projectPath: testProjectPath,

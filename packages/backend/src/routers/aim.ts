@@ -662,22 +662,23 @@ export const createAimRouter = (
         archived: z.boolean().optional()
       }))
       .query(async ({ input }: any) => {
-        await ensureSearchIndex(input.projectPath);
-        const allAims = await listAims(input.projectPath, input.archived);
+        const projectPath = normalizeProjectPath(input.projectPath);
+        await ensureSearchIndex(projectPath);
+        const allAims = await listAims(projectPath, input.archived);
         console.log(`[Search] Query: "${input.query}" | Total Aims: ${allAims.length} | Archived: ${input.archived}`);
 
         let results: SearchAimResult[] = [];
 
         if (input.query && input.query.trim().length > 0) {
           // 1. Text Search (FlexSearch)
-          const textPromise = searchAims(input.projectPath, input.query, allAims);
+          const textPromise = searchAims(projectPath, input.query, allAims);
 
           // 2. Semantic Search (Embeddings)
           const vectorPromise = (async () => {
              try {
                  const queryVector = await generateEmbedding(input.query);
                  if (!queryVector) return [];
-                 return await searchVectors(input.projectPath, queryVector, 20);
+                 return await searchVectors(projectPath, queryVector, 20);
              } catch (e) {
                  return [];
              }
@@ -701,6 +702,7 @@ export const createAimRouter = (
               if (resultMap.has(r.id)) {
                   const existing = resultMap.get(r.id)!;
                   r.score = Math.max(r.score || 0, existing.score || 0) * 1.1;
+                  if (r.idMatch) existing.idMatch = r.idMatch;
               }
               resultMap.set(r.id, r);
           }

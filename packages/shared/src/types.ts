@@ -98,4 +98,9 @@ export type Phase = z.infer<typeof PhaseSchema>;
 export type AimStatus = z.infer<typeof AimStatusSchema>;
 export type ProjectMeta = z.infer<typeof ProjectMetaSchema>;
 export type SystemStatus = z.infer<typeof SystemStatusSchema>;
-export type SearchAimResult = Aim & { score?: number };
+export type SearchAimResult = Aim & {
+  score?: number;
+  idMatch?: {
+    prefix: string;
+  };
+};

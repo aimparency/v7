@@ -129,6 +129,11 @@ const getAimDisplayText = (aim: SearchAimResult): string => {
   return path.join(' / ')
 }
 
+const getAimIdRemainder = (aim: SearchAimResult): string => {
+  const prefixLength = aim.idMatch?.prefix.length ?? 0
+  return aim.id.slice(prefixLength)
+}
+
 const normalizeSearchError = (error: any): string => {
   const message = error?.message || error?.shape?.message || error?.data?.message
   if (typeof message === 'string' && message.trim()) {
@@ -213,6 +218,9 @@ const performSearch = async (query: string) => {
         const semanticScore = existing.score || 0
         const keywordScore = result.score || 0
         existing.score = Math.max(semanticScore, keywordScore) + 0.2
+        if (result.idMatch) {
+          existing.idMatch = result.idMatch
+        }
       } else {
         combined.set(result.id, { ...result })
       }
@@ -544,9 +552,14 @@ onUnmounted(() => {
           </template>
 
           <template v-else>
-            <div class="result-text">
-              <span class="aim-text">{{ getAimDisplayText(item.data) }}</span>
-              <span class="aim-status" :class="item.data.status.state">{{ item.data.status.state }}</span>
+            <div class="result-content">
+              <div class="result-text">
+                <span class="aim-text">{{ getAimDisplayText(item.data) }}</span>
+                <span class="aim-status" :class="item.data.status.state">{{ item.data.status.state }}</span>
+              </div>
+              <div v-if="item.data.idMatch" class="aim-id-match">
+                <span class="aim-id-prefix">{{ item.data.idMatch.prefix }}</span><span>{{ getAimIdRemainder(item.data) }}</span>
+              </div>
             </div>
           </template>
         </div>
@@ -693,6 +706,12 @@ onUnmounted(() => {
   gap: 1rem;
 }
 
+.result-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
 .option-text {
   flex-direction: column;
   gap: 0.2rem;
@@ -700,6 +719,18 @@ onUnmounted(() => {
 
 .aim-text {
   color: #f0f0f0;
+}
+
+.aim-id-match {
+  color: #8c8c8c;
+  font-family: monospace;
+  font-size: 0.78rem;
+  line-height: 1.2;
+}
+
+.aim-id-prefix {
+  color: #33d6ff;
+  font-weight: 700;
 }
 
 .option-description {

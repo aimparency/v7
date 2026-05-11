@@ -104,7 +104,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
     } else {
       const targetParentId = targetEntry.parentPhaseId ?? null
       const targetIndex =
-        delta > 0 && targetEntry.type === 'phase'
+        targetEntry.type === 'phase' && delta < 0
           ? targetEntry.childIndex + 1
           : targetEntry.childIndex
 

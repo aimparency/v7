@@ -139,10 +139,100 @@ describe('keyboard actions', () => {
       preventDefault: vi.fn()
     } as any, dataStore)
 
-    expect(movePhase).toHaveBeenCalledWith('/tmp/project', 'child-a', 'root-b', 1)
+    expect(movePhase).toHaveBeenCalledWith('/tmp/project', 'child-a', 'root-b', 0)
     expect(dataStore.phases['root-a']?.childPhaseIds).toEqual([])
-    expect(dataStore.phases['root-b']?.childPhaseIds).toEqual(['child-b', 'child-a'])
+    expect(dataStore.phases['root-b']?.childPhaseIds).toEqual(['child-a', 'child-b'])
     expect(uiStore.selectedPhaseIdByColumn[0]).toBe('root-b')
     expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-a')
+  })
+
+  it('moves a phase upward after the previous parent children when crossing parent boundaries', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
+    projectStore.projectPath = '/tmp/project'
+
+    dataStore.meta = { rootPhaseIds: ['root-a', 'root-b'] } as any
+    dataStore.phases = {
+      'root-a': {
+        id: 'root-a',
+        name: 'Root A',
+        from: 0,
+        to: 0,
+        parent: null,
+        childPhaseIds: ['child-a1', 'child-a2'],
+        commitments: []
+      },
+      'root-b': {
+        id: 'root-b',
+        name: 'Root B',
+        from: 0,
+        to: 0,
+        parent: null,
+        childPhaseIds: ['child-b'],
+        commitments: []
+      },
+      'child-a1': {
+        id: 'child-a1',
+        name: 'Child A1',
+        from: 0,
+        to: 0,
+        parent: 'root-a',
+        childPhaseIds: [],
+        commitments: []
+      },
+      'child-a2': {
+        id: 'child-a2',
+        name: 'Child A2',
+        from: 0,
+        to: 0,
+        parent: 'root-a',
+        childPhaseIds: [],
+        commitments: []
+      },
+      'child-b': {
+        id: 'child-b',
+        name: 'Child B',
+        from: 0,
+        to: 0,
+        parent: 'root-b',
+        childPhaseIds: [],
+        commitments: []
+      }
+    } as any
+
+    vi.spyOn(dataStore, 'loadPhases').mockResolvedValue([] as any)
+    const movePhase = vi.spyOn(dataStore, 'movePhase').mockImplementation(async (_projectPath, phaseId, parentId, newIndex) => {
+      const phase = dataStore.phases[phaseId]
+      if (!phase || !phase.parent || !parentId) throw new Error('invalid test phase move')
+      const oldParent = dataStore.phases[phase.parent!]
+      const newParent = dataStore.phases[parentId!]
+      if (!oldParent || !newParent) throw new Error('invalid test phase parent')
+      oldParent.childPhaseIds = oldParent.childPhaseIds?.filter((id) => id !== phaseId) ?? []
+      const nextChildIds = [...(newParent.childPhaseIds ?? [])]
+      nextChildIds.splice(newIndex, 0, phaseId)
+      newParent.childPhaseIds = nextChildIds
+      phase.parent = parentId
+    })
+
+    uiStore.activeColumn = 1
+    uiStore.maxColumn = 1
+    uiStore.windowStart = 0
+    uiStore.windowSize = 2
+    uiStore.selectedPhaseByColumn[0] = 1
+    uiStore.selectedPhaseIdByColumn[0] = 'root-b'
+    uiStore.selectedPhaseByColumn[1] = 2
+    uiStore.selectedPhaseIdByColumn[1] = 'child-b'
+
+    await handleColumnNavigationKeysAction(uiStore, {
+      key: 'K',
+      preventDefault: vi.fn()
+    } as any, dataStore)
+
+    expect(movePhase).toHaveBeenCalledWith('/tmp/project', 'child-b', 'root-a', 2)
+    expect(dataStore.phases['root-a']?.childPhaseIds).toEqual(['child-a1', 'child-a2', 'child-b'])
+    expect(dataStore.phases['root-b']?.childPhaseIds).toEqual([])
+    expect(uiStore.selectedPhaseIdByColumn[0]).toBe('root-a')
+    expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-b')
   })
 })
