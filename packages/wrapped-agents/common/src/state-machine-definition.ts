@@ -165,6 +165,31 @@ export const explore: Action = {
   ]
 }
 
+export const retry: Action = {
+  name: 'retry',
+  description: 'Use when in an ERROR state to attempt recovery and return to the previous state.',
+  parameters: [
+    { name: 'reason', description: 'Optional reason for retrying', required: false }
+  ],
+  examples: [
+    '{"action": {"type": "retry"}}',
+    '{"action": {"type": "retry", "reason": "timeout recovered"}}'
+  ]
+}
+
+export const wait: Action = {
+  name: 'wait',
+  description: 'Use when the worker is in a state where you just want to wait longer without sending a prompt. Useful if you suspect the worker is still doing something or if you want to extend a backoff.',
+  parameters: [
+    { name: 'duration', description: 'Duration to wait in milliseconds. Default: 30000 (30 seconds).', required: false },
+    { name: 'reason', description: 'Reason for waiting', required: false }
+  ],
+  examples: [
+    '{"action": {"type": "wait", "duration": 60000, "reason": "waiting for background build"}}',
+    '{"action": {"type": "wait"}}'
+  ]
+}
+
 // ========== STATE DEFINITIONS ==========
 
 export const exploring: State = {
@@ -186,7 +211,8 @@ export const working: State = {
   actions: [
     { action: textPrompt, targetState: 'WORKING' },
     { action: choice, targetState: 'WORKING' },
-    { action: verify, targetState: 'WRAPPING_UP' }
+    { action: verify, targetState: 'WRAPPING_UP' },
+    { action: wait, targetState: 'WORKING' }
   ]
 }
 
@@ -200,7 +226,18 @@ export const wrappingUp: State = {
     { action: wrapUp, targetState: 'WRAPPING_UP' },
     { action: commit, targetState: 'WRAPPING_UP' },
     { action: waitingForCommitted, targetState: 'WRAPPING_UP' },
-    { action: explore, targetState: 'EXPLORING' }
+    { action: explore, targetState: 'EXPLORING' },
+    { action: wait, targetState: 'WRAPPING_UP' }
+  ]
+}
+
+export const error: State = {
+  name: 'ERROR',
+  instructions: 'The system has encountered an error or timeout. You are in a recovery backoff period. Analyze the terminal output to understand what failed. When you believe the system is ready to resume, use the retry action to return to the previous state.',
+  color: '#ffb3b3',  // Pastel red - error/recovery
+  actions: [
+    { action: retry, targetState: 'PREVIOUS_STATE' },
+    { action: wait, targetState: 'ERROR' }
   ]
 }
 
@@ -209,7 +246,8 @@ export const wrappingUp: State = {
 export const STATE_MACHINE: Record<string, State> = {
   EXPLORING: exploring,
   WORKING: working,
-  WRAPPING_UP: wrappingUp
+  WRAPPING_UP: wrappingUp,
+  ERROR: error
 }
 
 // ========== HELPER FUNCTIONS ==========

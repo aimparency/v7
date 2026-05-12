@@ -9,13 +9,15 @@
 
 import { getTargetState, getValidActionNames } from './state-machine-definition'
 
-export type AnimatorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP'
+export type AnimatorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP' | 'ERROR'
 
 export interface TransitionResult {
   success: boolean
   newState?: AnimatorStateName
   validActions?: string[]
   error?: string
+  backoffActive?: boolean
+  nextRetryAt?: number
 }
 
 export interface StateContext {
@@ -28,6 +30,10 @@ export interface StateContext {
   // Timing
   workStartedAt?: number
   stateEnteredAt: number
+
+  // Error handling
+  errorCount: number
+  previousState?: AnimatorStateName
 
   // Other context
   metadata?: Record<string, any>
@@ -54,9 +60,13 @@ export class AnimatorState {
   private context: StateContext
   private history: StateTransition[] = []
 
+  // Backoff schedule in minutes: 1, 2, 4, 8, 15 (max)
+  private static readonly BACKOFF_SCHEDULE = [1, 2, 4, 8, 15];
+
   constructor() {
     this.context = {
-      stateEnteredAt: Date.now()
+      stateEnteredAt: Date.now(),
+      errorCount: 0
     }
   }
 
@@ -102,6 +112,21 @@ export class AnimatorState {
 
     // Update context on transition
     if (newState !== this.currentState) {
+      // If entering ERROR, record previous state and increment count
+      if (newState === 'ERROR') {
+        this.context.previousState = this.currentState;
+        this.context.errorCount++;
+      } else if (newState !== 'ERROR' && action === 'retry') {
+        // Successful retry - we don't clear errorCount yet, 
+        // maybe it should clear after some successful work?
+        // For now, let's keep it until it's manually reset or new work starts.
+      } else if (newState !== 'ERROR' && newState !== 'EXPLORING') {
+        // Clear error count when moving to a new normal state (e.g. WORKING)
+        // unless it's a retry transition.
+        this.context.errorCount = 0;
+        this.context.previousState = undefined;
+      }
+
       this.context.stateEnteredAt = Date.now()
 
       // Clear work context when returning to EXPLORING
@@ -111,6 +136,8 @@ export class AnimatorState {
         this.context.reference = undefined
         this.context.strategy = undefined
         this.context.workStartedAt = undefined
+        this.context.errorCount = 0;
+        this.context.previousState = undefined;
       }
     }
 
@@ -126,8 +153,22 @@ export class AnimatorState {
     const actionType = action.type
     const currentState = this.currentState
 
+    // Check backoff if in ERROR state
+    if (currentState === 'ERROR') {
+      const delay = this.getErrorBackoffDelay();
+      const nextRetryAt = this.context.stateEnteredAt + delay;
+      if (Date.now() < nextRetryAt) {
+        return {
+          success: false,
+          error: `In backoff period. Next retry allowed at ${new Date(nextRetryAt).toLocaleTimeString()}`,
+          backoffActive: true,
+          nextRetryAt
+        }
+      }
+    }
+
     // Get target state for this action
-    const targetState = getTargetState(currentState, actionType)
+    let targetState = getTargetState(currentState, actionType)
 
     if (!targetState) {
       // Action not valid for current state
@@ -139,6 +180,11 @@ export class AnimatorState {
       }
     }
 
+    // Special handling for PREVIOUS_STATE meta-target
+    if (targetState === 'PREVIOUS_STATE') {
+      targetState = this.context.previousState || 'EXPLORING';
+    }
+
     const newState = targetState as AnimatorStateName
 
     // Valid action - perform transition
@@ -148,6 +194,23 @@ export class AnimatorState {
       success: true,
       newState
     }
+  }
+
+  /**
+   * Manually trigger an error transition (e.g. on timeout)
+   */
+  triggerError(reason: string): void {
+    if (this.currentState === 'ERROR') return; // Already in ERROR
+    this.transition('ERROR', 'error_detected', { reason });
+  }
+
+  /**
+   * Get backoff delay for current error count in ms
+   */
+  getErrorBackoffDelay(): number {
+    if (this.context.errorCount === 0) return 0;
+    const index = Math.min(this.context.errorCount - 1, AnimatorState.BACKOFF_SCHEDULE.length - 1);
+    return AnimatorState.BACKOFF_SCHEDULE[index] * 60 * 1000;
   }
 
   /**

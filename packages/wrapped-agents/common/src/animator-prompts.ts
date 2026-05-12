@@ -100,6 +100,11 @@ function buildSituation(ctx: PromptContext): string {
     }
     lines.push('')
     lines.push('question: should the worker go back to implementation, finish wrap-up tasks, or move on to exploring?')
+  } else if (ctx.state === 'ERROR') {
+    lines.push('')
+    lines.push('SYSTEM ALERT: The system is in a recovery backoff period following a timeout or failure.')
+    lines.push('The backoff duration increases exponentially with each consecutive error.')
+    lines.push('You should analyze the terminal output to understand what went wrong, and when you believe the worker is ready or the environment is stable, use the "retry" action to return to the previous state.')
   }
 
   return lines.join('\n')

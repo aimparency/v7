@@ -626,6 +626,17 @@ Please choose one of the valid actions and respond with correct JSON.`;
         await this.executeExplore(action.text);
         break;
 
+      case 'retry':
+        this.log(`[StateMachine] Retrying, returning to previous state`);
+        this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
+        return;
+
+      case 'wait':
+        const waitDuration = action.duration || 30000;
+        this.log(`[StateMachine] Waiting for ${waitDuration}ms. Reason: ${action.reason || 'no reason'}`);
+        this.nextCheckTime = Date.now() + waitDuration;
+        return;
+
       default:
         this.log(`[StateMachine] Unknown action type: ${actionType}`);
     }

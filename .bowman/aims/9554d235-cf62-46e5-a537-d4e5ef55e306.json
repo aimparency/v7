@@ -2,7 +2,16 @@
   "id": "9554d235-cf62-46e5-a537-d4e5ef55e306",
   "text": "Add ERROR state with exponential backoff handling",
   "description": "Implement ERROR state triggered by timeouts, stuck states, or failures. Exponential backoff: 1min, 2min, 4min, 8min, 15min (max). Send health checks to supervisor at intervals, attempt recovery or reset to EXPLORING. Log error counts, track last check times. User can always manually override (start/stop/chat).",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1778592125126,
+      "context": "The autonomous agent watchdogs needed a robust error handling mechanism with exponential backoff to handle API timeouts and failures gracefully, as well as a way to explicitly command the agent to keep waiting.",
+      "outcome": "Added an 'ERROR' state and 'wait' action to the shared state machine. Refactored Claude, Codex, and Gemini watchdogs to trigger this error state on repeated failures, using the shared backoff schedule (1, 2, 4, 8, 15m) and enabling the 'retry' action.",
+      "effectiveness": "Sharing the state machine logic via the common package ensured consistency across all agent types, simplifying the watchdog implementations and centralizing the backoff rules. The explicit wait action provides granular control during recovery or long-running tasks.",
+      "lesson": "When adding new states to a shared state machine used by multiple independent session types, updating the type definitions, prompts, and all implementations simultaneously ensures parity and avoids divergent behavior.",
+      "pattern": "Centralized state management combined with agent-specific side-effect executors allows for consistent high-level logic while accommodating platform-specific details."
+    }
+  ],
   "archived": false,
   "tags": [
     "error-handling",
