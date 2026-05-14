@@ -709,4 +709,11 @@ Check Aimparency MCP for open aims or the current assigned aim, then start worki
     const prompt = text || 'check Aimparency MCP for open aims and see if there is something you can work on';
     await this.post(this.worker, prompt);
   }
+
+  private async executeChoice(choice: string): Promise<void> {
+    this.log(`[StateMachine] Executing choice: ${choice}`);
+    await this.wait(70);
+    this.worker.write(choice);
+    await this.ensureEnter(this.worker);
+  }
 }

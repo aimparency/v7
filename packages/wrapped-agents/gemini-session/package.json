@@ -30,6 +30,7 @@
   },
   "homepage": "https://github.com/aimparency/v7/tree/main/packages/wrapped-agents/gemini-session",
   "dependencies": {
+    "@aimparency/wrapped-agents-common": "file:../common",
     "@types/node": "^25.0.1",
     "@xterm/headless": "^5.5.0",
     "concurrently": "^9.2.1",

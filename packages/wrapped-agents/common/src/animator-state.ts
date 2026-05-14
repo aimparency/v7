@@ -116,11 +116,11 @@ export class AnimatorState {
       if (newState === 'ERROR') {
         this.context.previousState = this.currentState;
         this.context.errorCount++;
-      } else if (newState !== 'ERROR' && action === 'retry') {
+      } else if (action === 'retry') {
         // Successful retry - we don't clear errorCount yet, 
         // maybe it should clear after some successful work?
         // For now, let's keep it until it's manually reset or new work starts.
-      } else if (newState !== 'ERROR' && newState !== 'EXPLORING') {
+      } else if (newState !== 'EXPLORING') {
         // Clear error count when moving to a new normal state (e.g. WORKING)
         // unless it's a retry transition.
         this.context.errorCount = 0;

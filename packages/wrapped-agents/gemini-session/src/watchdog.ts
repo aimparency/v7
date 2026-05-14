@@ -29,7 +29,7 @@ const IDLE_CHECK_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_CHECK_INTERVAL ||
 const IDLE_DEBOUNCE_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_DEBOUNCE || '100', 10);
 const MAX_RETRIES = parseInt(process.env.WATCHDOG_MAX_RETRIES || '5', 10);
 const SPINNER_CHARS = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠏'];
-const PROMPT_MARKER = "[[RESPONSE_START]]";
+const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
 const WRAP_UP_PROMPT = "Before compressing, make a git commit for the work completed so far. Review git status, stage the intended files, create the commit, and then wait for compaction. If you need short guidance for the commit, ask explicitly.";
 
 function stripAnsi(str: string): string {
@@ -609,6 +609,10 @@ Please choose one of the valid actions and respond with correct JSON.`;
         await this.executeExplore(action.text);
         break;
 
+      case 'choice':
+        await this.executeChoice(action.choice);
+        break;
+
       case 'retry':
         this.log(`[StateMachine] Retrying, returning to previous state`);
         this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
@@ -691,5 +695,12 @@ Check Aimparency MCP for open aims or the current assigned aim, then start worki
   private async executeExplore(text?: string): Promise<void> {
     const prompt = text || 'check Aimparency MCP for open aims and see if there is something you can work on';
     await this.post(this.worker, prompt);
+  }
+
+  private async executeChoice(choice: string): Promise<void> {
+    this.log(`[StateMachine] Executing choice: ${choice}`);
+    await this.wait(70);
+    this.worker.write(choice);
+    await this.ensureEnter(this.worker);
   }
 }

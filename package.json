@@ -34,7 +34,7 @@
     "list-sessions": "npm run list-sessions -w wrapped-agents-broker",
     "build:core": "npm run build -w shared && npm run build -w backend && npm run build -w wrapped-agents-broker && npm run build -w frontend",
     "build:optional": "npm run build:core && npm run build -w mcp && npm run build -w voice-bridge",
-    "build:all": "npm run build:optional && npm run build --workspace=wrapped-agents-gemini-session --if-present && npm run build --workspace=wrapped-agents-claude-session --if-present && npm run build --workspace=wrapped-agents-codex-session --if-present",
+    "build:all": "npm run build:optional && npm run build --workspace=@aimparency/wrapped-agents-common --if-present && npm run build --workspace=wrapped-agents-gemini-session --if-present && npm run build --workspace=wrapped-agents-claude-session --if-present && npm run build --workspace=wrapped-agents-codex-session --if-present",
     "build": "npm run build:core",
     "test": "npm run test:all",
     "test:all": "npm run test:unit && npm run test:e2e",

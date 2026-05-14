@@ -518,7 +518,8 @@ export class WatchdogService {
       return false;
     }
 
-    const lastVisibleLine = view.recent8.split('\n').filter(Boolean).at(-1) || '';
+    const lines = view.recent8.split('\n').filter(Boolean);
+    const lastVisibleLine = lines.length > 0 ? lines[lines.length - 1] : '';
     const hasSpinner = SPINNER_CHARS.some(char => lastVisibleLine.includes(char));
     const hasInterruptIndicator = /esc to interrupt/i.test(view.recent8);
     const hasTimedCancelIndicator = /esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i.test(view.recent8);

@@ -66,8 +66,8 @@ let projectRootPath = path.resolve(__dirname, '../../../../');
 let workerModel: string | undefined; // 'gemini-3-pro'; 
 let watchdogModel: string | undefined; // 'gemini-3-flash'; 
 
-workerModel = 'gemini-3-pro-preview'
-watchdogModel = 'gemini-3-flash-preview'
+workerModel = 'gemini-3.1-pro-preview'
+watchdogModel = 'gemini-3.1-flash-lite-preview'
 
 let compactEvery = 20;
 
