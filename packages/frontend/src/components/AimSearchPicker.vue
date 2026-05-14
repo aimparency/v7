@@ -52,6 +52,9 @@ const projectStore = useProjectStore()
 
 const localQuery = ref(props.initialQuery)
 const searchResults = ref<SearchAimResult[]>([])
+const navigationMode = ref(false)
+const navigationTitle = ref('')
+const navigationHistory = ref<{ title: string, results: SearchAimResult[] }[]>([])
 const selectedIndex = ref(0)
 const focusedResultIndex = ref(-1)
 const hoveredResultIndex = ref(-1)
@@ -178,6 +181,8 @@ const applySelectionBehavior = () => {
 }
 
 const performSearch = async (query: string) => {
+  if (navigationMode.value) return
+
   if (!query) {
     searchResults.value = []
     searchError.value = null
@@ -251,10 +256,82 @@ const scheduleSearch = (query: string) => {
 watch(
   () => currentQuery.value,
   query => {
+    if (navigationMode.value && query.length > 0) {
+      navigationMode.value = false
+      navigationHistory.value = []
+    }
     scheduleSearch(query)
   },
   { immediate: true }
 )
+
+const navigateToParents = async (aim: SearchAimResult) => {
+  if (!aim.supportedAims || aim.supportedAims.length === 0) return
+
+  loading.value = true
+  try {
+    const parents = await trpc.aim.getMany.query({
+      projectPath: projectStore.projectPath,
+      aimIds: aim.supportedAims
+    })
+    
+    navigationHistory.value.push({
+      title: navigationTitle.value || 'Search Results',
+      results: [...searchResults.value]
+    })
+    
+    searchResults.value = parents.map(p => ({ ...p, score: 1 }))
+    navigationTitle.value = `Parents of: ${aim.text}`
+    navigationMode.value = true
+    selectedIndex.value = props.additionalOptions.length
+    applySelectionBehavior()
+  } catch (error) {
+    console.error('Failed to navigate to parents', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const navigateToChildren = async (aim: SearchAimResult) => {
+  loading.value = true
+  try {
+    const children = await trpc.aim.list.query({
+      projectPath: projectStore.projectPath,
+      parentAimId: aim.id
+    })
+    
+    if (children.length === 0) return
+
+    navigationHistory.value.push({
+      title: navigationTitle.value || 'Search Results',
+      results: [...searchResults.value]
+    })
+    
+    searchResults.value = children.map(c => ({ ...c, score: 1 }))
+    navigationTitle.value = `Children of: ${aim.text}`
+    navigationMode.value = true
+    selectedIndex.value = props.additionalOptions.length
+    applySelectionBehavior()
+  } catch (error) {
+    console.error('Failed to navigate to children', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const navigateBack = () => {
+  const previous = navigationHistory.value.pop()
+  if (previous) {
+    searchResults.value = previous.results
+    navigationTitle.value = previous.title === 'Search Results' ? '' : previous.title
+    if (navigationHistory.value.length === 0) {
+      navigationMode.value = false
+    }
+    applySelectionBehavior()
+  } else {
+    navigationMode.value = false
+  }
+}
 
 watch([selectedStatuses, includeArchived], () => {
   scheduleSearch(currentQuery.value)
@@ -303,6 +380,10 @@ const getEscapeSelection = (): NonNullable<AimSearchSelection> | null => {
 }
 
 const handleEscape = () => {
+  if (navigationMode.value) {
+    navigateBack()
+    return
+  }
   const escapeSelection = getEscapeSelection()
   if (escapeSelection) {
     activateSelection(escapeSelection)
@@ -313,7 +394,7 @@ const handleEscape = () => {
 
 const handleInputKeydown = (event: KeyboardEvent) => {
   const key = event.key
-  if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Tab'].includes(key)) {
+  if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Tab', 'h', 'l'].includes(key)) {
     return
   }
 
@@ -321,6 +402,13 @@ const handleInputKeydown = (event: KeyboardEvent) => {
     event.preventDefault()
     event.stopPropagation()
     handleEscape()
+    return
+  }
+
+  if (key === 'h' && navigationMode.value && currentQuery.value.length === 0) {
+    event.preventDefault()
+    event.stopPropagation()
+    navigateBack()
     return
   }
 
@@ -376,7 +464,7 @@ const handleResultClick = (index: number) => {
 
 const handleResultKeydown = (event: KeyboardEvent, index: number) => {
   const key = event.key
-  if (!['ArrowDown', 'ArrowUp', 'j', 'k', 'Enter', 'Escape', 'Tab'].includes(key)) {
+  if (!['ArrowDown', 'ArrowUp', 'j', 'k', 'h', 'l', 'Enter', 'Escape', 'Tab'].includes(key)) {
     return
   }
 
@@ -413,6 +501,24 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
     setSelectedIndex(nextIndex)
     focusedResultIndex.value = nextIndex
     focusResult(nextIndex)
+    return
+  }
+
+  if (key === 'h') {
+    const item = items.value[index]
+    if (item?.type === 'aim') {
+      void navigateToParents(item.data)
+    } else if (navigationMode.value) {
+      navigateBack()
+    }
+    return
+  }
+
+  if (key === 'l') {
+    const item = items.value[index]
+    if (item?.type === 'aim') {
+      void navigateToChildren(item.data)
+    }
     return
   }
 
@@ -510,6 +616,11 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <div v-if="navigationMode && navigationTitle" class="navigation-header">
+      <span class="back-hint">← H</span>
+      <span class="nav-title">{{ navigationTitle }}</span>
+    </div>
+
     <div v-if="showInput" class="search-input-wrapper">
       <span class="search-icon">/</span>
       <input
@@ -577,6 +688,30 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.navigation-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #2d2d2d;
+  border-bottom: 1px solid #333;
+  color: #ccc;
+  font-size: 0.85rem;
+}
+
+.back-hint {
+  padding: 0.1rem 0.3rem;
+  background: #444;
+  border-radius: 0.2rem;
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.nav-title {
+  font-weight: 500;
+  color: #eee;
+}
+
 .aim-search-picker {
   display: flex;
   flex-direction: column;

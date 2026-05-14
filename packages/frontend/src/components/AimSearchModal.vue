@@ -131,7 +131,59 @@ const selectAim = async (aim: Aim, keepOpen = false) => {
     } else {
       selectedAimText.value = aim.text.length > 50 ? `${aim.text.substring(0, 50)}...` : aim.text
 
-      availablePaths.value = await Promise.all(paths.map(async path => {
+      // Merge paths sharing common suffixes
+      const mergedPaths: (AimPath & { isMerged?: boolean })[] = []
+      const processed = new Set<number>()
+
+      for (let i = 0; i < paths.length; i++) {
+        if (processed.has(i)) continue
+        const pathA = paths[i]!
+        let matches: number[] = []
+        let commonSuffixLen = 0
+
+        for (let j = i + 1; j < paths.length; j++) {
+          if (processed.has(j)) continue
+          const pathB = paths[j]!
+          if (pathA.phaseId !== pathB.phaseId) continue
+
+          let suffixLen = 0
+          const lenA = pathA.aims.length
+          const lenB = pathB.aims.length
+          while (suffixLen < lenA && suffixLen < lenB) {
+            if (pathA.aims[lenA - 1 - suffixLen]?.id === pathB.aims[lenB - 1 - suffixLen]?.id) {
+              suffixLen++
+            } else {
+              break
+            }
+          }
+
+          if (suffixLen > 1) {
+            if (matches.length === 0) {
+              commonSuffixLen = suffixLen
+              matches.push(j)
+            } else if (suffixLen === commonSuffixLen) {
+              matches.push(j)
+            } else if (suffixLen > commonSuffixLen) {
+              // This is a bit complex for a simple loop, but for now we take the first match's suffix length
+            }
+          }
+        }
+
+        if (matches.length > 0) {
+          mergedPaths.push({
+            ...pathA,
+            aims: pathA.aims.slice(-commonSuffixLen),
+            isMerged: true
+          })
+          processed.add(i)
+          matches.forEach(idx => processed.add(idx))
+        } else {
+          mergedPaths.push(pathA)
+          processed.add(i)
+        }
+      }
+
+      availablePaths.value = await Promise.all(mergedPaths.map(async path => {
         let label = ''
         if (path.phaseId) {
           let phase = dataStore.phases[path.phaseId]
@@ -145,8 +197,12 @@ const selectAim = async (aim: Aim, keepOpen = false) => {
           label = 'Floating'
         }
 
-        const trail = path.aims.slice(0, -1).map(step => step.text).join(' > ')
-        if (trail) {
+        const trailAims = path.isMerged ? path.aims : path.aims.slice(0, -1)
+        const trail = trailAims.map(step => step.text).join(' > ')
+        
+        if (path.isMerged) {
+          label += ` > ... > ${trail}`
+        } else if (trail) {
           label += ` > ${trail}`
         }
 
