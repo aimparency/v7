@@ -412,6 +412,20 @@ const handleInputKeydown = (event: KeyboardEvent) => {
     return
   }
 
+  if ((key === 'h' || key === 'l') && currentQuery.value.length === 0) {
+    const item = selectedItem.value
+    if (item?.type === 'aim') {
+      event.preventDefault()
+      event.stopPropagation()
+      if (key === 'h') {
+        void navigateToParents(item.data)
+      } else {
+        void navigateToChildren(item.data)
+      }
+      return
+    }
+  }
+
   if (key === 'Tab') {
     if (items.value.length === 0) return
     event.preventDefault()
@@ -666,7 +680,11 @@ onUnmounted(() => {
             <div class="result-content">
               <div class="result-text">
                 <span class="aim-text">{{ getAimDisplayText(item.data) }}</span>
-                <span class="aim-status" :class="item.data.status.state">{{ item.data.status.state }}</span>
+                <div class="aim-meta">
+                  <span v-if="item.data.supportedAims?.length" class="nav-indicator">H ←</span>
+                  <span class="aim-status" :class="item.data.status.state">{{ item.data.status.state }}</span>
+                  <span v-if="item.data.supportingConnections?.length" class="nav-indicator">→ L</span>
+                </div>
               </div>
               <div v-if="item.data.idMatch" class="aim-id-match">
                 <span class="aim-id-prefix">{{ item.data.idMatch.prefix }}</span><span>{{ getAimIdRemainder(item.data) }}</span>
@@ -871,6 +889,21 @@ onUnmounted(() => {
 .option-description {
   color: #a6a6a6;
   font-size: 0.85rem;
+}
+
+.aim-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.nav-indicator {
+  font-size: 0.7rem;
+  color: #666;
+  background: #2a2a2a;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+  font-family: monospace;
 }
 
 .aim-status {
