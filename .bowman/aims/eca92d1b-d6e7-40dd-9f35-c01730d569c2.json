@@ -2,7 +2,15 @@
   "id": "eca92d1b-d6e7-40dd-9f35-c01730d569c2",
   "text": "Implement user input detection and option selection in WORKING state",
   "description": "Detect when supervised session prompts for user input (patterns: (A) option (B) option, yes/no prompts, press key to continue). Extract options, present to supervisor in context, supervisor chooses via JSON action, send choice to supervised stdin. Handle critical decisions by escalating to human. Already have some detection logic in current watchdog - enhance and integrate with state machine.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1778796390190,
+      "context": "The supervisor needed to know when the worker was stuck on an interactive prompt to provide a 'choice' action instead of just more text.",
+      "outcome": "Supervisor can now reliably detect and respond to interactive prompts in the worker terminal.",
+      "effectiveness": "Regex-based terminal scanning is highly effective for detecting common CLI interaction patterns. Passing this as a boolean flag in the prompt context allows the LLM to switch from implemented guidance to specific menu selection logic.",
+      "lesson": "Terminal visibility for the supervisor shouldn't just be raw text; structured signals about the interaction state (like 'is waiting for input') are crucial for high-quality supervision."
+    }
+  ],
   "archived": false,
   "tags": [
     "user-input",

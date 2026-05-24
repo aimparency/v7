@@ -2,6 +2,8 @@
   "id": "060b3f53-1854-4fda-a50c-78a98e540288",
   "text": "UI improvements",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -151,8 +153,8 @@
     {
       "aimId": "4f8c3aca-dec4-4932-bc16-d0a5a6955473",
       "relativePosition": [
-        1.417112111942642,
-        2.0595614247177636
+        4.540542399671051,
+        -2.640971737499243
       ],
       "weight": 1
     }
@@ -170,5 +172,8 @@
   },
   "intrinsicValue": 5,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

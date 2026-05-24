@@ -731,8 +731,12 @@ export const createAimRouter = (
             results = fallbackResults;
           }
         } else {
-          // No query provided: start with all aims
-          results = allAims;
+          // No query provided: start with all aims, scored by their recency
+          const now = Date.now();
+          results = allAims.map((aim: Aim) => ({ 
+            ...aim, 
+            score: aim.status?.date ? Math.max(0, 1 - (now - aim.status.date) / (365 * 24 * 60 * 60 * 1000)) : 0
+          }));
         }
 
         if (input.status) {

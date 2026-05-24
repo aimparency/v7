@@ -205,9 +205,9 @@ describe('WatchdogPanel', () => {
     expect(wrapper.text()).toContain('automate')
     expect(wrapper.text()).not.toContain('Worker (Main Agent)')
     expect(wrapper.text()).not.toContain('Owner:')
-    expect(wrapper.text()).not.toContain('Watchdog (Animator)')
-    expect(wrapper.text()).not.toContain('Enable Animator')
-    expect(wrapper.text()).not.toContain('Animator State:')
+    expect(wrapper.text()).not.toContain('Watchdog (Supervisor)')
+    expect(wrapper.text()).not.toContain('Automate')
+    expect(wrapper.text()).not.toContain('Supervisor State:')
   })
 
   it('renders supervisor state color from hydrated state metadata', async () => {

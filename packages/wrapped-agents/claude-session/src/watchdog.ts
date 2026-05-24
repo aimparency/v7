@@ -2,7 +2,7 @@ import { Agent } from './agent';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SessionMemory } from './session-memory';
-import { AnimatorState, generateSupervisorPrompt, isValidAction, getState, type PromptContext } from '@aimparency/wrapped-agents-common';
+import { SupervisorState, generateSupervisorPrompt, isValidAction, getState, type PromptContext, type AutonomyPolicy, ActionPrompts } from '@aimparency/wrapped-agents-common';
 
 // Load instruction text for autonomous guidance
 const INSTRUCT_PATH = path.join(__dirname, '../../INSTRUCT.md');
@@ -16,8 +16,7 @@ try {
 /**
  * Configurable timing constants and behavior flags
  *
- * Environment Variables:
- * - WATCHDOG_POST_ACTION_COOLDOWN: Cooldown period after posting to watchdog (default: 3000ms)
+ * - POST_ACTION_COOLDOWN: Cooldown after posting an action (default: 3000ms)
  * - WATCHDOG_INITIAL_WAIT: Initial wait time after posting before checking idle state (default: 2000ms)
  * - WATCHDOG_IDLE_CHECK_INTERVAL: Interval between idle state checks (default: 500ms)
  * - WATCHDOG_IDLE_DEBOUNCE: Debounce interval for idle detection (default: 100ms)
@@ -29,11 +28,13 @@ const INITIAL_WAIT_AFTER_POST = parseInt(process.env.WATCHDOG_INITIAL_WAIT || '2
 const IDLE_CHECK_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_CHECK_INTERVAL || '500', 10);
 const IDLE_DEBOUNCE_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_DEBOUNCE || '100', 10);
 const MAX_RETRIES = parseInt(process.env.WATCHDOG_MAX_RETRIES || '5', 10);
+const MAX_BUSY_TIMEOUT_MS = parseInt(process.env.WATCHDOG_MAX_BUSY_TIMEOUT || '300000', 10); // 5 minutes
+const MAX_WATCHDOG_TIMEOUT_MS = parseInt(process.env.WATCHDOG_MAX_WATCHDOG_TIMEOUT || '120000', 10); // 2 minutes
 const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 // Claude Code uses different spinner characters
 const SPINNER_CHARS = ['✻', '·', '✢', '○', '◎', '●', '◯'];
+
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
-const WRAP_UP_PROMPT = "Before compacting, make a git commit for the work completed so far. Review git status, stage the intended files, create the commit, and then wait for /compact. If you need short guidance for the commit, ask explicitly.";
 
 function stripAnsi(str: string): string {
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
@@ -51,20 +52,24 @@ export class WatchdogService {
   compactEvery: number;
   turnCount: number = 0;
   expectedModel: string | undefined;
+  autonomyPolicy: AutonomyPolicy;
 
   private nextCheckTime = 0;
+  private busyStartedAt = 0;
+  private watchdogBusyStartedAt = 0;
   private sessionMemory: SessionMemory | null = null;
   private instructTextWithMemory: string = INSTRUCT_TEXT;
   private compactPlanned = false;
-  private animatorState: AnimatorState = new AnimatorState();
+  private supervisorState: SupervisorState = new SupervisorState();
   private projectPath?: string;
 
-  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1, projectPath?: string) {
+  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1, projectPath?: string, autonomyPolicy: AutonomyPolicy = {}) {
     this.projectPath = projectPath;
     this.worker = worker;
     this.watchdog = watchdog;
     this.expectedModel = expectedModel;
     this.compactEvery = compactEvery;
+    this.autonomyPolicy = autonomyPolicy;
 
     // Initialize session memory if projectPath provided
     if (projectPath) {
@@ -94,11 +99,9 @@ export class WatchdogService {
   }
 
   private log(msg: string) {
-    // Only log DEBUG messages when DEBUG_WATCHDOG is enabled
-    if (msg.startsWith('DEBUG:') && !DEBUG_WATCHDOG) {
-      return;
+    if (DEBUG_WATCHDOG) {
+        console.log(`[${new Date().toISOString()}] [WatchdogService] ${msg}`);
     }
-    console.log(`[${new Date().toISOString()}] [WatchdogService] ${msg}`);
   }
 
   emergencyStopped: boolean = false;
@@ -111,8 +114,12 @@ export class WatchdogService {
     this.enabled = enabled;
     if (enabled) {
       this.emergencyStopped = false;
+      this.waitingForResponse = false;
+      this.processing = false;
       this.nextCheckTime = Date.now() + 500;
       this.turnCount = 0;
+      this.busyStartedAt = 0;
+      this.watchdogBusyStartedAt = 0;
       this.compactPlanned = false;
       this.lastStopReason = '';
     } else {
@@ -141,15 +148,15 @@ export class WatchdogService {
   triggerEmergencyStop() {
       if (this.emergencyStopped) return;
       this.emergencyStopped = true;
-      this.stop("Emergency stop triggered");
+      this.stop("Quota limit / model switch detected");
       if (this.onEmergencyStop) {
           this.onEmergencyStop();
       }
       this.onStateChange?.();
   }
 
-  getAnimatorStateInfo() {
-      const stateName = this.animatorState.getState();
+  getSupervisorStateInfo() {
+      const stateName = this.supervisorState.getState();
       const stateDefinition = getState(stateName);
       return {
           state: stateName,
@@ -157,66 +164,49 @@ export class WatchdogService {
       };
   }
 
-  onWorkerData(data: string) {
-    if (this.enabled && !this.waitingForResponse) {
-        this.nextCheckTime = Math.max(this.nextCheckTime, Date.now() + IDLE_CHECK_INTERVAL);
-    }
-  }
-
   async tick() {
-    if (!this.enabled) return;
-    if (this.processing) return;
+    if (!this.enabled || this.processing) return;
     if (Date.now() < this.nextCheckTime) return;
-
-    // Safety check: ensure agents are initialized
-    if (!this.worker || !this.watchdog) {
-      this.log("Agents not initialized yet, waiting...");
-      this.nextCheckTime = Date.now() + 1000;
-      return;
-    }
 
     this.processing = true;
 
     try {
       // Check Watchdog Response
       if (this.waitingForResponse) {
-        // waitForIdle checks isGenerating(), so if it returns true, the watchdog has halted
         const isIdle = await this.waitForIdle(this.watchdog);
-
+        
         if (!isIdle) {
+          if (this.watchdogBusyStartedAt === 0) {
+            this.watchdogBusyStartedAt = Date.now();
+          } else {
+            const watchdogBusyDuration = Date.now() - this.watchdogBusyStartedAt;
+            if (watchdogBusyDuration > MAX_WATCHDOG_TIMEOUT_MS) {
+              this.log(`Watchdog busy for ${Math.floor(watchdogBusyDuration/1000)}s (limit: ${MAX_WATCHDOG_TIMEOUT_MS/1000}s). Triggering ERROR.`);
+              this.supervisorState.triggerError(`Watchdog session stuck (busy timeout reached after ${Math.floor(watchdogBusyDuration/1000)}s)`);
+              this.watchdogBusyStartedAt = 0;
+              this.onStateChange?.();
+              this.processing = false;
+              return;
+            }
+          }
           this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
           this.processing = false;
           return;
         }
 
-        // Watchdog is idle (halted), parse the response
-        this.log("DEBUG: Watchdog is idle. Attempting to parse response...");
-        const screenContent = this.watchdog.getLines(500);
-
-        this.log(`DEBUG: Screen content length: ${screenContent.length} chars`);
-        this.log(`DEBUG: First 400 chars of screen:\n${screenContent.substring(0, 400)}`);
-        this.log(`DEBUG: Last 400 chars of screen:\n${screenContent.substring(Math.max(0, screenContent.length - 400))}`);
+        this.watchdogBusyStartedAt = 0;
+        const screenContent = this.watchdog.getLines(500); 
         this.log(`DEBUG: Looking for marker: "${PROMPT_MARKER}"`);
-
         const markerIndex = screenContent.lastIndexOf(PROMPT_MARKER);
-        let contentToParse: string;
+        let contentToParse = "";
 
         if (markerIndex !== -1) {
-             this.log(`DEBUG: Marker found at index ${markerIndex}`);
              contentToParse = screenContent.substring(markerIndex + PROMPT_MARKER.length).trim();
-             this.log(`DEBUG: Content after marker (first 300 chars): ${contentToParse.substring(0, 300)}`);
         } else {
              this.log("PROMPT_MARKER not found in watchdog output. Waiting...");
              this.nextCheckTime = Date.now() + 1000;
              this.processing = false;
              return;
-        }
-
-        // Look for Claude Code's output marker (● ) and extract after it
-        const stripped = stripAnsi(contentToParse);
-        const bulletIndex = stripped.lastIndexOf('●');
-        if (bulletIndex !== -1) {
-            contentToParse = stripped.substring(bulletIndex + 1).trim();
         }
 
         if (contentToParse.length === 0) {
@@ -228,13 +218,13 @@ export class WatchdogService {
 
         try {
             this.log("Attempting to extract JSON...");
-            const jsonString = this.extractJson(contentToParse);
+            const jsonString = this.extractJson(contentToParse); 
             this.log("JSON extracted. Processing decision...");
             await this.processDecision(jsonString);
         } catch (e: any) {
-            this.log(`JSON extraction/parsing failed: ${e}. Content snippet: "${contentToParse.substring(0, 100)}"`);
-            this.retry(e.message || "JSON extraction failed");
-            return;
+            this.log(`JSON extraction/parsing failed: ${e}. Content length: ${contentToParse.length}`);
+            await this.retry(e.message || "JSON extraction failed");
+            return; 
         }
         this.processing = false;
         return;
@@ -242,7 +232,7 @@ export class WatchdogService {
 
       // Check Worker Idle
       const isWorkerIdle = await this.waitForIdle(this.worker);
-
+      
       if (isWorkerIdle) {
           // Check for context clear
           if (this.turnCount >= this.compactEvery) {
@@ -282,57 +272,47 @@ export class WatchdogService {
   }
 
   isGenerating(agent: Agent): boolean {
-    const lastLine = this.readAgentLastLine(agent);
-    const recentLines = stripAnsi(this.readAgentLines(agent, 8));
+    const lines = this.readAgentLines(agent, 8);
+    
+    // Check for spinner characters
+    const lastLine = lines.split('\n').pop() || '';
     const hasSpinner = SPINNER_CHARS.some(char => lastLine.includes(char));
-    // Claude shows "ctrl+c to interrupt" when busy
-    const hasBusyIndicator = /ctrl\+c to interrupt/i.test(recentLines);
-    return hasSpinner || hasBusyIndicator;
+    
+    // Also check for common Claude-specific busy indicators
+    const recentLines = stripAnsi(lines);
+    const hasInterruptIndicator = /esc to interrupt/i.test(recentLines);
+    const hasTimedCancelIndicator = /esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i.test(recentLines);
+    
+    return hasSpinner || hasInterruptIndicator || hasTimedCancelIndicator;
   }
 
-  private readAgentLines(agent: Agent, count: number): string {
-    if (typeof (agent as any).getViewportLines === 'function') {
-      return (agent as any).getViewportLines(count);
-    }
+  hasChoiceMenu(agent: Agent): boolean {
+    const recentLines = stripAnsi(this.readAgentLines(agent, 8));
+    // Support xterm-style (inquirer) menus and common (Y/n) patterns
+    const hasInquirerMenu = /›.*enter to submit | esc to cancel/i.test(recentLines);
+    const hasYesNoPrompt = /\?.*\(Y\/n\)/i.test(recentLines);
+    const hasChoiceA_B = /\([A-Z]\).* \([A-Z]\)/.test(recentLines);
+    
+    return hasInquirerMenu || hasYesNoPrompt || hasChoiceA_B;
+  }
+
+  readAgentLines(agent: Agent, count: number): string {
     return agent.getLines(count);
   }
 
-  private readAgentLastLine(agent: Agent): string {
-    if (typeof (agent as any).getViewportLastLine === 'function') {
-      return (agent as any).getViewportLastLine();
-    }
-    return agent.getLastLine();
-  }
-
-  private async wait(ms: number): Promise<void> {
+  async wait(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  private async ensureInsertMode(agent: Agent) {
-    await this.wait(70);
-    agent.write('\x1b'); // ESC to Normal Mode
-    await this.wait(70);
-    agent.write('i');    // 'i' to Insert Mode
-    await this.wait(70);
-  }
-
-  private async ensureEnter(agent: Agent): Promise<void> {
-    await this.wait(70);
-    agent.write('\r\n');
-    await this.wait(70);
-  }
-
-  private async post(agent: Agent, text: string): Promise<void> {
-    this.log(`Posting text to agent... Length: ${text.length}`);
-
-    // Claude Code doesn't use vi modes - just write the text directly
-    const chunkSize = 100;
-    for (let i = 0; i < text.length; i += chunkSize) {
-        const chunk = text.substring(i, i + chunkSize);
-        agent.write(chunk);
-        await this.wait(50);
+  async post(agent: Agent, text: string) {
+    this.log(`Posting to ${agent === this.worker ? 'Worker' : 'Watchdog'}: ${text.substring(0, 50)}...`);
+    
+    // Type text with small delay
+    for (const char of text) {
+        agent.write(char);
+        await this.wait(10);
     }
-
+    
     // Send enter to submit
     await this.wait(100);
     agent.write('\r');
@@ -340,10 +320,13 @@ export class WatchdogService {
     this.log("Post complete.");
   }
 
+  async onWorkerData(data: string) {
+      if (!this.enabled) return;
+  }
+
   async askWatchdog() {
     this.log("Asking Watchdog for guidance (STATE MACHINE)...");
 
-    // Safety check
     if (!this.worker || !this.watchdog) {
       this.log("Cannot ask watchdog: agents not initialized");
       return;
@@ -353,27 +336,50 @@ export class WatchdogService {
     this.retryCount = 0;
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
 
-    const rawContext = stripAnsi(this.readAgentLines(this.worker, 40));
-    const supervisedContext = rawContext.replace(/\s+/g, ' ').trim();
+    // Get lines and strip ANSI
+    const rawContext = stripAnsi(this.worker.getLines(25));
+    let context = rawContext.replace(/\s+/g, ' ').trim();
+    context = context.replace(/[^\x20-\x7E]/g, '');
+
+    if (context.length > 1000) {
+        context = "..." + context.substring(context.length - 1000);
+    }
+
+    const supervisedContext = context;
 
     // Get current state
-    const currentState = this.animatorState.getState();
-    const stateContext = this.animatorState.getContext();
+    const currentState = this.supervisorState.getState();
+    const stateContext = this.supervisorState.getContext();
+
+    // Check backoff if in ERROR state
+    if (currentState === 'ERROR') {
+      const delay = this.supervisorState.getErrorBackoffDelay();
+      const nextRetryAt = stateContext.stateEnteredAt + delay;
+      if (Date.now() < nextRetryAt) {
+        const remaining = Math.ceil((nextRetryAt - Date.now()) / 1000);
+        this.log(`[StateMachine] Still in backoff period (${remaining}s remaining). Skipping askWatchdog.`);
+        this.nextCheckTime = nextRetryAt;
+        this.waitingForResponse = false;
+        this.processing = false;
+        return;
+      }
+    }
 
     this.log(`[StateMachine] Current state: ${currentState}`);
-    this.log(`DEBUG: Worker context length: ${supervisedContext.length} chars`);
 
     // Build prompt context
     const promptContext: PromptContext = {
       state: currentState,
       supervisedContext,
-      supervisedStatus: this.isGenerating(this.worker) ? 'busy' : 'idle'
+      supervisedStatus: this.isGenerating(this.worker) ? 'busy' : 'idle',
+      requiresInput: this.hasChoiceMenu(this.worker),
+      autonomyPolicy: this.autonomyPolicy
     };
 
     // Add state-specific context
     if (currentState === 'WORKING' || currentState === 'WRAPPING_UP') {
       promptContext.aimText = stateContext.aimText;
-      const workDuration = this.animatorState.getWorkDuration();
+      const workDuration = this.supervisorState.getWorkDuration();
       if (workDuration !== null) {
         const minutes = Math.floor(workDuration / 60000);
         const seconds = Math.floor((workDuration % 60000) / 1000);
@@ -386,40 +392,34 @@ export class WatchdogService {
     const question = generateSupervisorPrompt(promptContext, requestId);
 
     this.log(`[StateMachine] Generated ${currentState} prompt, length: ${question.length} chars`);
-    this.log(`DEBUG: Question (first 500 chars):\n${question.substring(0, 500)}`);
 
     // Post the state-based question
     await this.post(this.watchdog, question);
-
-    // Capture screen AFTER posting
-    await this.wait(500);
-    const screenAfter = this.readAgentLines(this.watchdog, 100);
-    this.log(`DEBUG: Watchdog screen AFTER post (last 500 chars):\n${screenAfter.substring(Math.max(0, screenAfter.length - 500))}`);
-
-    // Check if Claude is processing (showing spinners)
-    const isProcessing = this.isGenerating(this.watchdog);
-    this.log(`DEBUG: Is watchdog generating after post? ${isProcessing}`);
+    this.log("AskWatchdog complete.");
   }
 
   async processDecision(jsonString: string) {
     this.waitingForResponse = false;
     this.log(`Processing decision JSON length: ${jsonString.length}`);
-
+    
     try {
        this.log(`Parsing JSON: ${jsonString}`);
-       jsonString = jsonString.replace(/[\r\n]+/g, ' ');
+
+       jsonString = jsonString.replace(/[\r\n]+/g, ' '); 
+
        const decision = JSON.parse(jsonString);
+       
        if (decision.action) {
          // Attempt action through state machine
-         const result = this.animatorState.attemptAction(decision.action);
+         const result = this.supervisorState.attemptAction(decision.action);
 
          if (result.success) {
-           // Valid action - execute agent-specific side effects
            this.log(`[StateMachine] Executing ${decision.action.type} → ${result.newState}`);
            await this.executeActionSideEffects(decision.action);
            this.onStateChange?.();
+         } else if (result.backoffActive) {
+           this.log(`[StateMachine] Action rejected: ${result.error}`);
          } else {
-           // Invalid action - urge supervisor to stick to available actions
            this.log(`[StateMachine] Invalid action: ${result.error}`);
            await this.urgeSupervisorToStickToAvailableActions(
              decision.action.type,
@@ -429,27 +429,27 @@ export class WatchdogService {
        }
     } catch (e: any) {
        this.log(`Error parsing JSON decision: ${e.message}`);
-       await this.urgeSupervisorToStickToJSONFormat(e.message);
+       await this.retry(e.message);
     }
   }
 
   extractJson(text: string): string {
     const end = text.lastIndexOf('}');
     if (end === -1) throw new Error("No JSON closing brace found");
-
+    
     let balance = 0;
     let start = -1;
-
+    
     for (let i = end; i >= 0; i--) {
       if (text[i] === '}') balance++;
       if (text[i] === '{') balance--;
-
+      
       if (balance === 0) {
         start = i;
         break;
       }
     }
-
+    
     if (start === -1) throw new Error("No matching JSON opening brace found");
     return text.substring(start, end + 1);
   }
@@ -457,7 +457,6 @@ export class WatchdogService {
   async executeAction(action: any) {
     this.log(`Executing Action: ${action.type}`);
 
-    // Safety check
     if (!this.worker || !this.watchdog) {
       this.log("Cannot execute action: agents not initialized");
       return;
@@ -466,10 +465,8 @@ export class WatchdogService {
     if (action.type === 'send-prompt') {
         let textToSend = action.text || '';
 
-        // If instruct flag is set, prepend the aimparency guidance (with session memory)
         if (action.instruct && this.instructTextWithMemory) {
             this.log('Including aimparency instruction text with session memory');
-            // Always append the specific instruction/question after the general instructions
             if (textToSend) {
                 textToSend = `${this.instructTextWithMemory}\n\n---\n\n${textToSend}`;
             } else {
@@ -483,19 +480,18 @@ export class WatchdogService {
     } else if (action.type === 'wrap-up') {
         this.log('Planning compact after git commit...');
         this.compactPlanned = true;
-        await this.post(this.worker, WRAP_UP_PROMPT);
+        await this.post(this.worker, ActionPrompts.commit());
     } else if (action.type === 'compact') {
         if (!this.compactPlanned) {
           this.log('Compact requested without wrap-up plan. Converting to wrap-up first.');
           this.compactPlanned = true;
-          await this.post(this.worker, WRAP_UP_PROMPT);
+          await this.post(this.worker, ActionPrompts.commit());
           this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
           return;
         }
         this.log(`Compacting worker context...`);
         this.compactPlanned = false;
 
-        // Extract session memory before compacting
         if (this.sessionMemory) {
           this.log('Extracting session memory before compact...');
           try {
@@ -506,12 +502,10 @@ export class WatchdogService {
             }
           } catch (error) {
             this.log(`Failed to save session memory: ${error}`);
-            // Continue with compact even if memory extraction fails
           }
         }
 
         await this.post(this.worker, '/compact');
-        // Don't increment turn count, this is maintenance
     } else if (action.type === 'enter') {
         this.worker.write('\r');
     } else if (action.type === 'select-option') {
@@ -534,26 +528,27 @@ export class WatchdogService {
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
   }
 
-  async urgeSupervisorToStickToJSONFormat(error: string) {
+  async retry(error: string) {
      this.retryCount++;
      if (this.retryCount < MAX_RETRIES) {
-       this.log(`Urging supervisor to fix JSON (Count: ${this.retryCount}). Error: ${error}`);
-       await this.wait(1000);
-       const message = `ERROR: Invalid JSON. Error: ${error}. Retry with valid JSON.`;
-       await this.post(this.watchdog, message);
-
+       this.log(`Retrying watchdog request (Count: ${this.retryCount}). Error: ${error}`);
+       await this.wait(5000);
+       const retryMessage = `ERROR: Invalid JSON. Error: ${error}. Retry JSON.`;
+       await this.post(this.watchdog, retryMessage);
+       
        this.waitingForResponse = true;
        this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
      } else {
-       console.error(`[WatchdogService] Max retries (${MAX_RETRIES}) reached. Stopping Watchdog.`);
-       this.stop(`Max retries (${MAX_RETRIES}) reached. JSON parsing failed repeatedly.`);
+       this.log(`[WatchdogService] Max retries (${MAX_RETRIES}) reached. Transitioning to ERROR state.`);
+       this.supervisorState.triggerError(`Max retries reached. JSON parsing failed repeatedly. Last error: ${error}`);
+       this.onStateChange?.();
      }
   }
 
   async urgeSupervisorToStickToAvailableActions(attemptedAction: string, validActions: string[]) {
     this.log(`Urging supervisor: invalid action "${attemptedAction}"`);
 
-    const currentState = this.animatorState.getState();
+    const currentState = this.supervisorState.getState();
     const message = `ERROR: Action "${attemptedAction}" is not valid in ${currentState} state.
 
 Valid actions for ${currentState}: ${validActions.join(', ')}
@@ -566,26 +561,16 @@ Please choose one of the valid actions and respond with correct JSON.`;
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
   }
 
-  async retry(error: string) {
-     // Deprecated: use urgeSupervisorToStickToJSONFormat instead
-     await this.urgeSupervisorToStickToJSONFormat(error);
-  }
-
   // ========== STATE MACHINE METHODS ==========
 
-  /**
-   * Execute agent-specific side effects for an action
-   * Note: State transition already happened in attemptAction()
-   */
   async executeActionSideEffects(action: any): Promise<void> {
     const actionType = action.type;
 
     this.log(`[StateMachine] Executing side effects for "${actionType}"`);
 
-    // Update context and execute side effects for each action
     switch (actionType) {
       case 'start_work':
-        this.animatorState.startWork(action.message ?? 'start working');
+        this.supervisorState.startWork(action.message ?? 'start working');
         await this.executeStartWork(action.message ?? 'start working');
         break;
 
@@ -617,6 +602,10 @@ Please choose one of the valid actions and respond with correct JSON.`;
         await this.executeCommit(action.text);
         break;
 
+      case 'compact':
+        await this.executeCompact(action.text);
+        break;
+
       case 'waiting_for_committed':
         this.log(`[StateMachine] Waiting for committed: ${action.reason || 'no reason'}`);
         this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
@@ -624,6 +613,10 @@ Please choose one of the valid actions and respond with correct JSON.`;
 
       case 'explore':
         await this.executeExplore(action.text);
+        break;
+
+      case 'choice':
+        await this.executeChoice(action.choice);
         break;
 
       case 'retry':
@@ -648,72 +641,69 @@ Please choose one of the valid actions and respond with correct JSON.`;
 
   private async executeStartWork(message: string): Promise<void> {
     this.log('[StateMachine] Starting work');
-
-    const prompt = `${this.instructTextWithMemory}
-
----
-
-Check Aimparency MCP for open aims or the current assigned aim, then start working. ${message}`;
-
+    const prompt = `${this.instructTextWithMemory}\n\n---\n\n${ActionPrompts.startWork(message)}`;
     await this.post(this.worker, prompt);
+    this.turnCount++;
   }
 
   private async executeBreakDown(message?: string): Promise<void> {
     this.log('[StateMachine] Breaking down work');
-
-    const defaultPrompt = 'Check Aimparency MCP for the current open aim, break it down into smaller concrete sub-aims or tasks, then continue with the next best step.';
-    const prompt = message ? `${defaultPrompt} ${message}` : defaultPrompt;
-
-    await this.post(this.worker, prompt);
+    await this.post(this.worker, ActionPrompts.breakDown(message));
+    this.turnCount++;
   }
 
   private async executeIdeate(text?: string): Promise<void> {
     this.log('[StateMachine] Ideating');
-
-    const defaultPrompt = 'Check Aimparency MCP for open aims and look for the next concrete task to start.';
-    const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
-    await this.post(this.worker, prompt);
+    await this.post(this.worker, ActionPrompts.ideate(text));
+    this.turnCount++;
   }
 
   private async executeTextPrompt(text?: string): Promise<void> {
-    const prompt = text || 'Keep advancing the work.';
-    await this.post(this.worker, prompt);
+    await this.post(this.worker, ActionPrompts.textPrompt(text));
+    this.turnCount++;
   }
 
   private async executeVerify(text?: string): Promise<void> {
-    const defaultPrompt = 'verify that more than 80% of the tackled requirements have been met. If the work is good enough, prepare to update the aim via Aimparency MCP.';
-    const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
-    this.animatorState.updateContext({ metadata: { workSummary: text || defaultPrompt } });
-    await this.post(this.worker, prompt);
+    this.supervisorState.updateContext({ metadata: { workSummary: text || 'verify that more than 80% of the tackled requirements have been met. If the work is good enough, prepare to update the aim via Aimparency MCP.' } });
+    await this.post(this.worker, ActionPrompts.verify(text));
+    this.turnCount++;
   }
 
   private async executeRevisit(text?: string): Promise<void> {
-    const prompt = text ? `finish implementation. ${text}` : 'finish implementation';
-    await this.post(this.worker, prompt);
+    await this.post(this.worker, ActionPrompts.revisit(text));
+    this.turnCount++;
   }
 
   private async executeWrapUp(text?: string): Promise<void> {
-    const defaultPrompt = 'use Aimparency MCP to update aim status and comment and reflection if not done already';
-    const prompt = text ? `${defaultPrompt}. ${text}` : defaultPrompt;
-    await this.post(this.worker, prompt);
+    await this.post(this.worker, ActionPrompts.wrapUp(text));
+    this.turnCount++;
   }
 
   private async executeCommit(text?: string): Promise<void> {
-    const prompt = text
-      ? `Track changes and make a git commit for the completed work. ${text}`
-      : WRAP_UP_PROMPT;
-    await this.post(this.worker, prompt);
+    await this.post(this.worker, ActionPrompts.commit(text));
+    this.turnCount++;
   }
 
   private async executeExplore(text?: string): Promise<void> {
-    const prompt = text || 'check Aimparency MCP for open aims and see if there is something you can work on';
-    await this.post(this.worker, prompt);
+    await this.post(this.worker, ActionPrompts.explore(text));
+    this.turnCount++;
+  }
+
+  private async executeCompact(text?: string): Promise<void> {
+    this.log('[StateMachine] Compacting worker context');
+    if (text) {
+        await this.post(this.worker, text);
+        await this.wait(1000);
+    }
+    await this.post(this.worker, '/compact');
+    this.turnCount = 0;
   }
 
   private async executeChoice(choice: string): Promise<void> {
     this.log(`[StateMachine] Executing choice: ${choice}`);
     await this.wait(70);
     this.worker.write(choice);
-    await this.ensureEnter(this.worker);
+    // Use manual enter for choice
+    this.worker.write('\r');
   }
 }

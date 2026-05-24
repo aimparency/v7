@@ -2,6 +2,8 @@
   "id": "e552723a-7f28-46b5-a1e9-5a64220e8710",
   "text": "add an mpc function: get highest priority aims for current phases",
   "description": "priority = value / effort",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -24,5 +26,8 @@
   },
   "intrinsicValue": 10,
   "cost": 0,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

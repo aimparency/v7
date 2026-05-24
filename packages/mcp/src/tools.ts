@@ -118,7 +118,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "search_aims",
-          description: "Search aims by text or status (e.g. 'open', 'done')",
+          description: "Search aims by text or status (e.g. 'open', 'done'). If the query is empty, it acts as a default listing sorted by the most recent status update date (effectively most recently created or updated).",
           inputSchema: {
             type: "object",
             properties: {

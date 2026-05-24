@@ -35,7 +35,7 @@ const actions = [
   {
     id: 'toggle',
     key: 'm',
-    label: () => 'Toggle Animator',
+    label: () => 'Toggle Supervisor',
     action: () => store.toggle(),
     icon: '⚡'
   },
@@ -67,7 +67,7 @@ const actions = [
   {
     id: 'hide',
     key: 'w',
-    label: () => 'Hide Animator Panel',
+    label: () => 'Hide Supervisor Panel',
     action: () => { projectStore.showWatchdog = false },
     icon: '👁️'
   },
@@ -81,7 +81,7 @@ const actions = [
   {
     id: 'relaunch',
     key: 'r',
-    label: () => 'Relaunch Animator Process',
+    label: () => 'Relaunch Supervisor Process',
     action: () => store.relaunch(),
     icon: '🔄'
   },
@@ -162,7 +162,7 @@ onUnmounted(() => {
 <template>
   <div class="actions-overlay" @click.self="store.showActionsOverlay = false">
     <div class="actions-modal">
-      <div class="modal-header">Animator Actions</div>
+      <div class="modal-header">Supervisor Actions</div>
       <div class="actions-list">
         <div 
           v-for="(action, index) in actions" 

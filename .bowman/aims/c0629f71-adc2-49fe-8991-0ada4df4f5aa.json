@@ -1,0 +1,26 @@
+{
+  "id": "c0629f71-adc2-49fe-8991-0ada4df4f5aa",
+  "text": "check and update status of 47cccbd6-8fe1-4fae-8530-1f66c489a05a (it's probably already implemented)",
+  "description": "let'",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "c561dd26-86c5-45c2-96a3-4b4f90e448a3"
+  ],
+  "committedIn": [
+    "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1779090420079
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

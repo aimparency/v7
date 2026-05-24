@@ -2,7 +2,15 @@
   "id": "ccf7385c-14b3-4e4a-8e94-c18da4b90d41",
   "text": "Persist and expose current supervisor engine state in project-local runtime metadata",
   "description": "Extend .bowman/runtime watchdog metadata so the current supervisor state-engine state and its color can be recovered after reconnects, reloads, and backend restarts. The frontend should be able to render the last known real supervisor state before a fresh socket event arrives.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1778795062191,
+      "context": "State machine state needed to survive backend restarts and browser reloads.",
+      "outcome": "Supervisor state is now persisted and restored correctly across sessions.",
+      "effectiveness": "Integrating the supervisor state into the existing runtime metadata persistence loop ensured that the 'memory' of the state machine's last known state was preserved on disk. Hydrating this on the frontend allows for immediate UI restoration.",
+      "lesson": "Durable runtime metadata should include not just binary on/off flags but also higher-level logical state to ensure a smooth 're-attachment' experience for users."
+    }
+  ],
   "archived": false,
   "tags": [
     "watchdog",
@@ -18,9 +26,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "Follow-up to current UI work: durable runtime metadata still does not include the actual supervisor state-machine state.",
-    "date": 1774857747279
+    "state": "done",
+    "comment": "Updated runtime metadata schema and persistence logic to include supervisor state machine information. The state and its associated color are now stored in watchdog-state.json and restored during frontend hydration. (RE-APPLYING DONE STATUS)",
+    "date": 1778795092137
   },
   "intrinsicValue": 0,
   "cost": 1,

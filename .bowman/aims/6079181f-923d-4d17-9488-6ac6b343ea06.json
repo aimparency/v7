@@ -1,0 +1,24 @@
+{
+  "id": "6079181f-923d-4d17-9488-6ac6b343ea06",
+  "text": "put the current project into a get param in the url",
+  "description": "so that reloading different tabs with different projects as get param reload to their project each. \nCheck that the state restoring logic will still work.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1778999283513
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

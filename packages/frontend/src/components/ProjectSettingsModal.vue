@@ -20,7 +20,7 @@ const autonomyMode = ref<'manual' | 'supervised' | 'autonomous'>('supervised')
 const preferredAgentType = ref<AgentType | ''>('')
 const sessionLeaseMinutes = ref(60)
 const autoConnectToExistingSession = ref(true)
-const restoreAnimatorStateOnSessionRestart = ref(true)
+const restoreSupervisorStateOnSessionRestart = ref(true)
 const requireCommitBeforeCompact = ref(true)
 const askForHumanOnText = ref('destructive-git, network, api-keys')
 
@@ -61,7 +61,7 @@ const describeAgentRuntimeState = (agentType: AgentType) => {
   const state = runtimeState.value?.agents?.[agentType]
   if (!state) return 'No runtime state'
   if (state.emergencyStopped) return state.stopReason || 'Emergency stopped'
-  if (state.enabled) return 'Animator enabled'
+  if (state.enabled) return 'Supervisor enabled'
   if (state.stopReason) return `Stopped: ${state.stopReason}`
   return 'Idle'
 }
@@ -76,7 +76,7 @@ async function loadAutonomyState() {
       preferredAgentType: AgentType | null
       sessionLeaseMinutes: number
       autoConnectToExistingSession: boolean
-      restoreAnimatorStateOnSessionRestart: boolean
+      restoreSupervisorStateOnSessionRestart: boolean
       requireCommitBeforeCompact: boolean
       askForHumanOn: string[]
     }>
@@ -87,7 +87,7 @@ async function loadAutonomyState() {
   preferredAgentType.value = policy.preferredAgentType || ''
   sessionLeaseMinutes.value = policy.sessionLeaseMinutes
   autoConnectToExistingSession.value = policy.autoConnectToExistingSession
-  restoreAnimatorStateOnSessionRestart.value = policy.restoreAnimatorStateOnSessionRestart
+  restoreSupervisorStateOnSessionRestart.value = policy.restoreSupervisorStateOnSessionRestart
   requireCommitBeforeCompact.value = policy.requireCommitBeforeCompact
   askForHumanOnText.value = policy.askForHumanOn.join(', ')
 }
@@ -169,7 +169,7 @@ const save = async () => {
             preferredAgentType: preferredAgentType.value || null,
             sessionLeaseMinutes: sessionLeaseMinutes.value,
             autoConnectToExistingSession: autoConnectToExistingSession.value,
-            restoreAnimatorStateOnSessionRestart: restoreAnimatorStateOnSessionRestart.value,
+            restoreSupervisorStateOnSessionRestart: restoreSupervisorStateOnSessionRestart.value,
             requireCommitBeforeCompact: requireCommitBeforeCompact.value,
             askForHumanOn: askForHumanOnText.value
               .split(',')
@@ -288,8 +288,8 @@ const save = async () => {
             </label>
 
             <label class="checkbox-row">
-              <input v-model="restoreAnimatorStateOnSessionRestart" type="checkbox" />
-              <span>Restore animator state when a session restarts</span>
+              <input v-model="restoreSupervisorStateOnSessionRestart" type="checkbox" />
+              <span>Restore supervisor state when a session restarts</span>
             </label>
 
             <label class="checkbox-row">

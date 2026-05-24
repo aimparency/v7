@@ -1,6 +1,8 @@
 {
   "id": "b5c6fda9-4c32-4b3a-94f0-31d0f2760040",
   "text": "implement search for phases and aims",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -26,6 +28,14 @@
         -1.7470129562333332
       ],
       "weight": 1
+    },
+    {
+      "aimId": "86bed896-8f75-4d29-acde-04b0582bf288",
+      "relativePosition": [
+        0.1745843162432007,
+        2.5346026702185815
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -43,5 +53,8 @@
   },
   "intrinsicValue": 10,
   "cost": 10,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

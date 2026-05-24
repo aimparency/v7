@@ -1,5 +1,5 @@
 /**
- * Animator State Machine
+ * Supervisor State Machine
  *
  * Manages the autonomous loop state with 3 explicit states:
  * - EXPLORING: Find work, break down aims, ideate
@@ -9,11 +9,16 @@
 
 import { getTargetState, getValidActionNames } from './state-machine-definition'
 
-export type AnimatorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP' | 'ERROR'
+export type SupervisorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP' | 'ERROR'
+
+export interface AutonomyPolicy {
+  restoreSupervisorStateOnSessionRestart?: boolean;
+  requireCommitBeforeCompact?: boolean;
+}
 
 export interface TransitionResult {
   success: boolean
-  newState?: AnimatorStateName
+  newState?: SupervisorStateName
   validActions?: string[]
   error?: string
   backoffActive?: boolean
@@ -33,15 +38,15 @@ export interface StateContext {
 
   // Error handling
   errorCount: number
-  previousState?: AnimatorStateName
+  previousState?: SupervisorStateName
 
   // Other context
   metadata?: Record<string, any>
 }
 
 export interface StateTransition {
-  from: AnimatorStateName
-  to: AnimatorStateName
+  from: SupervisorStateName
+  to: SupervisorStateName
   action: string
   timestamp: number
   data?: any
@@ -53,10 +58,10 @@ export interface ActionMessage {
 }
 
 /**
- * AnimatorState class manages the state machine
+ * SupervisorState class manages the state machine
  */
-export class AnimatorState {
-  private currentState: AnimatorStateName = 'EXPLORING'
+export class SupervisorState {
+  private currentState: SupervisorStateName = 'EXPLORING'
   private context: StateContext
   private history: StateTransition[] = []
 
@@ -73,7 +78,7 @@ export class AnimatorState {
   /**
    * Get current state name
    */
-  getState(): AnimatorStateName {
+  getState(): SupervisorStateName {
     return this.currentState
   }
 
@@ -94,7 +99,7 @@ export class AnimatorState {
   /**
    * Transition to a new state
    */
-  transition(newState: AnimatorStateName, action: string, data?: any): void {
+  transition(newState: SupervisorStateName, action: string, data?: any): void {
     const transition: StateTransition = {
       from: this.currentState,
       to: newState,
@@ -185,7 +190,7 @@ export class AnimatorState {
       targetState = this.context.previousState || 'EXPLORING';
     }
 
-    const newState = targetState as AnimatorStateName
+    const newState = targetState as SupervisorStateName
 
     // Valid action - perform transition
     this.transition(newState, actionType, action)
@@ -209,8 +214,8 @@ export class AnimatorState {
    */
   getErrorBackoffDelay(): number {
     if (this.context.errorCount === 0) return 0;
-    const index = Math.min(this.context.errorCount - 1, AnimatorState.BACKOFF_SCHEDULE.length - 1);
-    return AnimatorState.BACKOFF_SCHEDULE[index] * 60 * 1000;
+    const index = Math.min(this.context.errorCount - 1, SupervisorState.BACKOFF_SCHEDULE.length - 1);
+    return SupervisorState.BACKOFF_SCHEDULE[index] * 60 * 1000;
   }
 
   /**

@@ -23,6 +23,31 @@
   ],
   "committedIn": [],
   "status": {
+    "state": "done",
+    "comment": "Implemented ERROR state with exponential backoff and absolute busy timeouts. Added MAX_BUSY_TIMEOUT_MS (5m) for worker and MAX_WATCHDOG_TIMEOUT_MS (2m) for supervisor. Transitions to ERROR state on timeout or retry failure. Backoff schedule: 1, 2, 4, 8, 15 minutes. Verified with full build.",
+    "date": 1778796593978
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
+ve an associated timeout or escape condition. 'Generating' or 'Busy' is never a final state and must be time-boxed."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "error-handling",
+    "resilience"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "31e7e8b7-bc95-4968-bd4f-44e7963a93fd"
+  ],
+  "committedIn": [],
+  "status": {
     "state": "open",
     "comment": "Graceful error handling",
     "date": 1774790362628

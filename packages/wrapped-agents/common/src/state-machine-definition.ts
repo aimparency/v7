@@ -177,6 +177,17 @@ export const retry: Action = {
   ]
 }
 
+export const compact: Action = {
+  name: 'compact',
+  description: 'Compact the worker session context to reduce token usage and focus on the current task. Use when the worker has too much context or is repeating itself.',
+  parameters: [
+    { name: 'text', description: 'Optional extra guidance for the compaction', required: false }
+  ],
+  examples: [
+    '{"action": {"type": "compact"}}'
+  ]
+}
+
 export const wait: Action = {
   name: 'wait',
   description: 'Use when the worker is in a state where you just want to wait longer without sending a prompt. Useful if you suspect the worker is still doing something or if you want to extend a backoff.',
@@ -200,7 +211,8 @@ export const exploring: State = {
     { action: startWork, targetState: 'WORKING' },
     { action: breakDown, targetState: 'EXPLORING' },
     { action: ideate, targetState: 'EXPLORING' },
-    { action: choice, targetState: 'EXPLORING' }
+    { action: choice, targetState: 'EXPLORING' },
+    { action: compact, targetState: 'EXPLORING' }
   ]
 }
 
@@ -211,6 +223,7 @@ export const working: State = {
   actions: [
     { action: textPrompt, targetState: 'WORKING' },
     { action: choice, targetState: 'WORKING' },
+    { action: compact, targetState: 'WORKING' },
     { action: verify, targetState: 'WRAPPING_UP' },
     { action: wait, targetState: 'WORKING' }
   ]
@@ -225,6 +238,7 @@ export const wrappingUp: State = {
     { action: revisit, targetState: 'WORKING' },
     { action: wrapUp, targetState: 'WRAPPING_UP' },
     { action: commit, targetState: 'WRAPPING_UP' },
+    { action: compact, targetState: 'WRAPPING_UP' },
     { action: waitingForCommitted, targetState: 'WRAPPING_UP' },
     { action: explore, targetState: 'EXPLORING' },
     { action: wait, targetState: 'WRAPPING_UP' }

@@ -1,0 +1,26 @@
+{
+  "id": "8a8f970c-b085-4f9a-b257-8645b3879b55",
+  "text": "\"also supports\" instead of \"supports\" when subaim",
+  "description": "when displaying an aim as a sub aim (indented) in list view, \nshow only parents other than the visually apparent parent aim. \nOnly if there are others, show them, and replace \"supports:\" with \"also supports:\"",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [
+    "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Implemented visual distinction for additional parents. When a subaim is displayed, it now shows 'Also supports:' and lists only the other parents that are not the currently visually apparent parent in the list view.",
+    "date": 1779494151783
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

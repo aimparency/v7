@@ -6,7 +6,7 @@ import { trpc } from '../trpc'
 import type { SearchAimResult } from 'shared'
 import type { AimSearchAdditionalOption } from '../stores/ui/aim-search-types'
 
-type AimSearchSelection =
+export type AimSearchSelection =
   | { type: 'aim'; data: SearchAimResult; keepOpen?: boolean }
   | { type: 'option'; data: AimSearchAdditionalOption; keepOpen?: boolean }
   | null
@@ -25,6 +25,8 @@ const props = withDefaults(defineProps<{
   activateOnEnter?: boolean
   selectOnHover?: boolean
   resultLimit?: number
+  externalResults?: SearchAimResult[]
+  navigationTitle?: string
 }>(), {
   query: undefined,
   initialQuery: '',
@@ -38,7 +40,9 @@ const props = withDefaults(defineProps<{
   activateOnClick: true,
   activateOnEnter: true,
   selectOnHover: true,
-  resultLimit: 10
+  resultLimit: 10,
+  externalResults: undefined,
+  navigationTitle: ''
 })
 
 const emit = defineEmits<{
@@ -53,11 +57,9 @@ const projectStore = useProjectStore()
 const localQuery = ref(props.initialQuery)
 const searchResults = ref<SearchAimResult[]>([])
 const navigationMode = ref(false)
-const navigationTitle = ref('')
+const localNavigationTitle = ref('')
 const navigationHistory = ref<{ title: string, results: SearchAimResult[] }[]>([])
 const selectedIndex = ref(0)
-const focusedResultIndex = ref(-1)
-const hoveredResultIndex = ref(-1)
 const searchInput = ref<HTMLInputElement>()
 const resultsListRef = ref<HTMLDivElement>()
 const loading = ref(false)
@@ -68,13 +70,20 @@ const isStatusDropdownOpen = ref(false)
 
 const availableStatuses = computed(() => dataStore.getStatuses)
 const currentQuery = computed(() => (props.query ?? localQuery.value).trim())
+const displayTitle = computed(() => props.navigationTitle || localNavigationTitle.value)
 
-const items = computed(() => [
-  ...props.additionalOptions
-    .filter(option => !option.showWhenQueryEmptyOnly || currentQuery.value.length === 0)
-    .map(option => ({ type: 'option' as const, data: option })),
-  ...searchResults.value.map(result => ({ type: 'aim' as const, data: result }))
-])
+const items = computed(() => {
+  if (props.externalResults) {
+    return props.externalResults.map(result => ({ type: 'aim' as const, data: result }))
+  }
+
+  return [
+    ...props.additionalOptions
+      .filter(option => !option.showWhenQueryEmptyOnly || currentQuery.value.length === 0)
+      .map(option => ({ type: 'option' as const, data: option })),
+    ...searchResults.value.map(result => ({ type: 'aim' as const, data: result }))
+  ]
+})
 
 const selectedItem = computed<AimSearchSelection>(() => items.value[selectedIndex.value] ?? null)
 
@@ -89,61 +98,28 @@ const toggleStatus = (status: string) => {
 
 const getAimDisplayText = (aim: SearchAimResult): string => {
   const maxLength = 100
+  if (aim.text.length >= maxLength) return aim.text
 
-  // If aim text is already >= 100 chars, just return it
-  if (aim.text.length >= maxLength) {
-    return aim.text
-  }
-
-  // Build parent path recursively
   const buildPath = (aimId: string, currentPath: string[]): string[] => {
     const currentAim = dataStore.aims[aimId]
-    if (!currentAim || !currentAim.supportedAims || currentAim.supportedAims.length === 0) {
-      return currentPath
-    }
+    if (!currentAim || !currentAim.supportedAims?.length) return currentPath
 
-    // Get the first parent (largest/primary parent)
     const parentId = currentAim.supportedAims[0]
-    if (!parentId) return currentPath
-
-    const parentAim = dataStore.aims[parentId]
+    const parentAim = parentId ? dataStore.aims[parentId] : null
     if (!parentAim) return currentPath
 
-    // Add parent text to the beginning of the path
     const newPath = [parentAim.text, ...currentPath]
-    const pathString = newPath.join(' / ')
-
-    // If adding this parent would exceed max length, stop here
-    if (pathString.length > maxLength) {
-      return currentPath
-    }
-
-    // Continue recursively with the parent
-    return buildPath(parentId, newPath)
+    if (newPath.join(' / ').length > maxLength) return currentPath
+    return buildPath(parentId!, newPath)
   }
 
   const path = buildPath(aim.id, [aim.text])
-
-  // If we only have the aim itself (no parents found or they would exceed limit), return just the text
-  if (path.length === 1) {
-    return aim.text
-  }
-
-  return path.join(' / ')
+  return path.length === 1 ? aim.text : path.join(' / ')
 }
 
 const getAimIdRemainder = (aim: SearchAimResult): string => {
   const prefixLength = aim.idMatch?.prefix.length ?? 0
   return aim.id.slice(prefixLength)
-}
-
-const normalizeSearchError = (error: any): string => {
-  const message = error?.message || error?.shape?.message || error?.data?.message
-  if (typeof message === 'string' && message.trim()) {
-    return `Search failed: ${message.trim()}`
-  }
-
-  return 'Search failed because the server returned an error.'
 }
 
 const emitSelectionChange = () => {
@@ -153,7 +129,6 @@ const emitSelectionChange = () => {
 const applySelectionBehavior = () => {
   if (items.value.length === 0) {
     selectedIndex.value = 0
-    focusedResultIndex.value = -1
     emitSelectionChange()
     return
   }
@@ -169,19 +144,17 @@ const applySelectionBehavior = () => {
 
     if (exactMatches.length === 1) {
       selectedIndex.value = props.additionalOptions.length + exactMatches[0]!
-      focusedResultIndex.value = -1
       emitSelectionChange()
       return
     }
   }
 
   selectedIndex.value = 0
-  focusedResultIndex.value = -1
   emitSelectionChange()
 }
 
 const performSearch = async (query: string) => {
-  if (navigationMode.value) return
+  if (navigationMode.value || props.externalResults) return
 
   if (!query) {
     searchResults.value = []
@@ -212,20 +185,12 @@ const performSearch = async (query: string) => {
     ])
 
     const combined = new Map<string, SearchAimResult>()
-
-    semanticResults.forEach(result => {
-      combined.set(result.id, { ...result })
-    })
-
+    semanticResults.forEach(result => combined.set(result.id, { ...result }))
     keywordResults.forEach(result => {
       const existing = combined.get(result.id)
       if (existing) {
-        const semanticScore = existing.score || 0
-        const keywordScore = result.score || 0
-        existing.score = Math.max(semanticScore, keywordScore) + 0.2
-        if (result.idMatch) {
-          existing.idMatch = result.idMatch
-        }
+        existing.score = Math.max(existing.score || 0, result.score || 0) + 0.2
+        if (result.idMatch) existing.idMatch = result.idMatch
       } else {
         combined.set(result.id, { ...result })
       }
@@ -237,7 +202,7 @@ const performSearch = async (query: string) => {
   } catch (error: any) {
     console.error('Aim search failed:', error)
     searchResults.value = []
-    searchError.value = normalizeSearchError(error)
+    searchError.value = `Search failed: ${error.message || error}`
   } finally {
     loading.value = false
     applySelectionBehavior()
@@ -245,125 +210,70 @@ const performSearch = async (query: string) => {
 }
 
 let searchTimeout: NodeJS.Timeout | undefined
-
 const scheduleSearch = (query: string) => {
   if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    void performSearch(query.trim())
-  }, 150)
+  searchTimeout = setTimeout(() => void performSearch(query.trim()), 150)
 }
 
-watch(
-  () => currentQuery.value,
-  query => {
-    if (navigationMode.value && query.length > 0) {
-      navigationMode.value = false
-      navigationHistory.value = []
-    }
-    scheduleSearch(query)
-  },
-  { immediate: true }
-)
+watch([() => currentQuery.value, () => includeArchived.value, () => selectedStatuses.value.length], ([query]) => {
+  if (navigationMode.value && query.length > 0) {
+    navigationMode.value = false
+    navigationHistory.value = []
+  }
+  scheduleSearch(query)
+}, { immediate: true })
 
-const navigateToParents = async (aim: SearchAimResult) => {
-  if (!aim.supportedAims || aim.supportedAims.length === 0) return
-
+const navigateToParents = async (aim: SearchAimResult, wasFocused = false) => {
+  if (!aim.supportedAims?.length) return
   loading.value = true
   try {
-    const parents = await trpc.aim.getMany.query({
-      projectPath: projectStore.projectPath,
-      aimIds: aim.supportedAims
-    })
-    
-    navigationHistory.value.push({
-      title: navigationTitle.value || 'Search Results',
-      results: [...searchResults.value]
-    })
-    
+    const parents = await trpc.aim.getMany.query({ projectPath: projectStore.projectPath, aimIds: aim.supportedAims })
+    navigationHistory.value.push({ title: localNavigationTitle.value || 'Search Results', results: [...searchResults.value] })
     searchResults.value = parents.map(p => ({ ...p, score: 1 }))
-    navigationTitle.value = `Parents of: ${aim.text}`
+    localNavigationTitle.value = `Parents of: ${aim.text}`
     navigationMode.value = true
     selectedIndex.value = props.additionalOptions.length
     applySelectionBehavior()
-  } catch (error) {
-    console.error('Failed to navigate to parents', error)
+    if (wasFocused) nextTick(() => focusSelectedResult())
   } finally {
     loading.value = false
   }
 }
 
-const navigateToChildren = async (aim: SearchAimResult) => {
+const navigateToChildren = async (aim: SearchAimResult, wasFocused = false) => {
   loading.value = true
   try {
-    const children = await trpc.aim.list.query({
-      projectPath: projectStore.projectPath,
-      parentAimId: aim.id
-    })
-    
+    const children = await trpc.aim.list.query({ projectPath: projectStore.projectPath, parentAimId: aim.id })
     if (children.length === 0) return
-
-    navigationHistory.value.push({
-      title: navigationTitle.value || 'Search Results',
-      results: [...searchResults.value]
-    })
-    
+    navigationHistory.value.push({ title: localNavigationTitle.value || 'Search Results', results: [...searchResults.value] })
     searchResults.value = children.map(c => ({ ...c, score: 1 }))
-    navigationTitle.value = `Children of: ${aim.text}`
+    localNavigationTitle.value = `Children of: ${aim.text}`
     navigationMode.value = true
     selectedIndex.value = props.additionalOptions.length
     applySelectionBehavior()
-  } catch (error) {
-    console.error('Failed to navigate to children', error)
+    if (wasFocused) nextTick(() => focusSelectedResult())
   } finally {
     loading.value = false
   }
 }
 
-const navigateBack = () => {
+const navigateBack = (wasFocused = false) => {
   const previous = navigationHistory.value.pop()
   if (previous) {
     searchResults.value = previous.results
-    navigationTitle.value = previous.title === 'Search Results' ? '' : previous.title
-    if (navigationHistory.value.length === 0) {
-      navigationMode.value = false
-    }
+    localNavigationTitle.value = previous.title === 'Search Results' ? '' : previous.title
+    if (navigationHistory.value.length === 0) navigationMode.value = false
     applySelectionBehavior()
+    if (wasFocused) nextTick(() => focusSelectedResult())
   } else {
     navigationMode.value = false
   }
 }
 
-watch([selectedStatuses, includeArchived], () => {
-  scheduleSearch(currentQuery.value)
-}, { deep: true })
-
-watch(() => props.additionalOptions, () => {
-  applySelectionBehavior()
-}, { deep: true })
-
-watch(selectedIndex, () => {
-  emitSelectionChange()
-})
-
-const setSelectedIndex = (index: number) => {
-  if (index < 0 || index >= items.value.length) return
-  selectedIndex.value = index
-}
-
 const scrollToItem = (index: number) => {
   nextTick(() => {
     const item = resultsListRef.value?.querySelectorAll<HTMLElement>('.result-item')[index]
-    if (typeof item?.scrollIntoView === 'function') {
-      item.scrollIntoView({ block: 'nearest' })
-    }
-  })
-}
-
-const focusResult = (index: number) => {
-  nextTick(() => {
-    const item = resultsListRef.value?.querySelectorAll<HTMLElement>('.result-item')[index]
-    item?.focus()
-    if (typeof item?.scrollIntoView === 'function') {
+    if (item && typeof item.scrollIntoView === 'function') {
       item.scrollIntoView({ block: 'nearest' })
     }
   })
@@ -374,229 +284,87 @@ const activateSelection = (selection: AimSearchSelection = selectedItem.value, k
   emit('activate', keepOpen ? { ...selection, keepOpen } : selection)
 }
 
-const getEscapeSelection = (): NonNullable<AimSearchSelection> | null => {
-  const escapeOption = props.additionalOptions.find(option => option.actsAsEscape)
-  return escapeOption ? { type: 'option', data: escapeOption } : null
-}
-
-const handleEscape = () => {
-  if (navigationMode.value) {
-    navigateBack()
-    return
-  }
-  const escapeSelection = getEscapeSelection()
-  if (escapeSelection) {
-    activateSelection(escapeSelection)
-  } else {
-    emit('escape')
-  }
-}
-
-const handleInputKeydown = (event: KeyboardEvent) => {
+const handleKeydown = (event: KeyboardEvent) => {
   const key = event.key
-  if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Tab', 'h', 'l'].includes(key)) {
-    return
-  }
+  const isInput = event.target instanceof HTMLInputElement
 
   if (key === 'Escape') {
     event.preventDefault()
-    event.stopPropagation()
-    handleEscape()
+    if (navigationMode.value) navigateBack(!isInput)
+    else emit('escape')
     return
   }
 
-  if (key === 'h' && navigationMode.value && currentQuery.value.length === 0) {
+  if (key === 'ArrowDown' || (key === 'j' && !isInput)) {
     event.preventDefault()
-    event.stopPropagation()
-    navigateBack()
+    selectedIndex.value = Math.min(selectedIndex.value + 1, items.value.length - 1)
+    focusSelectedResult()
     return
   }
 
-  if ((key === 'h' || key === 'l') && currentQuery.value.length === 0) {
+  if (key === 'ArrowUp' || (key === 'k' && !isInput)) {
+    event.preventDefault()
+    selectedIndex.value = Math.max(selectedIndex.value - 1, 0)
+    focusSelectedResult()
+    return
+  }
+
+  if (key === 'h' && !isInput) {
+    event.preventDefault()
     const item = selectedItem.value
-    if (item?.type === 'aim') {
-      event.preventDefault()
-      event.stopPropagation()
-      if (key === 'h') {
-        void navigateToParents(item.data)
-      } else {
-        void navigateToChildren(item.data)
-      }
-      return
-    }
-  }
-
-  if (key === 'Tab') {
-    if (items.value.length === 0) return
-    event.preventDefault()
-    event.stopPropagation()
-    focusedResultIndex.value = selectedIndex.value
-    focusResult(selectedIndex.value)
-    return
-  }
-
-  if (items.value.length === 0) {
-    if (key === 'Enter' && props.activateOnEnter) {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-    return
-  }
-
-  if (key === 'ArrowDown') {
-    event.preventDefault()
-    event.stopPropagation()
-    const nextIndex = Math.min(selectedIndex.value + 1, items.value.length - 1)
-    setSelectedIndex(nextIndex)
-    scrollToItem(nextIndex)
-    return
-  }
-
-  if (key === 'ArrowUp') {
-    event.preventDefault()
-    event.stopPropagation()
-    const nextIndex = Math.max(selectedIndex.value - 1, 0)
-    setSelectedIndex(nextIndex)
-    scrollToItem(nextIndex)
-    return
-  }
-
-  if (key === 'Enter' && props.activateOnEnter) {
-    event.preventDefault()
-    event.stopPropagation()
-    activateSelection(selectedItem.value, event.shiftKey)
-  }
-}
-
-const handleResultClick = (index: number) => {
-  setSelectedIndex(index)
-  focusedResultIndex.value = index
-  if (props.activateOnClick) {
-    activateSelection(items.value[index] ?? null)
-  }
-}
-
-const handleResultKeydown = (event: KeyboardEvent, index: number) => {
-  const key = event.key
-  if (!['ArrowDown', 'ArrowUp', 'j', 'k', 'h', 'l', 'Enter', 'Escape', 'Tab'].includes(key)) {
-    return
-  }
-
-  if (key === 'Escape') {
-    event.preventDefault()
-    event.stopPropagation()
-    handleEscape()
-    return
-  }
-
-  if (key === 'Tab') {
-    focusedResultIndex.value = -1
-    if (props.showInput) {
-      event.preventDefault()
-      event.stopPropagation()
-      focusInput()
-    }
-    return
-  }
-
-  event.preventDefault()
-  event.stopPropagation()
-
-  if (key === 'ArrowDown' || key === 'j') {
-    const nextIndex = Math.min(index + 1, items.value.length - 1)
-    setSelectedIndex(nextIndex)
-    focusedResultIndex.value = nextIndex
-    focusResult(nextIndex)
-    return
-  }
-
-  if (key === 'ArrowUp' || key === 'k') {
-    const nextIndex = Math.max(index - 1, 0)
-    setSelectedIndex(nextIndex)
-    focusedResultIndex.value = nextIndex
-    focusResult(nextIndex)
-    return
-  }
-
-  if (key === 'h') {
-    const item = items.value[index]
-    if (item?.type === 'aim') {
-      void navigateToParents(item.data)
+    if (item?.type === 'aim' && item.data.supportedAims?.length) {
+      void navigateToParents(item.data, true)
     } else if (navigationMode.value) {
-      navigateBack()
+      navigateBack(true)
     }
     return
   }
 
-  if (key === 'l') {
-    const item = items.value[index]
-    if (item?.type === 'aim') {
-      void navigateToChildren(item.data)
+  if (key === 'l' && !isInput) {
+    event.preventDefault()
+    const item = selectedItem.value
+    if (item?.type === 'aim' && item.data.supportingConnections?.length) {
+      void navigateToChildren(item.data, true)
     }
     return
   }
 
   if (key === 'Enter') {
-    activateSelection(items.value[index] ?? null, event.shiftKey)
+    event.preventDefault()
+    activateSelection(selectedItem.value, event.shiftKey)
+  }
+
+  if (key === 'Tab' && isInput && items.value.length > 0) {
+    event.preventDefault()
+    focusSelectedResult()
   }
 }
 
-const getResultTabIndex = (index: number) => {
-  if (focusedResultIndex.value >= 0) {
-    return index === focusedResultIndex.value ? 0 : -1
-  }
-
-  if (!props.showInput) {
-    return index === selectedIndex.value ? 0 : -1
-  }
-
-  return -1
-}
-
-const handleResultMouseEnter = (index: number) => {
-  hoveredResultIndex.value = index
-  if (props.selectOnHover) {
-    setSelectedIndex(index)
-  }
-}
-
-const handleResultMouseLeave = (index: number) => {
-  if (hoveredResultIndex.value === index) {
-    hoveredResultIndex.value = -1
-  }
-}
-
-const focusInput = () => {
-  searchInput.value?.focus()
-}
+const focusInput = () => searchInput.value?.focus()
 
 const focusSelectedResult = () => {
-  if (items.value.length === 0) return
-  focusedResultIndex.value = selectedIndex.value
-  focusResult(selectedIndex.value)
+  scrollToItem(selectedIndex.value)
+  nextTick(() => {
+    const item = resultsListRef.value?.querySelectorAll<HTMLElement>('.result-item')[selectedIndex.value]
+    if (item && typeof item.focus === 'function') {
+      item.focus()
+    }
+  })
 }
 
-defineExpose({
-  activateSelection,
-  focusInput,
-  focusSelectedResult
-})
+defineExpose({ activateSelection, focusInput, focusSelectedResult })
 
 onMounted(() => {
-  if (props.autofocus && props.showInput) {
-    nextTick(() => focusInput())
-  }
+  if (props.autofocus && props.showInput) nextTick(() => focusInput())
 })
 
 onUnmounted(() => {
-  if (searchTimeout) {
-    clearTimeout(searchTimeout)
-  }
+  if (searchTimeout) clearTimeout(searchTimeout)
 })
 </script>
 
 <template>
-  <div class="aim-search-picker">
+  <div class="aim-search-picker" @keydown="handleKeydown">
     <div v-if="showFilters" class="filter-bar">
       <div class="filter-group relative">
         <button
@@ -606,22 +374,14 @@ onUnmounted(() => {
         >
           Status {{ selectedStatuses.length > 0 ? `(${selectedStatuses.length})` : '' }} ▼
         </button>
-
         <div v-if="isStatusDropdownOpen" class="dropdown-overlay" @click="isStatusDropdownOpen = false"></div>
-
         <div v-if="isStatusDropdownOpen" class="dropdown-menu">
-          <div
-            v-for="status in availableStatuses"
-            :key="status.key"
-            class="dropdown-item"
-            @click.stop="toggleStatus(status.key)"
-          >
+          <div v-for="status in availableStatuses" :key="status.key" class="dropdown-item" @click.stop="toggleStatus(status.key)">
             <input type="checkbox" :checked="selectedStatuses.includes(status.key)" readonly />
             <span :style="{ color: status.color }">{{ status.key }}</span>
           </div>
         </div>
       </div>
-
       <div class="filter-group">
         <label class="checkbox-label">
           <input type="checkbox" v-model="includeArchived" />
@@ -630,44 +390,26 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div v-if="navigationMode && navigationTitle" class="navigation-header">
+    <div v-if="displayTitle" class="navigation-header">
       <span class="back-hint">← H</span>
-      <span class="nav-title">{{ navigationTitle }}</span>
+      <span class="nav-title">{{ displayTitle }}</span>
     </div>
 
     <div v-if="showInput" class="search-input-wrapper">
       <span class="search-icon">/</span>
-      <input
-        ref="searchInput"
-        v-model="localQuery"
-        type="text"
-        :placeholder="placeholder"
-        @keydown="handleInputKeydown"
-      />
+      <input ref="searchInput" v-model="localQuery" type="text" :placeholder="placeholder" />
       <div v-if="loading" class="loader">...</div>
     </div>
 
-    <div
-      v-if="items.length > 0 || searchError || (currentQuery && !loading)"
-      ref="resultsListRef"
-      class="results-list"
-    >
+    <div v-if="items.length > 0 || searchError || (currentQuery && !loading)" ref="resultsListRef" class="results-list">
       <div v-if="items.length > 0">
         <div
           v-for="(item, index) in items"
           :key="item.type === 'option' ? `option-${item.data.id}` : item.data.id"
           class="result-item"
-          :class="{
-            selected: index === selectedIndex,
-            hovered: !props.selectOnHover && index === hoveredResultIndex,
-            'additional-option': item.type === 'option'
-          }"
-          :tabindex="getResultTabIndex(index)"
-          @click="handleResultClick(index)"
-          @mouseenter="handleResultMouseEnter(index)"
-          @mouseleave="handleResultMouseLeave(index)"
-          @focus="focusedResultIndex = index"
-          @keydown="handleResultKeydown($event, index)"
+          :class="{ selected: index === selectedIndex, 'additional-option': item.type === 'option' }"
+          :tabindex="index === selectedIndex ? 0 : -1"
+          @click="selectedIndex = index; props.activateOnClick && activateSelection(item)"
         >
           <template v-if="item.type === 'option'">
             <div class="result-text option-text">
@@ -693,231 +435,47 @@ onUnmounted(() => {
           </template>
         </div>
       </div>
-
-      <div v-else-if="searchError" class="search-feedback search-error">
-        {{ searchError }}
-      </div>
-
-      <div v-else class="search-feedback no-results">
-        {{ emptyMessage }}
-      </div>
+      <div v-else-if="searchError" class="search-feedback search-error">{{ searchError }}</div>
+      <div v-else class="search-feedback no-results">{{ emptyMessage }}</div>
     </div>
   </div>
 </template>
 
 <style scoped>
 .navigation-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 1rem;
-  background: #2d2d2d;
-  border-bottom: 1px solid #333;
-  color: #ccc;
-  font-size: 0.85rem;
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 1rem;
+  background: #2d2d2d; border-bottom: 1px solid #333; color: #ccc; font-size: 0.85rem;
 }
-
-.back-hint {
-  padding: 0.1rem 0.3rem;
-  background: #444;
-  border-radius: 0.2rem;
-  font-family: monospace;
-  font-weight: bold;
-}
-
-.nav-title {
-  font-weight: 500;
-  color: #eee;
-}
-
-.aim-search-picker {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.filter-bar {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #333;
-  background: #1e1e1e;
-}
-
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.relative {
-  position: relative;
-}
-
-.filter-btn {
-  padding: 0.35rem 0.6rem;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  color: #ddd;
-  border-radius: 0.25rem;
-  cursor: pointer;
-}
-
-.filter-btn.active {
-  border-color: #007acc;
-}
-
-.dropdown-overlay {
-  position: fixed;
-  inset: 0;
-}
-
+.back-hint { padding: 0.1rem 0.3rem; background: #444; border-radius: 0.2rem; font-family: monospace; font-weight: bold; }
+.nav-title { font-weight: 500; color: #eee; }
+.aim-search-picker { display: flex; flex-direction: column; min-height: 0; }
+.filter-bar { display: flex; gap: 0.75rem; padding: 0.75rem 1rem; border-bottom: 1px solid #333; background: #1e1e1e; }
+.filter-group { display: flex; align-items: center; gap: 0.5rem; }
+.relative { position: relative; }
+.filter-btn { padding: 0.35rem 0.6rem; background: #2a2a2a; border: 1px solid #444; color: #ddd; border-radius: 0.25rem; cursor: pointer; }
+.filter-btn.active { border-color: #007acc; }
+.dropdown-overlay { position: fixed; inset: 0; }
 .dropdown-menu {
-  position: absolute;
-  top: calc(100% + 0.4rem);
-  left: 0;
-  min-width: 12rem;
-  background: #252526;
-  border: 1px solid #444;
-  border-radius: 0.35rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.35);
-  z-index: 10;
+  position: absolute; top: calc(100% + 0.4rem); left: 0; min-width: 12rem;
+  background: #252526; border: 1px solid #444; border-radius: 0.35rem; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.35); z-index: 10;
 }
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.65rem;
-  cursor: pointer;
-}
-
-.dropdown-item:hover {
-  background: #2f2f2f;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: #d0d0d0;
-}
-
-.search-input-wrapper {
-  display: flex;
-  align-items: center;
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid #333;
-  background: #1e1e1e;
-}
-
-.search-icon {
-  margin-right: 0.65rem;
-  color: #888;
-}
-
-.search-input-wrapper input {
-  width: 100%;
-  padding: 0;
-  background: transparent;
-  border: none;
-  color: #f3f3f3;
-  font-size: 1rem;
-}
-
-.search-input-wrapper input:focus {
-  outline: none;
-}
-
-.loader {
-  margin-left: 0.75rem;
-  color: #888;
-}
-
-.results-list {
-  overflow-y: auto;
-  max-height: 22rem;
-}
-
-.result-item {
-  padding: 0.8rem 1rem;
-  border-bottom: 1px solid #2d2d2d;
-  cursor: pointer;
-}
-
-.result-item.selected {
-  background: #094771;
-}
-
-.result-item.additional-option {
-  border-bottom-color: #3a3220;
-}
-
-.result-text {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.result-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.option-text {
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.aim-text {
-  color: #f0f0f0;
-}
-
-.aim-id-match {
-  color: #8c8c8c;
-  font-family: monospace;
-  font-size: 0.78rem;
-  line-height: 1.2;
-}
-
-.aim-id-prefix {
-  color: #33d6ff;
-  font-weight: 700;
-}
-
-.option-description {
-  color: #a6a6a6;
-  font-size: 0.85rem;
-}
-
-.aim-meta {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.nav-indicator {
-  font-size: 0.7rem;
-  color: #666;
-  background: #2a2a2a;
-  padding: 0.1rem 0.3rem;
-  border-radius: 0.2rem;
-  font-family: monospace;
-}
-
-.aim-status {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: #bbb;
-}
-
-.search-feedback {
-  padding: 1rem;
-  color: #aaa;
-}
-
-.search-error {
-  color: #ff9a9a;
-}
+.dropdown-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.65rem; cursor: pointer; }
+.dropdown-item:hover { background: #2f2f2f; }
+.checkbox-label { display: flex; align-items: center; gap: 0.4rem; color: #d0d0d0; }
+.search-input-wrapper { display: flex; align-items: center; padding: 0.85rem 1rem; border-bottom: 1px solid #333; background: #1e1e1e; }
+.search-icon { margin-right: 0.65rem; color: #888; }
+.search-input-wrapper input { width: 100%; padding: 0; background: transparent; border: none; color: #f3f3f3; font-size: 1rem; }
+.search-input-wrapper input:focus { outline: none; }
+.loader { margin-left: 0.75rem; color: #888; }
+.results-list { overflow-y: auto; max-height: 22rem; }
+.result-item { padding: 0.8rem 1rem; border-bottom: 1px solid #2d2d2d; cursor: pointer; }
+.result-item.selected { background: #094771; outline: 1px solid #007acc; outline-offset: -1px; }
+.result-item.additional-option { border-bottom-color: #3a3220; }
+.result-text { display: flex; justify-content: space-between; gap: 1rem; }
+.result-content { display: flex; flex-direction: column; gap: 0.35rem; }
+.option-text { flex-direction: column; gap: 0.2rem; }
+.aim-text { color: #f0f0f0; }
+.aim-meta { display: flex; align-items: center; gap: 0.6rem; }
+.nav-indicator { font-size: 0.7rem; color: #666; background: #2a2a2a; padding: 0.1rem 0.3rem; border-radius: 0.2rem; font-family: monospace; }
+.aim-id-match { color: #8c8c8c; font-family: monospace; font-size: 0.78rem; line-height: 1.2; }
 </style>

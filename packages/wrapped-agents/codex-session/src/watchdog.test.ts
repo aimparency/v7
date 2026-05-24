@@ -627,7 +627,7 @@ test('askWatchdog wrapping-up prompt focuses on finishing wrap-up work', async (
   };
   const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
   (service as any).workingTowardsCommit = true;
-  (service as any).animatorState.transition('WRAPPING_UP', 'verify');
+  (service as any).supervisorState.transition('WRAPPING_UP', 'verify');
   (service as any).post = async (_agent: any, text: string) => {
     posts.push(text);
   };
@@ -721,7 +721,7 @@ test('askWatchdog includes wrap-up guidance when commit mode is active', async (
   };
   const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
   (service as any).workingTowardsCommit = true;
-  (service as any).animatorState.transition('WRAPPING_UP', 'verify');
+  (service as any).supervisorState.transition('WRAPPING_UP', 'verify');
   (service as any).post = async (_agent: any, text: string) => {
     prompts.push(text);
   };
@@ -750,7 +750,7 @@ test('askWatchdog includes wrap-up rule when commit mode is inactive', async () 
     write: () => {},
   };
   const service = new WatchdogService(worker as any, watchdog as any, undefined, 1);
-  (service as any).animatorState.transition('WRAPPING_UP', 'verify');
+  (service as any).supervisorState.transition('WRAPPING_UP', 'verify');
   (service as any).post = async (_agent: any, text: string) => {
     prompts.push(text);
   };

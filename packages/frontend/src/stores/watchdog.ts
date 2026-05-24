@@ -13,6 +13,7 @@ interface WatchdogRuntimeAgentState {
   emergencyStopped: boolean
   stopReason: string | null
   updatedAt: number
+  supervisorState?: SupervisorStateInfo | null
 }
 
 interface WatchdogRuntimeState {
@@ -21,7 +22,7 @@ interface WatchdogRuntimeState {
   agents: Partial<Record<AgentType, WatchdogRuntimeAgentState>>
 }
 
-interface AnimatorStateInfo {
+interface SupervisorStateInfo {
   state: string
   color?: string
 }
@@ -32,7 +33,7 @@ interface AutonomyPolicy {
   preferredAgentType: AgentType | null
   sessionLeaseMinutes: number
   autoConnectToExistingSession: boolean
-  restoreAnimatorStateOnSessionRestart: boolean
+  restoreSupervisorStateOnSessionRestart: boolean
   requireCommitBeforeCompact: boolean
   askForHumanOn: string[]
 }
@@ -44,7 +45,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const isEnabled = ref(false)
   const isEmergencyStopped = ref(false)
   const stopReason = ref('')
-  const supervisorState = ref<AnimatorStateInfo | null>(null)
+  const supervisorState = ref<SupervisorStateInfo | null>(null)
   const showActionsOverlay = ref(false)
   const focusRequestCounter = ref(0)
   const autonomyPolicy = ref<AutonomyPolicy | null>(null)
@@ -500,7 +501,13 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         isEnabled.value = agentState?.enabled ?? false
         isEmergencyStopped.value = agentState?.emergencyStopped ?? false
         stopReason.value = agentState?.stopReason ?? ''
-        supervisorState.value = null
+        supervisorState.value = agentState?.supervisorState ?? null
+
+        // Auto-restart if enabled but no session exists
+        if (isEnabled.value && !isEmergencyStopped.value && !currentProjectSession.value) {
+          logStatus(`Auto-starting enabled ${agentType} session (no active session found)...`)
+          void connect(projectPath, agentType)
+        }
       }
 
       return runtimeState
@@ -598,7 +605,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       stopReason.value = reason
     })
 
-    socket.value.on('animator-state', (state: AnimatorStateInfo) => {
+    socket.value.on('supervisor-state', (state: SupervisorStateInfo) => {
       supervisorState.value = state
     })
 

@@ -81,6 +81,7 @@ const handleScrollRequest = (element: HTMLElement) => {
           :is-active="isActive"
           :is-selected="isSelected"
           :is-this-aim-selected="selectedAimIndex === index"
+          :parent-aim-id="parentAimId"
           :class="{
             'active': isActive && selectedAimIndex === index,
             'selected': isSelected && selectedAimIndex === index,

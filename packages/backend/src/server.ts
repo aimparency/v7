@@ -62,7 +62,7 @@ const DEFAULT_AUTONOMY_POLICY = {
   preferredAgentType: null,
   sessionLeaseMinutes: 60,
   autoConnectToExistingSession: true,
-  restoreAnimatorStateOnSessionRestart: true,
+  restoreSupervisorStateOnSessionRestart: true,
   requireCommitBeforeCompact: true,
   askForHumanOn: ['destructive-git', 'network', 'api-keys']
 };

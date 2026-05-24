@@ -9,7 +9,7 @@ const socket = ref<Socket | null>(null);
 const status = ref('stopped');
 const emergencyStopped = ref(false);
 const stopReason = ref('');
-const animatorState = ref<{ state: string; color: string }>({ state: 'EXPLORING', color: '#a8dadc' });
+const supervisorState = ref<{ state: string; color: string }>({ state: 'EXPLORING', color: '#a8dadc' });
 
 type AgentType = 'claude' | 'gemini' | 'codex';
 
@@ -117,8 +117,8 @@ function setupSocket(s: Socket) {
     emergencyStopped.value = true;
     stopReason.value = 'Emergency Stop';
   });
-  s.on('animator-state', (data: { state: string; color: string }) => {
-    animatorState.value = data;
+  s.on('supervisor-state', (data: { state: string; color: string }) => {
+    supervisorState.value = data;
   });
   s.on('status', (s: string) => status.value = s === 'running' ? 'running' : 'stopped');
 }
@@ -183,8 +183,8 @@ onMounted(() => {
         </div>
         <div class="watchdog-pane">
         <div class="header">
-            Watchdog (Animator)
-            <span class="state-badge" :style="{ backgroundColor: animatorState.color }">{{ animatorState.state }}</span>
+            Watchdog (Supervisor)
+            <span class="state-badge" :style="{ backgroundColor: supervisorState.color }">{{ supervisorState.state }}</span>
             <span v-if="status === 'stopped' && stopReason" style="color: #fa0; font-weight: bold; margin: 0 10px;">stopped: {{ stopReason }}</span>
             <button @click="toggleWatchdog" :class="{ running: status === 'running' }">
             {{ status === 'running' ? 'Disable Watchdog' : 'Enable Watchdog' }}

@@ -15,13 +15,15 @@ interface Props {
   isThisAimSelected?: boolean
   phaseId: string
   columnIndex: number
+  parentAimId?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0,
   isActive: false,
   isSelected: false,
-  isThisAimSelected: false
+  isThisAimSelected: false,
+  parentAimId: undefined
 })
 
 const emit = defineEmits<{
@@ -80,6 +82,11 @@ const parentAims = computed(() => {
   return props.aim.supportedAims
     .map(parentId => dataStore.aims[parentId])
     .filter((a): a is Aim => !!a)
+})
+
+const otherParentAims = computed(() => {
+  if (!parentAims.value) return []
+  return parentAims.value.filter(p => p.id !== props.parentAimId)
 })
 
 const hasMultipleParents = computed(() => parentAims.value.length > 1)
@@ -161,11 +168,11 @@ onMounted(() => {
           {{ aim.description }}
         </div>
 
-        <div v-if="parentAims.length > 0" class="aim-parents">
-          <div class="parents-label">Supports:</div>
+        <div v-if="otherParentAims.length > 0" class="aim-parents">
+          <div class="parents-label">{{ parentAimId ? 'Also supports:' : 'Supports:' }}</div>
           <div class="parents-list">
             <button
-              v-for="parent in parentAims"
+              v-for="parent in otherParentAims"
               :key="parent.id"
               class="parent-aim"
               @click.stop="$emit('aim-clicked', parent.id)"

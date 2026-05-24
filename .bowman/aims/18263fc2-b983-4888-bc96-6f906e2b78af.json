@@ -1,0 +1,24 @@
+{
+  "id": "18263fc2-b983-4888-bc96-6f906e2b78af",
+  "text": "Rearrange UI aims",
+  "description": "We have like 4 general \"UI\" parent aims - and it's not clear why. \nMaybe we can restructure (change parent aims) them. \nParents could maybe be: \n- list view (with new sub parent \"vi style keybindings\")\n- project loading page\n- watchdog UI\n- graph view\n\nThere are hundreds of aims that would need restructuring",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "c561dd26-86c5-45c2-96a3-4b4f90e448a3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1779090665846
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

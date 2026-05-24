@@ -2,13 +2,15 @@
   "id": "6ad092fc-a69e-475d-8870-30f994a7f6a5",
   "text": "aim graph backend development",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
       "aimId": "b5c6fda9-4c32-4b3a-94f0-31d0f2760040",
       "relativePosition": [
-        3.5142395527791392,
-        2.729792080749641
+        3.053485741266225,
+        -0.6360029354069239
       ],
       "weight": 1
     },
@@ -58,5 +60,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

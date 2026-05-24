@@ -1,6 +1,6 @@
 {
   "id": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
-  "text": "ui enhancements",
+  "text": "list view",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -129,8 +129,8 @@
     {
       "aimId": "d59d03c1-45dd-48db-98c2-49b61b481f07",
       "relativePosition": [
-        2.219145998451428,
-        -2.4925134281006422
+        1.424535748676318,
+        -3.8354106830677996
       ],
       "weight": 1
     },
@@ -253,11 +253,19 @@
         1.6903187478628068
       ],
       "weight": 1
+    },
+    {
+      "aimId": "8a8f970c-b085-4f9a-b257-8645b3879b55",
+      "relativePosition": [
+        -1.538290091267209,
+        -3.7432370844242664
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
-    "33be4e0c-fa52-42ba-a86b-4c209b34e2be",
-    "22dd4138-d7c2-436a-8891-15568dacf338"
+    "22dd4138-d7c2-436a-8891-15568dacf338",
+    "33be4e0c-fa52-42ba-a86b-4c209b34e2be"
   ],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
@@ -265,7 +273,7 @@
   "status": {
     "state": "done",
     "comment": "",
-    "date": 1768593096135
+    "date": 1779090090360
   },
   "intrinsicValue": 10,
   "cost": 2,

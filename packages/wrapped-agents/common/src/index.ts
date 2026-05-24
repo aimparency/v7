@@ -1,3 +1,3 @@
 export * from './state-machine-definition'
-export * from './animator-state'
-export * from './animator-prompts'
+export * from './supervisor-state'
+export * from './supervisor-prompts'

@@ -27,7 +27,7 @@ const autonomyPolicySchema = z.object({
   preferredAgentType: agentTypeSchema.nullable().default(null),
   sessionLeaseMinutes: z.number().int().positive().default(60),
   autoConnectToExistingSession: z.boolean().default(true),
-  restoreAnimatorStateOnSessionRestart: z.boolean().default(true),
+  restoreSupervisorStateOnSessionRestart: z.boolean().default(true),
   requireCommitBeforeCompact: z.boolean().default(true),
   askForHumanOn: z.array(z.string()).default(['destructive-git', 'network', 'api-keys'])
 });

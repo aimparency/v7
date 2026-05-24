@@ -91,59 +91,113 @@ async function getVectorStorePath(projectPath: string) {
 // Cache per project
 const vectorCache = new Map<string, VectorStore>();
 
-export async function loadVectorStore(projectPath: string): Promise<VectorStore> {
-  if (vectorCache.has(projectPath)) {
-    return vectorCache.get(projectPath)!;
+// Simple Mutex for file operations to prevent corruption
+class Mutex {
+  private promise: Promise<void> = Promise.resolve();
+  async acquire(): Promise<() => void> {
+    let release: () => void;
+    const nextPromise = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    const currentPromise = this.promise;
+    this.promise = currentPromise.then(() => nextPromise);
+    await currentPromise;
+    return release!;
   }
+}
+const projectLocks = new Map<string, Mutex>();
 
-  const storePath = await getVectorStorePath(projectPath);
-  let store: VectorStore = {};
-  let needsRewrite = false;
-  
-  if (await fs.pathExists(storePath)) {
-    const rawStore = await fs.readJson(storePath);
-    for (const [aimId, vector] of Object.entries(rawStore as Record<string, unknown>)) {
-      if (isStoredVector(vector)) {
-        store[aimId] = vector.map(v => parseFloat(v.toFixed(6)));
-      } else {
+function getProjectLock(projectPath: string): Mutex {
+  if (!projectLocks.has(projectPath)) {
+    projectLocks.set(projectPath, new Mutex());
+  }
+  return projectLocks.get(projectPath)!;
+}
+
+export async function loadVectorStore(projectPath: string): Promise<VectorStore> {
+  const lock = getProjectLock(projectPath);
+  const release = await lock.acquire();
+  try {
+    if (vectorCache.has(projectPath)) {
+      return vectorCache.get(projectPath)!;
+    }
+
+    const storePath = await getVectorStorePath(projectPath);
+    let store: VectorStore = {};
+    let needsRewrite = false;
+    
+    if (await fs.pathExists(storePath)) {
+      try {
+        const rawStore = await fs.readJson(storePath);
+        for (const [aimId, vector] of Object.entries(rawStore as Record<string, unknown>)) {
+          if (isStoredVector(vector)) {
+            store[aimId] = vector.map(v => parseFloat(v.toFixed(6)));
+          } else {
+            needsRewrite = true;
+          }
+        }
+      } catch (e: any) {
+        console.error(`Error reading vectors.json (might be corrupted), starting fresh:`, e.message);
         needsRewrite = true;
+        store = {}; // reset to empty
       }
     }
-  }
 
-  if (needsRewrite) {
-    await fs.writeJson(storePath, store, { spaces: 0 });
+    if (needsRewrite) {
+      // Write to a temporary file first, then rename for atomic write
+      const tempPath = `${storePath}.tmp`;
+      await fs.ensureDir(path.dirname(storePath));
+      await fs.writeJson(tempPath, store, { spaces: 0 });
+      await fs.rename(tempPath, storePath);
+    }
+    
+    vectorCache.set(projectPath, store);
+    return store;
+  } finally {
+    release();
   }
-  
-  vectorCache.set(projectPath, store);
-  return store;
 }
 
 export async function saveEmbedding(projectPath: string, aimId: string, vector: number[]) {
+  const store = await loadVectorStore(projectPath);
+  const lock = getProjectLock(projectPath);
+  const release = await lock.acquire();
   try {
-    const store = await loadVectorStore(projectPath);
     // Reduce precision to 6 decimals to save space (plenty for cosine similarity)
     store[aimId] = vector.map(v => parseFloat(v.toFixed(6)));
     // Cache is updated by reference
 
     const storePath = await getVectorStorePath(projectPath);
+    const tempPath = `${storePath}.tmp`;
     await fs.ensureDir(path.dirname(storePath)); // Ensure .bowman directory exists
-    await fs.writeJson(storePath, store, { spaces: 0 });  // Compact format (no indentation)
+    // Write atomically
+    await fs.writeJson(tempPath, store, { spaces: 0 });  // Compact format (no indentation)
+    await fs.rename(tempPath, storePath);
   } catch (error: any) {
     if (error.code === 'ENOENT') {
       console.warn(`Failed to save embedding: Project directory might have been deleted (${projectPath})`);
     } else {
       console.error('Error saving embedding:', error);
     }
+  } finally {
+    release();
   }
 }
 
 export async function removeEmbedding(projectPath: string, aimId: string) {
   const store = await loadVectorStore(projectPath);
   if (store[aimId]) {
-    delete store[aimId];
-    const storePath = await getVectorStorePath(projectPath);
-    await fs.writeJson(storePath, store);
+    const lock = getProjectLock(projectPath);
+    const release = await lock.acquire();
+    try {
+      delete store[aimId];
+      const storePath = await getVectorStorePath(projectPath);
+      const tempPath = `${storePath}.tmp`;
+      await fs.writeJson(tempPath, store);
+      await fs.rename(tempPath, storePath);
+    } finally {
+      release();
+    }
   }
 }
 

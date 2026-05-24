@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
 import { useUIStore, type AimPath } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
-import type { Aim } from 'shared'
+import type { Aim, SearchAimResult } from 'shared'
 import type { AimSearchAdditionalOption } from '../stores/ui/aim-search-types'
-import AimSearchPicker from './AimSearchPicker.vue'
+import AimSearchPicker, { type AimSearchSelection } from './AimSearchPicker.vue'
 
 type AimSearchModalPayload =
   | { type: 'aim'; data: Aim; keepOpen?: boolean }
@@ -25,69 +25,42 @@ const emit = defineEmits<{
 }>()
 
 const pickerRef = ref<InstanceType<typeof AimSearchPicker>>()
-const selectedIndex = ref(0)
-const resultsListRef = ref<HTMLDivElement>()
 const loading = ref(false)
 
 const pathSelectionMode = ref(false)
 const availablePaths = ref<(AimPath & { label: string })[]>([])
 const selectedAimText = ref('')
 
-const blockLeakage = (event: KeyboardEvent) => {
-  const isInputTarget = event.target instanceof HTMLInputElement
-  const isNavKey = ['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Tab', 'j', 'k'].includes(event.key)
+const externalResults = computed<SearchAimResult[] | undefined>(() => {
+  if (!pathSelectionMode.value) return undefined
+  return availablePaths.value.map((path, index) => ({
+    id: `path-${index}`,
+    text: path.label,
+    status: { state: 'open', comment: '', date: Date.now() },
+    committedIn: [],
+    supportedAims: [],
+    supportingConnections: [],
+    intrinsicValue: 0,
+    cost: 0,
+    tags: [],
+    archived: false,
+    reflections: [],
+    loopWeight: 0,
+    duration: 1,
+    costVariance: 0,
+    valueVariance: 0,
+    score: index 
+  }))
+})
 
-  if (isInputTarget && !isNavKey) {
-    event.stopPropagation()
-    return
-  }
-
-  if (!pathSelectionMode.value) {
-    return
-  }
-
-  if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'j', 'k'].includes(event.key)) {
-    return
-  }
-
-  event.preventDefault()
-  event.stopPropagation()
-
-  const listLength = availablePaths.value.length
+// Unified key event handler for modal-level events (Escape)
+// Picker handles its own navigation.
+const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
-    pathSelectionMode.value = false
-    selectedIndex.value = 0
-    nextTick(() => pickerRef.value?.focusInput())
-    return
+    event.preventDefault()
+    event.stopPropagation()
+    close()
   }
-
-  if (listLength === 0) return
-
-  if (event.key === 'ArrowDown' || event.key === 'j') {
-    selectedIndex.value = Math.min(selectedIndex.value + 1, listLength - 1)
-    scrollToPath(selectedIndex.value)
-    return
-  }
-
-  if (event.key === 'ArrowUp' || event.key === 'k') {
-    selectedIndex.value = Math.max(selectedIndex.value - 1, 0)
-    scrollToPath(selectedIndex.value)
-    return
-  }
-
-  if (event.key === 'Enter') {
-    const path = availablePaths.value[selectedIndex.value]
-    if (path) {
-      selectPath(path)
-    }
-  }
-}
-
-const scrollToPath = (index: number) => {
-  nextTick(() => {
-    const item = resultsListRef.value?.querySelectorAll<HTMLElement>('.result-item')[index]
-    item?.scrollIntoView({ block: 'nearest' })
-  })
 }
 
 const selectAim = async (aim: Aim, keepOpen = false) => {
@@ -99,7 +72,7 @@ const selectAim = async (aim: Aim, keepOpen = false) => {
       console.error('Failed to load aim for selection', error)
       emit('select', keepOpen ? { type: 'aim', data: aim, keepOpen } : { type: 'aim', data: aim })
     }
-    if (keepOpen) {
+    if (shouldKeepOpen(keepOpen)) {
       nextTick(() => pickerRef.value?.focusInput())
     } else {
       close()
@@ -163,8 +136,6 @@ const selectAim = async (aim: Aim, keepOpen = false) => {
               matches.push(j)
             } else if (suffixLen === commonSuffixLen) {
               matches.push(j)
-            } else if (suffixLen > commonSuffixLen) {
-              // This is a bit complex for a simple loop, but for now we take the first match's suffix length
             }
           }
         }
@@ -210,8 +181,6 @@ const selectAim = async (aim: Aim, keepOpen = false) => {
       }))
 
       pathSelectionMode.value = true
-      selectedIndex.value = 0
-      scrollToPath(0)
     }
   } catch (error) {
     console.error('Error preparing navigation:', error)
@@ -220,12 +189,30 @@ const selectAim = async (aim: Aim, keepOpen = false) => {
   }
 }
 
-const handlePickerActivate = (payload: { type: 'aim'; data: Aim; keepOpen?: boolean } | { type: 'option'; data: AimSearchAdditionalOption; keepOpen?: boolean }) => {
-  const shouldKeepOpen = modalStore.aimSearchMode === 'pick' && payload.keepOpen === true
+const shouldKeepOpen = (keepOpenRequested?: boolean) => {
+  return modalStore.aimSearchMode === 'pick' && keepOpenRequested === true
+}
+
+const handlePickerActivate = (payload: AimSearchSelection) => {
+  if (!payload) return
+
+  if (pathSelectionMode.value) {
+    if (payload.type === 'aim') {
+      const pathIndex = payload.data.score ?? 0
+      const path = availablePaths.value[pathIndex]
+      if (path) {
+        emit('select', { type: 'path', data: path })
+        close()
+      }
+    }
+    return
+  }
+
+  const keepOpen = shouldKeepOpen(payload.keepOpen)
 
   if (payload.type === 'option') {
-    emit('select', shouldKeepOpen ? payload : { type: 'option', data: payload.data })
-    if (shouldKeepOpen) {
+    emit('select', keepOpen ? payload : { type: 'option', data: payload.data })
+    if (keepOpen) {
       nextTick(() => pickerRef.value?.focusInput())
     } else {
       close()
@@ -233,11 +220,15 @@ const handlePickerActivate = (payload: { type: 'aim'; data: Aim; keepOpen?: bool
     return
   }
 
-  void selectAim(payload.data, shouldKeepOpen)
+  void selectAim(payload.data, keepOpen)
 }
 
-const selectPath = (path: AimPath) => {
-  emit('select', { type: 'path', data: path })
+const handleEscape = () => {
+  if (pathSelectionMode.value) {
+    pathSelectionMode.value = false
+    nextTick(() => pickerRef.value?.focusInput())
+    return
+  }
   close()
 }
 
@@ -245,17 +236,10 @@ const close = () => {
   pathSelectionMode.value = false
   availablePaths.value = []
   selectedAimText.value = ''
-  selectedIndex.value = 0
   emit('close')
 }
 
 onMounted(async () => {
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur()
-  }
-
-  window.addEventListener('keydown', blockLeakage, true)
-
   if (modalStore.aimSearchInitialAimId && modalStore.aimSearchShowParentPaths) {
     const aimId = modalStore.aimSearchInitialAimId
     loading.value = true
@@ -299,7 +283,6 @@ onMounted(async () => {
 
       if (availablePaths.value.length > 0) {
         pathSelectionMode.value = true
-        selectedIndex.value = 0
       }
     } catch (error) {
       console.error('Failed to load parent paths', error)
@@ -327,48 +310,27 @@ onMounted(async () => {
 
   nextTick(() => pickerRef.value?.focusInput())
 })
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', blockLeakage, true)
-})
 </script>
 
 <template>
-  <div class="search-overlay" @click.self="close">
+  <div class="search-overlay" @click.self="close" @keydown="handleKeydown">
     <div class="search-modal">
       <div class="modal-header">
         <h3>{{ pathSelectionMode ? 'Select Path' : modalStore.aimSearchTitle }}</h3>
-        <div v-if="pathSelectionMode" class="path-selection-header">
-          {{ selectedAimText }}
-        </div>
       </div>
 
-      <div v-if="!pathSelectionMode">
-        <AimSearchPicker
-          ref="pickerRef"
-          :placeholder="modalStore.aimSearchPlaceholder"
-          :show-filters="modalStore.aimSearchShowFilters"
-          :autofocus="true"
-          :additional-options="modalStore.aimSearchAdditionalOptions"
-          @activate="handlePickerActivate"
-          @escape="close"
-        />
-      </div>
-
-      <div v-else ref="resultsListRef" class="results-list">
-        <div
-          v-for="(path, index) in availablePaths"
-          :key="`${path.phaseId ?? 'floating'}-${index}`"
-          class="result-item"
-          :class="{ selected: index === selectedIndex }"
-          @click="selectPath(path)"
-          @mouseenter="selectedIndex = index"
-        >
-          <div class="result-text">
-            <span class="aim-text">{{ path.label }}</span>
-          </div>
-        </div>
-      </div>
+      <AimSearchPicker
+        ref="pickerRef"
+        :placeholder="modalStore.aimSearchPlaceholder"
+        :show-filters="!pathSelectionMode && modalStore.aimSearchShowFilters"
+        :show-input="!pathSelectionMode"
+        :autofocus="true"
+        :additional-options="!pathSelectionMode ? modalStore.aimSearchAdditionalOptions : []"
+        :external-results="externalResults"
+        :navigation-title="pathSelectionMode ? selectedAimText : ''"
+        @activate="handlePickerActivate"
+        @escape="handleEscape"
+      />
 
       <div v-if="loading" class="loading-state">...</div>
     </div>
@@ -409,36 +371,6 @@ onUnmounted(() => {
 .modal-header h3 {
   margin: 0;
   font-size: 0.95rem;
-}
-
-.path-selection-header {
-  margin-top: 0.45rem;
-  color: #b9b9b9;
-  font-size: 0.85rem;
-}
-
-.results-list {
-  overflow-y: auto;
-  max-height: 22rem;
-}
-
-.result-item {
-  padding: 0.8rem 1rem;
-  border-bottom: 1px solid #2d2d2d;
-  cursor: pointer;
-}
-
-.result-item.selected {
-  background: #094771;
-}
-
-.result-text {
-  display: flex;
-  gap: 1rem;
-}
-
-.aim-text {
-  color: #f0f0f0;
 }
 
 .loading-state {

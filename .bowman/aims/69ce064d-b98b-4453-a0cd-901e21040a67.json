@@ -1,0 +1,24 @@
+{
+  "id": "69ce064d-b98b-4453-a0cd-901e21040a67",
+  "text": "Automatic focus. Phase masked aim search: \"what is the aim with the highest priority aim within the scope of a phase (recursive)\"",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1779521154833
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

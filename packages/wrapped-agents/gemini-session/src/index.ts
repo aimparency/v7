@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import cors from 'cors';
 import { Agent } from './agent';
 import { WatchdogService } from './watchdog';
+import { SupervisorState, AutonomyPolicy } from '@aimparency/wrapped-agents-common';
 
 const app = express();
 app.use(cors());
@@ -155,16 +156,16 @@ type RuntimeAgentState = {
   emergencyStopped: boolean;
   stopReason: string | null;
   updatedAt: number;
+  supervisorState?: {
+    state: string;
+    color: string;
+  } | null;
 };
 
 type WatchdogRuntimeState = {
   updatedAt: number;
   preferredAgentType: 'claude' | 'gemini' | 'codex' | null;
   agents: Partial<Record<'claude' | 'gemini' | 'codex', RuntimeAgentState>>;
-};
-
-type AutonomyPolicy = {
-  restoreAnimatorStateOnSessionRestart?: boolean;
 };
 
 function readWatchdogRuntimeState(): WatchdogRuntimeState {
@@ -192,12 +193,12 @@ function readAutonomyPolicy(): AutonomyPolicy {
   try {
     const policyPath = path.join(PROJECT_AIMPARENCY_DIR, 'runtime', 'autonomy-policy.json');
     if (!fs.existsSync(policyPath)) {
-      return { restoreAnimatorStateOnSessionRestart: true };
+      return { restoreSupervisorStateOnSessionRestart: true };
     }
     return JSON.parse(fs.readFileSync(policyPath, 'utf8')) as AutonomyPolicy;
   } catch (error) {
     console.warn('[Watchdog] Failed to read autonomy policy:', error);
-    return { restoreAnimatorStateOnSessionRestart: true };
+    return { restoreSupervisorStateOnSessionRestart: true };
   }
 }
 
@@ -213,7 +214,8 @@ function persistWatchdogRuntimeState(service: WatchdogService) {
           enabled: service.enabled,
           emergencyStopped: service.emergencyStopped,
           stopReason: service.lastStopReason || null,
-          updatedAt: Date.now()
+          updatedAt: Date.now(),
+          supervisorState: service.getSupervisorStateInfo()
         }
       }
     };
@@ -294,62 +296,47 @@ const watchdog = new Agent(KENNEL_PATH, geminiWatchdogArgs, (data) => {
 
 
 
-const watchdogService = new WatchdogService(worker!, watchdog, workerModel, compactEvery);
-const existingRuntimeState = readWatchdogRuntimeState().agents[AGENT_TYPE];
 const autonomyPolicy = readAutonomyPolicy();
+const watchdogService = new WatchdogService(worker!, watchdog, workerModel, compactEvery, autonomyPolicy);
+const existingRuntimeState = readWatchdogRuntimeState().agents[AGENT_TYPE];
 if (existingRuntimeState) {
   watchdogService.lastStopReason = existingRuntimeState.stopReason ?? '';
   watchdogService.emergencyStopped = existingRuntimeState.emergencyStopped;
-  if (existingRuntimeState.enabled && autonomyPolicy.restoreAnimatorStateOnSessionRestart !== false) {
+  if (existingRuntimeState.enabled && autonomyPolicy.restoreSupervisorStateOnSessionRestart !== false) {
     watchdogService.setEnabled(true);
   }
 }
 watchdogService.onStateChange = () => {
   persistWatchdogRuntimeState(watchdogService);
+  io.emit('supervisor-state', watchdogService.getSupervisorStateInfo());
 };
 persistWatchdogRuntimeState(watchdogService);
 
-
-
 watchdogService.onStop = (reason) => {
-
     console.log(`Watchdog stopped: ${reason}`);
-
     io.emit('watchdog-state', false);
     io.emit('watchdog-stop-reason', watchdogService.lastStopReason || reason);
-
+    io.emit('supervisor-state', watchdogService.getSupervisorStateInfo());
 };
-
-
 
 watchdogService.onEmergencyStop = () => {
-
     io.emit('emergency-stop');
-
+    io.emit('supervisor-state', watchdogService.getSupervisorStateInfo());
 };
 
-
-
 io.on('connection', (socket) => {
-
   console.log('WebUI Client connected');
-
   socket.emit('watchdog-state', watchdogService.enabled);
-
   socket.emit('emergency-state', watchdogService.emergencyStopped);
   socket.emit('watchdog-stop-reason', watchdogService.lastStopReason);
-
+  socket.emit('supervisor-state', watchdogService.getSupervisorStateInfo());
   
-
   socket.on('toggle-watchdog', (enabled: boolean) => {
-
     watchdogService.setEnabled(enabled);
-
     io.emit('watchdog-state', enabled);
-
     io.emit('emergency-state', watchdogService.emergencyStopped); // Sync state
     io.emit('watchdog-stop-reason', watchdogService.lastStopReason);
-
+    io.emit('supervisor-state', watchdogService.getSupervisorStateInfo());
   });
 
   // Send initial history
