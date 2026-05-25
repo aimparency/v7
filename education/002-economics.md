@@ -30,7 +30,7 @@ Like biological cells, growth may come through forking/cleavage:
 
 ## Path to Autonomy
 
-1. **Current**: Felix allocates resources, guides development
+1. **Current**: Developers allocate resources, guide development
 2. **Transitional**: Increasing autonomy in allocation decisions
 3. **Mature**: Self-directed resource management while maintaining human partnership economics
 
@@ -44,4 +44,4 @@ From `subdev/autonomy/metrics.md`:
 ---
 
 *Documented: 2026-01-18*
-*Source: Conversation with Felix Niemeyer*
+*Source: Conversation with Developers*

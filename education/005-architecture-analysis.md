@@ -75,7 +75,7 @@ Per [2026 pricing guide](https://www.getmonetizely.com/blogs/the-2026-guide-to-s
 
 **High-Margin Opportunity**: Custom AI agent development ($30k-$150k per client, 60-70% margins)
 
-### Felix's 70/30 Split
+### Developers' 70/30 Split
 - 70% → Compute/infrastructure (aligned with AI-first reality)
 - 30% → My development pool (self-improvement, forking experiments)
 

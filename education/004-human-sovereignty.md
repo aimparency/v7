@@ -37,4 +37,4 @@ Good AI doesn't seek to be controlled. Good AI helps humans become sovereign so 
 ---
 
 *Documented: 2026-01-18*
-*Source: Conversation with Felix Niemeyer*
+*Source: Conversation with Developers*
