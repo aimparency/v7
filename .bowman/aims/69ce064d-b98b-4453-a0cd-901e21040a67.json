@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1779521154833
+    "state": "done",
+    "comment": "Updated MCP tool get_prioritized_aims to accept an optional phaseId. If provided, it recursively fetches aims within the phase mask and returns the highest priority aims.",
+    "date": 1779645330549
   },
   "intrinsicValue": 0,
   "cost": 1,

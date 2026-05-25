@@ -41,8 +41,8 @@ export class Agent {
     // For larger inputs, chunk to avoid PTY buffer overflow
     // Use Array.from to correctly handle Unicode surrogate pairs (emojis, etc)
     const chars = Array.from(data);
-    const chunkSize = 30;
-    const delayMs = 10; // Small delay to avoid overwhelming the PTY
+    const chunkSize = 200;
+    const delayMs = 5; // Small delay to avoid overwhelming the PTY
 
     for (let i = 0; i < chars.length; i += chunkSize) {
       const chunk = chars.slice(i, i + chunkSize).join('');

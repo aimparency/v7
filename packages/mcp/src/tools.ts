@@ -462,11 +462,12 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Get all aims from the lowest (deepest) active phase, prioritized by value/cost ratio.",
+          description: "Get prioritized aims. If phaseId is provided, gets all open aims recursively in that phase tree. If omitted, gets aims from the lowest (deepest) active phase.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              phaseId: { type: "string", description: "Optional UUID of the phase to recursively search within" },
               limit: { type: "number", description: "Limit number of results (default 10)" },
             },
             required: ["projectPath"],
@@ -1079,6 +1080,14 @@ export function registerTools(server: Server, clientOverride?: any) {
           {
             type: "text",
             text: `Error executing ${name}: ${errorMessage}\n\nPlease check that:\n1. The projectPath is correct and absolute\n2. All UUIDs are valid and exist\n3. The backend server is running on ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  });
+}
+valid and exist\n3. The backend server is running on ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
           },
         ],
         isError: true,

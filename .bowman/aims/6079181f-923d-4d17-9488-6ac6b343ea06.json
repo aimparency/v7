@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1778999283513
+    "state": "done",
+    "comment": "Implemented updating the URL query string with ?project=path when a project is opened, and restoring the project from the URL parameter on startup.",
+    "date": 1779644513063
   },
   "intrinsicValue": 0,
   "cost": 1,

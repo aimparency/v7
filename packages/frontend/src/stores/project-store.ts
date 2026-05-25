@@ -10,7 +10,7 @@ import {
 
 function getInitialProjectPath(): string {
   const urlParams = new URLSearchParams(window.location.search)
-  const pathFromUrl = urlParams.get('path')
+  const pathFromUrl = urlParams.get('project') || urlParams.get('path')
   if (pathFromUrl) return pathFromUrl
   return localStorage.getItem('aimparency-project-path') || ''
 }
@@ -36,8 +36,15 @@ export const useProjectStore = defineStore('project', {
       this.projectPath = cleanPath
       if (cleanPath) {
         localStorage.setItem('aimparency-project-path', cleanPath)
+        const url = new URL(window.location.href)
+        url.searchParams.set('project', cleanPath)
+        window.history.replaceState({}, '', url)
       } else {
         localStorage.removeItem('aimparency-project-path')
+        const url = new URL(window.location.href)
+        url.searchParams.delete('project')
+        url.searchParams.delete('path')
+        window.history.replaceState({}, '', url)
       }
     },
 
