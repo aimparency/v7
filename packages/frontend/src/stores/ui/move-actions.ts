@@ -93,13 +93,15 @@ export async function moveAimDownAction(uiStore: any) {
         console.error('Move failed', e)
       }
     } else {
-      const parentPhaseId = path.phase.parent
-      const siblings = dataStore.getPhasesByParentId(parentPhaseId)
-      const currentPhaseIndex = siblings.findIndex((p: any) => p.id === phaseId)
+      const col = uiStore.activeColumn
+      const allPhasesAtLevel = col >= 0 ? dataStore.getActualPhasesForColumn(col) : []
+      const flatIndex = allPhasesAtLevel.findIndex((p: any) => p.id === phaseId)
 
-      if (currentPhaseIndex !== -1 && currentPhaseIndex < siblings.length - 1) {
-        const nextPhase = siblings[currentPhaseIndex + 1]
-        if (!nextPhase) return
+      const nextPhase = flatIndex !== -1 && flatIndex < allPhasesAtLevel.length - 1
+        ? allPhasesAtLevel[flatIndex + 1]
+        : undefined
+
+      if (nextPhase) {
         const nextPhaseId = nextPhase.id
 
         const ph = dataStore.phases[phaseId]
@@ -113,7 +115,6 @@ export async function moveAimDownAction(uiStore: any) {
           nextPh.selectedAimIndex = 0
         }
 
-        const col = uiStore.activeColumn
         if (col >= 0) {
           const nextPhaseIndex = uiStore.findSelectableIndexForPhase(col, nextPhaseId)
           if (nextPhaseIndex >= 0) {
@@ -233,13 +234,13 @@ export async function moveAimUpAction(uiStore: any) {
         console.error('Move failed', e)
       }
     } else {
-      const parentPhaseId = path.phase.parent
-      const siblings = dataStore.getPhasesByParentId(parentPhaseId)
-      const currentPhaseIndex = siblings.findIndex((p: any) => p.id === phaseId)
+      const col = uiStore.activeColumn
+      const allPhasesAtLevel = col >= 0 ? dataStore.getActualPhasesForColumn(col) : []
+      const flatIndex = allPhasesAtLevel.findIndex((p: any) => p.id === phaseId)
 
-      if (currentPhaseIndex > 0) {
-        const prevPhase = siblings[currentPhaseIndex - 1]
-        if (!prevPhase) return
+      const prevPhase = flatIndex > 0 ? allPhasesAtLevel[flatIndex - 1] : undefined
+
+      if (prevPhase) {
         const prevPhaseId = prevPhase.id
 
         const ph = dataStore.phases[phaseId]
@@ -255,7 +256,6 @@ export async function moveAimUpAction(uiStore: any) {
           prevPh.selectedAimIndex = newIndex
         }
 
-        const col = uiStore.activeColumn
         if (col >= 0) {
           const prevPhaseIndex = uiStore.findSelectableIndexForPhase(col, prevPhaseId)
           if (prevPhaseIndex >= 0) {

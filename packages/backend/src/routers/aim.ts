@@ -194,7 +194,8 @@ export const createAimRouter = (
           supportingConnections: z.array(z.object({
             aimId: z.string().uuid(),
             relativePosition: z.tuple([z.number(), z.number()]).optional(),
-            weight: z.number().optional()
+            weight: z.number().optional(),
+            explanation: z.string().optional()
           })).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
@@ -430,7 +431,8 @@ export const createAimRouter = (
           supportingConnections: z.array(z.object({
              aimId: z.string(),
              weight: z.number().optional(),
-             relativePosition: z.tuple([z.number(), z.number()]).optional()
+             relativePosition: z.tuple([z.number(), z.number()]).optional(),
+             explanation: z.string().optional()
           })).optional()
         })
       }))
@@ -518,7 +520,8 @@ export const createAimRouter = (
           supportingConnections: z.array(z.object({
              aimId: z.string(),
              weight: z.number().optional(),
-             relativePosition: z.tuple([z.number(), z.number()]).optional()
+             relativePosition: z.tuple([z.number(), z.number()]).optional(),
+             explanation: z.string().optional()
           })).optional()
         }),
         positionInParent: z.number().optional(),
@@ -601,7 +604,8 @@ export const createAimRouter = (
           supportingConnections: z.array(z.object({
              aimId: z.string(),
              weight: z.number().optional(),
-             relativePosition: z.tuple([z.number(), z.number()]).optional()
+             relativePosition: z.tuple([z.number(), z.number()]).optional(),
+             explanation: z.string().optional()
           })).optional()
         }),
         insertionIndex: z.number().optional()

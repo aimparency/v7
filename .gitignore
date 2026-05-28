@@ -31,3 +31,5 @@ subdev/*
 !subdev/README.md
 
 next
+
+.mcp.json
