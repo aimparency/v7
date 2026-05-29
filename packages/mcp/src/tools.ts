@@ -259,6 +259,17 @@ export function registerTools(server: Server, clientOverride?: any) {
           },
         },
         {
+          name: "get_active_path",
+          description: "Get the active phase path from stored cursor state (root → deepest selected phase)",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+            },
+            required: ["projectPath"],
+          },
+        },
+        {
           name: "get_prioritized_aims",
           description: "Get prioritized open aims from deepest active phase (or given phaseId)",
           inputSchema: {
@@ -358,13 +369,11 @@ export function registerTools(server: Server, clientOverride?: any) {
             });
             const aimMap = new Map(allAims.map((a: any) => [a.id, a]));
 
-            // 2. Get the phase to find roots
-            const phases = await trpcClient.phase.list.query({
+            // 2. Fetch the target phase directly
+            const phase = await trpcClient.phase.get.query({
                 projectPath: args.projectPath as string,
-                all: true
+                phaseId: args.phaseId as string,
             });
-            const phase = phases.find((p: any) => p.id === args.phaseId);
-            if (!phase) throw new Error(`Phase ${args.phaseId} not found`);
 
             const roots = phase.commitments;
             
@@ -671,35 +680,51 @@ export function registerTools(server: Server, clientOverride?: any) {
           };
         }
 
-        case "get_prioritized_aims": {
-          const phases = await trpcClient.phase.list.query({
-              projectPath: args.projectPath as string,
+        case "get_active_path": {
+          const result = await trpcClient.phase.getActivePath.query({
+            projectPath: args.projectPath as string,
           });
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                path: result.path.map((p: any) => ({ id: p.id, name: p.name, parent: p.parent })),
+                activeLevel: result.activeLevel,
+                activePhase: result.activePhase ? { id: result.activePhase.id, name: result.activePhase.name } : null,
+              }, null, 2),
+            }],
+          };
+        }
 
-          if (phases.length === 0) {
-               return { content: [{ type: "text", text: "No active phases found." }] };
+        case "get_prioritized_aims": {
+          // Prefer an explicit phaseId arg; otherwise use the cursor-based active path
+          let targetPhase: any = null;
+
+          if (args.phaseId) {
+            const phases = await trpcClient.phase.list.query({
+              projectPath: args.projectPath as string,
+              parentPhaseId: null,
+            });
+            targetPhase = phases.find((p: any) => p.id === args.phaseId) ?? null;
+            if (!targetPhase) {
+              // phaseId may be a child — fetch directly
+              try {
+                const allRoot = await trpcClient.phase.list.query({ projectPath: args.projectPath as string });
+                targetPhase = allRoot.find((p: any) => p.id === args.phaseId) ?? null;
+              } catch {}
+            }
           }
 
-          // Find phases with no active children (leaves)
-          // Map parent -> children
-          const parentMap = new Map<string, string[]>();
-          phases.forEach((p: any) => {
-              if (p.parent) {
-                  if (!parentMap.has(p.parent)) parentMap.set(p.parent, []);
-                  parentMap.get(p.parent)!.push(p.id);
-              }
-          });
+          if (!targetPhase) {
+            const activePath = await trpcClient.phase.getActivePath.query({
+              projectPath: args.projectPath as string,
+            });
+            targetPhase = activePath.activePhase;
+          }
 
-          // Filter for active leaves
-          const leaves = phases.filter((p: any) => {
-              const children = parentMap.get(p.id);
-              // If no children, it's a leaf. 
-              // If children exist, check if any are in the active 'phases' list
-              if (!children) return true;
-              return !children.some((childId: string) => phases.some((active: any) => active.id === childId));
-          });
-
-          const targetPhase = leaves[0];
+          if (!targetPhase) {
+               return { content: [{ type: "text", text: "No active phase found. Use list_phases to find a phase and pass phaseId." }] };
+          }
 
           if (!targetPhase) {
                return { content: [{ type: "text", text: "No active leaf phases found." }] };

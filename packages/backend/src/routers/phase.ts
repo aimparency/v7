@@ -272,6 +272,39 @@ export const createPhaseRouter = (
         meta.phaseActiveLevel = input.activeLevel;
         await writeMeta(input.projectPath, meta);
         return { success: true };
+      }),
+
+    getActivePath: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .query(async ({ input }: any) => {
+        const meta = await readMeta(input.projectPath);
+        const cursors: Record<string, string> = meta.phaseCursors ?? {};
+        const activeLevel: number = meta.phaseActiveLevel ?? 0;
+
+        const levels = Object.keys(cursors)
+          .map(Number)
+          .filter(n => !isNaN(n))
+          .sort((a, b) => a - b);
+
+        const path: Phase[] = [];
+        for (const level of levels) {
+          const phaseId = cursors[String(level)];
+          if (!phaseId) break;
+          try {
+            const phase = await readPhase(input.projectPath, phaseId);
+            path.push(phase);
+          } catch {
+            break;
+          }
+        }
+
+        return {
+          path,
+          activeLevel,
+          activePhase: path[activeLevel] ?? path[path.length - 1] ?? null
+        };
       })
   });
 };

@@ -19,9 +19,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "open",
-    "comment": "Core behavior change from temporal phases to ordered cursor navigation.",
-    "date": 1774951296155
+    "state": "done",
+    "comment": "activeAt fully removed; phase.getActivePath backend query added (resolves phaseCursors chain to Phase objects); MCP get_active_path tool added; get_prioritized_aims now uses cursor-based active path as default; list_phase_aims_recursive fixed (was passing stale all:true to phase.list, now uses phase.get directly).",
+    "date": 1780073469708
   },
   "intrinsicValue": 0,
   "cost": 1,

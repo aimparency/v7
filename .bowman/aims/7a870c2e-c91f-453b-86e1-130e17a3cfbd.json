@@ -19,9 +19,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "open",
-    "comment": "Replaces time-based active-phase selection with durable cursor state.",
-    "date": 1774951289858
+    "state": "done",
+    "comment": "phaseCursors changed to Record<string,string> (phase IDs per level), phase.setCursor mutation added, frontend debounces writes on every applyPhaseSelection, restoreCursorFromMeta() fallback added for bootstrap when localStorage is empty.",
+    "date": 1780073144210
   },
   "intrinsicValue": 0,
   "cost": 1,
