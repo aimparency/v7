@@ -3,7 +3,7 @@ import { AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
 export const AIM_STATE_KEYS = INITIAL_STATES.map(s => s.key);
 export const AIM_STATES_DESCRIPTION = `Current status of the aim. Options: ${AIM_STATE_KEYS.join(", ")}, archived`;
 
-export const PROJECT_PATH_DESCRIPTION = `Absolute path to the project directory. For a repository it defaults to /path/to/repo/${AIMPARENCY_DIR_NAME}. So be careful to append /${AIMPARENCY_DIR_NAME} to the repo directory if no otherwise specified`
+export const PROJECT_PATH_DESCRIPTION = `Absolute path to the .bowman dir (append /.bowman to repo root)`
 
 export const PROJECT_PATH_TOOL_PROPERTY = {
   type: "string",

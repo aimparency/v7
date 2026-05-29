@@ -116,8 +116,6 @@ test('createCommittedAim - creates and commits aim to phase', async () => {
     projectPath: testProjectPath,
     phase: {
       name: 'Test Phase',
-      from: Date.now(),
-      to: Date.now() + 86400000, // +1 day
       parent: null,
       commitments: []
     }
@@ -232,8 +230,6 @@ test('list - filters aims by status and phase', async () => {
     projectPath: testProjectPath,
     phase: {
       name: 'Test Phase',
-      from: Date.now(),
-      to: Date.now() + 86400000,
       parent: null,
       commitments: []
     }
@@ -288,8 +284,6 @@ test('phase.list skips malformed phase files', async () => {
     projectPath: testProjectPath,
     phase: {
       name: 'Valid Phase',
-      from: Date.now(),
-      to: Date.now() + 1000,
       parent: null,
       commitments: []
     }
@@ -316,8 +310,6 @@ test('phase reorder preserves canonical parent-owned order for roots and childre
     projectPath,
     phase: {
       name: 'A',
-      from: 0,
-      to: 0,
       parent: null,
       commitments: []
     }
@@ -327,8 +319,6 @@ test('phase reorder preserves canonical parent-owned order for roots and childre
     projectPath,
     phase: {
       name: 'B',
-      from: 0,
-      to: 0,
       parent: null,
       commitments: []
     }
@@ -338,8 +328,6 @@ test('phase reorder preserves canonical parent-owned order for roots and childre
     projectPath,
     phase: {
       name: 'C',
-      from: 0,
-      to: 0,
       parent: rootA.id,
       commitments: []
     }
@@ -356,8 +344,6 @@ test('phase reorder preserves canonical parent-owned order for roots and childre
     projectPath,
     phase: {
       name: 'D',
-      from: 0,
-      to: 0,
       parent: rootA.id,
       commitments: []
     }

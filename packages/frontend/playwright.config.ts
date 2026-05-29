@@ -141,9 +141,8 @@ export default defineConfig({
   ...baseConfig,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'list',
-  /* Only on CI systems run the tests headless */
   use: {
     ...baseConfig.use,
-    headless: process.env.HEADED !== 'true',
+    headless: true,
   },
 })

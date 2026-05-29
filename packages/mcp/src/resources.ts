@@ -45,60 +45,15 @@ export function registerResources(server: Server, caller: any) {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
       resources: [
-        {
-          uri: `aim://{uuid}?${PROJECT_PATH_PARAMETER}`,
-          name: "Single aim",
-          description: "Get a specific aim's text, status, and relationships. Replace {uuid} with actual aim ID. It's advised to know an aims supported aims recursively to fully understand it. Aims can have different states",
-          mimeType: "application/json",
-        },
-        {
-          uri: `aim://{uuid}/supporting_connections?${PROJECT_PATH_PARAMETER}`,
-          name: `Supporting connections (Children)`,
-          description: `Get all aims that support this aim (dependencies/prerequisites)`,
-          mimeType: `application/json`,
-        },
-        {
-          uri: `aim://{uuid}/supported_aims?${PROJECT_PATH_PARAMETER}`,
-          name: `Supported aims (Parents)`,
-          description: `Get all aims that this aim supports (aims that depend on this aim)`,
-          mimeType: `application/json`,
-        },
-        {
-          uri: `aims://all?${PROJECT_PATH_PARAMETER}`,
-          name: `All aims`,
-          description: `List all aims in the project with their full details`,
-          mimeType: `application/json`,
-        },
-        {
-          uri: `phase://{uuid}?${PROJECT_PATH_PARAMETER}`,
-          name: `Single phase`,
-          description: `Get a phase's name, date range, parent, and committed aims. Replace {uuid} with actual phase ID. A phase is a temporal window in which aims can be focused. Phases can have subphases, think YEAR>MONTHS>WEEKS for example. Phases help to focus on a set of aims in a given frame of time. Phases on the same level (siblings) are rather sequential.`,
-          mimeType: `application/json`,
-        },
-        {
-          uri: `phase://{uuid}/aims?${PROJECT_PATH_PARAMETER}`,
-          name: `Phase aims`,
-          description: `Get full details of all aims committed to this phase`,
-          mimeType: `application/json`,
-        },
-        {
-          uri: `phases://all?${PROJECT_PATH_PARAMETER}`,
-          name: `All phases`,
-          description: `List all phases in the project (root and sub-phases)`,
-          mimeType: `application/json`,
-        },
-        {
-          uri: `phases://{parent-uuid}/children?${PROJECT_PATH_PARAMETER}`,
-          name: `Sub-phases`,
-          description: `List all child phases of a specific parent phase`,
-          mimeType: `application/json`,
-        },
-        {
-          uri: `project://meta?${PROJECT_PATH_PARAMETER}`,
-          name: `Project info`,
-          description: `Get project name and color`,
-          mimeType: `application/json`,
-        },
+        { uri: `aim://{uuid}?${PROJECT_PATH_PARAMETER}`, name: "Aim", mimeType: "application/json" },
+        { uri: `aim://{uuid}/supporting_connections?${PROJECT_PATH_PARAMETER}`, name: "Aim children", mimeType: "application/json" },
+        { uri: `aim://{uuid}/supported_aims?${PROJECT_PATH_PARAMETER}`, name: "Aim parents", mimeType: "application/json" },
+        { uri: `aims://all?${PROJECT_PATH_PARAMETER}`, name: "All aims", mimeType: "application/json" },
+        { uri: `phase://{uuid}?${PROJECT_PATH_PARAMETER}`, name: "Phase", mimeType: "application/json" },
+        { uri: `phase://{uuid}/aims?${PROJECT_PATH_PARAMETER}`, name: "Phase aims", mimeType: "application/json" },
+        { uri: `phases://all?${PROJECT_PATH_PARAMETER}`, name: "All phases", mimeType: "application/json" },
+        { uri: `phases://{parent-uuid}/children?${PROJECT_PATH_PARAMETER}`, name: "Sub-phases", mimeType: "application/json" },
+        { uri: `project://meta?${PROJECT_PATH_PARAMETER}`, name: "Project meta", mimeType: "application/json" },
       ],
     };
   });

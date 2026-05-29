@@ -58,9 +58,9 @@ export const AimSchema = z.object({
 
 export const PhaseSchema = z.object({
   id: z.string().uuid(),
-  from: z.number(), // Date.now() timestamp
-  to: z.number(), // Date.now() timestamp
-  order: z.number().int().nonnegative().optional(),
+  from: z.number().optional(), // legacy, kept for backward compat reading old files
+  to: z.number().optional(),   // legacy, kept for backward compat reading old files
+  order: z.number().int().nonnegative().optional(), // legacy
   parent: z.string().uuid().nullable(),
   childPhaseIds: z.array(z.string().uuid()).optional(),
   commitments: z.array(z.string().uuid()),

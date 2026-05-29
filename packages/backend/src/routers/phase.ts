@@ -63,24 +63,12 @@ export const createPhaseRouter = (
         projectPath: z.string(),
         phase: z.object({
           name: z.string(),
-          from: z.number().optional(),
-          to: z.number().optional(),
           order: z.number().int().nonnegative().optional(),
           parent: z.string().nullable().optional(),
           commitments: z.array(z.string()).optional()
         })
       }))
       .mutation(async ({ input }: any) => {
-        let from = input.phase.from;
-        let to = input.phase.to;
-
-        if (from === undefined) {
-          from = 0;
-        }
-        if (to === undefined) {
-          to = from;
-        }
-
         let targetOrder = input.phase.order;
         if (targetOrder === undefined) {
           if (input.phase.parent) {
@@ -96,9 +84,6 @@ export const createPhaseRouter = (
         const phase: Phase = {
           id: phaseId,
           name: input.phase.name,
-          from: from!,
-          to: to!,
-          order: undefined,
           parent: input.phase.parent ?? null,
           childPhaseIds: [],
           commitments: input.phase.commitments || []
@@ -147,9 +132,6 @@ export const createPhaseRouter = (
         phaseId: z.string().uuid(),
         phase: z.object({
           name: z.string().optional(),
-          from: z.number().optional(),
-          to: z.number().optional(),
-          order: z.number().int().nonnegative().optional(),
           parent: z.string().nullable().optional(),
           commitments: z.array(z.string()).optional()
         })
@@ -158,12 +140,9 @@ export const createPhaseRouter = (
         const existingPhase = await readPhase(input.projectPath, input.phaseId);
         const oldParentId = existingPhase.parent ?? null;
 
-        // Manual merge to satisfy type checker
         const updatedPhase: Phase = {
             ...existingPhase,
             ...(input.phase.name !== undefined ? { name: input.phase.name } : {}),
-            ...(input.phase.from !== undefined ? { from: input.phase.from } : {}),
-            ...(input.phase.to !== undefined ? { to: input.phase.to } : {}),
             ...(input.phase.parent !== undefined ? { parent: input.phase.parent } : {}),
             ...(input.phase.childPhaseIds !== undefined ? { childPhaseIds: input.phase.childPhaseIds } : {}),
             ...(input.phase.commitments !== undefined ? { commitments: input.phase.commitments } : {})

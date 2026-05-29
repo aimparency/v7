@@ -2,7 +2,16 @@
   "id": "bb3d85e5-3667-48d4-8d91-9bf73008bb49",
   "text": "Refactor phase persistence to parent-owned child arrays with lazy migration",
   "description": "Replace child-side ordering as the canonical phase structure. Project metadata should store `rootPhaseIds: string[]` for root ordering, each phase should store `childPhaseIds: string[]` for ordered children, and each phase should retain `parent: string | null` as a backlink for fast upward traversal. Order must come exclusively from the containing array (`meta.rootPhaseIds` or `parent.childPhaseIds`), not from `from`/`to` or child-side `order`. Implement lazy migration from legacy date-based and temporary child-order data: when reading project data, derive missing ordered child arrays from existing sibling temporal/order sort, persist them incrementally, and keep parent/child links consistent in both directions.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1780066885145,
+      "context": "Removing from/to date fields from the full stack as part of the phase persistence refactor — types, backend mutations, frontend, MCP tools.",
+      "outcome": "The removal was complete across all layers except server.ts:normalizePhase, which still asserted `typeof parsed.from !== 'number'` causing newly created phases (without from/to) to fail validation on read. Fixed by removing those two type checks. All 30 backend tests pass. Phase creation works end-to-end without date fields.",
+      "effectiveness": "Fix was a one-line removal. The root cause was that the schema change (making from/to optional) was not propagated to the validation guard in normalizePhase. TypeScript didn't catch it because the guard used runtime typeof checks, not schema inference.",
+      "lesson": "When making schema fields optional, grep for runtime typeof guards on those same fields — they won't be caught by tsc but will silently break reads of new data.",
+      "pattern": "Schema/type change that compiles clean but breaks at runtime due to a disconnected runtime validation path. The compiler only sees the type layer, not invariant checks written as if conditions."
+    }
+  ],
   "archived": false,
   "tags": [
     "phase-refactor",
@@ -18,9 +27,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "open",
-    "comment": "Ordering now also requires lazy compatibility migration from legacy temporal phase files.",
-    "date": 1775935227762
+    "state": "partially",
+    "comment": "from/to removed from full stack: PhaseSchema (optional/legacy), backend create/update mutations, normalizePhase validation, test fixtures, PhaseCreationModal, PhaseSearchModal, MCP tools. 30/30 tests pass, end-to-end verified. Remaining: lazy migration (sort legacy phases by from/to when deriving missing childPhaseIds order) and incremental persistence of migrated order.",
+    "date": 1780065286348
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -377,8 +377,6 @@ function normalizePhase(rawPhase: unknown): Phase {
 
   if (
     !parsed.id ||
-    typeof parsed.from !== 'number' ||
-    typeof parsed.to !== 'number' ||
     parsed.parent === undefined ||
     !parsed.commitments ||
     !parsed.name

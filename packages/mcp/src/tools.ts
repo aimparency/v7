@@ -2,7 +2,6 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import { trpc } from "./client.js";
 import { AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { AIMPARENCY_DIR_NAME } from "shared";
 
 function formatAim(aim: any) {
   if (aim.supportingConnections) {
@@ -26,9 +25,6 @@ function formatAims(aims: any[]) {
   return aims.map(formatAim);
 }
 
-const RECOMMENDED_AIM_STRUCTURE_NOTE =
-  "For a healthy graph, aims should usually be both committed to a phase and connected to other aims via supportedAims/supportingConnections. Floating aims are allowed but should usually be temporary."
-
 export function registerTools(server: Server, clientOverride?: any) {
   const trpcClient = clientOverride || trpc;
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -36,145 +32,66 @@ export function registerTools(server: Server, clientOverride?: any) {
       tools: [
         {
           name: "get_aim",
-          description: "Get a single aim by its ID",
+          description: "Get aim by ID",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string", description: "UUID of the aim" }
+              aimId: { type: "string" }
             },
             required: ["projectPath", "aimId"],
           },
         },
         {
           name: "get_aim_context",
-          description: "Get context for an aim: 5 semantically closest aims, parents, and children.",
+          description: "Get aim + 5 semantic neighbors + parents/children",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string", description: "UUID of the aim" }
+              aimId: { type: "string" }
             },
             required: ["projectPath", "aimId"],
           },
         },
         {
-          name: "list_aims",
-          description: `List all aims in the project. ${RECOMMENDED_AIM_STRUCTURE_NOTE}`,
+          name: "search_aims",
+          description: "Search aims by text/status. Empty query = most recently updated.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              ids: {
-                type: "array",
-                items: { type: "string" },
-                description: "Filter by specific aim IDs"
-              },
-              status: {
-                type: ["string", "array"],
-                items: { type: "string" },
-                description: "Filter by status (e.g., 'open' or ['open', 'in_progress'])"
-              },
-              phaseId: {
-                type: "string",
-                description: "Filter by phase ID"
-              },
-              parentAimId: {
-                type: "string",
-                description: "Filter by parent aim ID (get sub-aims)"
-              },
-              floating: {
-                type: "boolean",
-                description: "Filter for aims that are not committed to any phase and have no parents. Useful for cleanup because aims should usually not remain floating."
-              },
-              archived: {
-                type: "boolean",
-                description: "If true, list only archived aims. If false/omitted, list only active aims."
-              },
-              limit: { type: "number", description: "Limit number of results" },
-              offset: { type: "number", description: "Skip first N results" },
-              sortBy: { type: "string", enum: ["date", "status", "text", "priority"], description: "Sort by field" },
-              sortOrder: { type: "string", enum: ["asc", "desc"], description: "Sort order (default asc)" }
+              query: { type: "string" },
+              status: { type: ["string", "array"], items: { type: "string" } },
+              phaseId: { type: "string" },
+              archived: { type: "boolean" },
+              limit: { type: "number" },
+              offset: { type: "number" }
             },
-            required: ["projectPath"],
+            required: ["projectPath", "query"],
           },
         },
         {
           name: "list_phase_aims_recursive",
-          description: "List all open aims and sub-aims recursively for a given phase.",
+          description: "All aims recursively within a phase (default: open only)",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              phaseId: { type: "string", description: "UUID of the phase" },
-              status: {
-                  type: ["string", "array"],
-                  items: { type: "string" },
-                  description: "Filter by status (default: ['open'])"
-              }
+              phaseId: { type: "string" },
+              status: { type: ["string", "array"], items: { type: "string" } }
             },
             required: ["projectPath", "phaseId"],
           },
         },
         {
-          name: "search_aims",
-          description: "Search aims by text or status (e.g. 'open', 'done'). If the query is empty, it acts as a default listing sorted by the most recent status update date (effectively most recently created or updated).",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              query: { type: "string" },
-              status: {
-                type: ["string", "array"],
-                items: { type: "string" },
-                description: "Filter by status"
-              },
-              phaseId: {
-                type: "string",
-                description: "Filter by phase ID"
-              },
-              archived: {
-                type: "boolean",
-                description: "If true, search only archived aims."
-              },
-              limit: { type: "number", description: "Limit number of results" },
-              offset: { type: "number", description: "Skip first N results" }
-            },
-            required: ["projectPath", "query"],
-          },
-        },
-        {
-          name: "search_aims_semantic",
-          description: "Search aims by semantic meaning (embedding-based)",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              query: { type: "string" },
-              limit: { type: "number", description: "Max results (default 10)" },
-              status: {
-                type: ["string", "array"],
-                items: { type: "string" },
-                description: "Filter by status"
-              },
-              phaseId: {
-                type: "string",
-                description: "Filter by phase ID"
-              }
-            },
-            required: ["projectPath", "query"],
-          },
-        },
-        {
           name: "list_phases",
-          description: "List phases in the project. Defaults to listing currently active phases (at current time) unless 'all' is set to true. Use this to find the active context to prioritize work.",
+          description: "List phases (ordered, no dates)",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              parentPhaseId: { type: ["string", "null"], description: "Optional parent phase ID" },
-              activeAt: { type: "number", description: "Optional timestamp (ms) to filter active phases. Defaults to current time if not provided and 'all' is false." },
-              all: { type: "boolean", description: "Set to true to list all phases regardless of time." }
+              parentPhaseId: { type: ["string", "null"] },
             },
             required: ["projectPath"],
           },
@@ -187,128 +104,87 @@ export function registerTools(server: Server, clientOverride?: any) {
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               query: { type: "string" },
-              parentPhaseId: { type: ["string", "null"], description: "Optional parent phase ID" },
+              parentPhaseId: { type: ["string", "null"] },
             },
             required: ["projectPath", "query"],
           },
         },
         {
           name: "create_aim",
-          description: `Create a new aim. Date is set automatically. Optionally provide phaseId to commit to a phase in one step. ${RECOMMENDED_AIM_STRUCTURE_NOTE}`,
+          description: "Create aim. Use phaseId to commit in one step.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              text: {
-                type: "string",
-                description: "The aim title (short)",
-              },
-              description: {
-                type: "string",
-                description: "Optional longer description with details, context, or notes",
-              },
-              tags: {
-                type: "array",
-                items: { type: "string" },
-                description: "Tags for categorization (e.g. 'bug', 'feature')",
-              },
+              text: { type: "string" },
+              description: { type: "string" },
+              tags: { type: "array", items: { type: "string" } },
               status: {
                 type: "object",
                 properties: {
-                  state: {
-                    type: "string",
-                    description: AIM_STATES_DESCRIPTION,
-                  },
-                  comment: {
-                    type: "string",
-                    description: "Optional comment about the status",
-                  },
+                  state: { type: "string", description: AIM_STATES_DESCRIPTION },
+                  comment: { type: "string" },
                 },
               },
-              supportingConnections: {
-                type: "array",
-                items: { type: "string" },
-                description: "UUIDs of aims that support this aim (children/dependencies). Usually provide relationships so the new aim is not isolated.",
-              },
-              supportedAims: {
-                type: "array",
-                items: { type: "string" },
-                description: "UUIDs of aims that this aim supports (parents). Usually provide relationships so the new aim is not isolated.",
-              },
-              phaseId: {
-                type: "string",
-                description: "Optional: UUID of phase to commit this aim to. Usually recommended so the aim is placed in an active time context.",
-              },
+              supportingConnections: { type: "array", items: { type: "string" }, description: "child aim UUIDs" },
+              supportedAims: { type: "array", items: { type: "string" }, description: "parent aim UUIDs" },
+              phaseId: { type: "string" },
             },
             required: ["projectPath", "text"],
           },
         },
         {
           name: "update_aim",
-          description: `Update an aim's text, status (open/done/cancelled/partially/failed), or dependency relationships. ${RECOMMENDED_AIM_STRUCTURE_NOTE} It's recommended to update aims before using git add for the code changes and ${AIMPARENCY_DIR_NAME}, in order to commit code and related aim changes at the same time.`,
+          description: "Update aim text/status/relationships. Update before git commit.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string", description: "UUID of the aim to update" },
-              text: { type: "string", description: "The aim title (short)" },
-              description: { type: "string", description: "Optional longer description" },
-              tags: {
-                type: "array",
-                items: { type: "string" },
-              },
+              aimId: { type: "string" },
+              text: { type: "string" },
+              description: { type: "string" },
+              tags: { type: "array", items: { type: "string" } },
               status: {
                 type: "object",
                 properties: {
-                  state: {
-                    type: "string",
-                    description: AIM_STATES_DESCRIPTION,
-                  },
+                  state: { type: "string", description: AIM_STATES_DESCRIPTION },
                   comment: { type: "string" },
                 },
               },
-              supportingConnections: {
-                type: "array",
-                items: { type: "string" },
-                description: "UUIDs of aims that support this aim (children/dependencies). Use this to keep aims connected instead of isolated.",
-              },
-              supportedAims: {
-                type: "array",
-                items: { type: "string" },
-                description: "UUIDs of aims that this aim supports (parents). Use this to keep aims connected instead of isolated.",
-              },
+              supportingConnections: { type: "array", items: { type: "string" }, description: "child aim UUIDs" },
+              supportedAims: { type: "array", items: { type: "string" }, description: "parent aim UUIDs" },
             },
             required: ["projectPath", "aimId"],
           },
         },
         {
           name: "delete_aim",
-          description: "Delete an aim permanently. Automatically removes it from all phases it's committed to. Prefer updating aim status to 'cancelled' instead. Use deletion only for duplicates or errors.",
+          description: "Delete aim. Prefer status=cancelled unless duplicate/error.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string", description: "UUID of the aim to delete" },
+              aimId: { type: "string" }
             },
             required: ["projectPath", "aimId"],
           },
         },
         {
           name: "addReflection",
-          description: "Add a structured reflection to an aim. Use this after completing an aim to record what you learned.",
+          description: "Add reflection to a completed aim",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string", description: "UUID of the aim to add reflection to" },
+              aimId: { type: "string" },
               reflection: {
                 type: "object",
                 properties: {
-                  context: { type: "string", description: "What were you trying to achieve?" },
-                  outcome: { type: "string", description: "What actually happened?" },
-                  effectiveness: { type: "string", description: "How well did your approach work?" },
-                  lesson: { type: "string", description: "What would you do differently next time?" },
-                  pattern: { type: "string", description: "(optional) Does this relate to past experiences?" }
+                  context: { type: "string" },
+                  outcome: { type: "string" },
+                  effectiveness: { type: "string" },
+                  lesson: { type: "string" },
+                  pattern: { type: "string" }
                 },
                 required: ["context", "outcome", "effectiveness", "lesson"]
               }
@@ -318,39 +194,26 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "create_phase",
-          description: "Create a time-boxed phase. Provide dates as Unix timestamps (milliseconds). Set parent to null for root phase or a phase UUID for sub-phase.",
+          description: "Create phase (ordered, no dates)",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              name: { type: "string", description: "Phase name" },
-              from: {
-                type: "number",
-                description: "Start date as Unix timestamp (milliseconds)",
-              },
-              to: {
-                type: "number",
-                description: "End date as Unix timestamp (milliseconds)",
-              },
-              parent: {
-                type: ["string", "null"],
-                description: "UUID of parent phase, or null for root phase",
-              },
+              name: { type: "string" },
+              parent: { type: ["string", "null"] },
             },
-            required: ["projectPath", "name", "from", "to"],
+            required: ["projectPath", "name"],
           },
         },
         {
           name: "update_phase",
-          description: "Update a phase's name, time range, or parent phase",
+          description: "Update phase name/parent",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              phaseId: { type: "string", description: "UUID of the phase to update" },
+              phaseId: { type: "string" },
               name: { type: "string" },
-              from: { type: "number" },
-              to: { type: "number" },
               parent: { type: ["string", "null"] },
             },
             required: ["projectPath", "phaseId"],
@@ -358,36 +221,33 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "delete_phase",
-          description: "Delete a phase. Aims are NOT deleted, only uncommitted from this phase.",
+          description: "Delete phase (aims remain, just uncommitted)",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              phaseId: { type: "string", description: "UUID of the phase to delete" },
+              phaseId: { type: "string" }
             },
             required: ["projectPath", "phaseId"],
           },
         },
         {
           name: "commit_aim_to_phase",
-          description: "Commit an existing aim to a phase. Optionally specify insertionIndex for ordering. This is usually recommended because aims should usually live in a phase as well as in the dependency graph.",
+          description: "Commit aim to phase",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string", description: "UUID of the aim" },
-              phaseId: { type: "string", description: "UUID of the phase" },
-              insertionIndex: {
-                type: "number",
-                description: "Optional position to insert (0-based), omit to append",
-              },
+              aimId: { type: "string" },
+              phaseId: { type: "string" },
+              insertionIndex: { type: "number" },
             },
             required: ["projectPath", "aimId", "phaseId"],
           },
         },
         {
           name: "remove_aim_from_phase",
-          description: "Remove an aim from a phase. The aim itself is not deleted. Use carefully, because aims should usually remain committed to some phase unless they are intentionally temporary or being reorganized.",
+          description: "Remove aim from phase (aim not deleted)",
           inputSchema: {
             type: "object",
             properties: {
@@ -399,76 +259,14 @@ export function registerTools(server: Server, clientOverride?: any) {
           },
         },
         {
-          name: "update_project_meta",
-          description: "Update project name and color. Color must be hex format (#RRGGBB).",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              name: { type: "string", description: "Project name" },
-              color: {
-                type: "string",
-                description: "Hex color code (e.g., #FF5733)",
-                pattern: "^#[0-9a-fA-F]{6}$",
-              },
-              statuses: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    key: { type: "string" },
-                    color: { type: "string", pattern: "^#[0-9a-fA-F]{6}$" }
-                  },
-                  required: ["key", "color"]
-                },
-                description: "Custom aim statuses"
-              }
-            },
-            required: ["projectPath", "name", "color"],
-          },
-        },
-        {
-          name: "build_search_index",
-          description: "Rebuild the search index and generate embeddings for all aims. Use this if search results seem outdated or missing.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "check_consistency",
-          description: "Check for data inconsistencies between aims, phases, and relationships (e.g. broken links, missing parents/children). Returns a list of errors if any found.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
-          name: "fix_consistency",
-          description: "Automatically fix data inconsistencies found by check-consistency. Use with caution as it may remove invalid relationships.",
-          inputSchema: {
-            type: "object",
-            properties: {
-              projectPath: PROJECT_PATH_TOOL_PROPERTY,
-            },
-            required: ["projectPath"],
-          },
-        },
-        {
           name: "get_prioritized_aims",
-          description: "Get prioritized aims. If phaseId is provided, gets all open aims recursively in that phase tree. If omitted, gets aims from the lowest (deepest) active phase.",
+          description: "Get prioritized open aims from deepest active phase (or given phaseId)",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              phaseId: { type: "string", description: "Optional UUID of the phase to recursively search within" },
-              limit: { type: "number", description: "Limit number of results (default 10)" },
+              phaseId: { type: "string" },
+              limit: { type: "number" },
             },
             required: ["projectPath"],
           },
@@ -548,30 +346,6 @@ export function registerTools(server: Server, clientOverride?: any) {
                     parents: parentContext,
                     children: childContext
                 }, null, 2),
-              },
-            ],
-          };
-        }
-
-        case "list_aims": {
-          const aims = await trpcClient.aim.list.query({
-            projectPath: args.projectPath as string,
-            ids: args.ids as string[] | undefined,
-            status: args.status as string | string[] | undefined,
-            phaseId: args.phaseId as string | undefined,
-            parentAimId: args.parentAimId as string | undefined,
-            floating: args.floating as boolean | undefined,
-            archived: args.archived as boolean | undefined,
-            limit: args.limit as number | undefined,
-            offset: args.offset as number | undefined,
-            sortBy: args.sortBy as "date" | "status" | "text" | undefined,
-            sortOrder: args.sortOrder as "asc" | "desc" | undefined,
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(formatAims(aims), null, 2),
               },
             ],
           };
@@ -663,37 +437,10 @@ export function registerTools(server: Server, clientOverride?: any) {
           };
         }
 
-        case "search_aims_semantic": {
-          const aims = await trpcClient.aim.searchSemantic.query({
-            projectPath: args.projectPath as string,
-            query: args.query as string,
-            limit: args.limit as number | undefined,
-            status: args.status as string | string[] | undefined,
-            phaseId: args.phaseId as string | undefined,
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(formatAims(aims), null, 2),
-              },
-            ],
-          };
-        }
-
         case "list_phases": {
-          const all = args.all as boolean | undefined;
-          let activeAt = args.activeAt as number | undefined;
-          
-          if (!all && activeAt === undefined) {
-              activeAt = Date.now();
-          }
-
           const phases = await trpcClient.phase.list.query({
             projectPath: args.projectPath as string,
             parentPhaseId: args.parentPhaseId as string | undefined,
-            activeAt: activeAt,
-            all: all
           });
           return {
             content: [
@@ -842,8 +589,6 @@ export function registerTools(server: Server, clientOverride?: any) {
             projectPath: args.projectPath as string,
             phase: {
               name: args.name as string,
-              from: args.from as number,
-              to: args.to as number,
               parent: (args.parent as string | null) || null,
               commitments: [],
             },
@@ -861,8 +606,6 @@ export function registerTools(server: Server, clientOverride?: any) {
         case "update_phase": {
           const updateData: any = {};
           if (args.name !== undefined) updateData.name = args.name;
-          if (args.from !== undefined) updateData.from = args.from;
-          if (args.to !== undefined) updateData.to = args.to;
           if (args.parent !== undefined) updateData.parent = args.parent;
 
           await trpcClient.phase.update.mutate({
@@ -928,77 +671,9 @@ export function registerTools(server: Server, clientOverride?: any) {
           };
         }
 
-        case "update_project_meta": {
-          await trpcClient.project.updateMeta.mutate({
-            projectPath: args.projectPath as string,
-            meta: {
-              name: args.name as string,
-              color: args.color as string,
-            },
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Updated project metadata",
-              },
-            ],
-          };
-        }
-
-        case "build_search_index": {
-          const result = await trpcClient.project.buildSearchIndex.mutate({
-            projectPath: args.projectPath as string,
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Search index rebuild initiated.\nIndexed: ${result.indexed.aims} aims, ${result.indexed.phases} phases.\nEmbeddings are generating in the background.`,
-              },
-            ],
-          };
-        }
-
-        case "check_consistency": {
-          const result = await trpcClient.project.checkConsistency.query({
-            projectPath: args.projectPath as string,
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: result.valid 
-                  ? "Data consistency check passed. No errors found."
-                  : `Data consistency check FAILED.\nErrors found:\n${result.errors.map((e: any) => `- ${e}`).join('\n')}`,
-              },
-            ],
-          };
-        }
-
-        case "fix_consistency": {
-          const result = await trpcClient.project.fixConsistency.mutate({
-            projectPath: args.projectPath as string,
-          });
-          return {
-            content: [
-              {
-                type: "text",
-                text: result.fixes.length > 0
-                  ? `Consistency repairs completed.\nFixes applied:\n${result.fixes.map((f: any) => `- ${f}`).join('\n')}`
-                  : "No inconsistencies found to fix.",
-              },
-            ],
-          };
-        }
-
         case "get_prioritized_aims": {
-          // ... (existing code for get_prioritized_aims)
-          // (Truncated for brevity in tool call but I will preserve it)
-          const now = Date.now();
-          const phases = await trpcClient.phase.list.query({ 
-              projectPath: args.projectPath as string, 
-              activeAt: now 
+          const phases = await trpcClient.phase.list.query({
+              projectPath: args.projectPath as string,
           });
 
           if (phases.length === 0) {
@@ -1024,8 +699,6 @@ export function registerTools(server: Server, clientOverride?: any) {
               return !children.some((childId: string) => phases.some((active: any) => active.id === childId));
           });
 
-          // If multiple leaves, pick the one ending soonest
-          leaves.sort((a: any, b: any) => a.to - b.to);
           const targetPhase = leaves[0];
 
           if (!targetPhase) {
@@ -1080,14 +753,6 @@ export function registerTools(server: Server, clientOverride?: any) {
           {
             type: "text",
             text: `Error executing ${name}: ${errorMessage}\n\nPlease check that:\n1. The projectPath is correct and absolute\n2. All UUIDs are valid and exist\n3. The backend server is running on ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
-          },
-        ],
-        isError: true,
-      };
-    }
-  });
-}
-valid and exist\n3. The backend server is running on ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
           },
         ],
         isError: true,

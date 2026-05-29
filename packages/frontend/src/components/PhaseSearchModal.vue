@@ -3,7 +3,6 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
 import type { Phase } from 'shared'
-import { timestampToLocalDate } from 'shared'
 import type { PhaseSearchAdditionalOption, PhaseSearchSelection } from '../stores/ui/phase-search-types'
 
 const projectStore = useProjectStore()
@@ -244,9 +243,6 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
             <template v-else>
               <div class="result-text">
                 <span class="phase-name">{{ item.data.name }}</span>
-                <span class="phase-dates">
-                  {{ timestampToLocalDate(item.data.from) }} - {{ timestampToLocalDate(item.data.to) }}
-                </span>
               </div>
               <div class="phase-meta">
                 <span v-if="item.data.parent" class="parent-badge">Sub-phase</span>
@@ -368,7 +364,6 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
   color: #f0f0f0;
 }
 
-.phase-dates,
 .option-description {
   color: #a6a6a6;
   font-size: 0.85rem;

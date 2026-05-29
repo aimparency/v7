@@ -49,8 +49,6 @@ const createPhase = async () => {
 
     await dataStore.createAndSelectPhase(projectStore.projectPath, {
       name: modalStore.newPhaseName.trim(),
-      from: 0,
-      to: 0,
       order,
       parent: parentPhaseId,
       commitments: []
