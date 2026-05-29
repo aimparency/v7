@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, test } from 'node:test';
+import { afterEach, beforeEach, test } from 'vitest';
 import assert from 'node:assert';
 import fs from 'fs-extra';
 import os from 'node:os';

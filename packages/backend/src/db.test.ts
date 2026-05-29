@@ -1,4 +1,4 @@
-import { test, beforeEach, afterEach } from 'node:test';
+import { test, beforeEach, afterEach } from 'vitest';
 import assert from 'node:assert';
 import os from 'node:os';
 import path from 'path';
