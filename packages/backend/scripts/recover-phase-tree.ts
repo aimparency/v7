@@ -18,7 +18,7 @@ type ProjectMeta = {
   color: string
   statuses?: unknown[]
   dataModelVersion?: number
-  phaseCursors?: Record<string, number>
+  phaseCursors?: Record<string, string>
   phaseActiveLevel?: number
   rootPhaseIds?: string[]
 }

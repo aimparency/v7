@@ -2,7 +2,16 @@
   "id": "648a2ea8-9692-4945-9232-4451e4df3ff0",
   "text": "Remove temporal phase UI and tests",
   "description": "Delete time-based phase rendering and progress concepts from the product. Remove date ranges, progress bars derived from now/from/to, smart-date helpers, and associated backend/frontend/e2e tests. Replace them with tests for explicit ordering and cursor-based active path behavior.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1780067334597,
+      "context": "Removing all temporal phase artifacts after from/to was stripped from the data model — smart-date helpers, e2e tests, unit test mocks.",
+      "outcome": "Deleted dateTimeUtils.ts (3 functions, fully unused), deleted smart-dates.spec.ts e2e test, cleaned from/to out of test-utils MockPhase interface and seedProject helper, and fixed the App.spec.ts phase mock. 125 lines net deleted, 0 regressions.",
+      "effectiveness": "Straightforward grep-driven sweep. Caught all instances in one pass by searching for the function names and field patterns, not just filenames.",
+      "lesson": "When removing a concept (temporal phases), grep for the data fields (from/to on Phase), utility functions (timestampToLocalDate), and test fixture helpers in one sweep — don't address them file by file or you leave orphans.",
+      "pattern": "Same pattern as the normalizePhase fix: schema change cascades to multiple disconnected usage sites. A single grep sweep finds them all at once rather than discovering them one by one through failures."
+    }
+  ],
   "archived": false,
   "tags": [
     "phase-refactor",

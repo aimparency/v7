@@ -78,7 +78,7 @@ export const ProjectMetaSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/), // hex color
   statuses: z.array(AimStateSchema).optional(),
   dataModelVersion: z.number().int().positive().optional(),
-  phaseCursors: z.record(z.string(), z.number().int()).optional(),
+  phaseCursors: z.record(z.string(), z.string()).optional(), // column level (string) → selected phase ID
   phaseActiveLevel: z.number().int().min(0).optional(),
   rootPhaseIds: z.array(z.string().uuid()).optional()
 });

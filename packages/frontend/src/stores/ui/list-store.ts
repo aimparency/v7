@@ -103,6 +103,7 @@ export const useListStore = defineStore('ui', {
     scrollTopByColumn: {} as Record<number, number>,
 
     uiStatePersistTimeout: null as ReturnType<typeof setTimeout> | null,
+    cursorPersistTimeout: null as ReturnType<typeof setTimeout> | null,
     isRestoringUIState: false,
     restoreGeneration: 0,
   }),
@@ -244,6 +245,75 @@ export const useListStore = defineStore('ui', {
       }
     },
 
+    scheduleCursorPersistToMeta() {
+      if (this.isRestoringUIState) return
+      const projectStore = useProjectStore()
+      if (!projectStore.projectPath) return
+
+      if (this.cursorPersistTimeout) {
+        clearTimeout(this.cursorPersistTimeout)
+      }
+
+      this.cursorPersistTimeout = setTimeout(() => {
+        this.cursorPersistTimeout = null
+        const cursors: Record<string, string> = {}
+        for (const [col, phaseId] of Object.entries(this.selectedPhaseIdByColumn)) {
+          if (phaseId) cursors[col] = phaseId
+        }
+        void trpc.phase.setCursor.mutate({
+          projectPath: projectStore.projectPath,
+          cursors,
+          activeLevel: Math.max(0, this.activeColumn)
+        }).catch(() => {})
+      }, 500)
+    },
+
+    async restoreCursorFromMeta(): Promise<boolean> {
+      const dataStore = useDataStore()
+      const meta = dataStore.meta
+      if (!meta?.phaseCursors || Object.keys(meta.phaseCursors).length === 0) return false
+
+      this.beginUIStateRestore()
+      const restoreGeneration = this.restoreGeneration
+      try {
+        if (meta.phaseActiveLevel !== undefined) {
+          this.activeColumn = meta.phaseActiveLevel
+          this.maxColumn = Math.max(this.activeColumn, 0)
+        }
+
+        const maxLevel = Math.max(...Object.keys(meta.phaseCursors).map(Number).filter(n => !isNaN(n)))
+        const shouldContinue = () => this.isRestoringUIState && this.restoreGeneration === restoreGeneration
+
+        await this.loadColumn(0)
+        if (!shouldContinue()) return true
+
+        for (let level = 0; level <= maxLevel; level++) {
+          const phaseId = meta.phaseCursors[String(level)]
+          if (!phaseId) break
+
+          const index = this.findSelectableIndexForPhase(level, phaseId)
+          if (index >= 0) {
+            this.applyPhaseSelection(level, index)
+            this.maxColumn = Math.max(this.maxColumn, level)
+          } else {
+            this.initializeColumnSelection(level, 'preserve')
+          }
+
+          if (level < maxLevel) {
+            await this.loadColumn(level + 1)
+            if (!shouldContinue()) return true
+          }
+        }
+
+        this.ensureSelectionVisible()
+        return true
+      } finally {
+        if (this.restoreGeneration === restoreGeneration && this.isRestoringUIState) {
+          this.endUIStateRestore()
+        }
+      }
+    },
+
     async restoreProjectUIState() {
       const restoreStartedAt = performance.now()
       perfLog('ui.restoreProjectUIState:start', { projectPath: useProjectStore().projectPath })
@@ -254,13 +324,15 @@ export const useListStore = defineStore('ui', {
       if (!projectStore.projectPath) return false
 
       const raw = localStorage.getItem(this.getPersistedUIStateKey(projectStore.projectPath))
-      if (!raw) return false
+      if (!raw) {
+        return await this.restoreCursorFromMeta()
+      }
 
       let parsed: PersistedUIState | null = null
       try {
         parsed = JSON.parse(raw) as PersistedUIState
       } catch {
-        return false
+        return await this.restoreCursorFromMeta()
       }
 
       this.beginUIStateRestore()
@@ -1015,6 +1087,7 @@ export const useListStore = defineStore('ui', {
         parentPhaseId: entry.parentPhaseId ?? null
       })
 
+      this.scheduleCursorPersistToMeta()
       return entry
     },
 

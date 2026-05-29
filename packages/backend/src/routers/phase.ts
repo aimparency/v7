@@ -258,6 +258,20 @@ export const createPhaseRouter = (
         await ensureSearchIndex(input.projectPath);
         const phases = await listPhases(input.projectPath, input.parentPhaseId);
         return await searchPhases(input.projectPath, input.query, phases);
-    })
+    }),
+
+    setCursor: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        cursors: z.record(z.string(), z.string()),
+        activeLevel: z.number().int().min(0)
+      }))
+      .mutation(async ({ input }: any) => {
+        const meta = await readMeta(input.projectPath);
+        meta.phaseCursors = input.cursors;
+        meta.phaseActiveLevel = input.activeLevel;
+        await writeMeta(input.projectPath, meta);
+        return { success: true };
+      })
   });
 };

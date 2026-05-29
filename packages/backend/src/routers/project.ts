@@ -435,7 +435,7 @@ export const createProjectRouter = (
           color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
           statuses: z.array(z.any()).optional(),
           dataModelVersion: z.number().int().positive().optional(),
-          phaseCursors: z.record(z.string(), z.number().int()).optional(),
+          phaseCursors: z.record(z.string(), z.string()).optional(),
           phaseActiveLevel: z.number().int().min(0).optional(),
           rootPhaseIds: z.array(z.string()).optional()
         })
