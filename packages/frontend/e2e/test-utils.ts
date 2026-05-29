@@ -16,8 +16,6 @@ export interface MockAim {
 export interface MockPhase {
   id?: string;
   name: string;
-  from?: number;
-  to?: number;
   commitments?: string[];
   parent?: string | null;
   childPhaseIds?: string[];
@@ -47,8 +45,6 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
     const phase = {
       id,
       name: p.name,
-      from: p.from || Date.now(),
-      to: p.to || Date.now() + 1000000,
       parent: p.parent || null,
       childPhaseIds: p.childPhaseIds || [],
       commitments: p.commitments || []

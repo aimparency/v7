@@ -261,7 +261,7 @@ describe('App', () => {
           AimSearchModal: true,
           PhaseSearchModal: {
             emits: ['select', 'close'],
-            template: '<button class="emit-phase" @click="$emit(\'select\', { type: \'phase\', data: { id: \'phase-1\', name: \'Release Prep\', from: 0, to: 1, parent: null }, keepOpen: true })">select phase</button>'
+            template: '<button class="emit-phase" @click="$emit(\'select\', { type: \'phase\', data: { id: \'phase-1\', name: \'Release Prep\', parent: null }, keepOpen: true })">select phase</button>'
           },
           ConsistencyModal: true,
           ProjectSettingsModal: true,

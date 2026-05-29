@@ -19,9 +19,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "open",
-    "comment": "Cleanup pass after ordered cursor behavior is in place.",
-    "date": 1774951307014
+    "state": "done",
+    "comment": "Deleted smart-dates.spec.ts e2e test and dateTimeUtils.ts (fully unused). Removed from/to from test-utils MockPhase interface and seedProject helper. Removed stale from/to fields from App.spec.ts phase mock. Removed dateTimeUtils export from shared/src/index.ts. 30/30 backend tests pass.",
+    "date": 1780067307004
   },
   "intrinsicValue": 0,
   "cost": 1,
