@@ -451,16 +451,18 @@ export function useGraphSimulation() {
             
             vec2.scale(delta, link.relativePosition, rSum)
             
+            const shareWeight = 0.5 + 0.5 * link.share
+
             // Parent
             vec2.sub(targetPos, from.pos, delta)
             vec2.sub(targetShift, targetPos, into.pos)
-            vec2.scale(targetShift, targetShift, (from.r / rSum)) // Removed flowMultiplier
+            vec2.scale(targetShift, targetShift, (from.r / rSum) * shareWeight)
             vec2.add(into.shift, into.shift, targetShift)
-            
+
             // Child
             vec2.add(targetPos, into.pos, delta)
             vec2.sub(targetShift, targetPos, from.pos)
-            vec2.scale(targetShift, targetShift, (into.r / rSum)) // Removed flowMultiplier
+            vec2.scale(targetShift, targetShift, (into.r / rSum) * shareWeight)
             vec2.add(from.shift, from.shift, targetShift)
         }
 
