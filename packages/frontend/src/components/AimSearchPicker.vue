@@ -73,7 +73,7 @@ const currentQuery = computed(() => (props.query ?? localQuery.value).trim())
 const displayTitle = computed(() => props.navigationTitle || localNavigationTitle.value)
 
 const items = computed(() => {
-  if (props.externalResults) {
+  if (!navigationMode.value && props.externalResults) {
     return props.externalResults.map(result => ({ type: 'aim' as const, data: result }))
   }
 
@@ -290,8 +290,12 @@ const handleKeydown = (event: KeyboardEvent) => {
 
   if (key === 'Escape') {
     event.preventDefault()
-    if (navigationMode.value) navigateBack(!isInput)
-    else emit('escape')
+    if (navigationMode.value) {
+      event.stopPropagation()
+      navigateBack(!isInput)
+    } else {
+      emit('escape')
+    }
     return
   }
 
@@ -309,7 +313,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  if (key === 'h' && !isInput) {
+  if (key === 'h' && (!isInput || currentQuery.value.length === 0)) {
     event.preventDefault()
     const item = selectedItem.value
     if (item?.type === 'aim' && item.data.supportedAims?.length) {
@@ -320,7 +324,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  if (key === 'l' && !isInput) {
+  if (key === 'l' && (!isInput || currentQuery.value.length === 0)) {
     event.preventDefault()
     const item = selectedItem.value
     if (item?.type === 'aim' && item.data.supportingConnections?.length) {
