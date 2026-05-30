@@ -27,7 +27,7 @@ export function calculateAimValues(aims: Aim[]): {
 
   for (const parent of aims) {
     // Determine weights
-    const rawLoopWeight = parent.loopWeight ?? 1;
+    const rawLoopWeight = parent.loopWeight ?? 0; // schema default is 0 (pure pass-through)
     
     // Only count children that actually exist in the aimMap (prevent leaks)
     const validConnections = parent.supportingConnections?.filter(c => aimMap.has(c.aimId)) || [];
@@ -151,33 +151,29 @@ export function calculateAimValues(aims: Aim[]): {
   const costs = distributeCosts(aims, aimMap, currentValues, flowValues, false);
   const doneCosts = distributeCosts(aims, aimMap, currentValues, flowValues, true, costs);
 
-  // Calculate Priorities with temporal discounting
-  // Priority = NPV / Cost = (PV of returns - Cost) / Cost
-  // Where PV uses duration (time to completion), not cost
+  // Priority = profitability index = NPV / cost
+  // NPV = discounted value - risk-adjusted cost
+  // Discounting uses duration in days and DAILY_DISCOUNT_RATE.
+  // Risk: valueVariance and costVariance are fractions (0–1) of their respective values,
+  // so the adjustment is proportional rather than absolute.
   const priorities = new Map<string, number>();
   for (const aim of aims) {
-      const val = (currentValues.get(aim.id) || 0) * totalIntrinsic;
-      const cost = costs.get(aim.id) || 0;
-      const duration = aim.duration || 1; // Default 1 day if not specified
-      const valueVariance = aim.valueVariance || 0;
-      const costVariance = aim.costVariance || 0;
+      const val = (currentValues.get(aim.id) ?? 0) * totalIntrinsic;
+      const cost = costs.get(aim.id) ?? 0;
+      const duration = aim.duration || 1;
+      const valueVariance = aim.valueVariance ?? 0;
+      const costVariance = aim.costVariance ?? 0;
 
       let priority = 0;
       if (cost > 0) {
-          // Temporal discounting: discount by actual time to completion (duration)
           const discountFactor = Math.pow(1 + DAILY_DISCOUNT_RATE, duration);
           const presentValue = val / discountFactor;
 
-          // Risk adjustment: reduce value by uncertainty
-          // Simple approach: subtract some multiple of variance as risk penalty
-          // More sophisticated: use certainty equivalence or utility functions
-          const riskAdjustedValue = presentValue - (valueVariance * 0.5);
-          const riskAdjustedCost = cost + (costVariance * 0.5);
+          // Treat variance as fractional uncertainty: penalise proportionally.
+          const riskAdjustedValue = presentValue * (1 - valueVariance * 0.5);
+          const riskAdjustedCost = cost * (1 + costVariance * 0.5);
 
-          // ROI = (Present Value - Cost) / Cost
-          // Higher priority = better return on investment considering time value of money
-          const netPresentValue = riskAdjustedValue - riskAdjustedCost;
-          priority = netPresentValue / riskAdjustedCost;
+          priority = (riskAdjustedValue - riskAdjustedCost) / riskAdjustedCost;
       } else if (val > 0) {
           priority = Number.POSITIVE_INFINITY;
       }

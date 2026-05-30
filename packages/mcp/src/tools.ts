@@ -1,4 +1,5 @@
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { calculateAimValues } from "shared";
 import { trpc } from "./client.js";
 import { AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
@@ -280,6 +281,64 @@ export function registerTools(server: Server, clientOverride?: any) {
               limit: { type: "number" },
             },
             required: ["projectPath"],
+          },
+        },
+        {
+          name: "list_aims",
+          description: "List all aims. Optionally filter by status, phaseId, or floating (uncommitted, no parents).",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              status: { type: ["string", "array"], items: { type: "string" } },
+              phaseId: { type: "string" },
+              floating: { type: "boolean" },
+              limit: { type: "number" },
+              offset: { type: "number" },
+            },
+            required: ["projectPath"],
+          },
+        },
+        {
+          name: "check_consistency",
+          description: "Check the aim graph for structural issues: broken links, mismatched parent/child references, orphaned embeddings. Run before fix_consistency.",
+          inputSchema: {
+            type: "object",
+            properties: { projectPath: PROJECT_PATH_TOOL_PROPERTY },
+            required: ["projectPath"],
+          },
+        },
+        {
+          name: "fix_consistency",
+          description: "Auto-repair structural inconsistencies found by check_consistency (rewires broken references).",
+          inputSchema: {
+            type: "object",
+            properties: { projectPath: PROJECT_PATH_TOOL_PROPERTY },
+            required: ["projectPath"],
+          },
+        },
+        {
+          name: "build_search_index",
+          description: "Rebuild the text search index and queue background embedding generation for semantic search.",
+          inputSchema: {
+            type: "object",
+            properties: { projectPath: PROJECT_PATH_TOOL_PROPERTY },
+            required: ["projectPath"],
+          },
+        },
+        {
+          name: "search_aims_semantic",
+          description: "Search aims by semantic similarity (embedding-based). Requires build_search_index to have run. Useful for finding duplicates.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              query: { type: "string" },
+              status: { type: ["string", "array"], items: { type: "string" } },
+              phaseId: { type: "string" },
+              limit: { type: "number" },
+            },
+            required: ["projectPath", "query"],
           },
         },
       ],
@@ -697,74 +756,205 @@ export function registerTools(server: Server, clientOverride?: any) {
         }
 
         case "get_prioritized_aims": {
-          // Prefer an explicit phaseId arg; otherwise use the cursor-based active path
+          // Fetch all phases once; we need them for both explicit lookup and time-based resolution.
+          // parentPhaseId omitted → backend returns all phases
+          const allPhases: any[] = await trpcClient.phase.list.query({
+            projectPath: args.projectPath as string,
+          });
+          const phaseById = new Map<string, any>(allPhases.map((p: any) => [p.id, p]));
+
           let targetPhase: any = null;
 
           if (args.phaseId) {
-            const phases = await trpcClient.phase.list.query({
-              projectPath: args.projectPath as string,
-              parentPhaseId: null,
-            });
-            targetPhase = phases.find((p: any) => p.id === args.phaseId) ?? null;
-            if (!targetPhase) {
-              // phaseId may be a child — fetch directly
-              try {
-                const allRoot = await trpcClient.phase.list.query({ projectPath: args.projectPath as string });
-                targetPhase = allRoot.find((p: any) => p.id === args.phaseId) ?? null;
-              } catch {}
+            targetPhase = phaseById.get(args.phaseId as string) ?? null;
+          }
+
+          if (!targetPhase) {
+            // Time-based resolution: find the deepest currently-active leaf phase
+            // that has open commitments. "phaseCursors" in meta.json can be stale
+            // or store indices rather than UUIDs, so we don't rely on it.
+            const now = Date.now();
+            const activePhases = allPhases.filter(
+              (p: any) => p.from > 0 && p.to > 0 && p.from <= now && now <= p.to
+            );
+
+            // Build a helper: is this phase a leaf (no children, or all children are inactive)?
+            const hasActiveChild = (phase: any): boolean =>
+              (phase.childPhaseIds ?? []).some((cid: string) => {
+                const child = phaseById.get(cid);
+                return child && child.from > 0 && child.to > 0 && child.from <= now && now <= child.to;
+              });
+
+            // Prefer deepest active leaf with open commitments; fall back up the tree.
+            const leaves = activePhases.filter((p: any) => !hasActiveChild(p));
+            const candidates = leaves.length > 0 ? leaves : activePhases;
+
+            // Walk up from each candidate until we find one with commitments.
+            const findWithCommitments = (phase: any): any => {
+              if (!phase) return null;
+              if ((phase.commitments ?? []).length > 0) return phase;
+              const parent = phaseById.get(phase.parent);
+              return findWithCommitments(parent);
+            };
+
+            for (const leaf of candidates) {
+              const found = findWithCommitments(leaf);
+              if (found) { targetPhase = found; break; }
             }
           }
 
           if (!targetPhase) {
-            const activePath = await trpcClient.phase.getActivePath.query({
-              projectPath: args.projectPath as string,
-            });
-            targetPhase = activePath.activePhase;
+            return { content: [{ type: "text", text: "No active phase found. Use list_phases to find a phase and pass phaseId." }] };
           }
 
-          if (!targetPhase) {
-               return { content: [{ type: "text", text: "No active phase found. Use list_phases to find a phase and pass phaseId." }] };
+          // Run the full-graph economic model so value flows top-down from
+          // high-value goals (e.g. ASI) into the sub-aims that support them and
+          // cost aggregates bottom-up. Ranking a single aim by its own
+          // intrinsicValue/cost ignores the graph and is near-useless when most
+          // intrinsic value sits at the top.
+          const allAims = await trpcClient.aim.list.query({
+            projectPath: args.projectPath as string,
+          });
+          const { priorities, values, costs, totalIntrinsic } = calculateAimValues(allAims as any);
+
+          const aimIdSet = new Set<string>(targetPhase.commitments ?? []);
+          const openInPhase = (allAims as any[]).filter(
+            (a: any) => aimIdSet.has(a.id) && a.status.state === 'open'
+          );
+
+          // Diagnostics: how many committed aims are missing economic data
+          const allCommitted = (allAims as any[]).filter((a: any) => aimIdSet.has(a.id));
+          const missingCost = allCommitted.filter((a: any) => !a.cost || a.cost <= 0).length;
+          // An aim with effectively-zero flowed value is disconnected from any intrinsic
+          // value source in the graph — its priority is meaningless regardless of cost.
+          const missingValue = allCommitted.filter(
+            (a: any) => (values.get(a.id) ?? 0) < 1e-10
+          ).length;
+
+          const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(4) : (n > 0 ? "Infinity" : "-Infinity"));
+
+          // Phase-level economic summary
+          const phaseFlowedValue = allCommitted.reduce(
+            (sum, a) => sum + (values.get(a.id) ?? 0) * totalIntrinsic, 0
+          );
+          const phaseTotalCost = allCommitted.reduce(
+            (sum, a) => sum + (costs.get(a.id) ?? 0), 0
+          );
+          const phaseValueFraction = totalIntrinsic > 0
+            ? phaseFlowedValue / totalIntrinsic
+            : 0;
+
+          const prioritized = openInPhase
+            .map((a: any) => ({
+              ...a,
+              _priority: priorities.get(a.id) ?? 0,
+              _flowedValue: (values.get(a.id) ?? 0) * totalIntrinsic,
+              _aggregatedCost: costs.get(a.id) ?? 0,
+            }))
+            .sort((a: any, b: any) => b._priority - a._priority)
+            .slice(0, (args.limit as number) || 10);
+
+          // Build phase path for context
+          const phasePath: string[] = [];
+          let cur: any = targetPhase;
+          while (cur) {
+            phasePath.unshift(cur.name);
+            cur = phaseById.get(cur.parent);
           }
-
-          if (!targetPhase) {
-               return { content: [{ type: "text", text: "No active leaf phases found." }] };
-          }
-
-          // Get aims
-          const aimIds = targetPhase.commitments;
-          const aims = await Promise.all(aimIds.map((id: string) => trpcClient.aim.get.query({ 
-              projectPath: args.projectPath as string, 
-              aimId: id 
-          })));
-
-          // Prioritize
-          const prioritized = aims
-              .filter((a: any) => a.status.state === 'open') // Only open aims
-              .map((a: any) => {
-                  const cost = (a.cost && a.cost > 0) ? a.cost : 0.1; // Avoid div by zero
-                  const priority = (a.intrinsicValue || 0) / cost;
-                  return { ...a, priority };
-              })
-              .sort((a: any, b: any) => b.priority - a.priority)
-              .slice(0, (args.limit as number) || 10);
 
           return {
             content: [
               {
                 type: "text",
                 text: JSON.stringify({
-                    phase: targetPhase.name,
-                    aims: prioritized.map((a: any) => ({
-                        id: a.id,
-                        text: a.text,
-                        description: a.description,
-                        priority: a.priority.toFixed(2),
-                        value: a.intrinsicValue,
-                        cost: a.cost
-                    }))
+                  phasePath,
+                  phase: targetPhase.name,
+                  model: "flow-based (top-down value, bottom-up cost, NPV/cost priority)",
+                  economics: {
+                    phaseFlowedValue: fmt(phaseFlowedValue),
+                    phaseTotalCost: fmt(phaseTotalCost),
+                    phaseValueFraction: (phaseValueFraction * 100).toFixed(1) + "%",
+                    totalGraphIntrinsicValue: totalIntrinsic,
+                  },
+                  diagnostics: {
+                    committedAims: allCommitted.length,
+                    openAims: openInPhase.length,
+                    missingCostEstimate: missingCost,
+                    disconnectedFromValue: missingValue,
+                    note: missingValue > 0
+                      ? `${missingValue} aim(s) have zero flowed value — they are disconnected from any intrinsic value source in the graph. Their priorities are unreliable.`
+                      : missingCost > 0
+                        ? `${missingCost} aim(s) lack a cost estimate. Set via update_aim { cost: N }.`
+                        : "All committed aims have economic data.",
+                  },
+                  aims: prioritized.map((a: any) => ({
+                    id: a.id,
+                    text: a.text,
+                    description: a.description,
+                    priority: fmt(a._priority),
+                    flowedValue: fmt(a._flowedValue),
+                    aggregatedCost: fmt(a._aggregatedCost),
+                    intrinsicValue: a.intrinsicValue,
+                    rawCost: a.cost,
+                    status: a.status?.state,
+                  })),
                 }, null, 2),
               },
             ],
+          };
+        }
+
+        case "list_aims": {
+          const aims = await trpcClient.aim.list.query({
+            projectPath: args.projectPath as string,
+            status: args.status as string | string[] | undefined,
+            phaseId: args.phaseId as string | undefined,
+            floating: args.floating as boolean | undefined,
+            limit: args.limit as number | undefined,
+            offset: args.offset as number | undefined,
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify(aims.map(formatAim), null, 2) }],
+          };
+        }
+
+        case "check_consistency": {
+          const result = await trpcClient.project.checkConsistency.query({
+            projectPath: args.projectPath as string,
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
+        case "fix_consistency": {
+          const result = await trpcClient.project.fixConsistency.mutate({
+            projectPath: args.projectPath as string,
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
+        case "build_search_index": {
+          const result = await trpcClient.project.buildSearchIndex.mutate({
+            projectPath: args.projectPath as string,
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
+        case "search_aims_semantic": {
+          const results = await trpcClient.aim.searchSemantic.query({
+            projectPath: args.projectPath as string,
+            query: args.query as string,
+            status: args.status as string | string[] | undefined,
+            phaseId: args.phaseId as string | undefined,
+            limit: args.limit as number | undefined,
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify(results.map(formatAim), null, 2) }],
           };
         }
 
