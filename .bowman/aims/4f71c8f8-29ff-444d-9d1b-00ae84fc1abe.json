@@ -22,9 +22,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774769861173
+    "state": "done",
+    "comment": "f key opens phase picker in graph view; committed aims shown as filled nodes, parent aims as ring-only outlines; phase badge with × to clear; loadable node click expands upward",
+    "date": 1780129719472
   },
   "intrinsicValue": 1,
   "cost": 1,

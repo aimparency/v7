@@ -29,6 +29,7 @@ export interface GraphNode {
   freezeFactor: number
   color?: string
   freezeCounter?: number
+  loadable?: boolean
 }
 
 export interface GraphLink {
@@ -130,8 +131,23 @@ export function useGraphSimulation() {
 
   // --- Data Sync ---
   const updateGraphData = () => {
-    const { nodes: rawNodes, links: rawLinks } = dataStore.graphData
-    
+    const { nodes: allRawNodes, links: allRawLinks } = dataStore.graphData
+    const filter = graphUIStore.phaseFilter
+
+    // Apply phase filter: only include visible + loadable aim IDs
+    let rawNodes = allRawNodes
+    let rawLinks = allRawLinks
+    let visibleSet: Set<string> | null = null
+    let loadableSet: Set<string> | null = null
+
+    if (filter) {
+      visibleSet = new Set(filter.visibleIds)
+      loadableSet = new Set(filter.loadableIds)
+      const allowedIds = new Set([...filter.visibleIds, ...filter.loadableIds])
+      rawNodes = allRawNodes.filter(n => allowedIds.has(n.id))
+      rawLinks = allRawLinks.filter(l => allowedIds.has(l.source) && allowedIds.has(l.target))
+    }
+
     // Calculate Average Value for sizing
     let totalValue = 0
     for (const n of rawNodes) totalValue += (n.value || 0)
@@ -172,6 +188,8 @@ export function useGraphSimulation() {
         }
       }
 
+      const isLoadable = loadableSet ? loadableSet.has(raw.id) : false
+
       if (!existing) {
         const loaded = loadedPositions.get(raw.id)
         const pos: vec2.T = loaded ? [loaded.x, loaded.y] : [Math.random() * 100 - 50, Math.random() * 100 - 50]
@@ -186,7 +204,8 @@ export function useGraphSimulation() {
           shift: [0, 0],
           freezeFactor: 0,
           freezeCounter: 0,
-          color
+          color,
+          loadable: isLoadable
         }
         nodeMap.set(raw.id, existing)
       } else {
@@ -194,7 +213,8 @@ export function useGraphSimulation() {
         existing.status = raw.status
         existing.value = val
         existing.r = radius
-        existing.color = color // Update color
+        existing.color = color
+        existing.loadable = isLoadable
         if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }
       newNodes.push(existing)
@@ -715,6 +735,7 @@ export function useGraphSimulation() {
     
     watch(() => dataStore.graphData, updateGraphData, { deep: true })
     watch(() => graphUIStore.graphColorMode, updateGraphData)
+    watch(() => graphUIStore.phaseFilter, updateGraphData)
   }
 
   const cleanup = () => {

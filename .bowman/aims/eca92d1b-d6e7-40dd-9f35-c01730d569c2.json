@@ -22,9 +22,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Enable automated decision-making",
-    "date": 1774790363097
+    "state": "done",
+    "comment": "hasChoiceMenu() detects inquirer menus, Y/n and (A)/(B) patterns; requiresInput passed to supervisor prompt; choice action executes via executeChoice(). Reflection confirmed it works reliably.",
+    "date": 1780128210330
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -48,6 +48,7 @@ export class WatchdogService {
   waitingForResponse: boolean = false;
   processing: boolean = false;
   retryCount: number = 0;
+  markerNotFoundCount: number = 0;
 
   compactEvery: number;
   turnCount: number = 0;
@@ -202,8 +203,15 @@ export class WatchdogService {
 
         if (markerIndex !== -1) {
              contentToParse = screenContent.substring(markerIndex + PROMPT_MARKER.length).trim();
+             this.markerNotFoundCount = 0;
         } else {
-             this.log("PROMPT_MARKER not found in watchdog output. Waiting...");
+             this.markerNotFoundCount++;
+             this.log(`PROMPT_MARKER not found in watchdog output. Waiting... (${this.markerNotFoundCount})`);
+             if (this.markerNotFoundCount >= 10) {
+               this.log("PROMPT_MARKER not found after 10 checks — re-asking watchdog.");
+               this.markerNotFoundCount = 0;
+               this.waitingForResponse = false;
+             }
              this.nextCheckTime = Date.now() + 1000;
              this.processing = false;
              return;

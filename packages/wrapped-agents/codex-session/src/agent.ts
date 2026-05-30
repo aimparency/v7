@@ -79,8 +79,14 @@ export class Agent {
     let output = '';
     for (let i = start; i < end; i++) {
       const line = buffer.getLine(i);
-      if (line) {
-        output += line.translateToString(true) + '\n';
+      if (!line) continue;
+      const nextLine = i + 1 < end ? buffer.getLine(i + 1) : null;
+      const text = line.translateToString(!(nextLine?.isWrapped ?? false));
+      if (line.isWrapped) {
+        output += text;
+      } else {
+        if (output.length > 0) output += '\n';
+        output += text;
       }
     }
     return output.trim();

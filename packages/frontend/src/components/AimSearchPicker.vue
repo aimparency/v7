@@ -333,6 +333,17 @@ const handleKeydown = (event: KeyboardEvent) => {
     return
   }
 
+  if (key === 'Backspace' && !isInput) {
+    event.preventDefault()
+    if (navigationMode.value) {
+      event.stopPropagation()
+      navigateBack(true)
+    } else {
+      emit('escape')
+    }
+    return
+  }
+
   if (key === 'Enter') {
     event.preventDefault()
     activateSelection(selectedItem.value, event.shiftKey)
@@ -356,7 +367,12 @@ const focusSelectedResult = () => {
   })
 }
 
-defineExpose({ activateSelection, focusInput, focusSelectedResult })
+const navigate = (delta: number) => {
+  selectedIndex.value = Math.max(0, Math.min(selectedIndex.value + delta, items.value.length - 1))
+  focusSelectedResult()
+}
+
+defineExpose({ activateSelection, focusInput, focusSelectedResult, navigate })
 
 onMounted(() => {
   if (props.autofocus && props.showInput) nextTick(() => focusInput())
@@ -406,13 +422,13 @@ onUnmounted(() => {
     </div>
 
     <div v-if="items.length > 0 || searchError || (currentQuery && !loading)" ref="resultsListRef" class="results-list">
-      <div v-if="items.length > 0">
+      <div v-if="items.length > 0" class="results-scroll" tabindex="-1">
         <div
           v-for="(item, index) in items"
           :key="item.type === 'option' ? `option-${item.data.id}` : item.data.id"
           class="result-item"
           :class="{ selected: index === selectedIndex, 'additional-option': item.type === 'option' }"
-          :tabindex="index === selectedIndex ? 0 : -1"
+          tabindex="-1"
           @click="selectedIndex = index; props.activateOnClick && activateSelection(item)"
         >
           <template v-if="item.type === 'option'">
@@ -471,7 +487,8 @@ onUnmounted(() => {
 .search-input-wrapper input { width: 100%; padding: 0; background: transparent; border: none; color: #f3f3f3; font-size: 1rem; }
 .search-input-wrapper input:focus { outline: none; }
 .loader { margin-left: 0.75rem; color: #888; }
-.results-list { overflow-y: auto; max-height: 22rem; }
+.results-list { }
+.results-scroll { overflow-y: auto; max-height: 22rem; }
 .result-item { padding: 0.8rem 1rem; border-bottom: 1px solid #2d2d2d; cursor: pointer; }
 .result-item.selected { background: #094771; outline: 1px solid #007acc; outline-offset: -1px; }
 .result-item.additional-option { border-bottom-color: #3a3220; }

@@ -14,8 +14,16 @@ export type PersistedGraphViewState = {
   graphShowLabels: boolean
 }
 
+export type PhaseFilter = {
+  phaseId: string
+  phaseName: string
+  visibleIds: string[]   // fully shown aims
+  loadableIds: string[]  // ring-only aims (parents of visible)
+}
+
 type GraphUIState = PersistedGraphViewState & {
   pendingDeleteLink: { parentId: string; childId: string } | null
+  phaseFilter: PhaseFilter | null
 }
 
 export const useGraphUIStore = defineStore('ui-graph', {
@@ -25,7 +33,8 @@ export const useGraphUIStore = defineStore('ui-graph', {
     pendingDeleteLink: null,
     graphColorMode: 'status',
     graphPanelWidth: 300,
-    graphShowLabels: true
+    graphShowLabels: true,
+    phaseFilter: null
   }),
 
   actions: {
@@ -86,6 +95,48 @@ export const useGraphUIStore = defineStore('ui-graph', {
 
     toggleGraphShowLabels() {
       toggleGraphShowLabelsHelper(this)
+    },
+
+    setPhaseFilter(phaseId: string, phaseName: string, commitments: string[], aimsById: Record<string, { supportedAims?: string[] }>) {
+      const visibleIds = commitments.filter(id => !!aimsById[id])
+      const visibleSet = new Set(visibleIds)
+      const loadableSet = new Set<string>()
+      for (const id of visibleIds) {
+        for (const parentId of (aimsById[id]?.supportedAims ?? [])) {
+          if (!visibleSet.has(parentId) && !!aimsById[parentId]) {
+            loadableSet.add(parentId)
+          }
+        }
+      }
+      this.phaseFilter = { phaseId, phaseName, visibleIds, loadableIds: [...loadableSet] }
+    },
+
+    expandLoadableAim(aimId: string, aimsById: Record<string, { supportedAims?: string[]; supportingConnections?: { aimId: string }[] }>) {
+      if (!this.phaseFilter) return
+      const aim = aimsById[aimId]
+      if (!aim) return
+
+      const visibleSet = new Set(this.phaseFilter.visibleIds)
+      const loadableSet = new Set(this.phaseFilter.loadableIds)
+
+      // Promote clicked node to visible
+      visibleSet.add(aimId)
+      loadableSet.delete(aimId)
+
+      // Its children become visible
+      for (const conn of (aim.supportingConnections ?? [])) {
+        if (aimsById[conn.aimId]) visibleSet.add(conn.aimId)
+      }
+      // Its parents become loadable (if not already visible)
+      for (const parentId of (aim.supportedAims ?? [])) {
+        if (!visibleSet.has(parentId) && !!aimsById[parentId]) loadableSet.add(parentId)
+      }
+
+      this.phaseFilter = { ...this.phaseFilter, visibleIds: [...visibleSet], loadableIds: [...loadableSet] }
+    },
+
+    clearPhaseFilter() {
+      this.phaseFilter = null
     }
   }
 })

@@ -24,15 +24,21 @@ void main() {
     discard;
   }
 
-  // Selection stroke configuration
+  // Stroke configuration
   float strokeWidth = 0.15;
   float strokeStart = 1.0 - strokeWidth;
 
-  if (v_selected > 0.5 && dist > strokeStart) {
-    // White stroke for selected nodes
+  if (v_selected > 1.5) {
+    // Loadable node: ring only (no fill)
+    if (dist < strokeStart) {
+      discard;
+    }
+    outColor = vec4(v_color, 0.85);
+  } else if (v_selected > 0.5 && dist > strokeStart) {
+    // Selected node: white stroke
     outColor = vec4(1.0, 1.0, 1.0, 1.0);
   } else {
-    // Node fill color
+    // Normal node fill
     outColor = vec4(v_color, 1.0);
   }
 

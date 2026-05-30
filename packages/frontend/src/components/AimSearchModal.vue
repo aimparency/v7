@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useUIStore, type AimPath } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
@@ -239,6 +239,34 @@ const close = () => {
   emit('close')
 }
 
+const handlePathSelectionKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'j' || event.key === 'ArrowDown') {
+    event.preventDefault()
+    event.stopPropagation()
+    pickerRef.value?.navigate(1)
+  } else if (event.key === 'k' || event.key === 'ArrowUp') {
+    event.preventDefault()
+    event.stopPropagation()
+    pickerRef.value?.navigate(-1)
+  } else if (event.key === 'Enter') {
+    event.preventDefault()
+    event.stopPropagation()
+    pickerRef.value?.activateSelection()
+  } else if (event.key === 'Backspace' || event.key === 'Escape') {
+    event.preventDefault()
+    event.stopPropagation()
+    handleEscape()
+  }
+}
+
+watch(pathSelectionMode, (active) => {
+  if (active) {
+    window.addEventListener('keydown', handlePathSelectionKeydown, true)
+  } else {
+    window.removeEventListener('keydown', handlePathSelectionKeydown, true)
+  }
+})
+
 onMounted(async () => {
   if (modalStore.aimSearchInitialAimId && modalStore.aimSearchShowParentPaths) {
     const aimId = modalStore.aimSearchInitialAimId
@@ -309,6 +337,10 @@ onMounted(async () => {
   }
 
   nextTick(() => pickerRef.value?.focusInput())
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handlePathSelectionKeydown, true)
 })
 </script>
 

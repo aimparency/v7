@@ -102,6 +102,7 @@ export function useWebGLGraphRenderer(
         r: node.r,
         color,
         selected: node.id === currentAimId,
+        loadable: node.loadable ?? false,
         moving: state.state > 0
       }
 

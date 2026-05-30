@@ -7,6 +7,8 @@ import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
 import GraphSidePanel from '../components/GraphSidePanel.vue'
+import PhaseSearchModal from '../components/PhaseSearchModal.vue'
+import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import * as vec2 from '../utils/vec2'
 import { useGraphSimulation } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
@@ -23,6 +25,7 @@ const canvasRef = ref<HTMLCanvasElement>()
 const svgOverlayRef = ref<SVGSVGElement>()
 const width = ref(0)
 const height = ref(0)
+const showPhaseFilter = ref(false)
 
 // Composables
 const simulation = useGraphSimulation()
@@ -128,7 +131,11 @@ function handleCanvasClick(e: MouseEvent) {
   // Nodes render on top of arrows, so test nodes first
   const clickedNode = hitTestNode(physX, physY)
   if (clickedNode) {
-    onNodeClick(clickedNode)
+    if (clickedNode.loadable) {
+      graphUIStore.expandLoadableAim(clickedNode.id, dataStore.aims)
+    } else {
+      onNodeClick(clickedNode)
+    }
     return
   }
 
@@ -172,6 +179,22 @@ const onKeydown = (e: KeyboardEvent) => {
     if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
         graphUIStore.setGraphColorMode(graphUIStore.graphColorMode === 'status' ? 'priority' : 'status')
     }
+
+    if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
+        showPhaseFilter.value = !showPhaseFilter.value
+    }
+
+    if (e.key === 'Escape' && !showPhaseFilter.value) {
+        graphUIStore.clearPhaseFilter()
+    }
+}
+
+function handlePhaseSelect(selection: PhaseSearchSelection) {
+    if (selection.type === 'phase') {
+        const phase = selection.data
+        graphUIStore.setPhaseFilter(phase.id, phase.name, phase.commitments, dataStore.aims)
+    }
+    showPhaseFilter.value = false
 }
 
 // Rendering Computeds
@@ -339,6 +362,14 @@ function getNodeTitleLines(text: string): string[] {
         />
       </g>
     </svg>
+    <PhaseSearchModal
+      v-if="showPhaseFilter"
+      title="Filter by Phase"
+      placeholder="Search phases..."
+      @select="handlePhaseSelect"
+      @close="showPhaseFilter = false"
+    />
+
     <GraphSidePanel />
     <div class="top-controls">
       <button class="control-btn" @click="dataStore.loadAllAims(projectStore.projectPath)" title="Reload Data">
@@ -388,16 +419,21 @@ function getNodeTitleLines(text: string): string[] {
       </button>
       
       <div class="segmented-control">
-        <button 
-            class="segment-btn" 
+        <button
+            class="segment-btn"
             :class="{ active: graphUIStore.graphColorMode === 'status' }"
             @click="graphUIStore.setGraphColorMode('status')"
         >Status</button>
-        <button 
-            class="segment-btn" 
+        <button
+            class="segment-btn"
             :class="{ active: graphUIStore.graphColorMode === 'priority' }"
             @click="graphUIStore.setGraphColorMode('priority')"
         >Prio</button>
+      </div>
+
+      <div v-if="graphUIStore.phaseFilter" class="phase-badge">
+        <span>{{ graphUIStore.phaseFilter.phaseName }}</span>
+        <button class="phase-badge-clear" @click="graphUIStore.clearPhaseFilter()" title="Clear phase filter">×</button>
       </div>
     </div>
   </div>
@@ -513,5 +549,29 @@ function getNodeTitleLines(text: string): string[] {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
     font-weight: 500;
+}
+
+.phase-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(74, 222, 128, 0.4);
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: #4ade80;
+    font-size: 0.8rem;
+
+    .phase-badge-clear {
+        background: none;
+        border: none;
+        color: #4ade80;
+        cursor: pointer;
+        padding: 0 2px;
+        font-size: 1rem;
+        line-height: 1;
+        opacity: 0.7;
+        &:hover { opacity: 1; }
+    }
 }
 </style>

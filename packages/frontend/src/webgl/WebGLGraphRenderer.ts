@@ -21,7 +21,8 @@ export interface NodeData {
   r: number
   color: [number, number, number] // RGB 0-1
   selected: boolean
-  moving: boolean  // Movement flag for TAA
+  loadable: boolean  // Ring-only rendering (phase filter)
+  moving: boolean    // Movement flag for TAA
 }
 
 export interface RendererOptions {
@@ -313,7 +314,7 @@ export class WebGLGraphRenderer {
       buffer[offset + 3] = node.color[0]
       buffer[offset + 4] = node.color[1]
       buffer[offset + 5] = node.color[2]
-      buffer[offset + 6] = node.selected ? 1.0 : 0.0
+      buffer[offset + 6] = node.loadable ? 2.0 : (node.selected ? 1.0 : 0.0)
       buffer[offset + 7] = node.moving ? 1.0 : 0.0
     }
 
