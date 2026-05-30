@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted, watch, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick, type Ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
@@ -258,6 +258,22 @@ export function useGraphInteraction(
                              }).then(async () => {
                                  // Reload both aims to get updated incoming/outgoing arrays
                                  await dataStore.loadAims(projectStore.projectPath, [parentNode.id, newAimId])
+                                 // Let Vue's watcher flush so updateGraphData runs and newNode.r reflects
+                                 // the actual post-connection value (not the zero-value initial radius).
+                                 await nextTick()
+                                 const updatedChildR = newNode.r ?? 25
+                                 const correctedRelPos: [number, number] = [deltaX / (parentR + updatedChildR), deltaY / (parentR + updatedChildR)]
+                                 // Snap node back to the exact drop position
+                                 newNode.pos[0] = x
+                                 newNode.pos[1] = y
+                                 newNode.renderPos[0] = x
+                                 newNode.renderPos[1] = y
+                                 newNode.shift = [0, 0]
+                                 // Update the link so the flow force uses the corrected relPos immediately
+                                 const correctedLink = links.value.find(l => l.source.id === newAimId && l.target.id === parentNode.id)
+                                 if (correctedLink) correctedLink.relativePosition = correctedRelPos
+                                 // Persist the corrected relative position
+                                 await (dataStore as any).updateConnectionPosition(projectStore.projectPath, parentNode.id, newAimId, correctedRelPos)
                              }).catch(err => {
                                  console.error('Graph: Connection failed', err)
                              })
