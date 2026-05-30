@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774366476766
+    "state": "done",
+    "comment": "After connectAims + loadAims, await nextTick() so Vue's watcher updates newNode.r with the real post-connection radius. Then recompute relPos with the correct rSum, snap the node back to the drop position, update the simulation link in-place, and persist via updateConnectionPosition. Committed in 943964f.",
+    "date": 1780105943629
   },
   "intrinsicValue": 0,
   "cost": 1,

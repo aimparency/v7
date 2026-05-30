@@ -9,6 +9,14 @@
       "outcome": "Users can now traverse up (parents) and down (children) from any search result, and common path suffixes are automatically grouped.",
       "effectiveness": "Highly effective. h/l navigation feels natural for graph traversal, and path merging significantly reduces UI clutter in deep hierarchies.",
       "lesson": "Suffix-based path merging is a robust way to handle 'multiple paths to the same node' visualization issues."
+    },
+    {
+      "date": 1780074984251,
+      "context": "h/l navigation was partially implemented but had three bugs: (1) the unified handleKeydown blocked h/l from the input field (!isInput condition); (2) the items computed always returned externalResults even in navigation mode, making navigated results invisible; (3) Escape in navigation mode bubbled to the modal and closed it instead of stepping back.",
+      "outcome": "Fixed all three: condition now allows h/l from input when query empty, items computed respects navigationMode, Escape stopsPropagation when navigating back. 7 new tests cover all paths. Browser test confirmed full h→l→Escape flow.",
+      "effectiveness": "All three bugs were silent regressions from an earlier refactor — no existing tests caught them. The fix is small and targeted.",
+      "lesson": "When consolidating separate event handlers into one, run tests for every code path the old handlers covered. Event bubbling bugs between nested components are easy to miss without an integration-style browser test.",
+      "pattern": "Same pattern as prior picker work: unit tests catch logic but browser testing catches event propagation and DOM update timing bugs that unit tests mock away."
     }
   ],
   "archived": false,
@@ -22,9 +30,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774775922430
+    "state": "done",
+    "comment": "h/l navigation works from result items and from empty input. Escape steps back through history without closing modal.",
+    "date": 1780074973813
   },
   "intrinsicValue": 0,
   "cost": 1,
