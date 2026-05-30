@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1772521143837
+    "state": "done",
+    "comment": "Added an 'Archive this aim' checkbox to AimEditModal, shown only when the selected status is non-ongoing (the v7 equivalent of the aim's 'halted' concept: done/cancelled/failed/unclear; ongoing = open/partially/human-dependent). canArchive computed gates visibility; a watch forces archived=false if status returns to ongoing; handleSave persists archived only when canArchive. Initialized from aim.archived on open. 3 regression tests added (hide/show on status switch, persist on save, force-false on revert); full AimEditModal spec green (13/13), typecheck clean.",
+    "date": 1780143748392
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1777206717883
+    "state": "done",
+    "comment": "Not a duplicate of b3f8518f (that one moves phases; this moves aims). Implemented in moveAimDownAction/moveAimUpAction (move-actions.ts): at a phase boundary it uses the flattened getActualPhasesForColumn(col) which spans all parents, so an aim at the last phase of parent A moves into the first phase of parent B's children. Verified by code reading; keyboard-actions spec green.",
+    "date": 1780132605596
   },
   "intrinsicValue": 0,
   "cost": 1,

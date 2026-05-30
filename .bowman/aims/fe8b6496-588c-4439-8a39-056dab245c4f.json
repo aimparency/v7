@@ -1,0 +1,73 @@
+{
+  "id": "fe8b6496-588c-4439-8a39-056dab245c4f",
+  "text": "Graph maintenance tooling",
+  "description": "Tooling to keep the aim graph healthy as it accumulates cruft over long autonomous-development runs: duplicates, resolved-but-uncollapsed chains, status drift from the actual code, and vague catch-all parents. The reorganization of subtrees (e.g. the 'UI' catch-all, see 18263fc2) should become a byproduct of this tooling rather than a manual slog. Evidence motivating this: 2a9e3aba and f592b156 are byte-identical duplicates; a05ea545/891e2ee0/855e26a1 are three aims for one shipped feature; 8ae9e8da/fe0e0aaf/b3f8518f/4e50493a were all already implemented but still marked open.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "75af098f-9e98-4dae-a56d-9d39f3fc1331",
+      "relativePosition": [
+        -1.4833196767758807,
+        -2.012402230293312
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "338c12e5-d411-42ed-8d39-e26665880dd2",
+      "relativePosition": [
+        0.8725686729340125,
+        -2.3427812341348
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b0fb3242-8866-435f-9765-a1d89256996f",
+      "relativePosition": [
+        -1.5185512105537546,
+        1.9859512131282897
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "7625d5e6-a29b-4b07-a4fb-94bfff3edba7",
+      "relativePosition": [
+        -1.6353456200377021,
+        -1.8909375195980176
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "d6734796-cb97-4afa-863b-fc4d0a599f8d",
+      "relativePosition": [
+        0.8595000816615289,
+        2.3476072093993547
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c69ab6f7-aaa5-4e3b-acec-6cdfd08e49a2",
+      "relativePosition": [
+        -1.2663947143646448,
+        2.1555148868493785
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "c561dd26-86c5-45c2-96a3-4b4f90e448a3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Captured from a graph-maintenance brainstorm session.",
+    "date": 1780143457028
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

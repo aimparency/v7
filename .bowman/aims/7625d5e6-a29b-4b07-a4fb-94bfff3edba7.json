@@ -1,0 +1,24 @@
+{
+  "id": "7625d5e6-a29b-4b07-a4fb-94bfff3edba7",
+  "text": "Status reconciliation pass (detect open aims already implemented)",
+  "description": "The graph drifts from reality: 8ae9e8da, fe0e0aaf, b3f8518f, 4e50493a were all already implemented in code but still marked open. A reconciliation pass should flag open aims whose described work appears present in the codebase (heuristic: keyword/symbol search, or an LLM check against the diff/tree) so they can be confirmed done. Reduces the gap between the aim graph and the actual implementation.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fe8b6496-588c-4439-8a39-056dab245c4f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780143472672
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -12,8 +12,8 @@
   "committedIn": [],
   "status": {
     "state": "done",
-    "comment": "Implemented Shift+J/K phase moves across parent boundaries by changing parent ownership, reordering inside the target parent, and repairing the selected ancestor path back down to the moved phase. Added focused frontend regression coverage.",
-    "date": 1778311894865
+    "comment": "Implemented in reorderSelectedPhase (keyboard-actions.ts): when target entry has a different parentPhaseId, calls dataStore.movePhase with the new parent + index. Covered by passing test 'moves a phase across parent boundaries and repairs the selected parent path' in keyboard-actions.spec.ts.",
+    "date": 1780132602497
   },
   "intrinsicValue": 0,
   "cost": 1,

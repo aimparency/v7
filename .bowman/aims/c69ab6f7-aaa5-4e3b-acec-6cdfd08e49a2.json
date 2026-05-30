@@ -1,0 +1,25 @@
+{
+  "id": "c69ab6f7-aaa5-4e3b-acec-6cdfd08e49a2",
+  "text": "Adopt structural-parent taxonomy convention; demote 'UI' catch-all",
+  "description": "Convention decision: top-level/area parents should be structural (areas of the product) and contain sub-parents or aims belonging strictly to that area — not a 200-child grab-bag. Concretely: demote the 'UI' parent (22dd4138) into its already-existing children (graph view, list view, watchdog UI/enhancements, project loading) and stop using it as a dumping ground. This is the human-decision half of the Rearrange UI aims goal (18263fc2); the reparent suggester provides the mechanics.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fe8b6496-588c-4439-8a39-056dab245c4f",
+    "18263fc2-b983-4888-bc96-6f906e2b78af"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780143479194
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

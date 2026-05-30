@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774366270867
+    "state": "done",
+    "comment": "Implemented viewport-based label culling in GraphView.vue. renderNodes now filters to a visibleLabelIds set; updateVisibleLabels() computes the logical viewport bounds (via mapStore.physicalToLogicalCoord of the two screen corners) and includes only nodes that are in-view AND large enough to show text (r*scale>20, matching the template guard). Recomputed on a 500ms interval (per the aim spec) plus on resize, so off-screen nodes no longer emit empty SVG label groups every frame. Positions stay live (renderNodes still recomputes per frame via trigger); only set membership is throttled. Typecheck clean; frontend unit tests green (1 pre-existing unrelated AimCreationModal failure).",
+    "date": 1780132863193
   },
   "intrinsicValue": 0,
   "cost": 1,

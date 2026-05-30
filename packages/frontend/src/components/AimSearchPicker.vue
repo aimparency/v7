@@ -428,7 +428,7 @@ onUnmounted(() => {
           :key="item.type === 'option' ? `option-${item.data.id}` : item.data.id"
           class="result-item"
           :class="{ selected: index === selectedIndex, 'additional-option': item.type === 'option' }"
-          tabindex="-1"
+          :tabindex="index === selectedIndex ? 0 : -1"
           @click="selectedIndex = index; props.activateOnClick && activateSelection(item)"
         >
           <template v-if="item.type === 'option'">

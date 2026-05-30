@@ -1,0 +1,24 @@
+{
+  "id": "338c12e5-d411-42ed-8d39-e26665880dd2",
+  "text": "First-class merge-aim operation",
+  "description": "A 'merge B into A' primitive that rewires B's supportedAims, supportingConnections and phase commitments onto A (de-duplicating), copies B's reflections to A, then archives B. This is the missing primitive that makes duplicate consolidation safe and reversible instead of manual hand-editing of connection arrays. Should be idempotent and guard against creating cycles or self-references.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fe8b6496-588c-4439-8a39-056dab245c4f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780143465592
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

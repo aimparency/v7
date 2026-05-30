@@ -152,23 +152,31 @@ function handleCanvasClick(e: MouseEvent) {
 }
 
 // Lifecycle
+let labelCullInterval: ReturnType<typeof setInterval> | undefined
+
 onMounted(() => {
     mapStore.isTracking = true
     simulation.init()
     interaction.initListeners()
     window.addEventListener('keydown', onKeydown)
+    updateVisibleLabels()
+    labelCullInterval = setInterval(updateVisibleLabels, 500)
 })
 
 onUnmounted(() => {
     simulation.cleanup()
     interaction.cleanupListeners()
     window.removeEventListener('keydown', onKeydown)
+    if (labelCullInterval !== undefined) clearInterval(labelCullInterval)
 })
 
 // Force WebGL update when simulation triggers
 watch(trigger, () => {
     webglRenderer.forceUpdate()
 })
+
+// Refresh label culling immediately on resize so labels don't wait up to 500ms
+watch([width, height], () => updateVisibleLabels())
 
 const onKeydown = (e: KeyboardEvent) => {
     // Ignore if user is typing in an input or textarea
@@ -210,21 +218,60 @@ const transform = computed(() => {
     return `translate(${cx}, ${cy}) scale(${s}) translate(${mapStore.offset[0]}, ${mapStore.offset[1]})`
 })
 
+// Set of node ids whose labels are currently in view and large enough to
+// render. Recomputed on a 500ms cadence (see updateVisibleLabels) so the
+// per-node viewport test does not run every frame. Positions stay live —
+// only membership is throttled.
+const visibleLabelIds = ref<Set<string>>(new Set())
+
 const renderNodes = computed(() => {
     trigger.value;
     const currentAimId = graphUIStore.graphSelectedAimId
     const activeAim = uiStore.getCurrentAim()
-    return nodes.value.map(n => ({
-        ...n,
-        x: n.renderPos[0],
-        y: n.renderPos[1],
-        r: n.r,
-        text: n.text,
-        selected: n.id === currentAimId,
-        active: n.id === activeAim?.id,
-        scale: visualScale.value
-    }))
+    const visible = visibleLabelIds.value
+    const result = []
+    for (const n of nodes.value) {
+        if (!visible.has(n.id)) continue
+        result.push({
+            ...n,
+            x: n.renderPos[0],
+            y: n.renderPos[1],
+            r: n.r,
+            text: n.text,
+            selected: n.id === currentAimId,
+            active: n.id === activeAim?.id,
+            scale: visualScale.value
+        })
+    }
+    return result
 })
+
+// Cull aim labels to those inside the viewport and large enough to show text
+// (matches the `node.r * node.scale > 20` template guard). Off-screen nodes
+// would otherwise each emit an empty SVG label group with event handlers,
+// which is the dominant cost for large graphs. Throttled to 500ms.
+function updateVisibleLabels() {
+    const w = width.value
+    const h = height.value
+    const s = visualScale.value
+    if (w <= 0 || h <= 0 || !(s > 0)) return
+    const c0 = mapStore.physicalToLogicalCoord([0, 0])
+    const c1 = mapStore.physicalToLogicalCoord([w, h])
+    const minX = Math.min(c0[0], c1[0])
+    const maxX = Math.max(c0[0], c1[0])
+    const minY = Math.min(c0[1], c1[1])
+    const maxY = Math.max(c0[1], c1[1])
+    const next = new Set<string>()
+    for (const n of nodes.value) {
+        if (n.r * s <= 20) continue
+        const x = n.renderPos[0]
+        const y = n.renderPos[1]
+        const r = n.r
+        if (x + r < minX || x - r > maxX || y + r < minY || y - r > maxY) continue
+        next.add(n.id)
+    }
+    visibleLabelIds.value = next
+}
 
 const renderLinks = computed(() => { 
     trigger.value; 

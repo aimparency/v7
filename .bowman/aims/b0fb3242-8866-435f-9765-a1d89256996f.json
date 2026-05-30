@@ -1,0 +1,25 @@
+{
+  "id": "b0fb3242-8866-435f-9765-a1d89256996f",
+  "text": "Reparent suggester (embedding-based parent suggestions)",
+  "description": "For each leaf aim under a vague catch-all parent, suggest the closest structural sub-parent by embedding distance (e.g. for 'UI' children: graph view / list view / watchdog UI / project loading). Present as an approve-a-list review rather than auto-applying. This turns the 'hundreds of aims need reparenting' problem (18263fc2) into a fast human review. Directly supports the Rearrange UI aims goal.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fe8b6496-588c-4439-8a39-056dab245c4f",
+    "18263fc2-b983-4888-bc96-6f906e2b78af"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780143469795
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

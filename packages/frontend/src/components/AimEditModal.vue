@@ -38,6 +38,21 @@ const aimLoopWeight = ref(0)
 const aimTags = ref<string[]>([])
 const selectedStatus = ref('')
 const statusComment = ref('')
+const archived = ref(false)
+
+// An aim can only be archived from a "halted" (non-ongoing) status such as
+// done, cancelled, failed or unclear. Ongoing statuses (open, partially,
+// human-dependent) are still active work and must not be archived directly.
+const canArchive = computed(() => {
+  const status = statuses.value.find((s) => s.key === selectedStatus.value)
+  return status ? !status.ongoing : false
+})
+
+// If the status is moved back to an ongoing one, drop the archive flag so we
+// never persist an archived aim that is still active.
+watch(canArchive, (allowed) => {
+  if (!allowed) archived.value = false
+})
 const reflection = ref('')
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
 const committedPhasesList = ref<{ id: string, name: string }[]>([])
@@ -123,6 +138,7 @@ watch(() => props.show, async (show) => {
     aimTags.value = [...(aim.value.tags || [])]
     selectedStatus.value = aim.value.status.state
     statusComment.value = aim.value.status.comment
+    archived.value = aim.value.archived ?? false
     reflection.value = aim.value.reflection || ''
 
     supportedAimsList.value = []
@@ -268,7 +284,8 @@ const handleSave = async () => {
       date: Date.now()
     },
     reflection: reflection.value || undefined,
-    supportedAims: supportedAimsList.value.map((entry) => entry.id)
+    supportedAims: supportedAimsList.value.map((entry) => entry.id),
+    archived: canArchive.value ? archived.value : false
   })
 
   const currentCommittedPhaseIds = committedPhasesList.value.map((phase) => phase.id)
@@ -335,6 +352,17 @@ const handleCancel = () => {
             {{ status.key }}
           </option>
         </select>
+      </div>
+
+      <div v-if="canArchive" class="form-section">
+        <label class="archive-toggle">
+          <input
+            type="checkbox"
+            v-model="archived"
+            @keydown="handleInputKeydown"
+          />
+          <span>Archive this aim</span>
+        </label>
       </div>
 
       <div class="form-section">
@@ -491,6 +519,14 @@ label {
   color: #ccc;
   font-size: 0.9rem;
   font-weight: 700;
+
+  &.archive-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0;
+    cursor: pointer;
+  }
 }
 
 .status-select,

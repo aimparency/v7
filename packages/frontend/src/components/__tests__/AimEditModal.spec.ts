@@ -17,7 +17,7 @@ vi.mock('../../trpc', () => ({
   }
 }))
 
-function mountEditModal(description = 'Old description') {
+function mountEditModal(description = 'Old description', statusState = 'open', archivedFlag = false) {
   const pinia = createTestingPinia({
     createSpy: vi.fn,
     initialState: {
@@ -31,7 +31,8 @@ function mountEditModal(description = 'Old description') {
             text: 'Old title',
             description,
             tags: [],
-            status: { state: 'open', comment: '' },
+            status: { state: statusState, comment: '' },
+            archived: archivedFlag,
             intrinsicValue: 0,
             cost: 1,
             loopWeight: 1,
@@ -43,7 +44,7 @@ function mountEditModal(description = 'Old description') {
           }
         },
         meta: {
-          statuses: [{ key: 'open', color: '#fff' }, { key: 'done', color: '#0f0' }]
+          statuses: [{ key: 'open', color: '#fff', ongoing: true }, { key: 'done', color: '#0f0', ongoing: false }]
         }
       }
     }
@@ -66,7 +67,8 @@ function mountEditModal(description = 'Old description') {
     text: 'Old title',
     description,
     tags: [],
-    status: { state: 'open', comment: '', date: Date.now() },
+    status: { state: statusState, comment: '', date: Date.now() },
+    archived: archivedFlag,
     intrinsicValue: 0,
     cost: 1,
     loopWeight: 1,
@@ -241,5 +243,60 @@ describe('AimEditModal keyboard save behavior', () => {
 
     expect(dataStore.updateAim).toHaveBeenCalled()
     expect(wrapper.emitted('close')).toBeTruthy()
+  })
+})
+
+describe('AimEditModal archive checkbox', () => {
+  it('hides the archive checkbox for an ongoing status and shows it after switching to a halted one', async () => {
+    const { wrapper } = mountEditModal('desc', 'open')
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.archive-toggle').exists()).toBe(false)
+
+    await wrapper.find('.status-select').setValue('done')
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.archive-toggle').exists()).toBe(true)
+  })
+
+  it('persists the archived flag when saving from a halted status', async () => {
+    const { wrapper, dataStore } = mountEditModal('desc', 'done')
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    const checkbox = wrapper.find('.archive-toggle input[type="checkbox"]')
+    expect(checkbox.exists()).toBe(true)
+    await checkbox.setValue(true)
+
+    await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
+    await wrapper.vm.$nextTick()
+
+    expect(dataStore.updateAim).toHaveBeenCalledWith(
+      '/test/project',
+      'aim-1',
+      expect.objectContaining({ archived: true })
+    )
+  })
+
+  it('forces archived back to false when the status returns to an ongoing one', async () => {
+    const { wrapper, dataStore } = mountEditModal('desc', 'done', true)
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('.status-select').setValue('open')
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
+    await wrapper.vm.$nextTick()
+
+    expect(dataStore.updateAim).toHaveBeenCalledWith(
+      '/test/project',
+      'aim-1',
+      expect.objectContaining({ archived: false })
+    )
   })
 })
