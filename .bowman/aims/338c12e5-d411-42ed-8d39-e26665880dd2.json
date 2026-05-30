@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780143465592
+    "state": "done",
+    "comment": "Implemented aim.merge tRPC mutation in backend + merge_aims MCP tool. Rewires parents, children, phase commitments (deduplicating), copies reflections, archives source. Guards against self-merge and direct parent-child cycles.",
+    "date": 1780158014569
   },
   "intrinsicValue": 0,
   "cost": 1,

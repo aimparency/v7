@@ -60,9 +60,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Captured from a graph-maintenance brainstorm session.",
-    "date": 1780143457028
+    "state": "partially",
+    "comment": "MCP foundation laid: check_consistency, fix_consistency, build_search_index, search_aims_semantic, list_aims all wired to live MCP server (were backend-only before). Remaining: merge-aim operation (338c12e5), status reconciliation (7625d5e6), hygiene report extension (d6734796), reparent suggester (b0fb3242), taxonomy convention (c69ab6f7).",
+    "date": 1780157735303
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780143472672
+    "state": "partially",
+    "comment": "Pass completed over 2026 phase and broader open-aim list. Found and closed 2 stale aims: 1c27fb5d (aim search — AimSearchModal.vue fully implemented) and 4117d1cc (loadable aims — WebGLGraphRenderer.ts loadable field). Named examples in description (8ae9e8da, fe0e0aaf, 4e50493a) were already done. Remaining open aims are genuinely not implemented or are vision/strategy nodes.",
+    "date": 1780158196733
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780143462775
+    "state": "partially",
+    "comment": "search_aims_semantic and build_search_index now wired to MCP. Dedicated duplicate-pair report not yet implemented — can now be built on top of these tools.",
+    "date": 1780157739860
   },
   "intrinsicValue": 0,
   "cost": 1,

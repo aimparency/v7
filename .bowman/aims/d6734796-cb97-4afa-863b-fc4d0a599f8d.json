@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780143476197
+    "state": "partially",
+    "comment": "check_consistency and fix_consistency now wired to MCP (were backend-only). The hygiene report extension (mega-parents, floating, done-leaf ratio, duplicate clusters) is not yet implemented.",
+    "date": 1780157737439
   },
   "intrinsicValue": 0,
   "cost": 1,
