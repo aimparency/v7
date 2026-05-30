@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774594224088
+    "state": "done",
+    "comment": "Added optional nullable hex `color` field to AimSchema (shared/types.ts). Persists through the existing update path (input is AimSchema.partial(), handler spreads {...existingAim, ...input.aim}). A color picker + Clear button added to AimEditModal (sends null to clear). shared/dist rebuilt; backend+frontend typecheck clean; 2 regression tests added.",
+    "date": 1780144865316
   },
   "intrinsicValue": 0,
   "cost": 1,

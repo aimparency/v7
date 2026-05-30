@@ -28,6 +28,7 @@ export interface GraphNode {
   shift: vec2.T
   freezeFactor: number
   color?: string
+  customColor?: string | null
   freezeCounter?: number
   loadable?: boolean
 }
@@ -205,6 +206,7 @@ export function useGraphSimulation() {
           freezeFactor: 0,
           freezeCounter: 0,
           color,
+          customColor: raw.color ?? null,
           loadable: isLoadable
         }
         nodeMap.set(raw.id, existing)
@@ -214,6 +216,7 @@ export function useGraphSimulation() {
         existing.value = val
         existing.r = radius
         existing.color = color
+        existing.customColor = raw.color ?? null
         existing.loadable = isLoadable
         if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }

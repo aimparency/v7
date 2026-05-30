@@ -87,9 +87,12 @@ export function useWebGLGraphRenderer(
         }
       }
 
-      // Determine color (priority mode or status mode)
+      // Determine color: a custom aim color always wins; otherwise fall back
+      // to the priority gradient (in priority mode) or the status color.
       let color: [number, number, number]
-      if (colorMode === 'priority' && node.color) {
+      if (node.customColor) {
+        color = applyBrightness(cssColorToRgb(node.customColor))
+      } else if (colorMode === 'priority' && node.color) {
         color = applyBrightness(cssColorToRgb(node.color))
       } else {
         color = statusToColor(node.status, configuredStatuses)
@@ -195,8 +198,12 @@ export function useWebGLGraphRenderer(
         state.share = share
       }
 
-      // Edge color - use a neutral gray
-      const color: [number, number, number] = [0.5, 0.5, 0.5]
+      // Edge color: take the supporting aim's custom color (the source/child of
+      // the link), falling back to neutral gray when it has no custom color.
+      const supportingColor = link.source.customColor
+      const color: [number, number, number] = supportingColor
+        ? applyBrightness(cssColorToRgb(supportingColor))
+        : [0.5, 0.5, 0.5]
 
       return {
         id: edgeKey,

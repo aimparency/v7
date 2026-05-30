@@ -39,6 +39,8 @@ const aimTags = ref<string[]>([])
 const selectedStatus = ref('')
 const statusComment = ref('')
 const archived = ref(false)
+const DEFAULT_COLOR = '#007acc'
+const aimColor = ref('')
 
 // An aim can only be archived from a "halted" (non-ongoing) status such as
 // done, cancelled, failed or unclear. Ongoing statuses (open, partially,
@@ -139,6 +141,7 @@ watch(() => props.show, async (show) => {
     selectedStatus.value = aim.value.status.state
     statusComment.value = aim.value.status.comment
     archived.value = aim.value.archived ?? false
+    aimColor.value = aim.value.color ?? ''
     reflection.value = aim.value.reflection || ''
 
     supportedAimsList.value = []
@@ -285,7 +288,8 @@ const handleSave = async () => {
     },
     reflection: reflection.value || undefined,
     supportedAims: supportedAimsList.value.map((entry) => entry.id),
-    archived: canArchive.value ? archived.value : false
+    archived: canArchive.value ? archived.value : false,
+    color: aimColor.value || null
   })
 
   const currentCommittedPhaseIds = committedPhasesList.value.map((phase) => phase.id)
@@ -363,6 +367,28 @@ const handleCancel = () => {
           />
           <span>Archive this aim</span>
         </label>
+      </div>
+
+      <div class="form-section">
+        <label>Color</label>
+        <div class="color-row">
+          <input
+            type="color"
+            class="color-input"
+            :value="aimColor || DEFAULT_COLOR"
+            @input="aimColor = ($event.target as HTMLInputElement).value"
+            @keydown="handleInputKeydown"
+          />
+          <button
+            v-if="aimColor"
+            type="button"
+            class="clear-color-btn"
+            @click="aimColor = ''"
+          >
+            Clear
+          </button>
+          <span v-else class="color-hint">Using status color</span>
+        </div>
       </div>
 
       <div class="form-section">
@@ -526,6 +552,36 @@ label {
     gap: 0.5rem;
     margin-bottom: 0;
     cursor: pointer;
+  }
+}
+
+.color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .color-input {
+    width: 3rem;
+    height: 2rem;
+    padding: 0;
+    background: #1a1a1a;
+    border: 1px solid #555;
+    border-radius: 0.1875rem;
+    cursor: pointer;
+  }
+
+  .clear-color-btn {
+    padding: 0.3rem 0.6rem;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 0.1875rem;
+    color: #e0e0e0;
+    cursor: pointer;
+  }
+
+  .color-hint {
+    color: #888;
+    font-size: 0.85rem;
   }
 }
 

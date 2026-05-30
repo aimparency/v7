@@ -300,3 +300,38 @@ describe('AimEditModal archive checkbox', () => {
     )
   })
 })
+
+describe('AimEditModal custom color', () => {
+  it('persists a picked custom color', async () => {
+    const { wrapper, dataStore } = mountEditModal('desc', 'open')
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('.color-input').setValue('#ff8800')
+    await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
+    await wrapper.vm.$nextTick()
+
+    expect(dataStore.updateAim).toHaveBeenCalledWith(
+      '/test/project',
+      'aim-1',
+      expect.objectContaining({ color: '#ff8800' })
+    )
+  })
+
+  it('saves color as null when none is set', async () => {
+    const { wrapper, dataStore } = mountEditModal('desc', 'open')
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
+    await wrapper.vm.$nextTick()
+
+    expect(dataStore.updateAim).toHaveBeenCalledWith(
+      '/test/project',
+      'aim-1',
+      expect.objectContaining({ color: null })
+    )
+  })
+})

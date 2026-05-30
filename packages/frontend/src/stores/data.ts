@@ -295,6 +295,7 @@ export const useDataStore = defineStore('data', {
         id: aim.id,
         text: aim.text,
         status: aim.status.state,
+        color: aim.color ?? undefined,
         depth: depthMap.get(aim.id) ?? 0,
         // Properties for force layout (mutable)
         x: 0, 

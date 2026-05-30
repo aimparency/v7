@@ -37,6 +37,7 @@ export const AimSchema = z.object({
   reflection: z.string().optional(), // Notes on how this aim went (simple text)
   reflections: z.array(ReflectionSchema).default([]), // Structured periodic self-evaluations
   archived: z.boolean().default(false),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(), // Custom node color (hex); null/absent clears it. Overrides status/priority color when set
   tags: z.array(z.string()).default([]),
   supportingConnections: z.array(ConnectionSchema).default([]),
   incoming: z.array(z.string().uuid()).optional(), // Deprecated: use supportingConnections
