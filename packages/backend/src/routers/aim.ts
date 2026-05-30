@@ -842,6 +842,149 @@ export const createAimRouter = (
         updateAimInIndex(input.projectPath, aim);
 
         return { success: true, reflection: newReflection };
+      }),
+
+    // Merge source aim B into target aim A:
+    // - Rewires B's parents, children, and phase commitments onto A (deduplicating)
+    // - Copies B's reflections to A
+    // - Archives B
+    // Guards: no self-merge, no self-reference loops, B must not already be archived
+    merge: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        targetId: z.string().uuid(),  // A — the aim to keep
+        sourceId: z.string().uuid(),  // B — the aim to archive
+      }))
+      .mutation(async ({ input }: any) => {
+        const { projectPath, targetId, sourceId } = input;
+
+        if (targetId === sourceId) {
+          throw new Error('Cannot merge an aim into itself');
+        }
+
+        const [target, source] = await Promise.all([
+          readAim(projectPath, targetId),
+          readAim(projectPath, sourceId),
+        ]);
+
+        if (source.status.state === 'archived') {
+          throw new Error(`Source aim ${sourceId} is already archived`);
+        }
+
+        // Guard: direct cycle — source is already a child of target, or vice-versa.
+        // (Deep cycle detection is skipped; archiving source severs its outgoing edges anyway.)
+        const sourceIsChildOfTarget = (target.supportingConnections ?? []).some((c: any) => c.aimId === sourceId);
+        const targetIsChildOfSource = (source.supportingConnections ?? []).some((c: any) => c.aimId === targetId);
+        if (sourceIsChildOfTarget || targetIsChildOfSource) {
+          throw new Error('Cannot merge: aims have a direct parent-child relationship, which would create a self-reference');
+        }
+
+        const rewired: string[] = [];
+
+        // 1. Rewire source's parents onto target
+        for (const parentId of source.supportedAims ?? []) {
+          if (parentId === targetId) continue; // already a parent of target
+          try {
+            const parent = await readAim(projectPath, parentId);
+            // Replace source with target in parent's supportingConnections (or add if missing)
+            const hasSource = (parent.supportingConnections ?? []).some((c: any) => c.aimId === sourceId);
+            const hasTarget = (parent.supportingConnections ?? []).some((c: any) => c.aimId === targetId);
+            if (hasSource) {
+              parent.supportingConnections = (parent.supportingConnections ?? []).map((c: any) =>
+                c.aimId === sourceId ? { ...c, aimId: targetId } : c
+              );
+              if (hasTarget) {
+                // Both existed — remove the duplicate entry (keep first occurrence of targetId)
+                const seen = new Set<string>();
+                parent.supportingConnections = parent.supportingConnections.filter((c: any) => {
+                  if (seen.has(c.aimId)) return false;
+                  seen.add(c.aimId);
+                  return true;
+                });
+              }
+              await writeAim(projectPath, parent);
+            }
+            // Add parentId to target.supportedAims if not already present
+            if (!target.supportedAims.includes(parentId)) {
+              target.supportedAims.push(parentId);
+            }
+            rewired.push(`parent ${parentId}`);
+          } catch (e) {
+            console.warn(`merge: could not rewire parent ${parentId}: ${e}`);
+          }
+        }
+
+        // 2. Rewire source's children onto target
+        for (const conn of source.supportingConnections ?? []) {
+          const childId = conn.aimId;
+          if (childId === targetId) continue; // target is already a child of itself? skip
+          try {
+            const child = await readAim(projectPath, childId);
+            // Replace source with target in child's supportedAims (or add if missing)
+            if ((child.supportedAims ?? []).includes(sourceId)) {
+              child.supportedAims = child.supportedAims.filter((id: string) => id !== sourceId);
+              if (!child.supportedAims.includes(targetId)) {
+                child.supportedAims.push(targetId);
+              }
+              await writeAim(projectPath, child);
+            }
+            // Add child connection to target if not already present
+            const alreadyConnected = (target.supportingConnections ?? []).some((c: any) => c.aimId === childId);
+            if (!alreadyConnected) {
+              if (!target.supportingConnections) target.supportingConnections = [];
+              target.supportingConnections.push({
+                aimId: childId,
+                weight: conn.weight ?? 1,
+                relativePosition: getRandomRelativePosition(),
+              });
+            }
+            rewired.push(`child ${childId}`);
+          } catch (e) {
+            console.warn(`merge: could not rewire child ${childId}: ${e}`);
+          }
+        }
+
+        // 3. Rewire source's phase commitments onto target
+        for (const phaseId of source.committedIn ?? []) {
+          try {
+            await commitAimToPhase(projectPath, targetId, phaseId);
+            await removeAimFromPhase(projectPath, sourceId, phaseId);
+            rewired.push(`phase ${phaseId}`);
+          } catch (e) {
+            console.warn(`merge: could not rewire phase ${phaseId}: ${e}`);
+          }
+        }
+
+        // 4. Copy source's reflections to target
+        const copiedReflections = source.reflections ?? [];
+        target.reflections = [...(target.reflections ?? []), ...copiedReflections];
+
+        // 5. Archive source — clear its connections since they've been rewired
+        source.supportedAims = [];
+        source.supportingConnections = [];
+        source.committedIn = [];
+        source.status = { state: 'archived', comment: `Merged into ${targetId}`, date: Date.now() };
+
+        // Write both
+        await writeAim(projectPath, target);
+        await writeAim(projectPath, source); // writeAim moves to archived-aims/ automatically
+        updateAimInIndex(projectPath, target);
+        removeAimFromIndex(projectPath, sourceId);
+
+        if (process.env.NODE_ENV !== 'test') {
+          await removeEmbedding(projectPath, sourceId);
+          invalidateSemanticCache(projectPath);
+        }
+
+        ee.emit('change', { type: 'aim', id: targetId, projectPath });
+        ee.emit('change', { type: 'aim', id: sourceId, projectPath });
+
+        return {
+          success: true,
+          rewired,
+          reflectionsCopied: copiedReflections.length,
+          archivedSource: sourceId,
+        };
       })
   });
 };

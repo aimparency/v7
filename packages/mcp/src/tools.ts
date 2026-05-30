@@ -341,6 +341,19 @@ export function registerTools(server: Server, clientOverride?: any) {
             required: ["projectPath", "query"],
           },
         },
+        {
+          name: "merge_aims",
+          description: "Merge source aim B into target aim A: rewires B's parents, children, and phase commitments onto A (deduplicating), copies B's reflections to A, then archives B. Use after finding duplicates via search_aims_semantic. Guards against self-merge and direct parent-child cycles.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              targetId: { type: "string", description: "UUID of the aim to keep (A)" },
+              sourceId: { type: "string", description: "UUID of the aim to archive (B)" },
+            },
+            required: ["projectPath", "targetId", "sourceId"],
+          },
+        },
       ],
     };
   });
@@ -955,6 +968,17 @@ export function registerTools(server: Server, clientOverride?: any) {
           });
           return {
             content: [{ type: "text", text: JSON.stringify(results.map(formatAim), null, 2) }],
+          };
+        }
+
+        case "merge_aims": {
+          const result = await trpcClient.aim.merge.mutate({
+            projectPath: args.projectPath as string,
+            targetId: args.targetId as string,
+            sourceId: args.sourceId as string,
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           };
         }
 
