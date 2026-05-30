@@ -2,7 +2,15 @@
   "id": "9b5862b9-857d-4127-85b5-0b7997ac2b1e",
   "text": "fix explanation saving in graph sidebar",
   "description": "",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1780105052790,
+      "context": "Explanation field typed in the graph sidebar connection editor appeared to save (optimistic update worked) but was lost on reload.",
+      "outcome": "Found that the backend aim.update mutation explicitly reconstructed each supportingConnection object with only aimId, relativePosition, and weight — silently dropping explanation. Added explanation to the spread. Added a backend integration test that round-trips explanation through update and re-read.",
+      "effectiveness": "One-line fix, root cause was immediately visible from reading the mapping code. Frontend test already covered the blur/race case; only the persistence layer was missing coverage.",
+      "lesson": "Explicit field reconstruction (mapping to a new object) is dangerous — it silently drops any fields not listed. Either spread the original object first and override specific fields, or list all fields explicitly with a type check."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -13,9 +21,9 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774782958051
+    "state": "done",
+    "comment": "Backend was reconstructing supportingConnections without the explanation field — now preserved.",
+    "date": 1780105026890
   },
   "intrinsicValue": 0,
   "cost": 1,

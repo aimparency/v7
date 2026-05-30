@@ -290,7 +290,8 @@ export const createAimRouter = (
             supportingConnections = input.aim.supportingConnections.map((c: any) => ({
                 aimId: c.aimId,
                 relativePosition: c.relativePosition || [0,0],
-                weight: c.weight || 1
+                weight: c.weight || 1,
+                ...(c.explanation !== undefined ? { explanation: c.explanation } : {})
             }));
         }
 

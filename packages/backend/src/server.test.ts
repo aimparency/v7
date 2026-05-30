@@ -639,6 +639,36 @@ test('connectAims - connects with relative position', async () => {
   assert.deepEqual(updatedParent.supportingConnections[0].relativePosition, relativePosition);
 });
 
+test('aim.update - persists explanation on supportingConnections', async () => {
+  const parentResult = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: { text: 'Parent', status: { state: 'open', comment: '', date: Date.now() } }
+  });
+  const childResult = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: { text: 'Child', status: { state: 'open', comment: '', date: Date.now() } }
+  });
+  await caller.aim.connectAims({
+    projectPath: testProjectPath,
+    parentAimId: parentResult.id,
+    childAimId: childResult.id
+  });
+
+  const before = await caller.aim.get({ projectPath: testProjectPath, aimId: parentResult.id });
+  const conn = before.supportingConnections[0]!;
+
+  await caller.aim.update({
+    projectPath: testProjectPath,
+    aimId: parentResult.id,
+    aim: {
+      supportingConnections: [{ ...conn, explanation: 'because it helps' }]
+    }
+  });
+
+  const after = await caller.aim.get({ projectPath: testProjectPath, aimId: parentResult.id });
+  assert.strictEqual(after.supportingConnections[0]!.explanation, 'because it helps');
+});
+
 test('discoverLocalProjects - finds nearby repositories with .bowman directories', async () => {
   const workspaceRoot = path.join(testRootPath, 'workspace');
   const repoA = path.join(workspaceRoot, 'repo-a');
