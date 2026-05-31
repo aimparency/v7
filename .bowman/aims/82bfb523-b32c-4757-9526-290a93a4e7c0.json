@@ -1,0 +1,29 @@
+{
+  "id": "82bfb523-b32c-4757-9526-290a93a4e7c0",
+  "text": "Fix backend test harness: vitest-based suites fail under node --test runner",
+  "description": "packages/backend `npm test` (NODE_ENV=test node scripts/run-tests.mjs) runs the suites through node --test/tsx, but src/*.test.ts import from 'vitest' (db, server, forces, embeddings, value-calculation). Result: 5/6 files fail with \"Vitest failed to find the runner\" — independent of any source change (reproduces at HEAD). Either run these via `vitest` (add vitest config + script) or migrate the imports to node:test (as shared/ already uses). Until fixed, verify backend logic via `tsx --test` per-suite + `tsc --noEmit`. Discovered 2026-05-31 while landing the connection contribution-% feature.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "testing",
+    "tooling",
+    "backend",
+    "tech-debt"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Root cause narrowed 2026-05-31: vitest IS installed (hoisted to root node_modules/.bin). The tests themselves PASS via `npx vitest run` (backend 6 files/31 tests, frontend 26 files/132 tests). The only breakage is the backend `npm test` wrapper (scripts/run-tests.mjs) invoking node --test instead of vitest. Fix: point backend test script at `vitest run` (frontend already does). Low-effort.",
+    "date": 1780234196154
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

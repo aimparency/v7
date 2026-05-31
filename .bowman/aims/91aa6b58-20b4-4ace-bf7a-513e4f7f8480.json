@@ -1,0 +1,24 @@
+{
+  "id": "91aa6b58-20b4-4ace-bf7a-513e4f7f8480",
+  "text": "Step 5: integrate modal into graph drag triggers",
+  "description": "useGraphInteraction.ts: drop-on-existing-node (:469) and drag-to-create-new-aim (:253). Connect with defaultWeight first (preserve radius/relPos correction at :258-276 for the create case), then open ConnectionDetailsModal for {parent, child}. Cancel keeps the default link.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "1e554f38-33ae-42d4-88e6-4a4b071a20d0"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "useGraphInteraction.ts: after connect on drop-on-existing (:469) and drag-to-create (:253, post relPos correction), opens ConnectionDetailsModal(parentId, childId). vue-tsc clean.",
+    "date": 1780233975559
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

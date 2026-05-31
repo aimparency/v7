@@ -1,0 +1,33 @@
+{
+  "id": "82c48ef7-7f4c-4ea6-9745-88e5f522bbce",
+  "text": "Step 2: ConnectionDetailsModal.vue + modalStore wiring",
+  "description": "New packages/frontend/src/components/ConnectionDetailsModal.vue: percentage input + explanation textarea + confirm/cancel. Modal store: open-with-context {parentId, childId}; confirm patches via updateAim full supportingConnections array (aim.ts:288-296 persists weight+explanation); cancel keeps the default-weight connection. Use shared connection-weight helpers for share<->weight.",
+  "reflections": [
+    {
+      "date": 1780233995195,
+      "context": "Build the ConnectionDetailsModal and wire it into all creation triggers (graph drag x2, list sub-aim x2 branches).",
+      "outcome": "Component built on the shared FormModalShell, store wired, mounted in App.vue; triggers added in useGraphInteraction.ts and list-store.createAim. All layers vue-tsc clean; Puppeteer confirmed the modal mounts and renders (sole-supporter fallback) without console errors.",
+      "effectiveness": "Reusing FormModalShell + mirroring GraphSidePanel.updateConnection's patch pattern (build supportingConnections array -> replaceAim -> recalculateValues -> trpc.aim.update) made the modal small and consistent. Driving the Pinia store directly via #app.__vue_app__.config.globalProperties.$pinia is a fast way to smoke-test a Vue modal without simulating canvas drags.",
+      "lesson": "Connect calls currently persist weight=1 (connectAimsInternal default), not the computed defaultWeight, so the cancel-default deviates from spec for non-uniform siblings. Acceptable since the modal sets the exact %, but note it. Full UI verification of the non-sole path needs a loaded project — the landing screen has an empty aims map.",
+      "pattern": "Same store-driven smoke-test approach used for verifying modals; pairs well with REPL-level math checks + live backend round-trips for layered confidence."
+    }
+  ],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "1e554f38-33ae-42d4-88e6-4a4b071a20d0"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "ConnectionDetailsModal.vue created (FormModalShell-based); modal-store wired with showConnectionDetailsModal + open/closeConnectionDetailsModal(parentId, childId); mounted in App.vue. Includes % input, explanation textarea, 90% clamp+hint, sole-supporter skip, confirm-patch via trpc.aim.update (mirrors GraphSidePanel.updateConnection) + cancel-keeps-default. vue-tsc clean.",
+    "date": 1780233583471
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

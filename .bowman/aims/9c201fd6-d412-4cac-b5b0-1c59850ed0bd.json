@@ -1,0 +1,24 @@
+{
+  "id": "9c201fd6-d412-4cac-b5b0-1c59850ed0bd",
+  "text": "Step 3: validation, hints, top-3 orientation + live rebalance in modal",
+  "description": "In ConnectionDetailsModal: clamp to MAX_SHARE (90%) with hint copy (\"100% isn't possible while other aims also support this — capped at 90%\"); skip the % field entirely when isSoleContributor(S,L) (weight=1, 100%); show top-3 contributing siblings by share; live \"after\" preview of rebalanced shares by re-running value-calculation.ts. S = Σ sibling weights on parent, L = parent loopWeight.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "1e554f38-33ae-42d4-88e6-4a4b071a20d0"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Added live top-3 contributor preview (parent outflow shares = weight/(S+L+w), computed locally) + 'this connection' row in ConnectionDetailsModal, with scoped styles. vue-tsc clean.",
+    "date": 1780233969647
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

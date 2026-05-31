@@ -342,6 +342,19 @@ export function registerTools(server: Server, clientOverride?: any) {
           },
         },
         {
+          name: "find_duplicate_aims",
+          description: "Scan the embedding index for near-duplicate aims (all-pairs cosine similarity). Returns ranked pairs above `threshold` (default 0.90). Run build_search_index first if results are empty. Use merge_aims to act on results.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              threshold: { type: "number", description: "Similarity threshold 0–1 (default 0.90)" },
+              limit: { type: "number", description: "Max pairs to return (default 50)" },
+            },
+            required: ["projectPath"],
+          },
+        },
+        {
           name: "merge_aims",
           description: "Merge source aim B into target aim A: rewires B's parents, children, and phase commitments onto A (deduplicating), copies B's reflections to A, then archives B. Use after finding duplicates via search_aims_semantic. Guards against self-merge and direct parent-child cycles.",
           inputSchema: {
@@ -968,6 +981,17 @@ export function registerTools(server: Server, clientOverride?: any) {
           });
           return {
             content: [{ type: "text", text: JSON.stringify(results.map(formatAim), null, 2) }],
+          };
+        }
+
+        case "find_duplicate_aims": {
+          const result = await trpcClient.project.findDuplicates.query({
+            projectPath: args.projectPath as string,
+            threshold: args.threshold as number | undefined,
+            limit: args.limit as number | undefined,
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           };
         }
 

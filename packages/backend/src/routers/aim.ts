@@ -14,7 +14,7 @@ export const createAimRouter = (
   readPhase: (projectPath: string, phaseId: string) => Promise<any>,
   commitAimToPhase: (projectPath: string, aimId: string, phaseId: string, insertionIndex?: number) => Promise<void>,
   removeAimFromPhase: (projectPath: string, aimId: string, phaseId: string) => Promise<void>,
-  connectAimsInternal: (projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number, relativePosition?: [number, number], weight?: number) => Promise<void>,
+  connectAimsInternal: (projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number, relativePosition?: [number, number], weight?: number, explanation?: string) => Promise<void>,
   getRandomRelativePosition: () => [number, number],
   normalizeProjectPath: (p: string) => string,
   addAimToIndex: (projectPath: string, aim: Aim) => void,
@@ -407,10 +407,11 @@ export const createAimRouter = (
         parentIncomingIndex: z.number().optional(),
         childSupportedAimsIndex: z.number().optional(),
         relativePosition: z.tuple([z.number(), z.number()]).optional(),
-        weight: z.number().optional()
+        weight: z.number().optional(),
+        explanation: z.string().optional()
       }))
       .mutation(async ({ input }: any) => {
-        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex, input.relativePosition, input.weight);
+        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex, input.relativePosition, input.weight, input.explanation);
       }),
 
     createFloatingAim: delayedProcedure
@@ -494,7 +495,7 @@ export const createAimRouter = (
 
         if (input.aim.supportingConnections) {
             for (const conn of input.aim.supportingConnections) {
-                await connectAimsInternal(input.projectPath, aimId, conn.aimId, undefined, undefined, conn.relativePosition, conn.weight);
+                await connectAimsInternal(input.projectPath, aimId, conn.aimId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
             }
         }
 
@@ -526,7 +527,8 @@ export const createAimRouter = (
           })).optional()
         }),
         positionInParent: z.number().optional(),
-        weight: z.number().optional()
+        weight: z.number().optional(),
+        explanation: z.string().optional()
       }))
       .mutation(async ({ input }: any) => {
         const childAimId = uuidv4();
@@ -566,7 +568,7 @@ export const createAimRouter = (
           });
         }
 
-        await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0, undefined, input.weight);
+        await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0, undefined, input.weight, input.explanation);
 
         if (input.aim.supportedAims) {
             for (const parentId of input.aim.supportedAims) {
@@ -578,7 +580,7 @@ export const createAimRouter = (
 
         if (input.aim.supportingConnections) {
             for (const conn of input.aim.supportingConnections) {
-                await connectAimsInternal(input.projectPath, childAimId, conn.aimId, undefined, undefined, conn.relativePosition, conn.weight);
+                await connectAimsInternal(input.projectPath, childAimId, conn.aimId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
             }
         }
 
@@ -662,7 +664,7 @@ export const createAimRouter = (
 
         if (input.aim.supportingConnections) {
             for (const conn of input.aim.supportingConnections) {
-                await connectAimsInternal(input.projectPath, aimId, conn.aimId, undefined, undefined, conn.relativePosition, conn.weight);
+                await connectAimsInternal(input.projectPath, aimId, conn.aimId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
             }
         }
 

@@ -11,6 +11,7 @@ import type { AimSearchAdditionalOption, AimSearchPickPayload } from './stores/u
 import type { PhaseSearchSelection } from './stores/ui/phase-search-types'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import AimCreationModal from './components/AimCreationModal.vue'
+import ConnectionDetailsModal from './components/ConnectionDetailsModal.vue'
 import AimEditModal from './components/AimEditModal.vue'
 import AimSearchModal from './components/AimSearchModal.vue'
 import PhaseSearchModal from './components/PhaseSearchModal.vue'
@@ -500,6 +501,9 @@ onUnmounted(() => {
     
     <!-- Aim Creation Modal -->
     <AimCreationModal v-if="modalStore.showAimModal" />
+
+    <!-- Connection Details Modal (contribution % + explanation) -->
+    <ConnectionDetailsModal v-if="modalStore.showConnectionDetailsModal" />
 
     <!-- Aim Edit Modal -->
     <AimEditModal

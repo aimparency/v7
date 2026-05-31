@@ -6,7 +6,7 @@ import type { Dirent } from 'fs';
 import { fileURLToPath } from 'url';
 import { observable } from '@trpc/server/observable';
 import type { Aim, Phase, ProjectMeta } from 'shared';
-import { INITIAL_STATES } from 'shared';
+import { INITIAL_STATES, cosineSimilarity } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 const agentTypeSchema = z.enum(['claude', 'gemini', 'codex']);
@@ -820,6 +820,83 @@ export const createProjectRouter = (
         }
 
         return { success: true, fixes };
+      }),
+
+    // Read-only duplicate report: loads all vectors in one pass, computes
+    // all-pairs cosine similarity, returns pairs above `threshold` ranked by score.
+    // Use merge_aims to act on the results.
+    findDuplicates: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        threshold: z.number().min(0).max(1).optional(), // default 0.90
+        limit: z.number().int().positive().optional(),   // default 50
+      }))
+      .query(async ({ input }: any) => {
+        const threshold = input.threshold ?? 0.90;
+        const limit = input.limit ?? 50;
+
+        const [aims, vectorStore] = await Promise.all([
+          listAims(input.projectPath),
+          loadVectorStore(input.projectPath),
+        ]);
+
+        const aimMap = new Map<string, Aim>(aims.map((a: Aim) => [a.id, a]));
+
+        // Build indexed list of (aimId, vector) for active aims only
+        const indexed: Array<{ id: string; vector: number[] }> = [];
+        for (const [id, vector] of Object.entries(vectorStore)) {
+          if (Array.isArray(vector) && vector.length > 0 && aimMap.has(id)) {
+            indexed.push({ id, vector: vector as number[] });
+          }
+        }
+
+        const pairs: Array<{
+          scoreRaw: number;
+          score: string;
+          aId: string;
+          aText: string;
+          bId: string;
+          bText: string;
+        }> = [];
+
+        // All-pairs O(n²/2): ~100k comparisons for 450 aims, negligible
+        for (let i = 0; i < indexed.length; i++) {
+          const a = indexed[i]!;
+          for (let j = i + 1; j < indexed.length; j++) {
+            const b = indexed[j]!;
+            if (a.vector.length !== b.vector.length) continue;
+            const score = cosineSimilarity(a.vector, b.vector);
+            if (score >= threshold) {
+              const aimA = aimMap.get(a.id)!;
+              const aimB = aimMap.get(b.id)!;
+              pairs.push({
+                scoreRaw: score,
+                score: score.toFixed(4),
+                aId: a.id,
+                aText: aimA.text,
+                bId: b.id,
+                bText: aimB.text,
+              });
+            }
+          }
+        }
+
+        pairs.sort((a, b) => b.scoreRaw - a.scoreRaw);
+        const topPairs = pairs.slice(0, limit).map(({ scoreRaw: _, ...rest }) => rest);
+
+        return {
+          threshold,
+          totalIndexed: indexed.length,
+          totalAims: aims.length,
+          unindexed: aims.length - indexed.length,
+          pairsFound: pairs.length,
+          pairs: topPairs,
+          note: indexed.length === 0
+            ? 'No embeddings found. Run build_search_index first.'
+            : pairs.length === 0
+              ? `No pairs above threshold ${threshold}. Try lowering it.`
+              : undefined,
+        };
       })
   });
 };

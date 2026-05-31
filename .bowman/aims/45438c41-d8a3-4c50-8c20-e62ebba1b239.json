@@ -1,0 +1,33 @@
+{
+  "id": "45438c41-d8a3-4c50-8c20-e62ebba1b239",
+  "text": "Step 1: connection-weight math helper + backend explanation persistence",
+  "description": "DONE 2026-05-31. Added packages/shared/src/connection-weight.ts (weightToShare, shareToWeight, defaultWeight, clampShare, MAX_SHARE=0.9, isSoleContributor) + 11 passing unit tests; exported from shared index. Threaded optional `explanation` through backend connectAimsInternal (server.ts) and connectAims + createSubAim/createFloatingAim/createAimInPhase (aim.ts); preserves explanation across connection reorder. shared+backend tsc clean.",
+  "reflections": [
+    {
+      "date": 1780232926612,
+      "context": "Build the foundation for the contribution-% connection modal: a pure share<->weight math module and backend persistence of connection explanations.",
+      "outcome": "Added shared/src/connection-weight.ts with 11 passing tests and threaded an optional `explanation` through connectAimsInternal and all create/connect mutations. shared+backend type-check clean.",
+      "effectiveness": "Putting the math in shared (not the component) means frontend live-preview and backend/MCP can reuse one source of truth. Discovered the value engine normalizes by ΣsiblingWeights + loopWeight, which corrected the percentage formula (loop must be in the denominator).",
+      "lesson": "Verify the actual normalization in value-calculation.ts before defining percentage<->weight math; the loopWeight term is easy to miss and changes the 100%/default rules. Also: backend `npm test` is broken independent of changes — test files import vitest but run under node --test ('Vitest failed to find the runner'); rely on tsx --test for individual suites + tsc for verification.",
+      "pattern": "Same as economic-model work: ground UI/derived math in the existing propagation engine rather than re-deriving it."
+    }
+  ],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "1e554f38-33ae-42d4-88e6-4a4b071a20d0"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Math helper + tests + backend persistence landed; type-checks clean.",
+    "date": 1780232888931
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

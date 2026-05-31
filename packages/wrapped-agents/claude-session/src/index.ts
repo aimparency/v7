@@ -58,7 +58,10 @@ const args = process.argv.slice(2);
 let projectRootPath = path.resolve(__dirname, '../../../../');
 
 // Claude model defaults
-let workerModel: string | undefined = 'sonnet';
+// Worker runs the main thread on the most capable model (Opus 4.8). The 'opus'
+// alias resolves to the current top Opus; pin to 'claude-opus-4-8' to lock 4.8.
+// Watchdog/supervisor stays on the fast, cheap Haiku.
+let workerModel: string | undefined = 'opus';
 let watchdogModel: string | undefined = 'haiku';
 
 let compactEvery = 20;

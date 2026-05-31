@@ -602,8 +602,8 @@ function getRandomRelativePosition(): [number, number] {
 }
 
 // Helper function to connect aims (reused by connectAims and createSubAim)
-async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number, relativePosition?: [number, number], weight: number = 1): Promise<void> {
-  console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childSupportedAimsIndex, relativePosition, weight });
+async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number, relativePosition?: [number, number], weight: number = 1, explanation?: string): Promise<void> {
+  console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childSupportedAimsIndex, relativePosition, weight, explanation });
   const parent = await readAim(projectPath, parentAimId);
   const child = await readAim(projectPath, childAimId);
 
@@ -612,14 +612,17 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
   const currentChildIndex = parent.supportingConnections.findIndex(c => c.aimId === childAimId);
   
   if (currentChildIndex === targetParentIndex) {
-    // Already at the correct position, but update weight if changed
-    if (currentChildIndex !== -1 && parent.supportingConnections[currentChildIndex]) {
-      if (parent.supportingConnections[currentChildIndex].weight !== weight) {
-        parent.supportingConnections[currentChildIndex].weight = weight;
-        await writeAim(projectPath, parent);
-      }
+    // Already at the correct position, but update weight/explanation if changed
+    const existing = currentChildIndex !== -1 ? parent.supportingConnections[currentChildIndex] : undefined;
+    if (existing) {
+      let changed = false;
+      if (existing.weight !== weight) { existing.weight = weight; changed = true; }
+      if (explanation !== undefined && existing.explanation !== explanation) { existing.explanation = explanation; changed = true; }
+      if (changed) await writeAim(projectPath, parent);
     }
   } else {
+    // Preserve an existing explanation across reorder if none is supplied
+    const prevConn = currentChildIndex !== -1 ? parent.supportingConnections[currentChildIndex] : undefined;
     // Remove from current position if present
     if (currentChildIndex !== -1) {
       parent.supportingConnections.splice(currentChildIndex, 1);
@@ -628,8 +631,14 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
       targetParentIndex = Math.min(targetParentIndex, maxIndex);
     }
     // Insert at target position
-    const newConnection = { aimId: childAimId, relativePosition: relativePosition || getRandomRelativePosition(), weight };
-    
+    const resolvedExplanation = explanation !== undefined ? explanation : prevConn?.explanation;
+    const newConnection = {
+      aimId: childAimId,
+      relativePosition: relativePosition || getRandomRelativePosition(),
+      weight,
+      ...(resolvedExplanation !== undefined ? { explanation: resolvedExplanation } : {})
+    };
+
     parent.supportingConnections.splice(targetParentIndex, 0, newConnection);
     await writeAim(projectPath, parent);
   }

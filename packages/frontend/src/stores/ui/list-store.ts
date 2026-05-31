@@ -526,6 +526,9 @@ export const useListStore = defineStore('ui', {
 
       const path = this.getSelectionPath()
       let newAimId: string | undefined
+      // Parent aim when creating/linking inside a sub-aim list (implicit connection).
+      // Used to offer the contribution % + explanation modal afterwards.
+      let implicitParentId: string | undefined
       let createdAsPhaseCommitmentWithoutImplicitSupportedAim = false
 
       if (modalStore.aimModalSource === 'graph') {
@@ -591,6 +594,7 @@ export const useListStore = defineStore('ui', {
             newAimId = result.id
           }
 
+          implicitParentId = currentAim.id
           const freshParent = dataStore.aims[currentAim.id]
           if (freshParent) {
             freshParent.selectedIncomingIndex = 0
@@ -623,6 +627,7 @@ export const useListStore = defineStore('ui', {
               newAimId = result.id
             }
 
+            implicitParentId = parentAim.id
             const freshParent = dataStore.aims[parentAim.id]
             if (freshParent) {
               freshParent.selectedIncomingIndex = insertionIndex
@@ -710,6 +715,14 @@ export const useListStore = defineStore('ui', {
         projectStore.currentView === 'graph'
 
       modalStore.closeAimModal()
+
+      // Sub-aim list creation/linking: offer contribution % + explanation for the
+      // implicit parent->child connection. Reload the parent so its supportingConnections
+      // include the freshly-created connection before the modal patches it.
+      if (implicitParentId && newAimId && !shouldPromptForSupportedAim && !shouldPromptForPhaseCommitment) {
+        await dataStore.loadAims(projectStore.projectPath, [implicitParentId, newAimId])
+        modalStore.openConnectionDetailsModal(implicitParentId, newAimId)
+      }
 
       if (shouldPromptForSupportedAim && newAimId) {
         modalStore.openAimSearch('pick', async (payload) => {

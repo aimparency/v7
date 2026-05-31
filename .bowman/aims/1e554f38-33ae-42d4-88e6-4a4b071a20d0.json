@@ -1,0 +1,81 @@
+{
+  "id": "1e554f38-33ae-42d4-88e6-4a4b071a20d0",
+  "text": "Connection contribution-% + explanation modal on connection creation (graph drag + list sub-aim)",
+  "description": "After a connection is created, show a modal to set the new connection's CONTRIBUTION PERCENTAGE (stored internally as a weight) and an EXPLANATION. Completes the unbuilt %/loopWeight half of done-aim 7a1e6736 and extends it to graph drag flows.\n\nTHREE TRIGGER POINTS (code-grounded):\n- Graph: drop on existing node — useGraphInteraction.ts:469\n- Graph: drag-to-create new aim — useGraphInteraction.ts:253\n- List view: create aim inside a sub-aim list (parent implicit) — AimCreationModal.vue:81 / list-store.ts:590,622\n\nCONTRIBUTION MODEL (matches value-calculation.ts:34,50,58): a connection's share = weight / (Σ siblingWeights + effectiveLoopWeight). S = Σ sibling weights on parent; L = parent loopWeight (raw, post-add; default 0).\n\nDESIGN DECISIONS (#1-6):\n1. % accounts for loopWeight: denominator includes L. Auto-100% (weight=1, skip % field) ONLY when S+L=0.\n2. Cancel/dismiss persists the connection at default weight = (S+L)/(siblingCount + (L>0?1:0)); special-case S+L=0 -> 1. Modal is enrichment, never a gate.\n3. Show resulting sibling rebalance by re-running value-calculation (already done elsewhere).\n4. Prefill % to the default-weight equivalent.\n5. List trigger = sub-aim-list creation only (not floating/top-level). Graph drag-to-create = connect-then-modal to preserve radius/relPos correction at useGraphInteraction.ts:258-276.\n6. Cap 90% with hint (\"100% isn't possible while other aims also support this — capped at 90%\"); show top-3 contributing aims for orientation.\n\nMATH HELPERS (shared/src/connection-weight.ts): weightToShare(w,S,L)=w/(S+L+w); shareToWeight(p,S,L)=p*(S+L)/(1-p); defaultWeight(S,L,n); MAX_SHARE=0.90; clampShare.\n\nPERSISTENCE: connect with defaultWeight, then patch on confirm via updateAim full supportingConnections array (aim.ts:288-296 already persists weight+explanation). Plus thread explanation through connectAimsInternal/connectAims so MCP/programmatic creation can set it too (task-1 gap: connectAimsInternal builds {aimId,relativePosition,weight} with no explanation at server.ts:631).\n\nSTEPS: (1) shared math helper + tests; (2) backend thread explanation through connect paths; (3) ConnectionDetailsModal.vue; (4) modalStore wiring + confirm/cancel; (5) wire graph drop-on-existing; (6) wire graph drag-to-create; (7) replace raw weight field with %-flow in list/create modal.",
+  "reflections": [
+    {
+      "date": 1780234445706,
+      "context": "Deliver a contribution-% + explanation modal shown after a connection is created, across graph drag and list sub-aim flows, with loopWeight-aware percentage math.",
+      "outcome": "Shipped all 5 steps. 176 tests pass, type-checks clean, backend persistence live-verified, and Puppeteer E2E confirmed sole/non-sole rendering, the 90% cap+hint, and the live rebalance preview with correct shares.",
+      "effectiveness": "Layered verification gave high confidence without a fragile canvas-drag test: REPL for pure math, live tRPC round-trip for persistence, and store-driven Puppeteer injection (dataStore.aims + modalStore action) to exercise the real component reactively. Discovering vitest is hoisted to root meant the 'broken' backend suite actually passes via `vitest run` — the only defect is the npm-test wrapper's runner choice.",
+      "lesson": "When a test wrapper looks broken, check whether the tool is merely invoked wrong before assuming missing coverage — `npx vitest run` revealed 163 backend+frontend tests that the node --test wrapper couldn't execute. For Vue modal E2E, injecting synthetic reactive store data is faster and more deterministic than simulating the upstream UI gesture.",
+      "pattern": "Same store-driven smoke-test + REPL + live round-trip combo as the rest of this feature; reliable for layered confidence on UI+backend changes."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "graph",
+    "ui",
+    "connections",
+    "economics"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "45438c41-d8a3-4c50-8c20-e62ebba1b239",
+      "relativePosition": [
+        0.40330144159515463,
+        2.4672551443268427
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "82c48ef7-7f4c-4ea6-9745-88e5f522bbce",
+      "relativePosition": [
+        -0.8722118195948857,
+        -2.3429141131844715
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9c201fd6-d412-4cac-b5b0-1c59850ed0bd",
+      "relativePosition": [
+        -1.7949695857728576,
+        1.7401391283889964
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "726d6438-4c29-4b0b-b48f-19a226fada9f",
+      "relativePosition": [
+        0.6060391617541949,
+        2.4254312058725294
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "91aa6b58-20b4-4ace-bf7a-513e4f7f8480",
+      "relativePosition": [
+        2.3929640169012476,
+        0.7236872348023317
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "4f8c3aca-dec4-4932-bc16-d0a5a6955473"
+  ],
+  "committedIn": [
+    "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Complete + verified end-to-end 2026-05-31. All 5 steps landed. Tests: shared 13/13, backend 31/31 (vitest run), frontend 132/132 = 176 passing, 0 fail; all type-checks clean. Live backend round-trip 7/7 for explanation persistence. Puppeteer E2E with real reactive data confirmed: sole-supporter path (100%, no % field), non-sole prefill (20% = w1/(S3+L1+1)), top-3 + loop preview with correct shares (Marketing 40%, Docs 20%, loop 20%), and 90% clamp+hint+live rebalance (95→90, Marketing 5%/Docs 2%/loop 2%). Cancel keeps default-weight link. Known minor deviation: connect creates at weight=1 not computed defaultWeight (modal overrides; harmless for uniform siblings).",
+    "date": 1780234437479
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

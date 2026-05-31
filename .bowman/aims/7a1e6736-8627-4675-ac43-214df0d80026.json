@@ -2,6 +2,8 @@
   "id": "7a1e6736-8627-4675-ac43-214df0d80026",
   "text": "when creating aims: show the supported aims with a weight field each (input in %, then calculate the actual weight based on the other supporting aims and loop weight of the supported aim)",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -9,11 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "done",
-    "comment": "Implemented weight field for supported aims in AimCreationModal. Updated backend and stores to handle weight during aim creation/connection.",
-    "date": 1768080933215
+    "state": "partially",
+    "comment": "Reconciliation 2026-05-31: only the RAW weight field was built (AimCreationModal.vue:303 'Weight:' NumericTextInput). The specified %-input + loopWeight-aware weight calculation was NOT implemented — no percentage UI, no shareToWeight conversion anywhere. Superseded by the new connection contribution-% + explanation modal aim, which implements the %/loopWeight logic properly and extends it to the graph drag flows.",
+    "date": 1780232495154
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

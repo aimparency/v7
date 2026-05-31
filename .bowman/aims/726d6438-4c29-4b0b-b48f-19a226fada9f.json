@@ -1,0 +1,24 @@
+{
+  "id": "726d6438-4c29-4b0b-b48f-19a226fada9f",
+  "text": "Step 4: integrate %-flow into list-view sub-aim creation",
+  "description": "AimCreationModal.vue (raw \"Weight:\" field at :303) + list-store.ts createAim (:590,:622 createSubAim): replace raw weight with the %-based flow, opening ConnectionDetailsModal post-create ONLY when a parent is implicit (sub-aim list context), not floating/top-level. Completes the unbuilt %/loopWeight half of done-aim 7a1e6736.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "1e554f38-33ae-42d4-88e6-4a4b071a20d0"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "list-store.createAim now tracks implicitParentId (branch A: currentAim.expanded+after; branch B: path.aims>1 parentAim) and, after closeAimModal, reloads parent+child and opens ConnectionDetailsModal — only for implicit-parent sub-aim contexts (not floating/phase/graph). vue-tsc clean.",
+    "date": 1780233972959
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

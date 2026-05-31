@@ -274,6 +274,8 @@ export function useGraphInteraction(
                                  if (correctedLink) correctedLink.relativePosition = correctedRelPos
                                  // Persist the corrected relative position
                                  await (dataStore as any).updateConnectionPosition(projectStore.projectPath, parentNode.id, newAimId, correctedRelPos)
+                                 // Offer contribution % + explanation for the new connection.
+                                 modalStore.openConnectionDetailsModal(parentNode.id, newAimId)
                              }).catch(err => {
                                  console.error('Graph: Connection failed', err)
                              })
@@ -474,6 +476,8 @@ export function useGraphInteraction(
                 })
                 // Reload both aims to get updated incoming/outgoing arrays
                 await dataStore.loadAims(projectStore.projectPath, [parent.id, child.id])
+                // Offer contribution % + explanation for the new connection.
+                modalStore.openConnectionDetailsModal(parent.id, child.id)
             } catch (e) {
                 console.error('Failed to connect aims:', e)
             }

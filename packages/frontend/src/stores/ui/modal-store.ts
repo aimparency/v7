@@ -36,6 +36,12 @@ export const useUIModalStore = defineStore('ui-modal', {
     showAimEditModal: false,
     aimEditModalAimId: null as string | null,
 
+    // Connection details (contribution % + explanation) for a freshly-created connection.
+    // parentId = supported aim, childId = supporting aim; the connection already exists.
+    showConnectionDetailsModal: false,
+    connectionDetailsParentId: null as string | null,
+    connectionDetailsChildId: null as string | null,
+
     showAimSearch: false,
     aimSearchMode: 'navigate' as 'navigate' | 'pick',
     aimSearchCallback: null as ((payload: AimSearchPickPayload) => void) | null,
@@ -147,6 +153,18 @@ export const useUIModalStore = defineStore('ui-modal', {
     closeAimEditModal() {
       this.showAimEditModal = false
       this.aimEditModalAimId = null
+    },
+
+    openConnectionDetailsModal(parentId: string, childId: string) {
+      this.connectionDetailsParentId = parentId
+      this.connectionDetailsChildId = childId
+      this.showConnectionDetailsModal = true
+    },
+
+    closeConnectionDetailsModal() {
+      this.showConnectionDetailsModal = false
+      this.connectionDetailsParentId = null
+      this.connectionDetailsChildId = null
     }
   }
 })
