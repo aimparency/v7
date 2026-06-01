@@ -355,6 +355,20 @@ export function registerTools(server: Server, clientOverride?: any) {
           },
         },
         {
+          name: "suggest_reparents",
+          description: "Read-only reparent suggestions for a vague catch-all parent: for each leaf child, suggest the closest structural sub-parent by embedding cosine. Candidate sub-parents default to the catch-all's children that are themselves parents; pass candidateParentIds to override. Run build_search_index first if empty. Apply with update_aim/merge_aims.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              parentAimId: { type: "string", description: "UUID of the catch-all parent aim" },
+              candidateParentIds: { type: "array", items: { type: "string" }, description: "Optional explicit candidate sub-parent UUIDs (default: the catch-all's children that have children)" },
+              limit: { type: "number", description: "Max suggestions to return (default 200)" },
+            },
+            required: ["projectPath", "parentAimId"],
+          },
+        },
+        {
           name: "merge_aims",
           description: "Merge source aim B into target aim A: rewires B's parents, children, and phase commitments onto A (deduplicating), copies B's reflections to A, then archives B. Use after finding duplicates via search_aims_semantic. Guards against self-merge and direct parent-child cycles.",
           inputSchema: {
@@ -988,6 +1002,18 @@ export function registerTools(server: Server, clientOverride?: any) {
           const result = await trpcClient.project.findDuplicates.query({
             projectPath: args.projectPath as string,
             threshold: args.threshold as number | undefined,
+            limit: args.limit as number | undefined,
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
+        case "suggest_reparents": {
+          const result = await trpcClient.project.suggestReparents.query({
+            projectPath: args.projectPath as string,
+            parentAimId: args.parentAimId as string,
+            candidateParentIds: args.candidateParentIds as string[] | undefined,
             limit: args.limit as number | undefined,
           });
           return {

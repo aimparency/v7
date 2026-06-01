@@ -897,6 +897,114 @@ export const createProjectRouter = (
               ? `No pairs above threshold ${threshold}. Try lowering it.`
               : undefined,
         };
+      }),
+
+    // Read-only reparent suggestions: for each leaf child of a vague catch-all parent,
+    // suggest the closest structural sub-parent (by embedding cosine) to move it under.
+    // Candidate sub-parents default to the catch-all's children that are themselves
+    // parents; pass candidateParentIds to override. Apply via merge/move tooling — this
+    // is an approve-a-list report, it changes nothing.
+    suggestReparents: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        parentAimId: z.string(),                              // the catch-all parent
+        candidateParentIds: z.array(z.string()).optional(),   // override structural sub-parents
+        limit: z.number().int().positive().optional(),        // default 200
+      }))
+      .query(async ({ input }: any) => {
+        const limit = input.limit ?? 200;
+        const [aims, vectorStore] = await Promise.all([
+          listAims(input.projectPath),
+          loadVectorStore(input.projectPath),
+        ]);
+        const aimMap = new Map<string, Aim>(aims.map((a: Aim) => [a.id, a]));
+        const catchAll = aimMap.get(input.parentAimId);
+        if (!catchAll) {
+          return { error: `Catch-all parent ${input.parentAimId} not found.` };
+        }
+
+        const vecOf = (id: string): number[] | undefined => {
+          const v = vectorStore[id];
+          return Array.isArray(v) && v.length > 0 ? (v as number[]) : undefined;
+        };
+
+        // Direct children of the catch-all = aims that support it.
+        const childIds: string[] = (catchAll.supportingConnections ?? [])
+          .map((c: any) => c.aimId)
+          .filter((id: string) => aimMap.has(id));
+
+        const isParent = (id: string) => (aimMap.get(id)?.supportingConnections?.length ?? 0) > 0;
+
+        // Candidate sub-parents: explicit, else the catch-all's children that are parents.
+        const candidateIds: string[] = (input.candidateParentIds ?? childIds.filter(isParent))
+          .filter((id: string) => aimMap.has(id));
+
+        // A candidate's "meaning" is best represented by what it already contains: the
+        // centroid of its children's embeddings. Fall back to its own title embedding
+        // when it has no embedded children.
+        const candidates = candidateIds.map((id: string) => {
+          const childVecs = (aimMap.get(id)?.supportingConnections ?? [])
+            .map((c: any) => vecOf(c.aimId))
+            .filter((v: any): v is number[] => !!v);
+          let vector: number[] | undefined;
+          if (childVecs.length > 0) {
+            const dim = childVecs[0].length;
+            vector = new Array(dim).fill(0);
+            for (const v of childVecs) for (let i = 0; i < dim; i++) vector[i] += v[i] / childVecs.length;
+          } else {
+            vector = vecOf(id);
+          }
+          return { id, text: aimMap.get(id)!.text, vector };
+        }).filter((c: any) => c.vector) as Array<{ id: string; text: string; vector: number[] }>;
+
+        const candidateSet = new Set(candidateIds);
+        const leafIds = childIds.filter((id: string) => !candidateSet.has(id));
+
+        const suggestions: any[] = [];
+        let unembeddedLeaves = 0;
+        for (const leafId of leafIds) {
+          const lv = vecOf(leafId);
+          if (!lv) { unembeddedLeaves++; continue; }
+          let best: { id: string; text: string; score: number } | undefined;
+          let runnerUp: { id: string; text: string; score: number } | undefined;
+          for (const cand of candidates) {
+            if (cand.id === leafId || cand.vector.length !== lv.length) continue;
+            const score = cosineSimilarity(lv, cand.vector);
+            if (!best || score > best.score) { runnerUp = best; best = { id: cand.id, text: cand.text, score }; }
+            else if (!runnerUp || score > runnerUp.score) { runnerUp = { id: cand.id, text: cand.text, score }; }
+          }
+          if (best) {
+            suggestions.push({
+              scoreRaw: best.score,
+              leafId,
+              leafText: aimMap.get(leafId)!.text,
+              suggestedParentId: best.id,
+              suggestedParentText: best.text,
+              score: best.score.toFixed(4),
+              margin: runnerUp ? (best.score - runnerUp.score).toFixed(4) : undefined,
+              runnerUpId: runnerUp?.id,
+              runnerUpText: runnerUp?.text,
+            });
+          }
+        }
+
+        suggestions.sort((a, b) => b.scoreRaw - a.scoreRaw);
+        const top = suggestions.slice(0, limit).map(({ scoreRaw: _, ...rest }) => rest);
+
+        return {
+          catchAllParent: { id: catchAll.id, text: catchAll.text },
+          candidateParents: candidates.map((c) => ({ id: c.id, text: c.text })),
+          totalChildren: childIds.length,
+          leafCount: leafIds.length,
+          unembeddedLeaves,
+          suggestionsCount: suggestions.length,
+          suggestions: top,
+          note: candidates.length === 0
+            ? 'No candidate structural sub-parents found. Pass candidateParentIds, or ensure the catch-all has sub-parent children with embeddings (run build_search_index).'
+            : suggestions.length === 0
+              ? 'No leaf children to reparent (or none embedded). Run build_search_index first.'
+              : undefined,
+        };
       })
   });
 };
