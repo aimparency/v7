@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "search_aims_semantic and build_search_index now wired to MCP. Dedicated duplicate-pair report not yet implemented — can now be built on top of these tools.",
-    "date": 1780157739860
+    "state": "done",
+    "comment": "Reconciliation 2026-06-01: the dedicated duplicate-pair report now exists — backend project.findDuplicates (all-pairs cosine over the embedding store, ranked pairs above threshold, default 0.90) exposed as the find_duplicate_aims MCP tool. Matches the spec (ranked candidate pairs with similarity score). Built after the prior 'not yet implemented' comment.",
+    "date": 1780306810023
   },
   "intrinsicValue": 0,
   "cost": 1,

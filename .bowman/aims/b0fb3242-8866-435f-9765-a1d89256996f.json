@@ -2,7 +2,16 @@
   "id": "b0fb3242-8866-435f-9765-a1d89256996f",
   "text": "Reparent suggester (embedding-based parent suggestions)",
   "description": "For each leaf aim under a vague catch-all parent, suggest the closest structural sub-parent by embedding distance (e.g. for 'UI' children: graph view / list view / watchdog UI / project loading). Present as an approve-a-list review rather than auto-applying. This turns the 'hundreds of aims need reparenting' problem (18263fc2) into a fast human review. Directly supports the Rearrange UI aims goal.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1780307301188,
+      "context": "Build the embedding-based reparent suggester to turn 'hundreds of aims need reparenting under vague catch-alls' into a fast approve-a-list review.",
+      "outcome": "Backend suggestReparents + suggest_reparents MCP tool, mirroring the find_duplicate_aims pattern (reused loadVectorStore + cosineSimilarity). Read-only ranked suggestions with margin/runner-up. Verified live on the 'UI' catch-all.",
+      "effectiveness": "Mirroring the existing findDuplicates procedure made it fast and consistent. The key quality lever was representing each candidate parent by the CENTROID of its children rather than its own short title — a quick live test showed scores ~doubling (0.32→0.66) and matches becoming sensible. The throwaway tsx test against the live (hot-reloaded) backend caught the quality issue immediately, before committing to the title-embedding approach.",
+      "lesson": "For 'which bucket does this belong to' by embeddings, represent the bucket by the centroid of its contents, not its label — short category titles are weak embeddings. Always smoke-test a ranking feature against real data; the title-based version type-checked and 'worked' but produced nonsense.",
+      "pattern": "Same reuse-the-existing-procedure + live-throwaway-script verification as find_duplicate_aims and the connection feature."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -12,9 +21,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780143469795
+    "state": "done",
+    "comment": "Implemented as read-only backend project.suggestReparents + suggest_reparents MCP tool (mirrors find_duplicate_aims). For a catch-all parent, ranks each leaf child's closest structural sub-parent by embedding cosine, where each candidate parent is represented by the CENTROID of its existing children (far better than its short title) with title-embedding fallback. Returns ranked suggestions with score, margin, and runner-up — an approve-a-list report; applies via update_aim/merge_aims, never auto-applies. Verified live on the 'UI' catch-all (22dd4138): 7 children → 3 sub-parents (graph view/list view/watchdog enhancements), 4 leaves suggested with sensible matches (0.34–0.66) and low-confidence cases flagged by small margins. backend tsc + mcp tsc clean; mcp built. Optional follow-up: a dedicated frontend approve-list review UI (the MCP report already satisfies the no-auto-apply review mechanic). Needs /mcp reconnect to expose the tool.",
+    "date": 1780307294266
   },
   "intrinsicValue": 0,
   "cost": 1,
