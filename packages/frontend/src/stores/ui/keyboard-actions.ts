@@ -120,6 +120,15 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
   }
 
   switch (event.key) {
+    case 'c': {
+      // Mark the focused phase as the current/active phase.
+      event.preventDefault()
+      const entry = uiStore.getSelectedPhaseEntry(col)
+      if (entry && entry.type === 'phase') {
+        await uiStore.markPhaseAsCurrent(entry.phase.id)
+      }
+      break
+    }
     case 'J':
       event.preventDefault()
       await reorderSelectedPhase(1)

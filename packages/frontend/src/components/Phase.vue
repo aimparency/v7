@@ -44,13 +44,16 @@ onMounted(() => {
 const isPendingDelete = computed(() => {
   return uiStore.pendingDeletePhaseId === props.phase.id
 })
+
+// On the current phase path (marked via `c`)
+const isCurrent = computed(() => uiStore.currentPhaseIdSet.has(props.phase.id))
 </script>
 
 <template>
   <div
     ref="phaseContainerRef"
     class="phase-container"
-    :class="{ 'active': isActive, 'selected': isSelected, 'pending-delete': isPendingDelete }"
+    :class="{ 'active': isActive, 'selected': isSelected, 'current': isCurrent, 'pending-delete': isPendingDelete }"
     @click="$emit('phase-clicked')"
   >
     <div class="phase-header">
@@ -93,6 +96,11 @@ const isPendingDelete = computed(() => {
   &.active {
     outline-color: #007acc;
   }
+}
+
+/* Current phase path (marked via `c`): default phase bg + 0.2 * open-state color */
+.phase-container.current {
+  background: linear-gradient(rgba(0, 85, 142, 0.2), rgba(0, 85, 142, 0.2)), rgba(255, 255, 255, 0.1);
 }
 
 .phase-container.pending-delete {

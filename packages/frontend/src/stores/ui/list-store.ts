@@ -80,9 +80,14 @@ export const useListStore = defineStore('ui', {
     maxColumn: 0,
     activeColumn: 0,
 
-    // Phase selection by column
+    // Phase selection by column (transient browsing focus — does NOT define the current phase)
     selectedPhaseByColumn: {} as Record<number, number>, // columnIndex -> phaseIndex
     selectedPhaseIdByColumn: {} as Record<number, string>, // columnIndex -> phaseId
+
+    // The explicit "current" phase path (root → marked phase → first child each level down).
+    // Set only via `c` (markPhaseAsCurrent); persisted to meta.phaseCursors and read by the
+    // autonomous loop as the active phase. Independent of browsing focus above.
+    currentPhaseIdByLevel: {} as Record<string, string>, // level -> phaseId
 
     // Root aims selection (for column -1)
     floatingAimIndex: 0,
@@ -103,7 +108,6 @@ export const useListStore = defineStore('ui', {
     scrollTopByColumn: {} as Record<number, number>,
 
     uiStatePersistTimeout: null as ReturnType<typeof setTimeout> | null,
-    cursorPersistTimeout: null as ReturnType<typeof setTimeout> | null,
     isRestoringUIState: false,
     restoreGeneration: 0,
   }),
@@ -137,6 +141,9 @@ export const useListStore = defineStore('ui', {
     getSelectedPhaseId: (state) => (columnIndex: number): string | undefined => {
       return state.selectedPhaseIdByColumn[columnIndex]
     },
+
+    // Set of phase ids on the current path, for highlighting.
+    currentPhaseIdSet: (state): Set<string> => new Set(Object.values(state.currentPhaseIdByLevel)),
 
     getPhaseCount: (state) => (columnIndex: number): number => {
       const dataStore = useDataStore()
@@ -245,27 +252,52 @@ export const useListStore = defineStore('ui', {
       }
     },
 
-    scheduleCursorPersistToMeta() {
-      if (this.isRestoringUIState) return
+    // Mark a phase as the current/active phase: build the path root → phaseId (recursive up
+    // via parents) and phaseId → leaf (recursive down picking the first child each level).
+    // Persists to meta.phaseCursors (what the autonomous loop reads as the active phase).
+    async markPhaseAsCurrent(phaseId: string) {
+      const dataStore = useDataStore()
       const projectStore = useProjectStore()
-      if (!projectStore.projectPath) return
+      if (!phaseId) return
 
-      if (this.cursorPersistTimeout) {
-        clearTimeout(this.cursorPersistTimeout)
+      // Recursive up: collect ancestors to the root.
+      const upChain: string[] = []
+      const seen = new Set<string>()
+      let cur: string | null | undefined = phaseId
+      while (cur && !seen.has(cur)) {
+        seen.add(cur)
+        upChain.push(cur)
+        cur = dataStore.phases[cur]?.parent ?? null
+      }
+      upChain.reverse() // root … phaseId
+      const markedLevel = upChain.length - 1
+
+      // Recursive down: follow the first child phase at each level until a leaf.
+      const downChain: string[] = []
+      let node = phaseId
+      while (node && !seen.has(`down:${node}`)) {
+        seen.add(`down:${node}`)
+        if (projectStore.projectPath) {
+          await dataStore.loadPhases(projectStore.projectPath, node)
+        }
+        const firstChild = dataStore.phases[node]?.childPhaseIds?.[0]
+        if (!firstChild || seen.has(firstChild)) break
+        seen.add(firstChild)
+        downChain.push(firstChild)
+        node = firstChild
       }
 
-      this.cursorPersistTimeout = setTimeout(() => {
-        this.cursorPersistTimeout = null
-        const cursors: Record<string, string> = {}
-        for (const [col, phaseId] of Object.entries(this.selectedPhaseIdByColumn)) {
-          if (phaseId) cursors[col] = phaseId
-        }
+      const cursors: Record<string, string> = {}
+      ;[...upChain, ...downChain].forEach((id, level) => { cursors[String(level)] = id })
+      this.currentPhaseIdByLevel = cursors
+
+      if (projectStore.projectPath) {
         void trpc.phase.setCursor.mutate({
           projectPath: projectStore.projectPath,
           cursors,
-          activeLevel: Math.max(0, this.activeColumn)
+          activeLevel: Math.max(0, markedLevel)
         }).catch(() => {})
-      }, 500)
+      }
     },
 
     async restoreCursorFromMeta(): Promise<boolean> {
@@ -322,6 +354,9 @@ export const useListStore = defineStore('ui', {
       const graphStore = useGraphUIStore()
 
       if (!projectStore.projectPath) return false
+
+      // The current phase lives in meta (set only via `c`), independent of browsing focus.
+      this.currentPhaseIdByLevel = { ...((dataStore.meta?.phaseCursors as Record<string, string>) ?? {}) }
 
       const raw = localStorage.getItem(this.getPersistedUIStateKey(projectStore.projectPath))
       if (!raw) {
@@ -1100,7 +1135,7 @@ export const useListStore = defineStore('ui', {
         parentPhaseId: entry.parentPhaseId ?? null
       })
 
-      this.scheduleCursorPersistToMeta()
+      // Browsing focus no longer defines the current phase — only `c` (markPhaseAsCurrent) does.
       return entry
     },
 

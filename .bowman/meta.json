@@ -32,10 +32,11 @@
     }
   ],
   "phaseCursors": {
-    "0": 0,
-    "1": 7
+    "0": "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5",
+    "1": "6a3432ea-a0c5-4df4-b533-68298be7b7fc",
+    "2": "73459692-c881-4386-80cd-a412f916af76"
   },
-  "phaseActiveLevel": 0,
+  "phaseActiveLevel": 1,
   "rootPhaseIds": [
     "d4bf28d6-b751-4315-a151-dd2ce5d8c420",
     "91e510e1-208a-4c5c-b93b-91c6525020bf",
