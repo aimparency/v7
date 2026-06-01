@@ -2,7 +2,16 @@
   "id": "82bfb523-b32c-4757-9526-290a93a4e7c0",
   "text": "Fix backend test harness: vitest-based suites fail under node --test runner",
   "description": "packages/backend `npm test` (NODE_ENV=test node scripts/run-tests.mjs) runs the suites through node --test/tsx, but src/*.test.ts import from 'vitest' (db, server, forces, embeddings, value-calculation). Result: 5/6 files fail with \"Vitest failed to find the runner\" — independent of any source change (reproduces at HEAD). Either run these via `vitest` (add vitest config + script) or migrate the imports to node:test (as shared/ already uses). Until fixed, verify backend logic via `tsx --test` per-suite + `tsc --noEmit`. Discovered 2026-05-31 while landing the connection contribution-% feature.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1780306710617,
+      "context": "Backend `npm test` failed (5/6 files) because run-tests.mjs invoked tsx --test (node:test) on files that import from vitest.",
+      "outcome": "Pointed the script at `vitest run` (vitest was already hoisted at root and passing), declared vitest as a backend devDep, and deleted the dead runner. npm test -w backend now passes 31/31.",
+      "effectiveness": "Minimal, correct fix — the tests were never broken, only the runner was wrong. Declaring the dep removes reliance on accidental hoisting.",
+      "lesson": "When a wrapper script looks broken, check whether the tool is merely invoked the wrong way before assuming the tests themselves are at fault. Also: this aim sat at priority -1.0 purely from value-graph disconnection, not low worth — a reminder that priority misranks infra/tooling lacking an intrinsic-value ancestor.",
+      "pattern": "Same diagnosis-before-rewrite approach as the connection-feature verification; small infra fixes often just need the right invocation."
+    }
+  ],
   "archived": false,
   "tags": [
     "testing",
@@ -16,9 +25,9 @@
     "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
   ],
   "status": {
-    "state": "open",
-    "comment": "Root cause narrowed 2026-05-31: vitest IS installed (hoisted to root node_modules/.bin). The tests themselves PASS via `npx vitest run` (backend 6 files/31 tests, frontend 26 files/132 tests). The only breakage is the backend `npm test` wrapper (scripts/run-tests.mjs) invoking node --test instead of vitest. Fix: point backend test script at `vitest run` (frontend already does). Low-effort.",
-    "date": 1780234196154
+    "state": "done",
+    "comment": "Fixed: backend `test` script now runs `NODE_ENV=test vitest run` (was tsx --test via run-tests.mjs); declared vitest as a backend devDependency (^4.1.8, previously only hoisted at root); removed the orphaned scripts/run-tests.mjs. Verified: npm test -w backend → 6 files / 31 tests pass. Added test:watch too.",
+    "date": 1780306704548
   },
   "intrinsicValue": 0,
   "cost": 1,

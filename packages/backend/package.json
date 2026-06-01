@@ -16,7 +16,8 @@
     "dev:delay": "DEV_DELAY=true tsx watch --tsconfig tsconfig.dev.json src/server.ts",
     "build": "rm -rf dist && tsc",
     "start": "node dist/server.js",
-    "test": "NODE_ENV=test node scripts/run-tests.mjs"
+    "test": "NODE_ENV=test vitest run",
+    "test:watch": "NODE_ENV=test vitest"
   },
   "keywords": [
     "aimparency",
@@ -54,6 +55,7 @@
     "@types/uuid": "^11.0.0",
     "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8"
   }
 }
