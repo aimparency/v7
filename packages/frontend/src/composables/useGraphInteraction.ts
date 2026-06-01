@@ -356,42 +356,65 @@ export function useGraphInteraction(
         scale: number, 
     };
 
-    const onTouchStart = (e: TouchEvent) => {
-        if(e.touches.length > 0) {
-            if(e.touches.length > 1) {
-                if(touchState.currentCount < 2) {
-                    mapStore.connectFrom = undefined
-                    touchState.currentCount = 2
-                    const t1 = e.touches[0]!
-                    const t2 = e.touches[1]!
-                    let firstPage = getLocalPos(t1.clientX, t1.clientY)
-                    let secondPage = getLocalPos(t2.clientX, t2.clientY)
-                    let mPhysical = vec2.clone(firstPage) 
-                    vec2.add(mPhysical, mPhysical, secondPage) 
-                    vec2.scale(mPhysical, mPhysical, 0.5) 
-                    let mLogical = mapStore.physicalToLogicalCoord(mPhysical) 
-                    pinchBeginning = {
-                        first: t1.identifier, 
-                        second: t2.identifier, 
-                        mLogical, 
-                        distancePage: vec2.dist(firstPage, secondPage), 
-                        offset: vec2.clone(mapStore.offset), 
-                        scale: mapStore.scale
-                    }
-                    isZooming.value = true
-                } 
-            } else {
-                if(touchState.currentCount == 0) {
-                    touchState.currentCount = 1
-                    const t = e.touches[0]!
-                    touchState.dragFingerId = t.identifier
-                    let mouse = getLocalPos(t.clientX, t.clientY)
-                    beginWhatever(mouse)
-                } else if (touchState.currentCount > 1) {
-                    pinchBeginning = undefined
-                }
-            }
+    // Begin a 2-finger pinch/zoom from the current two touches. Also used when a
+    // second finger is added mid-pan (pan -> zoom).
+    const beginPinch = (t1: Touch, t2: Touch) => {
+        mapStore.connectFrom = undefined
+        const firstPage = getLocalPos(t1.clientX, t1.clientY)
+        const secondPage = getLocalPos(t2.clientX, t2.clientY)
+        const mPhysical = vec2.clone(firstPage)
+        vec2.add(mPhysical, mPhysical, secondPage)
+        vec2.scale(mPhysical, mPhysical, 0.5)
+        const mLogical = mapStore.physicalToLogicalCoord(mPhysical)
+        pinchBeginning = {
+            first: t1.identifier,
+            second: t2.identifier,
+            mLogical,
+            distancePage: vec2.dist(firstPage, secondPage),
+            offset: vec2.clone(mapStore.offset),
+            scale: mapStore.scale
         }
+        isZooming.value = true
+    }
+
+    // Begin a 1-finger pan from the given touch. Also used when one finger is
+    // lifted from a pinch, so the remaining finger continues as a pan (zoom -> pan).
+    const beginPan = (t: Touch) => {
+        touchState.dragFingerId = t.identifier
+        beginWhatever(getLocalPos(t.clientX, t.clientY))
+    }
+
+    // Tear down whichever gesture matches the current finger count.
+    const endActiveGesture = () => {
+        if (touchState.currentCount > 1) {
+            pinchBeginning = undefined
+            isZooming.value = false
+        } else if (touchState.currentCount === 1) {
+            endWhatever()
+        }
+    }
+
+    // Re-derive the active gesture from the live touch list. Called on every finger
+    // add/remove so pinch<->pan transitions re-baseline instead of jumping: lifting
+    // one finger of a pinch continues as a pan; adding a finger to a pan promotes it
+    // to a pinch.
+    const resyncTouchGesture = (e: TouchEvent) => {
+        const n = e.touches.length
+        if (n === touchState.currentCount) return
+        endActiveGesture()
+        if (n >= 2) {
+            beginPinch(e.touches[0]!, e.touches[1]!)
+            touchState.currentCount = 2
+        } else if (n === 1) {
+            beginPan(e.touches[0]!)
+            touchState.currentCount = 1
+        } else {
+            touchState.currentCount = 0
+        }
+    }
+
+    const onTouchStart = (e: TouchEvent) => {
+        resyncTouchGesture(e)
     }
 
     const onTouchMove = (e: TouchEvent) => {
@@ -422,12 +445,8 @@ export function useGraphInteraction(
     }
 
     const onTouchEnd = (e: TouchEvent) => {
-        if(touchState.currentCount > 1) {
-            pinchBeginning = undefined
-            isZooming.value = false
-        }
-        if(touchState.currentCount > 0) endWhatever()
-        touchState.currentCount = 0
+        // e.touches is the remaining touches: 1 left -> hand off to pan, 0 -> end.
+        resyncTouchGesture(e)
     }
 
     // Node Events
