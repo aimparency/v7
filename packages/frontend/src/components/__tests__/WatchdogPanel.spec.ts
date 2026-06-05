@@ -6,8 +6,8 @@ import WatchdogPanel from '../WatchdogPanel.vue'
 const watchdogStore = reactive({
   isConnected: true,
   connectionState: 'connected' as 'idle' | 'spawning' | 'connecting' | 'connected' | 'error',
-  connectedAgentType: 'claude' as 'claude' | 'gemini' | 'codex' | null,
-  selectedAgentType: 'claude' as 'claude' | 'gemini' | 'codex',
+  connectedAgentType: 'claude' as 'claude' | 'gemini' | 'codex' | 'agy' | null,
+  selectedAgentType: 'claude' as 'claude' | 'gemini' | 'codex' | 'agy',
   sessions: [
     { projectPath: '/test/project', pid: 1, port: 4101, agentType: 'claude' as const, lastKeepalive: 1 }
   ],
@@ -38,7 +38,7 @@ const watchdogStore = reactive({
   toggle: vi.fn(),
   sendWorkerInput: vi.fn(),
   sendWatchdogInput: vi.fn(),
-  setAgentType: vi.fn((type: 'claude' | 'gemini' | 'codex') => {
+  setAgentType: vi.fn((type: 'claude' | 'gemini' | 'codex' | 'agy') => {
     watchdogStore.selectedAgentType = type
   }),
   get currentProjectSession() {
@@ -130,7 +130,7 @@ describe('WatchdogPanel', () => {
 
   it('commits the new selection before disconnecting the current session', async () => {
     const events: string[] = []
-    watchdogStore.setAgentType.mockImplementation((type: 'claude' | 'gemini' | 'codex') => {
+    watchdogStore.setAgentType.mockImplementation((type: 'claude' | 'gemini' | 'codex' | 'agy') => {
       events.push(`set:${type}`)
       watchdogStore.selectedAgentType = type
     })

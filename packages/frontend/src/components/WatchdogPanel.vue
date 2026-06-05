@@ -28,10 +28,12 @@ const headerBgColor = computed(() => {
   if (store.isConnected) {
     if (store.connectedAgentType === 'claude') return '#92400e'
     if (store.connectedAgentType === 'gemini') return '#0e7490'
+    if (store.connectedAgentType === 'agy') return '#6d28d9'
     return '#0f766e'
   }
   if (store.selectedAgentType === 'claude') return '#78350f'
   if (store.selectedAgentType === 'gemini') return '#164e63'
+  if (store.selectedAgentType === 'agy') return '#5b21b6'
   return '#115e59'
 })
 
@@ -232,6 +234,7 @@ defineExpose({
           <option value="claude">Claude {{ runningAgents.has('claude') ? '(Running)' : '' }}</option>
           <option value="gemini">Gemini {{ runningAgents.has('gemini') ? '(Running)' : '' }}</option>
           <option value="codex">Codex {{ runningAgents.has('codex') ? '(Running)' : '' }}</option>
+          <option value="agy">Agy {{ runningAgents.has('agy') ? '(Running)' : '' }}</option>
         </select>
 
         <span class="session-status">

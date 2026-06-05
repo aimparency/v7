@@ -49,7 +49,8 @@ const autonomyRuntimePath = computed(() => {
 const runtimeAgents = computed(() => ([
   { key: 'claude' as AgentType, label: 'Claude' },
   { key: 'gemini' as AgentType, label: 'Gemini' },
-  { key: 'codex' as AgentType, label: 'Codex' }
+  { key: 'codex' as AgentType, label: 'Codex' },
+  { key: 'agy' as AgentType, label: 'Agy' }
 ]))
 
 const formatRuntimeTimestamp = (timestamp?: number) => {

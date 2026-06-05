@@ -1,0 +1,22 @@
+{
+  "id": "f592b156-4906-462d-b24e-ce82f8a9c7f6",
+  "text": "esc in a modal should close the modal. childs that handle esc should stop() event bubbling. write UI tests for that to prevent regression.",
+  "description": "aim add/edit modal, phase add/edit modals.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "archived",
+    "comment": "Merged into 2a9e3aba-e9a5-4238-bd34-ef2d3384b41e",
+    "date": 1780314582392
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

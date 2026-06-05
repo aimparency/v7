@@ -6,7 +6,7 @@ import { trpcWatchdog } from '../trpc-watchdog'
 import { buildHttpUrl } from '../utils/runtime-config'
 import { useProjectStore } from './project-store'
 
-export type AgentType = 'claude' | 'gemini' | 'codex'
+export type AgentType = 'claude' | 'gemini' | 'codex' | 'agy'
 
 interface WatchdogRuntimeAgentState {
   enabled: boolean
@@ -62,7 +62,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const agentBuffers = ref<Record<AgentType, { worker: string; watchdog: string }>>({
     claude: { worker: '', watchdog: '' },
     gemini: { worker: '', watchdog: '' },
-    codex: { worker: '', watchdog: '' }
+    codex: { worker: '', watchdog: '' },
+    agy: { worker: '', watchdog: '' }
   })
 
   // Computed accessors for backward compatibility

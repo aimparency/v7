@@ -9,7 +9,7 @@ import type { Aim, Phase, ProjectMeta } from 'shared';
 import { INITIAL_STATES, cosineSimilarity } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
-const agentTypeSchema = z.enum(['claude', 'gemini', 'codex']);
+const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy']);
 const watchdogRuntimeAgentStateSchema = z.object({
   enabled: z.boolean().default(false),
   emergencyStopped: z.boolean().default(false),

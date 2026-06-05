@@ -11,7 +11,7 @@ const emergencyStopped = ref(false);
 const stopReason = ref('');
 const supervisorState = ref<{ state: string; color: string }>({ state: 'EXPLORING', color: '#a8dadc' });
 
-type AgentType = 'claude' | 'gemini' | 'codex';
+type AgentType = 'claude' | 'gemini' | 'codex' | 'agy';
 
 interface Session {
     projectPath: string;
@@ -145,6 +145,7 @@ onMounted(() => {
                 <option value="claude">Claude</option>
                 <option value="gemini">Gemini</option>
                 <option value="codex">Codex</option>
+                <option value="agy">Agy</option>
             </select>
             <button @click="createSession" :disabled="loading || !newProjectPath">Start New</button>
             <button @click="refreshSessions" :disabled="loading">Refresh</button>
@@ -219,6 +220,7 @@ html, body, #app { margin: 0; height: 100%; width: 100%; background: #000; color
 .agent-badge.claude { background: #d97706; color: white; }
 .agent-badge.gemini { background: #4285f4; color: white; }
 .agent-badge.codex { background: #0ea5a3; color: white; }
+.agent-badge.agy { background: #6d28d9; color: white; }
 .agent-badge.small { font-size: 0.65rem; padding: 1px 5px; }
 
 .session-list { display: flex; flex-direction: column; gap: 10px; }

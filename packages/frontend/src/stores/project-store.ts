@@ -12,7 +12,7 @@ function getInitialProjectPath(): string {
   const urlParams = new URLSearchParams(window.location.search)
   const pathFromUrl = urlParams.get('project') || urlParams.get('path')
   if (pathFromUrl) return pathFromUrl
-  return localStorage.getItem('aimparency-project-path') || ''
+  return ''
 }
 
 export const useProjectStore = defineStore('project', {
