@@ -50,12 +50,15 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
+// A stray rejection (e.g. a transient pty/socket error in the watchdog loop,
+// which only does real work once enabled) must NOT kill the session: that tears
+// down the user's live agent and surfaces as "transport close / Session lost" in
+// the UI. Log loudly and keep the supervisor running instead.
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('[WARN] Unhandled Rejection (kept alive) at:', promise, 'reason:', reason);
   if (reason instanceof Error && reason.stack) {
       console.error(reason.stack);
   }
-  process.exit(1);
 });
 
 const args = process.argv.slice(2);
@@ -335,7 +338,9 @@ io.on('connection', (socket) => {
     watchdogService.setEnabled(enabled);
     io.emit('watchdog-state', enabled);
     io.emit('emergency-state', watchdogService.emergencyStopped); // Sync state
-    io.emit('watchdog-stop-reason', watchdogService.lastStopReason);
+    // Only report a stop reason when actually stopping; emitting it on enable
+    // makes the UI log a spurious "Watchdog stopped" right after "ENABLED".
+    if (!enabled) io.emit('watchdog-stop-reason', watchdogService.lastStopReason);
     io.emit('supervisor-state', watchdogService.getSupervisorStateInfo());
   });
 

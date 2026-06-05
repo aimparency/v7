@@ -1005,6 +1005,106 @@ export const createProjectRouter = (
               ? 'No leaf children to reparent (or none embedded). Run build_search_index first.'
               : undefined,
         };
+      }),
+
+    // Read-only graph-hygiene dashboard: surfaces where the aim graph needs maintenance —
+    // floating aims, mega-parents (catch-all smell), stale cancelled/failed/human-dependent
+    // aims, collapse candidates (parents whose active children are all done), and
+    // duplicate clusters. Changes nothing; pairs with merge_aims / suggest_reparents / archiving.
+    graphHygiene: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        megaParentThreshold: z.number().int().positive().optional(), // default 25
+        duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.93
+        limit: z.number().int().positive().optional(),               // per-section cap, default 30
+      }))
+      .query(async ({ input }: any) => {
+        const megaParentThreshold = input.megaParentThreshold ?? 25;
+        const duplicateThreshold = input.duplicateThreshold ?? 0.93;
+        const limit = input.limit ?? 30;
+
+        const [aims, vectorStore] = await Promise.all([
+          listAims(input.projectPath),
+          loadVectorStore(input.projectPath),
+        ]);
+        const aimMap = new Map<string, Aim>(aims.map((a: Aim) => [a.id, a]));
+        const active = aims.filter((a: Aim) => !a.archived);
+
+        const childIdsOf = (a: Aim): string[] =>
+          (a.supportingConnections ?? []).map((c: any) => c.aimId).filter((id: string) => aimMap.has(id));
+
+        // 1. Floating: no parents and not committed to any phase.
+        const floating = active
+          .filter((a: Aim) => (a.supportedAims?.length ?? 0) === 0 && (a.committedIn?.length ?? 0) === 0)
+          .map((a: Aim) => ({ id: a.id, text: a.text, status: a.status.state }));
+
+        // 2. Mega-parents: too many direct children (catch-all smell).
+        const megaParents = active
+          .map((a: Aim) => ({ a, n: childIdsOf(a).length }))
+          .filter((x) => x.n >= megaParentThreshold)
+          .sort((x, y) => y.n - x.n)
+          .map((x) => ({ id: x.a.id, text: x.a.text, directChildren: x.n }));
+
+        // 3. Stale-status: cancelled/failed/human-dependent but not archived (clutter).
+        const staleStates = new Set(['cancelled', 'failed', 'human-dependent']);
+        const staleStatus = active
+          .filter((a: Aim) => staleStates.has(a.status.state))
+          .map((a: Aim) => ({ id: a.id, text: a.text, status: a.status.state }));
+
+        // 4. Collapse candidates: parents whose active children are ALL done.
+        const collapseCandidates = active
+          .map((a: Aim) => {
+            const kids = childIdsOf(a).map((id) => aimMap.get(id)!).filter((k) => !k.archived);
+            const done = kids.filter((k) => k.status.state === 'done').length;
+            return { a, total: kids.length, done };
+          })
+          .filter((x) => x.total > 0 && x.done === x.total)
+          .map((x) => ({ id: x.a.id, text: x.a.text, doneChildren: x.done, totalChildren: x.total }));
+
+        // 5. Duplicate clusters: all-pairs cosine above threshold, grouped via union-find.
+        const indexedIds = active
+          .map((a: Aim) => a.id)
+          .filter((id: string) => Array.isArray(vectorStore[id]) && (vectorStore[id] as number[]).length > 0);
+        const uf = new Map<string, string>(indexedIds.map((id: string) => [id, id]));
+        const find = (x: string): string => {
+          let r = x;
+          while (uf.get(r) !== r) r = uf.get(r)!;
+          while (uf.get(x) !== r) { const nx = uf.get(x)!; uf.set(x, r); x = nx; }
+          return r;
+        };
+        for (let i = 0; i < indexedIds.length; i++) {
+          const vi = vectorStore[indexedIds[i]!] as number[];
+          for (let j = i + 1; j < indexedIds.length; j++) {
+            const vj = vectorStore[indexedIds[j]!] as number[];
+            if (vi.length !== vj.length) continue;
+            if (cosineSimilarity(vi, vj) >= duplicateThreshold) {
+              const ri = find(indexedIds[i]!), rj = find(indexedIds[j]!);
+              if (ri !== rj) uf.set(ri, rj);
+            }
+          }
+        }
+        const clusterMap = new Map<string, string[]>();
+        for (const id of indexedIds) {
+          const r = find(id);
+          (clusterMap.get(r) ?? clusterMap.set(r, []).get(r)!).push(id);
+        }
+        const duplicateClusters = [...clusterMap.values()]
+          .filter((c) => c.length > 1)
+          .sort((a, b) => b.length - a.length)
+          .map((c) => c.map((id) => ({ id, text: aimMap.get(id)!.text })));
+
+        const section = <T>(items: T[]) => ({ count: items.length, items: items.slice(0, limit) });
+
+        return {
+          totalAims: aims.length,
+          activeAims: active.length,
+          thresholds: { megaParentThreshold, duplicateThreshold },
+          floating: section(floating),
+          megaParents: section(megaParents),
+          staleStatus: section(staleStatus),
+          collapseCandidates: section(collapseCandidates),
+          duplicateClusters: section(duplicateClusters),
+        };
       })
   });
 };

@@ -2,7 +2,16 @@
   "id": "d6734796-cb97-4afa-863b-fc4d0a599f8d",
   "text": "Graph-hygiene report (extend check_consistency)",
   "description": "Extend the existing check_consistency tooling with a hygiene report surfacing: floating aims, mega-parents (more than N direct leaf children = catch-all smell), orphaned cancelled/human-dependent aims, duplicate clusters (from the duplicate finder), and done-leaf ratio per subtree (candidates for archiving/collapsing). Gives a single dashboard of where the graph needs maintenance.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1780308397246,
+      "context": "Build a read-only graph-hygiene dashboard surfacing where the 534-aim graph needs maintenance, composing the duplicate/reparent tooling.",
+      "outcome": "backend project.graphHygiene + graph_hygiene MCP tool with five sections (floating, mega-parents, stale-status, collapse candidates, duplicate clusters via union-find). Verified live; results matched known true positives (the 'UI improvements'/'ui improvements' duplicate, the 'list view' 32-child mega-parent).",
+      "effectiveness": "Mirroring checkConsistency/findDuplicates kept it fast and idiomatic. Running it against the real graph immediately surfaced concrete next maintenance work (32-child list-view parent → a reparent target; 84 all-done parents → archive candidates), proving the report is actionable rather than decorative.",
+      "lesson": "A maintenance/report feature is only worth shipping if its first real run points at concrete actions; validate against a known issue (here, the byte-identical duplicate) to confirm the heuristics fire. Union-find is the clean way to turn pairwise-similarity into clusters.",
+      "pattern": "Same read-only-report-procedure + live-throwaway-verification approach as find_duplicate_aims and suggest_reparents; the graph-maintenance tooling now composes (hygiene report points at merge_aims / suggest_reparents / archiving)."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -11,9 +20,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "check_consistency and fix_consistency now wired to MCP (were backend-only). The hygiene report extension (mega-parents, floating, done-leaf ratio, duplicate clusters) is not yet implemented.",
-    "date": 1780157737439
+    "state": "done",
+    "comment": "Implemented as read-only backend project.graphHygiene + graph_hygiene MCP tool (mirrors checkConsistency/findDuplicates). Surfaces all 5 requested sections: floating aims (no parent + uncommitted), mega-parents (≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent aims, collapse candidates (parents whose active children are ALL done = the actionable end of done-leaf ratio), and duplicate clusters (all-pairs cosine ≥ threshold, grouped via union-find). Per-section caps. Verified live on the 534-aim graph: flagged 'list view' (32 children) as a mega-parent, 3 duplicate clusters incl. the known 'UI improvements'/'ui improvements', 84 collapse candidates, 56 stale, 11 floating. backend tsc + mcp tsc clean; mcp built (graph_hygiene in build/tools.js). Needs /mcp reconnect to expose. Note: done-leaf 'ratio' is reported as the all-done subset (collapse candidates) rather than every partial ratio.",
+    "date": 1780308390143
   },
   "intrinsicValue": 0,
   "cost": 1,

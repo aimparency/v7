@@ -601,8 +601,10 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     })
 
     socket.value.on('watchdog-stop-reason', (reason: string) => {
-      logStatus(`Watchdog stopped. Reason: ${reason}`)
       stopReason.value = reason
+      // An empty reason is just a state sync, not an actual stop — don't log it
+      // as "Watchdog stopped" (that was misleading right after enabling).
+      if (reason) logStatus(`Watchdog stopped. Reason: ${reason}`)
     })
 
     socket.value.on('supervisor-state', (state: SupervisorStateInfo) => {

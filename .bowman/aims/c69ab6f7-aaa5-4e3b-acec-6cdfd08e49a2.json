@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780143479194
+    "state": "human-dependent",
+    "comment": "Blocker confirmed by running suggest_reparents on 'list view' (32 children, 25 leaves): suggestions were low-confidence (scores 0.25-0.59, tiny margins, e.g. a list-flicker bug matched to 'watchdog panel improvements'). Cause: candidate sub-parents are auto-derived (children that happen to have children) = a messy mix of real areas and leaf tasks, not a defined taxonomy. Needs the human to define the real structural parents (the 18263fc2 set: graph view / list view+vim-keybindings / project loading / watchdog UI), then re-run suggest_reparents with explicit candidateParentIds. Reparent mechanics (b0fb3242) are done; this taxonomy decision is the remaining blocker for actually reparenting.",
+    "date": 1780314635063
   },
   "intrinsicValue": 0,
   "cost": 1,

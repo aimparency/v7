@@ -369,6 +369,20 @@ export function registerTools(server: Server, clientOverride?: any) {
           },
         },
         {
+          name: "graph_hygiene",
+          description: "Read-only graph-hygiene dashboard: floating aims, mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent aims, collapse candidates (parents whose active children are all done), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Act on results via merge_aims / suggest_reparents / update_aim.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              megaParentThreshold: { type: "number", description: "Min direct children to flag a mega-parent (default 25)" },
+              duplicateThreshold: { type: "number", description: "Cosine threshold for duplicate clusters 0–1 (default 0.93)" },
+              limit: { type: "number", description: "Max items per section (default 30)" },
+            },
+            required: ["projectPath"],
+          },
+        },
+        {
           name: "merge_aims",
           description: "Merge source aim B into target aim A: rewires B's parents, children, and phase commitments onto A (deduplicating), copies B's reflections to A, then archives B. Use after finding duplicates via search_aims_semantic. Guards against self-merge and direct parent-child cycles.",
           inputSchema: {
@@ -1014,6 +1028,18 @@ export function registerTools(server: Server, clientOverride?: any) {
             projectPath: args.projectPath as string,
             parentAimId: args.parentAimId as string,
             candidateParentIds: args.candidateParentIds as string[] | undefined,
+            limit: args.limit as number | undefined,
+          });
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
+        case "graph_hygiene": {
+          const result = await trpcClient.project.graphHygiene.query({
+            projectPath: args.projectPath as string,
+            megaParentThreshold: args.megaParentThreshold as number | undefined,
+            duplicateThreshold: args.duplicateThreshold as number | undefined,
             limit: args.limit as number | undefined,
           });
           return {
