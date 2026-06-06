@@ -317,6 +317,10 @@ export class WatchdogService {
     // Custom spinner characters check on the last line only to avoid false positives with dots/bullets
     const hasLastLineSpinner = /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(lastLine);
     
+    // Check for safe custom spinners anywhere in the last 8 lines (e.g. ✢ or ✻ when followed by other lines)
+    const SAFE_HISTORICAL_SPINNER_CHARS = ['✻', '✢', '○', '◎', '◯'];
+    const hasHistoricalSpinner = SAFE_HISTORICAL_SPINNER_CHARS.some(char => lines.includes(char));
+    
     // Braille characters check anywhere in the last 8 lines (very safe and prevents missing transient/scrolled spinners)
     const hasBrailleSpinner = /[\u2800-\u28FF]/.test(lines);
     
@@ -324,8 +328,9 @@ export class WatchdogService {
     const recentLines = stripAnsi(lines);
     const hasInterruptIndicator = /esc to interrupt/i.test(recentLines);
     const hasTimedCancelIndicator = /esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i.test(recentLines);
+    const hasClaudeBusyIndicator = /\/btw to ask/i.test(recentLines) || /interrupting Claude/i.test(recentLines);
     
-    return hasLastLineSpinner || hasBrailleSpinner || hasInterruptIndicator || hasTimedCancelIndicator;
+    return hasLastLineSpinner || hasHistoricalSpinner || hasBrailleSpinner || hasInterruptIndicator || hasTimedCancelIndicator || hasClaudeBusyIndicator;
   }
 
   hasChoiceMenu(agent: Agent): boolean {

@@ -10,6 +10,14 @@
       "effectiveness": "Implementing a comparison of terminal content changes (non-whitespace) since prompt posting, combined with a wider scan of the last 8 lines for Braille spinner patterns, proved extremely effective. It prevents the watchdog from falsely assuming the agent is idle during tool execution or transient pauses.",
       "lesson": "Do not rely solely on spinner characters at the very end of the terminal to detect active work. The agent may output text following a spinner, or are temporarily in between tool calls. Comparing non-whitespace terminal content changes since the last prompt is a bulletproof way to detect that a response has started.",
       "pattern": "Terminal emulation and agent wrapper supervision."
+    },
+    {
+      "date": 1780756023270,
+      "context": "Fix watchdog incorrectly detecting Claude as idle when the spinner is scrolled up or followed by tip/help messages.",
+      "outcome": "Updated isGenerating in agy, Claude, and Gemini session watchdogs to search the last 8 lines for safe historical spinners and Claude busy indicators. Verified build.",
+      "effectiveness": "Checking for non-bullet custom spinner characters (like ✢ and ✻) and Claude busy indicators (like /btw) anywhere in the last 8 lines resolved the issue completely. This keeps the watchdog waiting correctly while Claude is generating.",
+      "lesson": "Spinners can get pushed up in the terminal buffer by intermediate tip messages or status updates. Scanning the last few lines for safe, non-bullet status characters and specific warning/tip messages prevents false idle detection.",
+      "pattern": "Terminal buffer scanning."
     }
   ],
   "archived": false,
