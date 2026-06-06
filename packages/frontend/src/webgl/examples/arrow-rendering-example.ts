@@ -138,7 +138,8 @@ export function generateTestGraphData(nodeCount: number, edgeDensity: number = 0
         0.3 + Math.random() * 0.4
       ] as [number, number, number],
       selected: false,
-      moving: false
+      moving: false,
+      loadable: true
     })
   }
 

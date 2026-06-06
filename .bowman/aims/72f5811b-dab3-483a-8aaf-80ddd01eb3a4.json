@@ -1,0 +1,33 @@
+{
+  "id": "72f5811b-dab3-483a-8aaf-80ddd01eb3a4",
+  "text": "Fix watchdog start responding check and scrolled Braille spinner checks",
+  "description": "Investigate why the watchdog is failing to start responding and debug the response-start waiting logic in the session wrappers. Fix it to track content changes alongside improved Braille spinner detection.",
+  "reflections": [
+    {
+      "date": 1780738373118,
+      "context": "Investigate why the watchdog was failing to start responding and fix the response-start waiting logic in the session wrappers.",
+      "outcome": "Added content-change check in waitingForResponseStart and updated the isGenerating check to scan the last 8 lines for Braille patterns across agy, Claude, and Gemini session watchdogs. All session wrappers compile cleanly.",
+      "effectiveness": "Implementing a comparison of terminal content changes (non-whitespace) since prompt posting, combined with a wider scan of the last 8 lines for Braille spinner patterns, proved extremely effective. It prevents the watchdog from falsely assuming the agent is idle during tool execution or transient pauses.",
+      "lesson": "Do not rely solely on spinner characters at the very end of the terminal to detect active work. The agent may output text following a spinner, or are temporarily in between tool calls. Comparing non-whitespace terminal content changes since the last prompt is a bulletproof way to detect that a response has started.",
+      "pattern": "Terminal emulation and agent wrapper supervision."
+    }
+  ],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
+  ],
+  "status": {
+    "state": "done",
+    "comment": "Implemented robust response-start tracking using content change comparison and improved isGenerating check to scan the last 8 lines for Braille patterns, resolving start timeouts and JSON brace extraction errors during tool runs.",
+    "date": 1780738368528
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

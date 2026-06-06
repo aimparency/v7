@@ -254,49 +254,37 @@ defineExpose({
 
         <!-- Session state buttons -->
         <div class="session-controls">
-          <!-- No session: Start -->
-          <button
-            v-if="!sessionExists && !store.isConnected"
-            @click="store.connect()"
-            class="action-btn connect-btn"
-            :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
-          >
-            Start
-          </button>
+          <!-- State 1: Transitioning (Spawning or Connecting) -->
+          <template v-if="store.connectionState === 'spawning' || store.connectionState === 'connecting'">
+            <button
+              @click="store.cancelConnectionAttempt()"
+              class="action-btn disconnect-btn"
+            >
+              Cancel
+            </button>
+          </template>
 
-          <!-- Session exists but not connected: Connect -->
-          <button
-            v-if="sessionExists && !isConnectedToSelected"
-            @click="store.connect()"
-            class="action-btn connect-btn"
-            :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
-          >
-            Connect
-          </button>
+          <!-- State 2: Idle (No session exists and not connected) -->
+          <template v-else-if="!sessionExists && !store.isConnected">
+            <button
+              @click="store.connect()"
+              class="action-btn connect-btn"
+            >
+              Start
+            </button>
+          </template>
 
-          <button
-            v-if="store.connectionState === 'connecting' && !store.isConnected"
-            @click="store.cancelConnectionAttempt()"
-            class="action-btn disconnect-btn"
-          >
-            Cancel
-          </button>
-
-          <!-- Connected: Disconnect -->
-          <button
-            v-if="isConnectedToSelected"
-            @click="store.disconnect()"
-            class="action-btn disconnect-btn"
-          >
-            Disconnect
-          </button>
-
-          <!-- Session exists (connected or not): Stop + Relaunch -->
-          <template v-if="sessionExists || store.isConnected">
+          <!-- State 3: Running, but Disconnected -->
+          <template v-else-if="sessionExists && !isConnectedToSelected">
+            <button
+              @click="store.connect()"
+              class="action-btn connect-btn"
+            >
+              Connect
+            </button>
             <button
               @click="store.stop()"
               class="action-btn stop-btn"
-              :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
             >
               Stop
             </button>
@@ -304,7 +292,29 @@ defineExpose({
               @click="store.relaunch()"
               class="action-btn relaunch-btn"
               title="Restart the underlying agent process"
-              :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
+            >
+              Relaunch
+            </button>
+          </template>
+
+          <!-- State 4: Connected -->
+          <template v-else-if="isConnectedToSelected">
+            <button
+              @click="store.disconnect()"
+              class="action-btn disconnect-btn"
+            >
+              Disconnect
+            </button>
+            <button
+              @click="store.stop()"
+              class="action-btn stop-btn"
+            >
+              Stop
+            </button>
+            <button
+              @click="store.relaunch()"
+              class="action-btn relaunch-btn"
+              title="Restart the underlying agent process"
             >
               Relaunch
             </button>

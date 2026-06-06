@@ -242,6 +242,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         return
     }
 
+    // Always fetch fresh sessions before checking, in case a session was terminated/expired
+    await fetchSessions()
+
     const existingSession = findSession(targetPath, agentType)
     if (existingSession) {
         await connectToExistingSession(existingSession, 'Connecting to existing')

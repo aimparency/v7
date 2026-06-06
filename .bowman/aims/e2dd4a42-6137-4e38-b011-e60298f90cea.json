@@ -24,27 +24,3 @@
   "costVariance": 0,
   "valueVariance": 0
 }
-epts that span multiple packages requires careful coordination of build steps (building the shared package first) to avoid transient TypeScript errors in consumers. Adding auto-restart logic to the UI store during this process also helped maintain autonomous session continuity."
-    }
-  ],
-  "archived": false,
-  "tags": [],
-  "supportingConnections": [],
-  "supportedAims": [
-    "0622adb1-e79d-483c-b894-199d92ca199d"
-  ],
-  "committedIn": [
-    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
-  ],
-  "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774815582588
-  },
-  "intrinsicValue": 0,
-  "cost": 1,
-  "loopWeight": 1,
-  "duration": 1,
-  "costVariance": 0,
-  "valueVariance": 0
-}

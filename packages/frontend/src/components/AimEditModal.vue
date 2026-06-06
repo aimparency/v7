@@ -46,7 +46,7 @@ const aimColor = ref('')
 // done, cancelled, failed or unclear. Ongoing statuses (open, partially,
 // human-dependent) are still active work and must not be archived directly.
 const canArchive = computed(() => {
-  const status = statuses.value.find((s) => s.key === selectedStatus.value)
+  const status = statuses.value.find((s: any) => s.key === selectedStatus.value)
   return status ? !status.ongoing : false
 })
 

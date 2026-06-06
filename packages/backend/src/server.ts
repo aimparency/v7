@@ -136,7 +136,7 @@ async function ensureProjectStructure(rawProjectPath: string) {
   await fs.ensureDir(path.join(projectPath, 'runtime', 'audit'));
   const autonomyPolicyPath = path.join(projectPath, 'runtime', 'autonomy-policy.json');
   if (!(await fs.pathExists(autonomyPolicyPath))) {
-    await fs.writeJson(autonomyPolicyPath, DEFAULT_AUTONOMY_POLICY, { spaces: 2 });
+    await writeJsonAtomic(autonomyPolicyPath, DEFAULT_AUTONOMY_POLICY);
   }
   
   const gitignorePath = path.join(projectPath, '.gitignore');
@@ -183,7 +183,7 @@ async function writeAim(rawProjectPath: string, aim: Aim): Promise<void> {
   // Strip calculated values before saving
   const { calculatedValue, calculatedCost, ...aimToSave } = aim;
 
-  await fs.writeJson(aimPath, aimToSave, { spaces: 2 });
+  await writeJsonAtomic(aimPath, aimToSave);
   
   // Clean up if it was in the other location
   if (await fs.pathExists(oldPath)) {
@@ -523,7 +523,7 @@ async function readSystemStatus(rawProjectPath: string): Promise<SystemStatus> {
   // Default initial status
   const initialStatus: SystemStatus = { computeCredits: 10.0, funds: 0.0 };
   await ensureProjectStructure(projectPath);
-  await fs.writeJson(systemPath, initialStatus, { spaces: 2 });
+  await writeJsonAtomic(systemPath, initialStatus);
   return initialStatus;
 }
 
@@ -531,7 +531,7 @@ async function writeSystemStatus(rawProjectPath: string, status: SystemStatus): 
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   const systemPath = path.join(projectPath, 'system.json');
-  await fs.writeJson(systemPath, status, { spaces: 2 });
+  await writeJsonAtomic(systemPath, status);
   ee.emit('change', { type: 'system', id: 'status', projectPath });
 }
 

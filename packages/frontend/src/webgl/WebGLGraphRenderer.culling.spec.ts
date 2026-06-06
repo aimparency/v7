@@ -13,7 +13,8 @@ describe('WebGLGraphRenderer culling bounds', () => {
       r: 10,
       color: [1, 1, 1],
       selected: false,
-      moving: false
+      moving: false,
+      loadable: true
     }
     renderer.updateNodes([initial])
 

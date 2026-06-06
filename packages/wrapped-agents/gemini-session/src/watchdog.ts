@@ -42,6 +42,10 @@ export class WatchdogService {
 
   enabled: boolean = false;
   waitingForResponse: boolean = false;
+  waitingForResponseStart: boolean = false;
+  responseRequestedAt: number = 0;
+  responseSawGenerating: boolean = false;
+  responseStartContent?: string;
   processing: boolean = false;
   retryCount: number = 0;
 
@@ -81,6 +85,10 @@ export class WatchdogService {
     if (enabled) {
       this.emergencyStopped = false;
       this.waitingForResponse = false; // Reset waiting state
+      this.waitingForResponseStart = false;
+      this.responseRequestedAt = 0;
+      this.responseSawGenerating = false;
+      this.responseStartContent = undefined;
       this.processing = false;         // Reset processing state
       this.nextCheckTime = Date.now() + 500; 
       this.turnCount = 0; // Reset turn count on enable? Or keep it? Reset feels safer.
@@ -90,6 +98,8 @@ export class WatchdogService {
       this.lastStopReason = '';
     } else {
       this.waitingForResponse = false;
+      this.waitingForResponseStart = false;
+      this.responseStartContent = undefined;
       this.processing = false;
       this.compactPlanned = false;
       this.lastStopReason = '';
@@ -102,6 +112,8 @@ export class WatchdogService {
       if (!this.enabled) return;
       this.enabled = false;
       this.waitingForResponse = false;
+      this.waitingForResponseStart = false;
+      this.responseStartContent = undefined;
       this.processing = false;
       this.lastStopReason = reason;
       this.log(`WATCHDOG STOPPED: ${reason}`);
@@ -137,7 +149,40 @@ export class WatchdogService {
     this.processing = true;
 
     try {
-      // Check Watchdog Response
+      // 1. Handle "Waiting for response to START"
+      if (this.waitingForResponseStart) {
+        const currentContent = this.watchdog.getLines(50);
+        const clean = (s: string) => s.replace(/\s/g, '');
+        const currentClean = clean(currentContent);
+        const startClean = clean(this.responseStartContent || '');
+        const contentChanged = startClean !== '' && currentClean !== startClean;
+
+        const watchdogGenerating = this.isGenerating(this.watchdog) || contentChanged;
+        if (watchdogGenerating) {
+          this.log(`DEBUG: Watchdog started generating (generating: ${this.isGenerating(this.watchdog)}, contentChanged: ${contentChanged}).`);
+          this.waitingForResponseStart = false;
+          this.waitingForResponse = true;
+          this.responseSawGenerating = true;
+          this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
+          this.processing = false;
+          return;
+        }
+
+        const elapsedSinceRequest = Date.now() - this.responseRequestedAt;
+        if (elapsedSinceRequest > 60000) { // 60 seconds start timeout
+          this.log(`DEBUG: Watchdog failed to start response within 60000ms. Retrying.`);
+          this.waitingForResponseStart = false;
+          await this.retry("Watchdog failed to start responding");
+          this.processing = false;
+          return;
+        }
+
+        this.nextCheckTime = Date.now() + IDLE_CHECK_INTERVAL;
+        this.processing = false;
+        return;
+      }
+
+      // 2. Check Watchdog Response
       if (this.waitingForResponse) {
         // Check for idle
         const isIdle = await this.waitForIdle(this.watchdog);
@@ -192,6 +237,12 @@ export class WatchdogService {
               await this.processDecision(jsonString);
           } catch (e: any) {
               this.log(`JSON extraction/parsing failed: ${e}. Content length: ${contentToParse.length}`);
+              if (e.message && e.message.includes("No JSON closing brace found")) {
+                  this.log("No JSON closing brace found yet. Watching for more output...");
+                  this.nextCheckTime = Date.now() + 1000;
+                  this.processing = false;
+                  return;
+              }
               await this.retry(e.message || "JSON extraction failed");
               return; 
           }
@@ -257,15 +308,24 @@ export class WatchdogService {
   }
 
   isGenerating(agent: Agent): boolean {
-    const lastLine = this.readAgentLastLine(agent);
-    const recentLines = stripAnsi(this.readAgentLines(agent, 8));
+    const lines = this.readAgentLines(agent, 8);
     
-    // xterm spinner characters and other indicators
-    const hasSpinner = /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(lastLine);
+    // Check for spinner characters (both standard ones and any Braille characters U+2800 to U+28FF)
+    const lastLines = lines.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const lastLine = lastLines[lastLines.length - 1] || '';
+    
+    // Custom spinner characters check on the last line only to avoid false positives with dots/bullets
+    const hasLastLineSpinner = /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(lastLine);
+    
+    // Braille characters check anywhere in the last 8 lines (very safe and prevents missing transient/scrolled spinners)
+    const hasBrailleSpinner = /[\u2800-\u28FF]/.test(lines);
+    
+    // Also check for common busy indicators
+    const recentLines = stripAnsi(lines);
     const hasInterruptIndicator = /esc to interrupt/i.test(recentLines);
     const hasTimedCancelIndicator = /esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i.test(recentLines);
     
-    return hasSpinner || hasInterruptIndicator || hasTimedCancelIndicator;
+    return hasLastLineSpinner || hasBrailleSpinner || hasInterruptIndicator || hasTimedCancelIndicator;
   }
 
   hasChoiceMenu(agent: Agent): boolean {
@@ -326,8 +386,11 @@ export class WatchdogService {
     }
 
     try {
-      this.waitingForResponse = true;
+      this.waitingForResponseStart = true;
+      this.waitingForResponse = false;
       this.retryCount = 0;
+      this.responseRequestedAt = Date.now();
+      this.responseSawGenerating = false;
       this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
 
       // Get lines and strip ANSI to clean up formatting tokens
@@ -393,6 +456,7 @@ export class WatchdogService {
 
       // Post the state-based question
       await this.post(this.watchdog, question);
+      this.responseStartContent = this.watchdog.getLines(50);
       this.log("AskWatchdog complete.");
     } catch (e: any) {
         this.log(`Error in askWatchdog(): ${e.message}`);
@@ -530,8 +594,12 @@ export class WatchdogService {
        await this.wait(5000);
        const retryMessage = `ERROR: Invalid JSON. Error: ${error}. Retry JSON.`;
        await this.post(this.watchdog, retryMessage);
+       this.responseStartContent = this.watchdog.getLines(50);
        
-       this.waitingForResponse = true;
+       this.waitingForResponseStart = true;
+       this.waitingForResponse = false;
+       this.responseRequestedAt = Date.now();
+       this.responseSawGenerating = false;
        this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
      } else {
        this.log(`[WatchdogService] Max retries (${MAX_RETRIES}) reached. Transitioning to ERROR state.`);
@@ -551,8 +619,12 @@ Valid actions for ${currentState}: ${validActions.join(', ')}
 Please choose one of the valid actions and respond with correct JSON.`;
 
     await this.post(this.watchdog, message);
+    this.responseStartContent = this.watchdog.getLines(50);
 
-    this.waitingForResponse = true;
+    this.waitingForResponseStart = true;
+    this.waitingForResponse = false;
+    this.responseRequestedAt = Date.now();
+    this.responseSawGenerating = false;
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
   }
 

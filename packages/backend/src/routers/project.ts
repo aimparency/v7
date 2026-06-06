@@ -947,10 +947,18 @@ export const createProjectRouter = (
             .map((c: any) => vecOf(c.aimId))
             .filter((v: any): v is number[] => !!v);
           let vector: number[] | undefined;
-          if (childVecs.length > 0) {
-            const dim = childVecs[0].length;
-            vector = new Array(dim).fill(0);
-            for (const v of childVecs) for (let i = 0; i < dim; i++) vector[i] += v[i] / childVecs.length;
+          const firstVec = childVecs[0];
+          if (firstVec) {
+            const dim = firstVec.length;
+            const vec = new Array<number>(dim).fill(0);
+            for (const v of childVecs) {
+              for (let i = 0; i < dim; i++) {
+                const currentVal = vec[i] ?? 0;
+                const childVal = v[i] ?? 0;
+                vec[i] = currentVal + childVal / childVecs.length;
+              }
+            }
+            vector = vec;
           } else {
             vector = vecOf(id);
           }

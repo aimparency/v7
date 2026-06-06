@@ -34,28 +34,3 @@
   "costVariance": 0,
   "valueVariance": 0
 }
-ve an associated timeout or escape condition. 'Generating' or 'Busy' is never a final state and must be time-boxed."
-    }
-  ],
-  "archived": false,
-  "tags": [
-    "error-handling",
-    "resilience"
-  ],
-  "supportingConnections": [],
-  "supportedAims": [
-    "31e7e8b7-bc95-4968-bd4f-44e7963a93fd"
-  ],
-  "committedIn": [],
-  "status": {
-    "state": "open",
-    "comment": "Graceful error handling",
-    "date": 1774790362628
-  },
-  "intrinsicValue": 0,
-  "cost": 1,
-  "loopWeight": 1,
-  "duration": 1,
-  "costVariance": 0,
-  "valueVariance": 0
-}
