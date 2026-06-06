@@ -274,8 +274,9 @@ export const WatchdogManager = {
     const startPort = parseInt(process.env.PORT_PROCESS_START || '7000');
     const port = await findAvailablePort(startPort);
 
-    // Path to Worker entry point - dynamic based on agent type
-    const workerScript = path.join(WRAPPER_DIR, `${agentType}-session/dist/index.js`);
+    // Path to Worker entry point - dynamic based on agent type.
+    // Run TypeScript source directly via tsx (no build step / dist artifact).
+    const workerScript = path.join(WRAPPER_DIR, `${agentType}-session/src/index.ts`);
 
     console.log(`[WatchdogBroker] Spawning ${agentType} worker on port ${port} for ${projectPath}`);
     console.log(`[WatchdogBroker] Script: ${workerScript}`);
@@ -289,7 +290,10 @@ export const WatchdogManager = {
     const out = fs.openSync(path.join(logDir, 'out.log'), 'a');
     const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
 
-    const child = spawn('node', [workerScript, '--port', String(port), projectRoot], {
+    // `--import tsx` registers the tsx loader so node can run the .ts entry.
+    // cwd is WRAPPER_DIR (inside the monorepo) so `tsx` resolves from the
+    // hoisted root node_modules; PROJECT ROOT is passed via argv, not cwd.
+    const child = spawn('node', ['--import', 'tsx', workerScript, '--port', String(port), projectRoot], {
       cwd: WRAPPER_DIR,
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'], // Use pipes to capture output
