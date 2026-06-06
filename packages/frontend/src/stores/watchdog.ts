@@ -48,6 +48,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const supervisorState = ref<SupervisorStateInfo | null>(null)
   const showActionsOverlay = ref(false)
   const focusRequestCounter = ref(0)
+  const terminalClearCounter = ref(0)
   const autonomyPolicy = ref<AutonomyPolicy | null>(null)
   const runtimeMetadata = ref<WatchdogRuntimeState | null>(null)
 
@@ -547,6 +548,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     socket.value.on('connect', () => {
       logStatus('WebSocket connected successfully.')
+      agentBuffers.value[agentType] = { worker: '', watchdog: '' }
+      terminalClearCounter.value++
       isConnected.value = true
       connectionState.value = 'connected'
       localStorage.setItem('aimparency-watchdog-should-connect', 'true')
@@ -644,6 +647,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     spawningLog,
     showActionsOverlay,
     focusRequestCounter,
+    terminalClearCounter,
     autonomyPolicy,
     runtimeMetadata,
     sessions,

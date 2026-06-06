@@ -1,0 +1,62 @@
+{
+  "id": "83c4a240-b5b5-4eec-ad83-552db27c2b53",
+  "text": "BuilderShip hackathon (Composio/Nebius/Tavily) — ship + showcase an autonomous Aimparency agent",
+  "description": "Agent-building hackathon hosted by Composio, Nebius, Tavily, OpenClaw. Remote build phase through ~June 12, finalists June 13, in-person yacht finale on SF Bay June 14. \"Application\" = post a shipped project publicly and tag the organizers; selection favors something already shipped. Sponsor perks: Composio integrations, Nebius GPU credits, Tavily search, Token Factory keys, $50K credits + DGX Spark prize pool.\n\nREALITY CHECK (be honest, don't pretend the boat is reachable): we're remote from Germany; the finale strongly prefers SF-Bay locals, and the build window is short (created 2026-06-06). The lasting value here is NOT the boat — it's (a) forcing a genuinely shippable, demoable autonomous-agent artifact, and (b) low-cost public visibility for Aimparency by tagging a credible builder crowd. Those payoffs survive whether or not we attend. Sibling of the PL Genesis hackathon cluster (2b76f62f) under \"enable autonomy\".",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "hackathon",
+    "builders-hackathon",
+    "visibility",
+    "autonomy"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "9a1c0cf3-98f4-4534-b742-d4e13e766345",
+      "relativePosition": [
+        2.4259546866823465,
+        -0.6039402769843708
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "df33f924-437c-4ed3-91df-6d2166c23f1b",
+      "relativePosition": [
+        0.6381754745123849,
+        2.417174396631508
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9bb8a504-46a9-4a28-8f9d-bedaad1cbc4b",
+      "relativePosition": [
+        2.1149226933984773,
+        -1.3330798929352026
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "a3705b69-c529-411b-9e62-6b57d1395c89",
+      "relativePosition": [
+        2.1144750542313364,
+        1.3337898054166508
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Opportunity logged 2026-06-06. Short build window (deadline ~June 12). Treat as inspiration + visibility play; attendance feasibility is a separate human decision.",
+    "date": 1780755790660
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

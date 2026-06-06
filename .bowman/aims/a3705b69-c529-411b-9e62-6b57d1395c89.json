@@ -1,0 +1,28 @@
+{
+  "id": "a3705b69-c529-411b-9e62-6b57d1395c89",
+  "text": "Decide remote-vs-attend feasibility for BuilderShip given SF-Bay-local preference",
+  "description": "HUMAN DECISION. The finale (June 14 yacht, SF Bay) prefers local participants; we're in Germany on short notice. Decide explicitly: (a) remote build + public-showcase only, (b) actually travel/attend, or (c) skip the event and keep only the demo+visibility artifacts. Recommendation: (a) — capture the durable value (demo + tagged post) without committing to travel. Resolve this before investing in anything that only pays off by physically attending.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "builders-hackathon",
+    "logistics",
+    "human-decision"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "83c4a240-b5b5-4eec-ad83-552db27c2b53"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix to decide remote-only vs attend vs skip. Recommendation: remote-only (demo + visibility).",
+    "date": 1780755815860
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

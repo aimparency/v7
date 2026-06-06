@@ -10,5 +10,21 @@
   },
   "keywords": ["aimparency", "agents", "state-machine"],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@xterm/headless": "^5.5.0",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "fs-extra": "^11.3.3",
+    "node-pty": "^1.0.0",
+    "open": "^11.0.0",
+    "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^25.0.1",
+    "typescript": "^5.9.3"
+  }
 }

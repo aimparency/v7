@@ -5,18 +5,18 @@ export class Agent {
   ptyProcess: pty.IPty;
   terminal: Terminal;
 
-  constructor(cwd: string, args: string[], onData: (data: string) => void) {
-    const command = process.platform === 'win32' ? 'codex.cmd' : 'codex';
-    this.ptyProcess = pty.spawn(command, args, {
+  constructor(command: string, cwd: string, args: string[], onData: (data: string) => void, cols: number = 80) {
+    const resolvedCommand = process.platform === 'win32' ? `${command}.cmd` : command;
+    this.ptyProcess = pty.spawn(resolvedCommand, args, {
       name: 'xterm-color',
-      cols: 80,
+      cols,
       rows: 30,
       cwd: cwd,
       env: process.env as any
     });
 
     this.terminal = new Terminal({
-      cols: 80,
+      cols,
       rows: 30,
       allowProposedApi: true
     });
@@ -80,6 +80,8 @@ export class Agent {
     for (let i = start; i < end; i++) {
       const line = buffer.getLine(i);
       if (!line) continue;
+      // If the next line is a wrapped continuation of this one, preserve trailing
+      // spaces so the two halves join back into the original text correctly.
       const nextLine = i + 1 < end ? buffer.getLine(i + 1) : null;
       const text = line.translateToString(!(nextLine?.isWrapped ?? false));
       if (line.isWrapped) {

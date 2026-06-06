@@ -1,0 +1,28 @@
+{
+  "id": "df33f924-437c-4ed3-91df-6d2166c23f1b",
+  "text": "Publish a public showcase post of the shipped Aimparency agent and tag BuilderShip organizers",
+  "description": "The actual \"application\" mechanism: post the recorded demo (from the demo sub-aim) publicly — short thread/video framing Aimparency as \"AI becoming autonomous in the world of humans\" — and tag Composio/Nebius/Tavily/OpenClaw. Low cost, high visibility, and useful even if we never attend or aren't selected. Deadline-sensitive: build/visibility phase closes ~June 12. Depends on having a credible demo first; do not post a weak artifact.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "builders-hackathon",
+    "visibility",
+    "marketing"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "83c4a240-b5b5-4eec-ad83-552db27c2b53"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Blocked on the demo artifact; time-boxed (~June 12).",
+    "date": 1780755809635
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

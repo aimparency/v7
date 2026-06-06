@@ -146,6 +146,11 @@ watch(() => store.selectedAgentType, async (newAgent, oldAgent) => {
   }
 })
 
+watch(() => store.terminalClearCounter, () => {
+  workerTerm.value?.clear()
+  watchdogTerm.value?.clear()
+})
+
 watch(() => store.focusRequestCounter, () => {
   // Allow UI updates (e.g. search modal closing) to complete before focusing
   setTimeout(() => {

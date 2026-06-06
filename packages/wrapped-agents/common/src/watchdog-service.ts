@@ -1,17 +1,9 @@
 import { Agent } from './agent';
-import * as fs from 'fs';
-import * as path from 'path';
 import { SessionMemory } from './session-memory';
-import { SupervisorState, generateSupervisorPrompt, isValidAction, getState, type PromptContext, type AutonomyPolicy, ActionPrompts } from '@aimparency/wrapped-agents-common';
-
-// Load instruction text for autonomous guidance
-const INSTRUCT_PATH = path.join(__dirname, '../../INSTRUCT.md');
-let INSTRUCT_TEXT = '';
-try {
-  INSTRUCT_TEXT = fs.readFileSync(INSTRUCT_PATH, 'utf-8');
-} catch (e) {
-  console.warn('[WatchdogService] Could not load INSTRUCT.md:', e);
-}
+import { SupervisorState, type AutonomyPolicy } from './supervisor-state';
+import { generateSupervisorPrompt, type PromptContext, ActionPrompts } from './supervisor-prompts';
+import { getState } from './state-machine-definition';
+import type { AgentProfile } from './agent-profile';
 
 /**
  * Configurable timing constants and behavior flags
@@ -107,23 +99,39 @@ export class WatchdogService {
     lastSnapshotAt: 0,
   };
   private sessionMemory: SessionMemory | null = null;
-  private instructTextWithMemory: string = INSTRUCT_TEXT;
+  private baseInstructText: string = '';
+  private instructTextWithMemory: string = '';
   private workingTowardsCommit = false;
   private supervisorState: SupervisorState = new SupervisorState();
   private projectPath?: string;
+  readonly profile: AgentProfile;
 
-  constructor(worker: Agent, watchdog: Agent, expectedModel: string | undefined, compactEvery: number = 1, projectPath?: string, autonomyPolicy: AutonomyPolicy = {}) {
-    this.projectPath = projectPath;
+  constructor(
+    worker: Agent,
+    watchdog: Agent,
+    profile: AgentProfile,
+    opts: {
+      expectedModel?: string;
+      compactEvery?: number;
+      projectPath?: string;
+      autonomyPolicy?: AutonomyPolicy;
+      instructText?: string;
+    } = {}
+  ) {
     this.worker = worker;
     this.watchdog = watchdog;
-    this.expectedModel = expectedModel;
-    this.compactEvery = compactEvery;
-    this.autonomyPolicy = autonomyPolicy;
+    this.profile = profile;
+    this.expectedModel = opts.expectedModel;
+    this.compactEvery = opts.compactEvery ?? 1;
+    this.autonomyPolicy = opts.autonomyPolicy ?? {};
+    this.projectPath = opts.projectPath;
+    this.baseInstructText = opts.instructText ?? '';
+    this.instructTextWithMemory = this.baseInstructText;
 
     // Initialize session memory if projectPath provided
-    if (projectPath) {
-      this.sessionMemory = new SessionMemory(projectPath);
-      this.loadSessionMemoryContext(projectPath);
+    if (this.projectPath) {
+      this.sessionMemory = new SessionMemory(this.projectPath);
+      this.loadSessionMemoryContext(this.projectPath);
     }
   }
 
@@ -136,14 +144,14 @@ export class WatchdogService {
 
       if (summaries.length > 0) {
         const memoryContext = SessionMemory.formatForContext(summaries);
-        this.instructTextWithMemory = `${INSTRUCT_TEXT}\n\n${memoryContext}`;
+        this.instructTextWithMemory = `${this.baseInstructText}\n\n${memoryContext}`;
         this.log(`Loaded ${summaries.length} session memories into context`);
       } else {
-        this.instructTextWithMemory = INSTRUCT_TEXT;
+        this.instructTextWithMemory = this.baseInstructText;
       }
     } catch (error) {
       this.log(`Failed to load session memory context: ${error}`);
-      this.instructTextWithMemory = INSTRUCT_TEXT;
+      this.instructTextWithMemory = this.baseInstructText;
     }
   }
 
@@ -301,7 +309,7 @@ export class WatchdogService {
         if (this.turnCount >= this.compactEvery) {
           this.log(`Turn count ${this.turnCount} reached limit ${this.compactEvery}. Compacting watchdog context.`);
           this.turnCount = 0;
-          await this.post(this.watchdog, '/compact');
+          await this.post(this.watchdog, this.profile.compactCommand);
           this.nextCheckTime = now + INITIAL_WAIT_AFTER_POST;
         } else {
           await this.askWatchdog();
@@ -421,12 +429,8 @@ export class WatchdogService {
   private captureAgentSignals(agent: Agent, checkMarker: boolean): AgentSignals {
     const view = this.captureAgentView(agent);
 
-    // Support xterm-style (inquirer) menus and common (Y/n) patterns
-    const hasInquirerMenu = /›.*enter to submit | esc to cancel/i.test(view.recent8);
-    const hasYesNoPrompt = /\?.*\(Y\/n\)/i.test(view.recent8);
-    const hasChoiceA_B = /\([A-Z]\).* \([A-Z]\)/.test(view.recent8);
-    
-    const hasChoiceMenu = hasInquirerMenu || hasYesNoPrompt || hasChoiceA_B;
+    // Choice-menu detection is per-agent (CLI TUIs differ) via the profile.
+    const hasChoiceMenu = this.profile.choiceMenuPatterns.some(p => p.test(view.recent8));
     const isGenerating = this.detectGenerating(view, hasChoiceMenu);
 
     return {
@@ -440,11 +444,9 @@ export class WatchdogService {
   private detectGenerating(view: AgentView, hasChoiceMenu: boolean): boolean {
     if (hasChoiceMenu) return false;
 
-    // Spinner or progress characters
-    const hasSpinner = /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/.test(view.recent8);
-    const hasInterruptIndicator = /esc to interrupt/i.test(view.recent8);
-    const hasTimedCancelIndicator = /esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i.test(view.recent8);
-    return hasSpinner || hasInterruptIndicator || hasTimedCancelIndicator;
+    // Spinner glyphs and busy footers are per-agent (CLI TUIs differ) via the profile.
+    if (this.profile.spinnerPattern.test(view.recent8)) return true;
+    return this.profile.busyPatterns.some(p => p.test(view.recent8));
   }
 
   async wait(ms: number) {
@@ -649,7 +651,7 @@ export class WatchdogService {
         }
       }
 
-      await this.post(this.worker, '/compact');
+      await this.post(this.worker, this.profile.compactCommand);
     } else if (action.type === 'enter') {
       this.worker.write('\r');
     } else if (action.type === 'select-option') {
@@ -852,7 +854,7 @@ Please choose one of the valid actions and respond with correct JSON.`;
         await this.post(this.worker, text);
         await this.wait(1000);
     }
-    await this.post(this.worker, '/compact');
+    await this.post(this.worker, this.profile.compactCommand);
     this.turnCount = 0;
   }
 
