@@ -1,8 +1,9 @@
 import {
   type AgentProfile,
   COMMON_CHOICE_MENU_PATTERNS,
-  CLAUDE_STYLE_SPINNER,
-  CLAUDE_STYLE_BUSY_PATTERNS,
+  BRAILLE_SPINNER,
+  ESC_TO_INTERRUPT,
+  TIMED_CANCEL,
 } from '@aimparency/wrapped-agents-common';
 
 export const agyProfile: AgentProfile = {
@@ -27,8 +28,11 @@ export const agyProfile: AgentProfile = {
   },
   resumeFailurePatterns: [/No conversation found/, /No sessions found/],
 
-  spinnerPattern: CLAUDE_STYLE_SPINNER,
-  busyPatterns: CLAUDE_STYLE_BUSY_PATTERNS,
+  // Antigravity renders an animated Braille spinner (⠀-⣿) while generating —
+  // distinct from Claude's star glyphs. It's transient (gone once a turn ends),
+  // so the bare glyph is a safe busy signal here.
+  spinnerPattern: BRAILLE_SPINNER,
+  busyPatterns: [ESC_TO_INTERRUPT, TIMED_CANCEL],
   choiceMenuPatterns: COMMON_CHOICE_MENU_PATTERNS,
   compactCommand: '/compact',
 };

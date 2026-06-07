@@ -348,6 +348,9 @@ defineExpose({
         <div class="term-label term-label-supervisor">
           <span class="term-title">Supervisor</span>
           <span class="term-state" :style="supervisorStateStyle">State: {{ supervisorStateLabel }}</span>
+          <span v-if="store.isEnabled && store.commStatus" class="comm-status">
+            <span class="comm-dot"></span>{{ store.commStatus }}
+          </span>
           <button
             @click="toggle"
             class="action-btn toggle-btn"
@@ -603,6 +606,23 @@ defineExpose({
 .term-state {
   flex: 1;
   color: #d4d4d4;
+}
+
+.comm-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.comm-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fbbf24;
+  animation: blink 1s infinite;
 }
 
 .spawning-log {

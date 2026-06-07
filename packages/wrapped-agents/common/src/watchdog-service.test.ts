@@ -44,6 +44,57 @@ test('isGenerating: a visible choice menu suppresses the busy signal', () => {
   assert.equal(service.isGenerating(agentShowing(menu) as any), false);
 });
 
+// Regression: Claude's spinner glyph ✻ is reused in the *completed* turn
+// summary ("✻ Baked for 6s"). The ellipsis-gated spinner pattern must treat
+// the live spinner as busy but the past-tense summary as idle, otherwise idle
+// detection never fires after a turn ends.
+const claudeLikeProfile: AgentProfile = {
+  ...testProfile,
+  agentType: 'claude',
+  spinnerPattern: /[✻✢○◎◯][^\n]*…/,
+};
+
+function makeClaudeService(): WatchdogService {
+  return new WatchdogService({} as any, {} as any, claudeLikeProfile, { compactEvery: 1 });
+}
+
+test('isGenerating: live Claude spinner ("✻ Baking…") reads as generating', () => {
+  const service = makeClaudeService();
+  assert.equal(service.isGenerating(agentShowing('✻ Baking… (3s · esc to interrupt)') as any), true);
+});
+
+test('isGenerating: completed Claude summary ("✻ Baked for 6s") reads as idle', () => {
+  const service = makeClaudeService();
+  assert.equal(service.isGenerating(agentShowing('● done\n\n✻ Baked for 6s\n\n❯ ') as any), false);
+});
+
+test('post: reports "sending message to supervisor" while typing, clears after', async () => {
+  const statuses: string[] = [];
+  const watchdog = agentShowing('');
+  const service = makeService({}, watchdog);
+  service.enabled = true;
+  service.onCommStatusChange = (s) => statuses.push(s);
+  (service as any).wait = async () => {};
+
+  await service.post(service.watchdog, 'a longish supervisor prompt');
+
+  assert.equal(statuses[0], 'sending message to supervisor');
+  assert.equal(statuses[statuses.length - 1], 'waiting for main agent halt');
+});
+
+test('post: aborts mid-message (no Enter) when disabled, for a snappy stop', async () => {
+  const writes: string[] = [];
+  const watchdog = { getLines: () => '', getLastLine: () => '', write: (d: string) => writes.push(d) };
+  const service = makeService({}, watchdog);
+  service.enabled = true;
+  // Disable as soon as the first chunk is written.
+  (service as any).wait = async () => { service.enabled = false; };
+
+  await service.post(service.watchdog, 'x'.repeat(200));
+
+  assert.ok(!writes.includes('\r'), 'must not submit a partial message');
+});
+
 test('askWatchdog posts an EXPLORING prompt listing the available actions', async () => {
   const posts: string[] = [];
   const worker = agentShowing('worker is between steps');

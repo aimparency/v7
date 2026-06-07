@@ -1,8 +1,8 @@
 import {
   type AgentProfile,
   COMMON_CHOICE_MENU_PATTERNS,
-  CODEX_STYLE_SPINNER,
-  CODEX_STYLE_BUSY_PATTERNS,
+  ESC_TO_INTERRUPT,
+  TIMED_CANCEL,
 } from '@aimparency/wrapped-agents-common';
 
 export const codexProfile: AgentProfile = {
@@ -30,8 +30,10 @@ export const codexProfile: AgentProfile = {
   ],
   relaunchOnNonZeroExit: true,
 
-  spinnerPattern: CODEX_STYLE_SPINNER,
-  busyPatterns: CODEX_STYLE_BUSY_PATTERNS,
+  // Codex shows a narrow rotating Braille spinner (just these 10 glyphs) plus
+  // the esc-to-interrupt / countdown footers — no star glyphs.
+  spinnerPattern: /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/,
+  busyPatterns: [ESC_TO_INTERRUPT, TIMED_CANCEL],
   choiceMenuPatterns: COMMON_CHOICE_MENU_PATTERNS,
   compactCommand: '/compact',
 };

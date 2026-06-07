@@ -22,6 +22,12 @@ const IDLE_DEBOUNCE_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_DEBOUNCE || '1
 const MAX_RETRIES = parseInt(process.env.WATCHDOG_MAX_RETRIES || '5', 10);
 const MAX_BUSY_TIMEOUT_MS = parseInt(process.env.WATCHDOG_MAX_BUSY_TIMEOUT || '300000', 10); // 5 minutes
 const MAX_WATCHDOG_TIMEOUT_MS = parseInt(process.env.WATCHDOG_MAX_WATCHDOG_TIMEOUT || '120000', 10); // 2 minutes
+// Prompts get typed into the agent PTYs in chunks rather than one char at a
+// time: the supervisor prompt is ~1.5k chars, so the old 50ms-per-char pacing
+// took over a minute to send (and made "stop" feel unresponsive). Chunked
+// pacing sends the same text in well under a second.
+const POST_CHUNK_SIZE = parseInt(process.env.WATCHDOG_POST_CHUNK_SIZE || '40', 10);
+const POST_CHUNK_DELAY = parseInt(process.env.WATCHDOG_POST_CHUNK_DELAY || '8', 10);
 const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
@@ -29,6 +35,13 @@ const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line
 const RESPONSE_START_TIMEOUT_MS = 15000;
 const RESPONSE_COMPLETION_GRACE_MS = 5000;
 const WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS = 20000;
+// How long the worker's bottom region must be BOTH free of an activity
+// indicator AND unchanged before we treat it as idle. The spinner line carries
+// a live elapsed-time/token counter that ticks ~1/s while the agent works, so a
+// changing screen means "still working" even on frames where we fail to match
+// the (animated) spinner glyph or rotating tip. Must comfortably exceed the
+// ~1s counter cadence so between-tick stillness isn't mistaken for idle.
+const WORKER_IDLE_STABILITY_MS = parseInt(process.env.WATCHDOG_WORKER_IDLE_STABILITY || '1500', 10);
 
 function stripAnsi(str: string): string {
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
@@ -168,6 +181,29 @@ export class WatchdogService {
   onEmergencyStop?: () => void;
   onStop?: (reason: string) => void;
   onStateChange?: () => void;
+  onCommStatusChange?: (status: string) => void;
+  private lastCommStatus = '';
+  /** Which agent we're actively typing a message into, if any. */
+  private isPosting: 'worker' | 'watchdog' | null = null;
+
+  /**
+   * Human-readable description of the current supervisor↔agent communication
+   * phase. Only meaningful while the automation is enabled; '' otherwise.
+   */
+  getCommStatus(): string {
+    if (!this.enabled) return '';
+    if (this.isPosting === 'watchdog') return 'sending message to supervisor';
+    if (this.isPosting === 'worker') return 'sending message to main agent';
+    if (this.waitingForResponseStart || this.waitingForResponse) return 'waiting for supervisor reply';
+    return 'waiting for main agent halt';
+  }
+
+  private emitCommStatusIfChanged() {
+    const status = this.getCommStatus();
+    if (status === this.lastCommStatus) return;
+    this.lastCommStatus = status;
+    this.onCommStatusChange?.(status);
+  }
 
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
@@ -186,9 +222,11 @@ export class WatchdogService {
     } else {
       this.waitingForResponse = false;
       this.processing = false;
+      this.isPosting = null;
       this.lastStopReason = '';
     }
     this.log(`Logic ${enabled ? 'ENABLED' : 'DISABLED'}`);
+    this.emitCommStatusIfChanged();
     this.onStateChange?.();
   }
 
@@ -228,7 +266,10 @@ export class WatchdogService {
     if (!this.enabled || this.processing) return;
 
     const now = Date.now();
-    if (now < this.nextCheckTime) return;
+    if (now < this.nextCheckTime) {
+      this.emitCommStatusIfChanged();
+      return;
+    }
 
     this.processing = true;
 
@@ -300,11 +341,11 @@ export class WatchdogService {
 
       // 3. Monitor Worker Activity and Escalate if Idle
       const workerSignals = this.captureAgentSignals(this.worker, false);
-      const workerIdleReason = this.getWorkerIdleEscalationReason(now, workerSignals.isGenerating);
+      const workerIdleReason = this.getWorkerIdleEscalationReason(now, workerSignals);
 
       if (workerIdleReason) {
         this.log(`Escalating to Watchdog: ${workerIdleReason}`);
-        this.markWorkerIdleEscalation(now);
+        this.markWorkerIdleEscalation(now, workerSignals);
 
         if (this.turnCount >= this.compactEvery) {
           this.log(`Turn count ${this.turnCount} reached limit ${this.compactEvery}. Compacting watchdog context.`);
@@ -335,6 +376,7 @@ export class WatchdogService {
       console.error('[WatchdogService] Error in tick:', e);
     } finally {
       this.processing = false;
+      this.emitCommStatusIfChanged();
     }
   }
 
@@ -364,25 +406,48 @@ export class WatchdogService {
     return idleTime < IDLE_DEBOUNCE_INTERVAL;
   }
 
-  private observeWorkerActivity(now: number, isWorkerGenerating?: boolean) {
-    if (isWorkerGenerating) {
-      this.workerActivity.observedBusySinceEnabled = true;
-      this.workerActivity.lastBusyAt = now;
-    }
-  }
-
   private isWatchdogEffectivelyGenerating(signals: AgentSignals, now: number): boolean {
     return this.isEffectivelyGenerating(signals, now, this.watchdogSnapshotState);
   }
 
-  private getWorkerIdleEscalationReason(now: number, isWorkerGenerating?: boolean): string | null {
-    this.observeWorkerActivity(now, isWorkerGenerating);
+  /**
+   * Whether the worker is still working. Two combined signals:
+   *  1. An explicit activity indicator (spinner line / busy footer) via the
+   *     profile — fast and authoritative when it matches.
+   *  2. A "screen is changing" backstop: the spinner line's elapsed-time/token
+   *     counter ticks ~1/s while the agent works, so a changing bottom region
+   *     means "still working" even on frames where the (animated) glyph or
+   *     rotating tip didn't match. Only a screen that is BOTH indicator-free and
+   *     unchanged for WORKER_IDLE_STABILITY_MS counts as idle.
+   * Only the authoritative indicator marks `observedBusySinceEnabled`, so a
+   * worker that is static from the start still waits out the bootstrap grace
+   * rather than escalating on the first render diff.
+   */
+  private isWorkerEffectivelyBusy(signals: AgentSignals, now: number): boolean {
+    const activity = this.workerActivity;
+
+    if (signals.isGenerating) {
+      activity.observedBusySinceEnabled = true;
+      activity.lastBusyAt = now;
+      activity.lastSnapshot = signals.view.recent12;
+      activity.lastSnapshotAt = now;
+      return true;
+    }
+
+    if (activity.lastSnapshot !== signals.view.recent12) {
+      activity.lastSnapshot = signals.view.recent12;
+      activity.lastSnapshotAt = now;
+      return true;
+    }
+
+    return now - activity.lastSnapshotAt < WORKER_IDLE_STABILITY_MS;
+  }
+
+  private getWorkerIdleEscalationReason(now: number, signals: AgentSignals): string | null {
+    if (this.isWorkerEffectivelyBusy(signals, now)) return null;
 
     if (this.workerActivity.observedBusySinceEnabled) {
-      if (this.workerActivity.lastBusyAt !== 0 && now - this.workerActivity.lastBusyAt >= IDLE_CHECK_INTERVAL) {
-        return 'Worker transitioned from busy to not busy. Asking watchdog.';
-      }
-      return null;
+      return 'Worker idle: no activity indicator and screen static. Asking watchdog.';
     }
 
     if (this.workerActivity.enabledAt !== 0 && now - this.workerActivity.enabledAt >= WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS) {
@@ -392,13 +457,11 @@ export class WatchdogService {
     return null;
   }
 
-  private markWorkerIdleEscalation(now: number) {
-    if (this.workerActivity.observedBusySinceEnabled) {
-      this.workerActivity.lastBusyAt = now;
-      return;
-    }
-
-    this.workerActivity.enabledAt = now;
+  /** Restart the stability window after escalating so we don't re-escalate the
+   *  same idle screen before the supervisor's action has a chance to land. */
+  private markWorkerIdleEscalation(now: number, signals: AgentSignals) {
+    this.workerActivity.lastSnapshot = signals.view.recent12;
+    this.workerActivity.lastSnapshotAt = now;
   }
 
   private hasVisibleChoiceMenu(agent: Agent): boolean {
@@ -444,9 +507,12 @@ export class WatchdogService {
   private detectGenerating(view: AgentView, hasChoiceMenu: boolean): boolean {
     if (hasChoiceMenu) return false;
 
-    // Spinner glyphs and busy footers are per-agent (CLI TUIs differ) via the profile.
-    if (this.profile.spinnerPattern.test(view.recent8)) return true;
-    return this.profile.busyPatterns.some(p => p.test(view.recent8));
+    // Spinner glyphs and busy footers are per-agent (CLI TUIs differ) via the
+    // profile. Use a slightly taller window than the choice-menu check: the
+    // spinner status line sits above the rotating tip + input box, so it can be
+    // ~6-7 lines from the bottom.
+    if (this.profile.spinnerPattern.test(view.recent12)) return true;
+    return this.profile.busyPatterns.some(p => p.test(view.recent12));
   }
 
   async wait(ms: number) {
@@ -460,18 +526,35 @@ export class WatchdogService {
   }
 
   async post(agent: Agent, text: string) {
-    this.log(`Posting to ${agent === this.worker ? 'Worker' : 'Watchdog'}: ${text.substring(0, 50)}...`);
+    const target: 'worker' | 'watchdog' = agent === this.worker ? 'worker' : 'watchdog';
+    this.log(`Posting to ${target === 'worker' ? 'Worker' : 'Watchdog'}: ${text.substring(0, 50)}...`);
 
-    for (const char of text) {
-      agent.write(char);
-      await this.wait(50);
+    this.isPosting = target;
+    this.emitCommStatusIfChanged();
+
+    try {
+      // Type in chunks rather than one char at a time (see POST_CHUNK_SIZE).
+      for (let i = 0; i < text.length; i += POST_CHUNK_SIZE) {
+        // Bail immediately if the watchdog was disabled mid-message, so "stop"
+        // doesn't have to wait out a long in-flight prompt. The partial input is
+        // left unsubmitted (no trailing Enter).
+        if (!this.enabled) {
+          this.log("Posting aborted: watchdog disabled mid-message.");
+          return;
+        }
+        agent.write(text.slice(i, i + POST_CHUNK_SIZE));
+        await this.wait(POST_CHUNK_DELAY);
+      }
+
+      // Send enter to submit
+      await this.wait(100);
+      agent.write('\r');
+      await this.wait(100);
+      this.log("Post complete.");
+    } finally {
+      this.isPosting = null;
+      this.emitCommStatusIfChanged();
     }
-
-    // Send enter to submit
-    await this.wait(100);
-    agent.write('\r');
-    await this.wait(100);
-    this.log("Post complete.");
   }
 
   async onWorkerData(data: string) {

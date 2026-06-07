@@ -56,9 +56,13 @@ export interface AgentProfile {
   compactCommand: string;
 }
 
-// ---- Reusable detection presets ----
-// Shared so the (currently identical) Claude-family agents don't each re-spell
-// the same regexes. A profile can always override with its own patterns.
+// ---- Low-level detection building blocks ----
+// These are just *spellings* of individual matchers, kept here so a tricky
+// regex (e.g. the countdown footer) isn't re-typed in every profile. The
+// per-agent detection *policy* — which spinner glyphs / busy footers actually
+// apply to a given CLI — lives in that agent's profile, not here, because each
+// wrapped TUI renders differently (e.g. the Braille spinner is agy's, not
+// Claude's). Compose these into `spinnerPattern` / `busyPatterns` per profile.
 
 /** Choice-menu shapes common to the supported CLI TUIs. */
 export const COMMON_CHOICE_MENU_PATTERNS: RegExp[] = [
@@ -67,20 +71,11 @@ export const COMMON_CHOICE_MENU_PATTERNS: RegExp[] = [
   /\([A-Z]\).* \([A-Z]\)/,
 ];
 
-const TIMED_CANCEL = /esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i;
+/** "esc to interrupt" busy footer. */
+export const ESC_TO_INTERRUPT = /esc to interrupt/i;
 
-/** Claude-family (claude / agy / gemini-as-shipped) busy detection. */
-export const CLAUDE_STYLE_SPINNER = /[✻✢○◎◯]|[⠀-⣿]/;
-export const CLAUDE_STYLE_BUSY_PATTERNS: RegExp[] = [
-  /esc to interrupt/i,
-  TIMED_CANCEL,
-  /\/btw to ask/i,
-  /interrupting Claude/i,
-];
+/** Countdown cancel footer, e.g. "esc to cancel, 1m 30s". */
+export const TIMED_CANCEL = /esc to cancel,\s*(?:(\d+)h\s*)?(?:(\d+)m\s*)?(?:(\d+)s)?/i;
 
-/** Codex's leaner detection (Braille spinner + esc-to-interrupt/cancel only). */
-export const CODEX_STYLE_SPINNER = /[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/;
-export const CODEX_STYLE_BUSY_PATTERNS: RegExp[] = [
-  /esc to interrupt/i,
-  TIMED_CANCEL,
-];
+/** Animated Braille spinner glyphs (⠀-⣿). Transient — gone once a turn ends. */
+export const BRAILLE_SPINNER = /[⠀-⣿]/;

@@ -46,6 +46,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const isEmergencyStopped = ref(false)
   const stopReason = ref('')
   const supervisorState = ref<SupervisorStateInfo | null>(null)
+  const commStatus = ref('')
   const showActionsOverlay = ref(false)
   const focusRequestCounter = ref(0)
   const terminalClearCounter = ref(0)
@@ -589,6 +590,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       if (enabled) {
         stopReason.value = ''
         isEmergencyStopped.value = false
+      } else {
+        commStatus.value = ''
       }
     })
 
@@ -618,6 +621,10 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       supervisorState.value = state
     })
 
+    socket.value.on('watchdog-comm-status', (status: string) => {
+      commStatus.value = status
+    })
+
     // Data handling - write to specific agent's buffer using closure-captured agentType
     socket.value.on('worker-data', (data: string) => {
       agentBuffers.value[agentType].worker += data
@@ -642,6 +649,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     isEmergencyStopped,
     stopReason,
     supervisorState,
+    commStatus,
     workerOutput,
     watchdogOutput,
     spawningLog,

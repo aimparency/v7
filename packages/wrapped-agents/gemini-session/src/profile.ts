@@ -1,8 +1,9 @@
 import {
   type AgentProfile,
   COMMON_CHOICE_MENU_PATTERNS,
-  CLAUDE_STYLE_SPINNER,
-  CLAUDE_STYLE_BUSY_PATTERNS,
+  BRAILLE_SPINNER,
+  ESC_TO_INTERRUPT,
+  TIMED_CANCEL,
 } from '@aimparency/wrapped-agents-common';
 
 export const geminiProfile: AgentProfile = {
@@ -27,12 +28,12 @@ export const geminiProfile: AgentProfile = {
   },
   resumeFailurePatterns: [/No previous sessions found/],
 
-  // NOTE: these are inherited from the as-shipped (Claude-derived) detection and
-  // include Claude-specific footers (/btw to ask/, /interrupting Claude/) that
-  // likely never match Gemini's TUI. Verify against a live Gemini session and
-  // tighten if needed — they are isolated here now, not shared.
-  spinnerPattern: CLAUDE_STYLE_SPINNER,
-  busyPatterns: CLAUDE_STYLE_BUSY_PATTERNS,
+  // NOTE: not yet verified against a live Gemini TUI. Gemini renders a Braille
+  // spinner while generating; the busy footers below are the generic ones. The
+  // Claude-specific footers (/btw to ask/, /interrupting Claude/) were dropped
+  // since they never match Gemini. Tighten once observed against a real session.
+  spinnerPattern: BRAILLE_SPINNER,
+  busyPatterns: [ESC_TO_INTERRUPT, TIMED_CANCEL],
   choiceMenuPatterns: COMMON_CHOICE_MENU_PATTERNS,
   compactCommand: '/compact',
 };

@@ -291,6 +291,9 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
     persistWatchdogRuntimeState(watchdogService!);
     io.emit('supervisor-state', watchdogService!.getSupervisorStateInfo());
   };
+  watchdogService.onCommStatusChange = (status) => {
+    io.emit('watchdog-comm-status', status);
+  };
   persistWatchdogRuntimeState(watchdogService);
 
   watchdogService.onStop = (reason) => {
@@ -313,6 +316,7 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
       socket.emit('watchdog-stop-reason', watchdogService!.lastStopReason);
     }
     socket.emit('supervisor-state', watchdogService!.getSupervisorStateInfo());
+    socket.emit('watchdog-comm-status', watchdogService!.getCommStatus());
     socket.emit('worker-data', worker.getLines(1000));
     socket.emit('watchdog-data', watchdog.getLines(1000));
 
