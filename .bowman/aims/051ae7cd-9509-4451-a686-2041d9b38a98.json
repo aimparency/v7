@@ -1,0 +1,24 @@
+{
+  "id": "051ae7cd-9509-4451-a686-2041d9b38a98",
+  "text": "get aim context should return (almost) all parent aims - path to root.",
+  "description": "when creating that path: beware of cycles. And maybe a max of 12 parents. When parents branch, follow those with the highest absolute/actual value inflow",
+  "tags": [],
+  "reflections": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1781423059024
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "archived": false
+}

@@ -1,0 +1,38 @@
+{
+  "id": "700e5b01-1ca7-4ef8-a828-a05163f07bbf",
+  "text": "Backend: resolve & load linked repos",
+  "description": "Resolve repoId → localPath via the machine-local registry, then load aims from the linked .bowman (reuse listAims/getMany with that projectPath). Carry a visited-set to avoid cycles across repos. Return external aims tagged with their source repoId so the frontend can treat them as read-only and tint them. Endpoints for: list linked repos, resolve a {repoId,aimId}, and search within a linked repo (for cross-repo search fan-out).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "backend"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "1585aa46-8ed8-45c5-9303-9ddc9bbb03db",
+      "relativePosition": [
+        2.4495561271852333,
+        -0.49967467393223103
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "de08d86a-596e-4ac3-854f-e8f9afe4d203",
+    "a82b1530-fbcf-424f-b323-3bfea4f76048",
+    "c4df7232-a3b7-4081-879c-096c2b8488e8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780472113
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

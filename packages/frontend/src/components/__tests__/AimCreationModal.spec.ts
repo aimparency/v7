@@ -79,7 +79,10 @@ describe('AimCreationModal', () => {
       1,
       1,
       [],
-      []
+      [],
+      null,
+      'open',
+      ''
     )
   })
 
@@ -140,7 +143,10 @@ describe('AimCreationModal', () => {
         expect.anything(),
         expect.anything(),
         [], // Parents
-        [{ aimId: 'c1', weight: 5 }] // Children
+        [{ aimId: 'c1', weight: 5 }], // Children
+        null,
+        'open',
+        ''
     )
   })
 
@@ -168,7 +174,10 @@ describe('AimCreationModal', () => {
       1,
       1,
       [],
-      []
+      [],
+      null,
+      'open',
+      ''
     )
   })
 
@@ -318,7 +327,10 @@ describe('AimCreationModal', () => {
       1,
       1,
       [],
-      []
+      [],
+      null,
+      'open',
+      ''
     )
 
     uiStore.createAim.mockClear()

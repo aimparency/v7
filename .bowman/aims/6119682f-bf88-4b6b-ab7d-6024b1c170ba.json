@@ -1,0 +1,24 @@
+{
+  "id": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
+  "text": "Build the real-world effector layer: give wrapped agents hands via MCP tools (Composio + native connectors)",
+  "description": "Expose real-world actions (email, GitHub, calendar, social, payments) to wrapped agents as MCP tools, so aims can produce effects beyond the codebase. Supersedes the mock 'perform-work' credit tool. Path: add Composio's MCP server + native connectors to the wrapped Claude/codex sessions.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1781423217477
+  },
+  "intrinsicValue": 12,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

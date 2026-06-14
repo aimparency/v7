@@ -4,6 +4,7 @@
   "to": 1774915200000,
   "order": 15,
   "parent": "618b92d0-70cc-434c-b2b5-ee9fcfefc25a",
+  "childPhaseIds": [],
   "commitments": [
     "e2c26776-1260-4624-ba97-c3ee29fa623f",
     "3ea51517-fc9c-4215-ac5b-79ec2a21f6b2",
@@ -31,7 +32,12 @@
     "81c363a7-2598-4db5-ac12-2f24a93076a6",
     "38d26af9-329e-4259-ad4c-cd2c6521068a",
     "f09a7c0a-b880-4448-a433-eef89c1f27bc",
-    "ccf7385c-14b3-4e4a-8e94-c18da4b90d41"
+    "ccf7385c-14b3-4e4a-8e94-c18da4b90d41",
+    "5af61b3e-5b5e-43ba-af2c-23977d55b910",
+    "4a96fff0-ca81-436e-a51b-7b31ce762065",
+    "310878de-2ba0-4504-a8fd-85a0b14cdcfc",
+    "29021d9a-7ac9-418c-b814-4255d9407f4f",
+    "a7fd4651-61b4-4a37-a2a9-a11a094d8579"
   ],
   "name": "Open Source Release Prep"
 }

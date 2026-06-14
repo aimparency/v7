@@ -1,5 +1,5 @@
 export type UIViewMode = 'columns' | 'graph' | 'voice'
-export type GraphColorMode = 'status' | 'priority'
+export type GraphColorMode = 'status' | 'priority' | 'custom'
 
 type ViewState = {
   windowSize: number

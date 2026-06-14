@@ -308,7 +308,7 @@ describe('AimEditModal custom color', () => {
     await wrapper.setProps({ show: true })
     await wrapper.vm.$nextTick()
 
-    await wrapper.find('.color-input').setValue('#ff8800')
+    await wrapper.find('.hidden-color-input').setValue('#ff8800')
     await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
     await wrapper.vm.$nextTick()
 

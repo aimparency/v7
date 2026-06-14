@@ -1,0 +1,24 @@
+{
+  "id": "12da17c9-7c18-479c-8dc3-e78bc0a35805",
+  "text": "go through the mcp functions, understand them and update/correct the tool descriptions while keeping them brief for low context usage",
+  "description": "Think about, what formulations would help to subtly encourage the system to work autonmously. Always looking for the root aim. maybe we need to update \"get aim context\" to get the entire path of parent aims (bewar of cycles)",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1781422975353
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

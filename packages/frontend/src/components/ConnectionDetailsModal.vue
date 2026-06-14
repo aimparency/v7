@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import FormModalShell from './FormModalShell.vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
@@ -110,6 +110,32 @@ const confirm = async () => {
   }
 }
 
+const pctInput = ref<HTMLInputElement>()
+
+const handleWindowKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    const activeElement = document.activeElement
+    if (activeElement && activeElement.tagName.toLowerCase() === 'textarea') {
+      return
+    }
+    event.preventDefault()
+    confirm()
+  }
+}
+
+onMounted(async () => {
+  window.addEventListener('keydown', handleWindowKeydown)
+  await nextTick()
+  if (pctInput.value) {
+    pctInput.value.focus()
+    pctInput.value.select()
+  }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleWindowKeydown)
+})
+
 // Cancel keeps the already-persisted default-weight connection.
 const cancel = () => modalStore.closeConnectionDetailsModal()
 </script>
@@ -136,6 +162,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
       <div v-else class="form-group">
         <label>Contribution share (%)</label>
         <input
+          ref="pctInput"
           type="number"
           min="0"
           :max="maxPct"

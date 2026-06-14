@@ -1,0 +1,52 @@
+{
+  "id": "de08d86a-596e-4ac3-854f-e8f9afe4d203",
+  "text": "Merged cross-repo value flow (external intrinsics zeroed)",
+  "description": "Extend the value engine so cross-repo edges propagate flow. Merged aim array = local aims (real intrinsicValue) + referenced external aims with intrinsicValue forced to 0 + the cross-repo edges, fed to the existing calculateAimValues — externals receive value ONLY from inflow. totalIntrinsic stays = local intrinsics, so exporting flow to externals reduces local retained values (intended: value is conserved flow, not aggregate). v1: treat directly-referenced external aims as leaf sinks; cascade into their subtree only when expanded. Add a numeric two-repo fixture test confirming the boundary semantics.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "value-calculation"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "535d5d5a-883a-434f-892f-856f144482bb",
+      "relativePosition": [
+        1.1459455644601089,
+        2.2218930584738326
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "5a45cb28-dd71-47c7-8ba3-78b543b2647b",
+      "relativePosition": [
+        -1.8710746451155829,
+        -1.6580348827469207
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "700e5b01-1ca7-4ef8-a828-a05163f07bbf",
+      "relativePosition": [
+        -0.1875796170447536,
+        2.4929528449750795
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780439439
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

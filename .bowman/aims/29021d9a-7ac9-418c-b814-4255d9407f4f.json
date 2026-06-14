@@ -1,0 +1,26 @@
+{
+  "id": "29021d9a-7ac9-418c-b814-4255d9407f4f",
+  "text": "Implement atomic rebuild and relaunch in the session broker",
+  "description": "Trigger an npm rebuild and worker process reload upon finding a relaunch indicator file, handling build errors gracefully by logging them.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5af61b3e-5b5e-43ba-af2c-23977d55b910"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780334889
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,25 @@
+{
+  "id": "7634e681-d234-48fa-ad82-876ef97460ca",
+  "text": "ideate how we can reach ASI (make AI autonomously work towards ideas by using the aim graph and the wrapped agents)",
+  "description": "ideate using aimparency. Cooperate with human to create aims. look at the stem, the largest aims. ",
+  "reflections": [],
+  "archived": false,
+  "color": "#33d17a",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1781422732878
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

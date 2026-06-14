@@ -199,7 +199,8 @@ export const createAimRouter = (
           })).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
-          loopWeight: z.number().optional()
+          loopWeight: z.number().optional(),
+          color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
         })
       }))
       .mutation(async ({ input }: any) => {
@@ -435,7 +436,8 @@ export const createAimRouter = (
              weight: z.number().optional(),
              relativePosition: z.tuple([z.number(), z.number()]).optional(),
              explanation: z.string().optional()
-          })).optional()
+          })).optional(),
+          color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
         })
       }))
       .mutation(async ({ input }: any) => {
@@ -472,7 +474,8 @@ export const createAimRouter = (
           duration: input.aim.duration ?? 1,
           costVariance: input.aim.costVariance ?? 0,
           valueVariance: input.aim.valueVariance ?? 0,
-          archived: false
+          archived: false,
+          color: input.aim.color || undefined
         };
 
         await writeAim(input.projectPath, aim);
@@ -524,7 +527,8 @@ export const createAimRouter = (
              weight: z.number().optional(),
              relativePosition: z.tuple([z.number(), z.number()]).optional(),
              explanation: z.string().optional()
-          })).optional()
+          })).optional(),
+          color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
         }),
         positionInParent: z.number().optional(),
         weight: z.number().optional(),
@@ -556,7 +560,8 @@ export const createAimRouter = (
           duration: input.aim.duration ?? 1,
           costVariance: input.aim.costVariance ?? 0,
           valueVariance: input.aim.valueVariance ?? 0,
-          archived: false
+          archived: false,
+          color: input.aim.color || undefined
         };
 
         await writeAim(input.projectPath, childAim);
@@ -609,7 +614,8 @@ export const createAimRouter = (
              weight: z.number().optional(),
              relativePosition: z.tuple([z.number(), z.number()]).optional(),
              explanation: z.string().optional()
-          })).optional()
+          })).optional(),
+          color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
         }),
         insertionIndex: z.number().optional()
       }))
@@ -639,7 +645,8 @@ export const createAimRouter = (
           duration: input.aim.duration ?? 1,
           costVariance: input.aim.costVariance ?? 0,
           valueVariance: input.aim.valueVariance ?? 0,
-          archived: false
+          archived: false,
+          color: input.aim.color || undefined
         };
 
         await writeAim(input.projectPath, aim);

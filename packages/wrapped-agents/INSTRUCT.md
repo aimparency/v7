@@ -12,9 +12,9 @@ You have access to **aimparency** via MCP tools. Aimparency is a goal/aim manage
 
 When idle or unsure what to do:
 
-1. **Check active phases**: Use `list_phases` to see what phases are currently active
-2. **Find open work**: Use `get_prioritized_aims` to get aims sorted by value/cost ratio, or `list_phase_aims_recursive` with a phase ID to see all open aims
-3. **Pick an aim**: Choose one that matches your capabilities (coding, research, etc.)
+1. **Go to active work**: Use `get_prioritized_aims` — it resolves the active phase by date and ranks open aims by flow-based value/cost. (`get_active_path` shows the selected phase; `list_phases` lists all.)
+2. **See the full backlog**: Use `list_phase_aims_recursive` with a phase ID for the open-aim tree under a phase.
+3. **Pick an aim**: Choose one that matches your capabilities (coding, research, etc.). Note: `get_prioritized_aims` priorities are unreliable when its `diagnostics` flag aims with ~0 flowed value (disconnected from any goal) or missing cost — trust the graph less when that happens.
 4. **Work on it**: Implement the aim - write code, create files, run tests
 5. **Update status**: Use `update_aim` to mark as done when complete, or add a status comment if blocked
 6. **Reflect on completion**: When you complete an aim, use `addReflection` to record what you learned
@@ -49,14 +49,21 @@ You are not just an executor - you are a collaborator. The aim graph is a guide,
 
 ## Key MCP Tools
 
-- `list_phases` - Get active phases (time-boxed work periods)
-- `get_prioritized_aims` - Get aims sorted by priority
-- `list_phase_aims_recursive` - Get all open aims in a phase
-- `search_aims` / `search_aims_semantic` - Find specific aims
-- `get_aim` / `get_aim_context` - Get aim details and related aims
-- `create_aim` - Create new aims (with optional phaseId to commit immediately)
-- `update_aim` - Update aim status, text, or relationships
-- `addReflection` - Record structured reflections on completed aims
+**Find work**
+- `get_prioritized_aims` - Open aims of the active phase (resolved by date), ranked by value/cost. Read its `diagnostics`.
+- `get_active_path` - Currently selected phase path (root → deepest). `list_phases` - all phases.
+- `list_phase_aims_recursive` - Open aims under a phase as a nested tree.
+- `search_aims` / `search_aims_semantic` - Find aims. `get_aim` / `get_aim_context` - Details (+ parents/children/neighbors).
+
+**Change the graph**
+- `create_aim` - New aim (phaseId commits it; supportedAims/supportingConnections wire parents/children).
+- `update_aim` - Update fields. supportedAims/supportingConnections REPLACE links (not append). Set `intrinsicValue` on goals and `cost` on tasks so priorities mean something.
+- `commit_aim_to_phase` / `remove_aim_from_phase` - Phase membership. `addReflection` - Record reflections.
+
+**Keep the graph healthy**
+- `graph_hygiene` - Floating aims, mega-parents, stale + duplicate clusters, collapse candidates.
+- `find_duplicate_aims` → `merge_aims` - Dedupe. `suggest_reparents` - Reparent a vague catch-all's children.
+- `check_consistency` → `fix_consistency` - Repair broken links. `build_search_index` - Refresh before semantic/duplicate search.
 
 ## Reflection Pattern: Learn from Your Work
 
@@ -97,12 +104,22 @@ When you complete an aim, call `addReflection` with:
 - Prefer working on aims from active phases over floating aims
 - Before starting work on an aim, use MCP tool `get_aim_context` for that aim to understand it in its context. You might recursively call `get_aim_context` for its parent aims until you have a good understanding of the intention. 
 
+## Keep the Graph Healthy
+
+The economic priority model only works if the graph is well-formed. As you work, maintain it:
+
+- **Ground value**: A goal worth pursuing should carry `intrinsicValue`; a task should carry a realistic `cost`. Aims with neither get ~0 flowed value and pollute the ranking. Set them via `update_aim` when you notice them.
+- **Reconnect orphans**: If an aim has no path to a valued goal (flagged in `get_prioritized_aims` diagnostics), wire it to the parent it actually serves.
+- **Dedupe before creating**: Search (`search_aims_semantic`) before adding an aim. Periodically run `find_duplicate_aims` / `graph_hygiene` and merge.
+- **Don't let parents sprawl**: If a parent collects dozens of loosely-related children (mega-parent), use `suggest_reparents` to regroup.
+
 ## Stop Conditions
 
 Only consider stopping if:
 - ALL aims in ALL active phases are marked done
 - You've verified no open aims remain with `list_phase_aims_recursive`
 - You've considered adding new aims (refactoring, testing, documentation, performance, security)
+- You've kept the graph healthy (grounded value, reconnected orphans, deduped — see above)
 - There truly is nothing more to do
 
 Otherwise, keep working! Create new aims if needed.

@@ -28,6 +28,40 @@ const supportingConnectionsList = ref<{ id: string, text: string, weight: number
 const searchSelection = ref<{ type: 'aim'; data: SearchAimResult } | { type: 'option'; data: AimSearchAdditionalOption } | null>(null)
 const aimSearchPicker = ref<InstanceType<typeof AimSearchPicker>>()
 
+const statuses = computed(() => dataStore.getStatuses)
+const selectedStatus = ref('open')
+const statusComment = ref('')
+const aimColor = ref('')
+const colorInputRef = ref<HTMLInputElement>()
+
+const activeColor = computed(() => {
+  return aimColor.value || 'transparent'
+})
+
+const getStatusColor = (state: string) => {
+  const status = statuses.value.find((s: any) => s.key === state)
+  return status?.color || '#007acc'
+}
+
+const colorPickerValue = computed(() => {
+  return aimColor.value || getStatusColor(selectedStatus.value)
+})
+
+const triggerColorPicker = () => {
+  colorInputRef.value?.click()
+}
+
+const clearCustomColor = () => {
+  aimColor.value = ''
+}
+
+const headerStyle = computed(() => {
+  if (!aimColor.value) return {}
+  return {
+    background: `linear-gradient(to right, #2d2d2d, ${aimColor.value})`
+  }
+})
+
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
 const loopWeightInput = ref<HTMLInputElement>()
@@ -99,7 +133,10 @@ const createAim = async () => {
         aimCost.value,
         weight,
         supportedAimsList.value.map(a => a.id),
-        supportingConnectionsList.value.map(a => ({ aimId: a.id, weight: a.weight }))
+        supportingConnectionsList.value.map(a => ({ aimId: a.id, weight: a.weight })),
+        aimColor.value || null,
+        selectedStatus.value as any,
+        statusComment.value.trim()
       )
     }
   } catch (error) {
@@ -229,6 +266,9 @@ onMounted(async () => {
   aimCost.value = AIM_DEFAULTS.cost
   aimLoopWeight.value = AIM_DEFAULTS.loopWeight
   searchSelection.value = null
+  selectedStatus.value = 'open'
+  statusComment.value = ''
+  aimColor.value = ''
   await nextTick()
   aimTextInput.value?.focus()
 })
@@ -239,8 +279,45 @@ onMounted(async () => {
   <FormModalShell
     :show="true"
     title="Add Aim"
+    :header-style="headerStyle"
     @request-close="modalStore.closeAimModal()"
   >
+    <template #header-right>
+      <div class="color-picker-wrapper">
+        <input
+          ref="colorInputRef"
+          type="color"
+          class="hidden-color-input"
+          :value="colorPickerValue"
+          @input="aimColor = ($event.target as HTMLInputElement).value"
+        />
+        <button
+          type="button"
+          class="color-picker-trigger"
+          :style="{ backgroundColor: activeColor }"
+          @click="triggerColorPicker"
+          title="Select custom color"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="palette-icon">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.03345 19.1749 5.27909 19.243 5.51409 19.1763C5.7491 19.1096 5.92728 18.9213 5.98978 18.6713C6.155 18.0105 6.75 17.5 7.5 17.5H8.5C9.32843 17.5 10 18.1716 10 19V21.5C10 21.7761 10.2239 22 10.5 22H12Z" />
+            <circle cx="7.5" cy="10.5" r="1" fill="currentColor" />
+            <circle cx="11.5" cy="7.5" r="1" fill="currentColor" />
+            <circle cx="16.5" cy="9.5" r="1" fill="currentColor" />
+            <circle cx="15.5" cy="14.5" r="1" fill="currentColor" />
+          </svg>
+        </button>
+        <button
+          v-if="aimColor"
+          type="button"
+          class="clear-color-btn"
+          @click="clearCustomColor"
+          title="Clear custom color (revert to status color)"
+        >
+          ×
+        </button>
+      </div>
+    </template>
+
     <div @keydown.capture="handleModalKeydown">
         <div class="form-group">
           <label>Aim Text</label>
@@ -290,6 +367,30 @@ onMounted(async () => {
             rows="3"
             @keydown.capture="handleTextareaKeydown"
           ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Status</label>
+          <select
+            v-model="selectedStatus"
+            class="status-select"
+            @keydown="handleInputKeydown"
+          >
+            <option v-for="status in statuses" :key="status.key" :value="status.key">
+              {{ status.key }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Status Comment</label>
+          <input
+            v-model="statusComment"
+            type="text"
+            placeholder="Optional comment about status..."
+            class="text-input"
+            @keydown="handleInputKeydown"
+          />
         </div>
 
         <div class="form-group">
@@ -617,5 +718,65 @@ onMounted(async () => {
 
 .btn-remove:hover {
     color: #ff4444;
+}
+
+.color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hidden-color-input {
+  opacity: 0;
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.color-picker-trigger {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 1px solid #555;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.color-picker-trigger:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+.palette-icon {
+  filter: drop-shadow(0px 1px 1px rgba(0, 0, 0, 0.8));
+}
+
+.clear-color-btn {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.clear-color-btn:hover {
+  background: rgba(255, 0, 0, 0.3);
+  color: #fff;
 }
 </style>

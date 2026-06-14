@@ -1,0 +1,60 @@
+{
+  "id": "5af61b3e-5b5e-43ba-af2c-23977d55b910",
+  "text": "Implement self-rebuilding and relaunching of session workers on source file changes",
+  "description": "Enable wrapped session workers to detect edits to their own codebase and coordinate a rebuild and restart on the next agent halt, preventing watch-compiler crashes.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "4a96fff0-ca81-436e-a51b-7b31ce762065",
+      "relativePosition": [
+        -0.8190702871449961,
+        2.362016906102963
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "310878de-2ba0-4504-a8fd-85a0b14cdcfc",
+      "relativePosition": [
+        0.05048230728188347,
+        2.4994902553623803
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "29021d9a-7ac9-418c-b814-4255d9407f4f",
+      "relativePosition": [
+        -2.3890078297427695,
+        0.7366421040286404
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "a7fd4651-61b4-4a37-a2a9-a11a094d8579",
+      "relativePosition": [
+        -0.021795576009874498,
+        2.4999049887678524
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780328775
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -185,7 +185,12 @@ const onKeydown = (e: KeyboardEvent) => {
     if (isInput) return
 
     if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
-        graphUIStore.setGraphColorMode(graphUIStore.graphColorMode === 'status' ? 'priority' : 'status')
+        const nextMode: Record<'status' | 'priority' | 'custom', 'status' | 'priority' | 'custom'> = {
+            'status': 'priority',
+            'priority': 'custom',
+            'custom': 'status'
+        }
+        graphUIStore.setGraphColorMode(nextMode[graphUIStore.graphColorMode])
     }
 
     if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
@@ -476,6 +481,11 @@ function getNodeTitleLines(text: string): string[] {
             :class="{ active: graphUIStore.graphColorMode === 'priority' }"
             @click="graphUIStore.setGraphColorMode('priority')"
         >Prio</button>
+        <button
+            class="segment-btn"
+            :class="{ active: graphUIStore.graphColorMode === 'custom' }"
+            @click="graphUIStore.setGraphColorMode('custom')"
+        >Custom</button>
       </div>
 
       <div v-if="graphUIStore.phaseFilter" class="phase-badge">

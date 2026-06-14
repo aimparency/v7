@@ -87,11 +87,15 @@ export function useWebGLGraphRenderer(
         }
       }
 
-      // Determine color: a custom aim color always wins; otherwise fall back
-      // to the priority gradient (in priority mode) or the status color.
+      // Determine color: status, priority, and custom are separate coloring modes.
+      // Custom mode shows the custom aim color if set, falling back to a neutral grey.
       let color: [number, number, number]
-      if (node.customColor) {
-        color = applyBrightness(cssColorToRgb(node.customColor))
+      if (colorMode === 'custom') {
+        if (node.customColor) {
+          color = applyBrightness(cssColorToRgb(node.customColor))
+        } else {
+          color = applyBrightness(cssColorToRgb('#555555'))
+        }
       } else if (colorMode === 'priority' && node.color) {
         color = applyBrightness(cssColorToRgb(node.color))
       } else {

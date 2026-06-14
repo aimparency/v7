@@ -1,0 +1,24 @@
+{
+  "id": "c0a45822-0106-46fd-8819-244d3611488b",
+  "text": "Close one reality→priority feedback loop: ground aim value in real outcomes, not self-report",
+  "description": "Replace the mock economy (credits in system.json) with at least one real signal flowing back into aim value/priority — e.g. test outcomes, PR merges, replies, or revenue automatically adjusting intrinsicValue/cost. Turns directed breeding into real selection pressure that doesn't route through the human.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1781423219779
+  },
+  "intrinsicValue": 18,
+  "cost": 13,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

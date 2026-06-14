@@ -1,0 +1,46 @@
+{
+  "id": "bd1cefe0-6895-4247-b6fd-319972c8bd6e",
+  "text": "Partial/lazy graph rendering (dotted stubs, load on click)",
+  "description": "General capability (also valuable for large single repos): support graphs too big to fully load. Unloaded aims render as dotted-outline stubs with no loaded info. Clicking a stub loads the aim and reveals its relatives as new dotted stubs. The store holds a mix of loaded aims and stubs; value calc treats stubs as boundary leaves. This is the substrate cross-repo rendering builds on (externals are just stubs from another repo).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "graph",
+    "performance",
+    "ui"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200",
+      "relativePosition": [
+        0.2754918846064058,
+        -2.484774481017545
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "28134f24-5279-465d-bf6a-38795df36b8c",
+      "relativePosition": [
+        0.014492517648778565,
+        2.4999579930335227
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "a82b1530-fbcf-424f-b323-3bfea4f76048",
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780465047
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

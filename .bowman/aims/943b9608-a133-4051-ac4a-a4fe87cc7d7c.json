@@ -1,0 +1,27 @@
+{
+  "id": "943b9608-a133-4051-ac4a-a4fe87cc7d7c",
+  "text": "Writable external aims (git-permission based)",
+  "description": "DEFERRED / independent of the read-only edge model. Allow editing aims in a linked repo when the user opts in via a per-linked-repo machine-local read/write toggle. backend writeAim already accepts any local .bowman path; sharing/pushing is plain git done by the user outside the app. Ship after read-only cross-repo links land so the foundational slice stays small.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "deferred"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780452675
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

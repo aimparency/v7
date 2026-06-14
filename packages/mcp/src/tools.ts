@@ -74,7 +74,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "list_phase_aims_recursive",
-          description: "All aims recursively within a phase (default: open only)",
+          description: "Open aims under a phase as a nested tree (keeps parent path to open descendants). Pass status to override.",
           inputSchema: {
             type: "object",
             properties: {
@@ -87,7 +87,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "list_phases",
-          description: "List phases (ordered, no dates)",
+          description: "List phases in order. parentPhaseId → its children; omitted → all phases.",
           inputSchema: {
             type: "object",
             properties: {
@@ -112,7 +112,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "create_aim",
-          description: "Create aim. Use phaseId to commit in one step.",
+          description: "Create aim. phaseId commits it; supportedAims/supportingConnections wire parents/children.",
           inputSchema: {
             type: "object",
             properties: {
@@ -129,6 +129,8 @@ export function registerTools(server: Server, clientOverride?: any) {
               },
               supportingConnections: { type: "array", items: { type: "string" }, description: "child aim UUIDs" },
               supportedAims: { type: "array", items: { type: "string" }, description: "parent aim UUIDs" },
+              intrinsicValue: { type: "number", description: "Standalone worth; set on goals so value can flow to children" },
+              cost: { type: "number", description: "Effort/resource cost; set on tasks so priority is meaningful" },
               phaseId: { type: "string" },
             },
             required: ["projectPath", "text"],
@@ -136,7 +138,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "update_aim",
-          description: "Update aim text/status/relationships. Update before git commit.",
+          description: "Update aim fields. supportedAims/supportingConnections REPLACE existing links (not append).",
           inputSchema: {
             type: "object",
             properties: {
@@ -154,6 +156,8 @@ export function registerTools(server: Server, clientOverride?: any) {
               },
               supportingConnections: { type: "array", items: { type: "string" }, description: "child aim UUIDs" },
               supportedAims: { type: "array", items: { type: "string" }, description: "parent aim UUIDs" },
+              intrinsicValue: { type: "number", description: "Standalone worth; set on goals so value can flow to children" },
+              cost: { type: "number", description: "Effort/resource cost; set on tasks so priority is meaningful" },
             },
             required: ["projectPath", "aimId"],
           },
@@ -195,7 +199,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "create_phase",
-          description: "Create phase (ordered, no dates)",
+          description: "Create phase by name under optional parent.",
           inputSchema: {
             type: "object",
             properties: {
@@ -234,7 +238,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "commit_aim_to_phase",
-          description: "Commit aim to phase",
+          description: "Commit aim to phase (insertionIndex sets order).",
           inputSchema: {
             type: "object",
             properties: {
@@ -272,7 +276,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Get prioritized open aims from deepest active phase (or given phaseId)",
+          description: "Open aims of the active phase (resolved by date, or pass phaseId), ranked by flow-based value/cost. Includes phase economics + data-quality diagnostics.",
           inputSchema: {
             type: "object",
             properties: {
@@ -625,6 +629,18 @@ export function registerTools(server: Server, clientOverride?: any) {
             });
           }
 
+          // Economic fields aren't accepted by createFloatingAim; set them in a follow-up update.
+          if (args.intrinsicValue !== undefined || args.cost !== undefined) {
+            const econ: any = {};
+            if (args.intrinsicValue !== undefined) econ.intrinsicValue = args.intrinsicValue;
+            if (args.cost !== undefined) econ.cost = args.cost;
+            await trpcClient.aim.update.mutate({
+              projectPath: args.projectPath as string,
+              aimId: result.id,
+              aim: econ,
+            });
+          }
+
           // If phaseId provided, commit to phase
           if (args.phaseId) {
             await trpcClient.aim.commitToPhase.mutate({
@@ -650,7 +666,9 @@ export function registerTools(server: Server, clientOverride?: any) {
           if (args.description !== undefined) updateData.description = args.description;
           if (args.tags) updateData.tags = args.tags;
           if (args.status) updateData.status = args.status;
-          
+          if (args.intrinsicValue !== undefined) updateData.intrinsicValue = args.intrinsicValue;
+          if (args.cost !== undefined) updateData.cost = args.cost;
+
           if (args.supportingConnections) {
               updateData.supportingConnections = (args.supportingConnections as string[]).map(id => ({
                   aimId: id,

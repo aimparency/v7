@@ -1,6 +1,8 @@
 {
   "id": "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200",
   "text": "WebGL Graph Rendering",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -85,7 +87,8 @@
     }
   ],
   "supportedAims": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210",
+    "bd1cefe0-6895-4247-b6fd-319972c8bd6e"
   ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
@@ -97,5 +100,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { useDataStore, type Aim, type Phase, type AimCreationParams, type PhaseLevelPhaseEntry, type PhaseLevelPlaceholderEntry } from '../data'
 import { AIM_DEFAULTS } from '../../constants/aimDefaults'
+import type { AimStatusState } from 'shared'
 import {
   setWindowSize as setWindowSizeHelper,
 } from './view-helpers'
@@ -537,7 +538,21 @@ export const useListStore = defineStore('ui', {
     },
 
     // Create aim and update selection
-    async createAim(aimTextOrId: string, isExistingAim: boolean = false, description?: string, tags?: string[], intrinsicValue: number = AIM_DEFAULTS.intrinsicValue, loopWeight: number = AIM_DEFAULTS.loopWeight, cost: number = AIM_DEFAULTS.cost, weight: number = 1, supportedAims: string[] = [], supportingConnections: { aimId: string, weight?: number, relativePosition?: [number, number] }[] = []) {
+    async createAim(
+      aimTextOrId: string,
+      isExistingAim: boolean = false,
+      description?: string,
+      tags?: string[],
+      intrinsicValue: number = AIM_DEFAULTS.intrinsicValue,
+      loopWeight: number = AIM_DEFAULTS.loopWeight,
+      cost: number = AIM_DEFAULTS.cost,
+      weight: number = 1,
+      supportedAims: string[] = [],
+      supportingConnections: { aimId: string, weight?: number, relativePosition?: [number, number] }[] = [],
+      color?: string | null,
+      statusState: AimStatusState = 'open',
+      statusComment: string = ''
+    ) {
       const dataStore = useDataStore()
       const modalStore = useUIModalStore()
       const projectStore = useProjectStore()
@@ -547,7 +562,7 @@ export const useListStore = defineStore('ui', {
         description,
         tags: tags || [],
         reflections: [],
-        status: { state: 'open' as const, comment: '', date: Date.now() },
+        status: { state: statusState, comment: statusComment, date: Date.now() },
         supportingConnections,
         supportedAims,
         intrinsicValue: intrinsicValue ?? 0,
@@ -556,7 +571,8 @@ export const useListStore = defineStore('ui', {
         duration: 1,
         costVariance: 0,
         valueVariance: 0,
-        archived: false
+        archived: false,
+        color: color || undefined
       }
 
       const path = this.getSelectionPath()

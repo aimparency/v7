@@ -1,0 +1,24 @@
+{
+  "id": "0cd5540c-c2ae-4dd2-ac0e-e11685d271dd",
+  "text": "Wire the end-to-end read→act→reflect loop through a wrapped Claude session",
+  "description": "Integrate existing pieces into one closed loop: read top aim (get_prioritized_aims) → act with effector tools (aim A) → write reflection back (addReflection). Runs inside a real wrapped Claude session on a schedule, no streamText middle layer. Depends on A; feeds B.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1781423221443
+  },
+  "intrinsicValue": 8,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

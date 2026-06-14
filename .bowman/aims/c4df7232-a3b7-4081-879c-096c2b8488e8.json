@@ -1,0 +1,61 @@
+{
+  "id": "c4df7232-a3b7-4081-879c-096c2b8488e8",
+  "text": "Cross-repo aim search in the connection modal",
+  "description": "Add a repo scope selector to the aim-search modal (the universal connection-creation funnel): this repo / all / per-repo checkboxes. Fan the query out to each selected linked repo's search endpoint, merge and rank results (same embedding model ⇒ comparable cosine), and tag each result with its repo. Selecting an external result creates a cross-repo edge.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "search",
+    "ui"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "1c27fb5d-0a77-470e-a3f2-d5c8023d4464",
+      "relativePosition": [
+        -0.25277083545334916,
+        2.4871885543207646
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "1e554f38-33ae-42d4-88e6-4a4b071a20d0",
+      "relativePosition": [
+        -2.1523196379878824,
+        -1.2718176661501879
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "5a45cb28-dd71-47c7-8ba3-78b543b2647b",
+      "relativePosition": [
+        -2.4991837994609862,
+        0.06387751178425338
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "700e5b01-1ca7-4ef8-a828-a05163f07bbf",
+      "relativePosition": [
+        -2.4715607145441334,
+        0.3760154708547142
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780446921
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

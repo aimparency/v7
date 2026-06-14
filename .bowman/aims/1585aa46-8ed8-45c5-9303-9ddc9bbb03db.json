@@ -1,0 +1,29 @@
+{
+  "id": "1585aa46-8ed8-45c5-9303-9ddc9bbb03db",
+  "text": "Repo identity + portable/local linked-repo registry",
+  "description": "Add a stable generated repoId (uuid) to meta.json. Split the linked-repo registry: portable part (repoId, url, name) committed in meta.json; machine-local part (localPath, read/write access toggle) in .bowman/runtime/ (gitignored) — otherwise committed absolute paths break for every collaborator. Provide the two-stage resolution: edge {repoId,aimId} → machine-local repoId→localPath map. repoId is the source of truth; url is an optional relocation hint. Registration UX (add a linked repo, e.g. from discoverLocalProjects) lands here.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "data-model",
+    "identity"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5a45cb28-dd71-47c7-8ba3-78b543b2647b",
+    "700e5b01-1ca7-4ef8-a828-a05163f07bbf"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780480432
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,26 @@
+{
+  "id": "a7fd4651-61b4-4a37-a2a9-a11a094d8579",
+  "text": "Render rebuilding status and lock terminal input in the Watchdog UI",
+  "description": "Display a rebuild progress overlay and disable user inputs during relaunch transitions, restoring session automation upon reconnection.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5af61b3e-5b5e-43ba-af2c-23977d55b910"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780336997
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

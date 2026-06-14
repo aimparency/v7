@@ -1,0 +1,26 @@
+{
+  "id": "310878de-2ba0-4504-a8fd-85a0b14cdcfc",
+  "text": "Inject session relaunch prompts for the agent on natural halts",
+  "description": "During reflections or idle states, warn the agent that the wrapper code is dirty and instruct it to conclude its task and issue the relaunch command.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5af61b3e-5b5e-43ba-af2c-23977d55b910"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1780780332918
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

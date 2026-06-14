@@ -9,12 +9,14 @@ const props = withDefaults(defineProps<{
   width?: string
   closeOnOverlay?: boolean
   closeOnEscape?: boolean
+  headerStyle?: string | Record<string, string>
 }>(), {
   entityId: null,
   entityIdLabel: 'ID',
   width: 'min(90vw, 50vw)',
   closeOnOverlay: true,
-  closeOnEscape: true
+  closeOnEscape: true,
+  headerStyle: ''
 })
 
 const emit = defineEmits<{
@@ -45,14 +47,21 @@ const handleKeydown = (event: KeyboardEvent) => {
     @keydown="handleKeydown"
   >
     <div class="modal-panel" :style="{ width }">
-      <div class="modal-header">
+      <div class="modal-header" :style="headerStyle">
         <slot name="header">
-          <h2>{{ title }}</h2>
-          <CopyableMetaId
-            v-if="entityId"
-            :value="entityId"
-            :label="entityIdLabel"
-          />
+          <div class="modal-header-content">
+            <div class="modal-header-left">
+              <h2>{{ title }}</h2>
+              <CopyableMetaId
+                v-if="entityId"
+                :value="entityId"
+                :label="entityIdLabel"
+              />
+            </div>
+            <div class="modal-header-right">
+              <slot name="header-right" />
+            </div>
+          </div>
         </slot>
       </div>
 
@@ -92,6 +101,25 @@ const handleKeydown = (event: KeyboardEvent) => {
   padding: 0.875rem;
   border-bottom: 1px solid #555;
   flex-shrink: 0;
+  transition: background 0.25s ease;
+}
+
+.modal-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.modal-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.modal-header-right {
+  display: flex;
+  align-items: center;
 }
 
 .modal-header h2 {

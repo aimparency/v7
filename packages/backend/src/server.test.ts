@@ -669,6 +669,28 @@ test('aim.update - persists explanation on supportingConnections', async () => {
   assert.strictEqual(after.supportingConnections[0]!.explanation, 'because it helps');
 });
 
+test('aim.update - persists custom color', async () => {
+  const aimResult = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: { text: 'Color test', status: { state: 'open', comment: '', date: Date.now() }, color: '#ff8800' }
+  });
+  
+  assert.strictEqual(aimResult.color, '#ff8800');
+
+  const updatedAim = await caller.aim.update({
+    projectPath: testProjectPath,
+    aimId: aimResult.id,
+    aim: {
+      color: '#00ff00'
+    }
+  });
+
+  assert.strictEqual(updatedAim.color, '#00ff00');
+
+  const fetchedAim = await caller.aim.get({ projectPath: testProjectPath, aimId: aimResult.id });
+  assert.strictEqual(fetchedAim.color, '#00ff00');
+});
+
 test('discoverLocalProjects - finds nearby repositories with .bowman directories', async () => {
   const workspaceRoot = path.join(testRootPath, 'workspace');
   const repoA = path.join(workspaceRoot, 'repo-a');

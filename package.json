@@ -52,7 +52,8 @@
     "ncu-upgrade": "npx npm-check-updates -u --deep && npm install",
     "dev:mcp": "dotenv -e .env -- npm run dev -w mcp",
     "expose:mcp": "dotenv -e .env -- npm run expose -w mcp",
-    "rec-install": "npm install && cd packages/shared && npm install && cd ../backend && npm install && cd ../frontend && npm install && cd ../mcp && npm install"
+    "rec-install": "npm install && cd packages/shared && npm install && cd ../backend && npm install && cd ../frontend && npm install && cd ../mcp && npm install",
+    "real-world": "dotenv -e .env -- npm run start -w real-world --"
   },
   "keywords": [
     "aimparency",

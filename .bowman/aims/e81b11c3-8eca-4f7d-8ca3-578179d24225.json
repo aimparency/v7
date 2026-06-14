@@ -1,11 +1,60 @@
 {
   "id": "e81b11c3-8eca-4f7d-8ca3-578179d24225",
   "text": "inter-repository links",
-  "description": "enable linking to aims from other repositories. maybe treating repositories themselves as aims (economically/mathmatically). Usually the owner of such a connection is the repository. So only \"this other repo supports this aim here\" connections can be defined in the repo == Can't assume some other repo needs something.",
+  "description": "Enable linking to aims in other locally-checked-out repositories. Settled design (2026-06):\n\nDIRECTION & OWNERSHIP: A repo may only declare edges where a LOCAL aim is the supported (parent) side and the EXTERNAL aim is the supporter (child). You can always declare what supports you; never that another repo needs you. So a cross-repo edge is a supportingConnection on a local parent whose target lives in another repo. Weight stays on the local side. Value flows OUT of this repo into the external supporter. The external supporter keeps NO back-reference (supportedAims stays local-only).\n\nIDENTITY: edges store a two-part key {repoId, aimId}. repoId defined ⇒ external. Registry is split: portable part (repoId, url, name) committed in meta.json; machine-local part (localPath, read/write access toggle) in .bowman/runtime/ (gitignored). Resolution is two-stage: edge {repoId,aimId} → machine-local repoId→localPath map → load. Unresolved ⇒ 'repo not checked out here' state, not a broken edge.\n\nVALUE (model b): value is a conserved flow, not an aggregate. Merged calc = local aims (real intrinsic) + referenced external aims with intrinsicValue forced to 0 + cross-repo edges, fed to the existing calculateAimValues. Externals receive value ONLY from inflow; local values shrink as flow is exported (intended). totalIntrinsic stays = local intrinsics. v1: external linked aims are leaf sinks; cascade into their subtree only when expanded.\n\nROOTS: keep N root aims (no single synthetic project-root). Cross-repo edges always target a specific aim (often a central intrinsic-bearing one). No 'link the whole repo' sentinel.\n\nRENDERING: partial/lazy in general — unloaded aims show as dotted stubs with no info; click to load + reveal relatives as dotted. Externals additionally tinted by their repo color and read-only by default.\n\nWRITABLE EXTERNALS (deferred, independent): per-linked-repo machine-local read/write toggle; backend writeAim can target any local .bowman; sharing/pushing is plain git done by the user.\n\nSEARCH: the aim-search modal (the universal connection-creation funnel) gets a repo scope selector (this/all/checkboxes), fans out to each linked repo's search, merges ranked results (same embedding model ⇒ comparable cosine), tags each by repo.",
   "reflections": [],
   "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "de08d86a-596e-4ac3-854f-e8f9afe4d203",
+      "relativePosition": [
+        -0.1360542513409978,
+        2.496295102885883
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "a82b1530-fbcf-424f-b323-3bfea4f76048",
+      "relativePosition": [
+        -2.149482151903043,
+        -1.2766074097584832
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c4df7232-a3b7-4081-879c-096c2b8488e8",
+      "relativePosition": [
+        -0.15138721642755915,
+        2.495412172508244
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "f2e3dad3-407e-45ed-bcef-dd678a1236a9",
+      "relativePosition": [
+        1.9736994975645046,
+        1.5344413619665052
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "943b9608-a133-4051-ac4a-a4fe87cc7d7c",
+      "relativePosition": [
+        -2.4266844936066083,
+        0.6010011385091031
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "bd1cefe0-6895-4247-b6fd-319972c8bd6e",
+      "relativePosition": [
+        1.739916628481156,
+        1.7951852622876467
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "895ec1c1-c8b3-4258-b7be-62831819bf86"
   ],
