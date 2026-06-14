@@ -8,6 +8,7 @@ import { observable } from '@trpc/server/observable';
 import type { Aim, Phase, ProjectMeta } from 'shared';
 import { INITIAL_STATES, cosineSimilarity } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
+import { embeddingTextForAim } from '../embeddings.js';
 
 const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy']);
 const watchdogRuntimeAgentStateSchema = z.object({
@@ -406,7 +407,7 @@ export const createProjectRouter = (
               if (aimsToEmbed.length > 0) {
                   console.log(`Starting embedding generation for ${aimsToEmbed.length} aims (skipped ${aims.length - aimsToEmbed.length} existing)...`);
                   for (const aim of aimsToEmbed) {
-                      const vector = await generateEmbedding(aim.text);
+                      const vector = await generateEmbedding(embeddingTextForAim(aim));
                       if (vector) {
                           await saveEmbedding(input.projectPath, aim.id, vector);
                       }
