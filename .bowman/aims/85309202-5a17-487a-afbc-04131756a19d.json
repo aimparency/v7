@@ -1,9 +1,13 @@
 {
   "id": "85309202-5a17-487a-afbc-04131756a19d",
   "text": "Fix drag-to-create aim bug (null position values)",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "d0851a84-5300-4c25-a59e-7831c8f6b642"
+  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -12,5 +16,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -33,7 +33,7 @@ const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
 
 const RESPONSE_START_TIMEOUT_MS = 15000;
-const RESPONSE_COMPLETION_GRACE_MS = 5000;
+const RESPONSE_COMPLETION_GRACE_MS = 2000;
 const WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS = 20000;
 // How long the worker's bottom region must be BOTH free of an activity
 // indicator AND unchanged before we treat it as idle. The spinner line carries
@@ -41,10 +41,20 @@ const WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS = 20000;
 // changing screen means "still working" even on frames where we fail to match
 // the (animated) spinner glyph or rotating tip. Must comfortably exceed the
 // ~1s counter cadence so between-tick stillness isn't mistaken for idle.
-const WORKER_IDLE_STABILITY_MS = parseInt(process.env.WATCHDOG_WORKER_IDLE_STABILITY || '1500', 10);
+const WORKER_IDLE_STABILITY_MS = parseInt(process.env.WATCHDOG_WORKER_IDLE_STABILITY || '6500', 10);
 
 function stripAnsi(str: string): string {
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+}
+
+/**
+ * Collapse all runs of whitespace (incl. newlines) to single spaces. Used both
+ * for the worker context capture and the supervisor marker match: the TUI may
+ * hard-wrap and indent a logically-single line, so exact substring matching only
+ * works after normalization.
+ */
+function normalizeWhitespace(str: string): string {
+  return str.replace(/\s+/g, ' ').trim();
 }
 
 interface WorkerActivityState {
@@ -114,6 +124,11 @@ export class WatchdogService {
   private sessionMemory: SessionMemory | null = null;
   private baseInstructText: string = '';
   private instructTextWithMemory: string = '';
+  // The full INSTRUCT guide is heavy (~7KB). The worker is a continuous session,
+  // so it only needs the guide once per context epoch — sent on the first
+  // start_work, then re-armed after a worker /compact wipes its context.
+  // Subsequent start_works send only the short "check Aimparency" pointer.
+  private instructSent = false;
   private workingTowardsCommit = false;
   private supervisorState: SupervisorState = new SupervisorState();
   private projectPath?: string;
@@ -219,6 +234,7 @@ export class WatchdogService {
       this.busyStartedAt = 0;
       this.watchdogBusyStartedAt = 0;
       this.lastStopReason = '';
+      this.instructSent = false;
     } else {
       this.waitingForResponse = false;
       this.processing = false;
@@ -316,22 +332,20 @@ export class WatchdogService {
         }
 
         this.log("Watchdog appears idle. Attempting to parse response...");
-        const screenContent = this.readAgentLines(this.watchdog, 500);
-        const markerIndex = screenContent.lastIndexOf(this.currentPromptMarker);
+        const contentToParse = this.locateResponseAfterMarker(
+          this.readAgentLines(this.watchdog, 500),
+          this.currentPromptMarker,
+        );
 
-        if (markerIndex !== -1) {
-          const contentToParse = screenContent.substring(markerIndex + this.currentPromptMarker.length).trim();
-
-          if (contentToParse.length > 0) {
-            try {
-              const jsonString = this.extractJson(contentToParse);
-              await this.processDecision(jsonString);
-            } catch (e: any) {
-              this.log(`DEBUG: JSON extraction/parsing failed: ${e.message}`);
-              await this.retry(e.message || "JSON extraction failed");
-            }
-            return;
+        if (contentToParse) {
+          try {
+            const jsonString = this.extractJson(contentToParse);
+            await this.processDecision(jsonString);
+          } catch (e: any) {
+            this.log(`DEBUG: JSON extraction/parsing failed: ${e.message}`);
+            await this.retry(e.message || "JSON extraction failed");
           }
+          return;
         }
 
         this.log("DEBUG: Response marker not found or content empty. Waiting...");
@@ -387,60 +401,57 @@ export class WatchdogService {
     };
   }
 
-  private isEffectivelyGenerating(signals: AgentSignals, now: number, snapshotState: SnapshotState): boolean {
-    if (signals.isGenerating) return true;
-
-    if (!snapshotState.lastSnapshot) {
-      snapshotState.lastSnapshot = signals.view.recent8;
-      snapshotState.lastSnapshotAt = now;
-      return true;
-    }
-
-    if (signals.view.recent8 !== snapshotState.lastSnapshot) {
-      snapshotState.lastSnapshot = signals.view.recent8;
-      snapshotState.lastSnapshotAt = now;
-      return true;
-    }
-
-    const idleTime = now - snapshotState.lastSnapshotAt;
-    return idleTime < IDLE_DEBOUNCE_INTERVAL;
-  }
-
-  private isWatchdogEffectivelyGenerating(signals: AgentSignals, now: number): boolean {
-    return this.isEffectivelyGenerating(signals, now, this.watchdogSnapshotState);
-  }
-
   /**
-   * Whether the worker is still working. Two combined signals:
+   * Shared "is this agent still actively generating?" detector for both the
+   * worker and the supervisor. Two combined signals:
    *  1. An explicit activity indicator (spinner line / busy footer) via the
    *     profile — fast and authoritative when it matches.
    *  2. A "screen is changing" backstop: the spinner line's elapsed-time/token
-   *     counter ticks ~1/s while the agent works, so a changing bottom region
-   *     means "still working" even on frames where the (animated) glyph or
-   *     rotating tip didn't match. Only a screen that is BOTH indicator-free and
-   *     unchanged for WORKER_IDLE_STABILITY_MS counts as idle.
-   * Only the authoritative indicator marks `observedBusySinceEnabled`, so a
-   * worker that is static from the start still waits out the bootstrap grace
-   * rather than escalating on the first render diff.
+   *     counter ticks ~1/s while an agent works, so a changing region means
+   *     "still working" even on frames where the (animated) glyph or rotating
+   *     tip didn't match. Only a region that is BOTH indicator-free AND unchanged
+   *     for `stabilityMs` counts as settled/idle.
+   * The only intended per-agent difference is the view window and how long the
+   * screen must hold still — passed in by the callers below.
+   */
+  private isAgentEffectivelyBusy(
+    signals: AgentSignals,
+    now: number,
+    snapshotState: SnapshotState,
+    viewKey: keyof AgentView,
+    stabilityMs: number,
+  ): boolean {
+    const view = signals.view[viewKey];
+
+    if (signals.isGenerating || snapshotState.lastSnapshotAt === 0 || snapshotState.lastSnapshot !== view) {
+      snapshotState.lastSnapshot = view;
+      snapshotState.lastSnapshotAt = now;
+      return true;
+    }
+
+    return now - snapshotState.lastSnapshotAt < stabilityMs;
+  }
+
+  private isWatchdogEffectivelyGenerating(signals: AgentSignals, now: number): boolean {
+    return this.isAgentEffectivelyBusy(signals, now, this.watchdogSnapshotState, 'recent8', IDLE_DEBOUNCE_INTERVAL);
+  }
+
+  /**
+   * Worker-specific wrapper around {@link isAgentEffectivelyBusy}: uses a wider
+   * view and a much longer stability window (the worker runs long tasks), and
+   * additionally records `observedBusySinceEnabled` so a worker that is static
+   * from the start still waits out the bootstrap grace rather than escalating on
+   * the first render diff.
    */
   private isWorkerEffectivelyBusy(signals: AgentSignals, now: number): boolean {
-    const activity = this.workerActivity;
-
+    const busy = this.isAgentEffectivelyBusy(
+      signals, now, this.workerActivity, 'recent12', WORKER_IDLE_STABILITY_MS,
+    );
     if (signals.isGenerating) {
-      activity.observedBusySinceEnabled = true;
-      activity.lastBusyAt = now;
-      activity.lastSnapshot = signals.view.recent12;
-      activity.lastSnapshotAt = now;
-      return true;
+      this.workerActivity.observedBusySinceEnabled = true;
+      this.workerActivity.lastBusyAt = now;
     }
-
-    if (activity.lastSnapshot !== signals.view.recent12) {
-      activity.lastSnapshot = signals.view.recent12;
-      activity.lastSnapshotAt = now;
-      return true;
-    }
-
-    return now - activity.lastSnapshotAt < WORKER_IDLE_STABILITY_MS;
+    return busy;
   }
 
   private getWorkerIdleEscalationReason(now: number, signals: AgentSignals): string | null {
@@ -584,7 +595,7 @@ export class WatchdogService {
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
 
     const workerSignals = this.captureAgentSignals(this.worker, false);
-    const supervisedContext = workerSignals.view.recent50.replace(/\s+/g, ' ').trim();
+    const supervisedContext = normalizeWhitespace(workerSignals.view.recent50);
 
     // Get current state
     const currentState = this.supervisorState.getState();
@@ -660,6 +671,23 @@ export class WatchdogService {
       this.log(`Error parsing JSON decision: ${e.message}`);
       await this.retry(e.message);
     }
+  }
+
+  /**
+   * Locate the supervisor's reply after the prompt marker on the watchdog screen.
+   * The marker is a single logical line, but Claude's TUI hard-wraps and indents
+   * the rendered prompt block, injecting newlines/spaces that break an exact
+   * match — without normalization the parse loop re-polls forever despite the
+   * JSON being on screen. Returns the trimmed content after the (last) marker, or
+   * null if the marker isn't present or nothing follows it.
+   */
+  locateResponseAfterMarker(rawScreen: string, rawMarker: string): string | null {
+    const screen = normalizeWhitespace(rawScreen);
+    const marker = normalizeWhitespace(rawMarker);
+    const idx = screen.lastIndexOf(marker);
+    if (idx === -1) return null;
+    const content = screen.substring(idx + marker.length).trim();
+    return content.length > 0 ? content : null;
   }
 
   extractJson(text: string): string {
@@ -870,9 +898,19 @@ Please choose one of the valid actions and respond with correct JSON.`;
 
   // ========== STATE MACHINE ACTION EXECUTORS ==========
 
+  /**
+   * The full INSTRUCT guide, but only the first time per context epoch; '' after.
+   * Re-armed by {@link executeCompact} when the worker's context is wiped.
+   */
+  private consumeInstructLead(): string {
+    if (this.instructSent || !this.instructTextWithMemory) return '';
+    this.instructSent = true;
+    return `${this.instructTextWithMemory}\n\n---\n\n`;
+  }
+
   private async executeStartWork(message: string): Promise<void> {
     this.log('[StateMachine] Starting work');
-    const prompt = `${this.instructTextWithMemory}\n\n---\n\nCheck Aimparency MCP for open aims or the current assigned aim. Before making changes, investigate the codebase to see if the aim is already implemented. Sometimes an aim is already done but its status is still open. If you find it is already implemented, update the aim status to "done" via MCP and wait. If it is not implemented, start working. ${message}`;
+    const prompt = `${this.consumeInstructLead()}Check Aimparency MCP for open aims or the current assigned aim. Before making changes, investigate the codebase to see if the aim is already implemented. Sometimes an aim is already done but its status is still open. If you find it is already implemented, update the aim status to "done" via MCP and wait. If it is not implemented, start working. ${message}`;
     await this.post(this.worker, prompt);
     this.turnCount++;
   }
@@ -939,6 +977,9 @@ Please choose one of the valid actions and respond with correct JSON.`;
     }
     await this.post(this.worker, this.profile.compactCommand);
     this.turnCount = 0;
+    // Compaction wipes the worker's context, so re-send the full guide on the
+    // next start_work.
+    this.instructSent = false;
   }
 
   private async executeChoice(choice: string): Promise<void> {

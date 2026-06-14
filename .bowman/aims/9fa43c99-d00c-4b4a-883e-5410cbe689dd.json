@@ -21,6 +21,15 @@
         0.6895248151607082
       ],
       "weight": 1
+    },
+    {
+      "aimId": "3ffd9fb8-e4a5-428e-990d-4c17bf622678",
+      "relativePosition": [
+        2.4990316049584633,
+        0.06957756404708045
+      ],
+      "weight": 1,
+      "explanation": "graph maintenance: reparented floating aim by semantic similarity"
     }
   ],
   "supportedAims": [

@@ -1,9 +1,13 @@
 {
   "id": "abe82e32-65d3-4d08-b78d-2942431b2105",
   "text": "Refactor AimSearchModal to use emitted events for better decoupling",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -12,5 +16,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -2,9 +2,13 @@
   "id": "54a82679-d41c-4878-99b6-4135d3ee834e",
   "text": "when moving phases by editing parent phase, we may need to update columns",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -13,5 +17,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

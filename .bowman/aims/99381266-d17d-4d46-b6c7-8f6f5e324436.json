@@ -1,0 +1,24 @@
+{
+  "id": "99381266-d17d-4d46-b6c7-8f6f5e324436",
+  "text": "Improve the supervisor flow: post global instructions only once. Then situation and available actions per message",
+  "description": "",
+  "tags": [],
+  "reflections": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1781424049989
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "archived": false
+}

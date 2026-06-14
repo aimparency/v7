@@ -132,3 +132,52 @@ test('compact after wrap-up uses the profile compactCommand', async () => {
 
   assert.equal(posts[0], '/compact');
 });
+
+// Regression: the supervisor prompt marker is a single logical line, but Claude's
+// TUI hard-wraps and indents it in the rendered prompt block. An exact substring
+// match then fails and the parse loop re-polls forever despite the JSON being on
+// screen. locateResponseAfterMarker must normalize whitespace on both sides.
+test('locateResponseAfterMarker: finds reply after a hard-wrapped/indented marker', () => {
+  const service = makeService();
+  const marker = 'Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks). [1781451809723-m9ro3]';
+  // As rendered: wrapped between "no code" and "blocks)", each row indented.
+  const screen = [
+    '  Respond ONLY with the raw JSON action object (single line, no markdown, no code',
+    '  blocks). [1781451809723-m9ro3]',
+    '',
+    '● {"action": {"type": "start_work", "message": "go"}}',
+    '',
+    '✻ Cogitated for 6s',
+  ].join('\n');
+
+  const content = (service as any).locateResponseAfterMarker(screen, marker) as string | null;
+  assert.ok(content, 'marker should be located despite wrapping');
+  const json = (service as any).extractJson(content);
+  assert.deepEqual(JSON.parse(json), { action: { type: 'start_work', message: 'go' } });
+});
+
+test('locateResponseAfterMarker: returns null when the marker is absent', () => {
+  const service = makeService();
+  assert.equal((service as any).locateResponseAfterMarker('no marker here', 'MARKER'), null);
+});
+
+// The full INSTRUCT guide is heavy and the worker is a continuous session, so it
+// should be sent once per context epoch: on the first start_work, then again only
+// after a /compact wipes the worker's context.
+test('start_work sends the full instruct once, re-armed after compact', async () => {
+  const posts: string[] = [];
+  const service = makeService();
+  (service as any).instructTextWithMemory = 'FULL_GUIDE_TEXT';
+  (service as any).post = async (_agent: any, text: string) => { posts.push(text); };
+
+  await service.executeActionSideEffects({ type: 'start_work', message: 'do X' });
+  await service.executeActionSideEffects({ type: 'start_work', message: 'do Y' });
+
+  assert.match(posts[0] || '', /FULL_GUIDE_TEXT/);          // first carries the guide
+  assert.doesNotMatch(posts[1] || '', /FULL_GUIDE_TEXT/);   // second: short pointer only
+  assert.match(posts[1] || '', /Check Aimparency MCP/);
+
+  await service.executeActionSideEffects({ type: 'compact' }); // wipes worker context
+  await service.executeActionSideEffects({ type: 'start_work', message: 'do Z' });
+  assert.match(posts[posts.length - 1] || '', /FULL_GUIDE_TEXT/); // re-armed
+});

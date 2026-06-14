@@ -2,6 +2,8 @@
   "id": "d0851a84-5300-4c25-a59e-7831c8f6b642",
   "text": "graph view improvements",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -9,6 +11,14 @@
       "relativePosition": [
         -2.481761240407088,
         -0.3014318258131866
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "85309202-5a17-487a-afbc-04131756a19d",
+      "relativePosition": [
+        0.6688028351475127,
+        2.4088799820038043
       ],
       "weight": 1
     }
@@ -24,5 +34,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

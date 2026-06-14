@@ -2,9 +2,13 @@
   "id": "3ffd9fb8-e4a5-428e-990d-4c17bf622678",
   "text": "in graph view, in side bar, aim status should be same color as everywhere else.",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "9fa43c99-d00c-4b4a-883e-5410cbe689dd"
+  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -13,5 +17,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

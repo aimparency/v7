@@ -1,13 +1,17 @@
 {
   "id": "17c2b6fa-0b9f-4efe-bbed-06f737b45893",
   "text": "Watchdog: auto-compact when context < 20%",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "watchdog",
     "ux",
     "claude-session"
   ],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "abc3d503-5945-45eb-8122-be5e33b2ccea"
+  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -16,5 +20,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }
