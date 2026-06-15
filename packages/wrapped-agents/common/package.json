@@ -9,10 +9,15 @@
     "dev": "tsc --noEmit --watch",
     "test": "tsx --test src/*.test.ts"
   },
-  "keywords": ["aimparency", "agents", "state-machine"],
+  "keywords": [
+    "aimparency",
+    "agents",
+    "state-machine"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@xterm/addon-serialize": "^0.14.0",
     "@xterm/headless": "^5.5.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",

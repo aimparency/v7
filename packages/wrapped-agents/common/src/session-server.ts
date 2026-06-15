@@ -317,8 +317,14 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
     }
     socket.emit('supervisor-state', watchdogService!.getSupervisorStateInfo());
     socket.emit('watchdog-comm-status', watchdogService!.getCommStatus());
-    socket.emit('worker-data', worker.getLines(1000));
-    socket.emit('watchdog-data', watchdog.getLines(1000));
+
+    // Replay is deferred until the client announces its real terminal size (via
+    // the resize handlers below). Sending a snapshot now — before we know the
+    // browser pane's dimensions — would force the client to write at xterm's
+    // 80x24 default and then reflow, garbling the screen. We replay the faithful
+    // serialized snapshot (color + cursor preserved) once, right after resizing
+    // the agent to match the client.
+    const snapshotted = new Set<'worker' | 'watchdog'>();
 
     socket.on('toggle-watchdog', (enabled: boolean) => {
       watchdogService!.setEnabled(enabled);
@@ -335,9 +341,17 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
 
     socket.on('resize-worker', ({ cols, rows }) => {
       worker.resize(cols, rows);
+      if (!snapshotted.has('worker')) {
+        snapshotted.add('worker');
+        socket.emit('worker-data', worker.serialize());
+      }
     });
     socket.on('resize-watchdog', ({ cols, rows }) => {
       watchdog.resize(cols, rows);
+      if (!snapshotted.has('watchdog')) {
+        snapshotted.add('watchdog');
+        socket.emit('watchdog-data', watchdog.serialize());
+      }
     });
   });
 

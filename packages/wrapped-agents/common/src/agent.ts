@@ -1,9 +1,11 @@
 import * as pty from 'node-pty';
 import { Terminal } from '@xterm/headless';
+import { SerializeAddon } from '@xterm/addon-serialize';
 
 export class Agent {
   ptyProcess: pty.IPty;
   terminal: Terminal;
+  private serializeAddon: SerializeAddon;
 
   constructor(command: string, cwd: string, args: string[], onData: (data: string) => void, cols: number = 80) {
     const resolvedCommand = process.platform === 'win32' ? `${command}.cmd` : command;
@@ -21,10 +23,24 @@ export class Agent {
       allowProposedApi: true
     });
 
+    this.serializeAddon = new SerializeAddon();
+    this.terminal.loadAddon(this.serializeAddon);
+
     this.ptyProcess.onData((data) => {
       this.terminal.write(data);
       onData(data);
     });
+  }
+
+  /**
+   * Faithful replay snapshot for a (re)connecting browser terminal: reproduces
+   * the full screen + scrollback as escape sequences, preserving color and
+   * cursor state at the headless terminal's current dimensions. This is what a
+   * human's xterm should be fed on reload — unlike getLines(), which strips
+   * styling and is meant for the watchdog's structural busy-detection.
+   */
+  serialize(): string {
+    return this.serializeAddon.serialize();
   }
 
   async write(data: string) {
