@@ -177,9 +177,10 @@ onMounted(() => {
         <Terminal 
             v-if="socket"
             :socket="socket" 
-            channelIn="worker-data" 
-            channelOut="worker-input" 
+            channelIn="worker-data"
+            channelOut="worker-input"
             resizeEvent="resize-worker"
+            snapshotEvent="worker-snapshot"
         />
         </div>
         <div class="watchdog-pane">
@@ -194,9 +195,10 @@ onMounted(() => {
         <Terminal 
             v-if="socket"
             :socket="socket" 
-            channelIn="watchdog-data" 
+            channelIn="watchdog-data"
             channelOut="watchdog-input"
             resizeEvent="resize-watchdog"
+            snapshotEvent="watchdog-snapshot"
         />
         </div>
     </template>

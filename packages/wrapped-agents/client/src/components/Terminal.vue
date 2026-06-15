@@ -9,6 +9,7 @@ const props = defineProps<{
   channelIn: string;
   channelOut?: string;
   resizeEvent?: string;
+  snapshotEvent?: string;
 }>();
 
 const terminalContainer = ref<HTMLElement | null>(null);
@@ -50,6 +51,18 @@ onMounted(() => {
       if (atBottom) term.scrollToBottom();
     });
   });
+
+  if (props.snapshotEvent) {
+    // The one-shot replay snapshot is the authoritative current frame. Live
+    // `channelIn` data may already have raced ahead of it (the server's repaint
+    // perturbation streams incremental redraws into our still-empty buffer), so
+    // reset first to wipe that garble, then write the faithful snapshot. Socket
+    // ordering guarantees any post-snapshot live data arrives after and appends.
+    props.socket.on(props.snapshotEvent, (data: string) => {
+      term.reset();
+      term.write(data, () => term.scrollToBottom());
+    });
+  }
 
   if (props.channelOut) {
     term.onData((data) => {

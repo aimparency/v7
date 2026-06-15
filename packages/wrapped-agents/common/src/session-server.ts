@@ -346,6 +346,14 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
     // to force that repaint even when the client's size matches the pty's current
     // size, then defer the serialize so the redraw has actually flushed into the
     // headless buffer; snapshotting synchronously grabs the pre-redraw frame.
+    //
+    // The snapshot is emitted on a dedicated `${kind}-snapshot` channel, NOT on
+    // the live `${kind}-data` channel. The perturbation's SIGWINCH makes the CLI
+    // repaint, and that repaint streams live to this freshly connected socket
+    // during the 150ms window — incremental redraw escapes that garble when
+    // written into the client's still-empty buffer. The client resets its
+    // terminal when the snapshot arrives, wiping that pre-snapshot live garble
+    // before writing the faithful frame; subsequent live data then appends cleanly.
     const replayWithRepaint = (
       agent: Agent,
       kind: 'worker' | 'watchdog',
@@ -357,7 +365,7 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
       snapshotted.add(kind);
       agent.resize(cols, Math.max(1, rows - 1));
       agent.resize(cols, rows);
-      setTimeout(() => socket.emit(`${kind}-data`, agent.serialize()), 150);
+      setTimeout(() => socket.emit(`${kind}-snapshot`, agent.serialize()), 150);
     };
 
     socket.on('resize-worker', ({ cols, rows }) => replayWithRepaint(worker, 'worker', cols, rows));
