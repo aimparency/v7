@@ -317,8 +317,14 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
     }
     socket.emit('supervisor-state', watchdogService!.getSupervisorStateInfo());
     socket.emit('watchdog-comm-status', watchdogService!.getCommStatus());
-    socket.emit('worker-data', worker.getLines(1000));
-    socket.emit('watchdog-data', watchdog.getLines(1000));
+
+    // Replay is deferred until the client announces its real terminal size (via
+    // the resize handlers below). Sending a snapshot now — before we know the
+    // browser pane's dimensions — would force the client to write at xterm's
+    // 80x24 default and then reflow, garbling the screen. We replay the faithful
+    // serialized snapshot (color + cursor preserved) once, right after resizing
+    // the agent to match the client.
+    const snapshotted = new Set<'worker' | 'watchdog'>();
 
     socket.on('toggle-watchdog', (enabled: boolean) => {
       watchdogService!.setEnabled(enabled);
@@ -333,12 +339,29 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
     socket.on('worker-input', (data) => worker.write(data));
     socket.on('watchdog-input', (data) => watchdog.write(data));
 
-    socket.on('resize-worker', ({ cols, rows }) => {
-      worker.resize(cols, rows);
-    });
-    socket.on('resize-watchdog', ({ cols, rows }) => {
-      watchdog.resize(cols, rows);
-    });
+    // Nudge the agent's TUI into a clean full repaint before the one-shot replay.
+    // Resizing already sends SIGWINCH, and Ink/Claude CLI repaints the whole
+    // frame on resize — which clears stale footer/cursor artifacts left over
+    // from the CLI's own incremental redraws. We perturb rows by one and restore
+    // to force that repaint even when the client's size matches the pty's current
+    // size, then defer the serialize so the redraw has actually flushed into the
+    // headless buffer; snapshotting synchronously grabs the pre-redraw frame.
+    const replayWithRepaint = (
+      agent: Agent,
+      kind: 'worker' | 'watchdog',
+      cols: number,
+      rows: number,
+    ) => {
+      agent.resize(cols, rows);
+      if (snapshotted.has(kind)) return;
+      snapshotted.add(kind);
+      agent.resize(cols, Math.max(1, rows - 1));
+      agent.resize(cols, rows);
+      setTimeout(() => socket.emit(`${kind}-data`, agent.serialize()), 150);
+    };
+
+    socket.on('resize-worker', ({ cols, rows }) => replayWithRepaint(worker, 'worker', cols, rows));
+    socket.on('resize-watchdog', ({ cols, rows }) => replayWithRepaint(watchdog, 'watchdog', cols, rows));
   });
 
   setInterval(() => {

@@ -23,7 +23,7 @@ import {
   updatePhaseInIndex,
   removePhaseFromIndex
 } from './search.js';
-import { generateEmbedding, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore, hasCurrentEmbedding } from './embeddings.js';
+import { generateEmbedding, generateQueryEmbedding, warmupEmbedder, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore, hasCurrentEmbedding } from './embeddings.js';
 import { getSemanticGraph, invalidateSemanticCache } from './forces.js';
 import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues } from 'shared';
@@ -715,6 +715,7 @@ const appRouter = t.router({
     updateAimInIndex,
     removeAimFromIndex,
     generateEmbedding,
+    generateQueryEmbedding,
     saveEmbedding,
     removeEmbedding,
     searchVectors,
@@ -813,6 +814,9 @@ export function startServer() {
   server.listen(HTTP_PORT, () => {
     console.log(`HTTP Server running on http://localhost:${HTTP_PORT}`);
   });
+
+  // Load the embedding model up front so the first search/index doesn't pay the cold-load cost.
+  warmupEmbedder().then(() => console.log('Embedding model ready'));
 
   console.log(`WebSocket Server running on ws://localhost:${WS_PORT}`);
 

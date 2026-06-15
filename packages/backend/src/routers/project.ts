@@ -8,6 +8,7 @@ import { observable } from '@trpc/server/observable';
 import type { Aim, Phase, ProjectMeta } from 'shared';
 import { INITIAL_STATES, cosineSimilarity } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
+import { embeddingTextForAim } from '../embeddings.js';
 
 const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy']);
 const watchdogRuntimeAgentStateSchema = z.object({
@@ -406,7 +407,7 @@ export const createProjectRouter = (
               if (aimsToEmbed.length > 0) {
                   console.log(`Starting embedding generation for ${aimsToEmbed.length} aims (skipped ${aims.length - aimsToEmbed.length} existing)...`);
                   for (const aim of aimsToEmbed) {
-                      const vector = await generateEmbedding(aim.text);
+                      const vector = await generateEmbedding(embeddingTextForAim(aim));
                       if (vector) {
                           await saveEmbedding(input.projectPath, aim.id, vector);
                       }
@@ -828,11 +829,11 @@ export const createProjectRouter = (
     findDuplicates: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        threshold: z.number().min(0).max(1).optional(), // default 0.90
+        threshold: z.number().min(0).max(1).optional(), // default 0.89 (calibrated for bge-small-en-v1.5)
         limit: z.number().int().positive().optional(),   // default 50
       }))
       .query(async ({ input }: any) => {
-        const threshold = input.threshold ?? 0.90;
+        const threshold = input.threshold ?? 0.89;
         const limit = input.limit ?? 50;
 
         const [aims, vectorStore] = await Promise.all([
@@ -1023,12 +1024,12 @@ export const createProjectRouter = (
       .input(z.object({
         projectPath: z.string(),
         megaParentThreshold: z.number().int().positive().optional(), // default 25
-        duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.93
+        duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.89 (calibrated for bge-small-en-v1.5)
         limit: z.number().int().positive().optional(),               // per-section cap, default 30
       }))
       .query(async ({ input }: any) => {
         const megaParentThreshold = input.megaParentThreshold ?? 25;
-        const duplicateThreshold = input.duplicateThreshold ?? 0.93;
+        const duplicateThreshold = input.duplicateThreshold ?? 0.89;
         const limit = input.limit ?? 30;
 
         const [aims, vectorStore] = await Promise.all([

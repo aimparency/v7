@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import type { Aim, SearchAimResult } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
+import { embeddingTextForAim } from '../embeddings.js';
 
 export const createAimRouter = (
   t: RouterBuilder,
@@ -21,6 +22,7 @@ export const createAimRouter = (
   updateAimInIndex: (projectPath: string, aim: Aim) => void,
   removeAimFromIndex: (projectPath: string, aimId: string) => void,
   generateEmbedding: (text: string) => Promise<number[] | null>,
+  generateQueryEmbedding: (query: string) => Promise<number[] | null>,
   saveEmbedding: (projectPath: string, aimId: string, vector: number[]) => Promise<void>,
   removeEmbedding: (projectPath: string, aimId: string) => Promise<void>,
   searchVectors: (projectPath: string, queryVector: number[], limit: number) => Promise<Array<{ id: string, score: number }>>,
@@ -308,7 +310,7 @@ export const createAimRouter = (
 
         // Update embedding (async)
         if (process.env.NODE_ENV !== 'test' && updatedAim.text) {
-          generateEmbedding(updatedAim.text).then(vector => {
+          generateEmbedding(embeddingTextForAim(updatedAim)).then(vector => {
              if(vector) {
                saveEmbedding(input.projectPath, input.aimId, vector);
                invalidateSemanticCache(input.projectPath);
@@ -482,7 +484,7 @@ export const createAimRouter = (
         addAimToIndex(input.projectPath, aim);
 
         if (process.env.NODE_ENV !== 'test') {
-          generateEmbedding(aim.text).then(vector => {
+          generateEmbedding(embeddingTextForAim(aim)).then(vector => {
              if(vector) {
                saveEmbedding(input.projectPath, aimId, vector);
                invalidateSemanticCache(input.projectPath);
@@ -568,7 +570,7 @@ export const createAimRouter = (
         addAimToIndex(input.projectPath, childAim);
 
         if (process.env.NODE_ENV !== 'test') {
-          generateEmbedding(childAim.text).then(vector => {
+          generateEmbedding(embeddingTextForAim(childAim)).then(vector => {
              if(vector) saveEmbedding(input.projectPath, childAimId, vector);
           });
         }
@@ -653,7 +655,7 @@ export const createAimRouter = (
         addAimToIndex(input.projectPath, aim);
 
         if (process.env.NODE_ENV !== 'test') {
-          generateEmbedding(aim.text).then(vector => {
+          generateEmbedding(embeddingTextForAim(aim)).then(vector => {
              if(vector) {
                saveEmbedding(input.projectPath, aimId, vector);
                invalidateSemanticCache(input.projectPath);
@@ -703,7 +705,7 @@ export const createAimRouter = (
           // 2. Semantic Search (Embeddings)
           const vectorPromise = (async () => {
              try {
-                 const queryVector = await generateEmbedding(input.query);
+                 const queryVector = await generateQueryEmbedding(input.query);
                  if (!queryVector) return [];
                  return await searchVectors(projectPath, queryVector, 20);
              } catch (e) {
@@ -786,7 +788,7 @@ export const createAimRouter = (
       }))
       .query(async ({ input }: any) => {
         await ensureSearchIndex(input.projectPath);
-        const queryVector = await generateEmbedding(input.query);
+        const queryVector = await generateQueryEmbedding(input.query);
         if (!queryVector) return [];
 
         // Increase limit to account for potential filtering

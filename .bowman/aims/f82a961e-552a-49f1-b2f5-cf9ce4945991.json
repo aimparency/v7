@@ -1,0 +1,33 @@
+{
+  "id": "f82a961e-552a-49f1-b2f5-cf9ce4945991",
+  "text": "Recalibrate duplicate/hygiene thresholds for bge-small-en-v1.5",
+  "description": "The find_duplicate_aims (0.90) and graph_hygiene duplicateThreshold (0.93) defaults were tuned for the old FNV-1a hashed embedder. After switching to bge-small-en-v1.5 (commit 7affcf6) the cosine score band shifted, so the old defaults mis-fire — most importantly 0.93 missed ~7 of 11 genuine duplicate clusters. Recalibrated against the live 566-aim graph: genuine duplicates run from 1.0 down to ~0.894 (e.g. viewport-culling pair 0.8952, session-memory pair 0.8943); the first clear semantic false-positives start at 0.877 (Market Alpha RL vs RSI, Echo MVP vs Stripe-account parent/subtask, Deployment vs local-first strategy). 0.89 is the maximally-separating cutoff. Set both defaults to 0.89.",
+  "reflections": [
+    {
+      "date": 1781509299670,
+      "context": "Recalibrate the duplicate/hygiene similarity thresholds after the embedder was swapped from FNV-1a hash to bge-small-en-v1.5, since the old defaults (0.90 / 0.93) were tuned for the hash's score distribution.",
+      "outcome": "Swept find_duplicate_aims and graph_hygiene at several thresholds against the live 566-aim graph with settled vectors. Genuine duplicates ran 1.0–0.894; first clear semantic false-positives at 0.877. Set both defaults to 0.89 in backend project.ts and updated the MCP tool descriptions. 0.93 had been missing 7 of 11 genuine duplicate clusters.",
+      "effectiveness": "Empirical threshold sweep on real data was the right method — the boundary (genuine dups bottom out at 0.894, false-positives top out at 0.877) is not guessable a priori and is model-specific. Critical gotcha: build_search_index queues embedding regeneration in the background, so the first find_duplicate run (unindexed:3) returned scores computed on stale/partial vectors and disagreed with graph_hygiene; re-running once unindexed hit 0 gave consistent numbers.",
+      "lesson": "Any embedding-similarity threshold is a property of the specific model, not a universal constant — swapping the embedder invalidates every hardcoded cutoff downstream. Always wait for unindexed:0 after build_search_index before trusting similarity scores. The clean gap between true-dup and false-positive bands (0.877–0.894) is what makes 0.89 defensible rather than arbitrary.",
+      "pattern": "Same live-throwaway-verification approach as find_duplicate_aims / suggest_reparents: validate a similarity heuristic against the real graph and known true/false positives before committing the constant."
+    }
+  ],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fe8b6496-588c-4439-8a39-056dab245c4f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Swept find_duplicate_aims/graph_hygiene at multiple thresholds on the live 566-aim graph (settled bge vectors). Found clean separation: genuine dups ≥0.894, first clear false-positives ≤0.877. Set find_duplicate_aims default 0.90→0.89 (project.ts) and graph_hygiene duplicateThreshold 0.93→0.89 (project.ts); updated the matching MCP tool descriptions in mcp/tools.ts. backend + mcp tsc clean. The old 0.93 missed 7 of 11 genuine duplicate clusters; 0.89 recovers them (incl. viewport-culling, session-memory, pagination, local-first-strategy, SaaS-launch, aim-description pairs) while keeping Market Alpha / Stripe / Deployment false-positives out.",
+    "date": 1781509277622
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

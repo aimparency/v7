@@ -37,6 +37,7 @@
   },
   "homepage": "https://github.com/aimparency/v7/tree/main/packages/backend#readme",
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "@trpc/server": "^11.7.2",
     "better-sqlite3": "^12.5.0",
     "express": "^5.2.1",

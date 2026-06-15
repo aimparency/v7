@@ -1,0 +1,38 @@
+{
+  "id": "f02454a1-f8bf-4ce8-997b-fd52b2094a2f",
+  "text": "Optimize supervisor↔worker comms: slim the INSTRUCT guide + send it once per context epoch, unify worker/supervisor idle detection, fix the supervisor reply-parse hang",
+  "description": "Supervisor efficiency + reliability pass. (1) INSTRUCT.md cut 6967→2311 bytes: dropped the MCP tool catalog (already in the worker's context) and the reflection JSON schema; added \"improve yourself\" and \"at times, maintain the graph\". (2) The full guide was re-prepended on every start_work; now sent once per context epoch (first start_work, re-armed after /compact). (3) Unified the duplicated worker/supervisor idle debounce into one isAgentEffectivelyBusy(viewKey, stabilityMs). (4) Fixed the supervisor waiting forever: the prompt marker is hard-wrapped by Claude's TUI, breaking exact lastIndexOf — now whitespace-normalized before matching. (5) RESPONSE_COMPLETION_GRACE_MS 5000→2000. Shipped on branch feat/bge-search-and-supervisor-comms (commit 5bca268) with regression tests.",
+  "reflections": [
+    {
+      "date": 1781479522337,
+      "context": "The supervisor re-sent a ~7KB INSTRUCT guide on every start_work and the guide re-explained MCP tools the worker already has in context; separately the supervisor could hang forever waiting for a reply it had already produced.",
+      "outcome": "Slimmed INSTRUCT 67% (removed tool catalog + reflection schema, added self-improvement and graph-maintenance guidance), gated it to once per context epoch (re-armed after /compact), unified the duplicated worker/supervisor idle detection into one parameterized method, and fixed the hang by whitespace-normalizing the prompt marker before matching (Claude's TUI hard-wraps the long marker line, breaking exact lastIndexOf). Cut completion grace 5000→2000ms. All tests green.",
+      "effectiveness": "High. The hang root cause was confirmed directly from the user's screenshot (the marker visibly wrapped), and the token savings per turn are large since the guide is now small and sent rarely. Regression tests lock in both the wrapped-marker parse and the instruct-once behavior.",
+      "lesson": "Don't duplicate detection logic across two agents — divergent debounce windows hid that the real bug was elsewhere (marker parsing, not idleness). Also: never exact-match long single-line markers against terminal output; TUIs hard-wrap and indent. Normalize whitespace, as the worker-context capture already did.",
+      "pattern": "Same class as the bge embedding fix earlier this session: a feature looked 'present' but was quietly degraded/broken; verifying against real output (screenshot, real aims) exposed the true cause."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "watchdog",
+    "supervisor",
+    "autonomy",
+    "efficiency"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented in watchdog-service.ts + INSTRUCT.md; common 21/21, backend 32/32, typecheck clean. Verified live after relaunch.",
+    "date": 1781482970002
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

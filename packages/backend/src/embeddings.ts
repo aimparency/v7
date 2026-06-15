@@ -1,82 +1,89 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { cosineSimilarity } from 'shared';
+import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers';
+import type { Aim } from 'shared';
 
-export const EMBEDDING_DIMENSION = 256;
-const WORD_BUCKET_WEIGHT = 1.6;
-const BIGRAM_BUCKET_WEIGHT = 0.8;
-const TRIGRAM_BUCKET_WEIGHT = 0.35;
+// bge-small-en-v1.5: 384-dim sentence embeddings, native ONNX, 512-token window.
+// Runs in-process via onnxruntime-node (inference on native threads, off the JS event loop).
+export const EMBEDDING_DIMENSION = 384;
+const MODEL_ID = 'BAAI/bge-small-en-v1.5';
 
-export async function generateEmbedding(text: string): Promise<number[] | null> {
+// bge is an asymmetric retrieval model: documents (aims) are embedded raw, while
+// short search queries get this instruction prefix so they land near matching aims.
+// Symmetric ops (duplicate detection, reparenting, neighbours) compare raw aim
+// vectors to each other and therefore must NOT use the prefix.
+const QUERY_PREFIX = 'Represent this sentence for searching relevant passages: ';
+
+let extractorPromise: Promise<FeatureExtractionPipeline> | null = null;
+
+function getExtractor(): Promise<FeatureExtractionPipeline> {
+  if (!extractorPromise) {
+    extractorPromise = pipeline('feature-extraction', MODEL_ID).catch(error => {
+      // Reset so a later call can retry (e.g. transient download failure).
+      extractorPromise = null;
+      throw error;
+    });
+  }
+  return extractorPromise;
+}
+
+/**
+ * Load the embedding model once, up front. Call at backend startup so the first
+ * search/index request doesn't pay the cold-load cost. Safe to call repeatedly.
+ */
+export async function warmupEmbedder(): Promise<void> {
   try {
-    return buildLocalEmbedding(text);
+    await getExtractor();
   } catch (error) {
-    console.warn('Local embedding generation failed:', error);
+    console.warn('Embedding model warmup failed (will retry on demand):', error);
+  }
+}
+
+async function embed(text: string): Promise<number[] | null> {
+  if (!text || !text.trim()) {
+    return null;
+  }
+  try {
+    const extractor = await getExtractor();
+    const output = await extractor(text, { pooling: 'mean', normalize: true });
+    return Array.from(output.data as Float32Array, value => Number(value));
+  } catch (error) {
+    console.warn('Embedding generation failed:', error);
     return null;
   }
 }
 
-function buildLocalEmbedding(text: string): number[] {
-  const normalized = text.toLowerCase().trim();
-  const vector = new Array<number>(EMBEDDING_DIMENSION).fill(0);
-
-  if (!normalized) {
-    return vector;
-  }
-
-  const words = normalized.match(/[a-z0-9]+/g) ?? [];
-  for (const word of words) {
-    if (!word) continue;
-    addFeature(vector, `w:${word}`, WORD_BUCKET_WEIGHT);
-
-    if (word.length >= 2) {
-      for (let i = 0; i <= word.length - 2; i++) {
-        addFeature(vector, `b:${word.slice(i, i + 2)}`, BIGRAM_BUCKET_WEIGHT);
-      }
-    }
-
-    if (word.length >= 3) {
-      for (let i = 0; i <= word.length - 3; i++) {
-        addFeature(vector, `t:${word.slice(i, i + 3)}`, TRIGRAM_BUCKET_WEIGHT);
-      }
-    }
-  }
-
-  normalizeVector(vector);
-  return vector;
+/**
+ * Embed an aim/document for storage. Used when creating or updating aims.
+ * Pass the combined text from {@link embeddingTextForAim}.
+ */
+export async function generateEmbedding(text: string): Promise<number[] | null> {
+  return embed(text);
 }
 
-function addFeature(vector: number[], feature: string, weight: number): void {
-  const unsignedHash = fnv1a(feature);
-  const index = unsignedHash % EMBEDDING_DIMENSION;
-  const sign = ((unsignedHash >>> 31) & 1) === 0 ? 1 : -1;
-  vector[index] = (vector[index] ?? 0) + (weight * sign);
+/**
+ * Embed a free-text search query (asymmetric retrieval). Only for the search path,
+ * never for stored aim vectors.
+ */
+export async function generateQueryEmbedding(query: string): Promise<number[] | null> {
+  return embed(QUERY_PREFIX + query);
 }
 
-function normalizeVector(vector: number[]): void {
-  let sumSquares = 0;
-  for (let i = 0; i < vector.length; i++) {
-    const value = vector[i] ?? 0;
-    sumSquares += value * value;
+/**
+ * Build the text fed to the embedder for an aim: title + description + tags.
+ * The old hash embedder only used the title; descriptions/tags are often the
+ * richest signal, so we include them.
+ */
+export function embeddingTextForAim(aim: Pick<Aim, 'text' | 'description' | 'tags'>): string {
+  const parts: string[] = [aim.text];
+  if (aim.description && aim.description.trim()) {
+    parts.push(aim.description.trim());
   }
-
-  const magnitude = Math.sqrt(sumSquares);
-  if (magnitude === 0) {
-    return;
+  if (aim.tags && aim.tags.length > 0) {
+    parts.push(aim.tags.join(', '));
   }
-
-  for (let i = 0; i < vector.length; i++) {
-    vector[i] = parseFloat(((vector[i] ?? 0) / magnitude).toFixed(6));
-  }
-}
-
-function fnv1a(value: string): number {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < value.length; i++) {
-    hash ^= value.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return hash >>> 0;
+  return parts.join('\n\n');
 }
 
 // Store mappings: AimID -> Vector

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -14,9 +14,21 @@ const props = defineProps<{
 const terminalContainer = ref<HTMLElement | null>(null);
 let term: Terminal;
 let fitAddon: FitAddon;
+let resizeDebounce: ReturnType<typeof setTimeout> | undefined;
+
+function announceSize() {
+  fitAddon.fit();
+  if (props.resizeEvent) {
+    props.socket.emit(props.resizeEvent, { cols: term.cols, rows: term.rows });
+  }
+}
+
+function onWindowResize() {
+  clearTimeout(resizeDebounce);
+  resizeDebounce = setTimeout(announceSize, 100);
+}
 
 onMounted(() => {
-  console.log('TerminalComponent mounted');
   term = new Terminal({
     cursorBlink: true,
     theme: { background: '#000000' },
@@ -25,15 +37,17 @@ onMounted(() => {
   });
   fitAddon = new FitAddon();
   term.loadAddon(fitAddon);
-  
+
   if (terminalContainer.value) {
     term.open(terminalContainer.value);
-    fitAddon.fit();
   }
 
   props.socket.on(props.channelIn, (data: string) => {
+    // Only stick to the bottom if the user is already there; otherwise let them
+    // read scrollback without being yanked down on every chunk.
+    const atBottom = term.buffer.active.viewportY >= term.buffer.active.baseY;
     term.write(data, () => {
-        term.scrollToBottom();
+      if (atBottom) term.scrollToBottom();
     });
   });
 
@@ -43,17 +57,18 @@ onMounted(() => {
     });
   }
 
-  window.addEventListener('resize', () => {
-    fitAddon.fit();
-    if (props.resizeEvent) {
-      props.socket.emit(props.resizeEvent, { cols: term.cols, rows: term.rows });
-    }
-  });
-  
-  // Initial size
-  if (props.resizeEvent) {
-      setTimeout(() => props.socket.emit(props.resizeEvent, { cols: term.cols, rows: term.rows }), 100);
-  }
+  window.addEventListener('resize', onWindowResize);
+
+  // Fit, then announce our real size up front. The server defers the replay
+  // snapshot until it knows this size, so both ends agree on dimensions before
+  // any data is written — no 80x24-then-reflow garble.
+  announceSize();
+});
+
+onUnmounted(() => {
+  clearTimeout(resizeDebounce);
+  window.removeEventListener('resize', onWindowResize);
+  term?.dispose();
 });
 </script>
 

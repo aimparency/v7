@@ -29,7 +29,7 @@ test('generateEmbedding returns stable normalized vectors', async () => {
 
   assert.ok(first);
   assert.ok(second);
-  assert.equal(first.length, 256);
+  assert.equal(first.length, 384);
   assert.deepEqual(first, second);
 
   const magnitude = Math.sqrt(first.reduce((sum, value) => sum + (value * value), 0));

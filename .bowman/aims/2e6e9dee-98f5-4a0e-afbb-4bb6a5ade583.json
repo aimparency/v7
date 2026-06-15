@@ -2,9 +2,13 @@
   "id": "2e6e9dee-98f5-4a0e-afbb-4bb6a5ade583",
   "text": "when entering aim title in add/edit aim modal, typing c (and maybe other shortcut letters) should not actually cause the color toggle",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "060b3f53-1854-4fda-a50c-78a98e540288"
+  ],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -13,5 +17,8 @@
   },
   "intrinsicValue": 1,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

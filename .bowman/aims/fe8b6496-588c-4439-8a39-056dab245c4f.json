@@ -53,6 +53,14 @@
         2.1555148868493785
       ],
       "weight": 1
+    },
+    {
+      "aimId": "f82a961e-552a-49f1-b2f5-cf9ce4945991",
+      "relativePosition": [
+        -2.4561247957134964,
+        0.4663164031870793
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -61,8 +69,8 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "MCP foundation laid: check_consistency, fix_consistency, build_search_index, search_aims_semantic, list_aims all wired to live MCP server (were backend-only before). Remaining: merge-aim operation (338c12e5), status reconciliation (7625d5e6), hygiene report extension (d6734796), reparent suggester (b0fb3242), taxonomy convention (c69ab6f7).",
-    "date": 1780157735303
+    "comment": "Status reconciled 2026-06-15 (the prior comment was stale — it listed merge-aim/hygiene-report/reparent-suggester as remaining, but all three are done). Built and done: duplicate finder (75af098f), merge_aims (338c12e5), graph_hygiene report (d6734796), reparent suggester (b0fb3242), and bge threshold recalibration (f82a961e, defaults 0.90/0.93→0.89). The maintenance tooling itself is essentially complete. Genuinely remaining: status-reconciliation (7625d5e6) is an ongoing/recurring pass, not a one-shot; taxonomy convention (c69ab6f7) is human-dependent — needs Felix to define the real structural parents (graph view / list view+vim / project loading / watchdog UI) before suggest_reparents can drive the 'Rearrange UI aims' (18263fc2) cleanup.",
+    "date": 1781509307227
   },
   "intrinsicValue": 0,
   "cost": 1,
