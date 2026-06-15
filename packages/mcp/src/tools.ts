@@ -347,12 +347,12 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "find_duplicate_aims",
-          description: "Scan the embedding index for near-duplicate aims (all-pairs cosine similarity). Returns ranked pairs above `threshold` (default 0.90). Run build_search_index first if results are empty. Use merge_aims to act on results.",
+          description: "Scan the embedding index for near-duplicate aims (all-pairs cosine similarity). Returns ranked pairs above `threshold` (default 0.89). Run build_search_index first if results are empty. Use merge_aims to act on results.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              threshold: { type: "number", description: "Similarity threshold 0–1 (default 0.90)" },
+              threshold: { type: "number", description: "Similarity threshold 0–1 (default 0.89)" },
               limit: { type: "number", description: "Max pairs to return (default 50)" },
             },
             required: ["projectPath"],
@@ -380,7 +380,7 @@ export function registerTools(server: Server, clientOverride?: any) {
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               megaParentThreshold: { type: "number", description: "Min direct children to flag a mega-parent (default 25)" },
-              duplicateThreshold: { type: "number", description: "Cosine threshold for duplicate clusters 0–1 (default 0.93)" },
+              duplicateThreshold: { type: "number", description: "Cosine threshold for duplicate clusters 0–1 (default 0.89)" },
               limit: { type: "number", description: "Max items per section (default 30)" },
             },
             required: ["projectPath"],
