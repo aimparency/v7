@@ -23,7 +23,9 @@
   "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "093916f0-a6fa-4ed8-af9c-f6d1c47ebb68"
+  ],
   "committedIn": [
     "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
   ],

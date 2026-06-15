@@ -14,9 +14,7 @@
     "2ff1fd7a-7e02-4197-a558-174622db7cbe",
     "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
   ],
-  "committedIn": [
-    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
-  ],
+  "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Implemented policy-driven watchdog behavior. Added 'compact' action to the state machine and updated all session wrappers. Supervisor prompts now explicitly instruct the LLM on whether a git commit is mandatory or optional before return to exploring, based on the requireCommitBeforeCompact policy.",

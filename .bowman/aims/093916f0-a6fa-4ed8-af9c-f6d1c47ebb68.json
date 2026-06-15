@@ -2,6 +2,8 @@
   "id": "093916f0-a6fa-4ed8-af9c-f6d1c47ebb68",
   "text": "watchdog improvements",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -19,6 +21,14 @@
         2.378995368286304
       ],
       "weight": 1
+    },
+    {
+      "aimId": "72f5811b-dab3-483a-8aaf-80ddd01eb3a4",
+      "relativePosition": [
+        -1.4203953481621834,
+        -2.0572984846441775
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -32,5 +42,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

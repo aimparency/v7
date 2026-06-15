@@ -2,23 +2,23 @@
   "id": "99381266-d17d-4d46-b6c7-8f6f5e324436",
   "text": "Improve the supervisor flow: post global instructions only once. Then situation and available actions per message",
   "description": "",
-  "tags": [],
   "reflections": [],
+  "archived": false,
+  "tags": [],
   "supportingConnections": [],
   "supportedAims": [],
   "committedIn": [
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1781424049989
+    "state": "done",
+    "comment": "Already implemented (status reconciliation 2026-06-15). Verified in code: the global INSTRUCT guide is posted only once per context epoch via consumeInstructLead()/instructSent in watchdog-service.ts (re-armed after /compact), and generateSupervisorPrompt() in supervisor-prompts.ts builds every per-message prompt from buildSituation() (worker session + status) plus buildActionsList(state) (the available action types) plus examples. This matches the aim exactly. Shipped in commit 5bca268; overlaps the broader supervisor-comms aim f02454a1 (also done).",
+    "date": 1781510886465
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "archived": false
+  "valueVariance": 0
 }

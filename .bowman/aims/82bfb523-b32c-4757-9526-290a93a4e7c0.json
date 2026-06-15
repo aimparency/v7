@@ -20,7 +20,9 @@
     "tech-debt"
   ],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31"
+  ],
   "committedIn": [
     "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
   ],
