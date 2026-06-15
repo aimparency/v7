@@ -859,7 +859,8 @@ export const createAimRouter = (
     // - Rewires B's parents, children, and phase commitments onto A (deduplicating)
     // - Copies B's reflections to A
     // - Archives B
-    // Guards: no self-merge, no self-reference loops, B must not already be archived
+    // Guards: no self-merge, B must not already be archived. A direct parent-child
+    // pair is allowed (the connecting edge is dropped to avoid a self-reference).
     merge: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
@@ -882,13 +883,14 @@ export const createAimRouter = (
           throw new Error(`Source aim ${sourceId} is already archived`);
         }
 
-        // Guard: direct cycle — source is already a child of target, or vice-versa.
-        // (Deep cycle detection is skipped; archiving source severs its outgoing edges anyway.)
-        const sourceIsChildOfTarget = (target.supportingConnections ?? []).some((c: any) => c.aimId === sourceId);
-        const targetIsChildOfSource = (source.supportingConnections ?? []).some((c: any) => c.aimId === targetId);
-        if (sourceIsChildOfTarget || targetIsChildOfSource) {
-          throw new Error('Cannot merge: aims have a direct parent-child relationship, which would create a self-reference');
-        }
+        // A direct parent-child relationship is fine to merge — it's exactly the
+        // "collapse a redundant nesting" case (a child folded up into its parent,
+        // as graph_hygiene's collapse-candidates recommends). The only hazard is
+        // the direct target<->source edge: once source's identity is folded into
+        // target, that edge becomes target->target. We strip it below before
+        // writing target (the rewire loops skip the targetId edge but never remove
+        // the surviving side's reference to source). Deep cycles are still left
+        // alone; archiving source severs its outgoing edges anyway.
 
         const rewired: string[] = [];
 
@@ -960,6 +962,11 @@ export const createAimRouter = (
           try {
             await commitAimToPhase(projectPath, targetId, phaseId);
             await removeAimFromPhase(projectPath, sourceId, phaseId);
+            // commitAimToPhase persists committedIn on the target's file directly,
+            // but the final writeAim(target) below writes our in-memory copy and
+            // would clobber it — so mirror the commit into the in-memory target.
+            target.committedIn = target.committedIn ?? [];
+            if (!target.committedIn.includes(phaseId)) target.committedIn.push(phaseId);
             rewired.push(`phase ${phaseId}`);
           } catch (e) {
             console.warn(`merge: could not rewire phase ${phaseId}: ${e}`);
@@ -969,6 +976,12 @@ export const createAimRouter = (
         // 4. Copy source's reflections to target
         const copiedReflections = source.reflections ?? [];
         target.reflections = [...(target.reflections ?? []), ...copiedReflections];
+
+        // Drop any direct edge between target and source in either direction: folding
+        // source into target would otherwise leave target with a self-reference (an
+        // edge to its own merged-away identity / a soon-archived aim).
+        target.supportedAims = (target.supportedAims ?? []).filter((id: string) => id !== sourceId);
+        target.supportingConnections = (target.supportingConnections ?? []).filter((c: any) => c.aimId !== sourceId);
 
         // 5. Archive source — clear its connections since they've been rewired
         source.supportedAims = [];
