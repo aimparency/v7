@@ -1,7 +1,7 @@
 {
   "id": "f02454a1-f8bf-4ce8-997b-fd52b2094a2f",
   "text": "Optimize supervisor↔worker comms: slim the INSTRUCT guide + send it once per context epoch, unify worker/supervisor idle detection, fix the supervisor reply-parse hang",
-  "description": "Supervisor efficiency + reliability pass. (1) INSTRUCT.md cut 6967→2311 bytes: dropped the MCP tool catalog (already in the worker's context) and reflection JSON schema; added \"improve yourself\" and \"at times, maintain the graph\". (2) The full guide was re-prepended on every start_work; now sent once per context epoch (first start_work, re-armed after /compact). (3) Unified the duplicated worker/supervisor idle debounce into one isAgentEffectivelyBusy(viewKey, stabilityMs). (4) Fixed the supervisor waiting forever: the prompt marker is hard-wrapped by Claude's TUI, breaking exact lastIndexOf — now whitespace-normalized before matching. (5) RESPONSE_COMPLETION_GRACE_MS 5000→2000.</description>\n<parameter name=\"status\">{\"state\": \"done\", \"comment\": \"Implemented in watchdog-service.ts + INSTRUCT.md with regression tests; common 21/21, backend 32/32, typecheck clean.\"}",
+  "description": "Supervisor efficiency + reliability pass. (1) INSTRUCT.md cut 6967→2311 bytes: dropped the MCP tool catalog (already in the worker's context) and the reflection JSON schema; added \"improve yourself\" and \"at times, maintain the graph\". (2) The full guide was re-prepended on every start_work; now sent once per context epoch (first start_work, re-armed after /compact). (3) Unified the duplicated worker/supervisor idle debounce into one isAgentEffectivelyBusy(viewKey, stabilityMs). (4) Fixed the supervisor waiting forever: the prompt marker is hard-wrapped by Claude's TUI, breaking exact lastIndexOf — now whitespace-normalized before matching. (5) RESPONSE_COMPLETION_GRACE_MS 5000→2000. Shipped on branch feat/bge-search-and-supervisor-comms (commit 5bca268) with regression tests.",
   "reflections": [
     {
       "date": 1781479522337,
@@ -25,9 +25,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1781479508089
+    "state": "done",
+    "comment": "Implemented in watchdog-service.ts + INSTRUCT.md; common 21/21, backend 32/32, typecheck clean. Verified live after relaunch.",
+    "date": 1781482970002
   },
   "intrinsicValue": 0,
   "cost": 3,
