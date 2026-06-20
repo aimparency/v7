@@ -181,3 +181,15 @@ test('start_work sends the full instruct once, re-armed after compact', async ()
   await service.executeActionSideEffects({ type: 'start_work', message: 'do Z' });
   assert.match(posts[posts.length - 1] || '', /FULL_GUIDE_TEXT/); // re-armed
 });
+
+test('enabling clears a stuck ERROR state (automate = fresh restart)', () => {
+  const service = makeService();
+  const supervisorState = (service as any).supervisorState;
+
+  supervisorState.triggerError('simulated wedge');
+  assert.equal(supervisorState.getState(), 'ERROR');
+
+  service.setEnabled(true);
+  assert.equal(supervisorState.getState(), 'EXPLORING');
+  assert.equal(supervisorState.getContext().errorCount, 0);
+});

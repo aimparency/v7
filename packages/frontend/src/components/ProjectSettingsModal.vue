@@ -50,7 +50,8 @@ const runtimeAgents = computed(() => ([
   { key: 'claude' as AgentType, label: 'Claude' },
   { key: 'gemini' as AgentType, label: 'Gemini' },
   { key: 'codex' as AgentType, label: 'Codex' },
-  { key: 'agy' as AgentType, label: 'Agy' }
+  { key: 'agy' as AgentType, label: 'Agy' },
+  { key: 'grok' as AgentType, label: 'Grok' }
 ]))
 
 const formatRuntimeTimestamp = (timestamp?: number) => {
@@ -275,6 +276,8 @@ const save = async () => {
                 <option value="claude">Claude</option>
                 <option value="gemini">Gemini</option>
                 <option value="codex">Codex</option>
+                <option value="agy">Agy</option>
+                <option value="grok">Grok</option>
               </select>
             </div>
 

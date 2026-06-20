@@ -4,6 +4,19 @@
   box-sizing: border-box;
 }
 
+html {
+  /* Single density knob for the whole UI. A percentage keeps `rem` relative to
+     the device/browser default font size (so the user's preference still
+     scales), just dialed down so the monospace UI stays compact. Tune this one
+     value to make everything denser/looser. */
+  font-size: 87.5%; /* ~14px when the device default is 16px */
+  /* Stop mobile browsers from auto-inflating text on narrow viewports. Without
+     this, phones render larger text than desktop for the same rem — this makes
+     sizing identical across devices, no media queries needed. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 :root {
   --status-open: #87f;
   --status-done: #00ff00;
@@ -16,6 +29,10 @@
   --font-size-small: 0.85rem;
   --font-size-tiny: 0.78rem;
   --font-size-title: 1.2rem;
+  /* Uniform height for header/toolbar controls so bars stay slim and aligned. */
+  --control-h: 1.6rem;
+  /* Faint pill background used to keep control clusters legible after they wrap. */
+  --toolbar-group-bg: #ffffff14;
 }
 
 body {

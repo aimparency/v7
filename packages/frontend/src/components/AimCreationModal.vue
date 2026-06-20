@@ -55,7 +55,7 @@ const clearCustomColor = () => {
   aimColor.value = ''
 }
 
-const headerStyle = computed(() => {
+const headerStyle = computed((): Record<string, string> => {
   if (!aimColor.value) return {}
   return {
     background: `linear-gradient(to right, #2d2d2d, ${aimColor.value})`

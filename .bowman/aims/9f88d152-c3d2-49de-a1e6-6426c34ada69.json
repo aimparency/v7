@@ -1,16 +1,25 @@
 {
   "id": "9f88d152-c3d2-49de-a1e6-6426c34ada69",
   "text": "add aim description everywhere. open aim details/edit modal after creating.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
   "incoming": [],
+  "supportedAims": [
+    "865e4b34-0c68-4e34-9361-809c4d90db4c",
+    "ad34dc5b-054e-4765-b251-edbc971af27e"
+  ],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Added description field to Aim schema, UI modal, and display component. Open edit/details modal is integrated into the creation flow (description available on creation).",
     "date": 1764799875276
   },
-  "supportingConnections": [],
-  "supportedAims": [
-    "865e4b34-0c68-4e34-9361-809c4d90db4c",
-    "ad34dc5b-054e-4765-b251-edbc971af27e"
-  ]
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

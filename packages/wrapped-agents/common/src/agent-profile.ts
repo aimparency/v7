@@ -8,7 +8,7 @@
  * copying ~800 lines of watchdog logic.
  */
 
-export type AgentType = 'claude' | 'codex' | 'gemini' | 'agy';
+export type AgentType = 'claude' | 'codex' | 'gemini' | 'agy' | 'grok';
 
 export interface WorkerArgsContext {
   /** Whether to resume the previous session (vs. start fresh). */

@@ -32,6 +32,10 @@ const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
 
+// Prefixed to every guidance message the supervisor posts to the worker, so the
+// worker knows who is steering it and that the supervisor itself is editable.
+const WORKER_SUPERVISOR_PREFIX = "I am your supervisor AI agent. you can improve me in the wrapped agents <claude/gemini/...> package.";
+
 const RESPONSE_START_TIMEOUT_MS = 15000;
 const RESPONSE_COMPLETION_GRACE_MS = 2000;
 const WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS = 20000;
@@ -235,6 +239,13 @@ export class WatchdogService {
       this.watchdogBusyStartedAt = 0;
       this.lastStopReason = '';
       this.instructSent = false;
+      // Clear retry bookkeeping too: after a max-retries ERROR->stop, re-enabling
+      // must start fresh rather than land at the retry ceiling immediately.
+      this.retryCount = 0;
+      // Enabling is a fresh start: clear any stuck ERROR/backoff state so the
+      // operator's "automate" toggle actually restarts the loop from EXPLORING
+      // rather than resuming a wedged ERROR machine.
+      this.supervisorState.reset();
     } else {
       this.waitingForResponse = false;
       this.processing = false;
@@ -257,6 +268,18 @@ export class WatchdogService {
       this.onStop(reason);
     }
     this.onStateChange?.();
+  }
+
+  /**
+   * Enter the ERROR state and stop the supervisor. Previously triggerError only
+   * flipped the state machine to ERROR while the loop kept running in exponential
+   * backoff — leaving the operator with no clean way out. Stopping here means the
+   * UI button flips to "automate", and re-enabling (setEnabled(true) -> reset())
+   * is the retry: a fresh EXPLORING start with errorCount cleared.
+   */
+  private enterError(reason: string) {
+    this.supervisorState.triggerError(reason);
+    this.stop(`Supervisor error: ${reason}`);
   }
 
   triggerEmergencyStop() {
@@ -302,6 +325,30 @@ export class WatchdogService {
           this.resetWatchdogSnapshotState();
           this.nextCheckTime = now + IDLE_CHECK_INTERVAL;
           return;
+        }
+
+        // Fast-responder safety net: a quick watchdog (e.g. Haiku) can produce
+        // its whole reply inside INITIAL_WAIT_AFTER_POST, so we may never catch
+        // the live spinner and would otherwise wait out the full start-timeout
+        // and bogusly "retry" a reply that is already on screen. If a COMPLETE,
+        // parseable action is already present after the marker, process it now.
+        // We validate the JSON locally first so a half-rendered reply doesn't
+        // trip processDecision's retry path.
+        const earlyContent = this.locateResponseAfterMarker(
+          this.readAgentLines(this.watchdog, 500),
+          this.currentPromptMarker,
+        );
+        if (earlyContent) {
+          try {
+            const jsonString = this.extractJson(earlyContent);
+            JSON.parse(jsonString.replace(/[\r\n]+/g, ' '));
+            this.log("DEBUG: Watchdog reply already on screen before spinner seen. Parsing early.");
+            this.waitingForResponseStart = false;
+            await this.processDecision(jsonString);
+            return;
+          } catch {
+            // Not a complete/valid action yet — keep waiting for it to finish.
+          }
         }
 
         const elapsedSinceRequest = now - this.responseRequestedAt;
@@ -376,9 +423,8 @@ export class WatchdogService {
           const busyDuration = now - this.busyStartedAt;
           if (busyDuration > MAX_BUSY_TIMEOUT_MS) {
             this.log(`Worker busy for ${Math.floor(busyDuration/1000)}s (limit: ${MAX_BUSY_TIMEOUT_MS/1000}s). Triggering ERROR.`);
-            this.supervisorState.triggerError(`Worker session stuck (busy timeout reached after ${Math.floor(busyDuration/1000)}s)`);
             this.busyStartedAt = 0;
-            this.onStateChange?.();
+            this.enterError(`Worker session stuck (busy timeout reached after ${Math.floor(busyDuration/1000)}s)`);
             this.processing = false;
             return;
           }
@@ -538,6 +584,11 @@ export class WatchdogService {
 
   async post(agent: Agent, text: string) {
     const target: 'worker' | 'watchdog' = agent === this.worker ? 'worker' : 'watchdog';
+    // Prefix only natural-language guidance, not slash commands like /compact
+    // (a prefixed command would no longer be recognized by the worker CLI).
+    if (target === 'worker' && !text.startsWith('/')) {
+      text = `${WORKER_SUPERVISOR_PREFIX}\n\n${text}`;
+    }
     this.log(`Posting to ${target === 'worker' ? 'Worker' : 'Watchdog'}: ${text.substring(0, 50)}...`);
 
     this.isPosting = target;
@@ -797,9 +848,8 @@ export class WatchdogService {
       this.waitingForResponse = false;
       this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
     } else {
-      this.log(`[WatchdogService] Max retries (${MAX_RETRIES}) reached. Transitioning to ERROR state.`);
-      this.supervisorState.triggerError(`Max retries reached. JSON parsing failed repeatedly. Last error: ${error}`);
-      this.onStateChange?.();
+      this.log(`[WatchdogService] Max retries (${MAX_RETRIES}) reached. Transitioning to ERROR state and stopping.`);
+      this.enterError(`Max retries reached. JSON parsing failed repeatedly. Last error: ${error}`);
     }
   }
 

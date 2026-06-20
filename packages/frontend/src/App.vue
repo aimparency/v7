@@ -4,6 +4,7 @@ import { useUIStore, type AimPath } from './stores/ui'
 import { useUIModalStore } from './stores/ui/modal-store'
 import { useGraphUIStore } from './stores/ui/graph-store'
 import { useProjectStore } from './stores/project-store'
+import { useWatchdogStore } from './stores/watchdog'
 import { useDataStore, type Aim } from './stores/data'
 import { useMapStore } from './stores/map'
 import { trpc } from './trpc'
@@ -29,6 +30,7 @@ const uiStore = useUIStore()
 const modalStore = useUIModalStore()
 const graphUIStore = useGraphUIStore()
 const projectStore = useProjectStore()
+const watchdogStore = useWatchdogStore()
 const dataStore = useDataStore()
 const mapStore = useMapStore()
 const voiceEnabled = getRuntimeConfig().voiceEnabled
@@ -371,9 +373,12 @@ onUnmounted(() => {
     <!-- Header -->
     <header v-if="!projectStore.isInProjectSelection" class="header">
       <div class="status">
-        <span class="connection-status" :class="projectStore.connectionStatus">
-          {{ projectStore.connectionStatus === 'connected' ? 'Connected to' : projectStore.connectionStatus }}
-          {{ projectStore.connectionStatus === 'connected' ? 'aimparency server' : '' }}
+        <span
+          class="connection-status"
+          :class="projectStore.connectionStatus"
+          :title="`aimparency server: ${projectStore.connectionStatus}`"
+        >
+          {{ projectStore.connectionStatus === 'connected' ? 'Connected' : projectStore.connectionStatus }}
         </span>
         
         <div class="column-controls" v-if="projectStore.currentView === 'columns'">
@@ -401,32 +406,43 @@ onUnmounted(() => {
           >Voice</button>
         </div>
 
-        <button 
-          @click="projectStore.showWatchdog = !projectStore.showWatchdog" 
-          class="icon-btn" 
-          style="width: auto; padding: 0 0.5rem;"
-          :style="{ background: projectStore.showWatchdog ? '#444' : 'transparent' }"
-          title="Toggle Watchdog Panel"
-        >
-          Watchdog
-        </button>
+        <div class="watchdog-controls">
+          <button
+            @click="projectStore.showWatchdog = !projectStore.showWatchdog"
+            class="icon-btn"
+            style="width: auto; padding: 0 0.5rem;"
+            :style="{ background: projectStore.showWatchdog ? '#444' : 'transparent' }"
+            title="Toggle Watchdog Panel"
+          >
+            Watchdog
+          </button>
+
+          <button
+            v-if="projectStore.showWatchdog"
+            @click="watchdogStore.showActionsOverlay = !watchdogStore.showActionsOverlay"
+            class="icon-btn"
+            :style="{ background: watchdogStore.showActionsOverlay ? '#444' : 'transparent' }"
+            title="Watchdog actions menu (Ctrl+Space)"
+          >
+            ☰
+          </button>
+
+          <button
+            v-if="projectStore.showWatchdog"
+            @click="projectStore.watchdogMaximized = !projectStore.watchdogMaximized"
+            class="icon-btn"
+            :style="{ background: projectStore.watchdogMaximized ? '#444' : 'transparent' }"
+            :title="projectStore.watchdogMaximized ? 'Exit fullscreen' : 'Maximize watchdog panel'"
+          >
+            {{ projectStore.watchdogMaximized ? '🗗' : '⛶' }}
+          </button>
+        </div>
 
         <div class="project-info">
           <div v-if="projectStore.projectPath" class="project-location" :title="`${normalizedProjectRoot}\n${activeBowmanRoot}`">
-            <div class="project-chip">
-              <span class="project-chip-label">Project</span>
-              <span class="project-chip-value">{{ activeProjectName }}</span>
-            </div>
-            <div class="project-path-stack">
-              <span class="project-path-line">
-                <span class="project-path-label">root</span>
-                <code>{{ normalizedProjectRoot }}</code>
-              </span>
-              <span class="project-path-line">
-                <span class="project-path-label">.bowman</span>
-                <code>{{ activeBowmanRoot }}</code>
-              </span>
-            </div>
+            <span class="project-chip-label">Project</span>
+            <span class="project-chip-value">{{ activeProjectName }}</span>
+            <code class="project-path">{{ normalizedProjectRoot }}</code>
           </div>
 
           <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
@@ -557,7 +573,7 @@ onUnmounted(() => {
 
 .header {
   background: #2d2d2d;
-  padding: 0.25rem 1rem;
+  padding: 0.2rem 0.6rem;
   border-bottom: 1px solid #444;
   font-size: 0.8rem;
 }
@@ -565,8 +581,35 @@ onUnmounted(() => {
 .status {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.4rem;
+}
+
+/* Push the project/close cluster to the right edge of the first row. */
+.status .project-info {
+  margin-left: auto;
+}
+
+/* Shared cluster styling: every group is one control tall and reads as a faint
+   pill so wrapped rows stay tidy. */
+.column-controls,
+.watchdog-controls,
+.project-info,
+.project-location,
+.view-controls {
+  height: var(--control-h);
+  border-radius: 0.3rem;
+}
+
+.column-controls,
+.watchdog-controls,
+.project-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.3rem;
+  background: var(--toolbar-group-bg);
 }
 
 .connection-status {
@@ -586,20 +629,18 @@ onUnmounted(() => {
 }
 
 .column-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   color: #888;
-  font-size: 0.8rem;
 }
 
+/* Uniform control: one --control-h tall, square by default, text variants widen
+   via inline width:auto. Used for every icon/text button in the bar. */
 .icon-btn {
   background: transparent;
   border: 1px solid #444;
   color: #e0e0e0;
   border-radius: 3px;
-  width: 1.2rem;
-  height: 1.2rem;
+  min-width: var(--control-h);
+  height: var(--control-h);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -607,68 +648,38 @@ onUnmounted(() => {
   line-height: 1;
   padding: 0;
 }
-  
+
 .icon-btn:hover {
-  background: #444;
+  background: var(--toolbar-group-bg);
 }
 
 .project-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   min-width: 0;
 }
 
 .project-location {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.3rem;
   min-width: 0;
-  padding: 0.2rem 0.45rem;
-  border: 1px solid #3f3f3f;
-  border-radius: 0.4rem;
-  background: #252525;
+  padding: 0 0.45rem;
+  background: #00000033;
 }
 
-.project-chip {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0.1rem;
-  padding-right: 0.45rem;
-  border-right: 1px solid #3f3f3f;
-  flex-shrink: 0;
-}
-
-.project-chip-label,
-.project-path-label {
+.project-chip-label {
   color: #7f7f7f;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .project-chip-value {
   color: #f0f0f0;
-  font-size: 0.86rem;
+  flex-shrink: 0;
 }
 
-.project-path-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-}
-
-.project-path-line {
-  display: flex;
-  align-items: baseline;
-  gap: 0.35rem;
-  min-width: 0;
-}
-
-.project-path-line code {
+.project-path {
   color: #b6d7ff;
   min-width: 0;
   overflow: hidden;
@@ -688,19 +699,18 @@ onUnmounted(() => {
 }
 
 .consistency-btn {
-  width: 20px; 
-  height: 20px; 
-  background: #007acc; 
-  color: white; 
-  border-radius: 0.15rem; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  font-weight: bold; 
-  cursor: pointer; 
+  width: var(--control-h);
+  height: var(--control-h);
+  background: #007acc;
+  color: white;
+  border-radius: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
   border: none;
-  font-size: 14px;
-  /* Margins handled by parent flex gap */
+  font-size: 0.85rem;
 }
 
 .consistency-btn:hover {
@@ -773,23 +783,24 @@ onUnmounted(() => {
   gap: 0;
   background: #1a1a1a;
   border: 1px solid #444;
-  border-radius: 3px;
   overflow: hidden;
 }
 
 .view-btn {
+  display: flex;
+  align-items: center;
   background: transparent;
   border: none;
   color: #888;
-  padding: 0.2rem 0.6rem;
+  padding: 0 0.6rem;
   cursor: pointer;
   font-size: 0.8rem;
-  
+
   &:hover {
     background: #333;
     color: #ccc;
   }
-  
+
   &.active {
     background: #444;
     color: #fff;

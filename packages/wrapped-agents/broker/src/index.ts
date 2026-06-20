@@ -6,7 +6,7 @@ import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 import { WatchdogManager, type AgentType } from './manager.js';
 
-const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy']).default('gemini');
+const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy', 'grok']).default('gemini');
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -61,6 +61,8 @@ export type AppRouter = typeof appRouter;
 // Broker Port
 const HTTP_PORT = parseInt(process.env.PORT_BROKER_HTTP || '5000');
 const WS_PORT = parseInt(process.env.PORT_BROKER_WS || '5001');
+// Restrict binding to a single interface (e.g. Tailscale IP) when set; otherwise all interfaces.
+const BIND_HOST = process.env.BIND_HOST || undefined;
 
 const app = express();
 app.use(cors());
@@ -79,14 +81,14 @@ app.use(
   }) as any
 );
 
-const server = app.listen(HTTP_PORT, () => {
-  console.log(`[WatchdogBroker] HTTP Server running on http://localhost:${HTTP_PORT}`);
+const server = app.listen(HTTP_PORT, BIND_HOST as any, () => {
+  console.log(`[WatchdogBroker] HTTP Server running on http://${BIND_HOST || 'localhost'}:${HTTP_PORT}`);
 });
 
 console.log(`[WatchdogBroker] WebSocket Server running on ws://localhost:${WS_PORT}`);
 
 // WebSocket Server
-const wss = new WebSocketServer({ port: WS_PORT });
+const wss = new WebSocketServer({ port: WS_PORT, host: BIND_HOST });
 applyWSSHandler({
   wss: wss as any,
   router: appRouter,

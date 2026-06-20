@@ -9,7 +9,7 @@ import { AIMPARENCY_DIR_NAME } from 'shared';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export type AgentType = 'claude' | 'gemini' | 'codex' | 'agy';
+export type AgentType = 'claude' | 'gemini' | 'codex' | 'agy' | 'grok';
 
 interface WatchdogInstance {
   process?: ChildProcess;
@@ -341,7 +341,7 @@ export const WatchdogManager = {
     for (let i = 0; i < 20; i++) { // 10 seconds timeout
         try {
             await new Promise((resolve, reject) => {
-                const s = net.createConnection(port, 'localhost');
+                const s = net.createConnection(port, process.env.BIND_HOST || 'localhost');
                 s.on('connect', () => { s.end(); resolve(true); });
                 s.on('error', () => { reject(); });
             });

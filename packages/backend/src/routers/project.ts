@@ -10,7 +10,7 @@ import { INITIAL_STATES, cosineSimilarity } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
 
-const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy']);
+const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy', 'grok']);
 const watchdogRuntimeAgentStateSchema = z.object({
   enabled: z.boolean().default(false),
   emergencyStopped: z.boolean().default(false),
@@ -829,11 +829,11 @@ export const createProjectRouter = (
     findDuplicates: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        threshold: z.number().min(0).max(1).optional(), // default 0.89 (calibrated for bge-small-en-v1.5)
+        threshold: z.number().min(0).max(1).optional(), // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-aim graph)
         limit: z.number().int().positive().optional(),   // default 50
       }))
       .query(async ({ input }: any) => {
-        const threshold = input.threshold ?? 0.89;
+        const threshold = input.threshold ?? 0.92;
         const limit = input.limit ?? 50;
 
         const [aims, vectorStore] = await Promise.all([
@@ -842,6 +842,17 @@ export const createProjectRouter = (
         ]);
 
         const aimMap = new Map<string, Aim>(aims.map((a: Aim) => [a.id, a]));
+
+        // A high-cosine parent<->child pair is almost always an intentional
+        // summary/detail split, not an accidental duplicate. Exclude them so the
+        // duplicate signal stays clean; collapsing a redundant nesting is handled
+        // by merge_aims + graph_hygiene's collapseCandidates instead.
+        const isDirectParentChild = (x: string, y: string): boolean => {
+          const ax = aimMap.get(x);
+          if (!ax) return false;
+          return (ax.supportedAims ?? []).includes(y)
+            || (ax.supportingConnections ?? []).some((c: any) => c.aimId === y);
+        };
 
         // Build indexed list of (aimId, vector) for active aims only
         const indexed: Array<{ id: string; vector: number[] }> = [];
@@ -867,7 +878,7 @@ export const createProjectRouter = (
             const b = indexed[j]!;
             if (a.vector.length !== b.vector.length) continue;
             const score = cosineSimilarity(a.vector, b.vector);
-            if (score >= threshold) {
+            if (score >= threshold && !isDirectParentChild(a.id, b.id)) {
               const aimA = aimMap.get(a.id)!;
               const aimB = aimMap.get(b.id)!;
               pairs.push({
@@ -1024,12 +1035,12 @@ export const createProjectRouter = (
       .input(z.object({
         projectPath: z.string(),
         megaParentThreshold: z.number().int().positive().optional(), // default 25
-        duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.89 (calibrated for bge-small-en-v1.5)
+        duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-aim graph)
         limit: z.number().int().positive().optional(),               // per-section cap, default 30
       }))
       .query(async ({ input }: any) => {
         const megaParentThreshold = input.megaParentThreshold ?? 25;
-        const duplicateThreshold = input.duplicateThreshold ?? 0.89;
+        const duplicateThreshold = input.duplicateThreshold ?? 0.92;
         const limit = input.limit ?? 30;
 
         const [aims, vectorStore] = await Promise.all([
@@ -1041,6 +1052,16 @@ export const createProjectRouter = (
 
         const childIdsOf = (a: Aim): string[] =>
           (a.supportingConnections ?? []).map((c: any) => c.aimId).filter((id: string) => aimMap.has(id));
+
+        // Parent<->child pairs are intentional summary/detail splits, not dupes —
+        // keep them out of the duplicate clusters (collapseCandidates covers the
+        // "fold a finished nesting" case separately).
+        const isDirectParentChild = (x: string, y: string): boolean => {
+          const ax = aimMap.get(x);
+          if (!ax) return false;
+          return (ax.supportedAims ?? []).includes(y)
+            || (ax.supportingConnections ?? []).some((c: any) => c.aimId === y);
+        };
 
         // 1. Floating: no parents and not committed to any phase.
         const floating = active
@@ -1086,7 +1107,8 @@ export const createProjectRouter = (
           for (let j = i + 1; j < indexedIds.length; j++) {
             const vj = vectorStore[indexedIds[j]!] as number[];
             if (vi.length !== vj.length) continue;
-            if (cosineSimilarity(vi, vj) >= duplicateThreshold) {
+            if (cosineSimilarity(vi, vj) >= duplicateThreshold
+                && !isDirectParentChild(indexedIds[i]!, indexedIds[j]!)) {
               const ri = find(indexedIds[i]!), rj = find(indexedIds[j]!);
               if (ri !== rj) uf.set(ri, rj);
             }

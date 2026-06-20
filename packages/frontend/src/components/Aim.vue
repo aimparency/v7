@@ -3,7 +3,10 @@ import { computed, ref, watch, onMounted, useAttrs } from 'vue'
 import type { Aim } from '../stores/data'
 import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
+import { hasQueryFlag } from '../utils/perf-log'
 import AimsList from './AimsList.vue'
+
+const SCROLL_DEBUG = hasQueryFlag('scrolldbg')
 
 defineOptions({ inheritAttrs: false })
 
@@ -102,6 +105,7 @@ const hasMultipleParents = computed(() => parentAims.value.length > 1)
 watch(() => [props.isThisAimSelected, props.isActive], ([isSelected, isActive]) => {
   const hasSelectedChild = isExpanded.value && props.aim.selectedIncomingIndex !== undefined
   if (isSelected && isActive && !hasSelectedChild && aimContainerRef.value) {
+    if (SCROLL_DEBUG) console.log('[scrolldbg] Aim emit scroll-request (selected/active watch)', { aimId: props.aim.id, t: Math.round(performance.now()) })
     emit('scroll-request', aimContainerRef.value)
   }
 }, { flush: 'post' })
@@ -123,6 +127,7 @@ watch(isExpanded, (newVal) => {
 // Scroll on mount if already selected (for cascade restoration)
 onMounted(() => {
   if (props.isThisAimSelected && aimContainerRef.value) {
+    if (SCROLL_DEBUG) console.log('[scrolldbg] Aim emit scroll-request (onMounted, selected remount)', { aimId: props.aim.id, t: Math.round(performance.now()) })
     emit('scroll-request', aimContainerRef.value)
   }
 })

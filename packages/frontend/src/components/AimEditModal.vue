@@ -64,7 +64,7 @@ const clearCustomColor = () => {
   aimColor.value = ''
 }
 
-const headerStyle = computed(() => {
+const headerStyle = computed((): Record<string, string> => {
   if (!aimColor.value) return {}
   return {
     background: `linear-gradient(to right, #2d2d2d, ${aimColor.value})`
@@ -90,6 +90,31 @@ const committedPhasesList = ref<{ id: string, name: string }[]>([])
 const confirmRemoveParentId = ref<string | null>(null)
 const confirmRemovePhaseId = ref<string | null>(null)
 const originalCommittedPhaseIds = ref<string[]>([])
+
+// Snapshot of the form taken once it is fully populated, so we can detect
+// unsaved edits when the user tries to leave (Escape / overlay click) and ask
+// them to confirm rather than silently discarding their changes.
+const dirtySnapshot = ref('')
+const confirmingDiscard = ref(false)
+const keepEditingBtn = ref<HTMLButtonElement>()
+
+const serializeFormState = () => JSON.stringify({
+  text: aimText.value,
+  description: aimDescription.value,
+  intrinsicValue: aimIntrinsicValue.value,
+  cost: aimCost.value,
+  loopWeight: aimLoopWeight.value,
+  tags: aimTags.value,
+  status: selectedStatus.value,
+  statusComment: statusComment.value,
+  archived: archived.value,
+  color: aimColor.value,
+  reflection: reflection.value,
+  supportedAims: supportedAimsList.value.map((entry) => ({ id: entry.id, weight: entry.weight })),
+  committedPhases: committedPhasesList.value.map((phase) => phase.id)
+})
+
+const isDirty = computed(() => serializeFormState() !== dirtySnapshot.value)
 
 const aimTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
@@ -160,6 +185,7 @@ watch(() => props.show, async (show) => {
   if (show && aim.value) {
     confirmRemoveParentId.value = null
     confirmRemovePhaseId.value = null
+    confirmingDiscard.value = false
     aimText.value = aim.value.text
     aimDescription.value = aim.value.description || ''
     descriptionRows.value = getInitialDescriptionRows(aimDescription.value)
@@ -214,6 +240,8 @@ watch(() => props.show, async (show) => {
         console.error('Failed to load committed phases', error)
       }
     }
+
+    dirtySnapshot.value = serializeFormState()
 
     await nextTick()
     aimTextInput.value?.focus()
@@ -337,6 +365,25 @@ const handleSave = async () => {
 }
 
 const handleCancel = () => {
+  // Leaving with unsaved edits is easy to do by accident (Escape out of a
+  // textarea, stray overlay click), so ask for confirmation first. A second
+  // Escape / overlay close while the prompt is up confirms the discard.
+  if (isDirty.value && !confirmingDiscard.value) {
+    confirmingDiscard.value = true
+    nextTick(() => keepEditingBtn.value?.focus())
+    return
+  }
+  confirmingDiscard.value = false
+  emit('close')
+}
+
+const keepEditing = () => {
+  confirmingDiscard.value = false
+  nextTick(() => aimTextInput.value?.focus())
+}
+
+const discardChanges = () => {
+  confirmingDiscard.value = false
   emit('close')
 }
 </script>
@@ -561,6 +608,17 @@ const handleCancel = () => {
           @next-field="handleTagNext"
           @prev-field="handleTagPrev"
         />
+      </div>
+    </div>
+
+    <div v-if="confirmingDiscard" class="discard-overlay">
+      <div class="discard-prompt">
+        <p class="discard-title">Discard unsaved changes?</p>
+        <p class="discard-hint">You have edits that haven't been saved.</p>
+        <div class="discard-actions">
+          <button ref="keepEditingBtn" type="button" class="btn-cancel" @click="keepEditing">Keep editing</button>
+          <button type="button" class="btn-discard" @click="discardChanges">Discard</button>
+        </div>
       </div>
     </div>
 
@@ -828,6 +886,61 @@ label {
 
 .btn-save:hover {
   background: #005a99;
+}
+
+.discard-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 210;
+}
+
+.discard-prompt {
+  background: #2d2d2d;
+  border: 1px solid #555;
+  border-radius: 0.3125rem;
+  padding: 1.25rem;
+  max-width: min(90vw, 24rem);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.discard-title {
+  margin: 0 0 0.5rem;
+  color: #e0e0e0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.discard-hint {
+  margin: 0 0 1rem;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.discard-actions {
+  display: flex;
+  gap: 0.375rem;
+  justify-content: flex-end;
+}
+
+.btn-discard {
+  appearance: none;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.1875rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  background: #6a3a3a;
+  color: #fff;
+}
+
+.btn-discard:hover {
+  background: #7a4545;
 }
 
 .form-row {

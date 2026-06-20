@@ -47,6 +47,8 @@ type WatchdogRuntimeState = {
 export function startSession(profile: AgentProfile, options: StartSessionOptions): void {
   const { packageDir } = options;
   const PORT_BASE = options.portBase ?? 4011;
+  // Restrict binding to a single interface (e.g. Tailscale IP) when set; otherwise all interfaces.
+  const BIND_HOST = process.env.BIND_HOST || undefined;
   const AGENT_TYPE = profile.agentType;
 
   // Load instruction text for autonomous guidance (package-relative, as before).
@@ -397,8 +399,8 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
 
   (async () => {
     const PORT = requestedPort > 0 ? requestedPort : await findAvailablePort(PORT_BASE);
-    httpServer.listen(PORT, async () => {
-      console.log(`${profile.bannerName} Watchdog Server running at http://localhost:${PORT}`);
+    httpServer.listen(PORT, BIND_HOST, async () => {
+      console.log(`${profile.bannerName} Watchdog Server running at http://${BIND_HOST || 'localhost'}:${PORT}`);
 
       // Only open browser if port was NOT manually specified (implies manual run vs managed run)
       if (requestedPort === 0) {

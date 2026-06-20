@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 
 // Constants matching broker/src/index.ts
 const HTTP_PORT = parseInt(process.env.PORT_BROKER_HTTP || '5000');
-const BASE_URL = `http://localhost:${HTTP_PORT}/trpc`;
+const BASE_URL = `http://${process.env.BIND_HOST || 'localhost'}:${HTTP_PORT}/trpc`;
 
 // Paths
 const WRAPPER_DIR = path.resolve(__dirname, '../../../');

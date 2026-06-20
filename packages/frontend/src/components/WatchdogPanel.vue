@@ -12,6 +12,24 @@ const modalStore = useUIModalStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 
+// In portrait layouts only one terminal is shown at a time (the other is
+// display:none); these tabs pick which. In landscape both are visible and the
+// tabs are hidden by CSS, so this state is simply ignored there.
+const activeTerminalTab = ref<'worker' | 'supervisor'>('worker')
+
+watch(activeTerminalTab, async (tab) => {
+  // The revealed terminal was display:none (zero-size) — refit once laid out.
+  await nextTick()
+  requestAnimationFrame(() => {
+    if (tab === 'worker') {
+      workerTerm.value?.fit()
+      workerTerm.value?.focus()
+    } else {
+      watchdogTerm.value?.fit()
+    }
+  })
+})
+
 const onWorkerData = (data: string) => workerTerm.value?.write(data)
 const onWatchdogData = (data: string) => watchdogTerm.value?.write(data)
 
@@ -29,11 +47,13 @@ const headerBgColor = computed(() => {
     if (store.connectedAgentType === 'claude') return '#92400e'
     if (store.connectedAgentType === 'gemini') return '#0e7490'
     if (store.connectedAgentType === 'agy') return '#6d28d9'
+    if (store.connectedAgentType === 'grok') return '#1e2937'
     return '#0f766e'
   }
   if (store.selectedAgentType === 'claude') return '#78350f'
   if (store.selectedAgentType === 'gemini') return '#164e63'
   if (store.selectedAgentType === 'agy') return '#5b21b6'
+  if (store.selectedAgentType === 'grok') return '#0f172a'
   return '#115e59'
 })
 
@@ -240,6 +260,7 @@ defineExpose({
           <option value="gemini">Gemini {{ runningAgents.has('gemini') ? '(Running)' : '' }}</option>
           <option value="codex">Codex {{ runningAgents.has('codex') ? '(Running)' : '' }}</option>
           <option value="agy">Agy {{ runningAgents.has('agy') ? '(Running)' : '' }}</option>
+          <option value="grok">Grok {{ runningAgents.has('grok') ? '(Running)' : '' }}</option>
         </select>
 
         <span class="session-status">
@@ -335,16 +356,29 @@ defineExpose({
       </div>
     </div>
 
+    <div class="term-tabs" v-show="store.isConnected">
+      <button
+        class="term-tab"
+        :class="{ active: activeTerminalTab === 'worker' }"
+        @click="activeTerminalTab = 'worker'"
+      >Session</button>
+      <button
+        class="term-tab"
+        :class="{ active: activeTerminalTab === 'supervisor' }"
+        @click="activeTerminalTab = 'supervisor'"
+      >Supervisor</button>
+    </div>
+
     <div class="terminals" v-show="store.isConnected">
-      <div class="term-col">
-        <WatchdogTerminal 
-          ref="workerTerm" 
+      <div class="term-col" :class="{ 'tab-active': activeTerminalTab === 'worker' }">
+        <WatchdogTerminal
+          ref="workerTerm"
           :initial-content="store.workerOutput"
           :onData="handleWorkerInput"
           @resize="(dims) => store.socket?.emit('resize-worker', dims)"
         />
       </div>
-      <div class="term-col">
+      <div class="term-col" :class="{ 'tab-active': activeTerminalTab === 'supervisor' }">
         <div class="term-label term-label-supervisor">
           <span class="term-title">Supervisor</span>
           <span class="term-state" :style="supervisorStateStyle">State: {{ supervisorStateLabel }}</span>
@@ -396,9 +430,11 @@ defineExpose({
 
 .panel-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  padding: 0.5rem 1rem;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.4rem;
+  padding: 0.2rem 0.6rem;
   border-bottom: 1px solid #333;
   transition: background 0.3s ease;
 }
@@ -406,7 +442,8 @@ defineExpose({
 .header-left {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
 }
 
 .header-right {
@@ -426,11 +463,12 @@ defineExpose({
 }
 
 .agent-select {
-  padding: 0.35rem 0.5rem;
+  height: var(--control-h);
+  padding: 0 0.4rem;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
-  border-radius: 4px;
+  border-radius: 0.3rem;
   font-size: 0.85rem;
   font-weight: bold;
   cursor: pointer;
@@ -496,8 +534,11 @@ defineExpose({
 }
 
 .action-btn {
-  padding: 0.35rem 0.75rem;
-  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  padding: 0 0.6rem;
+  border-radius: 0.3rem;
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -570,6 +611,50 @@ defineExpose({
   flex: 1;
   display: flex;
   min-height: 0;
+}
+
+/* Tab bar: only meaningful in portrait (single-terminal mode); hidden otherwise. */
+.term-tabs {
+  display: none;
+  gap: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  background: #1e1e1e;
+  border-bottom: 1px solid #333;
+}
+
+.term-tab {
+  display: inline-flex;
+  align-items: center;
+  height: var(--control-h);
+  padding: 0 0.7rem;
+  background: var(--toolbar-group-bg);
+  border: none;
+  border-radius: 0.3rem;
+  color: #888;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+
+  &.active {
+    background: #444;
+    color: #fff;
+  }
+}
+
+/* When the viewport is taller than wide, the two side-by-side terminals get too
+   narrow — collapse to one terminal at a time, switched via the tabs. */
+@media (orientation: portrait) {
+  .term-tabs {
+    display: flex;
+  }
+
+  .term-col {
+    border-right: none;
+  }
+
+  .term-col:not(.tab-active) {
+    display: none;
+  }
 }
 
 .term-col {

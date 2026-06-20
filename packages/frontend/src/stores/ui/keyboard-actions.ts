@@ -72,6 +72,73 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
   }
 }
 
+// Move focus one column towards the root (left). Shared by the `h` key and
+// right-swipe touch gesture.
+export async function navigateColumnBackward(uiStore: any) {
+  const col = uiStore.activeColumn
+  if (col < 0) return
+
+  uiStore.pendingDeletePhaseId = null
+  const nextColumn = col - 1
+  if (nextColumn < 0) {
+    uiStore.setActiveColumn(-1)
+    uiStore.ensureSelectionVisible()
+  } else {
+    if (nextColumn < uiStore.windowStart) {
+      uiStore.windowStart = nextColumn
+    }
+    uiStore.setActiveColumn(nextColumn)
+  }
+}
+
+// Move focus one column deeper (right), lazily loading the next column.
+// Shared by the `l` key and left-swipe touch gesture.
+export async function navigateColumnForward(uiStore: any, dataStore: any) {
+  const col = uiStore.activeColumn
+  uiStore.pendingDeletePhaseId = null
+
+  if (col === -1) {
+    await uiStore.loadColumn(0)
+    const rootEntries = dataStore.getSelectableColumnEntries(0)
+    if (rootEntries.length > 0) {
+      uiStore.ensureMaxColumn(0)
+      uiStore.initializeColumnSelection(0)
+      uiStore.setActiveColumn(0)
+      uiStore.ensureSelectionVisible()
+      await uiStore.realignVisibleColumnsFrom(0, 'preserve')
+    }
+    return
+  }
+
+  if (col < 0) return
+
+  const nextColumn = col + 1
+  const windowEnd = uiStore.windowStart + uiStore.windowSize - 1
+  const wasVisible = nextColumn <= windowEnd
+
+  if (nextColumn > uiStore.maxColumn) {
+    await uiStore.loadColumn(nextColumn)
+    const discoveredEntries = dataStore.getSelectableColumnEntries(nextColumn)
+    if (discoveredEntries.length > 0) {
+      uiStore.ensureMaxColumn(nextColumn)
+      uiStore.initializeColumnSelection(nextColumn)
+    }
+  }
+
+  if (nextColumn <= uiStore.maxColumn) {
+    if (nextColumn > windowEnd) {
+      const maxWindowStart = Math.max(0, uiStore.maxColumn - uiStore.windowSize + 1)
+      if (uiStore.windowStart < maxWindowStart) {
+        uiStore.windowStart++
+      }
+    }
+    uiStore.setActiveColumn(nextColumn)
+    if (!wasVisible) {
+      await uiStore.realignVisibleColumnsFrom(nextColumn, 'preserve')
+    }
+  }
+}
+
 export async function handleColumnNavigationKeysAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
@@ -165,64 +232,11 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       break
     case 'h':
       event.preventDefault()
-      if (col >= 0) {
-        uiStore.pendingDeletePhaseId = null
-        const nextColumn = col - 1
-        if (nextColumn < 0) {
-          uiStore.setActiveColumn(-1)
-          uiStore.ensureSelectionVisible()
-        } else {
-          if (nextColumn < uiStore.windowStart) {
-            uiStore.windowStart = nextColumn
-          }
-          uiStore.setActiveColumn(nextColumn)
-        }
-      }
+      await navigateColumnBackward(uiStore)
       break
     case 'l':
       event.preventDefault()
-      uiStore.pendingDeletePhaseId = null
-
-      if (col === -1) {
-        await uiStore.loadColumn(0)
-        const rootEntries = dataStore.getSelectableColumnEntries(0)
-        if (rootEntries.length > 0) {
-          uiStore.ensureMaxColumn(0)
-          uiStore.initializeColumnSelection(0)
-          uiStore.setActiveColumn(0)
-          uiStore.ensureSelectionVisible()
-          await uiStore.realignVisibleColumnsFrom(0, 'preserve')
-        }
-        break
-      }
-
-      if (col >= 0) {
-        const nextColumn = col + 1
-        const windowEnd = uiStore.windowStart + uiStore.windowSize - 1
-        const wasVisible = nextColumn <= windowEnd
-
-        if (nextColumn > uiStore.maxColumn) {
-          await uiStore.loadColumn(nextColumn)
-          const discoveredEntries = dataStore.getSelectableColumnEntries(nextColumn)
-          if (discoveredEntries.length > 0) {
-            uiStore.ensureMaxColumn(nextColumn)
-            uiStore.initializeColumnSelection(nextColumn)
-          }
-        }
-
-        if (nextColumn <= uiStore.maxColumn) {
-          if (nextColumn > windowEnd) {
-            const maxWindowStart = Math.max(0, uiStore.maxColumn - uiStore.windowSize + 1)
-            if (uiStore.windowStart < maxWindowStart) {
-              uiStore.windowStart++
-            }
-          }
-          uiStore.setActiveColumn(nextColumn)
-          if (!wasVisible) {
-            await uiStore.realignVisibleColumnsFrom(nextColumn, 'preserve')
-          }
-        }
-      }
+      await navigateColumnForward(uiStore, dataStore)
       break
     case 'i': {
       event.preventDefault()

@@ -11,7 +11,7 @@ const emergencyStopped = ref(false);
 const stopReason = ref('');
 const supervisorState = ref<{ state: string; color: string }>({ state: 'EXPLORING', color: '#a8dadc' });
 
-type AgentType = 'claude' | 'gemini' | 'codex' | 'agy';
+type AgentType = 'claude' | 'gemini' | 'codex' | 'agy' | 'grok';
 
 interface Session {
     projectPath: string;
@@ -146,6 +146,7 @@ onMounted(() => {
                 <option value="gemini">Gemini</option>
                 <option value="codex">Codex</option>
                 <option value="agy">Agy</option>
+                <option value="grok">Grok</option>
             </select>
             <button @click="createSession" :disabled="loading || !newProjectPath">Start New</button>
             <button @click="refreshSessions" :disabled="loading">Refresh</button>

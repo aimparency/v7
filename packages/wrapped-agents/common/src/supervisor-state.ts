@@ -76,6 +76,29 @@ export class SupervisorState {
   }
 
   /**
+   * Hard reset back to a clean EXPLORING state, clearing ERROR/backoff and any
+   * in-flight work context. Used when the operator re-enables the supervisor
+   * ("automate"): toggling enable should behave like a fresh start, not resume a
+   * stuck ERROR/backoff machine. History is preserved for traceability.
+   */
+  reset(): void {
+    this.history.push({
+      from: this.currentState,
+      to: 'EXPLORING',
+      action: 'reset',
+      timestamp: Date.now(),
+    })
+    if (this.history.length > 100) {
+      this.history = this.history.slice(-100)
+    }
+    this.currentState = 'EXPLORING'
+    this.context = {
+      stateEnteredAt: Date.now(),
+      errorCount: 0,
+    }
+  }
+
+  /**
    * Get current state name
    */
   getState(): SupervisorStateName {

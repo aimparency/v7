@@ -151,14 +151,6 @@
       "weight": 1
     },
     {
-      "aimId": "4f8c3aca-dec4-4932-bc16-d0a5a6955473",
-      "relativePosition": [
-        4.540542399671051,
-        -2.640971737499243
-      ],
-      "weight": 1
-    },
-    {
       "aimId": "2e6e9dee-98f5-4a0e-afbb-4bb6a5ade583",
       "relativePosition": [
         -1.0121403971894298,
@@ -173,13 +165,70 @@
         2.415463152851805
       ],
       "weight": 1
+    },
+    {
+      "aimId": "9ce4c6ab-e213-434f-8bb7-eeabddf1f94c",
+      "relativePosition": [
+        -2.4103771526008004,
+        0.6633867516163239
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "101bc40f-5b53-4c4c-aca4-bc91bcdf094a",
+      "relativePosition": [
+        -2.2306581926570104,
+        -1.1287887435353698
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "7a1c2e24-4a04-4962-b34d-cab94db1b590",
+      "relativePosition": [
+        -1.4971806941085806,
+        -2.0021113778180646
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "9bcf93d5-1f94-4a80-8276-dcc78112e8f3",
+      "relativePosition": [
+        1.2288080782477637,
+        2.177161157754069
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "e266c632-dc74-4c44-8cf6-c184378cdc68",
+      "relativePosition": [
+        -2.2283943979529615,
+        -1.133251255093882
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b3c1bd1a-a503-45af-8c3a-3d3bee567f47",
+      "relativePosition": [
+        0.483559400585544,
+        2.4527882717644727
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "1e554f38-33ae-42d4-88e6-4a4b071a20d0",
+      "relativePosition": [
+        -0.3677800796333879,
+        2.4727995901457236
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
     "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
   "committedIn": [
-    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+    "5c2f9450-0feb-4755-b59a-081e9ab43037",
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
     "state": "done",

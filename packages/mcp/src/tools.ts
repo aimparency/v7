@@ -347,12 +347,12 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "find_duplicate_aims",
-          description: "Scan the embedding index for near-duplicate aims (all-pairs cosine similarity). Returns ranked pairs above `threshold` (default 0.89). Run build_search_index first if results are empty. Use merge_aims to act on results.",
+          description: "Scan the embedding index for near-duplicate aims (all-pairs cosine similarity). Returns ranked pairs above `threshold` (default 0.92). Run build_search_index first if results are empty. Use merge_aims to act on results.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              threshold: { type: "number", description: "Similarity threshold 0–1 (default 0.89)" },
+              threshold: { type: "number", description: "Similarity threshold 0–1 (default 0.92)" },
               limit: { type: "number", description: "Max pairs to return (default 50)" },
             },
             required: ["projectPath"],
@@ -380,7 +380,7 @@ export function registerTools(server: Server, clientOverride?: any) {
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               megaParentThreshold: { type: "number", description: "Min direct children to flag a mega-parent (default 25)" },
-              duplicateThreshold: { type: "number", description: "Cosine threshold for duplicate clusters 0–1 (default 0.89)" },
+              duplicateThreshold: { type: "number", description: "Cosine threshold for duplicate clusters 0–1 (default 0.92)" },
               limit: { type: "number", description: "Max items per section (default 30)" },
             },
             required: ["projectPath"],
@@ -388,7 +388,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "merge_aims",
-          description: "Merge source aim B into target aim A: rewires B's parents, children, and phase commitments onto A (deduplicating), copies B's reflections to A, then archives B. Use after finding duplicates via search_aims_semantic. Guards against self-merge and direct parent-child cycles.",
+          description: "Merge source aim B into target aim A: rewires B's parents, children, and phase commitments onto A (deduplicating), copies B's reflections to A, then archives B. Use after finding duplicates via search_aims_semantic, or to collapse a redundant child into its parent. Guards against self-merge only; a direct parent-child pair is merged cleanly (the connecting edge is dropped).",
           inputSchema: {
             type: "object",
             properties: {

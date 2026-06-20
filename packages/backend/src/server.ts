@@ -789,6 +789,8 @@ export type AppRouter = typeof appRouter;
 
 const HTTP_PORT = parseInt(process.env.PORT_BACKEND_HTTP || '3000');
 const WS_PORT = parseInt(process.env.PORT_BACKEND_WS || '3001');
+// Restrict binding to a single interface (e.g. Tailscale IP) when set; otherwise all interfaces.
+const BIND_HOST = process.env.BIND_HOST || undefined;
 
 export function startServer() {
   const server = createHTTPServer({
@@ -796,7 +798,7 @@ export function startServer() {
     createContext,
   });
 
-  const wss = new WebSocketServer({ port: WS_PORT });
+  const wss = new WebSocketServer({ port: WS_PORT, host: BIND_HOST });
 
   applyWSSHandler({
     wss,
@@ -811,8 +813,8 @@ export function startServer() {
     });
   });
 
-  server.listen(HTTP_PORT, () => {
-    console.log(`HTTP Server running on http://localhost:${HTTP_PORT}`);
+  server.listen(HTTP_PORT, BIND_HOST, () => {
+    console.log(`HTTP Server running on http://${BIND_HOST || 'localhost'}:${HTTP_PORT}`);
   });
 
   // Load the embedding model up front so the first search/index doesn't pay the cold-load cost.
