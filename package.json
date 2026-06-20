@@ -67,9 +67,9 @@
   "author": "Aimparency contributors",
   "license": "ISC",
   "devDependencies": {
-    "concurrently": "^9.2.1",
+    "concurrently": "^10.0.3",
     "dotenv-cli": "^11.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "repository": {
     "type": "git",
