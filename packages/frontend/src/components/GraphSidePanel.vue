@@ -5,7 +5,7 @@ import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { useMapStore } from '../stores/map'
 import { trpc } from '../trpc'
-import type { Aim, Connection } from 'shared/src/types'
+import type { Aim, Connection } from 'shared'
 import { formatWithK, parseK } from '../utils/number-format'
 import NumericTextInput from './NumericTextInput.vue'
 

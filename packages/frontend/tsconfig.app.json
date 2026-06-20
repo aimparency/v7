@@ -8,9 +8,7 @@
     "types": ["node"],
 
     "paths": {
-      "@/*": ["./src/*"],
-      "backend": ["../../packages/backend/src/index.ts"],
-      "shared": ["../../packages/shared/src/index.ts"]
+      "@/*": ["./src/*"]
     }
   }
 }

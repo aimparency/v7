@@ -11,7 +11,7 @@ import {
   clampShare,
   isSoleContributor,
   MAX_SHARE
-} from 'shared/src/connection-weight'
+} from 'shared'
 
 const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
