@@ -17,18 +17,22 @@ const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 // tabs are hidden by CSS, so this state is simply ignored there.
 const activeTerminalTab = ref<'worker' | 'supervisor'>('worker')
 
-watch(activeTerminalTab, async (tab) => {
-  // The revealed terminal was display:none (zero-size) — refit once laid out.
-  await nextTick()
-  requestAnimationFrame(() => {
-    if (tab === 'worker') {
-      workerTerm.value?.fit()
-      workerTerm.value?.focus()
-    } else {
-      watchdogTerm.value?.fit()
-    }
+const refitActiveTerminal = (focus = false) => {
+  // Terminal size changed (tab switch / fullscreen toggle) — refit once laid out.
+  void nextTick().then(() => {
+    requestAnimationFrame(() => {
+      const term = activeTerminalTab.value === 'worker' ? workerTerm.value : watchdogTerm.value
+      term?.fit()
+      if (focus) term?.focus()
+    })
   })
-})
+}
+
+watch(activeTerminalTab, () => refitActiveTerminal(true))
+
+// Entering/leaving terminal fullscreen changes the available size for the
+// visible terminal — refit and focus it so input goes straight to the terminal.
+watch(() => projectStore.terminalFullscreen, () => refitActiveTerminal(true))
 
 const onWorkerData = (data: string) => workerTerm.value?.write(data)
 const onWatchdogData = (data: string) => watchdogTerm.value?.write(data)
@@ -246,8 +250,16 @@ defineExpose({
 </script>
 
 <template>
-  <div class="watchdog-panel">
-    <div class="panel-header" :style="{ background: headerBgColor }">
+  <div class="watchdog-panel" :class="{ 'is-fullscreen': projectStore.terminalFullscreen }">
+    <!-- Floating exit affordance — overlays the terminal, costs no layout height. -->
+    <button
+      v-if="projectStore.terminalFullscreen"
+      class="terminal-fullscreen-exit"
+      title="Exit terminal fullscreen"
+      @click="projectStore.terminalFullscreen = false"
+    >✕</button>
+
+    <div class="panel-header" v-show="!projectStore.terminalFullscreen" :style="{ background: headerBgColor }">
       <!-- Left: Agent Selector + Status + Session Controls -->
       <div class="header-left">
         <select
@@ -356,7 +368,7 @@ defineExpose({
       </div>
     </div>
 
-    <div class="term-tabs" v-show="store.isConnected">
+    <div class="term-tabs" v-show="store.isConnected && !projectStore.terminalFullscreen">
       <button
         class="term-tab"
         :class="{ active: activeTerminalTab === 'worker' }"
@@ -367,6 +379,11 @@ defineExpose({
         :class="{ active: activeTerminalTab === 'supervisor' }"
         @click="activeTerminalTab = 'supervisor'"
       >Supervisor</button>
+      <button
+        class="term-tab term-fullscreen-enter"
+        title="Fullscreen terminal"
+        @click="projectStore.terminalFullscreen = true"
+      >⛶</button>
     </div>
 
     <div class="terminals" v-show="store.isConnected">
@@ -426,6 +443,40 @@ defineExpose({
   height: 100%;
   background: #1e1e1e;
   border-top: 1px solid #333;
+  position: relative;
+}
+
+/* Terminal-only mode: only the active terminal is shown, no dividers, and the
+   exit button floats over the top-right corner without consuming any height. */
+.watchdog-panel.is-fullscreen .term-col {
+  border-right: none;
+}
+
+.watchdog-panel.is-fullscreen .term-col:not(.tab-active) {
+  display: none;
+}
+
+.terminal-fullscreen-exit {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 20;
+  width: calc(var(--control-h) * 1.4);
+  height: calc(var(--control-h) * 1.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: #000000a6;
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    background: #000000d9;
+  }
 }
 
 .panel-header {
@@ -639,6 +690,11 @@ defineExpose({
     background: #444;
     color: #fff;
   }
+}
+
+/* Sits at the far end of the tab row. */
+.term-fullscreen-enter {
+  margin-left: auto;
 }
 
 /* When the viewport is taller than wide, the two side-by-side terminals get too

@@ -3,7 +3,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Compon
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useScrollIntoView } from '../composables/useScrollIntoView'
-import { hasQueryFlag } from '../utils/perf-log'
 import PhaseComponent from './Phase.vue'
 import type { PhaseLevelEntry } from '../stores/data'
 
@@ -18,20 +17,6 @@ const props = defineProps<Props>()
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
-
-// --- Scroll diagnostics (enable with ?scrolldbg in the URL) ---
-const SCROLL_DEBUG = hasQueryFlag('scrolldbg')
-const scrollDbg = (label: string, detail: Record<string, unknown> = {}) => {
-  if (!SCROLL_DEBUG) return
-  const container = phaseListRef.value
-  // eslint-disable-next-line no-console
-  console.log(`[scrolldbg c${props.columnIndex}] ${label}`, {
-    t: Math.round(performance.now()),
-    scrollTop: container ? Math.round(container.scrollTop) : null,
-    clientHeight: container?.clientHeight ?? null,
-    ...detail
-  })
-}
 
 const phaseListRef = ref<HTMLElement | null>(null)
 const entryElements = ref(new Map<string, HTMLElement>())
@@ -183,7 +168,6 @@ const updateViewportMetrics = (persistScroll: boolean = hasInitialAnchorPosition
 }
 
 const handleColumnScroll = () => {
-  scrollDbg('native-scroll')
   updateViewportMetrics(true)
 }
 
@@ -213,7 +197,6 @@ const adjustScrollForHeightChange = (entryIndex: number, delta: number) => {
   // re-center here, otherwise first-time entry measurements during a flick (or
   // an Android address-bar viewport resize) would yank the view back to the
   // selection and fight the user's scroll.
-  scrollDbg('AUTOSCROLL adjustScrollForHeightChange', { entryIndex, delta })
   container.scrollTop += delta
   updateViewportMetrics(true)
 }
@@ -281,7 +264,6 @@ const setInitialAnchorScrollIfNeeded = async () => {
         getRenderedTop(entryIndex) - container.clientHeight * 0.25 + (heights.value[entryIndex] ?? 0) * 0.5
       )
 
-  scrollDbg('AUTOSCROLL setInitialAnchor', { targetTop: Math.round(targetTop) })
   container.scrollTop = targetTop
   hasInitialAnchorPosition.value = true
   updateViewportMetrics(true)
@@ -316,7 +298,6 @@ const scrollSelectedEntryIntoView = async (
 
   const scrollToClamped = (targetTop: number, scrollBehavior: ScrollBehavior) => {
     const maxScrollTop = Math.max(0, container.scrollHeight - viewport)
-    scrollDbg('AUTOSCROLL scrollSelectedEntryIntoView', { direction, targetTop: Math.round(targetTop) })
     container.scrollTo({
       top: Math.max(0, Math.min(targetTop, maxScrollTop)),
       behavior: scrollBehavior
@@ -383,13 +364,7 @@ const scrollSelectedEntryIntoView = async (
 }
 
 // Handle scroll requests from child components (Phase/Aim emit 'scroll-request')
-const { handleScrollRequest: rawHandleScrollRequest } = useScrollIntoView(phaseListRef)
-const handleScrollRequest = (element: HTMLElement) => {
-  scrollDbg('AUTOSCROLL handleScrollRequest (child scroll-request)', {
-    el: element?.className
-  })
-  rawHandleScrollRequest(element)
-}
+const { handleScrollRequest } = useScrollIntoView(phaseListRef)
 
 const updateRevealedPlaceholder = async () => {
   const selectedEntry = getSelectedEntry()
@@ -405,7 +380,6 @@ const updateRevealedPlaceholder = async () => {
 
 watch(() => uiStore.columnScrollIntent, (req) => {
   if (req && req.col === props.columnIndex && phaseListRef.value) {
-    scrollDbg('AUTOSCROLL columnScrollIntent', { direction: req.direction })
     const behavior = 'smooth'
     if (req.direction === 'bottom') {
       phaseListRef.value.scrollTo({ top: phaseListRef.value.scrollHeight, behavior })
@@ -455,13 +429,6 @@ watch(
       selectionTravelDirection.value = 'preserve'
     }
 
-    scrollDbg('selection-watch fired', {
-      selectedPhaseIndex,
-      selectedEntryKey,
-      prevEntryKey: previousSelectedEntryKey,
-      selectionChanged,
-      hasInitialAnchor: hasInitialAnchorPosition.value
-    })
     void updateRevealedPlaceholder()
     if (!hasInitialAnchorPosition.value) {
       void setInitialAnchorScrollIfNeeded()
@@ -486,33 +453,9 @@ watch(() => entries.value.map((entry) => entry.key).join('|'), async () => {
   updateViewportMetrics(false)
 }, { flush: 'post' })
 
-// --- Touch diagnostics (enable with ?scrolldbg) ---
-let dbgTouchStartY = 0
-let dbgTouchStartT = 0
-let dbgTouchMoves = 0
-const dbgTouchStart = (event: TouchEvent) => {
-  dbgTouchStartY = event.touches[0]?.clientY ?? 0
-  dbgTouchStartT = performance.now()
-  dbgTouchMoves = 0
-  scrollDbg('TOUCH start', { y: Math.round(dbgTouchStartY), touches: event.touches.length })
-}
-const dbgTouchMove = () => { dbgTouchMoves++ }
-const dbgTouchEnd = (event: TouchEvent) => {
-  const y = event.changedTouches[0]?.clientY ?? 0
-  const dy = y - dbgTouchStartY
-  const dt = performance.now() - dbgTouchStartT
-  scrollDbg('TOUCH end', {
-    dy: Math.round(dy),
-    moves: dbgTouchMoves,
-    dt: Math.round(dt),
-    velocity: dt > 0 ? Math.round((dy / dt) * 1000) : 0 // px/s, flick if large
-  })
-}
-
 onMounted(() => {
   updateViewportMetrics(false)
   resizeObserver.value = new ResizeObserver((observedEntries) => {
-    scrollDbg('ResizeObserver fired', { count: observedEntries.length })
     for (const observedEntry of observedEntries) {
       const element = observedEntry.target
       if (!(element instanceof HTMLElement)) continue
@@ -524,11 +467,6 @@ onMounted(() => {
       }
     }
   })
-  if (SCROLL_DEBUG && phaseListRef.value) {
-    phaseListRef.value.addEventListener('touchstart', dbgTouchStart, { passive: true })
-    phaseListRef.value.addEventListener('touchmove', dbgTouchMove, { passive: true })
-    phaseListRef.value.addEventListener('touchend', dbgTouchEnd, { passive: true })
-  }
   void updateRevealedPlaceholder()
   void setInitialAnchorScrollIfNeeded()
 })
@@ -537,11 +475,6 @@ onBeforeUnmount(() => {
   if (pendingSelectionRealignTimeout.value !== null) {
     window.clearTimeout(pendingSelectionRealignTimeout.value)
     pendingSelectionRealignTimeout.value = null
-  }
-  if (SCROLL_DEBUG && phaseListRef.value) {
-    phaseListRef.value.removeEventListener('touchstart', dbgTouchStart)
-    phaseListRef.value.removeEventListener('touchmove', dbgTouchMove)
-    phaseListRef.value.removeEventListener('touchend', dbgTouchEnd)
   }
   resizeObserver.value?.disconnect()
   resizeObserver.value = null

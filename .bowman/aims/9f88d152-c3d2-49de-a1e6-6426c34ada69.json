@@ -10,7 +10,9 @@
     "865e4b34-0c68-4e34-9361-809c4d90db4c",
     "ad34dc5b-054e-4765-b251-edbc971af27e"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "91e510e1-208a-4c5c-b93b-91c6525020bf"
+  ],
   "status": {
     "state": "done",
     "comment": "Added description field to Aim schema, UI modal, and display component. Open edit/details modal is integrated into the creation flow (description available on creation).",

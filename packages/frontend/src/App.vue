@@ -371,7 +371,7 @@ onUnmounted(() => {
 <template>
   <div class="app">
     <!-- Header -->
-    <header v-if="!projectStore.isInProjectSelection" class="header">
+    <header v-if="!projectStore.isInProjectSelection" v-show="!projectStore.terminalFullscreen" class="header">
       <div class="status">
         <span
           class="connection-status"
@@ -490,7 +490,7 @@ onUnmounted(() => {
 
     <!-- Main Interface -->
     <div v-else class="main-split">
-      <main class="content-area" v-show="!(projectStore.showWatchdog && projectStore.watchdogMaximized)">
+      <main class="content-area" v-show="!projectStore.terminalFullscreen && !(projectStore.showWatchdog && projectStore.watchdogMaximized)">
         <!-- Columns View -->
         <ColumnsView v-if="projectStore.currentView === 'columns'" />
 
@@ -502,12 +502,12 @@ onUnmounted(() => {
       </main>
 
       <!-- Watchdog Panel -->
-      <div 
-        v-if="projectStore.showWatchdog" 
-        class="watchdog-container" 
-        :style="{ height: projectStore.watchdogMaximized ? '100%' : watchdogHeight + 'px' }"
+      <div
+        v-if="projectStore.showWatchdog"
+        class="watchdog-container"
+        :style="{ height: (projectStore.watchdogMaximized || projectStore.terminalFullscreen) ? '100%' : watchdogHeight + 'px' }"
       >
-        <div class="resize-handle" v-if="!projectStore.watchdogMaximized" @mousedown="startResizeWatchdog"></div>
+        <div class="resize-handle" v-if="!projectStore.watchdogMaximized && !projectStore.terminalFullscreen" @mousedown="startResizeWatchdog"></div>
         <WatchdogPanel ref="watchdogRef" />
       </div>
     </div>
@@ -552,7 +552,7 @@ onUnmounted(() => {
     <ProjectSettingsModal v-if="modalStore.showSettingsModal" />
 
     <!-- Help Text -->
-    <footer v-if="!projectStore.isInProjectSelection" class="help">
+    <footer v-if="!projectStore.isInProjectSelection" v-show="!projectStore.terminalFullscreen" class="help">
       <div class="help-keys">
         <div v-for="hint in projectStore.keyboardHints" :key="`${hint.key}-${hint.action}`" class="hint">
           <span class="key">{{ hint.key }}</span>
@@ -565,7 +565,8 @@ onUnmounted(() => {
 
 <style scoped>
 .app {
-  height: 100vh;
+  height: 100vh; /* fallback for browsers without dynamic viewport units */
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   color: #e0e0e0;
