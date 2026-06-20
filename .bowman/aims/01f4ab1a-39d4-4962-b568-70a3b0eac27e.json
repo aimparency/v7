@@ -1,0 +1,29 @@
+{
+  "id": "01f4ab1a-39d4-4962-b568-70a3b0eac27e",
+  "text": "Recalibrate bge-small duplicate/hygiene thresholds against the live aim graph",
+  "description": "Re-tuned the near-duplicate detection thresholds for bge-small-en-v1.5 using the live ~565-aim graph.\n\n**Method:** Rebuilt the search index, then ran find_duplicate_aims at threshold 0.80 (limit 120) to capture the full score distribution (158 pairs), cross-referenced against graph_hygiene duplicate clusters.\n\n**Finding:** Cosine score is a weak separator on this graph — scores are continuous from 0.95→0.80 with no clean valley. High similarity does NOT imply a true (mergeable) duplicate:\n- ≥0.93 is dominated by intentional parent→child *detail splits* (e.g. \"Upgrade Gemini API tier…\" pair 0.93, \".bowman gitignore\" pair 0.93, local-first strategy/execution 0.91) which merge_aims rejects anyway via its parent-child cycle guard.\n- 0.89–0.91 is mostly distinct sibling subtasks (watchdog panel/ui buckets, pagination sorting vs infinite-scroll, arc-arrow subtasks).\n- The genuine accidental duplicates found earlier (SaaS-launch pair, aim-description pair) were already merged.\n\n**Change:** Raised the default duplicate/hygiene threshold from 0.89 → 0.92 in packages/backend/src/routers/project.ts (findDuplicates + graphHygiene) and mirrored the descriptions in packages/mcp/src/tools.ts. This drops the noisy 0.89–0.91 sibling/subtask band while keeping the strongest restatement-level matches for human review. megaParentThreshold left at 25 (only \"list view\"/32 children flagged).\n\n**Follow-up (not done here):** Precision is fundamentally limited by structure, not threshold. The higher-value improvement is to exclude direct parent-child pairs from duplicate reports (both find_duplicate_aims and the hygiene duplicate clusters), since they're intentional and unmergeable. Consider as a separate change.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "search",
+    "embeddings",
+    "hygiene",
+    "bge-small"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "c561dd26-86c5-45c2-96a3-4b4f90e448a3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Thresholds updated to 0.92 in backend + mcp; calibrated against live graph. Parent-child exclusion noted as follow-up.",
+    "date": 1781538768010
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

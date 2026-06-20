@@ -1,0 +1,22 @@
+{
+  "id": "b65f5d59-6f7b-4634-8adf-ae87c45f9d3d",
+  "text": "Show description on aim items + Edit/Add aim modal. Add an aim description field to aim if it does not exist.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "incoming": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "archived",
+    "comment": "Merged into 9f88d152-c3d2-49de-a1e6-6426c34ada69",
+    "date": 1781538504232
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

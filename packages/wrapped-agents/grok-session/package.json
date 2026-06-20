@@ -1,0 +1,48 @@
+{
+  "name": "wrapped-agents-grok-session",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Grok CLI wrapper with watchdog supervision",
+  "main": "src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "watch": "tsc --noEmit --watch",
+    "start": "tsx src/index.ts"
+  },
+  "keywords": [
+    "aimparency",
+    "grok",
+    "xai",
+    "watchdog"
+  ],
+  "author": "Aimparency contributors",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aimparency/v7.git",
+    "directory": "packages/wrapped-agents/grok-session"
+  },
+  "bugs": {
+    "url": "https://github.com/aimparency/v7/issues"
+  },
+  "homepage": "https://github.com/aimparency/v7/tree/main/packages/wrapped-agents/grok-session",
+  "dependencies": {
+    "@aimparency/wrapped-agents-common": "file:../common",
+    "@types/node": "^25.0.1",
+    "@xterm/headless": "^5.5.0",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "node-pty": "^1.0.0",
+    "open": "^11.0.0",
+    "socket.io": "^4.8.1",
+    "strip-ansi": "^7.1.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/socket.io": "^3.0.2"
+  }
+}

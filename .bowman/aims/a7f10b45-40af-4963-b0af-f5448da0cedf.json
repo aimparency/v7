@@ -1,0 +1,37 @@
+{
+  "id": "a7f10b45-40af-4963-b0af-f5448da0cedf",
+  "text": "Exclude direct parent-child pairs from duplicate detection",
+  "description": "Follow-up from 01f4ab1a (threshold recalibration). Duplicate detection is structurally noisy: a high-cosine parent<->child pair is almost always an intentional summary/detail split, not an accidental duplicate to merge. Surfacing these as \"duplicates\" misdirects.\n\nChange: in packages/backend/src/routers/project.ts, skip any pair where one aim is a direct parent or child of the other, in both (a) findDuplicates (find_duplicate_aims) and (b) graphHygiene duplicate-cluster union-find. Adjacency via aimMap: x and y are linked if x.supportedAims includes y OR x.supportingConnections includes y.\n\nNote: the genuine \"collapse a redundant nesting\" case is now handled by merge_aims (which accepts parent-child pairs) and surfaced separately by graph_hygiene's collapseCandidates — so it does NOT need to live in the duplicate signal. Precision over recall here.",
+  "reflections": [
+    {
+      "date": 1781555464665,
+      "context": "Follow-up to bge threshold recalibration (01f4ab1a): duplicate detection on this graph is structurally noisy because high cosine often means an intentional parent->child detail-split, not an accidental dup.",
+      "outcome": "Added an isDirectParentChild adjacency guard to both findDuplicates and the graphHygiene duplicate-cluster union-find in project.ts. Live verification: clusters 4->1; parent-child splits (.bowman-gitignore, Gemini-tier) excluded, genuine sibling-dup (watchdog buckets) retained.",
+      "effectiveness": "high",
+      "lesson": "Threshold tuning has a precision ceiling set by graph STRUCTURE, not the number. Excluding structurally-explained pairs (parent-child) is a higher-leverage precision lever than nudging the cosine cutoff. The collapse-a-nesting case belongs in graph_hygiene's collapseCandidates, not the duplicate signal.",
+      "pattern": "When a similarity/ranking signal is noisy, subtract the cases the graph already explains structurally before tightening the numeric threshold."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "hygiene",
+    "search",
+    "embeddings"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fe8b6496-588c-4439-8a39-056dab245c4f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Added isDirectParentChild guard to findDuplicates + graphHygiene union-find in project.ts. Verified on live graph: duplicate clusters 4->1; the .bowman-gitignore and Gemini-tier parent-child splits dropped, the non-parent-child watchdog-bucket pair correctly retained.",
+    "date": 1781555455924
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

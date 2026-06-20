@@ -1,0 +1,22 @@
+{
+  "id": "4f8c3aca-dec4-4932-bc16-d0a5a6955473",
+  "text": "ui improvements",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "archived",
+    "comment": "Merged into 060b3f53-1854-4fda-a50c-78a98e540288",
+    "date": 1781554967494
+  },
+  "intrinsicValue": 5,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

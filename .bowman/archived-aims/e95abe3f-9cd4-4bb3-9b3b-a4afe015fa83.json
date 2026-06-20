@@ -1,0 +1,24 @@
+{
+  "id": "e95abe3f-9cd4-4bb3-9b3b-a4afe015fa83",
+  "text": "Launch aimparency as a service for paying customers",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "strategy",
+    "product"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "archived",
+    "comment": "Merged into b45149aa-c0f5-49de-8aec-f589dd3c7453",
+    "date": 1781538502449
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
