@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type ComponentPublicInstance } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useUIModalStore } from '../stores/ui/modal-store'
 import { useScrollIntoView } from '../composables/useScrollIntoView'
 import PhaseComponent from './Phase.vue'
 import type { PhaseLevelEntry } from '../stores/data'
@@ -17,6 +18,7 @@ const props = defineProps<Props>()
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
+const modalStore = useUIModalStore()
 
 const phaseListRef = ref<HTMLElement | null>(null)
 const entryElements = ref(new Map<string, HTMLElement>())
@@ -149,6 +151,21 @@ const getSelectableIndex = (entryKey: string) => {
   return selectableEntries.value.findIndex((entry) => entry.key === entryKey)
 }
 
+// Touch affordance: tapping an empty child-slot placeholder selects it and opens
+// the phase creation modal — the click equivalent of pressing 'o'.
+const createPhaseAtPlaceholder = async (entryKey: string) => {
+  await uiStore.selectPhase(props.columnIndex, getSelectableIndex(entryKey))
+  modalStore.openPhaseModal('after')
+}
+
+// Tapping the zero-entry empty column (e.g. a project with no root phases yet)
+// focuses the column and opens the creation modal; with no selected entry the
+// modal creates a root phase.
+const createPhaseInEmptyColumn = () => {
+  uiStore.setActiveColumn(props.columnIndex)
+  modalStore.openPhaseModal('after')
+}
+
 const getSelectedEntry = () => selectableEntries.value[props.selectedPhaseIndex]
 
 const getSelectedEntryIndexInColumn = () => {
@@ -183,7 +200,7 @@ const queueSelectionRealign = (
 
   pendingSelectionRealignTimeout.value = window.setTimeout(() => {
     pendingSelectionRealignTimeout.value = null
-    void scrollSelectedEntryIntoView(behavior, direction)
+    void scrollSelectedEntryIntoView(behavior, direction, true)
   }, delayMs)
 }
 
@@ -272,10 +289,60 @@ const setInitialAnchorScrollIfNeeded = async () => {
   }
 }
 
+// Single point through which all programmatic scrolls pass so the competing
+// scroll-into-view mechanisms (phase-level here vs. the selected aim's own
+// scroll-request) can no longer fire two conflicting smooth animations — the
+// "scrolls up then down" jitter on column navigation, worst when a phase is
+// taller than the viewport. Within one frame a higher-priority target wins
+// (aim > phase) and only the last surviving target is applied once via rAF.
+const SCROLL_PRIORITY = { phase: 0, aim: 1 } as const
+// How long a just-applied aim scroll suppresses a late phase realign that would
+// otherwise yank the view off the selected aim (the realign runs ~120ms later).
+const AIM_SCROLL_HOLD_MS = 300
+let lastAimScrollAt = 0
+let pendingScroll: { top: number; behavior: ScrollBehavior; priority: number } | null = null
+let pendingScrollFrame: number | null = null
+
+const requestScroll = (
+  top: number,
+  behavior: ScrollBehavior,
+  source: 'phase' | 'aim'
+) => {
+  const container = phaseListRef.value
+  if (!container) return
+  if (source === 'aim') lastAimScrollAt = performance.now()
+
+  const priority = SCROLL_PRIORITY[source]
+  // Keep an already-queued higher-priority target; otherwise the latest wins.
+  if (!pendingScroll || priority >= pendingScroll.priority) {
+    pendingScroll = { top, behavior, priority }
+  }
+
+  if (pendingScrollFrame !== null) return
+  pendingScrollFrame = requestAnimationFrame(() => {
+    pendingScrollFrame = null
+    const target = pendingScroll
+    pendingScroll = null
+    if (target && phaseListRef.value) {
+      phaseListRef.value.scrollTo({ top: target.top, behavior: target.behavior })
+    }
+  })
+}
+
 const scrollSelectedEntryIntoView = async (
   behavior: ScrollBehavior = 'smooth',
-  direction: 'forward' | 'backward' | 'preserve' = selectionTravelDirection.value
+  direction: 'forward' | 'backward' | 'preserve' = selectionTravelDirection.value,
+  isRealign = false
 ) => {
+  // The deferred realign runs ~120ms after navigation. By then the selected
+  // aim has positioned itself via scroll-request (kept-in-view is the chosen
+  // behavior for oversized phases); a phase-level realign would yank the view
+  // back off it. Skip the realign in that window. The immediate, same-frame
+  // call is NOT skipped here — the coalescer already lets the aim target win
+  // over the phase target within the frame, and aimless placeholder entries
+  // (which never set lastAimScrollAt) keep realigning normally.
+  if (isRealign && performance.now() - lastAimScrollAt < AIM_SCROLL_HOLD_MS) return
+
   await nextTick()
   const selectedEntry = getSelectedEntry()
   if (!selectedEntry) return
@@ -298,10 +365,7 @@ const scrollSelectedEntryIntoView = async (
 
   const scrollToClamped = (targetTop: number, scrollBehavior: ScrollBehavior) => {
     const maxScrollTop = Math.max(0, container.scrollHeight - viewport)
-    container.scrollTo({
-      top: Math.max(0, Math.min(targetTop, maxScrollTop)),
-      behavior: scrollBehavior
-    })
+    requestScroll(Math.max(0, Math.min(targetTop, maxScrollTop)), scrollBehavior, 'phase')
   }
 
   if (direction === 'forward') {
@@ -363,8 +427,13 @@ const scrollSelectedEntryIntoView = async (
   }
 }
 
-// Handle scroll requests from child components (Phase/Aim emit 'scroll-request')
-const { handleScrollRequest } = useScrollIntoView(phaseListRef)
+// Handle scroll requests from child components (Phase/Aim emit 'scroll-request').
+// Route through the same coalescer at aim priority so it wins over — and
+// cancels — a competing phase-level scroll in the same frame.
+const { handleScrollRequest } = useScrollIntoView(
+  phaseListRef,
+  (top, behavior) => requestScroll(top, behavior, 'aim')
+)
 
 const updateRevealedPlaceholder = async () => {
   const selectedEntry = getSelectedEntry()
@@ -483,8 +552,12 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="column-panel" :class="{ 'active': isActive, 'selected': isSelected }">
-    <div v-if="entries.length === 0" class="empty-state">
-      No sub phases, create one with o
+    <div
+      v-if="entries.length === 0"
+      class="empty-state"
+      @click="createPhaseInEmptyColumn"
+    >
+      No phases yet — tap to create one (or press o)
     </div>
 
     <div
@@ -516,7 +589,7 @@ onBeforeUnmount(() => {
               'selected-item': getSelectableIndex(entry.key) === selectedPhaseIndex,
               'active-item': getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex
             }"
-            @click="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
+            @click="() => createPhaseAtPlaceholder(entry.key)"
           >
             <span
               class="placeholder-text"
@@ -524,7 +597,7 @@ onBeforeUnmount(() => {
                 'is-visible': getSelectableIndex(entry.key) === selectedPhaseIndex && revealedPlaceholderKey === entry.key
               }"
             >
-              no sub phases yet. press 'o' to create one
+              no sub phases yet — tap to create one (or 'o')
             </span>
           </div>
           <PhaseComponent
@@ -658,5 +731,6 @@ onBeforeUnmount(() => {
   text-align: center;
   color: #666;
   font-style: italic;
+  cursor: pointer;
 }
 </style>
