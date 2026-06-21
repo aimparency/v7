@@ -23,6 +23,11 @@ const IDLE_CHECK_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_CHECK_INTERVAL ||
 const IDLE_DEBOUNCE_INTERVAL = parseInt(process.env.WATCHDOG_IDLE_DEBOUNCE || '100', 10);
 const MAX_RETRIES = parseInt(process.env.WATCHDOG_MAX_RETRIES || '5', 10);
 const MAX_BUSY_TIMEOUT_MS = parseInt(process.env.WATCHDOG_MAX_BUSY_TIMEOUT || '300000', 10); // 5 minutes
+// After an ERROR stops the loop, auto-restart it from EXPLORING this long later
+// so an unattended session recovers itself instead of sitting stopped until a
+// human re-enables it. Runs in the backend session process (setInterval-driven,
+// independent of the web UI) and is bounded by the session lease. <=0 disables.
+const AUTO_RETRY_AFTER_ERROR_MS = parseInt(process.env.WATCHDOG_AUTO_RETRY_MS || '600000', 10); // 10 minutes
 const MAX_WATCHDOG_TIMEOUT_MS = parseInt(process.env.WATCHDOG_MAX_WATCHDOG_TIMEOUT || '120000', 10); // 2 minutes
 // Prompts get typed into the agent PTYs in chunks rather than one char at a
 // time: the supervisor prompt is ~1.5k chars, so the old 50ms-per-char pacing
@@ -108,6 +113,7 @@ export class WatchdogService {
   autonomyPolicy: AutonomyPolicy;
 
   private nextCheckTime = 0;
+  private errorRetryTimeout: ReturnType<typeof setTimeout> | null = null;
   private busyStartedAt = 0;
   private watchdogBusyStartedAt = 0;
   private responseRequestedAt = 0;
@@ -227,6 +233,8 @@ export class WatchdogService {
   }
 
   setEnabled(enabled: boolean) {
+    // Any explicit enable/disable supersedes a pending post-error auto-retry.
+    this.clearAutoRetry();
     this.enabled = enabled;
     if (enabled) {
       this.emergencyStopped = false;
@@ -273,16 +281,40 @@ export class WatchdogService {
   }
 
   /**
-   * Enter the ERROR state and stop the supervisor. Previously triggerError only
-   * flipped the state machine to ERROR while the loop kept running in exponential
-   * backoff — leaving the operator with no clean way out. Stopping here means the
-   * UI button flips to "automate", and re-enabling (setEnabled(true) -> reset())
-   * is the retry: a fresh EXPLORING start with errorCount cleared.
+   * Enter the ERROR state and stop the supervisor loop, then schedule an
+   * automatic retry. Stopping flips the UI button to "automate" and gives a
+   * clean state; the auto-retry (default 10 min, AUTO_RETRY_AFTER_ERROR_MS)
+   * then re-enables a fresh EXPLORING run so an unattended session recovers
+   * itself instead of sitting in ERROR until a human returns. The timer lives
+   * in the backend session process (independent of the web UI) and dies with
+   * the process at lease expiry. A manual enable/disable cancels it.
    */
   private enterError(reason: string) {
     this.supervisorState.triggerError(reason);
     this.logErrorDiagnostics(reason);
     this.stop(`Supervisor error: ${reason}`);
+    this.scheduleAutoRetry();
+  }
+
+  private clearAutoRetry() {
+    if (this.errorRetryTimeout) {
+      clearTimeout(this.errorRetryTimeout);
+      this.errorRetryTimeout = null;
+    }
+  }
+
+  private scheduleAutoRetry() {
+    if (AUTO_RETRY_AFTER_ERROR_MS <= 0) return; // disabled via env
+    this.clearAutoRetry();
+    this.log(`Auto-retry scheduled in ${Math.round(AUTO_RETRY_AFTER_ERROR_MS / 60000)} min (fresh EXPLORING restart).`);
+    this.errorRetryTimeout = setTimeout(() => {
+      this.errorRetryTimeout = null;
+      // Skip if the operator already restarted, or an emergency stop (quota /
+      // model switch) is in effect — those should stay stopped.
+      if (this.enabled || this.emergencyStopped) return;
+      this.log('Auto-retry: re-enabling supervisor after error.');
+      this.setEnabled(true);
+    }, AUTO_RETRY_AFTER_ERROR_MS);
   }
 
   /**

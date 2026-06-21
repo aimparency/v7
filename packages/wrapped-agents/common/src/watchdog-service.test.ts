@@ -193,3 +193,34 @@ test('enabling clears a stuck ERROR state (automate = fresh restart)', () => {
   assert.equal(supervisorState.getState(), 'EXPLORING');
   assert.equal(supervisorState.getContext().errorCount, 0);
 });
+
+const TEN_MINUTES_MS = 10 * 60 * 1000; // matches AUTO_RETRY_AFTER_ERROR_MS default
+
+test('error auto-retry re-enables a fresh EXPLORING run after the delay', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const service = makeService();
+  (service as any).logErrorDiagnostics = () => {}; // avoid terminal reads / file IO
+  service.enabled = true;
+
+  (service as any).enterError('Worker session stuck');
+  assert.equal(service.enabled, false, 'error stops the loop');
+  assert.notEqual((service as any).errorRetryTimeout, null, 'auto-retry is scheduled');
+
+  t.mock.timers.tick(TEN_MINUTES_MS);
+  assert.equal(service.enabled, true, 'auto-retry re-enabled the loop unattended');
+  assert.equal((service as any).supervisorState.getState(), 'EXPLORING');
+});
+
+test('a manual stop cancels the pending auto-retry', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const service = makeService();
+  (service as any).logErrorDiagnostics = () => {};
+  service.enabled = true;
+
+  (service as any).enterError('Worker session stuck');
+  service.setEnabled(false); // operator stops it during the backoff window
+  assert.equal((service as any).errorRetryTimeout, null, 'pending retry was cleared');
+
+  t.mock.timers.tick(TEN_MINUTES_MS);
+  assert.equal(service.enabled, false, 'no auto-retry after a manual stop');
+});
