@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { Agent } from './agent';
 import { SessionMemory } from './session-memory';
 import { SupervisorState, type AutonomyPolicy } from './supervisor-state';
@@ -279,7 +281,71 @@ export class WatchdogService {
    */
   private enterError(reason: string) {
     this.supervisorState.triggerError(reason);
+    this.logErrorDiagnostics(reason);
     this.stop(`Supervisor error: ${reason}`);
+  }
+
+  /**
+   * Capture everything needed to diagnose an ERROR-state entry after the fact.
+   * Writes both a human-readable block to stdout (captured per-session in
+   * logs/<port>/out.log) and a durable one-line JSON record to the
+   * cross-session log logs/supervisor-errors.log. The record bundles the
+   * trigger reason, state-machine context (previous state, error count,
+   * backoff), the work in flight, the last few transitions, and the tail of
+   * both the worker and watchdog terminals — i.e. why the supervisor said
+   * state:error. Best-effort: never throws into the supervisor loop.
+   */
+  private logErrorDiagnostics(reason: string) {
+    const ctx = this.supervisorState.getContext();
+    const recentTransitions = this.supervisorState.getHistory().slice(-10).map(t => ({
+      from: t.from,
+      to: t.to,
+      action: t.action,
+      at: new Date(t.timestamp).toISOString(),
+    }));
+
+    let workerTail = '';
+    let watchdogTail = '';
+    try { workerTail = this.worker?.getLines(40) ?? ''; } catch { /* terminal unavailable */ }
+    try { watchdogTail = this.watchdog?.getLines(40) ?? ''; } catch { /* terminal unavailable */ }
+
+    const record = {
+      timestamp: new Date().toISOString(),
+      event: 'SUPERVISOR_ERROR_STATE',
+      agent: this.profile?.bannerName,
+      expectedModel: this.expectedModel,
+      projectPath: this.projectPath,
+      reason,
+      state: 'ERROR' as const,
+      previousState: ctx.previousState,
+      errorCount: ctx.errorCount,
+      backoffMs: this.supervisorState.getErrorBackoffDelay(),
+      work: { aimText: ctx.aimText, task: ctx.task, strategy: ctx.strategy },
+      recentTransitions,
+      workerTail,
+      watchdogTail,
+    };
+
+    // 1. Human-readable block — lands in the per-session out.log via stdout.
+    this.log(
+      `\n===== SUPERVISOR ENTERED ERROR STATE =====\n` +
+      `reason: ${reason}\n` +
+      `previousState: ${record.previousState ?? 'n/a'} | errorCount: ${record.errorCount} | backoff: ${Math.round(record.backoffMs / 1000)}s\n` +
+      `aim/task: ${record.work.aimText ?? record.work.task ?? 'n/a'}\n` +
+      `recent transitions: ${recentTransitions.map(h => `${h.from}->${h.to}(${h.action})`).join(' , ') || '(none)'}\n` +
+      `--- worker terminal tail ---\n${workerTail || '(empty)'}\n` +
+      `--- watchdog terminal tail ---\n${watchdogTail || '(empty)'}\n` +
+      `===========================================`
+    );
+
+    // 2. Durable cross-session JSONL record for easy after-the-fact lookup.
+    try {
+      const logDir = process.env.WATCHDOG_LOG_DIR || path.resolve(__dirname, '../../logs');
+      fs.mkdirSync(logDir, { recursive: true });
+      fs.appendFileSync(path.join(logDir, 'supervisor-errors.log'), JSON.stringify(record) + '\n');
+    } catch (e) {
+      this.log(`Failed to write supervisor-errors.log: ${e}`);
+    }
   }
 
   triggerEmergencyStop() {
