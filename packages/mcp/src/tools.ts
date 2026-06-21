@@ -45,7 +45,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_aim_context",
-          description: "Get aim + 5 semantic neighbors + parents/children",
+          description: "Get aim + path_to_root (lineage up to the top goal via highest value-inflow parent) + 5 semantic neighbors + immediate parents/children. Read path_to_root to stay oriented toward the highest-value aim.",
           inputSchema: {
             type: "object",
             properties: {
@@ -430,11 +430,18 @@ export function registerTools(server: Server, clientOverride?: any) {
         case "get_aim_context": {
           const aimId = args.aimId as string;
           const projectPath = args.projectPath as string;
+          const MAX_PATH = 12; // cap lineage depth to keep context small
 
-          // 1. Get Target Aim
-          const aim = await trpcClient.aim.get.query({ projectPath, aimId });
-          
-          // 2. Semantic Search
+          // Load the whole graph once: it powers the value model (to choose
+          // which parent to follow at branches) and lets us resolve parent/child
+          // text from a map instead of N round-trips.
+          const allAims = await trpcClient.aim.list.query({ projectPath });
+          const aimMap = new Map<string, any>((allAims as any[]).map((a: any) => [a.id, a]));
+          const { flowValues } = calculateAimValues(allAims as any);
+
+          const aim = aimMap.get(aimId) || await trpcClient.aim.get.query({ projectPath, aimId });
+
+          // Semantic Search
           const queryText = `${aim.text} ${aim.description || ''}`.trim();
           const similarAims = await trpcClient.aim.searchSemantic.query({
             projectPath,
@@ -446,23 +453,53 @@ export function registerTools(server: Server, clientOverride?: any) {
             .slice(0, 5)
             .map((a: any) => ({ id: a.id, text: a.text, description: a.description }));
 
-          // 3. Parents
-          const parentIds = aim.supportedAims || [];
-          const parents = await Promise.all(parentIds.map((id: string) => 
-             trpcClient.aim.get.query({ projectPath, aimId: id }).catch(() => null)
-          ));
-          const parentContext = parents
-            .filter((p: any) => p !== null)
+          // Immediate parents (an aim may have several)
+          const parentContext = (aim.supportedAims || [])
+            .map((id: string) => aimMap.get(id))
+            .filter(Boolean)
             .map((p: any) => ({ id: p.id, text: p.text, description: p.description }));
 
-          // 4. Children
-          const childConnections = aim.supportingConnections || [];
-          const children = await Promise.all(childConnections.map((c: any) => 
-             trpcClient.aim.get.query({ projectPath, aimId: c.aimId }).catch(() => null)
-          ));
-          const childContext = children
-            .filter((c: any) => c !== null)
+          // Children
+          const childContext = (aim.supportingConnections || [])
+            .map((c: any) => aimMap.get(c.aimId))
+            .filter(Boolean)
             .map((c: any) => ({ id: c.id, text: c.text, description: c.description }));
+
+          // Path to root: walk up supportedAims so the agent always sees its
+          // lineage toward the highest-value goal (e.g. "achieve ASI"). At a
+          // branch (multiple parents) follow the one with the highest actual
+          // value inflow into the current aim — i.e. the parent through which
+          // most value flows here. Cycle-guarded and capped at MAX_PATH.
+          const pathToRoot: any[] = [];
+          const visited = new Set<string>([aimId]);
+          let cursor: any = aim;
+          while (pathToRoot.length < MAX_PATH) {
+            const parentIds = (cursor.supportedAims || []).filter(
+              (id: string) => aimMap.has(id) && !visited.has(id)
+            );
+            if (parentIds.length === 0) break; // reached a root (or only cycles remain)
+
+            // Pick the parent with the greatest value inflow into `cursor`.
+            let best = parentIds[0];
+            let bestFlow = flowValues.get(`${best}->${cursor.id}`) ?? 0;
+            for (const pid of parentIds) {
+              const flow = flowValues.get(`${pid}->${cursor.id}`) ?? 0;
+              if (flow > bestFlow) { best = pid; bestFlow = flow; }
+            }
+
+            const parent = aimMap.get(best);
+            visited.add(best);
+            pathToRoot.push({
+              id: parent.id,
+              text: parent.text,
+              description: parent.description,
+              intrinsicValue: parent.intrinsicValue ?? 0,
+              valueInflow: Number(bestFlow.toFixed(4)),
+            });
+            cursor = parent;
+          }
+          // Order root-first so the north-star goal reads at the top.
+          pathToRoot.reverse();
 
           return {
             content: [
@@ -470,6 +507,7 @@ export function registerTools(server: Server, clientOverride?: any) {
                 type: "text",
                 text: JSON.stringify({
                     aim: { id: aim.id, text: aim.text, description: aim.description },
+                    path_to_root: pathToRoot,
                     semantic_context: semanticContext,
                     parents: parentContext,
                     children: childContext

@@ -7,7 +7,9 @@
   "color": "#33d17a",
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
   "committedIn": [
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
