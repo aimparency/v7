@@ -471,6 +471,14 @@ export class WatchdogService {
       const workerIdleReason = this.getWorkerIdleEscalationReason(now, workerSignals);
 
       if (workerIdleReason) {
+        // Worker is idle → it is NOT continuously busy, so reset the busy timer.
+        // Without this, busyStartedAt stays anchored near enable and the
+        // MAX_BUSY_TIMEOUT measures wall-clock-since-enable instead of
+        // continuous busy time: a session that idles (waiting for the next
+        // task) still trips the 300s cap and is wrongly killed as "stuck busy".
+        // Resetting here means the timeout only fires on genuinely uninterrupted
+        // busy work, which is the intended "worker is wedged" signal.
+        this.busyStartedAt = 0;
         this.log(`Escalating to Watchdog: ${workerIdleReason}`);
         this.markWorkerIdleEscalation(now, workerSignals);
 
