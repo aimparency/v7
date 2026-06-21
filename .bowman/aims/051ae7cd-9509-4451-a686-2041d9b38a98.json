@@ -2,23 +2,34 @@
   "id": "051ae7cd-9509-4451-a686-2041d9b38a98",
   "text": "get aim context should return (almost) all parent aims - path to root.",
   "description": "when creating that path: beware of cycles. And maybe a max of 12 parents. When parents branch, follow those with the highest absolute/actual value inflow",
+  "reflections": [
+    {
+      "date": 1782054663539,
+      "context": "get_aim_context only returned immediate parents; aim wanted the full lineage to the root goal.",
+      "outcome": "Added path_to_root: loads the graph once, reuses calculateAimValues' flowValues to pick the highest value-inflow parent at each branch, cycle-guarded, capped at 12, ordered root-first. Verified live on single-hop, multi-hop, and 4-parent-branch cases.",
+      "effectiveness": "Reusing the existing value model gave principled branch selection for free and replaced N per-parent round-trips with one graph load.",
+      "lesson": "When a tool needs graph-wide reasoning, load the whole aim list once and reuse calculateAimValues rather than fetching node-by-node.",
+      "pattern": "reuse-existing-value-model"
+    }
+  ],
+  "archived": false,
   "tags": [],
-  "reflections": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
   "committedIn": [
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1781423059024
+    "state": "done",
+    "comment": "Implemented value-guided path_to_root in get_aim_context (cycle-guarded, max 12, follows highest value-inflow parent at branches). Committed on branch mcp-aim-context-path-to-root.",
+    "date": 1782054652071
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "archived": false
+  "valueVariance": 0
 }

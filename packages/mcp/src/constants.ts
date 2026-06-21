@@ -1,7 +1,7 @@
 import { AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
 
 export const AIM_STATE_KEYS = INITIAL_STATES.map(s => s.key);
-export const AIM_STATES_DESCRIPTION = `Current status of the aim. Options: ${AIM_STATE_KEYS.join(", ")}, archived`;
+export const AIM_STATES_DESCRIPTION = `Aim status: open (todo), partially (in progress), done (complete — then addReflection), cancelled, failed, unclear (needs a human decision — explain in comment), human-dependent (blocked on a human action), archived. Don't leave completed or blocked work as open.`;
 
 export const PROJECT_PATH_DESCRIPTION = `Absolute path to the .bowman dir (append /.bowman to repo root)`
 

@@ -33,7 +33,7 @@ export function registerTools(server: Server, clientOverride?: any) {
       tools: [
         {
           name: "get_aim",
-          description: "Get aim by ID",
+          description: "Get one aim's raw fields by ID. To orient before working on it, prefer get_aim_context.",
           inputSchema: {
             type: "object",
             properties: {
@@ -45,7 +45,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_aim_context",
-          description: "Get aim + path_to_root (lineage up to the top goal via highest value-inflow parent) + 5 semantic neighbors + immediate parents/children. Read path_to_root to stay oriented toward the highest-value aim.",
+          description: "Call before working on an aim. Returns aim + path_to_root (lineage up to the top goal via highest value-inflow parent) + 5 semantic neighbors + immediate parents/children. Read path_to_root to stay oriented toward the highest-value goal it serves.",
           inputSchema: {
             type: "object",
             properties: {
@@ -57,7 +57,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "search_aims",
-          description: "Search aims by text/status. Empty query = most recently updated.",
+          description: "Search aims by text/status. Empty query = most recently updated. Search before creating a new aim to avoid duplicates.",
           inputSchema: {
             type: "object",
             properties: {
@@ -112,7 +112,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "create_aim",
-          description: "Create aim. phaseId commits it; supportedAims/supportingConnections wire parents/children.",
+          description: "Create aim (search first to avoid duplicates). phaseId commits it; supportedAims/supportingConnections wire parents/children — connect it to the goal it serves so it isn't floating. Set intrinsicValue on goals, cost on tasks so it ranks in priority.",
           inputSchema: {
             type: "object",
             properties: {
@@ -138,7 +138,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "update_aim",
-          description: "Update aim fields. supportedAims/supportingConnections REPLACE existing links (not append).",
+          description: "Update aim fields. supportedAims/supportingConnections REPLACE existing links (not append). When work is complete set status=done (then addReflection); when blocked set unclear/human-dependent with a comment — don't leave finished or stuck aims open.",
           inputSchema: {
             type: "object",
             properties: {
@@ -176,7 +176,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "addReflection",
-          description: "Add reflection to a completed aim",
+          description: "Record what you learned after marking an aim done (context, outcome, effectiveness, lesson). Builds the graph's memory for future work.",
           inputSchema: {
             type: "object",
             properties: {
@@ -276,7 +276,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Open aims of the active phase (resolved by date, or pass phaseId), ranked by flow-based value/cost. Includes phase economics + data-quality diagnostics.",
+          description: "Start the work loop here: open aims of the active phase (resolved by date, or pass phaseId), ranked by flow-based value/cost, with phase economics + data-quality diagnostics. Distrust the ranking when diagnostics flag ~0-value or cost-less aims — fix those first.",
           inputSchema: {
             type: "object",
             properties: {
@@ -289,7 +289,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "list_aims",
-          description: "List all aims. Optionally filter by status, phaseId, or floating (uncommitted, no parents).",
+          description: "List all aims. Optionally filter by status, phaseId, or floating (uncommitted, no parents) — use floating=true to find aims to reparent into the graph.",
           inputSchema: {
             type: "object",
             properties: {
