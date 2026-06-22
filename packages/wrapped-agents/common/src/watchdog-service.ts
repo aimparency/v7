@@ -115,6 +115,9 @@ export class WatchdogService {
   private nextCheckTime = 0;
   private errorRetryTimeout: ReturnType<typeof setTimeout> | null = null;
   private busyStartedAt = 0;
+  // Worker screen snapshot used to tell "working" (screen changing) from
+  // "frozen" (screen static) for the busy-timeout. See the busy branch in tick().
+  private lastBusyWorkerView = '';
   private watchdogBusyStartedAt = 0;
   private responseRequestedAt = 0;
   private responseSawGenerating = false;
@@ -523,14 +526,25 @@ export class WatchdogService {
           await this.askWatchdog();
         }
       } else {
-        if (this.busyStartedAt === 0) {
+        // Worker is busy. The timeout must distinguish "working hard" from
+        // "wedged" — duration alone can't: a capable agent legitimately works
+        // nonstop for many minutes. So reset the timer whenever the worker's
+        // screen changes (new output, or even just the spinner's ticking
+        // elapsed-time counter) — that is observable progress. Only a worker
+        // that stays busy with a COMPLETELY STATIC screen for the whole window
+        // is genuinely frozen. Without this, a worker producing output for
+        // >MAX_BUSY_TIMEOUT was wrongly killed as "stuck" (caught via the
+        // supervisor-error diagnostics).
+        const workerView = workerSignals.view.recent24;
+        if (this.busyStartedAt === 0 || workerView !== this.lastBusyWorkerView) {
           this.busyStartedAt = now;
+          this.lastBusyWorkerView = workerView;
         } else {
-          const busyDuration = now - this.busyStartedAt;
-          if (busyDuration > MAX_BUSY_TIMEOUT_MS) {
-            this.log(`Worker busy for ${Math.floor(busyDuration/1000)}s (limit: ${MAX_BUSY_TIMEOUT_MS/1000}s). Triggering ERROR.`);
+          const stuckDuration = now - this.busyStartedAt;
+          if (stuckDuration > MAX_BUSY_TIMEOUT_MS) {
+            this.log(`Worker busy with a static screen for ${Math.floor(stuckDuration/1000)}s (limit: ${MAX_BUSY_TIMEOUT_MS/1000}s). Triggering ERROR.`);
             this.busyStartedAt = 0;
-            this.enterError(`Worker session stuck (busy timeout reached after ${Math.floor(busyDuration/1000)}s)`);
+            this.enterError(`Worker session frozen (no screen change for ${Math.floor(stuckDuration/1000)}s while busy)`);
             this.processing = false;
             return;
           }
