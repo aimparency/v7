@@ -224,3 +224,45 @@ test('a manual stop cancels the pending auto-retry', (t) => {
   t.mock.timers.tick(TEN_MINUTES_MS);
   assert.equal(service.enabled, false, 'no auto-retry after a manual stop');
 });
+
+// Busy-timeout decision: must trip only on a frozen screen, never on an idle
+// session or a worker that is actively producing output. Locks in the two
+// fixes that kept the supervisor falsely erroring with "busy timeout 300s".
+const SIX_MINUTES_MS = 6 * 60 * 1000; // > MAX_BUSY_TIMEOUT (300s default)
+
+test('busy-timeout: an idle worker resets the timer (never accrues while idle)', () => {
+  const service = makeService();
+  (service as any).busyStartedAt = 1000;
+  const r = (service as any).advanceWorkerBusyTimeout(true, 'ignored', 5000);
+  assert.equal((service as any).busyStartedAt, 0);
+  assert.equal(r.frozen, false);
+});
+
+test('busy-timeout: a changing screen (progress) keeps re-anchoring, never frozen', () => {
+  const service = makeService();
+  (service as any).advanceWorkerBusyTimeout(false, 'frame-1', 0); // first busy tick anchors
+  // Six minutes later — past the cap — but the screen changed → progress, not stuck.
+  const r = (service as any).advanceWorkerBusyTimeout(false, 'frame-2', SIX_MINUTES_MS);
+  assert.equal(r.frozen, false);
+  assert.equal((service as any).busyStartedAt, SIX_MINUTES_MS, 're-anchored on progress');
+});
+
+test('busy-timeout: a busy worker with a frozen screen trips after the cap', () => {
+  const service = makeService();
+  const t0 = 1_000_000; // realistic Date.now()-style base (never the 0 sentinel)
+  (service as any).advanceWorkerBusyTimeout(false, 'frozen', t0); // anchor
+  assert.equal((service as any).advanceWorkerBusyTimeout(false, 'frozen', t0 + 200000).frozen, false, 'within window');
+  const r = (service as any).advanceWorkerBusyTimeout(false, 'frozen', t0 + SIX_MINUTES_MS);
+  assert.equal(r.frozen, true, 'static screen past the cap is frozen');
+  assert.ok(r.frozenForMs >= 300000);
+});
+
+test('busy-timeout: going idle mid-work clears the timer so the next busy starts fresh', () => {
+  const service = makeService();
+  (service as any).advanceWorkerBusyTimeout(false, 'work', 0);      // busy
+  (service as any).advanceWorkerBusyTimeout(true, '', 100000);      // idle → reset
+  assert.equal((service as any).busyStartedAt, 0);
+  const r = (service as any).advanceWorkerBusyTimeout(false, 'work', SIX_MINUTES_MS); // busy again
+  assert.equal(r.frozen, false, 'fresh anchor, not carried over from before the idle');
+  assert.equal((service as any).busyStartedAt, SIX_MINUTES_MS);
+});

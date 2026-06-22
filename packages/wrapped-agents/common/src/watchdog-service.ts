@@ -506,14 +506,8 @@ export class WatchdogService {
       const workerIdleReason = this.getWorkerIdleEscalationReason(now, workerSignals);
 
       if (workerIdleReason) {
-        // Worker is idle → it is NOT continuously busy, so reset the busy timer.
-        // Without this, busyStartedAt stays anchored near enable and the
-        // MAX_BUSY_TIMEOUT measures wall-clock-since-enable instead of
-        // continuous busy time: a session that idles (waiting for the next
-        // task) still trips the 300s cap and is wrongly killed as "stuck busy".
-        // Resetting here means the timeout only fires on genuinely uninterrupted
-        // busy work, which is the intended "worker is wedged" signal.
-        this.busyStartedAt = 0;
+        // Worker is idle → not continuously busy; reset the busy timer.
+        this.advanceWorkerBusyTimeout(true, '', now);
         this.log(`Escalating to Watchdog: ${workerIdleReason}`);
         this.markWorkerIdleEscalation(now, workerSignals);
 
@@ -526,28 +520,15 @@ export class WatchdogService {
           await this.askWatchdog();
         }
       } else {
-        // Worker is busy. The timeout must distinguish "working hard" from
-        // "wedged" — duration alone can't: a capable agent legitimately works
-        // nonstop for many minutes. So reset the timer whenever the worker's
-        // screen changes (new output, or even just the spinner's ticking
-        // elapsed-time counter) — that is observable progress. Only a worker
-        // that stays busy with a COMPLETELY STATIC screen for the whole window
-        // is genuinely frozen. Without this, a worker producing output for
-        // >MAX_BUSY_TIMEOUT was wrongly killed as "stuck" (caught via the
-        // supervisor-error diagnostics).
-        const workerView = workerSignals.view.recent24;
-        if (this.busyStartedAt === 0 || workerView !== this.lastBusyWorkerView) {
-          this.busyStartedAt = now;
-          this.lastBusyWorkerView = workerView;
-        } else {
-          const stuckDuration = now - this.busyStartedAt;
-          if (stuckDuration > MAX_BUSY_TIMEOUT_MS) {
-            this.log(`Worker busy with a static screen for ${Math.floor(stuckDuration/1000)}s (limit: ${MAX_BUSY_TIMEOUT_MS/1000}s). Triggering ERROR.`);
-            this.busyStartedAt = 0;
-            this.enterError(`Worker session frozen (no screen change for ${Math.floor(stuckDuration/1000)}s while busy)`);
-            this.processing = false;
-            return;
-          }
+        const { frozen, frozenForMs } = this.advanceWorkerBusyTimeout(
+          false, workerSignals.view.recent24, now,
+        );
+        if (frozen) {
+          this.log(`Worker busy with a static screen for ${Math.floor(frozenForMs/1000)}s (limit: ${MAX_BUSY_TIMEOUT_MS/1000}s). Triggering ERROR.`);
+          this.busyStartedAt = 0;
+          this.enterError(`Worker session frozen (no screen change for ${Math.floor(frozenForMs/1000)}s while busy)`);
+          this.processing = false;
+          return;
         }
         this.nextCheckTime = now + IDLE_CHECK_INTERVAL;
       }
@@ -618,6 +599,37 @@ export class WatchdogService {
       this.workerActivity.lastBusyAt = now;
     }
     return busy;
+  }
+
+  /**
+   * Advance the worker busy-timeout for one tick and report whether the worker
+   * is frozen. The timeout must tell "wedged" from "working hard" — duration
+   * alone can't, since a capable agent works minutes nonstop. So:
+   *   - idle worker → reset (not continuously busy). Fixes the false trip on an
+   *     idle session, where the timer used to accrue wall-clock-since-enable.
+   *   - first busy tick, or the screen changed since last tick (output / the
+   *     spinner's ticking timer = observable progress) → (re)anchor the timer.
+   *   - busy with an unchanged screen → accumulate; frozen once it exceeds the
+   *     cap. Only a worker stuck busy with a COMPLETELY STATIC screen for the
+   *     whole window is reported frozen.
+   * Extracted from tick() so the two failure modes are unit-testable.
+   */
+  private advanceWorkerBusyTimeout(
+    isWorkerIdle: boolean,
+    workerView: string,
+    now: number,
+  ): { frozen: boolean; frozenForMs: number } {
+    if (isWorkerIdle) {
+      this.busyStartedAt = 0;
+      return { frozen: false, frozenForMs: 0 };
+    }
+    if (this.busyStartedAt === 0 || workerView !== this.lastBusyWorkerView) {
+      this.busyStartedAt = now;
+      this.lastBusyWorkerView = workerView;
+      return { frozen: false, frozenForMs: 0 };
+    }
+    const frozenForMs = now - this.busyStartedAt;
+    return { frozen: frozenForMs > MAX_BUSY_TIMEOUT_MS, frozenForMs };
   }
 
   private getWorkerIdleEscalationReason(now: number, signals: AgentSignals): string | null {
