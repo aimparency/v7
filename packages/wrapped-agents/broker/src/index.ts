@@ -34,9 +34,9 @@ const appRouter = t.router({
          return { success };
       }),
     relaunch: t.procedure
-      .input(z.object({ projectPath: z.string(), agentType: agentTypeSchema }))
+      .input(z.object({ projectPath: z.string(), agentType: agentTypeSchema, verify: z.boolean().optional() }))
       .mutation(async ({ input }) => {
-         return await WatchdogManager.relaunch(input.projectPath, input.agentType as AgentType);
+         return await WatchdogManager.relaunch(input.projectPath, input.agentType as AgentType, { verify: input.verify });
       }),
     getStatus: t.procedure
       .input(z.object({ projectPath: z.string(), agentType: agentTypeSchema }))

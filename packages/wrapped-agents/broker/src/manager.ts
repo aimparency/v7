@@ -1,8 +1,11 @@
-import { spawn, type ChildProcess } from 'child_process';
+import { spawn, execFile, type ChildProcess } from 'child_process';
+import { promisify } from 'util';
 import path from 'path';
 import * as net from 'net';
 import { fileURLToPath } from 'url';
 import fs from 'fs-extra';
+
+const execFileAsync = promisify(execFile);
 
 import { AIMPARENCY_DIR_NAME } from 'shared';
 
@@ -32,6 +35,9 @@ function getInstanceKey(projectPath: string, agentType: AgentType): string {
 // Location: packages/wrapped-agents/broker/src/manager.ts
 // WRAPPER_DIR: packages/wrapped-agents (2 levels up from src)
 const WRAPPER_DIR = path.resolve(__dirname, '../../');
+// Monorepo root (packages/wrapped-agents -> ../..), where npm workspace
+// commands resolve from for the pre-relaunch verification gate.
+const REPO_ROOT = path.resolve(WRAPPER_DIR, '..', '..');
 const SESSIONS_FILE = path.join(WRAPPER_DIR, 'watchdog-sessions.json');
 const RUNTIME_DIR_NAME = 'runtime';
 const PROJECT_RUNTIME_SESSIONS_FILE = 'watchdog-sessions.json';
@@ -244,6 +250,42 @@ function findAvailablePort(startPort: number): Promise<number> {
   });
 }
 
+export interface VerifyResult {
+  ok: boolean;
+  output: string;
+}
+
+/**
+ * Pre-relaunch safety gate. Typecheck + test the wrapped-agents code that a
+ * relaunched session will load, so a self-edit that doesn't compile or breaks a
+ * test never reaches a running session. The linchpin of the safe self-redeploy
+ * loop: if this returns ok=false, the caller must NOT stop/restart the session
+ * — the current (working) code keeps running. Steps run sequentially and bail
+ * on the first failure. Sessions are run via tsx directly from source, so this
+ * is the only thing standing between a bad self-edit and a crash-looping boot.
+ */
+export async function verifyWrappedAgents(): Promise<VerifyResult> {
+  const steps: Array<{ name: string; args: string[] }> = [
+    { name: 'typecheck', args: ['run', 'type-check', '-w', '@aimparency/wrapped-agents-common'] },
+    { name: 'test', args: ['test', '-w', '@aimparency/wrapped-agents-common'] },
+  ];
+  let output = '';
+  for (const step of steps) {
+    try {
+      const { stdout, stderr } = await execFileAsync('npm', step.args, {
+        cwd: REPO_ROOT,
+        timeout: 180_000,
+        maxBuffer: 16 * 1024 * 1024,
+      });
+      output += `\n[verify:${step.name}] OK\n${stdout}${stderr}`;
+    } catch (e: any) {
+      output += `\n[verify:${step.name}] FAILED\n${e.stdout ?? ''}${e.stderr ?? ''}${e.message ?? ''}`;
+      return { ok: false, output };
+    }
+  }
+  return { ok: true, output };
+}
+
 export const WatchdogManager = {
   async start(projectPath: string, agentType: AgentType = 'gemini'): Promise<{ port: number, pid: number, agentType: AgentType }> {
     projectPath = normalizeProjectPath(projectPath);
@@ -415,8 +457,29 @@ export const WatchdogManager = {
       return { running: false };
   },
 
-  async relaunch(projectPath: string, agentType: AgentType = 'gemini'): Promise<{ port: number, pid: number, agentType: AgentType }> {
+  async relaunch(
+      projectPath: string,
+      agentType: AgentType = 'gemini',
+      opts: { verify?: boolean } = {},
+  ): Promise<{ port: number, pid: number, agentType: AgentType }> {
       projectPath = normalizeProjectPath(projectPath);
+
+      // Safety gate: verify the wrapped-agents code BEFORE stopping the running
+      // session, so a bad self-edit can't take the session down with it. Only
+      // bypassed when the caller explicitly forces (e.g. an operator recovering
+      // from already-red tests). Default is to verify.
+      if (opts.verify ?? true) {
+        console.log(`[WatchdogBroker] Verifying wrapped-agents before relaunch...`);
+        const result = await verifyWrappedAgents();
+        if (!result.ok) {
+          console.error(`[WatchdogBroker] Relaunch ABORTED — verification failed. Session keeps running the current code.${result.output.slice(-4000)}`);
+          throw new Error(
+            `Relaunch aborted: wrapped-agents typecheck/tests failed, so the new code was not deployed and the session keeps running the current code. Fix the failures (or relaunch with verify=false to force).\n${result.output.slice(-4000)}`
+          );
+        }
+        console.log(`[WatchdogBroker] Verification passed; relaunching.`);
+      }
+
       console.log(`[WatchdogBroker] Relaunching ${agentType} for ${projectPath}`);
       this.stop(projectPath, agentType);
       await new Promise(resolve => setTimeout(resolve, 500));
