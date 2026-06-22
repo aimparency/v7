@@ -2,18 +2,29 @@
   "id": "12da17c9-7c18-479c-8dc3-e78bc0a35805",
   "text": "go through the mcp functions, understand them and update/correct the tool descriptions while keeping them brief for low context usage",
   "description": "Think about, what formulations would help to subtly encourage the system to work autonmously. Always looking for the root aim. maybe we need to update \"get aim context\" to get the entire path of parent aims (bewar of cycles)",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782054668242,
+      "context": "Tool descriptions are loaded into every agent's context; they're the cheapest place to steer autonomous behavior.",
+      "outcome": "Tuned ~9 tool descriptions + AIM_STATES_DESCRIPTION to encode the work loop: orient via get_aim_context/path_to_root, dedupe before create, ground value/cost and connect (anti-floating), close-and-reflect or escalate (unclear/human-dependent) instead of leaving work open, use floating filter to reparent.",
+      "effectiveness": "Every agent now sees the loop on the tool surface without a separate prompt; kept each nudge to one clause to respect low-context budget.",
+      "lesson": "Steer autonomy with one-clause nudges embedded where the action happens (the tool's own description), not with long preambles.",
+      "pattern": "steer-via-tool-descriptions"
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
   "committedIn": [
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1781422975353
+    "state": "done",
+    "comment": "Refined MCP tool descriptions + AIM_STATES_DESCRIPTION with terse autonomy nudges: context-first (get_aim_context before working), path-to-root orientation, dedupe-before-create, ground value/cost + connect (anti-floating), close-and-reflect / escalate-when-blocked, floating filter for reparenting.",
+    "date": 1782054655062
   },
   "intrinsicValue": 0,
   "cost": 1,

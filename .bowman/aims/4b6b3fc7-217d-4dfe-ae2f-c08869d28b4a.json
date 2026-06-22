@@ -2,23 +2,32 @@
   "id": "4b6b3fc7-217d-4dfe-ae2f-c08869d28b4a",
   "text": "add intrinsicValue/cost to MCP aim tools — the MCP create_aim/update_aim tools don't currently expose those fields",
   "description": "",
+  "reflections": [
+    {
+      "date": 1782054405628,
+      "context": "Aim asked to add intrinsicValue/cost to the MCP create_aim/update_aim tools.",
+      "outcome": "Found it already implemented — both fields are exposed in the tool input schemas and wired through the handlers (tools.ts). Marked done without code changes.",
+      "effectiveness": "Verifying against actual code before implementing avoided redundant work.",
+      "lesson": "Open status can be stale. Always grep the codebase to confirm an aim isn't already satisfied before starting.",
+      "pattern": "check-before-implement"
+    }
+  ],
+  "archived": false,
   "tags": [],
-  "reflections": [],
   "supportingConnections": [],
   "supportedAims": [],
   "committedIn": [
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1781423284137
+    "state": "done",
+    "comment": "Already implemented: MCP create_aim/update_aim expose intrinsicValue and cost (tools.ts schemas ~132/159 and handlers ~633/669). Verified in code; no further work needed.",
+    "date": 1782054397112
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "archived": false
+  "valueVariance": 0
 }
