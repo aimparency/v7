@@ -12,9 +12,9 @@ const modalStore = useUIModalStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 
-// In portrait layouts only one terminal is shown at a time (the other is
-// display:none); these tabs pick which. In landscape both are visible and the
-// tabs are hidden by CSS, so this state is simply ignored there.
+// On touch devices only one terminal is shown at a time (the other is
+// display:none); these tabs pick which. On desktop both are visible side by
+// side and the tabs are hidden by CSS, so this state is simply ignored there.
 const activeTerminalTab = ref<'worker' | 'supervisor'>('worker')
 
 const refitActiveTerminal = (focus = false) => {
@@ -664,7 +664,7 @@ defineExpose({
   min-height: 0;
 }
 
-/* Tab bar: only meaningful in portrait (single-terminal mode); hidden otherwise. */
+/* Tab bar: only meaningful on touch devices (single-terminal mode); hidden otherwise. */
 .term-tabs {
   display: none;
   gap: 0.25rem;
@@ -697,9 +697,13 @@ defineExpose({
   margin-left: auto;
 }
 
-/* When the viewport is taller than wide, the two side-by-side terminals get too
-   narrow — collapse to one terminal at a time, switched via the tabs. */
-@media (orientation: portrait) {
+/* On touch devices (phones/tablets) the two side-by-side terminals get too
+   narrow — collapse to one at a time, switched via the tabs. Keyed off
+   pointer:coarse (the device's input type) rather than orientation: an
+   orientation/aspect query flips to landscape when the soft keyboard opens or
+   the viewport otherwise shrinks in height, which wrongly re-showed both
+   terminals at half width mid-session. pointer:coarse is immune to that. */
+@media (pointer: coarse) {
   .term-tabs {
     display: flex;
   }
