@@ -1,11 +1,22 @@
 {
   "id": "7f1a1d20-790f-4850-8410-2f3ee8348900",
   "text": "Explore forking/cleavage for parallel strategy testing",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "strategy",
     "growth"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "10a0561b-a10d-47ae-8fd9-823416faa412",
+      "relativePosition": [
+        2.1492942656680016,
+        1.2769237093760322
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "133934ba-f325-4b92-b57c-517bb1ea497f"
   ],
@@ -17,5 +28,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

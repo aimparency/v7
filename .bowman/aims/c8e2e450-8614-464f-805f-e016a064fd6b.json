@@ -1,0 +1,29 @@
+{
+  "id": "c8e2e450-8614-464f-805f-e016a064fd6b",
+  "text": "Spin-off: \"cross-repo link at the seam\" option",
+  "description": "Deferred remainder of the basic spin-off. Instead of dropping connections that cross the seam (a copied aim that supported an ancestor left behind in the source, e.g. B->A), offer a dialog option to preserve them as cross-repo links (repoId-tagged edges, see 5a45cb28) so the spun-off branch stays connected to what it used to serve. Postponed until basic spin-off + cross-repo edges land.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "spin-off",
+    "cross-repo",
+    "deferred"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "10a0561b-a10d-47ae-8fd9-823416faa412",
+    "5a45cb28-dd71-47c7-8ba3-78b543b2647b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Deferred — do after basic spin-off + cross-repo edges.",
+    "date": 1782310705927
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

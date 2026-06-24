@@ -1,0 +1,27 @@
+{
+  "id": "3af443da-7357-42e9-b3e0-1fe731e68c02",
+  "text": "Spin-off into an existing .bowman (integrate spun-off aims as free-floating)",
+  "description": "Deferred remainder of the basic spin-off. When the chosen target path already contains a .bowman, the basic version only warns and stops. Extend it to allow proceeding: merge the spun-off aims into the existing target graph as free-floating aims (no parents) so the user can reparent them into the target's structure. Handle ID collisions. Postponed until basic spin-off lands.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "spin-off",
+    "deferred"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "10a0561b-a10d-47ae-8fd9-823416faa412"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Deferred — do after basic spin-off.",
+    "date": 1782310708919
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
