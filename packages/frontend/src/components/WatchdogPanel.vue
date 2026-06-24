@@ -12,6 +12,28 @@ const modalStore = useUIModalStore()
 const workerTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 const watchdogTerm = ref<InstanceType<typeof WatchdogTerminal>>()
 
+// Header gear menu — currently just the session lease duration.
+const showSettings = ref(false)
+const settingsWrap = ref<HTMLElement | null>(null)
+const leaseMinutes = ref<number | null>(null)
+
+watch(() => store.autonomyPolicy?.sessionLeaseMinutes, (v) => {
+  leaseMinutes.value = v ?? null
+}, { immediate: true })
+
+const applyLease = async () => {
+  const v = Number(leaseMinutes.value)
+  if (!Number.isFinite(v) || v <= 0) return
+  await store.updateAutonomyPolicy({ sessionLeaseMinutes: Math.round(v) })
+}
+
+const onDocMouseDown = (e: MouseEvent) => {
+  if (!showSettings.value) return
+  if (settingsWrap.value && !settingsWrap.value.contains(e.target as Node)) {
+    showSettings.value = false
+  }
+}
+
 // In portrait layouts only one terminal is shown at a time (the other is
 // display:none); these tabs pick which. In landscape both are visible and the
 // tabs are hidden by CSS, so this state is simply ignored there.
@@ -211,6 +233,7 @@ onMounted(() => {
   void store.hydrateAutonomyPolicy()
   void store.hydrateRuntimeState()
   window.addEventListener('keydown', handleKeyDown, true) // Capture phase
+  window.addEventListener('mousedown', onDocMouseDown, true)
 })
 
 watch(
@@ -226,6 +249,7 @@ onUnmounted(() => {
     store.socket.off('watchdog-data', onWatchdogData)
   }
   window.removeEventListener('keydown', handleKeyDown, true)
+  window.removeEventListener('mousedown', onDocMouseDown, true)
 })
 
 const handleWorkerInput = (data: string) => {
@@ -362,9 +386,30 @@ defineExpose({
 
       <span v-if="leaseLabel" class="lease-status">{{ leaseLabel }}</span>
       
-      <!-- Right: Stop Reason -->
+      <!-- Right: Stop Reason + Settings -->
       <div class="header-right">
         <span v-if="store.stopReason" class="stop-reason">{{ store.stopReason }}</span>
+        <div class="settings-wrap" ref="settingsWrap">
+          <button
+            class="action-btn settings-gear"
+            title="Session settings"
+            @click="showSettings = !showSettings"
+          >⚙</button>
+          <div v-if="showSettings" class="settings-menu">
+            <label class="settings-row">
+              <span class="settings-label">Session lease (minutes)</span>
+              <input
+                class="settings-input"
+                type="number"
+                min="1"
+                step="1"
+                v-model.number="leaseMinutes"
+                @change="applyLease"
+                @keyup.enter="applyLease"
+              />
+            </label>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -656,6 +701,59 @@ defineExpose({
     background: rgba(255, 255, 255, 0.2);
     color: white;
   }
+}
+
+.settings-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.settings-gear {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.95rem;
+  line-height: 1;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
+}
+
+.settings-menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  right: 0;
+  z-index: 30;
+  min-width: 12rem;
+  padding: 0.6rem;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 0.4rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.settings-label {
+  font-size: 0.78rem;
+  color: #cfcfcf;
+}
+
+.settings-input {
+  height: var(--control-h);
+  padding: 0 0.4rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 0.3rem;
+  font-size: 0.85rem;
 }
 
 .terminals {

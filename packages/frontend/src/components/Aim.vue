@@ -2,8 +2,11 @@
 import { computed, ref, watch, onMounted, useAttrs } from 'vue'
 import type { Aim } from '../stores/data'
 import { useDataStore } from '../stores/data'
+import { useUIStore } from '../stores/ui'
 import { useProjectStore } from '../stores/project-store'
 import AimsList from './AimsList.vue'
+import ContextMenu, { type ContextMenuItem } from './ContextMenu.vue'
+import { useLongPress } from '../composables/useLongPress'
 
 defineOptions({ inheritAttrs: false })
 
@@ -34,7 +37,62 @@ const emit = defineEmits<{
 const attrs = useAttrs()
 const aimContainerRef = ref<HTMLElement | null>(null)
 const dataStore = useDataStore()
+const uiStore = useUIStore()
 const projectStore = useProjectStore()
+
+// Long-press context menu — one button per aim keyboard shortcut, dispatched
+// through the same handler the keyboard uses (so behaviour stays identical).
+const showMenu = ref(false)
+const menuX = ref(0)
+const menuY = ref(0)
+let lastMenuOpenAt = 0
+
+const dispatchKey = (key: string) =>
+  uiStore.handleGlobalKeydown(new KeyboardEvent('keydown', { key }), dataStore)
+
+// Tap normally selects/edits; swallow the click that trails a long-press so the
+// menu doesn't also re-trigger selection (which would pop the edit modal).
+const onAimClick = () => {
+  if (Date.now() - lastMenuOpenAt < 600) return
+  emit('aim-clicked', props.aim.id)
+}
+
+const openMenu = (event: PointerEvent) => {
+  // Select this aim via the normal chain (Column knows the real column index).
+  // Skip if already selected, since re-selecting opens the edit modal.
+  if (!props.isThisAimSelected) {
+    emit('aim-clicked', props.aim.id)
+  }
+  uiStore.navigatingAims = true
+  lastMenuOpenAt = Date.now()
+  menuX.value = event.clientX
+  menuY.value = event.clientY
+  showMenu.value = true
+}
+
+const longPress = useLongPress(openMenu)
+
+const aimMenuItems = computed<ContextMenuItem[]>(() => [
+  { id: 'add-before', label: 'Add aim before', run: () => dispatchKey('O') },
+  { id: 'add-after', label: 'Add aim after', run: () => dispatchKey('o') },
+  { id: 'edit', label: 'Edit aim', run: () => dispatchKey('e') },
+  { id: 'move-up', label: 'Move up', run: () => dispatchKey('K') },
+  { id: 'move-down', label: 'Move down', run: () => dispatchKey('J') },
+  { id: 'make-child', label: 'Make child', run: () => dispatchKey('L') },
+  { id: 'elevate', label: 'Elevate (make sibling)', run: () => dispatchKey('H') },
+  { id: 'cut', label: 'Cut', run: () => dispatchKey('x') },
+  { id: 'copy', label: 'Copy', run: () => dispatchKey('c') },
+  { id: 'paste', label: 'Paste', run: () => dispatchKey('p') },
+  { id: 'parents', label: 'Show parent paths', run: () => dispatchKey('s') },
+  {
+    id: 'delete',
+    label: 'Delete aim',
+    confirm: true,
+    confirmLabel: 'Confirm delete',
+    danger: true,
+    run: () => dispatchKey('d')
+  }
+])
 
 const hasIncomingAims = computed(() => props.aim.supportingConnections && props.aim.supportingConnections.length > 0)
 const isExpanded = computed(() => props.aim.expanded || false)
@@ -133,11 +191,19 @@ onMounted(() => {
     ref="aimContainerRef"
     class="aim-item"
     :class="[attrs.class, { expanded: isExpanded }]"
-    @click.stop="$emit('aim-clicked', aim.id)"
+    @click.stop="onAimClick"
   >
     <!-- Aim content -->
     <div class="aim-content">
-      <div class="aim-header">
+      <div
+        class="aim-header"
+        @pointerdown="longPress.onPointerDown"
+        @pointermove="longPress.onPointerMove"
+        @pointerup="longPress.onPointerUp"
+        @pointercancel="longPress.onPointerCancel"
+        @pointerleave="longPress.onPointerLeave"
+        @contextmenu.prevent
+      >
         <div class="aim-main">
           <div class="aim-text" :class="{ 'untitled': !aim.text }">
             {{ aim.text || '(untitled)' }}
@@ -192,6 +258,14 @@ onMounted(() => {
         </div>
       </div>
     </div>
+
+    <ContextMenu
+      v-if="showMenu"
+      :items="aimMenuItems"
+      :x="menuX"
+      :y="menuY"
+      @close="showMenu = false"
+    />
 
     <!-- Expanded incoming aims (recursive) -->
     <div v-if="isExpanded" class="incoming-aims">

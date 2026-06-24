@@ -387,9 +387,15 @@ onUnmounted(() => {
           <button @click="uiStore.setWindowSize(uiStore.windowSize + 1)" class="icon-btn" title="Increase columns">+</button>
         </div>
 
+        <button
+          class="icon-btn search-btn"
+          @click="modalStore.openAimSearch()"
+          title="Search aims (/)"
+        >🔍</button>
+
         <div class="view-controls">
-          <button 
-            @click="uiStore.setView('columns')" 
+          <button
+            @click="uiStore.setView('columns')"
             :class="{ active: projectStore.currentView === 'columns' }"
             class="view-btn"
           >Columns</button>
@@ -652,6 +658,10 @@ onUnmounted(() => {
 
 .icon-btn:hover {
   background: var(--toolbar-group-bg);
+}
+
+.search-btn {
+  font-size: 0.95rem;
 }
 
 .project-info {

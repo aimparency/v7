@@ -541,6 +541,24 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
+  async function updateAutonomyPolicy(policy: Partial<AutonomyPolicy>) {
+    const projectStore = useProjectStore()
+    const projectPath = projectStore.projectPath
+    if (!projectPath) return null
+
+    try {
+      const merged = await trpc.project.updateAutonomyPolicy.mutate({
+        projectPath,
+        policy
+      }) as AutonomyPolicy
+      autonomyPolicy.value = merged
+      return merged
+    } catch (e: any) {
+      logStatus(`Failed to update autonomy policy: ${e.message}`)
+      return null
+    }
+  }
+
   function triggerWorkerFocus() {
     focusRequestCounter.value++
   }
@@ -677,6 +695,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     restorePreviousConnection,
     handleProjectSwitch,
     hydrateRuntimeState,
-    hydrateAutonomyPolicy
+    hydrateAutonomyPolicy,
+    updateAutonomyPolicy
   }
 })
