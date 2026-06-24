@@ -20,6 +20,11 @@ export class Agent {
     this.terminal = new Terminal({
       cols,
       rows: 30,
+      // Match the client terminal's scrollback (WatchdogTerminal.vue) so the
+      // serialize() snapshot sent on (re)connect carries the same depth of
+      // history a live client had — otherwise reload truncates to xterm's
+      // 1000-line default. (Alt-screen TUIs keep no scrollback regardless.)
+      scrollback: 10000,
       allowProposedApi: true
     });
 

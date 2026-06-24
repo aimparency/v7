@@ -17,6 +17,7 @@ export interface AimState {
 
 export const INITIAL_STATES: AimState[] = [
   { key: 'open', color: '#ffcc80', ongoing: true },
+  { key: 'in-progress', color: '#f6d32d', ongoing: true },
   { key: 'partially', color: '#fff176', ongoing: true },
   { key: 'done', color: '#81c784', ongoing: false },
   { key: 'cancelled', color: '#e57373', ongoing: false },
