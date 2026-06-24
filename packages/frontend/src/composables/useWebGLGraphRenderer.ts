@@ -10,6 +10,7 @@ import { ArrowRenderer, type EdgeData } from '../webgl/ArrowRenderer'
 import { TAAPass } from '../webgl/TAAPass'
 import { calculateArrowGeometry } from '../webgl/utils/arrow-geometry'
 import { applyBrightness, cssColorToRgb, statusToColor, type StatusColorEntry } from '../webgl/status-colors'
+import { planSpinOff } from 'shared'
 import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useDataStore } from '../stores/data'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
@@ -54,6 +55,20 @@ export function useWebGLGraphRenderer(
     const colorMode = graphUIStore.graphColorMode
     const configuredStatuses = (dataStore.getStatuses || []) as StatusColorEntry[]
 
+    // Spin-off preview: classify every aim into red (spun off) / orange (overlap)
+    // once per pass; nodes not in the map are green (kept). Computed client-side
+    // from the loaded aims — same planSpinOff the backend will execute.
+    const spinOffBuckets = (() => {
+      if (colorMode !== 'spin-off') return null
+      const roots = graphUIStore.spinOffPreviewRootIds
+      if (!roots.length) return null
+      const plan = planSpinOff(Object.values(dataStore.aims), roots)
+      const m = new Map<string, 'red' | 'orange'>()
+      for (const id of plan.spinOffIds) m.set(id, 'red')
+      for (const id of plan.overlapIds) m.set(id, 'orange')
+      return m
+    })()
+
     return graphNodes.map(node => {
       const x = node.renderPos[0]
       const y = node.renderPos[1]
@@ -90,7 +105,12 @@ export function useWebGLGraphRenderer(
       // Determine color: status, priority, and custom are separate coloring modes.
       // Custom mode shows the custom aim color if set, falling back to a neutral grey.
       let color: [number, number, number]
-      if (colorMode === 'custom') {
+      if (colorMode === 'spin-off') {
+        // green = kept (source only), orange = overlap (both), red = spun off
+        const bucket = spinOffBuckets?.get(node.id)
+        const hex = bucket === 'red' ? '#f85149' : bucket === 'orange' ? '#f0883e' : '#3fb950'
+        color = applyBrightness(cssColorToRgb(hex))
+      } else if (colorMode === 'custom') {
         if (node.customColor) {
           color = applyBrightness(cssColorToRgb(node.customColor))
         } else {
@@ -388,12 +408,16 @@ export function useWebGLGraphRenderer(
     renderer.updateNodes(cachedNodeData)
   })
 
-  // Watch for color mode changes
-  watch(() => graphUIStore.graphColorMode, () => {
-    if (!renderer || !isInitialized.value) return
-    cachedNodeData = convertNodes(nodes.value)
-    renderer.updateNodes(cachedNodeData)
-  })
+  // Watch for color mode changes and spin-off preview root changes
+  watch(
+    () => [graphUIStore.graphColorMode, graphUIStore.spinOffPreviewRootIds] as const,
+    () => {
+      if (!renderer || !isInitialized.value) return
+      cachedNodeData = convertNodes(nodes.value)
+      renderer.updateNodes(cachedNodeData)
+    },
+    { deep: true }
+  )
 
   // Lifecycle
   onMounted(async () => {

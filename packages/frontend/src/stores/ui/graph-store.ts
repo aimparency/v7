@@ -24,6 +24,10 @@ export type PhaseFilter = {
 type GraphUIState = PersistedGraphViewState & {
   pendingDeleteLink: { parentId: string; childId: string } | null
   phaseFilter: PhaseFilter | null
+  // Ephemeral spin-off preview: when non-empty, the graph colors nodes by their
+  // spin-off bucket (kept/overlap/spun-off) for these selected root(s).
+  spinOffPreviewRootIds: string[]
+  spinOffPreviewPrevMode: GraphColorMode | null
 }
 
 export const useGraphUIStore = defineStore('ui-graph', {
@@ -34,7 +38,9 @@ export const useGraphUIStore = defineStore('ui-graph', {
     graphColorMode: 'status',
     graphPanelWidth: 300,
     graphShowLabels: true,
-    phaseFilter: null
+    phaseFilter: null,
+    spinOffPreviewRootIds: [],
+    spinOffPreviewPrevMode: null
   }),
 
   actions: {
@@ -137,6 +143,23 @@ export const useGraphUIStore = defineStore('ui-graph', {
 
     clearPhaseFilter() {
       this.phaseFilter = null
+    },
+
+    // Enter spin-off preview for the given root aim(s): the graph recolors nodes
+    // green (kept) / orange (overlap) / red (spun off) so the cut can be eyeballed
+    // before committing. Remembers the prior color mode to restore on clear.
+    previewSpinOff(rootIds: string[]) {
+      if (this.graphColorMode !== 'spin-off') {
+        this.spinOffPreviewPrevMode = this.graphColorMode
+      }
+      this.spinOffPreviewRootIds = [...rootIds]
+      this.graphColorMode = 'spin-off'
+    },
+
+    clearSpinOffPreview() {
+      this.spinOffPreviewRootIds = []
+      this.graphColorMode = this.spinOffPreviewPrevMode ?? 'status'
+      this.spinOffPreviewPrevMode = null
     }
   }
 })

@@ -190,7 +190,13 @@ const onKeydown = (e: KeyboardEvent) => {
             'priority': 'custom',
             'custom': 'status'
         }
-        graphUIStore.setGraphColorMode(nextMode[graphUIStore.graphColorMode])
+        // In spin-off preview, the cycle key exits the preview rather than
+        // landing on an undefined mode.
+        if (graphUIStore.graphColorMode === 'spin-off') {
+            graphUIStore.clearSpinOffPreview()
+        } else {
+            graphUIStore.setGraphColorMode(nextMode[graphUIStore.graphColorMode])
+        }
     }
 
     if (e.key === 'f' && !e.ctrlKey && !e.metaKey) {
@@ -346,6 +352,16 @@ function getNodeTitleLines(text: string): string[] {
   }
   return lines
 }
+
+// Toggle the spin-off preview: enter it using the currently selected aim as the
+// single root, or exit if already previewing.
+function toggleSpinOffPreview() {
+  if (graphUIStore.graphColorMode === 'spin-off') {
+    graphUIStore.clearSpinOffPreview()
+  } else if (graphUIStore.graphSelectedAimId) {
+    graphUIStore.previewSpinOff([graphUIStore.graphSelectedAimId])
+  }
+}
 </script>
 
 <template>
@@ -486,6 +502,21 @@ function getNodeTitleLines(text: string): string[] {
             :class="{ active: graphUIStore.graphColorMode === 'custom' }"
             @click="graphUIStore.setGraphColorMode('custom')"
         >Custom</button>
+      </div>
+
+      <button
+          class="control-btn"
+          :class="{ active: graphUIStore.graphColorMode === 'spin-off' }"
+          :disabled="graphUIStore.graphColorMode !== 'spin-off' && !graphUIStore.graphSelectedAimId"
+          @click="toggleSpinOffPreview"
+          title="Preview spin-off from the selected aim (green = kept, orange = both, red = spun off)"
+      >⎇ Spin-off</button>
+
+      <div v-if="graphUIStore.graphColorMode === 'spin-off'" class="phase-badge spinoff-legend">
+        <span class="so-dot so-green"></span>kept
+        <span class="so-dot so-orange"></span>both
+        <span class="so-dot so-red"></span>spun&nbsp;off
+        <button class="phase-badge-clear" @click="graphUIStore.clearSpinOffPreview()" title="Exit spin-off preview">×</button>
       </div>
 
       <div v-if="graphUIStore.phaseFilter" class="phase-badge">
@@ -631,4 +662,24 @@ function getNodeTitleLines(text: string): string[] {
         &:hover { opacity: 1; }
     }
 }
+
+/* Spin-off preview legend: neutral chrome with colored dots matching node colors. */
+.spinoff-legend {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ddd;
+
+    .phase-badge-clear { color: #ddd; }
+}
+
+.so-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 2px;
+}
+.so-green { background: #3fb950; }
+.so-orange { background: #f0883e; }
+.so-red { background: #f85149; }
 </style>
