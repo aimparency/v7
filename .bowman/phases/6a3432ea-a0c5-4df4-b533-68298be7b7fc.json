@@ -5,7 +5,8 @@
   "order": 16,
   "parent": "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5",
   "childPhaseIds": [
-    "785c77b3-db02-4636-bfba-6d6abcd10aea"
+    "785c77b3-db02-4636-bfba-6d6abcd10aea",
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "commitments": [
     "44ccf082-6032-49c7-a0dd-e5b4681be2cd",

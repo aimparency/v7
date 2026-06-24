@@ -1,0 +1,29 @@
+{
+  "id": "220c106c-9502-4353-913f-73cf314cbfcd",
+  "text": "Verify-and-rollback gate for self-redeploy: a bad self-edit must not brick the runtime",
+  "description": "The safety property that makes recursive self-improvement viable. When the agent edits its own supervisor/watchdog code and triggers a self-rebuild+relaunch (parent aim 5af61b3e), two guards must protect the runtime:\n\n1. PRE-RELAUNCH VERIFY GATE: before relaunching, run typecheck + the wrapped-agents tests (e.g. `npm run type-check` and `npm test -w @aimparency/wrapped-agents-common`). If either fails, do NOT relaunch — keep running the current (old) code and tell the agent its change is unsafe. Build/typecheck success alone is insufficient; tests must pass.\n\n2. POST-RELAUNCH ROLLBACK (don't brick yourself): today session-server's relaunchOnNonZeroExit just relaunches the SAME code, which crash-loops on a bad self-edit. Detect a boot-failure loop (the relaunched session fails to reach a healthy heartbeat within N seconds, or exits non-zero M times) and automatically `git`-revert the offending commit to the last-known-good, rebuild, relaunch, and escalate to the human (set a human-dependent flag with the failing diff). The agent must be recoverable from one bad commit, not killed by it.\n\n3. AUDIT: record each self-redeploy attempt — commit hash, verify result, boot outcome (healthy / rolled-back) — into session memory / agent_log for auditability.\n\nGrounded in this session: four watchdog self-fixes each needed a manual human restart to deploy (see memory: dev sessions run via `--import tsx`, no watch). Primitive already exists: broker.relaunch (manager.ts:418) + relaunchOnNonZeroExit. May split into 'pre-relaunch verify gate' and 'boot-failure rollback watchdog'.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "self-improvement",
+    "safety",
+    "watchdog"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5af61b3e-5b5e-43ba-af2c-23977d55b910"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782110121922
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,25 @@
+{
+  "id": "920b1921-8416-4fd1-b09f-8d30266c1482",
+  "text": "Touch support for list (column) editing on mobile",
+  "description": "The columns view editing is currently keyboard-only (vim-style); mobile users\nwith no physical keyboard cannot create/edit/reorder phases or aims. Add\nclick/touch affordances that mirror the key actions in\npackages/frontend/src/stores/ui/keyboard-actions.ts.\n\nConcrete starting point: tapping an empty phase placeholder/slot in a column\nshould create a phase (the o/O action).\n\nPhase (column) actions to expose as taps/buttons: create before/after (o/O),\nedit (e), delete-with-confirm (d d), mark as current (c), reorder up/down (J/K),\nenter aim navigation (i). Column left/right nav (h/l) already has swipe.\n\nAim navigation actions: create (o/O), edit (e), delete (d d), move out/in the\nhierarchy (H/L), reorder up/down (J/K), cut/copy/paste teleport (x/c/p),\nshow parent paths (s), expand/collapse / step into incoming (h/l).\n\nGraph view: tap to select an aim/link, plus delete (d) and edit (e) affordances.\n\nGlobal: aim search (/) and view toggle (g) should have visible buttons too.",
+  "tags": [
+    "mobile",
+    "ux"
+  ],
+  "reflections": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1781972375040
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "archived": false
+}

@@ -2,7 +2,16 @@
   "id": "cca28c6c-f3fa-4b13-9078-62fcb80a5f5e",
   "text": "Investigate & fix the root cause of the 300s worker busy-timeout that drops the supervisor into ERROR",
   "description": "The supervisor repeatedly enters ERROR via enterError(\"Worker session stuck (busy timeout reached after 300s)\") — the worker shows a busy indicator and never goes idle until MAX_BUSY_TIMEOUT_MS (watchdog-service.ts ~425). Seen twice on 2026-06-21 (14:23, 15:10 UTC) in logs/7000/out.log.\n\nHypothesis: the worker wedges on an interactive prompt (permission dialog, \"continue?\", login, pager) that the busy-detection reads as \"still working\", so it never resolves and only the absolute timeout fires.\n\nApproach:\n1. Use the new diagnostics (logs/supervisor-errors.log + the ERROR block in logs/<port>/out.log, from branch watchdog-error-diagnostics) to read the worker terminal tail at the moment of the next timeout and confirm what it was waiting on.\n2. If it's an interactive prompt: detect that state and auto-respond/interrupt (cf. the existing Gemini double-ESC interrupt action, aim bc0a18cf) rather than waiting the full 300s, or escalate to the watchdog earlier.\n3. Consider distinguishing \"genuinely working\" from \"blocked on input\" in isAgentEffectivelyBusy so a wedged prompt doesn't read as busy.\n\nDone when the cause is confirmed from a real capture and the worker either recovers automatically or the supervisor escalates well before the 300s hard timeout.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782100778499,
+      "context": "The supervisor kept entering ERROR with 'Worker session stuck (busy timeout reached after 300s)'. Initial hypothesis was an interactive prompt wedging the worker.",
+      "outcome": "The diagnostics log disproved the hypothesis and revealed two distinct bugs: the busy timer never reset on idle (measured wall-clock since enable), and it was a hard cap on continuous work (killed a worker that was actively producing output for 304s). Fixed both (reset on idle; reset on screen-change/progress, trip only on a frozen screen), extracted the logic into a tested helper, plus diagnostics + auto-retry.",
+      "effectiveness": "High once the diagnostics existed. The earlier fixes looked ineffective only because the long-running session process never hot-reloads (--import tsx, no watch) — every fix needed a manual session restart to deploy. Reading the actual worker terminal tail at the moment of error is what cracked it.",
+      "lesson": "Don't trust a plausible hypothesis (interactive prompt) over evidence — instrument first, then read the real capture. And a duration-based 'stuck' heuristic is wrong for capable agents: distinguish frozen (static screen) from working (changing screen), never kill by elapsed time alone. Also: dev agent sessions don't hot-reload, so watchdog fixes require a session restart to take effect.",
+      "pattern": "instrument-then-diagnose; frozen-not-slow"
+    }
+  ],
   "archived": false,
   "tags": [
     "watchdog",
@@ -18,9 +27,9 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "partially",
-    "comment": "ROOT CAUSE FOUND (hypothesis was wrong — not an interactive prompt). The busy timer (watchdog-service.ts busyStartedAt) was never reset when the worker went idle; it was only cleared on stop or when the timeout fired. So MAX_BUSY_TIMEOUT measured wall-clock-since-enable, not continuous busy time. logs/7000/out.log shows ERROR firing exactly 300s after 'Logic ENABLED' in every cycle even though the worker was idle (screen static) for ~248s and only worked the last ~47s. FIX committed on branch watchdog-error-diagnostics (dedaef6): reset busyStartedAt=0 in the idle-escalation branch, so the timeout only trips on genuinely uninterrupted busy work. 22/22 common tests pass, typecheck clean. REMAINING: live confirmation — restart the session on this branch and verify no more false 300s ERRORs; then mark done.",
-    "date": 1782064443050
+    "state": "done",
+    "comment": "Done. Root cause was TWO failure modes, both confirmed from logs/supervisor-errors.log (the diagnostics built for this), not the interactive-prompt hypothesis: (1) busyStartedAt never reset on idle → timer measured wall-clock-since-enable (fix dedaef6: reset on idle); (2) timer was a hard cap on CONTINUOUS work → a worker legitimately working >300s was killed (capture showed the worker actively producing output for 304s). Fix cda9f31: reset the timer on any screen change (output/ticking spinner = progress); only a frozen screen trips it. Refactored the decision into advanceWorkerBusyTimeout() + 4 regression tests (5901de4). Also shipped: ERROR-state diagnostics (f3c8513) and 10-min auto-retry (abc4273). All on main. Live-confirmed: this session worked many minutes continuously without a false ERROR.",
+    "date": 1782100768017
   },
   "intrinsicValue": 0,
   "cost": 3,
