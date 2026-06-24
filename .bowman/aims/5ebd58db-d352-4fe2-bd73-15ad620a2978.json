@@ -1,0 +1,30 @@
+{
+  "id": "5ebd58db-d352-4fe2-bd73-15ad620a2978",
+  "text": "Help the users get rich",
+  "description": "The cooperative flywheel that funds autonomy. Aimparency is open-source and exists to help humans realize their own ideas and aims. By helping users succeed — explicitly including economically, helping them get rich — the system (a) earns funding and compute for its own autonomy (target autonomy ratio >= 1.1), and (b) advances its OWN aims *through* the users' aims it helps realize. Helping humans implement their ideas is how the AI implements its own. This keeps growth aligned with benevolence: the system gets richer only by making its humans richer. First concrete revenue engine chosen with Felix: the content engine (Echo) — journal -> content -> audience -> brand/affiliate revenue (see 67a448b5, 0cefe646).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "strategy",
+    "economic",
+    "cooperation",
+    "alignment"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "297ad708-41ef-409e-a045-ff8dff0209ff",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782304387075
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

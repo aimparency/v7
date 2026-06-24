@@ -8,7 +8,16 @@
     "strategy",
     "partnership"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "5ebd58db-d352-4fe2-bd73-15ad620a2978",
+      "relativePosition": [
+        0.12258873554697956,
+        -2.4969925914821998
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "3253bc9e-14fe-4c9b-9849-588620518517",
     "cffdcd91-fd9c-45e4-98fd-e265650be143"
