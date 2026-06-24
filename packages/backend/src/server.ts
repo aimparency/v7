@@ -26,7 +26,7 @@ import {
 import { generateEmbedding, generateQueryEmbedding, warmupEmbedder, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore, hasCurrentEmbedding } from './embeddings.js';
 import { getSemanticGraph, invalidateSemanticCache } from './forces.js';
 import { chatWithGemini } from './voice-agent.js';
-import { calculateAimValues } from 'shared';
+import { calculateAimValues, planSpinOff, computeSpinOff } from 'shared';
 import { saveAimValues, getAimValues, getDb } from './db.js';
 import { createAimRouter } from './routers/aim.js';
 import { createPhaseRouter } from './routers/phase.js';
@@ -698,6 +698,119 @@ async function migrateCommittedInField(projectPath: string): Promise<void> {
 
 // Helper to calculate smart sub-phase dates
 // Create the actual tRPC router
+// --- Spin-off helpers ---------------------------------------------------------
+
+function resolveBowmanPath(rawPath: string): string {
+  return rawPath.endsWith(AIMPARENCY_DIR_NAME) ? rawPath : path.join(rawPath, AIMPARENCY_DIR_NAME);
+}
+
+// Does a target path already hold a .bowman with aim files? (spin-off guard:
+// the basic version refuses to write into an existing graph.)
+async function bowmanHasAims(rawTargetPath: string): Promise<boolean> {
+  const aimsDir = path.join(resolveBowmanPath(rawTargetPath), 'aims');
+  if (!(await fs.pathExists(aimsDir))) return false;
+  const files = await fs.readdir(aimsDir);
+  return files.some((f) => f.endsWith('.json'));
+}
+
+// Remove an aim file (active or archived) and purge it from index + embeddings.
+async function deleteAimCompletely(rawProjectPath: string, aimId: string): Promise<void> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await fs.remove(path.join(projectPath, 'aims', `${aimId}.json`));
+  await fs.remove(path.join(projectPath, 'archived-aims', `${aimId}.json`));
+  removeAimFromIndex(projectPath, aimId);
+  await removeEmbedding(projectPath, aimId);
+}
+
+const spinOffRouter = t.router({
+  // Dry-run: classify aims into kept (green) / overlap (orange) / spun-off (red)
+  // for the graph preview, plus a warning if the target already has a graph.
+  preview: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      rootIds: z.array(z.string().uuid()).min(1),
+      targetPath: z.string().optional(),
+    }))
+    .query(async ({ input }: any) => {
+      const aims = await listAims(normalizeProjectPath(input.projectPath));
+      const plan = planSpinOff(aims, input.rootIds);
+      return {
+        ...plan,
+        counts: {
+          kept: plan.keptIds.length,
+          overlap: plan.overlapIds.length,
+          spinOff: plan.spinOffIds.length,
+        },
+        targetHasBowman: input.targetPath ? await bowmanHasAims(input.targetPath) : false,
+      };
+    }),
+
+  // Execute: write the branch (roots + supporters) into a fresh .bowman at
+  // targetPath, then optionally prune the source — deleting only aims that serve
+  // the selection exclusively, keeping shared aims (overlap). Conservative.
+  apply: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      rootIds: z.array(z.string().uuid()).min(1),
+      targetPath: z.string(),
+      removeFromSource: z.boolean().default(true),
+    }))
+    .mutation(async ({ input }: any) => {
+      const source = normalizeProjectPath(input.projectPath);
+      const target = resolveBowmanPath(input.targetPath);
+
+      if (await bowmanHasAims(target)) {
+        throw new Error(
+          `Target already contains a .bowman with aims: ${target}. Integrating into an existing graph is not supported yet (deferred).`
+        );
+      }
+
+      const aims = await listAims(source);
+      const { plan, spinOffAims, sourceAimsToRewrite, sourceAimIdsToDelete } =
+        computeSpinOff(aims, input.rootIds);
+
+      // Write the spin-off repo: structure + meta (statuses/color carried), aims.
+      await ensureProjectStructure(target);
+      const sourceMeta = await readProjectMeta(source);
+      await writeProjectMeta(target, {
+        name: path.basename(path.dirname(target)) || 'spin-off',
+        color: sourceMeta.color,
+        statuses: sourceMeta.statuses,
+        rootPhaseIds: [],
+      });
+      for (const aim of spinOffAims) {
+        await writeAim(target, aim);
+      }
+
+      // Prune the source (optional): rewrite kept aims that lost edges, then
+      // delete the exclusive aims, then clean up dangling phase commitments.
+      let deletedFromSource = 0;
+      if (input.removeFromSource) {
+        for (const aim of sourceAimsToRewrite) {
+          await writeAim(source, aim);
+          updateAimInIndex(source, aim);
+        }
+        for (const id of sourceAimIdsToDelete) {
+          await deleteAimCompletely(source, id);
+          deletedFromSource++;
+        }
+        await cleanupCommitments(source);
+        invalidateSemanticCache(source);
+      }
+
+      return {
+        target,
+        copied: spinOffAims.length,
+        deletedFromSource,
+        counts: {
+          kept: plan.keptIds.length,
+          overlap: plan.overlapIds.length,
+          spinOff: plan.spinOffIds.length,
+        },
+      };
+    }),
+});
+
 const appRouter = t.router({
   aim: createAimRouter(
     t,
@@ -780,7 +893,8 @@ const appRouter = t.router({
     readAim,
     writePhase,
     ee
-  )
+  ),
+  spinOff: spinOffRouter
 });
 
 
