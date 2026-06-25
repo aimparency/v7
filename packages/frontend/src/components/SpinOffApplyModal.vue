@@ -15,6 +15,7 @@ const graphUIStore = useGraphUIStore()
 const pathInput = ref('')
 const pathInputEl = ref<HTMLInputElement>()
 const removeFromSource = ref(true)
+const openInNewTab = ref(true)
 const candidates = ref<string[]>([])
 const bowmanExists = ref(false)
 const applying = ref(false)
@@ -95,12 +96,20 @@ const apply = async () => {
   applying.value = true
   errorMessage.value = ''
   try {
-    await trpc.spinOff.execute.mutate({
+    const result = await trpc.spinOff.execute.mutate({
       projectPath: projectStore.projectPath,
       rootIds: rootIds.value,
       targetPath: pathInput.value.trim(),
       removeFromSource: removeFromSource.value
     })
+    // Open the spin-off in a new tab on the same host (result.target is the
+    // resolved absolute .bowman path the backend can load directly).
+    if (openInNewTab.value) {
+      const url = new URL(window.location.href)
+      url.search = ''
+      url.searchParams.set('project', result.target)
+      window.open(url.toString(), '_blank')
+    }
     modalStore.closeSpinOffApplyModal()
     graphUIStore.clearSpinOffPreview()
     await dataStore.loadAllAims(projectStore.projectPath)
@@ -135,6 +144,7 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
   if (show) {
     pathInput.value = defaultTargetPath()
     removeFromSource.value = true
+    openInNewTab.value = true
     candidates.value = []
     errorMessage.value = ''
     refreshPathState()
@@ -180,6 +190,11 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
     <label class="checkbox-row">
       <input type="checkbox" v-model="removeFromSource" />
       <span>Remove spun-off aims from source graph (keeps shared aims)</span>
+    </label>
+
+    <label class="checkbox-row">
+      <input type="checkbox" v-model="openInNewTab" />
+      <span>Open the spin-off in a new tab</span>
     </label>
 
     <p class="summary">
