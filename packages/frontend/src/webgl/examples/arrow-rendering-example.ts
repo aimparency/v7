@@ -72,7 +72,8 @@ export async function createArrowRenderingExample(
       color: [0.5, 0.5, 0.5] as [number, number, number],
       opacity: 0.8,
       geometry: calculateArrowGeometry(source, target, weight),
-      moving: false
+      moving: false,
+      selected: false
     }
   })
 

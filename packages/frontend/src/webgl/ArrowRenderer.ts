@@ -17,11 +17,13 @@ export interface EdgeData {
   opacity: number
   geometry: ArrowGeometry
   moving: boolean  // Movement flag for TAA
+  selected: boolean // Selected connection: animated stripes flowing toward the head
 }
 
 // Stride: arcCenter(2) + triangleV1(2) + triangleV2(2) + centerRadius(1) + normalizedHalfWidth(1)
-//       + trunkLength(1) + sourceDir(2) + targetCenter(2) + targetRadiusSq(1) + color(3) + opacity(1) + moving(1) = 19
-const STRIDE = 19
+//       + trunkLength(1) + sourceDir(2) + targetCenter(2) + targetRadiusSq(1) + color(3) + opacity(1) + moving(1)
+//       + selected(1) = 20
+const STRIDE = 20
 
 export class ArrowRenderer {
   private gl: WebGL2RenderingContext
@@ -46,11 +48,13 @@ export class ArrowRenderer {
   private a_color: number = -1
   private a_opacity: number = -1
   private a_moving: number = -1
+  private a_selected: number = -1
 
   // Uniform locations
   private u_viewMatrix: WebGLUniformLocation | null = null
   private u_viewportSize: WebGLUniformLocation | null = null
   private u_jitter: WebGLUniformLocation | null = null
+  private u_time: WebGLUniformLocation | null = null
 
   private edges: EdgeData[] = []
   private viewMatrix: Float32Array = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1])
@@ -97,11 +101,13 @@ export class ArrowRenderer {
     this.a_color = gl.getAttribLocation(this.program, 'a_color')
     this.a_opacity = gl.getAttribLocation(this.program, 'a_opacity')
     this.a_moving = gl.getAttribLocation(this.program, 'a_moving')
+    this.a_selected = gl.getAttribLocation(this.program, 'a_selected')
 
     // Get uniform locations
     this.u_viewMatrix = gl.getUniformLocation(this.program, 'u_viewMatrix')
     this.u_viewportSize = gl.getUniformLocation(this.program, 'u_viewportSize')
     this.u_jitter = gl.getUniformLocation(this.program, 'u_jitter')
+    this.u_time = gl.getUniformLocation(this.program, 'u_time')
 
     // Create vertex index buffer (3 vertices: 0, 1, 2)
     const vertexIndices = new Float32Array([0, 1, 2])
@@ -161,6 +167,7 @@ export class ArrowRenderer {
       this.instanceData[offset + 16] = e.color[2]
       this.instanceData[offset + 17] = e.opacity
       this.instanceData[offset + 18] = e.moving ? 1.0 : 0.0
+      this.instanceData[offset + 19] = e.selected ? 1.0 : 0.0
     }
 
     // Upload to GPU
@@ -173,7 +180,7 @@ export class ArrowRenderer {
     this.viewMatrix = viewMatrix
   }
 
-  render(jitterX: number = 0, jitterY: number = 0): void {
+  render(jitterX: number = 0, jitterY: number = 0, time: number = 0): void {
     if (!this.program || this.edges.length === 0) return
 
     const gl = this.gl
@@ -184,6 +191,7 @@ export class ArrowRenderer {
     gl.uniformMatrix3fv(this.u_viewMatrix, false, this.viewMatrix)
     gl.uniform2f(this.u_viewportSize, this.canvas.width, this.canvas.height)
     gl.uniform2f(this.u_jitter, jitterX, jitterY)
+    gl.uniform1f(this.u_time, time)
 
     // Bind vertex index buffer (per-vertex, not instanced)
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexIndexBuffer)
@@ -208,7 +216,8 @@ export class ArrowRenderer {
       { loc: this.a_targetRadiusSq, size: 1, offset: 13 },
       { loc: this.a_color, size: 3, offset: 14 },
       { loc: this.a_opacity, size: 1, offset: 17 },
-      { loc: this.a_moving, size: 1, offset: 18 }
+      { loc: this.a_moving, size: 1, offset: 18 },
+      { loc: this.a_selected, size: 1, offset: 19 }
     ]
 
     for (const attr of attrs) {

@@ -18,6 +18,7 @@ in float a_targetRadiusSq;      // target radius squared
 in vec3 a_color;
 in float a_opacity;
 in float a_moving;              // Movement flag for TAA (0.0 or 1.0)
+in float a_selected;            // Selected connection (0.0 or 1.0)
 
 // Uniforms
 uniform mat3 u_viewMatrix;
@@ -38,6 +39,8 @@ out float v_opacity;
 out float v_tip;        // 0 at V1 (source side), 0.5 at M, 1 at V2 (tip side)
 out float v_distFromM;  // 0 at M, 1 at V1 and V2 - for radial correction
 flat out float v_moving;
+flat out float v_selected;
+flat out float v_pixelsPerWorld; // Camera zoom: screen pixels per world unit (for AA)
 
 void main() {
   // Select vertex position based on index
@@ -69,8 +72,11 @@ void main() {
   vec2 ndc = (viewPos.xy / u_viewportSize) * 2.0 - 1.0;
   ndc.y *= -1.0;
 
-  // Apply sub-pixel jitter for TAA (convert pixel offset to NDC)
-  ndc += u_jitter * 2.0 / u_viewportSize;
+  // Apply sub-pixel jitter for TAA (convert pixel offset to NDC).
+  // Selected connections skip jitter: they bypass TAA accumulation (movement
+  // is forced on in the fragment shader for crisp stripe animation), so
+  // jittering them would just shimmer the geometry frame to frame.
+  ndc += u_jitter * 2.0 / u_viewportSize * (1.0 - step(0.5, a_selected));
 
   gl_Position = vec4(ndc, 0.0, 1.0);
 
@@ -88,4 +94,7 @@ void main() {
   v_tip = tip;
   v_distFromM = distFromM;
   v_moving = a_moving;
+  v_selected = a_selected;
+  // u_viewMatrix[0][0] is the uniform zoom factor (world units -> pixels).
+  v_pixelsPerWorld = u_viewMatrix[0][0];
 }

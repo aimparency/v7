@@ -7,6 +7,7 @@
 import { ref, onMounted, onUnmounted, watch, type Ref } from 'vue'
 import { WebGLGraphRenderer, type NodeData } from '../webgl/WebGLGraphRenderer'
 import { ArrowRenderer, type EdgeData } from '../webgl/ArrowRenderer'
+import { SelectionSpinnerRenderer } from '../webgl/SelectionSpinnerRenderer'
 import { TAAPass } from '../webgl/TAAPass'
 import { calculateArrowGeometry } from '../webgl/utils/arrow-geometry'
 import { applyBrightness, cssColorToRgb, statusToColor, type StatusColorEntry } from '../webgl/status-colors'
@@ -27,6 +28,7 @@ export function useWebGLGraphRenderer(
 
   let renderer: WebGLGraphRenderer | null = null
   let arrowRenderer: ArrowRenderer | null = null
+  let spinnerRenderer: SelectionSpinnerRenderer | null = null
   let taaPass: TAAPass | null = null
   let animationFrameId: number | null = null
 
@@ -39,6 +41,11 @@ export function useWebGLGraphRenderer(
   let lastZoom = 0
   let isMoving = false
   let movementTimeout: ReturnType<typeof setTimeout> | null = null
+
+  // Spinner clock: only advances when the camera is still, so the selection
+  // spinner appears frozen relative to the scene while panning/zooming.
+  let spinnerTime = 0
+  let lastFrameTime = performance.now()
 
   // Per-element movement tracking
   // Tracks previous positions and movement state for each node
@@ -158,6 +165,15 @@ export function useWebGLGraphRenderer(
 
   // Convert graph links to WebGL edge format with per-element movement tracking
   function convertLinks(graphLinks: GraphLink[]): EdgeData[] {
+    // The selected connection (link.source is the child/supporting aim,
+    // link.target is the parent/supported aim — see data store link build).
+    const selectedLink = graphUIStore.selectedLink
+
+    // Connection color always matches its supporting aim (the source/child).
+    // Reuse the node colors computed this frame so it respects the active
+    // color mode (status / priority / custom / spin-off) for free.
+    const nodeColorById = new Map(cachedNodeData.map(node => [node.id, node.color]))
+
     const renderedLinks = graphLinks.map(link => {
       const sourceX = link.source.renderPos[0]
       const sourceY = link.source.renderPos[1]
@@ -222,12 +238,13 @@ export function useWebGLGraphRenderer(
         state.share = share
       }
 
-      // Edge color: take the supporting aim's custom color (the source/child of
-      // the link), falling back to neutral gray when it has no custom color.
-      const supportingColor = link.source.customColor
-      const color: [number, number, number] = supportingColor
-        ? applyBrightness(cssColorToRgb(supportingColor))
-        : [0.5, 0.5, 0.5]
+      // Edge color: the supporting aim's (source) node color in the active
+      // color mode, falling back to neutral gray if the node isn't found.
+      const color: [number, number, number] = nodeColorById.get(link.source.id) ?? [0.5, 0.5, 0.5]
+
+      const selected = !!selectedLink &&
+        link.source.id === selectedLink.childId &&
+        link.target.id === selectedLink.parentId
 
       return {
         id: edgeKey,
@@ -236,7 +253,8 @@ export function useWebGLGraphRenderer(
         color,
         opacity: 0.6,
         geometry,
-        moving: state.state > 0
+        moving: state.state > 0,
+        selected
       }
     })
 
@@ -264,7 +282,8 @@ export function useWebGLGraphRenderer(
           0.5,
           { widthFactor: 1 }
         ),
-        moving: true
+        moving: true,
+        selected: false
       })
     }
 
@@ -336,6 +355,15 @@ export function useWebGLGraphRenderer(
       arrowRenderer.updateEdges(cachedEdgeData)
     }
 
+    // Advance the spinner/animation clock only while the camera is still, so
+    // the selection animations appear frozen relative to the scene during
+    // moves. Shared by the selection spinner and the selected-connection stripes.
+    const now = performance.now()
+    if (!isMoving) {
+      spinnerTime += (now - lastFrameTime) / 1000
+    }
+    lastFrameTime = now
+
     // Begin TAA pass (render to current framebuffer with MRT)
     if (taaPass) {
       taaPass.begin()
@@ -343,7 +371,7 @@ export function useWebGLGraphRenderer(
 
     // Render arrows first, then nodes on top
     if (arrowRenderer) {
-      arrowRenderer.render(jitterX, jitterY)
+      arrowRenderer.render(jitterX, jitterY, spinnerTime)
     }
 
     renderer.render(jitterX, jitterY)
@@ -352,6 +380,17 @@ export function useWebGLGraphRenderer(
     if (taaPass) {
       taaPass.setCameraMoving(isMoving)
       taaPass.end()
+    }
+
+    // Post-TAA overlay: draw the selection spinner crisply onto the resolved
+    // screen image (the dots move, so we keep them out of the TAA history).
+    if (spinnerRenderer) {
+      const selected = cachedNodeData.filter(node => node.selected)
+      spinnerRenderer.updateInstances(
+        selected.map(node => ({ x: node.x, y: node.y, r: node.r }))
+      )
+      spinnerRenderer.setCamera(buildViewMatrix(panX, panY, visualScale))
+      spinnerRenderer.render(spinnerTime)
     }
 
     // Continue loop
@@ -374,6 +413,9 @@ export function useWebGLGraphRenderer(
       if (gl) {
         arrowRenderer = new ArrowRenderer(gl, canvasRef.value)
         await arrowRenderer.init()
+
+        spinnerRenderer = new SelectionSpinnerRenderer(gl, canvasRef.value)
+        await spinnerRenderer.init()
 
         taaPass = new TAAPass(gl, canvasRef.value)
         await taaPass.init()
@@ -438,6 +480,9 @@ export function useWebGLGraphRenderer(
     }
     if (arrowRenderer) {
       arrowRenderer.destroy()
+    }
+    if (spinnerRenderer) {
+      spinnerRenderer.destroy()
     }
     if (renderer) {
       renderer.destroy()
