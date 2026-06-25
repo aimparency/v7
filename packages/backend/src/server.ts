@@ -3,6 +3,7 @@ import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
 import fs from 'fs-extra';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { initTRPC } from '@trpc/server';
@@ -700,8 +701,17 @@ async function migrateCommittedInField(projectPath: string): Promise<void> {
 // Create the actual tRPC router
 // --- Spin-off helpers ---------------------------------------------------------
 
+// Expand a leading `~` / `~/` to the user's home directory so typed paths like
+// `~/projects/foo` resolve correctly on the backend.
+function expandHome(rawPath: string): string {
+  if (rawPath === '~') return os.homedir();
+  if (rawPath.startsWith('~/')) return path.join(os.homedir(), rawPath.slice(2));
+  return rawPath;
+}
+
 function resolveBowmanPath(rawPath: string): string {
-  return rawPath.endsWith(AIMPARENCY_DIR_NAME) ? rawPath : path.join(rawPath, AIMPARENCY_DIR_NAME);
+  const expanded = expandHome(rawPath);
+  return expanded.endsWith(AIMPARENCY_DIR_NAME) ? expanded : path.join(expanded, AIMPARENCY_DIR_NAME);
 }
 
 // Does a target path already hold a .bowman with aim files? (spin-off guard:
@@ -723,6 +733,36 @@ async function deleteAimCompletely(rawProjectPath: string, aimId: string): Promi
 }
 
 const spinOffRouter = t.router({
+  // Tab-completion for the target path chooser: given a partial path (supporting
+  // `~/` and absolute `/`), return matching child directory names and whether the
+  // resolved path already holds a .bowman graph (so the UI can warn).
+  completePath: delayedProcedure
+    .input(z.object({ partial: z.string() }))
+    .query(async ({ input }: any) => {
+      const expanded = expandHome(input.partial);
+      // Split into the directory to list and the (possibly empty) prefix to match.
+      const endsWithSep = expanded.endsWith(path.sep) || expanded === '';
+      const dir = endsWithSep ? expanded : path.dirname(expanded);
+      const prefix = endsWithSep ? '' : path.basename(expanded);
+      const listDir = dir === '' ? '.' : dir;
+
+      let matches: string[] = [];
+      try {
+        const entries = await fs.readdir(listDir, { withFileTypes: true });
+        matches = entries
+          .filter((entry) => entry.isDirectory() && entry.name.startsWith(prefix))
+          .map((entry) => path.join(dir, entry.name))
+          .sort();
+      } catch {
+        // Non-existent / unreadable dir: no completions.
+      }
+
+      return {
+        matches,
+        bowmanExists: await bowmanHasAims(expanded),
+      };
+    }),
+
   // Dry-run: classify aims into kept (green) / overlap (orange) / spun-off (red)
   // for the graph preview, plus a warning if the target already has a graph.
   preview: delayedProcedure
@@ -748,7 +788,7 @@ const spinOffRouter = t.router({
   // Execute: write the branch (roots + supporters) into a fresh .bowman at
   // targetPath, then optionally prune the source — deleting only aims that serve
   // the selection exclusively, keeping shared aims (overlap). Conservative.
-  apply: delayedProcedure
+  execute: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
       rootIds: z.array(z.string().uuid()).min(1),

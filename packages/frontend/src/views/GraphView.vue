@@ -3,11 +3,13 @@ import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useGraphUIStore } from '../stores/ui/graph-store'
+import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
 import GraphSidePanel from '../components/GraphSidePanel.vue'
 import PhaseSearchModal from '../components/PhaseSearchModal.vue'
+import SpinOffApplyModal from '../components/SpinOffApplyModal.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import * as vec2 from '../utils/vec2'
 import { useGraphSimulation } from '../composables/useGraphSimulation'
@@ -18,6 +20,7 @@ import { calculateArrowGeometry, hitTestArrow } from '../webgl/utils/arrow-geome
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 const graphUIStore = useGraphUIStore()
+const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
 const mapStore = useMapStore()
 
@@ -441,6 +444,8 @@ function toggleSpinOffPreview() {
       @close="showPhaseFilter = false"
     />
 
+    <SpinOffApplyModal />
+
     <GraphSidePanel v-if="graphUIStore.graphColorMode !== 'spin-off'" />
     <div class="top-controls">
       <button class="control-btn" @click="dataStore.loadAllAims(projectStore.projectPath)" title="Reload Data">
@@ -489,7 +494,9 @@ function toggleSpinOffPreview() {
         </svg>
       </button>
       
-      <div class="segmented-control">
+      <!-- During spin-off mode the color-mode switch is replaced by the legend
+           (they share .segmented-control styling). -->
+      <div v-if="graphUIStore.graphColorMode !== 'spin-off'" class="segmented-control">
         <button
             class="segment-btn"
             :class="{ active: graphUIStore.graphColorMode === 'status' }"
@@ -507,18 +514,32 @@ function toggleSpinOffPreview() {
         >Custom</button>
       </div>
 
+      <div v-else class="segmented-control spinoff-legend">
+        <span class="so-dot so-green"></span>kept
+        <span class="so-dot so-orange"></span>both
+        <span class="so-dot so-red"></span>spun&nbsp;off
+      </div>
+
       <button
+          v-if="graphUIStore.graphColorMode !== 'spin-off'"
           class="control-btn"
-          :class="{ active: graphUIStore.graphColorMode === 'spin-off' }"
           @click="toggleSpinOffPreview"
           title="Spin-off preview: click aims to toggle them as roots (green = kept, orange = both, red = spun off)"
       >⎇ Spin-off</button>
 
-      <div v-if="graphUIStore.graphColorMode === 'spin-off'" class="phase-badge spinoff-legend">
-        <span class="so-dot so-green"></span>kept
-        <span class="so-dot so-orange"></span>both
-        <span class="so-dot so-red"></span>spun&nbsp;off
-        <button class="phase-badge-clear" @click="graphUIStore.clearSpinOffPreview()" title="Exit spin-off preview">×</button>
+      <!-- In spin-off mode the button splits into apply + cancel (× exits the preview). -->
+      <div v-else class="spinoff-split">
+        <button
+            class="spinoff-split-apply"
+            :disabled="graphUIStore.spinOffPreviewRootIds.length === 0"
+            @click="modalStore.openSpinOffApplyModal()"
+            title="Apply the spin-off: write the selected branch into a new graph"
+        >⎇ Apply</button>
+        <button
+            class="spinoff-split-cancel"
+            @click="graphUIStore.clearSpinOffPreview()"
+            title="Exit spin-off preview"
+        >×</button>
       </div>
 
       <div v-if="graphUIStore.phaseFilter" class="phase-badge">
@@ -665,13 +686,48 @@ function toggleSpinOffPreview() {
     }
 }
 
-/* Spin-off preview legend: neutral chrome with colored dots matching node colors. */
+/* Spin-off preview legend reuses .segmented-control's box; just lays out the dots. */
 .spinoff-legend {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
     color: #ddd;
+    font-size: 0.8rem;
+}
 
-    .phase-badge-clear { color: #ddd; }
+/* Apply + × cancel live in one box matching the spin-off mode button chrome. */
+.spinoff-split {
+    display: flex;
+    align-items: stretch;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.spinoff-split button {
+    background: transparent;
+    border: none;
+    color: #fff;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.spinoff-split button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+}
+.spinoff-split .spinoff-split-apply:disabled {
+    color: #666;
+    cursor: not-allowed;
+}
+.spinoff-split .spinoff-split-cancel {
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f85149;
+    font-size: 1rem;
+    line-height: 1;
+}
+.spinoff-split .spinoff-split-cancel:hover {
+    background: rgba(248, 81, 73, 0.2);
 }
 
 .so-dot {

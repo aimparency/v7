@@ -59,6 +59,9 @@ export const useUIModalStore = defineStore('ui-modal', {
     phaseSearchPromptAdditionalOptions: [] as PhaseSearchAdditionalOption[],
     showSettingsModal: false,
 
+    // Spin-off apply: target-path chooser dialog opened from the spin-off split button.
+    showSpinOffApplyModal: false,
+
     teleportCutAimId: null as string | null,
     teleportSource: null as TeleportSource | null,
     teleportCopyAimId: null as string | null,
@@ -153,6 +156,14 @@ export const useUIModalStore = defineStore('ui-modal', {
     closeAimEditModal() {
       this.showAimEditModal = false
       this.aimEditModalAimId = null
+    },
+
+    openSpinOffApplyModal() {
+      this.showSpinOffApplyModal = true
+    },
+
+    closeSpinOffApplyModal() {
+      this.showSpinOffApplyModal = false
     },
 
     openConnectionDetailsModal(parentId: string, childId: string) {
