@@ -225,6 +225,35 @@ test('a manual stop cancels the pending auto-retry', (t) => {
   assert.equal(service.enabled, false, 'no auto-retry after a manual stop');
 });
 
+test('emergency stop (quota / usage limit) auto-retries despite the emergency flag', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const service = makeService();
+  service.enabled = true;
+
+  service.triggerEmergencyStop();
+  assert.equal(service.enabled, false, 'emergency stop halts the loop');
+  assert.equal(service.emergencyStopped, true, 'emergency flag is set');
+  assert.notEqual((service as any).errorRetryTimeout, null, 'auto-retry is scheduled even for an emergency stop');
+
+  t.mock.timers.tick(TEN_MINUTES_MS);
+  assert.equal(service.enabled, true, 'usage-limit hit recovers itself after the delay');
+  assert.equal(service.emergencyStopped, false, 're-enabling clears the emergency flag');
+  assert.equal((service as any).supervisorState.getState(), 'EXPLORING');
+});
+
+test('a manual stop cancels a pending emergency-stop auto-retry', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const service = makeService();
+  service.enabled = true;
+
+  service.triggerEmergencyStop();
+  service.setEnabled(false); // operator intervenes during the backoff window
+  assert.equal((service as any).errorRetryTimeout, null, 'pending emergency retry was cleared');
+
+  t.mock.timers.tick(TEN_MINUTES_MS);
+  assert.equal(service.enabled, false, 'no auto-retry after a manual stop');
+});
+
 // Busy-timeout decision: must trip only on a frozen screen, never on an idle
 // session or a worker that is actively producing output. Locks in the two
 // fixes that kept the supervisor falsely erroring with "busy timeout 300s".

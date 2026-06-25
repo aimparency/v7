@@ -312,10 +312,15 @@ export class WatchdogService {
     this.log(`Auto-retry scheduled in ${Math.round(AUTO_RETRY_AFTER_ERROR_MS / 60000)} min (fresh EXPLORING restart).`);
     this.errorRetryTimeout = setTimeout(() => {
       this.errorRetryTimeout = null;
-      // Skip if the operator already restarted, or an emergency stop (quota /
-      // model switch) is in effect — those should stay stopped.
-      if (this.enabled || this.emergencyStopped) return;
-      this.log('Auto-retry: re-enabling supervisor after error.');
+      // Skip only if the operator already restarted manually. An active
+      // emergency stop (quota limit / model switch) must NOT block the retry —
+      // a usage-limit hit should recover on its own once the quota window rolls
+      // over, so we retry despite it. setEnabled(true) clears emergencyStopped.
+      // If the limit is still in force the supervisor will re-trigger the
+      // emergency stop, which reschedules this retry: effectively a retry every
+      // AUTO_RETRY_AFTER_ERROR_MS until the quota frees up.
+      if (this.enabled) return;
+      this.log('Auto-retry: re-enabling supervisor after error/emergency stop.');
       this.setEnabled(true);
     }, AUTO_RETRY_AFTER_ERROR_MS);
   }
@@ -390,6 +395,11 @@ export class WatchdogService {
     if (this.onEmergencyStop) {
       this.onEmergencyStop();
     }
+    // A quota/usage-limit hit is transient — the window rolls over. Schedule the
+    // same auto-retry used for ordinary errors so an unattended session resumes
+    // itself instead of sitting stopped until a human returns. A manual
+    // enable/disable cancels it (setEnabled -> clearAutoRetry).
+    this.scheduleAutoRetry();
     this.onStateChange?.();
   }
 
