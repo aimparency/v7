@@ -160,6 +160,13 @@ export const useGraphUIStore = defineStore('ui-graph', {
       this.spinOffPreviewRootIds = []
       this.graphColorMode = this.spinOffPreviewPrevMode ?? 'status'
       this.spinOffPreviewPrevMode = null
+    },
+
+    // Add/remove an aim as a spin-off root (click-to-toggle during preview).
+    toggleSpinOffRoot(aimId: string) {
+      this.spinOffPreviewRootIds = this.spinOffPreviewRootIds.includes(aimId)
+        ? this.spinOffPreviewRootIds.filter((id) => id !== aimId)
+        : [...this.spinOffPreviewRootIds, aimId]
     }
   }
 })

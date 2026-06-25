@@ -504,6 +504,12 @@ export function useGraphInteraction(
     }
 
     const onNodeClick = async (node: GraphNode) => {
+        // In spin-off preview, a click toggles the aim as a root (multi-select)
+        // and recolors the graph — no selection / detail panel.
+        if (graphUIStore.graphColorMode === 'spin-off') {
+            if (!mapStore.cursorMoved) graphUIStore.toggleSpinOffRoot(node.id)
+            return
+        }
         if (!mapStore.cursorMoved) {
             if (graphUIStore.graphSelectedAimId === node.id) {
                 // Already selected -> Start tracking

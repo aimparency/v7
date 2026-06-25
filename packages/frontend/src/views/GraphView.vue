@@ -358,8 +358,11 @@ function getNodeTitleLines(text: string): string[] {
 function toggleSpinOffPreview() {
   if (graphUIStore.graphColorMode === 'spin-off') {
     graphUIStore.clearSpinOffPreview()
-  } else if (graphUIStore.graphSelectedAimId) {
-    graphUIStore.previewSpinOff([graphUIStore.graphSelectedAimId])
+  } else {
+    // Seed with the current selection if any; otherwise start empty and let the
+    // user pick roots by clicking aims.
+    const seed = graphUIStore.graphSelectedAimId ? [graphUIStore.graphSelectedAimId] : []
+    graphUIStore.previewSpinOff(seed)
   }
 }
 </script>
@@ -438,7 +441,7 @@ function toggleSpinOffPreview() {
       @close="showPhaseFilter = false"
     />
 
-    <GraphSidePanel />
+    <GraphSidePanel v-if="graphUIStore.graphColorMode !== 'spin-off'" />
     <div class="top-controls">
       <button class="control-btn" @click="dataStore.loadAllAims(projectStore.projectPath)" title="Reload Data">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -507,9 +510,8 @@ function toggleSpinOffPreview() {
       <button
           class="control-btn"
           :class="{ active: graphUIStore.graphColorMode === 'spin-off' }"
-          :disabled="graphUIStore.graphColorMode !== 'spin-off' && !graphUIStore.graphSelectedAimId"
           @click="toggleSpinOffPreview"
-          title="Preview spin-off from the selected aim (green = kept, orange = both, red = spun off)"
+          title="Spin-off preview: click aims to toggle them as roots (green = kept, orange = both, red = spun off)"
       >⎇ Spin-off</button>
 
       <div v-if="graphUIStore.graphColorMode === 'spin-off'" class="phase-badge spinoff-legend">
