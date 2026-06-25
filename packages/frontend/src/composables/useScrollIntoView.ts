@@ -1,6 +1,12 @@
 import { type Ref } from 'vue'
 
-export function useScrollIntoView(containerRef: Ref<HTMLElement | null>) {
+export function useScrollIntoView(
+  containerRef: Ref<HTMLElement | null>,
+  // Optional sink for the computed target. Lets the caller coalesce this
+  // aim-level scroll with competing phase-level scrolls instead of firing a
+  // second, conflicting smooth animation. Defaults to scrolling directly.
+  applyScroll?: (top: number, behavior: ScrollBehavior) => void
+) {
   const handleScrollRequest = (element: HTMLElement) => {
 
     if (!containerRef.value) {
@@ -89,7 +95,11 @@ export function useScrollIntoView(containerRef: Ref<HTMLElement | null>) {
     const maxScroll = container.scrollHeight - container.clientHeight
     targetScroll = Math.max(0, Math.min(targetScroll, maxScroll))
 
-    container.scrollTo({ top: targetScroll, behavior: 'smooth' })
+    if (applyScroll) {
+      applyScroll(targetScroll, 'smooth')
+    } else {
+      container.scrollTo({ top: targetScroll, behavior: 'smooth' })
+    }
   }
 
   return { handleScrollRequest }
