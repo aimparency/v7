@@ -1,4 +1,5 @@
 import type { Aim } from './types.js';
+import { calculateAimValues } from './value-calculation.js';
 
 /**
  * Classification of every aim under a spin-off of one or more selected root aims.
@@ -94,19 +95,58 @@ export function planSpinOff(aims: Aim[], rootIds: string[]): SpinOffPlan {
   };
 }
 
+export interface SpinOffOptions {
+  /** Compensate for the inflow that copied aims used to receive from non-copied
+   *  parents (the dropped seam edges) by folding that lost flow into their
+   *  intrinsicValue, so the relative weighting of the exported sub-graph survives
+   *  the cut. Defaults off; the value model is only consulted when enabled. */
+  preserveInflow?: boolean;
+}
+
+/**
+ * For each copied aim, the value that flowed into it from parents *outside* the
+ * copy set in the original graph. Dropping those seam edges would otherwise
+ * silently zero this contribution in the isolated spin-off.
+ */
+function externalInflowByAim(aims: Aim[], copySet: Set<string>, byId: Map<string, Aim>): Map<string, number> {
+  const inflow = new Map<string, number>();
+  const { flowValues, totalIntrinsic } = calculateAimValues(aims);
+  if (totalIntrinsic <= 0) return inflow; // no value signal to preserve
+
+  for (const id of copySet) {
+    const a = byId.get(id);
+    if (!a) continue;
+    let lost = 0;
+    for (const parentId of a.supportedAims ?? []) {
+      if (copySet.has(parentId)) continue; // internal edge: recomputed in the new graph
+      // flowValues are normalized (sum to 1); scale back to intrinsic units.
+      lost += (flowValues.get(`${parentId}->${id}`) ?? 0) * totalIntrinsic;
+    }
+    if (lost > 0) inflow.set(id, lost);
+  }
+  return inflow;
+}
+
 /** Plan a spin-off and produce the aim objects to write/delete on each side. */
-export function computeSpinOff(aims: Aim[], rootIds: string[]): SpinOffResult {
+export function computeSpinOff(aims: Aim[], rootIds: string[], options: SpinOffOptions = {}): SpinOffResult {
   const plan = planSpinOff(aims, rootIds);
   const byId = new Map(aims.map((a) => [a.id, a]));
   const copySet = new Set(plan.copyIds);
   const redSet = new Set(plan.spinOffIds);
 
+  const inflow = options.preserveInflow
+    ? externalInflowByAim(aims, copySet, byId)
+    : new Map<string, number>();
+
   // Spin-off copies: keep only edges whose other end is also copied (drop seam
   // edges to uncopied ancestors), and clear phase commitments (phases not carried).
+  // When preserving inflow, fold each aim's lost external inflow into intrinsicValue.
   const spinOffAims: Aim[] = plan.copyIds.map((id) => {
     const a = byId.get(id)!;
+    const extraIntrinsic = inflow.get(id) ?? 0;
     return {
       ...a,
+      ...(extraIntrinsic > 0 ? { intrinsicValue: (a.intrinsicValue ?? 0) + extraIntrinsic } : {}),
       supportedAims: (a.supportedAims ?? []).filter((p) => copySet.has(p)),
       supportingConnections: (a.supportingConnections ?? []).filter((c) => copySet.has(c.aimId)),
       incoming: a.incoming ? a.incoming.filter((p) => copySet.has(p)) : a.incoming,

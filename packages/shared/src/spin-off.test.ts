@@ -109,6 +109,28 @@ test('multiple roots: union of both branches', () => {
   assert.deepEqual(plan.keptIds, []);
 });
 
+test('preserveInflow: external inflow folded into intrinsicValue of the seam aim', () => {
+  // A (intrinsic source) -> B -> C. Export B: B's inflow from A (dropped) should
+  // be folded into B's intrinsicValue so C still receives weight in the spin-off.
+  const aims = [
+    { ...aim('A', [], ['B']), intrinsicValue: 10 },
+    aim('B', ['A'], ['C']),
+    aim('C', ['B'], []),
+  ];
+
+  const without = computeSpinOff(aims, ['B']);
+  const wB = without.spinOffAims.find((a) => a.id === 'B')!;
+  assert.equal(wB.intrinsicValue, 0); // default: no compensation
+
+  const withInflow = computeSpinOff(aims, ['B'], { preserveInflow: true });
+  const b = withInflow.spinOffAims.find((a) => a.id === 'B')!;
+  // B had no intrinsic of its own but received flow from A; that is now its intrinsic.
+  assert.ok(b.intrinsicValue > 0, `expected B to gain intrinsic inflow, got ${b.intrinsicValue}`);
+  // C has no external parents (its only parent B is copied) → unchanged.
+  const c = withInflow.spinOffAims.find((a) => a.id === 'C')!;
+  assert.equal(c.intrinsicValue, 0);
+});
+
 test('empty / unknown roots produce an empty plan', () => {
   const plan = planSpinOff(exampleGraph(), ['does-not-exist']);
   assert.deepEqual(plan.copyIds, []);

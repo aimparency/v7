@@ -794,6 +794,7 @@ const spinOffRouter = t.router({
       rootIds: z.array(z.string().uuid()).min(1),
       targetPath: z.string(),
       removeFromSource: z.boolean().default(true),
+      preserveInflow: z.boolean().default(true),
     }))
     .mutation(async ({ input }: any) => {
       const source = normalizeProjectPath(input.projectPath);
@@ -807,7 +808,7 @@ const spinOffRouter = t.router({
 
       const aims = await listAims(source);
       const { plan, spinOffAims, sourceAimsToRewrite, sourceAimIdsToDelete } =
-        computeSpinOff(aims, input.rootIds);
+        computeSpinOff(aims, input.rootIds, { preserveInflow: input.preserveInflow });
 
       // Write the spin-off repo: structure + meta (statuses/color carried), aims.
       await ensureProjectStructure(target);

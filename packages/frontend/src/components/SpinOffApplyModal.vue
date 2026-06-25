@@ -15,6 +15,7 @@ const graphUIStore = useGraphUIStore()
 const pathInput = ref('')
 const pathInputEl = ref<HTMLInputElement>()
 const removeFromSource = ref(true)
+const preserveInflow = ref(true)
 const openInNewTab = ref(true)
 const candidates = ref<string[]>([])
 const bowmanExists = ref(false)
@@ -100,7 +101,8 @@ const apply = async () => {
       projectPath: projectStore.projectPath,
       rootIds: rootIds.value,
       targetPath: pathInput.value.trim(),
-      removeFromSource: removeFromSource.value
+      removeFromSource: removeFromSource.value,
+      preserveInflow: preserveInflow.value
     })
     // Open the spin-off in a new tab on the same host (result.target is the
     // resolved absolute .bowman path the backend can load directly).
@@ -144,6 +146,7 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
   if (show) {
     pathInput.value = defaultTargetPath()
     removeFromSource.value = true
+    preserveInflow.value = true
     openInNewTab.value = true
     candidates.value = []
     errorMessage.value = ''
@@ -190,6 +193,11 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
     <label class="checkbox-row">
       <input type="checkbox" v-model="removeFromSource" />
       <span>Remove spun-off aims from source graph (keeps shared aims)</span>
+    </label>
+
+    <label class="checkbox-row">
+      <input type="checkbox" v-model="preserveInflow" />
+      <span>Preserve external inflow as intrinsic value (keeps relative weights)</span>
     </label>
 
     <label class="checkbox-row">
