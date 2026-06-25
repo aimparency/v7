@@ -50,19 +50,18 @@ let fitAddon: FitAddon;
 let resizeObserver: ResizeObserver;
 let scrollTimeout: any = null;
 
-// Touch-scroll state. xterm only scrolls its own scrollback viewport on touch,
-// which is empty for a full-screen TUI (alternate buffer). So for the alt buffer
-// we translate vertical drags into arrow-key scroll sequences — mirroring what
-// xterm already does for the mouse wheel ("alternate scroll mode"), which is why
-// wheel works on desktop but touch doesn't.
+// Touch scrolling. xterm only handles touch when the app has NO mouse tracking,
+// and even then only scrolls its own scrollback viewport — it never forwards
+// touch to the app. Full-screen TUIs run in the alt buffer WITH mouse tracking,
+// so xterm ignores touch there entirely. The wheel, however, IS routed through
+// xterm's mouse service (which is why wheel-scroll works on desktop). So we
+// replay the vertical drag as a `wheel` event on xterm's own element and let its
+// native wheel handling encode it correctly — SGR mouse-wheel to the TUI in the
+// alt buffer, scrollback in the normal buffer. No bespoke key translation.
 let touchLastY: number | null = null;
 let touchAccumY = 0;
 
-const isAltBuffer = () => {
-  try { return term?.buffer?.active?.type === 'alternate'; } catch { return false; }
-};
-
-// Approx pixel height of one terminal row, used to convert drag distance to lines.
+// Approx pixel height of one terminal row — one wheel tick per row dragged.
 const rowPx = () => {
   const h = terminalContainer.value?.clientHeight ?? 0;
   const rows = term?.rows ?? 0;
@@ -70,23 +69,40 @@ const rowPx = () => {
 };
 
 const handleTouchStart = (e: TouchEvent) => {
-  if (e.touches.length !== 1) { touchLastY = null; return; }
-  touchLastY = e.touches[0].clientY;
+  touchLastY = e.touches.length === 1 ? e.touches[0].clientY : null;
   touchAccumY = 0;
+};
+
+const dispatchWheelLine = (dir: -1 | 1, t: Touch) => {
+  // xterm binds wheel on its root `.xterm` element; dispatch there so its native
+  // wheel handler fires. LINE mode (deltaMode 1) is the key: xterm rounds
+  // sub-line PIXEL deltas to zero and forwards nothing, but a whole-line tick is
+  // always forwarded — as an SGR mouse-wheel event to a mouse-tracking TUI, or a
+  // scrollback line in the normal buffer.
+  const xtermEl = terminalContainer.value?.querySelector('.xterm') as HTMLElement | null;
+  if (!xtermEl) return;
+  xtermEl.dispatchEvent(new WheelEvent('wheel', {
+    deltaY: dir,
+    deltaMode: 1, // lines
+    clientX: t.clientX,
+    clientY: t.clientY,
+    bubbles: false,
+    cancelable: true,
+  }));
 };
 
 const handleTouchMove = (e: TouchEvent) => {
   if (touchLastY === null || e.touches.length !== 1) return;
-  // Normal buffer has real scrollback — let xterm handle the drag natively.
-  if (!isAltBuffer()) return;
-  const y = e.touches[0].clientY;
-  touchAccumY += y - touchLastY; // positive = finger dragged down (reveal older content)
-  touchLastY = y;
+  const t = e.touches[0];
+  touchAccumY += t.clientY - touchLastY;
+  touchLastY = t.clientY;
+  e.preventDefault(); // own the gesture so the browser doesn't steal it mid-drag
+
+  // Emit one line-wheel per row dragged. Finger down (accum > 0) reveals older
+  // content = wheel up (deltaY -1); finger up = wheel down (+1).
   const step = rowPx();
-  let moved = false;
-  while (touchAccumY >= step) { props.onData?.(ARROW_UP); touchAccumY -= step; moved = true; }
-  while (touchAccumY <= -step) { props.onData?.(ARROW_DOWN); touchAccumY += step; moved = true; }
-  if (moved) e.preventDefault(); // stop the page/panel from scrolling instead
+  while (touchAccumY >= step) { dispatchWheelLine(-1, t); touchAccumY -= step; }
+  while (touchAccumY <= -step) { dispatchWheelLine(1, t); touchAccumY += step; }
 };
 
 const handleTouchEnd = () => { touchLastY = null; touchAccumY = 0; };
@@ -263,6 +279,20 @@ defineExpose({
   overflow: hidden;
   padding: 0.5rem;
   box-sizing: border-box;
+  /* We drive scrolling ourselves from touchmove; tell the browser not to claim
+     drags for native panning/zoom, which otherwise steals the gesture mid-drag. */
+  touch-action: none;
+}
+
+/* The element the finger actually lands on is xterm's .xterm-viewport, which is
+   `overflow-y: scroll` (a scroll container) with the default touch-action: auto.
+   The browser honors the touched element's own touch-action, so it starts
+   panning the viewport, steals the touch (touchcancel), and our drag dies after
+   one move. Force touch-action: none on xterm's inner elements too. */
+.terminal-container :deep(.xterm),
+.terminal-container :deep(.xterm-viewport),
+.terminal-container :deep(.xterm-screen) {
+  touch-action: none;
 }
 
 /* Keystroke helper — hidden on devices with a precise pointer (desktop),

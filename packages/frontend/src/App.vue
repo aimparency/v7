@@ -97,6 +97,11 @@ watch(() => projectStore.showWatchdog, (val) => {
   }
 })
 
+// Persist terminal fullscreen so a reload restores it.
+watch(() => projectStore.terminalFullscreen, (val) => {
+  localStorage.setItem('aimparency-terminal-fullscreen', String(val))
+})
+
 watch(() => projectStore.isInProjectSelection, (isInProjectSelection) => {
   if (isInProjectSelection) {
     void refreshDiscoveredProjects()

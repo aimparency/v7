@@ -25,8 +25,8 @@ export const useProjectStore = defineStore('project', {
     watchdogMaximized: false,
     // Terminal-only mode: hides ALL chrome (both headers, tabs, footer) and
     // renders just the active terminal full-bleed, with a floating exit button.
-    // Transient by design — not persisted, so a reload always returns to normal.
-    terminalFullscreen: false,
+    // Persisted so a reload restores the fullscreen session view (see App.vue watch).
+    terminalFullscreen: localStorage.getItem('aimparency-terminal-fullscreen') === 'true',
     keyboardHints: [] as Hint[]
   }),
 
