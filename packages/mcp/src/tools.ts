@@ -3,6 +3,44 @@ import { calculateAimValues } from "shared";
 import { trpc } from "./client.js";
 import { AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { execFileSync } from "child_process";
+import * as path from "path";
+
+// --- Realized-cost signal (c0a45822: reality→priority feedback) ---------------
+// Real git commits that reference an aim are evidence of actual output. Counting
+// them grounds the COST side of priority in reality WITHOUT mutating the
+// human-set intrinsicValue/cost (the chosen, non-corrupting design). Heuristic:
+// a commit "references" an aim when its message contains the aim's 8-char id
+// prefix — the convention used in this repo's commit messages.
+export function countAimReferences(commitMessages: string[], aimIds: string[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  const prefixes = aimIds
+    .filter((id) => typeof id === "string" && id.length >= 8)
+    .map((id) => [id, id.slice(0, 8)] as const);
+  for (const msg of commitMessages) {
+    for (const [id, prefix] of prefixes) {
+      if (msg.includes(prefix)) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+// Best-effort: one commit message per element (subject+body). Returns [] when the
+// project isn't a git repo or git is unavailable, so the signal degrades
+// gracefully and never breaks prioritization.
+function getRepoCommitMessages(projectPath: string, maxCommits = 2000): string[] {
+  try {
+    const repoRoot = path.basename(projectPath) === ".bowman" ? path.dirname(projectPath) : projectPath;
+    const out = execFileSync(
+      "git",
+      ["log", `-${maxCommits}`, "--format=%s%n%b%n--END-COMMIT--"],
+      { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 32 * 1024 * 1024 }
+    );
+    return out.split("--END-COMMIT--").filter((m) => m.trim().length > 0);
+  } catch {
+    return [];
+  }
+}
 
 function formatAim(aim: any) {
   if (aim.supportingConnections) {
@@ -276,7 +314,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Start the work loop here: open aims of the active phase (resolved by date, or pass phaseId), ranked by flow-based value/cost, with phase economics + data-quality diagnostics. Only ranks phase-committed aims — if it returns little, much open work is likely uncommitted to any phase; check list_aims uncommitted=true (or graph_hygiene) and commit_aim_to_phase. Distrust the ranking when diagnostics flag ~0-value or cost-less aims — fix those first.",
+          description: "Start the work loop here: open aims of the active phase (resolved by date, or pass phaseId), ranked by flow-based value/cost, with phase economics + data-quality diagnostics. Only ranks phase-committed aims — if it returns little, much open work is likely uncommitted to any phase; check list_aims uncommitted=true (or graph_hygiene) and commit_aim_to_phase. Distrust the ranking when diagnostics flag ~0-value or cost-less aims — fix those first. Each aim also reports realizedCommits (git commits referencing its id = real output so far); openAimsWithNoRealizedOutput flags high-ranked aims that keep getting picked but never actually advance.",
           inputSchema: {
             type: "object",
             properties: {
@@ -979,12 +1017,25 @@ export function registerTools(server: Server, clientOverride?: any) {
             ? phaseFlowedValue / totalIntrinsic
             : 0;
 
+          // Realized-cost signal: real commits referencing each open aim = actual
+          // output. Grounds attention in reality (which ranked aims have actually
+          // produced work) without mutating the human-set value model.
+          const commitMessages = getRepoCommitMessages(args.projectPath as string);
+          const realized = countAimReferences(commitMessages, openInPhase.map((a: any) => a.id));
+          const realizedSignalAvailable = commitMessages.length > 0;
+          // High-priority aims with a real cost but zero realized output are the
+          // ones the loop keeps ranking yet never actually advances — surface them.
+          const noRealizedOutput = realizedSignalAvailable
+            ? openInPhase.filter((a: any) => (a.cost ?? 0) > 0 && !(realized.get(a.id) ?? 0)).length
+            : 0;
+
           const prioritized = openInPhase
             .map((a: any) => ({
               ...a,
               _priority: priorities.get(a.id) ?? 0,
               _flowedValue: (values.get(a.id) ?? 0) * totalIntrinsic,
               _aggregatedCost: costs.get(a.id) ?? 0,
+              _realizedCommits: realized.get(a.id) ?? 0,
             }))
             .sort((a: any, b: any) => b._priority - a._priority)
             .slice(0, (args.limit as number) || 10);
@@ -1016,6 +1067,8 @@ export function registerTools(server: Server, clientOverride?: any) {
                     openAims: openInPhase.length,
                     missingCostEstimate: missingCost,
                     disconnectedFromValue: missingValue,
+                    realizedSignal: realizedSignalAvailable ? "git-commit-references" : "unavailable (not a git repo / no commits)",
+                    openAimsWithNoRealizedOutput: realizedSignalAvailable ? noRealizedOutput : undefined,
                     note: missingValue > 0
                       ? `${missingValue} aim(s) have zero flowed value — they are disconnected from any intrinsic value source in the graph. Their priorities are unreliable.`
                       : missingCost > 0
@@ -1029,6 +1082,7 @@ export function registerTools(server: Server, clientOverride?: any) {
                     priority: fmt(a._priority),
                     flowedValue: fmt(a._flowedValue),
                     aggregatedCost: fmt(a._aggregatedCost),
+                    realizedCommits: a._realizedCommits,
                     intrinsicValue: a.intrinsicValue,
                     rawCost: a.cost,
                     status: a.status?.state,

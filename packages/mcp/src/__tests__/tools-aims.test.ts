@@ -1,6 +1,6 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { registerTools } from '../tools.js';
+import { registerTools, countAimReferences } from '../tools.js';
 import { MockServer, caller, createCallerProxy, createTestContext } from './test-utils.js';
 
 let ctx: ReturnType<typeof createTestContext>;
@@ -121,6 +121,23 @@ test('MCP Tools - list_aims uncommitted surfaces parented-but-unphased aims that
   })).content[0].text).map((x: any) => x.id);
   assert.ok(floating.includes(a), 'floating includes the orphan');
   assert.ok(!floating.includes(c), 'floating MISSES the connected-but-unphased aim (the discoverability gap)');
+});
+
+test('countAimReferences counts commits referencing an aim id prefix (realized-cost signal)', () => {
+  const ids = [
+    'de22b7f3-ad77-4bcc-bd9f-aabbccddeeff', // referenced twice
+    'b03ad58e-4518-4a35-9a35-36f58ee9b001', // referenced once
+    '0622adb1-e79d-4837-b894-199d92ca199d', // not referenced
+  ];
+  const commits = [
+    'feat(supervisor): real reflection (de22b7f3, approach B)\n\nbody text',
+    'chore(graph): split b03ad58e; also touched de22b7f3 followup',
+    'unrelated cleanup commit with no aim id',
+  ];
+  const counts = countAimReferences(commits, ids);
+  assert.equal(counts.get(ids[0]), 2, 'de22b7f3 referenced in two commits');
+  assert.equal(counts.get(ids[1]), 1, 'b03ad58e referenced once');
+  assert.equal(counts.get(ids[2]) ?? 0, 0, 'unreferenced aim has zero');
 });
 
 test('MCP Tools - list_phase_aims_recursive', async () => {
