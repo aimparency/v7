@@ -179,12 +179,16 @@ export const retry: Action = {
 
 export const compact: Action = {
   name: 'compact',
-  description: 'Compact the worker session context to reduce token usage and focus on the current task. Use when the worker has too much context or is repeating itself.',
+  description: 'Compact the worker session context to reduce token usage and focus on the current task. Use when the worker has too much context or is repeating itself. Compaction wipes the worker\'s memory, so this is the moment to reflect: attach what you learned via patterns/lessonsLearned/systemLimitations so it carries into the next session.',
   parameters: [
-    { name: 'text', description: 'Optional extra guidance for the compaction', required: false }
+    { name: 'text', description: 'Optional extra guidance for the compaction', required: false },
+    { name: 'patterns', description: 'Optional: recurring patterns or insights noticed this session', required: false },
+    { name: 'lessonsLearned', description: 'Optional: what to do differently next time', required: false },
+    { name: 'systemLimitations', description: 'Optional: tooling/supervisor limitations that held the session back (input for self-improvement)', required: false }
   ],
   examples: [
-    '{"action": {"type": "compact"}}'
+    '{"action": {"type": "compact"}}',
+    '{"action": {"type": "compact", "lessonsLearned": "verify repo state before claiming done", "systemLimitations": "worker session does not hot-reload; watchdog fixes need a restart"}}'
   ]
 }
 

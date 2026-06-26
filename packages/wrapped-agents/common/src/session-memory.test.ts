@@ -196,3 +196,42 @@ test('summarizeRecentFriction skips malformed lines without failing', async () =
 
   await fs.remove(FRICTION_DIR);
 });
+
+test('extractReflection folds in supervisor reflection fields (approach B)', async () => {
+  const sm = new SessionMemory(TEST_PROJECT_PATH);
+  const mockWorker = new MockAgent('Working on aim abc; All tests passed') as any;
+  const mockWatchdog = new MockAgent('') as any;
+
+  const summary = await sm.extractReflection(mockWorker, mockWatchdog, {
+    patterns: '  instrument-then-diagnose  ',
+    lessonsLearned: 'verify repo state before claiming done',
+    systemLimitations: 'worker session does not hot-reload',
+  });
+
+  assert.ok(summary);
+  assert.equal(summary!.patterns, 'instrument-then-diagnose', 'trims and stores patterns');
+  assert.equal(summary!.lessonsLearned, 'verify repo state before claiming done');
+  assert.equal(summary!.systemLimitations, 'worker session does not hot-reload');
+});
+
+test('extractReflection without reflection leaves fields empty (backward compatible)', async () => {
+  const sm = new SessionMemory(TEST_PROJECT_PATH);
+  const mockWorker = new MockAgent('some work') as any;
+  const mockWatchdog = new MockAgent('') as any;
+
+  const summary = await sm.extractReflection(mockWorker, mockWatchdog);
+  assert.ok(summary);
+  assert.equal(summary!.patterns, '');
+  assert.equal(summary!.lessonsLearned, '');
+  assert.equal(summary!.systemLimitations, '');
+});
+
+test('formatForContext surfaces systemLimitations when present', () => {
+  const summary: SessionSummary = {
+    sessionId: 's1', timestamp: Date.now(), duration: 60000,
+    aimsWorked: [], outcomes: '', patterns: '', lessonsLearned: '',
+    systemLimitations: 'PTY sessions do not hot-reload', rawReflection: '',
+  };
+  const text = SessionMemory.formatForContext([summary]);
+  assert.match(text, /System limitation: PTY sessions do not hot-reload/);
+});

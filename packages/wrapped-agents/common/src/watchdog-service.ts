@@ -1097,7 +1097,7 @@ Please choose one of the valid actions and respond with correct JSON.`;
         break;
 
       case 'compact':
-        await this.executeCompact(action.text);
+        await this.executeCompact(action);
         break;
 
       case 'waiting_for_committed':
@@ -1204,10 +1204,32 @@ Please choose one of the valid actions and respond with correct JSON.`;
     this.turnCount++;
   }
 
-  private async executeCompact(text?: string): Promise<void> {
+  private async executeCompact(action: { text?: string; patterns?: string; lessonsLearned?: string; systemLimitations?: string } = {}): Promise<void> {
     this.log('[StateMachine] Compacting worker context');
-    if (text) {
-        await this.post(this.worker, text);
+
+    // Compaction wipes the worker's context, so this is the one moment to
+    // persist what the session learned. Save the summary BEFORE the compact
+    // command runs, folding in the supervisor's own reflection fields (approach
+    // B) when present. Best-effort: a missing/failed reflection must never block
+    // compaction.
+    if (this.sessionMemory) {
+      try {
+        const summary = await this.sessionMemory.extractReflection(this.worker, this.watchdog, {
+          patterns: action.patterns,
+          lessonsLearned: action.lessonsLearned,
+          systemLimitations: action.systemLimitations,
+        });
+        if (summary) {
+          await this.sessionMemory.saveSummary(summary);
+          this.log(`Session memory saved: ${summary.sessionId}`);
+        }
+      } catch (error) {
+        this.log(`Failed to save session memory before compact: ${error}`);
+      }
+    }
+
+    if (action.text) {
+        await this.post(this.worker, action.text);
         await this.wait(1000);
     }
     await this.post(this.worker, this.profile.compactCommand);

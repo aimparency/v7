@@ -10,7 +10,22 @@ export interface SessionSummary {
   outcomes: string;
   patterns: string;
   lessonsLearned: string;
+  /** What system/tooling limitations held the session back. Optional: older
+   * summaries predate this field. */
+  systemLimitations?: string;
   rawReflection: string;
+}
+
+/**
+ * Reflection fields the supervisor can attach to its compact decision (approach
+ * B: folded into the WRAPPING_UP/compact action JSON, no extra round-trip). All
+ * optional — when omitted, extractReflection falls back to its heuristic
+ * scrollback capture so the live path is unchanged.
+ */
+export interface ReflectionInput {
+  patterns?: string;
+  lessonsLearned?: string;
+  systemLimitations?: string;
 }
 
 export class SessionMemory {
@@ -39,33 +54,22 @@ export class SessionMemory {
   }
 
   /**
-   * Extract learning and reflection from worker before compaction
+   * Build the session summary saved at compaction time.
+   *
+   * aimsWorked / outcomes / rawReflection are heuristically extracted from the
+   * worker's terminal scrollback. patterns / lessonsLearned / systemLimitations
+   * come from the supervisor's own reflection when it attaches them to the
+   * compact decision (approach B) — far higher signal than scrollback. When the
+   * supervisor omits them they stay '' (the previous behavior), so the live path
+   * is never blocked by a missing or malformed reflection.
    */
-  async extractReflection(worker: Agent, watchdog: Agent): Promise<SessionSummary | null> {
+  async extractReflection(
+    worker: Agent,
+    watchdog: Agent,
+    reflection?: ReflectionInput
+  ): Promise<SessionSummary | null> {
     try {
-      // Get recent work context from worker
       const workerContext = worker.getLines(100);
-
-      // Ask watchdog to reflect on the session
-      const reflectionPrompt = `
-You are reflecting on the autonomous work session that just completed.
-
-Recent work output:
-${workerContext}
-
-Please provide a brief reflection in JSON format:
-{
-  "aimsWorked": ["list of aim IDs or descriptions worked on"],
-  "outcomes": "brief summary of what was accomplished",
-  "patterns": "any recurring patterns or insights noticed",
-  "lessonsLearned": "what would you do differently next time"
-}
-
-Respond with ONLY the JSON object, no markdown, no code blocks.`;
-
-      // Note: This is a simplified implementation that captures the context
-      // A full implementation would need to wait for watchdog response
-      // For now, we'll store the raw context and metadata
 
       const summary: SessionSummary = {
         sessionId: this.sessionId,
@@ -73,8 +77,9 @@ Respond with ONLY the JSON object, no markdown, no code blocks.`;
         duration: Date.now() - this.sessionStartTime,
         aimsWorked: this.extractAimIds(workerContext),
         outcomes: this.extractOutcomes(workerContext),
-        patterns: '',
-        lessonsLearned: '',
+        patterns: reflection?.patterns?.trim() ?? '',
+        lessonsLearned: reflection?.lessonsLearned?.trim() ?? '',
+        systemLimitations: reflection?.systemLimitations?.trim() ?? '',
         rawReflection: workerContext.slice(-2000) // Last 2000 chars
       };
 
@@ -208,6 +213,10 @@ Respond with ONLY the JSON object, no markdown, no code blocks.`;
 
       if (summary.lessonsLearned) {
         lines.push(`  - Lesson: ${summary.lessonsLearned.slice(0, 200)}`);
+      }
+
+      if (summary.systemLimitations) {
+        lines.push(`  - System limitation: ${summary.systemLimitations.slice(0, 200)}`);
       }
 
       lines.push('');
