@@ -54,6 +54,46 @@ test('MCP Tools - Aims CRUD', async (t) => {
   assert.equal(aims.length, 0);
 });
 
+test('MCP Tools - update_aim nudges to verify when marking done without a reflection', async () => {
+  const server = new MockServer();
+  const callerProxy = createCallerProxy(caller);
+  registerTools(server as any, callerProxy as any);
+
+  await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Verify me' });
+  const aimId = (await caller.aim.list({ projectPath: ctx.projectPath }))[0].id;
+
+  // Done without a reflection -> nudge.
+  const noReflection = await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId,
+    status: { state: 'done' },
+  });
+  assert.match(noReflection.content[0].text, /verified-done/, 'nudges when done without reflection');
+
+  // Add a reflection, then mark done again -> no nudge.
+  await server.callTool('addReflection', {
+    projectPath: ctx.projectPath,
+    aimId,
+    reflection: {
+      context: 'c', outcome: 'o', effectiveness: 'e', lesson: 'l',
+    },
+  });
+  const withReflection = await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId,
+    status: { state: 'done' },
+  });
+  assert.doesNotMatch(withReflection.content[0].text, /verified-done/, 'no nudge once a reflection exists');
+
+  // Non-done updates never nudge.
+  const openUpdate = await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId,
+    status: { state: 'open' },
+  });
+  assert.doesNotMatch(openUpdate.content[0].text, /verified-done/, 'no nudge on non-done updates');
+});
+
 test('MCP Tools - list_phase_aims_recursive', async () => {
   const server = new MockServer();
   const callerProxy = createCallerProxy(caller);

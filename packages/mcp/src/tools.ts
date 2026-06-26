@@ -138,7 +138,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "update_aim",
-          description: "Update aim fields. supportedAims/supportingConnections REPLACE existing links (not append). When work is complete set status=done (then addReflection); when blocked set unclear/human-dependent with a comment — don't leave finished or stuck aims open.",
+          description: "Update aim fields. supportedAims/supportingConnections REPLACE existing links (not append). When work is complete set status=done AND addReflection recording how you verified it (verified-done, not claimed-done); when blocked set unclear/human-dependent with a comment — don't leave finished or stuck aims open.",
           inputSchema: {
             type: "object",
             properties: {
@@ -721,11 +721,35 @@ export function registerTools(server: Server, clientOverride?: any) {
             aimId: args.aimId as string,
             aim: updateData,
           });
+
+          // Verification gate (soft): closing an aim should mean verified-done,
+          // not claimed-done. When status is set to done without any reflection
+          // recording evidence, nudge the agent to addReflection. Non-blocking
+          // and best-effort — never fails the update.
+          let verificationNudge = "";
+          if ((args.status as any)?.state === "done") {
+            try {
+              const aim = await trpcClient.aim.get.query({
+                projectPath: args.projectPath as string,
+                aimId: args.aimId as string,
+              });
+              const hasReflection = Array.isArray(aim?.reflections) && aim.reflections.length > 0;
+              if (!hasReflection) {
+                verificationNudge =
+                  "\n\nReminder: marked done without a reflection. Record the verification evidence " +
+                  "(what you ran/checked to confirm it actually works — tests, a repro, a screenshot) " +
+                  "via addReflection, so the graph reflects verified-done rather than claimed-done.";
+              }
+            } catch {
+              // best-effort: a failed lookup must not break the update
+            }
+          }
+
           return {
             content: [
               {
                 type: "text",
-                text: `Updated aim ${args.aimId}`,
+                text: `Updated aim ${args.aimId}${verificationNudge}`,
               },
             ],
           };
