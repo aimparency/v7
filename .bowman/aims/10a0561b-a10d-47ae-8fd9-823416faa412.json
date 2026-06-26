@@ -2,7 +2,16 @@
   "id": "10a0561b-a10d-47ae-8fd9-823416faa412",
   "text": "Spin off an aim branch to a new .bowman repo (export + conservative prune)",
   "description": "Export a branch of the aim graph into a separate .bowman, optionally pruning it from the source — the mechanism behind \"this is a different endeavor, spin it out.\"\n\nSemantics (worked example A>B>C, D child of A and B, export root B):\n- COPY to spin-off = selected root(s) + ALL transitive supporters (everything that contributes to the roots, i.e. descendants in the supporting direction). Ancestors are NOT copied. -> spin-off = {B, C, D}.\n- DELETE from source (optional) = roots + descendants that ONLY contribute to the selection (no supported-aim outside the copy set). Shared aims stay -> overlap. -> source keeps {A, D}.\n- Connections: edges with both ends in the copy set move/copy with it (C->B, D->B to spin-off). The shared D->A edge stays in source. Edges crossing the seam (B->A, where A is an uncopied ancestor) are DROPPED for now.\n- Keep aim IDs stable (so overlap can later become real cross-repo links, 5a45cb28).\n- Multiple roots selectable (usually one).\n- Conservative: never delete a shared aim; dry-run preview + explicit confirm before any deletion.\n\nTarget path: user-specified. If dir missing, create it; if it lacks /.bowman, add it; if a .bowman already exists there, warn (deferred: proceed by integrating as free-floating).",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782452486079,
+      "context": "Status-reconciliation sweep; spin-off base aim looked likely-done given recent git activity.",
+      "outcome": "Confirmed via the spin-off commit series (shared engine + tRPC router + frontend apply) and marked done; kept the explicitly-deferred remainder aims open.",
+      "effectiveness": "git log was the fast oracle for feature-completion across a multi-commit feature.",
+      "lesson": "Distinguish a 'base feature done' aim from its 'deferred remainder' siblings — mark the base done without sweeping the deferred ones.",
+      "pattern": "git-history-as-completion-oracle"
+    }
+  ],
   "archived": false,
   "tags": [
     "spin-off",
@@ -34,9 +43,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1782310698040
+    "state": "done",
+    "comment": "Implemented across the spin-off commit series: shared planSpinOff/computeSpinOff engine (42988d3), spinOff tRPC router preview+apply (6393d03), frontend preview/apply incl. open-in-new-tab (923e83e, 1b598b0, f751663). Base export + conservative prune is shipped. Deferred remainders are tracked separately (c8e2e450 cross-repo-link-at-seam, 3af443da spin-off-into-existing) and remain open.",
+    "date": 1782452470139
   },
   "intrinsicValue": 0,
   "cost": 1,

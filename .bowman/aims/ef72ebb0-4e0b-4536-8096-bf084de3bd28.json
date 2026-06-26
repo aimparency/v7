@@ -1,6 +1,17 @@
 {
   "id": "ef72ebb0-4e0b-4536-8096-bf084de3bd28",
   "text": "Implement cross-session memory for Watchdog",
+  "reflections": [
+    {
+      "date": 1782452482294,
+      "context": "Status-reconciliation sweep over the now-visible uncommittedOpen aims.",
+      "outcome": "Verified implemented in code (SessionMemory + loadSessionMemoryContext) and marked done.",
+      "effectiveness": "Quick, high-confidence: the feature is present and wired.",
+      "lesson": "Cross-session memory was already built and merely unmarked — typical of the stale-status drift the sweep targets.",
+      "pattern": "reconcile-not-rebuild"
+    }
+  ],
+  "archived": false,
   "tags": [
     "asi",
     "learning",
@@ -12,11 +23,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768829046045
+    "state": "done",
+    "comment": "Implemented: SessionMemory (packages/wrapped-agents/common/src/session-memory.ts) persists per-session summaries to .bowman/memory/sessions and loadSessionMemoryContext injects loadRecentSummaries + the system-friction summary into the next session's instruct context. Cross-session memory exists and is wired into the watchdog.",
+    "date": 1782452466733
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }
