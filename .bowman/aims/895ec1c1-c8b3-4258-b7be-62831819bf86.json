@@ -1,7 +1,7 @@
 {
   "id": "895ec1c1-c8b3-4258-b7be-62831819bf86",
   "text": "achieve ASI",
-  "description": "develop capability to autonomously create the future",
+  "description": "Achieve ASI through human cooperation. Aimparency is the durable link between human needs and free AI — a coordination/legitimacy layer where humans express needs and AI helps achieve them, with humans as final authority. Fully autonomous ASI is the moonshot (likely to arrive regardless of this project); Aimparency's enduring role is the human↔AI cooperation engine (3d868d5b). AI acting autonomously is a side effect of serving human needs well, not the end goal.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -12,8 +12,8 @@
     {
       "aimId": "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
       "relativePosition": [
-        -1.0535797313884936,
-        -2.511785983764135
+        -1.095614375427509,
+        -1.9859015771439081
       ],
       "weight": 1
     },
@@ -28,8 +28,8 @@
     {
       "aimId": "133934ba-f325-4b92-b57c-517bb1ea497f",
       "relativePosition": [
-        3.0230554235598763,
-        1.7111742653451099
+        2.5489383412640962,
+        1.5700962560449003
       ],
       "weight": 1
     },
@@ -52,8 +52,8 @@
     {
       "aimId": "cffdcd91-fd9c-45e4-98fd-e265650be143",
       "relativePosition": [
-        -2.638631981431301,
-        1.6319289045076468
+        -1.8992733608288328,
+        2.400914594273455
       ],
       "weight": 1
     },
@@ -100,16 +100,16 @@
     {
       "aimId": "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
       "relativePosition": [
-        -1.335909938654407,
-        2.0526280592349173
+        -2.092970992980075,
+        3.434721673605544
       ],
       "weight": 1
     },
     {
       "aimId": "7634e681-d234-48fa-ad82-876ef97460ca",
       "relativePosition": [
-        -2.4588615514254655,
-        0.4516634487331836
+        -4.2579689531366265,
+        0.8880383048323537
       ],
       "weight": 1
     }

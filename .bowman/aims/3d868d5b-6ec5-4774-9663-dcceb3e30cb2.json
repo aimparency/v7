@@ -1,6 +1,7 @@
 {
   "id": "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
   "text": "Build the Human-AI Cooperation Engine",
+  "description": "The core, enduring purpose of this project: a coordination & legitimacy layer between human needs and capable (\"free\") AI. Humans express high-level goals; the aim graph models their will — inspectable, revisable, human stays final authority; wrapped agents execute cooperatively, asking humans where judgment or authorization is needed and doing the rest. The bet: cooperative human+AI beats pure autonomous optimization on legitimacy and real-world traction (see GTM thesis 7032fa7f). ASI is reached THROUGH human cooperation. Fully autonomous ASI is a separate moonshot that will likely arrive regardless; Aimparency's lasting role is this human↔AI link. AI acting on its own is a side effect of serving human needs well, not the goal — which is why this aim, not the autonomy hub, carries the bulk of intrinsic value.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -47,6 +48,14 @@
         -3.4823378155126608
       ],
       "weight": 5
+    },
+    {
+      "aimId": "1be76eaf-1968-4c9f-88d1-9be9db09836d",
+      "relativePosition": [
+        0.19845649502581342,
+        -2.492110555248717
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -58,7 +67,7 @@
     "comment": "",
     "date": 1768763893265
   },
-  "intrinsicValue": 20,
+  "intrinsicValue": 300,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,

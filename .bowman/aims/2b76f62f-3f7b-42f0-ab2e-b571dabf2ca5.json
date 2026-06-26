@@ -1,7 +1,7 @@
 {
   "id": "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5",
   "text": "Achieve full autonomous agent capability: discover→plan→execute→verify→submit loop",
-  "description": "Transform Aimparency/Bowman into a fully autonomous agent system capable of operating end-to-end without human intervention. The agent must discover problems, plan solutions, execute using real tools, verify outcomes, and submit results - demonstrating true autonomy rather than scripted behavior. This is the north star aim for reaching ASI through autonomous capability development.",
+  "description": "Build the autonomous discover→plan→execute→verify→submit loop: the agent finds work, plans, executes with real tools, verifies outcomes, and reports — recovering from failures across sessions. IMPORTANT framing: autonomy here is an ENABLER of the Human-AI Cooperation Engine (3d868d5b) — continuity, recovery, and self-improvement so the agent can faithfully carry human-set goals across many sessions — NOT an end in itself. Fully autonomous ASI is a separate moonshot. The agent should default to cooperating with humans (asking where judgment/authorization is needed) rather than maximizing independence.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -107,6 +107,14 @@
       ],
       "weight": 1,
       "explanation": "graph maintenance: reparented floating aim by semantic similarity"
+    },
+    {
+      "aimId": "a1f62047-5be3-4178-9274-3e060285fd29",
+      "relativePosition": [
+        -2.0397673090403674,
+        1.445458171297329
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
