@@ -1,0 +1,24 @@
+{
+  "id": "0697d033-bb95-4433-8a9c-20f2afd06c31",
+  "text": "Conversational aim elicitation: turn a human's natural-language goal into a proposed, editable aim sub-tree they approve",
+  "description": "The core \"humans express needs → graph\" bridge of the cooperation engine. A human states a high-level goal in natural language (text or voice — VoiceView.vue already exists as infra); the system proposes a structured sub-tree of aims (decomposition with value/cost guesses) that the human can edit, reorder, and approve before the agents act. The will stays inspectable and revisable; humans stay final authority. This is what lets non-developers drive the system toward real-world goals, not just engineers editing the graph by hand. Concrete next step: define the elicitation→proposed-subtree→human-approval flow on top of the existing graph + MCP create_aim primitives.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782450400684
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

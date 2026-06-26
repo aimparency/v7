@@ -1,0 +1,24 @@
+{
+  "id": "366ede22-6516-45ec-9f0c-1845c25d1169",
+  "text": "Legitimacy primitive: human approval/veto checkpoint for consequential autonomous actions, with an audit trail",
+  "description": "The \"human stays final authority\" primitive from the GTM thesis (7032fa7f). Before the autonomous loop takes consequential or hard-to-reverse actions (real-world actions, spending, external comms, destructive ops), surface them for human approval/override with a clear, auditable record of what was proposed and decided. Builds on the existing watchdog approval surface (WatchdogActionsOverlay.vue) but generalizes it from 'approve a terminal action' to 'approve a consequential real-world/irreversible action', and ties decisions to the aim they serve. Tonight's over-cautious push-gating is the cartoon version of why this needs to be a designed, bounded primitive rather than ad-hoc agent judgment: define WHICH action classes require sign-off vs proceed freely.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782450406385
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
