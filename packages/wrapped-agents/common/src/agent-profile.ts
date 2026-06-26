@@ -52,8 +52,23 @@ export interface AgentProfile {
   /** Patterns that mean "a choice menu is visible and awaiting input". */
   choiceMenuPatterns: RegExp[];
 
+  /**
+   * Footers that mean a turn has *finished* (e.g. Grok's "Turn completed in
+   * 13s."). When matched in the recent viewport, overrides spinner/busy
+   * signals so idle detection and supervisor reply parsing can proceed.
+   */
+  idleFooterPatterns?: RegExp[];
+
   /** Command sent to the worker to compact its context (e.g. '/compact'). */
   compactCommand: string;
+
+  /**
+   * How long the supervisor's bottom region must be unchanged before we treat
+   * its reply as complete. Defaults to 100ms. Ink-based TUIs (e.g. grok) often
+   * keep a blinking cursor or status line ticking, so a longer window avoids
+   * "waiting for supervisor reply" wedging despite a finished answer on screen.
+   */
+  watchdogIdleStabilityMs?: number;
 }
 
 // ---- Low-level detection building blocks ----

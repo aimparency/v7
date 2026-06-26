@@ -1,0 +1,24 @@
+{
+  "id": "2fbd88df-3698-4f48-8e66-a001c37a99ea",
+  "text": "Initial project instructions",
+  "description": "Add a way in the ui and project meta for project based LLM coding assistant instructions that always get posted at the beginning of a conversation",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782450511454
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -113,8 +113,8 @@
     {
       "aimId": "812f2008-2ce4-4b66-bf87-53be001b712a",
       "relativePosition": [
-        2.525938049173532,
-        -2.8143635599345216
+        3.3147084222053973,
+        -1.8980617220341478
       ],
       "weight": 1
     },
@@ -165,6 +165,33 @@
         -3.919273205066764
       ],
       "weight": 1
+    },
+    {
+      "aimId": "c84f5fa1-ff38-45ae-8559-fcc8dc5849e2",
+      "relativePosition": [
+        1.0321922899942637,
+        2.2135551743745756
+      ],
+      "weight": 1.0526315789473684,
+      "explanation": ""
+    },
+    {
+      "aimId": "b0f6a19a-7d09-4454-97e5-8da581f14bb1",
+      "relativePosition": [
+        3.3353195456859743,
+        1.526796275116984
+      ],
+      "weight": 1.1080332409972302,
+      "explanation": "it makes the experience more smooth - currently, it behaves just weird (e.g. still doing a slight pan after zooming has mostly completed)"
+    },
+    {
+      "aimId": "da74d69e-b275-4412-b186-0ccc7a0d0440",
+      "relativePosition": [
+        -3.4572011999632655,
+        -1.1376654953876886
+      ],
+      "weight": 0.9233610341643584,
+      "explanation": ""
     }
   ],
   "supportedAims": [

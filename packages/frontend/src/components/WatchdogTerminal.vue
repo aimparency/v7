@@ -2,15 +2,24 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
+import type { Socket } from 'socket.io-client';
 import '@xterm/xterm/css/xterm.css';
+
+type TerminalKind = 'worker' | 'watchdog';
+
+interface ParserViewPayload {
+  text: string;
+  cols: number;
+  rows: number;
+  lineCount: number;
+  kind: TerminalKind;
+}
 
 const props = defineProps<{
   initialContent?: string;
   onData?: (data: string) => void;
-  // We can pass a ref or a getter for content stream if needed, 
-  // but simpler to expose a 'write' method or watch a prop.
-  // For integration with store, we might want to watch a buffer?
-  // Or better: the parent component subscribes to store and calls write.
+  terminalKind?: TerminalKind;
+  socket?: Socket | null;
 }>();
 
 const terminalContainer = ref<HTMLElement | null>(null);
@@ -139,6 +148,62 @@ const clear = () => {
   term?.clear();
 };
 
+const getBufferText = (): string => {
+  if (!term) return '';
+  const buffer = term.buffer.active;
+  let output = '';
+  for (let i = 0; i < buffer.length; i++) {
+    const line = buffer.getLine(i);
+    if (!line) continue;
+    const nextLine = i + 1 < buffer.length ? buffer.getLine(i + 1) : null;
+    const text = line.translateToString(!(nextLine?.isWrapped ?? false));
+    if (line.isWrapped) {
+      output += text;
+    } else {
+      if (output.length > 0) output += '\n';
+      output += text;
+    }
+  }
+  return output;
+};
+
+const copyFeedback = ref<'idle' | 'ok' | 'fail'>('idle');
+const parserCopyFeedback = ref<'idle' | 'ok' | 'fail'>('idle');
+
+const copyContent = async () => {
+  const text = getBufferText();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    copyFeedback.value = 'ok';
+  } catch {
+    copyFeedback.value = 'fail';
+  }
+  setTimeout(() => { copyFeedback.value = 'idle'; }, 1500);
+};
+
+const copyParserView = async () => {
+  if (!props.socket || !props.terminalKind) return;
+  try {
+    const view = await new Promise<ParserViewPayload>((resolve, reject) => {
+      props.socket!.emit(
+        'fetch-parser-view',
+        { kind: props.terminalKind },
+        (result: ParserViewPayload | { error: string }) => {
+          if (!result || 'error' in result) reject(new Error('error' in result ? result.error : 'fetch failed'));
+          else resolve(result);
+        },
+      );
+    });
+    const header = `# parser view (${view.kind}) ${view.cols}x${view.rows} last ${view.lineCount} viewport lines\n`;
+    await navigator.clipboard.writeText(header + view.text);
+    parserCopyFeedback.value = 'ok';
+  } catch {
+    parserCopyFeedback.value = 'fail';
+  }
+  setTimeout(() => { parserCopyFeedback.value = 'idle'; }, 1500);
+};
+
 const handlePaste = (event: ClipboardEvent) => {
   if (!props.onData) return;
 
@@ -233,12 +298,29 @@ defineExpose({
   write,
   fit,
   focus,
-  clear
+  clear,
+  getBufferText,
+  copyContent,
+  copyParserView,
 });
 </script>
 
 <template>
   <div ref="terminalContainer" class="terminal-container" @click="focus">
+    <!-- Desktop: both copy buttons; mobile uses the ⌨ menu instead. -->
+    <div class="copy-buttons copy-buttons-desktop" @mousedown.prevent>
+      <button
+        v-if="socket && terminalKind"
+        class="copy-btn"
+        :title="parserCopyFeedback === 'ok' ? 'Copied!' : parserCopyFeedback === 'fail' ? 'Copy failed' : 'Copy server getViewportLines(500) — what the watchdog parser sees'"
+        @click.stop="copyParserView"
+      >{{ parserCopyFeedback === 'ok' ? '✓' : parserCopyFeedback === 'fail' ? '✗' : 'copy parser view' }}</button>
+      <button
+        class="copy-btn"
+        :title="copyFeedback === 'ok' ? 'Copied!' : copyFeedback === 'fail' ? 'Copy failed' : 'Copy entire browser terminal scrollback'"
+        @click.stop="copyContent"
+      >{{ copyFeedback === 'ok' ? '✓' : copyFeedback === 'fail' ? '✗' : 'copy term content' }}</button>
+    </div>
     <!-- Touch-only keystroke helper: keys Android keyboards can't send. -->
     <!-- mousedown.prevent keeps focus in xterm's hidden input so the keyboard stays open. -->
     <div class="mobile-keys" @mousedown.prevent>
@@ -265,12 +347,49 @@ defineExpose({
           <button class="key-btn arrow right" @click="sendKey(ARROW_RIGHT)">→</button>
         </div>
         <button class="key-btn" @click="pasteFromClipboard">Paste</button>
+        <button class="key-btn" @click.stop="copyContent">
+          {{ copyFeedback === 'ok' ? '✓ term copied' : copyFeedback === 'fail' ? '✗ copy failed' : 'Copy term' }}
+        </button>
+        <button
+          v-if="socket && terminalKind"
+          class="key-btn"
+          @click.stop="copyParserView"
+        >
+          {{ parserCopyFeedback === 'ok' ? '✓ parser copied' : parserCopyFeedback === 'fail' ? '✗ copy failed' : 'Copy parser' }}
+        </button>
       </template>
     </div>
   </div>
 </template>
 
 <style scoped>
+.copy-buttons {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 0.35rem;
+}
+
+.copy-btn {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.35rem;
+  background: #000000b3;
+  color: #ccc;
+  font-size: 0.7rem;
+  font-family: monospace;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.copy-btn:hover {
+  background: #1f2937;
+  color: #fff;
+}
+
 .terminal-container {
   position: relative;
   width: 100%;
@@ -301,7 +420,15 @@ defineExpose({
   display: none;
 }
 
+.copy-buttons-desktop {
+  display: flex;
+}
+
 @media (pointer: coarse) {
+  .copy-buttons-desktop {
+    display: none;
+  }
+
   .mobile-keys {
     display: flex;
     flex-direction: column;

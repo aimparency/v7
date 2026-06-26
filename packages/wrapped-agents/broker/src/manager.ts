@@ -286,7 +286,30 @@ export async function verifyWrappedAgents(): Promise<VerifyResult> {
   return { ok: true, output };
 }
 
+/**
+ * Called by a worker CLI hook (via the broker) when the main worker TUI has
+ * halted / finished a response. We forward to the session's internal endpoint
+ * so the watchdog service can treat the main worker as reliably stopped
+ * without depending on output pattern matching.
+ */
+export function notifyWorkerHalted(projectPath: string, agentType: AgentType): { success: boolean; reason?: string } {
+  projectPath = normalizeProjectPath(projectPath);
+  const key = getInstanceKey(projectPath, agentType);
+  const inst = instances.get(key);
+  if (!inst || !inst.port) {
+    return { success: false, reason: 'no active session' };
+  }
+  // Internal localhost post; BIND_HOST only affects external exposure of the broker.
+  const url = `http://localhost:${inst.port}/_internal/worker-halt`;
+  // Fire-and-forget; the session will handle synchronously in its tick.
+  fetch(url, { method: 'POST' }).catch((e) => {
+    console.warn(`[WatchdogBroker] Failed to forward workerHalted to session ${inst.port}:`, e);
+  });
+  return { success: true };
+}
+
 export const WatchdogManager = {
+  notifyWorkerHalted,
   async start(projectPath: string, agentType: AgentType = 'gemini'): Promise<{ port: number, pid: number, agentType: AgentType }> {
     projectPath = normalizeProjectPath(projectPath);
     const key = getInstanceKey(projectPath, agentType);

@@ -1,0 +1,24 @@
+{
+  "id": "b0f6a19a-7d09-4454-97e5-8da581f14bb1",
+  "text": "when bringing into view an aim or connection in the graph view, build a proper \"camera path\".",
+  "description": "API for camera path: \nfromRect\ntoRect\n\nThen it calculates a path. \nAt the middle (p=0.5) the bounding box of fromRect and toRect should be the target. \nSo we have 3 points. start, overview, end. \nand we have pan and zoom. \n\nOnce the path is ready, move ease out along it.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782450106175
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

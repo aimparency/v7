@@ -161,6 +161,85 @@ test('locateResponseAfterMarker: returns null when the marker is absent', () => 
   assert.equal((service as any).locateResponseAfterMarker('no marker here', 'MARKER'), null);
 });
 
+test('locateResponseAfterMarker: finds JSON after SUPERVISOR_JSON marker with prose prefix', () => {
+  const service = makeService();
+  const marker = '<<SUPERVISOR_JSON:abc123>>';
+  const screen = [
+    'Sure, here is the action.',
+    `${marker}{"action":{"type":"start_work","message":"go"}}`,
+    '❯ ',
+  ].join('\n');
+
+  const content = (service as any).locateResponseAfterMarker(screen, marker) as string | null;
+  assert.ok(content);
+  assert.deepEqual(JSON.parse((service as any).extractJson(content)), {
+    action: { type: 'start_work', message: 'go' },
+  });
+});
+
+test('locateResponseAfterMarker: finds JSON in markdown fences without the marker', () => {
+  const service = makeService();
+  const screen = [
+    'Here you go:',
+    '```json',
+    '{"action":{"type":"ideate","text":"scan"}}',
+    '```',
+    '❯ ',
+  ].join('\n');
+
+  const content = (service as any).locateResponseAfterMarker(screen, '<<SUPERVISOR_JSON:missing>>') as string | null;
+  assert.ok(content);
+  assert.deepEqual(JSON.parse((service as any).extractJson(content)), {
+    action: { type: 'ideate', text: 'scan' },
+  });
+});
+
+test('locateResponseAfterMarker: finds {"action"} even when marker was omitted', () => {
+  const service = makeService();
+  const screen = 'Some explanation\n{"action":{"type":"explore","text":"check aims"}}\n❯ ';
+
+  const content = (service as any).locateResponseAfterMarker(screen, '<<SUPERVISOR_JSON:nope>>') as string | null;
+  assert.ok(content);
+  assert.deepEqual(JSON.parse((service as any).extractJson(content)), {
+    action: { type: 'explore', text: 'check aims' },
+  });
+});
+
+test('locateResponseAfterMarker: parses Grok hard-wrapped JSON with timestamps and block fillers', () => {
+  const grokProfile: AgentProfile = {
+    ...testProfile,
+    agentType: 'grok',
+    idleFooterPatterns: [/Turn completed in/i],
+  };
+  const service = new WatchdogService({} as any, {} as any, grokProfile, { compactEvery: 1 });
+
+  const screen = [
+    '◆ Thought for 2.4s',
+    '{"action": {"type": "start_work", "message": "harden locateResponseAfterMarker (strip',
+    'ANSI/fences, loose SUPERVISOR_JSON, fallback to {\\"action\\"), add optional',
+    'watchdogIdleStabilityMs to AgentProfile."}}      3:17 PM   █',
+    'Turn completed in 5.2s.                                                                                                   █',
+    '❯ ',
+  ].join('\n');
+
+  const content = (service as any).locateResponseAfterMarker(screen, '<<SUPERVISOR_JSON:missing>>') as string | null;
+  assert.ok(content, 'should locate Grok-wrapped supervisor JSON');
+  const parsed = JSON.parse((service as any).extractJson(content));
+  assert.equal(parsed.action.type, 'start_work');
+  assert.match(parsed.action.message, /fallback to \{"action"\)/);
+});
+
+test('isGenerating: Grok "Turn completed" footer reads as idle', () => {
+  const grokProfile: AgentProfile = {
+    ...testProfile,
+    agentType: 'grok',
+    idleFooterPatterns: [/Turn completed in/i],
+  };
+  const service = new WatchdogService({} as any, {} as any, grokProfile, { compactEvery: 1 });
+  const screen = '{"action":{"type":"ideate"}}\nTurn completed in 13s.\n❯ ';
+  assert.equal(service.isGenerating(agentShowing(screen) as any), false);
+});
+
 // The full INSTRUCT guide is heavy and the worker is a continuous session, so it
 // should be sent once per context epoch: on the first start_work, then again only
 // after a /compact wipes the worker's context.

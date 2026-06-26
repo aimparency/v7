@@ -1,0 +1,33 @@
+{
+  "id": "7f122bed-ff75-43fc-ba0b-1b74c8141270",
+  "text": "Project loading page",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "bd804d6f-dc19-46e1-befa-49677823270c",
+      "relativePosition": [
+        -0.07046188538731572,
+        2.440867069963804
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782464039071
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

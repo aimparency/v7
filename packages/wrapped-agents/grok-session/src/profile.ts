@@ -30,11 +30,20 @@ export const grokProfile: AgentProfile = {
   },
   resumeFailurePatterns: [/No conversation found/, /No sessions found/, /No previous sessions?/i],
 
-  // Grok's TUI is likely Ink-based. Use the generic esc/timed footers plus
-  // the common choice menu shapes. Spinner detection may need tuning after
-  // observing a real session (many xAI/CLI TUIs use animated Braille or dots).
-  spinnerPattern: /(?:…|\.\.\.)\s*\((?:\d+h\s*)?(?:\d+m\s*)?\d+s\b|[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]|[\u2800-\u28FF]/,
+  // Grok's Ink TUI: rely on the elapsed-time spinner shape (like Claude) rather
+  // than the full Braille block — idle screens often contain stray Braille/box
+  // glyphs that falsely read as "generating" and wedge supervisor reply detection.
+  //
+  // For *reliable* "main worker halt" recognition (the supervisor needs to know
+  // when the main agent has finished a turn), configure a hook in your grok CLI
+  // that runs the on-halt script. See common/hooks/worker-halt-hook.sh .
+  // The session wrapper injects AIMPARENCY_* env vars that the hook uses to
+  // notify the broker -> session watchdog.
+  spinnerPattern: /(?:…|\.\.\.)\s*\((?:\d+h\s*)?(?:\d+m\s*)?\d+s\b/,
   busyPatterns: [ESC_TO_INTERRUPT, TIMED_CANCEL],
   choiceMenuPatterns: COMMON_CHOICE_MENU_PATTERNS,
+  idleFooterPatterns: [/Turn completed in/i],
   compactCommand: '/compact',
+  // Grok keeps a blinking prompt cursor in the footer; give it longer to settle.
+  watchdogIdleStabilityMs: 2000,
 };

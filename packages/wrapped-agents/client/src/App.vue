@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { io, type Socket } from 'socket.io-client';
 import Terminal from './components/Terminal.vue';
+import AgentSelect from './components/AgentSelect.vue';
 import { trpc } from './trpc';
 import { AIMPARENCY_DIR_NAME } from 'shared';
 
@@ -141,13 +142,7 @@ onMounted(() => {
         <h1>Agent Session Manager</h1>
         <div class="controls">
             <input v-model="newProjectPath" :placeholder="'/path/to/project/' + AIMPARENCY_DIR_NAME" @keyup.enter="createSession" />
-            <select v-model="newAgentType" class="agent-select">
-                <option value="claude">Claude</option>
-                <option value="gemini">Gemini</option>
-                <option value="codex">Codex</option>
-                <option value="agy">Agy</option>
-                <option value="grok">Grok</option>
-            </select>
+            <AgentSelect v-model="newAgentType" />
             <button @click="createSession" :disabled="loading || !newProjectPath">Start New</button>
             <button @click="refreshSessions" :disabled="loading">Refresh</button>
         </div>
@@ -217,13 +212,13 @@ html, body, #app { margin: 0; height: 100%; width: 100%; background: #000; color
 .controls { display: flex; gap: 10px; margin-bottom: 2rem; }
 .controls input { flex: 1; padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; }
 .controls button { padding: 10px 20px; font-size: 14px; }
-.agent-select { padding: 10px; background: #222; border: 1px solid #444; color: white; border-radius: 4px; cursor: pointer; }
 
 .agent-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-right: 8px; }
 .agent-badge.claude { background: #d97706; color: white; }
 .agent-badge.gemini { background: #4285f4; color: white; }
 .agent-badge.codex { background: #0ea5a3; color: white; }
 .agent-badge.agy { background: #6d28d9; color: white; }
+.agent-badge.grok { background: #111827; color: white; }
 .agent-badge.small { font-size: 0.65rem; padding: 1px 5px; }
 
 .session-list { display: flex; flex-direction: column; gap: 10px; }

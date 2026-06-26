@@ -574,6 +574,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       connectionState.value = 'connected'
       localStorage.setItem('aimparency-watchdog-should-connect', 'true')
       startKeepalive(projectPath, agentType)
+      // Restore xterm focus after reload/reconnect once the terminal repaints.
+      triggerWorkerFocus()
     })
 
     socket.value.on('connect_error', (err) => {

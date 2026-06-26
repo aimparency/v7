@@ -1,0 +1,34 @@
+{
+  "id": "da74d69e-b275-4412-b186-0ccc7a0d0440",
+  "text": "Aim adding",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "87a9f3b2-89d0-4f78-85d5-a25dfe72acf2",
+      "relativePosition": [
+        0.11005469289144057,
+        -2.1207794473548076
+      ],
+      "weight": 1,
+      "explanation": ""
+    }
+  ],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782464192288
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

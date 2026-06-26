@@ -6,6 +6,7 @@ import { SupervisorState, type AutonomyPolicy } from './supervisor-state';
 import { generateSupervisorPrompt, type PromptContext, ActionPrompts } from './supervisor-prompts';
 import { getState } from './state-machine-definition';
 import type { AgentProfile } from './agent-profile';
+import { readAgentViewportLines, WATCHDOG_PARSER_LINE_COUNT } from './terminal-view';
 
 /**
  * Configurable timing constants and behavior flags
@@ -74,6 +75,66 @@ function stripAnsi(str: string): string {
  */
 function normalizeWhitespace(str: string): string {
   return str.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Strip Ink/Grok TUI chrome that gets spliced into hard-wrapped lines: right-
+ * margin block fillers (█), per-line timestamps, and box-drawing glyphs. Left
+ * intact otherwise — we only remove artifacts that corrupt JSON extraction.
+ */
+function cleanTuiArtifacts(str: string): string {
+  return str
+    .replace(/\s*█+\s*/g, ' ')
+    .replace(/\s+\d{1,2}:\d{2}\s*(?:AM|PM)\b/gi, ' ')
+    .replace(/[╭╮╯╰─│┃┏┓┗┛├┤┬┴┼]/g, ' ');
+}
+
+/**
+ * Extract a balanced `{...}` object starting at `start`, respecting quoted
+ * strings so `{` / `}` inside JSON string values (e.g. prose mentioning
+ * `{\"action\"}`) do not confuse depth counting.
+ */
+function extractBalancedJsonObject(text: string, start: number): string | null {
+  if (start < 0 || text[start] !== '{') return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  let quote = '';
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (inString) {
+      if (ch === '\\') escaped = true;
+      else if (ch === quote) inString = false;
+      continue;
+    }
+
+    if (ch === '"' || ch === "'") {
+      inString = true;
+      quote = ch;
+      continue;
+    }
+
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return text.substring(start, i + 1);
+    }
+  }
+
+  return null;
+}
+
+function prepareScreenForJsonExtraction(rawScreen: string): string {
+  const plain = stripAnsi(rawScreen).replace(/```(?:json)?/gi, '').replace(/```/g, '');
+  return normalizeWhitespace(cleanTuiArtifacts(plain));
 }
 
 interface WorkerActivityState {
@@ -154,6 +215,15 @@ export class WatchdogService {
     lastSnapshotAt: 0,
   };
   private sessionMemory: SessionMemory | null = null;
+
+  /**
+   * Timestamp of last "main worker halted" signal received from an external
+   * hook (configured in the CLI). This provides a reliable out-of-band
+   * notification that the worker TUI has finished a turn and is idle, bypassing
+   * brittle screen-scraping for agents whose output format makes spinner/busy
+   * detection unreliable (e.g. grok).
+   */
+  private lastExternalHaltAt = 0;
   private baseInstructText: string = '';
   private instructTextWithMemory: string = '';
   // The full INSTRUCT guide is heavy (~7KB). The worker is a continuous session,
@@ -307,6 +377,25 @@ export class WatchdogService {
     if (this.onStop) {
       this.onStop(reason);
     }
+    this.onStateChange?.();
+  }
+
+  /**
+   * Called when the main worker CLI signals (via configured hook) that it has
+   * halted / finished its turn. Forces the idle detection so the supervisor
+   * loop can escalate reliably even if the TUI output does not match our
+   * spinner/busy patterns.
+   */
+  signalWorkerHalted() {
+    const now = Date.now();
+    this.lastExternalHaltAt = now;
+    this.log('Received external halt signal for main worker (hook)');
+    // Force the busy tracker into "idle" so getWorkerIdleEscalationReason fires.
+    this.advanceWorkerBusyTimeout(true, '', now);
+    this.workerActivity.lastSnapshot = '';
+    this.workerActivity.lastSnapshotAt = now;
+    // Wake tick() on next opportunity.
+    this.nextCheckTime = now;
     this.onStateChange?.();
   }
 
@@ -488,13 +577,16 @@ export class WatchdogService {
         // parseable action is already present after the marker, process it now.
         // We validate the JSON locally first so a half-rendered reply doesn't
         // trip processDecision's retry path.
-        const earlyContent = this.locateResponseAfterMarker(
-          this.readAgentLines(this.watchdog, 500),
+        let earlyContent = this.locateResponseAfterMarker(
+          this.readAgentLines(this.watchdog, WATCHDOG_PARSER_LINE_COUNT),
           this.currentPromptMarker,
         );
         if (earlyContent) {
           try {
-            const jsonString = this.extractJson(earlyContent);
+            let jsonString = earlyContent;
+            if (!earlyContent.trim().startsWith('{')) {
+              jsonString = this.extractJson(earlyContent);
+            }
             JSON.parse(jsonString.replace(/[\r\n]+/g, ' '));
             this.log("DEBUG: Watchdog reply already on screen before spinner seen. Parsing early.");
             this.waitingForResponseStart = false;
@@ -520,32 +612,51 @@ export class WatchdogService {
       if (this.waitingForResponse) {
         const watchdogEffectivelyGenerating = this.isWatchdogEffectivelyGenerating(watchdogSignals, now);
 
-        if (watchdogEffectivelyGenerating) {
-          this.nextCheckTime = now + IDLE_CHECK_INTERVAL;
+        const elapsedSinceRequest = now - this.responseRequestedAt;
+
+        if (elapsedSinceRequest > 120000) {
+          this.log(`DEBUG: Supervisor failed to produce usable reply within 120s. Retrying.`);
+          await this.retry("Supervisor reply timeout");
           return;
         }
 
-        const elapsedSinceRequest = now - this.responseRequestedAt;
         if (elapsedSinceRequest < RESPONSE_COMPLETION_GRACE_MS) {
           this.log(`DEBUG: Deferring response completion check (${elapsedSinceRequest}ms < ${RESPONSE_COMPLETION_GRACE_MS}ms grace).`);
           this.nextCheckTime = now + 1000;
           return;
         }
 
-        this.log("Watchdog appears idle. Attempting to parse response...");
-        const contentToParse = this.locateResponseAfterMarker(
-          this.readAgentLines(this.watchdog, 500),
+        // Try to parse even if our "generating" heuristic still thinks it's busy.
+        // Many TUIs keep some updating element (clock, cursor area, etc.) which
+        // can make the screen delta never fully settle. If the user says the
+        // response is on screen and looks correct, we should still attempt extraction.
+        this.log("Attempting to parse supervisor response (past grace)...");
+        const watchdogTail = this.readAgentLines(this.watchdog, WATCHDOG_PARSER_LINE_COUNT);
+        let contentToParse = this.locateResponseAfterMarker(
+          watchdogTail,
           this.currentPromptMarker,
         );
 
         if (contentToParse) {
           try {
-            const jsonString = this.extractJson(contentToParse);
+            let jsonString = contentToParse;
+            if (!contentToParse.trim().startsWith('{')) {
+              jsonString = this.extractJson(contentToParse);
+            }
             await this.processDecision(jsonString);
           } catch (e: any) {
             this.log(`DEBUG: JSON extraction/parsing failed: ${e.message}`);
             await this.retry(e.message || "JSON extraction failed");
           }
+          return;
+        }
+
+        // Extra debug: show what the tail actually looks like when we can't find it
+        this.log(`DEBUG: No parsable content after marker. Tail (normalized, last 300 chars): ${normalizeWhitespace(watchdogTail).slice(-300)}`);
+
+        // If we didn't find anything yet, only keep waiting if we still think it's generating.
+        if (watchdogEffectivelyGenerating) {
+          this.nextCheckTime = now + IDLE_CHECK_INTERVAL;
           return;
         }
 
@@ -633,7 +744,13 @@ export class WatchdogService {
   }
 
   private isWatchdogEffectivelyGenerating(signals: AgentSignals, now: number): boolean {
-    return this.isAgentEffectivelyBusy(signals, now, this.watchdogSnapshotState, 'recent8', IDLE_DEBOUNCE_INTERVAL);
+    // Grok and similar TUIs keep a live status bar (% / tokens) that changes
+    // every frame; a completed-turn footer is a stronger idle signal than the
+    // screen-delta backstop, so don't block reply parsing on a ticking footer.
+    if (!signals.isGenerating) return false;
+
+    const stabilityMs = this.profile.watchdogIdleStabilityMs ?? IDLE_DEBOUNCE_INTERVAL;
+    return this.isAgentEffectivelyBusy(signals, now, this.watchdogSnapshotState, 'recent8', stabilityMs);
   }
 
   /**
@@ -686,6 +803,13 @@ export class WatchdogService {
   }
 
   private getWorkerIdleEscalationReason(now: number, signals: AgentSignals): string | null {
+    // External hook signal takes precedence for agents with unreliable TUI output.
+    if (this.lastExternalHaltAt > 0 && (now - this.lastExternalHaltAt) < 30000) {
+      const reason = 'Worker halted (external hook signal)';
+      this.lastExternalHaltAt = 0; // consume the signal
+      return reason;
+    }
+
     if (this.isWorkerEffectivelyBusy(signals, now)) return null;
 
     if (this.workerActivity.observedBusySinceEnabled) {
@@ -711,13 +835,7 @@ export class WatchdogService {
   }
 
   private readAgentLines(agent: Agent, count: number): string {
-    if (typeof (agent as any).getViewportLines === 'function') {
-      return (agent as any).getViewportLines(count);
-    }
-    if (typeof (agent as any).getLines === 'function') {
-      return agent.getLines(count);
-    }
-    return '';
+    return readAgentViewportLines(agent, count);
   }
 
   private captureAgentView(agent: Agent): AgentView {
@@ -748,6 +866,12 @@ export class WatchdogService {
 
   private detectGenerating(view: AgentView, hasChoiceMenu: boolean): boolean {
     if (hasChoiceMenu) return false;
+
+    // A completed-turn footer (e.g. Grok's "Turn completed in 13s.") means the
+    // agent is idle even if a status bar or cursor keeps ticking frame-to-frame.
+    if (this.profile.idleFooterPatterns?.some(p => p.test(view.recent12))) {
+      return false;
+    }
 
     // Spinner glyphs and busy footers are per-agent (CLI TUIs differ) via the
     // profile. Use a slightly taller window than the choice-menu check: the
@@ -863,7 +987,10 @@ export class WatchdogService {
     // Generate request ID and prompt using state machine
     const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const question = generateSupervisorPrompt(promptContext, requestId);
-    this.currentPromptMarker = `Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks). [${requestId}]`;
+    // Use a short prefix that the supervisor AI itself will output at the start of its reply.
+    // This is much more reliable than searching for our long prompt text (which can scroll
+    // out of the TUI buffer). We instruct the model to start its output with it.
+    this.currentPromptMarker = `<<SUPERVISOR_JSON:${requestId}>>`;
 
     this.log(`[StateMachine] Generated ${currentState} prompt, length: ${question.length} chars`);
     this.log(`DEBUG: Question (first 500 chars):\n${question.substring(0, 500)}`);
@@ -910,41 +1037,101 @@ export class WatchdogService {
   }
 
   /**
-   * Locate the supervisor's reply after the prompt marker on the watchdog screen.
-   * The marker is a single logical line, but Claude's TUI hard-wraps and indents
-   * the rendered prompt block, injecting newlines/spaces that break an exact
-   * match — without normalization the parse loop re-polls forever despite the
-   * JSON being on screen. Returns the trimmed content after the (last) marker, or
-   * null if the marker isn't present or nothing follows it.
+   * Locate the supervisor's reply after our response prefix on the watchdog screen.
+   * We now instruct the AI to *emit* the prefix at the very start of its reply
+   * (e.g. <<SUPERVISOR_JSON:abc123>>{"action":...}).
+   * This is far more reliable than searching for the (long) prompt we sent, which
+   * can easily scroll out of the limited TUI history buffer.
+   *
+   * Falls back to trying to extract the last JSON object from the tail if the
+   * prefix isn't found (defensive for different TUIs).
    */
   locateResponseAfterMarker(rawScreen: string, rawMarker: string): string | null {
-    const screen = normalizeWhitespace(rawScreen);
+    const screen = prepareScreenForJsonExtraction(rawScreen);
     const marker = normalizeWhitespace(rawMarker);
-    const idx = screen.lastIndexOf(marker);
-    if (idx === -1) return null;
-    const content = screen.substring(idx + marker.length).trim();
-    return content.length > 0 ? content : null;
+
+    const tryExtractActionJson = (text: string, label: string): string | null => {
+      const actionIdx = text.lastIndexOf('{"action"');
+      if (actionIdx === -1) return null;
+      try {
+        const json = this.extractJson(text.substring(actionIdx));
+        if (json.includes('"action"')) {
+          this.log(`DEBUG: locate extracted action JSON via ${label}`);
+          return json;
+        }
+      } catch { /* try next anchor */ }
+      return null;
+    };
+
+    const afterMarker = (text: string, m: string): string | null => {
+      const idx = text.lastIndexOf(m);
+      if (idx === -1) return null;
+      const tail = text.substring(idx + m.length).trim();
+      if (tail.length === 0) return null;
+      if (tail.startsWith('{')) {
+        try {
+          return this.extractJson(tail);
+        } catch {
+          return tryExtractActionJson(tail, 'marker tail');
+        }
+      }
+      return tryExtractActionJson(tail, 'marker tail');
+    };
+
+    let content = afterMarker(screen, marker);
+    if (content) return content;
+
+    // Model may have dropped the leading « or only partially echoed the token.
+    const markerTail = marker.match(/SUPERVISOR_JSON:[^>]+>>?/);
+    if (markerTail) {
+      content = afterMarker(screen, normalizeWhitespace(markerTail[0]));
+      if (content) return content;
+    }
+
+    const looseMarker = screen.match(/<<SUPERVISOR_JSON:[^>]+>>/g);
+    if (looseMarker?.length) {
+      content = afterMarker(screen, looseMarker[looseMarker.length - 1]);
+      if (content) return content;
+    }
+
+    // Grok emits "◆ Thought for Ns" immediately before the JSON block.
+    const thoughtMatches = [...screen.matchAll(/Thought for [\d.]+s/gi)];
+    if (thoughtMatches.length) {
+      const lastThought = thoughtMatches[thoughtMatches.length - 1];
+      const tail = screen.substring(lastThought.index! + lastThought[0].length);
+      content = tryExtractActionJson(tail, 'Thought-for anchor');
+      if (content) return content;
+    }
+
+    content = tryExtractActionJson(screen, '{"action" anchor');
+    if (content) return content;
+
+    // Fallback: the prefix may not have been in the sampled buffer, or TUI
+    // rendered it differently. Try to pull the last plausible JSON from the tail.
+    try {
+      const json = this.extractJson(screen);
+      if (json.includes('"action"') || json.includes('"type"')) {
+        this.log('DEBUG: locate fell back to tail JSON extraction (marker not visible in buffer)');
+        return json;
+      }
+    } catch {}
+    return null;
   }
 
   extractJson(text: string): string {
-    const end = text.lastIndexOf('}');
-    if (end === -1) throw new Error("No JSON closing brace found");
-
-    let balance = 0;
-    let start = -1;
-
-    for (let i = end; i >= 0; i--) {
-      if (text[i] === '}') balance++;
-      if (text[i] === '{') balance--;
-
-      if (balance === 0) {
-        start = i;
-        break;
-      }
+    const cleaned = prepareScreenForJsonExtraction(text);
+    const actionIdx = cleaned.lastIndexOf('{"action"');
+    if (actionIdx !== -1) {
+      const balanced = extractBalancedJsonObject(cleaned, actionIdx);
+      if (balanced) return balanced;
     }
 
-    if (start === -1) throw new Error("No matching JSON opening brace found");
-    return text.substring(start, end + 1);
+    const start = cleaned.indexOf('{');
+    if (start === -1) throw new Error('No JSON opening brace found');
+
+    const balanced = extractBalancedJsonObject(cleaned, start);
+    if (!balanced) throw new Error('No matching JSON closing brace found');
+    return balanced;
   }
 
   async executeAction(action: any) {
@@ -1026,11 +1213,14 @@ export class WatchdogService {
     if (this.retryCount < MAX_RETRIES) {
       this.log(`Retrying watchdog request (Count: ${this.retryCount}). Error: ${error}`);
       await this.wait(5000);
-      const retryMessage = `ERROR: Invalid JSON. Error: ${error}. Retry JSON.`;
+      const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      this.currentPromptMarker = `<<SUPERVISOR_JSON:${requestId}>>`;
+      const retryMessage = `ERROR: Invalid JSON. Error: ${error}. Retry JSON. Start your reply with ${this.currentPromptMarker} immediately followed by the raw minified JSON.`;
       await this.post(this.watchdog, retryMessage);
 
       this.waitingForResponseStart = true;
       this.waitingForResponse = false;
+      this.responseRequestedAt = Date.now();
       this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
     } else {
       this.log(`[WatchdogService] Max retries (${MAX_RETRIES}) reached. Transitioning to ERROR state and stopping.`);
@@ -1042,16 +1232,19 @@ export class WatchdogService {
     this.log(`Urging supervisor: invalid action "${attemptedAction}"`);
 
     const currentState = this.supervisorState.getState();
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    this.currentPromptMarker = `<<SUPERVISOR_JSON:${requestId}>>`;
     const message = `ERROR: Action "${attemptedAction}" is not valid in ${currentState} state.
 
 Valid actions for ${currentState}: ${validActions.join(', ')}
 
-Please choose one of the valid actions and respond with correct JSON.`;
+Please choose one of the valid actions. Respond ONLY with ${this.currentPromptMarker} immediately followed by the raw minified JSON.`;
 
     await this.post(this.watchdog, message);
 
     this.waitingForResponseStart = true;
     this.waitingForResponse = false;
+    this.responseRequestedAt = Date.now();
     this.nextCheckTime = Date.now() + INITIAL_WAIT_AFTER_POST;
   }
 

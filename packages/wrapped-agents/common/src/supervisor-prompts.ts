@@ -30,7 +30,7 @@ export interface PromptContext {
  * - for example: <examples>
  */
 export function generateSupervisorPrompt(promptContext: PromptContext, requestId: string): string {
-  const marker = `${PROMPT_MARKER} [${requestId}]`
+  const shortMarker = `<<SUPERVISOR_JSON:${requestId}>>`
   const state = getState(promptContext.state)
 
   if (!state) {
@@ -73,7 +73,8 @@ ${actionsList}
 for example:
 ${examples}
 
-${marker}`
+Respond ONLY with a single line that starts with the exact token ${shortMarker} immediately followed by the raw minified JSON object (no markdown, no code fences, no extra text). Example: ${shortMarker}{"action":{"type":"start_work", ...}}
+`
 }
 
 /**

@@ -1,0 +1,24 @@
+{
+  "id": "169e8e68-f69e-4ba6-8f50-c91afe6d7089",
+  "text": "Button shows either \"new project\" or \"open project\" - depending on whether .bowman folder exists",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bd804d6f-dc19-46e1-befa-49677823270c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782464160410
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

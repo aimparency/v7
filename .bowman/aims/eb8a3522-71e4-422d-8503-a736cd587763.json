@@ -1,0 +1,24 @@
+{
+  "id": "eb8a3522-71e4-422d-8503-a736cd587763",
+  "text": "on mobile webgl might need to use device pixel ratio or so. It seems kind of blurry and the TAA jitter is too larger",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "43632e76-c211-4f2f-b563-130022a6771f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782480225038
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

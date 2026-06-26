@@ -1,0 +1,24 @@
+{
+  "id": "9aecd61a-a981-4d71-8a46-72d590f1e3fa",
+  "text": "autocomplete (just for folders)",
+  "description": "show completion with darker font, tab to complete. needs backend implementation. maybe use same code as spin off path autocomplete. make it reusable. maybe even use component",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bd804d6f-dc19-46e1-befa-49677823270c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782464132526
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

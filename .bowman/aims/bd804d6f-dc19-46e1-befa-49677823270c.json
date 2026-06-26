@@ -1,0 +1,43 @@
+{
+  "id": "bd804d6f-dc19-46e1-befa-49677823270c",
+  "text": "help with entering path",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "9aecd61a-a981-4d71-8a46-72d590f1e3fa",
+      "relativePosition": [
+        -2.0603645461269213,
+        1.6648281316117637
+      ],
+      "weight": 1,
+      "explanation": ""
+    },
+    {
+      "aimId": "169e8e68-f69e-4ba6-8f50-c91afe6d7089",
+      "relativePosition": [
+        1.2201104458011691,
+        2.5772171472858223
+      ],
+      "weight": 0.9850746268656718,
+      "explanation": ""
+    }
+  ],
+  "supportedAims": [
+    "7f122bed-ff75-43fc-ba0b-1b74c8141270"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782464070160
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

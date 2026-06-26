@@ -357,6 +357,12 @@ onMounted(async () => {
   if (projectStore.projectPath) {
     await runProjectRestore(projectStore.projectPath)
     uiStore.ensureSelectionVisible();
+    if (projectStore.showWatchdog) {
+      // Reload path: panel may reconnect async — retry focus after restore settles.
+      nextTick(() => watchdogRef.value?.focusWorker())
+      setTimeout(() => watchdogRef.value?.focusWorker(), 600)
+      setTimeout(() => watchdogRef.value?.focusWorker(), 1400)
+    }
   } else {
     // Set initial focus to the first phase column
     uiStore.setActiveColumn(0);

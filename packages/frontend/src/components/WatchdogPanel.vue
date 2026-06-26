@@ -192,16 +192,33 @@ watch(() => store.selectedAgentType, async (newAgent, oldAgent) => {
   }
 })
 
+const scheduleWorkerFocus = (delayMs = 280) => {
+  window.setTimeout(() => {
+    void nextTick().then(() => {
+      requestAnimationFrame(() => {
+        workerTerm.value?.focus()
+      })
+    })
+  }, delayMs)
+}
+
+watch(() => store.isConnected, (connected, wasConnected) => {
+  if (connected && !wasConnected) {
+    // Terminals are v-show gated; wait for mount + server snapshot repaint.
+    scheduleWorkerFocus(320)
+  }
+})
+
 watch(() => store.terminalClearCounter, () => {
   workerTerm.value?.clear()
   watchdogTerm.value?.clear()
+  if (store.isConnected) {
+    scheduleWorkerFocus(350)
+  }
 })
 
 watch(() => store.focusRequestCounter, () => {
-  // Allow UI updates (e.g. search modal closing) to complete before focusing
-  setTimeout(() => {
-    workerTerm.value?.focus()
-  }, 200)
+  scheduleWorkerFocus(200)
 })
 
 watch(() => store.showActionsOverlay, (newValue) => {
@@ -265,7 +282,7 @@ const toggle = () => {
 }
 
 const focusWorker = () => {
-  workerTerm.value?.focus()
+  scheduleWorkerFocus(0)
 }
 
 defineExpose({
@@ -437,6 +454,8 @@ defineExpose({
           ref="workerTerm"
           :initial-content="store.workerOutput"
           :onData="handleWorkerInput"
+          :socket="store.socket"
+          terminal-kind="worker"
           @resize="(dims) => store.socket?.emit('resize-worker', dims)"
         />
       </div>
@@ -460,6 +479,8 @@ defineExpose({
           ref="watchdogTerm" 
           :initial-content="store.watchdogOutput"
           :onData="handleWatchdogInput"
+          :socket="store.socket"
+          terminal-kind="watchdog"
           @resize="(dims) => store.socket?.emit('resize-watchdog', dims)"
         />
       </div>

@@ -52,6 +52,13 @@ const appRouter = t.router({
     list: t.procedure
       .query(async () => {
          return WatchdogManager.list();
+      }),
+    // Hook notification: a main worker "halt" hook calls this (via broker)
+    // so we can forward a reliable stop signal into the session watchdog.
+    workerHalted: t.procedure
+      .input(z.object({ projectPath: z.string(), agentType: agentTypeSchema }))
+      .mutation(async ({ input }) => {
+         return WatchdogManager.notifyWorkerHalted(input.projectPath, input.agentType as AgentType);
       })
   })
 });

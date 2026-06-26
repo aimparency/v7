@@ -1,0 +1,25 @@
+{
+  "id": "87a9f3b2-89d0-4f78-85d5-a25dfe72acf2",
+  "text": "enter enter enter should go through all the additional dialogs after aim creation. currently modals appear at the same time. Fix that",
+  "description": "and enter does not (confirm and close the modal in the foreground).",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "da74d69e-b275-4412-b186-0ccc7a0d0440"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782464268214
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "color": null
+}

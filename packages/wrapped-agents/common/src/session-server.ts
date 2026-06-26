@@ -9,6 +9,12 @@ import { Agent } from './agent';
 import { WatchdogService } from './watchdog-service';
 import type { AutonomyPolicy } from './supervisor-state';
 import type { AgentProfile, AgentType } from './agent-profile';
+import {
+  buildParserViewPayload,
+  type ParserViewPayload,
+  type TerminalKind,
+  WATCHDOG_PARSER_LINE_COUNT,
+} from './terminal-view';
 
 /**
  * Shared session entrypoint for every wrapped agent.
@@ -91,6 +97,37 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
   }
 
   app.use(express.static(path.join(packageDir, '../client/dist')));
+
+  // Internal control endpoint for CLI hooks (e.g. worker "halt" hook) to signal
+  // that the main worker has stopped. Called via broker or directly.
+  app.post('/_internal/worker-halt', (_req, res) => {
+    if (watchdogService) {
+      watchdogService.signalWorkerHalted?.();
+    }
+    res.json({ ok: true });
+  });
+
+  function resolveParserView(kind: string, count: number): ParserViewPayload | { error: string } {
+    if (kind !== 'worker' && kind !== 'watchdog') {
+      return { error: 'kind must be worker or watchdog' };
+    }
+    const agent = kind === 'worker' ? worker : watchdog;
+    if (!agent) {
+      return { error: 'session agents not ready' };
+    }
+    return buildParserViewPayload(agent, kind as TerminalKind, count);
+  }
+
+  app.get('/_internal/parser-view/:kind', (req, res) => {
+    const rawCount = parseInt(String(req.query.count ?? WATCHDOG_PARSER_LINE_COUNT), 10);
+    const count = Number.isFinite(rawCount) ? rawCount : WATCHDOG_PARSER_LINE_COUNT;
+    const result = resolveParserView(req.params.kind, count);
+    if ('error' in result) {
+      res.status(result.error === 'session agents not ready' ? 503 : 400).json(result);
+      return;
+    }
+    res.json(result);
+  });
 
   // Centralized error handling
   process.on('uncaughtException', (err) => {
@@ -213,6 +250,16 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
   console.log(`Worker Model: ${workerModel ?? 'default'}`);
   console.log(`Watchdog Model: ${watchdogModel ?? 'default'}`);
   console.log(`Compact Watchdog Context Every: ${compactEvery} turns`);
+
+  // Inject context for CLI hooks (e.g. a "halt" / "stop" hook on the worker can
+  // notify the broker/session when the main agent finishes a turn). This gives
+  // a reliable signal for "main worker stop" that doesn't depend on scraping
+  // the TUI output (critical for agents like grok whose rendering makes the
+  // built-in spinner/busy detection flaky).
+  const brokerHttpPort = process.env.PORT_BROKER_HTTP || '5000';
+  process.env.AIMPARENCY_PROJECT = PROJECT_ROOT;
+  process.env.AIMPARENCY_AGENT_TYPE = AGENT_TYPE;
+  process.env.AIMPARENCY_BROKER_URL = `http://localhost:${brokerHttpPort}`;
 
   let worker: Agent;
   let watchdogService: WatchdogService | undefined;
@@ -372,6 +419,17 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
 
     socket.on('resize-worker', ({ cols, rows }) => replayWithRepaint(worker, 'worker', cols, rows));
     socket.on('resize-watchdog', ({ cols, rows }) => replayWithRepaint(watchdog, 'watchdog', cols, rows));
+
+    socket.on(
+      'fetch-parser-view',
+      (
+        payload: { kind?: string; count?: number },
+        ack?: (result: ParserViewPayload | { error: string }) => void,
+      ) => {
+        if (typeof ack !== 'function') return;
+        ack(resolveParserView(payload?.kind ?? '', payload?.count ?? WATCHDOG_PARSER_LINE_COUNT));
+      },
+    );
   });
 
   setInterval(() => {
