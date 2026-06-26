@@ -2,7 +2,16 @@
   "id": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
   "text": "Build the real-world effector layer: give wrapped agents hands via MCP tools (Composio + native connectors)",
   "description": "Expose real-world actions (email, GitHub, calendar, social, payments) to wrapped agents as MCP tools, so aims can produce effects beyond the codebase. Supersedes the mock 'perform-work' credit tool. Path: add Composio's MCP server + native connectors to the wrapped Claude/codex sessions.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782453661923,
+      "context": "Supervisor directed building the Composio GitHub effector layer with keys in .env. I can't obtain credentials and can't verify external calls (and real PRs are outward-facing), so I scoped to the verifiable, non-fabricating parts.",
+      "outcome": "Web-researched the real mechanism (Composio = HTTP MCP server + X-API-Key header, attached via claude --mcp-config; GitHub OAuth via the Composio connection, no raw token). Shipped an opt-in, fully-tested wiring (effectors.ts + session-server hook + .env.example), no-op by default. Activation (key + connection + live verify) is cleanly handed to Felix; flagged approval-gating for real PRs.",
+      "effectiveness": "High integrity-to-risk: built the real integration point as pure, tested config rather than an unverifiable SDK blob or fabricated secrets, with zero risk to the running loop (opt-in). Avoided coding against a possibly-stale external SDK by using the config/MCP path.",
+      "lesson": "For an externally-gated integration you can't test, build the verifiable wiring + env scaffold opt-in, research the real mechanism instead of guessing an SDK, and hand the credential/connection/verification to the human — never fabricate or commit secrets. The cleanest 'integration' was config (an MCP server URL), not custom code.",
+      "pattern": "opt-in-wiring; research-not-guess; human-owns-credentials"
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -13,9 +22,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1781423217477
+    "state": "partially",
+    "comment": "Wiring shipped (bf545eb): opt-in Composio GitHub MCP server attached to the wrapped worker via --mcp-config; effectors.ts (config/file/args) + tests + .env.example. STRICTLY no-op unless ENABLE_EFFECTORS=true and COMPOSIO_API_KEY+COMPOSIO_GITHUB_MCP_URL set. HUMAN-DEPENDENT to activate: Felix must (1) get a Composio API key, (2) create the GitHub connection in Composio (OAuth) and copy its Tool Router URL, (3) put both in .env, (4) restart sessions to verify live. First real PR creation is outward-facing — route through the approval checkpoint (366ede22). GitHub is the first surface; email/calendar/payments remain. No raw GitHub token needed (Composio handles OAuth).",
+    "date": 1782453649752
   },
   "intrinsicValue": 12,
   "cost": 5,
