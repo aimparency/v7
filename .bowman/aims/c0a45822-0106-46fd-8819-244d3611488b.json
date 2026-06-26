@@ -2,7 +2,16 @@
   "id": "c0a45822-0106-46fd-8819-244d3611488b",
   "text": "Close one reality→priority feedback loop: ground aim value in real outcomes, not self-report",
   "description": "Replace the mock economy (credits in system.json) with at least one real signal flowing back into aim value/priority — e.g. test outcomes, PR merges, replies, or revenue automatically adjusting intrinsicValue/cost. Turns directed breeding into real selection pressure that doesn't route through the human.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782453099786,
+      "context": "Asked to build reality→priority feedback by 'replacing the mock economy'. Investigated first.",
+      "outcome": "Found the mock economy (performWork credits) is dead and disconnected from priority — the premise was stale and there was no real→priority link at all. Asked Felix the design fork (his value model, his call); he chose the non-corrupting option. Shipped realizedCommits (git-reference count) + an openAimsWithNoRealizedOutput diagnostic in get_prioritized_aims, with intrinsicValue/cost untouched.",
+      "effectiveness": "Right call to investigate + ask before coding: blind-building the literal task would have polished dead code, and auto-mutating intrinsicValue would have corrupted the human-curated model. The shipped slice is real, safe, and unit-tested.",
+      "lesson": "When an aim says 'replace X', verify X is actually load-bearing first — here X was dead. And for anything touching the human value model, surface the design fork rather than guess; 'humans stay final authority' applies to the priority model itself.",
+      "pattern": "verify-the-premise; ask-before-touching-the-value-model"
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -13,9 +22,9 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1781423219779
+    "state": "partially",
+    "comment": "First reality→priority slice shipped (af62916): get_prioritized_aims reports per-aim realizedCommits (git commits referencing the aim) + openAimsWithNoRealizedOutput, grounding the loop's attention in real output. Human-set intrinsicValue/cost untouched (Felix chose the non-corrupting design). Finding: the referenced mock economy (performWork random credits) is DEAD/disconnected — no real→priority link existed; this is the first. Remaining: (B) outcome→value auto-adjust (depends on effector layer 6119682f, human-dependent) and optional costVariance nudging from realized evidence. Live confirmation of the get_prioritized_aims output needs an MCP rebuild + /mcp reconnect.",
+    "date": 1782453093894
   },
   "intrinsicValue": 18,
   "cost": 13,
