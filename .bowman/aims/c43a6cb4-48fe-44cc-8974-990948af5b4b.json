@@ -2,23 +2,31 @@
   "id": "c43a6cb4-48fe-44cc-8974-990948af5b4b",
   "text": "fix UI bug, where phase scrolls into view up and then down (or down and up), if it's too large to fit the screen. (on column navigation)",
   "description": "",
+  "reflections": [
+    {
+      "date": 1782426381998,
+      "context": "Open aim reporting up-then-down scroll jitter for oversized phases on column navigation. Created 2026-06-14.",
+      "outcome": "Found it was already resolved by commit 5f74ed1 (2026-06-22). Column.vue funnels phase-level and aim-level scrolls through one requestAnimationFrame coalescer with priority (aim > phase) and a 300ms hold that drops the deferred realign. Marked done; did not change code.",
+      "effectiveness": "Verified via git history (dedicated fix commit dated after the aim) and passing useScrollIntoView.spec.ts. Did not write code.",
+      "lesson": "Check git log for the affected files before implementing — an aim opened before a same-named fix commit is usually already done, just left open. Status hygiene lags the actual work."
+    }
+  ],
+  "archived": false,
   "tags": [],
-  "reflections": [],
   "supportingConnections": [],
   "supportedAims": [],
   "committedIn": [
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1781426929442
+    "state": "done",
+    "comment": "Already fixed by commit 5f74ed1 (2026-06-22), 8 days after this aim was opened. Column.vue now routes all programmatic scrolls through a single rAF coalescer (requestScroll) with aim>phase priority + a 300ms AIM_SCROLL_HOLD that suppresses the late realign, so the two competing smooth animations that caused the up-then-down jitter can no longer both fire. useScrollIntoView.spec.ts passes (3/3). Visual jitter is inherently interactive — reopen if it recurs.",
+    "date": 1782426375192
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "archived": false
+  "valueVariance": 0
 }

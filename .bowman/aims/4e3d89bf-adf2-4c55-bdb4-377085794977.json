@@ -1,0 +1,24 @@
+{
+  "id": "4e3d89bf-adf2-4c55-bdb4-377085794977",
+  "text": "Close the recursive loop: auto-propose improvement aims from recurring system limitations",
+  "description": "The \"identify improvements → apply improvements\" half of b03ad58e. When a friction bucket dominates the recent error log (e.g. busy-timeout ×N), the loop should propose a concrete aim in the wrapped-agents package to address that limitation at the source, rather than only retrying through it. Builds on the friction summarizer. Decide: auto-create the aim vs. surface a suggestion for human confirmation (avoid graph spam).",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b03ad58e-4518-455f-8a35-36f58eb8ee7d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Needs a human design decision: auto-create vs suggest.",
+    "date": 1782448526232
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -11,16 +11,41 @@
     "ASI",
     "meta-learning"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "bc567d2f-51f4-4ebd-86db-b4febf619ca4",
+      "relativePosition": [
+        2.2299092570589525,
+        -1.1302675370383735
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "de22b7f3-ad77-42d8-bcc9-f0de0551674e",
+      "relativePosition": [
+        0.8495294287585893,
+        -2.3512336654771477
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "4e3d89bf-adf2-4c55-bdb4-377085794977",
+      "relativePosition": [
+        -1.0793456100949466,
+        -2.2549973512110313
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5",
     "0622adb1-e79d-483c-b894-199d92ca199d"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Critical for recursive self-improvement and ASI development",
-    "date": 1774772607837
+    "state": "partially",
+    "comment": "Split into 3 sub-aims. Done: friction summarizer feeds the durable ERROR log back into next-session context (bc567d2f). Open: wire real LLM reflection to replace the scrollback stub (de22b7f3); auto-propose improvement aims from recurring limitations (4e3d89bf).",
+    "date": 1782448532242
   },
   "intrinsicValue": 0,
   "cost": 1,

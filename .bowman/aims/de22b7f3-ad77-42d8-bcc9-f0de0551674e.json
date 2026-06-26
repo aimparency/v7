@@ -1,0 +1,24 @@
+{
+  "id": "de22b7f3-ad77-42d8-bcc9-f0de0551674e",
+  "text": "Wire extractReflection to actually query the watchdog and parse a real reflection (replace the scrollback stub)",
+  "description": "SessionMemory.extractReflection builds a reflectionPrompt but never sends it — patterns/lessonsLearned are always empty and aimsWorked/outcomes are regex-scraped from terminal scrollback (low signal; visible as garbled \"Previous Session Insights\"). Wire it to send the prompt to the watchdog via the existing request/response path, await the JSON, and populate patterns/lessonsLearned plus a new systemLimitations field. Needs async plumbing in watchdog-service; design the await/timeout carefully so a slow/failed reflection never blocks compaction.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b03ad58e-4518-455f-8a35-36f58eb8ee7d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782448522295
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

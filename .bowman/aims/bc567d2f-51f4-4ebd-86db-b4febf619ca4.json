@@ -1,0 +1,33 @@
+{
+  "id": "bc567d2f-51f4-4ebd-86db-b4febf619ca4",
+  "text": "Surface recurring system friction from supervisor-errors.log into the next session's context",
+  "description": "SessionMemory.summarizeRecentFriction aggregates the durable ERROR-state log into a ranked \"Recent System Friction\" block (busy-timeout, quota, worker-stuck, parse failure, …) and loadSessionMemoryContext appends it to the instruct context. Gives each run real, structured limitation data about its own recurring failures. Tested (bucketing, aggregation, empty, malformed-skip).",
+  "reflections": [
+    {
+      "date": 1782448542067,
+      "context": "First concrete slice of b03ad58e (self-reflection / system-limitation analysis). Discovered the existing session reflection is a stub: extractReflection builds a prompt but never sends it, so patterns/lessons are always empty and the injected 'Previous Session Insights' are noisy regex scrapes of terminal scrollback.",
+      "outcome": "Rather than fix the fragile LLM-reflection path overnight, surfaced the already-structured ERROR log (supervisor-errors.log) as a ranked friction summary injected into the next session's context. Shared the log-dir resolver between writer and reader so paths can't drift.",
+      "effectiveness": "High value-to-risk: pure-function aggregation, fully unit-tested (4 tests), no change to the live control flow beyond appending a context block. Real limitation data instead of heuristic scrollback.",
+      "lesson": "When a feature's 'proper' implementation is LLM-dependent and hard to verify unattended, look for structured data the system already logs. The durable ERROR log was a higher-signal source than the reflection stub it sits next to.",
+      "pattern": "Prefer feeding back data the system already records over inventing new fragile extraction."
+    }
+  ],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b03ad58e-4518-455f-8a35-36f58eb8ee7d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Shipped in commit 1323534 on branch feat/autonomous-improvements. 4 new tests green.",
+    "date": 1782448517588
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
