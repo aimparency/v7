@@ -217,6 +217,84 @@ Respond with ONLY the JSON object, no markdown, no code blocks.`;
   }
 
   /**
+   * Resolve the durable supervisor-errors.log directory. Mirrors the path used
+   * by WatchdogService.logErrorDiagnostics so the reader and writer agree.
+   */
+  static getErrorLogDir(): string {
+    return process.env.WATCHDOG_LOG_DIR || path.resolve(__dirname, '../../logs');
+  }
+
+  /**
+   * Collapse a raw ERROR-state reason into a stable bucket so recurring
+   * failures aggregate instead of fragmenting on per-incident detail (elapsed
+   * seconds, ids, etc.). Unknown reasons fall back to a trimmed snippet.
+   */
+  static normalizeFrictionReason(reason: string): string {
+    const r = reason.toLowerCase();
+    if (/quota|usage limit|rate.?limit/.test(r)) return 'quota / usage-limit';
+    if (/model switch|model.?switch|downgrad|wrong model/.test(r)) return 'model switch';
+    if (/busy|frozen|static screen/.test(r)) return 'busy-timeout (worker frozen)';
+    if (/stuck|no response|unresponsive/.test(r)) return 'worker stuck / unresponsive';
+    if (/timeout/.test(r)) return 'timeout';
+    if (/parse|invalid json|malformed/.test(r)) return 'supervisor response parse failure';
+    if (/max.?retries|retry ceiling/.test(r)) return 'retry ceiling reached';
+    const trimmed = reason.trim().replace(/\s+/g, ' ');
+    return trimmed.length > 48 ? `${trimmed.slice(0, 48)}…` : (trimmed || 'unknown');
+  }
+
+  /**
+   * Aggregate the recent ERROR-state records from supervisor-errors.log into a
+   * compact "system friction" block the next session can learn from. Unlike the
+   * heuristic scrollback reflection, this is real structured limitation data
+   * (busy timeouts, stuck workers, quota hits, parse failures) — the input a
+   * recursive self-improvement loop needs to decide what to fix about itself.
+   * Returns '' when there is nothing useful to report.
+   */
+  static async summarizeRecentFriction(
+    logDir: string = SessionMemory.getErrorLogDir(),
+    limit: number = 30
+  ): Promise<string> {
+    try {
+      const logPath = path.join(logDir, 'supervisor-errors.log');
+      if (!await fs.pathExists(logPath)) return '';
+
+      const raw = await fs.readFile(logPath, 'utf8');
+      const lines = raw.split('\n').filter(line => line.trim().length > 0);
+      const recent = lines.slice(-limit);
+
+      const byReason = new Map<string, number>();
+      let parsed = 0;
+      for (const line of recent) {
+        try {
+          const record = JSON.parse(line) as { reason?: string };
+          const bucket = SessionMemory.normalizeFrictionReason(record.reason || 'unknown');
+          byReason.set(bucket, (byReason.get(bucket) ?? 0) + 1);
+          parsed++;
+        } catch {
+          // Skip a malformed/partial line rather than failing the whole summary.
+        }
+      }
+
+      if (parsed === 0) return '';
+
+      const ranked = [...byReason.entries()].sort((a, b) => b[1] - a[1]);
+      const items = ranked.map(([reason, count]) => `${reason} ×${count}`).join(', ');
+
+      return [
+        '## Recent System Friction',
+        '',
+        `The autonomous loop hit ${parsed} error event(s) recently — treat these as system limitations to design around or fix at the source:`,
+        `- ${items}`,
+        '',
+        'If one failure dominates, consider opening an aim to address that limitation in the wrapped-agents package rather than just retrying through it.',
+        ''
+      ].join('\n');
+    } catch {
+      return '';
+    }
+  }
+
+  /**
    * Perform recursive compression: compress N session summaries into one meta-summary
    */
   static async compressOldSessions(projectPath: string, threshold: number = 10): Promise<void> {

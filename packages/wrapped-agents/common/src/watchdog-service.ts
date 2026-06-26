@@ -201,14 +201,20 @@ export class WatchdogService {
   private async loadSessionMemoryContext(projectPath: string) {
     try {
       const summaries = await SessionMemory.loadRecentSummaries(projectPath, 5);
+      // Real, structured limitation data from the durable ERROR log — surfaced
+      // alongside the session insights so the next run can target its own
+      // recurring failures (recursive self-improvement) instead of rediscovering
+      // them. Best-effort: returns '' when there is nothing to report.
+      const friction = await SessionMemory.summarizeRecentFriction();
 
-      if (summaries.length > 0) {
-        const memoryContext = SessionMemory.formatForContext(summaries);
-        this.instructTextWithMemory = `${this.baseInstructText}\n\n${memoryContext}`;
-        this.log(`Loaded ${summaries.length} session memories into context`);
-      } else {
-        this.instructTextWithMemory = this.baseInstructText;
-      }
+      const blocks: string[] = [this.baseInstructText];
+      if (summaries.length > 0) blocks.push(SessionMemory.formatForContext(summaries));
+      if (friction) blocks.push(friction);
+
+      this.instructTextWithMemory = blocks.join('\n\n');
+      this.log(
+        `Loaded ${summaries.length} session memories${friction ? ' + system-friction summary' : ''} into context`
+      );
     } catch (error) {
       this.log(`Failed to load session memory context: ${error}`);
       this.instructTextWithMemory = this.baseInstructText;
@@ -417,7 +423,7 @@ export class WatchdogService {
 
     // 2. Durable cross-session JSONL record for easy after-the-fact lookup.
     try {
-      const logDir = process.env.WATCHDOG_LOG_DIR || path.resolve(__dirname, '../../logs');
+      const logDir = SessionMemory.getErrorLogDir();
       fs.mkdirSync(logDir, { recursive: true });
       fs.appendFileSync(path.join(logDir, 'supervisor-errors.log'), JSON.stringify(record) + '\n');
     } catch (e) {

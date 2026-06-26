@@ -144,3 +144,55 @@ Aim f1550eb7-d02e-40bc-af94-1fb1076076bd marked as done
   assert.ok(summary!.aimsWorked.includes('c4ab85c2-0497-48de-ae93-3dc7b4c2aa60'), 'Should extract second aim');
   assert.equal(summary!.aimsWorked.length, 2, 'Should deduplicate aim IDs');
 });
+
+const FRICTION_DIR = path.join(__dirname, '../.test-friction');
+
+function writeErrorLog(lines: string[]) {
+  fs.ensureDirSync(FRICTION_DIR);
+  fs.writeFileSync(path.join(FRICTION_DIR, 'supervisor-errors.log'), lines.join('\n') + '\n');
+}
+
+test('normalizeFrictionReason buckets recurring failures', () => {
+  assert.equal(SessionMemory.normalizeFrictionReason('Worker busy with a static screen for 312s'), 'busy-timeout (worker frozen)');
+  assert.equal(SessionMemory.normalizeFrictionReason('Quota limit / model switch detected'), 'quota / usage-limit');
+  assert.equal(SessionMemory.normalizeFrictionReason('Worker session stuck'), 'worker stuck / unresponsive');
+  assert.equal(SessionMemory.normalizeFrictionReason('Failed to parse supervisor JSON'), 'supervisor response parse failure');
+});
+
+test('summarizeRecentFriction aggregates and ranks the error log', async () => {
+  await fs.remove(FRICTION_DIR);
+  writeErrorLog([
+    JSON.stringify({ reason: 'Worker busy with a static screen for 300s', timestamp: '2026-06-25T22:00:00Z' }),
+    JSON.stringify({ reason: 'Worker busy with a static screen for 305s', timestamp: '2026-06-25T22:30:00Z' }),
+    JSON.stringify({ reason: 'Worker session stuck', timestamp: '2026-06-25T23:00:00Z' }),
+  ]);
+
+  const summary = await SessionMemory.summarizeRecentFriction(FRICTION_DIR);
+  assert.match(summary, /Recent System Friction/);
+  assert.match(summary, /busy-timeout \(worker frozen\) ×2/);
+  assert.match(summary, /worker stuck \/ unresponsive ×1/);
+  // Most frequent bucket ranks first.
+  assert.ok(summary.indexOf('busy-timeout') < summary.indexOf('worker stuck'), 'ranks by frequency');
+
+  await fs.remove(FRICTION_DIR);
+});
+
+test('summarizeRecentFriction returns empty when no log exists', async () => {
+  await fs.remove(FRICTION_DIR);
+  assert.equal(await SessionMemory.summarizeRecentFriction(FRICTION_DIR), '');
+});
+
+test('summarizeRecentFriction skips malformed lines without failing', async () => {
+  await fs.remove(FRICTION_DIR);
+  writeErrorLog([
+    'this is not json',
+    JSON.stringify({ reason: 'timeout waiting for response' }),
+    '{ partial',
+  ]);
+
+  const summary = await SessionMemory.summarizeRecentFriction(FRICTION_DIR);
+  assert.match(summary, /timeout ×1/);
+  assert.doesNotMatch(summary, /not json/);
+
+  await fs.remove(FRICTION_DIR);
+});
