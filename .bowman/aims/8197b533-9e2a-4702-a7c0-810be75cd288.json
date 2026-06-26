@@ -1,0 +1,26 @@
+{
+  "id": "8197b533-9e2a-4702-a7c0-810be75cd288",
+  "text": "Relevance check before starting work: confirm an aim is still worth doing before building it",
+  "description": "MOTIVATION: The loop repeatedly starts work on aims that are stale, already-implemented, or premised on a passed deadline. Concrete trigger: the Composio GitHub effector (6119682f) was built from an EXPIRED hackathon requirement (BuilderShip, ~June 12-14) and was redundant (the worker already has `gh`). Also this session: many top-ranked 'open' aims were already implemented by the watchdog. Wasted effort + graph drift. The worker should run a relevance check as STEP 0 before implementing any aim, and only proceed if it still makes sense.\n\nTHE CHECK (run before WORKING, on the aim about to be implemented):\n1. DATE: Is the aim time-boxed or premised on a deadline/event? Compare against today's date. If the driving event/deadline has passed (hackathons, dated milestones), the aim may be moot.\n2. ALREADY IMPLEMENTED: Investigate the codebase (grep/inspect) + git history. If the described work is already present, mark done with verification evidence instead of rebuilding. (Extends the existing 'check if already implemented' nudge in executeStartWork.)\n3. REASONING CHAIN (supporting connections up to root): Use get_aim_context's path_to_root. Does the chain of WHY still hold? Is a parent itself stale/abandoned/superseded (e.g. the hackathon cluster)? Is the aim premised on a requirement that no longer applies?\n\nDECISION RULES:\n- Relevant + not implemented -> proceed to build.\n- Already implemented -> mark done + reflection (verification evidence).\n- Clearly stale/moot (passed deadline, dead/abandoned parent, superseded) -> mark cancelled with a precise comment.\n- UNSURE whether still relevant -> set human-dependent with a comment explaining the specific doubt, so a human decides rather than the agent guessing or burning effort.\n\nIMPLEMENTATION (mostly prompt engineering in the loop, low risk):\n- Strengthen executeStartWork / the EXPLORING->WORKING guidance and the INSTRUCT guide so the worker performs date + already-implemented + reasoning-chain checks before coding, with the human-dependent escape hatch. Keep it terse (low-context ethos).\n- get_aim_context already returns path_to_root; consider surfacing a lightweight staleness hint (e.g. flag aims whose text/description mentions a date in the past). Optional, secondary to the prompt guidance.\n\nRELATED: complements a1f62047 (gate DONE on evidence) — this gates STARTING on relevance. Both make the graph a trustworthy compass and stop the loop wasting cycles.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Created from Felix's directive after the Composio/hackathon-stale-aim incident. Comprehensive design in description; implementation is mostly prompt engineering in the supervisor/worker loop.",
+    "date": 1782454252597
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
