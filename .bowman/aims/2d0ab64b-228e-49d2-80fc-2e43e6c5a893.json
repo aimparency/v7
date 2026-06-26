@@ -1,0 +1,26 @@
+{
+  "id": "2d0ab64b-228e-49d2-80fc-2e43e6c5a893",
+  "text": "Add a valueRationale field: a place to explain WHY an aim has its intrinsic value (esp. the root's value proposition)",
+  "description": "Today an aim has text + description + a bare intrinsicValue NUMBER, with no home for the reasoning behind that value. Felix (using Aimparency for a business-idea project) wants a dedicated place for the root aim's value proposition / \"why this is useful\", and more generally an explanation attached to intrinsic value.\n\nPROPOSAL: a `valueRationale` field (free text, optionally structured) on intrinsic-value-bearing nodes. Fits the cooperation/legitimacy thesis directly — value judgments become inspectable and auditable (humans stay final authority over the value model). It also feeds the relevance check (8197b533): \"is this still worth doing?\" is unanswerable without the recorded WHY, and a structured rationale captures the assumptions a relevance check should re-validate.\n\nSCOPE: schema field (shared types) + create_aim/update_aim MCP + frontend edit/display (root especially). Low risk, additive.\n\nOPEN QUESTIONS (Felix, design): (1) every aim or only intrinsic-value nodes? (2) free text vs structured (list the assumptions the value rests on)? (3) does it influence the value model at all, or purely documentation/inspection (recommend: documentation only — do NOT auto-derive intrinsicValue from it; humans stay authority).\n\nNOTE: the related cross-repo composition thread Felix raised (deep links repo+aim vs coarse repo-linking; normalized graphs compose by zeroing external intrinsics) is ALREADY covered by existing aims — do not duplicate: 5a45cb28 (cross-repo edge data model w/ repoId), de08d86a (merged cross-repo value flow, external intrinsics zeroed), 700e5b01, 1585aa46, a82b1530, f2e3dad3, c4df7232.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Captured from Felix's design musing (2026-06-26). Design open questions in description; recommend documentation-only (no auto-derivation of value). Cross-repo composition part is separately covered by existing aims, not duplicated here.",
+    "date": 1782466780267
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

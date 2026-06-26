@@ -50,10 +50,43 @@
       "weight": 5
     },
     {
-      "aimId": "1be76eaf-1968-4c9f-88d1-9be9db09836d",
+      "aimId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
       "relativePosition": [
         0.19845649502581342,
         -2.492110555248717
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0697d033-bb95-4433-8a9c-20f2afd06c31",
+      "relativePosition": [
+        -2.02256176011638,
+        1.4694366017337837
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "366ede22-6516-45ec-9f0c-1845c25d1169",
+      "relativePosition": [
+        2.4591124888413263,
+        0.45029520009058277
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "2fbd88df-3698-4f48-8e66-a001c37a99ea",
+      "relativePosition": [
+        -1.843963421655553,
+        -1.60016078852884
+      ],
+      "weight": 1.0434782608695652,
+      "explanation": "i sometimes feel the urge to say something like \"work directly on main\" - throughout the project. And need a place to configure this. maybe even a separate file next to the meta.json. something that get's posted when a new worker session starts. Same for the watchdog session maybe? There is already a prompt there, i think"
+    },
+    {
+      "aimId": "2d0ab64b-228e-49d2-80fc-2e43e6c5a893",
+      "relativePosition": [
+        -0.5877965067346034,
+        2.429916720110094
       ],
       "weight": 1
     }
