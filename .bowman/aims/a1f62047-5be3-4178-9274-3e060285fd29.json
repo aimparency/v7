@@ -9,11 +9,13 @@
   "supportedAims": [
     "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1782449285792
+    "state": "partially",
+    "comment": "First slice shipped (ca20f0e): MCP update_aim now nudges to addReflection with verification evidence when marking done without one. Remaining: richer per-aim-type evidence expectations (code/UI/behavior) and surfacing in the supervisor wrap-up flow.",
+    "date": 1782451673230
   },
   "intrinsicValue": 0,
   "cost": 3,
