@@ -2,7 +2,16 @@
   "id": "de22b7f3-ad77-42d8-bcc9-f0de0551674e",
   "text": "Wire extractReflection to actually query the watchdog and parse a real reflection (replace the scrollback stub)",
   "description": "SessionMemory.extractReflection builds a reflectionPrompt but never sends it — patterns/lessonsLearned are always empty and aimsWorked/outcomes are regex-scraped from terminal scrollback (low signal; visible as garbled \"Previous Session Insights\"). Wire it to send the prompt to the watchdog via the existing request/response path, await the JSON, and populate patterns/lessonsLearned plus a new systemLimitations field. Needs async plumbing in watchdog-service; design the await/timeout carefully so a slow/failed reflection never blocks compaction.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782449151992,
+      "context": "Wire a real session reflection (patterns/lessons/systemLimitations) without a fragile extra watchdog round-trip racing the single-in-flight tick() loop.",
+      "outcome": "Approach B: folded optional reflection fields into the existing compact action JSON; executeCompact now persists a SessionSummary with them. Found en route that the state-machine path never reflected at all — extractReflection lived only in the legacy executeAction (test-only). So this both activated reflection in the live loop and gave it real content.",
+      "effectiveness": "High value-to-risk once scoped as backward-compatible: omitted fields fall back to '' so the live compaction path is unaffected even if the model never emits them. Fully unit-tested; no live PTY verification needed because the fallback preserves prior behavior.",
+      "lesson": "Before 'wiring' a feature, confirm the live path even invokes the code you think you're extending — the reflection was dead in the active path, which changed the whole shape of the fix. Backward-compatible optional fields turn an 'unverifiable overnight' change into a safe one.",
+      "pattern": "fold-into-existing-decision; backward-compatible-optional-fields"
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -11,9 +20,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1782448522295
+    "state": "done",
+    "comment": "Implemented approach B in commit 38c67c4. compact action carries optional patterns/lessonsLearned/systemLimitations; executeCompact (the live path, which previously never reflected) saves a SessionSummary folding them in, before compacting. Backward compatible + best-effort. Also discovered & fixed that reflection was dead in the state-machine path (only the legacy executeAction had it). 3 new tests; 11/11 + 24/24 green.",
+    "date": 1782449142043
   },
   "intrinsicValue": 0,
   "cost": 3,

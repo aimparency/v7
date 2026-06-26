@@ -1,0 +1,24 @@
+{
+  "id": "a1f62047-5be3-4178-9274-3e060285fd29",
+  "text": "Gate aim 'done' on verification evidence appropriate to the aim type",
+  "description": "For the aim graph to be a trustworthy compass, 'done' must mean verified-done, not claimed-done. Observed repeatedly that aims get closed on weak evidence: a UI-jitter aim closed by git archaeology (visual bug, never seen running), a 'session reflection' aim where the live code path was actually dead. The loop should require + record evidence matched to the aim type before status=done — code: tests/typecheck pass; UI/visual: screenshot or interaction proof; behavior/bugfix: a repro that now passes — captured in the reflection. Complements c0a45822 (grounding VALUE in outcomes) by grounding STATUS in evidence. Without it, more autonomy compounds confident-but-unverified work (drift) rather than capability — the core risk on any path to ASI.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782449285792
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
