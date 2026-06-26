@@ -28,6 +28,14 @@ const MAX_BUSY_TIMEOUT_MS = parseInt(process.env.WATCHDOG_MAX_BUSY_TIMEOUT || '3
 // human re-enables it. Runs in the backend session process (setInterval-driven,
 // independent of the web UI) and is bounded by the session lease. <=0 disables.
 const AUTO_RETRY_AFTER_ERROR_MS = parseInt(process.env.WATCHDOG_AUTO_RETRY_MS || '600000', 10); // 10 minutes
+// Cap on consecutive post-emergency (quota / usage-limit / model-switch)
+// auto-retries before the loop gives up and stays stopped. <=0 (default) means
+// unbounded: a usage-limit hit should recover on its own once the quota window
+// rolls over, so by default an unattended session retries indefinitely. Set >0
+// as a safety valve when a *model downgrade* would otherwise retry forever on
+// the wrong model. Reset by a manual restart. Read at retry time so it can be
+// changed (or set in a test) without restarting the process.
+const maxEmergencyRetries = () => parseInt(process.env.WATCHDOG_MAX_EMERGENCY_RETRIES || '0', 10);
 const MAX_WATCHDOG_TIMEOUT_MS = parseInt(process.env.WATCHDOG_MAX_WATCHDOG_TIMEOUT || '120000', 10); // 2 minutes
 // Prompts get typed into the agent PTYs in chunks rather than one char at a
 // time: the supervisor prompt is ~1.5k chars, so the old 50ms-per-char pacing
@@ -106,6 +114,11 @@ export class WatchdogService {
   waitingForResponseStart: boolean = false;
   processing: boolean = false;
   retryCount: number = 0;
+  // How many times the post-emergency (quota / usage-limit / model-switch)
+  // auto-retry has fired without an intervening manual restart. Surfaces "the
+  // session recovered from N usage-limit hits overnight" and feeds the optional
+  // MAX_EMERGENCY_RETRIES cap. Reset on a manual enable, not on an auto-retry.
+  emergencyRetryCount: number = 0;
 
   compactEvery: number;
   turnCount: number = 0;
@@ -114,6 +127,10 @@ export class WatchdogService {
 
   private nextCheckTime = 0;
   private errorRetryTimeout: ReturnType<typeof setTimeout> | null = null;
+  // True only while the auto-retry timer is calling setEnabled(true), so the
+  // manual-restart path can reset emergencyRetryCount while the auto path keeps
+  // accumulating it across the unattended stretch.
+  private autoRetrying = false;
   private busyStartedAt = 0;
   // Worker screen snapshot used to tell "working" (screen changing) from
   // "frozen" (screen static) for the busy-timeout. See the busy branch in tick().
@@ -241,6 +258,10 @@ export class WatchdogService {
     this.enabled = enabled;
     if (enabled) {
       this.emergencyStopped = false;
+      // A manual restart is a clean slate: forget the emergency-retry tally so a
+      // future quota hit starts counting from zero against the cap. An auto
+      // retry must NOT reset it, or the cap could never be reached.
+      if (!this.autoRetrying) this.emergencyRetryCount = 0;
       this.waitingForResponse = false;
       this.waitingForResponseStart = false;
       this.processing = false;
@@ -320,8 +341,24 @@ export class WatchdogService {
       // emergency stop, which reschedules this retry: effectively a retry every
       // AUTO_RETRY_AFTER_ERROR_MS until the quota frees up.
       if (this.enabled) return;
-      this.log('Auto-retry: re-enabling supervisor after error/emergency stop.');
+
+      // emergencyStopped is still set here (only setEnabled clears it), so it
+      // tells an emergency retry apart from an ordinary-error retry.
+      if (this.emergencyStopped) {
+        const cap = maxEmergencyRetries();
+        this.emergencyRetryCount++;
+        if (cap > 0 && this.emergencyRetryCount > cap) {
+          this.log(`Auto-retry: giving up after ${cap} emergency (quota/model-switch) retries — staying stopped until a manual restart.`);
+          return;
+        }
+        this.log(`Auto-retry: re-enabling after emergency stop (quota recovery attempt #${this.emergencyRetryCount}).`);
+      } else {
+        this.log('Auto-retry: re-enabling supervisor after error.');
+      }
+
+      this.autoRetrying = true;
       this.setEnabled(true);
+      this.autoRetrying = false;
     }, AUTO_RETRY_AFTER_ERROR_MS);
   }
 

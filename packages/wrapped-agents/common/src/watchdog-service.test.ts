@@ -238,7 +238,51 @@ test('emergency stop (quota / usage limit) auto-retries despite the emergency fl
   t.mock.timers.tick(TEN_MINUTES_MS);
   assert.equal(service.enabled, true, 'usage-limit hit recovers itself after the delay');
   assert.equal(service.emergencyStopped, false, 're-enabling clears the emergency flag');
+  assert.equal(service.emergencyRetryCount, 1, 'counts the recovery attempt');
   assert.equal((service as any).supervisorState.getState(), 'EXPLORING');
+});
+
+test('repeated quota hits keep retrying (unbounded by default) and tally the count', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const service = makeService();
+
+  // Simulate three consecutive 10-min windows where the limit is still in force:
+  // each retry re-enables, the limit re-trips the emergency stop, repeat.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    service.enabled = true;
+    service.triggerEmergencyStop();
+    t.mock.timers.tick(TEN_MINUTES_MS);
+    assert.equal(service.enabled, true, `recovered on attempt ${attempt}`);
+    assert.equal(service.emergencyRetryCount, attempt, `tally is ${attempt}`);
+  }
+});
+
+test('WATCHDOG_MAX_EMERGENCY_RETRIES caps the retries and then stays stopped', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const prev = process.env.WATCHDOG_MAX_EMERGENCY_RETRIES;
+  process.env.WATCHDOG_MAX_EMERGENCY_RETRIES = '2';
+  t.after(() => {
+    if (prev === undefined) delete process.env.WATCHDOG_MAX_EMERGENCY_RETRIES;
+    else process.env.WATCHDOG_MAX_EMERGENCY_RETRIES = prev;
+  });
+  const service = makeService();
+
+  // Attempts 1 and 2 recover; attempt 3 exceeds the cap and stays stopped.
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    service.enabled = true;
+    service.triggerEmergencyStop();
+    t.mock.timers.tick(TEN_MINUTES_MS);
+    assert.equal(service.enabled, true, `recovered within cap on attempt ${attempt}`);
+  }
+
+  service.enabled = true;
+  service.triggerEmergencyStop();
+  t.mock.timers.tick(TEN_MINUTES_MS);
+  assert.equal(service.enabled, false, 'past the cap, the loop stays stopped');
+
+  // A manual restart resets the tally so a fresh quota stretch gets its own budget.
+  service.setEnabled(true);
+  assert.equal(service.emergencyRetryCount, 0, 'manual restart clears the emergency tally');
 });
 
 test('a manual stop cancels a pending emergency-stop auto-retry', (t) => {
