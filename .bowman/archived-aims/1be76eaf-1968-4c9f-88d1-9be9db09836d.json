@@ -6,15 +6,12 @@
   "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [
-    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
-    "cffdcd91-fd9c-45e4-98fd-e265650be143"
-  ],
+  "supportedAims": [],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Direction-setting per Felix: the product's main idea is reaching real-world goals, not just self-dev. Needs human decision on which action surface (email/web/calendar) to start with + credential setup.",
-    "date": 1782449291619
+    "state": "archived",
+    "comment": "Merged into 6119682f-bf88-4b6b-ab7d-6024b1c170ba",
+    "date": 1782452195691
   },
   "intrinsicValue": 12,
   "cost": 13,

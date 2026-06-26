@@ -56,9 +56,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Core capability - highest priority",
-    "date": 1774771790833
+    "state": "partially",
+    "comment": "Core loop is IMPLEMENTED, not unbuilt: the watchdog state machine (31e7e8b7, done) is the discover→plan→execute→verify loop — EXPLORING/WORKING/WRAPPING_UP/ERROR, with break_down for task decomposition and ERROR+retry+auto-retry (improved this session) for self-correction. Remaining open children: 6119682f real-world effector layer (needs Composio + credentials, partly human-dependent), c0a45822 reality→priority feedback, 0cd5540c full read→act→reflect wiring, b03ad58e self-reflection (partially). So: parent partially done; do not rebuild the loop.",
+    "date": 1782452217013
   },
   "intrinsicValue": 20,
   "cost": 1,
