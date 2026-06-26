@@ -94,6 +94,35 @@ test('MCP Tools - update_aim nudges to verify when marking done without a reflec
   assert.doesNotMatch(openUpdate.content[0].text, /verified-done/, 'no nudge on non-done updates');
 });
 
+test('MCP Tools - list_aims uncommitted surfaces parented-but-unphased aims that floating misses', async () => {
+  const server = new MockServer();
+  const callerProxy = createCallerProxy(caller);
+  registerTools(server as any, callerProxy as any);
+
+  const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
+
+  // A: no phase, no parent -> floating AND uncommitted.
+  const a = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'orphan' }));
+  // B: committed to a phase.
+  const phase = await caller.phase.create({ projectPath: ctx.projectPath, phase: { name: 'P', from: 0, to: 1000 } });
+  const b = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'phased', phaseId: phase.id }));
+  // C: has a parent (B) but no phase -> uncommitted but NOT floating (the invisible class).
+  const c = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'connected-unphased', supportedAims: [b] }));
+
+  const uncommitted = JSON.parse((await server.callTool('list_aims', {
+    projectPath: ctx.projectPath, status: 'open', uncommitted: true,
+  })).content[0].text).map((x: any) => x.id);
+  assert.ok(uncommitted.includes(a), 'uncommitted includes the orphan');
+  assert.ok(uncommitted.includes(c), 'uncommitted includes the connected-but-unphased aim');
+  assert.ok(!uncommitted.includes(b), 'uncommitted excludes the phased aim');
+
+  const floating = JSON.parse((await server.callTool('list_aims', {
+    projectPath: ctx.projectPath, floating: true,
+  })).content[0].text).map((x: any) => x.id);
+  assert.ok(floating.includes(a), 'floating includes the orphan');
+  assert.ok(!floating.includes(c), 'floating MISSES the connected-but-unphased aim (the discoverability gap)');
+});
+
 test('MCP Tools - list_phase_aims_recursive', async () => {
   const server = new MockServer();
   const callerProxy = createCallerProxy(caller);

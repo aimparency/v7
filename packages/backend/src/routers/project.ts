@@ -1068,6 +1068,16 @@ export const createProjectRouter = (
           .filter((a: Aim) => (a.supportedAims?.length ?? 0) === 0 && (a.committedIn?.length ?? 0) === 0)
           .map((a: Aim) => ({ id: a.id, text: a.text, status: a.status.state }));
 
+        // 1b. Uncommitted-open: open aims connected to the graph (have a parent)
+        // but not in any phase, so phase-based discovery (get_prioritized_aims)
+        // never surfaces them — the hidden work backlog. Commit them into a phase
+        // to make them rankable.
+        const uncommittedOpen = active
+          .filter((a: Aim) => a.status.state === 'open'
+            && (a.committedIn?.length ?? 0) === 0
+            && (a.supportedAims?.length ?? 0) > 0)
+          .map((a: Aim) => ({ id: a.id, text: a.text }));
+
         // 2. Mega-parents: too many direct children (catch-all smell).
         const megaParents = active
           .map((a: Aim) => ({ a, n: childIdsOf(a).length }))
@@ -1131,6 +1141,7 @@ export const createProjectRouter = (
           activeAims: active.length,
           thresholds: { megaParentThreshold, duplicateThreshold },
           floating: section(floating),
+          uncommittedOpen: section(uncommittedOpen),
           megaParents: section(megaParents),
           staleStatus: section(staleStatus),
           collapseCandidates: section(collapseCandidates),

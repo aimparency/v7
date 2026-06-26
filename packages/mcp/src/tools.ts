@@ -276,7 +276,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Start the work loop here: open aims of the active phase (resolved by date, or pass phaseId), ranked by flow-based value/cost, with phase economics + data-quality diagnostics. Distrust the ranking when diagnostics flag ~0-value or cost-less aims — fix those first.",
+          description: "Start the work loop here: open aims of the active phase (resolved by date, or pass phaseId), ranked by flow-based value/cost, with phase economics + data-quality diagnostics. Only ranks phase-committed aims — if it returns little, much open work is likely uncommitted to any phase; check list_aims uncommitted=true (or graph_hygiene) and commit_aim_to_phase. Distrust the ranking when diagnostics flag ~0-value or cost-less aims — fix those first.",
           inputSchema: {
             type: "object",
             properties: {
@@ -289,7 +289,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "list_aims",
-          description: "List all aims. Optionally filter by status, phaseId, or floating (uncommitted, no parents) — use floating=true to find aims to reparent into the graph.",
+          description: "List all aims. Filter by status, phaseId, floating (no phase AND no parents — orphans to reparent), or uncommitted (not in any phase, regardless of parents). Use uncommitted=true with status=open to find connected work that phase-based discovery (get_prioritized_aims) misses — then commit_aim_to_phase to make it rankable.",
           inputSchema: {
             type: "object",
             properties: {
@@ -297,6 +297,7 @@ export function registerTools(server: Server, clientOverride?: any) {
               status: { type: ["string", "array"], items: { type: "string" } },
               phaseId: { type: "string" },
               floating: { type: "boolean" },
+              uncommitted: { type: "boolean" },
               limit: { type: "number" },
               offset: { type: "number" },
             },
@@ -374,7 +375,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "graph_hygiene",
-          description: "Read-only graph-hygiene dashboard: floating aims, mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent aims, collapse candidates (parents whose active children are all done), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Act on results via merge_aims / suggest_reparents / update_aim.",
+          description: "Read-only graph-hygiene dashboard: floating aims (no phase, no parents), uncommittedOpen (open aims with a parent but no phase — hidden work that get_prioritized_aims misses; commit_aim_to_phase to surface them), mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent aims, collapse candidates (parents whose active children are all done), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Act on results via commit_aim_to_phase / merge_aims / suggest_reparents / update_aim.",
           inputSchema: {
             type: "object",
             properties: {
@@ -1044,6 +1045,7 @@ export function registerTools(server: Server, clientOverride?: any) {
             status: args.status as string | string[] | undefined,
             phaseId: args.phaseId as string | undefined,
             floating: args.floating as boolean | undefined,
+            uncommitted: args.uncommitted as boolean | undefined,
             limit: args.limit as number | undefined,
             offset: args.offset as number | undefined,
           });

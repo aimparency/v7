@@ -70,6 +70,7 @@ export const createAimRouter = (
         phaseId: z.string().uuid().optional(),
         parentAimId: z.string().uuid().optional(),
         floating: z.boolean().optional(),
+        uncommitted: z.boolean().optional(),
         archived: z.boolean().optional(),
         ids: z.array(z.string().uuid()).optional(),
         limit: z.number().optional(),
@@ -94,6 +95,12 @@ export const createAimRouter = (
             aims = aims.filter((aim: Aim) => aim.supportedAims.includes(input.parentAimId!));
           } else if (input.floating) {
             aims = aims.filter((aim: Aim) => (!aim.committedIn || aim.committedIn.length === 0) && (!aim.supportedAims || aim.supportedAims.length === 0));
+          } else if (input.uncommitted) {
+            // Not committed to any phase, regardless of parents. Surfaces aims
+            // that are connected (have a parent) but invisible to phase-based
+            // discovery like get_prioritized_aims — the work backlog to triage
+            // into phases. Broader than `floating` (which also requires no parents).
+            aims = aims.filter((aim: Aim) => !aim.committedIn || aim.committedIn.length === 0);
           }
         }
 
