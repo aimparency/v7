@@ -7,7 +7,6 @@ import * as fs from 'fs';
 import cors from 'cors';
 import { Agent } from './agent';
 import { WatchdogService } from './watchdog-service';
-import { effectorWorkerArgs } from './effectors';
 import type { AutonomyPolicy } from './supervisor-state';
 import type { AgentProfile, AgentType } from './agent-profile';
 
@@ -225,14 +224,7 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
       } catch (e) {}
     }
 
-    // Attach the opt-in real-world effector MCP server (Composio GitHub, aim
-    // 6119682f) when configured; effectorWorkerArgs() returns [] otherwise, so
-    // the default launch is unchanged.
-    const effectorArgs = effectorWorkerArgs();
-    const currentArgs = [...profile.buildWorkerArgs({ resume, workerModel }), ...effectorArgs];
-    if (effectorArgs.length > 0) {
-      console.log(`[Effectors] Attaching Composio MCP server to the worker session.`);
-    }
+    const currentArgs = profile.buildWorkerArgs({ resume, workerModel });
     console.log(`Starting ${profile.bannerName} worker (Resume: ${resume})...`);
 
     let relaunched = false;
