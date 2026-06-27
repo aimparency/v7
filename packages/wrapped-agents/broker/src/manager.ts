@@ -8,6 +8,7 @@ import fs from 'fs-extra';
 const execFileAsync = promisify(execFile);
 
 import { AIMPARENCY_DIR_NAME } from 'shared';
+import { runRelaunchPass } from './relaunch-watch.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,6 +27,13 @@ interface WatchdogInstance {
 
 const instances = new Map<string, WatchdogInstance>();
 const DEFAULT_KEEPALIVE_TIMEOUT = 60 * 60 * 1000; // 60 minutes
+
+// Relaunch-indicator watcher (aim 29021d9a): polls live sessions for a
+// `runtime/relaunch-request` file and rebuilds+relaunches them. A single
+// non-overlapping pass at a time (a relaunch's verify gate can take seconds).
+let relaunchWatcher: NodeJS.Timeout | null = null;
+let relaunchPassRunning = false;
+const RELAUNCH_WATCH_INTERVAL_MS = parseInt(process.env.WATCHDOG_RELAUNCH_WATCH_INTERVAL || '4000', 10);
 
 // Compound key for instances: allows same project with different agent types
 function getInstanceKey(projectPath: string, agentType: AgentType): string {
@@ -521,5 +529,29 @@ export const WatchdogManager = {
         agentType: i.agentType,
         lastKeepalive: i.lastKeepalive
       }));
+  },
+
+  /**
+   * Begin polling live sessions for a `runtime/relaunch-request` indicator and
+   * rebuild+relaunch the ones that have it (aim 29021d9a). Idempotent; the timer
+   * is unref'd so it never keeps the process alive on its own.
+   */
+  startRelaunchWatcher(intervalMs: number = RELAUNCH_WATCH_INTERVAL_MS): void {
+      if (relaunchWatcher) return;
+      relaunchWatcher = setInterval(() => {
+        if (relaunchPassRunning) return; // don't overlap a long (verify-gated) pass
+        relaunchPassRunning = true;
+        void runRelaunchPass({
+          instances: Array.from(instances.values()).map((i) => ({
+            projectPath: i.projectPath,
+            agentType: i.agentType,
+          })),
+          relaunch: (projectPath, agentType, opts) => WatchdogManager.relaunch(projectPath, agentType, opts),
+        })
+          .catch((e) => console.error('[WatchdogBroker] relaunch watcher pass error:', e))
+          .finally(() => { relaunchPassRunning = false; });
+      }, intervalMs);
+      if (typeof relaunchWatcher.unref === 'function') relaunchWatcher.unref();
+      console.log(`[WatchdogBroker] Relaunch-indicator watcher started (every ${intervalMs}ms).`);
   }
 };
