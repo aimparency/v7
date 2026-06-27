@@ -172,13 +172,17 @@ interface AgentSignals {
   hasAuthoritativeBusySignal: boolean;
 }
 
+// Path (relative to the worker's cwd = the project root) of the indicator file
+// the broker watches; dropping it requests a rebuild+relaunch of this session.
+export const RELAUNCH_REQUEST_REL_PATH = '.bowman/runtime/relaunch-request';
+
 /**
  * Guidance posted to the worker when it has edited its own wrapper code (aim
  * 310878de). The running build is stale until a rebuild+relaunch, so we nudge the
  * worker — at a natural halt, once — to reach a COMMITTED stopping point so the
- * edit is durable and a relaunch can safely deploy it. The relaunch itself is
- * operator/UI-triggered today (broker.relaunch, gated by the pre-relaunch verify
- * gate); the automated indicator-file trigger is the sibling aim 29021d9a.
+ * edit is durable, then trigger the relaunch itself by dropping the indicator
+ * file the broker watches (producer side, aim 0d07b9dd). The broker's verify gate
+ * (typecheck+tests) guards the actual relaunch (29021d9a).
  */
 export function buildWrapperRelaunchPrompt(changedFiles: string[], rootDir: string): string {
   const rels = changedFiles.map((f) => {
@@ -192,11 +196,15 @@ export function buildWrapperRelaunchPrompt(changedFiles: string[], rootDir: stri
     `code (${fileList}) since this session started, so the RUNNING build is now stale and`,
     'will NOT reflect your edits until the session is rebuilt and relaunched.',
     '',
-    'Before continuing: bring your current task to a clean, COMMITTED stopping point so the',
-    'change is durable and the wrapper is not left half-edited. Once committed, the session',
-    'can be relaunched (operator via the Watchdog UI, or the automated rebuild-relaunch step)',
-    'to load your new code — the relaunch runs a typecheck+test verify gate first, so make',
-    'sure type-check and the wrapped-agents tests pass.',
+    'Do this, in order:',
+    '1. Bring your current task to a clean, COMMITTED stopping point (so the change is',
+    '   durable and the wrapper is not left half-edited).',
+    '2. Make sure type-check and the wrapped-agents tests pass — the relaunch runs a',
+    '   typecheck+test verify gate and will ABORT (keeping the old code) if they fail.',
+    '3. Request the relaunch by dropping the indicator file the broker watches, from the',
+    '   project root:',
+    `       mkdir -p .bowman/runtime && printf '{}' > ${RELAUNCH_REQUEST_REL_PATH}`,
+    '   The broker will verify and, if green, rebuild+relaunch this session on your new code.',
   ].join('\n');
 }
 

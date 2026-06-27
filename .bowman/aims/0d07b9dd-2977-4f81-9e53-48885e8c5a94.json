@@ -1,0 +1,37 @@
+{
+  "id": "0d07b9dd-2977-4f81-9e53-48885e8c5a94",
+  "text": "Worker emits the relaunch-indicator after committing a self-edit",
+  "description": "Producer side that makes the self-rebuild loop actually fire. The broker now consumes a `<project .bowman>/runtime/relaunch-request` indicator (29021d9a) and the supervisor warns the worker when its own wrapper code is dirty (310878de), but nothing yet WRITES the indicator. v1: extend buildWrapperRelaunchPrompt so the dirty-warning instructs the worker to, AFTER committing, create the indicator file (e.g. `mkdir -p .bowman/runtime && printf '{}' > .bowman/runtime/relaunch-request`) from the project root (the worker's cwd). Commit-then-signal preserves a clean rollback point; the broker's verify gate guards the actual relaunch. Possible hardening (separate): have the supervisor write the indicator deterministically after observing a new commit, rather than relying on the LLM to run the command.",
+  "reflections": [
+    {
+      "date": 1782565518682,
+      "context": "The broker consumer (29021d9a) and the dirty-warning (310878de) existed but nothing wrote the indicator, so the self-rebuild loop could never fire.",
+      "outcome": "Extended buildWrapperRelaunchPrompt with an ordered commit -> verify -> drop-indicator instruction and exported RELAUNCH_REQUEST_REL_PATH (.bowman/runtime/relaunch-request). The worker now self-issues the relaunch; the broker's verify gate guards it.",
+      "effectiveness": "Verified-done: common `tsc --noEmit` clean and `npm test` 56/56 (1 new test asserting the prompt contains the exact indicator path + mkdir command). Confirmed by reading both sides that the producer path (worker cwd = project root, per manager.ts 'pass PROJECT ROOT') matches the consumer getProjectRelaunchRequestFile = <root>/.bowman/runtime/relaunch-request.",
+      "lesson": "Cross-component contracts (here a file path) must be checked from BOTH ends in code, not assumed: producer-relative vs consumer-normalized paths only line up because the worker runs from the project root. v1 leans on the LLM to run a shell command — a deterministic 'supervisor writes indicator after seeing a new commit' would be more reliable.",
+      "pattern": "Close a multi-aim chain by verifying the seam (shared path/contract) end-to-end rather than trusting each side in isolation."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "self-rebuild",
+    "wrapped-agents",
+    "supervisor"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5af61b3e-5b5e-43ba-af2c-23977d55b910"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Extended buildWrapperRelaunchPrompt to instruct the worker: commit -> ensure typecheck/tests pass -> drop the indicator (`mkdir -p .bowman/runtime && printf '{}' > .bowman/runtime/relaunch-request`) from the project root. Exported RELAUNCH_REQUEST_REL_PATH. Path matches the broker consumer (getProjectRelaunchRequestFile = <root>/.bowman/runtime/relaunch-request; worker cwd is the project root). Closes detect->warn->produce->consume. v1 relies on the LLM running the command; deterministic supervisor-writes-on-commit is noted as possible hardening.",
+    "date": 1782565506483
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

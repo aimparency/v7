@@ -161,6 +161,13 @@ test('buildWrapperRelaunchPrompt is actionable: lists changed files and explains
   assert.match(prompt, /stale/i);
 });
 
+test('buildWrapperRelaunchPrompt tells the worker how to drop the relaunch indicator', () => {
+  const prompt = buildWrapperRelaunchPrompt(['/r/common/src/a.ts'], '/r');
+  // The concrete producer command the broker watcher (29021d9a) consumes.
+  assert.match(prompt, /\.bowman\/runtime\/relaunch-request/);
+  assert.match(prompt, /mkdir -p \.bowman\/runtime/);
+});
+
 test('buildWrapperRelaunchPrompt truncates long file lists', () => {
   const root = '/r';
   const files = Array.from({ length: 7 }, (_, i) => path.join(root, `common/src/f${i}.ts`));
