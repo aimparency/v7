@@ -149,8 +149,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         logStatus(`Session lost - keepalive failed. Click Start to reconnect.`)
         // Session is gone, clean up client state
         if (socket.value) {
-          socket.value.disconnect()
-          socket.value = null
+          teardownSocket()
         }
         isConnected.value = false
         connectionState.value = 'idle'
@@ -183,6 +182,25 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
+  function clearAgentBuffers() {
+    agentBuffers.value = {
+      claude: { worker: '', watchdog: '' },
+      gemini: { worker: '', watchdog: '' },
+      codex: { worker: '', watchdog: '' },
+      agy: { worker: '', watchdog: '' },
+      grok: { worker: '', watchdog: '' }
+    }
+    terminalClearCounter.value++
+  }
+
+  function teardownSocket() {
+    const current = socket.value
+    if (!current) return
+    current.removeAllListeners()
+    current.disconnect()
+    socket.value = null
+  }
+
   async function fetchSessions() {
     try {
       sessions.value = await trpcWatchdog.watchdog.list.query()
@@ -209,6 +227,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   function connectToSocket(port: number, projectPath: string, agentType: AgentType) {
     logStatus(`Connecting to port ${port}...`)
 
+    teardownSocket()
+    stopKeepalive()
+
     connectionState.value = 'connecting'
     connectedAgentType.value = agentType
     setAgentType(agentType)
@@ -226,6 +247,14 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
   async function connectToExistingSession(session: WatchdogSession, reason: string) {
     if (socket.value || connectionState.value === 'spawning' || connectionState.value === 'connecting') return false
+
+    const projectStore = useProjectStore()
+    const currentPath = normalizeProjectPathForSession(projectStore.projectPath || '')
+    const sessionPath = normalizeProjectPathForSession(session.projectPath)
+    if (currentPath && sessionPath !== currentPath) {
+      logStatus(`Refusing to connect: session is for ${sessionPath}, current project is ${currentPath}`)
+      return false
+    }
 
     logStatus(`${reason} ${session.agentType} session on port ${session.port}...`)
     // Don't clear buffers - preserve existing agent output when reconnecting
@@ -282,8 +311,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     const agentType = connectedAgentType.value || selectedAgentType.value
     if (socket.value) {
       logStatus('Disconnecting from watchdog...')
-      socket.value.disconnect()
-      socket.value = null
+      teardownSocket()
     }
     isConnected.value = false
     connectionState.value = 'idle'
@@ -300,14 +328,14 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   function disconnectForProjectSwitch() {
     if (socket.value) {
       logStatus('Disconnecting watchdog due to project switch...')
-      socket.value.disconnect()
-      socket.value = null
+      teardownSocket()
     }
     stopKeepalive()
     isConnected.value = false
     connectionState.value = 'idle'
     connectedAgentType.value = null
     supervisorState.value = null
+    clearAgentBuffers()
   }
 
   async function cancelConnectionAttempt() {
@@ -316,9 +344,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     const agentType = connectedAgentType.value || selectedAgentType.value
 
     if (socket.value) {
-      socket.value.removeAllListeners()
-      socket.value.disconnect()
-      socket.value = null
+      teardownSocket()
     }
 
     stopKeepalive()
@@ -368,8 +394,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     // Disconnect first if connected
     if (socket.value) {
-      socket.value.disconnect()
-      socket.value = null
+      teardownSocket()
       isConnected.value = false
     }
     stopKeepalive()
@@ -401,8 +426,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     stopKeepalive()
 
     if (socket.value) {
-        socket.value.disconnect()
-        socket.value = null
+        teardownSocket()
         isConnected.value = false
     }
 

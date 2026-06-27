@@ -97,6 +97,14 @@ watch(() => projectStore.showWatchdog, (val) => {
   }
 })
 
+// Always disconnect/reconnect on project switch — even when the watchdog panel is hidden.
+watch(
+  () => projectStore.projectPath,
+  (newPath, oldPath) => {
+    void watchdogStore.handleProjectSwitch(newPath, oldPath)
+  }
+)
+
 // Persist terminal fullscreen so a reload restores it.
 watch(() => projectStore.terminalFullscreen, (val) => {
   localStorage.setItem('aimparency-terminal-fullscreen', String(val))

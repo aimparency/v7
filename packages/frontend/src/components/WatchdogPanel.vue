@@ -253,13 +253,6 @@ onMounted(() => {
   window.addEventListener('mousedown', onDocMouseDown, true)
 })
 
-watch(
-  () => projectStore.projectPath,
-  (newPath, oldPath) => {
-    void store.handleProjectSwitch(newPath, oldPath)
-  }
-)
-
 onUnmounted(() => {
   if (store.socket) {
     store.socket.off('worker-data', onWorkerData)
