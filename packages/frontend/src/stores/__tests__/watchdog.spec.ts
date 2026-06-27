@@ -155,7 +155,7 @@ describe('watchdog store project switching', () => {
     expect(mockIo).toHaveBeenCalledWith('http://127.0.0.1:4102', expect.any(Object))
   })
 
-  it('switches agent sessions without clearing should-connect', async () => {
+  it('switches agent sessions without clearing should-connect or refetching sessions', async () => {
     const projectStore = useProjectStore()
     const store = useWatchdogStore()
 
@@ -165,14 +165,14 @@ describe('watchdog store project switching', () => {
     store.connectedAgentType = 'claude'
     store.selectedAgentType = 'claude'
     localStorage.setItem('aimparency-watchdog-should-connect', 'true')
-
-    mockTrpcWatchdog.watchdog.list.query.mockResolvedValue([
+    store.sessions = [
       { projectPath: '/projects/a', pid: 1, port: 4101, agentType: 'claude', lastKeepalive: Date.now() },
       { projectPath: '/projects/a', pid: 2, port: 4102, agentType: 'grok', lastKeepalive: Date.now() }
-    ])
+    ]
 
     await store.switchAgentType('grok')
 
+    expect(mockTrpcWatchdog.watchdog.list.query).not.toHaveBeenCalled()
     expect(mockSocket.disconnect).toHaveBeenCalled()
     expect(mockIo).toHaveBeenCalledWith('http://127.0.0.1:4102', expect.any(Object))
     expect(localStorage.getItem('aimparency-watchdog-should-connect')).toBe('true')

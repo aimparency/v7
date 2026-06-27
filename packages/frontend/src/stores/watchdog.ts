@@ -118,14 +118,17 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     ) || null
   })
 
-  function setAgentType(type: AgentType) {
+  function setAgentType(type: AgentType, options?: { skipHydrate?: boolean }) {
+    if (selectedAgentType.value === type && options?.skipHydrate) return
     selectedAgentType.value = type
     localStorage.setItem('aimparency-agent-type', type)
     const projectStore = useProjectStore()
     if (projectStore.projectPath) {
       void trpcWatchdogRuntimePreference(projectStore.projectPath, type)
     }
-    void hydrateRuntimeState(undefined, type)
+    if (!options?.skipHydrate) {
+      void hydrateRuntimeState(undefined, type)
+    }
   }
 
   async function trpcWatchdogRuntimePreference(projectPath: string, preferredAgentType: AgentType) {
@@ -232,7 +235,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     connectionState.value = 'connecting'
     connectedAgentType.value = agentType
-    setAgentType(agentType)
+    if (selectedAgentType.value !== agentType) {
+      setAgentType(agentType, { skipHydrate: true })
+    }
     socket.value = io(buildHttpUrl(port), {
       transports: ['websocket'],
       autoConnect: true,
@@ -343,16 +348,20 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   async function switchAgentType(newType: AgentType) {
+    if (newType === selectedAgentType.value && isConnected.value && connectedAgentType.value === newType) {
+      return
+    }
+
     const wasConnected = isConnected.value && connectedAgentType.value !== null
     const previousType = connectedAgentType.value
 
-    setAgentType(newType)
+    setAgentType(newType, { skipHydrate: true })
 
     if (wasConnected && previousType !== newType) {
       disconnectSocketOnly('Switching agent session')
     }
 
-    await fetchSessions()
+    await hydrateRuntimeState(undefined, newType, { suppressAutoStart: true })
 
     const session = currentProjectSession.value
     if (session && !isConnected.value) {

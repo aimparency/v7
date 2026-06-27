@@ -83,23 +83,13 @@ const headerBgColor = computed(() => {
   return '#115e59'
 })
 
-const runningAgents = computed(() => {
-  const set = new Set<AgentType>()
-  if (!projectStore.projectPath) return set
-  
-  // Normalize: strip trailing slashes, then .bowman
-  const normalize = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
-  
-  const normalizedUiPath = normalize(projectStore.projectPath)
-
-  store.sessions.forEach(s => {
-    const normalizedSessionPath = normalize(s.projectPath)
-    if (normalizedSessionPath === normalizedUiPath) {
-      set.add(s.agentType)
-    }
-  })
-  return set
-})
+const AGENT_OPTIONS: { value: AgentType; label: string }[] = [
+  { value: 'claude', label: 'Claude' },
+  { value: 'gemini', label: 'Gemini' },
+  { value: 'codex', label: 'Codex' },
+  { value: 'agy', label: 'Agy' },
+  { value: 'grok', label: 'Grok' }
+]
 
 async function onAgentTypeChange(e: Event) {
   const target = e.target as HTMLSelectElement
@@ -285,14 +275,16 @@ defineExpose({
         <select
           :value="store.selectedAgentType"
           @change="onAgentTypeChange"
-          :disabled="store.connectionState === 'spawning' || store.connectionState === 'connecting'"
+          :disabled="store.connectionState === 'spawning'"
           class="agent-select"
         >
-          <option value="claude">Claude {{ runningAgents.has('claude') ? '(Running)' : '' }}</option>
-          <option value="gemini">Gemini {{ runningAgents.has('gemini') ? '(Running)' : '' }}</option>
-          <option value="codex">Codex {{ runningAgents.has('codex') ? '(Running)' : '' }}</option>
-          <option value="agy">Agy {{ runningAgents.has('agy') ? '(Running)' : '' }}</option>
-          <option value="grok">Grok {{ runningAgents.has('grok') ? '(Running)' : '' }}</option>
+          <option
+            v-for="agent in AGENT_OPTIONS"
+            :key="agent.value"
+            :value="agent.value"
+          >
+            {{ agent.label }}
+          </option>
         </select>
 
         <span class="session-status">
