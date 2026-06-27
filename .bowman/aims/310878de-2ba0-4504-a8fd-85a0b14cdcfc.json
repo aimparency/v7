@@ -2,7 +2,16 @@
   "id": "310878de-2ba0-4504-a8fd-85a0b14cdcfc",
   "text": "Inject session relaunch prompts for the agent on natural halts",
   "description": "During reflections or idle states, warn the agent that the wrapper code is dirty and instruct it to conclude its task and issue the relaunch command.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782563164110,
+      "context": "Second step of the self-rebuild cluster (5af61b3e), consuming the wrapperDirty flag from 4a96fff0: at a natural halt, tell the worker its own wrapper edits won't take effect until a rebuild+relaunch.",
+      "outcome": "Added buildWrapperRelaunchPrompt() (pure) and WatchdogService.maybeWarnWrapperDirty() (latched, async post to worker), wired into the idle-escalation branch of tick() so it fires at a natural halt and yields the turn. Warns once, lists changed files, and instructs commit-then-relaunch, referencing the broker's existing verify gate.",
+      "effectiveness": "Verified-done: `tsc --noEmit` clean and common suite 55/55 (3 new tests) — builder lists files + explains relaunch, truncates long lists (+N more), and maybeWarnWrapperDirty posts to the worker exactly once (no re-warn on the next halt).",
+      "lesson": "post() bails when !enabled and auto-prepends WORKER_SUPERVISOR_PREFIX to non-slash worker messages — tests must set enabled=true and assert on substrings. Kept the prompt builder pure so its wording is unit-testable without driving the async post/timer path.",
+      "pattern": "Latch one-shot interjections (sent-once flag) so supervisor guidance isn't drowned out by repeated halts; reuse the existing detection seam rather than re-scanning."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -13,9 +22,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780332918
+    "state": "done",
+    "comment": "WatchdogService.maybeWarnWrapperDirty() injects a one-time (latched) warning to the worker at the natural-halt branch of tick() when wrapperDirty (from sibling 4a96fff0). Pure builder buildWrapperRelaunchPrompt() lists changed files and instructs: reach a COMMITTED stopping point, then relaunch to deploy (references the existing broker.relaunch verify gate). Yields the turn after warning. The automated relaunch trigger (indicator file) remains 29021d9a. 3 new tests; common suite 55/55 + type-check clean.",
+    "date": 1782563153908
   },
   "intrinsicValue": 0,
   "cost": 1,
