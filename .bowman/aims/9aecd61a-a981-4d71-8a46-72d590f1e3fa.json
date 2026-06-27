@@ -12,8 +12,8 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1782464132526
+    "comment": "Verified 2026-06-27: the 'needs backend implementation' blocker is resolved — completePath endpoint (server.ts:739) + SpinOffApplyModal folder autocomplete already exist. Remaining work is purely frontend: wire folder autocomplete into ProjectSelectionView's path input, reusing the SpinOffApplyModal pattern (ideally extract a shared component).",
+    "date": 1782542543006
   },
   "intrinsicValue": 0,
   "cost": 1,

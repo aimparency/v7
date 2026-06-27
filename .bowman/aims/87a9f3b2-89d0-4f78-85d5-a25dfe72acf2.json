@@ -4,6 +4,7 @@
   "description": "and enter does not (confirm and close the modal in the foreground).",
   "reflections": [],
   "archived": false,
+  "color": null,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -12,14 +13,13 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1782464268214
+    "comment": "Verified-in-code 2026-06-27: after aim creation, list-store.ts:775 calls modalStore.openConnectionDetailsModal. The reported 'modals appear at the same time / enter doesn't advance through them sequentially' bug needs interactive repro to confirm current behavior before fixing.",
+    "date": 1782542545638
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "color": null
+  "valueVariance": 0
 }

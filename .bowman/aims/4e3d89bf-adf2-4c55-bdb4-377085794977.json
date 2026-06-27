@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Needs a human design decision: auto-create vs suggest.",
-    "date": 1782448526232
+    "state": "partially",
+    "comment": "Verified 2026-06-27. The capture+feedback half of the loop exists: session-memory.ts records systemLimitations and summarizeRecentFriction() injects a system-friction summary into the watchdog's context each session (watchdog-service.ts:278). Missing: nothing programmatically auto-PROPOSES improvement aims (create_aim) from recurring limitations — it currently relies on the agent doing so manually after reading the friction block.",
+    "date": 1782545173001
   },
   "intrinsicValue": 0,
   "cost": 3,

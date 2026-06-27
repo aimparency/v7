@@ -15,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Critical for verifying autonomy and debugging",
-    "date": 1774771791525
+    "state": "partially",
+    "comment": "Verified 2026-06-27. Structured durable logging partly exists via session-memory.ts (patterns/lessonsLearned/systemLimitations) + the supervisor error log; the specific agent_log.json execution-log schema was not built. Decide whether session-memory satisfies the audit intent or a dedicated agent_log.json is still wanted.",
+    "date": 1782542535004
   },
   "intrinsicValue": 0,
   "cost": 1,

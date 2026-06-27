@@ -34,8 +34,8 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1780780465047
+    "comment": "Verified not started 2026-06-27. Viewport culling exists (spatial tree reused from layout engine) but that's different from this aim: progressive/lazy loading with dotted stub nodes that expand on click is not implemented. Still relevant for large graphs.",
+    "date": 1782545295235
   },
   "intrinsicValue": 0,
   "cost": 1,

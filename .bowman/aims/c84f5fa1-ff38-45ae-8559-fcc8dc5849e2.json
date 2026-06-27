@@ -12,8 +12,8 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1782449766020
+    "comment": "Verified not implemented 2026-06-27. Aim.vue onAimClick (line 57/64) emits 'aim-clicked' with only the aim id and ignores keyboard modifiers; shiftKey is only handled for keyboard nav in keyboard-actions.ts, not for clicks. Work: have the aim click carry event.shiftKey and, when an aim is already selected, create/select the connection selected→clicked instead of changing selection.",
+    "date": 1782545292670
   },
   "intrinsicValue": 0,
   "cost": 1,

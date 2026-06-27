@@ -1,6 +1,8 @@
 {
   "id": "cf86e8af-afe6-4df6-9f75-501b7a0ac673",
   "text": "Implement Reflection Pattern for self-improvement",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "asi",
     "learning",
@@ -12,11 +14,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1768829032983
+    "state": "partially",
+    "comment": "Verified 2026-06-27 (status was stale — aim predates the watchdog reflection work). Reflection pattern is substantially built: on compact the watchdog records patterns/lessonsLearned/systemLimitations into session-memory.ts, summarizeRecentFriction() feeds prior friction back into the next session's context, and the aim graph has an addReflection MCP tool. Remaining open-ended part: turning reflections into measurable self-improvement (closes into 4e3d89bf auto-propose).",
+    "date": 1782545287075
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

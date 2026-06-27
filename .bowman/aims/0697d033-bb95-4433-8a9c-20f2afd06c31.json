@@ -12,8 +12,8 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1782450400684
+    "comment": "Verified 2026-06-27. Base exists: voice-bridge (packages/voice-bridge/src/index.ts) runs a conversational agent with list_aims/get_prioritized_aims/create_aim tools that can create aims from speech. Not built: the specific propose→editable aim sub-tree→human-approves-before-commit flow. Still relevant; voice-bridge is the natural starting point.",
+    "date": 1782545175633
   },
   "intrinsicValue": 0,
   "cost": 5,

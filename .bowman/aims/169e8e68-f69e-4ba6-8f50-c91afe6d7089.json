@@ -12,8 +12,8 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1782464160410
+    "comment": "Verified still relevant + not implemented 2026-06-27: ProjectSelectionView.vue:65 hard-codes 'Open Project'. Work: check whether the typed path already contains /.bowman and label the button 'Open Project' vs 'New Project' accordingly.",
+    "date": 1782542540190
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -15,8 +15,8 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Deferred — do after basic spin-off.",
-    "date": 1782310708919
+    "comment": "Verified still deferred 2026-06-27: server.ts:805 errors when target already holds a .bowman ('Integrating into an existing graph is not supported yet (deferred)'). Basic spin-off has landed, so this remainder is now actionable: merge spun-off aims as free-floating, handle ID collisions.",
+    "date": 1782542537359
   },
   "intrinsicValue": 0,
   "cost": 1,

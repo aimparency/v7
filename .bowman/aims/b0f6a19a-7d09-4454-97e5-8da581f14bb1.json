@@ -12,8 +12,8 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1782450106175
+    "comment": "Verified still todo 2026-06-27. Bring-into-view exists (mapStore.centerOnNode / centerOnConnection in map.ts, called from GraphSidePanel.vue:100/150 + App.vue:60) but uses a simple timed animation, not the described 3-point camera path (start → overview bounding-box at p=0.5 → end, ease-out). Implement the camera-path algorithm inside those map.ts methods.",
+    "date": 1782545289949
   },
   "intrinsicValue": 0,
   "cost": 1,

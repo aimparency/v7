@@ -16,9 +16,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1782110121922
+    "state": "partially",
+    "comment": "Verified 2026-06-27. Part 1 (pre-relaunch verify gate) IS shipped: broker verifyWrappedAgents (manager.ts:267) runs typecheck + wrapped-agents tests, gated at :494, aborts relaunch on failure. Remaining: Part 2 post-relaunch boot-failure rollback (detect crash-loop, git-revert to last-known-good, rebuild, escalate) and Part 3 per-redeploy audit log — neither exists in broker/common.",
+    "date": 1782542532478
   },
   "intrinsicValue": 0,
   "cost": 4,
