@@ -129,4 +129,53 @@ describe('watchdog store project switching', () => {
     expect(mockIo).toHaveBeenCalledWith('http://127.0.0.1:4102', expect.any(Object))
     expect(store.connectedAgentType).toBe('claude')
   })
+
+  it('forces reconnect on project switch even when autoConnectToExistingSession is false', async () => {
+    const projectStore = useProjectStore()
+    const store = useWatchdogStore()
+
+    mockTrpc.project.getAutonomyPolicy.query.mockResolvedValue({
+      version: 1,
+      autonomyMode: 'manual',
+      preferredAgentType: 'claude',
+      sessionLeaseMinutes: 60,
+      autoConnectToExistingSession: false,
+      restoreSupervisorStateOnSessionRestart: true,
+      requireCommitBeforeCompact: false,
+      askForHumanOn: []
+    })
+
+    projectStore.projectPath = '/projects/b'
+    store.socket = mockSocket as any
+    store.isConnected = true
+    store.connectedAgentType = 'claude'
+
+    await store.handleProjectSwitch('/projects/b', '/projects/a')
+
+    expect(mockIo).toHaveBeenCalledWith('http://127.0.0.1:4102', expect.any(Object))
+  })
+
+  it('switches agent sessions without clearing should-connect', async () => {
+    const projectStore = useProjectStore()
+    const store = useWatchdogStore()
+
+    projectStore.projectPath = '/projects/a'
+    store.socket = mockSocket as any
+    store.isConnected = true
+    store.connectedAgentType = 'claude'
+    store.selectedAgentType = 'claude'
+    localStorage.setItem('aimparency-watchdog-should-connect', 'true')
+
+    mockTrpcWatchdog.watchdog.list.query.mockResolvedValue([
+      { projectPath: '/projects/a', pid: 1, port: 4101, agentType: 'claude', lastKeepalive: Date.now() },
+      { projectPath: '/projects/a', pid: 2, port: 4102, agentType: 'grok', lastKeepalive: Date.now() }
+    ])
+
+    await store.switchAgentType('grok')
+
+    expect(mockSocket.disconnect).toHaveBeenCalled()
+    expect(mockIo).toHaveBeenCalledWith('http://127.0.0.1:4102', expect.any(Object))
+    expect(localStorage.getItem('aimparency-watchdog-should-connect')).toBe('true')
+    expect(store.selectedAgentType).toBe('grok')
+  })
 })

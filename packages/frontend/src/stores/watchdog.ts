@@ -201,13 +201,13 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     socket.value = null
   }
 
-  async function fetchSessions() {
+  async function fetchSessions(options?: { suppressAutoStart?: boolean }) {
     try {
       sessions.value = await trpcWatchdog.watchdog.list.query()
       const projectStore = useProjectStore()
       if (projectStore.projectPath) {
         await hydrateAutonomyPolicy(projectStore.projectPath)
-        await hydrateRuntimeState(projectStore.projectPath)
+        await hydrateRuntimeState(projectStore.projectPath, undefined, options)
       }
       // console.log(`[WatchdogStore] Fetched sessions:`, sessions.value)
     } catch (e: any) {
@@ -325,9 +325,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
-  function disconnectForProjectSwitch() {
+  function disconnectSocketOnly(reason = 'Disconnecting socket') {
     if (socket.value) {
-      logStatus('Disconnecting watchdog due to project switch...')
+      logStatus(`${reason}...`)
       teardownSocket()
     }
     stopKeepalive()
@@ -335,7 +335,29 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     connectionState.value = 'idle'
     connectedAgentType.value = null
     supervisorState.value = null
+  }
+
+  function disconnectForProjectSwitch() {
+    disconnectSocketOnly('Disconnecting watchdog due to project switch')
     clearAgentBuffers()
+  }
+
+  async function switchAgentType(newType: AgentType) {
+    const wasConnected = isConnected.value && connectedAgentType.value !== null
+    const previousType = connectedAgentType.value
+
+    setAgentType(newType)
+
+    if (wasConnected && previousType !== newType) {
+      disconnectSocketOnly('Switching agent session')
+    }
+
+    await fetchSessions()
+
+    const session = currentProjectSession.value
+    if (session && !isConnected.value) {
+      await connectToExistingSession(session, 'Switching to')
+    }
   }
 
   async function cancelConnectionAttempt() {
@@ -454,14 +476,14 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
   }
 
-  async function restorePreviousConnection() {
+  async function restorePreviousConnection(options?: { force?: boolean; suppressAutoStart?: boolean }) {
     const projectStore = useProjectStore()
     const projectPath = projectStore.projectPath
     if (!projectPath) return false
 
     await hydrateAutonomyPolicy(projectPath)
-    await hydrateRuntimeState(projectPath)
-    if (autonomyPolicy.value && !autonomyPolicy.value.autoConnectToExistingSession) {
+    await hydrateRuntimeState(projectPath, undefined, { suppressAutoStart: options?.suppressAutoStart })
+    if (!options?.force && autonomyPolicy.value && !autonomyPolicy.value.autoConnectToExistingSession) {
       return false
     }
 
@@ -485,8 +507,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     if (normalizedNewPath === normalizedOldPath) return
 
+    const hadActiveSocket = !!socket.value
     const shouldReconnect =
-      !!socket.value ||
+      hadActiveSocket ||
       localStorage.getItem('aimparency-watchdog-should-connect') === 'true'
 
     disconnectForProjectSwitch()
@@ -500,14 +523,24 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       return
     }
 
-    await fetchSessions()
+    await fetchSessions({ suppressAutoStart: true })
 
     if (shouldReconnect) {
-      await restorePreviousConnection()
+      const restored = await restorePreviousConnection({
+        force: hadActiveSocket,
+        suppressAutoStart: true
+      })
+      if (!restored && hadActiveSocket) {
+        await connect()
+      }
     }
   }
 
-  async function hydrateRuntimeState(overridePath?: string, overrideAgentType?: AgentType) {
+  async function hydrateRuntimeState(
+    overridePath?: string,
+    overrideAgentType?: AgentType,
+    options?: { suppressAutoStart?: boolean }
+  ) {
     const projectStore = useProjectStore()
     const projectPath = overridePath || projectStore.projectPath
     if (!projectPath) return null
@@ -535,7 +568,12 @@ export const useWatchdogStore = defineStore('watchdog', () => {
         supervisorState.value = agentState?.supervisorState ?? null
 
         // Auto-restart if enabled but no session exists
-        if (isEnabled.value && !isEmergencyStopped.value && !currentProjectSession.value) {
+        if (
+          !options?.suppressAutoStart &&
+          isEnabled.value &&
+          !isEmergencyStopped.value &&
+          !currentProjectSession.value
+        ) {
           logStatus(`Auto-starting enabled ${agentType} session (no active session found)...`)
           void connect(projectPath, agentType)
         }
@@ -708,6 +746,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     connectedAgentType,
     currentProjectSession,
     setAgentType,
+    switchAgentType,
     fetchSessions,
     connect,
     cancelConnectionAttempt,

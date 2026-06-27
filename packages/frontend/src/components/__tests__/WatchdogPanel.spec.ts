@@ -41,6 +41,9 @@ const watchdogStore = reactive({
   setAgentType: vi.fn((type: 'claude' | 'gemini' | 'codex' | 'agy' | 'grok') => {
     watchdogStore.selectedAgentType = type
   }),
+  switchAgentType: vi.fn(async (type: 'claude' | 'gemini' | 'codex' | 'agy' | 'grok') => {
+    watchdogStore.selectedAgentType = type
+  }),
   get currentProjectSession() {
     return watchdogStore.sessions.find(
       (session) =>
@@ -124,23 +127,12 @@ describe('WatchdogPanel', () => {
 
     expect(watchdogStore.selectedAgentType).toBe('codex')
     expect(watchdogStore.restorePreviousConnection).toHaveBeenCalledTimes(1)
-    expect(watchdogStore.disconnect).toHaveBeenCalledTimes(1)
+    expect(watchdogStore.switchAgentType).toHaveBeenCalledWith('codex')
+    expect(watchdogStore.disconnect).not.toHaveBeenCalled()
     expect(watchdogStore.connect).not.toHaveBeenCalled()
   })
 
-  it('commits the new selection before disconnecting the current session', async () => {
-    const events: string[] = []
-    watchdogStore.setAgentType.mockImplementation((type: 'claude' | 'gemini' | 'codex' | 'agy' | 'grok') => {
-      events.push(`set:${type}`)
-      watchdogStore.selectedAgentType = type
-    })
-    watchdogStore.disconnect.mockImplementation(() => {
-      events.push('disconnect')
-      watchdogStore.isConnected = false
-      watchdogStore.connectedAgentType = null
-      watchdogStore.connectionState = 'idle'
-    })
-
+  it('routes agent selection changes through switchAgentType', async () => {
     const wrapper = mount(WatchdogPanel, {
       global: {
         stubs: {
@@ -162,7 +154,8 @@ describe('WatchdogPanel', () => {
     await select.setValue('codex')
     await nextTick()
 
-    expect(events).toEqual(['set:codex', 'disconnect'])
+    expect(watchdogStore.switchAgentType).toHaveBeenCalledWith('codex')
+    expect(watchdogStore.disconnect).not.toHaveBeenCalled()
   })
 
   it('renders lease in the wrapper header and supervisor controls in the supervisor header', async () => {

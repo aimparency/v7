@@ -104,24 +104,10 @@ const runningAgents = computed(() => {
 async function onAgentTypeChange(e: Event) {
   const target = e.target as HTMLSelectElement
   const newType = target.value as AgentType
-  const wasConnectedToDifferentAgent = store.isConnected && store.connectedAgentType !== newType
+  if (newType === store.selectedAgentType) return
 
-  // Commit the UI selection before any disconnect/reconnect side effects.
-  store.setAgentType(newType)
-
-  // Wait for computed properties and the controlled select to settle first.
+  await store.switchAgentType(newType)
   await nextTick()
-
-  // If currently connected to a different agent type, disconnect (but leave it running)
-  if (wasConnectedToDifferentAgent) {
-    store.disconnect()
-    // Terminal clearing now handled by selectedAgentType watcher
-  }
-
-  // Auto-connect if session exists for new agent type
-  if (store.currentProjectSession !== null && !store.isConnected) {
-    await store.connect()
-  }
 }
 
 const leaseLabel = computed(() => {
