@@ -4,6 +4,7 @@ import os from 'os';
 import path from 'path';
 import type { Dirent } from 'fs';
 import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
 import { observable } from '@trpc/server/observable';
 import type { Aim, Phase, ProjectMeta } from 'shared';
 import { INITIAL_STATES, cosineSimilarity } from 'shared';
@@ -262,6 +263,20 @@ export const createProjectRouter = (
           if (!meta.rootPhaseIds) {
               meta.rootPhaseIds = [];
           }
+          if (!meta.linkedRepos) {
+              meta.linkedRepos = [];
+          }
+          // Generate a stable repo identity once, then persist so cross-repo
+          // edges ({repoId, aimId}) always reference the same id.
+          if (!meta.repoId) {
+              meta.repoId = uuidv4();
+              try {
+                  await ensureProjectStructure(projectPath);
+                  await writeJsonAtomic(metaPath, meta);
+              } catch (e) {
+                  console.error('Failed to persist generated repoId', e);
+              }
+          }
           return meta;
         }
 
@@ -272,6 +287,8 @@ export const createProjectRouter = (
         meta = {
             name,
             color: '#007acc',
+            repoId: uuidv4(),
+            linkedRepos: [],
             statuses: INITIAL_STATES,
             dataModelVersion: CURRENT_PHASE_DATA_MODEL_VERSION,
             phaseCursors: {},
@@ -445,7 +462,13 @@ export const createProjectRouter = (
         const projectPath = normalizeProjectPath(input.projectPath);
         await ensureProjectStructure(projectPath);
         const metaPath = path.join(projectPath, 'meta.json');
+        // Preserve fields the editor doesn't send (repoId, linkedRepos, …) by
+        // merging onto the existing meta rather than overwriting it wholesale.
+        const existing: ProjectMeta = (await fs.pathExists(metaPath))
+          ? await fs.readJson(metaPath)
+          : ({} as ProjectMeta);
         const nextMeta = {
+          ...existing,
           ...input.meta,
           dataModelVersion: input.meta.dataModelVersion ?? CURRENT_PHASE_DATA_MODEL_VERSION
         };

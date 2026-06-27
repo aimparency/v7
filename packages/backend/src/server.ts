@@ -11,7 +11,8 @@ import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
 import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
-import type { Aim, Phase, ProjectMeta, SystemStatus, SearchAimResult } from 'shared';
+import type { Aim, Phase, ProjectMeta, SystemStatus, SearchAimResult, LinkedRepo, LinkedRepoLocal } from 'shared';
+import { LinkedRepoRegistrySchema, LinkedRepoSchema } from 'shared';
 import {
   indexAims,
   indexPhases,
@@ -362,6 +363,14 @@ async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
   if (!meta.phaseCursors) meta.phaseCursors = {};
   if (meta.phaseActiveLevel === undefined) meta.phaseActiveLevel = 0;
   if (!meta.rootPhaseIds) meta.rootPhaseIds = [];
+  if (!meta.linkedRepos) meta.linkedRepos = [];
+
+  // Generate a stable repo identity once, then persist so it never changes.
+  // This is the source of truth cross-repo edges reference ({repoId, aimId}).
+  if (!meta.repoId) {
+    meta.repoId = uuidv4();
+    await writeProjectMeta(projectPath, meta);
+  }
 
   return meta;
 }
@@ -852,6 +861,143 @@ const spinOffRouter = t.router({
     }),
 });
 
+// --- Linked-repo registry -----------------------------------------------------
+// Identity split: the PORTABLE part (repoId, name, url) lives in meta.linkedRepos
+// and travels with the repo via git; the MACHINE-LOCAL part (where the repo is
+// checked out, and read/write access) lives here in .bowman/runtime/ (gitignored)
+// so committed absolute paths never break for collaborators. Resolving a
+// cross-repo edge {repoId, aimId} is two-stage: repoId → local map → load.
+
+const LINKED_REPOS_REGISTRY_FILE = 'linked-repos.json';
+
+function linkedRepoRegistryPath(projectPath: string): string {
+  return path.join(normalizeProjectPath(projectPath), 'runtime', LINKED_REPOS_REGISTRY_FILE);
+}
+
+async function readLinkedRepoRegistry(projectPath: string): Promise<LinkedRepoLocal[]> {
+  const file = linkedRepoRegistryPath(projectPath);
+  if (!(await fs.pathExists(file))) return [];
+  try {
+    return LinkedRepoRegistrySchema.parse(await fs.readJson(file)).repos;
+  } catch {
+    return [];
+  }
+}
+
+async function writeLinkedRepoRegistry(projectPath: string, repos: LinkedRepoLocal[]): Promise<void> {
+  await ensureProjectStructure(projectPath);
+  await writeJsonAtomic(linkedRepoRegistryPath(projectPath), { repos });
+}
+
+// Two-stage resolution: repoId → machine-local localPath (or null if this repo
+// is linked but not checked out here — the 'repo-not-checked-out' state).
+async function resolveLinkedRepoLocalPath(projectPath: string, repoId: string): Promise<string | null> {
+  const entry = (await readLinkedRepoRegistry(projectPath)).find((r) => r.repoId === repoId);
+  return entry ? entry.localPath : null;
+}
+
+// A portable link plus this machine's resolution status (localPath present ⇒
+// checked out here). Explicit output schemas keep the router's inferred type
+// nameable (portable .d.ts emit) and document the cross-repo API contract.
+const LinkedRepoStatusSchema = LinkedRepoSchema.extend({
+  localPath: z.string().optional(),
+  access: z.enum(['read', 'write']).optional(),
+  resolved: z.boolean(),
+});
+
+const linkedRepoRouter = t.router({
+  // Portable links (from meta) merged with this machine's resolution status.
+  list: delayedProcedure
+    .input(z.object({ projectPath: z.string() }))
+    .output(z.array(LinkedRepoStatusSchema))
+    .query(async ({ input }: any) => {
+      const meta = await readProjectMeta(input.projectPath);
+      const registry = await readLinkedRepoRegistry(input.projectPath);
+      const localById = new Map(registry.map((r) => [r.repoId, r]));
+      return (meta.linkedRepos ?? []).map((link) => {
+        const local = localById.get(link.repoId);
+        return {
+          ...link,
+          localPath: local?.localPath,
+          access: local?.access,
+          resolved: !!local, // false ⇒ linked but not checked out here
+        };
+      });
+    }),
+
+  // Register a sibling project as a linked repo: read its stable repoId from its
+  // meta (generating one if absent), record the portable part in this repo's
+  // meta and the machine-local path in the runtime registry.
+  register: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      targetPath: z.string(),
+      url: z.string().optional(),
+      access: z.enum(['read', 'write']).default('read'),
+    }))
+    .output(LinkedRepoStatusSchema)
+    .mutation(async ({ input }: any) => {
+      const target = resolveBowmanPath(input.targetPath);
+      if (!(await fs.pathExists(target))) {
+        throw new Error(`No .bowman found at target: ${target}`);
+      }
+
+      const selfMeta = await readProjectMeta(input.projectPath);
+      const targetMeta = await readProjectMeta(target); // generates+persists target repoId if missing
+      const repoId = targetMeta.repoId!;
+
+      if (repoId === selfMeta.repoId) {
+        throw new Error('Cannot link a repo to itself.');
+      }
+
+      // Portable part → meta.linkedRepos (upsert by repoId).
+      const portable: LinkedRepo = { repoId, name: targetMeta.name, ...(input.url ? { url: input.url } : {}) };
+      const links = (selfMeta.linkedRepos ?? []).filter((l) => l.repoId !== repoId);
+      links.push(portable);
+      selfMeta.linkedRepos = links;
+      await writeProjectMeta(input.projectPath, selfMeta);
+
+      // Machine-local part → runtime registry (upsert by repoId).
+      const local: LinkedRepoLocal = { repoId, localPath: target, access: input.access };
+      const registry = (await readLinkedRepoRegistry(input.projectPath)).filter((r) => r.repoId !== repoId);
+      registry.push(local);
+      await writeLinkedRepoRegistry(input.projectPath, registry);
+
+      return { ...portable, localPath: target, access: input.access, resolved: true };
+    }),
+
+  // Drop a linked repo from both the portable list and the local registry.
+  unregister: delayedProcedure
+    .input(z.object({ projectPath: z.string(), repoId: z.string().uuid() }))
+    .output(z.object({ repoId: z.string().uuid(), removed: z.boolean() }))
+    .mutation(async ({ input }: any) => {
+      const meta = await readProjectMeta(input.projectPath);
+      meta.linkedRepos = (meta.linkedRepos ?? []).filter((l) => l.repoId !== input.repoId);
+      await writeProjectMeta(input.projectPath, meta);
+
+      const registry = (await readLinkedRepoRegistry(input.projectPath)).filter((r) => r.repoId !== input.repoId);
+      await writeLinkedRepoRegistry(input.projectPath, registry);
+
+      return { repoId: input.repoId, removed: true };
+    }),
+
+  // Resolve a repoId to its local checkout (for loading external aims).
+  resolve: delayedProcedure
+    .input(z.object({ projectPath: z.string(), repoId: z.string().uuid() }))
+    .output(z.object({
+      repoId: z.string().uuid(),
+      name: z.string().optional(),
+      localPath: z.string().optional(),
+      resolved: z.boolean(),
+    }))
+    .query(async ({ input }: any) => {
+      const meta = await readProjectMeta(input.projectPath);
+      const link = (meta.linkedRepos ?? []).find((l) => l.repoId === input.repoId);
+      const localPath = await resolveLinkedRepoLocalPath(input.projectPath, input.repoId);
+      return { repoId: input.repoId, name: link?.name, localPath: localPath ?? undefined, resolved: !!localPath };
+    }),
+});
+
 const appRouter = t.router({
   aim: createAimRouter(
     t,
@@ -935,7 +1081,8 @@ const appRouter = t.router({
     writePhase,
     ee
   ),
-  spinOff: spinOffRouter
+  spinOff: spinOffRouter,
+  linkedRepo: linkedRepoRouter
 });
 
 

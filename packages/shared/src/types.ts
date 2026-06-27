@@ -74,9 +74,40 @@ export const AimStateSchema = z.object({
   ongoing: z.boolean()
 });
 
+// Portable linked-repo entry — committed in meta.json so the link travels with
+// the repo. Carries identity (repoId) and human/relocation hints (name, url),
+// but NEVER a localPath: where the repo is checked out is machine-specific and
+// lives in the runtime registry instead.
+export const LinkedRepoSchema = z.object({
+  repoId: z.string().uuid(), // stable identity of the linked repo
+  name: z.string(),          // display name (snapshot of the target's name)
+  url: z.string().optional() // optional relocation hint (e.g. git remote)
+});
+
+export type LinkedRepo = z.infer<typeof LinkedRepoSchema>;
+
+// Machine-local resolution for one linked repo. Lives in .bowman/runtime/
+// (gitignored) — committed absolute paths would break for every collaborator.
+export const LinkedRepoLocalSchema = z.object({
+  repoId: z.string().uuid(),
+  localPath: z.string(),     // where this repo's .bowman is checked out HERE
+  access: z.enum(['read', 'write']).default('read')
+});
+
+export type LinkedRepoLocal = z.infer<typeof LinkedRepoLocalSchema>;
+
+// The machine-local registry file: repoId → localPath map (as a list).
+export const LinkedRepoRegistrySchema = z.object({
+  repos: z.array(LinkedRepoLocalSchema).default([])
+});
+
+export type LinkedRepoRegistry = z.infer<typeof LinkedRepoRegistrySchema>;
+
 export const ProjectMetaSchema = z.object({
   name: z.string(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/), // hex color
+  repoId: z.string().uuid().optional(), // stable repo identity (generated+persisted on first read)
+  linkedRepos: z.array(LinkedRepoSchema).optional(), // portable cross-repo links
   statuses: z.array(AimStateSchema).optional(),
   dataModelVersion: z.number().int().positive().optional(),
   phaseCursors: z.record(z.string(), z.string()).optional(), // column level (string) → selected phase ID
