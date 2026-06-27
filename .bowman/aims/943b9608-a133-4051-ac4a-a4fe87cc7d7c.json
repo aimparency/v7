@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780452675
+    "state": "halted",
+    "comment": "Parked 2026-06-27: repo-level-links-only pivot. Editing individual aims inside a linked repo presumes the aim-level model. With opaque repo-as-black-box links there are no external aims surfaced to edit. Revive only if deep aim-level links return.",
+    "date": 1782583725511
   },
   "intrinsicValue": 0,
   "cost": 1,

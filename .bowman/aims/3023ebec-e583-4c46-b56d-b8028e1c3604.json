@@ -1,0 +1,27 @@
+{
+  "id": "3023ebec-e583-4c46-b56d-b8028e1c3604",
+  "text": "Repo-link value flow (repo node as leaf sink)",
+  "description": "Extend the value engine so repo-link edges propagate flow into a leaf sink. Merged aim array = local aims (real intrinsicValue) + one intrinsicValue-0 node per referenced linked repo + the repo edges, fed to the existing calculateAimValues. The repo node receives value only from inflow; exporting flow reduces local retained values (intended — value is conserved flow, not aggregate). totalIntrinsic stays = local intrinsics. Far simpler than the parked aim-level model: no loading the external graph, no cascade-on-expand — the repo is always a single boundary sink. Add a numeric two-node fixture test confirming the boundary semantics (value exported, totalIntrinsic unchanged).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "value-calculation"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782583749627
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

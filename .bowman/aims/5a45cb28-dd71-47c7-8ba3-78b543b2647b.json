@@ -34,9 +34,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780468780
+    "state": "halted",
+    "comment": "Parked 2026-06-27: design pivoted to REPO-LEVEL links only (aim → whole external repo, {repoId}-only edge, no aimId). This aim's premise — repoId on a connection that targets a SPECIFIC external aim — is superseded. The repo-only data model is a new aim under the rewritten parent e81b11c3. Revive only if deep aim-level links return.",
+    "date": 1782583710926
   },
   "intrinsicValue": 0,
   "cost": 1,

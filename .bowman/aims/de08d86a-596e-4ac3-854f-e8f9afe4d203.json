@@ -39,9 +39,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780439439
+    "state": "halted",
+    "comment": "Parked 2026-06-27: repo-level-links-only pivot. Merged value flow over external AIMS (zeroed external intrinsics, cascade-on-expand) is replaced by a much simpler model — one zero-intrinsic leaf-sink node per linked repo. Superseded by the new 'repo-link value flow (repo node as leaf sink)' aim under e81b11c3.",
+    "date": 1782583717096
   },
   "intrinsicValue": 0,
   "cost": 1,

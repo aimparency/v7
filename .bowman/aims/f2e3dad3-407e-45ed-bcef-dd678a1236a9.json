@@ -23,9 +23,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780449740
+    "state": "halted",
+    "comment": "Parked 2026-06-27: repo-level-links-only pivot. The rich per-edge link-health vocabulary (target-deleted etc.) was for aim-level edges. Repo-only links need just resolved vs repo-not-checked-out, folded into the data-model + rendering aims (neutral stub when unresolved). Revive if richer states are needed.",
+    "date": 1782583722217
   },
   "intrinsicValue": 0,
   "cost": 1,

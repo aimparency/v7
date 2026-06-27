@@ -25,9 +25,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780472113
+    "state": "halted",
+    "comment": "Parked 2026-06-27: repo-level-links-only pivot. The bulk here — load external AIMS from the linked .bowman, tag them read-only, search-within fan-out — is aim-level and dropped. The still-needed bit (resolve repoId→localPath + read the linked repo's meta name/color for the black-box node) is small and folded into the new repo-link data-model + rendering aims under e81b11c3.",
+    "date": 1782583731459
   },
   "intrinsicValue": 0,
   "cost": 1,

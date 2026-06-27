@@ -206,6 +206,15 @@ export const createAimRouter = (
             weight: z.number().optional(),
             explanation: z.string().optional()
           })).optional(),
+          // Repo-level cross-repo links (aim → whole external repo). No aimId,
+          // no reciprocal back-reference, so the parent/child consistency loops
+          // below deliberately ignore this field.
+          supportingRepos: z.array(z.object({
+            repoId: z.string().uuid(),
+            relativePosition: z.tuple([z.number(), z.number()]).optional(),
+            weight: z.number().optional(),
+            explanation: z.string().optional()
+          })).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
           loopWeight: z.number().optional(),
@@ -305,11 +314,22 @@ export const createAimRouter = (
             }));
         }
 
+        let supportingRepos = existingAim.supportingRepos;
+        if (input.aim.supportingRepos) {
+            supportingRepos = input.aim.supportingRepos.map((c: any) => ({
+                repoId: c.repoId,
+                relativePosition: c.relativePosition || [0,0],
+                weight: c.weight || 1,
+                ...(c.explanation !== undefined ? { explanation: c.explanation } : {})
+            }));
+        }
+
         const updatedAim = {
           ...existingAim,
           ...input.aim,
           status,
-          supportingConnections
+          supportingConnections,
+          supportingRepos
         };
 
         await writeAim(input.projectPath, updatedAim);

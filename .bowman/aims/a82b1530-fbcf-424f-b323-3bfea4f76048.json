@@ -48,9 +48,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780442225
+    "state": "halted",
+    "comment": "Parked 2026-06-27: repo-level-links-only pivot. Rendering individual external AIMS (dotted stubs, expand-to-load) is dropped; a linked repo is now ONE opaque black-box node. Superseded by the new 'render linked repos as black-box nodes' aim under e81b11c3.",
+    "date": 1782583714240
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -1,0 +1,28 @@
+{
+  "id": "8c09ea74-3744-49b9-8b99-b09489947a1d",
+  "text": "Render linked repos as single black-box nodes",
+  "description": "Frontend: render each repo-linked supporter as ONE node (never its internal aims) — tinted by the linked repo's meta color (neutral grey when not checked out), read-only, labeled by the repo name from the registry. Draw a flow-sized arrow from the repo node into the local parent aim, reusing the existing arrow visualization. Clicking the node may open/focus that repo (e.g. new tab) but never expands internal aims inline — the opacity is the modular border. Includes the link-target selection UX: when adding a supporter, offer 'link a whole repo' that picks a repo from the registry (alongside the normal aim-search funnel).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "graph",
+    "ui"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782583745237
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

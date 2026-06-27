@@ -18,6 +18,24 @@ export const ConnectionSchema = z.object({
 
 export type Connection = z.infer<typeof ConnectionSchema>;
 
+// A repo-level cross-repo link: a local aim is supported by ANOTHER repo AS A
+// WHOLE (black box), identified by repoId — NO aimId, because repo-only links
+// never target a specific external aim (see the inter-repository-links design).
+// The other repo keeps no back-reference; value flows out into the repo node,
+// which the value engine treats as a leaf sink. Kept in its own array
+// (supportingRepos) rather than overloaded onto ConnectionSchema so aim edges
+// keep their required aimId and the consistency checker skips repo edges for
+// free (it only walks supportingConnections/supportedAims).
+export const RepoConnectionSchema = z.object({
+  repoId: z.string().uuid(),
+  relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
+  weight: z.number().default(1),
+  explanation: z.string().optional(),
+  reflection: z.string().optional() // How did this cross-repo link work out?
+});
+
+export type RepoConnection = z.infer<typeof RepoConnectionSchema>;
+
 // Reflection pattern: Periodic self-evaluation
 export const ReflectionSchema = z.object({
   date: z.number(), // Unix timestamp
@@ -40,6 +58,7 @@ export const AimSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(), // Custom node color (hex); null/absent clears it. Overrides status/priority color when set
   tags: z.array(z.string()).default([]),
   supportingConnections: z.array(ConnectionSchema).default([]),
+  supportingRepos: z.array(RepoConnectionSchema).optional(), // repo-level cross-repo links (this aim is supported by a whole external repo)
   incoming: z.array(z.string().uuid()).optional(), // Deprecated: use supportingConnections
   supportedAims: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
