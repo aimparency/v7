@@ -25,6 +25,27 @@ export function countAimReferences(commitMessages: string[], aimIds: string[]): 
   return counts;
 }
 
+/**
+ * Verification evidence expected before an aim may be 'done', tailored to the
+ * aim's apparent type (inferred from text/description/tags). Keeps the soft
+ * done-gate concrete — "done = verified-done, not claimed-done" — instead of a
+ * generic reminder. Exported for unit testing.
+ */
+export function verificationHintForAim(
+  aim: { text?: string; description?: string; tags?: string[] } | null | undefined,
+): string {
+  const hay = `${aim?.text ?? ""} ${aim?.description ?? ""} ${(aim?.tags ?? []).join(" ")}`.toLowerCase();
+  const has = (re: RegExp) => re.test(hay);
+  // UI/visual first: a change to something visual is best proven by seeing it run.
+  if (has(/\b(ui|visual|render|screenshot|css|layout|animation|colou?rs?|button|modal|flicker|paint|style|icon|badge|dropdown|graph view)\b/))
+    return "a screenshot or interaction proof that you saw it working in the running app";
+  if (has(/\b(bug|fix|repro|broken|regression|crash|incorrect|wrong|stale|leak|race)\b/))
+    return "a repro that now passes — the previously-failing case, now green";
+  if (has(/\b(refactor|implement|backend|api|tool|schema|mcp|endpoint|function|module|migration|test|type-?check)\b/))
+    return "tests + typecheck passing — cite exactly what you ran";
+  return "what you ran/checked to confirm it actually works — tests, a repro, or a screenshot";
+}
+
 // Best-effort: one commit message per element (subject+body). Returns [] when the
 // project isn't a git repo or git is unavailable, so the signal degrades
 // gracefully and never breaks prioritization.
@@ -775,9 +796,9 @@ export function registerTools(server: Server, clientOverride?: any) {
               const hasReflection = Array.isArray(aim?.reflections) && aim.reflections.length > 0;
               if (!hasReflection) {
                 verificationNudge =
-                  "\n\nReminder: marked done without a reflection. Record the verification evidence " +
-                  "(what you ran/checked to confirm it actually works — tests, a repro, a screenshot) " +
-                  "via addReflection, so the graph reflects verified-done rather than claimed-done.";
+                  "\n\nReminder: marked done without a reflection. Record the verification evidence — " +
+                  verificationHintForAim(aim) +
+                  " — via addReflection, so the graph reflects verified-done rather than claimed-done.";
               }
             } catch {
               // best-effort: a failed lookup must not break the update

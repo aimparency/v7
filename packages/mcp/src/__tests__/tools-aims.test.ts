@@ -1,6 +1,6 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { registerTools, countAimReferences } from '../tools.js';
+import { registerTools, countAimReferences, verificationHintForAim } from '../tools.js';
 import { MockServer, caller, createCallerProxy, createTestContext } from './test-utils.js';
 
 let ctx: ReturnType<typeof createTestContext>;
@@ -92,6 +92,35 @@ test('MCP Tools - update_aim nudges to verify when marking done without a reflec
     status: { state: 'open' },
   });
   assert.doesNotMatch(openUpdate.content[0].text, /verified-done/, 'no nudge on non-done updates');
+});
+
+test('MCP Tools - verificationHintForAim tailors evidence to aim type', () => {
+  // UI/visual takes precedence — a visual change is best proven by seeing it run.
+  assert.match(verificationHintForAim({ text: 'Fix select dropdown flicker' }), /screenshot|interaction/);
+  assert.match(verificationHintForAim({ text: 'feature', tags: ['ui'] }), /screenshot|interaction/);
+  // Bugfix/behavior -> a passing repro.
+  assert.match(verificationHintForAim({ text: 'Bug: watchdog connects to wrong project' }), /repro/);
+  // Code/backend -> tests + typecheck.
+  assert.match(verificationHintForAim({ text: 'Implement the spin-off backend endpoint' }), /typecheck/);
+  // Unknown -> generic fallback still asks for concrete evidence.
+  assert.match(verificationHintForAim({ text: 'Negotiate partnership' }), /tests|repro|screenshot/);
+  assert.match(verificationHintForAim(null), /tests|repro|screenshot/);
+});
+
+test('MCP Tools - done nudge surfaces the type-specific evidence hint', async () => {
+  const server = new MockServer();
+  const callerProxy = createCallerProxy(caller);
+  registerTools(server as any, callerProxy as any);
+
+  await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Fix the modal flicker bug', tags: ['ui'] });
+  const aimId = (await caller.aim.list({ projectPath: ctx.projectPath }))[0].id;
+
+  const res = await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId,
+    status: { state: 'done' },
+  });
+  assert.match(res.content[0].text, /screenshot|interaction/, 'UI aim nudge asks for a screenshot/interaction proof');
 });
 
 test('MCP Tools - list_aims uncommitted surfaces parented-but-unphased aims that floating misses', async () => {

@@ -1380,7 +1380,7 @@ Please choose one of the valid actions. Respond ONLY with ${this.currentPromptMa
   }
 
   private async executeWrapUp(text?: string): Promise<void> {
-    const defaultPrompt = 'use Aimparency MCP to update aim status and comment and reflection if not done already';
+    const defaultPrompt = 'use Aimparency MCP to update aim status and comment and reflection if not done already. Before marking an aim done, record verification evidence matched to its type — code: tests/typecheck pass; UI/visual: a screenshot or interaction proof; bugfix: a repro that now passes.';
     const prompt = text ? `${defaultPrompt}. ${text}` : defaultPrompt;
     await this.post(this.worker, prompt);
     this.turnCount++;
