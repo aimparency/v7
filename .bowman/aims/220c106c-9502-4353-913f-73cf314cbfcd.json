@@ -16,9 +16,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Verified 2026-06-27. Part 1 (pre-relaunch verify gate) IS shipped: broker verifyWrappedAgents (manager.ts:267) runs typecheck + wrapped-agents tests, gated at :494, aborts relaunch on failure. Remaining: Part 2 post-relaunch boot-failure rollback (detect crash-loop, git-revert to last-known-good, rebuild, escalate) and Part 3 per-redeploy audit log — neither exists in broker/common.",
-    "date": 1782542532478
+    "state": "halted",
+    "comment": "Halted 2026-06-27 (first user of the new 'halted' status). The valuable part — the pre-relaunch verify gate — is shipped (broker verifyWrappedAgents, manager.ts:267/494). The remaining parts are parked, not pursued: (2) post-relaunch auto git-revert rollback is low-value (guards a passes-typecheck-AND-tests-but-crash-loops-at-boot failure that has never occurred) and genuinely risky (auto-revert could clobber parallel working-tree edits / worsen the loop); (3) audit log is minor. Revisit only if boot crash-loops actually start happening. Not cancelled — the idea stays on record.",
+    "date": 1782547413074
   },
   "intrinsicValue": 0,
   "cost": 4,
