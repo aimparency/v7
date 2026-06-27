@@ -1,0 +1,37 @@
+{
+  "id": "e2b02963-7532-4a99-aca4-148625784859",
+  "text": "Fix watchdog staying connected to wrong project on switch/reload",
+  "description": "When switching projects or reloading with a different project, the wrapped-agent WebSocket could remain connected to the previous project's session. Root cause: handleProjectSwitch only ran inside WatchdogPanel (v-if gated), so hidden panels never disconnected. Fix: move watcher to App.vue, proper socket teardown, buffer clear, session path guard.",
+  "reflections": [
+    {
+      "date": 1782541443759,
+      "context": "User reported wrapped-agent session could stay connected to the wrong project after reload or project switch.",
+      "outcome": "Root cause was handleProjectSwitch only in WatchdogPanel (v-if). Moved to App.vue, hardened socket teardown, cleared buffers, added cross-project connect guard. 3 new store tests + existing WatchdogPanel tests pass.",
+      "effectiveness": "High — small targeted fix for a subtle lifecycle bug; tests lock in teardown/reconnect behavior.",
+      "lesson": "Pinia store lifecycle hooks must not live only inside conditionally-mounted components — global side effects (WebSocket) need app-level watchers.",
+      "pattern": "Any v-if gated UI that owns reconnect logic should delegate switch handling to a always-mounted parent."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "watchdog",
+    "reconnect",
+    "bugfix"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5558caa1-cb54-40a9-a383-8b4c77568226"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Follow-up fix: agent dropdown now uses switchAgentType (not full disconnect); project switch force-reconnects when carrying active socket despite autoConnectToExistingSession=false. 10 watchdog tests pass.",
+    "date": 1782541600314
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

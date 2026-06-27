@@ -1,0 +1,25 @@
+{
+  "id": "b0ca7191-a484-4d5c-bd86-7fbb86efce4e",
+  "text": "rename the \"leave free floating\" in graph aim creation flow to \"leave uncommitted\". ",
+  "description": "terminology: \nno parent => root aim\nno phase => uncommmitted\nno parent, no phase => free floating",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "da74d69e-b275-4412-b186-0ccc7a0d0440"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782548401536
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "color": null
+}

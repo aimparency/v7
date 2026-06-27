@@ -1,0 +1,24 @@
+{
+  "id": "d64bef31-9091-409f-9a34-cf7a3f7941da",
+  "text": "hint about self improvement only when developing aimparency itself",
+  "description": "The hint \" I am your supervisor AI agent. you can improve me in the wrapped agents <claude/gemini/...> package.\" does not make sense when using aimparency on other projects than itself. \nMaybe we can make this postfix a configurable one in project meta settings. And for this aimparency repo we keep the sentece (I like telling the agent with every message, it's in your hands. reminder. you can improve this yourself)",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782548237757
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
