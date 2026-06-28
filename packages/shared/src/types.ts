@@ -127,6 +127,7 @@ export const ProjectMetaSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/), // hex color
   repoId: z.string().uuid().optional(), // stable repo identity (generated+persisted on first read)
   linkedRepos: z.array(LinkedRepoSchema).optional(), // portable cross-repo links
+  initialInstructions: z.string().optional(), // user-authored project instructions posted to the agent at the start of each conversation
   statuses: z.array(AimStateSchema).optional(),
   dataModelVersion: z.number().int().positive().optional(),
   phaseCursors: z.record(z.string(), z.string()).optional(), // column level (string) → selected phase ID

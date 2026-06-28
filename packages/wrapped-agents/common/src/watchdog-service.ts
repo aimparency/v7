@@ -208,6 +208,43 @@ export function buildWrapperRelaunchPrompt(changedFiles: string[], rootDir: stri
   ].join('\n');
 }
 
+/**
+ * Assemble the once-per-context-epoch instruction lead in a fixed order: the
+ * INSTRUCT guide, the human's always-on project instructions (aim 2fbd88df),
+ * recent session memories, then the system-friction summary. Pure + exported so
+ * the ordering/formatting is unit-testable without spinning up a session.
+ */
+export function composeInstructContext(parts: {
+  baseInstructText: string;
+  projectInstructions?: string;
+  sessionSummaries?: string;
+  friction?: string;
+}): string {
+  const blocks: string[] = [parts.baseInstructText];
+  const instructions = (parts.projectInstructions ?? '').trim();
+  if (instructions) {
+    blocks.push(
+      `## Project instructions (from the human)\n\n` +
+      `Always-on directives for this project — follow them unless the human overrides:\n\n` +
+      instructions
+    );
+  }
+  if (parts.sessionSummaries) blocks.push(parts.sessionSummaries);
+  if (parts.friction) blocks.push(parts.friction);
+  return blocks.filter(Boolean).join('\n\n');
+}
+
+/** Read the human's project instructions from .bowman/meta.json (best-effort). */
+async function readProjectInstructions(projectPath: string): Promise<string> {
+  try {
+    const metaPath = path.join(projectPath, '.bowman', 'meta.json');
+    const meta = JSON.parse(await fs.promises.readFile(metaPath, 'utf8'));
+    return typeof meta.initialInstructions === 'string' ? meta.initialInstructions : '';
+  } catch {
+    return '';
+  }
+}
+
 export class WatchdogService {
   worker!: Agent;
   watchdog!: Agent;
@@ -343,14 +380,19 @@ export class WatchdogService {
       // recurring failures (recursive self-improvement) instead of rediscovering
       // them. Best-effort: returns '' when there is nothing to report.
       const friction = await SessionMemory.summarizeRecentFriction();
+      // Human-authored, always-on project directives (aim 2fbd88df).
+      const projectInstructions = await readProjectInstructions(projectPath);
 
-      const blocks: string[] = [this.baseInstructText];
-      if (summaries.length > 0) blocks.push(SessionMemory.formatForContext(summaries));
-      if (friction) blocks.push(friction);
-
-      this.instructTextWithMemory = blocks.join('\n\n');
+      this.instructTextWithMemory = composeInstructContext({
+        baseInstructText: this.baseInstructText,
+        projectInstructions,
+        sessionSummaries: summaries.length > 0 ? SessionMemory.formatForContext(summaries) : undefined,
+        friction: friction || undefined,
+      });
       this.log(
-        `Loaded ${summaries.length} session memories${friction ? ' + system-friction summary' : ''} into context`
+        `Loaded ${summaries.length} session memories` +
+        `${friction ? ' + system-friction summary' : ''}` +
+        `${projectInstructions.trim() ? ' + project instructions' : ''} into context`
       );
     } catch (error) {
       this.log(`Failed to load session memory context: ${error}`);

@@ -27,6 +27,7 @@ vi.mock('../../trpc', () => ({
       getMeta: { query: vi.fn().mockResolvedValue(null) },
       getWatchdogRuntimeState: { query: vi.fn().mockResolvedValue({ updatedAt: 0, agents: {} }) },
       getAutonomyPolicy: { query: vi.fn().mockResolvedValue(policy) },
+      updateAutonomyPolicy: { mutate: vi.fn().mockResolvedValue({}) },
       discoverLocalProjects: { query: discoverMock }
     },
     linkedRepo: {
@@ -100,6 +101,39 @@ describe('ProjectSettingsModal linked repos', () => {
     await flushPromises()
 
     expect(registerMock).toHaveBeenCalledWith({ projectPath: SELF_BOWMAN, targetPath: SIBLING.path })
+  })
+
+  it('loads initial instructions from meta and persists edits on Save', async () => {
+    listMock.mockResolvedValue([])
+    discoverMock.mockResolvedValue({ projects: [], rootsScanned: [] })
+
+    const pinia = createTestingPinia({
+      createSpy: vi.fn,
+      initialState: {
+        'ui-modal': { showSettingsModal: true },
+        'ui-project': { projectPath: SELF_BOWMAN },
+        data: { meta: { name: 'P', color: '#007acc', statuses: [], initialInstructions: 'work directly on main' } }
+      }
+    })
+    const wrapper = mount(ProjectSettingsModal, { global: { plugins: [pinia] } })
+    const dataStore = useDataStore(pinia)
+    const projectStore = useProjectStore(pinia)
+    dataStore.meta = { name: 'P', color: '#007acc', statuses: [], initialInstructions: 'work directly on main' } as any
+    projectStore.projectPath = SELF_BOWMAN
+    await flushPromises()
+
+    const textarea = wrapper.find('textarea.instructions-input')
+    expect(textarea.exists()).toBe(true)
+    expect((textarea.element as HTMLTextAreaElement).value).toBe('work directly on main')
+
+    await textarea.setValue('work directly on main, no PRs')
+    await wrapper.find('.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(dataStore.updateProjectMeta).toHaveBeenCalledWith(
+      SELF_BOWMAN,
+      expect.objectContaining({ initialInstructions: 'work directly on main, no PRs' })
+    )
   })
 
   it('unregisters a repo after a confirm click', async () => {

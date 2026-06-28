@@ -12,6 +12,7 @@ const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const name = ref('')
 const color = ref('#007acc')
+const initialInstructions = ref('')
 const statuses = ref<Array<{ key: string, color: string }>>([])
 const loading = ref(false)
 const isUpdatingInstructions = ref(false)
@@ -189,6 +190,7 @@ onMounted(async () => {
     if (meta) {
         name.value = meta.name
         color.value = meta.color
+        initialInstructions.value = meta.initialInstructions || ''
         statuses.value = JSON.parse(JSON.stringify(meta.statuses || INITIAL_STATES))
     }
     await loadAutonomyState()
@@ -235,9 +237,10 @@ const updateInstructions = async () => {
 const save = async () => {
     try {
         await dataStore.updateProjectMeta(projectStore.projectPath, {
-          name: name.value, 
+          name: name.value,
           color: color.value,
-          statuses: statuses.value 
+          initialInstructions: initialInstructions.value,
+          statuses: statuses.value
         })
         await trpc.project.updateAutonomyPolicy.mutate({
           projectPath: projectStore.projectPath,
@@ -295,6 +298,18 @@ const save = async () => {
                 @keydown.enter="save"
             />
           </div>
+        </div>
+
+        <div class="form-group">
+          <label>Initial Instructions</label>
+          <p class="hint-text">Posted to the agent at the start of each conversation (e.g. "work directly on main, no PRs"). Stored in meta.json.</p>
+          <textarea
+            v-model="initialInstructions"
+            class="instructions-input"
+            rows="4"
+            placeholder="Project-wide instructions for the coding agent…"
+            @keydown="blockLeakage"
+          ></textarea>
         </div>
 
         <div class="form-group">
@@ -620,6 +635,22 @@ const save = async () => {
       color: #888;
       margin-bottom: 0.5rem;
       margin-top: -0.25rem;
+    }
+
+    .instructions-input {
+      width: 100%;
+      padding: 0.5rem;
+      background: #1a1a1a;
+      border: 1px solid #555;
+      border-radius: 3px;
+      color: #e0e0e0;
+      font-family: inherit;
+      resize: vertical;
+
+      &:focus {
+        outline: none;
+        border-color: #007acc;
+      }
     }
 
     .linked-repo-row {
