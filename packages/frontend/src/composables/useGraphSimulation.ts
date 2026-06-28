@@ -31,6 +31,7 @@ export interface GraphNode {
   customColor?: string | null
   freezeCounter?: number
   loadable?: boolean
+  isRepo?: boolean // black-box linked-repo node (read-only, not a real aim)
 }
 
 export interface GraphLink {
@@ -145,8 +146,17 @@ export function useGraphSimulation() {
       visibleSet = new Set(filter.visibleIds)
       loadableSet = new Set(filter.loadableIds)
       const allowedIds = new Set([...filter.visibleIds, ...filter.loadableIds])
-      rawNodes = allRawNodes.filter(n => allowedIds.has(n.id))
-      rawLinks = allRawLinks.filter(l => allowedIds.has(l.source) && allowedIds.has(l.target))
+      // Black-box repo nodes belong to no phase, so they'd be filtered out by id.
+      // Keep a repo edge whenever the local aim it supports (the link target) is
+      // visible, and let its repo node (the source) ride along with that parent.
+      const repoNodeIds = new Set(allRawNodes.filter(n => n.isRepo).map(n => n.id))
+      rawLinks = allRawLinks.filter(l =>
+        repoNodeIds.has(l.source)
+          ? allowedIds.has(l.target)
+          : (allowedIds.has(l.source) && allowedIds.has(l.target))
+      )
+      const keptRepoIds = new Set(rawLinks.filter(l => repoNodeIds.has(l.source)).map(l => l.source))
+      rawNodes = allRawNodes.filter(n => n.isRepo ? keptRepoIds.has(n.id) : allowedIds.has(n.id))
     }
 
     // Calculate Average Value for sizing
@@ -207,7 +217,8 @@ export function useGraphSimulation() {
           freezeCounter: 0,
           color,
           customColor: raw.color ?? null,
-          loadable: isLoadable
+          loadable: isLoadable,
+          isRepo: raw.isRepo ?? false
         }
         nodeMap.set(raw.id, existing)
       } else {
@@ -218,6 +229,7 @@ export function useGraphSimulation() {
         existing.color = color
         existing.customColor = raw.color ?? null
         existing.loadable = isLoadable
+        existing.isRepo = raw.isRepo ?? false
         if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }
       newNodes.push(existing)

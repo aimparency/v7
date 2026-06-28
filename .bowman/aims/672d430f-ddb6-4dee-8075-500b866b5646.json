@@ -1,0 +1,28 @@
+{
+  "id": "672d430f-ddb6-4dee-8075-500b866b5646",
+  "text": "'Link a whole repo' creation UX (registry picker in the connection funnel)",
+  "description": "Let a user CREATE a repo-level cross-repo link from the UI (currently a supportingRepos edge can only be made via backend aim.update). In the connection-creation funnel (the aim-search modal that opens when adding a supporter), add a 'link a whole repo' affordance that lists the project's linked repos from the registry (meta.linkedRepos + resolved state from linkedRepo.list) and, on pick, writes a {repoId} edge into the supported aim's supportingRepos via aim.update. Alongside it, the registration entry point (add a linked repo to the registry, e.g. from discoverLocalProjects) if not already reachable. Pairs with the rendering core (8c09ea74, done): once an edge exists, the black-box node + flow arrow already render. Deferred refinements from 8c09ea74 can ride here or stay noted: tint the repo node by the linked repo's actual meta color when checked out (grey-always today), and click-to-open/focus the linked repo.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "ui",
+    "graph"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Created 2026-06-28 as the remaining UX half of 8c09ea74 (rendering core done). Next concrete frontend task in the repo-link cluster.",
+    "date": 1782633008449
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

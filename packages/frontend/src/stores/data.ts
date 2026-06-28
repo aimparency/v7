@@ -18,6 +18,11 @@ const isMissingFileError = (error: unknown) => {
   return message.includes('ENOENT') || message.includes('no such file or directory')
 }
 
+// Neutral grey for black-box linked-repo nodes — they are opaque boundaries,
+// not tinted by any internal aim's status. (Tinting by the linked repo's own
+// meta color, when checked out, is a later refinement.)
+const REPO_NODE_COLOR = '#9e9e9e'
+
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
   selectedAimIndex?: number
@@ -304,7 +309,8 @@ export const useDataStore = defineStore('data', {
         vy: 0,
         fx: null as number | null, // Fixed position
         fy: null as number | null,
-        value: state.calculatedValues.get(aim.id) || 0 // Add value here for graph
+        value: state.calculatedValues.get(aim.id) || 0, // Add value here for graph
+        isRepo: false // real aim node (vs. a black-box linked-repo node, below)
       }))
 
       const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number, share: number, flowValue: number }[] = []
@@ -318,9 +324,9 @@ export const useDataStore = defineStore('data', {
             if (state.aims[childId]) {
                 const share = state.flowShares.get(`${aim.id}->${childId}`) || 0
                 const flowValue = state.flowValues.get(`${aim.id}->${childId}`) || 0
-                links.push({ 
-                  source: childId, 
-                  target: aim.id, 
+                links.push({
+                  source: childId,
+                  target: aim.id,
                   type: 'hierarchy',
                   relativePosition: [conn.relativePosition[0], conn.relativePosition[1]],
                   weight: conn.weight,
@@ -330,6 +336,54 @@ export const useDataStore = defineStore('data', {
             }
             })
         }
+      })
+
+      // Repo-level cross-repo links: render each referenced linked repo as ONE
+      // black-box node (never its internal aims). The repo is the supporter
+      // (child) of the local aim, mirroring the supportingConnections direction
+      // above (source=child/supporter, target=parent/supported). Value already
+      // flows into these repo sink nodes via calculateAimValues' repo expansion
+      // (the sink node is keyed by the repoId), so we reuse calculatedValues and
+      // flowValues/flowShares keyed `${aimId}->${repoId}` here.
+      const linkedRepoById = new Map((state.meta?.linkedRepos ?? []).map(r => [r.repoId, r]))
+      const repoNodeIds = new Set<string>()
+      aims.forEach(aim => {
+        if (!aim.supportingRepos) return
+        aim.supportingRepos.forEach(edge => {
+          const repoId = edge.repoId
+          // One node per distinct linked repo, however many aims lean on it.
+          if (!repoNodeIds.has(repoId)) {
+            repoNodeIds.add(repoId)
+            const linked = linkedRepoById.get(repoId)
+            nodes.push({
+              id: repoId,
+              text: linked?.name ?? `repo:${repoId.slice(0, 8)}`,
+              status: 'open',
+              // Neutral grey: a black box, not tinted by an internal aim's status.
+              color: REPO_NODE_COLOR,
+              depth: 0,
+              x: 0,
+              y: 0,
+              vx: 0,
+              vy: 0,
+              fx: null as number | null,
+              fy: null as number | null,
+              value: state.calculatedValues.get(repoId) || 0,
+              isRepo: true
+            })
+          }
+          const share = state.flowShares.get(`${aim.id}->${repoId}`) || 0
+          const flowValue = state.flowValues.get(`${aim.id}->${repoId}`) || 0
+          links.push({
+            source: repoId,
+            target: aim.id,
+            type: 'hierarchy',
+            relativePosition: [edge.relativePosition?.[0] ?? 0, edge.relativePosition?.[1] ?? 0],
+            weight: edge.weight ?? 1,
+            share,
+            flowValue
+          })
+        })
       })
 
       return { nodes, links }

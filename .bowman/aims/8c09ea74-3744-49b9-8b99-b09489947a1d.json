@@ -2,7 +2,16 @@
   "id": "8c09ea74-3744-49b9-8b99-b09489947a1d",
   "text": "Render linked repos as single black-box nodes",
   "description": "Frontend: render each repo-linked supporter as ONE node (never its internal aims) — tinted by the linked repo's meta color (neutral grey when not checked out), read-only, labeled by the repo name from the registry. Draw a flow-sized arrow from the repo node into the local parent aim, reusing the existing arrow visualization. Clicking the node may open/focus that repo (e.g. new tab) but never expands internal aims inline — the opacity is the modular border. Includes the link-target selection UX: when adding a supporter, offer 'link a whole repo' that picks a repo from the registry (alongside the normal aim-search funnel).",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782632992597,
+      "context": "Render repo-linked supporters as black-box nodes (e81b11c3 cluster). A WebGL graph (useWebGLGraphRenderer + DOM label overlay), not unit-verifiable visually, spanning data store / simulation / renderer / interaction.",
+      "outcome": "Landed the rendering CORE by injecting repo nodes+links at the data seam (data.ts graphData), then threading an isRepo flag through GraphNode, the renderer color logic, the phase filter, and the interaction guards. Reused existing node+arrow rendering by setting the repo node's color to grey and emitting a normal weighted link — no shader work. Marked the aim partially: the bundled 'link a whole repo' creation UX + color-tint/click-open refinements + in-app visual check remain, split into a follow-up aim.",
+      "effectiveness": "Solid for the verifiable layers, honest about the rest. Traced the full pipeline before editing (graphData -> useGraphSimulation.updateGraphData -> convertNodes -> color logic; and onNodeDown/Up/Click) which surfaced two non-obvious bugs BEFORE writing code: (a) customColor only wins in 'custom' color mode, so a status-colored repo node would not be grey in the default mode — needed an explicit isRepo branch in the renderer; (b) the phase filter drops by-id, which would hide repo nodes (in no phase) even when their parent is visible — needed a ride-along rule. Added 3 graphData unit tests. vue-tsc clean; full suite green except a pre-existing App.spec header failure I confirmed via git stash on clean HEAD.",
+      "lesson": "When a feature reuses a shared render path, read EVERY branch of that path (here the 4-way color-mode if/else and the filter) before assuming 'set a color field and it just works' — the default code path, not the obvious one, is where the reuse leaked. Also: for WebGL/visual features, push as much logic as possible down to a pure, unit-testable data getter (graphData) so the untestable layer stays a thin pass-through.",
+      "pattern": "Same single-seam strategy as the data-model (8ae69400) and value-flow (3023ebec) slices: normalize the cross-repo concern into the existing primitive at ONE boundary (here: a synthetic grey node + normal link in graphData) so simulation/renderer/interaction stay near-untouched. Consistent across all three repo-link slices."
+    }
+  ],
   "archived": false,
   "tags": [
     "cross-repo",
@@ -15,9 +24,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1782583745237
+    "state": "partially",
+    "comment": "Rendering core landed 2026-06-28 (commit pending). Injected black-box repo nodes into the graph at the data seam: data.ts graphData now emits ONE node per distinct repoId referenced by any aim's supportingRepos (id=repoId, label=registry name or repo:<short id> fallback, neutral grey #9e9e9e, value from calculatedValues sink, isRepo:true) plus a repo→aim link (source=repo/supporter, target=local aim, weight+flowValue from flowValues keyed `${aim}->${repoId}`) — so existing node + arrow rendering draws the black box with no shader changes. Threaded isRepo through GraphNode (useGraphSimulation) + the WebGL renderer (explicit isRepo grey branch so it stays grey in ALL color modes, not just custom). Read-only interaction guards in useGraphInteraction: no connect-FROM a repo node, no aim→repo connect onto one, click is a no-op (no aim selection). Phase-filter fixed so repo nodes ride along with their visible parent (they belong to no phase). Unit-tested: 3 new graphData tests (one node per repo, dedup across two linkers, registry-name label + grey + flow-sized + edge direction/weight). Verified: frontend vue-tsc clean (only pre-existing baseUrl warnings); new tests 3/3; full frontend suite 142 pass (the 1 failure in App.spec header-path is pre-existing on clean HEAD, unrelated). REMAINING (tracked in follow-up aim): (1) 'link a whole repo' creation UX — pick a repo from the registry in the connection funnel (currently repo edges can only be created via backend aim.update); (2) tint by the linked repo's actual meta color when checked out (grey-always for now); (3) click-to-open/focus the linked repo; (4) visual verification in the running app (WebGL not unit-verifiable).",
+    "date": 1782632977538
   },
   "intrinsicValue": 0,
   "cost": 1,
