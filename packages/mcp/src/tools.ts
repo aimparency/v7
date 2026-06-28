@@ -17,6 +17,7 @@ import * as path from "path";
 // preserve the existing import surface (countAimReferences).
 export { countAimReferences, findReconciliationCandidates } from "./reconcile.js";
 import { countAimReferences, findReconciliationCandidates } from "./reconcile.js";
+import { extractCodeTokens, scoreCodePresence } from "./code-presence.js";
 
 /**
  * Verification evidence expected before an aim may be 'done', tailored to the
@@ -64,6 +65,24 @@ function getRepoCommitMessages(projectPath: string, maxCommits = 2000, pathspec:
 // Commits that changed at least one file outside .bowman/ — i.e. real code work,
 // not graph metadata edits. The basis for the reconciliation signal.
 const CODE_ONLY_PATHSPEC = ["--", ".", ":(exclude).bowman"];
+
+// True if `token` (fixed string) appears in any tracked code file outside
+// .bowman/. git grep exits 0 on a match, 1 on none (execFileSync throws) — the
+// catch covers "no match" and "not a git repo" alike. Used by the code-presence
+// reconciliation heuristic.
+function gitGrepMatches(projectPath: string, token: string): boolean {
+  try {
+    const repoRoot = path.basename(projectPath) === ".bowman" ? path.dirname(projectPath) : projectPath;
+    execFileSync(
+      "git",
+      ["grep", "-F", "-I", "-l", "-e", token, "--", ".", ":(exclude).bowman"],
+      { cwd: repoRoot, stdio: ["ignore", "ignore", "ignore"], maxBuffer: 8 * 1024 * 1024 }
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function formatAim(aim: any) {
   if (aim.supportingConnections) {
@@ -469,6 +488,19 @@ export function registerTools(server: Server, clientOverride?: any) {
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               limit: { type: "number", description: "Max candidates to return (default 30)" },
+            },
+            required: ["projectPath"],
+          },
+        },
+        {
+          name: "reconcile_code_presence",
+          description: "Read-only reconciliation heuristic complementing reconcile_status: for OPEN aims NOT already cited by a code commit, extract code-shaped tokens (camelCase/snake_case/dotted/file names) from the aim text+description and check how many appear in the codebase via git grep. Flags aims whose tokens are mostly present (>= minScore) as likely-already-implemented. Noisier than reconcile_status — matched/missing tokens are shown as evidence; verify against the code before update_aim to done. Needs a git repo.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              minScore: { type: "number", description: "Min fraction of an aim's tokens present in code to flag it, 0–1 (default 0.6)" },
+              limit: { type: "number", description: "Max candidates to return (default 20)" },
             },
             required: ["projectPath"],
           },
@@ -1252,6 +1284,64 @@ export function registerTools(server: Server, clientOverride?: any) {
                   : candidates.length === 0
                     ? "No open aims are referenced by commits. Either the graph is in sync or commits don't cite aim ids."
                     : "Each candidate is an OPEN aim cited by a commit — verify against the code, then update_aim to done with a reflection if implemented.",
+                candidates: candidates.slice(0, limit),
+              }, null, 2),
+            }],
+          };
+        }
+
+        case "reconcile_code_presence": {
+          const minScore = (args.minScore as number | undefined) ?? 0.6;
+          const limit = (args.limit as number | undefined) ?? 20;
+          const MAX_TOKENS_PER_AIM = 12;
+          const MAX_UNIQUE_TOKENS = 400;
+
+          const allAims = await trpcClient.aim.list.query({ projectPath: args.projectPath as string });
+          const openAims = (allAims as any[]).filter((a: any) => a.status?.state === "open");
+
+          // Aims already cited by a code commit are reconcile_status's job — skip
+          // them so this heuristic focuses on its complement (no commit reference).
+          const codeCommits = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
+          const cited = countAimReferences(codeCommits, openAims.map((a: any) => a.id));
+          const aimsToScan = openAims.filter((a: any) => !((cited.get(a.id) ?? 0) > 0));
+
+          const tokensByAim = new Map<string, string[]>();
+          const uniqueTokens = new Set<string>();
+          for (const a of aimsToScan) {
+            const toks = extractCodeTokens(`${a.text}\n${a.description ?? ""}`).slice(0, MAX_TOKENS_PER_AIM);
+            if (toks.length >= 2) {
+              tokensByAim.set(a.id, toks);
+              for (const t of toks) if (uniqueTokens.size < MAX_UNIQUE_TOKENS) uniqueTokens.add(t);
+            }
+          }
+
+          // One git grep per unique token; build the set present in code.
+          const present = new Set<string>();
+          for (const tok of uniqueTokens) if (gitGrepMatches(args.projectPath as string, tok)) present.add(tok);
+
+          const aimById = new Map<string, any>(openAims.map((a: any) => [a.id, a]));
+          const candidates = [...tokensByAim.entries()]
+            .map(([id, toks]) => ({ id, ...scoreCodePresence(toks, present) }))
+            .filter((c) => c.scorable && c.score >= minScore && c.matched.length >= 2)
+            .sort((x, y) => y.score - x.score)
+            .map((c) => ({
+              id: c.id,
+              text: aimById.get(c.id)?.text,
+              score: Number(c.score.toFixed(2)),
+              matched: c.matched,
+              missing: c.missing,
+            }));
+
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                openAims: openAims.length,
+                skippedCommitCited: openAims.length - aimsToScan.length,
+                scanned: tokensByAim.size,
+                minScore,
+                candidatesFound: candidates.length,
+                note: "OPEN aims whose code-shaped tokens are mostly present in the codebase — likely already implemented. Heuristic/noisy (a token can exist for unrelated reasons): verify each against the code using the matched/missing tokens, then update_aim to done if confirmed. Aims cited by a code commit are handled by reconcile_status and skipped here.",
                 candidates: candidates.slice(0, limit),
               }, null, 2),
             }],
