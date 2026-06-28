@@ -1,0 +1,37 @@
+{
+  "id": "d9bb168f-014b-466b-935e-b14be16ff39b",
+  "text": "Extract duplicate-detection core into a tested module",
+  "description": "The duplicate-detection logic (all-pairs cosine + parent-child exclusion + union-find clustering) was copy-pasted inline across project.findDuplicates and project.graphHygiene, with ZERO test coverage despite being precision-sensitive maintenance logic. Extracted it into packages/backend/src/duplicate-detection.ts (isDirectParentChild, findDuplicatePairs, clusterDuplicates) — pure, dependency-injected (vectors + aimMap), behaviour-preserving — and added regression tests pinning the parent-child exclusion (the a7f10b45 precision fix) in both the ranked-pair report and the cluster union-find, plus sort order and transitive clustering.",
+  "reflections": [
+    {
+      "date": 1782636003519,
+      "context": "Active phase was drained, so I worked graph-maintenance tooling (fe8b6496). Intended the a7f10b45 follow-up (exclude parent-child from duplicate reports) but found it already implemented in both procedures and already marked done — no drift.",
+      "outcome": "Pivoted to the real gap: that precision logic was copy-pasted across findDuplicates + graphHygiene and had zero tests. Extracted a pure duplicate-detection module (vectors + aimMap injected) and added 5 regression tests, DRYing the duplication and pinning the parent-child exclusion + transitive clustering. Recorded as a done child of fe8b6496.",
+      "effectiveness": "Good: verifying against code first (per the guide) stopped me re-implementing a done feature, and redirected the effort to durable value — tests where there were none, on logic that drives the whole graph-health story. Injecting vectors+aimMap made it unit-testable without disk/embeddings/tRPC, sidestepping the awkward vectors.json path seeding. Behaviour preserved (52 backend tests green, return shapes unchanged).",
+      "lesson": "When an aim looks like 'implement X', check whether X already shipped — the higher-value adjacent work is often locking it in with tests + DRYing copy-paste, not re-doing it. Extracting inline logic into a deps-injected pure module is the cheapest path to coverage for code that otherwise needs heavy fixtures (here, on-disk vector store).",
+      "pattern": "verify-then-redirect; extract-pure-helper-for-testability (same tactic as composeInstructContext and graphData)."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "graph-maintenance",
+    "refactor",
+    "tests"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "fe8b6496-588c-4439-8a39-056dab245c4f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Done 2026-06-28 (commit pending). New packages/backend/src/duplicate-detection.ts with pure isDirectParentChild / findDuplicatePairs / clusterDuplicates; project.findDuplicates + project.graphHygiene refactored to call them (removed the two copy-pasted isDirectParentChild predicates + inline loops; behaviour identical, return shapes unchanged). 5 unit tests in duplicate-detection.test.ts (adjacency both directions; non-adjacent near-dup reported while parent-child excluded; score-desc ordering; clustering excludes parent-child but links transitively). Verified: backend tsc clean + 52 tests (was 47, +5); mcp tsc clean. Locks in the a7f10b45 parent-child-exclusion precision fix that previously had no coverage.",
+    "date": 1782635988750
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
