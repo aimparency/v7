@@ -87,8 +87,14 @@ watch(canArchive, (allowed) => {
 const reflection = ref('')
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
 const committedPhasesList = ref<{ id: string, name: string }[]>([])
+// Repo-level cross-repo links: whole external repos that support this aim
+// (black-box supporters, identified by repoId — no aimId). Staged locally like
+// parents/phases and reconciled against the original set on save.
+const linkedReposList = ref<{ repoId: string, name: string }[]>([])
+const originalLinkedRepoIds = ref<string[]>([])
 const confirmRemoveParentId = ref<string | null>(null)
 const confirmRemovePhaseId = ref<string | null>(null)
+const confirmRemoveRepoId = ref<string | null>(null)
 const originalCommittedPhaseIds = ref<string[]>([])
 
 // Snapshot of the form taken once it is fully populated, so we can detect
@@ -111,7 +117,8 @@ const serializeFormState = () => JSON.stringify({
   color: aimColor.value,
   reflection: reflection.value,
   supportedAims: supportedAimsList.value.map((entry) => ({ id: entry.id, weight: entry.weight })),
-  committedPhases: committedPhasesList.value.map((phase) => phase.id)
+  committedPhases: committedPhasesList.value.map((phase) => phase.id),
+  linkedRepos: linkedReposList.value.map((entry) => entry.repoId)
 })
 
 const isDirty = computed(() => serializeFormState() !== dirtySnapshot.value)
@@ -123,9 +130,10 @@ const reflectionInput = ref<HTMLTextAreaElement>()
 const loopWeightInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const addPhaseBtn = ref<HTMLButtonElement>()
+const addRepoBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 
-const pendingFocusRestore = ref<'parent' | 'phase' | null>(null)
+const pendingFocusRestore = ref<'parent' | 'phase' | 'repo' | null>(null)
 const defaultDescriptionRows = 3
 
 const getInitialDescriptionRows = (description: string) => {
@@ -181,10 +189,53 @@ const removeCommittedPhase = (phaseId: string) => {
   confirmRemovePhaseId.value = null
 }
 
+// Registered linked repos not yet attached to this aim — the pickable options
+// for "link a whole repo". Empty (and the add button disabled) when the project
+// has no linked repos or they are all already linked.
+const repoRegistry = computed(() => dataStore.meta?.linkedRepos ?? [])
+const availableRepos = computed(() =>
+  repoRegistry.value.filter((repo) => !linkedReposList.value.some((entry) => entry.repoId === repo.repoId))
+)
+
+const repoNameFor = (repoId: string) =>
+  repoRegistry.value.find((repo) => repo.repoId === repoId)?.name ?? `repo:${repoId.slice(0, 8)}`
+
+const openRepoSearch = () => {
+  if (availableRepos.value.length === 0) return
+  pendingFocusRestore.value = 'repo'
+  // Reuse the aim-search funnel but drive it entirely off additionalOptions:
+  // one option per available linked repo (always visible, not aim results).
+  modalStore.openAimSearch('pick', (payload) => {
+    if (payload.type !== 'option') return
+    const repoId = payload.data.id
+    if (linkedReposList.value.some((entry) => entry.repoId === repoId)) return
+    linkedReposList.value.push({ repoId, name: repoNameFor(repoId) })
+  }, undefined, {
+    title: 'Link a whole repo',
+    placeholder: 'Pick a linked repo below…',
+    additionalOptions: availableRepos.value.map((repo) => ({
+      id: repo.repoId,
+      label: repo.name,
+      description: repo.url || 'external repo (black box)'
+    }))
+  })
+}
+
+const removeLinkedRepo = (repoId: string) => {
+  if (confirmRemoveRepoId.value !== repoId) {
+    confirmRemoveRepoId.value = repoId
+    return
+  }
+
+  linkedReposList.value = linkedReposList.value.filter((entry) => entry.repoId !== repoId)
+  confirmRemoveRepoId.value = null
+}
+
 watch(() => props.show, async (show) => {
   if (show && aim.value) {
     confirmRemoveParentId.value = null
     confirmRemovePhaseId.value = null
+    confirmRemoveRepoId.value = null
     confirmingDiscard.value = false
     aimText.value = aim.value.text
     aimDescription.value = aim.value.description || ''
@@ -202,6 +253,14 @@ watch(() => props.show, async (show) => {
     supportedAimsList.value = []
     committedPhasesList.value = []
     originalCommittedPhaseIds.value = [...(aim.value.committedIn || [])]
+
+    // Repo links live on the aim itself (no fetch needed); resolve display
+    // names from the portable registry in meta.
+    linkedReposList.value = (aim.value.supportingRepos || []).map((edge) => ({
+      repoId: edge.repoId,
+      name: repoNameFor(edge.repoId)
+    }))
+    originalLinkedRepoIds.value = linkedReposList.value.map((entry) => entry.repoId)
 
     if (aim.value.supportedAims && aim.value.supportedAims.length > 0) {
       try {
@@ -260,6 +319,14 @@ watch(() => modalStore.showPhaseSearchPrompt, async (isOpen, wasOpen) => {
   if (!isOpen && wasOpen && pendingFocusRestore.value === 'phase' && props.show) {
     await nextTick()
     addPhaseBtn.value?.focus()
+    pendingFocusRestore.value = null
+  }
+})
+
+watch(() => modalStore.showAimSearch, async (isOpen, wasOpen) => {
+  if (!isOpen && wasOpen && pendingFocusRestore.value === 'repo' && props.show) {
+    await nextTick()
+    addRepoBtn.value?.focus()
     pendingFocusRestore.value = null
   }
 })
@@ -359,6 +426,24 @@ const handleSave = async () => {
 
   for (const phaseId of phasesToAdd) {
     await dataStore.commitAimToPhase(projectStore.projectPath, aim.value.id, phaseId)
+  }
+
+  // Reconcile repo links against the original set (handleSave's updateAim above
+  // doesn't touch supportingRepos, so these dedicated mutations own them).
+  const currentLinkedRepoIds = linkedReposList.value.map((entry) => entry.repoId)
+  const reposToRemove = originalLinkedRepoIds.value.filter((repoId) => !currentLinkedRepoIds.includes(repoId))
+  const reposToAdd = currentLinkedRepoIds.filter((repoId) => !originalLinkedRepoIds.value.includes(repoId))
+
+  for (const repoId of reposToRemove) {
+    await trpc.aim.unlinkRepo.mutate({ projectPath: projectStore.projectPath, aimId: aim.value.id, repoId })
+  }
+
+  for (const repoId of reposToAdd) {
+    await trpc.aim.linkRepo.mutate({ projectPath: projectStore.projectPath, aimId: aim.value.id, repoId })
+  }
+
+  if (reposToRemove.length > 0 || reposToAdd.length > 0) {
+    await dataStore.loadAims(projectStore.projectPath, [aim.value.id])
   }
 
   emit('close')
@@ -533,6 +618,34 @@ const discardChanges = () => {
             title="Add supported aim"
           >
             add supported aim
+          </button>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <label>Linked repos</label>
+        <div class="entry-list">
+          <div v-for="repo in linkedReposList" :key="repo.repoId" class="entry-row">
+            <span class="entry-name">{{ repo.name }}</span>
+            <span class="entry-meta entry-badge">Repo</span>
+            <button
+              @click="removeLinkedRepo(repo.repoId)"
+              class="entry-action"
+              :class="{ confirm: confirmRemoveRepoId === repo.repoId }"
+              type="button"
+            >
+              {{ confirmRemoveRepoId === repo.repoId ? 'Confirm' : 'Remove' }}
+            </button>
+          </div>
+          <button
+            ref="addRepoBtn"
+            @click="openRepoSearch"
+            class="entry-placeholder"
+            type="button"
+            title="Link a whole repo"
+            :disabled="availableRepos.length === 0"
+          >
+            {{ repoRegistry.length === 0 ? 'no linked repos in this project' : 'link a whole repo' }}
           </button>
         </div>
       </div>
