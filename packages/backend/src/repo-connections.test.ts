@@ -88,3 +88,51 @@ test('fixConsistency does not prune a repo edge', async () => {
   const reloaded = await caller.aim.get({ projectPath, aimId });
   assert.equal(reloaded.supportingRepos?.length, 1, 'fix must not strip the repo edge');
 });
+
+test('linkRepo attaches a {repoId}-only edge with a defaulted position', async () => {
+  const aimId = await makeAim('aim that will lean on a repo');
+
+  await caller.aim.linkRepo({ projectPath, aimId, repoId: EXTERNAL_REPO_ID, weight: 3 });
+
+  const reloaded = await caller.aim.get({ projectPath, aimId });
+  assert.equal(reloaded.supportingRepos?.length, 1);
+  const edge = reloaded.supportingRepos![0];
+  assert.equal(edge.repoId, EXTERNAL_REPO_ID);
+  assert.equal(edge.weight, 3);
+  assert.equal((edge as any).aimId, undefined, 'a repo edge must carry no aimId');
+  assert.ok(Array.isArray(edge.relativePosition) && edge.relativePosition.length === 2, 'gets a relative position');
+});
+
+test('linkRepo is idempotent on repoId (upsert, not duplicate)', async () => {
+  const aimId = await makeAim('aim');
+  await caller.aim.linkRepo({ projectPath, aimId, repoId: EXTERNAL_REPO_ID, weight: 1 });
+  await caller.aim.linkRepo({ projectPath, aimId, repoId: EXTERNAL_REPO_ID, weight: 5, explanation: 'leans harder now' });
+
+  const reloaded = await caller.aim.get({ projectPath, aimId });
+  assert.equal(reloaded.supportingRepos?.length, 1, 'no duplicate edge for the same repo');
+  assert.equal(reloaded.supportingRepos![0].weight, 5, 'weight updated on re-link');
+  assert.equal(reloaded.supportingRepos![0].explanation, 'leans harder now');
+});
+
+test('linkRepo preserves an existing edge to a different repo', async () => {
+  const OTHER_REPO_ID = '22222222-2222-4222-8222-222222222222';
+  const aimId = await makeAim('aim leaning on two repos');
+  await caller.aim.linkRepo({ projectPath, aimId, repoId: EXTERNAL_REPO_ID });
+  await caller.aim.linkRepo({ projectPath, aimId, repoId: OTHER_REPO_ID });
+
+  const reloaded = await caller.aim.get({ projectPath, aimId });
+  assert.equal(reloaded.supportingRepos?.length, 2, 'both distinct repo edges kept');
+});
+
+test('unlinkRepo removes only the matching repo edge', async () => {
+  const OTHER_REPO_ID = '22222222-2222-4222-8222-222222222222';
+  const aimId = await makeAim('aim');
+  await caller.aim.linkRepo({ projectPath, aimId, repoId: EXTERNAL_REPO_ID });
+  await caller.aim.linkRepo({ projectPath, aimId, repoId: OTHER_REPO_ID });
+
+  await caller.aim.unlinkRepo({ projectPath, aimId, repoId: EXTERNAL_REPO_ID });
+
+  const reloaded = await caller.aim.get({ projectPath, aimId });
+  assert.equal(reloaded.supportingRepos?.length, 1);
+  assert.equal(reloaded.supportingRepos![0].repoId, OTHER_REPO_ID, 'the other edge survives');
+});

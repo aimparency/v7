@@ -444,6 +444,55 @@ export const createAimRouter = (
         await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex, input.relativePosition, input.weight, input.explanation);
       }),
 
+    // Repo-level cross-repo link: attach a {repoId} edge (no aimId) to an aim's
+    // supportingRepos — the aim is supported by a WHOLE external repo, a black
+    // box. Idempotent on repoId: re-linking updates the existing edge's
+    // weight/position/explanation instead of duplicating. The external repo
+    // keeps no back-reference (by design — you declare what supports you, never
+    // that another repo needs you), so there is no reciprocal write.
+    linkRepo: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        repoId: z.string().uuid(),
+        relativePosition: z.tuple([z.number(), z.number()]).optional(),
+        weight: z.number().optional(),
+        explanation: z.string().optional()
+      }))
+      .mutation(async ({ input }: any) => {
+        const aim = await readAim(input.projectPath, input.aimId);
+        const existing = aim.supportingRepos ?? [];
+        const idx = existing.findIndex((r: any) => r.repoId === input.repoId);
+        const edge = {
+          repoId: input.repoId,
+          relativePosition: input.relativePosition || getRandomRelativePosition(),
+          weight: input.weight ?? 1,
+          ...(input.explanation !== undefined ? { explanation: input.explanation } : {})
+        };
+        const supportingRepos = idx >= 0
+          ? existing.map((r: any, i: number) => (i === idx ? { ...r, ...edge } : r))
+          : [...existing, edge];
+        const updatedAim = { ...aim, supportingRepos };
+        await writeAim(input.projectPath, updatedAim);
+        updateAimInIndex(input.projectPath, updatedAim);
+        return updatedAim;
+      }),
+
+    unlinkRepo: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        repoId: z.string().uuid()
+      }))
+      .mutation(async ({ input }: any) => {
+        const aim = await readAim(input.projectPath, input.aimId);
+        const supportingRepos = (aim.supportingRepos ?? []).filter((r: any) => r.repoId !== input.repoId);
+        const updatedAim = { ...aim, supportingRepos };
+        await writeAim(input.projectPath, updatedAim);
+        updateAimInIndex(input.projectPath, updatedAim);
+        return updatedAim;
+      }),
+
     createFloatingAim: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
