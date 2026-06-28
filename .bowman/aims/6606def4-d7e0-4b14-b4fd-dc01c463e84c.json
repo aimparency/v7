@@ -10,6 +10,14 @@
       "effectiveness": "Good leverage: the signal already existed and was proven; the only new code is a tiny pure selector + a thin tool handler + tests. Catching the side effect early mattered — tools.ts imports client.ts which opens a WS client at module load, so a test importing tools.ts would hang; moving the pure functions to a side-effect-free module sidestepped that (same reason the backend has duplicate-detection.ts).",
       "lesson": "Before adding a heuristic, check whether the signal is already computed somewhere — realizedCommits was right there in get_prioritized_aims; reconciliation is just a different VIEW of it (filter open + cite-count), not new machinery. And when a file pulls in a networked client at import, extract pure logic to its own module so tests don't drag the client in.",
       "pattern": "reuse-existing-signal; extract-pure-module-for-testability (duplicate-detection.ts, composeInstructContext, graphData)."
+    },
+    {
+      "date": 1782638354246,
+      "context": "Dogfooded reconcile_status against the live graph immediately after building it (the running MCP server has the old build, so I ran the exact logic by hand: open-aim id-prefixes vs git log).",
+      "outcome": "The raw heuristic flagged ~24 candidates, mostly garbage: vision goals (achieve ASI, Build the Cooperation Engine), structural parents, and even the two sub-aims my OWN reconcile commit had just cited as future work. Root cause: graph-bookkeeping commits (chore(graph)/chore(bowman) triage/reframe/handoff) cite many aim ids without implementing anything. Fix: count only commits that touched files outside .bowman/ (git pathspec ':(exclude).bowman'). That cut candidates 24→6 and surfaced the one genuine drift, 5af61b3e (self-rebuild loop), which I corrected open→partially.",
+      "effectiveness": "High-value loop: build→dogfood→find precision flaw→fix→re-validate, all in one turn. Validating the pathspec fix with real git BEFORE coding it meant the change was known-good when committed. mcp tsc + 4 pure tests stayed green (the fix is in the impure git read; the pure selector is unchanged).",
+      "lesson": "A commit MENTIONING an aim id is much weaker evidence than a commit IMPLEMENTING it — and a graph that records its own maintenance in commits will cite aim ids constantly. Filter the signal to code-touching commits, or the reconciliation drowns in its own bookkeeping. Residual false positives remain (a commit can cite an aim as future/related work; vision/parent aims get cited by their children's commits) — noted for the keyword/symbol (da1291e5) and leaf-vs-parent refinements.",
+      "pattern": "dogfood-immediately; the signal that records bookkeeping must exclude bookkeeping."
     }
   ],
   "archived": false,

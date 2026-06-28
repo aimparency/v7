@@ -42,12 +42,17 @@ export function verificationHintForAim(
 // Best-effort: one commit message per element (subject+body). Returns [] when the
 // project isn't a git repo or git is unavailable, so the signal degrades
 // gracefully and never breaks prioritization.
-function getRepoCommitMessages(projectPath: string, maxCommits = 2000): string[] {
+// `pathspec` (git pathspec args, e.g. ['--', '.', ':(exclude).bowman']) restricts
+// to commits that touched matching files. Reconciliation passes a code-only
+// pathspec so pure graph-bookkeeping commits (chore(graph)/chore(bowman) that
+// merely cite aim ids while triaging/reframing the graph) don't masquerade as
+// "this aim was implemented" — they touch only .bowman/.
+function getRepoCommitMessages(projectPath: string, maxCommits = 2000, pathspec: string[] = []): string[] {
   try {
     const repoRoot = path.basename(projectPath) === ".bowman" ? path.dirname(projectPath) : projectPath;
     const out = execFileSync(
       "git",
-      ["log", `-${maxCommits}`, "--format=%s%n%b%n--END-COMMIT--"],
+      ["log", `-${maxCommits}`, "--format=%s%n%b%n--END-COMMIT--", ...pathspec],
       { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], maxBuffer: 32 * 1024 * 1024 }
     );
     return out.split("--END-COMMIT--").filter((m) => m.trim().length > 0);
@@ -55,6 +60,10 @@ function getRepoCommitMessages(projectPath: string, maxCommits = 2000): string[]
     return [];
   }
 }
+
+// Commits that changed at least one file outside .bowman/ — i.e. real code work,
+// not graph metadata edits. The basis for the reconciliation signal.
+const CODE_ONLY_PATHSPEC = ["--", ".", ":(exclude).bowman"];
 
 function formatAim(aim: any) {
   if (aim.supportingConnections) {
@@ -454,7 +463,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "reconcile_status",
-          description: "Read-only status-reconciliation pass: lists OPEN aims that are referenced by >= 1 git commit (matched by 8-char id prefix in commit messages) — likely already implemented but never flipped to done. Ranked by commit count. The graph drifts when shipped work doesn't get its status updated; this catches it. Review each candidate against the code/commit, then update_aim to done (with a reflection) if confirmed. Needs a git repo with commits referencing aim ids.",
+          description: "Read-only status-reconciliation pass: lists OPEN aims referenced by >= 1 CODE commit (8-char id prefix in the message; pure graph-bookkeeping commits that only touch .bowman/ are excluded so triage/reframe commits don't masquerade as implementation) — likely already implemented but never flipped to done. Ranked by commit count. Review each candidate against the code, then update_aim to done (with a reflection) if confirmed; note a parent may be only partially done, and a commit citing an aim as future work is a false positive. Needs a git repo with commits referencing aim ids.",
           inputSchema: {
             type: "object",
             properties: {
@@ -1226,7 +1235,9 @@ export function registerTools(server: Server, clientOverride?: any) {
             projectPath: args.projectPath as string,
           });
           const openAims = (allAims as any[]).filter((a: any) => a.status?.state === "open");
-          const commitMessages = getRepoCommitMessages(args.projectPath as string);
+          // Code-only: a graph-bookkeeping commit that merely cites an aim id is
+          // not evidence the aim was implemented (see CODE_ONLY_PATHSPEC).
+          const commitMessages = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
           const counts = countAimReferences(commitMessages, openAims.map((a: any) => a.id));
           const candidates = findReconciliationCandidates(openAims as any[], counts);
           return {
