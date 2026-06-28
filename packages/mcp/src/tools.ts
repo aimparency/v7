@@ -12,18 +12,11 @@ import * as path from "path";
 // human-set intrinsicValue/cost (the chosen, non-corrupting design). Heuristic:
 // a commit "references" an aim when its message contains the aim's 8-char id
 // prefix — the convention used in this repo's commit messages.
-export function countAimReferences(commitMessages: string[], aimIds: string[]): Map<string, number> {
-  const counts = new Map<string, number>();
-  const prefixes = aimIds
-    .filter((id) => typeof id === "string" && id.length >= 8)
-    .map((id) => [id, id.slice(0, 8)] as const);
-  for (const msg of commitMessages) {
-    for (const [id, prefix] of prefixes) {
-      if (msg.includes(prefix)) counts.set(id, (counts.get(id) ?? 0) + 1);
-    }
-  }
-  return counts;
-}
+// Pure realized-commit / reconciliation helpers live in ./reconcile.ts (no MCP
+// server / tRPC client imports) so they stay unit-testable. Re-exported here to
+// preserve the existing import surface (countAimReferences).
+export { countAimReferences, findReconciliationCandidates } from "./reconcile.js";
+import { countAimReferences, findReconciliationCandidates } from "./reconcile.js";
 
 /**
  * Verification evidence expected before an aim may be 'done', tailored to the
@@ -457,6 +450,18 @@ export function registerTools(server: Server, clientOverride?: any) {
               sourceId: { type: "string", description: "UUID of the aim to archive (B)" },
             },
             required: ["projectPath", "targetId", "sourceId"],
+          },
+        },
+        {
+          name: "reconcile_status",
+          description: "Read-only status-reconciliation pass: lists OPEN aims that are referenced by >= 1 git commit (matched by 8-char id prefix in commit messages) — likely already implemented but never flipped to done. Ranked by commit count. The graph drifts when shipped work doesn't get its status updated; this catches it. Review each candidate against the code/commit, then update_aim to done (with a reflection) if confirmed. Needs a git repo with commits referencing aim ids.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              limit: { type: "number", description: "Max candidates to return (default 30)" },
+            },
+            required: ["projectPath"],
           },
         },
       ],
@@ -1212,6 +1217,33 @@ export function registerTools(server: Server, clientOverride?: any) {
           });
           return {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+          };
+        }
+
+        case "reconcile_status": {
+          const limit = (args.limit as number | undefined) ?? 30;
+          const allAims = await trpcClient.aim.list.query({
+            projectPath: args.projectPath as string,
+          });
+          const openAims = (allAims as any[]).filter((a: any) => a.status?.state === "open");
+          const commitMessages = getRepoCommitMessages(args.projectPath as string);
+          const counts = countAimReferences(commitMessages, openAims.map((a: any) => a.id));
+          const candidates = findReconciliationCandidates(openAims as any[], counts);
+          return {
+            content: [{
+              type: "text",
+              text: JSON.stringify({
+                gitAvailable: commitMessages.length > 0,
+                openAims: openAims.length,
+                candidatesFound: candidates.length,
+                note: commitMessages.length === 0
+                  ? "No git commits found (not a git repo, or no history) — commit-reference reconciliation is unavailable."
+                  : candidates.length === 0
+                    ? "No open aims are referenced by commits. Either the graph is in sync or commits don't cite aim ids."
+                    : "Each candidate is an OPEN aim cited by a commit — verify against the code, then update_aim to done with a reflection if implemented.",
+                candidates: candidates.slice(0, limit),
+              }, null, 2),
+            }],
           };
         }
 

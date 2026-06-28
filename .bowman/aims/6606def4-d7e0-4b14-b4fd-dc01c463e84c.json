@@ -1,0 +1,37 @@
+{
+  "id": "6606def4-d7e0-4b14-b4fd-dc01c463e84c",
+  "text": "Commit-reference status reconciliation (reconcile_status MCP tool)",
+  "description": "First + strongest heuristic of the status-reconciliation pass (7625d5e6): an OPEN aim whose 8-char id prefix appears in >=1 git commit message is almost certainly already implemented (this repo's convention is to cite the aim id in the commit that advances it) but never got flipped to done. Read-only review report, ranked by commit count. Deterministic, cheap, high-precision — no embeddings/LLM needed.",
+  "reflections": [
+    {
+      "date": 1782636569805,
+      "context": "Automate the open-but-already-implemented drift detection I keep doing by hand. Needed a cheap, high-precision first signal before reaching for embeddings/LLM.",
+      "outcome": "Reused the existing realized-commit signal (getRepoCommitMessages + countAimReferences already powering get_prioritized_aims' realizedCommits) to ship a reconcile_status MCP tool: OPEN aims whose 8-char id prefix appears in a commit are surfaced, ranked by count. Extracted the pure logic into a new reconcile.ts so it's unit-testable without booting the MCP server / WS client.",
+      "effectiveness": "Good leverage: the signal already existed and was proven; the only new code is a tiny pure selector + a thin tool handler + tests. Catching the side effect early mattered — tools.ts imports client.ts which opens a WS client at module load, so a test importing tools.ts would hang; moving the pure functions to a side-effect-free module sidestepped that (same reason the backend has duplicate-detection.ts).",
+      "lesson": "Before adding a heuristic, check whether the signal is already computed somewhere — realizedCommits was right there in get_prioritized_aims; reconciliation is just a different VIEW of it (filter open + cite-count), not new machinery. And when a file pulls in a networked client at import, extract pure logic to its own module so tests don't drag the client in.",
+      "pattern": "reuse-existing-signal; extract-pure-module-for-testability (duplicate-detection.ts, composeInstructContext, graphData)."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "graph-maintenance",
+    "mcp",
+    "reconciliation"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "7625d5e6-a29b-4b07-a4fb-94bfff3edba7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Done 2026-06-28 (commit pending). New reconcile_status MCP tool (packages/mcp/src/tools.ts) backed by a pure, side-effect-free packages/mcp/src/reconcile.ts (findReconciliationCandidates + countAimReferences moved there so they're testable without the MCP server/WS client). Lists OPEN aims referenced by >=1 commit (8-char prefix match), ranked by count, with a git-unavailable/no-candidates note. 4 unit tests (prefix counting; ranked surfacing; non-open excluded; empty). Verified: mcp tsc clean; reconcile tests 4/4.",
+    "date": 1782636522522
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
