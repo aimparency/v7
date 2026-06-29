@@ -1,0 +1,34 @@
+{
+  "id": "827cb5c7-f4eb-42d1-89dd-2a5361721318",
+  "text": "revise aim archiving",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "891c4776-a7ab-4367-a8ac-a31eb20c4210",
+      "relativePosition": [
+        -1.1140825110499495,
+        -1.6569234196706684
+      ],
+      "weight": 1,
+      "explanation": ""
+    }
+  ],
+  "supportedAims": [
+    "6ad092fc-a69e-475d-8870-30f994a7f6a5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782733628323
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
