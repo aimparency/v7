@@ -1,0 +1,24 @@
+{
+  "id": "50067a98-bc63-4e8e-89a7-0e5d12842053",
+  "text": "Association system",
+  "description": "feed in related aims as the agent works on something. \nMaybe through hooks.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1782733808612
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
