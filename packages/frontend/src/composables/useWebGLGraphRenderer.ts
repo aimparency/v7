@@ -242,9 +242,11 @@ export function useWebGLGraphRenderer(
       // color mode, falling back to neutral gray if the node isn't found.
       const color: [number, number, number] = nodeColorById.get(link.source.id) ?? [0.5, 0.5, 0.5]
 
-      const selected = !!selectedLink &&
+      const currentAimId = graphUIStore.graphSelectedAimId
+      const selected = (!!selectedLink &&
         link.source.id === selectedLink.childId &&
-        link.target.id === selectedLink.parentId
+        link.target.id === selectedLink.parentId) ||
+        (!!currentAimId && (link.source.id === currentAimId || link.target.id === currentAimId))
 
       return {
         id: edgeKey,

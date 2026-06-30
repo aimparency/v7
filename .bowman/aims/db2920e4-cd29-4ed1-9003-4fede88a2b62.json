@@ -1,0 +1,26 @@
+{
+  "id": "db2920e4-cd29-4ed1-9003-4fede88a2b62",
+  "text": "Refactor client-server communication and synchronization",
+  "description": "Inspect and refactor client-server synchronization to eliminate latency and state discrepancies:\n- Address stale client-side overwrites where mutation responses overwrite updated subscription states.\n- Evaluate pushing fully updated aim/phase payloads in WebSocket events instead of triggering client-side query round-trips.\n- Investigate parallelizing server-side file listing to speed up full-project loads.\n- Explore sequence numbers/versions for resource atoms to prevent out-of-order updates.",
+  "tags": [
+    "refactoring",
+    "sync",
+    "architecture"
+  ],
+  "reflections": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Created task for refactoring sync communication.",
+    "date": 1782805639112
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "archived": false
+}
