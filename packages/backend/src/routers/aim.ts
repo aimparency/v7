@@ -206,6 +206,15 @@ export const createAimRouter = (
             weight: z.number().optional(),
             explanation: z.string().optional()
           })).optional(),
+          // Repo-level cross-repo links (aim → whole external repo). No aimId,
+          // no reciprocal back-reference, so the parent/child consistency loops
+          // below deliberately ignore this field.
+          supportingRepos: z.array(z.object({
+            repoId: z.string().uuid(),
+            relativePosition: z.tuple([z.number(), z.number()]).optional(),
+            weight: z.number().optional(),
+            explanation: z.string().optional()
+          })).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
           loopWeight: z.number().optional(),
@@ -305,11 +314,22 @@ export const createAimRouter = (
             }));
         }
 
+        let supportingRepos = existingAim.supportingRepos;
+        if (input.aim.supportingRepos) {
+            supportingRepos = input.aim.supportingRepos.map((c: any) => ({
+                repoId: c.repoId,
+                relativePosition: c.relativePosition || [0,0],
+                weight: c.weight || 1,
+                ...(c.explanation !== undefined ? { explanation: c.explanation } : {})
+            }));
+        }
+
         const updatedAim = {
           ...existingAim,
           ...input.aim,
           status,
-          supportingConnections
+          supportingConnections,
+          supportingRepos
         };
 
         await writeAim(input.projectPath, updatedAim);
@@ -422,6 +442,55 @@ export const createAimRouter = (
       }))
       .mutation(async ({ input }: any) => {
         await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex, input.relativePosition, input.weight, input.explanation);
+      }),
+
+    // Repo-level cross-repo link: attach a {repoId} edge (no aimId) to an aim's
+    // supportingRepos — the aim is supported by a WHOLE external repo, a black
+    // box. Idempotent on repoId: re-linking updates the existing edge's
+    // weight/position/explanation instead of duplicating. The external repo
+    // keeps no back-reference (by design — you declare what supports you, never
+    // that another repo needs you), so there is no reciprocal write.
+    linkRepo: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        repoId: z.string().uuid(),
+        relativePosition: z.tuple([z.number(), z.number()]).optional(),
+        weight: z.number().optional(),
+        explanation: z.string().optional()
+      }))
+      .mutation(async ({ input }: any) => {
+        const aim = await readAim(input.projectPath, input.aimId);
+        const existing = aim.supportingRepos ?? [];
+        const idx = existing.findIndex((r: any) => r.repoId === input.repoId);
+        const edge = {
+          repoId: input.repoId,
+          relativePosition: input.relativePosition || getRandomRelativePosition(),
+          weight: input.weight ?? 1,
+          ...(input.explanation !== undefined ? { explanation: input.explanation } : {})
+        };
+        const supportingRepos = idx >= 0
+          ? existing.map((r: any, i: number) => (i === idx ? { ...r, ...edge } : r))
+          : [...existing, edge];
+        const updatedAim = { ...aim, supportingRepos };
+        await writeAim(input.projectPath, updatedAim);
+        updateAimInIndex(input.projectPath, updatedAim);
+        return updatedAim;
+      }),
+
+    unlinkRepo: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        repoId: z.string().uuid()
+      }))
+      .mutation(async ({ input }: any) => {
+        const aim = await readAim(input.projectPath, input.aimId);
+        const supportingRepos = (aim.supportingRepos ?? []).filter((r: any) => r.repoId !== input.repoId);
+        const updatedAim = { ...aim, supportingRepos };
+        await writeAim(input.projectPath, updatedAim);
+        updateAimInIndex(input.projectPath, updatedAim);
+        return updatedAim;
       }),
 
     createFloatingAim: delayedProcedure

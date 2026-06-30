@@ -18,6 +18,24 @@ export const ConnectionSchema = z.object({
 
 export type Connection = z.infer<typeof ConnectionSchema>;
 
+// A repo-level cross-repo link: a local aim is supported by ANOTHER repo AS A
+// WHOLE (black box), identified by repoId — NO aimId, because repo-only links
+// never target a specific external aim (see the inter-repository-links design).
+// The other repo keeps no back-reference; value flows out into the repo node,
+// which the value engine treats as a leaf sink. Kept in its own array
+// (supportingRepos) rather than overloaded onto ConnectionSchema so aim edges
+// keep their required aimId and the consistency checker skips repo edges for
+// free (it only walks supportingConnections/supportedAims).
+export const RepoConnectionSchema = z.object({
+  repoId: z.string().uuid(),
+  relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
+  weight: z.number().default(1),
+  explanation: z.string().optional(),
+  reflection: z.string().optional() // How did this cross-repo link work out?
+});
+
+export type RepoConnection = z.infer<typeof RepoConnectionSchema>;
+
 // Reflection pattern: Periodic self-evaluation
 export const ReflectionSchema = z.object({
   date: z.number(), // Unix timestamp
@@ -40,6 +58,7 @@ export const AimSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(), // Custom node color (hex); null/absent clears it. Overrides status/priority color when set
   tags: z.array(z.string()).default([]),
   supportingConnections: z.array(ConnectionSchema).default([]),
+  supportingRepos: z.array(RepoConnectionSchema).optional(), // repo-level cross-repo links (this aim is supported by a whole external repo)
   incoming: z.array(z.string().uuid()).optional(), // Deprecated: use supportingConnections
   supportedAims: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
@@ -74,9 +93,41 @@ export const AimStateSchema = z.object({
   ongoing: z.boolean()
 });
 
+// Portable linked-repo entry — committed in meta.json so the link travels with
+// the repo. Carries identity (repoId) and human/relocation hints (name, url),
+// but NEVER a localPath: where the repo is checked out is machine-specific and
+// lives in the runtime registry instead.
+export const LinkedRepoSchema = z.object({
+  repoId: z.string().uuid(), // stable identity of the linked repo
+  name: z.string(),          // display name (snapshot of the target's name)
+  url: z.string().optional() // optional relocation hint (e.g. git remote)
+});
+
+export type LinkedRepo = z.infer<typeof LinkedRepoSchema>;
+
+// Machine-local resolution for one linked repo. Lives in .bowman/runtime/
+// (gitignored) — committed absolute paths would break for every collaborator.
+export const LinkedRepoLocalSchema = z.object({
+  repoId: z.string().uuid(),
+  localPath: z.string(),     // where this repo's .bowman is checked out HERE
+  access: z.enum(['read', 'write']).default('read')
+});
+
+export type LinkedRepoLocal = z.infer<typeof LinkedRepoLocalSchema>;
+
+// The machine-local registry file: repoId → localPath map (as a list).
+export const LinkedRepoRegistrySchema = z.object({
+  repos: z.array(LinkedRepoLocalSchema).default([])
+});
+
+export type LinkedRepoRegistry = z.infer<typeof LinkedRepoRegistrySchema>;
+
 export const ProjectMetaSchema = z.object({
   name: z.string(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/), // hex color
+  repoId: z.string().uuid().optional(), // stable repo identity (generated+persisted on first read)
+  linkedRepos: z.array(LinkedRepoSchema).optional(), // portable cross-repo links
+  initialInstructions: z.string().optional(), // user-authored project instructions posted to the agent at the start of each conversation
   statuses: z.array(AimStateSchema).optional(),
   dataModelVersion: z.number().int().positive().optional(),
   phaseCursors: z.record(z.string(), z.string()).optional(), // column level (string) → selected phase ID

@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { findChangedWrapperSources, latestWrapperSourceMtime } from './wrapper-watch';
 import { Agent } from './agent';
 import { SessionMemory } from './session-memory';
 import { SupervisorState, type AutonomyPolicy } from './supervisor-state';
@@ -62,6 +63,11 @@ const WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS = 20000;
 // the (animated) spinner glyph or rotating tip. Must comfortably exceed the
 // ~1s counter cadence so between-tick stillness isn't mistaken for idle.
 const WORKER_IDLE_STABILITY_MS = parseInt(process.env.WATCHDOG_WORKER_IDLE_STABILITY || '6500', 10);
+// How often the supervisor tick re-scans wrapped-agents/ source for self-edits.
+// The dirty flag latches once set, so this only bounds detection latency, not
+// per-tick cost; statting the source tree every IDLE_CHECK_INTERVAL would be
+// wasteful, so throttle to ~15s.
+const WRAPPER_DIRTY_CHECK_INTERVAL_MS = parseInt(process.env.WATCHDOG_WRAPPER_CHECK_INTERVAL || '15000', 10);
 
 function stripAnsi(str: string): string {
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
@@ -166,6 +172,79 @@ interface AgentSignals {
   hasAuthoritativeBusySignal: boolean;
 }
 
+// Path (relative to the worker's cwd = the project root) of the indicator file
+// the broker watches; dropping it requests a rebuild+relaunch of this session.
+export const RELAUNCH_REQUEST_REL_PATH = '.bowman/runtime/relaunch-request';
+
+/**
+ * Guidance posted to the worker when it has edited its own wrapper code (aim
+ * 310878de). The running build is stale until a rebuild+relaunch, so we nudge the
+ * worker — at a natural halt, once — to reach a COMMITTED stopping point so the
+ * edit is durable, then trigger the relaunch itself by dropping the indicator
+ * file the broker watches (producer side, aim 0d07b9dd). The broker's verify gate
+ * (typecheck+tests) guards the actual relaunch (29021d9a).
+ */
+export function buildWrapperRelaunchPrompt(changedFiles: string[], rootDir: string): string {
+  const rels = changedFiles.map((f) => {
+    try { return path.relative(rootDir, f); } catch { return f; }
+  });
+  const shown = rels.slice(0, 5);
+  const more = rels.length - shown.length;
+  const fileList = shown.join(', ') + (more > 0 ? ` (+${more} more)` : '');
+  return [
+    'HEADS UP — self-edit pending deploy. You have changed your own wrapper/supervisor',
+    `code (${fileList}) since this session started, so the RUNNING build is now stale and`,
+    'will NOT reflect your edits until the session is rebuilt and relaunched.',
+    '',
+    'Do this, in order:',
+    '1. Bring your current task to a clean, COMMITTED stopping point (so the change is',
+    '   durable and the wrapper is not left half-edited).',
+    '2. Make sure type-check and the wrapped-agents tests pass — the relaunch runs a',
+    '   typecheck+test verify gate and will ABORT (keeping the old code) if they fail.',
+    '3. Request the relaunch by dropping the indicator file the broker watches, from the',
+    '   project root:',
+    `       mkdir -p .bowman/runtime && printf '{}' > ${RELAUNCH_REQUEST_REL_PATH}`,
+    '   The broker will verify and, if green, rebuild+relaunch this session on your new code.',
+  ].join('\n');
+}
+
+/**
+ * Assemble the once-per-context-epoch instruction lead in a fixed order: the
+ * INSTRUCT guide, the human's always-on project instructions (aim 2fbd88df),
+ * recent session memories, then the system-friction summary. Pure + exported so
+ * the ordering/formatting is unit-testable without spinning up a session.
+ */
+export function composeInstructContext(parts: {
+  baseInstructText: string;
+  projectInstructions?: string;
+  sessionSummaries?: string;
+  friction?: string;
+}): string {
+  const blocks: string[] = [parts.baseInstructText];
+  const instructions = (parts.projectInstructions ?? '').trim();
+  if (instructions) {
+    blocks.push(
+      `## Project instructions (from the human)\n\n` +
+      `Always-on directives for this project — follow them unless the human overrides:\n\n` +
+      instructions
+    );
+  }
+  if (parts.sessionSummaries) blocks.push(parts.sessionSummaries);
+  if (parts.friction) blocks.push(parts.friction);
+  return blocks.filter(Boolean).join('\n\n');
+}
+
+/** Read the human's project instructions from .bowman/meta.json (best-effort). */
+async function readProjectInstructions(projectPath: string): Promise<string> {
+  try {
+    const metaPath = path.join(projectPath, '.bowman', 'meta.json');
+    const meta = JSON.parse(await fs.promises.readFile(metaPath, 'utf8'));
+    return typeof meta.initialInstructions === 'string' ? meta.initialInstructions : '';
+  } catch {
+    return '';
+  }
+}
+
 export class WatchdogService {
   worker!: Agent;
   watchdog!: Agent;
@@ -236,6 +315,19 @@ export class WatchdogService {
   private projectPath?: string;
   readonly profile: AgentProfile;
 
+  // Self-edit detection (aim 5af61b3e foundation): true once the wrapped-agents
+  // source has changed since this process launched, meaning the running build is
+  // stale and a rebuild+relaunch would pick up the edit. Latched (only flips
+  // false→true) and consumed by the relaunch-prompt / broker-rebuild steps.
+  wrapperDirty = false;
+  changedWrapperFiles: string[] = [];
+  private readonly wrappedAgentsRoot: string;
+  private readonly wrapperWatchBaselineMs: number;
+  private lastWrapperCheckAt = 0;
+  // One-shot latch so the dirty→relaunch warning is injected once, not on every
+  // halt (it would otherwise drown out actual guidance).
+  private wrapperRelaunchPromptSent = false;
+
   constructor(
     worker: Agent,
     watchdog: Agent,
@@ -246,6 +338,9 @@ export class WatchdogService {
       projectPath?: string;
       autonomyPolicy?: AutonomyPolicy;
       instructText?: string;
+      /** Override the watched wrapped-agents root (defaults to this package's
+       *  own location; injectable for tests). */
+      wrappedAgentsRoot?: string;
     } = {}
   ) {
     this.worker = worker;
@@ -257,6 +352,15 @@ export class WatchdogService {
     this.projectPath = opts.projectPath;
     this.baseInstructText = opts.instructText ?? '';
     this.instructTextWithMemory = this.baseInstructText;
+
+    // This file lives at wrapped-agents/common/src/watchdog-service.ts (run as
+    // source via tsx, so __dirname is .../common/src), making the wrapped-agents
+    // root two levels up. Derived from the running module, not projectPath, which
+    // points at the SUPERVISED project rather than our own repo.
+    this.wrappedAgentsRoot =
+      opts.wrappedAgentsRoot ?? path.resolve(__dirname, '..', '..');
+    // Anchor "changed since launch" to the on-disk state at construction.
+    this.wrapperWatchBaselineMs = latestWrapperSourceMtime(this.wrappedAgentsRoot);
 
     // Initialize session memory if projectPath provided
     if (this.projectPath) {
@@ -276,14 +380,19 @@ export class WatchdogService {
       // recurring failures (recursive self-improvement) instead of rediscovering
       // them. Best-effort: returns '' when there is nothing to report.
       const friction = await SessionMemory.summarizeRecentFriction();
+      // Human-authored, always-on project directives (aim 2fbd88df).
+      const projectInstructions = await readProjectInstructions(projectPath);
 
-      const blocks: string[] = [this.baseInstructText];
-      if (summaries.length > 0) blocks.push(SessionMemory.formatForContext(summaries));
-      if (friction) blocks.push(friction);
-
-      this.instructTextWithMemory = blocks.join('\n\n');
+      this.instructTextWithMemory = composeInstructContext({
+        baseInstructText: this.baseInstructText,
+        projectInstructions,
+        sessionSummaries: summaries.length > 0 ? SessionMemory.formatForContext(summaries) : undefined,
+        friction: friction || undefined,
+      });
       this.log(
-        `Loaded ${summaries.length} session memories${friction ? ' + system-friction summary' : ''} into context`
+        `Loaded ${summaries.length} session memories` +
+        `${friction ? ' + system-friction summary' : ''}` +
+        `${projectInstructions.trim() ? ' + project instructions' : ''} into context`
       );
     } catch (error) {
       this.log(`Failed to load session memory context: ${error}`);
@@ -544,6 +653,51 @@ export class WatchdogService {
       };
   }
 
+  /** Has the wrapped-agents source changed since this process launched? */
+  isWrapperDirty(): boolean {
+    return this.wrapperDirty;
+  }
+
+  /**
+   * Throttled scan for self-edits to wrapped-agents source. Sets {@link wrapperDirty}
+   * (latched) once a source file is newer than the launch baseline. Best-effort:
+   * a filesystem error must never break the supervisor loop. Consumed by the
+   * relaunch-prompt (aim 310878de) and broker rebuild (aim 29021d9a) steps.
+   */
+  checkWrapperDirty(now = Date.now()): void {
+    if (this.wrapperDirty) return; // latched — no need to keep scanning
+    if (now - this.lastWrapperCheckAt < WRAPPER_DIRTY_CHECK_INTERVAL_MS) return;
+    this.lastWrapperCheckAt = now;
+
+    try {
+      const changed = findChangedWrapperSources(this.wrappedAgentsRoot, this.wrapperWatchBaselineMs);
+      if (changed.length > 0) {
+        this.wrapperDirty = true;
+        this.changedWrapperFiles = changed;
+        this.log(
+          `Wrapper source changed since launch (${changed.length} file(s)) — flagging dirty for rebuild+relaunch. ` +
+          `e.g. ${path.relative(this.wrappedAgentsRoot, changed[0])}`
+        );
+        this.onStateChange?.();
+      }
+    } catch (e) {
+      this.log(`DEBUG: wrapper dirty-check failed: ${e}`);
+    }
+  }
+
+  /**
+   * If the wrapper code is dirty, warn the worker ONCE (at a natural halt) to
+   * land+commit so a relaunch can deploy the edit. Returns true if it posted the
+   * warning this call, so tick() can yield the turn to let the worker act on it.
+   */
+  private async maybeWarnWrapperDirty(): Promise<boolean> {
+    if (!this.wrapperDirty || this.wrapperRelaunchPromptSent) return false;
+    this.wrapperRelaunchPromptSent = true;
+    this.log('Wrapper dirty at a natural halt — injecting commit+relaunch guidance to the worker.');
+    await this.post(this.worker, buildWrapperRelaunchPrompt(this.changedWrapperFiles, this.wrappedAgentsRoot));
+    return true;
+  }
+
   async tick() {
     if (!this.enabled || this.processing) return;
 
@@ -556,6 +710,9 @@ export class WatchdogService {
     this.processing = true;
 
     try {
+      // Cheap, throttled, latched: notice if the agent has edited our own source.
+      this.checkWrapperDirty(now);
+
       const watchdogSignals = this.captureAgentSignals(this.watchdog, true);
 
       // 1. Handle "Waiting for response to START"
@@ -672,6 +829,16 @@ export class WatchdogService {
       if (workerIdleReason) {
         // Worker is idle → not continuously busy; reset the busy timer.
         this.advanceWorkerBusyTimeout(true, '', now);
+
+        // A natural halt is the safe moment to tell the worker its own wrapper
+        // edits need a relaunch to deploy. Inject the warning once, then yield
+        // the turn so the worker can land+commit before we escalate further.
+        if (await this.maybeWarnWrapperDirty()) {
+          this.markWorkerIdleEscalation(now, workerSignals);
+          this.nextCheckTime = now + INITIAL_WAIT_AFTER_POST;
+          return;
+        }
+
         this.log(`Escalating to Watchdog: ${workerIdleReason}`);
         this.markWorkerIdleEscalation(now, workerSignals);
 

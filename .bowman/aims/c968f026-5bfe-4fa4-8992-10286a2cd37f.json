@@ -1,0 +1,28 @@
+{
+  "id": "c968f026-5bfe-4fa4-8992-10286a2cd37f",
+  "text": "LLM-judged reconciliation for ambiguous open aims",
+  "description": "Third/optional heuristic for 7625d5e6: for open aims that the cheap signals (commit-reference 6606def4, code-presence da1291e5) flag as ambiguous, run an LLM check of the aim's described work against the relevant code/tree/diff to judge implemented vs not, with a short rationale. Highest accuracy, highest cost — gate it behind the cheap heuristics so it only runs on a small candidate set. Output stays a human-review suggestion, never auto-marks done.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "graph-maintenance",
+    "reconciliation",
+    "llm"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "7625d5e6-a29b-4b07-a4fb-94bfff3edba7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Final-accuracy layer, gated behind the cheap heuristics to bound cost.",
+    "date": 1782636544807
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

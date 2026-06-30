@@ -1,0 +1,45 @@
+{
+  "id": "8ae69400-1743-4569-b77f-0ae6f1109273",
+  "text": "Repo-link data model: aim → external repo ({repoId}-only edge)",
+  "description": "Allow a supportingConnection on a local aim to carry a repoId WITHOUT an aimId — the whole-repo black-box link. {repoId, no aimId} ⇒ the supporter is an external repo, not an aim. Keep a single code path: it's a normal supportingConnection on the local parent that resolves to a repo node instead of an aim. Thread repoId through the connection schema + create/update/connect paths + persistence. The consistency checker must SKIP these edges (no back-reference exists by design — can't assume another repo needs you) and instead surface link health: resolved (repoId in machine-local registry → localPath exists) vs repo-not-checked-out. Builds directly on the repoId + split portable/local registry foundation (1585aa46).",
+  "reflections": [
+    {
+      "date": 1782584114820,
+      "context": "First slice of the repo-only cross-repo links pivot (decided 2026-06-27): the data model for an aim → whole-external-repo black-box edge. Foundation (repoId + split registry, 1585aa46) already shipped.",
+      "outcome": "Added RepoConnectionSchema {repoId, relativePosition, weight, explanation?, reflection?} and an OPTIONAL supportingRepos array on AimSchema (shared/types.ts); threaded it through the aim.update tRPC input schema + persistence (backend/routers/aim.ts), with normalization mirroring supportingConnections. writeAim writes raw JSON (no schema gate) so the zod input schema was the only place stripping the field.",
+      "effectiveness": "Verified, not assumed. Ran: shared build (tsc) clean; backend `npx tsc --noEmit` clean; `npx vitest run` full backend suite = 8 files / 43 tests pass, including 4 new tests in repo-connections.test.ts (persist {repoId}-only edge with defaulted relativePosition + no aimId; unrelated update doesn't wipe the edge; checkConsistency emits no phantom non-existent-child for the repo edge; fixConsistency doesn't prune it). mcp `npx tsc --noEmit` clean. frontend vue-tsc shows only 2 PRE-EXISTING baseUrl-deprecation errors, zero from this change.",
+      "lesson": "Measure blast radius before changing a widely-consumed shared schema. ConnectionSchema.aimId feeds 125 sites; making it optional to host repoId would have cascaded string|undefined everywhere. A separate optional supportingRepos array (a) left aim edges' required aimId untouched, (b) made the consistency checker skip repo edges with ZERO checker changes since it only walks supportingConnections/supportedAims, and (c) kept the shared change purely additive so frontend/mcp didn't break. Choosing .optional() over .default([]) avoided forcing every Aim literal (e.g. createFloatingAim) to add the field.",
+      "pattern": "Separate-additive-field over overloading-a-hot-type; verify-with-the-exact-commands-run; same low-blast strategy as prior shared-schema extensions (linkedRepos, repoId)."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "data-model"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "1585aa46-8ed8-45c5-9303-9ddc9bbb03db",
+      "relativePosition": [
+        2.4247745791870203,
+        -0.6086610223502151
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented: RepoConnectionSchema + optional supportingRepos array on AimSchema (shared/types.ts); threaded through the aim.update input schema + persistence (backend/routers/aim.ts). Refinement vs the parent's 'single supportingConnection with optional repoId' wording: used a SEPARATE supportingRepos array rather than making ConnectionSchema.aimId optional — under repo-only links a repo edge has no aimId, so overloading would force aimId to string|undefined across 125 consumer sites. Separate array keeps aim edges' required aimId untouched AND makes the consistency checker skip repo edges for free (it only walks supportingConnections/supportedAims). Verified: backend tsc clean, mcp tsc clean, frontend unchanged (only pre-existing baseUrl warnings), 4 new round-trip/consistency tests + full backend suite 43/43 green.",
+    "date": 1782584100010
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

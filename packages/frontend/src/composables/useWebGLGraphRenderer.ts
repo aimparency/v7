@@ -112,7 +112,11 @@ export function useWebGLGraphRenderer(
       // Determine color: status, priority, and custom are separate coloring modes.
       // Custom mode shows the custom aim color if set, falling back to a neutral grey.
       let color: [number, number, number]
-      if (colorMode === 'spin-off') {
+      if (node.isRepo) {
+        // Black-box linked-repo node: always neutral grey (its customColor),
+        // independent of color mode — it's an opaque boundary, not a status.
+        color = applyBrightness(cssColorToRgb(node.customColor ?? '#9e9e9e'))
+      } else if (colorMode === 'spin-off') {
         // green = kept (source only), orange = overlap (both), red = spun off
         const bucket = spinOffBuckets?.get(node.id)
         const hex = bucket === 'red' ? '#f85149' : bucket === 'orange' ? '#f0883e' : '#3fb950'

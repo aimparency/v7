@@ -453,6 +453,13 @@ export function useGraphInteraction(
     const onNodeDown = (e: MouseEvent | TouchEvent, nodeCopy: GraphNode) => {
         const node = nodeMap.get(nodeCopy.id)
         if (!node) return
+        // Black-box repo nodes are read-only: you can reposition them, but never
+        // start a connection FROM them (a repo is always a supporter/child and
+        // never declares that it needs another aim).
+        if (node.isRepo) {
+            mapStore.startDragging(node)
+            return
+        }
         const selectedId = graphUIStore.graphSelectedAimId
         if (selectedId && selectedId === node.id) {
             mapStore.startConnecting(node)
@@ -472,6 +479,13 @@ export function useGraphInteraction(
             connectionHandled = true
             const parent = mapStore.connectFrom as GraphNode
             const child = node
+
+            // Can't form a normal aim→aim connection onto a black-box repo node.
+            // Repo links are created through the dedicated 'link a whole repo' UX,
+            // not by dragging a connection onto the repo node.
+            if (parent.isRepo || child.isRepo) {
+                return
+            }
 
             // Validate positions and radii
             const parentX = parent.pos?.[0] ?? 0
@@ -510,6 +524,10 @@ export function useGraphInteraction(
             if (!mapStore.cursorMoved) graphUIStore.toggleSpinOffRoot(node.id)
             return
         }
+        // A black-box repo node has no aim detail to select/track — it's an
+        // opaque modular boundary. Clicking it is a no-op for now (open/focus the
+        // linked repo is a later refinement); never select it as an aim.
+        if (node.isRepo) return
         if (!mapStore.cursorMoved) {
             if (graphUIStore.graphSelectedAimId === node.id) {
                 // Already selected -> Start tracking

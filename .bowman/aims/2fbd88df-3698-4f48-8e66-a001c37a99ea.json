@@ -2,7 +2,16 @@
   "id": "2fbd88df-3698-4f48-8e66-a001c37a99ea",
   "text": "Initial project instructions",
   "description": "Add a way in the ui and project meta for project based LLM coding assistant instructions that always get posted at the beginning of a conversation",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782634607780,
+      "context": "User-authored per-project instructions posted to the agent at the start of each conversation (e.g. 'work directly on main'). A vertical feature spanning shared schema, backend, frontend UI, and the wrapped-agents supervisor — the package the supervisor explicitly invited improvement to.",
+      "outcome": "Implemented all four layers and tied them together: ProjectSettingsModal textarea -> meta.initialInstructions (merged by updateMeta) -> watchdog-service reads meta.json on session init -> composeInstructContext folds it into instructTextWithMemory -> consumeInstructLead posts it once per context epoch. Found the right seam (instructTextWithMemory, already the once-per-epoch carrier for the INSTRUCT guide + session memory), so the new block inherits the correct posting cadence for free.",
+      "effectiveness": "Verified at unit/component level in every package (shared build; backend 47; frontend 149 incl. a new save test; wrapped-agents 60 incl. 4 new). I extracted a PURE composeInstructContext helper specifically so the ordering/empty-handling is unit-testable without constructing a live WatchdogService — the untestable orchestration stayed a thin pass-through (same tactic as graphData in 8c09ea74). Honest gap: I could NOT verify the worker actually receives the block at runtime — watchdog sessions don't hot-reload, so it needs stop-sessions+relaunch to deploy and a live check.",
+      "lesson": "Find the existing once-per-epoch carrier before inventing a new injection path: instructTextWithMemory already solved 'send once at the start of a conversation, re-arm after compact', so the feature was a one-line addition to an assembly function rather than new posting machinery. Also: when a change lands in the wrapped-agents/watchdog code, completion is gated on a session relaunch (the no-hot-reload constraint) — state that caveat on the aim instead of implying it's live.",
+      "pattern": "Repeats the testable/untestable split and the trace-the-full-round-trip discipline from the cross-repo cluster: producer (UI+meta) and consumer (supervisor injection) built together so the feature actually moves end-to-end, with the one genuinely-unverifiable hop (runtime delivery) called out rather than glossed."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -11,9 +20,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1782450511454
+    "state": "done",
+    "comment": "Done 2026-06-28 (commit pending). End-to-end vertical across 4 packages. (1) shared: added initialInstructions?: string to ProjectMetaSchema. (2) backend: added it to project.updateMeta's input schema so the editor persists it (updateMeta already merges, preserving it). (3) frontend: 'Initial Instructions' textarea in ProjectSettingsModal, loaded from meta + included in the Save payload. (4) wrapped-agents: new pure exported composeInstructContext() assembles the once-per-context-epoch instruction lead as [INSTRUCT guide, human project instructions, session memories, friction]; loadSessionMemoryContext now reads .bowman/meta.json initialInstructions and feeds it in, so it rides instructTextWithMemory and is posted to the worker on the first start_work and re-sent after each /compact (new context epoch) — i.e. 'at the beginning of a conversation', exactly the request (and the place to put 'work directly on main'-type directives). Verified: shared build clean; backend tsc + 47 tests; frontend vue-tsc clean + 149 suite (1 pre-existing App.spec header failure) incl. a new ProjectSettingsModal test (loads from meta + persists edit on Save); wrapped-agents tsc + 60 tests incl. 4 new composeInstructContext ordering/empty-handling cases. DEPLOY CAVEAT: watchdog sessions don't hot-reload — the injection takes effect only after npm run stop-sessions + relaunch (or a broker rebuild+relaunch); a live check that the worker actually receives the block should be done post-relaunch. Related/possible follow-ups: de25fd9a (MCP how-to snippet for CLAUDE.md/GEMINI.md) and 99381266 (supervisor: post global instructions once) — distinct from this user-authored block.",
+    "date": 1782634590635
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -1,0 +1,36 @@
+{
+  "id": "3023ebec-e583-4c46-b56d-b8028e1c3604",
+  "text": "Repo-link value flow (repo node as leaf sink)",
+  "description": "Extend the value engine so repo-link edges propagate flow into a leaf sink. Merged aim array = local aims (real intrinsicValue) + one intrinsicValue-0 node per referenced linked repo + the repo edges, fed to the existing calculateAimValues. The repo node receives value only from inflow; exporting flow reduces local retained values (intended — value is conserved flow, not aggregate). totalIntrinsic stays = local intrinsics. Far simpler than the parked aim-level model: no loading the external graph, no cascade-on-expand — the repo is always a single boundary sink. Add a numeric two-node fixture test confirming the boundary semantics (value exported, totalIntrinsic unchanged).",
+  "reflections": [
+    {
+      "date": 1782600588885,
+      "context": "Repo-link value flow (e81b11c3 cluster). Make supportingRepos edges (aim 8ae69400 data model) propagate flow, treating each linked repo as a single black-box leaf sink, without touching the 8+ calculateAimValues call sites.",
+      "outcome": "Added expandRepoSinkNodes(aims) in packages/shared/src/value-calculation.ts and called it at the top of calculateAimValues. It folds each {repoId} edge into a normal supportingConnection into a synthesized intrinsic-0 leaf node keyed by the repoId (one per repo; skipped on collision with a real aim id). Single code path, zero call-site changes. The result maps now also carry repo-node values and ${parent}->${repoId} flow edges, which the renderer aim (8c09ea74) can consume directly.",
+      "effectiveness": "Verified, not just claimed. Ran: shared `npm run build` (tsc clean); shared node:test suite 21/21 incl. the new fixture; backend `npx tsc --noEmit` clean + `npx vitest run` 43/43; mcp `npx tsc --noEmit` clean; frontend `npx vue-tsc --noEmit` clean except 2 pre-existing baseUrl deprecation warnings. A throwaway probe script confirmed the exact steady-state fractions before pinning them in the test.",
+      "lesson": "My first hand-derivation of the steady state (golden ratio ~0.618) was WRONG because I forgot the engine's leaf-retention rule: a childless node gets a forced self-loop (effectiveLoopWeight=1), so the sink loops its own value back each iteration. The real symmetric steady state is 0.25/0.5/0.25. Probe the actual engine before asserting numeric fixtures rather than trusting a paper derivation of an iterative solver. Also: a control node (B, no repo link, keeps full intrinsic) makes the 'value exported' assertion far more legible than a lone exporting node.",
+      "pattern": "Same separate-array + single-expansion-point strategy as the data-model slice (8ae69400): keep cross-repo concerns out of the hot code by normalizing them into the existing primitive (here: synthetic leaf aims) at one boundary, so the core engine and every caller stay untouched."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "value-calculation"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Done 2026-06-28. Implemented in packages/shared/src/value-calculation.ts via a new exported expandRepoSinkNodes(aims) called at the top of calculateAimValues: each supportingRepos edge {repoId} is folded into an ordinary supportingConnection targeting a synthesized zero-intrinsic LEAF node whose id IS the repoId; one such node per referenced repo (skipped if the repoId collides with a real local aim id). Single code path — all callers (frontend/backend/mcp) get cross-repo flow for free, no call-site changes. Leaf self-retention makes the repo node a sink; totalIntrinsic unchanged (intrinsic 0); local retained values shrink by exactly the exported flow; flowValues carries `${parent}->${repoId}` for the renderer (8c09ea74) to size the arrow. Numeric fixture test added (A links repo R, control aim B does not): totalIntrinsic stays 200, A retains 0.25 / B keeps 0.5 / sink holds 0.25 — A exported half its intrinsic into the boundary, B kept its full. Verified: shared build clean; shared tests 21/21; backend tsc clean + 43 tests; mcp tsc clean; frontend vue-tsc clean (only pre-existing baseUrl warnings).",
+    "date": 1782600572155
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

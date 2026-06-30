@@ -12,6 +12,7 @@ const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const name = ref('')
 const color = ref('#007acc')
+const initialInstructions = ref('')
 const statuses = ref<Array<{ key: string, color: string }>>([])
 const loading = ref(false)
 const isUpdatingInstructions = ref(false)
@@ -23,6 +24,79 @@ const autoConnectToExistingSession = ref(true)
 const restoreSupervisorStateOnSessionRestart = ref(true)
 const requireCommitBeforeCompact = ref(true)
 const askForHumanOnText = ref('destructive-git, network, api-keys')
+
+// Linked repos (portable cross-repo links). Registering a sibling project here
+// is what populates meta.linkedRepos, which the aim-edit modal's 'link a whole
+// repo' picker then reads. Register/unregister are applied immediately (their
+// own mutations); the modal's Save merges name/color/statuses and preserves
+// linkedRepos, so there's no clobber.
+type LinkedRepoRow = { repoId: string, name: string, url?: string, localPath?: string, access?: string, resolved: boolean }
+const linkedRepos = ref<LinkedRepoRow[]>([])
+const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
+const selectedTargetPath = ref('')
+const repoBusy = ref(false)
+const confirmUnlinkRepoId = ref<string | null>(null)
+
+// Discovered projects that aren't this project and aren't already linked —
+// matched on the target's .bowman path (register stores it as localPath).
+const availableRepoTargets = computed(() => {
+  const linkedPaths = new Set(linkedRepos.value.map((r) => r.localPath).filter(Boolean))
+  const selfBowman = projectStore.projectPath.replace(/\/+$/, '')
+  return discoveredProjects.value.filter(
+    (p) => p.bowmanPath !== selfBowman && !linkedPaths.has(p.bowmanPath)
+  )
+})
+
+const projectLabel = (p: { path: string }) => p.path.split('/').filter(Boolean).pop() || p.path
+
+async function loadLinkedRepos() {
+  if (!projectStore.projectPath) return
+  linkedRepos.value = await trpc.linkedRepo.list.query({ projectPath: projectStore.projectPath })
+}
+
+async function loadDiscoveredProjects() {
+  try {
+    const result = await trpc.project.discoverLocalProjects.query()
+    discoveredProjects.value = result.projects
+  } catch (e) {
+    console.error('Failed to discover local projects for linking', e)
+    discoveredProjects.value = []
+  }
+}
+
+async function addLinkedRepo() {
+  if (!selectedTargetPath.value || repoBusy.value) return
+  repoBusy.value = true
+  try {
+    await trpc.linkedRepo.register.mutate({ projectPath: projectStore.projectPath, targetPath: selectedTargetPath.value })
+    selectedTargetPath.value = ''
+    await loadLinkedRepos()
+    // Refresh the store's meta so the aim-edit 'link a whole repo' picker sees it.
+    await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
+  } catch (e) {
+    console.error('Failed to register linked repo', e)
+  } finally {
+    repoBusy.value = false
+  }
+}
+
+async function removeLinkedRepo(repoId: string) {
+  if (confirmUnlinkRepoId.value !== repoId) {
+    confirmUnlinkRepoId.value = repoId
+    return
+  }
+  confirmUnlinkRepoId.value = null
+  repoBusy.value = true
+  try {
+    await trpc.linkedRepo.unregister.mutate({ projectPath: projectStore.projectPath, repoId })
+    await loadLinkedRepos()
+    await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
+  } catch (e) {
+    console.error('Failed to unregister linked repo', e)
+  } finally {
+    repoBusy.value = false
+  }
+}
 
 type RuntimeAgentState = {
   enabled: boolean
@@ -116,9 +190,12 @@ onMounted(async () => {
     if (meta) {
         name.value = meta.name
         color.value = meta.color
+        initialInstructions.value = meta.initialInstructions || ''
         statuses.value = JSON.parse(JSON.stringify(meta.statuses || INITIAL_STATES))
     }
     await loadAutonomyState()
+    await loadLinkedRepos()
+    await loadDiscoveredProjects()
   } catch (e) {
     console.error(e)
   } finally {
@@ -160,9 +237,10 @@ const updateInstructions = async () => {
 const save = async () => {
     try {
         await dataStore.updateProjectMeta(projectStore.projectPath, {
-          name: name.value, 
+          name: name.value,
           color: color.value,
-          statuses: statuses.value 
+          initialInstructions: initialInstructions.value,
+          statuses: statuses.value
         })
         await trpc.project.updateAutonomyPolicy.mutate({
           projectPath: projectStore.projectPath,
@@ -223,6 +301,18 @@ const save = async () => {
         </div>
 
         <div class="form-group">
+          <label>Initial Instructions</label>
+          <p class="hint-text">Posted to the agent at the start of each conversation (e.g. "work directly on main, no PRs"). Stored in meta.json.</p>
+          <textarea
+            v-model="initialInstructions"
+            class="instructions-input"
+            rows="4"
+            placeholder="Project-wide instructions for the coding agent…"
+            @keydown="blockLeakage"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
           <label>Aim Statuses</label>
           <div class="status-list">
             <div v-for="(status, index) in statuses" :key="index" class="status-row">
@@ -242,6 +332,37 @@ const save = async () => {
             </div>
           </div>
           <button @click="addStatus" class="add-btn">+ Add Status</button>
+        </div>
+
+        <div class="form-group">
+          <label>Linked repos</label>
+          <p class="hint-text">Whole external projects this one can link to as black-box supporters. Registering a sibling project here makes it pickable from an aim's "link a whole repo".</p>
+
+          <div v-if="linkedRepos.length > 0" class="status-list">
+            <div v-for="repo in linkedRepos" :key="repo.repoId" class="linked-repo-row">
+              <span class="linked-repo-name">{{ repo.name }}</span>
+              <span class="linked-repo-chip" :class="{ unresolved: !repo.resolved }">
+                {{ repo.resolved ? 'checked out' : 'not here' }}
+              </span>
+              <button
+                @click="removeLinkedRepo(repo.repoId)"
+                class="delete-btn"
+                :class="{ confirm: confirmUnlinkRepoId === repo.repoId }"
+                :title="confirmUnlinkRepoId === repo.repoId ? 'Confirm unlink' : 'Unlink repo'"
+              >{{ confirmUnlinkRepoId === repo.repoId ? '✓' : '×' }}</button>
+            </div>
+          </div>
+          <p v-else class="hint-text">No linked repos yet.</p>
+
+          <div class="add-repo-row">
+            <select v-model="selectedTargetPath" :disabled="availableRepoTargets.length === 0 || repoBusy">
+              <option value="">
+                {{ availableRepoTargets.length === 0 ? 'No other local projects found' : 'Select a project to link…' }}
+              </option>
+              <option v-for="p in availableRepoTargets" :key="p.bowmanPath" :value="p.path">{{ projectLabel(p) }}</option>
+            </select>
+            <button @click="addLinkedRepo" class="action-btn add-repo-btn" :disabled="!selectedTargetPath || repoBusy">Link</button>
+          </div>
         </div>
 
         <div class="form-group">
@@ -514,6 +635,71 @@ const save = async () => {
       color: #888;
       margin-bottom: 0.5rem;
       margin-top: -0.25rem;
+    }
+
+    .instructions-input {
+      width: 100%;
+      padding: 0.5rem;
+      background: #1a1a1a;
+      border: 1px solid #555;
+      border-radius: 3px;
+      color: #e0e0e0;
+      font-family: inherit;
+      resize: vertical;
+
+      &:focus {
+        outline: none;
+        border-color: #007acc;
+      }
+    }
+
+    .linked-repo-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+
+      .linked-repo-name {
+        flex: 1;
+        color: #e0e0e0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .linked-repo-chip {
+        font-size: 0.72rem;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        background: rgba(63, 185, 80, 0.18);
+        color: #7ee787;
+        border: 1px solid rgba(63, 185, 80, 0.35);
+        white-space: nowrap;
+
+        &.unresolved {
+          background: rgba(158, 158, 158, 0.18);
+          color: #bbb;
+          border-color: rgba(158, 158, 158, 0.35);
+        }
+      }
+
+      .delete-btn.confirm {
+        color: #7ee787;
+      }
+    }
+
+    .add-repo-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+      margin-top: 0.5rem;
+
+      select { flex: 1; }
+
+      .add-repo-btn {
+        width: auto;
+        flex-shrink: 0;
+        padding: 0.5rem 1rem;
+      }
     }
 
     .sub-label {

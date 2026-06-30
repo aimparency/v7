@@ -120,3 +120,45 @@ test('calculateAimValues distributes costs weighted by value share', () => {
   assert.ok(Math.abs(costA! - 50) < 0.1, `A Cost should be 50, got ${costA}`);
   assert.ok(Math.abs(costB! - 50) < 0.1, `B Cost should be 50, got ${costB}`);
 });
+
+test('repo-link edge exports flow into a leaf sink, leaving totalIntrinsic unchanged', () => {
+  // Boundary fixture with a control. A and B each carry intrinsic 100, but ONLY
+  // A leans on a WHOLE external repo R (a single black-box sink). A exports its
+  // flow into R; B keeps to itself. Value is conserved flow, so A's retained
+  // value shrinks by exactly what it exports, while B (the control) keeps its
+  // full intrinsic. R carries no intrinsic, so totalIntrinsic stays = the local
+  // intrinsics (200) — the repo node adds boundary, not value.
+  const REPO_ID = '11111111-1111-4111-8111-111111111111';
+  const aimA = createMockAim('A', 100, 0);
+  aimA.loopWeight = 0; // send everything downstream into the repo, retain nothing structurally
+  aimA.supportingRepos = [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }];
+  const aimB = createMockAim('B', 100, 0); // control: no repo link
+
+  const result = calculateAimValues([aimA, aimB]);
+
+  // Repo node carries no intrinsic ⇒ the total is just A + B's intrinsics.
+  assert.strictEqual(result.totalIntrinsic, 200, 'totalIntrinsic must stay = local intrinsics');
+
+  // A sink node exists in the value map, keyed by the repoId.
+  const repoFraction = result.values.get(REPO_ID);
+  assert.ok(repoFraction !== undefined, 'a sink node should be created for the linked repo');
+
+  // Steady state (each leaf retains via its self-loop): A and its sink split
+  // A's mass evenly, while B retains its own — fractions 0.25 / 0.5 / 0.25.
+  const aFraction = result.values.get('A')!;
+  const bFraction = result.values.get('B')!;
+  assert.ok(Math.abs(aFraction - 0.25) < 0.01, `A should retain ~0.25, got ${aFraction}`);
+  assert.ok(Math.abs(bFraction - 0.5) < 0.01, `B (control) should retain ~0.5, got ${bFraction}`);
+  assert.ok(Math.abs(repoFraction! - 0.25) < 0.01, `sink should hold ~0.25, got ${repoFraction}`);
+
+  // Concretely (×200): A keeps 50 of its 100 — half EXPORTED into the repo sink
+  // (also 50) — while the control B keeps its full 100. Fractions partition 1.
+  assert.ok(aFraction * 200 < 100, 'A must retain less than its full intrinsic (flow exported)');
+  assert.ok(Math.abs(bFraction * 200 - 100) < 0.5, 'B (no repo link) must keep its full intrinsic');
+  assert.ok(repoFraction! * 200 > 0, 'the repo sink must hold exported value');
+  assert.ok(Math.abs(aFraction + bFraction + repoFraction! - 1) < 1e-9, 'fractions partition the conserved flow');
+
+  // The export shows up as a parent→repo flow edge for the renderer to size.
+  const exportedFlow = result.flowValues.get(`A->${REPO_ID}`);
+  assert.ok(exportedFlow !== undefined && exportedFlow > 0, 'a parent→repo flow edge should exist');
+});

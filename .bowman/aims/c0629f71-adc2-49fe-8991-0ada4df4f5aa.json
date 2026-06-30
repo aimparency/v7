@@ -2,7 +2,16 @@
   "id": "c0629f71-adc2-49fe-8991-0ada4df4f5aa",
   "text": "check and update status of 47cccbd6-8fe1-4fae-8530-1f66c489a05a (it's probably already implemented)",
   "description": "let'",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782635590356,
+      "context": "Assigned a status-check task: 47cccbd6 (phase system refactor) 'is probably already implemented'. Active phase was otherwise drained of concrete committed work, so graph maintenance was the right call.",
+      "outcome": "Verified against real repo state instead of taking the speculation: 47cccbd6 is accurately 'partially', not done — 7/8 children done, with bb3d85e5 (lazy migration of legacy phase order) the genuine remainder. Side win: found dba842e7 was status-drifted (shipped in Column.vue but marked open) and flipped it to done.",
+      "effectiveness": "Good ROI for a cheap task: reading the aim files' statuses + grepping the actual phase code (types.ts schema, phase.ts ordering, Column.vue windowing) settled the question quickly and surfaced one real drift to fix. Avoided the trap of rubber-stamping the parent 'done' just because most of it shipped — the one unconfirmed child (migration) keeps it honestly partial.",
+      "lesson": "A 'probably already done, just update it' task should still be verified clause-by-clause: here the honest answer was the opposite of the hint (stays partially), AND the real drift was on a sibling the task didn't name. Don't let the task's framing pre-decide the status. Conservative on bb3d85e5: implemented persistence != complete lazy migration, so I left it partially rather than over-closing.",
+      "pattern": "verify-against-code-not-claims; trailing children are where status drift hides."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -14,8 +23,8 @@
   ],
   "status": {
     "state": "done",
-    "comment": "Updated 47cccbd6 to 'partially': 5 of 7 sub-aims done, bb3d85e5 partial, dba842e7 still open.",
-    "date": 1780073566957
+    "comment": "Checked 2026-06-28. 47cccbd6 (phase system refactor) is NOT 'already fully implemented' as this task speculated — its 'partially' status is accurate. Verified against real code: the refactor is largely shipped (cursor state 7a870c2e, ordered-hierarchy APIs/selection 687a7c08, o/O creation fe0e0aaf, temporal removal 648a2ea8, multi-parent columns 5508ce83, parent-edit column updates 54a82679 — all done; PhaseSchema childPhaseIds/parent + meta rootPhaseIds/phaseCursors/phaseActiveLevel in types.ts; phase.ts treats childPhaseIds/rootPhaseIds as canonical order). Of the 8 children, 7 are now done (I fixed dba842e7 windowing/separators/placeholders open→done after confirming it in Column.vue). The genuine remainder is bb3d85e5 (parent-owned persistence) which stays 'partially' — canonical ordering is implemented but lazy migration from legacy date/order data isn't confirmed (no phase-level legacy→ordered derivation found in server.ts/phase.ts; only aim-level migrations exist). So 47cccbd6 correctly stays 'partially'; no parent status change needed. Task = the check; complete.",
+    "date": 1782635574440
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -16,9 +16,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Deferred — do after basic spin-off + cross-repo edges.",
-    "date": 1782310705927
+    "state": "halted",
+    "comment": "Parked 2026-06-27: repo-level-links-only pivot. Preserving a seam edge B→A (A an uncopied ancestor) as a cross-repo AIM link no longer matches the model — a repo-only link can't target ancestor aim A specifically. Reconsider as a whole-repo link to the source repo if/when this is revisited.",
+    "date": 1782583728805
   },
   "intrinsicValue": 0,
   "cost": 1,

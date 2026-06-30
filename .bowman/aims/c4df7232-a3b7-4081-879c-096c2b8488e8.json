@@ -48,9 +48,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780446921
+    "state": "halted",
+    "comment": "Parked 2026-06-27: repo-level-links-only pivot. With repo-only links you pick a REPO from the registry, not search for an external aim, so cross-repo aim-search fan-out in the connection modal is not needed. Revive only if deep aim-level links return.",
+    "date": 1782583719431
   },
   "intrinsicValue": 0,
   "cost": 1,

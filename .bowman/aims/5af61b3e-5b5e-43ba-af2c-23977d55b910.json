@@ -45,6 +45,14 @@
         0.11217118117010541
       ],
       "weight": 1
+    },
+    {
+      "aimId": "0d07b9dd-2977-4f81-9e53-48885e8c5a94",
+      "relativePosition": [
+        0.7855063270500495,
+        2.37338994060486
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -54,9 +62,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780328775
+    "state": "partially",
+    "comment": "Drift fix 2026-06-28, surfaced by the reconcile_status code-only pass (cited by 2 real code commits while still 'open'). The core self-rebuild loop is shipped and WORKING end-to-end — verified live this session: I committed a wrapper self-edit, dropped .bowman/runtime/relaunch-request, and the broker consumed it + relaunched. Children: 4a96fff0 (detect self-edit) done, 310878de (warn worker) done, 29021d9a (broker rebuild+relaunch) done, 0d07b9dd (worker drops indicator) done. NOT fully done: a7fd4651 (render rebuilding status + lock terminal input during relaunch — UI) is open, and 220c106c (verify-and-rollback gate) is halted (the broker's verify gate partly covers it). So partially, not done.",
+    "date": 1782638334327
   },
   "intrinsicValue": 0,
   "cost": 1,

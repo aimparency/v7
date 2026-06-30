@@ -2,7 +2,16 @@
   "id": "29021d9a-7ac9-418c-b814-4255d9407f4f",
   "text": "Implement atomic rebuild and relaunch in the session broker",
   "description": "Trigger an npm rebuild and worker process reload upon finding a relaunch indicator file, handling build errors gracefully by logging them.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782563671040,
+      "context": "Third link of the self-rebuild chain (5af61b3e): the broker must act on a relaunch indicator the worker drops after committing a self-edit, completing detect(4a96fff0)→warn(310878de)→rebuild+relaunch.",
+      "outcome": "Added broker/src/relaunch-watch.ts (consumeRelaunchRequest + runRelaunchPass, dependency-injected for testability), a startRelaunchWatcher() poller on WatchdogManager (non-overlapping, unref'd), and started it in index.ts. Reused the existing verify-gated relaunch(); 'rebuild' is implicit because sessions run from source via tsx.",
+      "effectiveness": "Verified-done: `tsc --noEmit` clean for the broker (manager + index included) and a new `npm test` (tsx --test) green at 8/8 — covering indicator parse/consume (empty/JSON/non-JSON/absent), per-project fan-out to all sessions, verify passthrough, error isolation of a failing relaunch, and a real-fs end-to-end consume.",
+      "lesson": "Broker is ESM/nodenext: relative imports need .js extensions and fs-extra must be default-imported (namespace import hides mkdtempSync). Kept the file logic in a deps-injected module so tests never spawn node-pty or run the real verify suite. Restart-from-source (tsx) means no literal build step is needed.",
+      "pattern": "Consume-before-act (delete the indicator first) makes the trigger one-shot and safe under overlapping polls; isolate each side-effect so one failure can't break the loop or the broker."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -13,9 +22,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780334889
+    "state": "done",
+    "comment": "New broker/src/relaunch-watch.ts: consumeRelaunchRequest() (one-shot read+delete of <.bowman>/runtime/relaunch-request, optional {verify} body) + runRelaunchPass() (per-project consume, relaunch every live session, each error-isolated/logged — a failed verify keeps the session on current code). WatchdogManager.startRelaunchWatcher() polls every ~4s (non-overlapping, unref'd), started in index.ts. 'Rebuild' = restart (tsx loads fresh source) gated by the existing verify gate. 8 tests + type-check clean. REMAINING: producer — the worker/supervisor must WRITE the indicator (refine 310878de's prompt to emit the concrete command), which closes the loop.",
+    "date": 1782563658349
   },
   "intrinsicValue": 0,
   "cost": 1,

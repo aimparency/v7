@@ -1,0 +1,45 @@
+{
+  "id": "672d430f-ddb6-4dee-8075-500b866b5646",
+  "text": "'Link a whole repo' creation UX (registry picker in the connection funnel)",
+  "description": "Let a user CREATE a repo-level cross-repo link from the UI (currently a supportingRepos edge can only be made via backend aim.update). In the connection-creation funnel (the aim-search modal that opens when adding a supporter), add a 'link a whole repo' affordance that lists the project's linked repos from the registry (meta.linkedRepos + resolved state from linkedRepo.list) and, on pick, writes a {repoId} edge into the supported aim's supportingRepos via aim.update. Alongside it, the registration entry point (add a linked repo to the registry, e.g. from discoverLocalProjects) if not already reachable. Pairs with the rendering core (8c09ea74, done): once an edge exists, the black-box node + flow arrow already render. Deferred refinements from 8c09ea74 can ride here or stay noted: tint the repo node by the linked repo's actual meta color when checked out (grey-always today), and click-to-open/focus the linked repo.",
+  "reflections": [
+    {
+      "date": 1782633331407,
+      "context": "Build the UI to CREATE a repo-level cross-repo link. Needed a persistence path for adding/removing a {repoId} edge on an aim's supportingRepos, then a funnel hook to drive it.",
+      "outcome": "Shipped the verifiable backend half: dedicated aim.linkRepo (idempotent upsert) + aim.unlinkRepo mutations + 4 new tests (47/47 backend). Left the AimEditModal 'Linked repos' section as the next slice because it's WebGL/modal UI that genuinely needs running the app to verify save semantics, and I couldn't visually verify here.",
+      "effectiveness": "Good separation: I matched the codebase idiom (connectAims is a focused mutation, so linkRepo/unlinkRepo are too, rather than overloading aim.update or doing client read-modify-write) which kept the change small and fully unit-testable. Tracing the funnel first (openAimSearch + AimSearchAdditionalOption + {type:'option'} payload, seen in list-store.ts) confirmed the exact UX hook before committing to it, even though I deferred building it.",
+      "lesson": "Discovery from this turn: the repo is a SUPPORTER (child) of the local aim, but AimEditModal only has a 'Supports (Parents)' section — there is no existing 'supporters/children' UI to bolt onto. So the repo-link UX needs a NEW section, not a tweak to an existing one. Worth knowing before estimating the UI slice. Don't assume an inverse-direction UI exists just because the forward one does.",
+      "pattern": "Split a UX aim along the testable/untestable seam: land the deterministic backend mutation with tests this turn, leave the visual modal+graph wiring (which wants in-app verification) as a tightly-scoped follow-up. Same instinct as pushing logic down to graphData in 8c09ea74 so the untestable layer stays thin."
+    },
+    {
+      "date": 1782633690972,
+      "context": "Build the AimEditModal UI to create/remove repo-level cross-repo links, on top of the linkRepo/unlinkRepo backend mutations from earlier this turn.",
+      "outcome": "Implemented a 'Linked repos' section mirroring the existing parents/phases staged-list pattern (list + remove-with-confirm + add-via-funnel, reconciled on Save). 2 component tests pass; vue-tsc clean; full suite green except the pre-existing App.spec failure. Then discovered the feature isn't usable end-to-end: nothing in the UI populates meta.linkedRepos, so the section is permanently in its disabled empty state for real projects. Marked partially and pointed the blocker at 1585aa46 (registration UX).",
+      "effectiveness": "The build was clean and well-tested by reusing an established in-file pattern (parents/phases staging + phase add/remove reconcile mapped directly onto link/unlink). BUT I built a consumer before confirming its data source was reachable. I only grepped for linkedRepo.register/list AFTER finishing the UI — that check belonged at the START of the slice. Doing it first wouldn't have changed that the linking UX is correct, but it would have reframed the whole turn around the registration UX as the actual unblocking task.",
+      "lesson": "Before building UI that consumes a registry/list, verify there's a path that POPULATES it — grep the producer endpoints' usage first. A consumer with an empty source is green in tests (mocks supply the data) yet dead in the running app. Tests passing != feature reachable. This is the third turn in a row where the verifiable slice was real but the end-to-end feature stayed un-demoable; the registration UX (1585aa46) is the thing that finally makes the whole cross-repo cluster visible in the app.",
+      "pattern": "Mirrors the testable/untestable split of prior slices, but adds a sharper rule: trace the full data round-trip (producer -> store -> consumer) before picking the slice, so 'concrete task' means 'moves the end-to-end feature', not just 'adds a tested unit'."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "ui",
+    "graph"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Done 2026-06-28. The linking UX (AimEditModal 'Linked repos' section + linkRepo/unlinkRepo, commits 419b8f8 + e5dfb97) is now reachable end-to-end: the blocker — no UI populated meta.linkedRepos — is removed by the registration UX in ProjectSettingsModal (1585aa46, this commit). Full chain is wired + component/unit tested: register a sibling project → meta.linkedRepos → aim-edit picker offers it → linkRepo writes a {repoId} supportingRepos edge → graphData renders a grey black-box node with a value-flow arrow. Deferred refinements (tint the repo node by the linked repo's meta color when checked out; click-to-open the repo) remain tracked on 8c09ea74, which also still wants an in-app visual smoke test of the rendered node.",
+    "date": 1782634121392
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

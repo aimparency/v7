@@ -2,7 +2,16 @@
   "id": "4a96fff0-ca81-436e-a51b-7b31ce762065",
   "text": "Detect wrapped agent code changes in the watchdog supervisor loop",
   "description": "Quickly check packages/wrapped-agents/ for modifications during the supervisor tick (e.g. via git status or file mtimes) and set a dirty flag.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782562825336,
+      "context": "Foundation for self-rebuild/relaunch (5af61b3e): the supervisor must notice when the agent edits wrapped-agents' own source so a stale running build can be rebuilt+relaunched.",
+      "outcome": "Added wrapper-watch.ts (mtime-based detection of changed wrapped-agents/*/src .ts since launch, pruning node_modules/dist/client) and WatchdogService.checkWrapperDirty() — throttled (~15s) and latched — called at the top of tick(). Exposed wrapperDirty/changedWrapperFiles/isWrapperDirty() as the seam for the relaunch-prompt and broker-rebuild aims.",
+      "effectiveness": "Verified-done: `tsc --noEmit` clean and `npm test` green at 52/52, including 6 new tests covering collection/pruning, baseline (nothing dirty at launch), single-file detection, pruned-dir exclusion, and the WatchdogService latch + throttle behavior.",
+      "lesson": "common is a CommonJS package (module:commonjs) — `import.meta.url` fails type-check there; use __dirname (matches session-memory.ts). mtime-since-launch beats `git status` here because dev runs via tsx (no watch) and it catches committed-but-not-rebuilt edits too.",
+      "pattern": "Keep detection a pure, separately-tested helper; integrate via a thin throttled/latched method so the supervisor tick stays cheap."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -13,9 +22,9 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780330862
+    "state": "done",
+    "comment": "Implemented in WatchdogService.checkWrapperDirty() (throttled, latched), called from tick(). New helper module wrapper-watch.ts does mtime-based detection of edits to wrapped-agents/*/src since launch (prunes node_modules/dist/client). Exposes wrapperDirty / changedWrapperFiles / isWrapperDirty() for the relaunch-prompt (310878de) and broker-rebuild (29021d9a) consumers. 6 new tests; common suite 52/52 + type-check clean.",
+    "date": 1782562806924
   },
   "intrinsicValue": 0,
   "cost": 1,

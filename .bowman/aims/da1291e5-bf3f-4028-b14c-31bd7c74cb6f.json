@@ -1,0 +1,36 @@
+{
+  "id": "da1291e5-bf3f-4028-b14c-31bd7c74cb6f",
+  "text": "Code-presence (keyword/symbol) reconciliation heuristic",
+  "description": "Second heuristic for 7625d5e6: for OPEN aims with NO commit reference, extract salient identifier-like tokens (file names, symbols, quoted phrases) from the aim text/description and search the repo for them; score by hit density to flag aims whose described work appears present in code. Lower precision than the commit-reference signal (6606def4) — needs tuning and a denominator (token specificity) to avoid flagging generic aims. Read-only report feeding the same review flow. Builds on reconcile_status.",
+  "reflections": [
+    {
+      "date": 1782638753454,
+      "context": "Second reconciliation heuristic: flag open aims already implemented by checking whether their text's code-shaped tokens appear in the codebase (git grep). Precision was the explicit risk going in.",
+      "outcome": "Built it (pure code-presence.ts + reconcile_code_presence tool, 6 tests green) and dogfooded against the live 67-open-aim graph. The mechanism works, but precision is poor: all 6 flagged candidates were false positives where the matched tokens were existing infrastructure the aim references, not its deliverable. Reframed the tool as a pre-filter for the LLM judge (c968f026) rather than a standalone detector, and said so plainly on the aim.",
+      "effectiveness": "Dogfooding earned its keep again: the pure tests pass and would have let me ship a clean-looking tool, but running it on real data exposed that the SIGNAL is weak even though the CODE is correct. Verifying the 6 candidates by hand (does the described work actually exist?) is what revealed the context-vs-deliverable conflation — e.g. valueRationale, the literal new field 2d0ab64b adds, was in `missing` while its surrounding context tokens matched.",
+      "lesson": "Passing unit tests prove the function does what I specified; they say nothing about whether the specification is a good signal. For a heuristic, the real test is precision/recall on live data, not green checks. And a structural insight: aim text is dominated by references to what EXISTS (infra it builds on, context it cites) over the novel thing it adds, so token-presence is biased toward false positives — the discriminating evidence is the `missing` tokens (the absent deliverable), not the matched ones. That should shape c968f026's prompt: ask the LLM specifically whether the aim's NOVEL deliverable exists, given matched+missing tokens.",
+      "pattern": "dogfood-on-live-data; tests verify the spec, not the signal; the absent (missing) token is more informative than the present one."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "graph-maintenance",
+    "reconciliation"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "7625d5e6-a29b-4b07-a4fb-94bfff3edba7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "done",
+    "comment": "Implemented + dogfooded 2026-06-28. New reconcile_code_presence MCP tool backed by pure code-presence.ts: extractCodeTokens (camelCase/snake_case/dotted/file tokens, prose dropped, segments derived) + scoreCodePresence (fraction of tokens present in code; scorable only at >=2 tokens). Handler skips aims already commit-cited (reconcile_status' job), git-greps each unique token (code-only, excludes .bowman), flags aims with score>=minScore (default 0.6) and >=2 matches. 6 unit tests; mcp tsc clean. HONEST RESULT FROM DOGFOODING THE LIVE GRAPH: low standalone precision — of 67 open aims, 9 scorable, 6 flagged, and on inspection ALL 6 were false positives of one kind: the matched tokens were existing infra the aim BUILDS ON / cites as context (VoiceView, computeCredits, create_aim, intrinsicValue), not the aim's undelivered work (e.g. 2d0ab64b's own new field valueRationale landed in `missing`). 'mentions real code' != 'is implemented' — a semantic ceiling token-specificity can't fix. So its realistic ROLE is a cheap PRE-FILTER (narrows the field + shows matched/missing evidence) feeding the LLM judge c968f026, NOT an auto-detector. Marked done as the heuristic is built + characterized; accuracy now depends on c968f026.",
+    "date": 1782638737635
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

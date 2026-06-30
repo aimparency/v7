@@ -1,7 +1,7 @@
 {
   "id": "e81b11c3-8eca-4f7d-8ca3-578179d24225",
   "text": "inter-repository links",
-  "description": "Enable linking to aims in other locally-checked-out repositories. Settled design (2026-06):\n\nDIRECTION & OWNERSHIP: A repo may only declare edges where a LOCAL aim is the supported (parent) side and the EXTERNAL aim is the supporter (child). You can always declare what supports you; never that another repo needs you. So a cross-repo edge is a supportingConnection on a local parent whose target lives in another repo. Weight stays on the local side. Value flows OUT of this repo into the external supporter. The external supporter keeps NO back-reference (supportedAims stays local-only).\n\nIDENTITY: edges store a two-part key {repoId, aimId}. repoId defined ⇒ external. Registry is split: portable part (repoId, url, name) committed in meta.json; machine-local part (localPath, read/write access toggle) in .bowman/runtime/ (gitignored). Resolution is two-stage: edge {repoId,aimId} → machine-local repoId→localPath map → load. Unresolved ⇒ 'repo not checked out here' state, not a broken edge.\n\nVALUE (model b): value is a conserved flow, not an aggregate. Merged calc = local aims (real intrinsic) + referenced external aims with intrinsicValue forced to 0 + cross-repo edges, fed to the existing calculateAimValues. Externals receive value ONLY from inflow; local values shrink as flow is exported (intended). totalIntrinsic stays = local intrinsics. v1: external linked aims are leaf sinks; cascade into their subtree only when expanded.\n\nROOTS: keep N root aims (no single synthetic project-root). Cross-repo edges always target a specific aim (often a central intrinsic-bearing one). No 'link the whole repo' sentinel.\n\nRENDERING: partial/lazy in general — unloaded aims show as dotted stubs with no info; click to load + reveal relatives as dotted. Externals additionally tinted by their repo color and read-only by default.\n\nWRITABLE EXTERNALS (deferred, independent): per-linked-repo machine-local read/write toggle; backend writeAim can target any local .bowman; sharing/pushing is plain git done by the user.\n\nSEARCH: the aim-search modal (the universal connection-creation funnel) gets a repo scope selector (this/all/checkboxes), fans out to each linked repo's search, merges ranked results (same embedding model ⇒ comparable cosine), tags each by repo.",
+  "description": "Enable an aim to link to ANOTHER locally-checked-out repository AS A WHOLE — a black-box dependency: \"that project supports this aim\" without referencing its internals. Decision 2026-06-27: REPO-LEVEL links only. The earlier aim→aim model (target a specific external aim, render external aims, merged external-aim value flow, cross-repo aim search) is PARKED (halted children) — repo-level is more elegant and gives a clean modular border (you care about a project without knowing its internals).\n\nDIRECTION & OWNERSHIP: a local aim is the supported (parent) side; the external repo is the supporter (child). You declare what supports you, never that another repo needs you. Weight stays on the local side; value flows OUT of this repo into the external repo. The other repo keeps NO back-reference.\n\nIDENTITY: the edge stores just {repoId} (no aimId) — the \"link the whole repo\" form the old design had explicitly rejected, now embraced. Registry split unchanged: portable {repoId,url,name} in meta.json; machine-local {localPath,access} in .bowman/runtime/ (gitignored). Resolution: repoId → localPath; unresolved ⇒ \"repo not checked out here\" stub (name from portable registry), not a broken edge.\n\nRENDERING: each linked repo is ONE node — a black box, tinted by the repo's meta color (neutral grey when not checked out), read-only, labeled by repo name. A flow-sized arrow runs from the repo node into the local aim. No internal aims are loaded or drawn — that opacity IS the modular border.\n\nVALUE: the repo node is a leaf SINK. Merged calc = local aims (real intrinsic) + one zero-intrinsic node per linked repo + the repo edges, fed to the existing calculateAimValues. The repo node receives value only from inflow; local values shrink as flow is exported (intended — value is conserved flow, not aggregate). totalIntrinsic stays = local intrinsics.\n\nFoundation (repoId + split portable/local registry) shipped in 1585aa46. v1 implementation = data-model + black-box rendering + repo-node value sink.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -51,6 +51,38 @@
       "relativePosition": [
         1.739916628481156,
         1.7951852622876467
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "8ae69400-1743-4569-b77f-0ae6f1109273",
+      "relativePosition": [
+        -2.491839391954852,
+        -0.20183271464773744
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "8c09ea74-3744-49b9-8b99-b09489947a1d",
+      "relativePosition": [
+        0.9457055214696408,
+        2.3142258028683877
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "3023ebec-e583-4c46-b56d-b8028e1c3604",
+      "relativePosition": [
+        2.2036078339686265,
+        -1.1807254185762657
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "672d430f-ddb6-4dee-8075-500b866b5646",
+      "relativePosition": [
+        -1.4062551175266833,
+        -2.0669897301220477
       ],
       "weight": 1
     }

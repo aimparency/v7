@@ -5,15 +5,40 @@
   "reflections": [],
   "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "6606def4-d7e0-4b14-b4fd-dc01c463e84c",
+      "relativePosition": [
+        -2.4982641112044752,
+        0.09314735996104798
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "da1291e5-bf3f-4028-b14c-31bd7c74cb6f",
+      "relativePosition": [
+        -2.0876982476090147,
+        1.3753239716264125
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c968f026-5bfe-4fa4-8992-10286a2cd37f",
+      "relativePosition": [
+        2.490108491877002,
+        0.22217042710955642
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "fe8b6496-588c-4439-8a39-056dab245c4f"
   ],
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Pass completed over 2026 phase and broader open-aim list. Found and closed 2 stale aims: 1c27fb5d (aim search — AimSearchModal.vue fully implemented) and 4117d1cc (loadable aims — WebGLGraphRenderer.ts loadable field). Named examples in description (8ae9e8da, fe0e0aaf, 4e50493a) were already done. Remaining open aims are genuinely not implemented or are vision/strategy nodes.",
-    "date": 1780158196733
+    "comment": "Broken into 3 heuristic steps 2026-06-28, strongest-first: (1) 6606def4 commit-reference reconciliation — DONE this commit (reconcile_status MCP tool: OPEN aims cited by >=1 git commit, deterministic/cheap/high-precision); (2) da1291e5 code-presence keyword/symbol heuristic — open (covers aims implemented without a commit citing their id); (3) c968f026 LLM-judged check for ambiguous candidates — open (gated behind the cheap signals to bound cost). All three are read-only review reports feeding update_aim, never auto-marking done. Parent stays partially until (2) lands (and optionally (3)).",
+    "date": 1782636554772
   },
   "intrinsicValue": 0,
   "cost": 1,

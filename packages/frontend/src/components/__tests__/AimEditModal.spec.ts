@@ -9,7 +9,9 @@ import { useUIModalStore } from '../../stores/ui/modal-store'
 vi.mock('../../trpc', () => ({
   trpc: {
     aim: {
-      list: { query: vi.fn().mockResolvedValue([]) }
+      list: { query: vi.fn().mockResolvedValue([]) },
+      linkRepo: { mutate: vi.fn().mockResolvedValue({}) },
+      unlinkRepo: { mutate: vi.fn().mockResolvedValue({}) }
     },
     phase: {
       get: { query: vi.fn().mockResolvedValue(null) }
@@ -297,6 +299,91 @@ describe('AimEditModal archive checkbox', () => {
       '/test/project',
       'aim-1',
       expect.objectContaining({ archived: false })
+    )
+  })
+})
+
+describe('AimEditModal linked repos', () => {
+  const R1 = '11111111-1111-4111-8111-111111111111'
+  const R2 = '22222222-2222-4222-8222-222222222222'
+
+  function mountWithRepos() {
+    const pinia = createTestingPinia({ createSpy: vi.fn })
+    const wrapper = mount(AimEditModal, {
+      props: { show: false, aimId: 'aim-1' },
+      global: { plugins: [pinia] }
+    })
+    const dataStore = useDataStore(pinia)
+    const projectStore = useProjectStore(pinia)
+    dataStore.aims['aim-1'] = {
+      id: 'aim-1', text: 'Local aim', description: '', tags: [],
+      status: { state: 'open', comment: '', date: Date.now() }, archived: false,
+      intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+      supportedAims: [], supportingConnections: [], committedIn: [],
+      supportingRepos: [{ repoId: R1, weight: 1, relativePosition: [0, 0] }]
+    } as any
+    dataStore.meta = {
+      name: 'p', color: '#ffffff',
+      statuses: [{ key: 'open', color: '#fff', ongoing: true }],
+      linkedRepos: [{ repoId: R1, name: 'Repo One' }, { repoId: R2, name: 'Repo Two' }]
+    } as any
+    projectStore.projectPath = '/test/project'
+    return { wrapper, dataStore }
+  }
+
+  it('lists existing repo links and opens the funnel with only the unlinked repos', async () => {
+    const { wrapper } = mountWithRepos()
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    // The already-linked repo shows by its registry name.
+    expect(wrapper.text()).toContain('Repo One')
+
+    const modalStore = useUIModalStore()
+    await wrapper.find('button[title="Link a whole repo"]').trigger('click')
+
+    const calls = vi.mocked(modalStore.openAimSearch).mock.calls
+    const options = (calls[0]![3] as any).additionalOptions
+    // Only Repo Two is offered — Repo One is already linked.
+    expect(options).toEqual([expect.objectContaining({ id: R2, label: 'Repo Two' })])
+
+    // Picking the option stages the new repo link.
+    const callback = calls[0]![1] as (payload: any) => void
+    callback({ type: 'option', data: { id: R2, label: 'Repo Two' } })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.text()).toContain('Repo Two')
+  })
+
+  it('reconciles added/removed repo links via linkRepo/unlinkRepo on save', async () => {
+    const { trpc } = await import('../../trpc')
+    vi.mocked(trpc.aim.linkRepo.mutate).mockClear()
+    vi.mocked(trpc.aim.unlinkRepo.mutate).mockClear()
+
+    const { wrapper } = mountWithRepos()
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    const modalStore = useUIModalStore()
+    // Add R2 through the funnel.
+    await wrapper.find('button[title="Link a whole repo"]').trigger('click')
+    const callback = vi.mocked(modalStore.openAimSearch).mock.calls[0]![1] as (payload: any) => void
+    callback({ type: 'option', data: { id: R2, label: 'Repo Two' } })
+    await wrapper.vm.$nextTick()
+
+    // Remove the pre-existing R1 (two clicks: Remove → Confirm).
+    const removeBtn = wrapper.findAll('.entry-action').find((b) => b.text() === 'Remove')!
+    await removeBtn.trigger('click')
+    await removeBtn.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
+    await wrapper.vm.$nextTick()
+
+    expect(trpc.aim.linkRepo.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ projectPath: '/test/project', aimId: 'aim-1', repoId: R2 })
+    )
+    expect(trpc.aim.unlinkRepo.mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ projectPath: '/test/project', aimId: 'aim-1', repoId: R1 })
     )
   })
 })

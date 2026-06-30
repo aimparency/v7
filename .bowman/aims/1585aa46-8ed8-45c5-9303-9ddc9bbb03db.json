@@ -2,7 +2,16 @@
   "id": "1585aa46-8ed8-45c5-9303-9ddc9bbb03db",
   "text": "Repo identity + portable/local linked-repo registry",
   "description": "Add a stable generated repoId (uuid) to meta.json. Split the linked-repo registry: portable part (repoId, url, name) committed in meta.json; machine-local part (localPath, read/write access toggle) in .bowman/runtime/ (gitignored) — otherwise committed absolute paths break for every collaborator. Provide the two-stage resolution: edge {repoId,aimId} → machine-local repoId→localPath map. repoId is the source of truth; url is an optional relocation hint. Registration UX (add a linked repo, e.g. from discoverLocalProjects) lands here.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1782634107686,
+      "context": "Registration UX — the last open piece of the repo-identity/registry foundation, and the unblocker the previous turn identified for the whole cross-repo cluster (nothing populated meta.linkedRepos from the UI).",
+      "outcome": "Added a 'Linked repos' section to the existing ProjectSettingsModal (project-level config, already discoverable via the gear) rather than a new modal+entry-point: lists linkedRepo.list with resolved chips + confirm-unregister, and registers a discoverLocalProjects target via a select. Immediate mutations; force-refresh of store meta so the aim-edit picker updates. 3 component tests pass; vue-tsc clean; suite green except the pre-existing App.spec failure.",
+      "effectiveness": "Strong, and the test paid for itself immediately: it caught that I'd called trpc.linkedRepo.register/unregister WITHOUT .mutate — which in the app throws inside a try/catch and is silently swallowed, so it would have looked like 'nothing happens on Link' with no error. Verified updateMeta merges (preserves linkedRepos) before relying on immediate-persist + Save coexisting, instead of assuming. Reused the modal's existing styles/patterns so the surface stayed small.",
+      "lesson": "Two reusable lessons. (1) tRPC procedures need .query/.mutate at the call site; a bare trpc.x.y(...) is an object call that throws, and try/catch around mutations turns that into an invisible no-op — component tests that assert the mutate spy was called catch it where types don't (the mock shape allowed it). (2) Choosing an EXISTING surface (ProjectSettingsModal) over a new one removed an entire entry-point-wiring subtask and its risk — worth scanning for a host before scaffolding new UI.",
+      "pattern": "Completes the producer→store→consumer round-trip the previous turn's reflection demanded: this slice is the producer that was missing, and I verified the store-refresh hop that connects it to the already-built consumer (672d430f)."
+    }
+  ],
   "archived": false,
   "tags": [
     "cross-repo",
@@ -12,13 +21,14 @@
   "supportingConnections": [],
   "supportedAims": [
     "5a45cb28-dd71-47c7-8ba3-78b543b2647b",
-    "700e5b01-1ca7-4ef8-a828-a05163f07bbf"
+    "700e5b01-1ca7-4ef8-a828-a05163f07bbf",
+    "8ae69400-1743-4569-b77f-0ae6f1109273"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780480432
+    "state": "done",
+    "comment": "Done 2026-06-28 (commit pending). The foundation (generated repoId in meta, split portable/local registry, two-stage resolution, linkedRepo.list/register/unregister/resolve endpoints + linked-repos.test.ts) shipped earlier; the last open piece was the registration UX, now landed. Added a 'Linked repos' section to ProjectSettingsModal.vue: lists registered repos via linkedRepo.list (name + resolved 'checked out' / 'not here' chip) with a confirm-then-unregister × button, and an add row that lists discoverLocalProjects results (excluding this project and already-linked ones, matched on the target .bowman path) in a select → Link calls linkedRepo.register.mutate({projectPath, targetPath}). Register/unregister apply immediately (their own mutations); updateMeta merges + preserves linkedRepos so the modal's Save doesn't clobber them. After each change it force-refreshes dataStore meta so the aim-edit 'link a whole repo' picker (672d430f) sees the new repos. This closes the end-to-end loop: register here → meta.linkedRepos → aim-edit picker → supportingRepos edge → black-box node + value flow. 3 ProjectSettingsModal component tests (lists+excludes self/linked, register on Link, confirm-unregister). Verified: vue-tsc clean (pre-existing baseUrl only); full frontend suite 147 pass (1 pre-existing App.spec header failure). The test also caught a real bug: register/unregister were called without .mutate (silently swallowed by try/catch in the running app). Recommended final check: an in-app smoke test of the whole chain (browser/WebGL not unit-verifiable).",
+    "date": 1782634090217
   },
   "intrinsicValue": 0,
   "cost": 1,

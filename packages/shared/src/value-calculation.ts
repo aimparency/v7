@@ -1,7 +1,79 @@
 import type { Aim } from './types.js';
 import { DISCOUNT_RATE, DAILY_DISCOUNT_RATE } from './constants.js';
 
-export function calculateAimValues(aims: Aim[]): { 
+// Repo-level cross-repo links: a local aim's supportingRepos edge points at a
+// WHOLE external repo (by repoId, no aimId — see RepoConnectionSchema). For
+// value flow we model each referenced repo as ONE zero-intrinsic LEAF SINK node
+// (its id IS the repoId) and turn every repo edge into an ordinary
+// supportingConnection into that node, so the existing flow machinery handles it
+// on a single code path. A leaf retains all inflow (effectiveLoopWeight 1), so
+// flow is EXPORTED out of the local graph into the sink; totalIntrinsic is
+// unchanged (repo nodes carry intrinsic 0) and local aims' retained values
+// shrink by exactly the exported flow (value is conserved flow, not aggregate).
+export function expandRepoSinkNodes(aims: Aim[]): Aim[] {
+  // Fast path: no repo edges ⇒ nothing to merge, return the array untouched.
+  if (!aims.some(a => a.supportingRepos && a.supportingRepos.length > 0)) {
+    return aims;
+  }
+
+  const localIds = new Set(aims.map(a => a.id));
+  const repoIds = new Set<string>();
+  const expanded: Aim[] = [];
+
+  for (const aim of aims) {
+    if (aim.supportingRepos && aim.supportingRepos.length > 0) {
+      // Clone (don't mutate the caller's aim) and fold each repo edge into
+      // supportingConnections, targeting the repo node whose id is the repoId.
+      const repoConnections = aim.supportingRepos.map(r => {
+        repoIds.add(r.repoId);
+        return {
+          aimId: r.repoId,
+          weight: r.weight ?? 1,
+          relativePosition: (r.relativePosition ?? [0, 0]) as [number, number]
+        };
+      });
+      expanded.push({
+        ...aim,
+        supportingConnections: [...(aim.supportingConnections ?? []), ...repoConnections]
+      });
+    } else {
+      expanded.push(aim);
+    }
+  }
+
+  // One leaf sink node per referenced repo. Skip a repoId that collides with a
+  // real local aim id (already a node — don't shadow it).
+  for (const repoId of repoIds) {
+    if (!localIds.has(repoId)) {
+      expanded.push(makeRepoSinkNode(repoId));
+    }
+  }
+
+  return expanded;
+}
+
+function makeRepoSinkNode(repoId: string): Aim {
+  return {
+    id: repoId,
+    text: `repo:${repoId}`,
+    intrinsicValue: 0, // carries no intrinsic ⇒ keeps totalIntrinsic = local intrinsics
+    cost: 0,           // the external repo's cost is not ours to aggregate
+    duration: 1,
+    costVariance: 0,
+    valueVariance: 0,
+    reflections: [],
+    status: { state: 'open', comment: '', date: 0 },
+    supportingConnections: [], // leaf ⇒ retains all inflow (the sink)
+    supportingRepos: [],
+    supportedAims: [],
+    committedIn: [],
+    tags: [],
+    loopWeight: 0,
+    archived: false
+  } as Aim;
+}
+
+export function calculateAimValues(inputAims: Aim[]): {
   values: Map<string, number>, 
   totalIntrinsic: number, 
   flowShares: Map<string, number>,
@@ -10,6 +82,10 @@ export function calculateAimValues(aims: Aim[]): {
   doneCosts: Map<string, number>,
   priorities: Map<string, number>
 } {
+  // Merge repo-link edges into zero-intrinsic leaf sink nodes before any
+  // topology is built, so cross-repo flow runs on the same single code path.
+  const aims = expandRepoSinkNodes(inputAims);
+
   const aimMap = new Map<string, Aim>();
   const currentValues = new Map<string, number>();
   const flowShares = new Map<string, number>();
