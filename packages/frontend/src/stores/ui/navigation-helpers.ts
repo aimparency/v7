@@ -47,7 +47,8 @@ export function findNextSiblingOrAncestorSibling(
   aims: Aim[],
   dataStore: DataStore,
   parentAimId: string | null,
-  topLevelIndex: number
+  topLevelIndex: number,
+  visited: Set<string> = new Set()
 ): TreeTraversalResult | null {
   for (let i = 0; i < aims.length; i++) {
     const aim = aims[i]
@@ -56,6 +57,7 @@ export function findNextSiblingOrAncestorSibling(
     }
 
     const currentTopLevel = parentAimId === null ? i : topLevelIndex
+    const nextVisited = new Set(visited)
 
     if (aim.id === aimId) {
       if (i < aims.length - 1) {
@@ -70,16 +72,21 @@ export function findNextSiblingOrAncestorSibling(
       return null
     }
 
+    if (nextVisited.has(aim.id)) {
+      continue
+    }
+    nextVisited.add(aim.id)
+
     if (aim.expanded && aim.supportingConnections?.length) {
       const incomingAims = aim.supportingConnections
         .map((connection) => dataStore.aims[connection.aimId])
         .filter((child): child is Aim => Boolean(child))
-      const result = findNextSiblingOrAncestorSibling(aimId, incomingAims, dataStore, aim.id, currentTopLevel)
+      const result = findNextSiblingOrAncestorSibling(aimId, incomingAims, dataStore, aim.id, currentTopLevel, nextVisited)
       if (result) {
         return result
       }
 
-      const wasInIncoming = incomingAims.some((child) => child.id === aimId || isAimInTree(aimId, child, dataStore))
+      const wasInIncoming = incomingAims.some((child) => child.id === aimId || isAimInTree(aimId, child, dataStore, nextVisited))
       if (wasInIncoming) {
         if (i < aims.length - 1) {
           const nextSibling = aims[i + 1]
@@ -103,7 +110,8 @@ export function findPreviousSiblingOrAncestor(
   aims: Aim[],
   dataStore: DataStore,
   parentAimId: string | null,
-  topLevelIndex: number
+  topLevelIndex: number,
+  visited: Set<string> = new Set()
 ): TreeTraversalResult | null {
   for (let i = 0; i < aims.length; i++) {
     const aim = aims[i]
@@ -112,6 +120,7 @@ export function findPreviousSiblingOrAncestor(
     }
 
     const currentTopLevel = parentAimId === null ? i : topLevelIndex
+    const nextVisited = new Set(visited)
 
     if (aim.id === aimId) {
       if (i > 0) {
@@ -121,7 +130,7 @@ export function findPreviousSiblingOrAncestor(
         }
 
         const prevSiblingTopLevel = parentAimId === null ? i - 1 : topLevelIndex
-        const lastDescendant = findLastDescendant(prevSibling, dataStore)
+        const lastDescendant = findLastDescendant(prevSibling, dataStore, visited)
         return {
           aimId: lastDescendant.id,
           topLevelIndex: prevSiblingTopLevel,
@@ -137,11 +146,16 @@ export function findPreviousSiblingOrAncestor(
       return null
     }
 
+    if (nextVisited.has(aim.id)) {
+      continue
+    }
+    nextVisited.add(aim.id)
+
     if (aim.expanded && aim.supportingConnections?.length) {
       const incomingAims = aim.supportingConnections
         .map((connection) => dataStore.aims[connection.aimId])
         .filter((child): child is Aim => Boolean(child))
-      const result = findPreviousSiblingOrAncestor(aimId, incomingAims, dataStore, aim.id, currentTopLevel)
+      const result = findPreviousSiblingOrAncestor(aimId, incomingAims, dataStore, aim.id, currentTopLevel, nextVisited)
       if (result) {
         return result
       }
@@ -151,10 +165,17 @@ export function findPreviousSiblingOrAncestor(
   return null
 }
 
-export function findLastDescendant(aim: Aim, dataStore: DataStore): LastDescendantResult {
+export function findLastDescendant(aim: Aim, dataStore: DataStore, visited: Set<string> = new Set()): LastDescendantResult {
+  if (visited.has(aim.id)) {
+    return { id: aim.id }
+  }
+
   if (!aim.expanded || !aim.supportingConnections?.length) {
     return { id: aim.id }
   }
+
+  const nextVisited = new Set(visited)
+  nextVisited.add(aim.id)
 
   const lastConnection = aim.supportingConnections[aim.supportingConnections.length - 1]
   const lastIncoming = lastConnection ? dataStore.aims[lastConnection.aimId] : undefined
@@ -162,7 +183,7 @@ export function findLastDescendant(aim: Aim, dataStore: DataStore): LastDescenda
     return { id: aim.id }
   }
 
-  const descendant = findLastDescendant(lastIncoming, dataStore)
+  const descendant = findLastDescendant(lastIncoming, dataStore, nextVisited)
   return { ...descendant, parentId: aim.id, indexInParent: aim.supportingConnections.length - 1 }
 }
 
@@ -182,18 +203,25 @@ export function findTopLevelAncestorIndex(aimId: string, topLevelAims: Aim[], da
   return -1
 }
 
-export function isAimInTree(aimId: string, rootAim: Aim, dataStore: DataStore): boolean {
+export function isAimInTree(aimId: string, rootAim: Aim, dataStore: DataStore, visited: Set<string> = new Set()): boolean {
   if (rootAim.id === aimId) {
     return true
+  }
+
+  if (visited.has(rootAim.id)) {
+    return false
   }
 
   if (!rootAim.supportingConnections?.length) {
     return false
   }
 
+  const nextVisited = new Set(visited)
+  nextVisited.add(rootAim.id)
+
   for (const connection of rootAim.supportingConnections) {
     const child = dataStore.aims[connection.aimId]
-    if (child && isAimInTree(aimId, child, dataStore)) {
+    if (child && isAimInTree(aimId, child, dataStore, nextVisited)) {
       return true
     }
   }
@@ -201,8 +229,14 @@ export function isAimInTree(aimId: string, rootAim: Aim, dataStore: DataStore): 
   return false
 }
 
-export function makeSelectedAimPath(aim: Aim, path: Aim[], dataStore: DataStore): Aim {
+export function makeSelectedAimPath(aim: Aim, path: Aim[], dataStore: DataStore, visited: Set<string> = new Set()): Aim {
   path.push(aim)
+
+  if (visited.has(aim.id)) {
+    return aim
+  }
+  const nextVisited = new Set(visited)
+  nextVisited.add(aim.id)
 
   if (aim.expanded && aim.selectedIncomingIndex !== undefined) {
     const connections = aim.supportingConnections || []
@@ -210,7 +244,7 @@ export function makeSelectedAimPath(aim: Aim, path: Aim[], dataStore: DataStore)
       const selectedConnection = connections[aim.selectedIncomingIndex]
       const childAim = selectedConnection ? dataStore.aims[selectedConnection.aimId] : undefined
       if (childAim) {
-        return makeSelectedAimPath(childAim, path, dataStore)
+        return makeSelectedAimPath(childAim, path, dataStore, nextVisited)
       }
     }
   }
@@ -309,11 +343,18 @@ export function findPathInTree(
   currentAim: Aim,
   dataStore: DataStore,
   topLevelIndex: number,
-  indexInParent: number | undefined
+  indexInParent: number | undefined,
+  visited: Set<string> = new Set()
 ): TreeTraversalResult[] | null {
   if (currentAim.id === targetId) {
     return [{ aimId: currentAim.id, topLevelIndex, indexInParent }]
   }
+
+  if (visited.has(currentAim.id)) {
+    return null
+  }
+  const nextVisited = new Set(visited)
+  nextVisited.add(currentAim.id)
 
   if (currentAim.supportingConnections?.length) {
     for (let i = 0; i < currentAim.supportingConnections.length; i++) {
@@ -323,7 +364,7 @@ export function findPathInTree(
         continue
       }
 
-      const childPath = findPathInTree(targetId, childAim, dataStore, topLevelIndex, i)
+      const childPath = findPathInTree(targetId, childAim, dataStore, topLevelIndex, i, nextVisited)
       if (childPath) {
         return [{ aimId: currentAim.id, topLevelIndex, indexInParent }, ...childPath]
       }

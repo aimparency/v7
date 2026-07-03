@@ -45,7 +45,8 @@ export const useUIModalStore = defineStore('ui-modal', {
     showAimSearch: false,
     aimSearchMode: 'navigate' as 'navigate' | 'pick',
     aimSearchCallback: null as ((payload: AimSearchPickPayload) => void) | null,
-    aimCreationCallback: null as ((aimId: string) => void) | null,
+    aimCreationCallback: null as ((aimId: string, onConnectionConfirmed?: () => void) => void) | null,
+    connectionDetailsCallback: null as (() => void) | null,
     aimSearchInitialAimId: null as string | null,
     aimSearchShowParentPaths: false,
     aimSearchTitle: 'Search Aims',
@@ -166,16 +167,22 @@ export const useUIModalStore = defineStore('ui-modal', {
       this.showSpinOffApplyModal = false
     },
 
-    openConnectionDetailsModal(parentId: string, childId: string) {
+    openConnectionDetailsModal(parentId: string, childId: string, callback?: () => void) {
       this.connectionDetailsParentId = parentId
       this.connectionDetailsChildId = childId
       this.showConnectionDetailsModal = true
+      this.connectionDetailsCallback = callback || null
     },
 
     closeConnectionDetailsModal() {
       this.showConnectionDetailsModal = false
       this.connectionDetailsParentId = null
       this.connectionDetailsChildId = null
+      if (this.connectionDetailsCallback) {
+        const cb = this.connectionDetailsCallback
+        this.connectionDetailsCallback = null
+        cb()
+      }
     }
   }
 })

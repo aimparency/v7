@@ -1,0 +1,30 @@
+{
+  "id": "4c027fd6-90f1-4158-93e5-64572098b4a8",
+  "text": "Submit ZIM Einzelprojekt application (~€50k grant)",
+  "description": "Primary path to €50k target. Rolling submission via PTJ easy-Online.\n\n**Draft ready:** meta/zim-projektskizze-draft.md\n**Target:** €50,000 grant (60% of €83,333 project, 18 months)\n\n**Steps:**\n1. Review/finalize Projektskizze with Robin\n2. Submit informal inquiry via PTJ after GmbH/UG exists\n3. Do NOT start project expenses before Bewilligung\n\n**Innovation angle:** Transparent will-model for human-AI cooperative agent systems.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "grant",
+    "zim"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8d174cd3-7259-409f-8dd1-2e901bf3dbd7"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Projektskizze complete (meta/zim-projektskizze-draft.md); PTJ inquiry email drafted. Submit after incorporation.",
+    "date": 1782854152141
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -10,7 +10,17 @@ import { v4 as uuidv4 } from 'uuid'
 vi.mock('../components/AimsList.vue', () => ({
   default: {
     template: '<div class="mock-aims-list"></div>',
-    props: ['aims']
+    props: [
+      'aims',
+      'phaseId',
+      'parentAimId',
+      'columnIndex',
+      'indentationLevel',
+      'ancestorAimIds',
+      'isActive',
+      'isSelected',
+      'selectedAimIndex'
+    ]
   }
 }))
 
@@ -125,5 +135,35 @@ describe('Aim.vue', () => {
     })
 
     expect(dataStore.loadAims).toHaveBeenCalled()
+  })
+
+  it('marks repeated aims in the current path and does not render children', () => {
+    const dataStore = useDataStore()
+    const childAimId = uuidv4()
+    const aim = createMockAim({
+      expanded: true,
+      supportingConnections: [
+        { aimId: childAimId, relativePosition: [0, 0], weight: 1 }
+      ]
+    })
+
+    dataStore.loadAims = vi.fn()
+
+    const wrapper = mount(AimComponent, {
+      global: { plugins: [pinia] },
+      props: {
+        aim,
+        phaseId: 'test-phase',
+        columnIndex: 0,
+        isActive: false,
+        isSelected: false,
+        ancestorAimIds: [aim.id]
+      }
+    })
+
+    expect(wrapper.find('svg.cycle-marker').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain('Test Description')
+    expect(wrapper.find('.mock-aims-list').exists()).toBe(false)
+    expect(dataStore.loadAims).not.toHaveBeenCalled()
   })
 })

@@ -223,7 +223,7 @@ export function useGraphInteraction(
                 const parentNode = mapStore.connectFrom
                 const dropPosLogical = mapStore.mouse.logical  // Use already-computed logical coords
                 
-                modalStore.aimCreationCallback = async (newAimId) => {
+                modalStore.aimCreationCallback = async (newAimId, onConnectionConfirmed) => {
                      // Wait for node to exist in the graph
                      const checkNode = () => {
                          const newNode = nodeMap.get(newAimId)
@@ -275,7 +275,7 @@ export function useGraphInteraction(
                                  // Persist the corrected relative position
                                  await (dataStore as any).updateConnectionPosition(projectStore.projectPath, parentNode.id, newAimId, correctedRelPos)
                                  // Offer contribution % + explanation for the new connection.
-                                 modalStore.openConnectionDetailsModal(parentNode.id, newAimId)
+                                 modalStore.openConnectionDetailsModal(parentNode.id, newAimId, onConnectionConfirmed)
                              }).catch(err => {
                                  console.error('Graph: Connection failed', err)
                              })

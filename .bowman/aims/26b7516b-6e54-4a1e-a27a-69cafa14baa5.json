@@ -1,0 +1,31 @@
+{
+  "id": "26b7516b-6e54-4a1e-a27a-69cafa14baa5",
+  "text": "Submit EIC Accelerator Step 1 (EU)",
+  "description": "EU parallel track. Low-cost Step 1 (12-page form + deck + 3min video). Grant up to €2.5M if successful.\n\n**Outline ready:** meta/eic-accelerator-step1-outline.md\n**Submit:** Rolling, batched 1st Tuesday/month 17:00 Brussels\n\n**Human actions:**\n- Create EU Login account\n- Record 3-min video pitch\n- Build 10-slide PDF deck\n- Submit via EU Funding Portal\n\nCan use 'intending to launch SME' eligibility at Step 1.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "grant",
+    "eu",
+    "eic"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8d174cd3-7259-409f-8dd1-2e901bf3dbd7"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Projektskizze complete (meta/ki4kmu-projektskizze-draft.md). Submit by 15 Oct 2026 after incorporation.",
+    "date": 1782854152141
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

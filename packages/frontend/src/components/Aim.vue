@@ -19,6 +19,7 @@ interface Props {
   phaseId: string
   columnIndex: number
   parentAimId?: string
+  ancestorAimIds?: string[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -26,7 +27,8 @@ const props = withDefaults(defineProps<Props>(), {
   isActive: false,
   isSelected: false,
   isThisAimSelected: false,
-  parentAimId: undefined
+  parentAimId: undefined,
+  ancestorAimIds: () => []
 })
 
 const emit = defineEmits<{
@@ -96,6 +98,8 @@ const aimMenuItems = computed<ContextMenuItem[]>(() => [
 
 const hasIncomingAims = computed(() => props.aim.supportingConnections && props.aim.supportingConnections.length > 0)
 const isExpanded = computed(() => props.aim.expanded || false)
+const isCycleRepeat = computed(() => props.ancestorAimIds.includes(props.aim.id))
+const childAncestorAimIds = computed(() => [...props.ancestorAimIds, props.aim.id])
 
 const subAimCount = computed(() => {
   return props.aim.supportingConnections?.length || 0
@@ -166,7 +170,7 @@ watch(() => [props.isThisAimSelected, props.isActive], ([isSelected, isActive]) 
 
 // Ensure sub-aims and parent aims are loaded when expanded
 watch(isExpanded, (newVal) => {
-  if (newVal) {
+  if (newVal && !isCycleRepeat.value) {
     // Load child aims (supportingConnections)
     if (props.aim.supportingConnections && props.aim.supportingConnections.length > 0) {
       dataStore.loadAims(projectStore.projectPath, props.aim.supportingConnections.map(c => c.aimId))
@@ -190,7 +194,7 @@ onMounted(() => {
   <div
     ref="aimContainerRef"
     class="aim-item"
-    :class="[attrs.class, { expanded: isExpanded }]"
+    :class="[attrs.class, { expanded: isExpanded, 'cycle-repeat': isCycleRepeat }]"
     @click.stop="onAimClick"
   >
     <!-- Aim content -->
@@ -206,6 +210,15 @@ onMounted(() => {
       >
         <div class="aim-main">
           <div class="aim-text" :class="{ 'untitled': !aim.text }">
+            <svg
+              v-if="isCycleRepeat"
+              class="cycle-marker"
+              viewBox="0 0 16 16"
+              role="img"
+              aria-label="Cycle detected"
+            >
+              <circle cx="8" cy="8" r="5.5" />
+            </svg>
             {{ aim.text || '(untitled)' }}
           </div>
           <div class="aim-status" :style="{ color: statusColor }">
@@ -229,7 +242,7 @@ onMounted(() => {
         </div>
       </div>
       
-      <div v-if="isExpanded" class="aim-details">
+      <div v-if="isExpanded && !isCycleRepeat" class="aim-details">
         <div v-if="aim.description" class="aim-description">
           {{ aim.description }}
         </div>
@@ -268,7 +281,7 @@ onMounted(() => {
     />
 
     <!-- Expanded incoming aims (recursive) -->
-    <div v-if="isExpanded" class="incoming-aims">
+    <div v-if="isExpanded && !isCycleRepeat" class="incoming-aims">
       <div class="indent-space" :style="{ width: `${2.3 * Math.pow(0.8, indentationLevel)}rem` }">
         <div class="indent-line"></div>
       </div>
@@ -278,6 +291,7 @@ onMounted(() => {
         :parent-aim-id="aim.id"
         :column-index="columnIndex"
         :indentation-level="indentationLevel + 1"
+        :ancestor-aim-ids="childAncestorAimIds"
         :is-active="isActive && isThisAimSelected"
         :is-selected="isSelected && isThisAimSelected"
         :selected-aim-index="aim.selectedIncomingIndex"
@@ -342,6 +356,10 @@ onMounted(() => {
       z-index: 1;
     }
   }
+
+  &.cycle-repeat {
+    opacity: 0.8;
+  }
 }
 
 @keyframes moving-stripes {
@@ -385,6 +403,21 @@ onMounted(() => {
     &.untitled {
       color: #888;
       font-style: italic;
+    }
+  }
+
+  .cycle-marker {
+    align-self: center;
+    color: #ffcc66;
+    display: inline-block;
+    flex: 0 0 auto;
+    height: 1em;
+    width: 1em;
+
+    circle {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 3;
     }
   }
 

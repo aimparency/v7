@@ -1,7 +1,10 @@
 {
   "id": "0e71547e-5d14-434f-957c-7ad2cd0b8de8",
-  "name": "July",
   "parent": "6a3432ea-a0c5-4df4-b533-68298be7b7fc",
   "childPhaseIds": [],
-  "commitments": []
+  "commitments": [
+    "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
+    "21202fb8-b4c3-4636-9de3-5084bb2ad6ab"
+  ],
+  "name": "July"
 }

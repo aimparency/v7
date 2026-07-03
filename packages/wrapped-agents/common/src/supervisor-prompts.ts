@@ -206,8 +206,9 @@ export const ActionPrompts = {
   },
   
   commit: (text?: string) => {
-    const WRAP_UP_PROMPT = "Before compressing, make a git commit for the work completed so far. Review git status, stage the intended files, create the commit, and then wait for compaction. If you need short guidance for the commit, ask explicitly.";
-    return text ? `Track changes and make a git commit for the completed work. ${text}` : WRAP_UP_PROMPT;
+    const COMMIT_GRAPH_STATUS_HINT = 'When code and aim status both changed, it is elegant to commit them together, including the relevant .bowman files.';
+    const WRAP_UP_PROMPT = `Before compressing, make a git commit for the work completed so far. Review git status, stage the intended files, create the commit, and then wait for compaction. ${COMMIT_GRAPH_STATUS_HINT} If you need short guidance for the commit, ask explicitly.`;
+    return text ? `Track changes and make a git commit for the completed work. ${COMMIT_GRAPH_STATUS_HINT} ${text}` : WRAP_UP_PROMPT;
   },
   
   explore: (text?: string) => text || 'check Aimparency MCP for open aims and see if there is something you can work on'

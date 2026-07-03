@@ -728,9 +728,36 @@ export const useListStore = defineStore('ui', {
         }
       }
 
+      let connectionCallbackPromptsPhase = false
       if (newAimId) {
+        const shouldPromptForPhaseCommitment =
+          !isExistingAim &&
+          modalStore.aimModalSource === 'graph' &&
+          projectStore.currentView === 'graph'
+
         if (modalStore.aimCreationCallback) {
-          modalStore.aimCreationCallback(newAimId)
+          if (shouldPromptForPhaseCommitment) {
+            connectionCallbackPromptsPhase = true
+            const promptPhase = () => {
+              modalStore.openPhaseSearchPrompt(async (payload) => {
+                if (payload.type !== 'phase') return
+                await dataStore.commitAimToPhase(projectStore.projectPath, newAimId!, payload.data.id)
+              }, {
+                title: 'Commit to Phase',
+                placeholder: 'Optional: search for a phase...',
+                additionalOptions: [{
+                  id: 'skip-phase',
+                  label: 'Skip (leave floating)',
+                  description: 'Keep this new graph aim uncommitted to any phase.',
+                  showWhenQueryEmptyOnly: true,
+                  actsAsEscape: true
+                }]
+              })
+            }
+            modalStore.aimCreationCallback(newAimId, promptPhase)
+          } else {
+            modalStore.aimCreationCallback(newAimId)
+          }
           modalStore.aimCreationCallback = null
         }
 
@@ -763,7 +790,8 @@ export const useListStore = defineStore('ui', {
         !isExistingAim &&
         !!newAimId &&
         modalStore.aimModalSource === 'graph' &&
-        projectStore.currentView === 'graph'
+        projectStore.currentView === 'graph' &&
+        !connectionCallbackPromptsPhase
 
       modalStore.closeAimModal()
 

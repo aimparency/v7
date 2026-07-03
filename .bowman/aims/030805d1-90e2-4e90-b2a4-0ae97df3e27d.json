@@ -1,0 +1,31 @@
+{
+  "id": "030805d1-90e2-4e90-b2a4-0ae97df3e27d",
+  "text": "Apply IBB Pro FIT Innovation (Berlin)",
+  "description": "Berlin-based R&D grant. Typical awards €50–200k for innovative tech startups.\n\n**Steps after incorporation:**\n1. Contact IBB / Berlin Partner for scoping call\n2. Adapt meta/zim-projektskizze-draft.md for Pro FIT format\n3. Submit to next batch\n\n**References:** Taledo, doctorly, Deep Neuron Lab received Pro FIT funding.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "grant",
+    "berlin",
+    "ibb"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8d174cd3-7259-409f-8dd1-2e901bf3dbd7"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Inquiry email drafted (meta/applications/inquiry-ibb-pro-fit.md). Send after UG exists.",
+    "date": 1782854152141
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

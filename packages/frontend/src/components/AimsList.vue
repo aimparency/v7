@@ -17,12 +17,14 @@ interface Props {
   indentationLevel?: number
   selectedAimIndex?: number  // Index of selected aim in this list
   parentAimId?: string
+  ancestorAimIds?: string[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0,
   selectedAimIndex: undefined,
-  parentAimId: undefined
+  parentAimId: undefined,
+  ancestorAimIds: () => []
 })
 
 const emit = defineEmits<{
@@ -82,6 +84,7 @@ const handleScrollRequest = (element: HTMLElement) => {
           :is-selected="isSelected"
           :is-this-aim-selected="selectedAimIndex === index"
           :parent-aim-id="parentAimId"
+          :ancestor-aim-ids="ancestorAimIds"
           :class="{
             'active': isActive && selectedAimIndex === index,
             'selected': isSelected && selectedAimIndex === index,

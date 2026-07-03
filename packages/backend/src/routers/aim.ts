@@ -191,6 +191,8 @@ export const createAimRouter = (
         aim: z.object({
           text: z.string().optional(),
           description: z.string().optional(),
+          reflection: z.string().optional(),
+          archived: z.boolean().optional(),
           tags: z.array(z.string()).optional(),
           status: z.object({
             state: z.string().optional(),

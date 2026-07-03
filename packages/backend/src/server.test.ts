@@ -691,6 +691,29 @@ test('aim.update - persists custom color', async () => {
   assert.strictEqual(fetchedAim.color, '#00ff00');
 });
 
+test('aim.update - persists edit-modal reflection and archive fields', async () => {
+  const aimResult = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: {
+      text: 'Reflection test',
+      status: { state: 'done', comment: '', date: Date.now() }
+    }
+  });
+
+  await caller.aim.update({
+    projectPath: testProjectPath,
+    aimId: aimResult.id,
+    aim: {
+      reflection: 'This worked better after reducing scope.',
+      archived: true
+    }
+  });
+
+  const fetchedAim = await caller.aim.get({ projectPath: testProjectPath, aimId: aimResult.id });
+  assert.strictEqual(fetchedAim.reflection, 'This worked better after reducing scope.');
+  assert.strictEqual(fetchedAim.archived, true);
+});
+
 test('discoverLocalProjects - finds nearby repositories with .bowman directories', async () => {
   const workspaceRoot = path.join(testRootPath, 'workspace');
   const repoA = path.join(workspaceRoot, 'repo-a');

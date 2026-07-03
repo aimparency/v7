@@ -1,0 +1,73 @@
+{
+  "id": "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
+  "text": "find and apply for €50K in German/EU AI grants",
+  "description": "Secure ~€50k non-dilutive funding via German/EU AI grant programs. AI NATION (€54k) was not awarded — pivot to ZIM, IBB Pro FIT, KI4KMU, Bayern Digitalbonus, EIC Accelerator.\n\nResearch & drafts: meta/german-eu-grants-2026.md\n\n**Blocker:** GmbH/UG incorporation required before any submission.\n\n**Priority order:**\n1. ZIM Einzelprojekt (~€50k, rolling)\n2. IBB Pro FIT Innovation Berlin (€50–200k)\n3. KI4KMU (deadline 15 Oct 2026)\n4. Bayern Digitalbonus Plus (€30k, Memmingen)\n5. EIC Accelerator Step 1 (EU, rolling)",
+  "reflections": [],
+  "archived": false,
+  "color": null,
+  "tags": [
+    "funding",
+    "grant",
+    "germany",
+    "eu"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "9d446f62-f092-4a4b-a33c-4d5ca01f5a13",
+      "relativePosition": [
+        0.15671684958514895,
+        -2.4950831306904595
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "4c027fd6-90f1-4158-93e5-64572098b4a8",
+      "relativePosition": [
+        -1.8867336692946257,
+        -1.6401939096186275
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "030805d1-90e2-4e90-b2a4-0ae97df3e27d",
+      "relativePosition": [
+        -2.4863890234146004,
+        0.2605179921682749
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "26b7516b-6e54-4a1e-a27a-69cafa14baa5",
+      "relativePosition": [
+        -0.803431991840601,
+        2.3673818945170306
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "21202fb8-b4c3-4636-9de3-5084bb2ad6ab",
+      "relativePosition": [
+        2.498222582676673,
+        0.09425458824001247
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Grant landscape researched; ZIM, KI4KMU, EIC application drafts written. Blocked on GmbH/UG incorporation for actual submission.",
+    "date": 1782853875599
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

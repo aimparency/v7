@@ -1,0 +1,30 @@
+{
+  "id": "9d446f62-f092-4a4b-a33c-4d5ca01f5a13",
+  "text": "Incorporate Aimparency GmbH/UG in Germany (grant prerequisite)",
+  "description": "**HUMAN ACTION REQUIRED**\n\nAlmost all German/EU grants (ZIM, IBB Pro FIT, KI4KMU, Digitalbonus) require a registered KMU before application.\n\n**Quickstart:** meta/applications/incorporation-quickstart.md\n**Input checklist:** meta/applications/HUMAN-INPUT-REQUIRED.md\n\n**Recommended:** UG in Berlin, 50/50 Felix/Robin, ~€500-1500\n\n**After incorporation provide:** HRB, address, email, phone, IBAN, Steuernummer, ELSTER status",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "legal",
+    "human-dependent"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8d174cd3-7259-409f-8dd1-2e901bf3dbd7"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "All German grant packages ready; submission blocked on UG/GmbH incorporation + founder contact details",
+    "date": 1782854152141
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
