@@ -53,7 +53,7 @@ const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line
 // worker knows who is steering it and that the supervisor itself is editable.
 const WORKER_SUPERVISOR_PREFIX = "I am your supervisor AI agent. you can improve me in the wrapped agents <claude/gemini/...> package.";
 
-const RESPONSE_START_TIMEOUT_MS = 15000;
+const RESPONSE_START_TIMEOUT_MS = 60000;
 const RESPONSE_COMPLETION_GRACE_MS = 2000;
 const WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS = 20000;
 // How long the worker's bottom region must be BOTH free of an activity
