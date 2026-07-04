@@ -1,0 +1,26 @@
+{
+  "id": "5c35771c-a152-4be7-8c93-e1baefb6baa2",
+  "text": "in the search results: display aim title first, then path afterwards (smaller font)",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "1c27fb5d-0a77-470e-a3f2-d5c8023d4464"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783171413213
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
