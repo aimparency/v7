@@ -96,6 +96,14 @@ async function markInstanceStatus(projectPath: string, instanceId: string, statu
   await patchWorkerState(projectPath, instanceId, { status, updatedAt: Date.now() });
 }
 
+async function markLoopPhase(projectPath: string, instanceId: string, phase: string) {
+  await appendLoopEvent(projectPath, instanceId, {
+    role: 'system',
+    kind: 'event',
+    content: `phase: ${phase}`
+  });
+}
+
 async function readLoopAndInstance(projectPath: string, instanceId: string) {
   const runtime = await readLoopRuntimeState(projectPath);
   const instance = runtime.instances.find((candidate) => candidate.id === instanceId);
@@ -192,6 +200,7 @@ async function evaluateStopPolicy(projectPath: string, instance: LoopInstance) {
 }
 
 async function waitForNextCycle(projectPath: string, instanceId: string, loop: LoopDefinition, signal: AbortSignal) {
+  await markLoopPhase(projectPath, instanceId, `cooldown (${loop.intervalSeconds}s)`);
   const until = Date.now() + loop.intervalSeconds * 1000;
   while (!signal.aborted && Date.now() < until) {
     const workerState = await readWorkerState(projectPath, instanceId);
@@ -205,10 +214,12 @@ async function waitForNextCycle(projectPath: string, instanceId: string, loop: L
 }
 
 async function runCycle(projectPath: string, instanceId: string, loop: LoopDefinition, signal: AbortSignal) {
+  await markLoopPhase(projectPath, instanceId, 'checking API credentials');
   const secrets = await readSecrets(projectPath);
   const apiKey = apiKeyFor(loop, secrets);
   if (!apiKey) throw new Error(`Missing API key for provider ${loop.provider}.`);
 
+  await markLoopPhase(projectPath, instanceId, 'orienting in aim graph');
   const runtimeState = await readLoopRuntimeState(projectPath);
   const currentInstance = runtimeState.instances.find((candidate) => candidate.id === instanceId);
   const prioritized = await getPrioritizedAims(projectPath, 5, currentInstance?.targetPhaseId);
@@ -530,15 +541,41 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
   let reasoningText = '';
   let finishReason = 'unknown';
   let rawFinishReason = '';
+  let sawStreamPart = false;
   const toolCalls: string[] = [];
   const streamErrors: string[] = [];
+  let flushedTextLength = 0;
+  let lastTextFlushAt = Date.now();
+  const flushText = async (force = false) => {
+    const nextText = finalText.slice(flushedTextLength).trim();
+    if (!nextText) return;
+    if (!force && Date.now() - lastTextFlushAt < 1000 && nextText.length < 240) return;
+    flushedTextLength = finalText.length;
+    lastTextFlushAt = Date.now();
+    await appendLoopEvent(projectPath, instanceId, {
+      role: 'assistant',
+      kind: 'text',
+      content: nextText
+    });
+  };
+  await markLoopPhase(projectPath, instanceId, `waiting for LLM endpoint response (${loop.provider} / ${loop.model})`);
   for await (const part of result.fullStream) {
+    if (!sawStreamPart) {
+      sawStreamPart = true;
+      await markLoopPhase(projectPath, instanceId, 'streaming LLM response');
+    }
     if (part.type === 'text-delta') {
       finalText += part.text;
+      await flushText(false);
     } else if (part.type === 'reasoning-delta') {
       reasoningText += part.text;
     } else if (part.type === 'tool-call') {
       toolCalls.push(String(part.toolName));
+      await appendLoopEvent(projectPath, instanceId, {
+        role: 'system',
+        kind: 'event',
+        content: `Calling tool: ${String(part.toolName)}.`
+      });
     } else if (part.type === 'tool-error') {
       streamErrors.push(`Tool failed: ${String(part.toolName)}\n${errorMessage(part.error)}`);
     } else if (part.type === 'error') {
@@ -548,13 +585,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
       rawFinishReason = part.rawFinishReason ?? '';
     }
   }
-  if (finalText.trim()) {
-    await appendLoopEvent(projectPath, instanceId, {
-      role: 'assistant',
-      kind: 'text',
-      content: finalText.trim()
-    });
-  }
+  await flushText(true);
   if (streamErrors.length > 0) {
     await appendLoopEvent(projectPath, instanceId, {
       role: 'system',
@@ -607,6 +638,7 @@ async function main() {
   });
   await markInstanceStatus(projectPath, instanceId, 'running');
   await appendLoopEvent(projectPath, instanceId, { role: 'system', kind: 'event', content: `Loop worker started (pid ${process.pid}).` });
+  await markLoopPhase(projectPath, instanceId, 'started');
 
   const heartbeat = setInterval(() => {
     void patchWorkerState(projectPath, instanceId, {
@@ -622,6 +654,7 @@ async function main() {
       if (workerState?.stopRequested) break;
       const { loop, instance } = await readLoopAndInstance(projectPath, instanceId);
       if (instance.status === 'stopped') break;
+      await markLoopPhase(projectPath, instanceId, 'checking stop policy');
       const stopDecision = await evaluateStopPolicy(projectPath, instance);
       if (stopDecision) {
         finalStatus = stopDecision.status;
@@ -631,6 +664,7 @@ async function main() {
       if (instance.status !== 'running' && instance.status !== 'waiting_for_human') {
         await markInstanceStatus(projectPath, instanceId, 'running');
       }
+      await markLoopPhase(projectPath, instanceId, 'running cycle');
       await runCycle(projectPath, instanceId, loop, abortController.signal);
       const nextState = await readWorkerState(projectPath, instanceId);
       if (nextState?.stopRequested || abortController.signal.aborted) break;
@@ -655,6 +689,7 @@ async function main() {
     }
     await markInstanceStatus(projectPath, instanceId, finalStatus);
     await patchWorkerState(projectPath, instanceId, { status: finalStatus, stopRequested: false });
+    await markLoopPhase(projectPath, instanceId, finalStatus === 'done' ? 'done' : 'stopped');
     if (finalMessage) {
       await appendLoopEvent(projectPath, instanceId, { role: 'system', kind: 'event', content: finalMessage });
     }
