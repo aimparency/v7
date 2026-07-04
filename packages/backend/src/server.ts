@@ -56,7 +56,7 @@ const delayMiddleware = t.middleware(async ({ next }) => {
 // Create procedures with delay middleware
 const delayedProcedure = t.procedure.use(delayMiddleware);
 
-const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\nruntime/\n';
+const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\nruntime/\nsecrets.json\n';
 const CURRENT_PHASE_DATA_MODEL_VERSION = 2;
 const DEFAULT_AUTONOMY_POLICY = {
   version: 1,
@@ -162,6 +162,10 @@ async function ensureProjectStructure(rawProjectPath: string) {
     }
     if (!currentContent.includes('runtime/')) {
         currentContent += '\nruntime/';
+        needsUpdate = true;
+    }
+    if (!currentContent.includes('secrets.json')) {
+        currentContent += '\nsecrets.json';
         needsUpdate = true;
     }
     

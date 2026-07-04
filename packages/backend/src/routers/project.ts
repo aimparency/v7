@@ -7,10 +7,18 @@ import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { observable } from '@trpc/server/observable';
 import type { Aim, Phase, ProjectMeta } from 'shared';
-import { INITIAL_STATES, cosineSimilarity } from 'shared';
+import { INITIAL_STATES, AimSchema, PhaseSchema, calculateAimValues, cosineSimilarity } from 'shared';
+import { spawn, type ChildProcess } from 'child_process';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
 import { findDuplicatePairs, clusterDuplicates } from '../duplicate-detection.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const REPO_ROOT = path.resolve(__dirname, '../../../..');
+const LOOP_WORKER_DIR = path.join(REPO_ROOT, 'packages', 'loop-worker');
+const LOOP_WORKER_SCRIPT = path.join(LOOP_WORKER_DIR, 'src', 'index.ts');
+const LOOP_WORKER_TSCONFIG = path.join(LOOP_WORKER_DIR, 'tsconfig.json');
 
 const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy', 'grok']);
 const watchdogRuntimeAgentStateSchema = z.object({
@@ -34,6 +42,88 @@ const autonomyPolicySchema = z.object({
   requireCommitBeforeCompact: z.boolean().default(true),
   askForHumanOn: z.array(z.string()).default(['destructive-git', 'network', 'api-keys'])
 });
+
+const loopProviderSchema = z.enum(['nvidia', 'openrouter', 'openai-compatible']);
+const loopSecretsSchema = z.object({
+  NVIDIA_API_KEY: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
+  LOOP_API_KEY: z.string().optional()
+}).default({});
+const loopConfigSchema = z.object({
+  provider: loopProviderSchema.default('nvidia'),
+  model: z.string().default('z-ai/glm-5.2'),
+  baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
+  intervalSeconds: z.number().int().min(5).max(3600).default(60)
+});
+const loopMessageSchema = z.object({
+  id: z.string(),
+  role: z.enum(['system', 'assistant', 'tool', 'user']),
+  kind: z.enum(['event', 'text', 'status', 'error', 'human_action_required']),
+  content: z.string(),
+  timestamp: z.number(),
+  requestId: z.string().optional(),
+  replyToRequestId: z.string().optional()
+});
+const loopDefinitionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  systemPrompt: z.string(),
+  provider: loopProviderSchema.default('nvidia'),
+  model: z.string().default('z-ai/glm-5.2'),
+  baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
+  intervalSeconds: z.number().int().min(5).max(3600).default(60),
+  associationChance: z.number().min(0).max(1).default(0.1),
+  createdAt: z.number(),
+  updatedAt: z.number()
+});
+const loopInstanceSchema = z.object({
+  id: z.string(),
+  loopId: z.string(),
+  name: z.string(),
+  status: z.enum(['idle', 'running', 'waiting_for_human', 'stopped', 'done', 'error']),
+  targetPhaseId: z.string().nullable().default(null),
+  targetAimId: z.string().nullable().default(null),
+  stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).default('target_halted'),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+  messages: z.array(loopMessageSchema).default([])
+});
+const loopRuntimeStateSchema = z.object({
+  version: z.number().default(1),
+  selectedLoopId: z.string().nullable().default(null),
+  selectedInstanceId: z.string().nullable().default(null),
+  loops: z.array(loopDefinitionSchema).default([]),
+  instances: z.array(loopInstanceSchema).default([])
+});
+const loopWorkerStateSchema = z.object({
+  instanceId: z.string(),
+  projectPath: z.string(),
+  status: z.enum(['idle', 'running', 'waiting_for_human', 'stopped', 'done', 'error']),
+  pid: z.number().optional(),
+  startedAt: z.number().optional(),
+  updatedAt: z.number(),
+  heartbeatAt: z.number().optional(),
+  waitingRequestId: z.string().optional(),
+  waitingPrompt: z.string().optional(),
+  stopRequested: z.boolean().default(false),
+  error: z.string().optional()
+});
+const loopInboxMessageSchema = z.object({
+  id: z.string(),
+  role: z.literal('user').default('user'),
+  content: z.string(),
+  timestamp: z.number(),
+  replyToRequestId: z.string().optional()
+});
+
+type LoopWorkerProcess = {
+  process: ChildProcess;
+  pid: number;
+  projectPath: string;
+  instanceId: string;
+};
+
+const activeLoopWorkers = new Map<string, LoopWorkerProcess>();
 
 const projectDiscoveryInputSchema = z.object({
   roots: z.array(z.string()).optional(),
@@ -127,6 +217,431 @@ export const createProjectRouter = (
     path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'watchdog-state.json');
   const getAutonomyPolicyPath = (rawProjectPath: string) =>
     path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'autonomy-policy.json');
+  const getSecretsPath = (rawProjectPath: string) =>
+    path.join(normalizeProjectPath(rawProjectPath), 'secrets.json');
+  const getLoopConfigPath = (rawProjectPath: string) =>
+    path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loop-config.json');
+  const getLoopRuntimePath = (rawProjectPath: string) =>
+    path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loops.json');
+
+  const readLoopProjectMeta = async (rawProjectPath: string): Promise<ProjectMeta | null> => {
+    try {
+      return await fs.readJson(path.join(normalizeProjectPath(rawProjectPath), 'meta.json')) as ProjectMeta;
+    } catch {
+      return null;
+    }
+  };
+
+  const listLoopPhases = async (rawProjectPath: string): Promise<Phase[]> => {
+    const phasesDir = path.join(normalizeProjectPath(rawProjectPath), 'phases');
+    if (!await fs.pathExists(phasesDir)) return [];
+    const files = await fs.readdir(phasesDir);
+    const phases: Phase[] = [];
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      try {
+        phases.push(PhaseSchema.parse(await fs.readJson(path.join(phasesDir, file))));
+      } catch {
+        // Malformed phase files are ignored here; consistency checks surface them elsewhere.
+      }
+    }
+    return phases;
+  };
+
+  const listLoopAims = async (rawProjectPath: string): Promise<Aim[]> => {
+    const aimsDir = path.join(normalizeProjectPath(rawProjectPath), 'aims');
+    if (!await fs.pathExists(aimsDir)) return [];
+    const files = await fs.readdir(aimsDir);
+    const aims: Aim[] = [];
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      try {
+        const aim = AimSchema.parse(await fs.readJson(path.join(aimsDir, file)));
+        if (!aim.archived) aims.push(aim);
+      } catch {
+        // Malformed aim files are ignored here; consistency checks surface them elsewhere.
+      }
+    }
+    return aims;
+  };
+
+  const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPhaseId?: string | null) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    const [meta, phases, aims] = await Promise.all([
+      readLoopProjectMeta(projectPath),
+      listLoopPhases(projectPath),
+      listLoopAims(projectPath)
+    ]);
+    const phaseById = new Map(phases.map((phase) => [phase.id, phase]));
+    const explicitPhase = preferredPhaseId ? phaseById.get(preferredPhaseId) : undefined;
+    const cursorLevel = meta?.phaseActiveLevel ?? 0;
+    const cursorPhaseId = meta?.phaseCursors?.[String(cursorLevel)];
+    const cursorPhase = cursorPhaseId ? phaseById.get(cursorPhaseId) : undefined;
+    const now = Date.now();
+    const activePhase = phases.find((phase) =>
+      (phase.from ?? 0) > 0 && (phase.to ?? 0) > 0 && phase.from! <= now && now <= phase.to!
+    );
+    const phase = explicitPhase ?? cursorPhase ?? activePhase ?? phases[0] ?? null;
+    if (!phase) return { targetPhaseId: null, targetAimId: null };
+
+    const { priorities } = calculateAimValues(aims);
+    const aimById = new Map(aims.map((aim) => [aim.id, aim]));
+    const targetAim = [...(phase.commitments ?? [])]
+      .map((aimId) => aimById.get(aimId))
+      .filter((aim): aim is Aim => aim !== undefined && aim.status.state === 'open')
+      .sort((left, right) => (priorities.get(right.id) ?? 0) - (priorities.get(left.id) ?? 0))[0] ?? null;
+
+    return {
+      targetPhaseId: phase.id,
+      targetAimId: targetAim?.id ?? null
+    };
+  };
+
+  const ensureLoopInstanceTarget = async (
+    rawProjectPath: string,
+    instance: z.infer<typeof loopInstanceSchema>
+  ) => {
+    if (instance.targetPhaseId && instance.targetAimId) return instance;
+    const defaults = await pickDefaultLoopTarget(rawProjectPath, instance.targetPhaseId);
+    instance.targetPhaseId = instance.targetPhaseId ?? defaults.targetPhaseId;
+    instance.targetAimId = instance.targetAimId ?? defaults.targetAimId;
+    instance.updatedAt = Date.now();
+    return instance;
+  };
+
+  const readLoopSecrets = async (rawProjectPath: string) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    await ensureProjectStructure(projectPath);
+    const secretsPath = getSecretsPath(projectPath);
+    try {
+      return loopSecretsSchema.parse(await fs.readJson(secretsPath));
+    } catch {
+      return loopSecretsSchema.parse({});
+    }
+  };
+
+  const writeLoopSecrets = async (rawProjectPath: string, secrets: z.infer<typeof loopSecretsSchema>) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    await ensureProjectStructure(projectPath);
+    await writeJsonAtomic(getSecretsPath(projectPath), loopSecretsSchema.parse(secrets));
+  };
+
+  const readLoopConfig = async (rawProjectPath: string) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    await ensureProjectStructure(projectPath);
+    const configPath = getLoopConfigPath(projectPath);
+    try {
+      return loopConfigSchema.parse(await fs.readJson(configPath));
+    } catch {
+      const fallback = loopConfigSchema.parse({});
+      await fs.writeJson(configPath, fallback, { spaces: 2 });
+      return fallback;
+    }
+  };
+
+  const writeLoopConfig = async (rawProjectPath: string, config: z.infer<typeof loopConfigSchema>) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    await ensureProjectStructure(projectPath);
+    await writeJsonAtomic(getLoopConfigPath(projectPath), loopConfigSchema.parse(config));
+  };
+
+  const makeDefaultLoopRuntimeState = () => {
+    const now = Date.now();
+    const loopId = uuidv4();
+    return loopRuntimeStateSchema.parse({
+      version: 1,
+      selectedLoopId: loopId,
+      selectedInstanceId: null,
+      loops: [{
+        id: loopId,
+        name: 'Default loop',
+        systemPrompt: [
+          'You are an Aimparency loop worker.',
+          'Work on the currently prioritized aim.',
+          'Orient in the aim graph before acting: inspect context, related aims, and whether the aim is atomic enough.',
+          'Ask humans only for severe blockers; otherwise mark ambiguous aims human-dependent and continue with clearer work.',
+          'Use status_report whenever you have a useful user-facing progress update.',
+          'Keep status reports brief, no more than 3 sentences.'
+        ].join('\n'),
+        provider: 'nvidia',
+        model: 'z-ai/glm-5.2',
+        baseUrl: 'https://integrate.api.nvidia.com/v1',
+        intervalSeconds: 60,
+        associationChance: 0.1,
+        createdAt: now,
+        updatedAt: now
+      }],
+      instances: []
+    });
+  };
+
+  const readLoopRuntimeState = async (rawProjectPath: string) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    await ensureProjectStructure(projectPath);
+    const runtimePath = getLoopRuntimePath(projectPath);
+    try {
+      return loopRuntimeStateSchema.parse(await fs.readJson(runtimePath));
+    } catch {
+      const fallback = makeDefaultLoopRuntimeState();
+      await writeJsonAtomic(runtimePath, fallback);
+      return fallback;
+    }
+  };
+
+  const writeLoopRuntimeState = async (rawProjectPath: string, state: z.infer<typeof loopRuntimeStateSchema>) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    await ensureProjectStructure(projectPath);
+    await writeJsonAtomic(getLoopRuntimePath(projectPath), loopRuntimeStateSchema.parse(state));
+  };
+
+  const mutateLoopRuntimeState = async (
+    rawProjectPath: string,
+    mutate: (state: z.infer<typeof loopRuntimeStateSchema>) => void
+  ) => {
+    const state = await readLoopRuntimeState(rawProjectPath);
+    mutate(state);
+    await writeLoopRuntimeState(rawProjectPath, state);
+    ee.emit('change', { type: 'loop', id: 'runtime', projectPath: normalizeProjectPath(rawProjectPath) });
+    return state;
+  };
+
+  const appendLoopMessage = async (
+    rawProjectPath: string,
+    instanceId: string,
+    message: Omit<z.infer<typeof loopMessageSchema>, 'id' | 'timestamp'>
+  ) => {
+    await mutateLoopRuntimeState(rawProjectPath, (state) => {
+      const instance = state.instances.find((candidate) => candidate.id === instanceId);
+      if (!instance) return;
+      instance.messages.push({
+        id: uuidv4(),
+        timestamp: Date.now(),
+        ...message
+      });
+      instance.updatedAt = Date.now();
+    });
+  };
+
+  const getLoopApiKey = (provider: z.infer<typeof loopProviderSchema>, secrets: z.infer<typeof loopSecretsSchema>) => {
+    if (provider === 'nvidia') return secrets.NVIDIA_API_KEY;
+    if (provider === 'openrouter') return secrets.OPENROUTER_API_KEY;
+    return secrets.LOOP_API_KEY;
+  };
+
+  const getLoopInstanceDir = (rawProjectPath: string, instanceId: string) =>
+    path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loop-instances', instanceId);
+  const getLoopWorkerStatePath = (rawProjectPath: string, instanceId: string) =>
+    path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'state.json');
+  const getLoopInboxPath = (rawProjectPath: string, instanceId: string) =>
+    path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'inbox.jsonl');
+
+  const readLoopWorkerErrorText = async (rawProjectPath: string, instanceId: string, workerError?: string) => {
+    if (workerError?.trim()) return workerError.trim();
+    const errLogPath = path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'logs', 'err.log');
+    try {
+      const text = await fs.readFile(errLogPath, 'utf8');
+      return text.trim().split('\n').slice(-40).join('\n').trim();
+    } catch {
+      return '';
+    }
+  };
+
+  const appendLoopErrorOnce = async (
+    instance: z.infer<typeof loopInstanceSchema>,
+    content: string
+  ) => {
+    if (!content.trim()) return;
+    const latestError = [...instance.messages].reverse().find((message) => message.kind === 'error');
+    if (latestError?.content === content) return;
+    instance.messages.push({
+      id: uuidv4(),
+      role: 'system',
+      kind: 'error',
+      content,
+      timestamp: Date.now()
+    });
+    if (instance.messages.length > 500) {
+      instance.messages.splice(0, instance.messages.length - 500);
+    }
+  };
+
+  const loopWorkerKey = (rawProjectPath: string, instanceId: string) =>
+    `${normalizeProjectPath(rawProjectPath)}:${instanceId}`;
+
+  const readLoopWorkerState = async (rawProjectPath: string, instanceId: string) => {
+    try {
+      return loopWorkerStateSchema.parse(await fs.readJson(getLoopWorkerStatePath(rawProjectPath, instanceId)));
+    } catch {
+      return null;
+    }
+  };
+
+  const writeLoopWorkerState = async (
+    rawProjectPath: string,
+    instanceId: string,
+    state: z.infer<typeof loopWorkerStateSchema>
+  ) => {
+    await writeJsonAtomic(getLoopWorkerStatePath(rawProjectPath, instanceId), loopWorkerStateSchema.parse(state));
+  };
+
+  const patchLoopWorkerState = async (
+    rawProjectPath: string,
+    instanceId: string,
+    patch: Partial<z.infer<typeof loopWorkerStateSchema>>
+  ) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    const existing = await readLoopWorkerState(projectPath, instanceId);
+    const next = loopWorkerStateSchema.parse({
+      instanceId,
+      projectPath,
+      status: existing?.status ?? 'idle',
+      updatedAt: Date.now(),
+      ...existing,
+      ...patch
+    });
+    await writeLoopWorkerState(projectPath, instanceId, next);
+    return next;
+  };
+
+  const isPidAlive = (pid: number | undefined) => {
+    if (!pid) return false;
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const killLoopWorker = async (rawProjectPath: string, instanceId: string) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    const key = loopWorkerKey(projectPath, instanceId);
+    const active = activeLoopWorkers.get(key);
+    const workerState = await readLoopWorkerState(projectPath, instanceId);
+    const pid = active?.pid ?? workerState?.pid;
+    await patchLoopWorkerState(projectPath, instanceId, { stopRequested: true, status: 'stopped' });
+    if (pid && isPidAlive(pid)) {
+      try {
+        process.kill(-pid, 'SIGTERM');
+      } catch {
+        try {
+          process.kill(pid, 'SIGTERM');
+        } catch {
+          // Already stopped.
+        }
+      }
+    }
+    activeLoopWorkers.delete(key);
+  };
+
+  const refreshLoopProcessStates = async (rawProjectPath: string) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    const state = await readLoopRuntimeState(projectPath);
+    for (const instance of state.instances) {
+      const active = activeLoopWorkers.get(loopWorkerKey(projectPath, instance.id));
+      if (active?.process.exitCode !== null && active?.process.exitCode !== undefined) {
+        activeLoopWorkers.delete(loopWorkerKey(projectPath, instance.id));
+      }
+    }
+      let changed = false;
+      for (const instance of state.instances) {
+        const workerState = await readLoopWorkerState(projectPath, instance.id);
+        if (!workerState) continue;
+        const pidAlive = isPidAlive(workerState.pid);
+        if ((workerState.status === 'running' || workerState.status === 'waiting_for_human') && !pidAlive) {
+          instance.status = workerState.stopRequested ? 'stopped' : 'error';
+          if (instance.status === 'error') {
+            const errorText = await readLoopWorkerErrorText(projectPath, instance.id, workerState.error);
+            await appendLoopErrorOnce(instance, errorText || 'Loop worker exited without reporting an error.');
+          }
+          instance.updatedAt = Date.now();
+          changed = true;
+        } else if (instance.status !== workerState.status) {
+          instance.status = workerState.status;
+          if (instance.status === 'error') {
+            const errorText = await readLoopWorkerErrorText(projectPath, instance.id, workerState.error);
+            await appendLoopErrorOnce(instance, errorText || 'Loop worker entered error state without reporting details.');
+          }
+          instance.updatedAt = Date.now();
+          changed = true;
+        }
+      }
+      if (changed) await writeLoopRuntimeState(projectPath, state);
+      return state;
+  };
+
+  const spawnLoopWorker = async (rawProjectPath: string, instanceId: string) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    const key = loopWorkerKey(projectPath, instanceId);
+    const existing = activeLoopWorkers.get(key);
+    if (existing && isPidAlive(existing.pid)) return existing;
+
+    const workerState = await readLoopWorkerState(projectPath, instanceId);
+    if (workerState?.pid && isPidAlive(workerState.pid) && (workerState.status === 'running' || workerState.status === 'waiting_for_human')) {
+      return { pid: workerState.pid, projectPath, instanceId } as LoopWorkerProcess;
+    }
+
+    await fs.ensureDir(getLoopInstanceDir(projectPath, instanceId));
+    const logDir = path.join(getLoopInstanceDir(projectPath, instanceId), 'logs');
+    await fs.ensureDir(logDir);
+    const out = fs.openSync(path.join(logDir, 'out.log'), 'a');
+    const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
+    const child = spawn('node', [
+      '--conditions',
+      'development',
+      '--import',
+      'tsx',
+      LOOP_WORKER_SCRIPT,
+      '--projectPath',
+      projectPath,
+      '--instanceId',
+      instanceId
+    ], {
+      cwd: LOOP_WORKER_DIR,
+      detached: true,
+      stdio: ['ignore', out, err],
+      env: {
+        ...process.env,
+        TSX_TSCONFIG_PATH: LOOP_WORKER_TSCONFIG
+      }
+    });
+    child.unref();
+    const processEntry: LoopWorkerProcess = { process: child, pid: child.pid!, projectPath, instanceId };
+    activeLoopWorkers.set(key, processEntry);
+    await patchLoopWorkerState(projectPath, instanceId, {
+      status: 'running',
+      pid: child.pid!,
+      startedAt: Date.now(),
+      heartbeatAt: Date.now(),
+      stopRequested: false,
+      error: undefined
+    });
+    child.on('exit', () => {
+      const active = activeLoopWorkers.get(key);
+      if (active?.process === child) activeLoopWorkers.delete(key);
+    });
+    return processEntry;
+  };
+
+  const enqueueLoopHumanMessage = async (rawProjectPath: string, instanceId: string, content: string, replyToRequestId?: string) => {
+    const projectPath = normalizeProjectPath(rawProjectPath);
+    const message = loopInboxMessageSchema.parse({
+      id: uuidv4(),
+      role: 'user',
+      content,
+      timestamp: Date.now(),
+      replyToRequestId
+    });
+    await fs.ensureDir(getLoopInstanceDir(projectPath, instanceId));
+    await fs.appendFile(getLoopInboxPath(projectPath, instanceId), `${JSON.stringify(message)}\n`);
+    await appendLoopMessage(projectPath, instanceId, {
+      role: 'user',
+      kind: 'text',
+      content,
+      replyToRequestId
+    });
+    return message;
+  };
 
   const readWatchdogRuntimeState = async (rawProjectPath: string) => {
     const statePath = getWatchdogRuntimeStatePath(rawProjectPath);
@@ -381,6 +896,282 @@ export const createProjectRouter = (
         });
         await writeAutonomyPolicy(input.projectPath, merged);
         return merged;
+      }),
+
+    getLoopRuntimeConfig: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .query(async ({ input }: any) => {
+        const [config, secrets] = await Promise.all([
+          readLoopConfig(input.projectPath),
+          readLoopSecrets(input.projectPath)
+        ]);
+
+        return {
+          ...config,
+          secretsPresent: {
+            NVIDIA_API_KEY: Boolean(secrets.NVIDIA_API_KEY),
+            OPENROUTER_API_KEY: Boolean(secrets.OPENROUTER_API_KEY),
+            LOOP_API_KEY: Boolean(secrets.LOOP_API_KEY)
+          }
+        };
+      }),
+
+    updateLoopRuntimeConfig: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        config: loopConfigSchema.partial()
+      }))
+      .mutation(async ({ input }: any) => {
+        const existing = await readLoopConfig(input.projectPath);
+        const parsed = loopConfigSchema.parse({
+          ...existing,
+          ...input.config
+        });
+        await writeLoopConfig(input.projectPath, parsed);
+        return parsed;
+      }),
+
+    updateLoopSecrets: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        secrets: z.object({
+          NVIDIA_API_KEY: z.string().optional(),
+          OPENROUTER_API_KEY: z.string().optional(),
+          LOOP_API_KEY: z.string().optional()
+        })
+      }))
+      .mutation(async ({ input }: any) => {
+        const existing = await readLoopSecrets(input.projectPath);
+        const next = { ...existing };
+        for (const key of ['NVIDIA_API_KEY', 'OPENROUTER_API_KEY', 'LOOP_API_KEY'] as const) {
+          if (input.secrets[key] !== undefined) {
+            const value = String(input.secrets[key]).trim();
+            if (value) next[key] = value;
+            else delete next[key];
+          }
+        }
+        await writeLoopSecrets(input.projectPath, next);
+        return {
+          NVIDIA_API_KEY: Boolean(next.NVIDIA_API_KEY),
+          OPENROUTER_API_KEY: Boolean(next.OPENROUTER_API_KEY),
+          LOOP_API_KEY: Boolean(next.LOOP_API_KEY)
+        };
+      }),
+
+    getLoopRuntimeState: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .query(async ({ input }: any) => {
+        return refreshLoopProcessStates(input.projectPath);
+      }),
+
+    createLoop: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        name: z.string().optional()
+      }))
+      .mutation(async ({ input }: any) => {
+        const now = Date.now();
+        const loopId = uuidv4();
+        return mutateLoopRuntimeState(input.projectPath, (state) => {
+          state.loops.push({
+            id: loopId,
+            name: input.name?.trim() || 'New loop',
+            systemPrompt: 'You are an Aimparency loop worker. Use status_report for brief user-facing progress updates.',
+            provider: 'nvidia',
+            model: 'z-ai/glm-5.2',
+            baseUrl: 'https://integrate.api.nvidia.com/v1',
+            intervalSeconds: 60,
+            associationChance: 0.1,
+            createdAt: now,
+            updatedAt: now
+          });
+          state.selectedLoopId = loopId;
+          state.selectedInstanceId = null;
+        });
+      }),
+
+    updateLoop: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        loopId: z.string(),
+        name: z.string().optional(),
+        systemPrompt: z.string().optional(),
+        provider: loopProviderSchema.optional(),
+        model: z.string().optional(),
+        baseUrl: z.string().optional(),
+        intervalSeconds: z.number().int().min(5).max(3600).optional(),
+        associationChance: z.number().min(0).max(1).optional()
+      }))
+      .mutation(async ({ input }: any) => {
+        return mutateLoopRuntimeState(input.projectPath, (state) => {
+          const loop = state.loops.find((candidate) => candidate.id === input.loopId);
+          if (!loop) return;
+          if (input.name !== undefined) loop.name = input.name;
+          if (input.systemPrompt !== undefined) loop.systemPrompt = input.systemPrompt;
+          if (input.provider !== undefined) loop.provider = input.provider;
+          if (input.model !== undefined) loop.model = input.model;
+          if (input.baseUrl !== undefined) loop.baseUrl = input.baseUrl;
+          if (input.intervalSeconds !== undefined) loop.intervalSeconds = input.intervalSeconds;
+          if (input.associationChance !== undefined) loop.associationChance = input.associationChance;
+          loop.updatedAt = Date.now();
+        });
+      }),
+
+    deleteLoop: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        loopId: z.string()
+      }))
+      .mutation(async ({ input }: any) => {
+        const projectPath = normalizeProjectPath(input.projectPath);
+        const runtime = await readLoopRuntimeState(projectPath);
+        for (const instance of runtime.instances.filter((candidate) => candidate.loopId === input.loopId)) {
+          await killLoopWorker(projectPath, instance.id);
+        }
+        return mutateLoopRuntimeState(projectPath, (state) => {
+          state.loops = state.loops.filter((loop) => loop.id !== input.loopId);
+          state.instances = state.instances.filter((instance) => instance.loopId !== input.loopId);
+          if (state.selectedLoopId === input.loopId) {
+            state.selectedLoopId = state.loops[0]?.id ?? null;
+            state.selectedInstanceId = null;
+          }
+        });
+      }),
+
+    createLoopInstance: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        loopId: z.string(),
+        name: z.string().optional()
+      }))
+      .mutation(async ({ input }: any) => {
+        const now = Date.now();
+        const instanceId = uuidv4();
+        const target = await pickDefaultLoopTarget(input.projectPath);
+        return mutateLoopRuntimeState(input.projectPath, (state) => {
+          state.instances.push({
+            id: instanceId,
+            loopId: input.loopId,
+            name: input.name?.trim() || `Instance ${state.instances.filter((i) => i.loopId === input.loopId).length + 1}`,
+            status: 'idle',
+            targetPhaseId: target.targetPhaseId,
+            targetAimId: target.targetAimId,
+            stopPolicy: 'target_halted',
+            createdAt: now,
+            updatedAt: now,
+            messages: []
+          });
+          state.selectedLoopId = input.loopId;
+          state.selectedInstanceId = instanceId;
+        });
+      }),
+
+    updateLoopInstance: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        instanceId: z.string(),
+        name: z.string().optional(),
+        targetPhaseId: z.string().nullable().optional(),
+        targetAimId: z.string().nullable().optional(),
+        stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).optional()
+      }))
+      .mutation(async ({ input }: any) => {
+        const defaultTarget = input.targetPhaseId !== undefined && input.targetAimId === undefined
+          ? await pickDefaultLoopTarget(input.projectPath, input.targetPhaseId)
+          : null;
+        return mutateLoopRuntimeState(input.projectPath, (state) => {
+          const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
+          if (!instance) return;
+          if (input.name !== undefined) instance.name = input.name.trim() || instance.name;
+          if (input.targetPhaseId !== undefined) {
+            instance.targetPhaseId = input.targetPhaseId;
+            if (input.targetAimId === undefined) instance.targetAimId = defaultTarget?.targetAimId ?? null;
+          }
+          if (input.targetAimId !== undefined) instance.targetAimId = input.targetAimId;
+          if (input.stopPolicy !== undefined) instance.stopPolicy = input.stopPolicy;
+          instance.updatedAt = Date.now();
+        });
+      }),
+
+    deleteLoopInstance: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        instanceId: z.string()
+      }))
+      .mutation(async ({ input }: any) => {
+        const projectPath = normalizeProjectPath(input.projectPath);
+        await killLoopWorker(projectPath, input.instanceId);
+        return mutateLoopRuntimeState(projectPath, (state) => {
+          state.instances = state.instances.filter((instance) => instance.id !== input.instanceId);
+          if (state.selectedInstanceId === input.instanceId) {
+            state.selectedInstanceId = null;
+          }
+        });
+      }),
+
+    startLoopInstance: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        instanceId: z.string()
+      }))
+      .mutation(async ({ input }: any) => {
+        const projectPath = normalizeProjectPath(input.projectPath);
+        let startError: string | null = null;
+        const state = await readLoopRuntimeState(projectPath);
+        const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
+        if (instance) {
+          await ensureLoopInstanceTarget(projectPath, instance);
+          if (!instance.targetPhaseId || !instance.targetAimId) {
+            startError = 'Select a phase with an open aim before starting the loop.';
+            instance.status = 'error';
+            instance.messages.push({
+              id: uuidv4(),
+              role: 'system',
+              kind: 'error',
+              content: startError,
+              timestamp: Date.now()
+            });
+          } else {
+            instance.status = 'running';
+          }
+          instance.updatedAt = Date.now();
+          await writeLoopRuntimeState(projectPath, state);
+        }
+        if (startError) return refreshLoopProcessStates(projectPath);
+        await spawnLoopWorker(projectPath, input.instanceId);
+        return refreshLoopProcessStates(projectPath);
+      }),
+
+    stopLoopInstance: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        instanceId: z.string()
+      }))
+      .mutation(async ({ input }: any) => {
+        const projectPath = normalizeProjectPath(input.projectPath);
+        await killLoopWorker(projectPath, input.instanceId);
+        return mutateLoopRuntimeState(projectPath, (state) => {
+          const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
+          if (!instance) return;
+          instance.status = 'stopped';
+          instance.updatedAt = Date.now();
+        });
+      }),
+
+    sendLoopHumanMessage: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        instanceId: z.string(),
+        content: z.string().min(1),
+        replyToRequestId: z.string().optional()
+      }))
+      .mutation(async ({ input }: any) => {
+        await enqueueLoopHumanMessage(input.projectPath, input.instanceId, input.content, input.replyToRequestId);
+        return refreshLoopProcessStates(input.projectPath);
       }),
 
     discoverLocalProjects: delayedProcedure

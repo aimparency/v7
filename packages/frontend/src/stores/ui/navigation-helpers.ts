@@ -1,8 +1,10 @@
 import { useDataStore, type Aim, type Phase } from '../data'
+import { ensureAimUIState, type AimUIState, type AimUIStateTree } from './aim-ui-state'
 
 export type SelectionPath = {
   phase: Phase | undefined
   aims: Aim[]
+  aimStates: AimUIState[]
 }
 
 export type TreeTraversalResult = {
@@ -12,196 +14,7 @@ export type TreeTraversalResult = {
   indexInParent?: number
 }
 
-type LastDescendantResult = {
-  id: string
-  parentId?: string
-  indexInParent?: number
-}
-
 type DataStore = ReturnType<typeof useDataStore>
-
-export function findNextAimInTree(currentAimId: string, phaseId: string, dataStore: DataStore): TreeTraversalResult | null {
-  const topLevelAims = dataStore.getAimsForPhase(phaseId)
-  const currentAim = dataStore.aims[currentAimId]
-
-  if (currentAim?.expanded && currentAim.supportingConnections?.length > 0) {
-    const firstIncomingId = currentAim.supportingConnections[0]?.aimId
-    if (!firstIncomingId) {
-      return null
-    }
-
-    const topLevelIndex = findTopLevelAncestorIndex(firstIncomingId, topLevelAims, dataStore)
-    return { aimId: firstIncomingId, topLevelIndex, parentAimId: currentAimId, indexInParent: 0 }
-  }
-
-  return findNextSiblingOrAncestorSibling(currentAimId, topLevelAims, dataStore, null, -1)
-}
-
-export function findPreviousAimInTree(currentAimId: string, phaseId: string | undefined, dataStore: DataStore): TreeTraversalResult | null {
-  const topLevelAims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
-  return findPreviousSiblingOrAncestor(currentAimId, topLevelAims, dataStore, null, -1)
-}
-
-export function findNextSiblingOrAncestorSibling(
-  aimId: string,
-  aims: Aim[],
-  dataStore: DataStore,
-  parentAimId: string | null,
-  topLevelIndex: number,
-  visited: Set<string> = new Set()
-): TreeTraversalResult | null {
-  for (let i = 0; i < aims.length; i++) {
-    const aim = aims[i]
-    if (!aim) {
-      continue
-    }
-
-    const currentTopLevel = parentAimId === null ? i : topLevelIndex
-    const nextVisited = new Set(visited)
-
-    if (aim.id === aimId) {
-      if (i < aims.length - 1) {
-        const nextSibling = aims[i + 1]
-        if (!nextSibling) {
-          return null
-        }
-
-        return { aimId: nextSibling.id, topLevelIndex: currentTopLevel, parentAimId: parentAimId ?? undefined, indexInParent: i + 1 }
-      }
-
-      return null
-    }
-
-    if (nextVisited.has(aim.id)) {
-      continue
-    }
-    nextVisited.add(aim.id)
-
-    if (aim.expanded && aim.supportingConnections?.length) {
-      const incomingAims = aim.supportingConnections
-        .map((connection) => dataStore.aims[connection.aimId])
-        .filter((child): child is Aim => Boolean(child))
-      const result = findNextSiblingOrAncestorSibling(aimId, incomingAims, dataStore, aim.id, currentTopLevel, nextVisited)
-      if (result) {
-        return result
-      }
-
-      const wasInIncoming = incomingAims.some((child) => child.id === aimId || isAimInTree(aimId, child, dataStore, nextVisited))
-      if (wasInIncoming) {
-        if (i < aims.length - 1) {
-          const nextSibling = aims[i + 1]
-          if (!nextSibling) {
-            return null
-          }
-
-          return { aimId: nextSibling.id, topLevelIndex: currentTopLevel, parentAimId: parentAimId ?? undefined, indexInParent: i + 1 }
-        }
-
-        return null
-      }
-    }
-  }
-
-  return null
-}
-
-export function findPreviousSiblingOrAncestor(
-  aimId: string,
-  aims: Aim[],
-  dataStore: DataStore,
-  parentAimId: string | null,
-  topLevelIndex: number,
-  visited: Set<string> = new Set()
-): TreeTraversalResult | null {
-  for (let i = 0; i < aims.length; i++) {
-    const aim = aims[i]
-    if (!aim) {
-      continue
-    }
-
-    const currentTopLevel = parentAimId === null ? i : topLevelIndex
-    const nextVisited = new Set(visited)
-
-    if (aim.id === aimId) {
-      if (i > 0) {
-        const prevSibling = aims[i - 1]
-        if (!prevSibling) {
-          return null
-        }
-
-        const prevSiblingTopLevel = parentAimId === null ? i - 1 : topLevelIndex
-        const lastDescendant = findLastDescendant(prevSibling, dataStore, visited)
-        return {
-          aimId: lastDescendant.id,
-          topLevelIndex: prevSiblingTopLevel,
-          parentAimId: lastDescendant.parentId,
-          indexInParent: lastDescendant.indexInParent
-        }
-      }
-
-      if (parentAimId) {
-        return { aimId: parentAimId, topLevelIndex }
-      }
-
-      return null
-    }
-
-    if (nextVisited.has(aim.id)) {
-      continue
-    }
-    nextVisited.add(aim.id)
-
-    if (aim.expanded && aim.supportingConnections?.length) {
-      const incomingAims = aim.supportingConnections
-        .map((connection) => dataStore.aims[connection.aimId])
-        .filter((child): child is Aim => Boolean(child))
-      const result = findPreviousSiblingOrAncestor(aimId, incomingAims, dataStore, aim.id, currentTopLevel, nextVisited)
-      if (result) {
-        return result
-      }
-    }
-  }
-
-  return null
-}
-
-export function findLastDescendant(aim: Aim, dataStore: DataStore, visited: Set<string> = new Set()): LastDescendantResult {
-  if (visited.has(aim.id)) {
-    return { id: aim.id }
-  }
-
-  if (!aim.expanded || !aim.supportingConnections?.length) {
-    return { id: aim.id }
-  }
-
-  const nextVisited = new Set(visited)
-  nextVisited.add(aim.id)
-
-  const lastConnection = aim.supportingConnections[aim.supportingConnections.length - 1]
-  const lastIncoming = lastConnection ? dataStore.aims[lastConnection.aimId] : undefined
-  if (!lastIncoming) {
-    return { id: aim.id }
-  }
-
-  const descendant = findLastDescendant(lastIncoming, dataStore, nextVisited)
-  return { ...descendant, parentId: aim.id, indexInParent: aim.supportingConnections.length - 1 }
-}
-
-export function findTopLevelAncestorIndex(aimId: string, topLevelAims: Aim[], dataStore: DataStore): number {
-  const directIndex = topLevelAims.findIndex((aim) => aim.id === aimId)
-  if (directIndex >= 0) {
-    return directIndex
-  }
-
-  for (let i = 0; i < topLevelAims.length; i++) {
-    const candidate = topLevelAims[i]
-    if (candidate && isAimInTree(aimId, candidate, dataStore)) {
-      return i
-    }
-  }
-
-  return -1
-}
 
 export function isAimInTree(aimId: string, rootAim: Aim, dataStore: DataStore, visited: Set<string> = new Set()): boolean {
   if (rootAim.id === aimId) {
@@ -229,22 +42,18 @@ export function isAimInTree(aimId: string, rootAim: Aim, dataStore: DataStore, v
   return false
 }
 
-export function makeSelectedAimPath(aim: Aim, path: Aim[], dataStore: DataStore, visited: Set<string> = new Set()): Aim {
+export function makeSelectedAimPath(aim: Aim, state: AimUIState, path: Aim[], statePath: AimUIState[], dataStore: DataStore): Aim {
   path.push(aim)
+  statePath.push(state)
 
-  if (visited.has(aim.id)) {
-    return aim
-  }
-  const nextVisited = new Set(visited)
-  nextVisited.add(aim.id)
-
-  if (aim.expanded && aim.selectedIncomingIndex !== undefined) {
+  if (state.expanded && state.selectedIncomingIndex !== undefined) {
     const connections = aim.supportingConnections || []
-    if (aim.selectedIncomingIndex < connections.length) {
-      const selectedConnection = connections[aim.selectedIncomingIndex]
+    if (state.selectedIncomingIndex < connections.length) {
+      const selectedConnection = connections[state.selectedIncomingIndex]
       const childAim = selectedConnection ? dataStore.aims[selectedConnection.aimId] : undefined
       if (childAim) {
-        return makeSelectedAimPath(childAim, path, dataStore, nextVisited)
+        const childState = ensureAimUIState(state.children, childAim.id)
+        return makeSelectedAimPath(childAim, childState, path, statePath, dataStore)
       }
     }
   }
@@ -256,47 +65,53 @@ export function getSelectionPathFromState(
   navigatingAims: boolean,
   activeColumn: number,
   floatingAimIndex: number,
-  getSelectedPhaseId: (columnIndex: number) => string | undefined
+  getSelectedPhaseId: (columnIndex: number) => string | undefined,
+  getFloatingAimUIStates: () => AimUIStateTree,
+  getPhaseAimUIStates: (phaseId: string) => AimUIStateTree
 ): SelectionPath {
   const dataStore = useDataStore()
   if (!navigatingAims) {
-    return { phase: undefined, aims: [] }
+    return { phase: undefined, aims: [], aimStates: [] }
   }
 
   if (activeColumn === -1) {
     const floatingAims = dataStore.floatingAims
     if (!floatingAims.length) {
-      return { phase: undefined, aims: [] }
+      return { phase: undefined, aims: [], aimStates: [] }
     }
 
     const validIndex = Math.max(0, Math.min(floatingAimIndex, floatingAims.length - 1))
     const selectedAim = floatingAims[validIndex]
     if (!selectedAim) {
-      return { phase: undefined, aims: [] }
+      return { phase: undefined, aims: [], aimStates: [] }
     }
 
     const aimPath: Aim[] = []
-    makeSelectedAimPath(selectedAim, aimPath, dataStore)
-    return { phase: undefined, aims: aimPath }
+    const statePath: AimUIState[] = []
+    const selectedState = ensureAimUIState(getFloatingAimUIStates(), selectedAim.id)
+    makeSelectedAimPath(selectedAim, selectedState, aimPath, statePath, dataStore)
+    return { phase: undefined, aims: aimPath, aimStates: statePath }
   }
 
   const phaseId = getSelectedPhaseId(activeColumn)
   if (!phaseId) {
-    return { phase: undefined, aims: [] }
+    return { phase: undefined, aims: [], aimStates: [] }
   }
 
   const phase = dataStore.phases[phaseId]
   const aims = dataStore.getAimsForPhase(phaseId)
   const aimPath: Aim[] = []
+  const statePath: AimUIState[] = []
 
   if (phase?.selectedAimIndex !== undefined) {
     const selectedAim = aims[phase.selectedAimIndex]
     if (selectedAim) {
-      makeSelectedAimPath(selectedAim, aimPath, dataStore)
+      const selectedState = ensureAimUIState(getPhaseAimUIStates(phaseId), selectedAim.id)
+      makeSelectedAimPath(selectedAim, selectedState, aimPath, statePath, dataStore)
     }
   }
 
-  return { phase, aims: aimPath }
+  return { phase, aims: aimPath, aimStates: statePath }
 }
 
 export function setCurrentAimIndexInState(

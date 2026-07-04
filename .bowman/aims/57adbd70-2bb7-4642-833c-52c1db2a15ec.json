@@ -1,0 +1,24 @@
+{
+  "id": "57adbd70-2bb7-4642-833c-52c1db2a15ec",
+  "text": "high prio = gold/orange, low prio = dark blue",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e2dc1422-5f19-4841-9f17-d38296886461"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783167720887
+  },
+  "intrinsicValue": 0,
+  "cost": 0.01,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

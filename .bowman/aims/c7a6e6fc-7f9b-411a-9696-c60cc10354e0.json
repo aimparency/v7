@@ -1,0 +1,34 @@
+{
+  "id": "c7a6e6fc-7f9b-411a-9696-c60cc10354e0",
+  "text": "UI",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "e1ea8121-1b72-4004-86d2-bd06c1b53834",
+      "relativePosition": [
+        -2.0637325584202975,
+        0.32518739069754876
+      ],
+      "weight": 1,
+      "explanation": ""
+    }
+  ],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783168592054
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

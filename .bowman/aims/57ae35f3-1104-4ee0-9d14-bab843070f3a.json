@@ -1,0 +1,26 @@
+{
+  "id": "57ae35f3-1104-4ee0-9d14-bab843070f3a",
+  "text": "'a' should toggle agent loop area",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "2e845190-a51f-44ca-ad3c-f1ef34aa857a"
+  ],
+  "committedIn": [
+    "173bdd80-4cb8-44bc-a4b8-13ac1267795d"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783168478758
+  },
+  "intrinsicValue": 0,
+  "cost": 0.1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -23,6 +23,9 @@ export const useProjectStore = defineStore('project', {
     currentView: 'columns' as 'columns' | 'graph' | 'voice',
     showWatchdog: localStorage.getItem('aimparency-show-watchdog') === 'true',
     watchdogMaximized: false,
+    showLoop: localStorage.getItem('aimparency-show-loop') === 'true',
+    loopMaximized: false,
+    loopHasHumanRequests: false,
     // Terminal-only mode: hides ALL chrome (both headers, tabs, footer) and
     // renders just the active terminal full-bleed, with a floating exit button.
     // Persisted so a reload restores the fullscreen session view (see App.vue watch).

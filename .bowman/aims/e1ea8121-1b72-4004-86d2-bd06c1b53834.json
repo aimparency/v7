@@ -1,0 +1,24 @@
+{
+  "id": "e1ea8121-1b72-4004-86d2-bd06c1b53834",
+  "text": "make config entry look different from loop instances",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "c7a6e6fc-7f9b-411a-9696-c60cc10354e0"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783168637924
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

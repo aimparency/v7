@@ -1,0 +1,34 @@
+{
+  "id": "2e845190-a51f-44ca-ad3c-f1ef34aa857a",
+  "text": "keyboard shortcuts",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "57ae35f3-1104-4ee0-9d14-bab843070f3a",
+      "relativePosition": [
+        -0.49122429467944034,
+        -2.191970910800352
+      ],
+      "weight": 1,
+      "explanation": ""
+    }
+  ],
+  "supportedAims": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783168452785
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

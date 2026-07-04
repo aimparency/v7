@@ -138,13 +138,9 @@ describe('UI teleport cut/paste', () => {
 
     const parentA = baseAim('parent-a', 'Parent A') as any
     parentA.supportingConnections = [{ aimId: 'child', weight: 1, relativePosition: [0, 0] }]
-    parentA.expanded = true
-    parentA.selectedIncomingIndex = 0
 
     const parentB = baseAim('parent-b', 'Parent B') as any
     parentB.supportingConnections = [{ aimId: 'target', weight: 1, relativePosition: [0, 0] }]
-    parentB.expanded = true
-    parentB.selectedIncomingIndex = 0
 
     const child = baseAim('child', 'Child') as any
     child.supportedAims = ['parent-a']
@@ -171,6 +167,10 @@ describe('UI teleport cut/paste', () => {
     modalStore.teleportCutAimId = 'child'
     modalStore.teleportSource = { parentAimId: 'parent-a' }
     modalStore.movingAimId = 'child'
+
+    const parentBState = uiStore.ensureAimUIState(uiStore.getPhaseAimUIStates('phase-1'), 'parent-b')
+    parentBState.expanded = true
+    parentBState.selectedIncomingIndex = 0
 
     mockTrpc.aim.update.mutate.mockResolvedValue({})
     mockTrpc.aim.connectAims.mutate.mockResolvedValue({})

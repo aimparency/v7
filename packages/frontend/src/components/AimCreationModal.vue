@@ -243,8 +243,9 @@ onMounted(async () => {
   if (path.aims.length > 0) {
     let parentAim: Aim | undefined
     const currentAim = path.aims[path.aims.length - 1]
+    const currentAimState = path.aimStates[path.aimStates.length - 1]
     
-    if (currentAim && currentAim.expanded && modalStore.aimModalInsertPosition === 'after') {
+    if (currentAim && currentAimState?.expanded && modalStore.aimModalInsertPosition === 'after') {
       parentAim = currentAim
     } else if (path.aims.length > 1) {
       parentAim = path.aims[path.aims.length - 2]

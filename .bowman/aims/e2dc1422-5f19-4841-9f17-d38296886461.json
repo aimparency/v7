@@ -1,13 +1,25 @@
 {
   "id": "e2dc1422-5f19-4841-9f17-d38296886461",
   "text": "Graph mode colors: use project-configured status colors in WebGL renderer",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "ui",
     "graph",
     "colors",
     "webgl"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "57adbd70-2bb7-4642-833c-52c1db2a15ec",
+      "relativePosition": [
+        -0.15421165079712598,
+        -1.2833934992613265
+      ],
+      "weight": 1,
+      "explanation": ""
+    }
+  ],
   "supportedAims": [
     "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
@@ -21,5 +33,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

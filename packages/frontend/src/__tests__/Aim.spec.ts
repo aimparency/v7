@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import AimComponent from '../components/Aim.vue'
 import { useDataStore, type Aim } from '../stores/data'
-import { useUIStore } from '../stores/ui'
+import { createAimUIState } from '../stores/ui/aim-ui-state'
 import { v4 as uuidv4 } from 'uuid'
 
 // Mock sub-component to avoid recursion issues in testing
@@ -16,7 +16,7 @@ vi.mock('../components/AimsList.vue', () => ({
       'parentAimId',
       'columnIndex',
       'indentationLevel',
-      'ancestorAimIds',
+      'aimUiStates',
       'isActive',
       'isSelected',
       'selectedAimIndex'
@@ -69,7 +69,8 @@ describe('Aim.vue', () => {
         phaseId: 'test-phase',
         columnIndex: 0,
         isActive: false,
-        isSelected: false
+        isSelected: false,
+        aimUiState: createAimUIState()
       }
     })
 
@@ -92,7 +93,8 @@ describe('Aim.vue', () => {
         phaseId: 'test-phase',
         columnIndex: 0,
         isActive: false,
-        isSelected: false
+        isSelected: false,
+        aimUiState: createAimUIState()
       }
     })
 
@@ -110,6 +112,7 @@ describe('Aim.vue', () => {
     ]
     
     const aim = createMockAim({ supportingConnections: connections })
+    const aimUiState = createAimUIState()
     
     // Mock loadAims action
     dataStore.loadAims = vi.fn()
@@ -121,35 +124,34 @@ describe('Aim.vue', () => {
         phaseId: 'test-phase',
         columnIndex: 0,
         isActive: false,
-        isSelected: false
+        isSelected: false,
+        aimUiState
       }
     })
 
-    // Simulate expansion by updating prop (in real app, parent handles expansion state usually, 
-    // or dataStore does. Here we simulate the prop change trigger if we modify the aim object reactive?)
-    // Actually Aim.vue watches `isExpanded` computed from `props.aim.expanded`.
-    // We need to update the prop object.
-    
+    aimUiState.expanded = true
     await wrapper.setProps({
-      aim: { ...aim, expanded: true }
+      aimUiState: { ...aimUiState }
     })
 
     expect(dataStore.loadAims).toHaveBeenCalled()
   })
 
-  it('marks repeated aims in the current path and does not render children', () => {
+  it('uses per-rendered-aim UI state for expansion', () => {
     const dataStore = useDataStore()
     const childAimId = uuidv4()
     const aim = createMockAim({
-      expanded: true,
       supportingConnections: [
         { aimId: childAimId, relativePosition: [0, 0], weight: 1 }
       ]
     })
+    const collapsedState = createAimUIState()
+    const expandedState = createAimUIState()
+    expandedState.expanded = true
 
     dataStore.loadAims = vi.fn()
 
-    const wrapper = mount(AimComponent, {
+    const collapsedWrapper = mount(AimComponent, {
       global: { plugins: [pinia] },
       props: {
         aim,
@@ -157,13 +159,23 @@ describe('Aim.vue', () => {
         columnIndex: 0,
         isActive: false,
         isSelected: false,
-        ancestorAimIds: [aim.id]
+        aimUiState: collapsedState
       }
     })
 
-    expect(wrapper.find('svg.cycle-marker').exists()).toBe(true)
-    expect(wrapper.text()).not.toContain('Test Description')
-    expect(wrapper.find('.mock-aims-list').exists()).toBe(false)
-    expect(dataStore.loadAims).not.toHaveBeenCalled()
+    const expandedWrapper = mount(AimComponent, {
+      global: { plugins: [pinia] },
+      props: {
+        aim,
+        phaseId: 'test-phase',
+        columnIndex: 0,
+        isActive: false,
+        isSelected: false,
+        aimUiState: expandedState
+      }
+    })
+
+    expect(collapsedWrapper.find('.mock-aims-list').exists()).toBe(false)
+    expect(expandedWrapper.find('.mock-aims-list').exists()).toBe(true)
   })
 })

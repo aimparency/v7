@@ -1,0 +1,24 @@
+{
+  "id": "af654959-e59b-4ec1-bcbf-e6d999eb6ebe",
+  "text": "allow specifying a worktree for a loop",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783167628229
+  },
+  "intrinsicValue": 10,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

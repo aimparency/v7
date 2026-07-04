@@ -37,8 +37,10 @@
   },
   "homepage": "https://github.com/aimparency/v7/tree/main/packages/backend#readme",
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.56",
     "@huggingface/transformers": "^4.2.0",
     "@trpc/server": "^11.7.2",
+    "ai": "^6.0.219",
     "better-sqlite3": "^12.5.0",
     "express": "^5.2.1",
     "flexsearch": "^0.8.212",
@@ -46,7 +48,8 @@
     "fuse.js": "^7.1.0",
     "shared": "*",
     "uuid": "^13.0.0",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

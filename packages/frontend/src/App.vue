@@ -21,6 +21,7 @@ import GraphViewWrapper from './views/GraphViewWrapper.vue'
 import ProjectSelectionView from './views/ProjectSelectionView.vue'
 import VoiceView from './views/VoiceView.vue'
 import WatchdogPanel from './components/WatchdogPanel.vue'
+import LoopPanel from './components/LoopPanel.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 import { getRuntimeConfig } from './utils/runtime-config'
@@ -79,6 +80,7 @@ const handlePhaseSearchSelect = (payload: PhaseSearchSelection) => {
 
 // Local UI state
 const watchdogHeight = ref(parseInt(localStorage.getItem('aimparency-watchdog-height') || '300'))
+const loopHeight = ref(parseInt(localStorage.getItem('aimparency-loop-height') || '300'))
 const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
 const showConsistencyModal = ref(false)
 const isResizingWatchdog = ref(false)
@@ -95,6 +97,10 @@ watch(() => projectStore.showWatchdog, (val) => {
       watchdogRef.value?.focusWorker()
     })
   }
+})
+
+watch(() => projectStore.showLoop, (val) => {
+  localStorage.setItem('aimparency-show-loop', String(val))
 })
 
 // Always disconnect/reconnect on project switch — even when the watchdog panel is hidden.
@@ -126,12 +132,18 @@ const startResizeWatchdog = (e: MouseEvent) => {
 const resizeWatchdog = (e: MouseEvent) => {
   if (!isResizingWatchdog.value) return
   const newHeight = window.innerHeight - e.clientY
-  watchdogHeight.value = Math.max(100, Math.min(newHeight, window.innerHeight - 100))
+  const nextHeight = Math.max(100, Math.min(newHeight, window.innerHeight - 100))
+  if (projectStore.showLoop && !projectStore.showWatchdog) {
+    loopHeight.value = nextHeight
+  } else {
+    watchdogHeight.value = nextHeight
+  }
 }
 
 const stopResizeWatchdog = () => {
   isResizingWatchdog.value = false
   localStorage.setItem('aimparency-watchdog-height', String(watchdogHeight.value))
+  localStorage.setItem('aimparency-loop-height', String(loopHeight.value))
   window.removeEventListener('mousemove', resizeWatchdog)
   window.removeEventListener('mouseup', stopResizeWatchdog)
 }
@@ -443,6 +455,17 @@ onUnmounted(() => {
           </button>
 
           <button
+            @click="projectStore.showLoop = !projectStore.showLoop"
+            class="icon-btn"
+            style="width: auto; padding: 0 0.5rem; position: relative;"
+            :style="{ background: projectStore.showLoop ? '#444' : 'transparent' }"
+            title="Toggle Loop Panel"
+          >
+            Loop
+            <span v-if="projectStore.loopHasHumanRequests" class="loop-notify-dot"></span>
+          </button>
+
+          <button
             v-if="projectStore.showWatchdog"
             @click="watchdogStore.showActionsOverlay = !watchdogStore.showActionsOverlay"
             class="icon-btn"
@@ -460,6 +483,16 @@ onUnmounted(() => {
             :title="projectStore.watchdogMaximized ? 'Exit fullscreen' : 'Maximize watchdog panel'"
           >
             {{ projectStore.watchdogMaximized ? '🗗' : '⛶' }}
+          </button>
+
+          <button
+            v-if="projectStore.showLoop"
+            @click="projectStore.loopMaximized = !projectStore.loopMaximized"
+            class="icon-btn"
+            :style="{ background: projectStore.loopMaximized ? '#444' : 'transparent' }"
+            :title="projectStore.loopMaximized ? 'Exit fullscreen' : 'Maximize loop panel'"
+          >
+            {{ projectStore.loopMaximized ? '🗗' : '⛶' }}
           </button>
         </div>
 
@@ -515,7 +548,7 @@ onUnmounted(() => {
 
     <!-- Main Interface -->
     <div v-else class="main-split">
-      <main class="content-area" v-show="!projectStore.terminalFullscreen && !(projectStore.showWatchdog && projectStore.watchdogMaximized)">
+      <main class="content-area" v-show="!projectStore.terminalFullscreen && !(projectStore.showWatchdog && projectStore.watchdogMaximized) && !(projectStore.showLoop && projectStore.loopMaximized)">
         <!-- Columns View -->
         <ColumnsView v-if="projectStore.currentView === 'columns'" />
 
@@ -534,6 +567,15 @@ onUnmounted(() => {
       >
         <div class="resize-handle" v-if="!projectStore.watchdogMaximized && !projectStore.terminalFullscreen" @mousedown="startResizeWatchdog"></div>
         <WatchdogPanel ref="watchdogRef" />
+      </div>
+
+      <div
+        v-if="projectStore.showLoop"
+        class="watchdog-container"
+        :style="{ height: projectStore.loopMaximized ? '100%' : loopHeight + 'px' }"
+      >
+        <div class="resize-handle" v-if="!projectStore.loopMaximized && !projectStore.showWatchdog" @mousedown="startResizeWatchdog"></div>
+        <LoopPanel />
       </div>
     </div>
 
@@ -677,6 +719,17 @@ onUnmounted(() => {
 
 .icon-btn:hover {
   background: var(--toolbar-group-bg);
+}
+
+.loop-notify-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #ffd166;
+  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.18);
 }
 
 .search-btn {

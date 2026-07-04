@@ -4,11 +4,13 @@
   "to": 1769968800000,
   "order": 10,
   "parent": "5c2f9450-0feb-4755-b59a-081e9ab43037",
+  "childPhaseIds": [],
   "commitments": [
     "f1550eb7-d02e-40bc-af94-1fb1076076bd",
     "bc0a18cf-63c5-413f-9faf-5a312241deff",
     "96adb3d0-5827-432e-8a48-8d26754fcaed",
-    "73e72297-47c8-4a88-b7eb-5d6e7e575001"
+    "73e72297-47c8-4a88-b7eb-5d6e7e575001",
+    "57ae35f3-1104-4ee0-9d14-bab843070f3a"
   ],
   "name": "Vor AI NATION Bewerbung"
 }

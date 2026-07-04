@@ -3,6 +3,7 @@ import { useDataStore } from '../data'
 import { isAimInTree as isAimInTreeHelper } from './navigation-helpers'
 import { useProjectStore } from '../project-store'
 import { useUIModalStore } from './modal-store'
+import { ensureAimUIState } from './aim-ui-state'
 
 function getProjectPath(): string {
   return useProjectStore().projectPath
@@ -18,8 +19,9 @@ export async function moveAimDownAction(uiStore: any) {
 
   if (path.aims.length > 1) {
     const parentAim = path.aims[path.aims.length - 2]
-    if (parentAim && parentAim.selectedIncomingIndex !== undefined) {
-      const currentIndex = parentAim.selectedIncomingIndex
+    const parentState = path.aimStates[path.aimStates.length - 2]
+    if (parentAim && parentState?.selectedIncomingIndex !== undefined) {
+      const currentIndex = parentState.selectedIncomingIndex
       const parentConnections = parentAim.supportingConnections || []
 
       if (currentIndex < parentConnections.length - 1) {
@@ -30,7 +32,7 @@ export async function moveAimDownAction(uiStore: any) {
           parentAim.supportingConnections[currentIndex] = parentAim.supportingConnections[nextIndex]!
           parentAim.supportingConnections[nextIndex] = temp
         }
-        parentAim.selectedIncomingIndex = nextIndex
+        parentState.selectedIncomingIndex = nextIndex
 
         try {
           await trpc.aim.connectAims.mutate({
@@ -47,10 +49,7 @@ export async function moveAimDownAction(uiStore: any) {
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
 
-          const reloadedParent = dataStore.aims[parentAim.id]
-          if (reloadedParent) {
-            reloadedParent.selectedIncomingIndex = nextIndex
-          }
+          parentState.selectedIncomingIndex = nextIndex
         } catch (e) {
           console.error('Move failed', e)
         }
@@ -162,8 +161,9 @@ export async function moveAimUpAction(uiStore: any) {
 
   if (path.aims.length > 1) {
     const parentAim = path.aims[path.aims.length - 2]
-    if (parentAim && parentAim.selectedIncomingIndex !== undefined) {
-      const currentIndex = parentAim.selectedIncomingIndex
+    const parentState = path.aimStates[path.aimStates.length - 2]
+    if (parentAim && parentState?.selectedIncomingIndex !== undefined) {
+      const currentIndex = parentState.selectedIncomingIndex
       if (currentIndex > 0) {
         const prevIndex = currentIndex - 1
 
@@ -172,7 +172,7 @@ export async function moveAimUpAction(uiStore: any) {
           parentAim.supportingConnections[currentIndex] = parentAim.supportingConnections[prevIndex]!
           parentAim.supportingConnections[prevIndex] = temp
         }
-        parentAim.selectedIncomingIndex = prevIndex
+        parentState.selectedIncomingIndex = prevIndex
 
         try {
           await trpc.aim.connectAims.mutate({
@@ -189,10 +189,7 @@ export async function moveAimUpAction(uiStore: any) {
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
 
-          const reloadedParent = dataStore.aims[parentAim.id]
-          if (reloadedParent) {
-            reloadedParent.selectedIncomingIndex = prevIndex
-          }
+          parentState.selectedIncomingIndex = prevIndex
         } catch (e) {
           console.error('Move failed', e)
         }
@@ -315,8 +312,9 @@ export async function moveAimOutAction(uiStore: any) {
 
   if (path.aims.length > 2) {
     const grandparentAim = path.aims[path.aims.length - 3]!
+    const grandparentState = path.aimStates[path.aimStates.length - 3]!
     grandparentId = grandparentAim.id
-    const parentIndexInGrandparent = grandparentAim.selectedIncomingIndex!
+    const parentIndexInGrandparent = grandparentState.selectedIncomingIndex!
     newIndex = parentIndexInGrandparent + 1
   } else if (path.phase) {
     targetPhaseId = path.phase.id
@@ -339,7 +337,8 @@ export async function moveAimOutAction(uiStore: any) {
     if (gp && newIndex !== undefined) {
       if (!gp.supportingConnections) gp.supportingConnections = []
       gp.supportingConnections.splice(newIndex, 0, { aimId: currentAimId, weight: 1 } as any)
-      gp.selectedIncomingIndex = newIndex
+      const gpState = path.aimStates[path.aimStates.length - 3]
+      if (gpState) gpState.selectedIncomingIndex = newIndex
       currentAim.supportedAims.push(grandparentId)
     }
   } else if (targetPhaseId) {
@@ -444,9 +443,10 @@ export async function moveAimInAction(uiStore: any) {
 
   if (path.aims.length > 1) {
     const parentAim = path.aims[path.aims.length - 2]
-    if (!parentAim || parentAim.selectedIncomingIndex === undefined) return
+    const parentState = path.aimStates[path.aimStates.length - 2]
+    if (!parentAim || parentState?.selectedIncomingIndex === undefined) return
 
-    currentIndex = parentAim.selectedIncomingIndex
+    currentIndex = parentState.selectedIncomingIndex
     if (currentIndex === 0) return
 
     const parentConnections = parentAim.supportingConnections || []
@@ -497,8 +497,16 @@ export async function moveAimInAction(uiStore: any) {
   if (previousSibling) {
     if (!previousSibling.supportingConnections) previousSibling.supportingConnections = []
     previousSibling.supportingConnections.splice(insertionIndex, 0, { aimId: currentAimId, weight: 1 } as any)
-    previousSibling.expanded = true
-    previousSibling.selectedIncomingIndex = insertionIndex
+    const siblingStateTree = path.aims.length > 1
+      ? path.aimStates[path.aimStates.length - 2]?.children
+      : oldPhaseId
+        ? uiStore.getPhaseAimUIStates(oldPhaseId)
+        : uiStore.floatingAimUIStates
+    const previousSiblingState = siblingStateTree ? ensureAimUIState(siblingStateTree, previousSiblingId) : undefined
+    if (previousSiblingState) {
+      previousSiblingState.expanded = true
+      previousSiblingState.selectedIncomingIndex = insertionIndex
+    }
     if (!currentAim.supportedAims) currentAim.supportedAims = []
     currentAim.supportedAims.push(previousSiblingId)
   }
@@ -511,9 +519,9 @@ export async function moveAimInAction(uiStore: any) {
   }
 
   if (oldParentId) {
-    const oldP = dataStore.aims[oldParentId]
-    if (oldP && oldP.selectedIncomingIndex !== undefined) {
-      oldP.selectedIncomingIndex = Math.max(0, currentIndex - 1)
+    const oldParentState = path.aimStates[path.aimStates.length - 2]
+    if (oldParentState?.selectedIncomingIndex !== undefined) {
+      oldParentState.selectedIncomingIndex = Math.max(0, currentIndex - 1)
     }
   }
 
@@ -597,12 +605,14 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
   let destinationPhaseId: string | undefined
   let destinationFloating = false
   let insertionIndex = 0
+  let destinationParentState: any
 
   if (path.aims.length > 1) {
     const parentAim = path.aims[path.aims.length - 2]
+    destinationParentState = path.aimStates[path.aimStates.length - 2]
     if (!parentAim) return
     destinationParentAimId = parentAim.id
-    insertionIndex = (parentAim.selectedIncomingIndex ?? 0) + 1
+    insertionIndex = (destinationParentState?.selectedIncomingIndex ?? 0) + 1
   } else if (path.phase) {
     destinationPhaseId = path.phase.id
     insertionIndex = (path.phase.selectedAimIndex ?? -1) + 1
@@ -719,9 +729,9 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
 
     if (destinationParentAimId) {
       const destinationParent = dataStore.aims[destinationParentAimId]
-      if (destinationParent) {
-        destinationParent.expanded = true
-        destinationParent.selectedIncomingIndex = Math.max(
+      if (destinationParent && destinationParentState) {
+        destinationParentState.expanded = true
+        destinationParentState.selectedIncomingIndex = Math.max(
           0,
           (destinationParent.supportingConnections || []).findIndex((c: any) => c.aimId === cutAimId)
         )
@@ -753,12 +763,14 @@ export async function pasteCopiedAimAction(uiStore: any, dataStore: any) {
   let destinationParentAimId: string | undefined
   let destinationPhaseId: string | undefined
   let insertionIndex = 0
+  let destinationParentState: any
 
   if (path.aims.length > 1) {
     const parentAim = path.aims[path.aims.length - 2]
+    destinationParentState = path.aimStates[path.aimStates.length - 2]
     if (!parentAim) return
     destinationParentAimId = parentAim.id
-    insertionIndex = (parentAim.selectedIncomingIndex ?? 0) + 1
+    insertionIndex = (destinationParentState?.selectedIncomingIndex ?? 0) + 1
   } else if (path.phase) {
     destinationPhaseId = path.phase.id
     insertionIndex = (path.phase.selectedAimIndex ?? -1) + 1
@@ -819,9 +831,9 @@ export async function pasteCopiedAimAction(uiStore: any, dataStore: any) {
 
     if (destinationParentAimId) {
       const destinationParent = dataStore.aims[destinationParentAimId]
-      if (destinationParent) {
-        destinationParent.expanded = true
-        destinationParent.selectedIncomingIndex = Math.max(
+      if (destinationParent && destinationParentState) {
+        destinationParentState.expanded = true
+        destinationParentState.selectedIncomingIndex = Math.max(
           0,
           (destinationParent.supportingConnections || []).findIndex((c: any) => c.aimId === copyAimId)
         )

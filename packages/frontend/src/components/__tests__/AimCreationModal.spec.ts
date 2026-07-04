@@ -41,7 +41,7 @@ describe('AimCreationModal', () => {
     // Configure mock before mount
     uiStore = useUIStore(pinia)
     modalStore = useUIModalStore(pinia)
-    uiStore.getSelectionPath.mockReturnValue({ aims: [], phase: null })
+    uiStore.getSelectionPath.mockReturnValue({ aims: [], aimStates: [], phase: null })
 
     wrapper = mount(AimCreationModal, {
       global: {

@@ -383,6 +383,7 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
   const projectStore = useProjectStore()
   const path = uiStore.getSelectionPath()
   const currentAim = path.aims[path.aims.length - 1]
+  const currentAimState = path.aimStates[path.aimStates.length - 1]
 
   if (event.key === 'j') {
     await uiStore.navigateDown()
@@ -499,13 +500,13 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
       break
     case 'h': {
       event.preventDefault()
-      if (currentAim) {
-        if (currentAim.expanded) {
-          currentAim.expanded = false
+      if (currentAimState) {
+        if (currentAimState.expanded) {
+          currentAimState.expanded = false
         } else if (path.aims.length > 1) {
-          const parentAim = path.aims[path.aims.length - 2]
-          if (parentAim) {
-            parentAim.selectedIncomingIndex = undefined
+          const parentAimState = path.aimStates[path.aimStates.length - 2]
+          if (parentAimState) {
+            parentAimState.selectedIncomingIndex = undefined
           }
         }
       }
@@ -520,16 +521,17 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
       }
 
       const selectedAim = uiStore.getCurrentAim()
-      if (selectedAim) {
-        if (!selectedAim.expanded) {
-          selectedAim.expanded = true
+      const selectedAimState = uiStore.getCurrentAimUIState()
+      if (selectedAim && selectedAimState) {
+        if (!selectedAimState.expanded) {
+          selectedAimState.expanded = true
           const connections = selectedAim.supportingConnections || []
           if (connections.length > 0) {
             dataStore.loadAims(projectStore.projectPath, connections.map((connection: any) => connection.aimId))
           }
         } else if (selectedAim.supportingConnections && selectedAim.supportingConnections.length > 0) {
-          if (selectedAim.selectedIncomingIndex === undefined) {
-            selectedAim.selectedIncomingIndex = 0
+          if (selectedAimState.selectedIncomingIndex === undefined) {
+            selectedAimState.selectedIncomingIndex = 0
           }
         }
       }

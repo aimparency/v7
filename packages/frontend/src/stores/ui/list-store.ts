@@ -11,6 +11,7 @@ import {
   findPathToAim as findPathToAimHelper,
   type SelectionPath
 } from './navigation-helpers'
+import { createAimUIState, ensureAimUIState, type AimUIState, type AimUIStateTree } from './aim-ui-state'
 import {
   handleAimNavigationKeysAction,
   handleColumnNavigationKeysAction,
@@ -62,8 +63,10 @@ type PersistedListViewState = {
   lastSelectedSubPhaseIndexByPhase: Record<string, number>
   navigatingAims: boolean
   selectedAimIndexByPhaseId: Record<string, number>
-  selectedIncomingIndexByAimId: Record<string, number>
-  expandedAimIds: string[]
+  selectedIncomingIndexByAimId?: Record<string, number>
+  expandedAimIds?: string[]
+  floatingAimUIStates?: AimUIStateTree
+  phaseAimUIStatesByPhaseId?: Record<string, AimUIStateTree>
 }
 
 type PersistedUIState = {
@@ -111,6 +114,8 @@ export const useListStore = defineStore('ui', {
     uiStatePersistTimeout: null as ReturnType<typeof setTimeout> | null,
     isRestoringUIState: false,
     restoreGeneration: 0,
+    floatingAimUIStates: {} as AimUIStateTree,
+    phaseAimUIStatesByPhaseId: {} as Record<string, AimUIStateTree>,
   }),
   
   getters: {
@@ -182,22 +187,10 @@ export const useListStore = defineStore('ui', {
     getListViewStateSnapshot(): PersistedListViewState {
       const dataStore = useDataStore()
       const selectedAimIndexByPhaseId: Record<string, number> = {}
-      const selectedIncomingIndexByAimId: Record<string, number> = {}
-      const expandedAimIds: string[] = []
 
       for (const phase of Object.values(dataStore.phases)) {
         if (phase?.selectedAimIndex !== undefined) {
           selectedAimIndexByPhaseId[phase.id] = phase.selectedAimIndex
-        }
-      }
-
-      for (const aim of Object.values(dataStore.aims)) {
-        if (!aim) continue
-        if (aim.selectedIncomingIndex !== undefined) {
-          selectedIncomingIndexByAimId[aim.id] = aim.selectedIncomingIndex
-        }
-        if (aim.expanded) {
-          expandedAimIds.push(aim.id)
         }
       }
 
@@ -211,8 +204,8 @@ export const useListStore = defineStore('ui', {
         lastSelectedSubPhaseIndexByPhase: { ...this.lastSelectedSubPhaseIndexByPhase },
         navigatingAims: this.navigatingAims,
         selectedAimIndexByPhaseId,
-        selectedIncomingIndexByAimId,
-        expandedAimIds
+        floatingAimUIStates: this.floatingAimUIStates,
+        phaseAimUIStatesByPhaseId: this.phaseAimUIStatesByPhaseId
       }
     },
 
@@ -449,12 +442,24 @@ export const useListStore = defineStore('ui', {
             }
           }
 
-          const expandedAimIds = new Set(listViewState.expandedAimIds)
-          for (const aim of Object.values(dataStore.aims)) {
-            if (!aim) continue
-            aim.expanded = expandedAimIds.has(aim.id)
-            if (listViewState.selectedIncomingIndexByAimId[aim.id] !== undefined) {
-              aim.selectedIncomingIndex = listViewState.selectedIncomingIndexByAimId[aim.id]
+          if (listViewState.floatingAimUIStates) {
+            this.floatingAimUIStates = listViewState.floatingAimUIStates
+          }
+          if (listViewState.phaseAimUIStatesByPhaseId) {
+            this.phaseAimUIStatesByPhaseId = listViewState.phaseAimUIStatesByPhaseId
+          }
+
+          if (listViewState.expandedAimIds || listViewState.selectedIncomingIndexByAimId) {
+            const expandedAimIds = new Set(listViewState.expandedAimIds ?? [])
+            for (const aim of Object.values(dataStore.aims)) {
+              if (!aim) continue
+              if (!expandedAimIds.has(aim.id) && listViewState.selectedIncomingIndexByAimId?.[aim.id] === undefined) continue
+              const state = ensureAimUIState(this.floatingAimUIStates, aim.id)
+              state.expanded = expandedAimIds.has(aim.id)
+              const selectedIncomingIndex = listViewState.selectedIncomingIndexByAimId?.[aim.id]
+              if (selectedIncomingIndex !== undefined) {
+                state.selectedIncomingIndex = selectedIncomingIndex
+              }
             }
           }
 
@@ -619,12 +624,13 @@ export const useListStore = defineStore('ui', {
         }
       } else {
         const currentAim = path.aims[path.aims.length - 1]
+        const currentAimState = path.aimStates[path.aimStates.length - 1]
         if (!currentAim) {
           modalStore.showAimModal = false
           return
         }
 
-        if (currentAim.expanded && modalStore.aimModalInsertPosition === 'after') {
+        if (currentAimState?.expanded && modalStore.aimModalInsertPosition === 'after') {
           if (isExistingAim) {
             await trpc.aim.connectAims.mutate({
               projectPath: projectStore.projectPath,
@@ -646,14 +652,14 @@ export const useListStore = defineStore('ui', {
           }
 
           implicitParentId = currentAim.id
-          const freshParent = dataStore.aims[currentAim.id]
-          if (freshParent) {
-            freshParent.selectedIncomingIndex = 0
+          if (currentAimState) {
+            currentAimState.selectedIncomingIndex = 0
           }
         } else if (path.aims.length > 1) {
           const parentAim = path.aims[path.aims.length - 2]
+          const parentAimState = path.aimStates[path.aimStates.length - 2]
           if (parentAim) {
-            let insertionIndex = parentAim.selectedIncomingIndex ?? 0
+            let insertionIndex = parentAimState?.selectedIncomingIndex ?? 0
             if (modalStore.aimModalInsertPosition === 'after') {
               insertionIndex++
             }
@@ -679,9 +685,8 @@ export const useListStore = defineStore('ui', {
             }
 
             implicitParentId = parentAim.id
-            const freshParent = dataStore.aims[parentAim.id]
-            if (freshParent) {
-              freshParent.selectedIncomingIndex = insertionIndex
+            if (parentAimState) {
+              parentAimState.selectedIncomingIndex = insertionIndex
             }
           }
         } else if (path.phase) {
@@ -866,12 +871,32 @@ export const useListStore = defineStore('ui', {
       return path.aims[path.aims.length - 1]
     }, 
 
+    getCurrentAimUIState(): AimUIState | undefined {
+      const path = this.getSelectionPath()
+      return path.aimStates[path.aimStates.length - 1]
+    },
+
+    getFloatingAimUIStates(): AimUIStateTree {
+      return this.floatingAimUIStates
+    },
+
+    getPhaseAimUIStates(phaseId: string): AimUIStateTree {
+      this.phaseAimUIStatesByPhaseId[phaseId] ??= {}
+      return this.phaseAimUIStatesByPhaseId[phaseId]
+    },
+
+    ensureAimUIState(tree: AimUIStateTree, aimId: string): AimUIState {
+      return ensureAimUIState(tree, aimId)
+    },
+
     getSelectionPath(): SelectionPath {
       return getSelectionPathFromState(
         this.navigatingAims,
         this.activeColumn,
         this.floatingAimIndex,
-        (columnIndex) => this.getSelectedPhaseId(columnIndex)
+        (columnIndex) => this.getSelectedPhaseId(columnIndex),
+        () => this.getFloatingAimUIStates(),
+        (phaseId) => this.getPhaseAimUIStates(phaseId)
       )
     },
 
@@ -1449,8 +1474,9 @@ export const useListStore = defineStore('ui', {
           if (selectLastAim) {
             const aims = dataStore.getAimsForPhase(selectedEntry.phase.id)
             const target = aims[newPhase.selectedAimIndex]
-            if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
-              this.goToLastChildAim(target)
+            const targetState = target ? ensureAimUIState(this.getPhaseAimUIStates(selectedEntry.phase.id), target.id) : undefined
+            if (target && targetState?.expanded && targetState.selectedIncomingIndex !== undefined) {
+              this.goToLastChildAim(target, targetState)
             }
           }
         }
@@ -1485,10 +1511,6 @@ export const useListStore = defineStore('ui', {
 
       const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
 
-      Object.values(dataStore.aims).forEach((aim: any) => {
-        aim.selectedIncomingIndex = undefined
-      })
-
       const topLevelIndex = aims.findIndex((a: any) => a && a.id === aimId)
 
       if (topLevelIndex >= 0) {
@@ -1499,14 +1521,15 @@ export const useListStore = defineStore('ui', {
       const path = findPathToAimHelper(aimId, aims, dataStore)
       if (!path || path.length === 0) return
 
+      let stateTree = phaseId ? this.getPhaseAimUIStates(phaseId) : this.floatingAimUIStates
       for (let i = 0; i < path.length - 1; i++) {
         const step = path[i]
-        if (!step) continue
-        const parentAim = dataStore.aims[step.aimId]
         const nextStep = path[i + 1]
-        if (parentAim && nextStep && nextStep.indexInParent !== undefined) {
-          parentAim.selectedIncomingIndex = nextStep.indexInParent
-        }
+        if (!step || !nextStep || nextStep.indexInParent === undefined) continue
+        const state = ensureAimUIState(stateTree, step.aimId)
+        state.expanded = true
+        state.selectedIncomingIndex = nextStep.indexInParent
+        stateTree = state.children
       }
 
       const topLevel = path[0]
@@ -1670,6 +1693,7 @@ export const useListStore = defineStore('ui', {
         }
       }
 
+      let stateTree = phaseId ? this.getPhaseAimUIStates(phaseId) : this.floatingAimUIStates
       for (let i = 0; i < path.aims.length - 1; i++) {
         const parentStep = path.aims[i]
         if (!parentStep) continue
@@ -1677,7 +1701,8 @@ export const useListStore = defineStore('ui', {
         const child = path.aims[i + 1]
         if (!parent || !child) continue
 
-        parent.expanded = true
+        const parentState = ensureAimUIState(stateTree, parent.id)
+        parentState.expanded = true
         if (parent.supportingConnections && parent.supportingConnections.length > 0) {
           await dataStore.loadAims(
             projectStore.projectPath,
@@ -1687,8 +1712,9 @@ export const useListStore = defineStore('ui', {
 
         const childIndex = parent.supportingConnections.findIndex((c: any) => c.aimId === child.id)
         if (childIndex !== -1) {
-          parent.selectedIncomingIndex = childIndex
+          parentState.selectedIncomingIndex = childIndex
         }
+        stateTree = parentState.children
       }
 
       this.navigatingAims = true
@@ -1748,10 +1774,11 @@ export const useListStore = defineStore('ui', {
         let broke = false
         for (let i = path.aims.length - 2; i >= 0; i--) {
           const ancestorAim = path.aims[i]
-          if (!ancestorAim) continue
+          const ancestorState = path.aimStates[i]
+          if (!ancestorAim || !ancestorState) continue
           const ancestorConnections = ancestorAim.supportingConnections || []
-          if (ancestorAim.selectedIncomingIndex !== undefined && ancestorAim.selectedIncomingIndex < ancestorConnections.length - 1) {
-            ancestorAim.selectedIncomingIndex++
+          if (ancestorState.selectedIncomingIndex !== undefined && ancestorState.selectedIncomingIndex < ancestorConnections.length - 1) {
+            ancestorState.selectedIncomingIndex++
             broke = true
             break
           }
@@ -1798,16 +1825,18 @@ export const useListStore = defineStore('ui', {
           if (this.floatingAimIndex > 0) {
             this.floatingAimIndex--
             const target = dataStore.floatingAims[this.floatingAimIndex]
-            if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
-              this.goToLastChildAim(target)
+            const targetState = target ? ensureAimUIState(this.floatingAimUIStates, target.id) : undefined
+            if (target && targetState?.expanded && targetState.selectedIncomingIndex !== undefined) {
+              this.goToLastChildAim(target, targetState)
             }
           }
         } else if (col >= 0 && path.phase) {
           if (path.phase.selectedAimIndex !== undefined && path.phase.selectedAimIndex > 0) {
             path.phase.selectedAimIndex--
             const target = dataStore.getAimsForPhase(path.phase.id)[path.phase.selectedAimIndex]
-            if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
-              this.goToLastChildAim(target)
+            const targetState = target ? ensureAimUIState(this.getPhaseAimUIStates(path.phase.id), target.id) : undefined
+            if (target && targetState?.expanded && targetState.selectedIncomingIndex !== undefined) {
+              this.goToLastChildAim(target, targetState)
             }
           } else {
             await this.continueAimBoundaryPhaseMove(-1)
@@ -1815,17 +1844,19 @@ export const useListStore = defineStore('ui', {
         }
       } else {
         const parentAim = path.aims[path.aims.length - 2]
-        if (parentAim) {
-          if (parentAim.selectedIncomingIndex == 0) {
-            parentAim.selectedIncomingIndex = undefined
-          } else if (parentAim.selectedIncomingIndex !== undefined) {
-            parentAim.selectedIncomingIndex--
+        const parentState = path.aimStates[path.aimStates.length - 2]
+        if (parentAim && parentState) {
+          if (parentState.selectedIncomingIndex == 0) {
+            parentState.selectedIncomingIndex = undefined
+          } else if (parentState.selectedIncomingIndex !== undefined) {
+            parentState.selectedIncomingIndex--
             const parentConnections = parentAim.supportingConnections || []
-            const targetConn = parentConnections[parentAim.selectedIncomingIndex]
+            const targetConn = parentConnections[parentState.selectedIncomingIndex]
             if (targetConn) {
               const target = dataStore.aims[targetConn.aimId]
-              if (target && target.expanded && target.selectedIncomingIndex !== undefined) {
-                this.goToLastChildAim(target)
+              const targetState = target ? ensureAimUIState(parentState.children, target.id) : undefined
+              if (target && targetState?.expanded && targetState.selectedIncomingIndex !== undefined) {
+                this.goToLastChildAim(target, targetState)
               }
             }
           }
@@ -1833,16 +1864,17 @@ export const useListStore = defineStore('ui', {
       }
     },
 
-    goToLastChildAim(target: Aim) {
+    goToLastChildAim(target: Aim, targetState: AimUIState) {
       const dataStore = useDataStore()
       let connections = target.supportingConnections || []
-      while (target.expanded && connections.length > 0) {
+      while (targetState.expanded && connections.length > 0) {
         const lastIdx = connections.length - 1
-        target.selectedIncomingIndex = lastIdx
+        targetState.selectedIncomingIndex = lastIdx
         const nextTargetConn = connections[lastIdx]
         if (!nextTargetConn) break
         const nextTarget = dataStore.aims[nextTargetConn.aimId]
         if (!nextTarget) break
+        targetState = ensureAimUIState(targetState.children, nextTarget.id)
         target = nextTarget
         connections = target.supportingConnections || []
       }

@@ -31,6 +31,7 @@ const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
         :is-active="isActive && uiStore.navigatingAims"
         :is-selected="isSelected"
         :selected-aim-index="uiStore.floatingAimIndex"
+        :aim-ui-states="uiStore.floatingAimUIStates"
         @aim-clicked="(aimId) => uiStore.selectAimById(-1, undefined, aimId)"
         @scroll-request="handleScrollRequest"
       />

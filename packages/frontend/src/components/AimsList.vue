@@ -6,6 +6,7 @@ import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
+import type { AimUIStateTree } from '../stores/ui/aim-ui-state'
 import AimComponent from './Aim.vue'
 
 interface Props {
@@ -17,14 +18,13 @@ interface Props {
   indentationLevel?: number
   selectedAimIndex?: number  // Index of selected aim in this list
   parentAimId?: string
-  ancestorAimIds?: string[]
+  aimUiStates: AimUIStateTree
 }
 
 const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0,
   selectedAimIndex: undefined,
-  parentAimId: undefined,
-  ancestorAimIds: () => []
+  parentAimId: undefined
 })
 
 const emit = defineEmits<{
@@ -84,7 +84,7 @@ const handleScrollRequest = (element: HTMLElement) => {
           :is-selected="isSelected"
           :is-this-aim-selected="selectedAimIndex === index"
           :parent-aim-id="parentAimId"
-          :ancestor-aim-ids="ancestorAimIds"
+          :aim-ui-state="uiStore.ensureAimUIState(aimUiStates, aim.id)"
           :class="{
             'active': isActive && selectedAimIndex === index,
             'selected': isSelected && selectedAimIndex === index,

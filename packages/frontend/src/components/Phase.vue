@@ -141,6 +141,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
         :is-active="isActive && uiStore.navigatingAims"
         :is-selected="isSelected"
         :selected-aim-index="phase.selectedAimIndex"
+        :aim-ui-states="uiStore.getPhaseAimUIStates(phase.id)"
         @scroll-request="$emit('scroll-request', $event)"
         @aim-clicked="$emit('aim-clicked', $event)"
       />
