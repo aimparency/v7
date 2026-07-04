@@ -112,6 +112,39 @@ function summarizeInbox(messages: LoopInboxMessage[]): string {
     .join('\n');
 }
 
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+function describeProviderError(error: unknown, loop: LoopDefinition): string {
+  const message = errorMessage(error);
+  const details = error && typeof error === 'object' ? error as Record<string, unknown> : {};
+  const statusCode = details.statusCode ?? details.status ?? details.code;
+  const lines = [
+    `LLM request failed: ${message}`,
+    `provider: ${loop.provider}`,
+    `model: ${loop.model}`,
+    `baseUrl: ${loop.baseUrl}`
+  ];
+  if (statusCode) lines.push(`status/code: ${String(statusCode)}`);
+  if (/unauthorized|401|invalid.?api.?key|authentication/i.test(message)) {
+    const keyName = loop.provider === 'nvidia'
+      ? 'NVIDIA_API_KEY'
+      : loop.provider === 'openrouter'
+        ? 'OPENROUTER_API_KEY'
+        : 'LOOP_API_KEY';
+    lines.push(`likely cause: ${keyName} is missing, invalid, expired, or not accepted by this endpoint/model.`);
+    lines.push('Check the loop configuration and .bowman/secrets.json for this project.');
+  }
+  return lines.join('\n');
+}
+
 async function waitForHumanAnswer(projectPath: string, instanceId: string, requestId: string, signal: AbortSignal) {
   while (!signal.aborted) {
     const state = await readWorkerState(projectPath, instanceId);
@@ -494,14 +527,57 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
   } as any);
 
   let finalText = '';
-  for await (const delta of result.textStream) {
-    finalText += delta;
+  let reasoningText = '';
+  let finishReason = 'unknown';
+  let rawFinishReason = '';
+  const toolCalls: string[] = [];
+  const streamErrors: string[] = [];
+  for await (const part of result.fullStream) {
+    if (part.type === 'text-delta') {
+      finalText += part.text;
+    } else if (part.type === 'reasoning-delta') {
+      reasoningText += part.text;
+    } else if (part.type === 'tool-call') {
+      toolCalls.push(String(part.toolName));
+    } else if (part.type === 'tool-error') {
+      streamErrors.push(`Tool failed: ${String(part.toolName)}\n${errorMessage(part.error)}`);
+    } else if (part.type === 'error') {
+      streamErrors.push(describeProviderError(part.error, loop));
+    } else if (part.type === 'finish') {
+      finishReason = part.finishReason;
+      rawFinishReason = part.rawFinishReason ?? '';
+    }
   }
   if (finalText.trim()) {
     await appendLoopEvent(projectPath, instanceId, {
       role: 'assistant',
       kind: 'text',
       content: finalText.trim()
+    });
+  }
+  if (streamErrors.length > 0) {
+    await appendLoopEvent(projectPath, instanceId, {
+      role: 'system',
+      kind: 'error',
+      content: streamErrors.join('\n')
+    });
+  }
+  if (!finalText.trim() && toolCalls.length === 0 && streamErrors.length === 0) {
+    await appendLoopEvent(projectPath, instanceId, {
+      role: 'system',
+      kind: 'error',
+      content: [
+        'Model returned no visible output and called no tools.',
+        `finishReason: ${finishReason}${rawFinishReason ? ` (${rawFinishReason})` : ''}`,
+        reasoningText.trim() ? `reasoning: ${reasoningText.trim().slice(0, 1200)}` : 'reasoning: empty',
+        'This usually means the provider/model response shape is not fully compatible with the AI SDK adapter, or the model chose to emit only hidden reasoning.'
+      ].join('\n')
+    });
+  } else if (!finalText.trim() && toolCalls.length > 0) {
+    await appendLoopEvent(projectPath, instanceId, {
+      role: 'system',
+      kind: 'event',
+      content: `Model called tools: ${[...new Set(toolCalls)].join(', ')}.`
     });
   }
 }
@@ -583,7 +659,13 @@ async function main() {
       await appendLoopEvent(projectPath, instanceId, { role: 'system', kind: 'event', content: finalMessage });
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    let message = errorMessage(error);
+    try {
+      const { loop } = await readLoopAndInstance(projectPath, instanceId);
+      message = describeProviderError(error, loop);
+    } catch {
+      // Keep the generic message if loop config cannot be read.
+    }
     await markInstanceStatus(projectPath, instanceId, abortController.signal.aborted ? 'stopped' : 'error');
     await patchWorkerState(projectPath, instanceId, {
       status: abortController.signal.aborted ? 'stopped' : 'error',

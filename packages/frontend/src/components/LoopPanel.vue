@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { trpc } from '../trpc'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
@@ -72,6 +72,7 @@ const instanceNameDirty = ref(false)
 const stopPolicyDraft = ref<LoopStopPolicy>('target_halted')
 const phaseLabels = ref<Record<string, string>>({})
 const aimLabels = ref<Record<string, string>>({})
+const loopLogRef = ref<HTMLDivElement>()
 const secretsPresent = ref({
   NVIDIA_API_KEY: false,
   OPENROUTER_API_KEY: false,
@@ -95,6 +96,14 @@ const selectedTargetAimLabel = computed(() => {
   if (!id) return 'No aim'
   return dataStore.aims[id]?.text ?? aimLabels.value[id] ?? 'Loading aim...'
 })
+const stopPolicyOptions = computed<Array<{ value: LoopStopPolicy; label: string }>>(() => [
+  ...(selectedInstance.value?.targetAimId ? [{ value: 'target_halted' as const, label: 'aim halted' }] : []),
+  ...(selectedInstance.value?.targetPhaseId ? [{ value: 'phase_done' as const, label: 'phase done' }] : []),
+  { value: 'never', label: 'never' },
+  { value: 'asap', label: 'asap' }
+])
+const coerceStopPolicy = (policy: LoopStopPolicy | undefined) =>
+  stopPolicyOptions.value.some((option) => option.value === policy) ? policy! : 'never'
 const requiredSecretLabel = computed(() => {
   if (provider.value === 'nvidia') return 'NVIDIA_API_KEY'
   if (provider.value === 'openrouter') return 'OPENROUTER_API_KEY'
@@ -147,7 +156,7 @@ const hydrate = async () => {
     if (!instanceNameDirty.value) {
       instanceNameDraft.value = selectedInstance.value?.name ?? ''
     }
-    stopPolicyDraft.value = selectedInstance.value?.stopPolicy ?? 'target_halted'
+    stopPolicyDraft.value = coerceStopPolicy(selectedInstance.value?.stopPolicy)
     if (selectedLoopId.value !== previousLoopId || !configDirty.value) {
       loopNameDraft.value = selectedLoop.value?.name ?? ''
       systemPromptDraft.value = selectedLoop.value?.systemPrompt ?? ''
@@ -260,6 +269,15 @@ const updateStopPolicy = async () => {
   await updateSelectedInstance({ stopPolicy: stopPolicyDraft.value })
 }
 
+const retargetSelectedInstance = async (patch: Partial<Pick<LoopInstance, 'targetPhaseId' | 'targetAimId'>>) => {
+  const nextStopPolicy = (
+    (patch.targetAimId === null && stopPolicyDraft.value === 'target_halted') ||
+    (patch.targetPhaseId === null && stopPolicyDraft.value === 'phase_done')
+  ) ? 'never' : stopPolicyDraft.value
+  await updateSelectedInstance({ ...patch, stopPolicy: nextStopPolicy })
+  stopPolicyDraft.value = nextStopPolicy
+}
+
 const saveInstanceName = async () => {
   if (!instanceNameDirty.value || !instanceNameDraft.value.trim()) return
   await updateSelectedInstance({ name: instanceNameDraft.value.trim() })
@@ -268,30 +286,52 @@ const saveInstanceName = async () => {
 
 const openPhaseTargetSearch = () => {
   modalStore.openPhaseSearchPrompt(async (payload: PhaseSearchSelection) => {
+    if (payload.type === 'option' && payload.data.id === 'none') {
+      await retargetSelectedInstance({ targetPhaseId: null, targetAimId: null })
+      modalStore.closePhaseSearchPrompt()
+      return
+    }
     if (payload.type !== 'phase') return
     phaseLabels.value = { ...phaseLabels.value, [payload.data.id]: payload.data.name }
-    await updateSelectedInstance({ targetPhaseId: payload.data.id })
+    await retargetSelectedInstance({ targetPhaseId: payload.data.id })
     modalStore.closePhaseSearchPrompt()
   }, {
     title: 'Select Loop Phase',
-    placeholder: 'Search target phase...'
+    placeholder: 'Search target phase...',
+    additionalOptions: [{
+      id: 'none',
+      label: 'No phase',
+      description: 'Let the loop choose from the active phase dynamically.',
+      showWhenQueryEmptyOnly: true
+    }]
   })
 }
 
 const openAimTargetSearch = () => {
   modalStore.openAimSearch('pick', async (payload: AimSearchPickPayload) => {
+    if (payload.type === 'option' && payload.data.id === 'none') {
+      await retargetSelectedInstance({ targetAimId: null })
+      modalStore.closeAimSearch()
+      return
+    }
     if (payload.type !== 'aim') return
     aimLabels.value = { ...aimLabels.value, [payload.data.id]: payload.data.text }
     const targetPhaseId = selectedInstance.value?.targetPhaseId ?? payload.data.committedIn?.[0] ?? null
-    await updateSelectedInstance({
+    await retargetSelectedInstance({
       targetPhaseId,
       targetAimId: payload.data.id
     })
     modalStore.closeAimSearch()
-  }, selectedInstance.value?.targetAimId ?? undefined, {
+  }, undefined, {
     title: 'Select Loop Aim',
     placeholder: 'Search target aim...',
-    showFilters: true
+    showFilters: true,
+    additionalOptions: [{
+      id: 'none',
+      label: 'No aim',
+      description: 'Let the loop choose the highest-priority open aim dynamically.',
+      showWhenQueryEmptyOnly: true
+    }]
   })
 }
 
@@ -321,6 +361,13 @@ const sendHumanMessage = async () => {
   instances.value = runtime.instances
 }
 
+const scrollLoopLogToBottom = async () => {
+  await nextTick()
+  const el = loopLogRef.value
+  if (!el) return
+  el.scrollTop = el.scrollHeight
+}
+
 watch(provider, () => {
   if (provider.value === 'nvidia') {
     if (!model.value || model.value.includes('claude')) model.value = 'z-ai/glm-5.2'
@@ -344,9 +391,17 @@ watch(selectedLoopId, () => {
 
 watch(selectedInstanceId, () => {
   instanceNameDraft.value = selectedInstance.value?.name ?? ''
-  stopPolicyDraft.value = selectedInstance.value?.stopPolicy ?? 'target_halted'
+  stopPolicyDraft.value = coerceStopPolicy(selectedInstance.value?.stopPolicy)
   instanceNameDirty.value = false
+  void scrollLoopLogToBottom()
 })
+
+watch(
+  () => selectedInstance.value?.messages.map((msg) => msg.id).join('|') ?? '',
+  () => {
+    void scrollLoopLogToBottom()
+  }
+)
 
 onMounted(() => {
   void hydrate()
@@ -415,10 +470,13 @@ onUnmounted(() => {
             <label class="stop-policy">
               <span>when</span>
               <select v-model="stopPolicyDraft" @change="updateStopPolicy">
-                <option value="target_halted">aim halted</option>
-                <option value="phase_done">phase done</option>
-                <option value="never">never</option>
-                <option value="asap">asap</option>
+                <option
+                  v-for="option in stopPolicyOptions"
+                  :key="option.value"
+                  :value="option.value"
+                >
+                  {{ option.label }}
+                </option>
               </select>
             </label>
           </template>
@@ -490,7 +548,7 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="selectedInstance" class="instance-view">
-        <div class="terminal">
+        <div ref="loopLogRef" class="loop-log">
           <div v-if="selectedInstance.messages.length === 0" class="empty">No messages yet.</div>
           <div
             v-for="msg in selectedInstance.messages"
@@ -731,7 +789,7 @@ em,
   border-color: #8b3a3a;
 }
 
-.terminal {
+.loop-log {
   flex: 1;
   min-height: 0;
   background: #080808;

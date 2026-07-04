@@ -17,8 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '../../../..');
 const LOOP_WORKER_DIR = path.join(REPO_ROOT, 'packages', 'loop-worker');
-const LOOP_WORKER_SCRIPT = path.join(LOOP_WORKER_DIR, 'src', 'index.ts');
-const LOOP_WORKER_TSCONFIG = path.join(LOOP_WORKER_DIR, 'tsconfig.json');
+const LOOP_WORKER_SCRIPT = path.join(LOOP_WORKER_DIR, 'dist', 'index.js');
 
 const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy', 'grok']);
 const watchdogRuntimeAgentStateSchema = z.object({
@@ -587,10 +586,6 @@ export const createProjectRouter = (
     const out = fs.openSync(path.join(logDir, 'out.log'), 'a');
     const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
     const child = spawn('node', [
-      '--conditions',
-      'development',
-      '--import',
-      'tsx',
       LOOP_WORKER_SCRIPT,
       '--projectPath',
       projectPath,
@@ -600,10 +595,7 @@ export const createProjectRouter = (
       cwd: LOOP_WORKER_DIR,
       detached: true,
       stdio: ['ignore', out, err],
-      env: {
-        ...process.env,
-        TSX_TSCONFIG_PATH: LOOP_WORKER_TSCONFIG
-      }
+      env: { ...process.env }
     });
     child.unref();
     const processEntry: LoopWorkerProcess = { process: child, pid: child.pid!, projectPath, instanceId };
@@ -1080,7 +1072,7 @@ export const createProjectRouter = (
         stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).optional()
       }))
       .mutation(async ({ input }: any) => {
-        const defaultTarget = input.targetPhaseId !== undefined && input.targetAimId === undefined
+        const defaultTarget = input.targetPhaseId && input.targetAimId === undefined
           ? await pickDefaultLoopTarget(input.projectPath, input.targetPhaseId)
           : null;
         return mutateLoopRuntimeState(input.projectPath, (state) => {
@@ -1120,28 +1112,12 @@ export const createProjectRouter = (
       }))
       .mutation(async ({ input }: any) => {
         const projectPath = normalizeProjectPath(input.projectPath);
-        let startError: string | null = null;
-        const state = await readLoopRuntimeState(projectPath);
-        const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
-        if (instance) {
-          await ensureLoopInstanceTarget(projectPath, instance);
-          if (!instance.targetPhaseId || !instance.targetAimId) {
-            startError = 'Select a phase with an open aim before starting the loop.';
-            instance.status = 'error';
-            instance.messages.push({
-              id: uuidv4(),
-              role: 'system',
-              kind: 'error',
-              content: startError,
-              timestamp: Date.now()
-            });
-          } else {
-            instance.status = 'running';
-          }
+        await mutateLoopRuntimeState(projectPath, (state) => {
+          const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
+          if (!instance) return;
+          instance.status = 'running';
           instance.updatedAt = Date.now();
-          await writeLoopRuntimeState(projectPath, state);
-        }
-        if (startError) return refreshLoopProcessStates(projectPath);
+        });
         await spawnLoopWorker(projectPath, input.instanceId);
         return refreshLoopProcessStates(projectPath);
       }),

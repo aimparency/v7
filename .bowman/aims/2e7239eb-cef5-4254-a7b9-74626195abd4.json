@@ -1,0 +1,27 @@
+{
+  "id": "2e7239eb-cef5-4254-a7b9-74626195abd4",
+  "text": "assign colors similar (but slightly different) to parent per default.",
+  "description": "no parent => grey color \n\nslightly different means => when creating more and more sub children the trees further from the root will have similar but distinct colors from the root node. \n\nuse hsv based colors to look good with white fg text",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9fa43c99-d00c-4b4a-883e-5410cbe689dd"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783171899604
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "color": null
+}
