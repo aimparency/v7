@@ -38,12 +38,12 @@ type LoopInstance = {
   targetPhaseId: string | null
   targetAimId: string | null
   stopPolicy: LoopStopPolicy
+  currentActivity: string | null
   createdAt: number
   updatedAt: number
   messages: LoopMessage[]
 }
 
-const CONFIG_ID = '__config'
 const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const modalStore = useUIModalStore()
@@ -54,7 +54,7 @@ const message = ref('')
 const loops = ref<LoopDefinition[]>([])
 const instances = ref<LoopInstance[]>([])
 const selectedLoopId = ref<string | null>(null)
-const selectedInstanceId = ref<string | null>(CONFIG_ID)
+const selectedInstanceId = ref<string | null>(null)
 const loopNameDraft = ref('')
 const systemPromptDraft = ref('')
 const configDirty = ref(false)
@@ -73,6 +73,8 @@ const stopPolicyDraft = ref<LoopStopPolicy>('target_halted')
 const phaseLabels = ref<Record<string, string>>({})
 const aimLabels = ref<Record<string, string>>({})
 const loopLogRef = ref<HTMLDivElement>()
+const focusedLogIndex = ref(-1)
+const expandedLogIds = ref<Set<string>>(new Set())
 const secretsPresent = ref({
   NVIDIA_API_KEY: false,
   OPENROUTER_API_KEY: false,
@@ -83,9 +85,10 @@ let pollTimer: number | undefined
 const selectedLoop = computed(() => loops.value.find((loop) => loop.id === selectedLoopId.value) ?? null)
 const selectedInstance = computed(() => instances.value.find((instance) => instance.id === selectedInstanceId.value) ?? null)
 const loopInstances = computed(() => instances.value.filter((instance) => instance.loopId === selectedLoopId.value))
-const showingConfig = computed(() => selectedInstanceId.value === CONFIG_ID)
+const showingConfig = computed(() => Boolean(selectedLoop.value) && selectedInstanceId.value === null)
 const hasWaitingInstances = computed(() => instances.value.some((instance) => instance.status === 'waiting_for_human'))
 const selectedHumanRequest = computed(() => [...(selectedInstance.value?.messages ?? [])].reverse().find((message) => message.kind === 'human_action_required'))
+const selectedMessages = computed(() => selectedInstance.value?.messages ?? [])
 const selectedTargetPhaseLabel = computed(() => {
   const id = selectedInstance.value?.targetPhaseId
   if (!id) return 'No phase'
@@ -150,8 +153,8 @@ const hydrate = async () => {
     selectedLoopId.value = selectedLoopId.value && loops.value.some((loop) => loop.id === selectedLoopId.value)
       ? selectedLoopId.value
       : runtime.selectedLoopId ?? loops.value[0]?.id ?? null
-    if (selectedInstanceId.value !== CONFIG_ID && !instances.value.some((instance) => instance.id === selectedInstanceId.value)) {
-      selectedInstanceId.value = CONFIG_ID
+    if (selectedInstanceId.value && !instances.value.some((instance) => instance.id === selectedInstanceId.value)) {
+      selectedInstanceId.value = null
     }
     if (!instanceNameDirty.value) {
       instanceNameDraft.value = selectedInstance.value?.name ?? ''
@@ -217,9 +220,27 @@ const createLoop = async () => {
   loops.value = runtime.loops
   instances.value = runtime.instances
   selectedLoopId.value = runtime.selectedLoopId
-  selectedInstanceId.value = CONFIG_ID
+  selectedInstanceId.value = null
   loopNameDraft.value = loops.value.find((loop) => loop.id === selectedLoopId.value)?.name ?? ''
   systemPromptDraft.value = loops.value.find((loop) => loop.id === selectedLoopId.value)?.systemPrompt ?? ''
+  configDirty.value = false
+}
+
+const duplicateLoop = async () => {
+  if (!projectStore.projectPath || !selectedLoop.value) return
+  const runtime = await trpc.project.duplicateLoop.mutate({ projectPath: projectStore.projectPath, loopId: selectedLoop.value.id })
+  loops.value = runtime.loops
+  instances.value = runtime.instances
+  selectedLoopId.value = runtime.selectedLoopId
+  selectedInstanceId.value = null
+  const duplicated = loops.value.find((loop) => loop.id === selectedLoopId.value)
+  loopNameDraft.value = duplicated?.name ?? ''
+  systemPromptDraft.value = duplicated?.systemPrompt ?? ''
+  provider.value = duplicated?.provider ?? 'nvidia'
+  model.value = duplicated?.model ?? 'z-ai/glm-5.2'
+  baseUrl.value = duplicated?.baseUrl ?? 'https://integrate.api.nvidia.com/v1'
+  intervalSeconds.value = duplicated?.intervalSeconds ?? 60
+  associationChancePercent.value = Math.round((duplicated?.associationChance ?? 0.1) * 100)
   configDirty.value = false
 }
 
@@ -230,7 +251,7 @@ const deleteLoop = async () => {
   loops.value = runtime.loops
   instances.value = runtime.instances
   selectedLoopId.value = runtime.selectedLoopId
-  selectedInstanceId.value = CONFIG_ID
+  selectedInstanceId.value = null
   loopNameDraft.value = loops.value.find((loop) => loop.id === selectedLoopId.value)?.name ?? ''
   systemPromptDraft.value = loops.value.find((loop) => loop.id === selectedLoopId.value)?.systemPrompt ?? ''
   configDirty.value = false
@@ -241,7 +262,7 @@ const createInstance = async () => {
   const runtime = await trpc.project.createLoopInstance.mutate({ projectPath: projectStore.projectPath, loopId: selectedLoopId.value })
   loops.value = runtime.loops
   instances.value = runtime.instances
-  selectedInstanceId.value = runtime.selectedInstanceId ?? CONFIG_ID
+  selectedInstanceId.value = runtime.selectedInstanceId ?? null
 }
 
 const deleteInstance = async () => {
@@ -250,7 +271,7 @@ const deleteInstance = async () => {
   const runtime = await trpc.project.deleteLoopInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
   loops.value = runtime.loops
   instances.value = runtime.instances
-  selectedInstanceId.value = CONFIG_ID
+  selectedInstanceId.value = null
 }
 
 const updateSelectedInstance = async (patch: Partial<Pick<LoopInstance, 'name' | 'targetPhaseId' | 'targetAimId' | 'stopPolicy'>>) => {
@@ -347,6 +368,17 @@ const stopInstance = async () => {
   await hydrate()
 }
 
+const restartInstance = async () => {
+  if (!projectStore.projectPath || !selectedInstance.value) return
+  if (!confirm(`Restart instance "${selectedInstance.value.name}" and erase its log?`)) return
+  const runtime = await trpc.project.restartLoopInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
+  loops.value = runtime.loops
+  instances.value = runtime.instances
+  focusedLogIndex.value = -1
+  expandedLogIds.value = new Set()
+  await scrollLoopLogToBottom()
+}
+
 const sendHumanMessage = async () => {
   if (!projectStore.projectPath || !selectedInstance.value || !humanMessage.value.trim()) return
   const text = humanMessage.value.trim()
@@ -366,6 +398,44 @@ const scrollLoopLogToBottom = async () => {
   const el = loopLogRef.value
   if (!el) return
   el.scrollTop = el.scrollHeight
+}
+
+const focusLogIndex = async (index: number) => {
+  const messages = selectedMessages.value
+  if (messages.length === 0) return
+  focusedLogIndex.value = Math.max(0, Math.min(index, messages.length - 1))
+  await nextTick()
+  loopLogRef.value
+    ?.querySelectorAll<HTMLElement>('.message-line')
+    [focusedLogIndex.value]
+    ?.scrollIntoView({ block: 'nearest' })
+}
+
+const toggleLogExpansion = (messageId: string, expanded: boolean) => {
+  const next = new Set(expandedLogIds.value)
+  if (expanded) next.add(messageId)
+  else next.delete(messageId)
+  expandedLogIds.value = next
+}
+
+const handleLogKeydown = (event: KeyboardEvent) => {
+  if (!['j', 'k', 'h', 'l', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return
+  if (selectedMessages.value.length === 0) return
+  event.preventDefault()
+  event.stopPropagation()
+  const current = focusedLogIndex.value >= 0 ? focusedLogIndex.value : selectedMessages.value.length - 1
+  if (event.key === 'j' || event.key === 'ArrowDown') {
+    void focusLogIndex(current + 1)
+    return
+  }
+  if (event.key === 'k' || event.key === 'ArrowUp') {
+    void focusLogIndex(current - 1)
+    return
+  }
+  const message = selectedMessages.value[current]
+  if (!message) return
+  if (event.key === 'l' || event.key === 'ArrowRight') toggleLogExpansion(message.id, true)
+  if (event.key === 'h' || event.key === 'ArrowLeft') toggleLogExpansion(message.id, false)
 }
 
 watch(provider, () => {
@@ -398,8 +468,10 @@ watch(selectedInstanceId, () => {
 
 watch(
   () => selectedInstance.value?.messages.map((msg) => msg.id).join('|') ?? '',
-  () => {
+  (next, previous) => {
+    const wasAtBottom = focusedLogIndex.value === -1 || focusedLogIndex.value >= selectedMessages.value.length - 2
     void scrollLoopLogToBottom()
+    if (wasAtBottom) focusedLogIndex.value = selectedMessages.value.length - 1
   }
 )
 
@@ -423,7 +495,7 @@ onUnmounted(() => {
         :key="loop.id"
         class="nav-item"
         :class="{ active: loop.id === selectedLoopId }"
-        @click="selectedLoopId = loop.id; selectedInstanceId = CONFIG_ID"
+        @click="selectedLoopId = loop.id; selectedInstanceId = null"
       >
         <span>{{ loop.name }}</span>
         <span v-if="instances.some((instance) => instance.loopId === loop.id && instance.status === 'waiting_for_human')" class="notify-dot"></span>
@@ -432,9 +504,6 @@ onUnmounted(() => {
     </aside>
 
     <aside class="column instance-column">
-      <button class="nav-item" :class="{ active: showingConfig }" @click="selectedInstanceId = CONFIG_ID">
-        Configuration
-      </button>
       <button
         v-for="instance in loopInstances"
         :key="instance.id"
@@ -454,7 +523,10 @@ onUnmounted(() => {
     <section class="main">
       <div class="main-header">
         <div class="header-main">
-          <strong v-if="showingConfig">Loop configuration</strong>
+          <template v-if="showingConfig">
+            <strong>Loop configuration</strong>
+            <button class="action-btn header-btn" @click="duplicateLoop">Duplicate</button>
+          </template>
           <template v-else-if="selectedInstance">
             <input
               v-model="instanceNameDraft"
@@ -467,6 +539,7 @@ onUnmounted(() => {
             <button class="target-chip aim-chip" @click="openAimTargetSearch">{{ selectedTargetAimLabel }}</button>
             <button class="primary-btn header-btn" :disabled="selectedInstance.status === 'running'" @click="startInstance">Start</button>
             <button class="action-btn header-btn" :disabled="selectedInstance.status !== 'running'" @click="stopInstance">Stop</button>
+            <button class="action-btn header-btn" @click="restartInstance">Restart</button>
             <label class="stop-policy">
               <span>when</span>
               <select v-model="stopPolicyDraft" @change="updateStopPolicy">
@@ -548,19 +621,22 @@ onUnmounted(() => {
       </div>
 
       <div v-else-if="selectedInstance" class="instance-view">
-        <div ref="loopLogRef" class="loop-log">
+        <div ref="loopLogRef" class="loop-log" tabindex="0" @keydown="handleLogKeydown">
           <div v-if="selectedInstance.messages.length === 0" class="empty">No messages yet.</div>
           <div
-            v-for="msg in selectedInstance.messages"
+            v-for="(msg, index) in selectedMessages"
             :key="msg.id"
             class="message-line"
-            :class="msg.kind"
+            :class="[msg.kind, { focused: index === focusedLogIndex, collapsed: !expandedLogIds.has(msg.id) }]"
+            @click="focusedLogIndex = index"
           >
-            <span class="time">{{ new Date(msg.timestamp).toLocaleTimeString() }}</span>
+            <span class="time">{{ new Date(msg.timestamp).toLocaleTimeString(undefined, { hour12: false }) }}</span>
             <span class="kind">{{ msg.kind }}</span>
             <span class="content">{{ msg.content }}</span>
           </div>
         </div>
+
+        <div class="activity-line">{{ selectedInstance.currentActivity || selectedInstance.status }}</div>
 
         <form class="human-input" @submit.prevent="sendHumanMessage">
           <input
@@ -797,6 +873,7 @@ em,
   overflow: auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.82rem;
+  outline: none;
 }
 
 .message-line {
@@ -804,7 +881,23 @@ em,
   grid-template-columns: 5rem 4.5rem minmax(0, 1fr);
   gap: 0.5rem;
   padding: 0.2rem 0;
+  min-width: 0;
+}
+
+.message-line.focused {
+  background: rgba(255, 255, 255, 0.06);
+  outline: 1px solid #3a3a3a;
+}
+
+.message-line.collapsed .content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.message-line:not(.collapsed) .content {
   white-space: pre-wrap;
+  overflow: visible;
 }
 
 .time,
@@ -823,6 +916,19 @@ em,
 .message-line.human_action_required .content {
   color: #ffd166;
   font-weight: 700;
+}
+
+.activity-line {
+  flex: 0 0 auto;
+  margin: 0 0.75rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid #222;
+  color: #9fb7d7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .human-input {

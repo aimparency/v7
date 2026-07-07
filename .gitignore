@@ -33,3 +33,5 @@ subdev/*
 next
 
 .mcp.json
+
+.claude/settings.json

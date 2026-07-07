@@ -1,0 +1,26 @@
+{
+  "id": "13d86789-3114-4de3-b444-2899fb3fc845",
+  "text": "shift / ctrl + click on computer, long tap on touch/android for selecting multiple aims in list view",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "887a6cd5-458f-4ba2-b91f-b0291a0ff66c",
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783335179653
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "color": null
+}

@@ -1,0 +1,46 @@
+{
+  "id": "b3d98c5b-8ba0-4910-9745-d778795e9c51",
+  "text": "multiple aim actions",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "color": null,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "887a6cd5-458f-4ba2-b91f-b0291a0ff66c",
+      "relativePosition": [
+        1.7211543610848463,
+        -0.5738095039190533
+      ],
+      "weight": 1,
+      "explanation": ""
+    },
+    {
+      "aimId": "f71142d3-39fc-49de-b818-ef5a882c3fd8",
+      "relativePosition": [
+        1.6107347896528932,
+        0.750341831613927
+      ],
+      "weight": 0.9850746268656718,
+      "explanation": ""
+    }
+  ],
+  "supportedAims": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783335315937
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

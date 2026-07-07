@@ -1,0 +1,43 @@
+{
+  "id": "887a6cd5-458f-4ba2-b91f-b0291a0ff66c",
+  "text": "Select multiple aims",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "13d86789-3114-4de3-b444-2899fb3fc845",
+      "relativePosition": [
+        -1.5909312655463788,
+        -1.2436419629236843
+      ],
+      "weight": 1,
+      "explanation": ""
+    },
+    {
+      "aimId": "892b30ca-b7da-49c2-afd7-b3d18109811f",
+      "relativePosition": [
+        1.6114430534822837,
+        1.3526115211315501
+      ],
+      "weight": 0.9850746268656718,
+      "explanation": ""
+    }
+  ],
+  "supportedAims": [
+    "b3d98c5b-8ba0-4910-9745-d778795e9c51"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783335024829
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

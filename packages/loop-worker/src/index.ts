@@ -28,6 +28,7 @@ import {
   runCommand,
   searchAimsSemanticLite,
   searchFiles,
+  setLoopActivity,
   strReplace,
   updateAim,
   type LoopDefinition,
@@ -97,11 +98,7 @@ async function markInstanceStatus(projectPath: string, instanceId: string, statu
 }
 
 async function markLoopPhase(projectPath: string, instanceId: string, phase: string) {
-  await appendLoopEvent(projectPath, instanceId, {
-    role: 'system',
-    kind: 'event',
-    content: `phase: ${phase}`
-  });
+  await setLoopActivity(projectPath, instanceId, phase);
 }
 
 async function readLoopAndInstance(projectPath: string, instanceId: string) {
@@ -151,6 +148,11 @@ function describeProviderError(error: unknown, loop: LoopDefinition): string {
     lines.push('Check the loop configuration and .bowman/secrets.json for this project.');
   }
   return lines.join('\n');
+}
+
+function summarizeToolOutput(output: unknown): string {
+  const text = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
+  return text.length > 1200 ? `${text.slice(0, 1200)}\n...[truncated ${text.length - 1200} chars]` : text;
 }
 
 async function waitForHumanAnswer(projectPath: string, instanceId: string, requestId: string, signal: AbortSignal) {
@@ -253,37 +255,55 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     apiKey
   });
 
+  const systemText = [
+    loop.systemPrompt,
+    '',
+    'You are running inside an Aimparency loop worker.',
+    'Start each cycle by orienting in the aim graph. Before acting, decide whether the aim is atomic enough.',
+    'If an aim is too broad, create smaller child aims or mark the current aim human-dependent instead of pretending it is actionable.',
+    'Humans should be asked for help only on severe blockers. Usually, use the graph tools to record ambiguity and move to clearer work.',
+    'Assume people run Aimparency on their own computers unless an aim explicitly asks for remote hosting.',
+    '',
+    'Available tools include aim graph tools plus coding tools: list_files, search_files, read_file, git_status, git_diff, run_command, propose_patch, apply_patch, str_replace, and line_replace.',
+    'Before editing, inspect git_status and read the relevant files. Prefer str_replace or line_replace for small edits. Use run_command for tests/typechecks. Destructive commands are refused.'
+  ].join('\n');
+  const promptText = [
+    `Current aim:\n${JSON.stringify({
+      id: target.aim.id,
+      text: target.aim.text,
+      description: target.aim.description,
+      priority: target.priority,
+      value: target.value,
+      cost: target.cost,
+      phase: target.phase.name
+    }, null, 2)}`,
+    `Aim context:\n${JSON.stringify(context, null, 2)}`,
+    `Related aims:\n${JSON.stringify(related, null, 2)}`,
+    association ? `Association surfaced from recent loop state messages:\n${JSON.stringify(association, null, 2)}` : '',
+    pendingHumanMessages.length > 0 ? `Pending human messages:\n${summarizeInbox(pendingHumanMessages)}` : ''
+  ].filter(Boolean).join('\n\n');
+  await appendLoopEvent(projectPath, instanceId, {
+    role: 'system',
+    kind: 'event',
+    content: [
+      'Sending LLM request:',
+      `provider: ${loop.provider}`,
+      `model: ${loop.model}`,
+      `baseUrl: ${loop.baseUrl}`,
+      '',
+      '[system]',
+      systemText,
+      '',
+      '[prompt]',
+      promptText
+    ].join('\n')
+  });
+
   const result = streamText({
     model: provider(loop.model),
     abortSignal: signal,
-    system: [
-      loop.systemPrompt,
-      '',
-      'You are running inside an Aimparency loop worker.',
-      'Start each cycle by orienting in the aim graph. Before acting, decide whether the aim is atomic enough.',
-      'If an aim is too broad, create smaller child aims or mark the current aim human-dependent instead of pretending it is actionable.',
-      'Humans should be asked for help only on severe blockers. Usually, use the graph tools to record ambiguity and move to clearer work.',
-      'Assume people run Aimparency on their own computers unless an aim explicitly asks for remote hosting.',
-      '',
-      'Available tools include aim graph tools plus coding tools: list_files, search_files, read_file, git_status, git_diff, run_command, propose_patch, apply_patch, str_replace, and line_replace.',
-      'Before editing, inspect git_status and read the relevant files. Prefer str_replace or line_replace for small edits. Use run_command for tests/typechecks. Destructive commands are refused.'
-    ].join('\n'),
-    prompt: [
-      `Current aim:\n${JSON.stringify({
-        id: target.aim.id,
-        text: target.aim.text,
-        description: target.aim.description,
-        priority: target.priority,
-        value: target.value,
-        cost: target.cost,
-        phase: target.phase.name
-      }, null, 2)}`,
-      `Aim context:\n${JSON.stringify(context, null, 2)}`,
-      `Related aims:\n${JSON.stringify(related, null, 2)}`,
-      association ? `Association surfaced from recent loop state messages:\n${JSON.stringify(association, null, 2)}` : '',
-      pendingHumanMessages.length > 0 ? `Pending human messages:\n${summarizeInbox(pendingHumanMessages)}` : '',
-      'Perform one bounded cycle of useful work. Prefer graph updates and status reports over broad speculation.'
-    ].filter(Boolean).join('\n\n'),
+    system: systemText,
+    prompt: promptText,
     stopWhen: stepCountIs(10),
     tools: {
       status_report: tool({
@@ -547,15 +567,18 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
   let flushedTextLength = 0;
   let lastTextFlushAt = Date.now();
   const flushText = async (force = false) => {
-    const nextText = finalText.slice(flushedTextLength).trim();
-    if (!nextText) return;
-    if (!force && Date.now() - lastTextFlushAt < 1000 && nextText.length < 240) return;
+    const rawText = finalText.slice(flushedTextLength);
+    if (!rawText.trim()) return;
+    const enoughTime = Date.now() - lastTextFlushAt >= 1000;
+    const enoughText = rawText.length >= 80;
+    const sentenceBoundary = /[.!?]\s$/.test(rawText);
+    if (!force && !enoughTime && !enoughText && !sentenceBoundary) return;
     flushedTextLength = finalText.length;
     lastTextFlushAt = Date.now();
     await appendLoopEvent(projectPath, instanceId, {
       role: 'assistant',
       kind: 'text',
-      content: nextText
+      content: rawText
     });
   };
   await markLoopPhase(projectPath, instanceId, `waiting for LLM endpoint response (${loop.provider} / ${loop.model})`);
@@ -570,14 +593,23 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     } else if (part.type === 'reasoning-delta') {
       reasoningText += part.text;
     } else if (part.type === 'tool-call') {
+      await flushText(true);
       toolCalls.push(String(part.toolName));
+      await setLoopActivity(projectPath, instanceId, `calling tool: ${String(part.toolName)}`);
       await appendLoopEvent(projectPath, instanceId, {
         role: 'system',
         kind: 'event',
-        content: `Calling tool: ${String(part.toolName)}.`
+        content: `Calling tool: ${String(part.toolName)}\n${summarizeToolOutput(part.input)}`
       });
     } else if (part.type === 'tool-error') {
       streamErrors.push(`Tool failed: ${String(part.toolName)}\n${errorMessage(part.error)}`);
+    } else if (part.type === 'tool-result') {
+      await setLoopActivity(projectPath, instanceId, `tool completed: ${String(part.toolName)}`);
+      await appendLoopEvent(projectPath, instanceId, {
+        role: 'system',
+        kind: 'event',
+        content: `Tool result: ${String(part.toolName)}\n${summarizeToolOutput(part.output)}`
+      });
     } else if (part.type === 'error') {
       streamErrors.push(describeProviderError(part.error, loop));
     } else if (part.type === 'finish') {

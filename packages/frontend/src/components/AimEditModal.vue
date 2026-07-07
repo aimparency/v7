@@ -103,6 +103,7 @@ const originalCommittedPhaseIds = ref<string[]>([])
 const dirtySnapshot = ref('')
 const confirmingDiscard = ref(false)
 const keepEditingBtn = ref<HTMLButtonElement>()
+const discardBtn = ref<HTMLButtonElement>()
 
 const serializeFormState = () => JSON.stringify({
   text: aimText.value,
@@ -334,27 +335,45 @@ watch(() => modalStore.showAimSearch, async (isOpen, wasOpen) => {
 const handleModalKeydown = (event: KeyboardEvent) => {
   event.stopPropagation()
 
+  if (confirmingDiscard.value) {
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      keepEditing()
+      return
+    }
+    if (event.key === 'Enter') {
+      const target = event.target as HTMLElement | null
+      if (target && (target.tagName === 'BUTTON' || target.closest('button'))) {
+        return
+      }
+      event.preventDefault()
+      discardChanges()
+      return
+    }
+    return
+  }
+
   if (event.key === 'Escape') {
     event.preventDefault()
     handleCancel()
     return
   }
 
-  if (event.key !== 'Enter') return
+  if (event.key === 'Enter') {
+    const target = event.target as HTMLElement | null
+    const tagName = target?.tagName
 
-  const target = event.target as HTMLElement | null
-  const tagName = target?.tagName
+    if (tagName === 'TEXTAREA' && !event.ctrlKey && !event.metaKey) {
+      return
+    }
 
-  if (tagName === 'TEXTAREA' && !event.ctrlKey && !event.metaKey) {
-    return
+    if (tagName === 'BUTTON') {
+      return
+    }
+
+    event.preventDefault()
+    handleSave()
   }
-
-  if (tagName === 'BUTTON') {
-    return
-  }
-
-  event.preventDefault()
-  handleSave()
 }
 
 const handleInputKeydown = (event: KeyboardEvent) => {
@@ -451,11 +470,10 @@ const handleSave = async () => {
 
 const handleCancel = () => {
   // Leaving with unsaved edits is easy to do by accident (Escape out of a
-  // textarea, stray overlay click), so ask for confirmation first. A second
-  // Escape / overlay close while the prompt is up confirms the discard.
+  // textarea, stray overlay click), so ask for confirmation first.
   if (isDirty.value && !confirmingDiscard.value) {
     confirmingDiscard.value = true
-    nextTick(() => keepEditingBtn.value?.focus())
+    nextTick(() => discardBtn.value?.focus())
     return
   }
   confirmingDiscard.value = false
@@ -730,7 +748,7 @@ const discardChanges = () => {
         <p class="discard-hint">You have edits that haven't been saved.</p>
         <div class="discard-actions">
           <button ref="keepEditingBtn" type="button" class="btn-cancel" @click="keepEditing">Keep editing</button>
-          <button type="button" class="btn-discard" @click="discardChanges">Discard</button>
+          <button ref="discardBtn" type="button" class="btn-discard" @click="discardChanges">Discard</button>
         </div>
       </div>
     </div>

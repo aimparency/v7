@@ -1,0 +1,25 @@
+{
+  "id": "6314d50f-280e-4e56-b539-d0a614e90304",
+  "text": "connection-editing in list view (same as side panel)",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210",
+    "d7ba6b8b-5150-4ab2-b6a4-79a556f10ab1"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783365348057
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

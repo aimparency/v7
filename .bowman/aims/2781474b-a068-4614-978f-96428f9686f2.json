@@ -2,13 +2,15 @@
   "id": "2781474b-a068-4614-978f-96428f9686f2",
   "text": "graph ui should be really close to the reference. also with the relative positioning for example",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
       "aimId": "b439cf5f-d9b8-4406-a73b-65236c321c91",
       "relativePosition": [
-        6.033383628301881,
-        -2.927420857755046
+        6.29007768877647,
+        14.844626262997217
       ],
       "weight": 1
     }
@@ -24,5 +26,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

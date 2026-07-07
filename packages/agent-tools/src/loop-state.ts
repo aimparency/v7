@@ -39,6 +39,7 @@ export const loopInstanceSchema = z.object({
   targetPhaseId: z.string().nullable().default(null),
   targetAimId: z.string().nullable().default(null),
   stopPolicy: loopStopPolicySchema.default('target_halted'),
+  currentActivity: z.string().nullable().default(null),
   createdAt: z.number(),
   updatedAt: z.number(),
   messages: z.array(loopMessageSchema).default([])
@@ -157,6 +158,19 @@ export async function appendLoopEvent(
     instance.updatedAt = entry.timestamp;
   });
   return entry;
+}
+
+export async function setLoopActivity(
+  projectPath: string,
+  instanceId: string,
+  activity: string | null
+): Promise<void> {
+  await mutateLoopRuntimeState(projectPath, (state) => {
+    const instance = state.instances.find((candidate) => candidate.id === instanceId);
+    if (!instance) return;
+    instance.currentActivity = activity;
+    instance.updatedAt = Date.now();
+  });
 }
 
 export async function readWorkerState(projectPath: string, instanceId: string): Promise<LoopWorkerState | null> {

@@ -83,6 +83,7 @@ const loopInstanceSchema = z.object({
   targetPhaseId: z.string().nullable().default(null),
   targetAimId: z.string().nullable().default(null),
   stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).default('target_halted'),
+  currentActivity: z.string().nullable().default(null),
   createdAt: z.number(),
   updatedAt: z.number(),
   messages: z.array(loopMessageSchema).default([])
@@ -1013,6 +1014,29 @@ export const createProjectRouter = (
         });
       }),
 
+    duplicateLoop: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        loopId: z.string()
+      }))
+      .mutation(async ({ input }: any) => {
+        const now = Date.now();
+        const loopId = uuidv4();
+        return mutateLoopRuntimeState(input.projectPath, (state) => {
+          const source = state.loops.find((candidate) => candidate.id === input.loopId);
+          if (!source) return;
+          state.loops.push({
+            ...source,
+            id: loopId,
+            name: `${source.name} (duplicated)`,
+            createdAt: now,
+            updatedAt: now
+          });
+          state.selectedLoopId = loopId;
+          state.selectedInstanceId = null;
+        });
+      }),
+
     deleteLoop: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
@@ -1053,6 +1077,7 @@ export const createProjectRouter = (
             targetPhaseId: target.targetPhaseId,
             targetAimId: target.targetAimId,
             stopPolicy: 'target_halted',
+            currentActivity: null,
             createdAt: now,
             updatedAt: now,
             messages: []
@@ -1116,6 +1141,7 @@ export const createProjectRouter = (
           const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
           if (!instance) return;
           instance.status = 'running';
+          instance.currentActivity = 'starting';
           instance.updatedAt = Date.now();
         });
         await spawnLoopWorker(projectPath, input.instanceId);
@@ -1134,8 +1160,30 @@ export const createProjectRouter = (
           const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
           if (!instance) return;
           instance.status = 'stopped';
+          instance.currentActivity = 'stopped';
           instance.updatedAt = Date.now();
         });
+      }),
+
+    restartLoopInstance: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        instanceId: z.string()
+      }))
+      .mutation(async ({ input }: any) => {
+        const projectPath = normalizeProjectPath(input.projectPath);
+        await killLoopWorker(projectPath, input.instanceId);
+        await fs.remove(getLoopInstanceDir(projectPath, input.instanceId));
+        await mutateLoopRuntimeState(projectPath, (state) => {
+          const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
+          if (!instance) return;
+          instance.status = 'running';
+          instance.currentActivity = 'restarting';
+          instance.messages = [];
+          instance.updatedAt = Date.now();
+        });
+        await spawnLoopWorker(projectPath, input.instanceId);
+        return refreshLoopProcessStates(projectPath);
       }),
 
     sendLoopHumanMessage: delayedProcedure

@@ -6,7 +6,24 @@
   "archived": false,
   "color": "#33d17a",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "7f2bae54-03a6-481f-8de7-114fba05c112",
+      "relativePosition": [
+        2.4999863415243997,
+        -0.008263908968960029
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "0733cb72-c746-478c-b06e-ae4faa2af712",
+      "relativePosition": [
+        0.1542881056750673,
+        2.4952344940801052
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "895ec1c1-c8b3-4258-b7be-62831819bf86"
   ],

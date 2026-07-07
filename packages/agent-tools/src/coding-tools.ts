@@ -38,6 +38,11 @@ function truncate(text: string, maxChars: number): string {
   return `${text.slice(0, maxChars)}\n...[truncated ${text.length - maxChars} chars]`;
 }
 
+function shellQuote(value: string): string {
+  if (/^[A-Za-z0-9_./:=@%+-]+$/.test(value)) return value;
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
 export async function listFiles(projectPath: string, input: { directory?: string; limit?: number } = {}) {
   const root = projectRoot(projectPath);
   const cwd = input.directory ? resolveInsideProject(projectPath, input.directory) : root;
@@ -58,17 +63,41 @@ export async function searchFiles(projectPath: string, input: {
   glob?: string;
   limitChars?: number;
 }) {
+  if (!input.query.trim()) {
+    return { command: 'rg', cwd: projectRoot(projectPath), stdout: '', stderr: 'Refused empty search query.' };
+  }
   const cwd = input.directory ? resolveInsideProject(projectPath, input.directory) : projectRoot(projectPath);
-  const args = ['-n', '--line-number', '-C', String(Math.max(0, Math.min(input.context ?? 2, 20)))];
+  const args = [
+    '--color', 'never',
+    '-n',
+    '--line-number',
+    '-C', String(Math.max(0, Math.min(input.context ?? 2, 20))),
+    '-g', '!node_modules/**',
+    '-g', '!dist/**',
+    '-g', '!build/**',
+    '-g', '!coverage/**',
+    '-g', '!.git/**',
+    '-g', '!.next/**',
+    '-g', '!.turbo/**'
+  ];
   if (input.glob) args.push('-g', input.glob);
   args.push(input.query);
+  const command = `rg ${args.map(shellQuote).join(' ')}`;
   try {
-    const { stdout, stderr } = await execFileAsync('rg', args, { cwd, maxBuffer: 8 * 1024 * 1024 });
-    return { stdout: truncate(stdout, input.limitChars ?? 20000), stderr };
+    const { stdout, stderr } = await execFileAsync('rg', args, {
+      cwd,
+      timeout: 30000,
+      maxBuffer: 8 * 1024 * 1024
+    });
+    return { command, cwd, stdout: truncate(stdout, input.limitChars ?? 20000), stderr };
   } catch (error: any) {
     return {
+      command,
+      cwd,
       stdout: truncate(error.stdout ?? '', input.limitChars ?? 20000),
-      stderr: error.stderr ?? ''
+      stderr: error.killed || error.signal === 'SIGTERM'
+        ? `search_files timed out after 30000ms: ${command}`
+        : error.stderr ?? ''
     };
   }
 }

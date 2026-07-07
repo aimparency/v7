@@ -1,0 +1,24 @@
+{
+  "id": "7f2bae54-03a6-481f-8de7-114fba05c112",
+  "text": "Demonstrate autonomous value creation: the system completes a real-world task end-to-end without human prompts — not self-improvement, but producing external value (e.g. a useful artifact, a research summary, a working feature in a user's project)",
+  "description": "The critical proof-point between \"the loop runs\" and \"the loop is useful\". Today the watchdog autonomously improves its own code (self-refixes, self-rebuilds) but has not demonstrated producing value OUTSIDE the Aimparency codebase without a human steering it. This is the bridge from \"autonomy for self-maintenance\" to \"autonomy for mission execution\".\n\nCONCRETE EXPERIMENT: Give the system an aim that produces a deliverable for an external user/project (e.g. \"fix a real bug in a linked external repo\", \"write a research brief on a topic\", \"generate and deploy a useful tool\"). The system must: discover the aim → plan → execute with available tools → verify the output → submit — with NO human in the loop between commit and result. Human sets the aim upfront; human reviews the result; everything between is autonomous.\n\nSUCCESS CRITERION: One completed external deliverable, produced autonomously, that a human judges as genuinely useful (not just syntactically correct but trivial). This is the minimum viable proof that the aim graph + wrapped agents can autonomously work towards ideas.\n\nDEPENDENCIES: Effector layer (6119682f) for real-world actions, OR scoped to codebase-only actions (git, file ops, build) which already work. Start with the latter (no external credentials needed), expand to effectors when available.\n\nRELATIONSHIP: This is the concrete demonstration that \"ideate how we can reach ASI\" (7634e681) is more than theorizing — it's the proof-of-concept that the existing machinery can already produce autonomous value.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "7634e681-d234-48fa-ad82-876ef97460ca"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783368741173
+  },
+  "intrinsicValue": 15,
+  "cost": 5,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

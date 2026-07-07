@@ -84,7 +84,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
   const logStatus = (msg: string) => {
     console.log(`[Watchdog] ${msg}`)
-    spawningLog.value.push(`${new Date().toLocaleTimeString()}: ${msg}`)
+    spawningLog.value.push(`${new Date().toLocaleTimeString(undefined, { hour12: false })}: ${msg}`)
     if (spawningLog.value.length > 50) spawningLog.value.shift()
   }
 

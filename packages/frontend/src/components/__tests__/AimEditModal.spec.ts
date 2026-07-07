@@ -246,6 +246,57 @@ describe('AimEditModal keyboard save behavior', () => {
     expect(dataStore.updateAim).toHaveBeenCalled()
     expect(wrapper.emitted('close')).toBeTruthy()
   })
+
+  it('opens confirmation on Escape when dirty, and cancels/stays on 2nd Escape', async () => {
+    const { wrapper } = mountEditModal()
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    // Make dirty
+    const title = wrapper.find('input[placeholder="Aim title..."]')
+    await title.setValue('Dirty updated title')
+    await wrapper.vm.$nextTick()
+
+    // 1st Escape: triggers confirmation overlay
+    await title.trigger('keydown', { key: 'Escape' })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.vm.confirmingDiscard).toBe(true)
+    expect(wrapper.emitted('close')).toBeFalsy()
+
+    // 2nd Escape: cancels confirmation, stays in modal
+    await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Escape' })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.vm.confirmingDiscard).toBe(false)
+    expect(wrapper.emitted('close')).toBeFalsy()
+  })
+
+  it('opens confirmation on Escape when dirty, and closes/discards on Enter', async () => {
+    const { wrapper } = mountEditModal()
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    // Make dirty
+    const title = wrapper.find('input[placeholder="Aim title..."]')
+    await title.setValue('Dirty updated title')
+    await wrapper.vm.$nextTick()
+
+    // Escape: triggers confirmation overlay
+    await title.trigger('keydown', { key: 'Escape' })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.vm.confirmingDiscard).toBe(true)
+
+    // Enter: confirms modal close/discard
+    await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.vm.confirmingDiscard).toBe(false)
+    expect(wrapper.emitted('close')).toBeTruthy()
+  })
 })
 
 describe('AimEditModal archive checkbox', () => {

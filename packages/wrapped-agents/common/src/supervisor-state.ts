@@ -188,7 +188,7 @@ export class SupervisorState {
       if (Date.now() < nextRetryAt) {
         return {
           success: false,
-          error: `In backoff period. Next retry allowed at ${new Date(nextRetryAt).toLocaleTimeString()}`,
+          error: `In backoff period. Next retry allowed at ${new Date(nextRetryAt).toLocaleTimeString(undefined, { hour12: false })}`,
           backoffActive: true,
           nextRetryAt
         }

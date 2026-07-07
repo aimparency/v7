@@ -1,0 +1,45 @@
+{
+  "id": "d7ba6b8b-5150-4ab2-b6a4-79a556f10ab1",
+  "text": "refactor side panel vs. modal - maybe use the same code? just modal vs side panel?",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "6314d50f-280e-4e56-b539-d0a614e90304",
+      "relativePosition": [
+        -17.437511353916317,
+        0.49636496395748175
+      ],
+      "weight": 1,
+      "explanation": ""
+    },
+    {
+      "aimId": "3103d302-2896-4ee4-b33a-e8358d96b1f6",
+      "relativePosition": [
+        0.27203844115815556,
+        -1.5793666394414803
+      ],
+      "weight": 0.9850746268656718,
+      "explanation": ""
+    }
+  ],
+  "supportedAims": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1783365381128
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
