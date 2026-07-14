@@ -14,6 +14,7 @@ import { applyBrightness, cssColorToRgb, statusToColor, type StatusColorEntry } 
 import { planSpinOff } from 'shared'
 import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useDataStore } from '../stores/data'
+import { useUIStore } from '../stores/ui'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import type { GraphNode, GraphLink } from './useGraphSimulation'
 
@@ -23,6 +24,7 @@ export function useWebGLGraphRenderer(
   links: Ref<GraphLink[]>
 ) {
   const graphUIStore = useGraphUIStore()
+  const uiStore = useUIStore()
   const dataStore = useDataStore()
   const mapStore = useMapStore()
 
@@ -139,7 +141,7 @@ export function useWebGLGraphRenderer(
         y: useOldPos ? state.y : y,
         r: node.r,
         color,
-        selected: node.id === currentAimId,
+        selected: node.id === currentAimId || uiStore.isMultiSelected(node.id),
         loadable: node.loadable ?? false,
         moving: state.state > 0
       }

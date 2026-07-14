@@ -31,6 +31,26 @@ const pendingSelectionRealignTimeout = ref<number | null>(null)
 const revealedPlaceholderKey = ref<string | null>(null)
 const selectionTravelDirection = ref<'forward' | 'backward' | 'preserve'>('preserve')
 
+const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimId: string, mods?: { ctrl: boolean; shift: boolean }) => {
+  const isCtrl = !!(mods && mods.ctrl)
+  const isShift = !!(mods && mods.shift)
+  if (isCtrl) {
+    uiStore.toggleMultiSelect(aimId)
+  } else if (isShift) {
+    if (phaseId) {
+      const ordered = dataStore.getAimsForPhase(phaseId).map((a: any) => a.id)
+      if (ordered.includes(aimId)) {
+        uiStore.selectMultiRange(aimId, ordered)
+      }
+      // subs: range already done in AimsList handler; no extra toggle
+    } else {
+      uiStore.toggleMultiSelect(aimId)
+    }
+  }
+  // Always update primary nav selection (so keyboard etc still work on it)
+  uiStore.selectAimById(columnIndex, phaseId, aimId).catch(() => {})
+}
+
 const ESTIMATED_PHASE_HEIGHT = 180
 const ESTIMATED_SEPARATOR_HEIGHT = 17
 const OVERSCAN_COUNT = 4
@@ -606,7 +626,7 @@ onBeforeUnmount(() => {
             :is-selected="getSelectableIndex(entry.key) === selectedPhaseIndex"
             :is-active="getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex"
             @phase-clicked="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
-            @aim-clicked="(aimId) => uiStore.selectAimById(columnIndex, entry.phase.id, aimId)"
+            @aim-clicked="(aimId, mods) => handleAimClicked(columnIndex, entry.phase.id, aimId, mods)"
             @scroll-request="handleScrollRequest"
           />
         </div>

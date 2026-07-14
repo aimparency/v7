@@ -18,7 +18,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'scroll-request': [element: HTMLElement]
-  'aim-clicked': [aimId: string]
+  'aim-clicked': [aimId: string, modifiers?: { ctrl: boolean; shift: boolean }]
   'phase-clicked': []
 }>()
 
@@ -143,7 +143,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
         :selected-aim-index="phase.selectedAimIndex"
         :aim-ui-states="uiStore.getPhaseAimUIStates(phase.id)"
         @scroll-request="$emit('scroll-request', $event)"
-        @aim-clicked="$emit('aim-clicked', $event)"
+        @aim-clicked="(id, mods) => $emit('aim-clicked', id, mods)"
       />
     </div>
   </div>

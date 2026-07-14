@@ -32,7 +32,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'aim-clicked': [aimId: string]
+  'aim-clicked': [aimId: string, modifiers?: { ctrl: boolean; shift: boolean }]
   'scroll-request': [element: HTMLElement]
 }>()
 
@@ -54,9 +54,15 @@ const dispatchKey = (key: string) =>
 
 // Tap normally selects/edits; swallow the click that trails a long-press so the
 // menu doesn't also re-trigger selection (which would pop the edit modal).
-const onAimClick = () => {
+const onAimClick = (event?: MouseEvent) => {
   if (Date.now() - lastMenuOpenAt < 600) return
-  emit('aim-clicked', props.aim.id)
+
+  const modifiers = event
+    ? { ctrl: !!(event.ctrlKey || event.metaKey), shift: !!event.shiftKey }
+    : { ctrl: false, shift: false }
+
+  // For multi-select modifier clicks, let the parent decide (toggle multi + optional primary)
+  emit('aim-clicked', props.aim.id, modifiers)
 }
 
 const openMenu = (event: PointerEvent) => {
@@ -74,27 +80,56 @@ const openMenu = (event: PointerEvent) => {
 
 const longPress = useLongPress(openMenu)
 
-const aimMenuItems = computed<ContextMenuItem[]>(() => [
-  { id: 'add-before', label: 'Add aim before', run: () => dispatchKey('O') },
-  { id: 'add-after', label: 'Add aim after', run: () => dispatchKey('o') },
-  { id: 'edit', label: 'Edit aim', run: () => dispatchKey('e') },
-  { id: 'move-up', label: 'Move up', run: () => dispatchKey('K') },
-  { id: 'move-down', label: 'Move down', run: () => dispatchKey('J') },
-  { id: 'make-child', label: 'Make child', run: () => dispatchKey('L') },
-  { id: 'elevate', label: 'Elevate (make sibling)', run: () => dispatchKey('H') },
-  { id: 'cut', label: 'Cut', run: () => dispatchKey('x') },
-  { id: 'copy', label: 'Copy', run: () => dispatchKey('c') },
-  { id: 'paste', label: 'Paste', run: () => dispatchKey('p') },
-  { id: 'parents', label: 'Show parent paths', run: () => dispatchKey('s') },
-  {
-    id: 'delete',
-    label: 'Delete aim',
-    confirm: true,
-    confirmLabel: 'Confirm delete',
-    danger: true,
-    run: () => dispatchKey('d')
+const aimMenuItems = computed<ContextMenuItem[]>(() => {
+  const base: ContextMenuItem[] = [
+    { id: 'add-before', label: 'Add aim before', run: () => dispatchKey('O') },
+    { id: 'add-after', label: 'Add aim after', run: () => dispatchKey('o') },
+    { id: 'edit', label: 'Edit aim', run: () => dispatchKey('e') },
+    { id: 'move-up', label: 'Move up', run: () => dispatchKey('K') },
+    { id: 'move-down', label: 'Move down', run: () => dispatchKey('J') },
+    { id: 'make-child', label: 'Make child', run: () => dispatchKey('L') },
+    { id: 'elevate', label: 'Elevate (make sibling)', run: () => dispatchKey('H') },
+    { id: 'cut', label: 'Cut', run: () => dispatchKey('x') },
+    { id: 'copy', label: 'Copy', run: () => dispatchKey('c') },
+    { id: 'paste', label: 'Paste', run: () => dispatchKey('p') },
+    { id: 'parents', label: 'Show parent paths', run: () => dispatchKey('s') },
+    {
+      id: 'delete',
+      label: 'Delete aim',
+      confirm: true,
+      confirmLabel: 'Confirm delete',
+      danger: true,
+      run: () => dispatchKey('d')
+    }
+  ]
+
+  // Multi-select merge action (supports "merge aims" feature from current week)
+  if (uiStore.multiSelectCount > 1 && uiStore.isMultiSelected(props.aim.id)) {
+    const otherCount = uiStore.multiSelectCount - 1
+    base.push({
+      id: 'merge-selected-into',
+      label: `Merge ${otherCount} other selected into this`,
+      confirm: true,
+      confirmLabel: 'Confirm merge (this aim is kept; others archived after rewiring connections)',
+      run: async () => {
+        const result = await uiStore.mergeSelectedInto(props.aim.id)
+        if (result?.success) {
+          uiStore.clearMultiSelect()
+        }
+      }
+    })
   }
-])
+
+  if (uiStore.multiSelectCount > 0) {
+    base.push({
+      id: 'clear-multi',
+      label: `Clear multi-select (${uiStore.multiSelectCount})`,
+      run: () => uiStore.clearMultiSelect()
+    })
+  }
+
+  return base
+})
 
 const hasIncomingAims = computed(() => props.aim.supportingConnections && props.aim.supportingConnections.length > 0)
 const isExpanded = computed(() => props.aimUiState.expanded)
@@ -151,7 +186,9 @@ const otherParentAims = computed(() => {
 
 const hasMultipleParents = computed(() => parentAims.value.length > 1)
 
-  const statusColor = computed(() => {
+const isMultiSelected = computed(() => uiStore.isMultiSelected(props.aim.id))
+
+const statusColor = computed(() => {
     const colorMap: Record<string, string> = {}
     dataStore.getStatuses.forEach((s: any) => {
       colorMap[s.key] = s.color
@@ -192,8 +229,11 @@ onMounted(() => {
   <div
     ref="aimContainerRef"
     class="aim-item"
-    :class="[attrs.class, { expanded: isExpanded }]"
-    @click.stop="onAimClick"
+    :class="[attrs.class, { 
+      expanded: isExpanded,
+      'multi-selected': isMultiSelected 
+    }]"
+    @click.stop="onAimClick($event)"
   >
     <!-- Aim content -->
     <div class="aim-content">
@@ -209,6 +249,7 @@ onMounted(() => {
         <div class="aim-main">
           <div class="aim-text" :class="{ 'untitled': !aim.text }">
             {{ aim.text || '(untitled)' }}
+            <span v-if="isMultiSelected" class="multi-badge" title="Multi-selected">●</span>
           </div>
           <div class="aim-status" :style="{ color: statusColor }">
             {{ aim.status.state }}
@@ -243,7 +284,7 @@ onMounted(() => {
               v-for="parent in otherParentAims"
               :key="parent.id"
               class="parent-aim"
-              @click.stop="$emit('aim-clicked', parent.id)"
+              @click.stop="$emit('aim-clicked', parent.id, { ctrl: false, shift: false })"
               :title="`Navigate to: ${parent.text}`"
             >
               {{ parent.text || '(untitled)' }}
@@ -285,7 +326,7 @@ onMounted(() => {
         :is-selected="isSelected && isThisAimSelected"
         :selected-aim-index="aimUiState.selectedIncomingIndex"
         @scroll-request="$emit('scroll-request', $event)"
-        @aim-clicked="$emit('aim-clicked', $event)"
+        @aim-clicked="(id, mods) => $emit('aim-clicked', id, mods)"
       />
     </div>
   </div>
@@ -315,6 +356,17 @@ onMounted(() => {
 
   &.pending-delete {
     background-color: rgba(255, 0, 0, 0.2);
+  }
+
+  &.multi-selected {
+    background-color: rgba(100, 180, 255, 0.15);
+    outline: 1px dashed #4a9eff;
+    outline-offset: -1px;
+  }
+
+  /* When both primary selected and multi-selected, multi bg + selected outline wins visually */
+  &.selected.multi-selected {
+    background-color: rgba(100, 180, 255, 0.25);
   }
 
   &.pending-remove {
@@ -395,6 +447,14 @@ onMounted(() => {
     font-size: 0.75rem;
     text-transform: uppercase;
     font-weight: bold;
+  }
+
+  .multi-badge {
+    display: inline-block;
+    margin-left: 0.35rem;
+    font-size: 0.7em;
+    color: #4a9eff;
+    vertical-align: middle;
   }
 
   .aim-details {

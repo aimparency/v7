@@ -104,6 +104,12 @@ export const useListStore = defineStore('ui', {
     pendingDeletePhaseId: null as string | null,
     pendingDeleteAimId: null as string | null,
 
+    // Multi-selection (separate from primary navigation/focus selection).
+    // Used for bulk actions like "merge aims" (current week UI feature).
+    // Ctrl/Cmd+click or shift+click to populate. Primary click still drives nav selection.
+    multiSelectedAimIds: [] as string[],
+    multiAnchorId: null as string | null,
+
     // Scroll Request
     columnScrollIntent: null as { col: number, direction: 'bottom' | 'top' } | null,
 
@@ -157,6 +163,11 @@ export const useListStore = defineStore('ui', {
     },
     graphSelectedAimId: () => useGraphUIStore().graphSelectedAimId,
     currentView: () => useProjectStore().currentView,
+
+    // Multi-select helpers (for bulk actions like merge)
+    multiSelectedSet: (state): Set<string> => new Set(state.multiSelectedAimIds),
+    isMultiSelected: (state) => (aimId: string): boolean => state.multiSelectedAimIds.includes(aimId),
+    multiSelectCount: (state): number => state.multiSelectedAimIds.length,
   },
   
   actions: {
@@ -1580,6 +1591,93 @@ export const useListStore = defineStore('ui', {
 
     deselectAim() {
       this.navigatingAims = false
+    },
+
+    // --- Multi-select for bulk actions (current-week feature: merge aims etc.) ---
+    toggleMultiSelect(aimId: string) {
+      this.cleanMultiSelect()
+      const idx = this.multiSelectedAimIds.indexOf(aimId)
+      if (idx >= 0) {
+        this.multiSelectedAimIds.splice(idx, 1)
+      } else {
+        this.multiSelectedAimIds.push(aimId)
+        this.multiAnchorId = aimId
+      }
+    },
+
+    addToMultiSelect(aimId: string) {
+      if (!this.multiSelectedAimIds.includes(aimId)) {
+        this.multiSelectedAimIds.push(aimId)
+      }
+    },
+
+    clearMultiSelect() {
+      this.multiSelectedAimIds = []
+    },
+
+    // Auto-clear stale IDs (e.g. after merge/archive/delete or data reload)
+    cleanMultiSelect() {
+      const dataStore = useDataStore()
+      this.multiSelectedAimIds = this.multiSelectedAimIds.filter(id => id && dataStore.aims[id])
+    },
+
+    // Shift-range selection within a provided ordered list of aim IDs (e.g. sibling aims in a list or phase)
+    selectMultiRange(targetAimId: string, orderedAimIds: string[]) {
+      this.cleanMultiSelect()
+      if (!orderedAimIds || orderedAimIds.length === 0) {
+        this.toggleMultiSelect(targetAimId)
+        this.multiAnchorId = targetAimId
+        return
+      }
+      const anchor = this.multiAnchorId && orderedAimIds.includes(this.multiAnchorId)
+        ? this.multiAnchorId
+        : (this.multiSelectedAimIds.length > 0 && orderedAimIds.includes(this.multiSelectedAimIds[0]) ? this.multiSelectedAimIds[0] : orderedAimIds[0])
+
+      const startIdx = orderedAimIds.indexOf(anchor)
+      const endIdx = orderedAimIds.indexOf(targetAimId)
+      if (startIdx < 0 || endIdx < 0) {
+        this.addToMultiSelect(targetAimId)
+        this.multiAnchorId = targetAimId
+        return
+      }
+      const [lo, hi] = startIdx <= endIdx ? [startIdx, endIdx] : [endIdx, startIdx]
+      const range = orderedAimIds.slice(lo, hi + 1)
+      // Replace multi with the range (standard shift behavior), but keep primary separate
+      this.multiSelectedAimIds = [...range]
+      this.multiAnchorId = anchor
+    },
+
+    setMultiAnchor(aimId: string | null) {
+      this.multiAnchorId = aimId
+    },
+
+    // Merge all currently multi-selected (except the target) into the target aim.
+    // Uses the existing backend merge (target keeps identity + connections + reflections; sources archived).
+    async mergeSelectedInto(targetId: string) {
+      const projectStore = useProjectStore()
+      const projectPath = projectStore.projectPath
+      if (!projectPath || !targetId) return { success: false, error: 'No project or target' }
+
+      const others = this.multiSelectedAimIds.filter(id => id !== targetId)
+      if (others.length === 0) {
+        return { success: false, error: 'No other aims selected to merge' }
+      }
+
+      const results: any[] = []
+      for (const sourceId of others) {
+        try {
+          const res = await trpc.aim.merge.mutate({ projectPath, targetId, sourceId })
+          results.push({ sourceId, ...res })
+        } catch (e: any) {
+          console.error('merge failed for', sourceId, e)
+          results.push({ sourceId, error: String(e) })
+        }
+      }
+
+      // Clean up selection state
+      this.clearMultiSelect()
+
+      return { success: true, results, mergedCount: others.length }
     },
 
     async calculateAimPaths(aimId: string): Promise<AimPath[]> {

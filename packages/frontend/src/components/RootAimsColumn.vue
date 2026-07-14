@@ -15,6 +15,18 @@ const rootColumnRef = ref<HTMLElement | null>(null)
 
 // Handle scroll requests from child aims
 const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
+
+const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimId: string, mods?: { ctrl: boolean; shift: boolean }) => {
+  const isCtrl = !!(mods && mods.ctrl)
+  const isShift = !!(mods && mods.shift)
+  if (isShift) {
+    const ordered = dataStore.floatingAims.map((a: any) => a.id)
+    uiStore.selectMultiRange(aimId, ordered)
+  } else if (isCtrl || isShift) {
+    uiStore.toggleMultiSelect(aimId)
+  }
+  uiStore.selectAimById(columnIndex, phaseId, aimId).catch(() => {})
+}
 </script>
 
 <template>
@@ -32,7 +44,7 @@ const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
         :is-selected="isSelected"
         :selected-aim-index="uiStore.floatingAimIndex"
         :aim-ui-states="uiStore.floatingAimUIStates"
-        @aim-clicked="(aimId) => uiStore.selectAimById(-1, undefined, aimId)"
+        @aim-clicked="(aimId, mods) => handleAimClicked(-1, undefined, aimId, mods)"
         @scroll-request="handleScrollRequest"
       />
     </div>

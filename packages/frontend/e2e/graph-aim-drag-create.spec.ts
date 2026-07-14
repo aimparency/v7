@@ -221,3 +221,72 @@ test('graph view: drag from existing node to another existing node creates conne
     }
   }
 });
+
+test('graph view: ctrl/shift click for multi-select (range add) and bulk bar', async ({ page }) => {
+  const tempDir = join(tmpdir(), 'aimparency-graph-multi-' + Date.now());
+  mkdirSync(tempDir, { recursive: true });
+
+  try {
+    await setupBlankProject(page, tempDir);
+
+    // Switch to graph view
+    await page.keyboard.press('g');
+    await page.waitForTimeout(600);
+
+    const graphView = page.locator('.graph-view');
+    await expect(graphView).toBeVisible();
+
+    const surface = page.locator('.graph-view > svg, .graph-view canvas').first();
+    await expect(surface).toBeVisible({ timeout: 5000 });
+
+    const box = await surface.boundingBox();
+    if (!box) throw new Error('No graph surface');
+
+    // Create first aim
+    const ax = box.x + box.width * 0.3;
+    const ay = box.y + box.height * 0.4;
+    await page.mouse.dblclick(ax, ay);
+    await page.waitForTimeout(400);
+    let modal = page.locator('.modal');
+    if (await modal.count() > 0 && await modal.isVisible()) {
+      await modal.locator('input[type="text"]').first().fill('GMulti A');
+      await modal.locator('input[type="text"]').first().press('Enter');
+      await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+    }
+    await page.waitForTimeout(500);
+
+    // Create second aim
+    const bx = box.x + box.width * 0.7;
+    const by = box.y + box.height * 0.55;
+    await page.mouse.dblclick(bx, by);
+    await page.waitForTimeout(400);
+    if (await modal.count() > 0 && await modal.isVisible()) {
+      await modal.locator('input[type="text"]').first().fill('GMulti B');
+      await modal.locator('input[type="text"]').first().press('Enter');
+      await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+    }
+    await page.waitForTimeout(600);
+
+    // Ctrl click first
+    await page.mouse.click(ax, ay, { modifiers: ['Control'] });
+    await page.waitForTimeout(300);
+
+    // Shift click second (range/add)
+    await page.mouse.click(bx, by, { modifiers: ['Shift'] });
+    await page.waitForTimeout(400);
+
+    // Check bulk bar
+    const multiBar = page.locator('.multi-select-bar');
+    await expect(multiBar).toBeVisible({ timeout: 2000 });
+    await expect(multiBar).toContainText(/2 aims multi-selected/);
+
+    const clearBtn = multiBar.locator('button:has-text("Clear")');
+    if (await clearBtn.count() > 0) {
+      await clearBtn.first().click();
+      await expect(multiBar).toBeHidden({ timeout: 1000 });
+    }
+
+  } finally {
+    try { rmSync(tempDir, { recursive: true, force: true }); } catch {}
+  }
+});

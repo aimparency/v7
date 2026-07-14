@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<{
-  'aim-clicked': [aimId: string]
+  'aim-clicked': [aimId: string, modifiers?: { ctrl: boolean; shift: boolean }]
   'scroll-request': [element: HTMLElement]
 }>()
 
@@ -61,6 +61,17 @@ const handleScrollRequest = (element: HTMLElement) => {
   // Forward to parent (column) for scrolling
   emit('scroll-request', element)
 }
+
+const handleAimClickedInList = (aimId: string, mods?: { ctrl: boolean; shift: boolean }) => {
+  const isShift = !!(mods && mods.shift)
+  if (isShift) {
+    // Range within this sub-list's aims
+    const ordered = localAims.value.map((a: any) => a.id)
+    uiStore.selectMultiRange(aimId, ordered)
+  }
+  // Always forward for primary selection / higher level handling (ctrl handled higher too if needed)
+  emit('aim-clicked', aimId, mods)
+}
 </script>
 
 <template>
@@ -92,7 +103,7 @@ const handleScrollRequest = (element: HTMLElement) => {
             'moving': modalStore.movingAimId === aim.id
           }"
           @scroll-request="handleScrollRequest"
-          @aim-clicked="$emit('aim-clicked', $event)"
+          @aim-clicked="(id, mods) => handleAimClickedInList(id, mods)"
         />
       </template>
       <template #footer>

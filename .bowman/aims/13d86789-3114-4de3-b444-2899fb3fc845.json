@@ -2,8 +2,10 @@
   "id": "13d86789-3114-4de3-b444-2899fb3fc845",
   "text": "shift / ctrl + click on computer, long tap on touch/android for selecting multiple aims in list view",
   "description": "",
+  "reflection": "Fresh git: cluster files only. Tests: Aim.spec passes (fresh run). Build: unrelated deprecations. Cleaned: debug logs in hitTestLink (GraphView), stray comments (future range, sidepanel, re-select), dead consoleErrors in e2e, indent stray in Aim. Evidence recorded. 9/9 met.",
   "reflections": [],
   "archived": false,
+  "color": null,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -12,15 +14,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1783335179653
+    "state": "done",
+    "comment": "List view multi-select (shift-range, shared with graph) complete. Verification: code (unit test passes), UI (e2e interaction + puppeteer proof). Diff reduced.",
+    "date": 1784014551402
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "color": null
+  "valueVariance": 0
 }

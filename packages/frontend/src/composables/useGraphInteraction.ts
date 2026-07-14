@@ -517,7 +517,7 @@ export function useGraphInteraction(
         }
     }
 
-    const onNodeClick = async (node: GraphNode) => {
+    const onNodeClick = async (node: GraphNode, event?: MouseEvent) => {
         // In spin-off preview, a click toggles the aim as a root (multi-select)
         // and recolors the graph — no selection / detail panel.
         if (graphUIStore.graphColorMode === 'spin-off') {
@@ -528,12 +528,36 @@ export function useGraphInteraction(
         // opaque modular boundary. Clicking it is a no-op for now (open/focus the
         // linked repo is a later refinement); never select it as an aim.
         if (node.isRepo) return
+
+        const isCtrl = event && (event.ctrlKey || event.metaKey)
+        const isShift = event && event.shiftKey
+
+        if (isShift) {
+            // Shift = range/add to multi (for graph, just add since no linear order; could extend to bbox/path later)
+            uiStore.addToMultiSelect(node.id)
+            if (!mapStore.cursorMoved) {
+                graphUIStore.setGraphSelection(node.id)
+                graphUIStore.deselectLink()
+            }
+            uiStore.setMultiAnchor(node.id)
+            return
+        }
+        if (isCtrl) {
+            // Ctrl = toggle
+            uiStore.toggleMultiSelect(node.id)
+            if (!mapStore.cursorMoved) {
+                graphUIStore.setGraphSelection(node.id)
+                graphUIStore.deselectLink()
+            }
+            return
+        }
+
         if (!mapStore.cursorMoved) {
             if (graphUIStore.graphSelectedAimId === node.id) {
                 // Already selected -> Start tracking
                 mapStore.isTracking = true
             } else {
-                // New selection -> Select only
+                // New selection -> Select only (clear multi? optional; keep for now like list)
                 graphUIStore.setGraphSelection(node.id)
                 graphUIStore.deselectLink()
                 mapStore.isTracking = false

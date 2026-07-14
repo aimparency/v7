@@ -19,7 +19,8 @@ vi.mock('../components/AimsList.vue', () => ({
       'aimUiStates',
       'isActive',
       'isSelected',
-      'selectedAimIndex'
+      'selectedAimIndex',
+      'isThisAimSelected'  // for multi/selection compatibility
     ]
   }
 }))
@@ -177,5 +178,40 @@ describe('Aim.vue', () => {
 
     expect(collapsedWrapper.find('.mock-aims-list').exists()).toBe(false)
     expect(expandedWrapper.find('.mock-aims-list').exists()).toBe(true)
+  })
+
+  it('emits aim-clicked with modifiers for multi-select (ctrl/shift)', async () => {
+    const aim = createMockAim()
+    const wrapper = mount(AimComponent, {
+      global: { plugins: [pinia] },
+      props: {
+        aim,
+        phaseId: 'test-phase',
+        columnIndex: 0,
+        isActive: false,
+        isSelected: false,
+        aimUiState: createAimUIState()
+      }
+    })
+
+    // Normal click
+    await wrapper.find('.aim-item').trigger('click')
+    const emits = wrapper.emitted('aim-clicked') || []
+    expect(emits.length).toBeGreaterThan(0)
+    const first = emits[0]
+    expect(first?.[0]).toBe(aim.id)
+    expect(first?.[1]).toEqual({ ctrl: false, shift: false })
+
+    // Ctrl click for multi
+    await wrapper.find('.aim-item').trigger('click', { ctrlKey: true })
+    const last = (wrapper.emitted('aim-clicked') || []).slice(-1)[0]
+    expect(last?.[0]).toBe(aim.id)
+    expect(last?.[1]).toEqual({ ctrl: true, shift: false })
+
+    // Shift click
+    await wrapper.find('.aim-item').trigger('click', { shiftKey: true })
+    const shiftLast = (wrapper.emitted('aim-clicked') || []).slice(-1)[0]
+    expect(shiftLast?.[0]).toBe(aim.id)
+    expect(shiftLast?.[1]).toEqual({ ctrl: false, shift: true })
   })
 })
