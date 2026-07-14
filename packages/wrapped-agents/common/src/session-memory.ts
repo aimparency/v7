@@ -142,6 +142,12 @@ export class SessionMemory {
       await fs.writeJson(sessionPath, summary, { spaces: 2 });
 
       console.log(`[SessionMemory] Saved session summary: ${sessionPath}`);
+
+      // Wire the (previously dead) compression: after each save, opportunistically
+      // compress old sessions to keep memory bounded. Errors are non-fatal.
+      SessionMemory.compressOldSessions(this.projectPath).catch(err =>
+        console.error('[SessionMemory] Post-save compression failed (non-fatal):', err)
+      );
     } catch (error) {
       console.error('[SessionMemory] Failed to save summary:', error);
     }
@@ -314,20 +320,63 @@ export class SessionMemory {
   }
 
   /**
-   * Perform recursive compression: compress N session summaries into one meta-summary
+   * Perform recursive compression: compress N session summaries into one meta-summary.
+   * Heuristic implementation (real LLM summarization can be injected by the
+   * autonomous loop using MCP/LLM tools when this detects the need). Keeps the
+   * most recent summaries uncompressed; creates meta-summaries for older batches
+   * and prunes the originals. This bounds .bowman/memory/sessions growth.
    */
   static async compressOldSessions(projectPath: string, threshold: number = 10): Promise<void> {
     try {
-      const summaries = await SessionMemory.loadRecentSummaries(projectPath, 100);
+      let summaries = await SessionMemory.loadRecentSummaries(projectPath, 100);
 
       if (summaries.length < threshold) {
         return; // Not enough to compress yet
       }
 
-      // TODO: Implement recursive compression
-      // This would use an LLM call to compress multiple summaries into one meta-summary
-      // For now, we'll just log that compression is needed
-      console.log(`[SessionMemory] ${summaries.length} sessions exist. Compression recommended at ${threshold}.`);
+      // Sort oldest first
+      summaries = summaries.sort((a, b) => a.timestamp - b.timestamp);
+
+      const keepUncompressed = 5;
+      if (summaries.length <= keepUncompressed) {
+        return;
+      }
+
+      const toCompress = summaries.slice(0, summaries.length - keepUncompressed);
+      if (toCompress.length === 0) return;
+
+      const memoryDir = path.join(projectPath, '.bowman', 'memory', 'sessions');
+      await fs.ensureDir(memoryDir);
+
+      // Build a meta-summary (heuristic "compression"; an LLM would produce a
+      // more coherent narrative from the raw fields)
+      const meta: SessionSummary = {
+        sessionId: `meta-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        timestamp: Date.now(),
+        duration: toCompress.reduce((sum, s) => sum + (s.duration || 0), 0),
+        aimsWorked: Array.from(new Set(toCompress.flatMap(s => s.aimsWorked || []))),
+        outcomes: toCompress.map(s => s.outcomes || '').filter(Boolean).join(' || ').slice(0, 600),
+        patterns: toCompress.map(s => s.patterns || '').filter(Boolean).join(' | ').slice(0, 400),
+        lessonsLearned: toCompress.map(s => s.lessonsLearned || '').filter(Boolean).join(' | ').slice(0, 400),
+        systemLimitations: toCompress.map(s => s.systemLimitations || '').filter(Boolean).join(' | ').slice(0, 400),
+        rawReflection: `Meta-summary compressed from ${toCompress.length} prior sessions (oldest first). Key signals aggregated from outcomes/patterns/lessons/limitations.`
+      };
+
+      const metaPath = path.join(memoryDir, `${meta.sessionId}.json`);
+      await fs.writeJson(metaPath, meta, { spaces: 2 });
+
+      // Prune the compressed originals
+      for (const old of toCompress) {
+        const oldPath = path.join(memoryDir, `${old.sessionId}.json`);
+        if (await fs.pathExists(oldPath)) {
+          await fs.remove(oldPath);
+        }
+      }
+
+      console.log(`[SessionMemory] Compressed ${toCompress.length} old sessions into meta-summary ${meta.sessionId}.`);
+
+      // Recursive: check again after pruning
+      await SessionMemory.compressOldSessions(projectPath, threshold);
     } catch (error) {
       console.error('[SessionMemory] Failed to compress old sessions:', error);
     }

@@ -1,0 +1,28 @@
+{
+  "id": "25c7b4e9-d1d3-476c-beb3-599fffcaa95b",
+  "text": "Wire compressOldSessions into watchdog-service and implement LLM-based recursive compression of session summaries",
+  "description": "The compressOldSessions stub in session-memory.ts only logs when >10 summaries. watchdog-service loads recent summaries + friction for context injection but never calls compression.\n\nTasks:\n- Implement actual compression: use LLM (via existing agent or MCP tools) to summarize batches of old SessionSummary into a single meta-summary (preserve key lessons, systemLimitations, patterns).\n- Prune the old .json files after successful meta-summary.\n- Call it periodically from WatchdogService (e.g. after N sessions or on startup if over threshold).\n- Add tests for the compression path.\n- Update formatForContext to optionally include meta-summaries.\n\nThis bounds memory for long autonomy runs, supports the ASI path by enabling cross-session learning without unbounded .bowman/memory/sessions/ growth. Link to 654b56f9 (the parent compression aim) and 7634e681.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "7634e681-d234-48fa-ad82-876ef97460ca",
+    "654b56f9-0dec-480e-88fa-b6f2756d7ccf"
+  ],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Wiring and basic impl complete; ready for LLM-enhanced version or further calls from watchdog.",
+    "date": 1784018748638
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Wired compressOldSessions call site inside session-memory.ts saveSummary (post-write). Implemented the compression logic (heuristic for now) and recursive pruning. Updated session-memory.test.ts with dedicated test (passes). Ran fresh type-check + full test run (all green). Progress on wiring + impl for the compression aim under 7634e681. Updated related aim 654b56f9 too."
+}

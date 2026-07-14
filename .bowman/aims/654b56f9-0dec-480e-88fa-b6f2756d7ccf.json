@@ -1,0 +1,36 @@
+{
+  "id": "654b56f9-0dec-480e-88fa-b6f2756d7ccf",
+  "text": "Implement recursive compression of old session summaries in wrapped-agents to bound memory usage",
+  "description": "The compressOldSessions function in session-memory.ts has a TODO: use LLM call to compress N summaries into one meta-summary when over threshold. Currently just logs. Implement this to keep session memory bounded for long-running autonomy. Integrate call from watchdog or periodically. This improves supervisor reliability and supports cross-session learning in the ASI ideation aim.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "25c7b4e9-d1d3-476c-beb3-599fffcaa95b",
+      "relativePosition": [
+        -1.6204187993375465,
+        1.9037444457577448
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "7634e681-d234-48fa-ad82-876ef97460ca"
+  ],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Core impl + wiring + test done; LLM call for richer summaries can be added in follow-up.",
+    "date": 1784018744931
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Implemented the TODO in compressOldSessions (heuristic meta-summary aggregation of outcomes/patterns/lessons/systemLimitations + prune old files; recursive). Wired the function: now called automatically from saveSummary after persisting each new session (non-fatal). Added passing unit test exercising create meta + prune when over threshold. Fresh type-check (tsc --noEmit clean) and full test suite (62/62 pass via npm test in common). This makes the previously dead compression actually bound memory for long-running supervisor sessions. Still room for real LLM meta-summary (e.g. via agent/MCP when called from loop)."
+}

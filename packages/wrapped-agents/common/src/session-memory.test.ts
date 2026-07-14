@@ -254,3 +254,44 @@ test('formatForContext surfaces systemLimitations when present', () => {
   const text = SessionMemory.formatForContext([summary]);
   assert.match(text, /System limitation: PTY sessions do not hot-reload/);
 });
+
+test('compressOldSessions creates meta-summary and prunes old files when over threshold', async () => {
+  await fs.remove(TEST_PROJECT_PATH);
+
+  const memoryDir = path.join(TEST_PROJECT_PATH, '.bowman', 'memory', 'sessions');
+  await fs.ensureDir(memoryDir);
+
+  // Create 12 fake old summaries (oldest first)
+  const now = Date.now();
+  for (let i = 0; i < 12; i++) {
+    const summary: SessionSummary = {
+      sessionId: `old-${i}-${now - (12 - i) * 100000}`,
+      timestamp: now - (12 - i) * 100000,
+      duration: 60000,
+      aimsWorked: [`aim-${i}`],
+      outcomes: `outcome-${i}`,
+      patterns: `pattern-${i}`,
+      lessonsLearned: `lesson-${i}`,
+      systemLimitations: i % 3 === 0 ? `limit-${i}` : '',
+      rawReflection: `raw-${i}`
+    };
+    const filePath = path.join(memoryDir, `${summary.sessionId}.json`);
+    await fs.writeJson(filePath, summary);
+  }
+
+  // Should have 12 files
+  let files = await fs.readdir(memoryDir);
+  assert.equal(files.length, 12, 'started with 12 summaries');
+
+  // Call with threshold=10 (will keep ~5 + create meta)
+  await SessionMemory.compressOldSessions(TEST_PROJECT_PATH, 10);
+
+  files = await fs.readdir(memoryDir);
+  // Expect fewer raw old files + at least one meta
+  const metas = files.filter(f => f.startsWith('meta-'));
+  assert.ok(metas.length >= 1, 'should have created at least one meta-summary');
+  assert.ok(files.length < 12, 'should have pruned some old files');
+
+  // Clean
+  await fs.remove(TEST_PROJECT_PATH);
+});

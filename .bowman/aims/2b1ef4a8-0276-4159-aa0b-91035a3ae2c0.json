@@ -1,0 +1,35 @@
+{
+  "id": "2b1ef4a8-0276-4159-aa0b-91035a3ae2c0",
+  "text": "Add circuit-breaker logic to supervisor-state.ts to reset or halt after N consecutive ERRORs to avoid retry ceiling",
+  "description": "Current backoff in supervisor-state.ts increases but can still lead to repeated 'retry ceiling reached' in friction. Add logic: after e.g. 5 consecutive ERRORs without success, trigger a special state or log a limitation and suggest aim. Reset on success. This improves the supervisor in wrapped-agents for the ASI ideation aim.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "aimId": "073ea968-fc31-45ef-b90e-15bb9237c38d",
+      "relativePosition": [
+        -2.368416154602608,
+        -0.8003779848405351
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "7634e681-d234-48fa-ad82-876ef97460ca"
+  ],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1784017640764
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
