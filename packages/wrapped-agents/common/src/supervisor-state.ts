@@ -9,7 +9,7 @@
 
 import { getTargetState, getValidActionNames } from './state-machine-definition'
 
-export type SupervisorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP' | 'ERROR'
+export type SupervisorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP' | 'ERROR' | 'CIRCUIT_OPEN'
 
 export interface AutonomyPolicy {
   restoreSupervisorStateOnSessionRestart?: boolean;
@@ -67,6 +67,10 @@ export class SupervisorState {
 
   // Backoff schedule in minutes: 1, 2, 4, 8, 15 (max)
   private static readonly BACKOFF_SCHEDULE = [1, 2, 4, 8, 15];
+
+  // After this many consecutive ERRORs without success, open the circuit to prevent
+  // hitting retry ceiling and trigger self-improvement (auto-propose).
+  private static readonly CIRCUIT_BREAKER_THRESHOLD = 5;
 
   constructor() {
     this.context = {
@@ -144,6 +148,14 @@ export class SupervisorState {
       if (newState === 'ERROR') {
         this.context.previousState = this.currentState;
         this.context.errorCount++;
+        // Check for circuit breaker
+        if (this.context.errorCount >= SupervisorState.CIRCUIT_BREAKER_THRESHOLD) {
+          newState = 'CIRCUIT_OPEN';
+          this.context.previousState = this.currentState; // keep for recovery
+        }
+      } else if (newState === 'CIRCUIT_OPEN') {
+        this.context.previousState = this.currentState;
+        // do not increment further
       } else if (action === 'retry') {
         // Successful retry - we don't clear errorCount yet, 
         // maybe it should clear after some successful work?
@@ -195,6 +207,15 @@ export class SupervisorState {
       }
     }
 
+    // Circuit breaker: after N consecutive, block and suggest improvement
+    if (currentState === 'CIRCUIT_OPEN') {
+      return {
+        success: false,
+        error: 'Circuit open after consecutive ERRORs. Trigger auto-propose for supervisor improvement instead of retrying. Use create_aim or reset after fix.',
+        backoffActive: true
+      }
+    }
+
     // Get target state for this action
     let targetState = getTargetState(currentState, actionType)
 
@@ -228,8 +249,26 @@ export class SupervisorState {
    * Manually trigger an error transition (e.g. on timeout)
    */
   triggerError(reason: string): void {
-    if (this.currentState === 'ERROR') return; // Already in ERROR
+    if (this.currentState === 'ERROR' || this.currentState === 'CIRCUIT_OPEN') return;
     this.transition('ERROR', 'error_detected', { reason });
+  }
+
+  /**
+   * Check if circuit breaker is open (too many consecutive failures)
+   */
+  isCircuitOpen(): boolean {
+    return this.currentState === 'CIRCUIT_OPEN' || this.context.errorCount >= SupervisorState.CIRCUIT_BREAKER_THRESHOLD;
+  }
+
+  /**
+   * Close the circuit after improvement (e.g. after auto-propose fix or manual)
+   */
+  closeCircuit(): void {
+    if (this.currentState === 'CIRCUIT_OPEN') {
+      this.transition('EXPLORING', 'circuit_closed');
+    }
+    this.context.errorCount = 0;
+    this.context.previousState = undefined;
   }
 
   /**

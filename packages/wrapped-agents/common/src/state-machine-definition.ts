@@ -259,13 +259,26 @@ export const error: State = {
   ]
 }
 
+export const circuitOpen: State = {
+  name: 'CIRCUIT_OPEN',
+  instructions: 'CIRCUIT BREAKER OPEN after repeated consecutive failures. Stop retrying to avoid ceiling. Analyze system limitations from friction log. Use auto-propose or directly call create_aim MCP to open an improvement aim for the supervisor (e.g. backoff tuning, circuit recovery logic). After applying a fix, transition out with retry or explore.',
+  color: '#ff9999',  // Stronger red for open circuit
+  actions: [
+    { action: wait, targetState: 'CIRCUIT_OPEN' },
+    { action: retry, targetState: 'EXPLORING' },  // after fix
+    { action: explore, targetState: 'EXPLORING' },
+    { action: compact, targetState: 'CIRCUIT_OPEN' }
+  ]
+}
+
 // ========== STATE MACHINE ==========
 
 export const STATE_MACHINE: Record<string, State> = {
   EXPLORING: exploring,
   WORKING: working,
   WRAPPING_UP: wrappingUp,
-  ERROR: error
+  ERROR: error,
+  CIRCUIT_OPEN: circuitOpen
 }
 
 // ========== HELPER FUNCTIONS ==========

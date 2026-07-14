@@ -14,14 +14,15 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1784018507015
+    "state": "partially",
+    "comment": "Core circuit breaker added to supervisor-state (CIRCUIT_OPEN after 5 errors). Prompt and state def updated. Progress on supervisor reliability for ASI loops.",
+    "date": 1784019021270
   },
   "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Implemented the improvements described: circuit breaker in supervisor-state.ts (new CIRCUIT_OPEN state, threshold logic, methods for check/close). Updated related definition and prompts to direct to auto-propose/create_aim when open. Type-check/tests green. This addresses the 'retry ceiling' by halting retries and triggering self-improvement. Linked to parent sub-aim."
 }

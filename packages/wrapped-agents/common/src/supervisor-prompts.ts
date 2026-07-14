@@ -118,6 +118,11 @@ function buildSituation(ctx: PromptContext): string {
     lines.push('SYSTEM ALERT: The system is in a recovery backoff period following a timeout or failure.')
     lines.push('The backoff duration increases exponentially with each consecutive error.')
     lines.push('You should analyze the terminal output to understand what went wrong, and when you believe the worker is ready or the environment is stable, use the "retry" action to return to the previous state.')
+  } else if (ctx.state === 'CIRCUIT_OPEN') {
+    lines.push('')
+    lines.push('SYSTEM ALERT: CIRCUIT OPEN after too many consecutive ERRORs (retry ceiling risk).')
+    lines.push('Do NOT keep retrying. Instead, use the auto-propose mechanism or call create_aim MCP tool to propose a fix in wrapped-agents (e.g. extend backoff or add recovery).')
+    lines.push('Analyze recent friction from logs, then propose a concrete improvement aim under the self-reflection parent. After fix applied, use closeCircuit or reset.')
   }
 
   return lines.join('\n')

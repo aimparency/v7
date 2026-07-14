@@ -22,14 +22,15 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1784017640764
+    "state": "partially",
+    "comment": "Added CIRCUIT_OPEN state to supervisor-state and state-machine-definition. Logic in transition to open circuit after 5 consecutive ERRORs. attemptAction blocks with message to auto-propose. Added isCircuitOpen, closeCircuit, triggerError guard. Updated prompts for CIRCUIT_OPEN to direct to create_aim/auto-propose. Type-check and tests pass. Ties to friction auto-propose and backoff.",
+    "date": 1784019018331
   },
   "intrinsicValue": 0,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Implemented core circuit-breaker logic in supervisor-state.ts per the aim description:\n- Extended SupervisorStateName with 'CIRCUIT_OPEN'.\n- CIRCUIT_BREAKER_THRESHOLD = 5.\n- In transition, when ERROR and errorCount >= threshold, redirect to CIRCUIT_OPEN.\n- In attemptAction, special block for CIRCUIT_OPEN (backoffActive, suggest propose).\n- Added isCircuitOpen(), closeCircuit() to reset after improvement.\n- Updated triggerError to guard.\n- Updated state-machine-definition.ts with circuitOpen state definition, instructions for auto-propose, actions.\n- Updated supervisor-prompts.ts with specific alert for CIRCUIT_OPEN directing to create_aim MCP or auto-propose.\n\nEvidence: type-check clean, tests 62/62 pass. No breakage to existing ERROR/backoff.\n\nNext: integrate closeCircuit call after successful recovery or auto-propose apply; add unit test simulating ceiling; make threshold configurable via AutonomyPolicy; update watchdog handling if needed for state emission."
 }
