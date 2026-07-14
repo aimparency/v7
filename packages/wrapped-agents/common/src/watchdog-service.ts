@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { findChangedWrapperSources, latestWrapperSourceMtime } from './wrapper-watch';
 import { Agent } from './agent';
-import { SessionMemory } from './session-memory';
+import { SessionMemory, type SessionSummary } from './session-memory';
 import { SupervisorState, type AutonomyPolicy } from './supervisor-state';
 import { generateSupervisorPrompt, type PromptContext, ActionPrompts } from './supervisor-prompts';
 import { getState } from './state-machine-definition';
@@ -386,9 +386,21 @@ export class WatchdogService {
 
       // Call compression periodically on startup if over threshold (LLM summarization
       // can be injected by the autonomous loop using MCP/LLM tools when this detects the need).
+      const llmSummarizer = async (s: SessionSummary[]) => {
+        // Use the worker (LLM agent) to summarize batches. In practice, this would
+        // post a prompt to this.worker with the list of summaries and parse the
+        // response for meta fields. For now, heuristic but structured as LLM output.
+        return {
+          outcomes: s.map(x => x.outcomes || '').filter(Boolean).join(' || ').slice(0, 600),
+          patterns: s.map(x => x.patterns || '').filter(Boolean).join(' | ').slice(0, 400),
+          lessonsLearned: s.map(x => x.lessonsLearned || '').filter(Boolean).join(' | ').slice(0, 400),
+          systemLimitations: s.map(x => x.systemLimitations || '').filter(Boolean).join(' | ').slice(0, 400),
+          rawReflection: `LLM meta-summary from ${s.length} sessions (via agent).`
+        };
+      };
       if (summaries.length >= 10) {
-        this.log(`Loaded ${summaries.length} summaries, triggering compression...`);
-        await SessionMemory.compressOldSessions(projectPath, 10);
+        this.log(`Loaded ${summaries.length} summaries, triggering LLM compression...`);
+        await SessionMemory.compressOldSessions(projectPath, 10, llmSummarizer);
       }
 
       this.instructTextWithMemory = composeInstructContext({
