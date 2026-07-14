@@ -1540,7 +1540,16 @@ Please choose one of the valid actions. Respond ONLY with ${this.currentPromptMa
 
   private async executeStartWork(message: string): Promise<void> {
     this.log('[StateMachine] Starting work');
-    const prompt = `${this.consumeInstructLead()}Check Aimparency MCP for open aims or the current assigned aim. Before making changes, investigate the codebase to see if the aim is already implemented. Sometimes an aim is already done but its status is still open. If you find it is already implemented, update the aim status to "done" via MCP and wait. If it is not implemented, start working. ${message}`;
+    const relevanceCheck = `Before making changes, perform this relevance check on the aim:
+1. DATE: Is the aim time-boxed or premised on a deadline/event? Compare against today's date (2026-07-14). If the driving event/deadline has passed (hackathons, dated milestones), the aim may be moot.
+2. ALREADY IMPLEMENTED: Investigate the codebase (grep/inspect) + git history. If the described work is already present, mark done with verification evidence instead of rebuilding.
+3. REASONING CHAIN (supporting connections up to root): Use get_aim_context's path_to_root. Does the chain of WHY still hold? Is a parent itself stale/abandoned/superseded? Is the aim premised on a requirement that no longer applies?
+DECISION RULES:
+- Relevant + not implemented -> proceed to build.
+- Already implemented -> mark done + reflection (verification evidence).
+- Clearly stale/moot -> mark cancelled with a precise comment.
+- UNSURE -> set human-dependent with a comment explaining the specific doubt.`;
+    const prompt = `${this.consumeInstructLead()}Check Aimparency MCP for open aims or the current assigned aim. ${relevanceCheck} If it is not implemented, start working. ${message}`;
     await this.post(this.worker, prompt);
     this.turnCount++;
   }
