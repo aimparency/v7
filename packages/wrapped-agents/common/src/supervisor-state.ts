@@ -14,6 +14,7 @@ export type SupervisorStateName = 'EXPLORING' | 'WORKING' | 'WRAPPING_UP' | 'ERR
 export interface AutonomyPolicy {
   restoreSupervisorStateOnSessionRestart?: boolean;
   requireCommitBeforeCompact?: boolean;
+  maxConsecutiveErrors?: number; // for circuit breaker
 }
 
 export interface TransitionResult {
@@ -70,9 +71,10 @@ export class SupervisorState {
 
   // After this many consecutive ERRORs without success, open the circuit to prevent
   // hitting retry ceiling and trigger self-improvement (auto-propose).
-  private static readonly CIRCUIT_BREAKER_THRESHOLD = 5;
+  private circuitBreakerThreshold: number;
 
-  constructor() {
+  constructor(policy: AutonomyPolicy = {}) {
+    this.circuitBreakerThreshold = policy.maxConsecutiveErrors ?? 5;
     this.context = {
       stateEnteredAt: Date.now(),
       errorCount: 0
@@ -149,7 +151,7 @@ export class SupervisorState {
         this.context.previousState = this.currentState;
         this.context.errorCount++;
         // Check for circuit breaker
-        if (this.context.errorCount >= SupervisorState.CIRCUIT_BREAKER_THRESHOLD) {
+        if (this.context.errorCount >= this.circuitBreakerThreshold) {
           newState = 'CIRCUIT_OPEN';
           this.context.previousState = this.currentState; // keep for recovery
         }
@@ -257,7 +259,7 @@ export class SupervisorState {
    * Check if circuit breaker is open (too many consecutive failures)
    */
   isCircuitOpen(): boolean {
-    return this.currentState === 'CIRCUIT_OPEN' || this.context.errorCount >= SupervisorState.CIRCUIT_BREAKER_THRESHOLD;
+    return this.currentState === 'CIRCUIT_OPEN' || this.context.errorCount >= this.circuitBreakerThreshold;
   }
 
   /**

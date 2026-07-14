@@ -311,7 +311,7 @@ export class WatchdogService {
   // Subsequent start_works send only the short "check Aimparency" pointer.
   private instructSent = false;
   private workingTowardsCommit = false;
-  private supervisorState: SupervisorState = new SupervisorState();
+  private supervisorState: SupervisorState;
   private projectPath?: string;
   readonly profile: AgentProfile;
 
@@ -352,6 +352,7 @@ export class WatchdogService {
     this.projectPath = opts.projectPath;
     this.baseInstructText = opts.instructText ?? '';
     this.instructTextWithMemory = this.baseInstructText;
+    this.supervisorState = new SupervisorState(this.autonomyPolicy);
 
     // This file lives at wrapped-agents/common/src/watchdog-service.ts (run as
     // source via tsx, so __dirname is .../common/src), making the wrapped-agents
