@@ -18,6 +18,8 @@ export interface PromptContext {
   workSummary?: string
   requiresInput?: boolean
   autonomyPolicy?: AutonomyPolicy
+  computeCredits?: number
+  funds?: number
 }
 
 /**
@@ -93,6 +95,9 @@ function buildSituation(ctx: PromptContext): string {
   }
   if (ctx.requiresInput !== undefined) {
     lines.push(`worker requires input: ${ctx.requiresInput ? 'yes' : 'no'}`)
+  }
+  if (ctx.computeCredits !== undefined || ctx.funds !== undefined) {
+    lines.push(`compute budget: ${ctx.computeCredits ?? 'N/A'} credits, ${ctx.funds ?? 'N/A'} funds. Track usage, prefer efficient actions, stop before limits.`)
   }
   lines.push('rule: current terminal/repo-facing evidence is more reliable than prior narrative claims')
 

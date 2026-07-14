@@ -1165,6 +1165,16 @@ export class WatchdogService {
       autonomyPolicy: this.autonomyPolicy
     };
 
+    // Load compute budget from meta for awareness (if present)
+    if (this.projectPath) {
+      try {
+        const metaPath = path.join(this.projectPath, '.bowman', 'meta.json');
+        const meta = JSON.parse(await fs.promises.readFile(metaPath, 'utf8'));
+        if (typeof meta.computeCredits === 'number') promptContext.computeCredits = meta.computeCredits;
+        if (typeof meta.funds === 'number') promptContext.funds = meta.funds;
+      } catch {}
+    }
+
     // Add state-specific context
     if (currentState === 'WORKING' || currentState === 'WRAPPING_UP') {
       promptContext.aimText = stateContext.aimText;
