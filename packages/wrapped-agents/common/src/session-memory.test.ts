@@ -177,6 +177,25 @@ test('summarizeRecentFriction aggregates and ranks the error log', async () => {
   await fs.remove(FRICTION_DIR);
 });
 
+test('summarizeRecentFriction includes auto-propose directive for dominant retry ceiling', async () => {
+  await fs.remove(FRICTION_DIR);
+  writeErrorLog([
+    JSON.stringify({ reason: 'max retries exceeded, retry ceiling reached', timestamp: '2026-06-25T22:00:00Z' }),
+    JSON.stringify({ reason: 'retry ceiling reached after 5 attempts', timestamp: '2026-06-25T22:30:00Z' }),
+    JSON.stringify({ reason: 'Worker busy with a static screen', timestamp: '2026-06-25T23:00:00Z' }),
+  ]);
+
+  const summary = await SessionMemory.summarizeRecentFriction(FRICTION_DIR);
+  assert.match(summary, /Recent System Friction/);
+  assert.match(summary, /retry ceiling reached ×2/);
+  assert.match(summary, /AUTO-PROPOSE ACTION/);
+  assert.match(summary, /create_aim MCP tool/);
+  assert.match(summary, /Fix recurring retry ceiling friction in supervisor/);
+  assert.match(summary, /BACKOFF_SCHEDULE/);
+
+  await fs.remove(FRICTION_DIR);
+});
+
 test('summarizeRecentFriction returns empty when no log exists', async () => {
   await fs.remove(FRICTION_DIR);
   assert.equal(await SessionMemory.summarizeRecentFriction(FRICTION_DIR), '');

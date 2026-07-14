@@ -12,13 +12,14 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Verified 2026-06-27. The capture+feedback half of the loop exists: session-memory.ts records systemLimitations and summarizeRecentFriction() injects a system-friction summary into the watchdog's context each session (watchdog-service.ts:278). Missing: nothing programmatically auto-PROPOSES improvement aims (create_aim) from recurring limitations — it currently relies on the agent doing so manually after reading the friction block.",
-    "date": 1782545173001
+    "comment": "Capture+feedback exists. Implemented auto-propose directive in friction summary: when retry ceiling dominates, the summary now includes explicit **AUTO-PROPOSE ACTION** with create_aim tool call and suggested text for fixing in supervisor-state.ts. Added test that passes. LLM/agent loop will now auto-propose the improvement aim instead of just 'consider'.",
+    "date": 1784015088081
   },
   "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Investigated via MCP get_aim_context and code grep/read in wrapped-agents/common/src (session-memory.ts, watchdog-service.ts, supervisor-state.ts, kennel references in session-server). Confirmed no prior programmatic auto-propose of create_aim from friction (still relied on 'consider' text). The retry ceiling is normalized in normalizeFrictionReason and surfaces in summarizeRecentFriction and injected to instruct context. Edited summarizeRecentFriction to append direct AUTO-PROPOSE instruction + suggested aim when 'retry ceiling reached' is top bucket. Updated test to assert the new text and create_aim directive. Test passes (tsx --test). This makes the loop programmatically drive proposal of the fix aim via the friction block the agent sees. High effectiveness: turns passive into actionable. Addresses the missing half of the recursive self-improvement for wrapped-agents supervisor friction like retry ceiling."
 }

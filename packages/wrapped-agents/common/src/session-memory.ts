@@ -289,15 +289,25 @@ export class SessionMemory {
       const ranked = [...byReason.entries()].sort((a, b) => b[1] - a[1]);
       const items = ranked.map(([reason, count]) => `${reason} ×${count}`).join(', ');
 
-      return [
+      let summaryText = [
         '## Recent System Friction',
         '',
         `The autonomous loop hit ${parsed} error event(s) recently — treat these as system limitations to design around or fix at the source:`,
         `- ${items}`,
-        '',
-        'If one failure dominates, consider opening an aim to address that limitation in the wrapped-agents package rather than just retrying through it.',
         ''
       ].join('\n');
+
+      // Auto-propose improvement aim for dominant friction (implements the "Close the recursive loop" aim).
+      // When retry ceiling (or other dominant) is top, direct the loop (LLM agent) to use create_aim MCP tool
+      // to propose a concrete fix in wrapped-agents instead of just retrying. This closes identify→apply.
+      const top = ranked[0];
+      if (top && top[0] === 'retry ceiling reached') {
+        summaryText += '\n\n**AUTO-PROPOSE ACTION**: Dominant friction "retry ceiling reached". Use the create_aim MCP tool to create an improvement aim under the self-reflection/system-limitation aim (b03ad58e-4518-455f-8a35-36f58eb8ee7d) or "Close the recursive loop" parent. Suggested text: "Fix recurring retry ceiling friction in supervisor by extending BACKOFF_SCHEDULE=[1,2,4,8,15] or adding circuit-breaker/reset logic after N consecutive ERRORs in supervisor-state.ts + prompts. Avoid hitting ceiling by better recovery." Cost: 2. This addresses the limitation at the source in wrapped-agents.';
+      } else if (top) {
+        summaryText += '\n\nIf one failure dominates, use create_aim MCP tool to open a specific aim in wrapped-agents/common or kennel to fix the root cause rather than just retrying.';
+      }
+
+      return summaryText;
     } catch {
       return '';
     }
