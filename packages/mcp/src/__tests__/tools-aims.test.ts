@@ -123,6 +123,103 @@ test('MCP Tools - done nudge surfaces the type-specific evidence hint', async ()
   assert.match(res.content[0].text, /screenshot|interaction/, 'UI aim nudge asks for a screenshot/interaction proof');
 });
 
+test('MCP Tools - update_aim stores free-text reflection with status', async () => {
+  const server = new MockServer();
+  const callerProxy = createCallerProxy(caller);
+  registerTools(server as any, callerProxy as any);
+
+  await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Reflectable aim' });
+  const aimId = (await caller.aim.list({ projectPath: ctx.projectPath }))[0].id;
+
+  const result = await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId,
+    status: { state: 'done' },
+    reflection: 'Verified with the focused MCP aim test.',
+  });
+
+  const aim = await caller.aim.get({ projectPath: ctx.projectPath, aimId });
+  assert.equal(aim.status.state, 'done');
+  assert.equal(aim.reflection, 'Verified with the focused MCP aim test.');
+  assert.doesNotMatch(result.content[0].text, /verified-done/, 'free-text reflection satisfies done evidence nudge');
+});
+
+test('MCP Tools - create_aim accepts edge metadata for parent and child links', async () => {
+  const server = new MockServer();
+  const callerProxy = createCallerProxy(caller);
+  registerTools(server as any, callerProxy as any);
+
+  const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
+  const parentId = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Parent' }));
+  const childId = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Child' }));
+  const aimId = idOf(await server.callTool('create_aim', {
+    projectPath: ctx.projectPath,
+    text: 'Middle',
+    supportedAims: [{ aimId: parentId, weight: 2, explanation: 'parent rationale' }],
+    supportingConnections: [{ aimId: childId, weight: 3, explanation: 'child rationale' }],
+  }));
+
+  const parent = await caller.aim.get({ projectPath: ctx.projectPath, aimId: parentId });
+  const middle = await caller.aim.get({ projectPath: ctx.projectPath, aimId });
+  const child = await caller.aim.get({ projectPath: ctx.projectPath, aimId: childId });
+
+  assert.equal(parent.supportingConnections.find((c: any) => c.aimId === aimId)?.weight, 2);
+  assert.equal(parent.supportingConnections.find((c: any) => c.aimId === aimId)?.explanation, 'parent rationale');
+  assert.equal(middle.supportingConnections.find((c: any) => c.aimId === childId)?.weight, 3);
+  assert.equal(middle.supportingConnections.find((c: any) => c.aimId === childId)?.explanation, 'child rationale');
+  assert.ok(middle.supportedAims.includes(parentId));
+  assert.ok(child.supportedAims.includes(aimId));
+});
+
+test('MCP Tools - update_aim supports append and remove connection deltas', async () => {
+  const server = new MockServer();
+  const callerProxy = createCallerProxy(caller);
+  registerTools(server as any, callerProxy as any);
+
+  const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
+  const parentId = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Parent' }));
+  const child1Id = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Child 1' }));
+  const child2Id = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Child 2' }));
+  const aimId = idOf(await server.callTool('create_aim', {
+    projectPath: ctx.projectPath,
+    text: 'Target',
+    supportingConnections: [child1Id],
+  }));
+
+  await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId,
+    addSupportedAims: [{ aimId: parentId, weight: 4, explanation: 'added parent edge' }],
+    addSupportingConnections: [{ aimId: child2Id, weight: 5, explanation: 'added child edge' }],
+  });
+
+  let parent = await caller.aim.get({ projectPath: ctx.projectPath, aimId: parentId });
+  let target = await caller.aim.get({ projectPath: ctx.projectPath, aimId });
+  assert.ok(target.supportedAims.includes(parentId));
+  assert.equal(parent.supportingConnections.find((c: any) => c.aimId === aimId)?.weight, 4);
+  assert.equal(parent.supportingConnections.find((c: any) => c.aimId === aimId)?.explanation, 'added parent edge');
+  assert.deepEqual(
+    target.supportingConnections.map((c: any) => c.aimId).sort(),
+    [child1Id, child2Id].sort(),
+  );
+  assert.equal(target.supportingConnections.find((c: any) => c.aimId === child2Id)?.weight, 5);
+
+  await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId,
+    removeSupportedAims: [parentId],
+    removeSupportingConnections: [child1Id],
+  });
+
+  parent = await caller.aim.get({ projectPath: ctx.projectPath, aimId: parentId });
+  target = await caller.aim.get({ projectPath: ctx.projectPath, aimId });
+  const child1 = await caller.aim.get({ projectPath: ctx.projectPath, aimId: child1Id });
+  assert.ok(!target.supportedAims.includes(parentId));
+  assert.ok(!parent.supportingConnections.some((c: any) => c.aimId === aimId));
+  assert.deepEqual(target.supportingConnections.map((c: any) => c.aimId), [child2Id]);
+  assert.ok(!child1.supportedAims.includes(aimId));
+});
+
 test('MCP Tools - list_aims uncommitted surfaces parented-but-unphased aims that floating misses', async () => {
   const server = new MockServer();
   const callerProxy = createCallerProxy(caller);

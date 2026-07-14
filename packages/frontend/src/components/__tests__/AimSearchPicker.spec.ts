@@ -155,6 +155,40 @@ describe('AimSearchPicker h/l navigation', () => {
     expect(wrapper.text()).toContain('Aim with relatives')
   })
 
+  it('shows aim title bold with parent path below in smaller text', async () => {
+    const childWithParent = {
+      id: 'child-with-parent',
+      text: 'Child aim',
+      status: { state: 'open' },
+      supportedAims: ['parent-1'],
+      supportingConnections: [],
+      score: 1
+    }
+
+    const wrapper = mount(AimSearchPicker, {
+      props: { externalResults: [childWithParent] as any },
+      global: {
+        plugins: [createTestingPinia({
+          createSpy: vi.fn,
+          initialState: {
+            data: {
+              meta: { statuses: [{ key: 'open', color: '#fff' }] },
+              aims: {
+                'parent-1': parentAim,
+                'child-with-parent': childWithParent
+              }
+            },
+            project: { projectPath: '/test', currentView: 'columns' }
+          }
+        })]
+      }
+    })
+
+    const item = wrapper.find('.result-item')
+    expect(item.find('.aim-title').text()).toBe('Child aim')
+    expect(item.find('.aim-path').text()).toBe('Parent aim')
+  })
+
   it('shows H and L indicators only when relatives exist', async () => {
     const aimNoRelatives = { id: 'lonely', text: 'Lonely aim', status: { state: 'open' }, supportedAims: [], supportingConnections: [], score: 1 }
     const wrapper = mount(AimSearchPicker, {

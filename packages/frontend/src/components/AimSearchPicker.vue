@@ -73,15 +73,21 @@ const currentQuery = computed(() => (props.query ?? localQuery.value).trim())
 const displayTitle = computed(() => props.navigationTitle || localNavigationTitle.value)
 
 const items = computed(() => {
+  const toAimItem = (result: SearchAimResult) => ({
+    type: 'aim' as const,
+    data: result,
+    pathContext: getAimPathContext(result)
+  })
+
   if (!navigationMode.value && props.externalResults) {
-    return props.externalResults.map(result => ({ type: 'aim' as const, data: result }))
+    return props.externalResults.map(toAimItem)
   }
 
   return [
     ...props.additionalOptions
       .filter(option => !option.showWhenQueryEmptyOnly || currentQuery.value.length === 0)
       .map(option => ({ type: 'option' as const, data: option })),
-    ...searchResults.value.map(result => ({ type: 'aim' as const, data: result }))
+    ...searchResults.value.map(toAimItem)
   ]
 })
 
@@ -96,9 +102,9 @@ const toggleStatus = (status: string) => {
   }
 }
 
-const getAimDisplayText = (aim: SearchAimResult): string => {
+const getAimPathContext = (aim: SearchAimResult): string | null => {
   const maxLength = 100
-  if (aim.text.length >= maxLength) return aim.text
+  if (aim.text.length >= maxLength) return null
 
   const buildPath = (aimId: string, currentPath: string[]): string[] => {
     const currentAim = dataStore.aims[aimId]
@@ -113,8 +119,9 @@ const getAimDisplayText = (aim: SearchAimResult): string => {
     return buildPath(parentId!, newPath)
   }
 
-  const path = buildPath(aim.id, [aim.text])
-  return path.length === 1 ? aim.text : path.join(' / ')
+  const parentPath = buildPath(aim.id, [])
+  if (parentPath.length === 0) return null
+  return parentPath.join(' / ')
 }
 
 const getAimIdRemainder = (aim: SearchAimResult): string => {
@@ -441,12 +448,15 @@ onUnmounted(() => {
           <template v-else>
             <div class="result-content">
               <div class="result-text">
-                <span class="aim-text">{{ getAimDisplayText(item.data) }}</span>
-                <div class="aim-meta">
-                  <span v-if="item.data.supportedAims?.length" class="nav-indicator">H ←</span>
-                  <span class="aim-status" :class="item.data.status.state">{{ item.data.status.state }}</span>
-                  <span v-if="item.data.supportingConnections?.length" class="nav-indicator">→ L</span>
+                <div class="aim-primary">
+                  <span class="aim-title">{{ item.data.text }}</span>
+                  <div class="aim-meta">
+                    <span v-if="item.data.supportedAims?.length" class="nav-indicator">H ←</span>
+                    <span class="aim-status" :class="item.data.status.state">{{ item.data.status.state }}</span>
+                    <span v-if="item.data.supportingConnections?.length" class="nav-indicator">→ L</span>
+                  </div>
                 </div>
+                <span v-if="item.pathContext" class="aim-path">{{ item.pathContext }}</span>
               </div>
               <div v-if="item.data.idMatch" class="aim-id-match">
                 <span class="aim-id-prefix">{{ item.data.idMatch.prefix }}</span><span>{{ getAimIdRemainder(item.data) }}</span>
@@ -492,11 +502,14 @@ onUnmounted(() => {
 .result-item { padding: 0.8rem 1rem; border-bottom: 1px solid #2d2d2d; cursor: pointer; }
 .result-item.selected { background: #094771; outline: 1px solid #007acc; outline-offset: -1px; }
 .result-item.additional-option { border-bottom-color: #3a3220; }
-.result-text { display: flex; justify-content: space-between; gap: 1rem; }
+.result-text { display: flex; flex-direction: column; gap: 0.2rem; }
 .result-content { display: flex; flex-direction: column; gap: 0.35rem; }
 .option-text { flex-direction: column; gap: 0.2rem; }
+.aim-primary { display: flex; justify-content: space-between; gap: 1rem; }
 .aim-text { color: #f0f0f0; }
-.aim-meta { display: flex; align-items: center; gap: 0.6rem; }
+.aim-title { color: #f0f0f0; font-weight: 600; }
+.aim-path { color: #8c8c8c; font-size: 0.78rem; line-height: 1.2; }
+.aim-meta { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
 .nav-indicator { font-size: 0.7rem; color: #666; background: #2a2a2a; padding: 0.1rem 0.3rem; border-radius: 0.2rem; font-family: monospace; }
 .aim-id-match { color: #8c8c8c; font-family: monospace; font-size: 0.78rem; line-height: 1.2; }
 </style>

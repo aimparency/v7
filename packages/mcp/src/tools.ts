@@ -106,6 +106,69 @@ function formatAims(aims: any[]) {
   return aims.map(formatAim);
 }
 
+type ConnectionInput = string | {
+  aimId: string;
+  weight?: number;
+  explanation?: string;
+  relativePosition?: [number, number];
+};
+
+function connectionInputSchema(description: string) {
+  return {
+    type: "array",
+    description,
+    items: {
+      anyOf: [
+        { type: "string", description: "aim UUID" },
+        {
+          type: "object",
+          properties: {
+            aimId: { type: "string" },
+            weight: { type: "number" },
+            explanation: { type: "string" },
+            relativePosition: {
+              type: "array",
+              items: { type: "number" },
+              minItems: 2,
+              maxItems: 2,
+            },
+          },
+          required: ["aimId"],
+        },
+      ],
+    },
+  };
+}
+
+function normalizeConnectionInput(input: ConnectionInput): {
+  aimId: string;
+  weight?: number;
+  explanation?: string;
+  relativePosition?: [number, number];
+} {
+  if (typeof input === "string") return { aimId: input };
+  return {
+    aimId: input.aimId,
+    weight: input.weight,
+    explanation: input.explanation,
+    relativePosition: input.relativePosition,
+  };
+}
+
+function connectionId(input: ConnectionInput): string {
+  return typeof input === "string" ? input : input.aimId;
+}
+
+function toStoredConnection(input: ConnectionInput) {
+  const conn = normalizeConnectionInput(input);
+  return {
+    aimId: conn.aimId,
+    weight: conn.weight ?? 1,
+    relativePosition: conn.relativePosition ?? [0, 0],
+    ...(conn.explanation !== undefined ? { explanation: conn.explanation } : {}),
+  };
+}
+
 export function registerTools(server: Server, clientOverride?: any) {
   const trpcClient = clientOverride || trpc;
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -207,8 +270,8 @@ export function registerTools(server: Server, clientOverride?: any) {
                   comment: { type: "string" },
                 },
               },
-              supportingConnections: { type: "array", items: { type: "string" }, description: "child aim UUIDs" },
-              supportedAims: { type: "array", items: { type: "string" }, description: "parent aim UUIDs" },
+              supportingConnections: connectionInputSchema("Child aim UUIDs, or objects with aimId/weight/explanation/relativePosition for edge metadata."),
+              supportedAims: connectionInputSchema("Parent aim UUIDs, or objects with aimId/weight/explanation/relativePosition for the parent→new-aim edge."),
               intrinsicValue: { type: "number", description: "Standalone worth; set on goals so value can flow to children" },
               cost: { type: "number", description: "Effort/resource cost; set on tasks so priority is meaningful" },
               phaseId: { type: "string" },
@@ -218,7 +281,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "update_aim",
-          description: "Update aim fields. supportedAims/supportingConnections REPLACE existing links (not append). When work is complete set status=done AND addReflection recording how you verified it (verified-done, not claimed-done); when blocked set unclear/human-dependent with a comment — don't leave finished or stuck aims open.",
+          description: "Update aim fields. Sparse by default. supportedAims/supportingConnections still REPLACE existing links; use add*/remove* connection fields for safer append/remove edits. reflection is a free-text note and can be set with status=done to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
           inputSchema: {
             type: "object",
             properties: {
@@ -226,6 +289,7 @@ export function registerTools(server: Server, clientOverride?: any) {
               aimId: { type: "string" },
               text: { type: "string" },
               description: { type: "string" },
+              reflection: { type: "string", description: "Free-text note/reflection on the aim; can be updated together with status without changing other fields." },
               tags: { type: "array", items: { type: "string" } },
               status: {
                 type: "object",
@@ -234,8 +298,12 @@ export function registerTools(server: Server, clientOverride?: any) {
                   comment: { type: "string" },
                 },
               },
-              supportingConnections: { type: "array", items: { type: "string" }, description: "child aim UUIDs" },
-              supportedAims: { type: "array", items: { type: "string" }, description: "parent aim UUIDs" },
+              supportingConnections: connectionInputSchema("REPLACE child links. Each item may be a child UUID or { aimId, weight, explanation, relativePosition }."),
+              supportedAims: connectionInputSchema("REPLACE parent links. Each item may be a parent UUID or { aimId, weight, explanation, relativePosition }. Metadata applies to the parent→this-aim edge."),
+              addSupportingConnections: connectionInputSchema("Append/update child links without replacing other children. Each item may include weight/explanation/relativePosition."),
+              removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child aim UUIDs to unlink without replacing other children." },
+              addSupportedAims: connectionInputSchema("Append/update parent links without replacing other parents. Each item may include weight/explanation/relativePosition for the parent→this-aim edge."),
+              removeSupportedAims: { type: "array", items: { type: "string" }, description: "Parent aim UUIDs to unlink without replacing other parents." },
               intrinsicValue: { type: "number", description: "Standalone worth; set on goals so value can flow to children" },
               cost: { type: "number", description: "Effort/resource cost; set on tasks so priority is meaningful" },
             },
@@ -256,7 +324,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "addReflection",
-          description: "Record what you learned after marking an aim done (context, outcome, effectiveness, lesson). Builds the graph's memory for future work.",
+          description: "Append a structured reflection (context, outcome, effectiveness, lesson) without changing aim status. For a simple free-text note, use update_aim.reflection.",
           inputSchema: {
             type: "object",
             properties: {
@@ -754,22 +822,30 @@ export function registerTools(server: Server, clientOverride?: any) {
           });
 
           // Handle supportingConnections (children)
-          const children = (args.supportingConnections as string[]) || [];
-          for (const childId of children) {
+          const children = (args.supportingConnections as ConnectionInput[]) || [];
+          for (const childInput of children) {
+            const child = normalizeConnectionInput(childInput);
             await trpcClient.aim.connectAims.mutate({
               projectPath: args.projectPath as string,
               parentAimId: result.id,
-              childAimId: childId,
+              childAimId: child.aimId,
+              relativePosition: child.relativePosition,
+              weight: child.weight,
+              explanation: child.explanation,
             });
           }
 
           // Handle supportedAims (parents)
-          const parents = (args.supportedAims as string[]) || [];
-          for (const parentId of parents) {
+          const parents = (args.supportedAims as ConnectionInput[]) || [];
+          for (const parentInput of parents) {
+            const parent = normalizeConnectionInput(parentInput);
             await trpcClient.aim.connectAims.mutate({
               projectPath: args.projectPath as string,
-              parentAimId: parentId,
+              parentAimId: parent.aimId,
               childAimId: result.id,
+              relativePosition: parent.relativePosition,
+              weight: parent.weight,
+              explanation: parent.explanation,
             });
           }
 
@@ -808,25 +884,125 @@ export function registerTools(server: Server, clientOverride?: any) {
           const updateData: any = {};
           if (args.text) updateData.text = args.text;
           if (args.description !== undefined) updateData.description = args.description;
+          if (args.reflection !== undefined) updateData.reflection = args.reflection;
           if (args.tags) updateData.tags = args.tags;
           if (args.status) updateData.status = args.status;
           if (args.intrinsicValue !== undefined) updateData.intrinsicValue = args.intrinsicValue;
           if (args.cost !== undefined) updateData.cost = args.cost;
 
-          if (args.supportingConnections) {
-              updateData.supportingConnections = (args.supportingConnections as string[]).map(id => ({
-                  aimId: id,
-                  weight: 1,
-                  relativePosition: [0,0]
-              }));
+          const hasConnectionDeltas =
+            args.addSupportingConnections !== undefined ||
+            args.removeSupportingConnections !== undefined ||
+            args.addSupportedAims !== undefined ||
+            args.removeSupportedAims !== undefined;
+
+          const parentMetadataToApply: Array<{
+            parentAimId: string;
+            relativePosition?: [number, number];
+            weight?: number;
+            explanation?: string;
+          }> = [];
+
+          if (args.supportingConnections !== undefined) {
+              updateData.supportingConnections = (args.supportingConnections as ConnectionInput[]).map(toStoredConnection);
           }
-          if (args.supportedAims) updateData.supportedAims = args.supportedAims;
+          if (args.supportedAims !== undefined) {
+            const supportedAimInputs = args.supportedAims as ConnectionInput[];
+            updateData.supportedAims = supportedAimInputs.map(connectionId);
+            for (const input of supportedAimInputs) {
+              if (typeof input === "string") continue;
+              const parent = normalizeConnectionInput(input);
+              parentMetadataToApply.push({
+                parentAimId: parent.aimId,
+                relativePosition: parent.relativePosition,
+                weight: parent.weight,
+                explanation: parent.explanation,
+              });
+            }
+          }
+
+          if (hasConnectionDeltas) {
+            const existingAim = await trpcClient.aim.get.query({
+              projectPath: args.projectPath as string,
+              aimId: args.aimId as string,
+            });
+
+            if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined) {
+              const byChildId = new Map<string, any>();
+              const baseSupportingConnections = updateData.supportingConnections ?? existingAim.supportingConnections ?? [];
+              for (const conn of baseSupportingConnections) {
+                byChildId.set(conn.aimId, { ...conn });
+              }
+              for (const childId of (args.removeSupportingConnections as string[] | undefined) ?? []) {
+                byChildId.delete(childId);
+              }
+              for (const input of (args.addSupportingConnections as ConnectionInput[] | undefined) ?? []) {
+                const next = toStoredConnection(input);
+                byChildId.set(next.aimId, { ...(byChildId.get(next.aimId) ?? {}), ...next });
+              }
+              updateData.supportingConnections = Array.from(byChildId.values());
+            }
+
+            if (args.addSupportedAims !== undefined || args.removeSupportedAims !== undefined) {
+              const parentIds = new Set<string>(updateData.supportedAims ?? existingAim.supportedAims ?? []);
+              for (const parentId of (args.removeSupportedAims as string[] | undefined) ?? []) {
+                parentIds.delete(parentId);
+              }
+              for (const input of (args.addSupportedAims as ConnectionInput[] | undefined) ?? []) {
+                const parent = normalizeConnectionInput(input);
+                parentIds.add(parent.aimId);
+                if (typeof input !== "string") {
+                  parentMetadataToApply.push({
+                    parentAimId: parent.aimId,
+                    relativePosition: parent.relativePosition,
+                    weight: parent.weight,
+                    explanation: parent.explanation,
+                  });
+                }
+              }
+              updateData.supportedAims = Array.from(parentIds);
+            }
+          }
 
           await trpcClient.aim.update.mutate({
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
             aim: updateData,
           });
+
+          for (const parent of parentMetadataToApply) {
+            if (
+              parent.relativePosition === undefined &&
+              parent.weight === undefined &&
+              parent.explanation === undefined
+            ) continue;
+
+            const parentAim = await trpcClient.aim.get.query({
+              projectPath: args.projectPath as string,
+              aimId: parent.parentAimId,
+            });
+            const childAimId = args.aimId as string;
+            const supportingConnections = [...(parentAim.supportingConnections ?? [])];
+            const existingIndex = supportingConnections.findIndex((conn: any) => conn.aimId === childAimId);
+            const previous = existingIndex === -1 ? { aimId: childAimId } : supportingConnections[existingIndex];
+            const next = {
+              ...previous,
+              aimId: childAimId,
+              relativePosition: parent.relativePosition ?? previous.relativePosition ?? [0, 0],
+              weight: parent.weight ?? previous.weight ?? 1,
+              ...(parent.explanation !== undefined ? { explanation: parent.explanation } : {}),
+            };
+            if (existingIndex === -1) {
+              supportingConnections.push(next);
+            } else {
+              supportingConnections[existingIndex] = next;
+            }
+            await trpcClient.aim.update.mutate({
+              projectPath: args.projectPath as string,
+              aimId: parent.parentAimId,
+              aim: { supportingConnections },
+            });
+          }
 
           // Verification gate (soft): closing an aim should mean verified-done,
           // not claimed-done. When status is set to done without any reflection
@@ -839,12 +1015,14 @@ export function registerTools(server: Server, clientOverride?: any) {
                 projectPath: args.projectPath as string,
                 aimId: args.aimId as string,
               });
-              const hasReflection = Array.isArray(aim?.reflections) && aim.reflections.length > 0;
+              const hasReflection =
+                (typeof aim?.reflection === "string" && aim.reflection.trim().length > 0) ||
+                (Array.isArray(aim?.reflections) && aim.reflections.length > 0);
               if (!hasReflection) {
                 verificationNudge =
-                  "\n\nReminder: marked done without a reflection. Record the verification evidence — " +
+                  "\n\nReminder: marked done without a reflection. Record the verification evidence in update_aim.reflection or addReflection — " +
                   verificationHintForAim(aim) +
-                  " — via addReflection, so the graph reflects verified-done rather than claimed-done.";
+                  " — so the graph reflects verified-done rather than claimed-done.";
               }
             } catch {
               // best-effort: a failed lookup must not break the update

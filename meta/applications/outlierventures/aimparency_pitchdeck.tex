@@ -1,0 +1,304 @@
+\documentclass[12pt]{article}
+\usepackage[papersize={24cm,13.5cm},margin=1.2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+% Clean sans-serif font
+\renewcommand{\familydefault}{\sfdefault}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+
+% Custom Color Palette (aligned with Aimparency's UI & OV's aesthetic)
+\definecolor{bgdark}{HTML}{0B0F19}      % Slate 950
+\definecolor{bgcard}{HTML}{1E293B}    % Slate 800
+\definecolor{aimgold}{HTML}{F59E0B}     % Amber 500 (High priority / Accent)
+\definecolor{aimcyan}{HTML}{06B6D4}     % Cyan 500 (Dunkel cyan / Secondary)
+\definecolor{textlight}{HTML}{F8FAFC}   % Slate 50
+\definecolor{textmuted}{HTML}{94A3B8}   % Slate 400
+
+% Helper command for slides
+\newcommand{\slide}[1]{%
+  \clearpage
+  \pagecolor{bgdark}
+  \color{textlight}
+  \noindent{\Large\bfseries\color{aimgold}{#1}}\par
+  \vspace{0.6cm}
+}
+
+% Helper for columns
+\newcommand{\col}[2]{%
+  \begin{minipage}[t]{#1\textwidth}
+    #2
+  \end{minipage}%
+}
+
+% Custom box using standard colorbox and minipage with padding
+\newcommand{\card}[2]{%
+  \colorbox{bgcard}{%
+    \begin{minipage}{\dimexpr#1\textwidth-2\fboxsep-2\fboxrule\relax}%
+      \vspace{0.2cm}%
+      \color{textlight}%
+      #2%
+      \vspace{0.2cm}%
+    \end{minipage}%
+  }%
+}
+
+% Helper to compact itemize lists
+\newenvironment{slideitemize}{%
+  \begin{itemize}%
+    \setlength{\itemsep}{4pt}%
+    \setlength{\parskip}{0pt}%
+    \setlength{\parsep}{0pt}%
+}{%
+  \end{itemize}%
+}
+
+\begin{document}
+\pagecolor{bgdark}
+\color{textlight}
+
+% ==================== SLIDE 1: TITLE ====================
+\vspace*{2.2cm}
+\begin{center}
+  {\Huge\bfseries\color{textlight} Aimparency}\par
+  \vspace{0.4cm}
+  {\large\color{aimgold} Cognitive Sovereignty Infrastructure for the AI Era}\par
+  \vspace{0.6cm}
+  {\normalsize\color{textmuted} Git-backed, open-source communication layer between human intent and AI agency}\par
+  \vspace{2.2cm}
+  {\small Felix Niemeyer \quad | \quad July 2026}
+\end{center}
+
+% ==================== SLIDE 2: THE PROBLEM ====================
+\slide{The Problem: The AI Agency Steering Gap}
+\large \textbf{As AI systems become autonomous, humans lose agency over direction-setting.}
+\vspace{0.8cm}
+\normalsize
+
+\col{0.48}{
+  \textbf{The Current False Dichotomy}
+  \vspace{0.2cm}
+  \begin{slideitemize}
+    \item \textbf{Chatbots (No Structure):} AI treated as stateless conversational partners, failing to build cumulative, long-term plans.
+    \item \textbf{Black Boxes (No Transparency):} Autonomous agent loops executing plans in hidden states without user oversight.
+  \end{slideitemize}
+}
+\hfill
+\col{0.48}{
+  \card{1.0}{
+    \hspace{0.2cm}%
+    \begin{minipage}{\dimexpr\textwidth-0.4cm\relax}
+      \textbf{\color{aimgold}The Structural Deficit}
+      \vspace{0.2cm}
+      There is currently no verifiable, transparent protocol for translating abstract human wishes into structured, AI-executable plans.
+    \end{minipage}
+  }
+}
+
+% ==================== SLIDE 3: ORIGIN STORY ====================
+\slide{Origin Story: The Evolution of Summits}
+\large \textbf{Solving the goal-alignment and value-routing problem across paradigm shifts.}
+\vspace{0.8cm}
+\normalsize
+
+\col{0.5}{
+  \textbf{The Blockchain Substrate (5 Years Ago)}
+  \begin{slideitemize}
+    \item Built \textbf{Summits}, a blockchain dApp for networked OKRs and governance-token-incentivized contribution (won hackathon).
+    \item \textbf{Core Insight:} Visualize goals as a graph, make value flows transparent, and align community effort with vision.
+  \end{slideitemize}
+}
+\hfill
+\col{0.45}{
+  \card{1.0}{
+    \hspace{0.2cm}%
+    \begin{minipage}{\dimexpr\textwidth-0.4cm\relax}
+      \textbf{\color{aimcyan}The AI Agent Substrate (Today)}
+      \vspace{0.2cm}
+      The substrate has shifted from blockchains to AI agents, but the challenge is identical: \textbf{structuring intent, aligning effort, and verifying outcomes.}
+    \end{minipage}
+  }
+}
+
+% ==================== SLIDE 4: WHAT IS AIMPARENCY ====================
+\slide{What Aimparency Is: The Wish Machine}
+\large \textbf{A ``wish machine'' for long-horizon thinkers.}
+\vspace{0.8cm}
+\normalsize
+
+\col{0.48}{
+  \textbf{Structured Intention Decomposition}
+  \begin{slideitemize}
+    \item A Git-backed aim graph that decomposes abstract human visions into structured, AI-assisted progress.
+    \item Every connection maintains explicit, auditable reasoning.
+  \end{slideitemize}
+}
+\hfill
+\col{0.48}{
+  \card{1.0}{
+    \hspace{0.2cm}%
+    \begin{minipage}{\dimexpr\textwidth-0.4cm\relax}
+      \textbf{\color{aimgold}Priority Alignment}
+      \vspace{0.2cm}
+      Value-vs-cost prioritization is built directly into the graph. Every aim, priority shift, and agent action is fully auditable, reproducible, and transparent.
+    \end{minipage}
+  }
+}
+
+% ==================== SLIDE 5: COGNITIVE SOVEREIGNTY ====================
+\slide{Cognitive Sovereignty: Steering vs. Execution}
+\large \textbf{Maintaining human agency over direction-setting while AI handles execution.}
+\vspace{0.8cm}
+\normalsize
+
+\col{0.48}{
+  \textbf{A Needs Interface, Not a Steering Wheel}
+  \begin{slideitemize}
+    \item Humans seed top-level aims (strategic destination).
+    \item Autonomous AI agent loops pursue aims through a structured, human-readable interface.
+    \item The agent decomposes the goal, identifies constraints, and proposes actions.
+  \end{slideitemize}
+}
+\hfill
+\col{0.48}{
+  \card{1.0}{
+    \hspace{0.2cm}%
+    \begin{minipage}{\dimexpr\textwidth-0.4cm\relax}
+      \textbf{\color{aimcyan}Verifiable Cooperation}
+      \vspace{0.2cm}
+      Ensures the human remains the final authority and steering mind. Prevents agents from running off-track or building counter to the user's intent.
+    \end{minipage}
+  }
+}
+
+% ==================== SLIDE 6: TECHNICAL ARCHITECTURE ====================
+\slide{Technical Architecture: Local-First Agent Loop}
+\large \textbf{Local-first persistence combined with direct agent execution loops.}
+\vspace{0.8cm}
+\normalsize
+
+\col{0.48}{
+  \textbf{Core Engine}
+  \begin{slideitemize}
+    \item \textbf{Direct LLM API loop:} Built-in support for NVIDIA GLM 2, Claude, and Codex hooks.
+    \item \textbf{Git Persistence Layer:} Local-first `.bowman` directory storing plain JSON schemas of aims, phases, and configs.
+  \end{slideitemize}
+}
+\hfill
+\col{0.48}{
+  \card{1.0}{
+    \hspace{0.2cm}%
+    \begin{minipage}{\dimexpr\textwidth-0.4cm\relax}
+      \textbf{\color{aimgold}Autonomous Loop}
+      \vspace{0.2cm}
+      The agent loop identifies top-level aims, evaluates local codebase context relative to the vision, and autonomously writes/implements code. \\
+      \textit{Tool layer in active development for file creation and editing.}
+    \end{minipage}
+  }
+}
+
+% ==================== SLIDE 7: WHY GIT-BACKED MATTERS ====================
+\slide{Why Git-Backed Matters: The Verifiability Premium}
+\large \textbf{Git is the trust layer that crypto-native and decentralized systems understand.}
+\vspace{0.8cm}
+\normalsize
+
+\col{0.48}{
+  \textbf{Core Trust Properties}
+  \begin{slideitemize}
+    \item \textbf{Verifiability:} Every planning change, priority shift, or agent reflection is a cryptographic Git commit.
+    \item \textbf{Composability:} Open, file-based protocol designed to compose with other agent frameworks.
+  \end{slideitemize}
+}
+\hfill
+\col{0.48}{
+  \card{1.0}{
+    \hspace{0.2cm}%
+    \begin{minipage}{\dimexpr\textwidth-0.4cm\relax}
+      \textbf{\color{aimcyan}No Walled Garden}
+      \vspace{0.2cm}
+      Complete auditability. If an agent goes rogue or makes an error, the history is fully reproducible and reversible in Git. Exit is built-in.
+    \end{minipage}
+  }
+}
+
+% ==================== SLIDE 8: TRACTION & VALIDATION ====================
+\slide{Traction \& Validation: Dogfooding the Protocol}
+\large \textbf{A functional prototype actively driving its own development.}
+\vspace{0.8cm}
+\normalsize
+
+\col{0.48}{
+  \textbf{Real-World Use Cases}
+  \begin{slideitemize}
+    \item \textbf{Dogfooding:} Used daily to plan, structure, and code my own life/projects.
+    \item \textbf{Grant Elicitation:} Built-in grant research loop autonomously identified German AI funding opportunities (ZIM, IBB).
+  \end{slideitemize}
+}
+\hfill
+\col{0.48}{
+  \card{1.0}{
+    \hspace{0.2cm}%
+    \begin{minipage}{\dimexpr\textwidth-0.4cm\relax}
+      \textbf{\color{aimgold}External Validation}
+      \vspace{0.2cm}
+      \textbf{Alexander Lawson} (ex-Clearco VP, building European deep tech fund) validated the architecture and suggested utilizing grant funding as proof-of-concept. \\
+      \textit{Open-source under MIT license.}
+    \end{minipage}
+  }
+}
+
+% ==================== SLIDE 9: ASK & USE OF FUNDS ====================
+\slide{Ask \& Use of Funds}
+\large \textbf{Seeking minimal, focused runway to complete the autonomous capabilities.}
+\vspace{0.8cm}
+\normalsize
+
+\col{0.48}{
+  \textbf{Funding Target}
+  \begin{slideitemize}
+    \item \textbf{Ask:} \textbf{€2K/month} for 6--12 months.
+    \item \textbf{Focus:} Scale the autonomous loop and finalize the file creation/editing tool layer.
+  \end{slideitemize}
+}
+\hfill
+\col{0.48}{
+  \card{1.0}{
+    \hspace{0.2cm}%
+    \begin{minipage}{\dimexpr\textwidth-0.4cm\relax}
+      \textbf{\color{aimcyan}Allocation \& Web3 Openness}
+      \vspace{0.2cm}
+      100\% of funds go directly to API compute/tokens and basic developer living expenses. \\
+      \vspace{0.1cm}
+      \textbf{Open to token-based models} if aligned with the long-term protocol vision.
+    \end{minipage}
+  }
+}
+
+% ==================== SLIDE 10: VISION ====================
+\slide{Vision: The Intention Economy}
+\large \textbf{Moving toward economically self-sustainable AI networks.}
+\vspace{0.8cm}
+\normalsize
+
+\col{0.5}{
+  \textbf{Economic Self-Sustainability}
+  \begin{slideitemize}
+    \item The agent loop scans market trends, forms hypotheses, and develops products people actually pay for.
+    \item The agent funds its own compute fees through market revenue.
+  \end{slideitemize}
+}
+\hfill
+\col{0.45}{
+  \card{1.0}{
+    \hspace{0.2cm}%
+    \begin{minipage}{\dimexpr\textwidth-0.4cm\relax}
+      \textbf{\color{aimgold}Infrastructure for Intention}
+      \vspace{0.2cm}
+      Not just a planner, but the protocol for human-AI interaction in the intention economy. The next evolution of the Summits thesis, active at the AI frontier.
+    \end{minipage}
+  }
+}
+
+\end{document}

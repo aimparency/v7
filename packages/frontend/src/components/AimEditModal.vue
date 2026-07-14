@@ -335,27 +335,13 @@ watch(() => modalStore.showAimSearch, async (isOpen, wasOpen) => {
 const handleModalKeydown = (event: KeyboardEvent) => {
   event.stopPropagation()
 
-  if (confirmingDiscard.value) {
-    if (event.key === 'Escape') {
-      event.preventDefault()
-      keepEditing()
-      return
-    }
-    if (event.key === 'Enter') {
-      const target = event.target as HTMLElement | null
-      if (target && (target.tagName === 'BUTTON' || target.closest('button'))) {
-        return
-      }
-      event.preventDefault()
-      discardChanges()
-      return
-    }
-    return
-  }
-
   if (event.key === 'Escape') {
     event.preventDefault()
     handleCancel()
+    return
+  }
+
+  if (confirmingDiscard.value) {
     return
   }
 
@@ -471,10 +457,15 @@ const handleSave = async () => {
 const handleCancel = () => {
   // Leaving with unsaved edits is easy to do by accident (Escape out of a
   // textarea, stray overlay click), so ask for confirmation first.
-  if (isDirty.value && !confirmingDiscard.value) {
-    confirmingDiscard.value = true
-    nextTick(() => discardBtn.value?.focus())
-    return
+  if (isDirty.value) {
+    if (!confirmingDiscard.value) {
+      confirmingDiscard.value = true
+      nextTick(() => discardBtn.value?.focus())
+      return
+    } else {
+      keepEditing()
+      return
+    }
   }
   confirmingDiscard.value = false
   emit('close')

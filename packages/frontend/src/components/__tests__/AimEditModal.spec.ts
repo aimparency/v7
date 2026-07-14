@@ -248,7 +248,42 @@ describe('AimEditModal keyboard save behavior', () => {
   })
 
   it('opens confirmation on Escape when dirty, and cancels/stays on 2nd Escape', async () => {
-    const { wrapper } = mountEditModal()
+    const div = document.createElement('div')
+    document.body.appendChild(div)
+
+    const pinia = createTestingPinia({
+      createSpy: vi.fn,
+      initialState: {
+        'ui-project': { projectPath: '/test/project' },
+        data: {
+          aims: {
+            'aim-1': {
+              id: 'aim-1', text: 'Old title', description: '', tags: [],
+              status: { state: 'open', comment: '' }, archived: false,
+              intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+              supportedAims: [], supportingConnections: [], incoming: [], committedIn: []
+            }
+          },
+          meta: {
+            statuses: [{ key: 'open', color: '#fff', ongoing: true }, { key: 'done', color: '#0f0', ongoing: false }]
+          }
+        }
+      }
+    })
+
+    const wrapper = mount(AimEditModal, {
+      props: { show: false, aimId: 'aim-1' },
+      global: { plugins: [pinia] },
+      attachTo: div
+    })
+
+    const dataStore = useDataStore(pinia)
+    dataStore.aims['aim-1'] = {
+      id: 'aim-1', text: 'Old title', description: '', tags: [],
+      status: { state: 'open', comment: '', date: Date.now() }, archived: false,
+      intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+      supportedAims: [], supportingConnections: [], committedIn: []
+    } as any
 
     await wrapper.setProps({ show: true })
     await wrapper.vm.$nextTick()
@@ -271,10 +306,48 @@ describe('AimEditModal keyboard save behavior', () => {
 
     expect(wrapper.vm.confirmingDiscard).toBe(false)
     expect(wrapper.emitted('close')).toBeFalsy()
+
+    wrapper.unmount()
+    div.remove()
   })
 
-  it('opens confirmation on Escape when dirty, and closes/discards on Enter', async () => {
-    const { wrapper } = mountEditModal()
+  it('opens confirmation on Escape when dirty, focuses the discard button, and closes/discards on click', async () => {
+    const div = document.createElement('div')
+    document.body.appendChild(div)
+
+    const pinia = createTestingPinia({
+      createSpy: vi.fn,
+      initialState: {
+        'ui-project': { projectPath: '/test/project' },
+        data: {
+          aims: {
+            'aim-1': {
+              id: 'aim-1', text: 'Old title', description: '', tags: [],
+              status: { state: 'open', comment: '' }, archived: false,
+              intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+              supportedAims: [], supportingConnections: [], incoming: [], committedIn: []
+            }
+          },
+          meta: {
+            statuses: [{ key: 'open', color: '#fff', ongoing: true }, { key: 'done', color: '#0f0', ongoing: false }]
+          }
+        }
+      }
+    })
+
+    const wrapper = mount(AimEditModal, {
+      props: { show: false, aimId: 'aim-1' },
+      global: { plugins: [pinia] },
+      attachTo: div
+    })
+
+    const dataStore = useDataStore(pinia)
+    dataStore.aims['aim-1'] = {
+      id: 'aim-1', text: 'Old title', description: '', tags: [],
+      status: { state: 'open', comment: '', date: Date.now() }, archived: false,
+      intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+      supportedAims: [], supportingConnections: [], committedIn: []
+    } as any
 
     await wrapper.setProps({ show: true })
     await wrapper.vm.$nextTick()
@@ -287,15 +360,23 @@ describe('AimEditModal keyboard save behavior', () => {
     // Escape: triggers confirmation overlay
     await title.trigger('keydown', { key: 'Escape' })
     await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
 
     expect(wrapper.vm.confirmingDiscard).toBe(true)
 
-    // Enter: confirms modal close/discard
-    await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
+    // Focuses the discard button (OK button)
+    const discardBtn = wrapper.find('.btn-discard')
+    expect(document.activeElement).toBe(discardBtn.element)
+
+    // Click: confirms modal close/discard
+    await discardBtn.trigger('click')
     await wrapper.vm.$nextTick()
 
     expect(wrapper.vm.confirmingDiscard).toBe(false)
     expect(wrapper.emitted('close')).toBeTruthy()
+
+    wrapper.unmount()
+    div.remove()
   })
 })
 
