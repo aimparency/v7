@@ -24,14 +24,15 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "open",
-    "comment": "AI said: Restored link.share weighting via shareWeight = 0.5 + 0.5 * link.share. But I don't think it's happening. very tiny connections still have a strong influence. We have to look at incoming and outgoing relationships and weight them by their absolute flow (size). Can you double check this? I reopened",
-    "date": 1783171567831
+    "state": "done",
+    "comment": "Fixed in simulation: flow force now weighted by absolute flowValue (transported value) instead of normalized share floor.",
+    "date": 1784018109472
   },
   "intrinsicValue": 5,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Implemented the requested weighting for graph node connection forces.\n\nChange:\n- Extended GraphLink interface with flowValue: number.\n- Pass flowValue from dataStore.graphData (already computed as parentValue * share) into internal links.\n- In flow force loop (useGraphSimulation.ts): replaced shareWeight = 0.5 + 0.5*share with flow-based flowWeight = flow > 0 ? max(0.02, min(1.5, flow * 5)) : 0.01\n- Used flowWeight in both parent/child shift scalings.\n\nEvidence:\n- Code change matches the aim description and the reopen note (tiny connections no longer dominate; absolute size now controls influence).\n- Verified: npm run type-check (only pre-existing baseUrl deprecation); npm run test:unit (153/154 pass, 1 unrelated App.spec header path fail).\n- Previous share floor gave ~0.5 strength to near-0 share links; now ~0 for tiny flowValue (e.g. 0.01 flow -> 0.05), full strength for larger flows (~0.25 flow -> ~1.25).\n- Incoming/outgoing covered since all hierarchy links (child<->parent) carry their flowValue and are processed symmetrically.\n\nThis closes the July phase open aim for graph force weighting by connection size. (Related visuals in WebGL/GraphLink still use share for thickness which is appropriate for relative %.)"
 }

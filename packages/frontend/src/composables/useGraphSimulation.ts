@@ -40,6 +40,7 @@ export interface GraphLink {
   relativePosition: vec2.T
   weight: number
   share: number
+  flowValue: number
 }
 
 // Helper: Sweep and Prune (1-axis sort)
@@ -254,7 +255,8 @@ export function useGraphSimulation() {
           target,
           relativePosition: l.relativePosition || [0, 0],
           weight: l.weight || 1,
-          share: l.share || 0
+          share: l.share || 0,
+          flowValue: l.flowValue || 0
         })
       }
     })
@@ -485,19 +487,24 @@ export function useGraphSimulation() {
             const rSum = from.r + into.r
             
             vec2.scale(delta, link.relativePosition, rSum)
-            
-            const shareWeight = 0.5 + 0.5 * link.share
+
+            // Weight flow force by absolute value transported on the connection (flowValue = parentValue * share).
+            // Addresses July aim 7815eb52: "weigh graph node connection force by connection size (how much value is transported by it)".
+            // Tiny flows now contribute near-zero force (no floor from normalized share); stronger value flows pull harder (bounded).
+            // Previously: shareWeight = 0.5 + 0.5*share gave tiny connections ~half strength.
+            const flow = link.flowValue || 0
+            const flowWeight = flow > 0 ? Math.max(0.02, Math.min(1.5, flow * 5)) : 0.01
 
             // Parent
             vec2.sub(targetPos, from.pos, delta)
             vec2.sub(targetShift, targetPos, into.pos)
-            vec2.scale(targetShift, targetShift, (from.r / rSum) * shareWeight)
+            vec2.scale(targetShift, targetShift, (from.r / rSum) * flowWeight)
             vec2.add(into.shift, into.shift, targetShift)
 
             // Child
             vec2.add(targetPos, into.pos, delta)
             vec2.sub(targetShift, targetPos, from.pos)
-            vec2.scale(targetShift, targetShift, (into.r / rSum) * shareWeight)
+            vec2.scale(targetShift, targetShift, (into.r / rSum) * flowWeight)
             vec2.add(from.shift, from.shift, targetShift)
         }
 
