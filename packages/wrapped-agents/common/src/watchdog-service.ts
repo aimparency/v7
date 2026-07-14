@@ -471,7 +471,12 @@ export class WatchdogService {
       // Enabling is a fresh start: clear any stuck ERROR/backoff state so the
       // operator's "automate" toggle actually restarts the loop from EXPLORING
       // rather than resuming a wedged ERROR machine.
-      this.supervisorState.reset();
+      // Use closeCircuit if we were in circuit breaker to properly record recovery.
+      if (this.supervisorState.isCircuitOpen()) {
+        this.supervisorState.closeCircuit();
+      } else {
+        this.supervisorState.reset();
+      }
     } else {
       this.waitingForResponse = false;
       this.processing = false;

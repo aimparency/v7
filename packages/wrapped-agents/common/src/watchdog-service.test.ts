@@ -273,6 +273,21 @@ test('enabling clears a stuck ERROR state (automate = fresh restart)', () => {
   assert.equal(supervisorState.getContext().errorCount, 0);
 });
 
+test('circuit breaker opens after N consecutive errors and enabling uses closeCircuit', () => {
+  const service = makeService();
+  const supervisorState = (service as any).supervisorState;
+
+  // Force count high, then transition to ERROR to trigger circuit (consecutive via errorCount)
+  supervisorState.context.errorCount = 4;
+  supervisorState.transition('ERROR', 'test-error');
+  assert.equal(supervisorState.getState(), 'CIRCUIT_OPEN');
+  assert.ok(supervisorState.isCircuitOpen());
+
+  service.setEnabled(true);
+  assert.equal(supervisorState.getState(), 'EXPLORING');
+  assert.equal(supervisorState.getContext().errorCount, 0);
+});
+
 const TEN_MINUTES_MS = 10 * 60 * 1000; // matches AUTO_RETRY_AFTER_ERROR_MS default
 
 test('error auto-retry re-enables a fresh EXPLORING run after the delay', (t) => {
