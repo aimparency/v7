@@ -203,6 +203,15 @@ export class SessionMemory {
       const date = new Date(summary.timestamp).toISOString().slice(0, 16).replace('T', ' ');
       const durationMins = Math.round(summary.duration / 60000);
 
+      if (summary.sessionId.startsWith('meta-')) {
+        lines.push(`**Meta-summary from ${summaries.length} sessions** (${date}):`);
+        if (summary.rawReflection) {
+          lines.push(`  - ${summary.rawReflection.slice(0, 300)}`);
+        }
+        lines.push('');
+        continue;
+      }
+
       lines.push(`**Session ${date}** (${durationMins}min):`);
 
       if (summary.outcomes) {
@@ -326,7 +335,7 @@ export class SessionMemory {
    * most recent summaries uncompressed; creates meta-summaries for older batches
    * and prunes the originals. This bounds .bowman/memory/sessions growth.
    */
-  static async compressOldSessions(projectPath: string, threshold: number = 10): Promise<void> {
+  static async compressOldSessions(projectPath: string, threshold: number = 10, llmSummarizer?: (summaries: SessionSummary[]) => Promise<Partial<Pick<SessionSummary, 'outcomes' | 'patterns' | 'lessonsLearned' | 'systemLimitations' | 'rawReflection'>>> ): Promise<void> {
     try {
       let summaries = await SessionMemory.loadRecentSummaries(projectPath, 100);
 
@@ -348,18 +357,38 @@ export class SessionMemory {
       const memoryDir = path.join(projectPath, '.bowman', 'memory', 'sessions');
       await fs.ensureDir(memoryDir);
 
-      // Build a meta-summary (heuristic "compression"; an LLM would produce a
-      // more coherent narrative from the raw fields)
+      // Use LLM summarizer if provided (via existing agent or MCP tools to produce
+      // coherent meta from the batch). Otherwise heuristic.
+      let metaOutcomes = toCompress.map(s => s.outcomes || '').filter(Boolean).join(' || ').slice(0, 600);
+      let metaPatterns = toCompress.map(s => s.patterns || '').filter(Boolean).join(' | ').slice(0, 400);
+      let metaLessons = toCompress.map(s => s.lessonsLearned || '').filter(Boolean).join(' | ').slice(0, 400);
+      let metaLimits = toCompress.map(s => s.systemLimitations || '').filter(Boolean).join(' | ').slice(0, 400);
+      let metaRaw = `Meta-summary compressed from ${toCompress.length} prior sessions (oldest first). Key signals aggregated from outcomes/patterns/lessons/limitations.`;
+
+      if (llmSummarizer) {
+        try {
+          const llmMeta = await llmSummarizer(toCompress);
+          metaOutcomes = llmMeta.outcomes || metaOutcomes;
+          metaPatterns = llmMeta.patterns || metaPatterns;
+          metaLessons = llmMeta.lessonsLearned || metaLessons;
+          metaLimits = llmMeta.systemLimitations || metaLimits;
+          metaRaw = llmMeta.rawReflection || metaRaw;
+        } catch (e) {
+          console.error('[SessionMemory] LLM summarizer failed, falling back to heuristic', e);
+        }
+      }
+
+      // Build a meta-summary (LLM or heuristic "compression")
       const meta: SessionSummary = {
         sessionId: `meta-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         timestamp: Date.now(),
         duration: toCompress.reduce((sum, s) => sum + (s.duration || 0), 0),
         aimsWorked: Array.from(new Set(toCompress.flatMap(s => s.aimsWorked || []))),
-        outcomes: toCompress.map(s => s.outcomes || '').filter(Boolean).join(' || ').slice(0, 600),
-        patterns: toCompress.map(s => s.patterns || '').filter(Boolean).join(' | ').slice(0, 400),
-        lessonsLearned: toCompress.map(s => s.lessonsLearned || '').filter(Boolean).join(' | ').slice(0, 400),
-        systemLimitations: toCompress.map(s => s.systemLimitations || '').filter(Boolean).join(' | ').slice(0, 400),
-        rawReflection: `Meta-summary compressed from ${toCompress.length} prior sessions (oldest first). Key signals aggregated from outcomes/patterns/lessons/limitations.`
+        outcomes: metaOutcomes,
+        patterns: metaPatterns,
+        lessonsLearned: metaLessons,
+        systemLimitations: metaLimits,
+        rawReflection: metaRaw
       };
 
       const metaPath = path.join(memoryDir, `${meta.sessionId}.json`);
@@ -376,7 +405,7 @@ export class SessionMemory {
       console.log(`[SessionMemory] Compressed ${toCompress.length} old sessions into meta-summary ${meta.sessionId}.`);
 
       // Recursive: check again after pruning
-      await SessionMemory.compressOldSessions(projectPath, threshold);
+      await SessionMemory.compressOldSessions(projectPath, threshold, llmSummarizer);
     } catch (error) {
       console.error('[SessionMemory] Failed to compress old sessions:', error);
     }

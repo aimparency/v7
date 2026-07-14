@@ -374,7 +374,7 @@ export class WatchdogService {
    */
   private async loadSessionMemoryContext(projectPath: string) {
     try {
-      const summaries = await SessionMemory.loadRecentSummaries(projectPath, 5);
+      const summaries = await SessionMemory.loadRecentSummaries(projectPath, 20);
       // Real, structured limitation data from the durable ERROR log — surfaced
       // alongside the session insights so the next run can target its own
       // recurring failures (recursive self-improvement) instead of rediscovering
@@ -382,6 +382,13 @@ export class WatchdogService {
       const friction = await SessionMemory.summarizeRecentFriction();
       // Human-authored, always-on project directives (aim 2fbd88df).
       const projectInstructions = await readProjectInstructions(projectPath);
+
+      // Call compression periodically on startup if over threshold (LLM summarization
+      // can be injected by the autonomous loop using MCP/LLM tools when this detects the need).
+      if (summaries.length >= 10) {
+        this.log(`Loaded ${summaries.length} summaries, triggering compression...`);
+        await SessionMemory.compressOldSessions(projectPath, 10);
+      }
 
       this.instructTextWithMemory = composeInstructContext({
         baseInstructText: this.baseInstructText,
