@@ -465,6 +465,11 @@ export function useGraphInteraction(
             nodeLongPressTimer = window.setTimeout(() => {
                 nodeLongPressTimer = undefined
                 if (mapStore.cursorMoved) return
+                if (uiStore.multiSelectCount > 1 && uiStore.isMultiSelected(node.id)) {
+                    modalStore.openAimEditModal(node.id, [...uiStore.multiSelectedAimIds])
+                    longPressedNodeId = node.id
+                    return
+                }
                 uiStore.toggleMultiSelect(node.id)
                 graphUIStore.setGraphSelection(node.id)
                 graphUIStore.deselectLink()
@@ -579,6 +584,7 @@ export function useGraphInteraction(
         }
 
         if (!mapStore.cursorMoved) {
+            uiStore.clearMultiSelect()
             if (graphUIStore.graphSelectedAimId === node.id) {
                 // Already selected -> Start tracking
                 mapStore.isTracking = true
@@ -593,6 +599,7 @@ export function useGraphInteraction(
 
     const onBackgroundClick = () => {
         if (!mapStore.cursorMoved && !mapStore.connecting) {
+            uiStore.clearMultiSelect()
             graphUIStore.deselectLink()
             graphUIStore.setGraphSelection(null)
         }
