@@ -12,6 +12,8 @@ in float v_centerRadius;
 in float v_normalizedHalfWidth;  // Precomputed: halfWidth / centerRadius
 in float v_trunkLength;          // Precomputed: where trunk ends (0-1)
 in vec2 v_sourceDir;             // Precomputed: normalized direction M→S
+in vec2 v_sourceCapCenter;
+in float v_sourceCapRadiusSq;
 in vec2 v_targetCenter;
 in float v_targetRadiusSq;
 in vec3 v_color;
@@ -73,8 +75,15 @@ void main() {
   vec2 toTarget = v_worldPos - v_targetCenter;
   bool beforeEnd = dot(toTarget, toTarget) >= v_targetRadiusSq;
 
+  float sourceCapRadius = sqrt(v_sourceCapRadiusSq);
+  float sourceCapDistance = length(v_worldPos - v_sourceCapCenter);
+  float capCoverage = v_sourceCapRadiusSq > 0.0
+    ? 1.0 - smoothstep(sourceCapRadius - aa * v_centerRadius, sourceCapRadius + aa * v_centerRadius, sourceCapDistance)
+    : 0.0;
+  float shapeCoverage = max(pastStart ? ringCoverage : 0.0, capCoverage);
+
   // Combined test
-  if (ringCoverage > 0.0 && pastStart && beforeEnd) {
+  if (shapeCoverage > 0.0 && beforeEnd) {
     vec3 color = v_color;
     float opacity = v_opacity;
     float moveFlag = v_moving;
@@ -102,7 +111,7 @@ void main() {
       moveFlag = 1.0; // bypass TAA accumulation so the stripes stay crisp
     }
 
-    outColor = vec4(color, opacity * ringCoverage);
+    outColor = vec4(color, opacity * shapeCoverage);
     outMovement = vec4(moveFlag, 0.0, 0.0, 1.0);
   } else {
     discard;

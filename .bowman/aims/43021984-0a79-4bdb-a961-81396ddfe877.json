@@ -1,0 +1,34 @@
+{
+  "id": "43021984-0a79-4bdb-a961-81396ddfe877",
+  "text": "Pilot Aimparency for Wilde Möhre festival planning",
+  "description": "Use Aimparency to model a real slice of Wilde Möhre festival planning as a free pilot. First agree with the relevant people on one bounded workflow where explicit aims and dependencies have non-zero value, then model it, use it during actual planning, collect concrete feedback, and document evidence for a case study. Success means real participants use or review the model and identify measurable value, friction, or a credible paid follow-up. Felix can introduce and facilitate this through his work at the festival.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "sales",
+    "pilot",
+    "customer-validation",
+    "wilde-moehre",
+    "festival"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b42711f4-cb68-4f64-b0c1-4a1eca8d2029"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Pilot proposal, bounded workflow options, evidence plan, and internal ask are ready. Felix still needs to secure permission, select the workflow, and identify its owner.",
+    "date": 1784541209545
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Prepared meta/applications/funding-15k-2026/wilde-moehre-pilot.md: a four-week free pilot proposal, three bounded workflow candidates, evidence measures, privacy/permission decisions, stop conditions, an internal ask, and a non-coercive commercial follow-up. This removes preparation work while leaving institutional approval and workflow selection to Felix."
+}

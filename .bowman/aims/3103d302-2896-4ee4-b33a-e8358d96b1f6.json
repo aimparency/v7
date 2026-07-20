@@ -13,14 +13,15 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1783365471527
+    "state": "done",
+    "comment": "Analyzed and documented the presentation, persistence, reuse, and mobile boundaries.",
+    "date": 1784540770780
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Documented the decision in meta/ui-side-panel-modal-analysis.md. Keep side panel and modals as distinct surfaces: persistent immediate-save inspector versus staged transactional editor. Share typed store mutations and small controls, not a universal form. Recommended mobile panel as responsive full-width drawer/overlay. Verified against GraphSidePanel.vue, AimEditModal.vue, ConnectionDetailsModal.vue, their callers, and tests."
 }

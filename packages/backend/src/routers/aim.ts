@@ -5,6 +5,7 @@ import fs from 'fs-extra';
 import type { Aim, SearchAimResult } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
+import { defaultAimColor } from '../aim-color.js';
 
 export const createAimRouter = (
   t: RouterBuilder,
@@ -31,6 +32,17 @@ export const createAimRouter = (
   ensureSearchIndex: (projectPath: string) => Promise<void>,
   ee: any
 ) => {
+  const resolveCreationColor = async (
+    projectPath: string,
+    explicitColor: string | null | undefined,
+    parentId?: string
+  ) => {
+    if (explicitColor) return explicitColor;
+    if (!parentId) return defaultAimColor();
+    const parent = await readAim(projectPath, parentId);
+    return defaultAimColor(parent.color ?? '#666666', parent.supportingConnections.length);
+  };
+
   return t.router({
     get: delayedProcedure
       .input(z.object({
@@ -538,6 +550,7 @@ export const createAimRouter = (
           : 0;
         const isFirstAim = existingAims === 0;
 
+        const primaryParentId = input.aim.supportedAims?.[0];
         const aim: Aim = {
           id: aimId,
           text: input.aim.text,
@@ -555,7 +568,7 @@ export const createAimRouter = (
           costVariance: input.aim.costVariance ?? 0,
           valueVariance: input.aim.valueVariance ?? 0,
           archived: false,
-          color: input.aim.color || undefined
+          color: await resolveCreationColor(input.projectPath, input.aim.color, primaryParentId)
         };
 
         await writeAim(input.projectPath, aim);
@@ -641,7 +654,7 @@ export const createAimRouter = (
           costVariance: input.aim.costVariance ?? 0,
           valueVariance: input.aim.valueVariance ?? 0,
           archived: false,
-          color: input.aim.color || undefined
+          color: await resolveCreationColor(input.projectPath, input.aim.color, input.parentAimId)
         };
 
         await writeAim(input.projectPath, childAim);
@@ -709,6 +722,7 @@ export const createAimRouter = (
             }
           : { state: 'open' as const, comment: '', date: Date.now() };
 
+        const primaryParentId = input.aim.supportedAims?.[0];
         const aim: Aim = {
           id: aimId,
           text: input.aim.text,
@@ -726,7 +740,7 @@ export const createAimRouter = (
           costVariance: input.aim.costVariance ?? 0,
           valueVariance: input.aim.valueVariance ?? 0,
           archived: false,
-          color: input.aim.color || undefined
+          color: await resolveCreationColor(input.projectPath, input.aim.color, primaryParentId)
         };
 
         await writeAim(input.projectPath, aim);

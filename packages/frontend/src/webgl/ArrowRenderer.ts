@@ -22,8 +22,8 @@ export interface EdgeData {
 
 // Stride: arcCenter(2) + triangleV1(2) + triangleV2(2) + centerRadius(1) + normalizedHalfWidth(1)
 //       + trunkLength(1) + sourceDir(2) + targetCenter(2) + targetRadiusSq(1) + color(3) + opacity(1) + moving(1)
-//       + selected(1) = 20
-const STRIDE = 20
+//       + sourceCapCenter(2) + sourceCapRadiusSq(1) + selected(1) = 23
+const STRIDE = 23
 
 export class ArrowRenderer {
   private gl: WebGL2RenderingContext
@@ -43,6 +43,8 @@ export class ArrowRenderer {
   private a_normalizedHalfWidth: number = -1
   private a_trunkLength: number = -1
   private a_sourceDir: number = -1
+  private a_sourceCapCenter: number = -1
+  private a_sourceCapRadiusSq: number = -1
   private a_targetCenter: number = -1
   private a_targetRadiusSq: number = -1
   private a_color: number = -1
@@ -96,6 +98,8 @@ export class ArrowRenderer {
     this.a_normalizedHalfWidth = gl.getAttribLocation(this.program, 'a_normalizedHalfWidth')
     this.a_trunkLength = gl.getAttribLocation(this.program, 'a_trunkLength')
     this.a_sourceDir = gl.getAttribLocation(this.program, 'a_sourceDir')
+    this.a_sourceCapCenter = gl.getAttribLocation(this.program, 'a_sourceCapCenter')
+    this.a_sourceCapRadiusSq = gl.getAttribLocation(this.program, 'a_sourceCapRadiusSq')
     this.a_targetCenter = gl.getAttribLocation(this.program, 'a_targetCenter')
     this.a_targetRadiusSq = gl.getAttribLocation(this.program, 'a_targetRadiusSq')
     this.a_color = gl.getAttribLocation(this.program, 'a_color')
@@ -159,15 +163,18 @@ export class ArrowRenderer {
       this.instanceData[offset + 8] = g.trunkLength
       this.instanceData[offset + 9] = g.sourceDirX
       this.instanceData[offset + 10] = g.sourceDirY
-      this.instanceData[offset + 11] = g.targetCenter.x
-      this.instanceData[offset + 12] = g.targetCenter.y
-      this.instanceData[offset + 13] = g.targetRadiusSq
-      this.instanceData[offset + 14] = e.color[0]
-      this.instanceData[offset + 15] = e.color[1]
-      this.instanceData[offset + 16] = e.color[2]
-      this.instanceData[offset + 17] = e.opacity
-      this.instanceData[offset + 18] = e.moving ? 1.0 : 0.0
-      this.instanceData[offset + 19] = e.selected ? 1.0 : 0.0
+      this.instanceData[offset + 11] = g.sourceCapCenter.x
+      this.instanceData[offset + 12] = g.sourceCapCenter.y
+      this.instanceData[offset + 13] = g.sourceCapRadiusSq
+      this.instanceData[offset + 14] = g.targetCenter.x
+      this.instanceData[offset + 15] = g.targetCenter.y
+      this.instanceData[offset + 16] = g.targetRadiusSq
+      this.instanceData[offset + 17] = e.color[0]
+      this.instanceData[offset + 18] = e.color[1]
+      this.instanceData[offset + 19] = e.color[2]
+      this.instanceData[offset + 20] = e.opacity
+      this.instanceData[offset + 21] = e.moving ? 1.0 : 0.0
+      this.instanceData[offset + 22] = e.selected ? 1.0 : 0.0
     }
 
     // Upload to GPU
@@ -212,12 +219,14 @@ export class ArrowRenderer {
       { loc: this.a_normalizedHalfWidth, size: 1, offset: 7 },
       { loc: this.a_trunkLength, size: 1, offset: 8 },
       { loc: this.a_sourceDir, size: 2, offset: 9 },
-      { loc: this.a_targetCenter, size: 2, offset: 11 },
-      { loc: this.a_targetRadiusSq, size: 1, offset: 13 },
-      { loc: this.a_color, size: 3, offset: 14 },
-      { loc: this.a_opacity, size: 1, offset: 17 },
-      { loc: this.a_moving, size: 1, offset: 18 },
-      { loc: this.a_selected, size: 1, offset: 19 }
+      { loc: this.a_sourceCapCenter, size: 2, offset: 11 },
+      { loc: this.a_sourceCapRadiusSq, size: 1, offset: 13 },
+      { loc: this.a_targetCenter, size: 2, offset: 14 },
+      { loc: this.a_targetRadiusSq, size: 1, offset: 16 },
+      { loc: this.a_color, size: 3, offset: 17 },
+      { loc: this.a_opacity, size: 1, offset: 20 },
+      { loc: this.a_moving, size: 1, offset: 21 },
+      { loc: this.a_selected, size: 1, offset: 22 }
     ]
 
     for (const attr of attrs) {

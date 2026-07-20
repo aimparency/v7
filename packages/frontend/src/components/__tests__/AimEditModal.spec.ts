@@ -84,7 +84,122 @@ function mountEditModal(description = 'Old description', statusState = 'open', a
   return { wrapper, dataStore }
 }
 
+function mountBulkEditModal() {
+  const pinia = createTestingPinia({
+    createSpy: vi.fn,
+    initialState: {
+      'ui-project': { projectPath: '/test/project' },
+      data: {
+        aims: {
+          'aim-1': {
+            id: 'aim-1',
+            text: 'First title',
+            description: 'First description',
+            tags: ['first'],
+            status: { state: 'open', comment: '' },
+            archived: false,
+            intrinsicValue: 1,
+            cost: 1,
+            loopWeight: 1,
+            reflection: '',
+            supportedAims: [],
+            supportingConnections: [],
+            committedIn: []
+          },
+          'aim-2': {
+            id: 'aim-2',
+            text: 'Second title',
+            description: 'Second description',
+            tags: ['second'],
+            status: { state: 'done', comment: 'Finished' },
+            archived: true,
+            intrinsicValue: 2,
+            cost: 2,
+            loopWeight: 2,
+            reflection: 'Learned',
+            supportedAims: [],
+            supportingConnections: [],
+            committedIn: []
+          }
+        },
+        meta: {
+          statuses: [
+            { key: 'open', color: '#fff', ongoing: true },
+            { key: 'done', color: '#0f0', ongoing: false }
+          ]
+        }
+      }
+    }
+  })
+  const dataStore = useDataStore(pinia)
+  const projectStore = useProjectStore(pinia)
+  projectStore.projectPath = '/test/project'
+  const wrapper = mount(AimEditModal, {
+    props: { show: false, aimId: 'aim-1', aimIds: ['aim-1', 'aim-2'] },
+    global: { plugins: [pinia] }
+  })
+  return { wrapper, dataStore }
+}
+
 describe('AimEditModal keyboard save behavior', () => {
+  it('does not persist bulk mixed fields until Save and only overrides activated fields', async () => {
+    const { wrapper, dataStore } = mountBulkEditModal()
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    const title = wrapper.find('input[placeholder="Multiple values - click to override all"]')
+    expect(title.attributes('readonly')).toBeDefined()
+
+    await title.trigger('click')
+    await title.setValue('Shared title')
+    expect(dataStore.updateAim).not.toHaveBeenCalled()
+
+    await wrapper.find('.btn-save').trigger('click')
+
+    expect(dataStore.updateAim).toHaveBeenCalledTimes(2)
+    for (const call of vi.mocked(dataStore.updateAim).mock.calls) {
+      expect(call[2]).toMatchObject({ text: 'Shared title' })
+      expect(call[2]).not.toHaveProperty('description')
+    }
+  })
+
+  it('does not persist bulk edits when cancelled', async () => {
+    const { wrapper, dataStore } = mountBulkEditModal()
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    const title = wrapper.find('input[placeholder="Multiple values - click to override all"]')
+    await title.trigger('click')
+    await title.setValue('Discarded title')
+    await wrapper.find('.btn-cancel').trigger('click')
+    await wrapper.vm.$nextTick()
+    await wrapper.find('.btn-discard').trigger('click')
+
+    expect(dataStore.updateAim).not.toHaveBeenCalled()
+  })
+
+  it('uses explicit activation for mixed selects and protects mixed ongoing aims from archive', async () => {
+    const { wrapper, dataStore } = mountBulkEditModal()
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('select').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Archive this aim')
+
+    const statusOverride = wrapper.findAll('.mixed-activate')
+      .find((button) => button.text().includes('Multiple values'))
+    expect(statusOverride).toBeDefined()
+    await statusOverride!.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const status = wrapper.find('select')
+    expect(status.exists()).toBe(true)
+    await status.setValue('done')
+    await wrapper.vm.$nextTick()
+    expect(wrapper.text()).toContain('Archive this aim')
+    expect(dataStore.updateAim).not.toHaveBeenCalled()
+  })
+
   it('saves and closes on Enter from title input', async () => {
     const { wrapper, dataStore } = mountEditModal()
 

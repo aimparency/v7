@@ -288,7 +288,7 @@ export function useWebGLGraphRenderer(
             r: target.r
           },
           0.5,
-          { widthFactor: 1 }
+          { widthFactor: 1, roundSourceCap: true }
         ),
         moving: true,
         selected: false

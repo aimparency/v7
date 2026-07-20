@@ -35,6 +35,7 @@ export const useUIModalStore = defineStore('ui-modal', {
 
     showAimEditModal: false,
     aimEditModalAimId: null as string | null,
+    aimEditModalAimIds: [] as string[],
 
     // Connection details (contribution % + explanation) for a freshly-created connection.
     // parentId = supported aim, childId = supporting aim; the connection already exists.
@@ -149,14 +150,16 @@ export const useUIModalStore = defineStore('ui-modal', {
       closeSettingsModalHelper(this)
     },
 
-    openAimEditModal(aimId: string) {
+    openAimEditModal(aimId: string, aimIds: string[] = [aimId]) {
       this.showAimEditModal = true
       this.aimEditModalAimId = aimId
+      this.aimEditModalAimIds = [...new Set(aimIds)]
     },
 
     closeAimEditModal() {
       this.showAimEditModal = false
       this.aimEditModalAimId = null
+      this.aimEditModalAimIds = []
     },
 
     openSpinOffApplyModal() {

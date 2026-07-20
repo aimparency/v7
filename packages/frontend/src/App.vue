@@ -550,6 +550,7 @@ onUnmounted(() => {
             <span class="project-chip-label">Project</span>
             <span class="project-chip-value">{{ activeProjectName }}</span>
             <code class="project-path">{{ normalizedProjectRoot }}</code>
+            <code class="project-path bowman-path">{{ activeBowmanRoot }}</code>
           </div>
 
           <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
@@ -641,6 +642,7 @@ onUnmounted(() => {
     <AimEditModal
       :show="modalStore.showAimEditModal"
       :aim-id="modalStore.aimEditModalAimId"
+      :aim-ids="modalStore.aimEditModalAimIds"
       @close="modalStore.closeAimEditModal()"
     />
 

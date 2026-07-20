@@ -27,6 +27,8 @@ export interface ArrowGeometry {
   // Precomputed normalized direction from M to S (for start bound cross product)
   sourceDirX: number        // (S.x - M.x) / centerRadius
   sourceDirY: number        // (S.y - M.y) / centerRadius
+  sourceCapCenter: Vec2     // Centerline point at the source-side bound
+  sourceCapRadiusSq: number // Zero when the optional round source cap is disabled
 
   // Target info for end bound (world coords)
   targetCenter: Vec2        // T
@@ -40,11 +42,13 @@ export interface ArrowGeometry {
 export interface ArrowStyle {
   curvature: number       // How far M is from midpoint (as factor of |S-T|)
   widthFactor: number     // Multiplier for share-based width (like SVG's 1.2)
+  roundSourceCap: boolean // Extend and round the source side (used by drag previews)
 }
 
 const DEFAULT_STYLE: ArrowStyle = {
   curvature: 0.5,         // M is at |S-T| * 0.5 from midpoint
-  widthFactor: 1.2        // Match SVG: width = widthFactor * targetR * share
+  widthFactor: 1.2,       // Match SVG: width = widthFactor * targetR * share
+  roundSourceCap: false
 }
 
 /**
@@ -198,15 +202,28 @@ export function calculateArrowGeometry(
     sourceDirY = msDirY
   }
 
+  // A round cap protrudes backwards along the arc by approximately halfWidth.
+  // Rotate the source-side triangle vertex counter-clockwise so the triangle
+  // covers that protrusion; the shader still owns the exact circular boundary.
+  let triangleSourceDirX = sourceDirX
+  let triangleSourceDirY = sourceDirY
+  if (s.roundSourceCap) {
+    const capAngle = Math.min(halfWidth / centerRadius, Math.PI / 6)
+    const cosCap = Math.cos(capAngle)
+    const sinCap = Math.sin(capAngle)
+    triangleSourceDirX = sourceDirX * cosCap - sourceDirY * sinCap
+    triangleSourceDirY = sourceDirX * sinCap + sourceDirY * cosCap
+  }
+
   // Triangle extension factor: radiusOuter / cos(θ/2) where θ is arc angle
-  const cosTheta = sourceDirX * tipDirX + sourceDirY * tipDirY
+  const cosTheta = triangleSourceDirX * tipDirX + triangleSourceDirY * tipDirY
   const cosHalfTheta = Math.sqrt((1 + cosTheta) / 2)
   const extend = radiusOuter / cosHalfTheta
 
   // Triangle vertices
   const triangleV1: Vec2 = {
-    x: M.x + sourceDirX * extend,
-    y: M.y + sourceDirY * extend
+    x: M.x + triangleSourceDirX * extend,
+    y: M.y + triangleSourceDirY * extend
   }
   const triangleV2: Vec2 = {
     x: M.x + tipDirX * extend,
@@ -220,6 +237,11 @@ export function calculateArrowGeometry(
     trunkLength,
     sourceDirX,
     sourceDirY,
+    sourceCapCenter: {
+      x: M.x + sourceDirX * centerRadius,
+      y: M.y + sourceDirY * centerRadius
+    },
+    sourceCapRadiusSq: s.roundSourceCap ? halfWidth * halfWidth : 0,
     targetCenter: T,
     targetRadiusSq: target.r * target.r,
     triangleV1,
@@ -235,6 +257,8 @@ function createDegenerateGeometry(S: Vec2, T: Vec2, targetR: number): ArrowGeome
     trunkLength: 1,
     sourceDirX: 1,
     sourceDirY: 0,
+    sourceCapCenter: S,
+    sourceCapRadiusSq: 0,
     targetCenter: T,
     targetRadiusSq: targetR * targetR,
     triangleV1: S,

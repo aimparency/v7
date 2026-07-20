@@ -4,6 +4,7 @@
   "description": "no parent => grey color \n\nslightly different means => when creating more and more sub children the trees further from the root will have similar but distinct colors from the root node. \n\nuse hsv based colors to look good with white fg text",
   "reflections": [],
   "archived": false,
+  "color": null,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -13,9 +14,9 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1783171899604
+    "state": "review",
+    "comment": "Implemented backend-wide default root and parent-derived child colors; ready to show the user.",
+    "date": 1784541138131
   },
   "intrinsicValue": 0,
   "cost": 1,
@@ -23,5 +24,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "color": null
+  "reflection": "Added centralized HSV color derivation in backend/src/aim-color.ts. Explicit creation colors win; roots default to neutral #666666; children derive deterministic dark, white-text-safe hue variations from their first parent's custom color, with sibling index producing distinct defaults. Applied across floating, sub-aim, and phase creation routes. Added unit and route-level tests. Verification: backend test subset passes 22/22, backend TypeScript build passes, git diff --check passes."
 }

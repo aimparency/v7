@@ -1,7 +1,7 @@
 {
   "id": "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
-  "text": "Offer paid Aimparency design partnerships as the non-dilutive fallback",
-  "description": "Sell a tightly scoped paid pilot/sponsorship to 3-5 open-source teams or agent-heavy developer teams. Example ask: €5k for a 6-8 week design partnership including onboarding, roadmap influence, direct support, and a documented Git-native intent/dependency workflow; no bespoke feature promises that derail the product. Three €5k signed agreements meet the target. Validate willingness to pay and create investor evidence at the same time.",
+  "text": "Sell Aimparency through paid design partnerships",
+  "description": "Treat revenue as the healthiest near-term funding path. Sell a tightly scoped paid pilot/design partnership to 3-5 teams or planning organizations. Example ask: EUR 5k for a 6-8 week engagement including onboarding, workflow modelling, roadmap influence, direct support, and a documented intent/dependency workflow; avoid bespoke promises that derail the product. Three EUR 5k agreements meet the August target while validating willingness to pay and creating investor evidence.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -11,7 +11,17 @@
     "open-source",
     "human-dependent"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "43021984-0a79-4bdb-a961-81396ddfe877",
+      "relativePosition": [
+        1.6686361139211576,
+        -1.8616265789137463
+      ],
+      "weight": 1,
+      "explanation": "The free pilot validates a sellable design-partnership offer and can produce customer evidence."
+    }
+  ],
   "supportedAims": [
     "cabe6e06-8988-4145-b884-9ef5bc68f660"
   ],
@@ -20,13 +30,14 @@
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "Requires founder outreach, customer conversations, pricing approval, and signed agreements.",
-    "date": 1784387911528
+    "comment": "EUR 5k design-partner offer, tracker, qualification process, and Wilde Moehre free-pilot proposal are ready. Founder outreach and commercial approval remain required.",
+    "date": 1784541264141
   },
   "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Prepared the default EUR 5k design-partner offer and qualification/call process in outreach-process.md, plus the Wilde Moehre validation pilot. External prospect selection, outreach, calls, pricing exceptions, and agreements remain human actions."
 }

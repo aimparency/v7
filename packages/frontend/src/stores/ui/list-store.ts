@@ -1515,7 +1515,10 @@ export const useListStore = defineStore('ui', {
         const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
         const aimIndex = aims.findIndex((a: any) => a && a.id === aimId)
         if (aimIndex !== -1) {
-          modalStore.openAimEditModal(aimId)
+          const editIds = this.multiSelectedAimIds.includes(aimId) && this.multiSelectedAimIds.length > 1
+            ? this.multiSelectedAimIds
+            : [aimId]
+          modalStore.openAimEditModal(aimId, editIds)
         }
         return
       }

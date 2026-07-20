@@ -98,9 +98,12 @@ describe('ConnectionDetailsModal', () => {
 
     await nextTick()
 
-    // It should have replaced aim and recalculated values
-    expect(dataStore.replaceAim).toHaveBeenCalled()
-    expect(dataStore.recalculateValues).toHaveBeenCalled()
+    expect(dataStore.updateConnectionDetails).toHaveBeenCalledWith(
+      expect.any(String),
+      'parent-1',
+      'child-1',
+      expect.objectContaining({ weight: expect.any(Number), explanation: '' })
+    )
     expect(modalStore.closeConnectionDetailsModal).toHaveBeenCalled()
 
     wrapper.unmount()

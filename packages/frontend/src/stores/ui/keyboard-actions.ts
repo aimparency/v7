@@ -64,11 +64,14 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
       graphStore.setGraphSelection(null)
       graphStore.deselectLink()
     }
-  } else if (event.key === 'e') {
+  } else if (event.key === 'e' || event.key === 'Enter') {
     event.preventDefault()
     const aimId = graphStore.graphSelectedAimId
     if (!aimId) return
-    modalStore.openAimEditModal(aimId)
+    const editIds = uiStore.multiSelectedAimIds.includes(aimId) && uiStore.multiSelectCount > 1
+      ? uiStore.multiSelectedAimIds
+      : [aimId]
+    modalStore.openAimEditModal(aimId, editIds)
   }
 }
 
@@ -478,10 +481,14 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
         uiStore.navigatingAims = false
       }
       break
-    case 'e': {
+    case 'e':
+    case 'Enter': {
       event.preventDefault()
       if (currentAim) {
-        modalStore.openAimEditModal(currentAim.id)
+        const editIds = uiStore.multiSelectedAimIds.includes(currentAim.id) && uiStore.multiSelectCount > 1
+          ? uiStore.multiSelectedAimIds
+          : [currentAim.id]
+        modalStore.openAimEditModal(currentAim.id, editIds)
       }
       break
     }

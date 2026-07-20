@@ -2,6 +2,7 @@
   "id": "093756d3-c8ef-4acb-ac14-6e610a5e0060",
   "text": "Create the €15k funding package: 2-pager, deck, demo, use of funds, and clear ask",
   "description": "Produce a compact package usable for angels and design partners: one-line category, concrete user/problem, working-product proof, why Git-native intent/dependency infrastructure is differentiated, founder/team credibility, 6-month milestones, exact €15k minimum ask (with a larger sensible round range), and use of funds. Reuse the Build Week demo so one artifact serves both tracks. Avoid unsupported TAM claims and ASI-heavy framing in the first contact.",
+  "reflection": "Created meta/applications/funding-15k-2026 with a two-pager, deck outline, 3-minute demo script, EUR 15k use-of-funds plan, outreach templates, and qualified funding routes. Positioning is Git-native intent and dependency infrastructure for AI-assisted development. Ask is EUR 15k minimum by 2026-08-31, toward a EUR 50k bridge, with 3 x EUR 5k paid design partnerships as a parallel route. Live checks on 2026-07-20 confirm Prototype Fund applications open 2026-10-01 and EXIST is conditional on founder/institution eligibility. git diff --check passes. Human confirmation remains for Robin Maier's role/permission, contact details, legal instrument, and externally supportable evidence/screenshots.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -18,9 +19,9 @@
     "e4c477a4-009b-4354-a2ad-2b4616ca3377"
   ],
   "status": {
-    "state": "open",
-    "comment": "First execution task; target completion within 3 days.",
-    "date": 1784387910508
+    "state": "review",
+    "comment": "Funding package drafted and internally checked; ready to show the user before final completion.",
+    "date": 1784534535784
   },
   "intrinsicValue": 0,
   "cost": 2,

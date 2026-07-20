@@ -24,7 +24,10 @@ const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimI
     uiStore.selectMultiRange(aimId, ordered)
   } else if (isCtrl || isShift) {
     uiStore.toggleMultiSelect(aimId)
+  } else {
+    uiStore.clearMultiSelect()
   }
+  if ((isCtrl || isShift) && uiStore.getCurrentAim()?.id === aimId) return
   uiStore.selectAimById(columnIndex, phaseId, aimId).catch(() => {})
 }
 </script>

@@ -109,6 +109,34 @@ test('createSubAim - creates and connects sub-aim', async () => {
   assert.equal(subAim.text, 'Sub Aim');
 });
 
+test('aim creation assigns grey roots and distinct parent-derived child colors', async () => {
+  const parent = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: { text: 'Root' }
+  });
+  const firstChild = await caller.aim.createSubAim({
+    projectPath: testProjectPath,
+    parentAimId: parent.id,
+    aim: { text: 'First child' }
+  });
+  const secondChild = await caller.aim.createSubAim({
+    projectPath: testProjectPath,
+    parentAimId: parent.id,
+    aim: { text: 'Second child' }
+  });
+  const explicitChild = await caller.aim.createSubAim({
+    projectPath: testProjectPath,
+    parentAimId: parent.id,
+    aim: { text: 'Explicit child', color: '#123456' }
+  });
+
+  assert.equal(parent.color, '#666666');
+  assert.match(firstChild.color ?? '', /^#[0-9a-f]{6}$/);
+  assert.notEqual(firstChild.color, parent.color);
+  assert.notEqual(secondChild.color, firstChild.color);
+  assert.equal(explicitChild.color, '#123456');
+});
+
 test('createCommittedAim - creates and commits aim to phase', async () => {
 
   // Create phase

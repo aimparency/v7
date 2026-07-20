@@ -2,6 +2,7 @@
   "id": "b74bf814-ae8f-4330-98a3-2315ac89d66d",
   "text": "when dragging, can we have a round cap for the trunk of the arrow (side without tip?)",
   "description": "talking about the placeholder arrow, that's being shown on when dragging from an aim to create a connection",
+  "reflection": "Added roundSourceCap geometry metadata and source-side triangle extension, carried cap attributes through ArrowRenderer, and unioned an anti-aliased circular source cap in the fragment shader. Enabled it only for temp-connector-* arrows, preserving regular arrows. Added arrow-geometry.spec.ts. Verification: 29 focused tests pass, production frontend build passes, git diff --check passes. Runtime visual inspection was not performed because no dev server was running and project instructions prohibit starting one.",
   "reflections": [],
   "archived": false,
   "color": null,
@@ -14,9 +15,9 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1784017886565
+    "state": "review",
+    "comment": "Implemented an opt-in round source cap for the WebGL temporary connection arrow; ready to show the user.",
+    "date": 1784540709349
   },
   "intrinsicValue": 0,
   "cost": 1,

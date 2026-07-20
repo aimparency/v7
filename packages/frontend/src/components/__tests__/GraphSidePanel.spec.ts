@@ -10,7 +10,7 @@ vi.mock('../../trpc', () => ({
   trpc: {
     aim: {
       update: {
-        mutate: vi.fn().mockResolvedValue({})
+        mutate: vi.fn().mockImplementation(async ({ aimId, aim }: any) => ({ id: aimId, ...aim }))
       }
     }
   }
@@ -39,6 +39,29 @@ describe('GraphSidePanel', () => {
     pinia = createPinia()
     setActivePinia(pinia)
     vi.clearAllMocks()
+  })
+
+  it('routes quick aim metric edits through the data store update action', async () => {
+    const graphStore = useGraphUIStore()
+    const projectStore = useProjectStore()
+    const dataStore = useDataStore()
+    projectStore.projectPath = '/tmp/project'
+    dataStore.aims = { a1: makeAim('a1', 'Aim 1') } as any
+    graphStore.setGraphSelection('a1')
+    const updateAim = vi.spyOn(dataStore, 'updateAim').mockResolvedValue()
+
+    const wrapper = mount(GraphSidePanel, {
+      global: { plugins: [pinia] }
+    })
+    const valueInput = wrapper.find('input[placeholder="e.g. 10k, 1500"]')
+    await valueInput.setValue('2k')
+    await valueInput.trigger('change')
+
+    expect(updateAim).toHaveBeenCalledWith('/tmp/project', 'a1', {
+      intrinsicValue: 2000,
+      cost: 1,
+      loopWeight: 1
+    })
   })
 
   it('persists explanation to the originally edited connection when selection changes before blur', async () => {

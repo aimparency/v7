@@ -4,7 +4,6 @@ import FormModalShell from './FormModalShell.vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
-import { trpc } from '../trpc'
 import {
   weightToShare,
   shareToWeight,
@@ -92,19 +91,13 @@ const confirm = async () => {
     modalStore.closeConnectionDetailsModal()
     return
   }
-  const updatedConnections = p.supportingConnections.map((c: any) =>
-    c.aimId === cid ? { ...c, weight: resolvedWeight.value, explanation: explanation.value } : c
-  )
-  // Optimistic local update + value recompute, then persist.
-  dataStore.replaceAim(p.id, { ...p, supportingConnections: updatedConnections })
-  dataStore.recalculateValues()
+  const save = dataStore.updateConnectionDetails(projectStore.projectPath, p.id, cid, {
+    weight: resolvedWeight.value,
+    explanation: explanation.value
+  })
   modalStore.closeConnectionDetailsModal()
   try {
-    await trpc.aim.update.mutate({
-      projectPath: projectStore.projectPath,
-      aimId: p.id,
-      aim: { supportingConnections: updatedConnections }
-    })
+    await save
   } catch (e) {
     console.error('Failed to save connection details', e)
   }

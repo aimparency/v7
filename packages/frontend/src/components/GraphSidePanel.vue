@@ -4,7 +4,6 @@ import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { useMapStore } from '../stores/map'
-import { trpc } from '../trpc'
 import type { Aim, Connection } from 'shared'
 import { formatWithK, parseK } from '../utils/number-format'
 import NumericTextInput from './NumericTextInput.vue'
@@ -120,25 +119,14 @@ const onLoopWeightInput = (event: Event) => {
 const updateAimAttributes = async () => {
     if (!selectedAim.value) return
     const aimId = selectedAim.value.id
-    
-    // Optimistic Update
     const updates = {
         intrinsicValue: editedIntrinsicValue.value,
         cost: editedCost.value,
         loopWeight: editedLoopWeight.value
     }
-    
-    const updatedAim = { ...selectedAim.value, ...updates }
-    dataStore.replaceAim(aimId, updatedAim)
-    dataStore.recalculateValues()
-    
-    // Persist
+
     try {
-        await trpc.aim.update.mutate({
-            projectPath: projectStore.projectPath,
-            aimId,
-            aim: updates
-        })
+        await dataStore.updateAim(projectStore.projectPath, aimId, updates)
     } catch (e) {
         console.error('Failed to update aim attributes', e)
     }
@@ -178,29 +166,9 @@ const updateConnection = async (options?: { linkRef?: { parentId: string, childI
     const resolved = resolveConnection(options?.linkRef)
     if (!resolved) return
 
-    const { parent, child, connection } = resolved
+    const { parent, child } = resolved
     const closeEditor = options?.closeEditor ?? false
     
-    // Optimistic update
-    const updatedConnections = parent.supportingConnections.map((c: any) => {
-        if (c.aimId === child.id) {
-            return { 
-                ...c, 
-                weight: editedWeight.value,
-                explanation: editedExplanation.value 
-            }
-        }
-        return c
-    })
-
-    const updatedParent = {
-        ...parent,
-        supportingConnections: updatedConnections
-    }
-
-    // Local update
-    dataStore.replaceAim(parent.id, updatedParent)
-    dataStore.recalculateValues()
     if (closeEditor) {
         isEditingExplanation.value = false
         editingConnectionRef.value = null
@@ -208,12 +176,9 @@ const updateConnection = async (options?: { linkRef?: { parentId: string, childI
 
     // Backend update
     try {
-        await trpc.aim.update.mutate({
-            projectPath: projectStore.projectPath,
-            aimId: parent.id,
-            aim: {
-                supportingConnections: updatedConnections
-            }
+        await dataStore.updateConnectionDetails(projectStore.projectPath, parent.id, child.id, {
+            weight: editedWeight.value,
+            explanation: editedExplanation.value
         })
     } catch (e) {
         console.error('Failed to update connection', e)
@@ -244,30 +209,11 @@ const removeConnection = async () => {
     if (!selectedLink.value) return
     const { parent, child } = selectedLink.value
 
-    // Optimistic update
-    const updatedConnections = parent.supportingConnections.filter((c: any) => c.aimId !== child.id)
-    const updatedParent = { ...parent, supportingConnections: updatedConnections }
-    
-    const updatedChildSupported = child.supportedAims.filter((id: string) => id !== parent.id)
-    const updatedChild = { ...child, supportedAims: updatedChildSupported }
-
-    dataStore.replaceAim(parent.id, updatedParent)
-    dataStore.replaceAim(child.id, updatedChild)
-    dataStore.recalculateValues()
     graphUIStore.deselectLink()
     isConfirmingDelete.value = false
 
     try {
-        await trpc.aim.update.mutate({
-            projectPath: projectStore.projectPath,
-            aimId: parent.id,
-            aim: { supportingConnections: updatedConnections }
-        })
-        await trpc.aim.update.mutate({
-            projectPath: projectStore.projectPath,
-            aimId: child.id,
-            aim: { supportedAims: updatedChildSupported }
-        })
+        await dataStore.removeConnection(projectStore.projectPath, parent.id, child.id)
     } catch (e) {
         console.error('Failed to remove connection', e)
     }

@@ -46,7 +46,10 @@ const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimI
     } else {
       uiStore.toggleMultiSelect(aimId)
     }
+  } else {
+    uiStore.clearMultiSelect()
   }
+  if ((isCtrl || isShift) && uiStore.getCurrentAim()?.id === aimId) return
   // Always update primary nav selection (so keyboard etc still work on it)
   uiStore.selectAimById(columnIndex, phaseId, aimId).catch(() => {})
 }

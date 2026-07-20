@@ -2,7 +2,7 @@
   "id": "887a6cd5-458f-4ba2-b91f-b0291a0ff66c",
   "text": "Select multiple aims",
   "description": "",
-  "reflection": "Audited and completed the missing touch paths in list and graph views. Desktop Ctrl/Cmd and Shift behavior, shared selection state, selection bar, and merge remain intact.",
+  "reflection": "Bulk mixed status, archive, and color now use explicit activation buttons so disabled controls cannot swallow the override click. Bulk archive is hidden unless every effective selected status is non-ongoing, preventing accidental archival of open work. No mutation occurs before Save. Verification: 35 focused frontend tests pass, production build passes, git diff --check passes.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -32,8 +32,8 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "List and graph multi-selection are implemented across desktop modifiers and touch long-press; awaiting user acceptance.",
-    "date": 1784493484425
+    "comment": "Integrated selection and staged bulk editing are implemented, safety-hardened, and verified; awaiting user acceptance.",
+    "date": 1784541347791
   },
   "intrinsicValue": 0,
   "cost": 1,

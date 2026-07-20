@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from 'backend'
-import type { Phase as BasePhase, Aim as BaseAim } from 'shared'
+import type { Phase as BasePhase, Aim as BaseAim, Connection } from 'shared'
 import { calculateAimValues, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
 import { trpc } from '../trpc'
 import { perfLog } from '../utils/perf-log'
@@ -689,6 +689,76 @@ export const useDataStore = defineStore('data', {
         this.recalculateValues();
       } catch (error) {
         console.error('Failed to update aim:', error)
+        throw error
+      }
+    },
+
+    async updateConnectionDetails(
+      projectPath: string,
+      parentId: string,
+      childId: string,
+      updates: Pick<Connection, 'weight' | 'explanation'>
+    ): Promise<void> {
+      const parent = this.aims[parentId]
+      if (!parent) throw new Error(`Parent aim ${parentId} is not loaded`)
+      const connectionIndex = parent.supportingConnections.findIndex(connection => connection.aimId === childId)
+      if (connectionIndex < 0) throw new Error(`Connection ${parentId} -> ${childId} does not exist`)
+
+      const originalParent = parent
+      const updatedConnections = parent.supportingConnections.map((connection, index) => (
+        index === connectionIndex ? { ...connection, ...updates } : connection
+      ))
+      this.replaceAim(parentId, { ...parent, supportingConnections: updatedConnections })
+      this.recalculateValues()
+
+      try {
+        const updatedParent = await trpc.aim.update.mutate({
+          projectPath,
+          aimId: parentId,
+          aim: { supportingConnections: updatedConnections }
+        })
+        this.replaceAim(parentId, updatedParent)
+        this.recalculateValues()
+      } catch (error) {
+        this.replaceAim(parentId, originalParent)
+        this.recalculateValues()
+        throw error
+      }
+    },
+
+    async removeConnection(projectPath: string, parentId: string, childId: string): Promise<void> {
+      const parent = this.aims[parentId]
+      const child = this.aims[childId]
+      if (!parent || !child) throw new Error(`Connection endpoints ${parentId} -> ${childId} are not loaded`)
+
+      const originalParent = parent
+      const originalChild = child
+      const updatedConnections = parent.supportingConnections.filter(connection => connection.aimId !== childId)
+      const updatedSupportedAims = child.supportedAims.filter(id => id !== parentId)
+      this.replaceAim(parentId, { ...parent, supportingConnections: updatedConnections })
+      this.replaceAim(childId, { ...child, supportedAims: updatedSupportedAims })
+      this.recalculateValues()
+
+      try {
+        const [updatedParent, updatedChild] = await Promise.all([
+          trpc.aim.update.mutate({
+            projectPath,
+            aimId: parentId,
+            aim: { supportingConnections: updatedConnections }
+          }),
+          trpc.aim.update.mutate({
+            projectPath,
+            aimId: childId,
+            aim: { supportedAims: updatedSupportedAims }
+          })
+        ])
+        this.replaceAim(parentId, updatedParent)
+        this.replaceAim(childId, updatedChild)
+        this.recalculateValues()
+      } catch (error) {
+        this.replaceAim(parentId, originalParent)
+        this.replaceAim(childId, originalChild)
+        this.recalculateValues()
         throw error
       }
     },

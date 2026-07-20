@@ -4,6 +4,7 @@ import type { Aim } from '../stores/data'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useProjectStore } from '../stores/project-store'
+import { useUIModalStore } from '../stores/ui/modal-store'
 import type { AimUIState } from '../stores/ui/aim-ui-state'
 import AimsList from './AimsList.vue'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu.vue'
@@ -66,6 +67,21 @@ const onAimClick = (event?: MouseEvent) => {
 }
 
 const openMenu = (event: PointerEvent) => {
+  if (uiStore.multiSelectCount > 1 && uiStore.isMultiSelected(props.aim.id)) {
+    lastMenuOpenAt = Date.now()
+    useUIModalStore().openAimEditModal(props.aim.id, [...uiStore.multiSelectedAimIds])
+    return
+  }
+
+  if (uiStore.multiSelectCount > 0) {
+    uiStore.addToMultiSelect(props.aim.id)
+    uiStore.selectAimById(props.columnIndex, props.phaseId || undefined, props.aim.id).catch(() => {})
+    uiStore.navigatingAims = true
+    lastMenuOpenAt = Date.now()
+    useUIModalStore().openAimEditModal(props.aim.id, [...uiStore.multiSelectedAimIds])
+    return
+  }
+
   // Select this aim via the normal chain (Column knows the real column index).
   // Skip if already selected, since re-selecting opens the edit modal.
   if (!props.isThisAimSelected) {

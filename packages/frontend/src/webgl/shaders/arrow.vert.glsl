@@ -13,6 +13,8 @@ in float a_centerRadius;        // Distance from M to arc centerline
 in float a_normalizedHalfWidth; // halfWidth / centerRadius (precomputed)
 in float a_trunkLength;         // Where trunk ends (precomputed, 0-1)
 in vec2 a_sourceDir;            // Normalized direction from M to S (precomputed)
+in vec2 a_sourceCapCenter;       // Center of optional round source cap
+in float a_sourceCapRadiusSq;    // Zero disables the round cap
 in vec2 a_targetCenter;         // T - for end bound
 in float a_targetRadiusSq;      // target radius squared
 in vec3 a_color;
@@ -32,6 +34,8 @@ out float v_centerRadius;
 out float v_normalizedHalfWidth;
 out float v_trunkLength;
 out vec2 v_sourceDir;
+out vec2 v_sourceCapCenter;
+out float v_sourceCapRadiusSq;
 out vec2 v_targetCenter;
 out float v_targetRadiusSq;
 out vec3 v_color;
@@ -87,6 +91,8 @@ void main() {
   v_normalizedHalfWidth = a_normalizedHalfWidth;
   v_trunkLength = a_trunkLength;
   v_sourceDir = a_sourceDir;
+  v_sourceCapCenter = a_sourceCapCenter;
+  v_sourceCapRadiusSq = a_sourceCapRadiusSq;
   v_targetCenter = a_targetCenter;
   v_targetRadiusSq = a_targetRadiusSq;
   v_color = a_color;

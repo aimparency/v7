@@ -12,6 +12,7 @@ import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 const props = defineProps<{
   show: boolean
   aimId: string | null
+  aimIds?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -26,6 +27,23 @@ const aim = computed(() => {
   if (!props.aimId) return null
   return dataStore.aims[props.aimId] || null
 })
+const editingAims = computed(() => {
+  const ids = props.aimIds?.length ? props.aimIds : (props.aimId ? [props.aimId] : [])
+  return ids.map((id) => dataStore.aims[id]).filter((entry): entry is NonNullable<typeof entry> => !!entry)
+})
+const isBulk = computed(() => editingAims.value.length > 1)
+type BulkField = 'text' | 'description' | 'intrinsicValue' | 'cost' | 'loopWeight' | 'tags' |
+  'status' | 'statusComment' | 'archived' | 'color' | 'reflection'
+const mixedFields = ref<Set<BulkField>>(new Set())
+const overriddenFields = ref<Set<BulkField>>(new Set())
+const isMixed = (field: BulkField) => isBulk.value && mixedFields.value.has(field) && !overriddenFields.value.has(field)
+const activateOverride = (field: BulkField) => {
+  if (!isMixed(field)) return
+  overriddenFields.value = new Set([...overriddenFields.value, field])
+}
+const mixedPlaceholder = (field: BulkField, fallback: string) =>
+  isMixed(field) ? 'Multiple values - click to override all' : fallback
+const sameValue = (values: unknown[]) => values.every((value) => JSON.stringify(value) === JSON.stringify(values[0]))
 
 const statuses = computed(() => dataStore.getStatuses)
 
@@ -75,8 +93,13 @@ const headerStyle = computed((): Record<string, string> => {
 // done, cancelled, failed or unclear. Ongoing statuses (open, partially,
 // human-dependent) are still active work and must not be archived directly.
 const canArchive = computed(() => {
-  const status = statuses.value.find((s: any) => s.key === selectedStatus.value)
-  return status ? !status.ongoing : false
+  const states = isBulk.value && isMixed('status')
+    ? editingAims.value.map((entry) => entry.status.state)
+    : [selectedStatus.value]
+  return states.length > 0 && states.every((state) => {
+    const status = statuses.value.find((entry: any) => entry.key === state)
+    return status ? !status.ongoing : false
+  })
 })
 
 // If the status is moved back to an ongoing one, drop the archive flag so we
@@ -119,7 +142,8 @@ const serializeFormState = () => JSON.stringify({
   reflection: reflection.value,
   supportedAims: supportedAimsList.value.map((entry) => ({ id: entry.id, weight: entry.weight })),
   committedPhases: committedPhasesList.value.map((phase) => phase.id),
-  linkedRepos: linkedReposList.value.map((entry) => entry.repoId)
+  linkedRepos: linkedReposList.value.map((entry) => entry.repoId),
+  overrides: [...overriddenFields.value].sort()
 })
 
 const isDirty = computed(() => serializeFormState() !== dirtySnapshot.value)
@@ -195,11 +219,11 @@ const removeCommittedPhase = (phaseId: string) => {
 // has no linked repos or they are all already linked.
 const repoRegistry = computed(() => dataStore.meta?.linkedRepos ?? [])
 const availableRepos = computed(() =>
-  repoRegistry.value.filter((repo) => !linkedReposList.value.some((entry) => entry.repoId === repo.repoId))
+  repoRegistry.value.filter((repo: { repoId: string }) => !linkedReposList.value.some((entry) => entry.repoId === repo.repoId))
 )
 
 const repoNameFor = (repoId: string) =>
-  repoRegistry.value.find((repo) => repo.repoId === repoId)?.name ?? `repo:${repoId.slice(0, 8)}`
+  repoRegistry.value.find((repo: { repoId: string, name?: string }) => repo.repoId === repoId)?.name ?? `repo:${repoId.slice(0, 8)}`
 
 const openRepoSearch = () => {
   if (availableRepos.value.length === 0) return
@@ -214,7 +238,7 @@ const openRepoSearch = () => {
   }, undefined, {
     title: 'Link a whole repo',
     placeholder: 'Pick a linked repo below…',
-    additionalOptions: availableRepos.value.map((repo) => ({
+    additionalOptions: availableRepos.value.map((repo: { repoId: string, name: string, url?: string }) => ({
       id: repo.repoId,
       label: repo.name,
       description: repo.url || 'external repo (black box)'
@@ -234,22 +258,40 @@ const removeLinkedRepo = (repoId: string) => {
 
 watch(() => props.show, async (show) => {
   if (show && aim.value) {
+    const targets = editingAims.value
+    const fieldValues: Record<BulkField, unknown[]> = {
+      text: targets.map((entry) => entry.text),
+      description: targets.map((entry) => entry.description || ''),
+      intrinsicValue: targets.map((entry) => entry.intrinsicValue ?? 0),
+      cost: targets.map((entry) => entry.cost ?? 0),
+      loopWeight: targets.map((entry) => entry.loopWeight ?? 0),
+      tags: targets.map((entry) => entry.tags || []),
+      status: targets.map((entry) => entry.status.state),
+      statusComment: targets.map((entry) => entry.status.comment || ''),
+      archived: targets.map((entry) => entry.archived ?? false),
+      color: targets.map((entry) => entry.color ?? ''),
+      reflection: targets.map((entry) => entry.reflection || '')
+    }
+    mixedFields.value = new Set(
+      (Object.keys(fieldValues) as BulkField[]).filter((field) => !sameValue(fieldValues[field]))
+    )
+    overriddenFields.value = new Set()
     confirmRemoveParentId.value = null
     confirmRemovePhaseId.value = null
     confirmRemoveRepoId.value = null
     confirmingDiscard.value = false
-    aimText.value = aim.value.text
-    aimDescription.value = aim.value.description || ''
+    aimText.value = isMixed('text') ? '' : aim.value.text
+    aimDescription.value = isMixed('description') ? '' : (aim.value.description || '')
     descriptionRows.value = getInitialDescriptionRows(aimDescription.value)
-    aimIntrinsicValue.value = aim.value.intrinsicValue ?? 0
-    aimCost.value = aim.value.cost ?? 0
-    aimLoopWeight.value = aim.value.loopWeight ?? 0
-    aimTags.value = [...(aim.value.tags || [])]
-    selectedStatus.value = aim.value.status.state
-    statusComment.value = aim.value.status.comment
-    archived.value = aim.value.archived ?? false
-    aimColor.value = aim.value.color ?? ''
-    reflection.value = aim.value.reflection || ''
+    aimIntrinsicValue.value = isMixed('intrinsicValue') ? 0 : (aim.value.intrinsicValue ?? 0)
+    aimCost.value = isMixed('cost') ? 0 : (aim.value.cost ?? 0)
+    aimLoopWeight.value = isMixed('loopWeight') ? 0 : (aim.value.loopWeight ?? 0)
+    aimTags.value = isMixed('tags') ? [] : [...(aim.value.tags || [])]
+    selectedStatus.value = isMixed('status') ? '' : aim.value.status.state
+    statusComment.value = isMixed('statusComment') ? '' : (aim.value.status.comment || '')
+    archived.value = isMixed('archived') ? false : (aim.value.archived ?? false)
+    aimColor.value = isMixed('color') ? '' : (aim.value.color ?? '')
+    reflection.value = isMixed('reflection') ? '' : (aim.value.reflection || '')
 
     supportedAimsList.value = []
     committedPhasesList.value = []
@@ -403,24 +445,33 @@ const handleTagNext = () => {
 const handleSave = async () => {
   if (!aim.value || !projectStore.projectPath) return
 
-  await dataStore.updateAim(projectStore.projectPath, aim.value.id, {
-    text: aimText.value,
-    description: aimDescription.value,
-    intrinsicValue: aimIntrinsicValue.value,
-    cost: aimCost.value,
-    loopWeight: aimLoopWeight.value,
-    tags: aimTags.value,
-    status: {
-      state: selectedStatus.value,
-      comment: statusComment.value,
-      date: Date.now()
-    },
-    reflection: reflection.value || undefined,
-    supportedAims: supportedAimsList.value.map((entry) => entry.id),
-    archived: canArchive.value ? archived.value : false,
-    color: aimColor.value || null
-  })
+  const shouldWrite = (field: BulkField) => !isBulk.value || !mixedFields.value.has(field) || overriddenFields.value.has(field)
+  for (const target of editingAims.value) {
+    const updates: any = {}
+    if (shouldWrite('text')) updates.text = aimText.value
+    if (shouldWrite('description')) updates.description = aimDescription.value
+    if (shouldWrite('intrinsicValue')) updates.intrinsicValue = aimIntrinsicValue.value
+    if (shouldWrite('cost')) updates.cost = aimCost.value
+    if (shouldWrite('loopWeight')) updates.loopWeight = aimLoopWeight.value
+    if (shouldWrite('tags')) updates.tags = aimTags.value
+    if (shouldWrite('reflection')) updates.reflection = reflection.value || undefined
+    if (shouldWrite('archived')) updates.archived = archived.value
+    if (shouldWrite('color')) updates.color = aimColor.value || null
+    if (shouldWrite('status') || shouldWrite('statusComment')) {
+      updates.status = {
+        state: shouldWrite('status') ? selectedStatus.value : target.status.state,
+        comment: shouldWrite('statusComment') ? statusComment.value : target.status.comment,
+        date: Date.now()
+      }
+    }
+    if (!isBulk.value) updates.supportedAims = supportedAimsList.value.map((entry) => entry.id)
+    await dataStore.updateAim(projectStore.projectPath, target.id, updates)
+  }
 
+  if (isBulk.value) {
+    emit('close')
+    return
+  }
   const currentCommittedPhaseIds = committedPhasesList.value.map((phase) => phase.id)
   const phasesToRemove = originalCommittedPhaseIds.value.filter((phaseId) => !currentCommittedPhaseIds.includes(phaseId))
   const phasesToAdd = currentCommittedPhaseIds.filter((phaseId) => !originalCommittedPhaseIds.value.includes(phaseId))
@@ -485,13 +536,22 @@ const discardChanges = () => {
 <template>
   <FormModalShell
     :show="show"
-    title="Edit Aim"
+    :title="isBulk ? `Edit ${editingAims.length} Aims` : 'Edit Aim'"
     :entity-id="aimId"
     :header-style="headerStyle"
     @request-close="handleCancel"
   >
     <template #header-right>
-      <div class="color-picker-wrapper">
+      <div class="color-picker-wrapper" :class="{ 'mixed-field': isMixed('color') }">
+        <button
+          v-if="isMixed('color')"
+          type="button"
+          class="mixed-color-activate"
+          title="Multiple colors - click to override all"
+          @click="activateOverride('color')"
+        >
+          Multiple
+        </button>
         <input
           ref="colorInputRef"
           type="color"
@@ -500,6 +560,7 @@ const discardChanges = () => {
           @input="aimColor = ($event.target as HTMLInputElement).value"
         />
         <button
+          v-if="!isMixed('color')"
           type="button"
           class="color-picker-trigger"
           :style="{ backgroundColor: activeColor }"
@@ -527,34 +588,48 @@ const discardChanges = () => {
     </template>
 
     <div class="modal-content-root" tabindex="-1" @keydown.capture="handleModalKeydown">
-      <div class="form-section">
+      <p v-if="isBulk" class="bulk-notice">
+        Mixed fields are unchanged unless you click them to override all selected aims.
+      </p>
+      <div class="form-section" :class="{ 'mixed-field': isMixed('text') }" @click="activateOverride('text')">
         <label>Title</label>
         <input
           ref="aimTextInput"
           v-model="aimText"
           type="text"
-          placeholder="Aim title..."
+          :placeholder="mixedPlaceholder('text', 'Aim title...')"
+          :readonly="isMixed('text')"
           class="text-input"
           @keydown="handleInputKeydown"
           @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
         />
       </div>
 
-      <div class="form-section">
+      <div class="form-section" :class="{ 'mixed-field': isMixed('description') }" @click="activateOverride('description')">
         <label>Description</label>
         <textarea
           ref="descriptionInput"
           v-model="aimDescription"
-          placeholder="Optional description..."
+          :placeholder="mixedPlaceholder('description', 'Optional description...')"
+          :readonly="isMixed('description')"
           class="textarea-input"
           :rows="descriptionRows"
           @keydown="handleTextareaKeydown"
         />
       </div>
 
-      <div class="form-section">
+      <div class="form-section" :class="{ 'mixed-field': isMixed('status') }">
         <label>Status</label>
+        <button
+          v-if="isMixed('status')"
+          type="button"
+          class="mixed-activate"
+          @click="activateOverride('status')"
+        >
+          Multiple values - click to override all
+        </button>
         <select
+          v-else
           v-model="selectedStatus"
           class="status-select"
           @keydown="handleInputKeydown"
@@ -565,22 +640,32 @@ const discardChanges = () => {
         </select>
       </div>
 
-      <div class="form-section">
+      <div class="form-section" :class="{ 'mixed-field': isMixed('statusComment') }" @click="activateOverride('statusComment')">
         <label>Status Comment</label>
         <input
           ref="statusCommentInput"
           v-model="statusComment"
           type="text"
-          placeholder="Optional comment about status..."
+          :placeholder="mixedPlaceholder('statusComment', 'Optional comment about status...')"
+          :readonly="isMixed('statusComment')"
           class="text-input"
           @keydown="handleInputKeydown"
           @keydown.tab.exact="handleStatusCommentNext"
         />
       </div>
 
-      <div v-if="canArchive" class="form-section">
+      <div v-if="canArchive" class="form-section" :class="{ 'mixed-field': isMixed('archived') }">
+        <button
+          v-if="isMixed('archived')"
+          type="button"
+          class="mixed-activate"
+          @click="activateOverride('archived')"
+        >
+          Multiple archive values - click to override all
+        </button>
         <label class="archive-toggle">
           <input
+            v-if="!isMixed('archived')"
             type="checkbox"
             v-model="archived"
             @keydown="handleInputKeydown"
@@ -589,19 +674,20 @@ const discardChanges = () => {
         </label>
       </div>
 
-      <div class="form-section">
+      <div class="form-section" :class="{ 'mixed-field': isMixed('reflection') }" @click="activateOverride('reflection')">
         <label>Reflection</label>
         <textarea
           ref="reflectionInput"
           v-model="reflection"
-          placeholder="How did this aim go? What did you learn?"
+          :placeholder="mixedPlaceholder('reflection', 'How did this aim go? What did you learn?')"
+          :readonly="isMixed('reflection')"
           class="textarea-input"
           rows="4"
           @keydown="handleTextareaKeydown"
         />
       </div>
 
-      <div class="form-section">
+      <div v-if="!isBulk" class="form-section">
         <label>Supports (Parents)</label>
         <div class="entry-list">
           <div v-for="parent in supportedAimsList" :key="parent.id" class="entry-row">
@@ -631,7 +717,7 @@ const discardChanges = () => {
         </div>
       </div>
 
-      <div class="form-section">
+      <div v-if="!isBulk" class="form-section">
         <label>Linked repos</label>
         <div class="entry-list">
           <div v-for="repo in linkedReposList" :key="repo.repoId" class="entry-row">
@@ -659,7 +745,7 @@ const discardChanges = () => {
         </div>
       </div>
 
-      <div class="form-section">
+      <div v-if="!isBulk" class="form-section">
         <label>Committed In</label>
         <div class="entry-list">
           <div v-for="phase in committedPhasesList" :key="phase.id" class="entry-row">
@@ -687,44 +773,51 @@ const discardChanges = () => {
       </div>
 
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" :class="{ 'mixed-field': isMixed('intrinsicValue') }" @click="activateOverride('intrinsicValue')">
           <label>Intrinsic Value</label>
           <input
             v-model.number="aimIntrinsicValue"
             type="text"
-            placeholder="0"
             class="text-input"
+            :placeholder="mixedPlaceholder('intrinsicValue', '0')"
+            :readonly="isMixed('intrinsicValue')"
             @keydown="handleInputKeydown"
           />
         </div>
 
-        <div class="form-group">
+        <div class="form-group" :class="{ 'mixed-field': isMixed('cost') }" @click="activateOverride('cost')">
           <label>Cost</label>
           <input
             v-model.number="aimCost"
             type="text"
-            placeholder="0"
             class="text-input"
+            :placeholder="mixedPlaceholder('cost', '0')"
+            :readonly="isMixed('cost')"
             @keydown="handleInputKeydown"
           />
         </div>
 
-        <div class="form-group">
+        <div class="form-group" :class="{ 'mixed-field': isMixed('loopWeight') }" @click="activateOverride('loopWeight')">
           <label>Loop Weight</label>
           <input
             ref="loopWeightInput"
             v-model.number="aimLoopWeight"
             type="text"
-            placeholder="0"
             class="text-input"
+            :placeholder="mixedPlaceholder('loopWeight', '0')"
+            :readonly="isMixed('loopWeight')"
             @keydown="handleInputKeydown"
             @keydown.tab.exact="handleLoopWeightNext"
           />
         </div>
       </div>
 
-      <div class="form-section">
+      <div class="form-section" :class="{ 'mixed-field': isMixed('tags') }" @click="activateOverride('tags')">
+        <button v-if="isMixed('tags')" type="button" class="mixed-activate">
+          Multiple tag values - click to override all
+        </button>
         <TagInput
+          v-else
           v-model="aimTags"
           label="Tags"
           @next-field="handleTagNext"
@@ -761,6 +854,42 @@ const discardChanges = () => {
 <style scoped>
 .form-section {
   margin-bottom: 0.75rem;
+}
+
+.bulk-notice {
+  margin: 0 0 0.75rem;
+  padding: 0.625rem;
+  border-left: 3px solid #d29b35;
+  background: #292316;
+  color: #e8d4aa;
+  font-size: 0.85rem;
+}
+
+.mixed-field {
+  cursor: pointer;
+}
+
+.mixed-field :is(input, textarea, select, button) {
+  cursor: pointer;
+  border-color: #8b6a2d;
+}
+
+.mixed-activate {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px dashed #8b6a2d;
+  background: #211d15;
+  color: #d8c18e;
+  text-align: left;
+}
+
+.mixed-color-activate {
+  min-width: 5rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border: 1px dashed #8b6a2d;
+  background: #211d15;
+  color: #d8c18e;
 }
 
 label {
