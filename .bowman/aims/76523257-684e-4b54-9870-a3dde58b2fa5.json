@@ -1,0 +1,30 @@
+{
+  "id": "76523257-684e-4b54-9870-a3dde58b2fa5",
+  "text": "Produce and publish a sub-3-minute Build Week demo",
+  "description": "Public YouTube video under 3 minutes, in English or with English translation. Show the working project, the new hackathon extension, and explain how Codex and GPT-5.6 were used. Suggested arc: problem (intent disappears into issue trackers/chat) -> .bowman graph beside code -> dependency/provenance demo -> why this matters for open-source teams. Avoid third-party music/trademarks without permission.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "hackathon",
+    "demo-video",
+    "human-dependent"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "19f32e9c-0ce1-4f61-9cf7-2bbaee656301"
+  ],
+  "committedIn": [
+    "b16cdc29-a215-4b07-a262-49efd6171b2f"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix must record voice/video and publish publicly; script and shot list can be prepared by the agent.",
+    "date": 1784387763523
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

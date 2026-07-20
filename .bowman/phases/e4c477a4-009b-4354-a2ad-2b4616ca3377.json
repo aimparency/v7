@@ -1,0 +1,13 @@
+{
+  "id": "e4c477a4-009b-4354-a2ad-2b4616ca3377",
+  "parent": null,
+  "childPhaseIds": [],
+  "commitments": [
+    "cabe6e06-8988-4145-b884-9ef5bc68f660",
+    "093756d3-c8ef-4acb-ac14-6e610a5e0060",
+    "b3866d9d-7f95-4f45-b639-df8a822db4e1",
+    "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
+    "abfbac00-22db-40c0-99d6-c370bba237b0"
+  ],
+  "name": "secure funding by end of August"
+}

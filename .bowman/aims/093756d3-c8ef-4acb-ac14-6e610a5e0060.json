@@ -1,0 +1,31 @@
+{
+  "id": "093756d3-c8ef-4acb-ac14-6e610a5e0060",
+  "text": "Create the €15k funding package: 2-pager, deck, demo, use of funds, and clear ask",
+  "description": "Produce a compact package usable for angels and design partners: one-line category, concrete user/problem, working-product proof, why Git-native intent/dependency infrastructure is differentiated, founder/team credibility, 6-month milestones, exact €15k minimum ask (with a larger sensible round range), and use of funds. Reuse the Build Week demo so one artifact serves both tracks. Avoid unsupported TAM claims and ASI-heavy framing in the first contact.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "pitch",
+    "deck",
+    "demo"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "cabe6e06-8988-4145-b884-9ef5bc68f660"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "First execution task; target completion within 3 days.",
+    "date": 1784387910508
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

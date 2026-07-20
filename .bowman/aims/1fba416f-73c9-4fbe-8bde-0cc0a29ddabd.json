@@ -1,0 +1,32 @@
+{
+  "id": "1fba416f-73c9-4fbe-8bde-0cc0a29ddabd",
+  "text": "Add modular hybrid code intelligence for semantic maps and improvement discovery",
+  "description": "Provide code search and mapping that combines exact search, symbols/references, syntax chunks, semantic embeddings, dependency structure, git churn, tests/coverage, and aim history. Expose focused tools such as code_search, symbol_context, change_impact, and high-leverage improvement discovery without loading every capability into every loop.",
+  "reflection": "Added modular tool loading: core graph/delegation tools stay available, while coding, experiments, and code-intelligence are optional per loop. Existing loops default to all packs. Loop UI persists checkbox selection; worker filters disabled tools before constructing the model request. Verification: backend 53/53 tests, package typechecks, frontend build, and focused capability/embedding/persistence tests (3/3) pass.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "code-intelligence",
+    "semantic-search",
+    "modular-tools"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Semantic/heuristic code intelligence, incremental indexing, and per-loop capability packs are implemented. LSP/AST precision, coverage/failure signals, and aim-history scoring remain.",
+    "date": 1784500052492
+  },
+  "intrinsicValue": 0,
+  "cost": 6,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

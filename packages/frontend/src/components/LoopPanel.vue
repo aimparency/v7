@@ -8,6 +8,7 @@ import type { AimSearchPickPayload } from '../stores/ui/aim-search-types'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 
 type LoopProvider = 'nvidia' | 'openrouter' | 'openai-compatible'
+type LoopCapability = 'coding' | 'experiments' | 'code-intelligence'
 type LoopStopPolicy = 'target_halted' | 'phase_done' | 'never' | 'asap'
 type LoopDefinition = {
   id: string
@@ -18,13 +19,14 @@ type LoopDefinition = {
   baseUrl: string
   intervalSeconds: number
   associationChance: number
+  capabilities: LoopCapability[]
   createdAt: number
   updatedAt: number
 }
 type LoopMessage = {
   id: string
   role: string
-  kind: 'event' | 'text' | 'status' | 'error' | 'human_action_required'
+  kind: 'event' | 'text' | 'status' | 'error' | 'human_action_required' | 'external_action_required'
   content: string
   timestamp: number
   requestId?: string
@@ -34,7 +36,7 @@ type LoopInstance = {
   id: string
   loopId: string
   name: string
-  status: 'idle' | 'running' | 'waiting_for_human' | 'stopped' | 'done' | 'error'
+  status: 'idle' | 'running' | 'waiting_for_human' | 'waiting_for_external' | 'stopped' | 'done' | 'error'
   targetPhaseId: string | null
   targetAimId: string | null
   stopPolicy: LoopStopPolicy
@@ -63,6 +65,7 @@ const model = ref('z-ai/glm-5.2')
 const baseUrl = ref('https://integrate.api.nvidia.com/v1')
 const intervalSeconds = ref(60)
 const associationChancePercent = ref(10)
+const capabilityDraft = ref<LoopCapability[]>(['coding', 'experiments', 'code-intelligence'])
 const nvidiaApiKey = ref('')
 const openrouterApiKey = ref('')
 const loopApiKey = ref('')
@@ -87,7 +90,9 @@ const selectedInstance = computed(() => instances.value.find((instance) => insta
 const loopInstances = computed(() => instances.value.filter((instance) => instance.loopId === selectedLoopId.value))
 const showingConfig = computed(() => Boolean(selectedLoop.value) && selectedInstanceId.value === null)
 const hasWaitingInstances = computed(() => instances.value.some((instance) => instance.status === 'waiting_for_human'))
-const selectedHumanRequest = computed(() => [...(selectedInstance.value?.messages ?? [])].reverse().find((message) => message.kind === 'human_action_required'))
+const selectedDependencyRequest = computed(() => [...(selectedInstance.value?.messages ?? [])].reverse().find(
+  (message) => message.kind === 'human_action_required' || message.kind === 'external_action_required'
+))
 const selectedMessages = computed(() => selectedInstance.value?.messages ?? [])
 const selectedTargetPhaseLabel = computed(() => {
   const id = selectedInstance.value?.targetPhaseId
@@ -168,6 +173,7 @@ const hydrate = async () => {
       baseUrl.value = selectedLoop.value?.baseUrl ?? 'https://integrate.api.nvidia.com/v1'
       intervalSeconds.value = selectedLoop.value?.intervalSeconds ?? 60
       associationChancePercent.value = Math.round((selectedLoop.value?.associationChance ?? 0.1) * 100)
+      capabilityDraft.value = [...(selectedLoop.value?.capabilities ?? ['coding', 'experiments', 'code-intelligence'])]
       configDirty.value = false
     }
     secretsPresent.value = config.secretsPresent
@@ -192,7 +198,8 @@ const saveConfig = async () => {
         model: model.value,
         baseUrl: baseUrl.value,
         intervalSeconds: intervalSeconds.value,
-        associationChance: Math.max(0, Math.min(associationChancePercent.value / 100, 1))
+        associationChance: Math.max(0, Math.min(associationChancePercent.value / 100, 1)),
+        capabilities: capabilityDraft.value
       })
     const secrets: Record<string, string> = {}
     if (nvidiaApiKey.value) secrets.NVIDIA_API_KEY = nvidiaApiKey.value
@@ -241,6 +248,7 @@ const duplicateLoop = async () => {
   baseUrl.value = duplicated?.baseUrl ?? 'https://integrate.api.nvidia.com/v1'
   intervalSeconds.value = duplicated?.intervalSeconds ?? 60
   associationChancePercent.value = Math.round((duplicated?.associationChance ?? 0.1) * 100)
+  capabilityDraft.value = [...(duplicated?.capabilities ?? ['coding', 'experiments', 'code-intelligence'])]
   configDirty.value = false
 }
 
@@ -387,7 +395,7 @@ const sendHumanMessage = async () => {
     projectPath: projectStore.projectPath,
     instanceId: selectedInstance.value.id,
     content: text,
-    replyToRequestId: selectedHumanRequest.value?.id
+    replyToRequestId: selectedDependencyRequest.value?.id
   })
   loops.value = runtime.loops
   instances.value = runtime.instances
@@ -416,6 +424,18 @@ const toggleLogExpansion = (messageId: string, expanded: boolean) => {
   if (expanded) next.add(messageId)
   else next.delete(messageId)
   expandedLogIds.value = next
+}
+
+const toggleLoopActions = () => {
+  projectStore.showLoopActionsOverlay = !projectStore.showLoopActionsOverlay
+}
+
+const handleLoopKeyDown = (e: KeyboardEvent) => {
+  if (e.ctrlKey && e.code === 'Space') {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleLoopActions()
+  }
 }
 
 const handleLogKeydown = (event: KeyboardEvent) => {
@@ -456,6 +476,7 @@ watch(selectedLoopId, () => {
   baseUrl.value = selectedLoop.value?.baseUrl ?? 'https://integrate.api.nvidia.com/v1'
   intervalSeconds.value = selectedLoop.value?.intervalSeconds ?? 60
   associationChancePercent.value = Math.round((selectedLoop.value?.associationChance ?? 0.1) * 100)
+  capabilityDraft.value = [...(selectedLoop.value?.capabilities ?? ['coding', 'experiments', 'code-intelligence'])]
   configDirty.value = false
 })
 
@@ -475,15 +496,26 @@ watch(
   }
 )
 
+defineExpose({
+  createLoop,
+  createInstance,
+  duplicateLoop,
+  startInstance,
+  stopInstance,
+  restartInstance
+})
+
 onMounted(() => {
   void hydrate()
   pollTimer = window.setInterval(() => {
     if (projectStore.showLoop) void hydrate()
   }, 1500)
+  window.addEventListener('keydown', handleLoopKeyDown, true)
 })
 
 onUnmounted(() => {
   if (pollTimer) window.clearInterval(pollTimer)
+  window.removeEventListener('keydown', handleLoopKeyDown, true)
 })
 </script>
 
@@ -493,7 +525,7 @@ onUnmounted(() => {
       <button
         v-for="loop in loops"
         :key="loop.id"
-        class="nav-item"
+        class="nav-item loop-def"
         :class="{ active: loop.id === selectedLoopId }"
         @click="selectedLoopId = loop.id; selectedInstanceId = null"
       >
@@ -597,6 +629,22 @@ onUnmounted(() => {
           </label>
         </div>
 
+        <fieldset class="capability-field">
+          <legend>Capability packs</legend>
+          <label>
+            <input v-model="capabilityDraft" type="checkbox" value="coding" @change="configDirty = true">
+            Coding
+          </label>
+          <label>
+            <input v-model="capabilityDraft" type="checkbox" value="experiments" @change="configDirty = true">
+            Experiments
+          </label>
+          <label>
+            <input v-model="capabilityDraft" type="checkbox" value="code-intelligence" @change="configDirty = true">
+            Code intelligence
+          </label>
+        </fieldset>
+
         <label v-if="provider === 'nvidia'" class="field">
           <span>NVIDIA API key <em v-if="secretsPresent.NVIDIA_API_KEY">saved</em></span>
           <input v-model="nvidiaApiKey" type="password" autocomplete="off" placeholder="Paste to update">
@@ -641,7 +689,11 @@ onUnmounted(() => {
         <form class="human-input" @submit.prevent="sendHumanMessage">
           <input
             v-model="humanMessage"
-            :placeholder="selectedInstance.status === 'waiting_for_human' ? 'Answer the loop...' : 'Send an intent interception...'"
+            :placeholder="selectedInstance.status === 'waiting_for_human'
+              ? 'Answer the loop...'
+              : selectedInstance.status === 'waiting_for_external'
+                ? 'Report external completion or evidence...'
+                : 'Send an intent interception...'"
           >
           <button class="primary-btn" :disabled="!humanMessage.trim()">Send</button>
         </form>
@@ -698,6 +750,19 @@ onUnmounted(() => {
 .nav-item.active {
   border-color: #007acc;
   background: #24384a;
+}
+
+/* Config entries (loop defs) look different from running instances */
+.loop-def {
+  background: #1f1f1f;
+  font-style: italic;
+}
+
+.loop-def::before {
+  content: '⚙ ';
+  opacity: 0.55;
+  font-size: 0.85em;
+  font-style: normal;
 }
 
 .instance-item small {
@@ -827,6 +892,27 @@ textarea {
   gap: 0.75rem;
 }
 
+.capability-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.82rem;
+}
+
+.capability-field legend {
+  margin-bottom: 0.4rem;
+  color: #aaa;
+}
+
+.capability-field label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .wide {
   grid-column: 1 / -1;
 }
@@ -915,6 +1001,11 @@ em,
 
 .message-line.human_action_required .content {
   color: #ffd166;
+  font-weight: 700;
+}
+
+.message-line.external_action_required .content {
+  color: #80cbc4;
   font-weight: 700;
 }
 

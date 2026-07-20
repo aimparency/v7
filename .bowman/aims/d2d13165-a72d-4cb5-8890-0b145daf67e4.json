@@ -1,0 +1,76 @@
+{
+  "id": "d2d13165-a72d-4cb5-8890-0b145daf67e4",
+  "text": "Win Prototype Fund support for Aimparency's open Git-native intent infrastructure",
+  "description": "Apply as Felix Niemeyer, an individual developer resident and taxed in Germany. The formal fit requires being self-employed/freelance during the funded period (or proportionally released from employment); companies cannot receive this funding. Applications for Jahrgang 03 run 1 October-30 November 2026. Proposed project framing: build an open, Git-native intent and dependency protocol/tooling layer for human-AI software collaboration, including inspectable provenance from aims to dependencies and realizing commits. This should be a concrete new software-infrastructure prototype with societal value, user sovereignty, reusable formats, and freely licensed outputs, rather than a request to maintain the existing Aimparency app. Funding target: up to €47.5k solo for six months (up to 950 hours at €50/hour, subject to the current rules).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "grant",
+    "prototype-fund",
+    "individual",
+    "open-source",
+    "software-infrastructure",
+    "october-2026"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "06423345-ec02-4935-b80f-dc4abaa089ca",
+      "relativePosition": [
+        0.14099353288709016,
+        2.4960209982458115
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "6453b8e2-f7bc-4045-8251-bfd008254c2a",
+      "relativePosition": [
+        1.9759462204580216,
+        1.5315471046812956
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "826b4e21-7690-4a9c-b6d1-433b2acef4b7",
+      "relativePosition": [
+        -2.2828617069214565,
+        -1.0190890182273844
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "1d9cecd8-4269-46b4-96a7-1617a09fe9b7",
+      "relativePosition": [
+        -0.9956813634327679,
+        2.293167813857648
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ef20d21f-96e3-472d-8ae0-e2a4be45b2e8",
+      "relativePosition": [
+        -0.5976576443244,
+        2.4275101112416833
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "cabe6e06-8988-4145-b884-9ef5bc68f660",
+    "b6844398-3f5f-43da-b6fc-fe7b8ec39981"
+  ],
+  "committedIn": [
+    "2cb2e798-c679-489e-b168-8c02c89f78cd"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Individual route appears structurally suitable, subject to confirming German residence/tax and self-employment status for the funded period. Prepare in October; target submission by 31 October.",
+    "date": 1784390952126
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

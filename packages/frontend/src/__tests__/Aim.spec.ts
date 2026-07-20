@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import AimComponent from '../components/Aim.vue'
 import { useDataStore, type Aim } from '../stores/data'
+import { useUIStore } from '../stores/ui'
 import { createAimUIState } from '../stores/ui/aim-ui-state'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -213,5 +214,36 @@ describe('Aim.vue', () => {
     const shiftLast = (wrapper.emitted('aim-clicked') || []).slice(-1)[0]
     expect(shiftLast?.[0]).toBe(aim.id)
     expect(shiftLast?.[1]).toEqual({ ctrl: false, shift: true })
+  })
+
+  it('toggles multi-selection on touch long-press', async () => {
+    vi.useFakeTimers()
+    const aim = createMockAim()
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    dataStore.aims[aim.id] = aim
+    const wrapper = mount(AimComponent, {
+      global: { plugins: [pinia] },
+      props: {
+        aim,
+        phaseId: 'test-phase',
+        columnIndex: 0,
+        isActive: false,
+        isSelected: false,
+        aimUiState: createAimUIState()
+      }
+    })
+
+    const pointerDown = new Event('pointerdown', { bubbles: true })
+    Object.defineProperties(pointerDown, {
+      pointerType: { value: 'touch' },
+      clientX: { value: 10 },
+      clientY: { value: 10 }
+    })
+    wrapper.find('.aim-header').element.dispatchEvent(pointerDown)
+    await vi.advanceTimersByTimeAsync(450)
+
+    expect(uiStore.multiSelectedAimIds).toEqual([aim.id])
+    vi.useRealTimers()
   })
 })

@@ -1,0 +1,32 @@
+{
+  "id": "ea8f55b0-fae5-42fd-9fb7-e54565225b4a",
+  "text": "Delegate human-only and externally blocked loop actions with resumable state",
+  "description": "Represent actions requiring legal identity, institutional access, credentials, judgment, or another external event as explicit dependencies. The loop should distinguish waiting_on_human from waiting_on_external, preserve context, and resume automatically when confirmation or evidence arrives.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "delegation",
+    "human-in-the-loop",
+    "resumable"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Human and external dependency states are distinct and resumable through correlated inbox evidence; awaiting user acceptance.",
+    "date": 1784493608628
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Added waiting_for_external across shared/backend/frontend contracts and worker liveness checks. Added external_action_required tool, durable request event/prompt, correlated evidence reply, automatic running-state restoration, and distinct UI labeling. Reused the existing inbox rather than implementing external systems. Verification: agent-tools and loop-worker typechecks pass; backend 53/53 tests pass; frontend production build passes."
+}

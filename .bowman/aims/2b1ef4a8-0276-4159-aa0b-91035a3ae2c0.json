@@ -2,6 +2,7 @@
   "id": "2b1ef4a8-0276-4159-aa0b-91035a3ae2c0",
   "text": "Add circuit-breaker logic to supervisor-state.ts to reset or halt after N consecutive ERRORs to avoid retry ceiling",
   "description": "Current backoff in supervisor-state.ts increases but can still lead to repeated 'retry ceiling reached' in friction. Add logic: after e.g. 5 consecutive ERRORs without success, trigger a special state or log a limitation and suggest aim. Reset on success. This improves the supervisor in wrapped-agents for the ASI ideation aim.",
+  "reflection": "Completed per description and follow-up items:\n- Circuit breaker with CIRCUIT_OPEN after threshold consecutive ERRORs, blocks retries, prompts for auto-propose/create_aim.\n- closeCircuit integrated in setEnabled for recovery.\n- Unit test added simulating ceiling and close on enable.\n- Threshold configurable via AutonomyPolicy.maxConsecutiveErrors (default 5).\n- Watchdog state handling supports via getState (CIRCUIT_OPEN defined).\n\nEvidence: code changes, tests 63/63, type-check clean, commits. No more 'retry ceiling' without self-improvement trigger.\n\nTies to auto-propose and ASI supervisor reliability.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -22,15 +23,14 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Added CIRCUIT_OPEN state to supervisor-state and state-machine-definition. Logic in transition to open circuit after 5 consecutive ERRORs. attemptAction blocks with message to auto-propose. Added isCircuitOpen, closeCircuit, triggerError guard. Updated prompts for CIRCUIT_OPEN to direct to create_aim/auto-propose. Type-check and tests pass. Ties to friction auto-propose and backoff.",
-    "date": 1784019018331
+    "state": "done",
+    "comment": "Full logic, integration of closeCircuit on recovery, unit test for ceiling, configurable via policy. Type-check/tests pass, committed. Addresses retry ceiling in supervisor.",
+    "date": 1784019852633
   },
   "intrinsicValue": 0,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Implemented core circuit-breaker logic in supervisor-state.ts per the aim description:\n- Extended SupervisorStateName with 'CIRCUIT_OPEN'.\n- CIRCUIT_BREAKER_THRESHOLD = 5.\n- In transition, when ERROR and errorCount >= threshold, redirect to CIRCUIT_OPEN.\n- In attemptAction, special block for CIRCUIT_OPEN (backoffActive, suggest propose).\n- Added isCircuitOpen(), closeCircuit() to reset after improvement.\n- Updated triggerError to guard.\n- Updated state-machine-definition.ts with circuitOpen state definition, instructions for auto-propose, actions.\n- Updated supervisor-prompts.ts with specific alert for CIRCUIT_OPEN directing to create_aim MCP or auto-propose.\n\nEvidence: type-check clean, tests 62/62 pass. No breakage to existing ERROR/backoff.\n\nNext: integrate closeCircuit call after successful recovery or auto-propose apply; add unit test simulating ceiling; make threshold configurable via AutonomyPolicy; update watchdog handling if needed for state emission."
+  "valueVariance": 0
 }

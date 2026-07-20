@@ -1,0 +1,30 @@
+{
+  "id": "61dc3d49-4b9a-4d21-b6b0-131a69e82bf2",
+  "text": "Make the coding-assistant stop hook continue autonomous work indefinitely",
+  "description": "Return the documented Stop-hook continuation decision instead of a decorative message. Keep an explicit opt-out for deliberate shutdown.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "hooks",
+    "continuity"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and internally verified; awaiting user acceptance.",
+    "date": 1784493389626
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

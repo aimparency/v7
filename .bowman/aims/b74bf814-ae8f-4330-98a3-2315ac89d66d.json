@@ -1,0 +1,27 @@
+{
+  "id": "b74bf814-ae8f-4330-98a3-2315ac89d66d",
+  "text": "when dragging, can we have a round cap for the trunk of the arrow (side without tip?)",
+  "description": "talking about the placeholder arrow, that's being shown on when dragging from an aim to create a connection",
+  "reflections": [],
+  "archived": false,
+  "color": null,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1784017886565
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

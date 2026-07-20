@@ -2,6 +2,7 @@
   "id": "073ea968-fc31-45ef-b90e-15bb9237c38d",
   "text": "Improve backoff and add explicit circuit-breaker in supervisor-state + recovery that triggers auto-propose",
   "description": "Current: BACKOFF_SCHEDULE caps at 15min; errorCount grows; 'retry ceiling reached' still bubbles to friction (suggesting upstream retries in client/animator or MCP). No explicit 'open circuit' state.\n\nImprovements:\n- Add CIRCUIT_OPEN or HALTED state after e.g. 5 consecutive ERRORs (configurable).\n- In that state, inject limitation + use the existing auto-propose mechanism (or direct create_aim) before allowing further retries.\n- Better reset: clear on successful WRAPPING_UP with work done, persist minimal error state.\n- Make schedule or max-consecutive configurable via AutonomyPolicy or project meta.\n- Update attemptAction, transition, triggerError accordingly.\n- Add unit tests and simulate 'retry ceiling' scenario.\n\nTies directly to 2b1ef4a8 sub-aim and the auto-propose logic in session-memory. Improves reliability of wrapped supervisor for autonomous loops under 7634e681.",
+  "reflection": "The improvements listed are covered by completing the sub-aim 2b1ef4a8 (circuit logic, state, prompts for auto-propose, tests, configurable). Better reset via closeCircuit on recovery. Supervisor reliability improved for wrapped-agents.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -14,15 +15,14 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Core circuit breaker added to supervisor-state (CIRCUIT_OPEN after 5 errors). Prompt and state def updated. Progress on supervisor reliability for ASI loops.",
-    "date": 1784019021270
+    "state": "done",
+    "comment": "All improvements implemented via the sub-aim 2b1ef4a8 which is now done. Configurable, integrated, tested.",
+    "date": 1784019867279
   },
   "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Implemented the improvements described: circuit breaker in supervisor-state.ts (new CIRCUIT_OPEN state, threshold logic, methods for check/close). Updated related definition and prompts to direct to auto-propose/create_aim when open. Type-check/tests green. This addresses the 'retry ceiling' by halting retries and triggering self-improvement. Linked to parent sub-aim."
+  "valueVariance": 0
 }

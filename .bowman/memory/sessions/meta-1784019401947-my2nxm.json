@@ -1,0 +1,29 @@
+{
+  "sessionId": "meta-1784019401947-my2nxm",
+  "timestamp": 1784019401947,
+  "duration": 38643574,
+  "aimsWorked": [
+    "9917490b-c0a5-41b8-9c2d-ea515d91b495",
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a",
+    "365e78d0-ed64-47d7-9902-b575d493c6e4",
+    "b33d2821-76e3-43c8-81a7-fd961ff733d5",
+    "5f660c4c-a96d-4a52-b1ea-81c045c2025e",
+    "16c7ebd4-7f1f-482a-b4c6-74f8fab21644",
+    "28134f24-5279-465d-bf6a-38795df36b8c",
+    "ce8516bc-df20-44d3-9fea-6784401e8276",
+    "8affbc01-11e0-4fa6-82aa-1723b7cd6168",
+    "e2c26776-1260-4624-ba97-c3ee29fa623f",
+    "439230f6-4347-4abc-a23b-2f67e58739bd",
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31",
+    "0227dd11-7432-49dd-ba8c-63a4d6d1bd24",
+    "facbacb5-1589-4b73-8ecb-97d7bb32bd99",
+    "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d",
+    "cffdcd91-fd9c-45e4-98fd-e265650be143",
+    "038522a0-3f35-4f06-82ef-2dd0b2d3736e"
+  ],
+  "outcomes": "● All remaining open aims require either external services/payments or are large multi-day projects (16-60+ hours). I've completed  |   Successfully completed 3 aims in this session:                                                                                    |   - Implemented reflection pattern with structured self-evaluation                                                                  |   - Implemented cron scheduler for experience-mining pipeline                                      || • Implemented all requested fixes and verified them. |   ### Fixed ||         81c045c2025e\",\"sta",
+  "patterns": "",
+  "lessonsLearned": "",
+  "systemLimitations": "",
+  "rawReflection": "Meta-summary compressed from 7 prior sessions (oldest first). Key signals aggregated from outcomes/patterns/lessons/limitations."
+}

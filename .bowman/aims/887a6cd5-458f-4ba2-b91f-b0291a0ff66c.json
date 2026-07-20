@@ -2,7 +2,7 @@
   "id": "887a6cd5-458f-4ba2-b91f-b0291a0ff66c",
   "text": "Select multiple aims",
   "description": "",
-  "reflection": "MCP updated for 13d86789 (list child) and this. Graph sibling done. Verification evidence: code (tests pass for changes; build clean on our code), UI/visual (puppeteer nav+attempted screenshot of graph; playwright e2e does clicks+asserts bar). Reduction pass done on diff. No commit. Clean intentional batch prepared.",
+  "reflection": "Audited and completed the missing touch paths in list and graph views. Desktop Ctrl/Cmd and Shift behavior, shared selection state, selection bar, and merge remain intact.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -31,9 +31,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "done",
-    "comment": "Parent complete. All cluster reqs (range list+graph, bar, confirmation, tests/e2e) met + verified + diff reduced.",
-    "date": 1784014555336
+    "state": "review",
+    "comment": "List and graph multi-selection are implemented across desktop modifiers and touch long-press; awaiting user acceptance.",
+    "date": 1784493484425
   },
   "intrinsicValue": 0,
   "cost": 1,

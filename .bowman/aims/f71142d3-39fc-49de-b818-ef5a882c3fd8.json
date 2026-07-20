@@ -4,6 +4,7 @@
   "description": "merges multiple selected aims into one. \ncombines all connections. \nUseful e.g. when having duplicate aims or when reducing complexity (one more encompassing aim instead of too detailed ones). ",
   "reflections": [],
   "archived": false,
+  "color": null,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
@@ -13,9 +14,9 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1783335305887
+    "state": "partially",
+    "comment": "UI multi-select + merge action in progress (list/columns view)",
+    "date": 1784013444882
   },
   "intrinsicValue": 0,
   "cost": 1,
@@ -23,5 +24,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "color": null
+  "reflection": "Implemented core of multi-select and merge for list view (addresses 'Select multiple aims (list view)' + this aim + parent 'multiple aim actions').\n\nChanges:\n- Added multiSelectedAimIds (array) + toggleMultiSelect / clearMultiSelect / mergeSelectedInto(targetId) in list-store.ts\n- mergeSelectedInto calls trpc.aim.merge.mutate sequentially for other selected into target (backend already supports rewire + archive)\n- Updated click flow: Aim.vue now emits modifiers (ctrl/meta/shift); Column + RootAimsColumn handle modifier clicks by toggling multi + updating primary nav selection\n- Visuals: .multi-selected styling (bg tint + dashed outline), ● badge in title\n- Context menu: dynamically adds 'Merge N other selected into this' (when this aim is in multi) and 'Clear multi-select (N)'\n\nScope so far: list/columns view (DOM). Graph/WebGL multi-select is separate child aim.\n\nNext: polish (range shift-select, clear on certain actions, graph view, tests), then mark related child aims done too."
 }

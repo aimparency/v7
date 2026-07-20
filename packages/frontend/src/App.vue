@@ -22,6 +22,7 @@ import ProjectSelectionView from './views/ProjectSelectionView.vue'
 import VoiceView from './views/VoiceView.vue'
 import WatchdogPanel from './components/WatchdogPanel.vue'
 import LoopPanel from './components/LoopPanel.vue'
+import LoopActionsOverlay from './components/LoopActionsOverlay.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 import { getRuntimeConfig } from './utils/runtime-config'
@@ -82,6 +83,7 @@ const handlePhaseSearchSelect = (payload: PhaseSearchSelection) => {
 const watchdogHeight = ref(parseInt(localStorage.getItem('aimparency-watchdog-height') || '300'))
 const loopHeight = ref(parseInt(localStorage.getItem('aimparency-loop-height') || '300'))
 const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
+const loopRef = ref<InstanceType<typeof LoopPanel>>()
 const showConsistencyModal = ref(false)
 const isResizingWatchdog = ref(false)
 const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
@@ -227,6 +229,23 @@ const flushPersistedUIState = () => {
   }
 }
 
+type LoopPanelAction = 'create-loop' | 'create-instance' | 'duplicate-loop' | 'start-instance' | 'stop-instance' | 'restart-instance'
+
+const handleLoopAction = (action: LoopPanelAction) => {
+  const panel = loopRef.value
+  if (!panel) return
+
+  const handlers: Record<LoopPanelAction, () => void | Promise<void>> = {
+    'create-loop': panel.createLoop,
+    'create-instance': panel.createInstance,
+    'duplicate-loop': panel.duplicateLoop,
+    'start-instance': panel.startInstance,
+    'stop-instance': panel.stopInstance,
+    'restart-instance': panel.restartInstance
+  }
+  void handlers[action]()
+}
+
 const handleVisibilityChange = () => {
   if (document.visibilityState === 'hidden') {
     flushPersistedUIState()
@@ -278,6 +297,22 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
     return
   }
 
+  // Loop (agent loop area) toggle
+  if (event.key === 'a' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    projectStore.showLoop = !projectStore.showLoop
+    return
+  }
+
+  // Ctrl+Space for context menu (watchdog handled in its panel via capture; loop below)
+  if (event.ctrlKey && event.code === 'Space') {
+    if (projectStore.showLoop) {
+      event.preventDefault()
+      event.stopPropagation()
+      projectStore.showLoopActionsOverlay = !projectStore.showLoopActionsOverlay
+      return
+    }
+  }
+
   // Voice view toggle
   if (voiceEnabled && event.key === 'v' && !event.ctrlKey && !event.metaKey && !event.altKey) {
     uiStore.setView(projectStore.currentView === 'voice' ? 'columns' : 'voice')
@@ -302,7 +337,9 @@ watch(() => [uiStore.navigatingAims, uiStore.activeColumn], ([navigatingAims, ac
       { key: 'h/l', action: 'switch columns' },
       { key: 'j/k', action: 'navigate phases/aims' },
       { key: 'i', action: 'enter edit mode' },
-      { key: 'o', action: 'create phase/aim' }
+      { key: 'o', action: 'create phase/aim' },
+      { key: 'a', action: 'toggle loop panel' },
+      { key: 'w', action: 'toggle watchdog' }
     ]
 
     if (voiceEnabled) {
@@ -326,7 +363,9 @@ watch(() => [uiStore.navigatingAims, uiStore.activeColumn], ([navigatingAims, ac
       { key: 'e', action: 'edit aim' },
       { key: 'd', action: 'delete aim' },
       { key: 'o/O', action: 'create aim below/above' },
-      { key: 'Esc', action: 'exit edit mode' }
+      { key: 'Esc', action: 'exit edit mode' },
+      { key: 'a', action: 'toggle loop panel' },
+      { key: 'w', action: 'toggle watchdog' }
     ])
   }
 }, { immediate: true })
@@ -487,6 +526,16 @@ onUnmounted(() => {
 
           <button
             v-if="projectStore.showLoop"
+            @click="projectStore.showLoopActionsOverlay = !projectStore.showLoopActionsOverlay"
+            class="icon-btn"
+            :style="{ background: projectStore.showLoopActionsOverlay ? '#444' : 'transparent' }"
+            title="Loop actions menu (Ctrl+Space)"
+          >
+            ☰
+          </button>
+
+          <button
+            v-if="projectStore.showLoop"
             @click="projectStore.loopMaximized = !projectStore.loopMaximized"
             class="icon-btn"
             :style="{ background: projectStore.loopMaximized ? '#444' : 'transparent' }"
@@ -575,7 +624,7 @@ onUnmounted(() => {
         :style="{ height: projectStore.loopMaximized ? '100%' : loopHeight + 'px' }"
       >
         <div class="resize-handle" v-if="!projectStore.loopMaximized && !projectStore.showWatchdog" @mousedown="startResizeWatchdog"></div>
-        <LoopPanel />
+        <LoopPanel ref="loopRef" />
       </div>
     </div>
 
@@ -617,6 +666,10 @@ onUnmounted(() => {
     />
 
     <ProjectSettingsModal v-if="modalStore.showSettingsModal" />
+    <LoopActionsOverlay
+      v-if="projectStore.showLoopActionsOverlay"
+      @action="handleLoopAction"
+    />
 
     <!-- Help Text -->
     <footer v-if="!projectStore.isInProjectSelection" v-show="!projectStore.terminalFullscreen" class="help">

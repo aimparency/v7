@@ -1,0 +1,31 @@
+{
+  "id": "ef20d21f-96e3-472d-8ae0-e2a4be45b2e8",
+  "text": "Review and submit the Prototype Fund application by 31 October 2026",
+  "description": "Run technical, user-value, eligibility, licensing, and plain-language reviews. Ask at least two external readers to challenge the proposal. Ensure the application is self-contained and does not rely on attachments. Submit through the official platform by 31 October, ahead of the 30 November final deadline, and preserve the submitted version and confirmation.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "prototype-fund",
+    "submission",
+    "deadline",
+    "human-dependent"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d2d13165-a72d-4cb5-8890-0b145daf67e4"
+  ],
+  "committedIn": [
+    "2cb2e798-c679-489e-b168-8c02c89f78cd"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix must approve and submit through the official application platform.",
+    "date": 1784390978854
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

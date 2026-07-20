@@ -16,14 +16,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Mirrors real-world constraint environments",
-    "date": 1774771792169
+    "state": "done",
+    "comment": "Added budget to prompts and context loading from meta. Agent now sees computeCredits/funds and instruction to be cost-conscious. type-check/tests pass, committed.",
+    "date": 1784020015762
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Implemented cost-conscious: budget shown in situation, rule to track and optimize. Ties to autonomy loop supervisor."
 }

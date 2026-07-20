@@ -1,0 +1,31 @@
+{
+  "id": "826b4e21-7690-4a9c-b6d1-433b2acef4b7",
+  "text": "Collect user and public-interest evidence for the Prototype Fund application",
+  "description": "Interview at least five open-source maintainers, agent-tool developers, or small technical teams. Test the problem statement: intent and dependencies drift away from code; agent work is difficult to inspect; issue trackers capture tasks but not value/rationale. Capture concrete quotes only with permission, current workflows, failed alternatives, desired integrations, and willingness to test the prototype. Seek 2-3 lightweight letters or written commitments to pilot.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "prototype-fund",
+    "user-research",
+    "public-interest",
+    "human-dependent"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d2d13165-a72d-4cb5-8890-0b145daf67e4"
+  ],
+  "committedIn": [
+    "2cb2e798-c679-489e-b168-8c02c89f78cd"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Requires Felix outreach and interviews; the agent can prepare scripts and synthesize notes.",
+    "date": 1784390978105
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,7 +1,9 @@
 {
   "id": "0e71547e-5d14-434f-957c-7ad2cd0b8de8",
   "parent": "6a3432ea-a0c5-4df4-b533-68298be7b7fc",
-  "childPhaseIds": [],
+  "childPhaseIds": [
+    "ecbb6e18-0a5d-4189-8f15-e15e43c0b7b8"
+  ],
   "commitments": [
     "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
     "21202fb8-b4c3-4636-9de3-5084bb2ad6ab",
@@ -13,7 +15,13 @@
     "f71142d3-39fc-49de-b818-ef5a882c3fd8",
     "b3d98c5b-8ba0-4910-9745-d778795e9c51",
     "d7ba6b8b-5150-4ab2-b6a4-79a556f10ab1",
-    "3103d302-2896-4ee4-b33a-e8358d96b1f6"
+    "3103d302-2896-4ee4-b33a-e8358d96b1f6",
+    "b74bf814-ae8f-4330-98a3-2315ac89d66d",
+    "ea8f55b0-fae5-42fd-9fb7-e54565225b4a",
+    "1171de2f-a08e-4bb3-bf2a-7d279e4cb066",
+    "8c0f71ff-0397-44fb-9e4e-b450a45ba646",
+    "1fba416f-73c9-4fbe-8bde-0cc0a29ddabd",
+    "61dc3d49-4b9a-4d21-b6b0-131a69e82bf2"
   ],
   "name": "July"
 }

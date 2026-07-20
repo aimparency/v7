@@ -19,7 +19,7 @@ function getExtractor(): Promise<FeatureExtractionPipeline> {
   return extractorPromise;
 }
 
-async function embedQuery(text: string): Promise<number[] | null> {
+export async function embedSearchQuery(text: string): Promise<number[] | null> {
   if (!text.trim()) return null;
   try {
     const extractor = await getExtractor();
@@ -28,6 +28,15 @@ async function embedQuery(text: string): Promise<number[] | null> {
   } catch {
     return null;
   }
+}
+
+export async function embedDocuments(texts: string[]): Promise<number[][]> {
+  if (texts.length === 0) return [];
+  const extractor = await getExtractor();
+  const output = await extractor(texts, { pooling: 'mean', normalize: true });
+  const flat = Array.from(output.data as Float32Array, (value) => Number(value));
+  const dimension = flat.length / texts.length;
+  return texts.map((_, index) => flat.slice(index * dimension, (index + 1) * dimension));
 }
 
 async function readVectorStore(projectPath: string): Promise<Record<string, number[]>> {
@@ -55,7 +64,7 @@ function quantile(values: number[], q: number): number {
 export async function maybeFindAssociation(projectPath: string, stateText: string, chance = 0.1) {
   const boundedChance = Math.max(0, Math.min(chance, 1));
   if (boundedChance <= 0 || !stateText.trim()) return null;
-  const queryVector = await embedQuery(stateText);
+  const queryVector = await embedSearchQuery(stateText);
   if (!queryVector) return null;
   const [vectors, aims] = await Promise.all([
     readVectorStore(projectPath),

@@ -1,0 +1,72 @@
+{
+  "id": "19f32e9c-0ce1-4f61-9cf7-2bbaee656301",
+  "text": "WIN THE OPENAI HACKATHON with Aimparency, GPT-5.6, and Codex",
+  "description": "**BOLD IDEA: WIN THE OPENAI HACKATHON.** Build the strongest Developer Tools entry by using GPT-5.6 through Codex to meaningfully extend Aimparency during the eligible July 13-21 window. Position Aimparency as the Git-native intent and dependency layer for open-source development: code history says what changed; Aimparency records why, what it depends on, and whether implementation fulfilled the intent. The central proof should be a coherent, working intent-to-code provenance experience showing aims, dependencies, linked repositories, and realizing commits. The submission story is intentionally recursive and demonstrable: we used GPT-5.6 and Codex inside Aimparency, guided by the Aimparency graph, to build the extension intended to win the OpenAI Build Week hackathon. Developer Tools track. Deadline: 21 July 2026, 17:00 PDT (22 July 02:00 CEST).",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "bold-idea",
+    "win",
+    "hackathon",
+    "openai-build-week",
+    "gpt-5.6",
+    "codex",
+    "developer-tools",
+    "git",
+    "open-source",
+    "funding"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "d4e8cdcf-99a0-488c-818d-aebd24087ff7",
+      "relativePosition": [
+        2.4226094563694804,
+        -0.617222343980815
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b11e2994-4e08-42fb-b468-e15327e17029",
+      "relativePosition": [
+        -2.497797185782304,
+        -0.10492482403131496
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "76523257-684e-4b54-9870-a3dde58b2fa5",
+      "relativePosition": [
+        0.5389873997661137,
+        -2.441207197862026
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "2219e032-0663-4c03-848e-ed7c5fe594b5",
+      "relativePosition": [
+        1.9675206232843367,
+        -1.5423561835551525
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143",
+    "3253bc9e-14fe-4c9b-9849-588620518517",
+    "cabe6e06-8988-4145-b884-9ef5bc68f660"
+  ],
+  "committedIn": [
+    "b16cdc29-a215-4b07-a262-49efd6171b2f"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Go decision made 2026-07-18. Active objective: build, document, demo, and submit a winning Developer Tools entry.",
+    "date": 1784390917332
+  },
+  "intrinsicValue": 25,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

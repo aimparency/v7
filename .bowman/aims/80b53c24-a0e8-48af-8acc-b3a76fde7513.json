@@ -1,0 +1,49 @@
+{
+  "id": "80b53c24-a0e8-48af-8acc-b3a76fde7513",
+  "text": "Secure sustainable Q4 funding for Aimparency",
+  "description": "Build a durable Q4 funding pipeline beyond the August bridge: submit the Prototype Fund application, monitor genuinely relevant AI/open-source calls, strengthen public-interest evidence and user traction, and decide the legal/IP structure without accidentally making individual/GbR grants unavailable. Success is at least one high-quality grant application plus an investable evidence package by year end.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "q4-2026",
+    "grant",
+    "open-source"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "b6844398-3f5f-43da-b6fc-fe7b8ec39981",
+      "relativePosition": [
+        0.8337396368804015,
+        -2.3568789145593665
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "28ddbcb0-d6de-417b-b453-78caa9e74ee6",
+      "relativePosition": [
+        -0.3949626921375576,
+        -2.468603749454224
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "cabe6e06-8988-4145-b884-9ef5bc68f660",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [
+    "bb7ce28d-0eee-4243-a489-fd4eab223c35"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Q4 container created; October Prototype Fund track is the primary grant path.",
+    "date": 1784390926316
+  },
+  "intrinsicValue": 18,
+  "cost": 8,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -4,7 +4,11 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { jsonSchema, streamText, stepCountIs, tool } from 'ai';
 import {
   appendLoopEvent,
+  buildCodeIndex,
+  changeImpact,
+  codeHeatmap,
   commitAimToPhase,
+  createExperiment,
   createAim,
   drainInbox,
   getAimContext,
@@ -14,6 +18,7 @@ import {
   graphHygiene,
   applyUnifiedPatch,
   lineReplace,
+  listExperiments,
   listAimsFromFiles,
   listFiles,
   listPhasesFromFiles,
@@ -28,13 +33,17 @@ import {
   runCommand,
   searchAimsSemanticLite,
   searchFiles,
+  semanticCodeSearch,
   setLoopActivity,
   strReplace,
+  symbolContext,
   updateAim,
+  updateExperiment,
   type LoopDefinition,
   type LoopInboxMessage,
   type LoopInstance
 } from 'agent-tools';
+import { filterToolsByCapabilities } from './capabilities.js';
 
 type LoopSecrets = {
   NVIDIA_API_KEY?: string;
@@ -264,7 +273,8 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     'Humans should be asked for help only on severe blockers. Usually, use the graph tools to record ambiguity and move to clearer work.',
     'Assume people run Aimparency on their own computers unless an aim explicitly asks for remote hosting.',
     '',
-    'Available tools include aim graph tools plus coding tools: list_files, search_files, read_file, git_status, git_diff, run_command, propose_patch, apply_patch, str_replace, and line_replace.',
+    `Enabled optional capability packs: ${loop.capabilities.length > 0 ? loop.capabilities.join(', ') : 'none'}.`,
+    'Core aim-graph orientation and delegation tools are always available.',
     'Before editing, inspect git_status and read the relevant files. Prefer str_replace or line_replace for small edits. Use run_command for tests/typechecks. Destructive commands are refused.'
   ].join('\n');
   const promptText = [
@@ -299,13 +309,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     ].join('\n')
   });
 
-  const result = streamText({
-    model: provider(loop.model),
-    abortSignal: signal,
-    system: systemText,
-    prompt: promptText,
-    stopWhen: stepCountIs(10),
-    tools: {
+  const availableTools: Record<string, any> = {
       status_report: tool({
         description: 'Post a brief user-facing status report about what happened since the last status report. Max 3 sentences.',
         inputSchema: jsonSchema<{ message: string }>({
@@ -350,6 +354,37 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           return { ok: true, answer: answer.content };
         }
       }),
+      external_action_required: tool({
+        description: 'Wait for an external system, institution, or third party. State exactly what evidence or event will unblock the loop.',
+        inputSchema: jsonSchema<{ message: string }>({
+          type: 'object',
+          properties: { message: { type: 'string' } },
+          required: ['message'],
+          additionalProperties: false
+        }),
+        execute: async ({ message }) => {
+          const request = await appendLoopEvent(projectPath, instanceId, {
+            role: 'tool',
+            kind: 'external_action_required',
+            content: message
+          });
+          await markInstanceStatus(projectPath, instanceId, 'waiting_for_external');
+          await patchWorkerState(projectPath, instanceId, {
+            status: 'waiting_for_external',
+            waitingRequestId: request.id,
+            waitingPrompt: message
+          });
+          const evidence = await waitForHumanAnswer(projectPath, instanceId, request.id, signal);
+          if (!evidence) return { ok: false, stopped: true };
+          await markInstanceStatus(projectPath, instanceId, 'running');
+          await patchWorkerState(projectPath, instanceId, {
+            status: 'running',
+            waitingRequestId: undefined,
+            waitingPrompt: undefined
+          });
+          return { ok: true, evidence: evidence.content };
+        }
+      }),
       get_prioritized_aims: tool({
         description: 'Return open aims in active phase ranked by Aimparency priority.',
         inputSchema: jsonSchema<{ limit?: number }>({
@@ -387,6 +422,131 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           additionalProperties: false
         }),
         execute: async () => graphHygiene(projectPath)
+      }),
+      experiment: tool({
+        description: 'Create, list, or update durable experiments. Define predictions and stop conditions before acting; append evidence and belief updates after observing results.',
+        inputSchema: jsonSchema<{
+          action: 'create' | 'list' | 'update';
+          experimentId?: string;
+          aimIds?: string[];
+          hypothesis?: string;
+          prediction?: string;
+          expectedCost?: string;
+          expectedUpside?: string;
+          successMetric?: string;
+          stopCondition?: string;
+          status?: 'draft' | 'running' | 'waiting' | 'succeeded' | 'failed' | 'inconclusive' | 'stopped';
+          evidence?: { summary: string; ref?: string; observedAt?: number };
+          result?: string;
+          beliefUpdate?: { previousConfidence?: number; newConfidence: number; reason: string };
+          economicOutcomeRef?: string;
+          nextDecision?: string;
+        }>({
+          type: 'object',
+          properties: {
+            action: { type: 'string', enum: ['create', 'list', 'update'] },
+            experimentId: { type: 'string' },
+            aimIds: { type: 'array', items: { type: 'string' } },
+            hypothesis: { type: 'string' },
+            prediction: { type: 'string' },
+            expectedCost: { type: 'string' },
+            expectedUpside: { type: 'string' },
+            successMetric: { type: 'string' },
+            stopCondition: { type: 'string' },
+            status: { type: 'string', enum: ['draft', 'running', 'waiting', 'succeeded', 'failed', 'inconclusive', 'stopped'] },
+            evidence: {
+              type: 'object',
+              properties: {
+                summary: { type: 'string' },
+                ref: { type: 'string' },
+                observedAt: { type: 'number' }
+              },
+              required: ['summary'],
+              additionalProperties: false
+            },
+            result: { type: 'string' },
+            beliefUpdate: {
+              type: 'object',
+              properties: {
+                previousConfidence: { type: 'number' },
+                newConfidence: { type: 'number' },
+                reason: { type: 'string' }
+              },
+              required: ['newConfidence', 'reason'],
+              additionalProperties: false
+            },
+            economicOutcomeRef: { type: 'string' },
+            nextDecision: { type: 'string' }
+          },
+          required: ['action'],
+          additionalProperties: false
+        }),
+        execute: async (input) => {
+          if (input.action === 'list') return listExperiments(projectPath);
+          if (input.action === 'create') {
+            const required = [
+              'hypothesis',
+              'prediction',
+              'expectedCost',
+              'expectedUpside',
+              'successMetric',
+              'stopCondition'
+            ] as const;
+            const missing = required.filter((field) => !input[field]?.trim());
+            if (missing.length > 0) throw new Error(`Missing experiment fields: ${missing.join(', ')}`);
+            return createExperiment(projectPath, {
+              aimIds: input.aimIds,
+              hypothesis: input.hypothesis!,
+              prediction: input.prediction!,
+              expectedCost: input.expectedCost!,
+              expectedUpside: input.expectedUpside!,
+              successMetric: input.successMetric!,
+              stopCondition: input.stopCondition!,
+              status: input.status
+            });
+          }
+          if (!input.experimentId) throw new Error('experimentId is required for update');
+          return updateExperiment(projectPath, input.experimentId, {
+            status: input.status,
+            evidence: input.evidence ? {
+              ...input.evidence,
+              observedAt: input.evidence.observedAt ?? Date.now()
+            } : undefined,
+            result: input.result,
+            beliefUpdate: input.beliefUpdate,
+            economicOutcomeRef: input.economicOutcomeRef,
+            nextDecision: input.nextDecision
+          });
+        }
+      }),
+      code_intelligence: tool({
+        description: 'Inspect code through one compact interface: index builds local code embeddings; semantic searches them by meaning; heatmap combines lexical matches and churn; symbol finds definitions/references; impact finds dependents and tests.',
+        inputSchema: jsonSchema<{
+          mode: 'index' | 'semantic' | 'heatmap' | 'symbol' | 'impact';
+          query?: string;
+          limit?: number;
+          maxFiles?: number;
+          maxChunks?: number;
+        }>({
+          type: 'object',
+          properties: {
+            mode: { type: 'string', enum: ['index', 'semantic', 'heatmap', 'symbol', 'impact'] },
+            query: { type: 'string' },
+            limit: { type: 'number' },
+            maxFiles: { type: 'number' },
+            maxChunks: { type: 'number' }
+          },
+          required: ['mode'],
+          additionalProperties: false
+        }),
+        execute: async ({ mode, query, limit, maxFiles, maxChunks }) => {
+          if (mode === 'index') return buildCodeIndex(projectPath, { maxFiles, maxChunks });
+          if (!query) throw new Error(`query is required for code_intelligence mode=${mode}`);
+          if (mode === 'semantic') return semanticCodeSearch(projectPath, query, limit);
+          if (mode === 'heatmap') return codeHeatmap(projectPath, query, limit);
+          if (mode === 'symbol') return symbolContext(projectPath, query, limit);
+          return changeImpact(projectPath, query, limit);
+        }
       }),
       create_aim: tool({
         description: 'Create a child/supporting aim or newly clarified aim.',
@@ -554,7 +714,16 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         }),
         execute: async (input) => lineReplace(projectPath, input)
       })
-    }
+  };
+  const enabledTools = filterToolsByCapabilities(availableTools, loop.capabilities);
+
+  const result = streamText({
+    model: provider(loop.model),
+    abortSignal: signal,
+    system: systemText,
+    prompt: promptText,
+    stopWhen: stepCountIs(10),
+    tools: enabledTools
   } as any);
 
   let finalText = '';
@@ -693,7 +862,7 @@ async function main() {
         finalMessage = stopDecision.message;
         break;
       }
-      if (instance.status !== 'running' && instance.status !== 'waiting_for_human') {
+      if (instance.status !== 'running' && instance.status !== 'waiting_for_human' && instance.status !== 'waiting_for_external') {
         await markInstanceStatus(projectPath, instanceId, 'running');
       }
       await markLoopPhase(projectPath, instanceId, 'running cycle');

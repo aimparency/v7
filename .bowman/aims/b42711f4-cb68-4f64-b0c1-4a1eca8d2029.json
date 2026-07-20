@@ -1,0 +1,32 @@
+{
+  "id": "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
+  "text": "Offer paid Aimparency design partnerships as the non-dilutive fallback",
+  "description": "Sell a tightly scoped paid pilot/sponsorship to 3-5 open-source teams or agent-heavy developer teams. Example ask: €5k for a 6-8 week design partnership including onboarding, roadmap influence, direct support, and a documented Git-native intent/dependency workflow; no bespoke feature promises that derail the product. Three €5k signed agreements meet the target. Validate willingness to pay and create investor evidence at the same time.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "revenue",
+    "design-partner",
+    "open-source",
+    "human-dependent"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "cabe6e06-8988-4145-b884-9ef5bc68f660"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Requires founder outreach, customer conversations, pricing approval, and signed agreements.",
+    "date": 1784387911528
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,31 @@
+{
+  "id": "d4e8cdcf-99a0-488c-818d-aebd24087ff7",
+  "text": "Build the hackathon extension: visible aim-to-commit provenance with dependency context",
+  "description": "Create one coherent, judge-visible capability after 13 July: from an aim, show implementation evidence from Git commits (existing realized-commit signal), the aim's supporting dependencies, and linked-repo context. The experience should answer: what did we intend, what did it depend on, and what code actually realized it? Reuse existing .bowman persistence, linked-repo model, and commit-reference machinery. Keep scope to a polished vertical slice with tests; do not attempt a platform rewrite.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "hackathon",
+    "core-demo",
+    "git-provenance",
+    "developer-tools"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "19f32e9c-0ce1-4f61-9cf7-2bbaee656301"
+  ],
+  "committedIn": [
+    "b16cdc29-a215-4b07-a262-49efd6171b2f"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Candidate core extension; implement only after go/no-go.",
+    "date": 1784387762567
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

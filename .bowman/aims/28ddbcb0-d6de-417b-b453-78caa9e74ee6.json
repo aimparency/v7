@@ -1,0 +1,33 @@
+{
+  "id": "28ddbcb0-d6de-417b-b453-78caa9e74ee6",
+  "text": "Monitor AI-specific and open-source funding calls for a genuinely eligible Q4 opportunity",
+  "description": "Maintain a monthly, source-verified scan of German/EU AI and open-source funding that is actually open and structurally eligible. Current July 2026 result: no better individual AI-specific grant is open for Aimparency. SPRIND Next Frontier AI closed 1 June and funds frontier-model research rather than an application/tool layer; the former BMWE Gründungswettbewerb is not currently continued; many BMFTR AI calls require companies/research consortia or are already closed. Watch: new SPRIND challenges, BMFTR software/AI calls, KMU-innovativ IKT after a legal entity exists, EIC Open at greater maturity, and NLnet's regular open calls when they reopen after summer. Never treat a search listing as open until the official call page confirms deadline and eligibility.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "ai-grants",
+    "germany",
+    "eu",
+    "monitoring",
+    "q4-2026"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "80b53c24-a0e8-48af-8acc-b3a76fde7513"
+  ],
+  "committedIn": [
+    "bb7ce28d-0eee-4243-a489-fd4eab223c35"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Initial July scan complete: Prototype Fund remains the strongest individual route. Recheck official sources monthly in Q4.",
+    "date": 1784391028506
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,31 @@
+{
+  "id": "6453b8e2-f7bc-4045-8251-bfd008254c2a",
+  "text": "Confirm Felix's individual Prototype Fund eligibility and funding setup",
+  "description": "Verify the formal checklist against the current Jahrgang 03 rules: adult individual developer, residence and taxes in Germany, self-employed/freelance during the project or proportionally released from employment, no company as grant recipient, and no conflicting public financing for the same work. Record the intended tax/self-employment setup and clarify any uncertainty with Prototype Fund before investing heavily in the application.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "prototype-fund",
+    "eligibility",
+    "individual",
+    "human-dependent"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d2d13165-a72d-4cb5-8890-0b145daf67e4"
+  ],
+  "committedIn": [
+    "2cb2e798-c679-489e-b168-8c02c89f78cd"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix must confirm residence, German tax status, employment/self-employment situation, and overlapping funding.",
+    "date": 1784390977693
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

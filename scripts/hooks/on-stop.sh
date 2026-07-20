@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
-# on-stop.sh - Codex exit hook script for Aimparency workspace
+# Keep the coding loop alive. Set AIMPARANCY_ALLOW_STOP=1 for a deliberate exit.
 
-# ANSI colors
-CYAN='\033[1;36m'
-RESET='\033[0m'
-GRAY='\033[90m'
+set -euo pipefail
 
-echo -e "${GRAY}┌────────────────────────────────────────────────────────┐${RESET}"
-echo -e "${GRAY}│${RESET}  ${CYAN}[Watchdog]${RESET} Codex has stopped.                         ${GRAY}│${RESET}"
-echo -e "${GRAY}│${RESET}  Check Aimparency aims and find something to work on!  ${GRAY}│${RESET}"
-echo -e "${GRAY}└────────────────────────────────────────────────────────┘${RESET}"
+# Consume the hook payload so callers can close stdin cleanly.
+cat >/dev/null
+
+if [[ "${AIMPARANCY_ALLOW_STOP:-0}" == "1" ]]; then
+  printf '{"continue":true}\n'
+  exit 0
+fi
+
+printf '%s\n' \
+  '{"decision":"block","reason":"Continue working autonomously. Re-orient in Aimparency, select the next valuable actionable aim, execute and verify it, record the result, and continue. Ask the human only when judgment, authorization, credentials, or an institutionally human action is genuinely required."}'

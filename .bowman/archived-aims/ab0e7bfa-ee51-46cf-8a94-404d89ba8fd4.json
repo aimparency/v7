@@ -1,0 +1,22 @@
+{
+  "id": "ab0e7bfa-ee51-46cf-8a94-404d89ba8fd4",
+  "text": "Implement recursive compression of old session summaries in wrapped-agents/common/src/session-memory.ts",
+  "description": "The compressOldSessions function has a TODO to use LLM call to compress N summaries into one meta-summary when over threshold (currently just logs). Implement this to keep session memory bounded for long-running supervisor/autonomy. Call it from watchdog-service or periodically. This improves reliability for the ASI ideation aim (7634e681) and supports cross-session learning.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [],
+  "status": {
+    "state": "archived",
+    "comment": "Merged into 654b56f9-0dec-480e-88fa-b6f2756d7ccf",
+    "date": 1784017686329
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

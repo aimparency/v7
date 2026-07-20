@@ -5,9 +5,19 @@
   "reflections": [],
   "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "8025ab20-c497-43c0-b365-fbfa60b7428c",
+      "relativePosition": [
+        1.8501178254075523,
+        -1.6813875318049762
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
-    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "7634e681-d234-48fa-ad82-876ef97460ca"
   ],
   "committedIn": [
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"

@@ -43,6 +43,7 @@ const autonomyPolicySchema = z.object({
 });
 
 const loopProviderSchema = z.enum(['nvidia', 'openrouter', 'openai-compatible']);
+const loopCapabilitySchema = z.enum(['coding', 'experiments', 'code-intelligence']);
 const loopSecretsSchema = z.object({
   NVIDIA_API_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
@@ -57,7 +58,7 @@ const loopConfigSchema = z.object({
 const loopMessageSchema = z.object({
   id: z.string(),
   role: z.enum(['system', 'assistant', 'tool', 'user']),
-  kind: z.enum(['event', 'text', 'status', 'error', 'human_action_required']),
+  kind: z.enum(['event', 'text', 'status', 'error', 'human_action_required', 'external_action_required']),
   content: z.string(),
   timestamp: z.number(),
   requestId: z.string().optional(),
@@ -72,6 +73,7 @@ const loopDefinitionSchema = z.object({
   baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
   intervalSeconds: z.number().int().min(5).max(3600).default(60),
   associationChance: z.number().min(0).max(1).default(0.1),
+  capabilities: z.array(loopCapabilitySchema).default(['coding', 'experiments', 'code-intelligence']),
   createdAt: z.number(),
   updatedAt: z.number()
 });
@@ -79,7 +81,7 @@ const loopInstanceSchema = z.object({
   id: z.string(),
   loopId: z.string(),
   name: z.string(),
-  status: z.enum(['idle', 'running', 'waiting_for_human', 'stopped', 'done', 'error']),
+  status: z.enum(['idle', 'running', 'waiting_for_human', 'waiting_for_external', 'stopped', 'done', 'error']),
   targetPhaseId: z.string().nullable().default(null),
   targetAimId: z.string().nullable().default(null),
   stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).default('target_halted'),
@@ -98,7 +100,7 @@ const loopRuntimeStateSchema = z.object({
 const loopWorkerStateSchema = z.object({
   instanceId: z.string(),
   projectPath: z.string(),
-  status: z.enum(['idle', 'running', 'waiting_for_human', 'stopped', 'done', 'error']),
+  status: z.enum(['idle', 'running', 'waiting_for_human', 'waiting_for_external', 'stopped', 'done', 'error']),
   pid: z.number().optional(),
   startedAt: z.number().optional(),
   updatedAt: z.number(),
@@ -368,6 +370,7 @@ export const createProjectRouter = (
         baseUrl: 'https://integrate.api.nvidia.com/v1',
         intervalSeconds: 60,
         associationChance: 0.1,
+        capabilities: ['coding', 'experiments', 'code-intelligence'],
         createdAt: now,
         updatedAt: now
       }],
@@ -548,7 +551,7 @@ export const createProjectRouter = (
         const workerState = await readLoopWorkerState(projectPath, instance.id);
         if (!workerState) continue;
         const pidAlive = isPidAlive(workerState.pid);
-        if ((workerState.status === 'running' || workerState.status === 'waiting_for_human') && !pidAlive) {
+        if ((workerState.status === 'running' || workerState.status === 'waiting_for_human' || workerState.status === 'waiting_for_external') && !pidAlive) {
           instance.status = workerState.stopRequested ? 'stopped' : 'error';
           if (instance.status === 'error') {
             const errorText = await readLoopWorkerErrorText(projectPath, instance.id, workerState.error);
@@ -577,7 +580,7 @@ export const createProjectRouter = (
     if (existing && isPidAlive(existing.pid)) return existing;
 
     const workerState = await readLoopWorkerState(projectPath, instanceId);
-    if (workerState?.pid && isPidAlive(workerState.pid) && (workerState.status === 'running' || workerState.status === 'waiting_for_human')) {
+    if (workerState?.pid && isPidAlive(workerState.pid) && (workerState.status === 'running' || workerState.status === 'waiting_for_human' || workerState.status === 'waiting_for_external')) {
       return { pid: workerState.pid, projectPath, instanceId } as LoopWorkerProcess;
     }
 
@@ -979,6 +982,7 @@ export const createProjectRouter = (
             baseUrl: 'https://integrate.api.nvidia.com/v1',
             intervalSeconds: 60,
             associationChance: 0.1,
+            capabilities: ['coding', 'experiments', 'code-intelligence'],
             createdAt: now,
             updatedAt: now
           });
@@ -997,7 +1001,8 @@ export const createProjectRouter = (
         model: z.string().optional(),
         baseUrl: z.string().optional(),
         intervalSeconds: z.number().int().min(5).max(3600).optional(),
-        associationChance: z.number().min(0).max(1).optional()
+        associationChance: z.number().min(0).max(1).optional(),
+        capabilities: z.array(loopCapabilitySchema).optional()
       }))
       .mutation(async ({ input }: any) => {
         return mutateLoopRuntimeState(input.projectPath, (state) => {
@@ -1010,6 +1015,7 @@ export const createProjectRouter = (
           if (input.baseUrl !== undefined) loop.baseUrl = input.baseUrl;
           if (input.intervalSeconds !== undefined) loop.intervalSeconds = input.intervalSeconds;
           if (input.associationChance !== undefined) loop.associationChance = input.associationChance;
+          if (input.capabilities !== undefined) loop.capabilities = input.capabilities;
           loop.updatedAt = Date.now();
         });
       }),

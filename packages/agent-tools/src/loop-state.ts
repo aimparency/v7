@@ -4,11 +4,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 export const loopProviderSchema = z.enum(['nvidia', 'openrouter', 'openai-compatible']);
+export const loopCapabilitySchema = z.enum(['coding', 'experiments', 'code-intelligence']);
 
 export const loopMessageSchema = z.object({
   id: z.string(),
   role: z.enum(['system', 'assistant', 'tool', 'user']),
-  kind: z.enum(['event', 'text', 'status', 'error', 'human_action_required']),
+  kind: z.enum(['event', 'text', 'status', 'error', 'human_action_required', 'external_action_required']),
   content: z.string(),
   timestamp: z.number(),
   requestId: z.string().optional(),
@@ -24,11 +25,12 @@ export const loopDefinitionSchema = z.object({
   baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
   intervalSeconds: z.number().int().min(5).max(3600).default(60),
   associationChance: z.number().min(0).max(1).default(0.1),
+  capabilities: z.array(loopCapabilitySchema).default(['coding', 'experiments', 'code-intelligence']),
   createdAt: z.number(),
   updatedAt: z.number()
 });
 
-export const loopInstanceStatusSchema = z.enum(['idle', 'running', 'waiting_for_human', 'stopped', 'done', 'error']);
+export const loopInstanceStatusSchema = z.enum(['idle', 'running', 'waiting_for_human', 'waiting_for_external', 'stopped', 'done', 'error']);
 export const loopStopPolicySchema = z.enum(['target_halted', 'phase_done', 'never', 'asap']);
 
 export const loopInstanceSchema = z.object({

@@ -1,0 +1,34 @@
+{
+  "id": "8c0f71ff-0397-44fb-9e4e-b450a45ba646",
+  "text": "Persist structured experiments and belief updates across loop cycles",
+  "description": "For each real-world bet, persist the hypothesis, prediction, expected cost/upside, success metric, stop condition, evidence, result, belief update, economic outcome reference, and next decision. Connect this record to existing hypothesis generation and evaluation aims.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "experiments",
+    "learning",
+    "beliefs"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d",
+    "c4fd0987-d131-4da0-acb4-3833c771dde9",
+    "af4fd5b4-f32e-496f-8579-a5b5be59eeb7"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Durable structured experiments and one compact loop tool are implemented; awaiting user acceptance.",
+    "date": 1784497149690
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Added .bowman/runtime/experiments.json with validated create/list/update operations. Records aims, hypothesis, prediction, expected cost/upside, metric, stop condition, status, append-only evidence, result, confidence update, external economic reference, and next decision. Exposed one experiment action tool to limit tool-surface growth. Verification: agent-tools and loop-worker typechecks pass; focused persistence test passes."
+}

@@ -71,6 +71,7 @@ const openMenu = (event: PointerEvent) => {
   if (!props.isThisAimSelected) {
     emit('aim-clicked', props.aim.id)
   }
+  uiStore.toggleMultiSelect(props.aim.id)
   uiStore.navigatingAims = true
   lastMenuOpenAt = Date.now()
   menuX.value = event.clientX
@@ -349,8 +350,10 @@ onMounted(() => {
     padding-right: 0.5rem;
     outline-color: #888;
 
+    /* Only the action target (active / blue border) gets a brighter bg. */
     &.active {
       outline-color: #007acc;
+      background-color: rgba(255, 255, 255, 0.1);
     }
   }
 
@@ -364,9 +367,11 @@ onMounted(() => {
     outline-offset: -1px;
   }
 
-  /* When both primary selected and multi-selected, multi bg + selected outline wins visually */
-  &.selected.multi-selected {
-    background-color: rgba(100, 180, 255, 0.25);
+  /* Active + multi: multi tint with action-target brightness layered on top. */
+  &.selected.active.multi-selected {
+    background:
+      linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
+      rgba(100, 180, 255, 0.15);
   }
 
   &.pending-remove {

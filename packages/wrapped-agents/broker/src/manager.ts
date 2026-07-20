@@ -35,6 +35,24 @@ let relaunchWatcher: NodeJS.Timeout | null = null;
 let relaunchPassRunning = false;
 const RELAUNCH_WATCH_INTERVAL_MS = parseInt(process.env.WATCHDOG_RELAUNCH_WATCH_INTERVAL || '4000', 10);
 
+// In-flight relaunch tracking for UI (aim a7fd4651): lets the client show
+// rebuild progress overlay + lock inputs while broker verifies + restarts
+// a session's worker + kennel supervisor after a self-edit (or manual relaunch).
+// Keyed the same as instances. Marked around the verify+stop+start window.
+const activeRelaunches = new Set<string>();
+function getRebuildKey(projectPath: string, agentType: AgentType): string {
+  return `${normalizeProjectPath(projectPath)}:${agentType}`;
+}
+function markRebuilding(projectPath: string, agentType: AgentType) {
+  activeRelaunches.add(getRebuildKey(projectPath, agentType));
+}
+function clearRebuilding(projectPath: string, agentType: AgentType) {
+  activeRelaunches.delete(getRebuildKey(projectPath, agentType));
+}
+function isRebuilding(projectPath: string, agentType: AgentType): boolean {
+  return activeRelaunches.has(getRebuildKey(projectPath, agentType));
+}
+
 // Compound key for instances: allows same project with different agent types
 function getInstanceKey(projectPath: string, agentType: AgentType): string {
   return `${projectPath}:${agentType}`;
@@ -494,27 +512,32 @@ export const WatchdogManager = {
       opts: { verify?: boolean } = {},
   ): Promise<{ port: number, pid: number, agentType: AgentType }> {
       projectPath = normalizeProjectPath(projectPath);
+      markRebuilding(projectPath, agentType);
 
-      // Safety gate: verify the wrapped-agents code BEFORE stopping the running
-      // session, so a bad self-edit can't take the session down with it. Only
-      // bypassed when the caller explicitly forces (e.g. an operator recovering
-      // from already-red tests). Default is to verify.
-      if (opts.verify ?? true) {
-        console.log(`[WatchdogBroker] Verifying wrapped-agents before relaunch...`);
-        const result = await verifyWrappedAgents();
-        if (!result.ok) {
-          console.error(`[WatchdogBroker] Relaunch ABORTED — verification failed. Session keeps running the current code.${result.output.slice(-4000)}`);
-          throw new Error(
-            `Relaunch aborted: wrapped-agents typecheck/tests failed, so the new code was not deployed and the session keeps running the current code. Fix the failures (or relaunch with verify=false to force).\n${result.output.slice(-4000)}`
-          );
+      try {
+        // Safety gate: verify the wrapped-agents code BEFORE stopping the running
+        // session, so a bad self-edit can't take the session down with it. Only
+        // bypassed when the caller explicitly forces (e.g. an operator recovering
+        // from already-red tests). Default is to verify.
+        if (opts.verify ?? true) {
+          console.log(`[WatchdogBroker] Verifying wrapped-agents before relaunch...`);
+          const result = await verifyWrappedAgents();
+          if (!result.ok) {
+            console.error(`[WatchdogBroker] Relaunch ABORTED — verification failed. Session keeps running the current code.${result.output.slice(-4000)}`);
+            throw new Error(
+              `Relaunch aborted: wrapped-agents typecheck/tests failed, so the new code was not deployed and the session keeps running the current code. Fix the failures (or relaunch with verify=false to force).\n${result.output.slice(-4000)}`
+            );
+          }
+          console.log(`[WatchdogBroker] Verification passed; relaunching.`);
         }
-        console.log(`[WatchdogBroker] Verification passed; relaunching.`);
-      }
 
-      console.log(`[WatchdogBroker] Relaunching ${agentType} for ${projectPath}`);
-      this.stop(projectPath, agentType);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return this.start(projectPath, agentType);
+        console.log(`[WatchdogBroker] Relaunching ${agentType} for ${projectPath}`);
+        this.stop(projectPath, agentType);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return await this.start(projectPath, agentType);
+      } finally {
+        clearRebuilding(projectPath, agentType);
+      }
   },
 
   list(): Array<{ projectPath: string, pid: number, port: number, agentType: AgentType, lastKeepalive: number }> {

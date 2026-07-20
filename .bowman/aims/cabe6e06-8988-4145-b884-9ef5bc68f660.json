@@ -1,0 +1,98 @@
+{
+  "id": "cabe6e06-8988-4145-b884-9ef5bc68f660",
+  "text": "Secure at least €15k committed funding for Aimparency by 31 August 2026",
+  "description": "Success means at least €15,000 is contractually committed to Aimparency by 31 August 2026, not merely an application submitted. Primary path: one or more warm angels using a simple early-stage instrument after legal review, or paid design-partner/sponsorship agreements. Upside path: OpenAI Build Week prize announced around 12 August. Public grants with later decisions remain pipeline, not counted toward this deadline. Preserve optionality between open-source public-interest funding and venture financing until legal/IP structure is decided.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "deadline",
+    "investment",
+    "revenue",
+    "august-2026"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
+      "relativePosition": [
+        -2.249740925887348,
+        -1.0902594949770157
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "19f32e9c-0ce1-4f61-9cf7-2bbaee656301",
+      "relativePosition": [
+        -2.202335355529664,
+        1.1830971987896965
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "093756d3-c8ef-4acb-ac14-6e610a5e0060",
+      "relativePosition": [
+        1.559882864162563,
+        1.953654383480353
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b3866d9d-7f95-4f45-b639-df8a822db4e1",
+      "relativePosition": [
+        2.396447355333789,
+        0.712067463878029
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
+      "relativePosition": [
+        -2.4044596573530685,
+        -0.6845244744795937
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "abfbac00-22db-40c0-99d6-c370bba237b0",
+      "relativePosition": [
+        0.07636135442411479,
+        2.498833516573386
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "d2d13165-a72d-4cb5-8890-0b145daf67e4",
+      "relativePosition": [
+        -2.1305320841751247,
+        -1.3079881644343723
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "80b53c24-a0e8-48af-8acc-b3a76fde7513",
+      "relativePosition": [
+        0.031284113935194514,
+        2.4998042531796942
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517",
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Strategy researched. Requires founder decisions on financing instrument, legal vehicle, and outreach network before execution.",
+    "date": 1784387876766
+  },
+  "intrinsicValue": 20,
+  "cost": 6,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

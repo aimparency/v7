@@ -109,7 +109,14 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
   <div
     ref="phaseContainerRef"
     class="phase-container"
-    :class="{ 'active': isActive, 'selected': isSelected, 'current': isCurrent, 'pending-delete': isPendingDelete }"
+    :class="{
+      'active': isActive,
+      'selected': isSelected,
+      'current': isCurrent,
+      'pending-delete': isPendingDelete,
+      /* Phase is the action target when selected in this column and not in aim mode. */
+      'action-target': isActive && !uiStore.navigatingAims
+    }"
     @click="$emit('phase-clicked')"
   >
     <div
@@ -174,6 +181,20 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
 /* Current phase path (marked via `c`): default phase bg + 0.2 * open-state color */
 .phase-container.current {
   background: linear-gradient(rgba(0, 85, 142, 0.2), rgba(0, 85, 142, 0.2)), rgba(255, 255, 255, 0.1);
+}
+
+/* Action-target phase: 10% brighter on top of base / current tint. */
+.phase-container.action-target {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
+    rgba(255, 255, 255, 0.1);
+}
+
+.phase-container.current.action-target {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
+    linear-gradient(rgba(0, 85, 142, 0.2), rgba(0, 85, 142, 0.2)),
+    rgba(255, 255, 255, 0.1);
 }
 
 .phase-container.pending-delete {

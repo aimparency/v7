@@ -9,7 +9,16 @@
     "hypothesis",
     "reasoning"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "8c0f71ff-0397-44fb-9e4e-b450a45ba646",
+      "relativePosition": [
+        -2.166373024455325,
+        -1.2477291047788734
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "f6af0b7a-39b9-4f22-866e-8f13bca532e8"
   ],

@@ -2,6 +2,7 @@
   "id": "e1ea8121-1b72-4004-86d2-bd06c1b53834",
   "text": "make config entry look different from loop instances",
   "description": "",
+  "reflection": "Loop configurations are now visually distinct from runtime instances via dedicated styling and a configuration marker in LoopPanel.vue. Verified by the successful production Vite build.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -11,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1783168637924
+    "state": "review",
+    "comment": "Implemented and internally verified; awaiting user demonstration and acceptance before marking done.",
+    "date": 1784471514892
   },
   "intrinsicValue": 0,
   "cost": 1,

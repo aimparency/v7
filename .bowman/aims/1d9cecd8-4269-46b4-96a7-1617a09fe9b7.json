@@ -1,0 +1,31 @@
+{
+  "id": "1d9cecd8-4269-46b4-96a7-1617a09fe9b7",
+  "text": "Draft the Prototype Fund application, work plan, and €47.5k solo budget",
+  "description": "Answer the application questions concisely in German or English. Include problem, users, societal value, differentiation, technical challenges, six-month milestones, sustainable open-source path, team/expertise, and ecosystem engagement. Build a realistic work plan up to 950 hours and €47,500 at €50/hour under the current solo cap. Declare AI assistance transparently if requested by the application process, and keep all proposed outputs under accepted free/open licenses.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "prototype-fund",
+    "application",
+    "budget",
+    "work-plan"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d2d13165-a72d-4cb5-8890-0b145daf67e4"
+  ],
+  "committedIn": [
+    "2cb2e798-c679-489e-b168-8c02c89f78cd"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Target complete internal draft by 15 October 2026.",
+    "date": 1784390978483
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -5,14 +5,12 @@ This directory contains lifecycle hooks for AI coding assistants (like OpenAI Co
 ## Available Hooks
 
 ### `on-stop.sh`
-This hook runs automatically whenever the AI assistant stops/exits its session. It displays a watchdog-inspired alert to remind the developer to check active Aimparency aims and pick up the next task.
+This hook runs whenever the AI assistant tries to stop. It returns a continuation
+decision that sends the assistant back to Aimparency to select and execute the
+next valuable aim.
 
-```text
-┌────────────────────────────────────────────────────────┐
-│  [Watchdog] Codex/Claude has stopped.                  │
-│  Check Aimparency aims and find something to work on!  │
-└────────────────────────────────────────────────────────┘
-```
+For a deliberate normal exit, launch the assistant with
+`AIMPARANCY_ALLOW_STOP=1` or interrupt the process directly.
 
 ## Setup & Configuration
 

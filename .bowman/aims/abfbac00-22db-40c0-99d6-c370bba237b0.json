@@ -1,0 +1,31 @@
+{
+  "id": "abfbac00-22db-40c0-99d6-c370bba237b0",
+  "text": "Choose the legal vehicle and financing instrument for an August commitment",
+  "description": "Resolve whether funding is accepted by an existing/new UG, a pre-incorporation commitment, or another lawful structure. For equity-like money, use a German startup lawyer/notary-approved standard instrument (for example a convertible loan or suitable participation instrument); do not improvise legal terms. Check effects on IP ownership, Robin's role, planned Prototype Fund eligibility (companies cannot receive it), taxes, and future grants before signing.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "legal",
+    "incorporation",
+    "human-dependent"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "cabe6e06-8988-4145-b884-9ef5bc68f660"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Founder decision plus qualified German legal/tax advice required. This is the gating path for investment.",
+    "date": 1784387911992
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

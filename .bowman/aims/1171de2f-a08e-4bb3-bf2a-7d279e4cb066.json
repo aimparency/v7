@@ -1,0 +1,32 @@
+{
+  "id": "1171de2f-a08e-4bb3-bf2a-7d279e4cb066",
+  "text": "Integrate external economic and operational signals instead of reimplementing their source systems",
+  "description": "Let the loop consume selected signals from accounting, payments, analytics, funding, and other existing systems through modular connectors. Aimparency stores decisions and evidence references; source systems remain authoritative.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "integrations",
+    "economics",
+    "modular-tools"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Requires choosing the first authoritative source system and granting its connector/API access. No source should be invented or reimplemented.",
+    "date": 1784497149408
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Dependency contract is ready via waiting_for_external and correlated evidence. Actual integration correctly waits for a user-selected source and authorization."
+}

@@ -347,6 +347,8 @@ export function useGraphInteraction(
 
     // Touch Handling (Ported)
     let touchState = { currentCount: 0, dragFingerId: 0 }
+    let nodeLongPressTimer: number | undefined
+    let longPressedNodeId: string | null = null
     let pinchBeginning: undefined | {
         first: number, 
         second: number, 
@@ -424,6 +426,10 @@ export function useGraphInteraction(
                 const t = e.touches[0]!
                 let mouse = getLocalPos(t.clientX, t.clientY)
                 updateWhatever(mouse)
+                if (mapStore.cursorMoved && nodeLongPressTimer !== undefined) {
+                    window.clearTimeout(nodeLongPressTimer)
+                    nodeLongPressTimer = undefined
+                }
             }
         } else if (touchState.currentCount > 1) {
             if(pinchBeginning && e.touches.length > 1) {
@@ -453,6 +459,18 @@ export function useGraphInteraction(
     const onNodeDown = (e: MouseEvent | TouchEvent, nodeCopy: GraphNode) => {
         const node = nodeMap.get(nodeCopy.id)
         if (!node) return
+        if (e instanceof TouchEvent) {
+            if (nodeLongPressTimer !== undefined) window.clearTimeout(nodeLongPressTimer)
+            longPressedNodeId = null
+            nodeLongPressTimer = window.setTimeout(() => {
+                nodeLongPressTimer = undefined
+                if (mapStore.cursorMoved) return
+                uiStore.toggleMultiSelect(node.id)
+                graphUIStore.setGraphSelection(node.id)
+                graphUIStore.deselectLink()
+                longPressedNodeId = node.id
+            }, 450)
+        }
         // Black-box repo nodes are read-only: you can reposition them, but never
         // start a connection FROM them (a repo is always a supporter/child and
         // never declares that it needs another aim).
@@ -470,6 +488,10 @@ export function useGraphInteraction(
     }
 
     const onNodeUp = async (node: GraphNode) => {
+        if (nodeLongPressTimer !== undefined) {
+            window.clearTimeout(nodeLongPressTimer)
+            nodeLongPressTimer = undefined
+        }
         if (mapStore.connecting && mapStore.connectFrom) {
             if (mapStore.connectFrom.id === node.id) {
                 // Released on same node where connection started - cancel
@@ -518,6 +540,10 @@ export function useGraphInteraction(
     }
 
     const onNodeClick = async (node: GraphNode, event?: MouseEvent) => {
+        if (longPressedNodeId === node.id) {
+            longPressedNodeId = null
+            return
+        }
         // In spin-off preview, a click toggles the aim as a root (multi-select)
         // and recolors the graph — no selection / detail panel.
         if (graphUIStore.graphColorMode === 'spin-off') {
@@ -691,6 +717,10 @@ export function useGraphInteraction(
     }
 
     const cleanupListeners = () => {
+        if (nodeLongPressTimer !== undefined) {
+            window.clearTimeout(nodeLongPressTimer)
+            nodeLongPressTimer = undefined
+        }
         if (svgRef.value) {
             svgRef.value.removeEventListener("mousemove", onMouseMoveListener)
             svgRef.value.removeEventListener("mousedown", onMouseDownListener)

@@ -2,7 +2,7 @@
   "id": "892b30ca-b7da-49c2-afd7-b3d18109811f",
   "text": "shift / ctrl + click on computer, long tap on touch/android for selecting multiple aims in graph view",
   "description": "",
-  "reflection": "Fleshed out shift-range selection: added selectMultiRange + anchor to list-store, wired in Column (top phase aims), RootAimsColumn (floating), AimsList (sub-aim children lists using localAims). Graph: ctrl=toggle, shift=add-to-multi using shared state (no linear order but fulfills click-to-multi and 'range' add intent), sets anchor. Added e2e playwright test exercising create in graph, modifier clicks at positions, asserts multi-select-bar count and clear. Added styles for bar. Cleaned double-handling. Verified no breakage to primary selection. This completes the requested for the graph multi-select child aim. Related list and parent aims also advanced.",
+  "reflection": "Graph touch now starts a 450ms hold timer, cancels it on drag, toggles shared multi-selection on hold, and suppresses the following synthetic click. Focused frontend tests pass (11/11); production build passes.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -13,9 +13,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "done",
-    "comment": "Range (list phase/sub/floating + graph add) + e2e + supporting logic complete.",
-    "date": 1784014190537
+    "state": "review",
+    "comment": "Desktop modifiers and touch long-press now select graph aims; awaiting user acceptance.",
+    "date": 1784493484193
   },
   "intrinsicValue": 0,
   "cost": 1,

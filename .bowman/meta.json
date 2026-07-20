@@ -23,6 +23,11 @@
       "color": "#40bf9a"
     },
     {
+      "key": "review",
+      "color": "#64b5f6",
+      "ongoing": true
+    },
+    {
       "key": "failed",
       "color": "#f66151"
     },
@@ -38,15 +43,17 @@
   "phaseCursors": {
     "0": "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5",
     "1": "6a3432ea-a0c5-4df4-b533-68298be7b7fc",
-    "2": "785c77b3-db02-4636-bfba-6d6abcd10aea",
-    "3": "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+    "2": "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   },
-  "phaseActiveLevel": 3,
+  "phaseActiveLevel": 2,
   "rootPhaseIds": [
     "d4bf28d6-b751-4315-a151-dd2ce5d8c420",
     "91e510e1-208a-4c5c-b93b-91c6525020bf",
     "f51f8930-c937-4c66-9db8-d4d313e6d286",
-    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5",
+    "b16cdc29-a215-4b07-a262-49efd6171b2f",
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377",
+    "bb7ce28d-0eee-4243-a489-fd4eab223c35"
   ],
   "dataModelVersion": 1,
   "linkedRepos": [],

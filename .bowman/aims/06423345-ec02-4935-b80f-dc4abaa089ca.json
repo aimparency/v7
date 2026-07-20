@@ -1,0 +1,31 @@
+{
+  "id": "06423345-ec02-4935-b80f-dc4abaa089ca",
+  "text": "Define the fundable prototype: an open Git-native intent and dependency protocol",
+  "description": "Specify the new six-month project independently from the existing app. Candidate deliverables: versioned open schema for aims/dependencies/rationale/provenance; Git-native CLI and validation tooling; aim-to-commit evidence; interoperable import/export; reference integration in Aimparency; documentation and examples for other open-source projects. Explain why this is reusable software infrastructure, how it improves user sovereignty around AI agents, and what technical uncertainty makes it a prototype rather than routine product work.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "prototype-fund",
+    "scope",
+    "software-infrastructure",
+    "open-standard"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "d2d13165-a72d-4cb5-8890-0b145daf67e4"
+  ],
+  "committedIn": [
+    "2cb2e798-c679-489e-b168-8c02c89f78cd"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Core application decision; draft and validate before writing the full application.",
+    "date": 1784390977296
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

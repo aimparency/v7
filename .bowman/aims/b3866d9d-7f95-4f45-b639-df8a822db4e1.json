@@ -1,0 +1,31 @@
+{
+  "id": "b3866d9d-7f95-4f45-b639-df8a822db4e1",
+  "text": "Run a warm-introduction angel sprint for a signed €15k+ commitment",
+  "description": "Build a named list from Felix and Robin's networks, especially exited founders, developer-tool operators, open-source maintainers, and German AI angels. Target: 25 qualified names, 15 warm asks, 8-10 calls, 2 concrete follow-ups/term discussions. Ask for a small fast commitment or a lead into a larger pre-seed round. Track every contact and next action. Cold VC forms are secondary because institutional processes are unlikely to close by 31 August.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "angel",
+    "outreach",
+    "human-dependent"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "cabe6e06-8988-4145-b884-9ef5bc68f660"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix and Robin must supply names, authorize outreach, take calls, and negotiate.",
+    "date": 1784387911046
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

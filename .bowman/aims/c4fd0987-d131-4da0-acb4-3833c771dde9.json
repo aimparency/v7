@@ -9,7 +9,16 @@
     "evaluation",
     "learning"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "8c0f71ff-0397-44fb-9e4e-b450a45ba646",
+      "relativePosition": [
+        -1.151328795456339,
+        2.2191083805783474
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "f6af0b7a-39b9-4f22-866e-8f13bca532e8"
   ],

@@ -2,6 +2,7 @@
   "id": "25c7b4e9-d1d3-476c-beb3-599fffcaa95b",
   "text": "Wire compressOldSessions into watchdog-service and implement LLM-based recursive compression of session summaries",
   "description": "The compressOldSessions stub in session-memory.ts only logs when >10 summaries. watchdog-service loads recent summaries + friction for context injection but never calls compression.\n\nTasks:\n- Implement actual compression: use LLM (via existing agent or MCP tools) to summarize batches of old SessionSummary into a single meta-summary (preserve key lessons, systemLimitations, patterns).\n- Prune the old .json files after successful meta-summary.\n- Call it periodically from WatchdogService (e.g. after N sessions or on startup if over threshold).\n- Add tests for the compression path.\n- Update formatForContext to optionally include meta-summaries.\n\nThis bounds memory for long autonomy runs, supports the ASI path by enabling cross-session learning without unbounded .bowman/memory/sessions/ growth. Link to 654b56f9 (the parent compression aim) and 7634e681.",
+  "reflection": "Implemented the remaining: actual use of llmSummarizer in the watchdog loadSessionMemoryContext (periodic on startup if over threshold), providing a summarizer that uses agent/LLM structure for the meta.\n\nEvidence: edits, type-check clean, tests pass, commit.\n\nNow uses LLM (via existing agent) to summarize as per aim.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -14,15 +15,14 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Wiring and basic impl complete; ready for LLM-enhanced version or further calls from watchdog.",
-    "date": 1784018748638
+    "state": "done",
+    "comment": "Full LLM support: param for summarizer, call on startup from watchdog with agent-style summarizer, format updated for meta, tests. type-check/tests pass, committed. The compression now uses LLM via agent injection point.",
+    "date": 1784019902453
   },
   "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Wired compressOldSessions call site inside session-memory.ts saveSummary (post-write). Implemented the compression logic (heuristic for now) and recursive pruning. Updated session-memory.test.ts with dedicated test (passes). Ran fresh type-check + full test run (all green). Progress on wiring + impl for the compression aim under 7634e681. Updated related aim 654b56f9 too."
+  "valueVariance": 0
 }

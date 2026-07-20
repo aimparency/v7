@@ -1,0 +1,24 @@
+{
+  "id": "72b06978-0cc4-4e55-a92d-c4edd0586450",
+  "text": "apply for funding",
+  "description": "",
+  "tags": [],
+  "reflections": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "ecbb6e18-0a5d-4189-8f15-e15e43c0b7b8"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1784017652399
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "archived": false
+}

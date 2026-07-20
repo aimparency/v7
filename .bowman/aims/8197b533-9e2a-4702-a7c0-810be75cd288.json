@@ -13,14 +13,15 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "open",
-    "comment": "Created from Felix's directive after the Composio/hackathon-stale-aim incident. Comprehensive design in description; implementation is mostly prompt engineering in the supervisor/worker loop.",
-    "date": 1782454252597
+    "state": "done",
+    "comment": "Implemented by updating the startWork prompt and INSTRUCT with the full relevance check logic, decision rules. Evidence: code change, type-check/tests pass, commit.",
+    "date": 1784020316096
   },
   "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Implemented the relevance check as described. The prompt now instructs the full 3-step check (DATE, ALREADY IMPLEMENTED, REASONING CHAIN) and decision rules before starting work. Added to INSTRUCT.md for the guide. This prevents wasting effort on stale or already-implemented aims. Verified by investigating the previous basic version in code vs the aim spec."
 }
