@@ -9,6 +9,13 @@
       "outcome": "Prepared exact live-schema answers for all seven custom submission fields in submission-payload.md, including Individual, Germany, Developer Tools, public repository, testing instructions, feedback session ID, and platform/install instructions. Reframed the 2:35 demo around the playful recursive experiment and jury-provided outcome.",
       "effectiveness": "Once the YouTube URL arrives, submission becomes a single connector call with no remaining copy decisions.",
       "lesson": "Treat the application workflow as executable product evidence, while preserving final submission as an explicit human-authorized boundary."
+    },
+    {
+      "date": 1784657470203,
+      "context": "Performed a final live Devpost announcements and key-dates check at 2026-07-21 18:10 UTC.",
+      "outcome": "Deadline remains 2026-07-22 00:00 UTC (02:00 CEST), submissions are open, and Devpost recommends submitting roughly three hours early. Unlisted YouTube is allowed. Video must be under three minutes, viewable, have voiceover, and explicitly cover both Codex and GPT-5.6. No late changes are allowed.",
+      "effectiveness": "No rule drift requires repository or payload changes. The only blocking requirement remains the public/unlisted YouTube URL, followed by explicit final authorization and verification that Devpost shows Submitted.",
+      "lesson": "Upload and verify video visibility early; connector success must be followed by checking the submitted state rather than assuming a public project page is an entry."
     }
   ],
   "archived": false,
