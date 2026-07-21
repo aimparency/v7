@@ -70,6 +70,14 @@
       ],
       "weight": 1,
       "explanation": "graph maintenance: reparented floating aim by semantic similarity"
+    },
+    {
+      "aimId": "607f6b45-2a65-4702-8b47-d83e967ed4c8",
+      "relativePosition": [
+        -2.2314957302429224,
+        1.1271321155515026
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [

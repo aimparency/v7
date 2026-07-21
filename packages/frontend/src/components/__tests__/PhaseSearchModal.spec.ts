@@ -18,7 +18,8 @@ const phase = {
   name: 'Release Prep',
   from: Date.UTC(2026, 0, 1),
   to: Date.UTC(2026, 0, 31),
-  parent: null
+  parent: null,
+  ancestorNames: []
 }
 
 function mountPhaseSearchModal() {
@@ -68,5 +69,22 @@ describe('PhaseSearchModal keyboard selection', () => {
       [{ type: 'phase', data: phase }]
     ])
     expect(wrapper.emitted('close')).toEqual([[]])
+  })
+
+  it('always shows ancestry paths to disambiguate repeated phase names', async () => {
+    vi.mocked(trpc.phase.search.query).mockResolvedValue([
+      { ...phase, id: 'phase-1', name: 'Mittwoch', ancestorNames: ['2026', 'Juli'] },
+      { ...phase, id: 'phase-2', name: 'Mittwoch', ancestorNames: ['2026', 'August'] },
+      { ...phase, id: 'phase-3', name: 'Inbox', ancestorNames: [] }
+    ] as any)
+
+    const wrapper = mountPhaseSearchModal()
+    await flushPromises()
+
+    expect(wrapper.findAll('.phase-path').map((node) => node.text())).toEqual([
+      '2026 / Juli',
+      '2026 / August',
+      'Root'
+    ])
   })
 })

@@ -57,6 +57,20 @@ export const createPhaseRouter = (
     }
   };
 
+  const phaseAncestorNames = (phase: Phase, phasesById: Map<string, Phase>) => {
+    const names: string[] = [];
+    const visited = new Set<string>([phase.id]);
+    let parentId = phase.parent;
+    while (parentId && !visited.has(parentId)) {
+      visited.add(parentId);
+      const parent = phasesById.get(parentId);
+      if (!parent) break;
+      names.unshift(parent.name);
+      parentId = parent.parent;
+    }
+    return names;
+  };
+
   return t.router({
     create: delayedProcedure
       .input(z.object({
@@ -256,8 +270,16 @@ export const createPhaseRouter = (
       }))
       .query(async ({ input }: any) => {
         await ensureSearchIndex(input.projectPath);
-        const phases = await listPhases(input.projectPath, input.parentPhaseId);
-        return await searchPhases(input.projectPath, input.query, phases);
+        const allPhases = await listPhases(input.projectPath);
+        const phases = input.parentPhaseId === undefined
+          ? allPhases
+          : allPhases.filter((phase) => phase.parent === input.parentPhaseId);
+        const results = await searchPhases(input.projectPath, input.query, phases);
+        const phasesById = new Map(allPhases.map((phase) => [phase.id, phase]));
+        return results.map((phase) => ({
+          ...phase,
+          ancestorNames: phaseAncestorNames(phase, phasesById)
+        }));
     }),
 
     setCursor: delayedProcedure

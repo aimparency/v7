@@ -5,6 +5,8 @@ import { trpc } from '../trpc'
 import type { Phase } from 'shared'
 import type { PhaseSearchAdditionalOption, PhaseSearchSelection } from '../stores/ui/phase-search-types'
 
+type PhaseSearchResult = Phase & { ancestorNames: string[] }
+
 const projectStore = useProjectStore()
 
 const props = withDefaults(defineProps<{
@@ -25,7 +27,7 @@ const emit = defineEmits<{
 }>()
 
 const searchQuery = ref('')
-const searchResults = ref<Phase[]>([])
+const searchResults = ref<PhaseSearchResult[]>([])
 const selectedIndex = ref(0)
 const focusedResultIndex = ref(-1)
 const searchInput = ref<HTMLInputElement>()
@@ -243,6 +245,7 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
             <template v-else>
               <div class="result-text">
                 <span class="phase-name">{{ item.data.name }}</span>
+                <span class="phase-path">{{ item.data.ancestorNames.length ? item.data.ancestorNames.join(' / ') : 'Root' }}</span>
               </div>
               <div class="phase-meta">
                 <span v-if="item.data.parent" class="parent-badge">Sub-phase</span>
@@ -362,6 +365,13 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
 
 .phase-name {
   color: #f0f0f0;
+}
+
+.phase-path {
+  color: #a0a0a0;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  text-align: right;
 }
 
 .option-description {

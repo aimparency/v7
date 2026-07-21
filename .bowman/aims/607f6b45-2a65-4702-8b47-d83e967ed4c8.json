@@ -1,0 +1,32 @@
+{
+  "id": "607f6b45-2a65-4702-8b47-d83e967ed4c8",
+  "text": "Show full ancestry paths for every phase search result",
+  "description": "Disambiguate repeated phase names such as Mittwoch by always rendering the phase's ancestor path beside/below its name, matching aim-search path context.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "frontend",
+    "phase-search",
+    "ux"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and verified; awaiting user acceptance.",
+    "date": 1784661058528
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Phase search now returns ancestor names computed cycle-safely by the backend and always renders them beside the phase name; root phases show Root. Verified with a regression test containing two Mittwoch phases under different ancestors, backend TypeScript build, frontend production build, and diff check."
+}
