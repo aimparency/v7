@@ -49,10 +49,6 @@ const DEBUG_WATCHDOG = process.env.DEBUG_WATCHDOG === 'true';
 
 const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks).";
 
-// Prefixed to every guidance message the supervisor posts to the worker, so the
-// worker knows who is steering it and that the supervisor itself is editable.
-const WORKER_SUPERVISOR_PREFIX = "I am your supervisor AI agent. you can improve me in the wrapped agents <claude/gemini/...> package.";
-
 const RESPONSE_START_TIMEOUT_MS = 60000;
 const RESPONSE_COMPLETION_GRACE_MS = 2000;
 const WORKER_IDLE_BOOTSTRAP_TIMEOUT_MS = 20000;
@@ -240,6 +236,19 @@ async function readProjectInstructions(projectPath: string): Promise<string> {
     const metaPath = path.join(projectPath, '.bowman', 'meta.json');
     const meta = JSON.parse(await fs.promises.readFile(metaPath, 'utf8'));
     return typeof meta.initialInstructions === 'string' ? meta.initialInstructions : '';
+  } catch {
+    return '';
+  }
+}
+
+/** Read optional project-specific guidance prefixed to worker messages. */
+async function readSupervisorGuidancePrefix(projectPath: string): Promise<string> {
+  try {
+    const metaPath = path.join(projectPath, '.bowman', 'meta.json');
+    const meta = JSON.parse(await fs.promises.readFile(metaPath, 'utf8'));
+    return typeof meta.supervisorGuidancePrefix === 'string'
+      ? meta.supervisorGuidancePrefix.trim()
+      : '';
   } catch {
     return '';
   }
@@ -1088,7 +1097,10 @@ export class WatchdogService {
     // Prefix only natural-language guidance, not slash commands like /compact
     // (a prefixed command would no longer be recognized by the worker CLI).
     if (target === 'worker' && !text.startsWith('/')) {
-      text = `${WORKER_SUPERVISOR_PREFIX}\n\n${text}`;
+      const prefix = this.projectPath
+        ? await readSupervisorGuidancePrefix(this.projectPath)
+        : '';
+      if (prefix) text = `${prefix}\n\n${text}`;
     }
     this.log(`Posting to ${target === 'worker' ? 'Worker' : 'Watchdog'}: ${text.substring(0, 50)}...`);
 

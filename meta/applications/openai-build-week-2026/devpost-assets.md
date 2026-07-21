@@ -5,13 +5,15 @@ before submission.
 
 ## Identity
 
-**Title:** Aimparency: Git-native intent for Codex
+**Title:** Aimparency: The Aim Is to Win
 
-**Tagline:** Give Codex the why behind a change, then trace the code back to the aim.
+**Tagline:** We gave Aimparency one real aim—win this hackathon. This application is the proof; the jury supplies the outcome.
 
 **Track:** Developer Tools
 
 **Repository:** https://github.com/aimparency/v7
+
+**Devpost draft:** https://devpost.com/software/aimparency-the-aim-is-to-win
 
 **License:** ISC
 
@@ -19,15 +21,13 @@ before submission.
 
 **Primary Codex session ID:** `019f859f-04bd-7e52-9922-14fe70507464`
 
-**Project image:** `assets/project-image.png` (original generated artwork)
+**Project image:** `assets/project-image.png` (original artwork); `assets/project-thumbnail.jpg` is the upload-sized derivative.
 
 ## Short description
 
-Aimparency is a local-first, Git-native intent graph for AI-assisted software
-development. It lets developers and coding agents preserve why work matters,
-what it depends on, and which real commits implemented it. During Build Week,
-we used GPT-5.6 through Codex—guided by Aimparency's own MCP aim graph—to add a
-visible intent-to-code provenance path.
+We gave Aimparency one real-world aim: win OpenAI Build Week. The graph planned
+and prioritized the path, GPT-5.6 in Codex executed through MCP, and the jury
+provides the external outcome. This application is itself the proof of concept.
 
 ## Full description
 

@@ -112,27 +112,33 @@ describe('ProjectSettingsModal linked repos', () => {
       initialState: {
         'ui-modal': { showSettingsModal: true },
         'ui-project': { projectPath: SELF_BOWMAN },
-        data: { meta: { name: 'P', color: '#007acc', statuses: [], initialInstructions: 'work directly on main' } }
+        data: { meta: { name: 'P', color: '#007acc', statuses: [], initialInstructions: 'work directly on main', supervisorGuidancePrefix: 'Improve this supervisor.' } }
       }
     })
     const wrapper = mount(ProjectSettingsModal, { global: { plugins: [pinia] } })
     const dataStore = useDataStore(pinia)
     const projectStore = useProjectStore(pinia)
-    dataStore.meta = { name: 'P', color: '#007acc', statuses: [], initialInstructions: 'work directly on main' } as any
+    dataStore.meta = { name: 'P', color: '#007acc', statuses: [], initialInstructions: 'work directly on main', supervisorGuidancePrefix: 'Improve this supervisor.' } as any
     projectStore.projectPath = SELF_BOWMAN
     await flushPromises()
 
     const textarea = wrapper.find('textarea.instructions-input')
     expect(textarea.exists()).toBe(true)
     expect((textarea.element as HTMLTextAreaElement).value).toBe('work directly on main')
+    const prefixTextarea = wrapper.find('textarea.supervisor-guidance-input')
+    expect((prefixTextarea.element as HTMLTextAreaElement).value).toBe('Improve this supervisor.')
 
     await textarea.setValue('work directly on main, no PRs')
+    await prefixTextarea.setValue('You can improve this system.')
     await wrapper.find('.btn-primary').trigger('click')
     await flushPromises()
 
     expect(dataStore.updateProjectMeta).toHaveBeenCalledWith(
       SELF_BOWMAN,
-      expect.objectContaining({ initialInstructions: 'work directly on main, no PRs' })
+      expect.objectContaining({
+        initialInstructions: 'work directly on main, no PRs',
+        supervisorGuidancePrefix: 'You can improve this system.'
+      })
     )
   })
 

@@ -10,6 +10,13 @@
       "outcome": "Aligned the Git evidence query with MCP reconciliation by searching the stable 8-character prefix. Verified against aim 0733cb72-c746-478c-b06e-ae4faa2af712: the query returned real commit 93fdf3e with author, timestamp, and subject.",
       "effectiveness": "The feature now works with established project history and remains compatible with full UUID references because those include the prefix. Backend tests pass 2/2 and TypeScript build passes.",
       "lesson": "End-to-end evidence must be tested against repository conventions, not only synthetic parser fixtures."
+    },
+    {
+      "date": 1784654088429,
+      "context": "Human authorized a broad commit including overlapping existing frontend work and supplied the primary Codex session ID.",
+      "outcome": "Created commit 9e22fac referencing aim d4e8cdcf. Verified the built Git evidence query immediately resolves that same commit, completing the recursive intent → Codex work → commit → visible evidence proof. Local-only .grok configuration remains excluded.",
+      "effectiveness": "The commit contains the working provenance feature, tests, aim records, Build Week docs, Devpost copy, demo script, and original project artwork. The public submission can point to one dated, aim-linked implementation commit.",
+      "lesson": "A self-demonstrating provenance feature becomes materially stronger once its own implementation commit is discoverable through the exact mechanism it adds."
     }
   ],
   "archived": false,

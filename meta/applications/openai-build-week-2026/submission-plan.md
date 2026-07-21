@@ -55,6 +55,8 @@ Primary Codex session ID: `019f859f-04bd-7e52-9922-14fe70507464`
 - [x] Codex session ID
 - [ ] Developer Tools category selected
 
+Devpost draft: https://devpost.com/software/aimparency-the-aim-is-to-win
+
 ## Demo Structure: Under Three Minutes
 
 ### 0:00-0:20 - Problem

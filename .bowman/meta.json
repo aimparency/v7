@@ -1,6 +1,7 @@
 {
   "name": "v7",
   "color": "#ffffff",
+  "supervisorGuidancePrefix": "I am your supervisor AI agent. You can improve me in the wrapped-agents packages. It is in your hands; you can improve this system yourself.",
   "statuses": [
     {
       "key": "open",

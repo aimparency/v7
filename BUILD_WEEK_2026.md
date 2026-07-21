@@ -4,6 +4,17 @@ Aimparency is entered in the Developer Tools track as a Git-native intent and
 dependency layer for Codex. This is a hackathon project and is not affiliated
 with or endorsed by OpenAI.
 
+## The recursive experiment
+
+The application itself is the primary proof of concept. We gave Aimparency a
+real-world aim: **win OpenAI Build Week**. Aimparency structured and prioritized
+the path; GPT-5.6 in Codex executed actionable work through the graph and MCP;
+Felix supplied human judgment and authorization. The hackathon jury is the
+external evaluator. If the jury says “it won,” that outcome closes the loop and
+demonstrates that Aimparency coordinated human intent and AI action toward a
+real goal. The tone is intentionally a little playful; the success condition is
+still concrete and falsifiable.
+
 ## The Build Week extension
 
 Aimparency itself predates the July 13–21 submission window. During Build Week,

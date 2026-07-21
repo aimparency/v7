@@ -11,14 +11,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1782548237757
+    "state": "review",
+    "comment": "Project-specific supervisor guidance is configurable and empty by default; Aimparency retains its self-improvement reminder. Awaiting human acceptance.",
+    "date": 1784656685894
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Added optional supervisorGuidancePrefix to project meta, backend update contract, and Project Settings. Watchdog reads it per natural-language worker message; slash commands remain untouched and projects without the field receive no Aimparency-specific hint. Set the reminder only in this repo. Verified: wrapped-agents 63/63 tests, backend 20/20 tests, ProjectSettingsModal 4/4 tests, common typecheck, backend build, frontend production build, git diff --check."
 }

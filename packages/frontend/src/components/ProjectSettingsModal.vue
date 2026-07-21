@@ -13,6 +13,7 @@ const dataStore = useDataStore()
 const name = ref('')
 const color = ref('#007acc')
 const initialInstructions = ref('')
+const supervisorGuidancePrefix = ref('')
 const statuses = ref<Array<{ key: string, color: string }>>([])
 const loading = ref(false)
 const isUpdatingInstructions = ref(false)
@@ -191,6 +192,7 @@ onMounted(async () => {
         name.value = meta.name
         color.value = meta.color
         initialInstructions.value = meta.initialInstructions || ''
+        supervisorGuidancePrefix.value = meta.supervisorGuidancePrefix || ''
         statuses.value = JSON.parse(JSON.stringify(meta.statuses || INITIAL_STATES))
     }
     await loadAutonomyState()
@@ -240,6 +242,7 @@ const save = async () => {
           name: name.value,
           color: color.value,
           initialInstructions: initialInstructions.value,
+          supervisorGuidancePrefix: supervisorGuidancePrefix.value,
           statuses: statuses.value
         })
         await trpc.project.updateAutonomyPolicy.mutate({
@@ -308,6 +311,18 @@ const save = async () => {
             class="instructions-input"
             rows="4"
             placeholder="Project-wide instructions for the coding agent…"
+            @keydown="blockLeakage"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Supervisor Guidance Prefix</label>
+          <p class="hint-text">Optional reminder prefixed to each natural-language supervisor message. Leave empty for ordinary projects.</p>
+          <textarea
+            v-model="supervisorGuidancePrefix"
+            class="supervisor-guidance-input"
+            rows="2"
+            placeholder="Project-specific reminder for the coding agent…"
             @keydown="blockLeakage"
           ></textarea>
         </div>
