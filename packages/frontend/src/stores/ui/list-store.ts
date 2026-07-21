@@ -107,8 +107,10 @@ export const useListStore = defineStore('ui', {
     // Multi-selection (separate from primary navigation/focus selection).
     // Used for bulk actions like "merge aims" (current week UI feature).
     // Ctrl/Cmd+click or shift+click to populate. Primary click still drives nav selection.
+    multiSelectMode: false,
     multiSelectedAimIds: [] as string[],
     multiAnchorId: null as string | null,
+    pendingBulkDelete: false,
 
     // Scroll Request
     columnScrollIntent: null as { col: number, direction: 'bottom' | 'top' } | null,
@@ -1599,6 +1601,8 @@ export const useListStore = defineStore('ui', {
     // --- Multi-select for bulk actions (current-week feature: merge aims etc.) ---
     toggleMultiSelect(aimId: string) {
       this.cleanMultiSelect()
+      this.multiSelectMode = true
+      this.pendingBulkDelete = false
       const idx = this.multiSelectedAimIds.indexOf(aimId)
       if (idx >= 0) {
         this.multiSelectedAimIds.splice(idx, 1)
@@ -1606,22 +1610,40 @@ export const useListStore = defineStore('ui', {
         this.multiSelectedAimIds.push(aimId)
         this.multiAnchorId = aimId
       }
+      if (this.multiSelectedAimIds.length === 0) {
+        this.clearMultiSelect()
+      }
+    },
+
+    enterMultiSelect(aimId: string) {
+      this.multiSelectMode = true
+      this.multiSelectedAimIds = [aimId]
+      this.multiAnchorId = aimId
+      this.pendingBulkDelete = false
     },
 
     addToMultiSelect(aimId: string) {
+      this.multiSelectMode = true
+      this.pendingBulkDelete = false
       if (!this.multiSelectedAimIds.includes(aimId)) {
         this.multiSelectedAimIds.push(aimId)
       }
     },
 
     clearMultiSelect() {
+      this.multiSelectMode = false
       this.multiSelectedAimIds = []
+      this.multiAnchorId = null
+      this.pendingBulkDelete = false
     },
 
     // Auto-clear stale IDs (e.g. after merge/archive/delete or data reload)
     cleanMultiSelect() {
       const dataStore = useDataStore()
       this.multiSelectedAimIds = this.multiSelectedAimIds.filter(id => id && dataStore.aims[id])
+      if (this.multiSelectedAimIds.length === 0) {
+        this.clearMultiSelect()
+      }
     },
 
     // Shift-range selection within a provided ordered list of aim IDs (e.g. sibling aims in a list or phase)
@@ -1646,12 +1668,36 @@ export const useListStore = defineStore('ui', {
       const [lo, hi] = startIdx <= endIdx ? [startIdx, endIdx] : [endIdx, startIdx]
       const range = orderedAimIds.slice(lo, hi + 1)
       // Replace multi with the range (standard shift behavior), but keep primary separate
+      this.multiSelectMode = true
       this.multiSelectedAimIds = [...range]
       this.multiAnchorId = anchor
+      this.pendingBulkDelete = false
     },
 
     setMultiAnchor(aimId: string | null) {
       this.multiAnchorId = aimId
+    },
+
+    async requestBulkDelete() {
+      this.cleanMultiSelect()
+      if (!this.multiSelectMode || this.multiSelectedAimIds.length === 0) return false
+      if (!this.pendingBulkDelete) {
+        this.pendingBulkDelete = true
+        return false
+      }
+
+      const dataStore = useDataStore()
+      const ids = [...this.multiSelectedAimIds]
+      for (const aimId of ids) {
+        if (dataStore.aims[aimId]) {
+          await dataStore.deleteAimFromStore(useProjectStore().projectPath, aimId)
+          delete dataStore.aims[aimId]
+          dataStore.floatingAimsIds = dataStore.floatingAimsIds.filter(id => id !== aimId)
+        }
+      }
+      this.clearMultiSelect()
+      dataStore.recalculateValues()
+      return true
     },
 
     // Merge all currently multi-selected (except the target) into the target aim.

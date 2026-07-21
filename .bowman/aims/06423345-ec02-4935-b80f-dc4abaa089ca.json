@@ -18,14 +18,15 @@
     "2cb2e798-c679-489e-b168-8c02c89f78cd"
   ],
   "status": {
-    "state": "open",
-    "comment": "Core application decision; draft and validate before writing the full application.",
-    "date": 1784390977296
+    "state": "review",
+    "comment": "A bounded, independently fundable protocol/tooling scope is drafted and source-checked; ready for founder review and external validation.",
+    "date": 1784541571213
   },
   "intrinsicValue": 0,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Created meta/applications/prototype-fund-2026/scope.md. It distinguishes the existing Aimparency baseline from new funded work and specifies five deliverables: versioned protocol, standalone CLI, local intent-to-implementation provenance, interoperability toolkit, and external validation/docs. Includes technical uncertainties, six-month sequence, explicit exclusions, public value, and measurable success criteria. Checked official Prototype Fund pages on 2026-07-20: software infrastructure, societal value, open availability, modularity/interoperability, and October-November 2026 window."
 }

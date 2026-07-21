@@ -2,7 +2,16 @@
   "id": "d4e8cdcf-99a0-488c-818d-aebd24087ff7",
   "text": "Build the hackathon extension: visible aim-to-commit provenance with dependency context",
   "description": "Create one coherent, judge-visible capability after 13 July: from an aim, show implementation evidence from Git commits (existing realized-commit signal), the aim's supporting dependencies, and linked-repo context. The experience should answer: what did we intend, what did it depend on, and what code actually realized it? Reuse existing .bowman persistence, linked-repo model, and commit-reference machinery. Keep scope to a polished vertical slice with tests; do not attempt a platform rewrite.",
-  "reflections": [],
+  "reflection": "Implemented visible aim-to-commit provenance: backend Git log query keyed by exact aim UUID, Implementation evidence in AimEditModal beside dependency/repo context, and focused tests. Verified: backend test 1/1, AimEditModal tests 23/23, backend TypeScript build, frontend Vite production build, git diff --check. Full frontend type-check remains blocked by pre-existing TypeScript 6 baseUrl deprecation in tsconfig.",
+  "reflections": [
+    {
+      "date": 1784653794562,
+      "context": "Runtime-independent validation against real repository history exposed that Aimparency commits conventionally cite 8-character aim UUID prefixes, not necessarily full UUIDs.",
+      "outcome": "Aligned the Git evidence query with MCP reconciliation by searching the stable 8-character prefix. Verified against aim 0733cb72-c746-478c-b06e-ae4faa2af712: the query returned real commit 93fdf3e with author, timestamp, and subject.",
+      "effectiveness": "The feature now works with established project history and remains compatible with full UUID references because those include the prefix. Backend tests pass 2/2 and TypeScript build passes.",
+      "lesson": "End-to-end evidence must be tested against repository conventions, not only synthetic parser fixtures."
+    }
+  ],
   "archived": false,
   "tags": [
     "hackathon",
@@ -18,9 +27,9 @@
     "b16cdc29-a215-4b07-a262-49efd6171b2f"
   ],
   "status": {
-    "state": "open",
-    "comment": "Candidate core extension; implement only after go/no-go.",
-    "date": 1784387762567
+    "state": "review",
+    "comment": "Implementation and internal verification complete; awaiting human review per repository policy.",
+    "date": 1784653635655
   },
   "intrinsicValue": 0,
   "cost": 3,

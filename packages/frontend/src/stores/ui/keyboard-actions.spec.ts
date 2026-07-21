@@ -65,6 +65,23 @@ describe('keyboard actions', () => {
     })
   })
 
+  it('toggles the focused graph aim with Space in multi-select mode', async () => {
+    const graphStore = useGraphUIStore()
+    const uiStore = useUIStore()
+    const dataStore = useDataStore()
+    const aim = makeAim('aim-a', 'Aim A')
+    dataStore.aims[aim.id] = aim as any
+    graphStore.setGraphSelection(aim.id)
+    uiStore.enterMultiSelect(aim.id)
+
+    const event = new KeyboardEvent('keydown', { key: ' ', cancelable: true })
+    await handleGraphKeydownAction(uiStore, event, dataStore)
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(uiStore.multiSelectedAimIds).toEqual([])
+    expect(uiStore.multiSelectMode).toBe(false)
+  })
+
   it('moves a phase across parent boundaries and repairs the selected parent path', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()

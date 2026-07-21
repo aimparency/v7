@@ -27,6 +27,28 @@ describe('list store phase selection', () => {
     vi.clearAllMocks()
   })
 
+  it('keeps multi-select mode explicit and exits when the last aim is toggled off', () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    dataStore.aims['aim-a'] = { id: 'aim-a', text: 'A' } as any
+    dataStore.aims['aim-b'] = { id: 'aim-b', text: 'B' } as any
+
+    uiStore.enterMultiSelect('aim-a')
+    expect(uiStore.multiSelectMode).toBe(true)
+    expect(uiStore.multiSelectedAimIds).toEqual(['aim-a'])
+
+    uiStore.toggleMultiSelect('aim-b')
+    expect(uiStore.multiSelectedAimIds).toEqual(['aim-a', 'aim-b'])
+
+    uiStore.toggleMultiSelect('aim-a')
+    expect(uiStore.multiSelectMode).toBe(true)
+    expect(uiStore.multiSelectedAimIds).toEqual(['aim-b'])
+
+    uiStore.toggleMultiSelect('aim-b')
+    expect(uiStore.multiSelectMode).toBe(false)
+    expect(uiStore.multiSelectedAimIds).toEqual([])
+  })
+
   it('preserves selected child phase by id when reloading columns', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()

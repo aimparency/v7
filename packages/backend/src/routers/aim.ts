@@ -6,6 +6,7 @@ import type { Aim, SearchAimResult } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
 import { defaultAimColor } from '../aim-color.js';
+import { getAimCommitEvidence } from '../git-evidence.js';
 
 export const createAimRouter = (
   t: RouterBuilder,
@@ -44,6 +45,18 @@ export const createAimRouter = (
   };
 
   return t.router({
+    commitEvidence: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid(),
+        limit: z.number().int().min(1).max(100).optional()
+      }))
+      .query(async ({ input }: any) => {
+        const bowmanPath = normalizeProjectPath(input.projectPath);
+        const repositoryPath = path.dirname(bowmanPath);
+        return getAimCommitEvidence(repositoryPath, input.aimId, input.limit);
+      }),
+
     get: delayedProcedure
       .input(z.object({
         projectPath: z.string(),

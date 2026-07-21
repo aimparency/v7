@@ -10,6 +10,7 @@ vi.mock('../../trpc', () => ({
   trpc: {
     aim: {
       list: { query: vi.fn().mockResolvedValue([]) },
+      commitEvidence: { query: vi.fn().mockResolvedValue([]) },
       linkRepo: { mutate: vi.fn().mockResolvedValue({}) },
       unlinkRepo: { mutate: vi.fn().mockResolvedValue({}) }
     },
@@ -142,24 +143,46 @@ function mountBulkEditModal() {
 }
 
 describe('AimEditModal keyboard save behavior', () => {
+  it('shows Git commits that realize the selected aim', async () => {
+    const { trpc } = await import('../../trpc')
+    vi.mocked(trpc.aim.commitEvidence.query).mockResolvedValueOnce([{
+      hash: '0123456789012345678901234567890123456789',
+      shortHash: '01234567',
+      subject: 'feat: realize aim aim-1',
+      author: 'Codex',
+      authoredAt: '2026-07-21T18:00:00+02:00'
+    }])
+    const { wrapper } = mountEditModal()
+
+    await wrapper.setProps({ show: true })
+    await vi.waitFor(() => expect(wrapper.text()).toContain('feat: realize aim aim-1'))
+
+    expect(wrapper.text()).toContain('01234567')
+  })
+
   it('does not persist bulk mixed fields until Save and only overrides activated fields', async () => {
     const { wrapper, dataStore } = mountBulkEditModal()
     await wrapper.setProps({ show: true })
     await wrapper.vm.$nextTick()
 
-    const title = wrapper.find('input[placeholder="Multiple values - click to override all"]')
-    expect(title.attributes('readonly')).toBeDefined()
+    expect(wrapper.find('input[placeholder="Aim title..."]').exists()).toBe(false)
+    expect(wrapper.find('textarea[placeholder="Optional description..."]').exists()).toBe(false)
+    expect(wrapper.find('.bulk-aim-titles').text()).toContain('First title')
+    expect(wrapper.find('.bulk-aim-titles').text()).toContain('Second title')
 
-    await title.trigger('click')
-    await title.setValue('Shared title')
+    const statusOverride = wrapper.findAll('.mixed-activate')
+      .find((button) => button.text().includes('Multiple values'))
+    await statusOverride!.trigger('click')
+    await wrapper.find('select').setValue('done')
     expect(dataStore.updateAim).not.toHaveBeenCalled()
 
     await wrapper.find('.btn-save').trigger('click')
 
     expect(dataStore.updateAim).toHaveBeenCalledTimes(2)
     for (const call of vi.mocked(dataStore.updateAim).mock.calls) {
-      expect(call[2]).toMatchObject({ text: 'Shared title' })
+      expect(call[2]).not.toHaveProperty('text')
       expect(call[2]).not.toHaveProperty('description')
+      expect(call[2]).toMatchObject({ status: { state: 'done' } })
     }
   })
 
@@ -168,9 +191,10 @@ describe('AimEditModal keyboard save behavior', () => {
     await wrapper.setProps({ show: true })
     await wrapper.vm.$nextTick()
 
-    const title = wrapper.find('input[placeholder="Multiple values - click to override all"]')
-    await title.trigger('click')
-    await title.setValue('Discarded title')
+    const statusOverride = wrapper.findAll('.mixed-activate')
+      .find((button) => button.text().includes('Multiple values'))
+    await statusOverride!.trigger('click')
+    await wrapper.find('select').setValue('done')
     await wrapper.find('.btn-cancel').trigger('click')
     await wrapper.vm.$nextTick()
     await wrapper.find('.btn-discard').trigger('click')

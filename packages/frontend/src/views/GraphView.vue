@@ -375,12 +375,6 @@ function toggleSpinOffPreview() {
         :class="{ 'is-zooming': isZooming }"
     ></canvas>
 
-    <!-- Bulk multi-select action bar (for graph multi-select aim) -->
-    <div v-if="uiStore.multiSelectCount > 0" class="multi-select-bar">
-      {{ uiStore.multiSelectCount }} aims multi-selected in graph.
-      <button @click="uiStore.clearMultiSelect()">Clear</button>
-    </div>
-
     <!-- SVG Overlay for labels and interactive elements -->
     <svg
         ref="svgOverlayRef"
@@ -630,37 +624,6 @@ function toggleSpinOffPreview() {
     border-color: rgba(74, 222, 128, 0.5);
     color: #4ade80;
     box-shadow: 0 0 8px rgba(74, 222, 128, 0.2);
-}
-
-.multi-select-bar {
-  position: absolute;
-  top: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(30, 30, 40, 0.95);
-  color: #ddd;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  z-index: 200;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  border: 1px solid #4a9eff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-}
-
-.multi-select-bar button {
-  background: #3a5a8c;
-  border: none;
-  color: white;
-  padding: 2px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 11px;
-}
-.multi-select-bar button:hover {
-  background: #4a6a9c;
 }
 
 .segmented-control {

@@ -9,8 +9,17 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
   const graphStore = useGraphUIStore()
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
-  if (event.key === 'd') {
+  if (event.key === ' ' && uiStore.multiSelectMode) {
     event.preventDefault()
+    const aimId = graphStore.graphSelectedAimId
+    if (aimId) uiStore.toggleMultiSelect(aimId)
+  } else if (event.key === 'd') {
+    event.preventDefault()
+    if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
+      const deleted = await uiStore.requestBulkDelete()
+      if (deleted) graphStore.setGraphSelection(null)
+      return
+    }
     const selectedLink = graphStore.selectedLink
     if (selectedLink) {
       const pendingLink = graphStore.pendingDeleteLink
@@ -67,11 +76,11 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
   } else if (event.key === 'e' || event.key === 'Enter') {
     event.preventDefault()
     const aimId = graphStore.graphSelectedAimId
-    if (!aimId) return
-    const editIds = uiStore.multiSelectedAimIds.includes(aimId) && uiStore.multiSelectCount > 1
-      ? uiStore.multiSelectedAimIds
-      : [aimId]
-    modalStore.openAimEditModal(aimId, editIds)
+    if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
+      modalStore.openAimEditModal(uiStore.multiSelectedAimIds[0], [...uiStore.multiSelectedAimIds])
+    } else if (aimId) {
+      modalStore.openAimEditModal(aimId, [aimId])
+    }
   }
 }
 
@@ -475,26 +484,39 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
   switch (event.key) {
     case 'Escape':
       event.preventDefault()
-      if (uiStore.pendingDeleteAimId) {
+      if (uiStore.multiSelectMode) {
+        uiStore.clearMultiSelect()
+      } else if (uiStore.pendingDeleteAimId) {
         uiStore.pendingDeleteAimId = null
       } else {
         uiStore.navigatingAims = false
       }
       break
+    case ' ':
+      if (currentAim) {
+        event.preventDefault()
+        if (uiStore.multiSelectMode) {
+          uiStore.toggleMultiSelect(currentAim.id)
+        } else {
+          uiStore.enterMultiSelect(currentAim.id)
+        }
+      }
+      break
     case 'e':
     case 'Enter': {
       event.preventDefault()
-      if (currentAim) {
-        const editIds = uiStore.multiSelectedAimIds.includes(currentAim.id) && uiStore.multiSelectCount > 1
-          ? uiStore.multiSelectedAimIds
-          : [currentAim.id]
-        modalStore.openAimEditModal(currentAim.id, editIds)
+      if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
+        modalStore.openAimEditModal(uiStore.multiSelectedAimIds[0], [...uiStore.multiSelectedAimIds])
+      } else if (currentAim) {
+        modalStore.openAimEditModal(currentAim.id, [currentAim.id])
       }
       break
     }
     case 'd': {
       event.preventDefault()
-      if (currentAim) {
+      if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
+        await uiStore.requestBulkDelete()
+      } else if (currentAim) {
         if (uiStore.pendingDeleteAimId === currentAim.id) {
           await dataStore.deleteAim(currentAim.id)
           uiStore.pendingDeleteAimId = null

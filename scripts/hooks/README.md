@@ -37,3 +37,11 @@ The hook configuration is checked into [.claude/settings.json](file:///home/feli
 1. Start an interactive session with `claude`.
 2. Run the `/hooks` slash command.
 3. Trust the `./scripts/hooks/on-stop.sh` script.
+
+#### 3. Grok
+The hook configuration is checked into [.grok/hooks/stop.json](file:///home/felix/dev/aimparency/v7/.grok/hooks/stop.json).
+1. Trust the project once (`/hooks-trust` or launch with `--trust`). Folder trust is shared with MCP/LSP.
+2. Reload hooks mid-session with `/hooks` then `r`, or start a new session.
+3. Confirm the Stop hook is listed under Project in the Hooks tab.
+
+Note: Grok also loads the Claude settings Stop hook via `[compat.claude] hooks = true` (default). The `.grok/hooks/` entry is the native project source of truth.

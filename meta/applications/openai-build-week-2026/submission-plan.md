@@ -30,29 +30,29 @@ A judge can:
 
 - [ ] Dated commits after July 13 isolate the extension.
 - [ ] Commit messages reference the relevant Aimparency aim IDs.
-- [ ] Primary Codex `/feedback` session ID is recorded below.
+- [x] Primary Codex `/feedback` session ID is recorded below.
 - [ ] Screenshots show the completed end-to-end workflow.
-- [ ] Automated tests cover commit matching and the visible UI state.
-- [ ] README identifies pre-existing work and new Build Week work.
-- [ ] README explains human decisions versus Codex/GPT-5.6 contributions.
-- [ ] Public repository and license are confirmed.
+- [x] Automated tests cover commit matching and the visible UI state.
+- [x] README identifies pre-existing work and new Build Week work.
+- [x] README explains human decisions versus Codex/GPT-5.6 contributions.
+- [x] Repository license is confirmed (ISC); public visibility still requires human confirmation.
 - [ ] Hosted demo, sandbox, or downloadable test build is available.
 - [ ] Installation steps are tested from a clean environment.
 
-Primary Codex session ID: `TODO: obtain with /feedback`
+Primary Codex session ID: `019f859f-04bd-7e52-9922-14fe70507464`
 
 ## Devpost Assets
 
-- [ ] Title
-- [ ] Short tagline
-- [ ] English project description
-- [ ] Technology list
+- [x] Title
+- [x] Short tagline
+- [x] English project description
+- [x] Technology list
 - [ ] Public repository URL
 - [ ] Public YouTube URL
-- [ ] Square project image
+- [x] Square project image
 - [ ] Screenshots
-- [ ] Testing instructions
-- [ ] Codex session ID
+- [x] Testing instructions
+- [x] Codex session ID
 - [ ] Developer Tools category selected
 
 ## Demo Structure: Under Three Minutes
@@ -112,4 +112,3 @@ Submit only if the working workflow can be demonstrated clearly in under three
 minutes and the new Build Week code is easy to distinguish. If the provenance
 feature is incomplete, prioritize a smaller fully working path over a broad
 platform tour.
-

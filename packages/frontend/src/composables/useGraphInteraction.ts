@@ -465,12 +465,17 @@ export function useGraphInteraction(
             nodeLongPressTimer = window.setTimeout(() => {
                 nodeLongPressTimer = undefined
                 if (mapStore.cursorMoved) return
-                if (uiStore.multiSelectCount > 1 && uiStore.isMultiSelected(node.id)) {
+                if (node.isRepo) return
+                if (uiStore.multiSelectMode && uiStore.isMultiSelected(node.id)) {
                     modalStore.openAimEditModal(node.id, [...uiStore.multiSelectedAimIds])
                     longPressedNodeId = node.id
                     return
                 }
-                uiStore.toggleMultiSelect(node.id)
+                if (uiStore.multiSelectMode) {
+                    uiStore.toggleMultiSelect(node.id)
+                } else {
+                    uiStore.enterMultiSelect(node.id)
+                }
                 graphUIStore.setGraphSelection(node.id)
                 graphUIStore.deselectLink()
                 longPressedNodeId = node.id
@@ -573,7 +578,7 @@ export function useGraphInteraction(
             uiStore.setMultiAnchor(node.id)
             return
         }
-        if (isCtrl) {
+        if (isCtrl || uiStore.multiSelectMode) {
             // Ctrl = toggle
             uiStore.toggleMultiSelect(node.id)
             if (!mapStore.cursorMoved) {

@@ -66,33 +66,27 @@ const onAimClick = (event?: MouseEvent) => {
   emit('aim-clicked', props.aim.id, modifiers)
 }
 
-const openMenu = (event: PointerEvent) => {
-  if (uiStore.multiSelectCount > 1 && uiStore.isMultiSelected(props.aim.id)) {
+const openMenu = (_event: PointerEvent) => {
+  if (uiStore.multiSelectMode && uiStore.isMultiSelected(props.aim.id)) {
     lastMenuOpenAt = Date.now()
     useUIModalStore().openAimEditModal(props.aim.id, [...uiStore.multiSelectedAimIds])
     return
   }
 
-  if (uiStore.multiSelectCount > 0) {
-    uiStore.addToMultiSelect(props.aim.id)
+  if (uiStore.multiSelectMode) {
+    uiStore.toggleMultiSelect(props.aim.id)
     uiStore.selectAimById(props.columnIndex, props.phaseId || undefined, props.aim.id).catch(() => {})
     uiStore.navigatingAims = true
     lastMenuOpenAt = Date.now()
-    useUIModalStore().openAimEditModal(props.aim.id, [...uiStore.multiSelectedAimIds])
     return
   }
 
-  // Select this aim via the normal chain (Column knows the real column index).
-  // Skip if already selected, since re-selecting opens the edit modal.
   if (!props.isThisAimSelected) {
-    emit('aim-clicked', props.aim.id)
+    uiStore.selectAimById(props.columnIndex, props.phaseId || undefined, props.aim.id).catch(() => {})
   }
-  uiStore.toggleMultiSelect(props.aim.id)
+  uiStore.enterMultiSelect(props.aim.id)
   uiStore.navigatingAims = true
   lastMenuOpenAt = Date.now()
-  menuX.value = event.clientX
-  menuY.value = event.clientY
-  showMenu.value = true
 }
 
 const longPress = useLongPress(openMenu)

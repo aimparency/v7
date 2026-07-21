@@ -34,7 +34,8 @@ const selectionTravelDirection = ref<'forward' | 'backward' | 'preserve'>('prese
 const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isCtrl = !!(mods && mods.ctrl)
   const isShift = !!(mods && mods.shift)
-  if (isCtrl) {
+  const isModeToggle = uiStore.multiSelectMode && !isShift
+  if (isCtrl || isModeToggle) {
     uiStore.toggleMultiSelect(aimId)
   } else if (isShift) {
     if (phaseId) {
@@ -49,7 +50,7 @@ const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimI
   } else {
     uiStore.clearMultiSelect()
   }
-  if ((isCtrl || isShift) && uiStore.getCurrentAim()?.id === aimId) return
+  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentAim()?.id === aimId) return
   // Always update primary nav selection (so keyboard etc still work on it)
   uiStore.selectAimById(columnIndex, phaseId, aimId).catch(() => {})
 }

@@ -19,15 +19,16 @@ const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
 const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isCtrl = !!(mods && mods.ctrl)
   const isShift = !!(mods && mods.shift)
+  const isModeToggle = uiStore.multiSelectMode && !isShift
   if (isShift) {
     const ordered = dataStore.floatingAims.map((a: any) => a.id)
     uiStore.selectMultiRange(aimId, ordered)
-  } else if (isCtrl || isShift) {
+  } else if (isCtrl || isModeToggle) {
     uiStore.toggleMultiSelect(aimId)
   } else {
     uiStore.clearMultiSelect()
   }
-  if ((isCtrl || isShift) && uiStore.getCurrentAim()?.id === aimId) return
+  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentAim()?.id === aimId) return
   uiStore.selectAimById(columnIndex, phaseId, aimId).catch(() => {})
 }
 </script>

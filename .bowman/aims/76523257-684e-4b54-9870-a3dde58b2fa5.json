@@ -2,7 +2,15 @@
   "id": "76523257-684e-4b54-9870-a3dde58b2fa5",
   "text": "Produce and publish a sub-3-minute Build Week demo",
   "description": "Public YouTube video under 3 minutes, in English or with English translation. Show the working project, the new hackathon extension, and explain how Codex and GPT-5.6 were used. Suggested arc: problem (intent disappears into issue trackers/chat) -> .bowman graph beside code -> dependency/provenance demo -> why this matters for open-source teams. Avoid third-party music/trademarks without permission.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1784653726653,
+      "context": "The public demo remains institutionally human-dependent, but all preparatory work can be completed autonomously.",
+      "outcome": "Created a timed 2:35 English demo script, exact screen/voice sequence, and privacy/capture checklist in meta/applications/openai-build-week-2026/demo-script.md.",
+      "effectiveness": "The script stays focused on the judge-visible intent → context → Codex → Git evidence loop and explicitly separates human decisions from GPT-5.6/Codex work.",
+      "lesson": "Keep the recorded walkthrough narrower than the overall product; the provenance proof is understandable within three minutes."
+    }
+  ],
   "archived": false,
   "tags": [
     "hackathon",

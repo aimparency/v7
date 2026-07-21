@@ -1,5 +1,9 @@
 # Aimparency
 
+> OpenAI Build Week 2026: see [BUILD_WEEK_2026.md](BUILD_WEEK_2026.md) for the
+> Developer Tools entry, the exact hackathon extension, and its verification
+> path. This project is not affiliated with or endorsed by OpenAI.
+
 Aimparency is a local-first tool for cartographing ideas next to real repositories.
 
 It runs as a browser app on your machine, stores project state in a `.bowman` directory inside the repo or workspace you point it at, and can start local agent sessions through the broker. The current data model still uses the word `aim` in many places, but the broader point is optional ideas: things people or agents may want to realize, explore, defer, split, merge, or abandon.

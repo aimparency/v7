@@ -36,7 +36,17 @@ else
   echo "  ℹ️  No global Codex configuration found at $CODEX_CONFIG."
 fi
 
-# 3. Instructions to trust
+# 3. Verify Grok project hook is present
+echo ""
+echo "Step 3: Checking Grok project hook configuration..."
+GROK_HOOK="$REPO_DIR/.grok/hooks/stop.json"
+if [[ -f "$GROK_HOOK" ]]; then
+  echo "  ✓ Found $GROK_HOOK"
+else
+  echo "  ⚠️  Missing $GROK_HOOK (create it or restore from git)."
+fi
+
+# 4. Instructions to trust
 echo ""
 echo "=========================================================="
 echo "                 Trusting the Hooks"
@@ -52,4 +62,9 @@ echo "👉 For Claude Code:"
 echo "   1. Run 'claude' in this directory."
 echo "   2. Type the slash command: /hooks"
 echo "   3. Trust the './scripts/hooks/on-stop.sh' hook."
+echo ""
+echo "👉 For Grok:"
+echo "   1. Trust the project once: /hooks-trust (or launch with --trust)."
+echo "   2. Reload hooks: /hooks then press 'r' (or start a new session)."
+echo "   3. Confirm Project Stop → ../../scripts/hooks/on-stop.sh is listed."
 echo "=========================================================="

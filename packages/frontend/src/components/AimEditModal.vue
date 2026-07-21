@@ -32,7 +32,7 @@ const editingAims = computed(() => {
   return ids.map((id) => dataStore.aims[id]).filter((entry): entry is NonNullable<typeof entry> => !!entry)
 })
 const isBulk = computed(() => editingAims.value.length > 1)
-type BulkField = 'text' | 'description' | 'intrinsicValue' | 'cost' | 'loopWeight' | 'tags' |
+type BulkField = 'intrinsicValue' | 'cost' | 'loopWeight' | 'tags' |
   'status' | 'statusComment' | 'archived' | 'color' | 'reflection'
 const mixedFields = ref<Set<BulkField>>(new Set())
 const overriddenFields = ref<Set<BulkField>>(new Set())
@@ -119,6 +119,33 @@ const confirmRemoveParentId = ref<string | null>(null)
 const confirmRemovePhaseId = ref<string | null>(null)
 const confirmRemoveRepoId = ref<string | null>(null)
 const originalCommittedPhaseIds = ref<string[]>([])
+type CommitEvidence = { hash: string, shortHash: string, subject: string, author: string, authoredAt: string }
+const commitEvidence = ref<CommitEvidence[]>([])
+const commitEvidenceLoading = ref(false)
+const commitEvidenceError = ref('')
+
+const loadCommitEvidence = async () => {
+  if (!props.aimId || isBulk.value || !projectStore.projectPath) return
+  commitEvidenceLoading.value = true
+  commitEvidenceError.value = ''
+  try {
+    commitEvidence.value = await trpc.aim.commitEvidence.query({
+      projectPath: projectStore.projectPath,
+      aimId: props.aimId,
+      limit: 20
+    })
+  } catch (error) {
+    commitEvidence.value = []
+    commitEvidenceError.value = error instanceof Error ? error.message : 'Could not read Git history'
+  } finally {
+    commitEvidenceLoading.value = false
+  }
+}
+
+watch(() => [props.show, props.aimId] as const, ([show]) => {
+  if (show) void loadCommitEvidence()
+  else commitEvidence.value = []
+}, { immediate: true })
 
 // Snapshot of the form taken once it is fully populated, so we can detect
 // unsaved edits when the user tries to leave (Escape / overlay click) and ask
@@ -260,8 +287,6 @@ watch(() => props.show, async (show) => {
   if (show && aim.value) {
     const targets = editingAims.value
     const fieldValues: Record<BulkField, unknown[]> = {
-      text: targets.map((entry) => entry.text),
-      description: targets.map((entry) => entry.description || ''),
       intrinsicValue: targets.map((entry) => entry.intrinsicValue ?? 0),
       cost: targets.map((entry) => entry.cost ?? 0),
       loopWeight: targets.map((entry) => entry.loopWeight ?? 0),
@@ -280,8 +305,8 @@ watch(() => props.show, async (show) => {
     confirmRemovePhaseId.value = null
     confirmRemoveRepoId.value = null
     confirmingDiscard.value = false
-    aimText.value = isMixed('text') ? '' : aim.value.text
-    aimDescription.value = isMixed('description') ? '' : (aim.value.description || '')
+    aimText.value = aim.value.text
+    aimDescription.value = aim.value.description || ''
     descriptionRows.value = getInitialDescriptionRows(aimDescription.value)
     aimIntrinsicValue.value = isMixed('intrinsicValue') ? 0 : (aim.value.intrinsicValue ?? 0)
     aimCost.value = isMixed('cost') ? 0 : (aim.value.cost ?? 0)
@@ -448,8 +473,8 @@ const handleSave = async () => {
   const shouldWrite = (field: BulkField) => !isBulk.value || !mixedFields.value.has(field) || overriddenFields.value.has(field)
   for (const target of editingAims.value) {
     const updates: any = {}
-    if (shouldWrite('text')) updates.text = aimText.value
-    if (shouldWrite('description')) updates.description = aimDescription.value
+    if (!isBulk.value) updates.text = aimText.value
+    if (!isBulk.value) updates.description = aimDescription.value
     if (shouldWrite('intrinsicValue')) updates.intrinsicValue = aimIntrinsicValue.value
     if (shouldWrite('cost')) updates.cost = aimCost.value
     if (shouldWrite('loopWeight')) updates.loopWeight = aimLoopWeight.value
@@ -588,30 +613,33 @@ const discardChanges = () => {
     </template>
 
     <div class="modal-content-root" tabindex="-1" @keydown.capture="handleModalKeydown">
-      <p v-if="isBulk" class="bulk-notice">
-        Mixed fields are unchanged unless you click them to override all selected aims.
-      </p>
-      <div class="form-section" :class="{ 'mixed-field': isMixed('text') }" @click="activateOverride('text')">
+      <template v-if="isBulk">
+        <p class="bulk-notice">
+          Editing {{ editingAims.length }} aims. Mixed fields are unchanged unless you click them to override all.
+        </p>
+        <ul class="bulk-aim-titles">
+          <li v-for="editingAim in editingAims" :key="editingAim.id">{{ editingAim.text }}</li>
+        </ul>
+      </template>
+      <div v-if="!isBulk" class="form-section">
         <label>Title</label>
         <input
           ref="aimTextInput"
           v-model="aimText"
           type="text"
-          :placeholder="mixedPlaceholder('text', 'Aim title...')"
-          :readonly="isMixed('text')"
+          placeholder="Aim title..."
           class="text-input"
           @keydown="handleInputKeydown"
           @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
         />
       </div>
 
-      <div class="form-section" :class="{ 'mixed-field': isMixed('description') }" @click="activateOverride('description')">
+      <div v-if="!isBulk" class="form-section">
         <label>Description</label>
         <textarea
           ref="descriptionInput"
           v-model="aimDescription"
-          :placeholder="mixedPlaceholder('description', 'Optional description...')"
-          :readonly="isMixed('description')"
+          placeholder="Optional description..."
           class="textarea-input"
           :rows="descriptionRows"
           @keydown="handleTextareaKeydown"
@@ -772,6 +800,19 @@ const discardChanges = () => {
         </div>
       </div>
 
+      <div v-if="!isBulk" class="form-section">
+        <label>Implementation evidence</label>
+        <div class="entry-list">
+          <span v-if="commitEvidenceLoading" class="entry-placeholder">reading Git history…</span>
+          <span v-else-if="commitEvidenceError" class="entry-placeholder">{{ commitEvidenceError }}</span>
+          <span v-else-if="commitEvidence.length === 0" class="entry-placeholder">no commits reference this aim yet</span>
+          <div v-for="commit in commitEvidence" v-else :key="commit.hash" class="entry-row">
+            <span class="entry-name">{{ commit.subject }}</span>
+            <span class="entry-meta entry-badge" :title="`${commit.author} · ${commit.authoredAt}`">{{ commit.shortHash }}</span>
+          </div>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-group" :class="{ 'mixed-field': isMixed('intrinsicValue') }" @click="activateOverride('intrinsicValue')">
           <label>Intrinsic Value</label>
@@ -863,6 +904,15 @@ const discardChanges = () => {
   background: #292316;
   color: #e8d4aa;
   font-size: 0.85rem;
+}
+
+.bulk-aim-titles {
+  max-height: 130px;
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.5rem 0.5rem 1.75rem;
+  overflow-y: auto;
+  border: 1px solid #444;
+  color: #ccc;
 }
 
 .mixed-field {

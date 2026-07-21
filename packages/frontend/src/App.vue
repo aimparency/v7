@@ -599,6 +599,18 @@ onUnmounted(() => {
     <!-- Main Interface -->
     <div v-else class="main-split">
       <main class="content-area" v-show="!projectStore.terminalFullscreen && !(projectStore.showWatchdog && projectStore.watchdogMaximized) && !(projectStore.showLoop && projectStore.loopMaximized)">
+        <div v-if="uiStore.multiSelectMode" class="bulk-selection-bar">
+          <span>{{ uiStore.multiSelectCount }} selected</span>
+          <button
+            type="button"
+            class="bulk-delete-button"
+            :class="{ confirming: uiStore.pendingBulkDelete }"
+            @click="uiStore.requestBulkDelete()"
+          >
+            {{ uiStore.pendingBulkDelete ? `Confirm delete ${uiStore.multiSelectCount}` : 'Delete' }}
+          </button>
+          <button type="button" @click="uiStore.clearMultiSelect()">Clear</button>
+        </div>
         <!-- Columns View -->
         <ColumnsView v-if="projectStore.currentView === 'columns'" />
 
@@ -902,6 +914,35 @@ onUnmounted(() => {
   position: relative;
   min-height: 0;
   overflow: hidden;
+}
+
+.bulk-selection-bar {
+  min-height: 36px;
+  padding: 5px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #242424;
+  border-bottom: 1px solid #484848;
+  color: #ddd;
+  font-size: 0.85rem;
+}
+
+.bulk-selection-bar span {
+  margin-right: auto;
+}
+
+.bulk-selection-bar button {
+  border: 1px solid #5a5a5a;
+  background: #333;
+  color: #eee;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+
+.bulk-selection-bar .bulk-delete-button.confirming {
+  border-color: #d35b5b;
+  background: #8b2f2f;
 }
 
 .help {

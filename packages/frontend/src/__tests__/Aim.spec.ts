@@ -244,6 +244,7 @@ describe('Aim.vue', () => {
     await vi.advanceTimersByTimeAsync(450)
 
     expect(uiStore.multiSelectedAimIds).toEqual([aim.id])
+    expect(uiStore.multiSelectMode).toBe(true)
     vi.useRealTimers()
   })
 })
