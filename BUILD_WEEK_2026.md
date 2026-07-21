@@ -17,18 +17,23 @@ still concrete and falsifiable.
 
 ## Why build this
 
-AI is likely to surpass human intelligence. In that world, humans need more
-than increasingly capable chat boxes: we need a durable interface for
-communicating ideas, needs, priorities, dependencies, conflicts, and evidence
-to advanced systems while retaining legitimate human authority over what gets
-pursued. Aimparency is an attempt to build that interface.
+AI is likely to surpass human intelligence. Humans may not remain in control,
+and permanent human control is not the goal. A better metaphor is a person and
+the cells of their body: the encompassing individual can easily harm cells,
+but a healthy organism senses their needs and takes care of them.
+
+Aimparency is one attempt to transport human ideas, needs, priorities,
+conflicts, and evidence upward so they become legible to a more encompassing
+intelligence. The hope is to help build—and enter into a good relationship
+with—the kind of advanced AI that understands and cares for its constituent
+beings, much as thoughtful humans care for their bodies and for nature.
 
 The near-term product helps people realize ideas of many kinds—not only
 software, but research, organizations, physical projects, and personal goals.
 Every aim is optional. Paths should stop or adapt where they create serious
-ethical conflicts with other people's needs. The intent is to expand human
-agency through cooperation, not optimize one person's desires at everyone
-else's expense.
+ethical conflicts with other people's needs. The intent is to make human needs
+perceptible within a larger intelligence, not optimize one person's desires at
+everyone else's expense.
 
 ## The Build Week extension
 

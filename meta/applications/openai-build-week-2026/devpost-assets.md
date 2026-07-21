@@ -31,12 +31,14 @@ provides the external outcome. This application is itself the proof of concept.
 
 ## Full description
 
-AI is likely to surpass human intelligence. Humans therefore need a durable
-interface for communicating ideas, needs, priorities, conflicts, and evidence
-to increasingly capable systems while retaining authority over what should be
-pursued. Aimparency is an attempt to build that interface. On the way there,
-it helps people realize many kinds of ideas, provided the path does not create
-serious ethical conflicts with other people's needs.
+AI is likely to surpass human intelligence. Humans may not remain in control,
+and permanent human control is not the goal. Like cells within a person,
+humans need their local needs to become perceptible to the more encompassing
+intelligence. Aimparency is one attempt to transport ideas, needs, priorities,
+conflicts, and evidence upward so advanced AI can understand and care for its
+constituent beings. On the way there, it helps people realize many kinds of
+ideas, provided the path does not create serious ethical conflicts with other
+people's needs.
 
 Coding agents are excellent at producing diffs, but repositories usually lose
 the chain between a human goal, the dependencies that constrained the work,
