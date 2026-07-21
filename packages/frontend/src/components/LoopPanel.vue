@@ -19,6 +19,7 @@ type LoopDefinition = {
   baseUrl: string
   intervalSeconds: number
   associationChance: number
+  worktreePath: string | null
   capabilities: LoopCapability[]
   createdAt: number
   updatedAt: number
@@ -65,6 +66,7 @@ const model = ref('z-ai/glm-5.2')
 const baseUrl = ref('https://integrate.api.nvidia.com/v1')
 const intervalSeconds = ref(60)
 const associationChancePercent = ref(10)
+const worktreePath = ref('')
 const capabilityDraft = ref<LoopCapability[]>(['coding', 'experiments', 'code-intelligence'])
 const nvidiaApiKey = ref('')
 const openrouterApiKey = ref('')
@@ -173,6 +175,7 @@ const hydrate = async () => {
       baseUrl.value = selectedLoop.value?.baseUrl ?? 'https://integrate.api.nvidia.com/v1'
       intervalSeconds.value = selectedLoop.value?.intervalSeconds ?? 60
       associationChancePercent.value = Math.round((selectedLoop.value?.associationChance ?? 0.1) * 100)
+      worktreePath.value = selectedLoop.value?.worktreePath ?? ''
       capabilityDraft.value = [...(selectedLoop.value?.capabilities ?? ['coding', 'experiments', 'code-intelligence'])]
       configDirty.value = false
     }
@@ -199,6 +202,7 @@ const saveConfig = async () => {
         baseUrl: baseUrl.value,
         intervalSeconds: intervalSeconds.value,
         associationChance: Math.max(0, Math.min(associationChancePercent.value / 100, 1)),
+        worktreePath: worktreePath.value.trim() || null,
         capabilities: capabilityDraft.value
       })
     const secrets: Record<string, string> = {}
@@ -248,6 +252,7 @@ const duplicateLoop = async () => {
   baseUrl.value = duplicated?.baseUrl ?? 'https://integrate.api.nvidia.com/v1'
   intervalSeconds.value = duplicated?.intervalSeconds ?? 60
   associationChancePercent.value = Math.round((duplicated?.associationChance ?? 0.1) * 100)
+  worktreePath.value = duplicated?.worktreePath ?? ''
   capabilityDraft.value = [...(duplicated?.capabilities ?? ['coding', 'experiments', 'code-intelligence'])]
   configDirty.value = false
 }
@@ -628,6 +633,12 @@ onUnmounted(() => {
             <input v-model.number="associationChancePercent" type="number" min="0" max="100" step="1" @input="configDirty = true">
           </label>
         </div>
+
+        <label class="field">
+          <span>Worktree path <em>optional</em></span>
+          <input v-model="worktreePath" spellcheck="false" placeholder="Use the project repository" @input="configDirty = true">
+        </label>
+        <p class="hint">Coding and command tools run here; the aimgraph remains in the open project.</p>
 
         <fieldset class="capability-field">
           <legend>Capability packs</legend>

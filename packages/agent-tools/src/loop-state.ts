@@ -25,6 +25,7 @@ export const loopDefinitionSchema = z.object({
   baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
   intervalSeconds: z.number().int().min(5).max(3600).default(60),
   associationChance: z.number().min(0).max(1).default(0.1),
+  worktreePath: z.string().nullable().default(null),
   capabilities: z.array(loopCapabilitySchema).default(['coding', 'experiments', 'code-intelligence']),
   createdAt: z.number(),
   updatedAt: z.number()

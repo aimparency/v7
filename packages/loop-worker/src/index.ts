@@ -225,6 +225,7 @@ async function waitForNextCycle(projectPath: string, instanceId: string, loop: L
 }
 
 async function runCycle(projectPath: string, instanceId: string, loop: LoopDefinition, signal: AbortSignal) {
+  const executionPath = loop.worktreePath || projectPath;
   await markLoopPhase(projectPath, instanceId, 'checking API credentials');
   const secrets = await readSecrets(projectPath);
   const apiKey = apiKeyFor(loop, secrets);
@@ -540,12 +541,12 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           additionalProperties: false
         }),
         execute: async ({ mode, query, limit, maxFiles, maxChunks }) => {
-          if (mode === 'index') return buildCodeIndex(projectPath, { maxFiles, maxChunks });
+          if (mode === 'index') return buildCodeIndex(executionPath, { maxFiles, maxChunks });
           if (!query) throw new Error(`query is required for code_intelligence mode=${mode}`);
-          if (mode === 'semantic') return semanticCodeSearch(projectPath, query, limit);
-          if (mode === 'heatmap') return codeHeatmap(projectPath, query, limit);
-          if (mode === 'symbol') return symbolContext(projectPath, query, limit);
-          return changeImpact(projectPath, query, limit);
+          if (mode === 'semantic') return semanticCodeSearch(executionPath, query, limit);
+          if (mode === 'heatmap') return codeHeatmap(executionPath, query, limit);
+          if (mode === 'symbol') return symbolContext(executionPath, query, limit);
+          return changeImpact(executionPath, query, limit);
         }
       }),
       create_aim: tool({
@@ -610,7 +611,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           properties: { directory: { type: 'string' }, limit: { type: 'number' } },
           additionalProperties: false
         }),
-        execute: async (input) => listFiles(projectPath, input)
+        execute: async (input) => listFiles(executionPath, input)
       }),
       search_files: tool({
         description: 'Search files with rg line numbers and configurable context.',
@@ -626,7 +627,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['query'],
           additionalProperties: false
         }),
-        execute: async (input) => searchFiles(projectPath, input)
+        execute: async (input) => searchFiles(executionPath, input)
       }),
       read_file: tool({
         description: 'Read a file range with line numbers.',
@@ -636,12 +637,12 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['path'],
           additionalProperties: false
         }),
-        execute: async (input) => readFileRange(projectPath, input)
+        execute: async (input) => readFileRange(executionPath, input)
       }),
       git_status: tool({
         description: 'Return git status --short for the project.',
         inputSchema: jsonSchema<Record<string, never>>({ type: 'object', properties: {}, additionalProperties: false }),
-        execute: async () => gitStatus(projectPath)
+        execute: async () => gitStatus(executionPath)
       }),
       git_diff: tool({
         description: 'Return git diff, optionally for one path or staged changes.',
@@ -650,7 +651,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           properties: { path: { type: 'string' }, staged: { type: 'boolean' }, limitChars: { type: 'number' } },
           additionalProperties: false
         }),
-        execute: async (input) => gitDiff(projectPath, input)
+        execute: async (input) => gitDiff(executionPath, input)
       }),
       run_command: tool({
         description: 'Run a shell command in the project. Risky destructive commands are refused. Use for tests, builds, typechecks, and read-only shell inspection.',
@@ -665,7 +666,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['command'],
           additionalProperties: false
         }),
-        execute: async (input) => runCommand(projectPath, input)
+        execute: async (input) => runCommand(executionPath, input)
       }),
       propose_patch: tool({
         description: 'Record a proposed unified diff and summary before applying it.',
@@ -685,7 +686,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['unifiedDiff'],
           additionalProperties: false
         }),
-        execute: async (input) => applyUnifiedPatch(projectPath, input)
+        execute: async (input) => applyUnifiedPatch(executionPath, input)
       }),
       str_replace: tool({
         description: 'Replace one unique string in a project file.',
@@ -695,7 +696,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['path', 'oldString', 'newString'],
           additionalProperties: false
         }),
-        execute: async (input) => strReplace(projectPath, input)
+        execute: async (input) => strReplace(executionPath, input)
       }),
       line_replace: tool({
         description: 'Replace a line range, guarded by exact expected first and last line text.',
@@ -712,7 +713,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['path', 'startLine', 'lineCount', 'expectedFirstLine', 'expectedLastLine', 'replacement'],
           additionalProperties: false
         }),
-        execute: async (input) => lineReplace(projectPath, input)
+        execute: async (input) => lineReplace(executionPath, input)
       })
   };
   const enabledTools = filterToolsByCapabilities(availableTools, loop.capabilities);
@@ -838,7 +839,9 @@ async function main() {
     error: undefined
   });
   await markInstanceStatus(projectPath, instanceId, 'running');
-  await appendLoopEvent(projectPath, instanceId, { role: 'system', kind: 'event', content: `Loop worker started (pid ${process.pid}).` });
+  const startupLoop = (await readLoopAndInstance(projectPath, instanceId)).loop;
+  const executionNote = startupLoop.worktreePath ? ` Coding tools use worktree ${startupLoop.worktreePath}.` : '';
+  await appendLoopEvent(projectPath, instanceId, { role: 'system', kind: 'event', content: `Loop worker started (pid ${process.pid}).${executionNote}` });
   await markLoopPhase(projectPath, instanceId, 'started');
 
   const heartbeat = setInterval(() => {

@@ -73,6 +73,7 @@ const loopDefinitionSchema = z.object({
   baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
   intervalSeconds: z.number().int().min(5).max(3600).default(60),
   associationChance: z.number().min(0).max(1).default(0.1),
+  worktreePath: z.string().nullable().default(null),
   capabilities: z.array(loopCapabilitySchema).default(['coding', 'experiments', 'code-intelligence']),
   createdAt: z.number(),
   updatedAt: z.number()
@@ -982,6 +983,7 @@ export const createProjectRouter = (
             baseUrl: 'https://integrate.api.nvidia.com/v1',
             intervalSeconds: 60,
             associationChance: 0.1,
+            worktreePath: null,
             capabilities: ['coding', 'experiments', 'code-intelligence'],
             createdAt: now,
             updatedAt: now
@@ -1002,9 +1004,23 @@ export const createProjectRouter = (
         baseUrl: z.string().optional(),
         intervalSeconds: z.number().int().min(5).max(3600).optional(),
         associationChance: z.number().min(0).max(1).optional(),
+        worktreePath: z.string().nullable().optional(),
         capabilities: z.array(loopCapabilitySchema).optional()
       }))
       .mutation(async ({ input }: any) => {
+        const resolvedWorktreePath = input.worktreePath?.trim()
+          ? path.resolve(input.worktreePath.trim())
+          : null;
+        if (resolvedWorktreePath) {
+          const stat = await fs.stat(resolvedWorktreePath).catch(() => null);
+          if (!stat?.isDirectory()) {
+            throw new Error(`Worktree path is not a directory: ${resolvedWorktreePath}`);
+          }
+          const gitMarker = await fs.stat(path.join(resolvedWorktreePath, '.git')).catch(() => null);
+          if (!gitMarker) {
+            throw new Error(`Worktree path is not a Git working tree: ${resolvedWorktreePath}`);
+          }
+        }
         return mutateLoopRuntimeState(input.projectPath, (state) => {
           const loop = state.loops.find((candidate) => candidate.id === input.loopId);
           if (!loop) return;
@@ -1015,6 +1031,9 @@ export const createProjectRouter = (
           if (input.baseUrl !== undefined) loop.baseUrl = input.baseUrl;
           if (input.intervalSeconds !== undefined) loop.intervalSeconds = input.intervalSeconds;
           if (input.associationChance !== undefined) loop.associationChance = input.associationChance;
+          if (input.worktreePath !== undefined) {
+            loop.worktreePath = resolvedWorktreePath;
+          }
           if (input.capabilities !== undefined) loop.capabilities = input.capabilities;
           loop.updatedAt = Date.now();
         });
