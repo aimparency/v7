@@ -49,6 +49,7 @@ Primary Codex session ID: `019f859f-04bd-7e52-9922-14fe70507464`
 - [x] Technology list
 - [ ] Public repository URL
 - [ ] Public YouTube URL
+- [x] Timed narration, teleprompter, and importable `.srt` subtitles
 - [x] Square project image
 - [ ] Screenshots
 - [x] Testing instructions

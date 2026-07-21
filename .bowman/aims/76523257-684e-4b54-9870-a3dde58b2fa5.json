@@ -9,6 +9,13 @@
       "outcome": "Created a timed 2:35 English demo script, exact screen/voice sequence, and privacy/capture checklist in meta/applications/openai-build-week-2026/demo-script.md.",
       "effectiveness": "The script stays focused on the judge-visible intent → context → Codex → Git evidence loop and explicitly separates human decisions from GPT-5.6/Codex work.",
       "lesson": "Keep the recorded walkthrough narrower than the overall product; the provenance proof is understandable within three minutes."
+    },
+    {
+      "date": 1784657386866,
+      "context": "Felix confirmed he will create the required public video, leaving subtitle and narration packaging as autonomous support work.",
+      "outcome": "Added a 214-word narration-only teleprompter and six-cue SRT subtitle file synchronized from 00:00 to 02:35. Updated the submission checklist.",
+      "effectiveness": "The human recording step now needs only screen capture and reading; captions can be imported directly rather than recreated in the editor.",
+      "lesson": "For institutionally human deliverables, reduce the handoff to the smallest possible mechanical action and preserve exact timing."
     }
   ],
   "archived": false,

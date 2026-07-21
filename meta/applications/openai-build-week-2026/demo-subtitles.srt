@@ -1,0 +1,44 @@
+1
+00:00:00,000 --> 00:00:20,000
+We gave our goal-management system one very concrete goal:
+win the hackathon judging goal-management systems.
+This application is the experiment.
+If the jury says “it won,” the jury supplies the external proof.
+
+2
+00:00:20,000 --> 00:00:44,000
+Aimparency is a local-first graph where humans express aims
+and AI helps realize them while humans remain the final authority.
+Goals, supporting aims, phases, and repository dependencies
+live beside the code.
+
+3
+00:00:44,000 --> 00:01:16,000
+GPT-5.6 in Codex queried Aimparency through MCP,
+followed the aim to its root goal, selected actionable work,
+and preserved steps requiring human judgment.
+Felix chose the wager and acceptance condition; Codex executed.
+
+4
+00:01:16,000 --> 00:01:52,000
+Now, when a commit references an aim UUID prefix,
+the aim view reads the real Git history and shows that
+implementation evidence beside its dependency context.
+We can see what we intended, what supported it,
+and the exact code output that realized it.
+
+5
+00:01:52,000 --> 00:02:15,000
+The extension has focused backend and interface tests,
+production build verification, and a dated commit.
+The repository clearly separates the pre-existing product
+from the work created during Build Week.
+
+6
+00:02:15,000 --> 00:02:35,000
+The small loop closes at the commit.
+The larger loop closes with you, the jury.
+Aimparency gives human intention durable structure,
+gives Codex the why, and lets reality judge the outcome.
+So: did it work?
+
