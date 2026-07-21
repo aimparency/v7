@@ -26,8 +26,8 @@
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "Felix must record voice/video and publish publicly; script and shot list can be prepared by the agent.",
-    "date": 1784387763523
+    "comment": "Timed 2:35 script and capture checklist are complete. Felix must record the running UI, upload publicly to YouTube, and return the URL.",
+    "date": 1784656910139
   },
   "intrinsicValue": 0,
   "cost": 2,

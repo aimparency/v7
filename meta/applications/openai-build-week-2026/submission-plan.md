@@ -35,7 +35,7 @@ A judge can:
 - [x] Automated tests cover commit matching and the visible UI state.
 - [x] README identifies pre-existing work and new Build Week work.
 - [x] README explains human decisions versus Codex/GPT-5.6 contributions.
-- [x] Repository license is confirmed (ISC); public visibility still requires human confirmation.
+- [x] Public repository and ISC license confirmed; Build Week commits pushed to `main`.
 - [ ] Hosted demo, sandbox, or downloadable test build is available.
 - [ ] Installation steps are tested from a clean environment.
 

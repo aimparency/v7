@@ -27,8 +27,8 @@
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "Requires Felix's Devpost/OpenAI accounts and final submission authorization.",
-    "date": 1784387763976
+    "comment": "Devpost draft 1359213 is complete except the required public <3-minute YouTube URL. After Felix supplies it, require explicit confirmation before the final submit connector call.",
+    "date": 1784656910069
   },
   "intrinsicValue": 0,
   "cost": 1,
