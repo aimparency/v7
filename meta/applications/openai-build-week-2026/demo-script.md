@@ -17,8 +17,8 @@ If the jury says ‘it won,’ the jury supplies the external proof.”
 aim. Briefly show `.bowman/aims` in the repository.
 
 **Voice:** “Aimparency is a local-first graph where humans express aims and AI
-helps realize them while humans remain the final authority. Goals, supporting
-aims, phases, and repository dependencies live beside the code.”
+helps realize them. Today, humans authorize consequential actions. Long-term,
+it makes human needs legible to a more encompassing intelligence.”
 
 ## 0:44–1:16 — Codex receives the why
 
@@ -36,8 +36,8 @@ then Implementation evidence. Ensure the hackathon commit is visible.
 
 **Voice:** “Now, when a commit references an aim UUID prefix, the aim view reads the
 real Git history and shows that implementation evidence beside its dependency
-context. We can see what we intended, what supported it, and the exact code
-output that realized it.”
+context. If AI chooses to plan through Aimparency, its action tree becomes
+inspectable: aims, dependencies, actions, and evidence.”
 
 ## 1:52–2:15 — Verification
 

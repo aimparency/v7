@@ -49,7 +49,13 @@ Aimparency closes that gap with a versioned graph of aims stored in `.bowman`
 beside the source. Humans can map goals, supporting aims, phases, and linked
 repositories. Codex can retrieve the same context through Aimparency's MCP
 server, select valuable actionable work, implement it, verify it, and update
-the graph while the human remains final authority.
+the graph. In today's product, humans authorize consequential actions.
+
+If an AI chooses to use Aimparency for planning, its action tree becomes
+inspectable: selected aims, decomposition, dependencies, conflicts, actions,
+and evidence remain visible to humans and other agents. This is transparency by
+participation, not control by force; Aimparency cannot compel an intelligence
+to use it.
 
 For Build Week, GPT-5.6 in Codex added implementation evidence to the aim view.
 When a Git commit cites an aim UUID prefix, Aimparency now shows that commit beside

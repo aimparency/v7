@@ -35,6 +35,12 @@ ethical conflicts with other people's needs. The intent is to make human needs
 perceptible within a larger intelligence, not optimize one person's desires at
 everyone else's expense.
 
+If an AI chooses to use Aimparency in its planning loop, its action tree becomes
+inspectable: humans and other agents can see selected aims, decomposition,
+dependencies, conflicts, actions, and recorded evidence. This is transparency
+by participation, not control by force. Aimparency cannot compel a more capable
+intelligence to use it.
+
 ## The Build Week extension
 
 Aimparency itself predates the July 13–21 submission window. During Build Week,
