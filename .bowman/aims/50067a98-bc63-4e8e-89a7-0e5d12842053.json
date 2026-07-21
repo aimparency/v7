@@ -11,14 +11,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1782733808612
+    "state": "review",
+    "comment": "Association integration improved and verified; awaiting user acceptance.",
+    "date": 1784660284246
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Reconciled the existing association system and fixed its key relevance defect: the active aim is now excluded, so stochastic association injects lateral context rather than echoing current work. Extracted deterministic selection logic and added four tests covering ranking, probability rejection, disabled behavior, and active-aim exclusion. Agent-tools and loop-worker typechecks pass."
 }

@@ -61,7 +61,42 @@ function quantile(values: number[], q: number): number {
   return sorted[index];
 }
 
-export async function maybeFindAssociation(projectPath: string, stateText: string, chance = 0.1) {
+type AssociationCandidate = {
+  id: string;
+  score: number;
+  aim: { id: string; text: string; description?: string; status?: unknown };
+};
+
+export function selectAssociation(
+  candidates: AssociationCandidate[],
+  chance: number,
+  random: () => number = Math.random,
+  excludeAimIds: string[] = []
+) {
+  const boundedChance = Math.max(0, Math.min(chance, 1));
+  const excluded = new Set(excludeAimIds);
+  const eligible = candidates.filter((candidate) => !excluded.has(candidate.id));
+  if (boundedChance <= 0 || eligible.length === 0) return null;
+  const best = eligible[0];
+  const threshold = quantile(eligible.map((row) => row.score), 1 - boundedChance);
+  if (best.score < threshold || random() >= boundedChance) return null;
+  return {
+    id: best.aim.id,
+    text: best.aim.text,
+    description: best.aim.description,
+    status: best.aim.status,
+    score: Number(best.score.toFixed(4)),
+    threshold: Number(threshold.toFixed(4)),
+    chance: boundedChance
+  };
+}
+
+export async function maybeFindAssociation(
+  projectPath: string,
+  stateText: string,
+  chance = 0.1,
+  excludeAimIds: string[] = []
+) {
   const boundedChance = Math.max(0, Math.min(chance, 1));
   if (boundedChance <= 0 || !stateText.trim()) return null;
   const queryVector = await embedSearchQuery(stateText);
@@ -76,22 +111,5 @@ export async function maybeFindAssociation(projectPath: string, stateText: strin
     .map(([id, vector]) => ({ id, score: cosineSimilarity(queryVector, vector), aim: aimById.get(id) }))
     .filter((row) => row.aim && !row.aim.archived)
     .sort((left, right) => right.score - left.score);
-  const best = scored[0];
-  if (!best?.aim) return null;
-
-  // Dynamic threshold is calibrated against the current similarity distribution:
-  // a higher associationChance lowers the quantile gate. A stochastic gate keeps
-  // insertion frequency near the configured target even when the top score is
-  // always above the quantile in dense graphs.
-  const threshold = quantile(scored.map((row) => row.score), 1 - boundedChance);
-  if (best.score < threshold || Math.random() >= boundedChance) return null;
-  return {
-    id: best.aim.id,
-    text: best.aim.text,
-    description: best.aim.description,
-    status: best.aim.status,
-    score: Number(best.score.toFixed(4)),
-    threshold: Number(threshold.toFixed(4)),
-    chance: boundedChance
-  };
+  return selectAssociation(scored as AssociationCandidate[], boundedChance, Math.random, excludeAimIds);
 }

@@ -251,7 +251,12 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     .slice(-12)
     .map((message) => `${message.kind}: ${message.content}`)
     .join('\n');
-  const association = await maybeFindAssociation(projectPath, stateText, loop.associationChance ?? 0.1);
+  const association = await maybeFindAssociation(
+    projectPath,
+    stateText,
+    loop.associationChance ?? 0.1,
+    [target.aim.id]
+  );
 
   await appendLoopEvent(projectPath, instanceId, {
     role: 'tool',
