@@ -2,7 +2,15 @@
   "id": "2219e032-0663-4c03-848e-ed7c5fe594b5",
   "text": "Register and submit the OpenAI Build Week entry by 21 July",
   "description": "Human submission checklist: join the Devpost hackathon; choose Developer Tools; provide project description, public or judge-shared repository, working demo/test access, public YouTube video, and /feedback Codex Session ID. Deadline is 21 July 2026 at 17:00 PDT (22 July 02:00 CEST). Enter as an eligible German individual or authorized team representative.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1784656854733,
+      "context": "The authenticated user is already registered; a Devpost project draft exists. Final submission is blocked only by the required public YouTube demo and explicit final confirmation.",
+      "outcome": "Prepared exact live-schema answers for all seven custom submission fields in submission-payload.md, including Individual, Germany, Developer Tools, public repository, testing instructions, feedback session ID, and platform/install instructions. Reframed the 2:35 demo around the playful recursive experiment and jury-provided outcome.",
+      "effectiveness": "Once the YouTube URL arrives, submission becomes a single connector call with no remaining copy decisions.",
+      "lesson": "Treat the application workflow as executable product evidence, while preserving final submission as an explicit human-authorized boundary."
+    }
+  ],
   "archived": false,
   "tags": [
     "hackathon",
