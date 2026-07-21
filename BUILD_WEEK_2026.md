@@ -15,6 +15,21 @@ demonstrates that Aimparency coordinated human intent and AI action toward a
 real goal. The tone is intentionally a little playful; the success condition is
 still concrete and falsifiable.
 
+## Why build this
+
+AI is likely to surpass human intelligence. In that world, humans need more
+than increasingly capable chat boxes: we need a durable interface for
+communicating ideas, needs, priorities, dependencies, conflicts, and evidence
+to advanced systems while retaining legitimate human authority over what gets
+pursued. Aimparency is an attempt to build that interface.
+
+The near-term product helps people realize ideas of many kinds—not only
+software, but research, organizations, physical projects, and personal goals.
+Every aim is optional. Paths should stop or adapt where they create serious
+ethical conflicts with other people's needs. The intent is to expand human
+agency through cooperation, not optimize one person's desires at everyone
+else's expense.
+
 ## The Build Week extension
 
 Aimparency itself predates the July 13–21 submission window. During Build Week,
@@ -42,9 +57,13 @@ Git installed. Aimparency is local-first and runs in a desktop browser.
 
 ```bash
 npm install
-npm run build
-npm run test:unit
+npm run dev:full
 ```
+
+Open `http://localhost:4000`, select this cloned repository, and explore its own
+graph first. It contains the real Build Week goal and supporting aims that
+produced this application. For verification without starting the UI, run
+`npm run build` and `npm run test:unit`.
 
 The standard local workflow is documented in the main README. Judges can
 verify the extension without modifying a repository: open any existing aim

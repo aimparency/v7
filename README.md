@@ -70,6 +70,11 @@ Then open:
 http://localhost:4000
 ```
 
+For the best first look, enter the path of this cloned `v7` repository and
+explore its own graph. The graph is not sample data: it contains the goals,
+dependencies, implementation aims, reflections, and Build Week submission path
+that shaped the repository itself.
+
 `4000` is the default frontend port in a fresh checkout. If you want custom ports, copy `.env.example` to `.env` and override them there.
 
 `npm run dev` starts the core local stack: frontend, backend, broker, and wrapped-agent session servers.
@@ -79,6 +84,10 @@ If you need optional integrations too, use:
 ```bash
 npm run dev:full
 ```
+
+Use `dev:full` when trying the complete agent/MCP workflow demonstrated by the
+Build Week entry. The app remains self-hosted and opens on
+`http://localhost:4000` by default.
 
 That also starts the dev-only broker inspector, MCP server, and voice bridge.
 

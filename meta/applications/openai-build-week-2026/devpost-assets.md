@@ -31,6 +31,13 @@ provides the external outcome. This application is itself the proof of concept.
 
 ## Full description
 
+AI is likely to surpass human intelligence. Humans therefore need a durable
+interface for communicating ideas, needs, priorities, conflicts, and evidence
+to increasingly capable systems while retaining authority over what should be
+pursued. Aimparency is an attempt to build that interface. On the way there,
+it helps people realize many kinds of ideas, provided the path does not create
+serious ethical conflicts with other people's needs.
+
 Coding agents are excellent at producing diffs, but repositories usually lose
 the chain between a human goal, the dependencies that constrained the work,
 and the code that actually realized it. Issue trackers record planned tasks;
@@ -66,12 +73,11 @@ Prerequisites: Node.js 20+, npm, and Git.
 git clone https://github.com/aimparency/v7.git
 cd v7
 npm install
-npm run build
-npm run test:unit
-npm run dev
+npm run dev:full
 ```
 
-Open `http://localhost:4000`, select this repository, and open an aim whose UUID
+Open `http://localhost:4000`, select this repository, and explore its own graph
+first: it contains the real Build Week goal and execution path. Then open an aim whose UUID
 is present in a commit message. Its edit view shows the matching commit under
 **Implementation evidence**, beside parent aims and linked repositories.
 
