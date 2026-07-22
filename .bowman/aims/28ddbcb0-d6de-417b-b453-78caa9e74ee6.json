@@ -2,7 +2,15 @@
   "id": "28ddbcb0-d6de-417b-b453-78caa9e74ee6",
   "text": "Monitor AI-specific and open-source funding calls for a genuinely eligible Q4 opportunity",
   "description": "Maintain a monthly, source-verified scan of German/EU AI and open-source funding that is actually open and structurally eligible. Current July 2026 result: no better individual AI-specific grant is open for Aimparency. SPRIND Next Frontier AI closed 1 June and funds frontier-model research rather than an application/tool layer; the former BMWE Gründungswettbewerb is not currently continued; many BMFTR AI calls require companies/research consortia or are already closed. Watch: new SPRIND challenges, BMFTR software/AI calls, KMU-innovativ IKT after a legal entity exists, EIC Open at greater maturity, and NLnet's regular open calls when they reopen after summer. Never treat a search listing as open until the official call page confirms deadline and eligibility.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1784745126694,
+      "context": "Felix requested current ways to fund continued Aimparency work; several existing graph claims predated July 2026 program changes.",
+      "outcome": "Verified official sources and created meta/funding-landscape-2026-07-22.md. Prototype Fund remains the strongest individual route; NLnet's general call is paused until after summer; EXIST is conditional on founder/university eligibility; Pro FIT and BayTOU depend on company location; ZIM stopped ordinary applications on 7 July 2026. Updated the funding parent and ZIM child accordingly.",
+      "effectiveness": "The graph no longer ranks a currently unavailable ZIM submission as its first route and explicitly keeps paid customer diagnostics alongside grants as real survival evidence.",
+      "lesson": "Funding monitoring must treat official availability, applicant identity, geography, and timing as first-class state; a technically suitable program is not an actionable opportunity while paused or structurally ineligible."
+    }
+  ],
   "archived": false,
   "tags": [
     "funding",

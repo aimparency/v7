@@ -5,7 +5,16 @@
   "reflections": [],
   "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "ca5a7c3f-f32c-4a3f-9087-f6f08bb57e97",
+      "relativePosition": [
+        -0.868435679144864,
+        -2.344316418743041
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "fe8b6496-588c-4439-8a39-056dab245c4f"
   ],

@@ -15,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Nice-to-have; gated on not derailing the core demo. Relates to info-streams aim 3045f505.",
-    "date": 1780755810838
+    "state": "cancelled",
+    "comment": "Cancelled 22 July 2026: sponsor integration was justified only as an optional strengthener inside the expired BuilderShip window. Generic information-stream integrations remain separate aims.",
+    "date": 1784745208761
   },
   "intrinsicValue": 0,
   "cost": 1,

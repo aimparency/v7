@@ -15,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Felix to decide remote-only vs attend vs skip. Recommendation: remote-only (demo + visibility).",
-    "date": 1780755815860
+    "state": "cancelled",
+    "comment": "Cancelled 22 July 2026: the 14 June SF Bay finale has passed, so remote-versus-travel feasibility no longer requires a decision.",
+    "date": 1784745209003
   },
   "intrinsicValue": 0,
   "cost": 1,

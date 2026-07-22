@@ -1,7 +1,7 @@
 {
   "id": "9d446f62-f092-4a4b-a33c-4d5ca01f5a13",
-  "text": "Incorporate Aimparency GmbH/UG in Germany (grant prerequisite)",
-  "description": "**HUMAN ACTION REQUIRED**\n\nAlmost all German/EU grants (ZIM, IBB Pro FIT, KI4KMU, Digitalbonus) require a registered KMU before application.\n\n**Quickstart:** meta/applications/incorporation-quickstart.md\n**Input checklist:** meta/applications/HUMAN-INPUT-REQUIRED.md\n\n**Recommended:** UG in Berlin, 50/50 Felix/Robin, ~€500-1500\n\n**After incorporation provide:** HRB, address, email, phone, IBAN, Steuernummer, ELSTER status",
+  "text": "Choose company timing and location without losing individual grant eligibility",
+  "description": "HUMAN DECISION REQUIRED. Do not incorporate merely because older grant notes said every route requires a company. Prototype Fund is an individual route and companies cannot receive that grant; EXIST also normally supports a pre-incorporation university-linked team. Company programs differ by registered location: Pro FIT requires a young Berlin company, while BayTOU requires a Bavarian formation/young company. Before signing: confirm Prototype Fund and possible EXIST compatibility, decide Berlin versus Bavaria from the actual operating plan rather than one grant, confirm Robin's role and ownership, and obtain German legal/tax advice. Then use meta/applications/incorporation-quickstart.md as a checklist, updating its older Berlin assumptions first.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -16,7 +16,7 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "All German grant packages ready; submission blocked on UG/GmbH incorporation + founder contact details",
+    "comment": "Felix must decide timing, Berlin versus Bavaria, ownership/Robin's role, and obtain legal/tax advice after checking individual-grant compatibility.",
     "date": 1782854152141
   },
   "intrinsicValue": 0,

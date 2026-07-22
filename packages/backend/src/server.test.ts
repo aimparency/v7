@@ -742,6 +742,98 @@ test('aim.update - persists edit-modal reflection and archive fields', async () 
   assert.strictEqual(fetchedAim.archived, true);
 });
 
+test('aim.merge - preserves source knowledge and archives it consistently', async () => {
+  const parent = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: { text: 'Parent', status: { state: 'open', comment: '', date: Date.now() } }
+  });
+  const target = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: {
+      text: 'Canonical aim',
+      tags: ['canonical'],
+      status: { state: 'open', comment: '', date: Date.now() }
+    }
+  });
+  const source = await caller.aim.createSubAim({
+    projectPath: testProjectPath,
+    parentAimId: parent.id,
+    aim: {
+      text: 'Duplicate aim',
+      tags: ['duplicate', 'canonical'],
+      status: { state: 'done', comment: '', date: Date.now() }
+    }
+  });
+  await caller.aim.update({
+    projectPath: testProjectPath,
+    aimId: target.id,
+    aim: { reflection: 'Target legacy reflection' }
+  });
+  await caller.aim.update({
+    projectPath: testProjectPath,
+    aimId: source.id,
+    aim: { reflection: 'Source legacy reflection' }
+  });
+  await caller.aim.addReflection({
+    projectPath: testProjectPath,
+    aimId: target.id,
+    reflection: {
+      context: 'target context',
+      outcome: 'target outcome',
+      effectiveness: 'target effectiveness',
+      lesson: 'target lesson'
+    }
+  });
+  await caller.aim.addReflection({
+    projectPath: testProjectPath,
+    aimId: source.id,
+    reflection: {
+      context: 'source context',
+      outcome: 'source outcome',
+      effectiveness: 'source effectiveness',
+      lesson: 'source lesson'
+    }
+  });
+  const phase = await caller.phase.create({
+    projectPath: testProjectPath,
+    phase: { name: 'Merge phase' }
+  });
+  await caller.aim.commitToPhase({
+    projectPath: testProjectPath,
+    aimId: source.id,
+    phaseId: phase.id
+  });
+
+  const result = await caller.aim.merge({
+    projectPath: testProjectPath,
+    targetId: target.id,
+    sourceId: source.id
+  });
+
+  assert.strictEqual(result.success, true);
+  assert.strictEqual(result.reflectionsCopied, 1);
+
+  const merged = await caller.aim.get({ projectPath: testProjectPath, aimId: target.id });
+  assert.deepEqual(merged.supportedAims, [parent.id]);
+  assert.deepEqual(merged.committedIn, [phase.id]);
+  assert.deepEqual(merged.tags, ['canonical', 'duplicate']);
+  assert.match(merged.reflection ?? '', /Target legacy reflection/);
+  assert.match(merged.reflection ?? '', /Source legacy reflection/);
+  assert.strictEqual(merged.reflections.length, 2);
+
+  const mergedParent = await caller.aim.get({ projectPath: testProjectPath, aimId: parent.id });
+  assert.deepEqual(mergedParent.supportingConnections.map((connection) => connection.aimId), [target.id]);
+
+  const archivedSource = await caller.aim.get({ projectPath: testProjectPath, aimId: source.id });
+  assert.strictEqual(archivedSource.status.state, 'archived');
+  assert.strictEqual(archivedSource.archived, true);
+  assert.deepEqual(archivedSource.supportedAims, []);
+  assert.deepEqual(archivedSource.supportingConnections, []);
+  assert.deepEqual(archivedSource.committedIn, []);
+  assert.strictEqual(await fs.pathExists(path.join(testProjectPath, 'aims', `${source.id}.json`)), false);
+  assert.strictEqual(await fs.pathExists(path.join(testProjectPath, 'archived-aims', `${source.id}.json`)), true);
+});
+
 test('discoverLocalProjects - finds nearby repositories with .bowman directories', async () => {
   const workspaceRoot = path.join(testRootPath, 'workspace');
   const repoA = path.join(workspaceRoot, 'repo-a');

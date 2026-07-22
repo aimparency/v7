@@ -284,6 +284,50 @@ test('MCP Tools - list_aims uncommitted surfaces parented-but-unphased aims that
   assert.ok(!floating.includes(c), 'floating MISSES the connected-but-unphased aim (the discoverability gap)');
 });
 
+test('get_prioritized_aims falls back to connected uncommitted work when a phase has only containers', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+
+  const parentResult = await server.callTool('create_aim', {
+    projectPath: ctx.projectPath,
+    text: 'Mission container',
+    intrinsicValue: 10,
+    cost: 1,
+  });
+  const parentId = /Created aim with ID: ([0-9a-f-]+)/.exec(parentResult.content[0].text)?.[1];
+  assert.ok(parentId);
+
+  const childResult = await server.callTool('create_aim', {
+    projectPath: ctx.projectPath,
+    text: 'Executable hidden work',
+    supportedAims: [parentId],
+    cost: 1,
+  });
+  const childId = /Created aim with ID: ([0-9a-f-]+)/.exec(childResult.content[0].text)?.[1];
+  assert.ok(childId);
+
+  const phase = await caller.phase.create({
+    projectPath: ctx.projectPath,
+    phase: { name: 'Active phase' },
+  });
+  await caller.aim.commitToPhase({
+    projectPath: ctx.projectPath,
+    aimId: parentId,
+    phaseId: phase.id,
+  });
+
+  const result = await server.callTool('get_prioritized_aims', {
+    projectPath: ctx.projectPath,
+    phaseId: phase.id,
+  });
+  const payload = JSON.parse(result.content[0].text);
+
+  assert.equal(payload.selectionScope, 'connected-uncommitted-fallback');
+  assert.equal(payload.diagnostics.openLeafAims, 0);
+  assert.equal(payload.diagnostics.uncommittedFallbackAims, 1);
+  assert.deepEqual(payload.aims.map((aim: any) => aim.id), [childId]);
+});
+
 test('countAimReferences counts commits referencing an aim id prefix (realized-cost signal)', () => {
   const ids = [
     'de22b7f3-ad77-4bcc-bd9f-aabbccddeeff', // referenced twice

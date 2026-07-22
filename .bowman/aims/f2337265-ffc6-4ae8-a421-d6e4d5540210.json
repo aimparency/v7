@@ -287,6 +287,14 @@
       ],
       "weight": 1.147837177170794,
       "explanation": ""
+    },
+    {
+      "aimId": "3d09a7a1-d337-4595-b9aa-4b2fe5b6e381",
+      "relativePosition": [
+        0.538239340530003,
+        2.44137223960334
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [

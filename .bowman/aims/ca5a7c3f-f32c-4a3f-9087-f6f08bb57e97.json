@@ -1,0 +1,37 @@
+{
+  "id": "ca5a7c3f-f32c-4a3f-9087-f6f08bb57e97",
+  "text": "Preserve complete aim state when merging duplicates",
+  "description": "Fix merge_aims so the archived source has consistent archival metadata and the surviving aim retains both structured reflections, legacy free-text reflection, and tags. Regression coverage must also verify parent and phase rewiring and physical movement into archived-aims.",
+  "reflections": [
+    {
+      "date": 1784745100624,
+      "context": "A real merge moved the source file correctly but left archived=false, omitted its legacy reflection, and later exposed an orphaned embedding.",
+      "outcome": "Updated merge_aims to set archived=true, preserve legacy reflection and tags in addition to structured reflections, and always delete the source embedding/invalidate semantic cache. Repaired the live merged source, restored its reflection to the canonical aim, and removed the orphaned embedding.",
+      "effectiveness": "Backend full suite passes 59/59; focused merge regression passes; backend TypeScript build and git diff --check pass; Aimparency consistency now reports valid with zero issues.",
+      "lesson": "A merge is an identity-preserving operation, not just edge rewiring: narrative state, classification, lifecycle metadata, phase ownership, and secondary indexes must move atomically."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "graph-hygiene",
+    "merge",
+    "regression"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "338c12e5-d411-42ed-8d39-e26665880dd2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implementation and internal verification complete; awaiting Felix's acceptance.",
+    "date": 1784745070020
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

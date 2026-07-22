@@ -1,0 +1,37 @@
+{
+  "id": "3d09a7a1-d337-4595-b9aa-4b2fe5b6e381",
+  "text": "Keep delete highlighting in rendered aim UI state",
+  "description": "Delete confirmation/highlight in recursive list views belongs to the rendered AimUIState, like expanded, rather than a global aim-ID flag. Graph confirmation remains graph-scoped.",
+  "reflections": [
+    {
+      "date": 1784751613611,
+      "context": "Delete confirmation was stored globally by aim ID although an aim can be rendered recursively in multiple list locations.",
+      "outcome": "Moved pendingDelete into AimUIState, updated keyboard/navigation clearing, removed it from the list store, and isolated graph confirmation in graph UI state. Added regression tests.",
+      "effectiveness": "Focused Vitest run passes 7/7. Frontend type-check is currently stopped by the repository's existing TypeScript 6 baseUrl deprecation configuration before source checking.",
+      "lesson": "Ephemeral interaction feedback should be owned at the same rendering scope as expansion/selection; view-specific confirmation must not leak through a shared domain-ID flag."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "frontend",
+    "ui-state",
+    "list-view"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and internally verified; awaiting user acceptance.",
+    "date": 1784751605329
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

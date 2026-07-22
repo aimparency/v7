@@ -1,0 +1,6 @@
+participant_id,date,cohort,relationship,project_or_repository,workflow_example,problem_observed,current_workaround,workaround_cost,privacy_constraint,requested_adapter,test_willingness,test_conditions,anonymous_paraphrase_permission,quote_permission,naming_permission,evidence_strength,next_action
+P01,,,,,,,,,,,,,pending,pending,pending,0,Invite candidate
+P02,,,,,,,,,,,,,pending,pending,pending,0,Invite candidate
+P03,,,,,,,,,,,,,pending,pending,pending,0,Invite candidate
+P04,,,,,,,,,,,,,pending,pending,pending,0,Invite candidate
+P05,,,,,,,,,,,,,pending,pending,pending,0,Invite candidate

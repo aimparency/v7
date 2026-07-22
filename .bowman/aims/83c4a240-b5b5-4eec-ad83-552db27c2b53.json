@@ -12,14 +12,6 @@
   ],
   "supportingConnections": [
     {
-      "aimId": "9a1c0cf3-98f4-4534-b742-d4e13e766345",
-      "relativePosition": [
-        2.4259546866823465,
-        -0.6039402769843708
-      ],
-      "weight": 1
-    },
-    {
       "aimId": "df33f924-437c-4ed3-91df-6d2166c23f1b",
       "relativePosition": [
         0.6381754745123849,
@@ -49,9 +41,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Opportunity logged 2026-06-06. Short build window (deadline ~June 12). Treat as inspiration + visibility play; attendance feasibility is a separate human decision.",
-    "date": 1780755790660
+    "state": "cancelled",
+    "comment": "Cancelled 22 July 2026: the BuilderShip build, selection, and finale dates (12–14 June) have passed. The durable run-record child was reparented to the live autonomous external-value experiment; event-only children were cancelled.",
+    "date": 1784745209210
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -56,19 +56,19 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
     const aimId = graphStore.graphSelectedAimId
     if (!aimId) return
 
-    if (uiStore.pendingDeleteAimId === aimId) {
+    if (graphStore.pendingDeleteAimId === aimId) {
       await dataStore.deleteAim(aimId)
-      uiStore.pendingDeleteAimId = null
+      graphStore.setPendingDeleteAim(null)
       graphStore.setGraphSelection(null)
     } else {
-      uiStore.setPendingDeleteAim(aimId)
+      graphStore.setPendingDeleteAim(aimId)
     }
   } else if (event.key === 'Escape') {
     event.preventDefault()
     if (graphStore.pendingDeleteLink) {
       graphStore.setPendingDeleteLink(null)
-    } else if (uiStore.pendingDeleteAimId) {
-      uiStore.pendingDeleteAimId = null
+    } else if (graphStore.pendingDeleteAimId) {
+      graphStore.setPendingDeleteAim(null)
     } else {
       graphStore.setGraphSelection(null)
       graphStore.deselectLink()
@@ -254,7 +254,8 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       event.preventDefault()
       const localDataStore = useDataStore()
 
-      uiStore.pendingDeleteAimId = null
+      const currentAimState = uiStore.getCurrentAimUIState()
+      if (currentAimState) currentAimState.pendingDelete = false
 
       if (uiStore.activeColumn >= 0) {
         const selectableEntries = localDataStore.getSelectableColumnEntries(uiStore.activeColumn)
@@ -328,12 +329,13 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
 
           const aimToDelete = aims[selectedIndex]
           if (!aimToDelete) break
+          const aimState = uiStore.ensureAimUIState(uiStore.floatingAimUIStates, aimToDelete.id)
 
-          if (uiStore.pendingDeleteAimId === aimToDelete.id) {
+          if (aimState.pendingDelete) {
             await dataStore.deleteAim(aimToDelete.id)
-            uiStore.pendingDeleteAimId = null
+            aimState.pendingDelete = false
           } else {
-            uiStore.setPendingDeleteAim(aimToDelete.id)
+            aimState.pendingDelete = true
           }
         }
       } else {
@@ -376,9 +378,9 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       if (uiStore.pendingDeletePhaseId) {
         uiStore.pendingDeletePhaseId = null
       }
-      if (uiStore.pendingDeleteAimId) {
-        uiStore.pendingDeleteAimId = null
-      }
+      const escapePath = uiStore.getSelectionPath()
+      const escapeAimState = escapePath.aimStates[escapePath.aimStates.length - 1]
+      if (escapeAimState) escapeAimState.pendingDelete = false
       if (uiStore.navigatingAims) {
         uiStore.navigatingAims = false
       }
@@ -486,8 +488,8 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
       event.preventDefault()
       if (uiStore.multiSelectMode) {
         uiStore.clearMultiSelect()
-      } else if (uiStore.pendingDeleteAimId) {
-        uiStore.pendingDeleteAimId = null
+      } else if (currentAimState?.pendingDelete) {
+        currentAimState.pendingDelete = false
       } else {
         uiStore.navigatingAims = false
       }
@@ -517,11 +519,11 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
       if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
         await uiStore.requestBulkDelete()
       } else if (currentAim) {
-        if (uiStore.pendingDeleteAimId === currentAim.id) {
+        if (currentAimState?.pendingDelete) {
           await dataStore.deleteAim(currentAim.id)
-          uiStore.pendingDeleteAimId = null
+          currentAimState.pendingDelete = false
         } else {
-          uiStore.setPendingDeleteAim(currentAim.id)
+          if (currentAimState) currentAimState.pendingDelete = true
         }
         break
       }

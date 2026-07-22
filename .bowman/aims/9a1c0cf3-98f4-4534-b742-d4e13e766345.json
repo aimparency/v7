@@ -1,7 +1,7 @@
 {
   "id": "9a1c0cf3-98f4-4534-b742-d4e13e766345",
-  "text": "Produce a shippable, recorded demo of Bowman's autonomous discover→plan→execute→verify loop",
-  "description": "The core deliverable. Reuse the PL Genesis autonomy work (2b76f62f cluster: animator state machine, session memory, autonomous execution loop) to produce ONE clean, reproducible end-to-end run that a stranger can watch and believe is autonomous: agent discovers an aim, plans, executes with real tools, verifies, and reports. Capture it as a short screen recording + a written run log (agent_log.json already exists). This is the artifact every other BuilderShip sub-aim depends on, and it has standalone value as a Aimparency demo regardless of the hackathon.",
+  "text": "Preserve a credible run record for the first autonomous external-value delivery",
+  "description": "For the first real external-value experiment, preserve one reproducible discover→plan→execute→verify→present run that a stranger can inspect. Capture the selected aim, planning transitions, tool actions, verification, failures/recovery, resulting deliverable, and the external beneficiary's acceptance/use/merge/payment or explicit rejection. A screen recording is useful but optional if a structured run log and repository history are sufficient. This is no longer a BuilderShip deadline artifact; it supports the canonical external-value proof.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -11,7 +11,7 @@
   ],
   "supportingConnections": [],
   "supportedAims": [
-    "83c4a240-b5b5-4eec-ad83-552db27c2b53"
+    "7f2bae54-03a6-481f-8de7-114fba05c112"
   ],
   "committedIn": [],
   "status": {

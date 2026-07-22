@@ -8,6 +8,10 @@ Working materials for the Jahrgang 03 application expected to open from
   budget, references, and founder checks
 - `check-word-limits.sh` - validates every marked answer against the official
   application limit
+- `user-research-kit.md` - interview script, consent language, evidence rubric,
+  synthesis method, and lightweight pilot commitment
+- `user-research-tracker.csv` - blank five-participant evidence tracker; empty
+  rows are not evidence
 
 Official references checked 20 July 2026:
 

@@ -102,7 +102,6 @@ export const useListStore = defineStore('ui', {
 
     // Delete pending states
     pendingDeletePhaseId: null as string | null,
-    pendingDeleteAimId: null as string | null,
 
     // Multi-selection (separate from primary navigation/focus selection).
     // Used for bulk actions like "merge aims" (current week UI feature).
@@ -1590,10 +1589,6 @@ export const useListStore = defineStore('ui', {
       this.pendingDeletePhaseId = phaseId
     },
 
-    setPendingDeleteAim(aimId: string | null) {
-      this.pendingDeleteAimId = aimId
-    },
-
     deselectAim() {
       this.navigatingAims = false
     },
@@ -1888,7 +1883,9 @@ export const useListStore = defineStore('ui', {
     // Universal navigation down (j) - works on selection path
     async navigateDown(dontDescend: boolean = false) {
       const dataStore = useDataStore()
-      this.pendingDeleteAimId = null
+      const previousPath = this.getSelectionPath()
+      const previousAimState = previousPath.aimStates[previousPath.aimStates.length - 1]
+      if (previousAimState) previousAimState.pendingDelete = false
       logNav('navigateDown:start', {
         dontDescend,
         activeColumn: this.activeColumn,
@@ -1949,7 +1946,9 @@ export const useListStore = defineStore('ui', {
     async navigateUp() {
       const dataStore = useDataStore()
       const projectStore = useProjectStore()
-      this.pendingDeleteAimId = null
+      const previousPath = this.getSelectionPath()
+      const previousAimState = previousPath.aimStates[previousPath.aimStates.length - 1]
+      if (previousAimState) previousAimState.pendingDelete = false
       logNav('navigateUp:start', {
         activeColumn: this.activeColumn,
         navigatingAims: this.navigatingAims

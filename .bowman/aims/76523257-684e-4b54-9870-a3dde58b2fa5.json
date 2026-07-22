@@ -32,14 +32,15 @@
     "b16cdc29-a215-4b07-a262-49efd6171b2f"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Timed 2:35 script and capture checklist are complete. Felix must record the running UI, upload publicly to YouTube, and return the URL.",
-    "date": 1784656910139
+    "state": "review",
+    "comment": "The published Devpost submission includes https://youtu.be/91JPjLPlXUM as its demo video; awaiting Felix's acceptance before done.",
+    "date": 1784745261363
   },
   "intrinsicValue": 0,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Live authenticated Devpost verification on 22 July 2026 shows project 1359213 published with video_url=https://youtu.be/91JPjLPlXUM and submitted to OpenAI Build Week. The prior human-dependent recording/upload blocker has therefore been satisfied externally."
 }

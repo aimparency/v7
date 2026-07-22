@@ -1,7 +1,7 @@
 {
   "id": "4c027fd6-90f1-4158-93e5-64572098b4a8",
-  "text": "Submit ZIM Einzelprojekt application (~€50k grant)",
-  "description": "Primary path to €50k target. Rolling submission via PTJ easy-Online.\n\n**Draft ready:** meta/zim-projektskizze-draft.md\n**Target:** €50,000 grant (60% of €83,333 project, 18 months)\n\n**Steps:**\n1. Review/finalize Projektskizze with Robin\n2. Submit informal inquiry via PTJ after GmbH/UG exists\n3. Do NOT start project expenses before Bewilligung\n\n**Innovation angle:** Transparent will-model for human-AI cooperative agent systems.",
+  "text": "Monitor ZIM reopening and preserve the R&D draft",
+  "description": "ZIM is technically plausible for a German Aimparency company, but ordinary applications and sketches have been temporarily stopped since 7 July 2026 because of constrained budget; only specified international-partner calls are exempt. Preserve meta/zim-projektskizze-draft.md, recheck the official stop notice monthly, and do not spend founder time attempting submission until reopening. If it reopens, revalidate legal entity, German establishment, R&D novelty, project start, eligible personnel costs, own financing, and the then-current funding rate before adapting the draft.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -16,7 +16,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Projektskizze complete (meta/zim-projektskizze-draft.md); PTJ inquiry email drafted. Submit after incorporation.",
+    "comment": "Technical draft preserved, but ordinary ZIM applications have been paused since 7 July 2026. Monitor the official reopening notice; do not submit meanwhile.",
     "date": 1782854152141
   },
   "intrinsicValue": 0,

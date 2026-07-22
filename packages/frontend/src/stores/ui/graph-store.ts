@@ -22,6 +22,7 @@ export type PhaseFilter = {
 }
 
 type GraphUIState = PersistedGraphViewState & {
+  pendingDeleteAimId: string | null
   pendingDeleteLink: { parentId: string; childId: string } | null
   phaseFilter: PhaseFilter | null
   // Ephemeral spin-off preview: when non-empty, the graph colors nodes by their
@@ -34,6 +35,7 @@ export const useGraphUIStore = defineStore('ui-graph', {
   state: (): GraphUIState => ({
     graphSelectedAimId: null,
     selectedLink: null,
+    pendingDeleteAimId: null,
     pendingDeleteLink: null,
     graphColorMode: 'status',
     graphPanelWidth: 300,
@@ -71,10 +73,16 @@ export const useGraphUIStore = defineStore('ui-graph', {
 
     setGraphSelection(aimId: string | null) {
       this.graphSelectedAimId = aimId
+      this.pendingDeleteAimId = null
     },
 
     clearGraphSelection() {
       this.graphSelectedAimId = null
+      this.pendingDeleteAimId = null
+    },
+
+    setPendingDeleteAim(aimId: string | null) {
+      this.pendingDeleteAimId = aimId
     },
 
     selectLink(parentId: string, childId: string) {

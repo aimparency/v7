@@ -2,7 +2,15 @@
   "id": "826b4e21-7690-4a9c-b6d1-433b2acef4b7",
   "text": "Collect user and public-interest evidence for the Prototype Fund application",
   "description": "Interview at least five open-source maintainers, agent-tool developers, or small technical teams. Test the problem statement: intent and dependencies drift away from code; agent work is difficult to inspect; issue trackers capture tasks but not value/rationale. Capture concrete quotes only with permission, current workflows, failed alternatives, desired integrations, and willingness to test the prototype. Seek 2-3 lightweight letters or written commitments to pilot.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1784742556111,
+      "context": "The Prototype Fund draft identified external user evidence as its weakest point, while actual outreach and interviews require Felix's relationships and consent.",
+      "outcome": "Prepared meta/applications/prototype-fund-2026/user-research-kit.md and user-research-tracker.csv: a neutral invitation, 11 event-focused interview questions, separate consent prompts, evidence-strength rubric, negative-evidence rule, synthesis protocol, five blank participant rows, and a non-binding pilot commitment template.",
+      "effectiveness": "Preparation friction is removed without fabricating interviews, quotes, demand, or pilot commitments. The tracker has 18 consistent columns and git diff --check passes.",
+      "lesson": "The autonomous loop can prepare the institutional interface, but externally valid evidence begins only when a real person agrees, speaks, and grants the relevant permissions."
+    }
+  ],
   "archived": false,
   "tags": [
     "prototype-fund",

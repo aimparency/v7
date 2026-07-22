@@ -426,7 +426,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Start and resume the infinite loop here. Pick a high-value actionable aim, verify real outcomes, record them, then return and reprioritize toward the mission. Only phase-committed open aims rank; diagnostics expose missing economics and activity without realized output.",
+          description: "Start and resume the infinite loop here. Pick a high-value actionable aim, verify real outcomes, record them, then return and reprioritize toward the mission. Ranks phase-committed open aims; if the phase contains only open containers and no open leaf, falls back to connected uncommitted open aims so hidden work cannot empty the loop.",
           inputSchema: {
             type: "object",
             properties: {
@@ -1241,6 +1241,24 @@ export function registerTools(server: Server, clientOverride?: any) {
           const openInPhase = (allAims as any[]).filter(
             (a: any) => aimIdSet.has(a.id) && a.status.state === 'open'
           );
+          const hasActiveChild = (aim: any) => (aim.supportingConnections ?? []).some((connection: any) => {
+            const child = (allAims as any[]).find((candidate: any) => candidate.id === connection.aimId);
+            return child && ['open', 'partially'].includes(child.status?.state);
+          });
+          const openLeavesInPhase = openInPhase.filter((aim: any) => !hasActiveChild(aim));
+          const uncommittedFallback = openLeavesInPhase.length === 0
+            ? (allAims as any[]).filter((aim: any) =>
+                aim.status?.state === 'open'
+                && (aim.committedIn ?? []).length === 0
+                && (aim.supportedAims ?? []).length > 0
+              )
+            : [];
+          const rankedOpenAims = uncommittedFallback.length > 0
+            ? uncommittedFallback
+            : openInPhase;
+          const selectionScope = uncommittedFallback.length > 0
+            ? 'connected-uncommitted-fallback'
+            : 'phase-commitments';
 
           // Diagnostics: how many committed aims are missing economic data
           const allCommitted = (allAims as any[]).filter((a: any) => aimIdSet.has(a.id));
@@ -1268,15 +1286,15 @@ export function registerTools(server: Server, clientOverride?: any) {
           // output. Grounds attention in reality (which ranked aims have actually
           // produced work) without mutating the human-set value model.
           const commitMessages = getRepoCommitMessages(args.projectPath as string);
-          const realized = countAimReferences(commitMessages, openInPhase.map((a: any) => a.id));
+          const realized = countAimReferences(commitMessages, rankedOpenAims.map((a: any) => a.id));
           const realizedSignalAvailable = commitMessages.length > 0;
           // High-priority aims with a real cost but zero realized output are the
           // ones the loop keeps ranking yet never actually advances — surface them.
           const noRealizedOutput = realizedSignalAvailable
-            ? openInPhase.filter((a: any) => (a.cost ?? 0) > 0 && !(realized.get(a.id) ?? 0)).length
+            ? rankedOpenAims.filter((a: any) => (a.cost ?? 0) > 0 && !(realized.get(a.id) ?? 0)).length
             : 0;
 
-          const prioritized = openInPhase
+          const prioritized = rankedOpenAims
             .map((a: any) => ({
               ...a,
               _priority: priorities.get(a.id) ?? 0,
@@ -1302,6 +1320,7 @@ export function registerTools(server: Server, clientOverride?: any) {
                 text: JSON.stringify({
                   phasePath,
                   phase: targetPhase.name,
+                  selectionScope,
                   model: "flow-based (top-down value, bottom-up cost, NPV/cost priority)",
                   economics: {
                     phaseFlowedValue: fmt(phaseFlowedValue),
@@ -1312,11 +1331,15 @@ export function registerTools(server: Server, clientOverride?: any) {
                   diagnostics: {
                     committedAims: allCommitted.length,
                     openAims: openInPhase.length,
+                    openLeafAims: openLeavesInPhase.length,
+                    uncommittedFallbackAims: uncommittedFallback.length,
                     missingCostEstimate: missingCost,
                     disconnectedFromValue: missingValue,
                     realizedSignal: realizedSignalAvailable ? "git-commit-references" : "unavailable (not a git repo / no commits)",
                     openAimsWithNoRealizedOutput: realizedSignalAvailable ? noRealizedOutput : undefined,
-                    note: missingValue > 0
+                    note: uncommittedFallback.length > 0
+                      ? `No open leaf aim is committed to this phase; ranked ${uncommittedFallback.length} connected uncommitted open aim(s) as a fallback.`
+                      : missingValue > 0
                       ? `${missingValue} aim(s) have zero flowed value — they are disconnected from any intrinsic value source in the graph. Their priorities are unreliable.`
                       : missingCost > 0
                         ? `${missingCost} aim(s) lack a cost estimate. Set via update_aim { cost: N }.`

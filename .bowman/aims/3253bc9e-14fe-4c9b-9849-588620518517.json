@@ -1,6 +1,7 @@
 {
   "id": "3253bc9e-14fe-4c9b-9849-588620518517",
   "text": "Achieve Economic Autonomy",
+  "description": "The real selection test for the graph-and-model loop: repeatedly create externally valued outcomes, cover actual compute and operating costs, adapt strategy from authoritative evidence, and remain operational over time. Survival must be measured from real revenue, costs, usage, commitments, and outcomes—never simulated credits or self-reported success. The loop returns to this mission indefinitely and develops better connected ideas when evidence shows the current strategy is not sustainable.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -172,6 +173,15 @@
       ],
       "weight": 1,
       "explanation": "The economic model defines measurable sustainability without simulating success."
+    },
+    {
+      "aimId": "7f2bae54-03a6-481f-8de7-114fba05c112",
+      "relativePosition": [
+        0.9321784990755588,
+        2.3197075776617275
+      ],
+      "weight": 1,
+      "explanation": "External acceptance, use, or payment is the real survival feedback for economic autonomy."
     }
   ],
   "supportedAims": [
@@ -189,6 +199,5 @@
   "loopWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "description": "The real selection test for the graph-and-model loop: repeatedly create externally valued outcomes, cover actual compute and operating costs, adapt strategy from authoritative evidence, and remain operational over time. Survival must be measured from real revenue, costs, usage, commitments, and outcomes—never simulated credits or self-reported success. The loop returns to this mission indefinitely and develops better connected ideas when evidence shows the current strategy is not sustainable."
+  "valueVariance": 0
 }

@@ -15,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Blocked on the demo artifact; time-boxed (~June 12).",
-    "date": 1780755809635
+    "state": "cancelled",
+    "comment": "Cancelled 22 July 2026: the BuilderShip public-post window closed around 12 June. Any future public demo should be created from current evidence, not presented as a hackathon submission.",
+    "date": 1784745208511
   },
   "intrinsicValue": 0,
   "cost": 1,

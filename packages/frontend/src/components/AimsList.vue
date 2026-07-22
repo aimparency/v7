@@ -99,7 +99,7 @@ const handleAimClickedInList = (aimId: string, mods?: { ctrl: boolean; shift: bo
           :class="{
             'active': isActive && selectedAimIndex === index,
             'selected': isSelected && selectedAimIndex === index,
-            'pending-delete': uiStore.pendingDeleteAimId === aim.id,
+            'pending-delete': uiStore.ensureAimUIState(aimUiStates, aim.id).pendingDelete,
             'moving': modalStore.movingAimId === aim.id
           }"
           @scroll-request="handleScrollRequest"

@@ -2,18 +2,36 @@
   "id": "0697d033-bb95-4433-8a9c-20f2afd06c31",
   "text": "Conversational aim elicitation: turn a human's natural-language goal into a proposed, editable aim sub-tree they approve",
   "description": "The core \"humans express needs → graph\" bridge of the cooperation engine. A human states a high-level goal in natural language (text or voice — VoiceView.vue already exists as infra); the system proposes a structured sub-tree of aims (decomposition with value/cost guesses) that the human can edit, reorder, and approve before the agents act. The will stays inspectable and revisable; humans stay final authority. This is what lets non-developers drive the system toward real-world goals, not just engineers editing the graph by hand. Concrete next step: define the elicitation→proposed-subtree→human-approval flow on top of the existing graph + MCP create_aim primitives.",
+  "reflection": "Created meta/conversational-aim-elicitation.md after verifying that VoiceView currently calls an echo placeholder and the separate voice bridge exposes immediate create_aim writes. The design separates read-only proposal generation from exact-revision human approval and persistence; defines transient IDs, limits, idempotency, partial-failure truthfulness, context minimization, a shared text/voice flow, and ten acceptance tests. This prevents conversation from being mistaken for authorization.",
   "reflections": [],
   "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "61d46ac4-061e-461b-9209-64b805b1ec5f",
+      "relativePosition": [
+        0.7286561869855367,
+        2.391455657370151
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "84c533a5-a9bf-4d78-90f4-f95983757b99",
+      "relativePosition": [
+        -1.5909757814561618,
+        -1.9284180207672703
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Verified 2026-06-27. Base exists: voice-bridge (packages/voice-bridge/src/index.ts) runs a conversational agent with list_aims/get_prioritized_aims/create_aim tools that can create aims from speech. Not built: the specific propose→editable aim sub-tree→human-approves-before-commit flow. Still relevant; voice-bridge is the natural starting point.",
-    "date": 1782545175633
+    "state": "partially",
+    "comment": "The approval-safe contract and implementation sequence are specified. Shared schemas, persistence endpoint, model proposer, editor, and voice reuse remain to implement.",
+    "date": 1784749867582
   },
   "intrinsicValue": 0,
   "cost": 5,

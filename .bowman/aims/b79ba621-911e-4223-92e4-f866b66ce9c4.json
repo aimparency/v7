@@ -1,0 +1,38 @@
+{
+  "id": "b79ba621-911e-4223-92e4-f866b66ce9c4",
+  "text": "Make prioritization fall back to connected uncommitted work",
+  "description": "When an active phase contains open mission containers but no open leaf, get_prioritized_aims must rank connected uncommitted open aims rather than returning only the root and forcing a second discovery workflow. Report the fallback scope and counts explicitly; preserve normal phase ranking when an open committed leaf exists.",
+  "reflections": [
+    {
+      "date": 1784749773315,
+      "context": "The infinite-loop entry tool returned only the root ASI mission although graph_hygiene reported 52 connected uncommitted open aims.",
+      "outcome": "get_prioritized_aims now detects whether the selected phase has an open committed leaf. If not, it ranks connected uncommitted open aims, labels selectionScope=connected-uncommitted-fallback, and reports openLeafAims and uncommittedFallbackAims diagnostics. Added an end-to-end MCP regression test.",
+      "effectiveness": "The new regression subtest passed and the MCP TypeScript build plus git diff check pass. The node test runner retains a known open handle after reporting success and was terminated manually; no dev server was touched.",
+      "lesson": "Making hidden work queryable is insufficient for autonomy: the primary selection primitive itself needs a safe fallback when a phase contains only strategic containers."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "autonomy",
+    "prioritization",
+    "discovery"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "5b992c55-cf3b-4e6b-8897-9754f11cf852",
+    "51a4e657-b427-4f29-9378-3878c9fdb185"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and internally verified; awaiting Felix's acceptance. The already-running MCP process must be reconnected naturally before live behavior reflects the rebuilt code.",
+    "date": 1784749765946
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

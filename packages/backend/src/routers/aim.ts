@@ -1091,6 +1091,12 @@ export const createAimRouter = (
         // 4. Copy source's reflections to target
         const copiedReflections = source.reflections ?? [];
         target.reflections = [...(target.reflections ?? []), ...copiedReflections];
+        if (source.reflection?.trim()) {
+          target.reflection = [target.reflection?.trim(), source.reflection.trim()]
+            .filter(Boolean)
+            .join('\n\n');
+        }
+        target.tags = [...new Set([...(target.tags ?? []), ...(source.tags ?? [])])];
 
         // Drop any direct edge between target and source in either direction: folding
         // source into target would otherwise leave target with a self-reference (an
@@ -1102,6 +1108,7 @@ export const createAimRouter = (
         source.supportedAims = [];
         source.supportingConnections = [];
         source.committedIn = [];
+        source.archived = true;
         source.status = { state: 'archived', comment: `Merged into ${targetId}`, date: Date.now() };
 
         // Write both
@@ -1110,10 +1117,11 @@ export const createAimRouter = (
         updateAimInIndex(projectPath, target);
         removeAimFromIndex(projectPath, sourceId);
 
-        if (process.env.NODE_ENV !== 'test') {
-          await removeEmbedding(projectPath, sourceId);
-          invalidateSemanticCache(projectPath);
-        }
+        // Merging changes the source's lifecycle and identity in every
+        // environment. Skipping this in test-mode also affects real MCP
+        // processes launched with NODE_ENV=test and leaves an orphaned vector.
+        await removeEmbedding(projectPath, sourceId);
+        invalidateSemanticCache(projectPath);
 
         ee.emit('change', { type: 'aim', id: targetId, projectPath });
         ee.emit('change', { type: 'aim', id: sourceId, projectPath });

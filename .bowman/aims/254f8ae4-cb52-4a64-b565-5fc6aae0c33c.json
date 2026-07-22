@@ -15,14 +15,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Waiting for human to record screen footage",
-    "date": 1774590115720
+    "state": "review",
+    "comment": "A YouTube demo is attached to the published Devpost submission; awaiting Felix's acceptance before done.",
+    "date": 1784745245937
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Authoritative external evidence: the authenticated Devpost project record for project 1359213 contains video_url=https://youtu.be/91JPjLPlXUM and a completed OpenAI Build Week submission timestamp. The older footage checklist is superseded by the submitted demo."
 }

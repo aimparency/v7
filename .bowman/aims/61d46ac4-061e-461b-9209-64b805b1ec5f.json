@@ -1,0 +1,29 @@
+{
+  "id": "61d46ac4-061e-461b-9209-64b805b1ec5f",
+  "text": "Specify the propose → edit → approve aim-subtree contract",
+  "description": "Define the transient proposal schema, human approval boundary, revision/idempotency rules, persistence failure semantics, context minimization, UI states, limits, acceptance tests, and implementation sequence before connecting any model to graph writes.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "human-ai-cooperation",
+    "elicitation",
+    "design"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0697d033-bb95-4433-8a9c-20f2afd06c31"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Contract specified and internally checked in meta/conversational-aim-elicitation.md; awaiting Felix's acceptance.",
+    "date": 1784749867211
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

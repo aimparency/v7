@@ -82,6 +82,24 @@ describe('keyboard actions', () => {
     expect(uiStore.multiSelectMode).toBe(false)
   })
 
+  it('keeps graph delete confirmation in graph UI state', async () => {
+    const graphStore = useGraphUIStore()
+    const uiStore = useUIStore()
+    const dataStore = { deleteAim: vi.fn().mockResolvedValue(undefined) }
+    graphStore.setGraphSelection('aim-a')
+
+    await handleGraphKeydownAction(uiStore, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
+
+    expect(graphStore.pendingDeleteAimId).toBe('aim-a')
+    expect('pendingDeleteAimId' in uiStore).toBe(false)
+
+    await handleGraphKeydownAction(uiStore, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
+
+    expect(dataStore.deleteAim).toHaveBeenCalledWith('aim-a')
+    expect(graphStore.pendingDeleteAimId).toBe(null)
+    expect(graphStore.graphSelectedAimId).toBe(null)
+  })
+
   it('moves a phase across parent boundaries and repairs the selected parent path', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()

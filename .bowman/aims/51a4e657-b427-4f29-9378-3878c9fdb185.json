@@ -2,6 +2,7 @@
   "id": "51a4e657-b427-4f29-9378-3878c9fdb185",
   "text": "Make the autonomous loop mission-continuous and evidence-driven",
   "description": "Keep the loop running indefinitely: orient to the highest-value mission, select an actionable descendant, verify and record evidence, then return and reprioritize. New instances should not pin a leaf aim by default. Explicit targets must fall back after completion; provider stream errors must fail visibly rather than enter a successful cooldown. Core worker and MCP prompts should state this invariant once, leanly.",
+  "reflection": "Implemented infinite-loop semantics: new instances default to dynamic aim selection and never-stop policy; completed/missing explicit targets fall back to the next prioritized open aim; streamed provider errors fail the cycle instead of cooling down as success. Condensed default worker and MCP prompts around one invariant: mission → actionable descendant → real evidence → reprioritize indefinitely. Verification: loop-worker typecheck passed; backend build passed; MCP build passed; 3 focused loop policy/capability tests passed.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -11,7 +12,16 @@
     "mission",
     "evidence"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "b79ba621-911e-4223-92e4-f866b66ce9c4",
+      "relativePosition": [
+        2.039476419170998,
+        1.4458685748177262
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "0622adb1-e79d-483c-b894-199d92ca199d"
   ],
@@ -26,6 +36,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Implemented infinite-loop semantics: new instances default to dynamic aim selection and never-stop policy; completed/missing explicit targets fall back to the next prioritized open aim; streamed provider errors fail the cycle instead of cooling down as success. Condensed default worker and MCP prompts around one invariant: mission → actionable descendant → real evidence → reprioritize indefinitely. Verification: loop-worker typecheck passed; backend build passed; MCP build passed; 3 focused loop policy/capability tests passed."
+  "valueVariance": 0
 }

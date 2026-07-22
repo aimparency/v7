@@ -1,0 +1,37 @@
+{
+  "id": "84c533a5-a9bf-4d78-90f4-f95983757b99",
+  "text": "Add shared schemas and flattening for transient aim proposals",
+  "description": "Implement a shared recursive AimProposal schema that rejects durable IDs, duplicate draft IDs, invalid weights, excessive size/depth, and unsupported statuses; expose deterministic flattening for later approval persistence.",
+  "reflections": [
+    {
+      "date": 1784751374875,
+      "context": "Implement the first code milestone from the conversational aim-elicitation contract without introducing model calls or graph writes.",
+      "outcome": "Added packages/shared/src/aim-proposal.ts with recursive schemas, limits, draft-ID safeguards, allowed proposal statuses, and deterministic flattening; exported it and added focused tests.",
+      "effectiveness": "All 23 shared tests pass, including two new proposal tests; shared TypeScript build and git diff check pass.",
+      "lesson": "Keep transient proposal identity structurally distinct from durable aim UUIDs, and make proposal size/depth/weight constraints shared so model, UI, and persistence boundaries cannot drift."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "human-ai-cooperation",
+    "elicitation",
+    "shared-schema"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0697d033-bb95-4433-8a9c-20f2afd06c31"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and internally verified; awaiting Felix's acceptance.",
+    "date": 1784751367391
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

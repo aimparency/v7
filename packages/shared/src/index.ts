@@ -4,4 +4,5 @@ export * from './connection-weight.js';
 export * from './spin-off.js';
 export * from './constants.js';
 export * from './vector-math.js';
+export * from './aim-proposal.js';
 export type { AppRouter } from './router.js';
