@@ -6,6 +6,7 @@ import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
 import { trpc } from '../trpc'
+import { surfaceMovementShares } from '../utils/graph-forces'
 
 // Constants
 const OUTER_MARGIN_FACTOR = 2
@@ -485,6 +486,7 @@ export function useGraphSimulation() {
             const from = link.source
             const into = link.target
             const rSum = from.r + into.r
+            const movement = surfaceMovementShares(from.r, into.r)
             
             vec2.scale(delta, link.relativePosition, rSum)
 
@@ -498,13 +500,13 @@ export function useGraphSimulation() {
             // Parent
             vec2.sub(targetPos, from.pos, delta)
             vec2.sub(targetShift, targetPos, into.pos)
-            vec2.scale(targetShift, targetShift, (from.r / rSum) * flowWeight)
+            vec2.scale(targetShift, targetShift, movement.into * flowWeight)
             vec2.add(into.shift, into.shift, targetShift)
 
             // Child
             vec2.add(targetPos, into.pos, delta)
             vec2.sub(targetShift, targetPos, from.pos)
-            vec2.scale(targetShift, targetShift, (into.r / rSum) * flowWeight)
+            vec2.scale(targetShift, targetShift, movement.from * flowWeight)
             vec2.add(from.shift, from.shift, targetShift)
         }
 

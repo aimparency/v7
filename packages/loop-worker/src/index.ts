@@ -44,6 +44,7 @@ import {
   type LoopInstance
 } from 'agent-tools';
 import { filterToolsByCapabilities } from './capabilities.js';
+import { selectCycleTarget, throwIfStreamFailed } from './runtime-policy.js';
 
 type LoopSecrets = {
   NVIDIA_API_KEY?: string;
@@ -234,10 +235,12 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
   await markLoopPhase(projectPath, instanceId, 'orienting in aim graph');
   const runtimeState = await readLoopRuntimeState(projectPath);
   const currentInstance = runtimeState.instances.find((candidate) => candidate.id === instanceId);
-  const prioritized = await getPrioritizedAims(projectPath, 5, currentInstance?.targetPhaseId);
-  const target = currentInstance?.targetAimId
-    ? prioritized.find((candidate) => candidate.aim.id === currentInstance.targetAimId)
-    : prioritized[0];
+  const prioritized = await getPrioritizedAims(
+    projectPath,
+    currentInstance?.targetAimId ? Number.MAX_SAFE_INTEGER : 5,
+    currentInstance?.targetPhaseId
+  );
+  const target = selectCycleTarget(prioritized, currentInstance?.targetAimId);
   if (!target) throw new Error('No open prioritized aim found in the active phase.');
 
   const context = await getAimContext(projectPath, target.aim.id);
@@ -800,6 +803,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
       content: streamErrors.join('\n')
     });
   }
+  throwIfStreamFailed(streamErrors);
   if (!finalText.trim() && toolCalls.length === 0 && streamErrors.length === 0) {
     await appendLoopEvent(projectPath, instanceId, {
       role: 'system',

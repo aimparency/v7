@@ -1,6 +1,6 @@
 {
   "id": "b6844398-3f5f-43da-b6fc-fe7b8ec39981",
-  "text": "Submit a compelling Prototype Fund application in October",
+  "text": "Submit a compelling \"Prototype Fund\" application in October",
   "description": "Use October to turn the Prototype Fund opportunity into a submitted-quality application early in the 1 October-30 November window. Target an internal complete draft by 15 October and submission by 31 October, leaving November for corrections if the platform permits. Frame the funded project as a concrete new open-source software-infrastructure module, not as general operating support for an already-built application.",
   "reflections": [],
   "archived": false,
@@ -29,12 +29,13 @@
   "status": {
     "state": "open",
     "comment": "Primary October objective. Prototype Fund application work is organized in the child phase.",
-    "date": 1784390935298
+    "date": 1784670251498
   },
   "intrinsicValue": 10,
   "cost": 4,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "color": null
 }

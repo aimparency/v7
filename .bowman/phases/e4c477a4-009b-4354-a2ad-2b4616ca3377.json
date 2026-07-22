@@ -1,7 +1,9 @@
 {
   "id": "e4c477a4-009b-4354-a2ad-2b4616ca3377",
-  "parent": null,
-  "childPhaseIds": [],
+  "parent": "bb7ce28d-0eee-4243-a489-fd4eab223c35",
+  "childPhaseIds": [
+    "b16cdc29-a215-4b07-a262-49efd6171b2f"
+  ],
   "commitments": [
     "cabe6e06-8988-4145-b884-9ef5bc68f660",
     "093756d3-c8ef-4acb-ac14-6e610a5e0060",

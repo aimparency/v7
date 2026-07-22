@@ -1,12 +1,14 @@
 {
   "id": "bb7ce28d-0eee-4243-a489-fd4eab223c35",
-  "parent": null,
+  "parent": "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5",
   "childPhaseIds": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8",
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377",
     "0f3e2cde-2b03-43e9-b386-90b5d76eff1c"
   ],
   "commitments": [
     "80b53c24-a0e8-48af-8acc-b3a76fde7513",
     "28ddbcb0-d6de-417b-b453-78caa9e74ee6"
   ],
-  "name": "Q4 2026"
+  "name": "Q3 2026"
 }

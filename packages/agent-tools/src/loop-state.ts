@@ -41,7 +41,7 @@ export const loopInstanceSchema = z.object({
   status: loopInstanceStatusSchema.default('idle'),
   targetPhaseId: z.string().nullable().default(null),
   targetAimId: z.string().nullable().default(null),
-  stopPolicy: loopStopPolicySchema.default('target_halted'),
+  stopPolicy: loopStopPolicySchema.default('never'),
   currentActivity: z.string().nullable().default(null),
   createdAt: z.number(),
   updatedAt: z.number(),
