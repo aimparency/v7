@@ -16,9 +16,11 @@ export function parseAimCommitEvidence(stdout: string): AimCommitEvidence[] {
     .split('\x1e')
     .map((record) => record.trim())
     .filter(Boolean)
-    .map((record) => {
-      const [hash, shortHash, subject, author, authoredAt] = record.split('\x1f');
-      return { hash, shortHash, subject, author, authoredAt };
+    .flatMap((record) => {
+      const fields = record.split('\x1f');
+      if (fields.length !== 5) return [];
+      const [hash, shortHash, subject, author, authoredAt] = fields as [string, string, string, string, string];
+      return [{ hash, shortHash, subject, author, authoredAt }];
     });
 }
 

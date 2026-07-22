@@ -78,7 +78,8 @@ const rowPx = () => {
 };
 
 const handleTouchStart = (e: TouchEvent) => {
-  touchLastY = e.touches.length === 1 ? e.touches[0].clientY : null;
+  const touch = e.touches.length === 1 ? e.touches.item(0) : null;
+  touchLastY = touch?.clientY ?? null;
   touchAccumY = 0;
 };
 
@@ -102,7 +103,8 @@ const dispatchWheelLine = (dir: -1 | 1, t: Touch) => {
 
 const handleTouchMove = (e: TouchEvent) => {
   if (touchLastY === null || e.touches.length !== 1) return;
-  const t = e.touches[0];
+  const t = e.touches.item(0);
+  if (!t) return;
   touchAccumY += t.clientY - touchLastY;
   touchLastY = t.clientY;
   e.preventDefault(); // own the gesture so the browser doesn't steal it mid-drag

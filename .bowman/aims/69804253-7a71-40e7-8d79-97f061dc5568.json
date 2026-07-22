@@ -1,0 +1,30 @@
+{
+  "id": "69804253-7a71-40e7-8d79-97f061dc5568",
+  "text": "Restore frontend type-check under the TypeScript 6 baseUrl deprecation",
+  "description": "Silence the intentional baseUrl compatibility deprecation at the frontend tsconfig boundary, then run the full vue-tsc build to expose any real source errors.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "frontend",
+    "typescript",
+    "tooling"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Frontend vue-tsc build restored and strictness failures repaired; awaiting user acceptance.",
+    "date": 1784752617438
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Added the narrow TypeScript 6 deprecation compatibility setting, then fixed every real strictness error it exposed across color conversion, Git evidence parsing, watchdog Socket/touch handling, linked-repo normalization, list range selection, and modal test typing. Verified: frontend type-check passes; backend focused tests 4/4; frontend focused tests 30/30."
+}

@@ -345,7 +345,8 @@ export const useDataStore = defineStore('data', {
       // flows into these repo sink nodes via calculateAimValues' repo expansion
       // (the sink node is keyed by the repoId), so we reuse calculatedValues and
       // flowValues/flowShares keyed `${aimId}->${repoId}` here.
-      const linkedRepoById = new Map((state.meta?.linkedRepos ?? []).map(r => [r.repoId, r]))
+      const linkedRepos = (state.meta?.linkedRepos ?? []) as Array<{ repoId: string; name?: string }>
+      const linkedRepoById = new Map(linkedRepos.map(repo => [repo.repoId, repo]))
       const repoNodeIds = new Set<string>()
       aims.forEach(aim => {
         if (!aim.supportingRepos) return

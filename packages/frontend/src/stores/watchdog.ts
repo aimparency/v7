@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { io, type Socket } from 'socket.io-client'
-import { ref, computed } from 'vue'
+import { ref, shallowRef, computed } from 'vue'
 import { trpc } from '../trpc'
 import { trpcWatchdog } from '../trpc-watchdog'
 import { buildHttpUrl } from '../utils/runtime-config'
@@ -39,7 +39,9 @@ interface AutonomyPolicy {
 }
 
 export const useWatchdogStore = defineStore('watchdog', () => {
-  const socket = ref<Socket | null>(null)
+  // Socket is a class instance; deep Vue proxying strips its private members
+  // from the public type and provides no reactive value inside the instance.
+  const socket = shallowRef<Socket | null>(null)
   const isConnected = ref(false)
   const connectionState = ref<'idle' | 'spawning' | 'connecting' | 'connected' | 'error'>('idle')
   const isEnabled = ref(false)

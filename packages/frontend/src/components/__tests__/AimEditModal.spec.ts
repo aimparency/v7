@@ -436,14 +436,14 @@ describe('AimEditModal keyboard save behavior', () => {
     await title.trigger('keydown', { key: 'Escape' })
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.vm.confirmingDiscard).toBe(true)
+    expect((wrapper.vm as any).confirmingDiscard).toBe(true)
     expect(wrapper.emitted('close')).toBeFalsy()
 
     // 2nd Escape: cancels confirmation, stays in modal
     await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Escape' })
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.vm.confirmingDiscard).toBe(false)
+    expect((wrapper.vm as any).confirmingDiscard).toBe(false)
     expect(wrapper.emitted('close')).toBeFalsy()
 
     wrapper.unmount()
@@ -501,7 +501,7 @@ describe('AimEditModal keyboard save behavior', () => {
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.vm.confirmingDiscard).toBe(true)
+    expect((wrapper.vm as any).confirmingDiscard).toBe(true)
 
     // Focuses the discard button (OK button)
     const discardBtn = wrapper.find('.btn-discard')
@@ -511,7 +511,7 @@ describe('AimEditModal keyboard save behavior', () => {
     await discardBtn.trigger('click')
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.vm.confirmingDiscard).toBe(false)
+    expect((wrapper.vm as any).confirmingDiscard).toBe(false)
     expect(wrapper.emitted('close')).toBeTruthy()
 
     wrapper.unmount()

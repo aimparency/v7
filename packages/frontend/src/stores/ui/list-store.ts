@@ -1649,9 +1649,10 @@ export const useListStore = defineStore('ui', {
         this.multiAnchorId = targetAimId
         return
       }
+      const selectedAnchor = this.multiSelectedAimIds[0]
       const anchor = this.multiAnchorId && orderedAimIds.includes(this.multiAnchorId)
         ? this.multiAnchorId
-        : (this.multiSelectedAimIds.length > 0 && orderedAimIds.includes(this.multiSelectedAimIds[0]) ? this.multiSelectedAimIds[0] : orderedAimIds[0])
+        : (selectedAnchor && orderedAimIds.includes(selectedAnchor) ? selectedAnchor : orderedAimIds[0]!)
 
       const startIdx = orderedAimIds.indexOf(anchor)
       const endIdx = orderedAimIds.indexOf(targetAimId)
