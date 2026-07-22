@@ -54,6 +54,41 @@ test('MCP Tools - Aims CRUD', async (t) => {
   assert.equal(aims.length, 0);
 });
 
+test('status date changes only on state transition; reviewedAt is independent', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+
+  const initialReview = 1_700_000_000_000;
+  await server.callTool('create_aim', {
+    projectPath: ctx.projectPath,
+    text: 'Long-standing intent',
+    status: { state: 'open', reviewedAt: initialReview },
+  });
+  const created = (await caller.aim.list({ projectPath: ctx.projectPath }))[0];
+  assert.equal(created.status.reviewedAt, initialReview, 'create path preserves an explicit review time');
+  const transitionDate = created.status.date;
+  const reviewedAt = transitionDate + 10_000;
+
+  await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId: created.id,
+    status: { state: 'open', comment: 'Still strategically relevant', reviewedAt },
+  });
+  const reviewed = await caller.aim.get({ projectPath: ctx.projectPath, aimId: created.id });
+  assert.equal(reviewed.status.date, transitionDate, 'same-state review preserves transition time');
+  assert.equal(reviewed.status.reviewedAt, reviewedAt);
+
+  await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId: created.id,
+    status: { state: 'partially' },
+  });
+  const transitioned = await caller.aim.get({ projectPath: ctx.projectPath, aimId: created.id });
+  assert.equal(transitioned.status.state, 'partially');
+  assert.ok(transitioned.status.date >= transitionDate, 'state transition advances transition time');
+  assert.equal(transitioned.status.reviewedAt, reviewedAt, 'transition preserves the last explicit review');
+});
+
 test('MCP Tools - update_aim nudges to verify when marking done without a reflection', async () => {
   const server = new MockServer();
   const callerProxy = createCallerProxy(caller);

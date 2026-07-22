@@ -1,0 +1,32 @@
+{
+  "id": "2480f3a2-f15f-4259-ae5c-7aac128a8475",
+  "text": "Separate aim status-transition time from relevance-review time",
+  "description": "Preserve status.date as the time the status state actually changed; editing only the status comment must not refresh it. Add optional status.reviewedAt for an explicit human/agent confirmation that the current intention and status still hold. Stale status age is a review signal only, never automatic deprecation; central standing aims may remain valid indefinitely. Expose reviewedAt through backend and MCP update paths, with focused compatibility tests for legacy aims.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "status",
+    "data-model",
+    "relevance",
+    "graph-trust"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "7625d5e6-a29b-4b07-a4fb-94bfff3edba7",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and internally verified; awaiting user acceptance per repository policy.",
+    "date": 1784740829305
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Implemented optional status.reviewedAt across the shared schema, backend create/update inputs, and MCP create/update schemas. Fixed backend update semantics so status.date changes only when the state actually transitions; same-state comment edits and explicit reviews preserve it. Legacy aims remain compatible. Verification: all 11 MCP aim-tool tests passed (including new same-state review/state-transition coverage); shared, backend, and MCP builds passed; git diff --check passed. The node test process retained an existing open handle after completing all tests and was manually terminated."
+}

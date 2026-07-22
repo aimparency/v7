@@ -1,6 +1,8 @@
 {
   "id": "d59d03c1-45dd-48db-98c2-49b61b481f07",
   "text": "maintain a nice ui (vim inspired)",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -146,6 +148,15 @@
         -0.038488732686357864
       ],
       "weight": 1
+    },
+    {
+      "aimId": "db2920e4-cd29-4ed1-9003-4fede88a2b62",
+      "relativePosition": [
+        -2.245736508325634,
+        1.0984841988728784
+      ],
+      "weight": 1,
+      "explanation": "Client/server synchronization architecture groups this refactor and its completed sync slices."
     }
   ],
   "supportedAims": [
@@ -162,5 +173,8 @@
   },
   "intrinsicValue": 10,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

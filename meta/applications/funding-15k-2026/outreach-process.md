@@ -4,7 +4,8 @@
 
 Use one tracker for:
 
-- **Design partner:** a team pays for a bounded supported deployment.
+- **AI-transformation client:** an owner pays for a bounded workflow diagnostic;
+  a separately priced reversible pilot follows only when the diagnosis supports it.
 - **Angel:** an individual can commit quickly after legal structure is clear.
 - **Introducer:** cannot fund directly but can make qualified introductions.
 
@@ -54,11 +55,15 @@ Capture:
 Do not count praise, introductions, or an application submission as committed
 funding.
 
-## Design-Partner Ask
+## AI-Transformation Ask
 
-Default offer: EUR 5,000 for 6-8 weeks of onboarding, workflow modelling,
-direct support, roadmap input, and a documented outcome. Change scope or price
-only deliberately; do not promise unrelated bespoke development.
+First-price hypothesis: EUR 2,500 net for a two-week diagnosis of one owner-owned
+workflow, paid 50% at commissioning and 50% at delivery. The client receives the
+workflow graph, baseline, decision-right map, ranked opportunities, 90-day roadmap,
+and pilot/no-pilot recommendation. Productive automation and credentials are not
+part of the diagnosis. A pilot is scoped and priced separately. Change scope or
+price only deliberately; do not trade discounts for free implementation or
+unbounded support.
 
 ## Angel Ask
 

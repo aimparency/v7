@@ -1,0 +1,33 @@
+{
+  "id": "b5348ae2-62d6-42ac-8191-b877e0570c61",
+  "text": "Develop a durable human stewardship thesis for autonomous companies",
+  "description": "Explore how founders, workers, communities, and capital providers who build valuable institutions before advanced AI can retain legitimate long-term stewardship and economic participation as operations become autonomous—including succession beyond an individual's lifetime. Distinguish stewardship from permanent unchecked control: specify revocable governance, obligations, beneficiary rights, anti-rent-seeking safeguards, inheritance/succession options, and ways future contributors earn influence. Convert the philosophy into one testable design principle for Aimparency's owner constitution and one provocative but defensible public talk. Do not make legal promises before jurisdiction-specific advice.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "governance",
+    "stewardship",
+    "succession",
+    "human-ai-cooperation",
+    "thought-leadership"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "9548e95a-a911-41a5-b404-0cc289633acd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "A first stewardship thesis and pilot-level constitutional experiment are drafted; awaiting Felix's judgment.",
+    "date": 1784740628157
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Created meta/durable-human-stewardship-thesis.md. It develops durable founder stewardship without endorsing permanent unchecked hereditary control, proposes constitutional rights plus obligations, succession and anti-rent-seeking safeguards, and a one-page owner constitution as the near-term pilot experiment."
+}

@@ -1,0 +1,47 @@
+{
+  "id": "032b8a47-d3d2-4974-bdcd-559a377164ef",
+  "text": "Run the first paid owner-led AI autonomy transformation pilot",
+  "description": "Find one owner-operated company with a bounded economically meaningful workflow and baseline evidence. Map it, automate one reversible loop, operate it long enough to compare before/after economics, and obtain the owner's judgment. Success requires verified external value net of real compute, integration, and supervision costs plus willingness to pay or continue. Failure evidence must update the graph and offer; mock transactions, synthetic revenue, and internal activity metrics do not count.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "ai-transformation",
+    "pilot",
+    "real-world-evidence"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "43021984-0a79-4bdb-a961-81396ddfe877",
+      "relativePosition": [
+        -1.5544090246452094,
+        -1.9580124065239037
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "493d4f17-9781-4dff-a32c-2916e298f0bb",
+      "relativePosition": [
+        -0.7057825588158967,
+        2.398305856155817
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "9548e95a-a911-41a5-b404-0cc289633acd",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "The diagnostic, commercial model, operating model, and resilience policy are ready. Starting the real pilot requires a consenting company owner, permission to inspect a bounded workflow and baseline evidence, agreement on scope/payment, and credentials only after written authorization.",
+    "date": 1784738558487
+  },
+  "intrinsicValue": 0,
+  "cost": 13,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

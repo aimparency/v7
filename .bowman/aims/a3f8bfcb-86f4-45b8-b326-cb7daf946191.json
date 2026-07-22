@@ -1,0 +1,33 @@
+{
+  "id": "a3f8bfcb-86f4-45b8-b326-cb7daf946191",
+  "text": "Book an IFB funding qualification call for Aimparency",
+  "description": "Felix contacts IFB Hamburg's Förderlotsen or Innovationsstarter for one qualification call. Ask which path fits the actual legal/company age and founder situation: InnoFounder (pre-start or under one year; up to €45k solo / €75k team) or InnoRampUp (Hamburg technology startup under two years; up to €150k and up to 90% eligible costs). Do not prepare both applications before eligibility is confirmed. Immediate human action: email foerderlotsen@ifbhh.de with a two-paragraph description and request a call. Record eligibility, next deadline/process, required legal structure, and whether paid customer pilots can run alongside funding.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "funding",
+    "ifb-hamburg",
+    "innofounder",
+    "innorampup",
+    "human-action"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "80b53c24-a0e8-48af-8acc-b3a76fde7513",
+    "9548e95a-a911-41a5-b404-0cc289633acd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix must disclose the real legal/founder situation and book the official qualification call.",
+    "date": 1784740547558
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Researched current official IFB program pages and prepared a qualification email in meta/founder-actions-ai-transformation.md. InnoFounder and InnoRampUp appear potentially relevant, but eligibility depends on real legal/company facts and must be confirmed with IFB."
+}

@@ -188,7 +188,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_aim_context",
-          description: "Call before working on an aim. Returns aim + path_to_root (lineage up to the top goal via highest value-inflow parent) + 5 semantic neighbors + immediate parents/children. Read path_to_root to stay oriented toward the highest-value goal it serves.",
+          description: "Orient before acting: returns the aim, its highest-value mission path, related aims, parents, and children.",
           inputSchema: {
             type: "object",
             properties: {
@@ -255,7 +255,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "create_aim",
-          description: "Create aim (search first to avoid duplicates). phaseId commits it; supportedAims/supportingConnections wire parents/children — connect it to the goal it serves so it isn't floating. Set intrinsicValue on goals, cost on tasks so it ranks in priority.",
+          description: "Create a non-duplicate aim and connect it to the mission it serves. Set value on goals, cost on tasks, and phaseId when it should enter the work queue.",
           inputSchema: {
             type: "object",
             properties: {
@@ -268,6 +268,7 @@ export function registerTools(server: Server, clientOverride?: any) {
                 properties: {
                   state: { type: "string", description: AIM_STATES_DESCRIPTION },
                   comment: { type: "string" },
+                  reviewedAt: { type: "number", description: "Explicit review timestamp confirming the current status and intention still hold; does not change the state-transition date." },
                 },
               },
               supportingConnections: connectionInputSchema("Child aim UUIDs, or objects with aimId/weight/explanation/relativePosition for edge metadata."),
@@ -296,6 +297,7 @@ export function registerTools(server: Server, clientOverride?: any) {
                 properties: {
                   state: { type: "string", description: AIM_STATES_DESCRIPTION },
                   comment: { type: "string" },
+                  reviewedAt: { type: "number", description: "Explicit review timestamp confirming the current status and intention still hold; does not change the state-transition date." },
                 },
               },
               supportingConnections: connectionInputSchema("REPLACE child links. Each item may be a child UUID or { aimId, weight, explanation, relativePosition }."),
@@ -424,7 +426,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Start the work loop here: open aims of the active phase (resolved by date, or pass phaseId), ranked by flow-based value/cost, with phase economics + data-quality diagnostics. Only ranks phase-committed aims — if it returns little, much open work is likely uncommitted to any phase; check list_aims uncommitted=true (or graph_hygiene) and commit_aim_to_phase. Distrust the ranking when diagnostics flag ~0-value or cost-less aims — fix those first. Each aim also reports realizedCommits (git commits referencing its id = real output so far); openAimsWithNoRealizedOutput flags high-ranked aims that keep getting picked but never actually advance.",
+          description: "Start and resume the infinite loop here. Pick a high-value actionable aim, verify real outcomes, record them, then return and reprioritize toward the mission. Only phase-committed open aims rank; diagnostics expose missing economics and activity without realized output.",
           inputSchema: {
             type: "object",
             properties: {

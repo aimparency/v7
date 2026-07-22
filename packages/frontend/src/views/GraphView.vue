@@ -16,6 +16,7 @@ import { useGraphSimulation } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { calculateArrowGeometry, hitTestArrow } from '../webgl/utils/arrow-geometry'
+import { proposeRelaxedConnections } from '../utils/auto-relax'
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -322,6 +323,46 @@ const isSemanticForceActive = computed(() => simulation.targetSemanticForce.valu
 const startSemanticForce = () => setSemanticForce(true)
 const stopSemanticForce = () => setSemanticForce(false)
 
+async function autoRelaxLayout() {
+  const proposals = proposeRelaxedConnections(
+    links.value
+      .filter(link => !link.source.isRepo)
+      .map(link => ({
+        parentId: link.target.id,
+        childId: link.source.id,
+        parentPosition: link.target.renderPos,
+        childPosition: link.source.renderPos,
+        parentRadius: link.target.r,
+        childRadius: link.source.r,
+        relativePosition: link.relativePosition
+      }))
+  )
+  if (proposals.length === 0) {
+    window.alert('The graph is already relaxed; no relative positions changed by more than 3%.')
+    return
+  }
+
+  const parentCount = new Set(proposals.map(proposal => proposal.parentId)).size
+  if (!window.confirm(`Relax ${proposals.length} connections across ${parentCount} aims? This will persist their relative positions.`)) return
+
+  const proposalsByParent = new Map<string, Map<string, [number, number]>>()
+  for (const proposal of proposals) {
+    const children = proposalsByParent.get(proposal.parentId) ?? new Map()
+    children.set(proposal.childId, proposal.relativePosition)
+    proposalsByParent.set(proposal.parentId, children)
+  }
+  await Promise.all([...proposalsByParent].map(async ([parentId, children]) => {
+    const parent = dataStore.aims[parentId]
+    if (!parent) return
+    await dataStore.updateAim(projectStore.projectPath, parentId, {
+      supportingConnections: parent.supportingConnections.map(connection => ({
+        ...connection,
+        relativePosition: children.get(connection.aimId) ?? connection.relativePosition
+      }))
+    })
+  }))
+}
+
 // Helper: split node text into lines for label rendering
 function getNodeTitleLines(text: string): string[] {
   const words = text.split(' ')
@@ -456,6 +497,9 @@ function toggleSpinOffPreview() {
           <line x1="15" y1="15" x2="21" y2="21"></line>
           <line x1="4" y1="4" x2="9" y2="9"></line>
         </svg>
+      </button>
+      <button class="control-btn" @click="autoRelaxLayout" title="Evenly space child aims and persist relative positions after confirmation">
+        Relax
       </button>
       <button 
         class="control-btn" 

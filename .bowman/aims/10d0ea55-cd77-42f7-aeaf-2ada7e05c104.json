@@ -1,0 +1,31 @@
+{
+  "id": "10d0ea55-cd77-42f7-aeaf-2ada7e05c104",
+  "text": "Run a Kimi K3 one-aim loop compatibility experiment",
+  "description": "Configure a duplicated loop with provider OpenRouter, base URL https://openrouter.ai/api/v1, model moonshotai/kimi-k3, a clean worktree, and one atomic coding aim. Compare tool-call success, cycles, verification quality, diff quality, latency, and actual cost against the current provider. Do not start until an OpenRouter key and spending authorization are available.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "kimi-k3",
+    "openrouter",
+    "loop",
+    "experiment"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0622adb1-e79d-483c-b894-199d92ca199d",
+    "c7a6e6fc-7f9b-411a-9696-c60cc10354e0"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Requires an OpenRouter API key and authorization to incur model costs.",
+    "date": 1784737973822
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

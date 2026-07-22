@@ -3,7 +3,8 @@ import { z } from 'zod';
 export const AimStatusSchema = z.object({
   state: z.string(),
   comment: z.string(),
-  date: z.number() // Date.now() timestamp
+  date: z.number(), // Timestamp of the last actual state transition
+  reviewedAt: z.number().optional() // Explicit confirmation that this status/intention still holds
 });
 
 export type AimStatusState = string;

@@ -2,7 +2,7 @@
   "id": "1d9cecd8-4269-46b4-96a7-1617a09fe9b7",
   "text": "Draft the Prototype Fund application, work plan, and €47.5k solo budget",
   "description": "Answer the application questions concisely in German or English. Include problem, users, societal value, differentiation, technical challenges, six-month milestones, sustainable open-source path, team/expertise, and ecosystem engagement. Build a realistic work plan up to 950 hours and €47,500 at €50/hour under the current solo cap. Declare AI assistance transparently if requested by the application process, and keep all proposed outputs under accepted free/open licenses.",
-  "reflection": "",
+  "reflection": "Created meta/applications/prototype-fund-2026/application-draft.md with every official application answer, a milestone-first 950-hour/€47,500 allocation, second-stage option, primary references, and explicit founder checks. Added check-word-limits.sh. Verified all 12 marked answers are within their official limits (including current status exactly 100/100), the work plan sums to 950 hours, and git diff --check passes. No application was submitted and no unverified personal claim was silently assumed.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -19,9 +19,9 @@
     "2cb2e798-c679-489e-b168-8c02c89f78cd"
   ],
   "status": {
-    "state": "open",
-    "comment": "Application drafting remains open. Do not structure planning primarily around hours; use outcomes and milestones, deriving any formally required hour figure only at submission time.",
-    "date": 1784550231319
+    "state": "review",
+    "comment": "Submission-ready first draft completed; awaiting Felix's factual/eligibility review and later external-reader feedback before submission.",
+    "date": 1784741755458
   },
   "intrinsicValue": 0,
   "cost": 3,

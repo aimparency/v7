@@ -120,6 +120,58 @@
         0.543995853964365
       ],
       "weight": 1
+    },
+    {
+      "aimId": "9548e95a-a911-41a5-b404-0cc289633acd",
+      "relativePosition": [
+        0.14766557791481175,
+        -2.4956351650630113
+      ],
+      "weight": 1,
+      "explanation": "Paying client outcomes provide real economic survival feedback."
+    },
+    {
+      "aimId": "032b8a47-d3d2-4974-bdcd-559a377164ef",
+      "relativePosition": [
+        -2.4930910303838134,
+        -0.18573398778838252
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "1a401004-2c03-45e7-96a9-a2c15e7c0b2d",
+      "relativePosition": [
+        0.08937054090362995,
+        -2.49840207060805
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "c0a45822-0106-46fd-8819-244d3611488b",
+      "relativePosition": [
+        1.6381342479213292,
+        1.8885222227411624
+      ],
+      "weight": 1,
+      "explanation": "Real outcomes must change strategy; simulated credits do not count as survival evidence."
+    },
+    {
+      "aimId": "1171de2f-a08e-4bb3-bf2a-7d279e4cb066",
+      "relativePosition": [
+        -1.2746976051103918,
+        -2.150615264412915
+      ],
+      "weight": 1,
+      "explanation": "Economic stability must be observed through authoritative external systems."
+    },
+    {
+      "aimId": "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
+      "relativePosition": [
+        0.8812891865630943,
+        -2.339514772265172
+      ],
+      "weight": 1,
+      "explanation": "The economic model defines measurable sustainability without simulating success."
     }
   ],
   "supportedAims": [
@@ -129,13 +181,14 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Target: Autonomy Ratio >= 1.1",
-    "date": 1768763895486
+    "comment": "Real economic stability is the survival test. Use authoritative revenue, cost, usage, commitment, and outcome evidence; never simulated credits. The graph-and-model loop should return here indefinitely and revise strategy until it can remain operational.",
+    "date": 1784737797772
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "description": "The real selection test for the graph-and-model loop: repeatedly create externally valued outcomes, cover actual compute and operating costs, adapt strategy from authoritative evidence, and remain operational over time. Survival must be measured from real revenue, costs, usage, commitments, and outcomes—never simulated credits or self-reported success. The loop returns to this mission indefinitely and develops better connected ideas when evidence shows the current strategy is not sustainable."
 }

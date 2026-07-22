@@ -1,0 +1,29 @@
+{
+  "id": "10c428da-af9a-45c9-bc37-aac845a6996c",
+  "text": "Turn every client transformation into reusable Aimparency capability",
+  "description": "Define the repeatable company-autonomy architecture: owner mission and constitution, inspectable graph, evidence-linked priorities, execution loops, human and institutional gates, economic telemetry, audit and rollback, and strategy reflection. Separate reusable product primitives from client-specific adapters. Track reuse rate, founder intervention, deployment time, and marginal support cost so the business can detect and escape bespoke-consultancy dependence.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "ai-transformation",
+    "productization"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9548e95a-a911-41a5-b404-0cc289633acd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Reusable company-autonomy operating model drafted and internally checked; awaiting user acceptance.",
+    "date": 1784738525845
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Created meta/company-autonomy-operating-model.md. Defined owner constitution, strategic graph, bounded loops, source-system adapters, human/institutional gates, real evidence/economics, audit/recovery, engagement lifecycle, core/domain/connector/config/bespoke boundaries, reuse promotion gate, per-client compounding telemetry, portfolio feedback, and portable client handoff. Verification: git diff --check passed; reuse, founder intervention, deployment/support cost, client concentration, authoritative systems, and rollback are all explicit."
+}

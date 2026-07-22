@@ -13,14 +13,15 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "partially",
-    "comment": "First slice shipped (ca20f0e): MCP update_aim now nudges to addReflection with verification evidence when marking done without one. Remaining: richer per-aim-type evidence expectations (code/UI/behavior) and surfacing in the supervisor wrap-up flow.",
-    "date": 1782451673230
+    "state": "cancelled",
+    "comment": "Deprioritized 2026-07-22 after Felix clarified this evidence-gate initiative was not his idea and redirected effort toward real customers, funding, talks, and human leverage. Existing generic verification guidance remains; no richer gate will be built under this aim.",
+    "date": 1784740628382
   },
   "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Corrected attribution and priority after direct founder feedback. I had selected this agent-originated partial aim as if it represented Felix's intent. It does not. Stopped work before making code changes and redirected the loop to human-leverage actions with real external feedback."
 }

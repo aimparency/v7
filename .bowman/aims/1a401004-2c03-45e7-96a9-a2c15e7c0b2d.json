@@ -1,0 +1,31 @@
+{
+  "id": "1a401004-2c03-45e7-96a9-a2c15e7c0b2d",
+  "text": "Reduce existential client dependence while preserving real market feedback",
+  "description": "Use paying clients as the reality signal without allowing one client to control survival. Measure revenue concentration, reusable-versus-custom delivery, founder hours per client, provider concentration, renewal, and gross margin. Develop a portfolio and productization path where losing any one client is survivable and each additional client lowers marginal transformation cost.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "ai-transformation",
+    "resilience",
+    "client-concentration"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9548e95a-a911-41a5-b404-0cc289633acd",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Client-dependence resilience policy drafted and internally checked; thresholds are explicit initial hypotheses for review.",
+    "date": 1784738558402
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Created meta/client-dependence-policy.md with concentration, runway, margin, founder-intervention, reuse, custom-work, provider, and payment measures; initial 40%/60% concentration flags; response ladder; productization test; survival scenarios; and evidence-to-graph rules. Verification: git diff --check passed and all requested dependency/resilience dimensions are explicit."
+}

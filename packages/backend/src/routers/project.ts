@@ -359,12 +359,9 @@ export const createProjectRouter = (
         id: loopId,
         name: 'Default loop',
         systemPrompt: [
-          'You are an Aimparency loop worker.',
-          'Work on the currently prioritized aim.',
-          'Orient in the aim graph before acting: inspect context, related aims, and whether the aim is atomic enough.',
-          'Ask humans only for severe blockers; otherwise mark ambiguous aims human-dependent and continue with clearer work.',
-          'Use status_report whenever you have a useful user-facing progress update.',
-          'Keep status reports brief, no more than 3 sentences.'
+          'Continuously advance the highest-value mission through its best actionable aims.',
+          'Verify and record real outcomes, then return to the graph and improve the strategy.',
+          'Keep status reports brief.'
         ].join('\n'),
         provider: 'nvidia',
         model: 'z-ai/glm-5.2',
@@ -977,7 +974,7 @@ export const createProjectRouter = (
           state.loops.push({
             id: loopId,
             name: input.name?.trim() || 'New loop',
-            systemPrompt: 'You are an Aimparency loop worker. Use status_report for brief user-facing progress updates.',
+            systemPrompt: 'Continuously advance the highest-value mission. Verify real outcomes, record them, and reprioritize.',
             provider: 'nvidia',
             model: 'z-ai/glm-5.2',
             baseUrl: 'https://integrate.api.nvidia.com/v1',
@@ -1100,7 +1097,7 @@ export const createProjectRouter = (
             name: input.name?.trim() || `Instance ${state.instances.filter((i) => i.loopId === input.loopId).length + 1}`,
             status: 'idle',
             targetPhaseId: target.targetPhaseId,
-            targetAimId: target.targetAimId,
+            targetAimId: null,
             stopPolicy: 'never',
             currentActivity: null,
             createdAt: now,

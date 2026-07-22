@@ -1,0 +1,131 @@
+{
+  "id": "9548e95a-a911-41a5-b404-0cc289633acd",
+  "text": "Build Aimparency into an autonomous AI-transformation company",
+  "description": "Aimparency uses its own aim graph and agent loops to operate a company that transforms existing owner-led businesses into increasingly AI-autonomous companies. The company discovers and qualifies clients, maps owner intent and operating constraints, proposes bounded transformations, executes and verifies workflows, learns from real economic outcomes, and supports the transformed operation. Each engagement must produce reusable graph patterns, connectors, evaluation methods, and operating loops so delivery compounds into product capability rather than bespoke consulting debt. Client revenue is the initial real survival feedback, but dependency must be diversified: no single client, founder intervention, model provider, or custom integration may remain existential.",
+  "reflection": "Completed the buildable strategy layer in four artifacts under meta/: transformation diagnostic, commercial model, reusable company-autonomy operating model, and client-dependence policy. These make the thesis testable through real owner authority, economics, product reuse, and resilience. Remaining work is external: secure and run a paid bounded pilot.",
+  "reflections": [
+    {
+      "date": 1784738427721,
+      "context": "Turn the autonomous AI-transformation company thesis into its first reusable commercial capability.",
+      "outcome": "Produced a standalone transformation diagnostic and owner-roadmap artifact; the diagnostic child is ready for review.",
+      "effectiveness": "The artifact makes the thesis falsifiable through real baselines, net economics, pilot gates, reuse, and concentration measures while leaving owners with value even without a follow-on engagement.",
+      "lesson": "The diagnostic is the safest first product: it sells structured judgment before requiring credentials or automating external actions.",
+      "pattern": "Convert broad business theses into low-risk paid entry products with explicit evidence and escalation boundaries."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "business-model",
+    "ai-transformation",
+    "autonomous-company",
+    "revenue"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
+      "relativePosition": [
+        2.49879350379784,
+        0.0776596766521285
+      ],
+      "weight": 1,
+      "explanation": "Existing paid design partnerships are an initial commercial channel for the transformation offer."
+    },
+    {
+      "aimId": "fcb77ff3-0bb5-416c-8f70-ad6a5ac2e60e",
+      "relativePosition": [
+        -0.16988813373675143,
+        -2.494220924861197
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "a5735564-9b26-48cd-9c40-af9a05c6b95a",
+      "relativePosition": [
+        -2.4031244131564207,
+        -0.6891973990749002
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "10c428da-af9a-45c9-bc37-aac845a6996c",
+      "relativePosition": [
+        -2.2494261811106426,
+        1.0909087293325646
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "032b8a47-d3d2-4974-bdcd-559a377164ef",
+      "relativePosition": [
+        -0.9221168118427702,
+        -2.32372558304911
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "1a401004-2c03-45e7-96a9-a2c15e7c0b2d",
+      "relativePosition": [
+        -2.17066328322216,
+        1.2402503420161564
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "43021984-0a79-4bdb-a961-81396ddfe877",
+      "relativePosition": [
+        -0.1558969655653859,
+        -2.4951344925930354
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "493d4f17-9781-4dff-a32c-2916e298f0bb",
+      "relativePosition": [
+        -1.6784126771298735,
+        -1.8528170134283986
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "a3f8bfcb-86f4-45b8-b326-cb7daf946191",
+      "relativePosition": [
+        -1.747737773964787,
+        1.7875717254019798
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "f011253f-b075-45bd-a0d3-e8b0bac21e29",
+      "relativePosition": [
+        1.1717776414960503,
+        -2.2083788531160033
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "b5348ae2-62d6-42ac-8191-b877e0570c61",
+      "relativePosition": [
+        -0.6064726292541849,
+        2.4253228547897527
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "5ebd58db-d352-4fe2-bd73-15ad620a2978",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "partially",
+    "comment": "Strategy foundation is built: owner diagnostic, staged commercial model, reusable operating model, and client-dependence policy are in review. The real survival test now requires a consenting paying pilot client and authoritative before/after evidence.",
+    "date": 1784738565584
+  },
+  "intrinsicValue": 0,
+  "cost": 8,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

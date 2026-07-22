@@ -1,0 +1,35 @@
+{
+  "id": "493d4f17-9781-4dff-a32c-2916e298f0bb",
+  "text": "Ask Herzog Records for an owner-level AI-transformation diagnostic",
+  "description": "Felix uses his existing Herzog Records relationship to request a 30-minute conversation with the owner or operating decision-maker. Public information suggests a small owner-led label with active 2026 releases, long-term artist development, media/contact follow-up, booking/stage activity, and grant applications. Treat these only as discovery hypotheses. Ask where the owner is the recurring integration layer; offer a paid diagnostic mapping one recent release, its dependencies, approvals, repeated information, delays, and human-only artistic or relationship decisions. Prefer private coordination/memory over autonomous external communication.",
+  "reflection": "Created meta/ai-transformation-prospect-briefs.md from current public sources. Prepared owner questions around release orchestration, relationship follow-up, catalogue consistency, grant applications, and campaign learning while explicitly rejecting generic automated communication as a default. Proposed a private release-control diagnostic that preserves the owner's voice.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "sales",
+    "paid-pilot",
+    "ai-transformation",
+    "music",
+    "herzog-records",
+    "human-action"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9548e95a-a911-41a5-b404-0cc289633acd",
+    "032b8a47-d3d2-4974-bdcd-559a377164ef",
+    "b42711f4-cb68-4f64-b0c1-4a1eca8d2029"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix must choose and contact the trusted Herzog Records person; the system should not impersonate him or initiate outreach.",
+    "date": 1784740519732
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

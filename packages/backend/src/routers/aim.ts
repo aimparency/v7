@@ -222,7 +222,8 @@ export const createAimRouter = (
           status: z.object({
             state: z.string().optional(),
             comment: z.string().optional(),
-            date: z.number().optional()
+            date: z.number().optional(),
+            reviewedAt: z.number().optional()
           }).optional(),
           incoming: z.array(z.string()).optional(),
           supportedAims: z.array(z.string()).optional(),
@@ -321,13 +322,16 @@ export const createAimRouter = (
              }
         }
 
-        // Handle status deep merge and date default
+        // `date` means state-transition time, not "last status-object edit".
+        // A comment edit or explicit relevance review must preserve it.
         let status = existingAim.status;
         if (input.aim.status) {
+          const stateChanged = input.aim.status.state !== undefined &&
+            input.aim.status.state !== existingAim.status.state;
           status = {
             ...existingAim.status,
             ...input.aim.status,
-            date: input.aim.status.date ?? Date.now()
+            date: input.aim.status.date ?? (stateChanged ? Date.now() : existingAim.status.date)
           };
         }
 
@@ -530,7 +534,8 @@ export const createAimRouter = (
           status: z.object({
             state: z.string().optional(),
             comment: z.string().optional(),
-            date: z.number().optional()
+            date: z.number().optional(),
+            reviewedAt: z.number().optional()
           }).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
@@ -551,7 +556,8 @@ export const createAimRouter = (
           ? {
               state: input.aim.status.state || 'open',
               comment: input.aim.status.comment || '',
-              date: input.aim.status.date || Date.now()
+              date: input.aim.status.date || Date.now(),
+              ...(input.aim.status.reviewedAt !== undefined ? { reviewedAt: input.aim.status.reviewedAt } : {})
             }
           : { state: 'open' as const, comment: '', date: Date.now() };
 
@@ -622,7 +628,8 @@ export const createAimRouter = (
           status: z.object({
             state: z.string().optional(),
             comment: z.string().optional(),
-            date: z.number().optional()
+            date: z.number().optional(),
+            reviewedAt: z.number().optional()
           }).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
@@ -646,7 +653,8 @@ export const createAimRouter = (
           ? {
               state: input.aim.status.state || 'open',
               comment: input.aim.status.comment || '',
-              date: input.aim.status.date || Date.now()
+              date: input.aim.status.date || Date.now(),
+              ...(input.aim.status.reviewedAt !== undefined ? { reviewedAt: input.aim.status.reviewedAt } : {})
             }
           : { state: 'open' as const, comment: '', date: Date.now() };
 
@@ -709,7 +717,8 @@ export const createAimRouter = (
           status: z.object({
             state: z.string().optional(),
             comment: z.string().optional(),
-            date: z.number().optional()
+            date: z.number().optional(),
+            reviewedAt: z.number().optional()
           }).optional(),
           intrinsicValue: z.number().optional(),
           cost: z.number().optional(),
@@ -731,7 +740,8 @@ export const createAimRouter = (
           ? {
               state: input.aim.status.state || 'open',
               comment: input.aim.status.comment || '',
-              date: input.aim.status.date || Date.now()
+              date: input.aim.status.date || Date.now(),
+              ...(input.aim.status.reviewedAt !== undefined ? { reviewedAt: input.aim.status.reviewedAt } : {})
             }
           : { state: 'open' as const, comment: '', date: Date.now() };
 

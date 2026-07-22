@@ -5,7 +5,7 @@ export function selectCycleTarget(
   targetAimId?: string | null
 ): PrioritizedAim | undefined {
   return targetAimId
-    ? prioritized.find((candidate) => candidate.aim.id === targetAimId)
+    ? prioritized.find((candidate) => candidate.aim.id === targetAimId) ?? prioritized[0]
     : prioritized[0];
 }
 

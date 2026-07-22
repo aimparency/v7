@@ -1,8 +1,18 @@
 {
   "id": "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
-  "text": "Sell Aimparency through paid design partnerships",
-  "description": "Treat revenue as the healthiest near-term funding path. Sell a tightly scoped paid pilot/design partnership to 3-5 teams or planning organizations. Example ask: EUR 5k for a 6-8 week engagement including onboarding, workflow modelling, roadmap influence, direct support, and a documented intent/dependency workflow; avoid bespoke promises that derail the product. Three EUR 5k agreements meet the August target while validating willingness to pay and creating investor evidence.",
-  "reflections": [],
+  "text": "Sell Aimparency through paid owner-led AI-transformation engagements",
+  "description": "Use revenue as the primary reality signal. Start through Felix's trusted owner relationships with a paid, fixed-scope diagnostic of one economically meaningful workflow; only then offer a bounded reversible automation pilot and continuing stewardship. Every engagement must define the baseline, owner decision rights, access boundaries, stop conditions, price, and observable result. Avoid free pilots, bespoke promises that do not compound into product capability, and success claims based on activity rather than net customer value. Initial prospects are Wilde Möhre and Herzog Records.",
+  "reflection": "The commercial path is now prepared through proposal stage: meta/ai-transformation-diagnostic-offer.de.md can be adapted after an owner call, using a two-week fixed-scope €2,500 first-price hypothesis with no free implementation. Remaining steps are founder outreach, client discovery, and actual commercial consent.",
+  "reflections": [
+    {
+      "date": 1784741481383,
+      "context": "Align the existing outreach machinery with the paid AI-transformation offer and make the two warm prospects actionable without claiming contact.",
+      "outcome": "Updated outreach-process.md from the stale €5k design-partner package to a €2.5k two-week paid diagnostic, and replaced the example tracker row with Wilde Möhre and Herzog Records rows marked ready-for-founder with no outreach recorded.",
+      "effectiveness": "The commercial sequence is now consistent across the graph, proposal, process, and tracker; CSV structure was validated at 17 columns per row.",
+      "lesson": "Sales infrastructure must be reconciled when positioning changes, or old templates silently steer behavior back to obsolete offers.",
+      "pattern": "strategy-to-operating-artifact consistency"
+    }
+  ],
   "archived": false,
   "tags": [
     "funding",
@@ -15,22 +25,40 @@
     {
       "aimId": "43021984-0a79-4bdb-a961-81396ddfe877",
       "relativePosition": [
-        1.6686361139211576,
-        -1.8616265789137463
+        2.4288982907330032,
+        -0.5919907881667534
       ],
       "weight": 1,
-      "explanation": "The free pilot validates a sellable design-partnership offer and can produce customer evidence."
+      "explanation": "Warm relationship and concrete first paid owner-diagnostic prospect."
+    },
+    {
+      "aimId": "493d4f17-9781-4dff-a32c-2916e298f0bb",
+      "relativePosition": [
+        -2.268960988945114,
+        1.049674249777144
+      ],
+      "weight": 1,
+      "explanation": "Second warm owner-diagnostic prospect in the music industry."
+    },
+    {
+      "aimId": "acb5797b-f4a9-494d-9751-8740d7d111e0",
+      "relativePosition": [
+        0.38791205415650976,
+        2.4697214900146287
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
-    "cabe6e06-8988-4145-b884-9ef5bc68f660"
+    "cabe6e06-8988-4145-b884-9ef5bc68f660",
+    "9548e95a-a911-41a5-b404-0cc289633acd"
   ],
   "committedIn": [
     "e4c477a4-009b-4354-a2ad-2b4616ca3377"
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "EUR 5k design-partner offer, tracker, qualification process, and Wilde Moehre free-pilot proposal are ready. Founder outreach and commercial approval remain required.",
+    "comment": "The offer, outreach messages, diagnostic, and pilot model are ready. Felix must personally approach Wilde Möhre and/or Herzog Records, qualify an owner-owned workflow, and approve any commercial terms.",
     "date": 1784541264141
   },
   "intrinsicValue": 0,
@@ -38,6 +66,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Prepared the default EUR 5k design-partner offer and qualification/call process in outreach-process.md, plus the Wilde Moehre validation pilot. External prospect selection, outreach, calls, pricing exceptions, and agreements remain human actions."
+  "valueVariance": 0
 }

@@ -1,0 +1,33 @@
+{
+  "id": "f011253f-b075-45bd-a0d3-e8b0bac21e29",
+  "text": "Pitch one concrete talk and live diagnostic demo to Hamburg's AI and creative-industry networks",
+  "description": "Felix prepares and sends a concise speaker proposal: 'From isolated AI tools to an owner-governed autonomous company: a live workflow diagnostic.' Target AI.HAMBURG first (AI Media Circle on 27 Aug 2026 and AI.SUMMIT Corporate Edition on 24 Nov 2026), then Hamburg Kreativ Gesellschaft network formats. The talk must include a real or permissioned anonymized workflow, decision boundaries, and economics—not an ASI manifesto or generic product pitch. Immediate action: write a 100-word abstract, 3 audience takeaways, and ask the organizers about a lightning talk, workshop, demo, or future speaker slot. Success: organizer conversation or booked appearance; resulting owner leads feed the pilot funnel.",
+  "reflection": "Created meta/talk-owner-governed-autonomous-company.md: a 12-minute/9-slide talk plus 5-minute live diagnostic using Aimparency's real self-transformation graph and artifacts. It includes the economic survival test, human authority ladder, durable stewardship thesis, honest no-customer-yet boundary, owner-call invitation, stage safety/fallback, forbidden claims, audience questions, and 10/25/60-minute variants. Verified required sections and git diff --check.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "speaking",
+    "lead-generation",
+    "hamburg",
+    "ai-transformation",
+    "human-action"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "9548e95a-a911-41a5-b404-0cc289633acd",
+    "629396d0-891d-42c7-b2b2-1be5423de649"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "The abstract, complete talk, live-demo sequence, fallback and format variants are ready. Felix must approve the public positioning, supply contact details, rehearse, and contact organizers in his own name.",
+    "date": 1784740547858
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

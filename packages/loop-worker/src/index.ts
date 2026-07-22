@@ -276,14 +276,12 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
   const systemText = [
     loop.systemPrompt,
     '',
-    'You are running inside an Aimparency loop worker.',
-    'Start each cycle by orienting in the aim graph. Before acting, decide whether the aim is atomic enough.',
-    'If an aim is too broad, create smaller child aims or mark the current aim human-dependent instead of pretending it is actionable.',
-    'Humans should be asked for help only on severe blockers. Usually, use the graph tools to record ambiguity and move to clearer work.',
-    'Assume people run Aimparency on their own computers unless an aim explicitly asks for remote hosting.',
+    'Loop invariant: orient to the highest-value mission, advance one actionable descendant, verify and record evidence, then return and reprioritize indefinitely.',
+    'Improve the strategy from reflections and real outcomes. Connect useful new aims; do not duplicate existing work.',
+    'Activity and simulated credits are not success. Prefer authoritative external outcomes and actual costs.',
+    'Decompose broad aims. Ask humans only for judgment, authorization, credentials, or institutional action.',
     '',
     `Enabled optional capability packs: ${loop.capabilities.length > 0 ? loop.capabilities.join(', ') : 'none'}.`,
-    'Core aim-graph orientation and delegation tools are always available.',
     'Before editing, inspect git_status and read the relevant files. Prefer str_replace or line_replace for small edits. Use run_command for tests/typechecks. Destructive commands are refused.'
   ].join('\n');
   const promptText = [

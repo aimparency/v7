@@ -7,6 +7,7 @@ test('selects an explicit target even when it is below the first five priorities
     aim: { id: `aim-${index}` }
   })) as any;
   assert.equal(selectCycleTarget(prioritized, 'aim-7')?.aim.id, 'aim-7');
+  assert.equal(selectCycleTarget(prioritized, 'completed-aim')?.aim.id, 'aim-0');
   assert.equal(selectCycleTarget(prioritized)?.aim.id, 'aim-0');
 });
 

@@ -4,6 +4,10 @@ Working materials for the Jahrgang 03 application expected to open from
 1 October to 30 November 2026.
 
 - `scope.md` - bounded, independently fundable software-infrastructure project
+- `application-draft.md` - exact, word-limited application answers, work plan,
+  budget, references, and founder checks
+- `check-word-limits.sh` - validates every marked answer against the official
+  application limit
 
 Official references checked 20 July 2026:
 
