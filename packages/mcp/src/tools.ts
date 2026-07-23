@@ -168,6 +168,79 @@ function toStoredConnection(input: ConnectionInput) {
   };
 }
 
+type PhasePlacementArgs = {
+  order?: number;
+  before?: string;
+  after?: string;
+};
+
+type PhaseSibling = {
+  id: string;
+  name: string;
+};
+
+export function resolvePhasePlacement(
+  placement: PhasePlacementArgs,
+  siblings: PhaseSibling[],
+): number | undefined {
+  const constraints: Array<{ label: string; order: number }> = [];
+
+  if (placement.order !== undefined) {
+    if (!Number.isInteger(placement.order) || placement.order < 0) {
+      throw new Error(`order must be a non-negative integer; received ${placement.order}.`);
+    }
+    constraints.push({ label: `order=${placement.order}`, order: placement.order });
+  }
+
+  const resolveNamedSibling = (relation: "before" | "after", name: string) => {
+    const matches = siblings
+      .map((phase, index) => ({ phase, index }))
+      .filter(({ phase }) => phase.name === name);
+    const available = siblings.length
+      ? siblings.map((phase) => `"${phase.name}" [${phase.id}]`).join(", ")
+      : "(none)";
+
+    if (matches.length === 0) {
+      throw new Error(
+        `Cannot place ${relation} "${name}": no sibling phase has that exact name. ` +
+        `Available siblings: ${available}.`,
+      );
+    }
+    if (matches.length > 1) {
+      throw new Error(
+        `Cannot place ${relation} "${name}": the sibling name is ambiguous. ` +
+        `Matches: ${matches.map(({ phase }) => `"${phase.name}" [${phase.id}]`).join(", ")}. ` +
+        `Rename a sibling or use order.`,
+      );
+    }
+
+    const resolvedOrder = matches[0].index + (relation === "after" ? 1 : 0);
+    constraints.push({
+      label: `${relation}="${name}"→${resolvedOrder}`,
+      order: resolvedOrder,
+    });
+  };
+
+  if (placement.before !== undefined) resolveNamedSibling("before", placement.before);
+  if (placement.after !== undefined) resolveNamedSibling("after", placement.after);
+  if (constraints.length === 0) return undefined;
+
+  const resolvedOrder = constraints[0].order;
+  if (constraints.some((constraint) => constraint.order !== resolvedOrder)) {
+    throw new Error(
+      `Phase placement constraints disagree: ${constraints.map(({ label }) => label).join(", ")}. ` +
+      "When multiple placement arguments are supplied, they must resolve to the same insertion index.",
+    );
+  }
+  if (resolvedOrder > siblings.length) {
+    throw new Error(
+      `Resolved phase order ${resolvedOrder} is beyond the ${siblings.length} available sibling positions.`,
+    );
+  }
+
+  return resolvedOrder;
+}
+
 export function registerTools(server: Server, trpcClient: any) {
   if (!trpcClient) throw new Error("registerTools requires a tRPC client");
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -348,14 +421,16 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "create_phase",
-          description: "Create an ordered work horizon or timebox under an optional parent, with optional epoch-ms boundaries. Then use commit_aim_to_phase to make its aims discoverable and rankable. Prefer phases over describing schedules only in documents.",
+          description: "Create an ordered work horizon or timebox under an optional parent. Place it with order, before, or after; these are virtual MCP arguments resolved to one sibling index. If several are supplied they must agree. Sibling names must match exactly and uniquely. Then use commit_aim_to_phase to make aims discoverable and rankable.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               name: { type: "string" },
               parent: { type: ["string", "null"] },
-              order: { type: "number", description: "Zero-based position among sibling phases." },
+              order: { type: "integer", minimum: 0, description: "Zero-based position among sibling phases." },
+              before: { type: "string", description: "Insert before the sibling with this exact, unique phase name." },
+              after: { type: "string", description: "Insert after the sibling with this exact, unique phase name." },
               from: { type: "number", description: "Optional phase start as Unix epoch milliseconds." },
               to: { type: "number", description: "Optional phase end as Unix epoch milliseconds." },
             },
@@ -1077,12 +1152,29 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "create_phase": {
+          const parent = (args.parent as string | null | undefined) ?? null;
+          const hasPlacement =
+            args.order !== undefined || args.before !== undefined || args.after !== undefined;
+          const siblings = hasPlacement
+            ? await trpcClient.phase.list.query({
+                projectPath: args.projectPath as string,
+                parentPhaseId: parent,
+              })
+            : [];
+          const resolvedOrder = resolvePhasePlacement(
+            {
+              order: args.order as number | undefined,
+              before: args.before as string | undefined,
+              after: args.after as string | undefined,
+            },
+            siblings as PhaseSibling[],
+          );
           const result = await trpcClient.phase.create.mutate({
             projectPath: args.projectPath as string,
             phase: {
               name: args.name as string,
-              parent: (args.parent as string | null) || null,
-              ...(args.order !== undefined ? { order: args.order as number } : {}),
+              parent,
+              ...(resolvedOrder !== undefined ? { order: resolvedOrder } : {}),
               ...(args.from !== undefined ? { from: args.from as number } : {}),
               ...(args.to !== undefined ? { to: args.to as number } : {}),
               commitments: [],
@@ -1092,7 +1184,8 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [
               {
                 type: "text",
-                text: `Created phase with ID: ${result.id}`,
+                text: `Created phase with ID: ${result.id}` +
+                  (resolvedOrder !== undefined ? ` at sibling index ${resolvedOrder}` : ""),
               },
             ],
           };

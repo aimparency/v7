@@ -90,3 +90,75 @@ test('MCP Tools - Phase Commitments', async () => {
   fetchedPhase = await caller.phase.get({ projectPath: ctx.projectPath, phaseId: phase.id });
   assert.ok(!fetchedPhase.commitments.includes(aim.id));
 });
+
+test('MCP Tools - create_phase resolves relative placement constraints', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+
+  await server.callTool('create_phase', {
+    projectPath: ctx.projectPath,
+    name: 'First'
+  });
+  await server.callTool('create_phase', {
+    projectPath: ctx.projectPath,
+    name: 'Last'
+  });
+
+  const matchingResult = await server.callTool('create_phase', {
+    projectPath: ctx.projectPath,
+    name: 'Middle',
+    order: 1,
+    after: 'First',
+    before: 'Last'
+  });
+  assert.match(matchingResult.content[0].text, /at sibling index 1/);
+
+  let phases = await caller.phase.list({
+    projectPath: ctx.projectPath,
+    parentPhaseId: null
+  });
+  assert.deepEqual(phases.map((phase: any) => phase.name), ['First', 'Middle', 'Last']);
+
+  const conflictResult = await server.callTool('create_phase', {
+    projectPath: ctx.projectPath,
+    name: 'Conflict',
+    before: 'First',
+    after: 'First'
+  });
+  assert.equal(conflictResult.isError, true);
+  assert.match(conflictResult.content[0].text, /placement constraints disagree/i);
+
+  const missingResult = await server.callTool('create_phase', {
+    projectPath: ctx.projectPath,
+    name: 'Missing reference',
+    before: 'Unknown'
+  });
+  assert.equal(missingResult.isError, true);
+  assert.match(missingResult.content[0].text, /no sibling phase has that exact name/i);
+  assert.match(missingResult.content[0].text, /Available siblings:/);
+
+  await server.callTool('create_phase', {
+    projectPath: ctx.projectPath,
+    name: 'Duplicate'
+  });
+  await server.callTool('create_phase', {
+    projectPath: ctx.projectPath,
+    name: 'Duplicate'
+  });
+  const ambiguousResult = await server.callTool('create_phase', {
+    projectPath: ctx.projectPath,
+    name: 'Ambiguous reference',
+    after: 'Duplicate'
+  });
+  assert.equal(ambiguousResult.isError, true);
+  assert.match(ambiguousResult.content[0].text, /sibling name is ambiguous/i);
+  assert.match(ambiguousResult.content[0].text, /Matches:.*Duplicate/s);
+
+  phases = await caller.phase.list({
+    projectPath: ctx.projectPath,
+    parentPhaseId: null
+  });
+  assert.equal(phases.some((phase: any) => phase.name === 'Conflict'), false);
+  assert.equal(phases.some((phase: any) => phase.name === 'Missing reference'), false);
+  assert.equal(phases.some((phase: any) => phase.name === 'Ambiguous reference'), false);
+});

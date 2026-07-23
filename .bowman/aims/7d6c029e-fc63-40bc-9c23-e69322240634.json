@@ -16,7 +16,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "Graph-first descriptions, phase boundary support, and test-process reliability are implemented and internally verified; awaiting Felix's acceptance.",
+    "comment": "Graph-first guidance, phase boundaries, terminating tests, explicit tRPC injection, and virtual before/after placement are implemented and internally verified; awaiting Felix's acceptance.",
     "date": 1784818625883
   },
   "intrinsicValue": 0,
@@ -24,5 +24,6 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Follow-up improvement: create_phase now accepts virtual `before` and `after` sibling-name arguments while the backend remains index-based. MCP resolves exact unique sibling names against ordered siblings, permits order/before/after together only when all resolve to the same insertion index, and returns LLM-readable errors with available candidates for missing names, matching IDs for ambiguous names, and resolved indices for conflicts. Focused phase tests cover matching compound constraints, ordering, missing, ambiguity, and mismatch (3/3 pass); MCP TypeScript build passes. This reduces index arithmetic and makes phase planning calls more legible without complicating persisted phase data."
 }
