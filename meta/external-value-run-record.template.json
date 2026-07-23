@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0",
+  "runId": "replace-with-stable-run-id",
+  "startedAt": "2026-07-23T00:00:00Z",
+  "endedAt": null,
+  "beneficiary": {
+    "name": null,
+    "organization": "replace-with-real-beneficiary",
+    "contactEvidenceUri": null
+  },
+  "selectedAim": {
+    "id": "replace-with-aim-id",
+    "text": "replace-with-selected-aim"
+  },
+  "missionPath": [
+    {
+      "id": "replace-with-mission-aim-id",
+      "text": "replace-with-mission"
+    }
+  ],
+  "hypothesis": {
+    "claim": "State why this action should create external value.",
+    "prediction": "State the observable result and time horizon.",
+    "successEvidence": [
+      "Name authoritative evidence that would support the prediction."
+    ],
+    "stopConditions": [
+      "Name a condition that stops or reverses the work."
+    ]
+  },
+  "authority": {
+    "grantedBy": null,
+    "scope": [],
+    "humanOnlyDecisions": [],
+    "credentials": []
+  },
+  "transitions": [],
+  "actions": [],
+  "verification": [
+    {
+      "criterion": "The delivered artifact addresses the beneficiary's stated need.",
+      "method": "Compare the artifact with the agreed acceptance criteria.",
+      "result": "pending",
+      "evidenceUris": []
+    }
+  ],
+  "delivery": {
+    "deliveredAt": null,
+    "artifactUris": [],
+    "presentedTo": null
+  },
+  "externalOutcome": {
+    "state": "pending",
+    "recordedAt": null,
+    "evidenceUri": null,
+    "beneficiaryStatement": null
+  },
+  "economics": {
+    "currency": "EUR",
+    "revenue": 0,
+    "modelCost": 0,
+    "integrationCost": 0,
+    "humanHours": 0,
+    "humanHourlyRate": 0,
+    "otherCost": 0,
+    "netValue": 0
+  },
+  "failuresAndRecovery": [],
+  "finalDisposition": {
+    "decision": "pending",
+    "beliefUpdate": "",
+    "nextAimIds": []
+  }
+}

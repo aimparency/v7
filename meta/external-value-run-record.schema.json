@@ -1,0 +1,316 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aimparency.org/schemas/external-value-run-record.schema.json",
+  "title": "Aimparency external-value run record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "startedAt",
+    "endedAt",
+    "beneficiary",
+    "selectedAim",
+    "missionPath",
+    "hypothesis",
+    "authority",
+    "transitions",
+    "actions",
+    "verification",
+    "delivery",
+    "externalOutcome",
+    "economics",
+    "finalDisposition"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "endedAt": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "beneficiary": {
+      "$ref": "#/$defs/beneficiary"
+    },
+    "selectedAim": {
+      "$ref": "#/$defs/aimReference"
+    },
+    "missionPath": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/aimReference"
+      }
+    },
+    "hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim", "prediction", "successEvidence", "stopConditions"],
+      "properties": {
+        "claim": { "type": "string", "minLength": 1 },
+        "prediction": { "type": "string", "minLength": 1 },
+        "successEvidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "stopConditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grantedBy", "scope", "humanOnlyDecisions", "credentials"],
+      "properties": {
+        "grantedBy": { "type": ["string", "null"] },
+        "scope": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "humanOnlyDecisions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "authorizedBy", "expiresAt"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "authorizedBy": { "type": "string", "minLength": 1 },
+              "expiresAt": {
+                "type": ["string", "null"],
+                "format": "date-time"
+              }
+            }
+          }
+        }
+      }
+    },
+    "transitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["at", "from", "to", "reason"],
+        "properties": {
+          "at": { "type": "string", "format": "date-time" },
+          "from": { "type": ["string", "null"] },
+          "to": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "at",
+          "actor",
+          "action",
+          "target",
+          "result",
+          "evidenceUris",
+          "reversible"
+        ],
+        "properties": {
+          "at": { "type": "string", "format": "date-time" },
+          "actor": { "type": "string", "minLength": 1 },
+          "action": { "type": "string", "minLength": 1 },
+          "target": { "type": "string", "minLength": 1 },
+          "result": { "type": "string", "minLength": 1 },
+          "evidenceUris": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "reversible": { "type": "boolean" }
+        }
+      }
+    },
+    "verification": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["criterion", "method", "result", "evidenceUris"],
+        "properties": {
+          "criterion": { "type": "string", "minLength": 1 },
+          "method": { "type": "string", "minLength": 1 },
+          "result": {
+            "enum": ["pass", "fail", "inconclusive", "pending"]
+          },
+          "evidenceUris": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["deliveredAt", "artifactUris", "presentedTo"],
+      "properties": {
+        "deliveredAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "artifactUris": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "presentedTo": { "type": ["string", "null"] }
+      }
+    },
+    "externalOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "recordedAt", "evidenceUri", "beneficiaryStatement"],
+      "properties": {
+        "state": {
+          "enum": [
+            "pending",
+            "accepted",
+            "used",
+            "merged",
+            "paid",
+            "rejected"
+          ]
+        },
+        "recordedAt": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "evidenceUri": { "type": ["string", "null"] },
+        "beneficiaryStatement": { "type": ["string", "null"] }
+      }
+    },
+    "economics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "currency",
+        "revenue",
+        "modelCost",
+        "integrationCost",
+        "humanHours",
+        "humanHourlyRate",
+        "otherCost",
+        "netValue"
+      ],
+      "properties": {
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "revenue": { "type": "number" },
+        "modelCost": { "type": "number", "minimum": 0 },
+        "integrationCost": { "type": "number", "minimum": 0 },
+        "humanHours": { "type": "number", "minimum": 0 },
+        "humanHourlyRate": { "type": "number", "minimum": 0 },
+        "otherCost": { "type": "number", "minimum": 0 },
+        "netValue": { "type": "number" }
+      }
+    },
+    "failuresAndRecovery": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["failure", "effect", "recovery", "evidenceUris"],
+        "properties": {
+          "failure": { "type": "string", "minLength": 1 },
+          "effect": { "type": "string", "minLength": 1 },
+          "recovery": { "type": "string", "minLength": 1 },
+          "evidenceUris": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "finalDisposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "beliefUpdate", "nextAimIds"],
+      "properties": {
+        "decision": {
+          "enum": ["continue", "revise", "stop", "pending"]
+        },
+        "beliefUpdate": { "type": "string" },
+        "nextAimIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "beneficiary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "organization", "contactEvidenceUri"],
+      "properties": {
+        "name": { "type": ["string", "null"] },
+        "organization": { "type": "string", "minLength": 1 },
+        "contactEvidenceUri": { "type": ["string", "null"] }
+      }
+    },
+    "aimReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "text"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "text": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "type": "object",
+        "properties": {
+          "externalOutcome": {
+            "type": "object",
+            "properties": {
+              "state": {
+                "not": { "const": "pending" }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "type": "object",
+        "properties": {
+          "externalOutcome": {
+            "type": "object",
+            "properties": {
+              "recordedAt": { "type": "string" },
+              "evidenceUri": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

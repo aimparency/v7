@@ -13,16 +13,19 @@
   "supportedAims": [
     "7f2bae54-03a6-481f-8de7-114fba05c112"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
   "status": {
-    "state": "open",
-    "comment": "Highest-leverage item: the demo gates the public showcase.",
-    "date": 1780755809539
+    "state": "human-dependent",
+    "comment": "The strict schema, valid template, and recording guidance are ready. Completing the aim requires a real externally authorized run and evidence of beneficiary acceptance, use, merge, payment, or rejection.",
+    "date": 1784794632180
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Prepared meta/external-value-run-record.schema.json, .template.json, and .md. The record captures mission path, hypothesis, authority, transitions, actions, verification, delivery, external outcome, failures/recovery, full economics, and belief update. Non-pending external outcomes require dated external evidence, and unknown fields are rejected. Verification: JSON parses; AJV 2020 strict compilation succeeds; the template validates; negative cases reject an accepted outcome without evidence and an extra untracked property; git diff --check passes."
 }
