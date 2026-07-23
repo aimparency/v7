@@ -14,7 +14,17 @@
   ],
   "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "7d6c029e-fc63-40bc-9c23-e69322240634",
+      "relativePosition": [
+        2.4874305973085913,
+        0.2503777617381863
+      ],
+      "weight": 1,
+      "explanation": "Extends lean MCP tool-surface guidance from generic autonomy to graph-first planning."
+    }
+  ],
   "supportedAims": [
     "cffdcd91-fd9c-45e4-98fd-e265650be143"
   ],

@@ -2,7 +2,11 @@
   "id": "e4c477a4-009b-4354-a2ad-2b4616ca3377",
   "parent": "bb7ce28d-0eee-4243-a489-fd4eab223c35",
   "childPhaseIds": [
-    "b16cdc29-a215-4b07-a262-49efd6171b2f"
+    "b16cdc29-a215-4b07-a262-49efd6171b2f",
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5",
+    "111d2965-0ca2-4b07-ab5c-eef1571a820a",
+    "37bee25a-dfee-4595-8eba-628a6f5a3d5b",
+    "d3c486d6-60a9-4843-a16f-b545c086fcc2"
   ],
   "commitments": [
     "cabe6e06-8988-4145-b884-9ef5bc68f660",
@@ -13,7 +17,8 @@
     "43021984-0a79-4bdb-a961-81396ddfe877",
     "fdd2059a-2d3b-49b4-994b-023799c90397",
     "9a1c0cf3-98f4-4534-b742-d4e13e766345",
-    "07178308-5d5c-4340-9697-3c68105602d5"
+    "07178308-5d5c-4340-9697-3c68105602d5",
+    "f1bc585d-77c3-4d01-8cb1-e6e69a22ba7c"
   ],
   "name": "secure funding by end of August"
 }

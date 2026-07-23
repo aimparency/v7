@@ -11,12 +11,23 @@
     "deck",
     "demo"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "f1bc585d-77c3-4d01-8cb1-e6e69a22ba7c",
+      "relativePosition": [
+        1.818203953092568,
+        1.715848007534047
+      ],
+      "weight": 1,
+      "explanation": "Strengthens the reusable funding/demo package."
+    }
+  ],
   "supportedAims": [
     "cabe6e06-8988-4145-b884-9ef5bc68f660"
   ],
   "committedIn": [
-    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377",
+    "d3c486d6-60a9-4843-a16f-b545c086fcc2"
   ],
   "status": {
     "state": "review",

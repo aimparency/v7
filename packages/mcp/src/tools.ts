@@ -1,6 +1,5 @@
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { calculateAimValues } from "shared";
-import { trpc } from "./client.js";
 import { AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { execFileSync } from "child_process";
@@ -169,8 +168,8 @@ function toStoredConnection(input: ConnectionInput) {
   };
 }
 
-export function registerTools(server: Server, clientOverride?: any) {
-  const trpcClient = clientOverride || trpc;
+export function registerTools(server: Server, trpcClient: any) {
+  if (!trpcClient) throw new Error("registerTools requires a tRPC client");
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [
@@ -255,7 +254,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "create_aim",
-          description: "Create a non-duplicate aim and connect it to the mission it serves. Set value on goals, cost on tasks, and phaseId when it should enter the work queue.",
+          description: "Put a non-duplicate goal, idea, decision, or task in the Aimparency graph and connect it to the mission it serves. Prefer aims/connections over auxiliary planning files; use files only for detail the graph cannot express well. Set value on goals, cost on tasks, and phaseId when it should enter the work queue.",
           inputSchema: {
             type: "object",
             properties: {
@@ -349,20 +348,23 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "create_phase",
-          description: "Create phase by name under optional parent.",
+          description: "Create an ordered work horizon or timebox under an optional parent, with optional epoch-ms boundaries. Then use commit_aim_to_phase to make its aims discoverable and rankable. Prefer phases over describing schedules only in documents.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
               name: { type: "string" },
               parent: { type: ["string", "null"] },
+              order: { type: "number", description: "Zero-based position among sibling phases." },
+              from: { type: "number", description: "Optional phase start as Unix epoch milliseconds." },
+              to: { type: "number", description: "Optional phase end as Unix epoch milliseconds." },
             },
             required: ["projectPath", "name"],
           },
         },
         {
           name: "update_phase",
-          description: "Update phase name/parent",
+          description: "Update phase name, parent, or optional epoch-ms boundaries.",
           inputSchema: {
             type: "object",
             properties: {
@@ -370,6 +372,8 @@ export function registerTools(server: Server, clientOverride?: any) {
               phaseId: { type: "string" },
               name: { type: "string" },
               parent: { type: ["string", "null"] },
+              from: { type: "number", description: "Optional phase start as Unix epoch milliseconds." },
+              to: { type: "number", description: "Optional phase end as Unix epoch milliseconds." },
             },
             required: ["projectPath", "phaseId"],
           },
@@ -426,7 +430,7 @@ export function registerTools(server: Server, clientOverride?: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Start and resume the infinite loop here. Pick a high-value actionable aim, verify real outcomes, record them, then return and reprioritize toward the mission. Ranks phase-committed open aims; if the phase contains only open containers and no open leaf, falls back to connected uncommitted open aims so hidden work cannot empty the loop.",
+          description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable aim, update aims/connections/phases as understanding changes, verify real outcomes, record the result on the aim, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open aims; if the phase contains only open containers and no open leaf, falls back to connected uncommitted open aims so hidden work cannot empty the loop.",
           inputSchema: {
             type: "object",
             properties: {
@@ -1078,6 +1082,9 @@ export function registerTools(server: Server, clientOverride?: any) {
             phase: {
               name: args.name as string,
               parent: (args.parent as string | null) || null,
+              ...(args.order !== undefined ? { order: args.order as number } : {}),
+              ...(args.from !== undefined ? { from: args.from as number } : {}),
+              ...(args.to !== undefined ? { to: args.to as number } : {}),
               commitments: [],
             },
           });
@@ -1095,6 +1102,8 @@ export function registerTools(server: Server, clientOverride?: any) {
           const updateData: any = {};
           if (args.name !== undefined) updateData.name = args.name;
           if (args.parent !== undefined) updateData.parent = args.parent;
+          if (args.from !== undefined) updateData.from = args.from;
+          if (args.to !== undefined) updateData.to = args.to;
 
           await trpcClient.phase.update.mutate({
             projectPath: args.projectPath as string,

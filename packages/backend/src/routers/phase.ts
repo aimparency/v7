@@ -78,6 +78,8 @@ export const createPhaseRouter = (
         phase: z.object({
           name: z.string(),
           order: z.number().int().nonnegative().optional(),
+          from: z.number().optional(),
+          to: z.number().optional(),
           parent: z.string().nullable().optional(),
           commitments: z.array(z.string()).optional()
         })
@@ -98,6 +100,8 @@ export const createPhaseRouter = (
         const phase: Phase = {
           id: phaseId,
           name: input.phase.name,
+          ...(input.phase.from !== undefined ? { from: input.phase.from } : {}),
+          ...(input.phase.to !== undefined ? { to: input.phase.to } : {}),
           parent: input.phase.parent ?? null,
           childPhaseIds: [],
           commitments: input.phase.commitments || []
@@ -146,6 +150,8 @@ export const createPhaseRouter = (
         phaseId: z.string().uuid(),
         phase: z.object({
           name: z.string().optional(),
+          from: z.number().optional(),
+          to: z.number().optional(),
           parent: z.string().nullable().optional(),
           commitments: z.array(z.string()).optional()
         })
@@ -157,6 +163,8 @@ export const createPhaseRouter = (
         const updatedPhase: Phase = {
             ...existingPhase,
             ...(input.phase.name !== undefined ? { name: input.phase.name } : {}),
+            ...(input.phase.from !== undefined ? { from: input.phase.from } : {}),
+            ...(input.phase.to !== undefined ? { to: input.phase.to } : {}),
             ...(input.phase.parent !== undefined ? { parent: input.phase.parent } : {}),
             ...(input.phase.childPhaseIds !== undefined ? { childPhaseIds: input.phase.childPhaseIds } : {}),
             ...(input.phase.commitments !== undefined ? { commitments: input.phase.commitments } : {})

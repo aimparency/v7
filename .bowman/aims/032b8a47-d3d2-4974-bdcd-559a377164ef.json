@@ -41,7 +41,9 @@
     "9548e95a-a911-41a5-b404-0cc289633acd",
     "3253bc9e-14fe-4c9b-9849-588620518517"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "111d2965-0ca2-4b07-ab5c-eef1571a820a"
+  ],
   "status": {
     "state": "human-dependent",
     "comment": "The diagnostic, commercial model, operating model, and resilience policy are ready. Starting the real pilot requires a consenting company owner, permission to inspect a bounded workflow and baseline evidence, agreement on scope/payment, and credentials only after written authorization.",

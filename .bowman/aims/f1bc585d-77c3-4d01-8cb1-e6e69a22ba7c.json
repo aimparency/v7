@@ -1,0 +1,35 @@
+{
+  "id": "f1bc585d-77c3-4d01-8cb1-e6e69a22ba7c",
+  "text": "Produce the three-minute survival-to-moonshot walkthrough",
+  "description": "Create one reusable three-minute walkthrough for an owner, funder, or agent builder. Start with one expensive person-dependent workflow, show the owner mission and human-only decisions in the graph, show Aimparency selecting and delegating a bounded task, show external evidence and real costs returning, then zoom out to the strategy-agent layer for a future of dramatically more capable specialist agents. Clearly distinguish the working system, the one-month experiment, and the longer-term vision. Do not imply a customer, A2A deployment, payment, or autonomous company already exists.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "moonshot",
+    "demo",
+    "three-minute",
+    "positioning"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "07178308-5d5c-4340-9697-3c68105602d5",
+    "093756d3-c8ef-4acb-ac14-6e610a5e0060"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377",
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "The three-minute walkthrough, one-sentence category, truth labels, audience-specific asks, and evidence checklist are drafted and internally checked; awaiting Felix's narrative/visual acceptance.",
+    "date": 1784818134627
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Created meta/three-minute-moonshot-walkthrough.md as the detail artifact for this graph aim. It provides a timed survival→graph→bounded delegation→external evidence→moonshot arc, explicitly labels what works now versus what is being tested versus the A2A direction, and avoids claiming customers, revenue, or deployed interoperability. Following Felix's correction, the one-month schedule itself is now represented as four Aimparency phases with existing aims committed to each; Markdown remains only for the timed script detail."
+}

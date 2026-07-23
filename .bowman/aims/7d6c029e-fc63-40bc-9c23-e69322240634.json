@@ -1,0 +1,28 @@
+{
+  "id": "7d6c029e-fc63-40bc-9c23-e69322240634",
+  "text": "Make MCP planning graph-first and phase creation reliable",
+  "description": "Improve MCP so agents naturally represent plans as aims, connections, and phases before writing auxiliary documents. Keep the guidance lean. Restore phase start/end support, ensure focused MCP tests terminate cleanly, and diagnose the observed create_phase delay with evidence. Record what additional compound planning operation would reduce round trips without hiding partial failure.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "12da17c9-7c18-479c-8dc3-e78bc0a35805",
+    "07178308-5d5c-4340-9697-3c68105602d5"
+  ],
+  "committedIn": [
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Graph-first descriptions, phase boundary support, and test-process reliability are implemented and internally verified; awaiting Felix's acceptance.",
+    "date": 1784818625883
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -21,7 +21,9 @@
     "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
     "fdd2059a-2d3b-49b4-994b-023799c90397"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
+  ],
   "status": {
     "state": "human-dependent",
     "comment": "Felix must choose and contact the trusted Herzog Records person; the system should not impersonate him or initiate outreach.",

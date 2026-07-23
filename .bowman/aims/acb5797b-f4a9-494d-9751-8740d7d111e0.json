@@ -2,6 +2,7 @@
   "id": "acb5797b-f4a9-494d-9751-8740d7d111e0",
   "text": "Prepare the first client-ready paid AI-transformation diagnostic proposal",
   "description": "Turn the internal diagnostic and commercial model into a concise German proposal Felix can adapt after a Wilde Möhre or Herzog Records owner call. Include fixed scope, two-week schedule, €2,500 net first-price hypothesis, 50/50 payment, owner inputs, deliverables, exclusions, confidentiality/data minimization, no automation or credentials during diagnosis, acceptance, and optional separately priced pilot. Keep placeholders explicit and do not present it as legal advice.",
+  "reflection": "Created meta/ai-transformation-diagnostic-offer.de.md: a concise two-week, one-workflow diagnostic proposal with €2,500 net first-price hypothesis, 50/50 payment, explicit client inputs and deliverables, no credentials/production automation during diagnosis, data minimization, exclusions, acceptance procedure, and separately authorized pilot. Price is labeled a hypothesis and legal terms require review. Verification: git diff --check passed and all required commercial/boundary clauses are present.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -17,7 +18,9 @@
     "fcb77ff3-0bb5-416c-8f70-ad6a5ac2e60e",
     "a5735564-9b26-48cd-9c40-af9a05c6b95a"
   ],
-  "committedIn": [],
+  "committedIn": [
+    "111d2965-0ca2-4b07-ab5c-eef1571a820a"
+  ],
   "status": {
     "state": "review",
     "comment": "Client-ready German proposal drafted and internally checked; price and legal terms require founder/client validation.",
@@ -28,6 +31,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Created meta/ai-transformation-diagnostic-offer.de.md: a concise two-week, one-workflow diagnostic proposal with €2,500 net first-price hypothesis, 50/50 payment, explicit client inputs and deliverables, no credentials/production automation during diagnosis, data minimization, exclusions, acceptance procedure, and separately authorized pilot. Price is labeled a hypothesis and legal terms require review. Verification: git diff --check passed and all required commercial/boundary clauses are present."
+  "valueVariance": 0
 }

@@ -2,6 +2,7 @@
   "id": "9a1c0cf3-98f4-4534-b742-d4e13e766345",
   "text": "Preserve a credible run record for the first autonomous external-value delivery",
   "description": "For the first real external-value experiment, preserve one reproducible discover→plan→execute→verify→present run that a stranger can inspect. Capture the selected aim, planning transitions, tool actions, verification, failures/recovery, resulting deliverable, and the external beneficiary's acceptance/use/merge/payment or explicit rejection. A screen recording is useful but optional if a structured run log and repository history are sufficient. This is no longer a BuilderShip deadline artifact; it supports the canonical external-value proof.",
+  "reflection": "Prepared meta/external-value-run-record.schema.json, .template.json, and .md. The record captures mission path, hypothesis, authority, transitions, actions, verification, delivery, external outcome, failures/recovery, full economics, and belief update. Non-pending external outcomes require dated external evidence, and unknown fields are rejected. Verification: JSON parses; AJV 2020 strict compilation succeeds; the template validates; negative cases reject an accepted outcome without evidence and an extra untracked property; git diff --check passes.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -14,7 +15,8 @@
     "7f2bae54-03a6-481f-8de7-114fba05c112"
   ],
   "committedIn": [
-    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377",
+    "37bee25a-dfee-4595-8eba-628a6f5a3d5b"
   ],
   "status": {
     "state": "human-dependent",
@@ -26,6 +28,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Prepared meta/external-value-run-record.schema.json, .template.json, and .md. The record captures mission path, hypothesis, authority, transitions, actions, verification, delivery, external outcome, failures/recovery, full economics, and belief update. Non-pending external outcomes require dated external evidence, and unknown fields are rejected. Verification: JSON parses; AJV 2020 strict compilation succeeds; the template validates; negative cases reject an accepted outcome without evidence and an extra untracked property; git diff --check passes."
+  "valueVariance": 0
 }

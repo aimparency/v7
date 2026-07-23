@@ -2,6 +2,7 @@
   "id": "07178308-5d5c-4340-9697-3c68105602d5",
   "text": "Make Aimparency take off within one month through revenue and a moonshot proof",
   "description": "By 23 August 2026, combine two inseparable engines. Survival engine: obtain at least one paid or clearly funded owner-led workflow experiment and measure its real economics. Moonshot engine: ship a legible proof that Aimparency can preserve human intent, continuously improve strategy, and coordinate specialist agents as intelligence and compute scale dramatically. The moonshot must use the same core primitives needed by the customer path, not become a separate science project. Treat abundant future intelligence and compute as making legitimate intent, ownership, evidence, authority, and real-world access more—not less—valuable.",
+  "reflection": "Created meta/one-month-takeoff-2026.md. Framed Aimparency's long-term scarcity thesis for a world of dramatically more capable AI and abundant compute: durable legitimate intent, authority, access, evidence, and strategy revision become the valuable layer. Coupled the moonshot proof to the same customer workflow and evidence machinery as the survival engine, with a 60/30/10 allocation, four weekly gates, and falsifiable 23 August scoreboard.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -39,6 +40,24 @@
       ],
       "weight": 1,
       "explanation": "Strategy-agent interoperability is the scalable future architecture."
+    },
+    {
+      "aimId": "f1bc585d-77c3-4d01-8cb1-e6e69a22ba7c",
+      "relativePosition": [
+        1.707954350520178,
+        1.8256209728580564
+      ],
+      "weight": 1,
+      "explanation": "Week 1 moonshot deliverable."
+    },
+    {
+      "aimId": "7d6c029e-fc63-40bc-9c23-e69322240634",
+      "relativePosition": [
+        2.4260041028070933,
+        0.6037417437639621
+      ],
+      "weight": 1,
+      "explanation": "Makes the one-month operating plan native to Aimparency."
     }
   ],
   "supportedAims": [
@@ -59,6 +78,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Created meta/one-month-takeoff-2026.md. Framed Aimparency's long-term scarcity thesis for a world of dramatically more capable AI and abundant compute: durable legitimate intent, authority, access, evidence, and strategy revision become the valuable layer. Coupled the moonshot proof to the same customer workflow and evidence machinery as the survival engine, with a 60/30/10 allocation, four weekly gates, and falsifiable 23 August scoreboard."
+  "valueVariance": 0
 }
