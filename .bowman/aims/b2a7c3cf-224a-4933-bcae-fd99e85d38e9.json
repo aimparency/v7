@@ -1,7 +1,7 @@
 {
   "id": "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
-  "text": "develop sound economical and mathmatical model",
-  "description": "",
+  "text": "Develop and calibrate a sound economic priority model",
+  "description": "Maintain an inspectable priority model that conserves graph value, distributes cost, discounts delayed returns, accounts for cost/value uncertainty, and uses aim surface as node mass in graph forces. The implemented model is a decision aid, not proof of economic value. Remaining work is calibration against authoritative observations from real deliveries: estimated versus actual duration, founder time, model/integration cost, external outcome, revenue, and prediction error. Do not auto-mutate human-set intrinsic value from activity counts or simulated credits. Revisit constants and uncertainty penalties only after enough comparable real runs exist.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -12,14 +12,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1779090876926
+    "state": "partially",
+    "comment": "Core mechanics are implemented and verified: value flow, cost distribution, duration discounting, variance penalties, and flow-force distribution by aim surface. Real-world calibration remains blocked on completed external-value runs with authoritative economics.",
+    "date": 1784794744906
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Reconciled the broad stale aim against current code and graph evidence. surfaceMovementShares divides connection correction by squared endpoint radius, so larger aims are more inertial; the focused frontend suite passes 35 files / 177 tests. calculateAimValues already applies duration-based daily discounting plus proportional cost/value variance penalties; its focused 3-test suite passes. The remaining economic work is empirical calibration from paid or externally evaluated runs, not another speculative formula."
 }
