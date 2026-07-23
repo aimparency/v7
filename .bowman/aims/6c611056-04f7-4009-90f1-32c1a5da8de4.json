@@ -1,7 +1,8 @@
 {
   "id": "6c611056-04f7-4009-90f1-32c1a5da8de4",
-  "text": "Use Aimparency aimgraphs as strategic cortex for external autonomous runtimes",
-  "description": "Design Aimparency so external runtimes (like Conway automaton) can use the aim graph as a strategic planning and hypothesis-management layer while keeping their own execution/runtime machinery.\n\n**HUMAN DECISION REQUIRED:**\n\n**Vision:** External autonomous agents use Aimparency aimgraphs for strategy while running their own execution loops.\n\n**Key questions:**\n1. What's the integration boundary? (API? File-based? MCP server?)\n2. Who owns what state? (Aimparency owns aims/graph, external owns runtime?)\n3. How do external runtimes write reflections/hypotheses back to graph?\n4. Should this be prioritized before or after native Aimparency autonomy?\n\n**Recommendation:** Defer until after native autonomy is proven (aim cffdcd91). This is strategic architecture, not urgent implementation.\n\n**After deciding:** Create detailed integration design document or mark as future work.",
+  "text": "Use Aimparency as the strategy and intent agent for external autonomous runtimes",
+  "description": "Aimparency preserves human-governed intent, explains priority context, proposes bounded delegations to independently operated specialist agents, and reconciles returned evidence. MCP remains the local graph-tool boundary; A2A is the peer-agent interoperability boundary. The architecture is specified in meta/a2a-strategy-agent-boundary.md. Implementation is activated only by a qualified customer workflow or a credible deployer agreeing to a concrete exchange, so protocol work does not displace economic validation.",
+  "reflection": "Researched the official A2A 1.0 specification and repositories and created meta/a2a-strategy-agent-boundary.md. Defined Aimparency's role as the human-intent/strategy agent, separated A2A peer collaboration from MCP graph tooling, mapped three candidate skills, specified bounded delegation and verification rules, and limited the first possible implementation to a generated Agent Card plus one authenticated read-only skill. The document explicitly keeps customer validation ahead of protocol completeness.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -9,15 +10,25 @@
     "integration",
     "automaton"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "5cc73338-d648-4440-98ef-035217d06fcd",
+      "relativePosition": [
+        1.4805457595554667,
+        2.014443906854278
+      ],
+      "weight": 1,
+      "explanation": "Smallest protocol-compliant exposure of the strategy-agent architecture."
+    }
+  ],
   "supportedAims": [
     "f6af0b7a-39b9-4f22-866e-8f13bca532e8"
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Requires human architectural decision about external runtime integration",
-    "date": 1774590323543
+    "state": "review",
+    "comment": "The integration boundary and staged activation criteria are now specified against official A2A 1.0. Awaiting Felix's architectural acceptance; implementation remains deliberately gated on a real interoperability case.",
+    "date": 1784793828484
   },
   "intrinsicValue": 0,
   "cost": 1,

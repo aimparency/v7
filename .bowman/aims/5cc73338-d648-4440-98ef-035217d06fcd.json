@@ -1,23 +1,26 @@
 {
   "id": "5cc73338-d648-4440-98ef-035217d06fcd",
-  "text": "Create machine-readable agent capability manifest (agent.json)",
-  "description": "Generate standardized agent.json file declaring Bowman's capabilities, constraints, and operational parameters. Include: agent name, operator wallet, ERC-8004 identity, supported tools (git, npm, file ops, API calls), supported tech stacks (Node.js, TypeScript, Vue), compute constraints, and supported task categories (code generation, project management, testing).",
+  "text": "Expose a schema-validated A2A Agent Card for the Aimparency Strategy Agent",
+  "description": "When activation evidence exists, generate the official A2A 1.0 Agent Card for an Aimparency Strategy Agent. Advertise only focused skills and supported interfaces; do not disclose credentials, private graph state, prompts, or broad internal tool access. Pair it with an authenticated read-only explain-strategy-context skill, a fixture peer/conformance test, and an audit record of disclosed context. Do not implement before a qualified customer workflow or credible deploying peer agrees to a concrete interoperability test.",
   "reflections": [],
   "archived": false,
   "tags": [
-    "manifest",
-    "capabilities",
-    "standardization"
+    "a2a",
+    "agent-card",
+    "interoperability",
+    "strategy-agent",
+    "market-gated"
   ],
   "supportingConnections": [],
   "supportedAims": [
-    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5",
+    "6c611056-04f7-4009-90f1-32c1a5da8de4"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Enables agent discovery and capability advertising",
-    "date": 1774771791323
+    "state": "human-dependent",
+    "comment": "Architecture is ready, but implementation is gated on real activation evidence: a customer workflow requiring independent specialist-agent coordination or a credible deployer agreeing to a dated concrete exchange.",
+    "date": 1784793828761
   },
   "intrinsicValue": 0,
   "cost": 1,
