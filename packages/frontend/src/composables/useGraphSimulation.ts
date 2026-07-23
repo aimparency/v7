@@ -7,6 +7,7 @@ import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
 import { trpc } from '../trpc'
 import { surfaceMovementShares } from '../utils/graph-forces'
+import { priorityColor } from '../utils/priority-color'
 
 // Constants
 const OUTER_MARGIN_FACTOR = 2
@@ -78,21 +79,6 @@ function sweepAndPrune(boxes: Box[], indices: Uint32Array, n: number) {
     }
   }
   return results
-}
-
-// Helper to interpolate colors (Orange #FF8000 -> Azure #0080FF)
-function interpolateColor(t: number): string {
-  // Clamp t to [0, 1]
-  t = Math.max(0, Math.min(1, t))
-  
-  // Start: [255, 128, 0]
-  // End:   [0, 128, 255]
-  
-  const r = Math.round(255 + (0 - 255) * t)
-  const g = 128
-  const b = Math.round(0 + (255 - 0) * t)
-  
-  return `rgb(${r}, ${g}, ${b})`
 }
 
 export function useGraphSimulation() {
@@ -190,15 +176,7 @@ export function useGraphSimulation() {
       let color: string | undefined = undefined
       if (graphUIStore.graphColorMode === 'priority') {
         const p = dataStore.getAimPriority(raw.id)
-        if (p === Number.POSITIVE_INFINITY) {
-          color = '#FFFF00' // Max Yellow
-        } else {
-          // Linear mapping for now: priority / max
-          // Or sqrt mapping to highlight lower-mid range?
-          // Let's try simple linear first
-          const t = p / maxPriority
-          color = interpolateColor(t)
-        }
+        color = priorityColor(p, maxPriority)
       }
 
       const isLoadable = loadableSet ? loadableSet.has(raw.id) : false
