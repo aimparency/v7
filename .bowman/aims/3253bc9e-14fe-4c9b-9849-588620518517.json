@@ -191,6 +191,15 @@
       ],
       "weight": 1,
       "explanation": "Turns economic autonomy into a near-term real-market falsification test."
+    },
+    {
+      "aimId": "07178308-5d5c-4340-9697-3c68105602d5",
+      "relativePosition": [
+        -1.1707569349050446,
+        -2.20892014327629
+      ],
+      "weight": 1,
+      "explanation": "Survival engine requires real economic stability."
     }
   ],
   "supportedAims": [

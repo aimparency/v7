@@ -1,0 +1,64 @@
+{
+  "id": "07178308-5d5c-4340-9697-3c68105602d5",
+  "text": "Make Aimparency take off within one month through revenue and a moonshot proof",
+  "description": "By 23 August 2026, combine two inseparable engines. Survival engine: obtain at least one paid or clearly funded owner-led workflow experiment and measure its real economics. Moonshot engine: ship a legible proof that Aimparency can preserve human intent, continuously improve strategy, and coordinate specialist agents as intelligence and compute scale dramatically. The moonshot must use the same core primitives needed by the customer path, not become a separate science project. Treat abundant future intelligence and compute as making legitimate intent, ownership, evidence, authority, and real-world access more—not less—valuable.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "one-month",
+    "takeoff",
+    "moonshot",
+    "revenue",
+    "future"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "fdd2059a-2d3b-49b4-994b-023799c90397",
+      "relativePosition": [
+        1.1905073307479888,
+        2.198338530671584
+      ],
+      "weight": 1,
+      "explanation": "Two-week operator validation produces the revenue wedge."
+    },
+    {
+      "aimId": "7f2bae54-03a6-481f-8de7-114fba05c112",
+      "relativePosition": [
+        0.3088475165115763,
+        -2.4808492923885224
+      ],
+      "weight": 1,
+      "explanation": "A real beneficiary turns the moonshot into evidence."
+    },
+    {
+      "aimId": "6c611056-04f7-4009-90f1-32c1a5da8de4",
+      "relativePosition": [
+        2.2080436666137313,
+        1.1724091292407228
+      ],
+      "weight": 1,
+      "explanation": "Strategy-agent interoperability is the scalable future architecture."
+    }
+  ],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "cabe6e06-8988-4145-b884-9ef5bc68f660"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "The dual-engine strategy, allocation, four weekly gates, and takeoff scoreboard are explicit. Execution is active; customer contact, contracts, and peer-introduction authorization remain human actions.",
+    "date": 1784794906285
+  },
+  "intrinsicValue": 30,
+  "cost": 20,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Created meta/one-month-takeoff-2026.md. Framed Aimparency's long-term scarcity thesis for a world of dramatically more capable AI and abundant compute: durable legitimate intent, authority, access, evidence, and strategy revision become the valuable layer. Coupled the moonshot proof to the same customer workflow and evidence machinery as the survival engine, with a 60/30/10 allocation, four weekly gates, and falsifiable 23 August scoreboard."
+}

@@ -97,6 +97,15 @@
         0.3004663305575495
       ],
       "weight": 1
+    },
+    {
+      "aimId": "07178308-5d5c-4340-9697-3c68105602d5",
+      "relativePosition": [
+        -0.27985217280303143,
+        2.4842871736933763
+      ],
+      "weight": 1,
+      "explanation": "Moonshot engine makes human intent the strategic layer for increasingly capable AI."
     }
   ],
   "supportedAims": [
