@@ -4,9 +4,13 @@ These messages are starting points. Personalize the first sentence so they sound
 
 ## Wilde Möhre
 
-> Hey [name], ich entwickle gerade mit Aimparency ein Angebot, mit dem inhabergeführte Organisationen einen konkreten Arbeitsablauf schrittweise in einen verantwortbaren KI-gestützten bzw. autonomen Prozess überführen können. Nicht als allgemeiner KI-Workshop: Wir nehmen einen wiederkehrenden Ablauf, messen den heutigen Aufwand, klären Entscheidungshoheit und Grenzen und bauen nur dann einen kleinen reversiblen Pilot, wenn es wirtschaftlich Sinn ergibt. Bei Wilde Möhre kenne ich den Kontext schon etwas und würde gern in 30 Minuten herausfinden, ob es einen passenden Engpass gibt. Wer wäre dafür die richtige Person?
+> Hey [name], ich probiere gerade im Kleinen aus, wie man einen wiederkehrenden Arbeitsablauf mit KI verbessern kann. Ich möchte euch keine große Automatisierungsvision pitchen, sondern verstehen: Welcher Prozess macht bei euch regelmäßig besonders viel Arbeit, ist chaotisch oder hängt zu stark an einer Person? Hättest du diese oder nächste Woche 30 Minuten, um einen solchen Ablauf gemeinsam anzuschauen – oder wer wäre dafür die richtige Person?
 
 If they ask for examples, offer categories rather than prescribing the problem: recurring planning dependencies, supplier/crew coordination, documentation and handoffs, or post-event reconciliation.
+
+This shorter invitation incorporates Boardy's independent feedback on 23 July
+2026. Do not attach a deck or proposal. The invitation earns a discovery
+conversation; it does not imply that Wilde Möhre has agreed to a pilot.
 
 ## Herzog Records
 
@@ -14,16 +18,27 @@ If they ask for examples, offer categories rather than prescribing the problem: 
 
 ## Discovery call
 
-Ask only enough to qualify a paid diagnostic:
+Start with events, not opinions. Ask them to reconstruct the most recent run of
+the workflow before discussing Aimparency:
 
-1. Which recurring workflow currently consumes disproportionate owner or team attention?
-2. What event starts it, and what observable result ends it?
-3. What does one run cost in time, delay, mistakes, or missed revenue?
-4. Which decisions must remain human, and who owns them?
-5. What evidence could establish a before/after result?
-6. Would solving the diagnostic itself be worth paying for, even if automation is not recommended?
+1. What happened the last time this workflow ran, from trigger to result?
+2. Where did people wait, repeat work, search for context, or escalate?
+3. How often does it run, and what does one run cost in time, delay, mistakes,
+   or missed revenue?
+4. Who is the person the workflow cannot currently run without?
+5. Which decisions must remain human, and who owns them?
+6. What systems or artifacts contain the authoritative evidence?
+7. What have you already tried, and why was it insufficient?
+8. Would you expose the real workflow and invest team time in a bounded
+   diagnostic?
+9. If the scope and result were credible, who could approve EUR 2,500 for it?
+10. What would make you say no even if the technical approach worked?
 
 Do not promise autonomy on the call. The next offer is a fixed-scope diagnostic with a price, output, schedule, access boundary, and stop condition.
+
+Immediately after the call, record evidence in
+`meta/operator-validation-sprint-2026-07.csv`. Praise and feature ideas are
+notes, not positive validation.
 
 ## Speaker proposal
 

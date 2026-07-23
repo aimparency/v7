@@ -182,6 +182,15 @@
       ],
       "weight": 1,
       "explanation": "External acceptance, use, or payment is the real survival feedback for economic autonomy."
+    },
+    {
+      "aimId": "fdd2059a-2d3b-49b4-994b-023799c90397",
+      "relativePosition": [
+        -2.4661367223582142,
+        0.4100849505118225
+      ],
+      "weight": 1,
+      "explanation": "Turns economic autonomy into a near-term real-market falsification test."
     }
   ],
   "supportedAims": [

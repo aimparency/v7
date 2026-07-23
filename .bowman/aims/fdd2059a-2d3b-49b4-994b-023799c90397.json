@@ -1,0 +1,54 @@
+{
+  "id": "fdd2059a-2d3b-49b4-994b-023799c90397",
+  "text": "Run a two-week operator validation sprint before further product expansion",
+  "description": "From 23 July through 6 August 2026, conduct 10 conversations with operators of owner-led organizations, starting with Wilde Möhre and Herzog Records. Do not lead with a product demo or promise of an autonomous company. Identify one recurring workflow that is expensive, chaotic, or overly dependent on one person. Test whether the operator will expose the real process, invest their time, and fund a bounded diagnostic or pilot. Record disconfirming evidence. The sprint succeeds through one paid or clearly funded bounded experiment, not through praise, meetings, feature requests, or simulated economics. Product work during the sprint must be directly required by a qualified workflow or remove friction from observing real evidence.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "customer-discovery",
+    "economic-evidence",
+    "two-week-sprint",
+    "human-dependent"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "43021984-0a79-4bdb-a961-81396ddfe877",
+      "relativePosition": [
+        2.173056299599581,
+        1.2360527168250455
+      ],
+      "weight": 1,
+      "explanation": "First warm operator conversation."
+    },
+    {
+      "aimId": "493d4f17-9781-4dff-a32c-2916e298f0bb",
+      "relativePosition": [
+        1.2976342340424794,
+        2.1368540882898364
+      ],
+      "weight": 1,
+      "explanation": "Second warm operator conversation."
+    }
+  ],
+  "supportedAims": [
+    "3253bc9e-14fe-4c9b-9849-588620518517",
+    "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
+    "032b8a47-d3d2-4974-bdcd-559a377164ef"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Sprint design, invitation, interview questions, build gate, and ten-prospect evidence tracker are ready. Felix must choose the first Wilde Möhre contact, personalize and send the invitation, conduct or authorize the operator conversations, and make commercial representations.",
+    "date": 1784793712778
+  },
+  "intrinsicValue": 20,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Created meta/operator-validation-sprint-2026-07.md and .csv for a dated 23 July–6 August market test. Defined externally falsifiable success as real workflow access, operator time, decision authority, and paid or committed funding; explicitly excluded praise, meetings, and unpaid open-ended proofs. Tightened the Wilde Möhre invitation based on Boardy's independent feedback and added event-based discovery questions. Verification: git diff --check passed, all CSV rows have 22 columns, and the Aimparency graph consistency check is clean."
+}
