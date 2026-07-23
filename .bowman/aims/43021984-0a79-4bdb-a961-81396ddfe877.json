@@ -12,7 +12,17 @@
     "wilde-moehre",
     "human-action"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "bc43297c-ca7c-4861-9111-d79ba6f95851",
+      "relativePosition": [
+        0.8147632826977818,
+        2.3635060383183992
+      ],
+      "weight": 1,
+      "explanation": "Turns the warm introduction into a concrete, measurable festival workflow discovery."
+    }
+  ],
   "supportedAims": [
     "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
     "9548e95a-a911-41a5-b404-0cc289633acd",

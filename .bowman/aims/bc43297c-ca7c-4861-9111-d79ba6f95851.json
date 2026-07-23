@@ -1,0 +1,80 @@
+{
+  "id": "bc43297c-ca7c-4861-9111-d79ba6f95851",
+  "text": "Select one economically useful festival workflow for Aimparency's first pilot",
+  "description": "Use Wilde Möhre as the first discovery case, without changing safety-critical live operations before the final festival. In one owner/operator conversation, identify a bounded recurring workflow with a named owner, current artifacts, measurable baseline, decision rights, exclusions, and willingness to pay for a diagnostic. Rank candidate workflows by economic pain, recurrence, reversibility, data availability, and reusable Aimparency capability. Initial recommendation: post-festival closeout and institutional-memory graph. Success is permission to inspect one real workflow and its evidence—not enthusiasm for AI.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "festival",
+    "customer-discovery",
+    "pilot-selection",
+    "wilde-moehre"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "874bee42-7e1a-4e52-99ba-d5ae31dffe56",
+      "relativePosition": [
+        1.447295386580608,
+        2.0384641434134885
+      ],
+      "weight": 1,
+      "explanation": "Candidate workflow to compare during the festival operator diagnostic."
+    },
+    {
+      "aimId": "fb1ec36d-2185-4513-8e9b-d763018c7e80",
+      "relativePosition": [
+        -0.11440369644411309,
+        2.497380987002168
+      ],
+      "weight": 1,
+      "explanation": "Candidate workflow to compare during the festival operator diagnostic."
+    },
+    {
+      "aimId": "259e4c04-9031-4c0b-88e1-0b0ec55b540e",
+      "relativePosition": [
+        -2.450998702869925,
+        0.49254985385232103
+      ],
+      "weight": 1,
+      "explanation": "Candidate workflow to compare during the festival operator diagnostic."
+    },
+    {
+      "aimId": "dc9d8351-32c7-48cb-877e-978a94527f02",
+      "relativePosition": [
+        -0.7221637155272,
+        -2.393424234851805
+      ],
+      "weight": 1,
+      "explanation": "Candidate workflow to compare during the festival operator diagnostic."
+    },
+    {
+      "aimId": "acafa81a-3fbd-4945-8de9-ab57eab01562",
+      "relativePosition": [
+        1.4739553760050312,
+        2.0192710441012784
+      ],
+      "weight": 1,
+      "explanation": "Candidate workflow to compare during the festival operator diagnostic."
+    }
+  ],
+  "supportedAims": [
+    "43021984-0a79-4bdb-a961-81396ddfe877",
+    "032b8a47-d3d2-4974-bdcd-559a377164ef",
+    "fdd2059a-2d3b-49b4-994b-023799c90397"
+  ],
+  "committedIn": [
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix must ask a Wilde Möhre owner/operator which workflow causes recurring coordination pain and obtain permission to inspect real artifacts. No live operational automation should be introduced without explicit authorization.",
+    "date": 1784820358072
+  },
+  "intrinsicValue": 8,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

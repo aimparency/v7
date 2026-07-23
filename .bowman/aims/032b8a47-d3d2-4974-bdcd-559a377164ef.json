@@ -35,6 +35,15 @@
       ],
       "weight": 1,
       "explanation": "Finds and qualifies the first real paid pilot."
+    },
+    {
+      "aimId": "bc43297c-ca7c-4861-9111-d79ba6f95851",
+      "relativePosition": [
+        -0.0913014494106334,
+        2.498332252790953
+      ],
+      "weight": 1,
+      "explanation": "Selects the bounded workflow for the first paid transformation pilot."
     }
   ],
   "supportedAims": [

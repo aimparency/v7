@@ -1,0 +1,33 @@
+{
+  "id": "acafa81a-3fbd-4945-8de9-ab57eab01562",
+  "text": "Pilot hypothesis: evidence collection for sustainability, grants, and partner reporting",
+  "description": "Map promised outcomes and required evidence to operational sources before they disappear across spreadsheets, chats, photos, invoices, and team memories. Agents request and organize evidence, flag gaps, and draft traceable reports; humans validate claims. Measure report-preparation hours, missing evidence, time to answer funder/partner questions, and grant or sponsorship deadlines met. This is lower operational risk and may directly protect funding, but recurrence and budget ownership must be validated.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "festival",
+    "pilot-hypothesis",
+    "reporting",
+    "funding",
+    "sustainability"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bc43297c-ca7c-4861-9111-d79ba6f95851"
+  ],
+  "committedIn": [
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Workflow hypothesis awaiting operator evidence; do not build before validating real pain, ownership, artifacts, baseline, and willingness to pay.",
+    "date": 1784820378399
+  },
+  "intrinsicValue": 3,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

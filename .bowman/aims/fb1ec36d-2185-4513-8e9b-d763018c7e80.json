@@ -1,0 +1,32 @@
+{
+  "id": "fb1ec36d-2185-4513-8e9b-d763018c7e80",
+  "text": "Pilot hypothesis: artist and vendor intake completeness loop",
+  "description": "Turn booking/vendor onboarding requirements into a goal-and-dependency graph: contracts, technical riders, travel, accommodation, accreditation, invoices, permits, and missing answers. Agents classify incoming material, propose reminders, and surface blockers; responsible humans approve communications and contractual choices. Measure coordinator hours per act/vendor, missing fields near deadline, reminder cycles, and late operational surprises. Avoid autonomous contract interpretation or commitments.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "festival",
+    "pilot-hypothesis",
+    "artist-relations",
+    "vendor-intake"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bc43297c-ca7c-4861-9111-d79ba6f95851"
+  ],
+  "committedIn": [
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Workflow hypothesis awaiting operator evidence; do not build before validating real pain, ownership, artifacts, baseline, and willingness to pay.",
+    "date": 1784820377034
+  },
+  "intrinsicValue": 4,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

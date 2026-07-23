@@ -30,6 +30,15 @@
       ],
       "weight": 1,
       "explanation": "Second warm operator conversation."
+    },
+    {
+      "aimId": "bc43297c-ca7c-4861-9111-d79ba6f95851",
+      "relativePosition": [
+        -0.19703933116600184,
+        2.4922230040615654
+      ],
+      "weight": 1,
+      "explanation": "Provides the first operator-validation case and disconfirming evidence."
     }
   ],
   "supportedAims": [

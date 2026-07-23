@@ -1,0 +1,33 @@
+{
+  "id": "dc9d8351-32c7-48cb-877e-978a94527f02",
+  "text": "Pilot hypothesis: production change-request and decision-rights graph",
+  "description": "Represent cross-department change requests, dependencies, affected goals, accountable owner, deadline, and explicit approval state. Agents detect conflicts, summarize impact, and chase missing information; humans retain authority for safety, budget, staffing, permits, artist commitments, and final go/no-go decisions. Measure coordination latency, duplicate/conflicting work, decisions lacking an owner, and emergency escalations. Valuable but higher-risk; test only in shadow mode before any live use.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "festival",
+    "pilot-hypothesis",
+    "production",
+    "decision-rights",
+    "shadow-mode"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bc43297c-ca7c-4861-9111-d79ba6f95851"
+  ],
+  "committedIn": [
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Workflow hypothesis awaiting operator evidence; do not build before validating real pain, ownership, artifacts, baseline, and willingness to pay.",
+    "date": 1784820377928
+  },
+  "intrinsicValue": 4,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

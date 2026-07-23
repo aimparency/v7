@@ -1,0 +1,33 @@
+{
+  "id": "874bee42-7e1a-4e52-99ba-d5ae31dffe56",
+  "text": "Pilot hypothesis: post-festival closeout and institutional-memory graph",
+  "description": "After the festival, ingest permissioned task lists, meeting notes, contracts/invoice trackers, and short operator interviews into an inspectable graph of outstanding obligations, decisions, dependencies, owners, and reusable lessons. The agent proposes follow-ups and detects missing closeout items; humans approve messages, payments, contractual decisions, and status changes. Measure unresolved items after 7/14/30 days, invoice/contract turnaround, manager hours, and time needed to retrieve why a decision was made. Best first wedge for Wilde Möhre because it creates value after the event without destabilizing live production.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "festival",
+    "pilot-hypothesis",
+    "recommended",
+    "closeout",
+    "institutional-memory"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bc43297c-ca7c-4861-9111-d79ba6f95851"
+  ],
+  "committedIn": [
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "Workflow hypothesis awaiting operator evidence; do not build before validating real pain, ownership, artifacts, baseline, and willingness to pay.",
+    "date": 1784820376528
+  },
+  "intrinsicValue": 6,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
