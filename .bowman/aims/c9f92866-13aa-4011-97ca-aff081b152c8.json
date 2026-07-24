@@ -1,0 +1,32 @@
+{
+  "id": "c9f92866-13aa-4011-97ca-aff081b152c8",
+  "text": "Balance all internal graph forces by aim surface to prevent drift",
+  "description": "Prevent internal layout interactions from translating the graph. Treat aim mass as displayed surface (radius²). For every hierarchy, collision, and semantic pair, derive one equal-and-opposite interaction and distribute resulting movement inversely to endpoint surface, so mA·ΔA + mB·ΔB = 0. Preserve normalized transported-flow strength on hierarchy connections. Global centering remains the only intentional external force. Add focused conservation tests for unequal aim sizes.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "graph-layout",
+    "forces",
+    "conservation",
+    "bug"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "8cce82bb-e8f2-4845-b90e-6d6749238148",
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "All internal pair-force families now conserve the same surface-weighted center and shared clamping preserves cancellation; internally verified, awaiting Felix's visual runtime acceptance.",
+    "date": 1784887127061
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Mathematical audit: hierarchy links already split opposite endpoint movement by radius² surface mass, conserving mA·ΔA+mB·ΔB. Collision forces instead used radius weighting, and semantic forces used equal displacement, so the simulation mixed mass models and could translate the surface-weighted graph center. Updated collision and semantic interactions to use the same radius² invariant while preserving their equal-size relative correction. Replaced independent per-node movement clamping—which could break cancellation—with one shared scale across the whole frame. Normalized transported-flow strength remains unchanged. Only global centering and deliberate user/freeze constraints are external forces. Verification: graph-force tests 8/8 pass including unequal-surface conservation; frontend vue-tsc passes. Runtime visual acceptance remains required."
+}

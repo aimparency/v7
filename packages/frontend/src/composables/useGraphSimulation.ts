@@ -276,10 +276,15 @@ export function useGraphSimulation() {
     shiftA: vec2.T, 
     shiftB: vec2.T
   ) => {
-    const amount = (marginFactor - d / rSum) / rSum 
-    vec2.scale(hShift, ab, -rB * amount) 
+    const correction = marginFactor - d / rSum
+    const movement = surfaceMovementShares(rA, rB)
+
+    // `ab * correction` is the total pair separation. Split movement by
+    // inverse surface/mass so rA²·ΔA + rB²·ΔB = 0: internal collisions cannot
+    // translate the graph as a whole.
+    vec2.scale(hShift, ab, -correction * movement.from)
     vec2.add(shiftA, shiftA, hShift)
-    vec2.scale(hShift, ab, +rA * amount) 
+    vec2.scale(hShift, ab, correction * movement.into)
     vec2.add(shiftB, shiftB, hShift)
   }
 
@@ -525,8 +530,15 @@ export function useGraphSimulation() {
                 
                 const forceMagnitude = displacement * effectiveStiffness
 
-                vec2.scale(hShift, abVector, forceMagnitude)
+                const movement = surfaceMovementShares(nodeA.r, nodeB.r)
+
+                // Preserve the old equal-size relative correction (each end
+                // moved by forceMagnitude), while distributing unequal-size
+                // movement by surface mass. The underlying pair interaction
+                // is equal-and-opposite and cannot create net momentum.
+                vec2.scale(hShift, abVector, forceMagnitude * 2 * movement.from)
                 vec2.add(nodeA.shift, nodeA.shift, hShift)
+                vec2.scale(hShift, abVector, forceMagnitude * 2 * movement.into)
                 vec2.sub(nodeB.shift, nodeB.shift, hShift)
             }
         }
@@ -592,6 +604,11 @@ export function useGraphSimulation() {
         const currentScale = mapStore.scale || 1
         const s = (currentScale * mapStore.halfSide) / (LOGICAL_HALF_SIDE || 1000) || 1
 
+        // Apply the common simulation scale and the only intentional external
+        // force before limiting movement. Limit every node by one shared
+        // factor: clamping endpoints independently would destroy the balanced
+        // pair invariant and introduce translation on large corrections.
+        let largestShiftComponent = 0
         for (let i = 0; i < count; i++) {
             const n = currentNodes[i]!
 
@@ -602,11 +619,28 @@ export function useGraphSimulation() {
                 vec2.add(n.shift, n.shift, hShift)
             }
 
+            largestShiftComponent = Math.max(
+                largestShiftComponent,
+                Math.abs(n.shift[0]),
+                Math.abs(n.shift[1])
+            )
+        }
+        const maxMove = effectiveMaxGap * 0.1
+        const sharedMovementScale = largestShiftComponent > maxMove
+            ? maxMove / largestShiftComponent
+            : 1
+
+        for (let i = 0; i < count; i++) {
+            const n = currentNodes[i]!
+            if (sharedMovementScale < 1) {
+                vec2.scale(n.shift, n.shift, sharedMovementScale)
+            }
+
             // Debug logging for selected node
             if (shouldLog && n.id === debugId && shiftBeforeGlobal) {
                 // Global contribution = shift after global - shift before global (scaled)
                 const scaledBeforeGlobal = vec2.create()
-                vec2.scale(scaledBeforeGlobal, shiftBeforeGlobal, GLOBAL_FORCE)
+                vec2.scale(scaledBeforeGlobal, shiftBeforeGlobal, GLOBAL_FORCE * sharedMovementScale)
                 vec2.sub(forceContributions.global, n.shift, scaledBeforeGlobal)
 
                 console.group(`[GraphForce] ${n.text} (every 60 frames)`)
@@ -649,23 +683,15 @@ export function useGraphSimulation() {
             } else {
                 // Removed skip logic to ensure realtime updates and prevent jumps.
                 // Internal vs render position split handles performance optimization.
+
+                // Physics Update: Always apply shift to resolve tensions
+                vec2.add(n.pos, n.pos, n.shift)
+
+                // Visual Update Logic: Manhattan distance > 0.5px screen space
+                const dx = Math.abs(n.pos[0] - n.renderPos[0])
+                const dy = Math.abs(n.pos[1] - n.renderPos[1])
                 
-                // Clamp maximum movement to prevent chaos (10% of world side)
-                            const maxMove = effectiveMaxGap * 0.1
-                            if (n.shift[0] > maxMove) n.shift[0] = maxMove
-                            else if (n.shift[0] < -maxMove) n.shift[0] = -maxMove
-                            
-                            if (n.shift[1] > maxMove) n.shift[1] = maxMove
-                            else if (n.shift[1] < -maxMove) n.shift[1] = -maxMove
-                
-                            // Physics Update: Always apply shift to resolve tensions
-                            vec2.add(n.pos, n.pos, n.shift)
-                            
-                            // Visual Update Logic: Manhattan distance > 0.5px screen space
-                            const dx = Math.abs(n.pos[0] - n.renderPos[0])
-                            const dy = Math.abs(n.pos[1] - n.renderPos[1])
-                
-                            if ((dx + dy) * s > 0.5) {
+                if ((dx + dy) * s > 0.5) {
                     n.renderPos[0] = n.pos[0]
                     n.renderPos[1] = n.pos[1]
                     hasVisualChange = true

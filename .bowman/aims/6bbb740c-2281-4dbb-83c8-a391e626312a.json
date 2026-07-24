@@ -281,6 +281,15 @@
       ],
       "weight": 1,
       "explanation": "Grouped under the structural graph-view area."
+    },
+    {
+      "aimId": "c9f92866-13aa-4011-97ca-aff081b152c8",
+      "relativePosition": [
+        -2.428407513277789,
+        -0.5940007992048351
+      ],
+      "weight": 1,
+      "explanation": "Makes graph layout internally momentum-balanced and visually stable."
     }
   ],
   "supportedAims": [

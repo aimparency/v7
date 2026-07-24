@@ -2,6 +2,7 @@
   "id": "8cce82bb-e8f2-4845-b90e-6d6749238148",
   "text": "Normalize connection-size force without slowing small-aim layout convergence",
   "description": "Fix the regression introduced when hierarchy force changed from a 0.5–1.0 share weight to absolute flowValue*5 with a 0.02 floor. Absolute graph value scale should not determine convergence speed. Normalize positive transported flow against a robust reference across visible connections, compress extreme ratios, and retain a meaningful minimum force. Keep inverse-surface endpoint movement so smaller aims move more than larger aims. Verify relative strength, scale invariance, zero-flow fallback, and surface movement with focused tests.",
+  "reflection": "Confirmed regression from commit history: hierarchy force previously used 0.5+0.5*share, then changed to clamp(flowValue*5, 0.02, 1.5), causing many small-flow connections to receive ~0.02 rather than the former 0.5–1.0 and settle roughly 25× more slowly. Implemented median-relative visible-flow normalization with square-root compression and 0.5–1.5 bounds; a median connection is 0.75. Preserved inverse-surface endpoint movement. This is invariant to absolute graph value scale and computed only when graph links update, not every animation frame. Verification: graph-forces tests 7/7 pass; frontend vue-tsc passes.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -11,7 +12,17 @@
     "force-normalization",
     "performance"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "c9f92866-13aa-4011-97ca-aff081b152c8",
+      "relativePosition": [
+        1.6385877590381372,
+        -1.888128744532633
+      ],
+      "weight": 1,
+      "explanation": "Preserves normalized connection flow while fixing residual whole-graph drift."
+    }
+  ],
   "supportedAims": [
     "7815eb52-72fc-410c-9e4a-935d6abb745e",
     "6bbb740c-2281-4dbb-83c8-a391e626312a"
@@ -27,6 +38,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Confirmed regression from commit history: hierarchy force previously used 0.5+0.5*share, then changed to clamp(flowValue*5, 0.02, 1.5), causing many small-flow connections to receive ~0.02 rather than the former 0.5–1.0 and settle roughly 25× more slowly. Implemented median-relative visible-flow normalization with square-root compression and 0.5–1.5 bounds; a median connection is 0.75. Preserved inverse-surface endpoint movement. This is invariant to absolute graph value scale and computed only when graph links update, not every animation frame. Verification: graph-forces tests 7/7 pass; frontend vue-tsc passes."
+  "valueVariance": 0
 }

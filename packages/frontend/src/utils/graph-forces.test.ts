@@ -12,6 +12,17 @@ describe('surfaceMovementShares', () => {
     expect(shares.into).toBeCloseTo(0.8)
   })
 
+  it('conserves the surface-weighted center for unequal aims', () => {
+    const fromRadius = 20
+    const intoRadius = 10
+    const movement = surfaceMovementShares(fromRadius, intoRadius)
+
+    // The two movements point in opposite directions. Equal mass-weighted
+    // magnitudes mean the internal pair interaction produces no net momentum.
+    expect(fromRadius ** 2 * movement.from)
+      .toBeCloseTo(intoRadius ** 2 * movement.into)
+  })
+
   it('has a stable fallback for zero-size nodes', () => {
     expect(surfaceMovementShares(0, 0)).toEqual({ from: 0.5, into: 0.5 })
   })
