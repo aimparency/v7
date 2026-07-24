@@ -37,6 +37,7 @@ import { createVoiceRouter } from './routers/voice.js';
 import { createGraphRouter } from './routers/graph.js';
 import { createMarketRouter } from './routers/market.js';
 import { createProjectRouter } from './routers/project.js';
+import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from './path-completion.js';
 
 // Create context for tRPC
 const createContext = () => ({});
@@ -714,32 +715,6 @@ async function migrateCommittedInField(projectPath: string): Promise<void> {
 // Create the actual tRPC router
 // --- Spin-off helpers ---------------------------------------------------------
 
-// Expand a leading `~` / `~/` to the user's home directory so typed paths like
-// `~/projects/foo` resolve correctly on the backend.
-function expandHome(rawPath: string): string {
-  if (rawPath === '~') return os.homedir();
-  if (rawPath.startsWith('~/')) return path.join(os.homedir(), rawPath.slice(2));
-  return rawPath;
-}
-
-function resolveBowmanPath(rawPath: string): string {
-  const expanded = expandHome(rawPath);
-  return expanded.endsWith(AIMPARENCY_DIR_NAME) ? expanded : path.join(expanded, AIMPARENCY_DIR_NAME);
-}
-
-// Treat initialized and archived-only .bowman directories as existing graphs too:
-// their metadata must not be replaced just because the active aim folder is empty.
-async function bowmanExists(rawTargetPath: string): Promise<boolean> {
-  const target = resolveBowmanPath(rawTargetPath);
-  if (await fs.pathExists(path.join(target, 'meta.json'))) return true;
-  for (const dirName of ['aims', 'archived-aims']) {
-    const dir = path.join(target, dirName);
-    if (!(await fs.pathExists(dir))) continue;
-    if ((await fs.readdir(dir)).some((file) => file.endsWith('.json'))) return true;
-  }
-  return false;
-}
-
 // Remove an aim file (active or archived) and purge it from index + embeddings.
 async function deleteAimCompletely(rawProjectPath: string, aimId: string): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
@@ -756,27 +731,9 @@ const spinOffRouter = t.router({
   completePath: delayedProcedure
     .input(z.object({ partial: z.string() }))
     .query(async ({ input }: any) => {
-      const expanded = expandHome(input.partial);
-      // Split into the directory to list and the (possibly empty) prefix to match.
-      const endsWithSep = expanded.endsWith(path.sep) || expanded === '';
-      const dir = endsWithSep ? expanded : path.dirname(expanded);
-      const prefix = endsWithSep ? '' : path.basename(expanded);
-      const listDir = dir === '' ? '.' : dir;
-
-      let matches: string[] = [];
-      try {
-        const entries = await fs.readdir(listDir, { withFileTypes: true });
-        matches = entries
-          .filter((entry) => entry.isDirectory() && entry.name.startsWith(prefix))
-          .map((entry) => path.join(dir, entry.name))
-          .sort();
-      } catch {
-        // Non-existent / unreadable dir: no completions.
-      }
-
       return {
-        matches,
-        bowmanExists: await bowmanExists(expanded),
+        matches: await completeDirectoryPath(input.partial),
+        bowmanExists: await bowmanExists(input.partial),
       };
     }),
 

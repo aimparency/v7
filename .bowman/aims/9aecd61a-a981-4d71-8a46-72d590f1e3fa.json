@@ -11,14 +11,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Verified 2026-06-27: the 'needs backend implementation' blocker is resolved — completePath endpoint (server.ts:739) + SpinOffApplyModal folder autocomplete already exist. Remaining work is purely frontend: wire folder autocomplete into ProjectSelectionView's path input, reusing the SpinOffApplyModal pattern (ideally extract a shared component).",
-    "date": 1782542543006
+    "state": "review",
+    "comment": "Implemented and internally verified; needs visual/keyboard acceptance because no frontend runtime is currently running.",
+    "date": 1784893309481
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Extracted shared backend path completion/home expansion/.bowman detection utilities and reused them from both project selection and spin-off. Project selection now renders the untyped common directory prefix as subdued inline text and accepts it with Tab; ambiguous candidates complete only their common prefix. The debounced inspection remains revision-guarded. Verification: selector tests 3/3, backend tests 62/62 and build, frontend tests 197/197 and production build/type-check, git diff --check passed."
 }

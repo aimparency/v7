@@ -28,6 +28,7 @@ const emit = defineEmits<{
 
 const inspectedPath = ref('')
 const bowmanExists = ref<boolean | null>(null)
+const completionValue = ref('')
 let inspectionTimer: ReturnType<typeof setTimeout> | undefined
 let inspectionRevision = 0
 
@@ -37,6 +38,7 @@ watch(() => props.modelValue, (value) => {
   const revision = ++inspectionRevision
   inspectedPath.value = ''
   bowmanExists.value = null
+  completionValue.value = ''
   if (!path) return
   inspectionTimer = setTimeout(async () => {
     try {
@@ -44,6 +46,14 @@ watch(() => props.modelValue, (value) => {
       if (revision !== inspectionRevision) return
       inspectedPath.value = path
       bowmanExists.value = result.bowmanExists
+      const matches = result.matches ?? []
+      if (matches.length > 0) {
+        let prefix = matches[0]!
+        for (const candidate of matches.slice(1)) {
+          while (prefix && !candidate.startsWith(prefix)) prefix = prefix.slice(0, -1)
+        }
+        if (prefix.startsWith(path) && prefix.length > path.length) completionValue.value = prefix
+      }
     } catch {
       if (revision !== inspectionRevision) return
       inspectedPath.value = path
@@ -59,6 +69,13 @@ const selectButtonLabel = computed(() =>
     ? 'New Project'
     : 'Open Project'
 )
+const completionSuffix = computed(() => completionValue.value.slice(props.modelValue.trim().length))
+
+const acceptCompletion = (event: KeyboardEvent) => {
+  if (!completionValue.value) return
+  event.preventDefault()
+  emit('update:modelValue', completionValue.value)
+}
 
 const onInput = (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -90,14 +107,20 @@ const formatRelativeTime = (timestamp: number): string => {
     <p>Select a project base folder to get started</p>
 
     <div class="project-input-container">
-      <input
-        :value="props.modelValue"
-        type="text"
-        placeholder="Enter project folder path..."
-        class="project-input"
-        @input="onInput"
-        @keydown.enter="emit('select-project')"
-      />
+      <div class="project-input-shell">
+        <div v-if="completionSuffix" class="path-completion" aria-hidden="true">
+          <span class="typed-path">{{ props.modelValue }}</span><span>{{ completionSuffix }}</span>
+        </div>
+        <input
+          :value="props.modelValue"
+          type="text"
+          placeholder="Enter project folder path..."
+          class="project-input"
+          @input="onInput"
+          @keydown.tab="acceptCompletion"
+          @keydown.enter="emit('select-project')"
+        />
+      </div>
       <button @click="emit('select-project')" class="select-project">{{ selectButtonLabel }}</button>
     </div>
 
@@ -209,13 +232,38 @@ const formatRelativeTime = (timestamp: number): string => {
 }
 
 .project-input {
-  flex: 1;
+  width: 100%;
   padding: 0.75rem 1rem;
   background: #1a1a1a;
   border: 1px solid #555;
   border-radius: 0.3125rem;
   color: #e0e0e0;
   font-size: 1rem;
+}
+
+.project-input-shell {
+  position: relative;
+  flex: 1;
+}
+
+.path-completion {
+  position: absolute;
+  inset: 0;
+  padding: 0.75rem 1rem;
+  color: #666;
+  font-family: monospace;
+  white-space: pre;
+  pointer-events: none;
+}
+
+.typed-path {
+  visibility: hidden;
+}
+
+.project-input {
+  position: relative;
+  background: transparent;
+  font-family: monospace;
 }
 
 .project-input:focus {

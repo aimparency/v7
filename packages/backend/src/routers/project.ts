@@ -12,6 +12,7 @@ import { spawn, type ChildProcess } from 'child_process';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
 import { findDuplicatePairs, clusterDuplicates } from '../duplicate-detection.js';
+import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-completion.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1245,21 +1246,12 @@ export const createProjectRouter = (
     inspectPath: delayedProcedure
       .input(z.object({ projectPath: z.string() }))
       .query(async ({ input }: any) => {
-        const bowmanPath = normalizeProjectPath(input.projectPath);
-        const hasMeta = await fs.pathExists(path.join(bowmanPath, 'meta.json'));
-        let hasAimFiles = false;
-        for (const dirName of ['aims', 'archived-aims']) {
-          const aimsDir = path.join(bowmanPath, dirName);
-          if (!(await fs.pathExists(aimsDir))) continue;
-          if ((await fs.readdir(aimsDir)).some((file) => file.endsWith('.json'))) {
-            hasAimFiles = true;
-            break;
-          }
-        }
+        const bowmanPath = resolveBowmanPath(input.projectPath);
         return {
           projectPath: input.projectPath,
           bowmanPath,
-          bowmanExists: hasMeta || hasAimFiles,
+          bowmanExists: await bowmanExists(input.projectPath),
+          matches: await completeDirectoryPath(input.projectPath),
         };
       }),
 
