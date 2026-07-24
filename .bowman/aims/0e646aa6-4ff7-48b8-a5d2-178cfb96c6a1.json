@@ -17,14 +17,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Bonus feature - shows scalable coordination",
-    "date": 1774771792586
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026 as hackathon-oriented architecture noise. Fixed planner/developer/QA/deployment roles and a separate swarm layer are not needed: agents coordinate through ordinary aims, contribution edges, statuses, reflections, and human-dependent boundaries. Reconsider only if a real workflow exposes a concrete coordination failure that the graph cannot express.",
+    "date": 1784893677741
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Relevance review found this was framed as a BONUS FEATURE that “demonstrates coordination at scale,” not a validated user need. Preserving the intention here prevents a future agent from recreating a role taxonomy without evidence."
 }
