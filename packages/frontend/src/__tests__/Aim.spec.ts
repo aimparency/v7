@@ -4,6 +4,7 @@ import { createTestingPinia } from '@pinia/testing'
 import AimComponent from '../components/Aim.vue'
 import { useDataStore, type Aim } from '../stores/data'
 import { useUIStore } from '../stores/ui'
+import { useUIModalStore } from '../stores/ui/modal-store'
 import { createAimUIState } from '../stores/ui/aim-ui-state'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -77,6 +78,28 @@ describe('Aim.vue', () => {
     })
 
     expect(wrapper.text()).toContain('Test Aim')
+  })
+
+  it('opens the shared connection editor for a nested list aim', async () => {
+    const parentId = uuidv4()
+    const aim = createMockAim({ supportedAims: [parentId] })
+    const modalStore = useUIModalStore()
+    const openEditor = vi.spyOn(modalStore, 'openConnectionDetailsModal')
+    const wrapper = mount(AimComponent, {
+      global: { plugins: [pinia] },
+      props: {
+        aim,
+        parentAimId: parentId,
+        phaseId: 'test-phase',
+        columnIndex: 0,
+        isActive: false,
+        isSelected: false,
+        aimUiState: createAimUIState()
+      }
+    })
+
+    await wrapper.find('.connection-edit-button').trigger('click')
+    expect(openEditor).toHaveBeenCalledWith(parentId, aim.id)
   })
 
   it('displays sub-aim count when present', () => {

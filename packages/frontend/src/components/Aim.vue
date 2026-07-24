@@ -42,6 +42,7 @@ const aimContainerRef = ref<HTMLElement | null>(null)
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 const projectStore = useProjectStore()
+const modalStore = useUIModalStore()
 
 // Long-press context menu — one button per aim keyboard shortcut, dispatched
 // through the same handler the keyboard uses (so behaviour stays identical).
@@ -199,6 +200,11 @@ const hasMultipleParents = computed(() => parentAims.value.length > 1)
 
 const isMultiSelected = computed(() => uiStore.isMultiSelected(props.aim.id))
 
+const editParentConnection = () => {
+  if (!props.parentAimId) return
+  modalStore.openConnectionDetailsModal(props.parentAimId, props.aim.id)
+}
+
 const statusColor = computed(() => {
     const colorMap: Record<string, string> = {}
     dataStore.getStatuses.forEach((s: any) => {
@@ -281,6 +287,14 @@ onMounted(() => {
             <div class="stat-bottom value">{{ intrinsicValue }}</div>
           </div>
         </div>
+        <button
+          v-if="parentAimId"
+          type="button"
+          class="connection-edit-button"
+          title="Edit contribution to parent"
+          aria-label="Edit contribution to parent"
+          @click.stop="editParentConnection"
+        >↗</button>
       </div>
       
       <div v-if="isExpanded" class="aim-details">
@@ -434,6 +448,21 @@ onMounted(() => {
     justify-content: space-between;
     align-items: flex-start;
     gap: 0.5rem;
+  }
+
+  .connection-edit-button {
+    flex: 0 0 auto;
+    padding: 0.1rem 0.35rem;
+    color: #999;
+    background: transparent;
+    border: 1px solid #555;
+    border-radius: 0.2rem;
+    cursor: pointer;
+
+    &:hover {
+      color: #fff;
+      border-color: #888;
+    }
   }
 
   .aim-main {

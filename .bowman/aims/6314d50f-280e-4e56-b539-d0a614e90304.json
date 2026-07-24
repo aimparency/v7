@@ -12,14 +12,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1783365348057
+    "state": "review",
+    "comment": "Implemented and internally verified; needs visual acceptance in list view because no frontend runtime is currently running.",
+    "date": 1784893413714
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Nested aim rows now show a compact connection-edit affordance when their parent relation is explicit. It opens the existing ConnectionDetailsModal with the exact parent/child IDs, reusing the same contribution-share, explanation, and persistence logic as graph workflows. Verification: Aim component tests 7/7, complete frontend suite 198/198, production build/type-check, and git diff --check passed."
 }
