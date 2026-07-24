@@ -40,6 +40,15 @@
       ],
       "weight": 1,
       "explanation": "Gives humans inspectable, editable control over a proposed decomposition before it becomes graph state."
+    },
+    {
+      "aimId": "683f0e5a-7fd4-47d0-9209-1c42a6b2f79b",
+      "relativePosition": [
+        1.7569413092135222,
+        -1.7785267037576566
+      ],
+      "weight": 1,
+      "explanation": "Turns the implemented proposal editor and persistence boundary into a reachable end-to-end human-to-graph flow."
     }
   ],
   "supportedAims": [
@@ -48,7 +57,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Contract, shared proposal schema, approval persistence, and recursive editor/review UI are implemented. Model-backed read-only proposal generation and shared voice entry remain.",
+    "comment": "A complete manual text → transient draft → recursive edit/review → durable graph flow is implemented. Model-backed read-only decomposition and routing voice transcripts through the same proposal entry remain.",
     "date": 1784749867582
   },
   "intrinsicValue": 0,

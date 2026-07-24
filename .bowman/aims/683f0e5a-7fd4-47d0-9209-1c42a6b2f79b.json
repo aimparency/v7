@@ -1,0 +1,31 @@
+{
+  "id": "683f0e5a-7fd4-47d0-9209-1c42a6b2f79b",
+  "text": "Make human-approved aim proposals reachable from ordinary text entry",
+  "description": "Expose a lean product entry point where a human enters a goal, receives a transient one-root AimProposal, decomposes it with the existing recursive editor, reviews it, and explicitly persists it. This delivers a usable no-model baseline while keeping the proposal contract ready for later model-backed decomposition and voice reuse.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "human-ai-cooperation",
+    "elicitation",
+    "frontend",
+    "text-entry"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0697d033-bb95-4433-8a9c-20f2afd06c31"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "The ordinary-text → editable proposal → explicit approval path is implemented and internally verified; awaiting Felix's UI acceptance.",
+    "date": 1784894549981
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Added a toolbar “New goal” entry point and AimProposalEntry. Ordinary text becomes a transient one-root proposal (no graph write), then opens the recursive editor/review surface. Cancelling review returns to text entry; successful approval reloads all aims, switches to graph view, and selects the durable root. This is a usable no-model baseline and preserves the same contract for later model/voice input. Verification: entry+review tests 5/5, full frontend tests 204/204, frontend type-check, production build, and git diff check."
+}

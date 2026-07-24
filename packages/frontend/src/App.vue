@@ -25,6 +25,7 @@ import LoopPanel from './components/LoopPanel.vue'
 import LoopActionsOverlay from './components/LoopActionsOverlay.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
+import AimProposalEntry from './components/AimProposalEntry.vue'
 import { getRuntimeConfig } from './utils/runtime-config'
 import { hasQueryFlag, installPerfLoggingControls, perfLog } from './utils/perf-log'
 
@@ -85,6 +86,7 @@ const loopHeight = ref(parseInt(localStorage.getItem('aimparency-loop-height') |
 const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
 const loopRef = ref<InstanceType<typeof LoopPanel>>()
 const showConsistencyModal = ref(false)
+const showAimProposalEntry = ref(false)
 const isResizingWatchdog = ref(false)
 const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
 const discoveredProjectRoots = ref<string[]>([])
@@ -250,6 +252,13 @@ const handleVisibilityChange = () => {
   if (document.visibilityState === 'hidden') {
     flushPersistedUIState()
   }
+}
+
+const handleProposalPersisted = async (result: { rootAimId: string }) => {
+  showAimProposalEntry.value = false
+  await dataStore.loadAllAims(projectStore.projectPath)
+  uiStore.setView('graph')
+  graphUIStore.setGraphSelection(result.rootAimId)
 }
 
 // Global keydown handler
@@ -462,6 +471,12 @@ onUnmounted(() => {
           @click="modalStore.openAimSearch()"
           title="Search aims (/)"
         >🔍</button>
+
+        <button
+          class="view-btn"
+          title="Turn a goal into an editable aim tree"
+          @click="showAimProposalEntry = true"
+        >New goal</button>
 
         <div class="view-controls">
           <button
@@ -680,6 +695,12 @@ onUnmounted(() => {
     />
 
     <ProjectSettingsModal v-if="modalStore.showSettingsModal" />
+    <AimProposalEntry
+      :show="showAimProposalEntry"
+      :project-path="projectStore.projectPath"
+      @close="showAimProposalEntry = false"
+      @persisted="handleProposalPersisted"
+    />
     <LoopActionsOverlay
       v-if="projectStore.showLoopActionsOverlay"
       @action="handleLoopAction"
