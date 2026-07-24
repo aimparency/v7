@@ -260,10 +260,12 @@ export const createAimRouter = (
             throw new Error('Idempotency key is already bound to a different proposal snapshot');
           }
           if (journal.complete) {
+            const replayedRootAimId = journal.idMap[proposal.root.proposalId];
+            if (!replayedRootAimId) throw new Error('Completed approval journal has no root aim ID');
             return {
               complete: true,
               replayed: true,
-              rootAimId: journal.idMap[proposal.root.proposalId],
+              rootAimId: replayedRootAimId,
               idMap: journal.idMap,
               completedOperations: journal.completedOperations
             };
@@ -289,20 +291,25 @@ export const createAimRouter = (
           connection.childProposalId,
           connection.parentProposalId
         ]));
+        const durableId = (proposalId: string) => {
+          const id = journal.idMap[proposalId];
+          if (!id) throw new Error(`Approval journal is missing an ID for proposal ${proposalId}`);
+          return id;
+        };
         const operations: Array<() => Promise<void>> = flat.aims.map(proposed => async () => {
           const internalParent = parentByChild.get(proposed.proposalId);
           const isRoot = proposed.proposalId === proposal.root.proposalId;
           const supportedAims = internalParent
-            ? [journal.idMap[internalParent]]
+            ? [durableId(internalParent)]
             : proposal.existingParentIds;
           const aim: Aim = {
-            id: journal.idMap[proposed.proposalId],
+            id: durableId(proposed.proposalId),
             text: proposed.text,
             description: proposed.description,
             tags: proposed.tags ?? [],
             reflections: [],
             supportingConnections: (connectionByParent.get(proposed.proposalId) ?? []).map(connection => ({
-              aimId: journal.idMap[connection.childProposalId],
+              aimId: durableId(connection.childProposalId),
               relativePosition: getRandomRelativePosition(),
               weight: connection.weight,
               ...(connection.explanation ? { explanation: connection.explanation } : {})
@@ -327,7 +334,7 @@ export const createAimRouter = (
           addAimToIndex(input.projectPath, aim);
         });
 
-        const rootAimId = journal.idMap[proposal.root.proposalId];
+        const rootAimId = durableId(proposal.root.proposalId);
         for (const parentId of proposal.existingParentIds) {
           operations.push(() => connectAimsInternal(input.projectPath, parentId, rootAimId));
         }
@@ -337,7 +344,9 @@ export const createAimRouter = (
 
         try {
           for (let index = journal.completedOperations; index < operations.length; index += 1) {
-            await operations[index]();
+            const operation = operations[index];
+            if (!operation) throw new Error(`Approval operation ${index} is missing`);
+            await operation();
             journal.completedOperations = index + 1;
             await fs.writeJson(journalPath, journal, { spaces: 2 });
           }

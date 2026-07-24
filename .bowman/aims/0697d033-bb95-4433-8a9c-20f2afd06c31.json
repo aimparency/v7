@@ -31,6 +31,15 @@
       ],
       "weight": 1,
       "explanation": "Makes a human-approved transient proposal durable without blurring conversation into authorization."
+    },
+    {
+      "aimId": "074f9ba4-572d-4213-b7ae-53a94fdda989",
+      "relativePosition": [
+        0.3671331312767185,
+        -2.4728957244329877
+      ],
+      "weight": 1,
+      "explanation": "Gives humans inspectable, editable control over a proposed decomposition before it becomes graph state."
     }
   ],
   "supportedAims": [
@@ -39,7 +48,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Contract, shared proposal schema, and approval persistence are implemented. Model-backed read-only proposal generation, recursive editor/review UI, and shared voice entry remain.",
+    "comment": "Contract, shared proposal schema, approval persistence, and recursive editor/review UI are implemented. Model-backed read-only proposal generation and shared voice entry remain.",
     "date": 1784749867582
   },
   "intrinsicValue": 0,
