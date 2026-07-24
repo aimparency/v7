@@ -764,7 +764,7 @@ export const useListStore = defineStore('ui', {
                 placeholder: 'Optional: search for a phase...',
                 additionalOptions: [{
                   id: 'skip-phase',
-                  label: 'Skip (leave floating)',
+                  label: 'Skip (leave uncommitted)',
                   description: 'Keep this new graph aim uncommitted to any phase.',
                   showWhenQueryEmptyOnly: true,
                   actsAsEscape: true
@@ -851,7 +851,7 @@ export const useListStore = defineStore('ui', {
           placeholder: 'Optional: search for a phase...',
           additionalOptions: [{
             id: 'skip-phase',
-            label: 'Skip (leave floating)',
+            label: 'Skip (leave uncommitted)',
             description: 'Keep this new graph aim uncommitted to any phase.',
             showWhenQueryEmptyOnly: true,
             actsAsEscape: true
