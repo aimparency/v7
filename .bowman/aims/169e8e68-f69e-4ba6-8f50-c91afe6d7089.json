@@ -11,14 +11,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Verified still relevant + not implemented 2026-06-27: ProjectSelectionView.vue:65 hard-codes 'Open Project'. Work: check whether the typed path already contains /.bowman and label the button 'Open Project' vs 'New Project' accordingly.",
-    "date": 1782542540190
+    "state": "review",
+    "comment": "Implemented and internally verified; needs acceptance in the project selection UI because no frontend runtime is currently running.",
+    "date": 1784893129707
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Added project.inspectPath as a read-only backend primitive that recognizes initialized, active, and archived-only .bowman graphs. Project selection performs a debounced, revision-guarded inspection of the typed path and displays Open Project for an existing graph or New Project otherwise. Verification: focused selector tests 2/2, backend tests 62/62, frontend tests 196/196, frontend production build/type-check, and git diff --check passed."
 }

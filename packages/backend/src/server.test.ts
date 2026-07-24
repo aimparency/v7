@@ -859,3 +859,19 @@ test('discoverLocalProjects - finds nearby repositories with .bowman directories
     [path.join(repoA, '.bowman'), path.join(repoB, '.bowman')].sort()
   );
 });
+
+test('inspectPath - distinguishes an existing .bowman from a new project path', async () => {
+  const existingRoot = path.join(testRootPath, 'existing');
+  await fs.ensureDir(path.join(existingRoot, '.bowman'));
+  await fs.writeJson(path.join(existingRoot, '.bowman', 'meta.json'), {
+    name: 'Existing',
+    color: '#123456',
+  });
+
+  const existing = await caller.project.inspectPath({ projectPath: existingRoot });
+  const fresh = await caller.project.inspectPath({ projectPath: path.join(testRootPath, 'fresh') });
+
+  assert.equal(existing.bowmanExists, true);
+  assert.equal(existing.bowmanPath, path.join(existingRoot, '.bowman'));
+  assert.equal(fresh.bowmanExists, false);
+});

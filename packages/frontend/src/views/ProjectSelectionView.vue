@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { computed, onUnmounted, ref, watch } from 'vue'
 import type { ProjectHistoryEntry } from '../stores/ui/project-helpers'
+import { trpc } from '../trpc'
 
 type DiscoveredProject = {
   path: string
@@ -23,6 +25,40 @@ const emit = defineEmits<{
   (event: 'refresh-discovered-projects'): void
   (event: 'open-discovered-project', path: string): void
 }>()
+
+const inspectedPath = ref('')
+const bowmanExists = ref<boolean | null>(null)
+let inspectionTimer: ReturnType<typeof setTimeout> | undefined
+let inspectionRevision = 0
+
+watch(() => props.modelValue, (value) => {
+  clearTimeout(inspectionTimer)
+  const path = value.trim()
+  const revision = ++inspectionRevision
+  inspectedPath.value = ''
+  bowmanExists.value = null
+  if (!path) return
+  inspectionTimer = setTimeout(async () => {
+    try {
+      const result = await trpc.project.inspectPath.query({ projectPath: path })
+      if (revision !== inspectionRevision) return
+      inspectedPath.value = path
+      bowmanExists.value = result.bowmanExists
+    } catch {
+      if (revision !== inspectionRevision) return
+      inspectedPath.value = path
+      bowmanExists.value = null
+    }
+  }, 200)
+}, { immediate: true })
+
+onUnmounted(() => clearTimeout(inspectionTimer))
+
+const selectButtonLabel = computed(() =>
+  props.modelValue.trim() && inspectedPath.value === props.modelValue.trim() && bowmanExists.value === false
+    ? 'New Project'
+    : 'Open Project'
+)
 
 const onInput = (event: Event) => {
   const target = event.target as HTMLInputElement
@@ -62,7 +98,7 @@ const formatRelativeTime = (timestamp: number): string => {
         @input="onInput"
         @keydown.enter="emit('select-project')"
       />
-      <button @click="emit('select-project')" class="select-project">Open Project</button>
+      <button @click="emit('select-project')" class="select-project">{{ selectButtonLabel }}</button>
     </div>
 
     <div class="project-lists">

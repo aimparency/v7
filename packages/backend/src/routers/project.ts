@@ -1242,6 +1242,27 @@ export const createProjectRouter = (
         };
       }),
 
+    inspectPath: delayedProcedure
+      .input(z.object({ projectPath: z.string() }))
+      .query(async ({ input }: any) => {
+        const bowmanPath = normalizeProjectPath(input.projectPath);
+        const hasMeta = await fs.pathExists(path.join(bowmanPath, 'meta.json'));
+        let hasAimFiles = false;
+        for (const dirName of ['aims', 'archived-aims']) {
+          const aimsDir = path.join(bowmanPath, dirName);
+          if (!(await fs.pathExists(aimsDir))) continue;
+          if ((await fs.readdir(aimsDir)).some((file) => file.endsWith('.json'))) {
+            hasAimFiles = true;
+            break;
+          }
+        }
+        return {
+          projectPath: input.projectPath,
+          bowmanPath,
+          bowmanExists: hasMeta || hasAimFiles,
+        };
+      }),
+
     buildSearchIndex: delayedProcedure
       .input(z.object({
         projectPath: z.string()

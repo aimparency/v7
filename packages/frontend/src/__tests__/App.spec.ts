@@ -11,6 +11,7 @@ const { mockTrpc } = vi.hoisted(() => ({
     project: {
       buildSearchIndex: { mutate: vi.fn() },
       discoverLocalProjects: { query: vi.fn().mockResolvedValue({ rootsScanned: [], projects: [] }) },
+      inspectPath: { query: vi.fn().mockResolvedValue({ bowmanExists: false }) },
       getMeta: { query: vi.fn().mockResolvedValue({ name: 'Test', color: '#007acc', rootPhaseIds: [] }) },
       onUpdate: { subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) }
     },
