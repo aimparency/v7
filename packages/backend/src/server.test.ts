@@ -195,6 +195,109 @@ test('getMany - skips missing aims instead of failing the full batch', async () 
   assert.deepEqual(results.map((aim) => aim.id), [aimResult.id]);
 });
 
+test('approveAimSubtree persists the approved structure once and safely replays retries', async () => {
+  const parent = await caller.aim.createFloatingAim({
+    projectPath: testProjectPath,
+    aim: { text: 'Existing parent' }
+  });
+  const phase = await caller.phase.create({
+    projectPath: testProjectPath,
+    phase: { name: 'Now', parent: null, commitments: [] }
+  });
+  const proposal = {
+    revision: 'revision-1',
+    sourceText: 'Make the festival easier to operate',
+    existingParentIds: [parent.id],
+    phaseId: phase.id,
+    assumptions: [],
+    questions: [],
+    root: {
+      proposalId: 'root',
+      text: 'Improve festival operations',
+      children: [{
+        weight: 2,
+        explanation: 'Reduces repetitive coordination',
+        child: {
+          proposalId: 'child',
+          text: 'Automate volunteer reminders',
+          children: [{
+            weight: 1,
+            child: {
+              proposalId: 'leaf',
+              text: 'Map the reminder workflow',
+              children: []
+            }
+          }]
+        }
+      }]
+    }
+  };
+
+  const first = await caller.aim.approveAimSubtree({
+    projectPath: testProjectPath,
+    proposal,
+    revision: proposal.revision,
+    idempotencyKey: 'approval-test-key'
+  });
+  const replay = await caller.aim.approveAimSubtree({
+    projectPath: testProjectPath,
+    proposal,
+    revision: proposal.revision,
+    idempotencyKey: 'approval-test-key'
+  });
+
+  assert.equal(first.complete, true);
+  assert.equal(first.replayed, false);
+  assert.equal(replay.complete, true);
+  assert.equal(replay.replayed, true);
+  assert.deepEqual(replay.idMap, first.idMap);
+
+  const aims = await caller.aim.list({ projectPath: testProjectPath });
+  assert.equal(aims.length, 4);
+  const root = await caller.aim.get({ projectPath: testProjectPath, aimId: first.rootAimId });
+  const child = await caller.aim.get({ projectPath: testProjectPath, aimId: first.idMap.child });
+  assert.deepEqual(root.supportedAims, [parent.id]);
+  assert.equal(root.supportingConnections[0].aimId, child.id);
+  assert.equal(root.supportingConnections[0].weight, 2);
+  assert.equal(root.supportingConnections[0].explanation, 'Reduces repetitive coordination');
+  assert.deepEqual(child.supportedAims, [root.id]);
+
+  const updatedParent = await caller.aim.get({ projectPath: testProjectPath, aimId: parent.id });
+  assert.equal(updatedParent.supportingConnections.filter(connection => connection.aimId === root.id).length, 1);
+  const updatedPhase = await caller.phase.get({ projectPath: testProjectPath, phaseId: phase.id });
+  assert.deepEqual(updatedPhase.commitments, [root.id]);
+});
+
+test('approveAimSubtree validates references and exact revision before graph writes', async () => {
+  const proposal = {
+    revision: 'revision-2',
+    sourceText: 'A proposed goal',
+    existingParentIds: ['00000000-0000-4000-8000-000000000000'],
+    assumptions: [],
+    questions: [],
+    root: { proposalId: 'root', text: 'Proposed root', children: [] }
+  };
+
+  await assert.rejects(
+    caller.aim.approveAimSubtree({
+      projectPath: testProjectPath,
+      proposal,
+      revision: 'stale-revision',
+      idempotencyKey: 'approval-stale-key'
+    }),
+    /Stale approval revision/
+  );
+  await assert.rejects(
+    caller.aim.approveAimSubtree({
+      projectPath: testProjectPath,
+      proposal,
+      revision: proposal.revision,
+      idempotencyKey: 'approval-missing-parent-key'
+    })
+  );
+  assert.deepEqual(await caller.aim.list({ projectPath: testProjectPath }), []);
+});
+
 test('connectAims - repositioning existing connections', async () => {
 
   // Create parent aim

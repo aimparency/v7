@@ -1,0 +1,31 @@
+{
+  "id": "49c43800-a3bb-446f-a9cd-bb5df054e8b0",
+  "text": "Persist approved aim-subtree proposals safely and idempotently",
+  "description": "Add a backend approval operation that validates an exact AimProposal revision, checks existing parents and optional phase before writing, pre-generates durable IDs, creates the displayed aims and contribution edges, suppresses duplicate retries with an idempotency key, and reports exact partial progress on write failure. It must not call a model or reinterpret the approved snapshot.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "human-ai-cooperation",
+    "elicitation",
+    "persistence",
+    "idempotency"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0697d033-bb95-4433-8a9c-20f2afd06c31"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Approval persistence is implemented and internally verified; awaiting Felix's acceptance.",
+    "date": 1784893940826
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Implemented backend aim.approveAimSubtree using the shared proposal schema. It validates the exact revision and all external references before writes, pre-generates a stable proposal-ID→aim-ID map, persists aims root-to-leaf with contribution metadata, attaches the root to approved existing parents/phase, and journals progress under runtime for safe replay/resumption. It returns exact partial progress on failure rather than claiming atomicity. Verification: focused server tests 24/24, full backend tests 64/64, backend TypeScript build, and git diff check pass."
+}

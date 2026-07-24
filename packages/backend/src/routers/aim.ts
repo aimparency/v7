@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs-extra';
-import type { Aim, SearchAimResult } from 'shared';
+import { createHash } from 'node:crypto';
+import { AimProposalSchema, flattenAimProposal, type Aim, type AimProposal, type SearchAimResult } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
 import { defaultAimColor } from '../aim-color.js';
@@ -42,6 +43,22 @@ export const createAimRouter = (
     if (!parentId) return defaultAimColor();
     const parent = await readAim(projectPath, parentId);
     return defaultAimColor(parent.color ?? '#666666', parent.supportingConnections.length);
+  };
+
+  type ApprovalJournal = {
+    proposalHash: string;
+    revision: string;
+    idMap: Record<string, string>;
+    completedOperations: number;
+    complete: boolean;
+  };
+
+  const proposalHash = (proposal: AimProposal) =>
+    createHash('sha256').update(JSON.stringify(proposal)).digest('hex');
+
+  const approvalJournalPath = (projectPath: string, idempotencyKey: string) => {
+    const safeKey = createHash('sha256').update(idempotencyKey).digest('hex');
+    return path.join(normalizeProjectPath(projectPath), 'runtime', 'aim-proposal-approvals', `${safeKey}.json`);
   };
 
   return t.router({
@@ -207,6 +224,143 @@ export const createAimRouter = (
         }
 
         return Array.from(result);
+      }),
+
+    approveAimSubtree: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        proposal: AimProposalSchema,
+        revision: z.string().trim().min(1).max(200),
+        idempotencyKey: z.string().trim().min(8).max(500)
+      }))
+      .mutation(async ({ input }: any) => {
+        const proposal = input.proposal as AimProposal;
+        if (input.revision !== proposal.revision) {
+          throw new Error(`Stale approval revision: expected ${proposal.revision}, received ${input.revision}`);
+        }
+
+        // Validate every external reference before the first graph write.
+        for (const parentId of proposal.existingParentIds) {
+          const parent = await readAim(input.projectPath, parentId);
+          if (parent.archived || parent.status.state === 'archived') {
+            throw new Error(`Cannot attach proposal to archived aim ${parentId}`);
+          }
+        }
+        if (proposal.phaseId) await readPhase(input.projectPath, proposal.phaseId);
+
+        const flat = flattenAimProposal(proposal.root);
+        const hash = proposalHash(proposal);
+        const journalPath = approvalJournalPath(input.projectPath, input.idempotencyKey);
+        await fs.ensureDir(path.dirname(journalPath));
+
+        let journal: ApprovalJournal;
+        if (await fs.pathExists(journalPath)) {
+          journal = await fs.readJson(journalPath);
+          if (journal.proposalHash !== hash || journal.revision !== proposal.revision) {
+            throw new Error('Idempotency key is already bound to a different proposal snapshot');
+          }
+          if (journal.complete) {
+            return {
+              complete: true,
+              replayed: true,
+              rootAimId: journal.idMap[proposal.root.proposalId],
+              idMap: journal.idMap,
+              completedOperations: journal.completedOperations
+            };
+          }
+        } else {
+          journal = {
+            proposalHash: hash,
+            revision: proposal.revision,
+            idMap: Object.fromEntries(flat.aims.map(aim => [aim.proposalId, uuidv4()])),
+            completedOperations: 0,
+            complete: false
+          };
+          await fs.writeJson(journalPath, journal, { spaces: 2 });
+        }
+
+        const connectionByParent = new Map<string, typeof flat.connections>();
+        for (const connection of flat.connections) {
+          const connections = connectionByParent.get(connection.parentProposalId) ?? [];
+          connections.push(connection);
+          connectionByParent.set(connection.parentProposalId, connections);
+        }
+        const parentByChild = new Map(flat.connections.map(connection => [
+          connection.childProposalId,
+          connection.parentProposalId
+        ]));
+        const operations: Array<() => Promise<void>> = flat.aims.map(proposed => async () => {
+          const internalParent = parentByChild.get(proposed.proposalId);
+          const isRoot = proposed.proposalId === proposal.root.proposalId;
+          const supportedAims = internalParent
+            ? [journal.idMap[internalParent]]
+            : proposal.existingParentIds;
+          const aim: Aim = {
+            id: journal.idMap[proposed.proposalId],
+            text: proposed.text,
+            description: proposed.description,
+            tags: proposed.tags ?? [],
+            reflections: [],
+            supportingConnections: (connectionByParent.get(proposed.proposalId) ?? []).map(connection => ({
+              aimId: journal.idMap[connection.childProposalId],
+              relativePosition: getRandomRelativePosition(),
+              weight: connection.weight,
+              ...(connection.explanation ? { explanation: connection.explanation } : {})
+            })),
+            supportedAims,
+            committedIn: isRoot && proposal.phaseId ? [proposal.phaseId] : [],
+            status: {
+              state: proposed.status ?? 'open',
+              comment: proposed.statusComment ?? '',
+              date: Date.now()
+            },
+            intrinsicValue: proposed.intrinsicValue ?? 0,
+            cost: proposed.cost ?? 1,
+            loopWeight: 1,
+            duration: 1,
+            costVariance: 0,
+            valueVariance: 0,
+            archived: false,
+            color: defaultAimColor()
+          };
+          await writeAim(input.projectPath, aim);
+          addAimToIndex(input.projectPath, aim);
+        });
+
+        const rootAimId = journal.idMap[proposal.root.proposalId];
+        for (const parentId of proposal.existingParentIds) {
+          operations.push(() => connectAimsInternal(input.projectPath, parentId, rootAimId));
+        }
+        if (proposal.phaseId) {
+          operations.push(() => commitAimToPhase(input.projectPath, rootAimId, proposal.phaseId!));
+        }
+
+        try {
+          for (let index = journal.completedOperations; index < operations.length; index += 1) {
+            await operations[index]();
+            journal.completedOperations = index + 1;
+            await fs.writeJson(journalPath, journal, { spaces: 2 });
+          }
+          journal.complete = true;
+          await fs.writeJson(journalPath, journal, { spaces: 2 });
+          return {
+            complete: true,
+            replayed: false,
+            rootAimId,
+            idMap: journal.idMap,
+            completedOperations: journal.completedOperations
+          };
+        } catch (error) {
+          return {
+            complete: false,
+            replayed: false,
+            rootAimId,
+            idMap: journal.idMap,
+            completedOperations: journal.completedOperations,
+            failedOperation: journal.completedOperations,
+            error: error instanceof Error ? error.message : String(error)
+          };
+        }
       }),
 
     update: delayedProcedure

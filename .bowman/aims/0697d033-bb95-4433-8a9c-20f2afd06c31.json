@@ -22,6 +22,15 @@
         -1.9284180207672703
       ],
       "weight": 1
+    },
+    {
+      "aimId": "49c43800-a3bb-446f-a9cd-bb5df054e8b0",
+      "relativePosition": [
+        -2.2667982334618135,
+        -1.0543366486916796
+      ],
+      "weight": 1,
+      "explanation": "Makes a human-approved transient proposal durable without blurring conversation into authorization."
     }
   ],
   "supportedAims": [
@@ -30,7 +39,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "The approval-safe contract and implementation sequence are specified. Shared schemas, persistence endpoint, model proposer, editor, and voice reuse remain to implement.",
+    "comment": "Contract, shared proposal schema, and approval persistence are implemented. Model-backed read-only proposal generation, recursive editor/review UI, and shared voice entry remain.",
     "date": 1784749867582
   },
   "intrinsicValue": 0,
