@@ -661,10 +661,11 @@ export function useGraphInteraction(
             uiStore.deselectAim()
             uiStore.setActiveColumn(-1)
 
-            modalStore.aimCreationCallback = (id) => {
+            modalStore.aimCreationCallback = (id, onPositionConfirmed) => {
                  const node = nodeMap.get(id)
                  const x = logicalMouse[0] ?? 0
                  const y = logicalMouse[1] ?? 0
+                 const finishPositioning = () => onPositionConfirmed?.()
                  if (node) {
                     node.pos[0] = x
                     node.pos[1] = y
@@ -672,6 +673,7 @@ export function useGraphInteraction(
                     node.renderPos[1] = y
                     node.shift[0] = 0
                     node.shift[1] = 0
+                    finishPositioning()
                  } else {
                     setTimeout(() => {
                          const n = nodeMap.get(id)
@@ -683,6 +685,7 @@ export function useGraphInteraction(
                             n.shift[0] = 0
                             n.shift[1] = 0
                          }
+                         finishPositioning()
                     }, 50)
                  }
             }

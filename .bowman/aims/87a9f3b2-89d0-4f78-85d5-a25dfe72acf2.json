@@ -12,14 +12,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Verified-in-code 2026-06-27: after aim creation, list-store.ts:775 calls modalStore.openConnectionDetailsModal. The reported 'modals appear at the same time / enter doesn't advance through them sequentially' bug needs interactive repro to confirm current behavior before fixing.",
-    "date": 1782542545638
+    "state": "review",
+    "comment": "Existing connection→phase sequencing was verified and the missing background-creation continuation was fixed. Needs interactive Enter-key acceptance because no frontend runtime is currently running.",
+    "date": 1784893624582
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Confirmed the main sequencing implementation already passes the phase continuation into ConnectionDetailsModal, whose close action invokes it only after the foreground modal closes. Fixed the remaining graph background-creation path, whose positioning callback previously ignored the continuation and therefore never opened the phase prompt. Added a modal-order regression test proving the next prompt remains closed until connection details close. Verification: focused modal test 1/1, full frontend suite 199/199, production build/type-check, and git diff --check passed."
 }
