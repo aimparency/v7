@@ -2,6 +2,7 @@
   "id": "3af443da-7357-42e9-b3e0-1fe731e68c02",
   "text": "Spin-off into an existing .bowman (integrate spun-off aims as free-floating)",
   "description": "Deferred remainder of the basic spin-off. When the chosen target path already contains a .bowman, the basic version only warns and stops. Extend it to allow proceeding: merge the spun-off aims into the existing target graph as free-floating aims (no parents) so the user can reparent them into the target's structure. Handle ID collisions. Postponed until basic spin-off lands.",
+  "reflection": "Implemented conservative existing-graph spin-off integration. Existing target metadata and phases remain authoritative; copied branch structure is preserved with free-floating roots; colliding aim IDs are remapped consistently across internal edges; archived-only/initialized targets are recognized; self-targeting is rejected. Added pure remapping and filesystem integration tests. Verification: shared tests 24/24, backend tests 61/61, backend build and complete frontend build/type-check passed, git diff --check passed.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -14,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Verified still deferred 2026-06-27: server.ts:805 errors when target already holds a .bowman ('Integrating into an existing graph is not supported yet (deferred)'). Basic spin-off has landed, so this remainder is now actionable: merge spun-off aims as free-floating, handle ID collisions.",
-    "date": 1782542537359
+    "state": "review",
+    "comment": "Implemented integration into an existing .bowman; awaiting user acceptance after UI/runtime review.",
+    "date": 1784887685581
   },
   "intrinsicValue": 0,
   "cost": 1,

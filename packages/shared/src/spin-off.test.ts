@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { planSpinOff, computeSpinOff } from './spin-off.js';
+import { planSpinOff, computeSpinOff, remapSpinOffCollisions } from './spin-off.js';
 import type { Aim, Connection } from './types.js';
 
 function conn(aimId: string): Connection {
@@ -135,4 +135,18 @@ test('empty / unknown roots produce an empty plan', () => {
   const plan = planSpinOff(exampleGraph(), ['does-not-exist']);
   assert.deepEqual(plan.copyIds, []);
   assert.deepEqual(plan.spinOffIds, []);
+});
+
+test('existing target collisions are remapped consistently without flattening the branch', () => {
+  const copied = computeSpinOff(exampleGraph(), ['B']).spinOffAims;
+  const generated = ['D', 'new-B'];
+  const result = remapSpinOffCollisions(copied, ['B', 'target-only'], () => generated.shift()!);
+
+  assert.deepEqual(result.idMap, { B: 'new-B' });
+  const byId = new Map(result.aims.map((candidate) => [candidate.id, candidate]));
+  assert.equal(byId.has('B'), false);
+  assert.deepEqual(sorted(byId.get('new-B')!.supportingConnections.map((c) => c.aimId)), ['C', 'D']);
+  assert.deepEqual(byId.get('C')!.supportedAims, ['new-B']);
+  assert.deepEqual(byId.get('D')!.supportedAims, ['new-B']);
+  assert.ok(result.aims.every((candidate) => candidate.committedIn.length === 0));
 });

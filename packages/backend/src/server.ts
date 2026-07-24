@@ -28,7 +28,7 @@ import {
 import { generateEmbedding, generateQueryEmbedding, warmupEmbedder, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore, hasCurrentEmbedding } from './embeddings.js';
 import { getSemanticGraph, invalidateSemanticCache } from './forces.js';
 import { chatWithGemini } from './voice-agent.js';
-import { calculateAimValues, planSpinOff, computeSpinOff } from 'shared';
+import { calculateAimValues, planSpinOff, computeSpinOff, remapSpinOffCollisions } from 'shared';
 import { saveAimValues, getAimValues, getDb } from './db.js';
 import { createAimRouter } from './routers/aim.js';
 import { createPhaseRouter } from './routers/phase.js';
@@ -727,13 +727,17 @@ function resolveBowmanPath(rawPath: string): string {
   return expanded.endsWith(AIMPARENCY_DIR_NAME) ? expanded : path.join(expanded, AIMPARENCY_DIR_NAME);
 }
 
-// Does a target path already hold a .bowman with aim files? (spin-off guard:
-// the basic version refuses to write into an existing graph.)
-async function bowmanHasAims(rawTargetPath: string): Promise<boolean> {
-  const aimsDir = path.join(resolveBowmanPath(rawTargetPath), 'aims');
-  if (!(await fs.pathExists(aimsDir))) return false;
-  const files = await fs.readdir(aimsDir);
-  return files.some((f) => f.endsWith('.json'));
+// Treat initialized and archived-only .bowman directories as existing graphs too:
+// their metadata must not be replaced just because the active aim folder is empty.
+async function bowmanExists(rawTargetPath: string): Promise<boolean> {
+  const target = resolveBowmanPath(rawTargetPath);
+  if (await fs.pathExists(path.join(target, 'meta.json'))) return true;
+  for (const dirName of ['aims', 'archived-aims']) {
+    const dir = path.join(target, dirName);
+    if (!(await fs.pathExists(dir))) continue;
+    if ((await fs.readdir(dir)).some((file) => file.endsWith('.json'))) return true;
+  }
+  return false;
 }
 
 // Remove an aim file (active or archived) and purge it from index + embeddings.
@@ -772,7 +776,7 @@ const spinOffRouter = t.router({
 
       return {
         matches,
-        bowmanExists: await bowmanHasAims(expanded),
+        bowmanExists: await bowmanExists(expanded),
       };
     }),
 
@@ -794,7 +798,7 @@ const spinOffRouter = t.router({
           overlap: plan.overlapIds.length,
           spinOff: plan.spinOffIds.length,
         },
-        targetHasBowman: input.targetPath ? await bowmanHasAims(input.targetPath) : false,
+        targetHasBowman: input.targetPath ? await bowmanExists(input.targetPath) : false,
       };
     }),
 
@@ -812,29 +816,51 @@ const spinOffRouter = t.router({
     .mutation(async ({ input }: any) => {
       const source = normalizeProjectPath(input.projectPath);
       const target = resolveBowmanPath(input.targetPath);
-
-      if (await bowmanHasAims(target)) {
-        throw new Error(
-          `Target already contains a .bowman with aims: ${target}. Integrating into an existing graph is not supported yet (deferred).`
-        );
+      if (path.resolve(source) === path.resolve(target)) {
+        throw new Error('The spin-off target must be a different .bowman graph from the source.');
       }
+      const integrateIntoExisting = await bowmanExists(target);
 
       const aims = await listAims(source);
       const { plan, spinOffAims, sourceAimsToRewrite, sourceAimIdsToDelete } =
         computeSpinOff(aims, input.rootIds, { preserveInflow: input.preserveInflow });
 
-      // Write the spin-off repo: structure + meta (statuses/color carried), aims.
-      await ensureProjectStructure(target);
-      const sourceMeta = await readProjectMeta(source);
-      await writeProjectMeta(target, {
-        name: path.basename(path.dirname(target)) || 'spin-off',
-        color: sourceMeta.color,
-        statuses: sourceMeta.statuses,
-        rootPhaseIds: [],
-      });
-      for (const aim of spinOffAims) {
-        await writeAim(target, aim);
+      // For an existing graph, retain all target metadata and remap only ids that
+      // collide. Internal branch edges follow the remap; no edge is added to an
+      // existing target aim, leaving the imported root(s) free for re-parenting.
+      let aimsToWrite = spinOffAims;
+      let remappedIds: Record<string, string> = {};
+      if (integrateIntoExisting) {
+        const targetAims = [
+          ...await listAims(target),
+          ...await listAims(target, true),
+        ];
+        const remapped = remapSpinOffCollisions(
+          spinOffAims,
+          targetAims.map((aim) => aim.id),
+          uuidv4,
+        );
+        aimsToWrite = remapped.aims;
+        remappedIds = remapped.idMap;
       }
+
+      // Write the branch. A fresh graph inherits source presentation metadata;
+      // an existing graph remains authoritative for its own settings and phases.
+      await ensureProjectStructure(target);
+      if (!integrateIntoExisting) {
+        const sourceMeta = await readProjectMeta(source);
+        await writeProjectMeta(target, {
+          name: path.basename(path.dirname(target)) || 'spin-off',
+          color: sourceMeta.color,
+          statuses: sourceMeta.statuses,
+          rootPhaseIds: [],
+        });
+      }
+      for (const aim of aimsToWrite) {
+        await writeAim(target, aim);
+        addAimToIndex(target, aim);
+      }
+      invalidateSemanticCache(target);
 
       // Prune the source (optional): rewrite kept aims that lost edges, then
       // delete the exclusive aims, then clean up dangling phase commitments.
@@ -854,8 +880,10 @@ const spinOffRouter = t.router({
 
       return {
         target,
-        copied: spinOffAims.length,
+        copied: aimsToWrite.length,
         deletedFromSource,
+        integratedIntoExisting: integrateIntoExisting,
+        remappedIds,
         counts: {
           kept: plan.keptIds.length,
           overlap: plan.overlapIds.length,

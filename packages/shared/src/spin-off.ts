@@ -37,6 +37,55 @@ export interface SpinOffResult {
   sourceAimIdsToDelete: string[];
 }
 
+export interface RemappedSpinOff {
+  aims: Aim[];
+  /** Only entries whose original id collided with an existing target id. */
+  idMap: Record<string, string>;
+}
+
+/**
+ * Make a copied branch safe to insert into an existing graph.
+ *
+ * Existing target aims are never changed. Colliding ids are replaced throughout
+ * the copied branch, while its internal contribution structure is preserved.
+ * The copied roots are already free-floating because computeSpinOff drops seam
+ * edges to aims outside the branch.
+ */
+export function remapSpinOffCollisions(
+  aims: Aim[],
+  occupiedIds: Iterable<string>,
+  createId: () => string,
+): RemappedSpinOff {
+  const occupied = new Set(occupiedIds);
+  const unavailable = new Set(occupied);
+  for (const aim of aims) unavailable.add(aim.id);
+
+  const idMap: Record<string, string> = {};
+  for (const aim of aims) {
+    if (!occupied.has(aim.id)) continue;
+    let replacement = createId();
+    while (unavailable.has(replacement)) replacement = createId();
+    idMap[aim.id] = replacement;
+    unavailable.add(replacement);
+  }
+
+  const mapId = (id: string) => idMap[id] ?? id;
+  return {
+    idMap,
+    aims: aims.map((aim) => ({
+      ...aim,
+      id: mapId(aim.id),
+      supportedAims: (aim.supportedAims ?? []).map(mapId),
+      supportingConnections: (aim.supportingConnections ?? []).map((connection) => ({
+        ...connection,
+        aimId: mapId(connection.aimId),
+      })),
+      ...(aim.incoming ? { incoming: aim.incoming.map(mapId) } : {}),
+      committedIn: [],
+    })),
+  };
+}
+
 function childIds(aim: Aim, present: Map<string, Aim>): string[] {
   return (aim.supportingConnections ?? [])
     .map((c) => c.aimId)

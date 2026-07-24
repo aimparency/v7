@@ -88,8 +88,7 @@ const onTab = async (event: KeyboardEvent) => {
 const canApply = computed(() =>
   !applying.value &&
   rootIds.value.length > 0 &&
-  pathInput.value.trim().length > 0 &&
-  !bowmanExists.value
+  pathInput.value.trim().length > 0
 )
 
 const apply = async () => {
@@ -186,7 +185,8 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
       </ul>
 
       <p v-if="bowmanExists" class="feedback warn">
-        A <code>.bowman</code> graph already exists here. Integrating into an existing graph is not supported yet — choose an empty target.
+        This branch will be added to the existing <code>.bowman</code>. Its roots remain free-floating,
+        colliding IDs are remapped, and existing settings and phases stay unchanged.
       </p>
     </div>
 
