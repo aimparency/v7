@@ -633,7 +633,10 @@ onUnmounted(() => {
         <GraphViewWrapper v-else-if="projectStore.currentView === 'graph'" />
 
         <!-- Voice View -->
-        <VoiceView v-else-if="voiceEnabled && projectStore.currentView === 'voice'" />
+        <VoiceView
+          v-else-if="voiceEnabled && projectStore.currentView === 'voice'"
+          @proposal-persisted="handleProposalPersisted"
+        />
       </main>
 
       <!-- Watchdog Panel -->

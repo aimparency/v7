@@ -1,0 +1,31 @@
+{
+  "id": "5dd31c2d-27c0-43e0-8384-d0403e32bc47",
+  "text": "Route browser voice transcripts through the approved aim-proposal flow",
+  "description": "Replace VoiceView's echo-placeholder path with creation of the same transient one-root AimProposal used by text entry, open the shared recursive editor/review surface, and navigate to the durable root after explicit approval. Speech capture must remain input rather than authorization.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "human-ai-cooperation",
+    "elicitation",
+    "voice",
+    "frontend"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0697d033-bb95-4433-8a9c-20f2afd06c31"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Browser speech now enters the shared transient proposal/review/persistence flow; internally verified and awaiting Felix's voice/UI acceptance.",
+    "date": 1784894689164
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Replaced VoiceView's call to the echo-placeholder backend with a transient AimProposal opened in the shared recursive review UI. Extracted createManualAimProposal so text and voice use exactly the same schema and differ only in revision provenance. Voice capture is input, never authorization; persistence still requires the explicit final approval. Successful persistence uses App's existing reload/select-root handler. Verification: focused proposal tests 7/7, full frontend tests 206/206, frontend type-check, production build, and git diff check."
+}

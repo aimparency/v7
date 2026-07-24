@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { trpc } from '../trpc'
+import { ref, onUnmounted, nextTick } from 'vue'
 import { useProjectStore } from '../stores/project-store'
+import type { AimProposal } from 'shared'
+import AimProposalReview from '../components/AimProposalReview.vue'
+import { createManualAimProposal } from '../utils/aim-proposal'
 
 const projectStore = useProjectStore()
+const emit = defineEmits<{
+  proposalPersisted: [result: { rootAimId: string, idMap: Record<string, string> }]
+}>()
 
 const isListening = ref(false)
 const transcript = ref('')
-const responseText = ref('')
 const error = ref('')
+const proposal = ref<AimProposal | null>(null)
 
 interface Message {
   role: 'user' | 'assistant'
@@ -28,7 +33,6 @@ const scrollToBottom = async () => {
 
 const clearHistory = () => {
   history.value = []
-  responseText.value = ''
   transcript.value = ''
 }
 
@@ -75,50 +79,21 @@ const toggleListening = () => {
       window.speechSynthesis.cancel()
     }
     transcript.value = ''
-    responseText.value = ''
     error.value = ''
     isListening.value = true
     recognition.start()
   }
 }
 
-const handleTranscript = async (text: string) => {
+const handleTranscript = (text: string) => {
   // Add user message to history
   history.value.push({
     role: 'user',
     text,
     timestamp: Date.now()
   })
-  scrollToBottom()
-
-  try {
-    // Call the backend voice chat endpoint
-    const result = await trpc.voice.chat.mutate({
-      projectPath: projectStore.projectPath,
-      transcript: text
-    })
-
-    responseText.value = result.response
-    
-    // Add assistant response to history
-    history.value.push({
-      role: 'assistant',
-      text: result.response,
-      timestamp: Date.now()
-    })
-    scrollToBottom()
-
-    speak(responseText.value)
-  } catch (err: any) {
-    error.value = 'Error processing voice command: ' + err.message
-  }
-}
-
-const speak = (text: string) => {
-  if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(text)
-    window.speechSynthesis.speak(utterance)
-  }
+  proposal.value = createManualAimProposal(text, 'voice')
+  void scrollToBottom()
 }
 
 onUnmounted(() => {
@@ -165,6 +140,14 @@ onUnmounted(() => {
         {{ error }}
       </div>
     </div>
+    <AimProposalReview
+      v-if="proposal"
+      show
+      :project-path="projectStore.projectPath"
+      :proposal="proposal"
+      @close="proposal = null"
+      @persisted="emit('proposalPersisted', $event)"
+    />
   </div>
 </template>
 

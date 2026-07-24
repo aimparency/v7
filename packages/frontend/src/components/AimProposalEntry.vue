@@ -3,6 +3,7 @@ import { nextTick, ref, watch } from 'vue'
 import type { AimProposal } from 'shared'
 import FormModalShell from './FormModalShell.vue'
 import AimProposalReview from './AimProposalReview.vue'
+import { createManualAimProposal } from '../utils/aim-proposal'
 
 const props = defineProps<{
   show: boolean
@@ -31,18 +32,7 @@ watch(() => props.show, async (show) => {
 const createDraft = () => {
   const text = sourceText.value.trim()
   if (!text) return
-  proposal.value = {
-    revision: `manual-${Date.now()}-${crypto.randomUUID()}`,
-    sourceText: text,
-    existingParentIds: [],
-    assumptions: [],
-    questions: [],
-    root: {
-      proposalId: 'root',
-      text,
-      children: []
-    }
-  }
+  proposal.value = createManualAimProposal(text)
 }
 
 const closeReview = () => {

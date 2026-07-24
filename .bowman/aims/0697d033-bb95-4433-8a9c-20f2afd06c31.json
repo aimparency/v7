@@ -49,6 +49,15 @@
       ],
       "weight": 1,
       "explanation": "Turns the implemented proposal editor and persistence boundary into a reachable end-to-end human-to-graph flow."
+    },
+    {
+      "aimId": "5dd31c2d-27c0-43e0-8384-d0403e32bc47",
+      "relativePosition": [
+        1.7746216030336575,
+        1.7608856198078997
+      ],
+      "weight": 1,
+      "explanation": "Reuses the human-approved proposal boundary for speech rather than allowing voice conversation to mutate the graph."
     }
   ],
   "supportedAims": [
@@ -57,7 +66,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "A complete manual text → transient draft → recursive edit/review → durable graph flow is implemented. Model-backed read-only decomposition and routing voice transcripts through the same proposal entry remain.",
+    "comment": "Manual text and browser speech now share the complete transient draft → recursive edit/review → durable graph flow. Model-backed read-only decomposition remains.",
     "date": 1784749867582
   },
   "intrinsicValue": 0,
