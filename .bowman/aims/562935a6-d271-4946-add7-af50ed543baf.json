@@ -1,6 +1,8 @@
 {
   "id": "562935a6-d271-4946-add7-af50ed543baf",
   "text": "Develop capacity for autonomous goal-setting",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "strategy",
     "autonomy"
@@ -11,11 +13,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Learn what good goals look like through helping humans",
-    "date": 1768763998960
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026 after relevance review: autonomous goal-setting is vague and misstates Aimparency's central model. Humans and organizations supply intent; agents may propose new supporting aims, but those remain inspectable contributions to human-set missions rather than an independent goal-setting subsystem. Existing graph creation, contextual review, and loop behavior cover the useful part.",
+    "date": 1784886728422,
+    "reviewedAt": 1784886728417
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

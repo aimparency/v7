@@ -111,14 +111,6 @@
       "weight": 1
     },
     {
-      "aimId": "060b3f53-1854-4fda-a50c-78a98e540288",
-      "relativePosition": [
-        4.96599410780382,
-        1.8086843695929413
-      ],
-      "weight": 1
-    },
-    {
       "aimId": "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200",
       "relativePosition": [
         -3.811249306174487,
@@ -295,6 +287,213 @@
         2.44137223960334
       ],
       "weight": 1
+    },
+    {
+      "aimId": "a71ee22c-d7d2-45dc-a17b-00ba7fcadda2",
+      "relativePosition": [
+        1.4625947450198686,
+        2.0275148857259384
+      ],
+      "weight": 1,
+      "explanation": "Aim/phase modal keyboard flow belongs to the list-view interaction surface."
+    },
+    {
+      "aimId": "4e50493a-94ca-4bb7-aefb-c78ed3107f62",
+      "relativePosition": [
+        -2.2033566492205754,
+        -1.1811940891891886
+      ],
+      "weight": 1,
+      "explanation": "Moving aims across phase boundaries is list-view navigation and ordering."
+    },
+    {
+      "aimId": "b3d98c5b-8ba0-4910-9745-d778795e9c51",
+      "relativePosition": [
+        -1.288385453626363,
+        -2.1424432134560742
+      ],
+      "weight": 1,
+      "explanation": "Bulk aim actions are part of list selection and manipulation."
+    },
+    {
+      "aimId": "2a9e3aba-e9a5-4238-bd34-ef2d3384b41e",
+      "relativePosition": [
+        -2.4207280241016536,
+        0.6245605121434622
+      ],
+      "weight": 1,
+      "explanation": "Modal keyboard behavior belongs to the list/modal interaction surface."
+    },
+    {
+      "aimId": "2e845190-a51f-44ca-ad3c-f1ef34aa857a",
+      "relativePosition": [
+        -2.023798033417223,
+        1.4677334635200567
+      ],
+      "weight": 1,
+      "explanation": "Keyboard shortcuts primarily structure list-view navigation and action."
+    },
+    {
+      "aimId": "c9536d91-3bed-427a-b14a-60b67c68cf8c",
+      "relativePosition": [
+        1.733524179064129,
+        -1.801358909434774
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "7a1c2e24-4a04-4962-b34d-cab94db1b590",
+      "relativePosition": [
+        -1.6901008655329819,
+        -1.8421615196080567
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "f5ea4b4f-f777-4b03-a9bb-c94538edd78c",
+      "relativePosition": [
+        2.1251984388653153,
+        1.3166364704976186
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "70d6c137-9b3b-4c8f-87dc-7bb7041188ec",
+      "relativePosition": [
+        2.145565751410951,
+        1.28317871178272
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "f50a5919-91f5-4ce7-a0db-ff4919a8893a",
+      "relativePosition": [
+        2.4687928286581777,
+        0.39377908675544715
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "2e6e9dee-98f5-4a0e-afbb-4bb6a5ade583",
+      "relativePosition": [
+        -0.10513866958227702,
+        2.497788193614196
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "1ec81038-54e4-406e-8851-d47c8a4799f1",
+      "relativePosition": [
+        -0.23528931741897058,
+        2.488903159447654
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "c63419f1-5d5f-4320-93fb-f12d01940037",
+      "relativePosition": [
+        2.394460603691139,
+        -0.7187199853705656
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "e33ca34b-b3d4-4b98-bcad-0c0aaf8db644",
+      "relativePosition": [
+        2.2942539096410575,
+        0.9931762170414283
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "dd4e0829-abb1-455f-b51f-3a3112ff1138",
+      "relativePosition": [
+        1.4002829940269863,
+        2.071040206427393
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "2181d80e-795a-4160-8377-77ddafb47fc4",
+      "relativePosition": [
+        -0.04004766294561931,
+        -2.4996792163580897
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "e266c632-dc74-4c44-8cf6-c184378cdc68",
+      "relativePosition": [
+        2.2392692447107883,
+        1.1116084066308498
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "b161d820-38d7-407a-8596-1b0c6c9ef1d3",
+      "relativePosition": [
+        2.4711629305505625,
+        -0.37862087986897364
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "03e895c0-7f2e-4fb5-a427-078a235c3b7f",
+      "relativePosition": [
+        1.948898691978226,
+        1.5658205160252434
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "155226ac-22fa-4c39-95dc-e34183b84347",
+      "relativePosition": [
+        -1.569961283080053,
+        1.9455645889123376
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "1e554f38-33ae-42d4-88e6-4a4b071a20d0",
+      "relativePosition": [
+        2.49979602831164,
+        0.03193457119407375
+      ],
+      "weight": 1,
+      "explanation": "Connection creation behavior is also used by list sub-aim creation."
+    },
+    {
+      "aimId": "101bc40f-5b53-4c4c-aca4-bc91bcdf094a",
+      "relativePosition": [
+        -1.901806711303863,
+        1.6226925872880495
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "abe82e32-65d3-4d08-b78d-2942431b2105",
+      "relativePosition": [
+        2.2794754775581163,
+        -1.026640904703878
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural list/modal interaction area."
     }
   ],
   "supportedAims": [
@@ -302,7 +501,9 @@
     "33be4e0c-fa52-42ba-a86b-4c209b34e2be"
   ],
   "committedIn": [
-    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+    "f51f8930-c937-4c66-9db8-d4d313e6d286",
+    "5c2f9450-0feb-4755-b59a-081e9ab43037",
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
     "state": "done",

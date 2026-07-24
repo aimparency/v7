@@ -2,10 +2,12 @@
   "id": "f5ea4b4f-f777-4b03-a9bb-c94538edd78c",
   "text": "make it possible to tab from Status Comment to the next UI element (Parents) in Edit Aim Modal",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
-    "060b3f53-1854-4fda-a50c-78a98e540288"
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
   "committedIn": [],
   "status": {
@@ -15,5 +17,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

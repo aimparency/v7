@@ -61,6 +61,42 @@
         1.837170141562007
       ],
       "weight": 1
+    },
+    {
+      "aimId": "a927cfcc-e058-4262-9899-0bdba24ead8a",
+      "relativePosition": [
+        2.490697964794785,
+        0.21546147722299877
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural watchdog area."
+    },
+    {
+      "aimId": "b3c1bd1a-a503-45af-8c3a-3d3bee567f47",
+      "relativePosition": [
+        2.393009614958486,
+        0.7235364418716155
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural watchdog area."
+    },
+    {
+      "aimId": "7fbf1bb1-6a27-422b-9bd5-613a28fbaea5",
+      "relativePosition": [
+        1.4836658247593861,
+        2.0121470424501906
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural watchdog area."
+    },
+    {
+      "aimId": "9bcf93d5-1f94-4a80-8276-dcc78112e8f3",
+      "relativePosition": [
+        0.8174576409064163,
+        2.362575502565731
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural watchdog area."
     }
   ],
   "supportedAims": [

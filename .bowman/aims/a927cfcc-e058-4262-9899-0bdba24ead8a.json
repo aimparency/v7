@@ -2,6 +2,8 @@
   "id": "a927cfcc-e058-4262-9899-0bdba24ead8a",
   "text": "watchdog ui improvements",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -38,7 +40,7 @@
     }
   ],
   "supportedAims": [
-    "060b3f53-1854-4fda-a50c-78a98e540288"
+    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
   ],
   "committedIn": [],
   "status": {
@@ -48,5 +50,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

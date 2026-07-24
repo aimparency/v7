@@ -13,6 +13,15 @@
         2.440867069963804
       ],
       "weight": 1
+    },
+    {
+      "aimId": "6079181f-923d-4d17-9488-6ac6b343ea06",
+      "relativePosition": [
+        0.9256336533811622,
+        -2.3223269235248174
+      ],
+      "weight": 1,
+      "explanation": "Project URL restoration belongs to project loading and switching."
     }
   ],
   "supportedAims": [

@@ -2,10 +2,12 @@
   "id": "03e895c0-7f2e-4fb5-a427-078a235c3b7f",
   "text": "when a phase is so long (and at the bottom of phases such that there is no next phase), that j does not change the scroll by definition, it would be nice to move to the end of the page instead. same for up of course.",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
-    "060b3f53-1854-4fda-a50c-78a98e540288"
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
   "committedIn": [],
   "status": {
@@ -15,5 +17,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

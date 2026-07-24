@@ -24,9 +24,10 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Closes the loop between planning and learning.",
-    "date": 1773964260949
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026 as duplicate abstraction. Execution outcomes are already recorded through aim status and reflections, and real economic/external evidence is represented by concrete aims and connections. Preserve concrete experiment records, but do not build a parallel hypothesis-evaluation engine.",
+    "date": 1784886728903,
+    "reviewedAt": 1784886728417
   },
   "intrinsicValue": 0,
   "cost": 1,

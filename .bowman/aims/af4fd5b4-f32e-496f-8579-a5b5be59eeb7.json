@@ -24,9 +24,10 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Core generative step for strategic planning.",
-    "date": 1773964260912
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026 as generic behavior rather than a distinct feature. Agents can propose supporting aims from graph context using the existing MCP and two-step contextual creation gate. Concrete hypotheses should be ordinary aims connected to the mission, not products of a separate hypothesis-generation subsystem.",
+    "date": 1784886728680,
+    "reviewedAt": 1784886728417
   },
   "intrinsicValue": 0,
   "cost": 1,

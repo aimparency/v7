@@ -218,6 +218,69 @@
       ],
       "weight": 1,
       "explanation": "Restores fast, stable graph-view layout convergence."
+    },
+    {
+      "aimId": "d7ba6b8b-5150-4ab2-b6a4-79a556f10ab1",
+      "relativePosition": [
+        -2.2781979624894246,
+        -1.0294727017794278
+      ],
+      "weight": 1,
+      "explanation": "The side panel in this decision is specifically the graph inspection surface."
+    },
+    {
+      "aimId": "e1671225-7707-4383-a7ba-0c81909f9311",
+      "relativePosition": [
+        0.5631837196807525,
+        2.4357389223573516
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural graph-view area."
+    },
+    {
+      "aimId": "d0851a84-5300-4c25-a59e-7831c8f6b642",
+      "relativePosition": [
+        -0.5410882375883312,
+        2.4407424114690093
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural graph-view area."
+    },
+    {
+      "aimId": "40a2db34-aa80-48bf-ac13-dfe17004e351",
+      "relativePosition": [
+        -1.4078685665027437,
+        2.065891115101062
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural graph-view area."
+    },
+    {
+      "aimId": "1e554f38-33ae-42d4-88e6-4a4b071a20d0",
+      "relativePosition": [
+        2.4774548154645513,
+        -0.33498901076230386
+      ],
+      "weight": 1,
+      "explanation": "Connection creation behavior is used by graph drag interactions."
+    },
+    {
+      "aimId": "d3b97d82-dfc0-4db6-841b-b90e678e6546",
+      "relativePosition": [
+        -1.078441563282046,
+        2.255429846966156
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural graph-view area."
+    },
+    {
+      "aimId": "9ce4c6ab-e213-434f-8bb7-eeabddf1f94c",
+      "relativePosition": [
+        2.4450004111868573,
+        0.5215102964430319
+      ],
+      "weight": 1,
+      "explanation": "Grouped under the structural graph-view area."
     }
   ],
   "supportedAims": [

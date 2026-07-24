@@ -2,10 +2,12 @@
   "id": "40a2db34-aa80-48bf-ac13-dfe17004e351",
   "text": "enlarge the semantic target connection in graph layout by 1.2",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
-    "060b3f53-1854-4fda-a50c-78a98e540288"
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
   ],
   "committedIn": [],
   "status": {
@@ -15,5 +17,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

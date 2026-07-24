@@ -12,14 +12,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Blocker confirmed by running suggest_reparents on 'list view' (32 children, 25 leaves): suggestions were low-confidence (scores 0.25-0.59, tiny margins, e.g. a list-flicker bug matched to 'watchdog panel improvements'). Cause: candidate sub-parents are auto-derived (children that happen to have children) = a messy mix of real areas and leaf tasks, not a defined taxonomy. Needs the human to define the real structural parents (the 18263fc2 set: graph view / list view+vim-keybindings / project loading / watchdog UI), then re-run suggest_reparents with explicit candidateParentIds. Reparent mechanics (b0fb3242) are done; this taxonomy decision is the remaining blocker for actually reparenting.",
-    "date": 1780314635063
+    "state": "review",
+    "comment": "Structural-parent convention has been applied to the UI and UI-improvements catch-alls; awaiting Felix's acceptance.",
+    "date": 1784886895352
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Applied the structural-parent convention: UI now contains only structural product surfaces; concrete work was moved to list/graph/watchdog/project-loading parents with contribution explanations. The redundant UI improvements catch-all was emptied and merged into list view."
 }
