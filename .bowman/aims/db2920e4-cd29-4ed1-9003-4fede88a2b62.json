@@ -15,14 +15,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Created task for refactoring sync communication.",
-    "date": 1782805639112
+    "state": "partially",
+    "comment": "Stale aim mutation/subscription overwrite race is fixed and tested. Broader payload-push, phase sequencing, and load-performance work remains.",
+    "date": 1784891840473
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Added monotonic per-aim client request revisions. Both updateAim mutations and subscription-triggered aim fetches claim a revision; only the newest response may replace local state, preventing a delayed mutation response from overwriting fresher subscription state. Regression test explicitly resolves the subscription refresh before a stale mutation response. Verification: focused MultiClient tests 3/3, full frontend unit suite 191/191, frontend type-check, and git diff --check passed."
 }

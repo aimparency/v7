@@ -181,4 +181,32 @@ describe('Multi-Client Synchronization', () => {
     await new Promise(resolve => setTimeout(resolve, 500))
     expect(store.aims[aimId]!.text).toBe('New Aim')
   })
+
+  it('does not let an older mutation response overwrite a newer subscription refresh', async () => {
+    const store = useDataStore()
+    const projectPath = '/test/project'
+    const aimId = 'aim-race'
+    const initialAim = {
+      id: aimId,
+      text: 'Initial',
+      status: { state: 'open' },
+      committedIn: [],
+      supportedAims: [],
+      supportingConnections: []
+    }
+    store.replaceAim(aimId, initialAim as any)
+    store.subscribeToUpdates(projectPath)
+
+    let resolveMutation!: (aim: any) => void
+    const mutationResponse = new Promise(resolve => { resolveMutation = resolve })
+    mockTrpc.aim.update.mutate.mockReturnValue(mutationResponse)
+    mockTrpc.aim.get.query.mockResolvedValue({ ...initialAim, text: 'Newest server state' })
+
+    const mutation = store.updateAim(projectPath, aimId, { text: 'Mutation response' } as any)
+    await subscriptionCallback({ type: 'aim', id: aimId, projectPath })
+    resolveMutation({ ...initialAim, text: 'Mutation response' })
+    await mutation
+
+    expect(store.aims[aimId]!.text).toBe('Newest server state')
+  })
 })

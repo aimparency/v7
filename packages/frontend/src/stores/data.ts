@@ -192,6 +192,9 @@ export const useDataStore = defineStore('data', {
     saveTimeout: null as any,
     pendingUpdates: new Set<string>(),
     deletedAims: new Set<string>(),
+    // Monotonic per-aim request order. A response may only replace local state
+    // while it is still the newest request for that aim.
+    aimSyncRevisions: {} as Record<string, number>,
 
     // Value Recalculation Debounce
     recalculateTimeout: null as any,
@@ -593,6 +596,18 @@ export const useDataStore = defineStore('data', {
       }
     },
 
+    beginAimSync(aimId: string): number {
+      const revision = (this.aimSyncRevisions[aimId] ?? 0) + 1
+      this.aimSyncRevisions[aimId] = revision
+      return revision
+    },
+
+    replaceAimIfCurrent(aimId: string, newAim: BaseAim, revision: number): boolean {
+      if (this.aimSyncRevisions[aimId] !== revision) return false
+      this.replaceAim(aimId, newAim)
+      return true
+    },
+
     async createFloatingAim(projectPath: string, aim: AimCreationParams): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createFloatingAim.mutate({
@@ -678,6 +693,7 @@ export const useDataStore = defineStore('data', {
     },
 
     async updateAim(projectPath: string, aimId: string, updates: Partial<Omit<Aim, 'id'>>): Promise<void> {
+      const revision = this.beginAimSync(aimId)
       try {
         const updatedAim = await trpc.aim.update.mutate({
           projectPath,
@@ -686,8 +702,9 @@ export const useDataStore = defineStore('data', {
         })
 
         // Update local state
-        this.replaceAim(aimId, updatedAim)
-        this.recalculateValues();
+        if (this.replaceAimIfCurrent(aimId, updatedAim, revision)) {
+          this.recalculateValues();
+        }
       } catch (error) {
         console.error('Failed to update aim:', error)
         throw error
@@ -1087,9 +1104,10 @@ export const useDataStore = defineStore('data', {
              }
           } else if (data.type === 'aim') {
              if (this.deletedAims.has(data.id)) return;
+             const revision = this.beginAimSync(data.id)
              try {
                const aim = await trpc.aim.get.query({ projectPath, aimId: data.id });
-               this.replaceAim(aim.id, aim);
+               if (!this.replaceAimIfCurrent(aim.id, aim, revision)) return;
 
                // Logic to update floating aims list
                // A floating aim has no commitments AND no outgoing connections (is not a parent)
