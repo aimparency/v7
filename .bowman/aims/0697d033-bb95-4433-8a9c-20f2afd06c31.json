@@ -2,7 +2,7 @@
   "id": "0697d033-bb95-4433-8a9c-20f2afd06c31",
   "text": "Conversational aim elicitation: turn a human's natural-language goal into a proposed, editable aim sub-tree they approve",
   "description": "The core \"humans express needs → graph\" bridge of the cooperation engine. A human states a high-level goal in natural language (text or voice — VoiceView.vue already exists as infra); the system proposes a structured sub-tree of aims (decomposition with value/cost guesses) that the human can edit, reorder, and approve before the agents act. The will stays inspectable and revisable; humans stay final authority. This is what lets non-developers drive the system toward real-world goals, not just engineers editing the graph by hand. Concrete next step: define the elicitation→proposed-subtree→human-approval flow on top of the existing graph + MCP create_aim primitives.",
-  "reflection": "Created meta/conversational-aim-elicitation.md after verifying that VoiceView currently calls an echo placeholder and the separate voice bridge exposes immediate create_aim writes. The design separates read-only proposal generation from exact-revision human approval and persistence; defines transient IDs, limits, idempotency, partial-failure truthfulness, context minimization, a shared text/voice flow, and ten acceptance tests. This prevents conversation from being mistaken for authorization.",
+  "reflection": "Completed the conversational elicitation vertical slice across shared schema, read-only model generation, manual text and browser-speech entry, recursive editing/review, and idempotent approval persistence. Conversation and model output remain input, never authorization. A configured live provider credential is required only to exercise real inference; manual operation remains available without it.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -67,6 +67,15 @@
       ],
       "weight": 1,
       "explanation": "Adds model-assisted decomposition while preserving the human approval boundary."
+    },
+    {
+      "aimId": "9bac62ec-9344-446a-a949-62330373d18f",
+      "relativePosition": [
+        -1.4916235985872162,
+        -2.0062549788443453
+      ],
+      "weight": 1,
+      "explanation": "Completes the reachable model-assisted human-to-approved-graph path while preserving manual operation."
     }
   ],
   "supportedAims": [
@@ -74,9 +83,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Manual text and browser speech share the full approved proposal flow, and a read-only selected-loop-model proposer is implemented. The remaining product step is invoking model decomposition from the text/voice entry UI and validating it with a configured live model.",
-    "date": 1784749867582
+    "state": "review",
+    "comment": "The complete text/voice → optional selected-loop-model decomposition → transient recursive edit/review → explicit idempotent persistence flow is implemented and internally verified. Awaiting Felix's UI acceptance and a live configured-model trial.",
+    "date": 1784895132185
   },
   "intrinsicValue": 0,
   "cost": 5,

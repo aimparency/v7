@@ -4,6 +4,7 @@ import type { AimProposal } from 'shared'
 import FormModalShell from './FormModalShell.vue'
 import AimProposalReview from './AimProposalReview.vue'
 import { createManualAimProposal } from '../utils/aim-proposal'
+import { trpc } from '../trpc'
 
 const props = defineProps<{
   show: boolean
@@ -18,11 +19,15 @@ const emit = defineEmits<{
 const sourceText = ref('')
 const proposal = ref<AimProposal | null>(null)
 const input = ref<HTMLTextAreaElement>()
+const generating = ref(false)
+const error = ref('')
 
 watch(() => props.show, async (show) => {
   if (!show) {
     sourceText.value = ''
     proposal.value = null
+    generating.value = false
+    error.value = ''
     return
   }
   await nextTick()
@@ -33,6 +38,24 @@ const createDraft = () => {
   const text = sourceText.value.trim()
   if (!text) return
   proposal.value = createManualAimProposal(text)
+}
+
+const generateDraft = async () => {
+  const text = sourceText.value.trim()
+  if (!text || generating.value) return
+  generating.value = true
+  error.value = ''
+  try {
+    proposal.value = await trpc.aim.proposeAimSubtree.mutate({
+      projectPath: props.projectPath,
+      transcript: text,
+      existingParentIds: []
+    })
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : 'Could not generate a proposal'
+  } finally {
+    generating.value = false
+  }
 }
 
 const closeReview = () => {
@@ -70,12 +93,18 @@ const closeReview = () => {
         This starts as a private draft. You can decompose and review it before
         anything is added to the graph.
       </p>
+      <p v-if="error" role="alert" class="error">
+        {{ error }} You can still start manually.
+      </p>
     </form>
 
     <template #footer>
       <button type="button" @click="emit('close')">Cancel</button>
-      <button type="button" class="primary" :disabled="!sourceText.trim()" @click="createDraft">
-        Create editable draft
+      <button type="button" :disabled="!sourceText.trim() || generating" @click="createDraft">
+        Start manually
+      </button>
+      <button type="button" class="primary" :disabled="!sourceText.trim() || generating" @click="generateDraft">
+        {{ generating ? 'Generating…' : 'Propose with model' }}
       </button>
     </template>
   </FormModalShell>
@@ -127,5 +156,9 @@ button:disabled {
 .primary {
   border-color: #4f87b8;
   background: #35658f;
+}
+
+.error {
+  color: #ff9f9f;
 }
 </style>

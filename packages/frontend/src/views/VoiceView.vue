@@ -4,6 +4,7 @@ import { useProjectStore } from '../stores/project-store'
 import type { AimProposal } from 'shared'
 import AimProposalReview from '../components/AimProposalReview.vue'
 import { createManualAimProposal } from '../utils/aim-proposal'
+import { trpc } from '../trpc'
 
 const projectStore = useProjectStore()
 const emit = defineEmits<{
@@ -85,15 +86,25 @@ const toggleListening = () => {
   }
 }
 
-const handleTranscript = (text: string) => {
+const handleTranscript = async (text: string) => {
   // Add user message to history
   history.value.push({
     role: 'user',
     text,
     timestamp: Date.now()
   })
-  proposal.value = createManualAimProposal(text, 'voice')
   void scrollToBottom()
+  error.value = ''
+  try {
+    proposal.value = await trpc.aim.proposeAimSubtree.mutate({
+      projectPath: projectStore.projectPath,
+      transcript: text,
+      existingParentIds: []
+    })
+  } catch (cause) {
+    proposal.value = createManualAimProposal(text, 'voice')
+    error.value = `${cause instanceof Error ? cause.message : 'Could not generate a proposal'} A manual draft was opened instead.`
+  }
 }
 
 onUnmounted(() => {

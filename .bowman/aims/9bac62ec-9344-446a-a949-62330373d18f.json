@@ -1,0 +1,31 @@
+{
+  "id": "9bac62ec-9344-446a-a949-62330373d18f",
+  "text": "Connect text and voice goal entry to model-backed proposal generation",
+  "description": "Invoke proposeAimSubtree from the existing text and browser-voice entry surfaces, display generation progress/errors, preserve an explicit manual-draft fallback, and feed successful results into the same recursive review/approval UI. No model response may persist directly.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "human-ai-cooperation",
+    "elicitation",
+    "model",
+    "frontend"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "0697d033-bb95-4433-8a9c-20f2afd06c31"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Text and voice entry are connected to model-backed proposal generation with manual fallback; internally verified and awaiting live configured-model/UI acceptance.",
+    "date": 1784895125626
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Text entry now offers “Propose with model” and “Start manually,” shows generation progress/errors, and opens the shared review UI for either result. Browser speech calls the same proposeAimSubtree endpoint; if model configuration/inference fails it opens a manual draft and explains the fallback. No generation path calls approval or graph writes. Verification: focused proposal tests 8/8, full frontend tests 207/207, frontend type-check, production build, and git diff check."
+}
