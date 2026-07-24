@@ -1,0 +1,32 @@
+{
+  "id": "8e8d8f7a-375d-46b8-8f03-192527b59106",
+  "text": "Require contextual review before MCP aim creation",
+  "description": "Make MCP aim creation an enforced two-call review. First create_aim call performs text+semantic search across active and cancelled aims, returns compact relevant context plus a deterministic confirmation token, and writes nothing. A second identical call with that token creates the aim. Similarity is informative rather than an automatic veto: the agent may confirm a genuinely distinct aim. The token binds the exact proposal so edits require fresh context. Keep this separate and much leaner than the human-facing transient subtree approval system.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "mcp",
+    "aim-creation",
+    "deduplication",
+    "graph-hygiene"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "12da17c9-7c18-479c-8dc3-e78bc0a35805",
+    "fe8b6496-588c-4439-8a39-056dab245c4f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Two-step contextual creation gate is implemented and internally verified; awaiting Felix's acceptance. The running MCP client must be restarted later to expose the new schema/behavior.",
+    "date": 1784886658805
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Implemented an enforced MCP-only two-call creation gate. First create_aim call performs existing combined text+semantic search, returns up to eight related active/cancelled aims with status rationale and a deterministic token, and writes nothing. Second identical call with the token creates; changing any proposal field invalidates it. Similarity remains contextual rather than an automatic veto. This is intentionally separate from the richer human-facing subtree proposal system. Verification: focused MCP aims+phases tests 16/16 pass, including no-write preview, cancelled rationale visibility, mismatch rejection, and confirmed creation; MCP TypeScript build passes."
+}

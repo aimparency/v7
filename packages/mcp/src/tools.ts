@@ -3,6 +3,7 @@ import { calculateAimValues } from "shared";
 import { AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { execFileSync } from "child_process";
+import { createHash } from "crypto";
 import * as path from "path";
 
 // --- Realized-cost signal (c0a45822: reality→priority feedback) ---------------
@@ -241,6 +242,27 @@ export function resolvePhasePlacement(
   return resolvedOrder;
 }
 
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .filter(([, item]) => item !== undefined)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([key, item]) => [key, canonicalize(item)]),
+    );
+  }
+  return value;
+}
+
+export function aimCreationConfirmationToken(args: Record<string, unknown>): string {
+  const { confirmationToken: _confirmationToken, ...proposal } = args;
+  return createHash("sha256")
+    .update(JSON.stringify(canonicalize(proposal)))
+    .digest("hex")
+    .slice(0, 24);
+}
+
 export function registerTools(server: Server, trpcClient: any) {
   if (!trpcClient) throw new Error("registerTools requires a tRPC client");
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -327,7 +349,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "create_aim",
-          description: "Put a non-duplicate goal, idea, decision, or task in the Aimparency graph and connect it to the mission it serves. Prefer aims/connections over auxiliary planning files; use files only for detail the graph cannot express well. Set value on goals, cost on tasks, and phaseId when it should enter the work queue.",
+          description: "Two-step creation: first call returns related active/cancelled aims and a confirmationToken without writing. Review that context, then repeat the identical call with confirmationToken to create. Similarity informs judgment; it does not forbid a genuinely distinct aim. Connect the aim to the mission it serves.",
           inputSchema: {
             type: "object",
             properties: {
@@ -348,6 +370,7 @@ export function registerTools(server: Server, trpcClient: any) {
               intrinsicValue: { type: "number", description: "Standalone worth; set on goals so value can flow to children" },
               cost: { type: "number", description: "Effort/resource cost; set on tasks so priority is meaningful" },
               phaseId: { type: "string" },
+              confirmationToken: { type: "string", description: "Token returned by the review-only first call. Any proposal edit requires a fresh review." },
             },
             required: ["projectPath", "text"],
           },
@@ -888,6 +911,42 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "create_aim": {
+          const expectedToken = aimCreationConfirmationToken(args);
+          if (args.confirmationToken === undefined) {
+            const related = await trpcClient.aim.search.query({
+              projectPath: args.projectPath as string,
+              query: args.text as string,
+              limit: 8,
+            });
+            return {
+              content: [{
+                type: "text",
+                text: JSON.stringify({
+                  created: false,
+                  reviewRequired: true,
+                  confirmationToken: expectedToken,
+                  instruction:
+                    "Review the related aims, especially cancelled ones and their reasons. " +
+                    "Reuse, update, connect, or merge when appropriate. If this proposal is still distinct and useful, " +
+                    "repeat the identical create_aim call with confirmationToken.",
+                  relatedAims: (related as any[]).map((aim: any) => ({
+                    id: aim.id,
+                    text: aim.text,
+                    description: aim.description,
+                    status: aim.status,
+                    score: aim.score,
+                  })),
+                }, null, 2),
+              }],
+            };
+          }
+          if (args.confirmationToken !== expectedToken) {
+            throw new Error(
+              "confirmationToken does not match this aim proposal. " +
+              "Call create_aim again without confirmationToken to review context for the edited proposal.",
+            );
+          }
+
           const result = await trpcClient.aim.createFloatingAim.mutate({
             projectPath: args.projectPath as string,
             aim: {

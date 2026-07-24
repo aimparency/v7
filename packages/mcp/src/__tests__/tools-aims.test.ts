@@ -5,6 +5,13 @@ import { MockServer, caller, createCallerProxy, createTestContext } from './test
 
 let ctx: ReturnType<typeof createTestContext>;
 
+async function createAim(server: MockServer, args: Record<string, unknown>) {
+  const review = await server.callTool('create_aim', args);
+  const confirmationToken = JSON.parse(review.content[0].text).confirmationToken;
+  assert.ok(confirmationToken, 'create_aim review returns a confirmation token');
+  return await server.callTool('create_aim', { ...args, confirmationToken });
+}
+
 beforeEach(async () => {
   ctx = createTestContext();
   await ctx.setup();
@@ -20,7 +27,7 @@ test('MCP Tools - Aims CRUD', async (t) => {
   registerTools(server as any, callerProxy as any);
 
   // 1. Create
-  await server.callTool('create_aim', { 
+  await createAim(server, {
     projectPath: ctx.projectPath, 
     text: 'MCP Aim',
     tags: ['test']
@@ -54,12 +61,62 @@ test('MCP Tools - Aims CRUD', async (t) => {
   assert.equal(aims.length, 0);
 });
 
+test('MCP Tools - create_aim requires review and surfaces cancelled context', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+
+  const cancelled = await caller.aim.createFloatingAim({
+    projectPath: ctx.projectPath,
+    aim: {
+      text: 'Build explicit first-class workflow plans',
+      status: {
+        state: 'cancelled',
+        comment: 'Rejected because contribution edges already express the relationship.',
+      },
+    },
+  });
+  const proposal = {
+    projectPath: ctx.projectPath,
+    text: 'Build explicit first-class workflow plans',
+  };
+
+  const review = await server.callTool('create_aim', proposal);
+  const payload = JSON.parse(review.content[0].text);
+  assert.equal(payload.created, false);
+  assert.equal(payload.reviewRequired, true);
+  assert.ok(payload.confirmationToken);
+  assert.ok(
+    payload.relatedAims.some((aim: any) =>
+      aim.id === cancelled.id &&
+      aim.status.state === 'cancelled' &&
+      /contribution edges/.test(aim.status.comment)
+    ),
+    'cancelled aims and their rationale are included in creation context',
+  );
+  assert.equal((await caller.aim.list({ projectPath: ctx.projectPath })).length, 1);
+
+  const mismatch = await server.callTool('create_aim', {
+    ...proposal,
+    confirmationToken: 'wrong-token',
+  });
+  assert.equal(mismatch.isError, true);
+  assert.match(mismatch.content[0].text, /does not match this aim proposal/);
+  assert.equal((await caller.aim.list({ projectPath: ctx.projectPath })).length, 1);
+
+  const created = await server.callTool('create_aim', {
+    ...proposal,
+    confirmationToken: payload.confirmationToken,
+  });
+  assert.match(created.content[0].text, /Created aim with ID:/);
+  assert.equal((await caller.aim.list({ projectPath: ctx.projectPath })).length, 2);
+});
+
 test('status date changes only on state transition; reviewedAt is independent', async () => {
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
 
   const initialReview = 1_700_000_000_000;
-  await server.callTool('create_aim', {
+  await createAim(server, {
     projectPath: ctx.projectPath,
     text: 'Long-standing intent',
     status: { state: 'open', reviewedAt: initialReview },
@@ -94,7 +151,7 @@ test('MCP Tools - update_aim nudges to verify when marking done without a reflec
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Verify me' });
+  await createAim(server, { projectPath: ctx.projectPath, text: 'Verify me' });
   const aimId = (await caller.aim.list({ projectPath: ctx.projectPath }))[0].id;
 
   // Done without a reflection -> nudge.
@@ -147,7 +204,7 @@ test('MCP Tools - done nudge surfaces the type-specific evidence hint', async ()
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Fix the modal flicker bug', tags: ['ui'] });
+  await createAim(server, { projectPath: ctx.projectPath, text: 'Fix the modal flicker bug', tags: ['ui'] });
   const aimId = (await caller.aim.list({ projectPath: ctx.projectPath }))[0].id;
 
   const res = await server.callTool('update_aim', {
@@ -163,7 +220,7 @@ test('MCP Tools - update_aim stores free-text reflection with status', async () 
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Reflectable aim' });
+  await createAim(server, { projectPath: ctx.projectPath, text: 'Reflectable aim' });
   const aimId = (await caller.aim.list({ projectPath: ctx.projectPath }))[0].id;
 
   const result = await server.callTool('update_aim', {
@@ -185,9 +242,9 @@ test('MCP Tools - create_aim accepts edge metadata for parent and child links', 
   registerTools(server as any, callerProxy as any);
 
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
-  const parentId = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Parent' }));
-  const childId = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Child' }));
-  const aimId = idOf(await server.callTool('create_aim', {
+  const parentId = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Parent' }));
+  const childId = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Child' }));
+  const aimId = idOf(await createAim(server, {
     projectPath: ctx.projectPath,
     text: 'Middle',
     supportedAims: [{ aimId: parentId, weight: 2, explanation: 'parent rationale' }],
@@ -212,10 +269,10 @@ test('MCP Tools - update_aim supports append and remove connection deltas', asyn
   registerTools(server as any, callerProxy as any);
 
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
-  const parentId = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Parent' }));
-  const child1Id = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Child 1' }));
-  const child2Id = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'Child 2' }));
-  const aimId = idOf(await server.callTool('create_aim', {
+  const parentId = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Parent' }));
+  const child1Id = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Child 1' }));
+  const child2Id = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Child 2' }));
+  const aimId = idOf(await createAim(server, {
     projectPath: ctx.projectPath,
     text: 'Target',
     supportingConnections: [child1Id],
@@ -263,12 +320,12 @@ test('MCP Tools - list_aims uncommitted surfaces parented-but-unphased aims that
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
 
   // A: no phase, no parent -> floating AND uncommitted.
-  const a = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'orphan' }));
+  const a = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'orphan' }));
   // B: committed to a phase.
   const phase = await caller.phase.create({ projectPath: ctx.projectPath, phase: { name: 'P', from: 0, to: 1000 } });
-  const b = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'phased', phaseId: phase.id }));
+  const b = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'phased', phaseId: phase.id }));
   // C: has a parent (B) but no phase -> uncommitted but NOT floating (the invisible class).
-  const c = idOf(await server.callTool('create_aim', { projectPath: ctx.projectPath, text: 'connected-unphased', supportedAims: [b] }));
+  const c = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'connected-unphased', supportedAims: [b] }));
 
   const uncommitted = JSON.parse((await server.callTool('list_aims', {
     projectPath: ctx.projectPath, status: 'open', uncommitted: true,
@@ -288,7 +345,7 @@ test('get_prioritized_aims falls back to connected uncommitted work when a phase
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
 
-  const parentResult = await server.callTool('create_aim', {
+  const parentResult = await createAim(server, {
     projectPath: ctx.projectPath,
     text: 'Mission container',
     intrinsicValue: 10,
@@ -297,7 +354,7 @@ test('get_prioritized_aims falls back to connected uncommitted work when a phase
   const parentId = /Created aim with ID: ([0-9a-f-]+)/.exec(parentResult.content[0].text)?.[1];
   assert.ok(parentId);
 
-  const childResult = await server.callTool('create_aim', {
+  const childResult = await createAim(server, {
     projectPath: ctx.projectPath,
     text: 'Executable hidden work',
     supportedAims: [parentId],

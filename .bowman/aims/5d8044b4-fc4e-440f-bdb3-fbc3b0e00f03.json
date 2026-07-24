@@ -15,9 +15,10 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Needed so hypothesis-driven strategies become durable graph objects instead of prompt-only reasoning.",
-    "date": 1773964260932
+    "state": "cancelled",
+    "comment": "Cancelled by design decision 24 July 2026: explicit first-class plan structures would duplicate the graph's minimal contribution-edge model and add noise. Dependencies, fallbacks, ordering rationale, and strategy alternatives should remain aims connected by contribution edges whose explanations state the relationship. Human gates are represented by aim status such as human-dependent. Preserve this cancelled aim so future semantic creation checks surface the rejected direction.",
+    "date": 1784886078356,
+    "reviewedAt": 1784886078349
   },
   "intrinsicValue": 0,
   "cost": 1,

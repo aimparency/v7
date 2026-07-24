@@ -11,9 +11,10 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774813549222
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026: inherited from an expired hackathon direction that produced no validating feedback. No current customer, interoperability partner, or economic use case requires ERC-8004. Preserve the rejected intent for semantic duplicate/context checks; reconsider only when external evidence creates a concrete requirement.",
+    "date": 1784886078410,
+    "reviewedAt": 1784886078351
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -16,9 +16,10 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Required for trust and reputation systems",
-    "date": 1774771791115
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026: speculative on-chain registration inherited from the unvalidated ERC-8004 hackathon branch. Wallet identity and registration add operational/security burden without a current user or partner need. Retained as cancelled context so it is not recreated casually.",
+    "date": 1784886078459,
+    "reviewedAt": 1784886078351
   },
   "intrinsicValue": 0,
   "cost": 1,

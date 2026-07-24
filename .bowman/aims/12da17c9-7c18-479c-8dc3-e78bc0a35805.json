@@ -23,6 +23,15 @@
       ],
       "weight": 1,
       "explanation": "Extends lean MCP tool-surface guidance from generic autonomy to graph-first planning."
+    },
+    {
+      "aimId": "8e8d8f7a-375d-46b8-8f03-192527b59106",
+      "relativePosition": [
+        -1.1752037813392835,
+        2.206557516206149
+      ],
+      "weight": 1,
+      "explanation": "Makes deduplication and prior graph decisions unavoidable at aim creation time."
     }
   ],
   "supportedAims": [

@@ -17,9 +17,10 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Bonus 5% scoring - enables agent ecosystems",
-    "date": 1774771792365
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026: hackathon bonus-scoring feature without validating feedback or a current collaboration requirement. Aimparency should not implement speculative trust infrastructure. Reconsider only for a real multi-agent exchange where ERC-8004 signals are demanded.",
+    "date": 1784886078699,
+    "reviewedAt": 1784886078351
   },
   "intrinsicValue": 0,
   "cost": 1,
