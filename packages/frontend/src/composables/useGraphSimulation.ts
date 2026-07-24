@@ -6,7 +6,7 @@ import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
 import { trpc } from '../trpc'
-import { surfaceMovementShares } from '../utils/graph-forces'
+import { normalizedFlowForceWeights, surfaceMovementShares } from '../utils/graph-forces'
 import { priorityColor } from '../utils/priority-color'
 
 // Constants
@@ -43,6 +43,7 @@ export interface GraphLink {
   weight: number
   share: number
   flowValue: number
+  forceWeight: number
 }
 
 // Helper: Sweep and Prune (1-axis sort)
@@ -235,9 +236,14 @@ export function useGraphSimulation() {
           relativePosition: l.relativePosition || [0, 0],
           weight: l.weight || 1,
           share: l.share || 0,
-          flowValue: l.flowValue || 0
+          flowValue: l.flowValue || 0,
+          forceWeight: 0.5
         })
       }
+    })
+    const flowForceWeights = normalizedFlowForceWeights(newLinks.map(link => link.flowValue))
+    newLinks.forEach((link, index) => {
+      link.forceWeight = flowForceWeights[index]!
     })
     links.value = newLinks
     
@@ -468,12 +474,9 @@ export function useGraphSimulation() {
             
             vec2.scale(delta, link.relativePosition, rSum)
 
-            // Weight flow force by absolute value transported on the connection (flowValue = parentValue * share).
-            // Addresses July aim 7815eb52: "weigh graph node connection force by connection size (how much value is transported by it)".
-            // Tiny flows now contribute near-zero force (no floor from normalized share); stronger value flows pull harder (bounded).
-            // Previously: shareWeight = 0.5 + 0.5*share gave tiny connections ~half strength.
-            const flow = link.flowValue || 0
-            const flowWeight = flow > 0 ? Math.max(0.02, Math.min(1.5, flow * 5)) : 0.01
+            // Relative connection size affects layout, but the absolute graph
+            // value scale must not make every hierarchy force nearly vanish.
+            const flowWeight = link.forceWeight
 
             // Parent
             vec2.sub(targetPos, from.pos, delta)

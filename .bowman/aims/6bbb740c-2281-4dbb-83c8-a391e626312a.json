@@ -209,6 +209,15 @@
         0.013598991303906124
       ],
       "weight": 1.0019108443623679
+    },
+    {
+      "aimId": "8cce82bb-e8f2-4845-b90e-6d6749238148",
+      "relativePosition": [
+        -2.444804003275115,
+        0.5224302686196229
+      ],
+      "weight": 1,
+      "explanation": "Restores fast, stable graph-view layout convergence."
     }
   ],
   "supportedAims": [

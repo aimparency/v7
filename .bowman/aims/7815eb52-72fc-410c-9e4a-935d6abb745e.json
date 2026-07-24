@@ -24,7 +24,17 @@
   "archived": false,
   "color": null,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "8cce82bb-e8f2-4845-b90e-6d6749238148",
+      "relativePosition": [
+        0.7994190578052183,
+        2.3687399962887055
+      ],
+      "weight": 1,
+      "explanation": "Corrects the convergence regression while preserving connection-size-dependent force."
+    }
+  ],
   "supportedAims": [
     "6bbb740c-2281-4dbb-83c8-a391e626312a"
   ],

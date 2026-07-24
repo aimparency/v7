@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { surfaceMovementShares } from './graph-forces'
+import { normalizedFlowForceWeights, surfaceMovementShares } from './graph-forces'
 
 describe('surfaceMovementShares', () => {
   it('moves equal-size aims equally', () => {
@@ -14,5 +14,27 @@ describe('surfaceMovementShares', () => {
 
   it('has a stable fallback for zero-size nodes', () => {
     expect(surfaceMovementShares(0, 0)).toEqual({ from: 0.5, into: 0.5 })
+  })
+})
+
+describe('normalizedFlowForceWeights', () => {
+  it('keeps a typical visible connection near the previous settling strength', () => {
+    expect(normalizedFlowForceWeights([1])).toEqual([0.75])
+  })
+
+  it('makes larger flows stronger without starving smaller flows', () => {
+    const [small, typical, large] = normalizedFlowForceWeights([0.25, 1, 4])
+    expect(small).toBe(0.5)
+    expect(typical).toBe(0.75)
+    expect(large).toBe(1.5)
+  })
+
+  it('is invariant to the graph absolute value scale', () => {
+    expect(normalizedFlowForceWeights([0.01, 0.04, 0.16]))
+      .toEqual(normalizedFlowForceWeights([1, 4, 16]))
+  })
+
+  it('uses a stable non-trivial fallback for absent flow', () => {
+    expect(normalizedFlowForceWeights([0, Number.NaN])).toEqual([0.5, 0.5])
   })
 })
