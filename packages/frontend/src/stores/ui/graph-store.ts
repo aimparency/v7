@@ -21,6 +21,20 @@ export type PhaseFilter = {
   loadableIds: string[]  // ring-only aims (parents of visible)
 }
 
+export function findConnectionBetween(
+  firstId: string,
+  secondId: string,
+  aimsById: Record<string, { supportingConnections?: { aimId: string }[] }>,
+): { parentId: string; childId: string } | null {
+  if ((aimsById[firstId]?.supportingConnections ?? []).some(connection => connection.aimId === secondId)) {
+    return { parentId: firstId, childId: secondId }
+  }
+  if ((aimsById[secondId]?.supportingConnections ?? []).some(connection => connection.aimId === firstId)) {
+    return { parentId: secondId, childId: firstId }
+  }
+  return null
+}
+
 type GraphUIState = PersistedGraphViewState & {
   pendingDeleteAimId: string | null
   pendingDeleteLink: { parentId: string; childId: string } | null

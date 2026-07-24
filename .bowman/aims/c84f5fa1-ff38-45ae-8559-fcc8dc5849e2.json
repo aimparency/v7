@@ -11,14 +11,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Verified not implemented 2026-06-27. Aim.vue onAimClick (line 57/64) emits 'aim-clicked' with only the aim id and ignores keyboard modifiers; shiftKey is only handled for keyboard nav in keyboard-actions.ts, not for clicks. Work: have the aim click carry event.shiftKey and, when an aim is already selected, create/select the connection selected→clicked instead of changing selection.",
-    "date": 1782545292670
+    "state": "review",
+    "comment": "Implemented and internally verified; needs graph interaction acceptance because no frontend runtime is currently running.",
+    "date": 1784892984916
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Shift-clicking a second aim now selects the existing contribution connection between it and the currently selected aim, resolving the stored parent/child direction regardless of click order. It does not create an edge. If the aims are unrelated, existing shift-add multi-selection behavior remains unchanged. Verification: focused connection resolver tests 2/2, full frontend suite 194/194, frontend production build/type-check, and git diff --check passed."
 }

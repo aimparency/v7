@@ -2,7 +2,7 @@ import { ref, onMounted, onUnmounted, watch, nextTick, type Ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { useGraphUIStore } from '../stores/ui/graph-store'
+import { findConnectionBetween, useGraphUIStore } from '../stores/ui/graph-store'
 import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
@@ -569,6 +569,17 @@ export function useGraphInteraction(
         const isShift = event && event.shiftKey
 
         if (isShift) {
+            const selectedId = graphUIStore.graphSelectedAimId
+            const existingConnection = selectedId && selectedId !== node.id
+                ? findConnectionBetween(selectedId, node.id, dataStore.aims)
+                : null
+            if (existingConnection && !mapStore.cursorMoved) {
+                uiStore.clearMultiSelect()
+                graphUIStore.selectLink(existingConnection.parentId, existingConnection.childId)
+                graphUIStore.setGraphSelection(null)
+                mapStore.isTracking = false
+                return
+            }
             // Shift = range/add to multi (for graph, just add since no linear order; could extend to bbox/path later)
             uiStore.addToMultiSelect(node.id)
             if (!mapStore.cursorMoved) {
