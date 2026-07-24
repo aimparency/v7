@@ -10,6 +10,18 @@ export interface MapNode {
   r: number
 }
 
+export interface CameraRect {
+  minX: number
+  minY: number
+  maxX: number
+  maxY: number
+}
+
+export interface CameraFrame {
+  offset: vec2.T
+  scale: number
+}
+
 export interface LayoutCandidate {
   fromWeight: number
   start: vec2.T
@@ -21,6 +33,32 @@ export interface LayoutCandidate {
 
 function getNodeFocusScale(node: MapNode): number {
   return 22 / node.r
+}
+
+export function unionCameraRects(a: CameraRect, b: CameraRect): CameraRect {
+  return {
+    minX: Math.min(a.minX, b.minX),
+    minY: Math.min(a.minY, b.minY),
+    maxX: Math.max(a.maxX, b.maxX),
+    maxY: Math.max(a.maxY, b.maxY),
+  }
+}
+
+export function fitCameraRect(
+  rect: CameraRect,
+  xratio: number,
+  yratio: number,
+  fill = 0.6,
+  maxScale = Number.POSITIVE_INFINITY,
+): CameraFrame {
+  const width = Math.max(rect.maxX - rect.minX, 1)
+  const height = Math.max(rect.maxY - rect.minY, 1)
+  const scaleX = (2 * fill * xratio * LOGICAL_HALF_SIDE) / width
+  const scaleY = (2 * fill * yratio * LOGICAL_HALF_SIDE) / height
+  return {
+    offset: vec2.fromValues(-(rect.minX + rect.maxX) / 2, -(rect.minY + rect.maxY) / 2),
+    scale: Math.min(scaleX, scaleY, maxScale),
+  }
 }
 
 export const useMapStore = defineStore('map', {
@@ -106,29 +144,8 @@ export const useMapStore = defineStore('map', {
       const minY = Math.min(nodeA.pos[1] - nodeA.r, nodeB.pos[1] - nodeB.r) - padding
       const maxY = Math.max(nodeA.pos[1] + nodeA.r, nodeB.pos[1] + nodeB.r) + padding
 
-      const w = Math.max(maxX - minX, 1)
-      const h = Math.max(maxY - minY, 1)
-      
-      const centerX = (minX + maxX) / 2
-      const centerY = (minY + maxY) / 2
-      
-      // Target: center on (centerX, centerY)
-      // offset = -center
-      const targetOffset = vec2.fromValues(-centerX, -centerY)
-      
-      // Target scale: 30% of viewport
-      // ViewLogicalSize = (Physical / halfSide) * (LOGICAL / scale)
-      // We want: BoxSize / ViewLogicalSize = 0.3
-      // BoxSize = 0.3 * (2 * ratio) * (LOGICAL / scale)
-      // scale = 0.6 * ratio * LOGICAL / BoxSize
-      
-      const scaleX = (0.6 * this.xratio * LOGICAL_HALF_SIDE) / w
-      const scaleY = (0.6 * this.yratio * LOGICAL_HALF_SIDE) / h
-      const fitScale = Math.min(scaleX, scaleY)
       const maxNodeScale = Math.min(getNodeFocusScale(nodeA), getNodeFocusScale(nodeB))
-      const targetScale = Math.min(fitScale, maxNodeScale)
-
-      this.animateCamera(targetOffset, targetScale, duration)
+      this.animateCameraToRect({ minX, minY, maxX, maxY }, duration, maxNodeScale)
     },
     animateCamera(targetOffset: vec2.T, targetScale: number, duration: number) {
       const offset0 = vec2.clone(this.offset)
@@ -150,10 +167,51 @@ export const useMapStore = defineStore('map', {
         this.scale = scale0 * (1 - progress) + targetScale * progress
       }
     },
+    currentViewportRect(): CameraRect {
+      const safeScale = Math.max(this.scale, 0.000001)
+      const centerX = -this.offset[0]
+      const centerY = -this.offset[1]
+      const halfWidth = this.xratio * LOGICAL_HALF_SIDE / safeScale
+      const halfHeight = this.yratio * LOGICAL_HALF_SIDE / safeScale
+      return {
+        minX: centerX - halfWidth,
+        minY: centerY - halfHeight,
+        maxX: centerX + halfWidth,
+        maxY: centerY + halfHeight,
+      }
+    },
+    animateCameraToRect(targetRect: CameraRect, duration: number, maxScale = Number.POSITIVE_INFINITY) {
+      const start: CameraFrame = { offset: vec2.clone(this.offset), scale: this.scale }
+      const destination = fitCameraRect(targetRect, this.xratio, this.yratio, 0.3, maxScale)
+      const overview = fitCameraRect(
+        unionCameraRects(this.currentViewportRect(), targetRect),
+        this.xratio,
+        this.yratio,
+        0.75,
+      )
+
+      this.anim.t0 = Date.now()
+      this.anim.duration = duration
+      this.anim.update = () => {
+        const progress = Math.min((Date.now() - this.anim.t0) / duration, 1)
+        const firstHalf = progress <= 0.5
+        const localProgress = firstHalf ? progress * 2 : (progress - 0.5) * 2
+        const eased = (1 - Math.cos(localProgress * Math.PI)) / 2
+        const from = firstHalf ? start : overview
+        const to = firstHalf ? overview : destination
+        vec2.mix(this.offset, to.offset, from.offset, eased)
+        this.scale = from.scale * (1 - eased) + to.scale * eased
+        if (progress >= 1) this.anim.update = undefined
+      }
+    },
     centerOnNode(node: MapNode, duration = 1000) {
-      const targetOffset = vec2.crScale(node.pos, -1)
-      const targetScale = getNodeFocusScale(node) // Heuristic (zoomed out) - reduced from 66 to 22 per aim d3b97d82
-      this.animateCamera(targetOffset, targetScale, duration)
+      const radius = node.r
+      this.animateCameraToRect({
+        minX: node.pos[0] - radius,
+        minY: node.pos[1] - radius,
+        maxX: node.pos[0] + radius,
+        maxY: node.pos[1] + radius,
+      }, duration, getNodeFocusScale(node))
     },
     resetView() {
       // Reset pan/zoom to defaults (called when switching projects)

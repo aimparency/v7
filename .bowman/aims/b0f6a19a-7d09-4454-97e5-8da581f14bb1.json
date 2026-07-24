@@ -11,14 +11,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Verified still todo 2026-06-27. Bring-into-view exists (mapStore.centerOnNode / centerOnConnection in map.ts, called from GraphSidePanel.vue:100/150 + App.vue:60) but uses a simple timed animation, not the described 3-point camera path (start → overview bounding-box at p=0.5 → end, ease-out). Implement the camera-path algorithm inside those map.ts methods.",
-    "date": 1782545289949
+    "state": "review",
+    "comment": "Implemented and internally verified; needs interaction review in the graph UI. Existing frontend runtime was not available, and repository instructions prohibit starting it without an explicit request.",
+    "date": 1784892869045
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Explicit graph focus now follows a three-keyframe camera path: current viewport, a fitted overview of the union of current and destination rectangles at p=0.5, then the fitted aim/connection destination. Node zoom caps and connection fitting remain intact; tracking/manual camera logic is unchanged. Added pure rectangle fitting/union helpers and midpoint regression coverage. Also corrected a GraphSidePanel test double to return the complete aim contract, eliminating its delayed recalculation exception. Verification: map tests 3/3, complete frontend suite 192/192, frontend production build/type-check, and git diff --check passed. Runtime visual review remains because no server was running and it was not started."
 }

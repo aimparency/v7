@@ -10,7 +10,19 @@ vi.mock('../../trpc', () => ({
   trpc: {
     aim: {
       update: {
-        mutate: vi.fn().mockImplementation(async ({ aimId, aim }: any) => ({ id: aimId, ...aim }))
+        // The real endpoint returns a complete aim, not the sparse patch.
+        mutate: vi.fn().mockImplementation(async ({ aimId, aim }: any) => ({
+          id: aimId,
+          text: 'Updated aim',
+          status: { state: 'open' },
+          supportedAims: [],
+          supportingConnections: [],
+          committedIn: [],
+          intrinsicValue: 0,
+          cost: 1,
+          loopWeight: 1,
+          ...aim,
+        }))
       }
     }
   }
