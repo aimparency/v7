@@ -33,14 +33,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Verified not started 2026-06-27. Viewport culling exists (spatial tree reused from layout engine) but that's different from this aim: progressive/lazy loading with dotted stub nodes that expand on click is not implemented. Still relevant for large graphs.",
-    "date": 1782545295235
+    "state": "partially",
+    "comment": "Phase-filter graphs now render ring-only loadable nodes and expand them on click, but these are projections of aims already loaded in the client. True storage/network-level lazy loading, mixed loaded/stub value calculation, and incremental relative discovery remain unimplemented. Defer that architecture until measured graph scale demonstrates the need.",
+    "date": 1784893727448
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Relevance reconciliation on 24 July 2026 found a useful UI slice in graph-store/useGraphSimulation/WebGLGraphRenderer: phase filtering creates loadable boundary nodes, ring-renders them, and expands relatives on click. This does not satisfy the original performance/storage claim because dataStore still holds full aims. Avoid broadening it without a benchmark; optimize measured bottlenecks first."
 }
