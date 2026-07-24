@@ -1,7 +1,7 @@
 {
   "id": "874bee42-7e1a-4e52-99ba-d5ae31dffe56",
-  "text": "Pilot hypothesis: post-festival closeout and institutional-memory graph",
-  "description": "After the festival, ingest permissioned task lists, meeting notes, contracts/invoice trackers, and short operator interviews into an inspectable graph of outstanding obligations, decisions, dependencies, owners, and reusable lessons. The agent proposes follow-ups and detects missing closeout items; humans approve messages, payments, contractual decisions, and status changes. Measure unresolved items after 7/14/30 days, invoice/contract turnaround, manager hours, and time needed to retrieve why a decision was made. Best first wedge for Wilde Möhre because it creates value after the event without destabilizing live production.",
+  "text": "Offer a paid festival closeout and next-cycle readiness sprint",
+  "description": "Fixed-fee two-week diagnostic after one completed production. With permission, reconstruct scattered messages, documents, decisions, and trackers into an owned action register, unresolved-risk list, dependency map, and reusable next-cycle operating playbook. Identify the ten highest-risk open loops, propose owners and deadlines, and let the organization approve every action. Measure unresolved obligations recovered, closeout hours, avoidable risk, and whether the playbook is reused. Do not sell vague knowledge management or expose customer operations: public artifacts are limited to schemas, generic/redacted examples, design decisions, and aggregate learning.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -20,14 +20,15 @@
     "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
   ],
   "status": {
-    "state": "open",
-    "comment": "Workflow hypothesis awaiting operator evidence; do not build before validating real pain, ownership, artifacts, baseline, and willingness to pay.",
-    "date": 1784820376528
+    "state": "human-dependent",
+    "comment": "Best current paid wedge, strengthened by Boardy's external review. Felix must learn whether Wilde Möhre will provide materials from one completed festival and identify who owns the closeout problem.",
+    "date": 1784881907517
   },
   "intrinsicValue": 6,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Boardy external review on 24 July 2026: institutional memory alone is a weak purchase because pain and budget ownership are vague. Reframe as closeout and next-cycle readiness tied to dropped obligations, named ownership, avoided work/risk, and reuse. Ranked this first for Wilde Möhre; artist/vendor intake second. Lead with operational outcome, with public inspectability as the trust mechanism rather than the sales headline."
 }
