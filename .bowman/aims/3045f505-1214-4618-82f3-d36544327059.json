@@ -33,14 +33,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Foundation for information-rich autonomous operation",
-    "date": 1774774152342
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026: the proposed generic information-stream subsystem reduces neither a measured bottleneck nor a validated customer workflow. Agents can research on demand for concrete aims; revive only around a named recurring source with an external outcome metric.",
+    "date": 1784895246125
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Cancelled the broad container after cancelling its RSS and generic web-research children. This keeps discovery lean: graph aims state what information is needed and why, while the executing agent chooses an available research tool."
 }

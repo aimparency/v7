@@ -16,14 +16,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Enables agent to pull external context",
-    "date": 1774774168280
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026: a persistent RSS subscription subsystem is speculative infrastructure without a validated user, feed, or decision it improves. Create concrete research aims tied to current missions instead; revive only when recurring monitoring has a named source and measurable value.",
+    "date": 1784895221564
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Kept as cancelled context rather than deleting it. The loop already has access to current web research through capable agents; continuously ingesting feeds risks graph noise and maintenance cost before a real workflow demands it."
 }

@@ -16,14 +16,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Complements RSS with on-demand research",
-    "date": 1774774168661
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026 as a product implementation aim: targeted web research is already an agent capability and should be invoked by concrete aims when current information is needed. No separate generic subsystem is justified.",
+    "date": 1784895226551
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Preserved the useful intention—research current unknowns when needed—while removing an unnecessary implementation abstraction. Evidence and findings belong on the concrete aim they inform."
 }
