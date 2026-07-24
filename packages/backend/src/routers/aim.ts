@@ -32,6 +32,13 @@ export const createAimRouter = (
   searchAims: (projectPath: string, query: string, aims: Aim[]) => Promise<SearchAimResult[]>,
   invalidateSemanticCache: (projectPath: string) => void,
   ensureSearchIndex: (projectPath: string) => Promise<void>,
+  generateProposal: (input: {
+    projectPath: string;
+    transcript: string;
+    existingParentIds: string[];
+    phaseId?: string;
+    parentContext: Array<{ text: string; description?: string }>;
+  }) => Promise<AimProposal>,
   ee: any
 ) => {
   const resolveCreationColor = async (
@@ -224,6 +231,31 @@ export const createAimRouter = (
         }
 
         return Array.from(result);
+      }),
+
+    proposeAimSubtree: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        transcript: z.string().trim().min(1).max(10_000),
+        existingParentIds: z.array(z.string().uuid()).max(20).default([]),
+        phaseId: z.string().uuid().optional()
+      }))
+      .mutation(async ({ input }: any) => {
+        const parents = await Promise.all(input.existingParentIds.map((id: string) => readAim(input.projectPath, id)));
+        if (parents.some(parent => parent.archived || parent.status.state === 'archived')) {
+          throw new Error('Cannot generate a proposal under an archived aim');
+        }
+        if (input.phaseId) await readPhase(input.projectPath, input.phaseId);
+        return generateProposal({
+          projectPath: normalizeProjectPath(input.projectPath),
+          transcript: input.transcript,
+          existingParentIds: input.existingParentIds,
+          phaseId: input.phaseId,
+          parentContext: parents.map(parent => ({
+            text: parent.text,
+            ...(parent.description ? { description: parent.description } : {})
+          }))
+        });
       }),
 
     approveAimSubtree: delayedProcedure

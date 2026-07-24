@@ -31,6 +31,7 @@ import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues, planSpinOff, computeSpinOff, remapSpinOffCollisions } from 'shared';
 import { saveAimValues, getAimValues, getDb } from './db.js';
 import { createAimRouter } from './routers/aim.js';
+import { generateAimProposal } from './aim-proposal-generator.js';
 import { createPhaseRouter } from './routers/phase.js';
 import { createSystemRouter } from './routers/system.js';
 import { createVoiceRouter } from './routers/voice.js';
@@ -1011,6 +1012,7 @@ const appRouter = t.router({
     searchAims,
     invalidateSemanticCache,
     ensureSearchIndex,
+    generateAimProposal,
     ee
   ),
   phase: createPhaseRouter(

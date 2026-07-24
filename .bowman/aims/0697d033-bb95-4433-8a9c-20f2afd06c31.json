@@ -58,6 +58,15 @@
       ],
       "weight": 1,
       "explanation": "Reuses the human-approved proposal boundary for speech rather than allowing voice conversation to mutate the graph."
+    },
+    {
+      "aimId": "9a33648c-1d92-41c1-85df-a577625804c2",
+      "relativePosition": [
+        -1.3666563056079566,
+        -2.093382559959362
+      ],
+      "weight": 1,
+      "explanation": "Adds model-assisted decomposition while preserving the human approval boundary."
     }
   ],
   "supportedAims": [
@@ -66,7 +75,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Manual text and browser speech now share the complete transient draft → recursive edit/review → durable graph flow. Model-backed read-only decomposition remains.",
+    "comment": "Manual text and browser speech share the full approved proposal flow, and a read-only selected-loop-model proposer is implemented. The remaining product step is invoking model decomposition from the text/voice entry UI and validating it with a configured live model.",
     "date": 1784749867582
   },
   "intrinsicValue": 0,
