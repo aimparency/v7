@@ -22,9 +22,10 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Cell division model - test variants, let successful ones thrive",
-    "date": 1768764007357
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026: speculative 'parallel strategy testing' adds an unnecessary conceptual layer. Alternative strategies are ordinary aims with contribution explanations and real outcomes. The concrete repository spin-off feature already also supports the practical graph-backend parent, so no implementation history is lost.",
+    "date": 1784887373072,
+    "reviewedAt": 1784887372689
   },
   "intrinsicValue": 0,
   "cost": 1,

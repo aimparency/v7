@@ -21,9 +21,10 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1782733628323
+    "state": "cancelled",
+    "comment": "Cancelled after relevance review on 24 July 2026: the aim contains no concrete revision requirement. Archiving is implemented, archived-source merge preservation has its own reviewed aim, and future defects should be recorded as specific reproducible aims.",
+    "date": 1784887372695,
+    "reviewedAt": 1784887372689
   },
   "intrinsicValue": 0,
   "cost": 1,
