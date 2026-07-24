@@ -44,14 +44,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Broken into 3 heuristic steps 2026-06-28, strongest-first: (1) 6606def4 commit-reference reconciliation — DONE this commit (reconcile_status MCP tool: OPEN aims cited by >=1 git commit, deterministic/cheap/high-precision); (2) da1291e5 code-presence keyword/symbol heuristic — open (covers aims implemented without a commit citing their id); (3) c968f026 LLM-judged check for ambiguous candidates — open (gated behind the cheap signals to bound cost). All three are read-only review reports feeding update_aim, never auto-marking done. Parent stays partially until (2) lands (and optionally (3)).",
-    "date": 1782636554772
+    "state": "review",
+    "comment": "Commit-reference and code-presence reconciliation reports are implemented and characterized; the optional LLM judge was cancelled as unnecessary duplication of active-agent review. Awaiting user acceptance.",
+    "date": 1784895298721
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Reconciled the parent: deterministic commit evidence works; the code-presence heuristic is implemented but honestly documented as low precision; ambiguous cases remain direct review work for the active agent rather than a new LLM-scoring subsystem. The intended read-only status hygiene capability is available without automating status decisions."
 }

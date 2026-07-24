@@ -15,14 +15,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Final-accuracy layer, gated behind the cheap heuristics to bound cost.",
-    "date": 1782636544807
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026: an LLM-judged reconciliation subsystem adds cost and uncertainty to graph bookkeeping without a measured need. Commit references, code-presence signals, and direct review are sufficient; any ambiguous case can be inspected by the active agent.",
+    "date": 1784895285032
   },
   "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "This optional third heuristic was explicitly gated behind cheaper signals. The loop itself can inspect an ambiguous candidate with current code context, so productizing another LLM scorer would duplicate agent capability and risk false authority over status."
 }
