@@ -321,12 +321,21 @@ export function useWebGLGraphRenderer(
     // For WebGL: panX = cx + visualScale * offset[0]
     const panX = cx + visualScale * mapStore.offset[0]
     const panY = cy + visualScale * mapStore.offset[1]
+    // Resize before TAA begins so its history/current framebuffers are created
+    // at the same physical-pixel dimensions as every renderer this frame.
+    const pixelRatio = renderer.resizeToDisplaySize()
+    const physicalPanX = panX * pixelRatio
+    const physicalPanY = panY * pixelRatio
+    const physicalScale = visualScale * pixelRatio
 
     // Detect camera movement
-    const cameraMoved = panX !== lastPanX || panY !== lastPanY || visualScale !== lastZoom
-    lastPanX = panX
-    lastPanY = panY
-    lastZoom = visualScale
+    const cameraMoved =
+      physicalPanX !== lastPanX ||
+      physicalPanY !== lastPanY ||
+      physicalScale !== lastZoom
+    lastPanX = physicalPanX
+    lastPanY = physicalPanY
+    lastZoom = physicalScale
 
     // Track movement state with debounce
     if (cameraMoved) {
@@ -341,11 +350,11 @@ export function useWebGLGraphRenderer(
     }
 
     // Update camera from mapStore
-    renderer.setCamera(panX, panY, visualScale)
+    renderer.setCamera(physicalPanX, physicalPanY, physicalScale)
 
     // Update arrow renderer camera
     if (arrowRenderer) {
-      const viewMatrix = buildViewMatrix(panX, panY, visualScale)
+      const viewMatrix = buildViewMatrix(physicalPanX, physicalPanY, physicalScale)
       arrowRenderer.setCamera(viewMatrix)
     }
 
@@ -397,7 +406,7 @@ export function useWebGLGraphRenderer(
       spinnerRenderer.updateInstances(
         selected.map(node => ({ x: node.x, y: node.y, r: node.r }))
       )
-      spinnerRenderer.setCamera(buildViewMatrix(panX, panY, visualScale))
+      spinnerRenderer.setCamera(buildViewMatrix(physicalPanX, physicalPanY, physicalScale))
       spinnerRenderer.render(spinnerTime)
     }
 

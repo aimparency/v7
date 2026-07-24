@@ -13,6 +13,7 @@ import {
 } from './buffers/DynamicBufferManager'
 import nodeVertexShaderSource from './shaders/node.vert.glsl?raw'
 import nodeFragmentShaderSource from './shaders/node.frag.glsl?raw'
+import { canvasPixelRatio } from './pixel-ratio'
 
 export interface NodeData {
   id: string
@@ -270,20 +271,27 @@ export class WebGLGraphRenderer {
     }
   }
 
+  resizeToDisplaySize(): number {
+    const pixelRatio = canvasPixelRatio()
+    const displayWidth = Math.max(1, Math.round(this.canvas.clientWidth * pixelRatio))
+    const displayHeight = Math.max(1, Math.round(this.canvas.clientHeight * pixelRatio))
+
+    if (this.canvas.width !== displayWidth || this.canvas.height !== displayHeight) {
+      this.canvas.width = displayWidth
+      this.canvas.height = displayHeight
+      this.gl?.viewport(0, 0, displayWidth, displayHeight)
+    }
+
+    return pixelRatio
+  }
+
   render(jitterX: number = 0, jitterY: number = 0): void {
     if (!this.gl || !this.program || this.nodes.length === 0) return
 
     const gl = this.gl
 
     // Resize canvas if needed
-    const displayWidth = this.canvas.clientWidth
-    const displayHeight = this.canvas.clientHeight
-
-    if (this.canvas.width !== displayWidth || this.canvas.height !== displayHeight) {
-      this.canvas.width = displayWidth
-      this.canvas.height = displayHeight
-      gl.viewport(0, 0, displayWidth, displayHeight)
-    }
+    this.resizeToDisplaySize()
 
     // Perform viewport culling
     if (this.enableCulling && this.quadtree) {
