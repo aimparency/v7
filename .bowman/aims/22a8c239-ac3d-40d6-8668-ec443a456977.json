@@ -34,14 +34,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Strategy now points to the local-first architecture aim and the release-prep execution branch.",
-    "date": 1773878417487
+    "state": "human-dependent",
+    "comment": "The local-first architecture and release preparation are implemented; both branches now wait on a real-machine clean-clone/first-run test and human acceptance.",
+    "date": 1784895724839
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Reconciled this strategy container: it is not open implementation work. Its architecture child is human-dependent and its publishability child is 4/5 complete with the same remaining clean-clone validation. Keep the long-standing strategy intent, but surface the actual human verification gate."
 }
