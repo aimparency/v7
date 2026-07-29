@@ -27,14 +27,15 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "partially",
-    "comment": "from/to removed from full stack: PhaseSchema (optional/legacy), backend create/update mutations, normalizePhase validation, test fixtures, PhaseCreationModal, PhaseSearchModal, MCP tools. 30/30 tests pass, end-to-end verified. Remaining: lazy migration (sort legacy phases by from/to when deriving missing childPhaseIds order) and incremental persistence of migrated order.",
-    "date": 1780065286348
+    "state": "review",
+    "comment": "Implementation and internal verification complete; awaiting user acceptance per repository workflow.",
+    "date": 1785309837776
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Implemented lazy, incremental migration to canonical phase ownership arrays. Project metadata reads now derive/reconcile rootPhaseIds from legacy parent backlinks and order/from/to fields, and phase reads do the same for childPhaseIds. Existing canonical order is preserved, stale/duplicate IDs are removed, and missing siblings are appended deterministically. Project and phase routers share the canonical metadata reader so mutations cannot bypass migration; phase creation migrates its owner before writing the new phase to avoid duplicate insertion. Verification: 68/68 backend tests pass, backend TypeScript build passes, full build:core passed, and git diff check passes. Added fixtures covering legacy temporal/order migration, disk persistence, partial canonical repair, canonical-order preservation, and create-on-legacy behavior."
 }

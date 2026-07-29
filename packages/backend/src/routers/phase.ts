@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs-extra';
 import path from 'path';
-import type { Phase } from 'shared';
+import type { Phase, ProjectMeta } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 export const createPhaseRouter = (
@@ -11,6 +11,8 @@ export const createPhaseRouter = (
   readPhase: (projectPath: string, phaseId: string) => Promise<Phase>,
   listPhases: (projectPath: string, parentPhaseId?: string | null) => Promise<Phase[]>,
   writePhase: (projectPath: string, phase: Phase) => Promise<void>,
+  readProjectMeta: (projectPath: string) => Promise<ProjectMeta>,
+  writeProjectMeta: (projectPath: string, meta: ProjectMeta) => Promise<void>,
   normalizeProjectPath: (p: string) => string,
   cleanupCommitments: (projectPath: string, specificPhaseId?: string) => Promise<number>,
   addPhaseToIndex: (projectPath: string, phase: Phase) => void,
@@ -20,34 +22,8 @@ export const createPhaseRouter = (
   ensureSearchIndex: (projectPath: string) => Promise<void>,
   ee: any
 ) => {
-  const readMeta = async (rawProjectPath: string) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await fs.ensureDir(projectPath);
-    const metaPath = path.join(projectPath, 'meta.json');
-    if (!(await fs.pathExists(metaPath))) {
-      return {
-        name: path.basename(path.dirname(projectPath)) || 'Project',
-        color: '#007acc',
-        statuses: [],
-        phaseCursors: {},
-        phaseActiveLevel: 0,
-        rootPhaseIds: []
-      };
-    }
-
-    const meta = await fs.readJson(metaPath);
-    if (!meta.phaseCursors) meta.phaseCursors = {};
-    if (meta.phaseActiveLevel === undefined) meta.phaseActiveLevel = 0;
-    if (!meta.rootPhaseIds) meta.rootPhaseIds = [];
-    return meta;
-  };
-
-  const writeMeta = async (rawProjectPath: string, meta: any) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await fs.ensureDir(projectPath);
-    const metaPath = path.join(projectPath, 'meta.json');
-    await fs.writeJson(metaPath, meta, { spaces: 2 });
-  };
+  const readMeta = readProjectMeta;
+  const writeMeta = writeProjectMeta;
 
   const emitOwnerChange = (projectPath: string, ownerParentId: string | null) => {
     if (ownerParentId) {
@@ -85,15 +61,17 @@ export const createPhaseRouter = (
         })
       }))
       .mutation(async ({ input }: any) => {
+        const parentOwner = input.phase.parent
+          ? await readPhase(input.projectPath, input.phase.parent)
+          : null;
+        const rootOwner = input.phase.parent
+          ? null
+          : await readMeta(input.projectPath);
         let targetOrder = input.phase.order;
         if (targetOrder === undefined) {
-          if (input.phase.parent) {
-            const parent = await readPhase(input.projectPath, input.phase.parent);
-            targetOrder = (parent.childPhaseIds ?? []).length;
-          } else {
-            const meta = await readMeta(input.projectPath);
-            targetOrder = (meta.rootPhaseIds ?? []).length;
-          }
+          targetOrder = input.phase.parent
+            ? (parentOwner?.childPhaseIds ?? []).length
+            : (rootOwner?.rootPhaseIds ?? []).length;
         }
 
         const phaseId = uuidv4();
@@ -108,17 +86,15 @@ export const createPhaseRouter = (
         };
 
         await writePhase(input.projectPath, phase);
-        if (phase.parent) {
-          const parent = await readPhase(input.projectPath, phase.parent);
-          const childPhaseIds = [...(parent.childPhaseIds ?? [])];
+        if (phase.parent && parentOwner) {
+          const childPhaseIds = [...(parentOwner.childPhaseIds ?? [])];
           childPhaseIds.splice(targetOrder, 0, phaseId);
-          await writePhase(input.projectPath, { ...parent, childPhaseIds });
-        } else {
-          const meta = await readMeta(input.projectPath);
-          const rootPhaseIds = [...(meta.rootPhaseIds ?? [])];
+          await writePhase(input.projectPath, { ...parentOwner, childPhaseIds });
+        } else if (rootOwner) {
+          const rootPhaseIds = [...(rootOwner.rootPhaseIds ?? [])];
           rootPhaseIds.splice(targetOrder, 0, phaseId);
-          meta.rootPhaseIds = rootPhaseIds;
-          await writeMeta(input.projectPath, meta);
+          rootOwner.rootPhaseIds = rootPhaseIds;
+          await writeMeta(input.projectPath, rootOwner);
         }
         addPhaseToIndex(input.projectPath, phase);
         ee.emit('change', { type: 'phase', id: phaseId, projectPath: input.projectPath });

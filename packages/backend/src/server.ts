@@ -348,8 +348,11 @@ async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
   const metaPath = path.join(projectPath, 'meta.json');
 
   let meta: ProjectMeta;
+  let needsPersist = false;
+  let hadRootPhaseIds = false;
   if (await fs.pathExists(metaPath)) {
     meta = await fs.readJson(metaPath);
+    hadRootPhaseIds = Array.isArray(meta.rootPhaseIds);
   } else {
     const parentDir = path.dirname(projectPath);
     const name = path.basename(parentDir) || 'Project';
@@ -371,10 +374,20 @@ async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
   if (!meta.rootPhaseIds) meta.rootPhaseIds = [];
   if (!meta.linkedRepos) meta.linkedRepos = [];
 
+  const derivedRootPhaseIds = await deriveLegacySiblingIds(projectPath, null);
+  const reconciledRootPhaseIds = reconcileSiblingIds(meta.rootPhaseIds, derivedRootPhaseIds);
+  if (!hadRootPhaseIds || !sameIds(meta.rootPhaseIds, reconciledRootPhaseIds)) {
+    meta.rootPhaseIds = reconciledRootPhaseIds;
+    needsPersist = true;
+  }
+
   // Generate a stable repo identity once, then persist so it never changes.
   // This is the source of truth cross-repo edges reference ({repoId, aimId}).
   if (!meta.repoId) {
     meta.repoId = uuidv4();
+    needsPersist = true;
+  }
+  if (needsPersist) {
     await writeProjectMeta(projectPath, meta);
   }
 
@@ -412,13 +425,74 @@ function normalizePhase(rawPhase: unknown): Phase {
   };
 }
 
+function compareLegacyPhaseOrder(a: Phase, b: Phase): number {
+  const fields: Array<keyof Pick<Phase, 'order' | 'from' | 'to'>> = ['order', 'from', 'to'];
+  for (const field of fields) {
+    const aValue = a[field];
+    const bValue = b[field];
+    if (aValue !== undefined || bValue !== undefined) {
+      const difference = (aValue ?? Number.POSITIVE_INFINITY) - (bValue ?? Number.POSITIVE_INFINITY);
+      if (difference !== 0) return difference;
+    }
+  }
+  return a.id.localeCompare(b.id);
+}
+
+function reconcileSiblingIds(existingIds: string[] | undefined, derivedIds: string[]): string[] {
+  const validIds = new Set(derivedIds);
+  const reconciledIds: string[] = [];
+  const seen = new Set<string>();
+  for (const id of existingIds ?? []) {
+    if (validIds.has(id) && !seen.has(id)) {
+      reconciledIds.push(id);
+      seen.add(id);
+    }
+  }
+  for (const id of derivedIds) {
+    if (!seen.has(id)) reconciledIds.push(id);
+  }
+  return reconciledIds;
+}
+
+function sameIds(left: string[] | undefined, right: string[]): boolean {
+  return !!left && left.length === right.length && left.every((id, index) => id === right[index]);
+}
+
+async function deriveLegacySiblingIds(
+  rawProjectPath: string,
+  parentPhaseId: string | null
+): Promise<string[]> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  const phasesDir = path.join(projectPath, 'phases');
+  if (!await fs.pathExists(phasesDir)) return [];
+
+  const siblings: Phase[] = [];
+  for (const file of await fs.readdir(phasesDir)) {
+    if (!file.endsWith('.json')) continue;
+    try {
+      const phase = normalizePhase(await fs.readJson(path.join(phasesDir, file)));
+      if (phase.parent === parentPhaseId) siblings.push(phase);
+    } catch {
+      // Malformed phase files remain isolated from migration, as they are from listing.
+    }
+  }
+  return siblings.sort(compareLegacyPhaseOrder).map((phase) => phase.id);
+}
+
 async function readPhaseFile(rawProjectPath: string, phaseId: string): Promise<Phase> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const phasePath = path.join(projectPath, 'phases', `${phaseId}.json`);
 
   try {
     const data = await fs.readJson(phasePath);
-    return normalizePhase(data);
+    const phase = normalizePhase(data);
+    const derivedChildPhaseIds = await deriveLegacySiblingIds(projectPath, phase.id);
+    const reconciledChildPhaseIds = reconcileSiblingIds(phase.childPhaseIds, derivedChildPhaseIds);
+    if (!Array.isArray(data?.childPhaseIds) || !sameIds(phase.childPhaseIds, reconciledChildPhaseIds)) {
+      phase.childPhaseIds = reconciledChildPhaseIds;
+      await writePhase(projectPath, phase, false);
+    }
+    return phase;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`${phasePath}: ${message}`);
@@ -1021,6 +1095,8 @@ const appRouter = t.router({
     readPhase,
     listPhases,
     writePhase,
+    readProjectMeta,
+    writeProjectMeta,
     normalizeProjectPath,
     cleanupCommitments,
     addPhaseToIndex,
@@ -1057,6 +1133,7 @@ const appRouter = t.router({
     ensureProjectStructure,
     listAims,
     listPhases,
+    readProjectMeta,
     writeAim,
     indexAims,
     indexPhases,

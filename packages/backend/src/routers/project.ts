@@ -202,6 +202,7 @@ export const createProjectRouter = (
   ensureProjectStructure: (projectPath: string) => Promise<void>,
   listAims: (projectPath: string, archived?: boolean) => Promise<Aim[]>,
   listPhases: (projectPath: string, parentPhaseId?: string | null) => Promise<Phase[]>,
+  readProjectMeta: (projectPath: string) => Promise<ProjectMeta>,
   writeAim: (projectPath: string, aim: Aim) => Promise<void>,
   indexAims: (projectPath: string, aims: Aim[]) => void,
   indexPhases: (projectPath: string, phases: Phase[]) => void,
@@ -751,70 +752,7 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .query(async ({ input }: any) => {
-        const projectPath = normalizeProjectPath(input.projectPath);
-        const metaPath = path.join(projectPath, 'meta.json');
-
-        let meta: ProjectMeta;
-
-        if (await fs.pathExists(metaPath)) {
-          meta = await fs.readJson(metaPath);
-          // Merge defaults if missing properties (like statuses)
-          if (!meta.statuses) {
-              meta.statuses = INITIAL_STATES;
-          }
-          if (meta.dataModelVersion === undefined) {
-              meta.dataModelVersion = 1;
-          }
-          if (!meta.phaseCursors) {
-              meta.phaseCursors = {};
-          }
-          if (meta.phaseActiveLevel === undefined) {
-              meta.phaseActiveLevel = 0;
-          }
-          if (!meta.rootPhaseIds) {
-              meta.rootPhaseIds = [];
-          }
-          if (!meta.linkedRepos) {
-              meta.linkedRepos = [];
-          }
-          // Generate a stable repo identity once, then persist so cross-repo
-          // edges ({repoId, aimId}) always reference the same id.
-          if (!meta.repoId) {
-              meta.repoId = uuidv4();
-              try {
-                  await ensureProjectStructure(projectPath);
-                  await writeJsonAtomic(metaPath, meta);
-              } catch (e) {
-                  console.error('Failed to persist generated repoId', e);
-              }
-          }
-          return meta;
-        }
-
-        // Initialize with defaults if missing
-        const parentDir = path.dirname(projectPath);
-        const name = path.basename(parentDir) || 'Project';
-
-        meta = {
-            name,
-            color: '#007acc',
-            repoId: uuidv4(),
-            linkedRepos: [],
-            statuses: INITIAL_STATES,
-            dataModelVersion: CURRENT_PHASE_DATA_MODEL_VERSION,
-            phaseCursors: {},
-            phaseActiveLevel: 0,
-            rootPhaseIds: []
-        };
-
-        try {
-            await ensureProjectStructure(projectPath);
-            await writeJsonAtomic(metaPath, meta);
-        } catch (e) {
-            console.error("Failed to initialize meta.json", e);
-        }
-
-        return meta;
+        return await readProjectMeta(input.projectPath);
       }),
 
     getWatchdogRuntimeState: delayedProcedure

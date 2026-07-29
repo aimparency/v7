@@ -538,6 +538,94 @@ test('phase reorder preserves canonical parent-owned order for roots and childre
   assert.deepEqual(meta.rootPhaseIds, [rootB.id, rootA.id]);
 });
 
+test('phase reads lazily persist legacy root and child ordering', async () => {
+  const rootEarlyId = uuidv4();
+  const rootLateId = uuidv4();
+  const childEarlyId = uuidv4();
+  const childLateId = uuidv4();
+  const phasesDir = path.join(testProjectPath, 'phases');
+  await fs.ensureDir(phasesDir);
+  await fs.writeJson(path.join(testProjectPath, 'meta.json'), {
+    name: 'Legacy project',
+    color: '#007acc',
+    statuses: []
+  });
+
+  const legacyPhases = [
+    { id: rootLateId, name: 'Root late', parent: null, order: 2, commitments: [] },
+    { id: rootEarlyId, name: 'Root early', parent: null, order: 1, commitments: [] },
+    { id: childLateId, name: 'Child late', parent: rootEarlyId, from: 200, commitments: [] },
+    { id: childEarlyId, name: 'Child early', parent: rootEarlyId, from: 100, commitments: [] }
+  ];
+  for (const phase of legacyPhases) {
+    await fs.writeJson(path.join(phasesDir, `${phase.id}.json`), phase);
+  }
+
+  const newRoot = await caller.phase.create({
+    projectPath: testProjectPath,
+    phase: { name: 'New root', parent: null, commitments: [] }
+  });
+  const expectedRootIds = [rootEarlyId, rootLateId, newRoot.id];
+  const meta = await caller.project.getMeta({ projectPath: testProjectPath });
+  assert.deepEqual(meta.rootPhaseIds, expectedRootIds);
+  assert.deepEqual(
+    (await fs.readJson(path.join(testProjectPath, 'meta.json')) as ProjectMeta).rootPhaseIds,
+    expectedRootIds
+  );
+
+  const parent = await caller.phase.get({
+    projectPath: testProjectPath,
+    phaseId: rootEarlyId
+  });
+  assert.deepEqual(parent.childPhaseIds, [childEarlyId, childLateId]);
+  assert.deepEqual(
+    (await fs.readJson(path.join(phasesDir, `${rootEarlyId}.json`)) as Phase).childPhaseIds,
+    [childEarlyId, childLateId]
+  );
+});
+
+test('phase migration preserves canonical order while repairing missing and stale links', async () => {
+  const rootFirstId = uuidv4();
+  const rootSecondId = uuidv4();
+  const staleId = uuidv4();
+  const childFirstId = uuidv4();
+  const childSecondId = uuidv4();
+  const phasesDir = path.join(testProjectPath, 'phases');
+  await fs.ensureDir(phasesDir);
+  await fs.writeJson(path.join(testProjectPath, 'meta.json'), {
+    name: 'Partially migrated project',
+    color: '#007acc',
+    statuses: [],
+    rootPhaseIds: [rootSecondId, staleId]
+  });
+
+  const phases = [
+    {
+      id: rootFirstId,
+      name: 'Root first by legacy order',
+      parent: null,
+      order: 1,
+      childPhaseIds: [childSecondId, staleId],
+      commitments: []
+    },
+    { id: rootSecondId, name: 'Canonical first root', parent: null, order: 2, commitments: [] },
+    { id: childFirstId, name: 'Missing child', parent: rootFirstId, order: 1, commitments: [] },
+    { id: childSecondId, name: 'Canonical first child', parent: rootFirstId, order: 2, commitments: [] }
+  ];
+  for (const phase of phases) {
+    await fs.writeJson(path.join(phasesDir, `${phase.id}.json`), phase);
+  }
+
+  const meta = await caller.project.getMeta({ projectPath: testProjectPath });
+  assert.deepEqual(meta.rootPhaseIds, [rootSecondId, rootFirstId]);
+
+  const parent = await caller.phase.get({
+    projectPath: testProjectPath,
+    phaseId: rootFirstId
+  });
+  assert.deepEqual(parent.childPhaseIds, [childSecondId, childFirstId]);
+});
+
 test('search - matches aims using search index', async () => {
   // Create test aims
   await caller.aim.createFloatingAim({
