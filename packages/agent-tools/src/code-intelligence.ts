@@ -222,3 +222,85 @@ export async function changeImpact(projectPath: string, file: string, limit = 80
     otherReferences: references.filter((line) => !/\b(import|from|require|use)\b/.test(line))
   };
 }
+
+function countOccurrences(text: string, query: string): number {
+  if (!query) return 0;
+  let count = 0;
+  let offset = 0;
+  while ((offset = text.indexOf(query, offset)) !== -1) {
+    count += 1;
+    offset += query.length;
+  }
+  return count;
+}
+
+export async function aimHistorySearch(projectPath: string, query: string, limit = 20) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) throw new Error('query is required');
+  const bowmanPath = normalizeBowmanPath(projectPath);
+  const aimFiles = (
+    await Promise.all(['aims', 'archived-aims'].map(async (directory) => {
+      const aimDir = path.join(bowmanPath, directory);
+      const files = await fs.readdir(aimDir).catch(() => [] as string[]);
+      return files
+        .filter((file) => file.endsWith('.json'))
+        .map((file) => path.join(aimDir, file));
+    }))
+  ).flat();
+  const commitText = await execFileAsync(
+    'git',
+    ['log', '--all', '--format=%s%n%b', '-n', '1000'],
+    { cwd: projectRoot(projectPath), timeout: 30000, maxBuffer: 8 * 1024 * 1024 }
+  ).then(({ stdout }) => stdout.toLowerCase()).catch(() => '');
+  const queryTokens = [...new Set(normalizedQuery.split(/\s+/).filter((token) => token.length >= 3))];
+
+  const matches = await Promise.all(aimFiles.map(async (file) => {
+    const aim = await fs.readJson(file).catch(() => null) as any;
+    if (!aim?.id || !aim?.text) return null;
+    const fields = {
+      text: String(aim.text ?? ''),
+      description: String(aim.description ?? ''),
+      reflection: [
+        String(aim.reflection ?? ''),
+        ...(Array.isArray(aim.reflections)
+          ? aim.reflections.flatMap((entry: any) => [
+              entry?.context, entry?.outcome, entry?.effectiveness, entry?.lesson, entry?.pattern
+            ].filter(Boolean).map(String))
+          : [])
+      ].join('\n'),
+      status: String(aim.status?.comment ?? '')
+    };
+    const matchedFields = Object.entries(fields)
+      .filter(([, value]) => {
+        const normalized = value.toLowerCase();
+        return normalized.includes(normalizedQuery) ||
+          queryTokens.some((token) => normalized.includes(token));
+      })
+      .map(([field]) => field);
+    if (matchedFields.length === 0) return null;
+
+    const haystack = Object.values(fields).join('\n').toLowerCase();
+    const exactMatches = countOccurrences(haystack, normalizedQuery);
+    const tokenMatches = queryTokens.reduce(
+      (total, token) => total + Math.min(countOccurrences(haystack, token), 5),
+      0
+    );
+    const realizedCommits = Math.max(
+      countOccurrences(commitText, String(aim.id).toLowerCase()),
+      countOccurrences(commitText, String(aim.id).slice(0, 8).toLowerCase())
+    );
+    return {
+      aimId: aim.id as string,
+      text: aim.text as string,
+      status: String(aim.status?.state ?? 'unknown'),
+      matchedFields,
+      realizedCommits,
+      score: exactMatches * 10 + tokenMatches + Math.log2(realizedCommits + 1)
+    };
+  }));
+
+  return matches
+    .filter((match): match is NonNullable<typeof match> => match !== null)
+    .sort((left, right) => right.score - left.score || left.text.localeCompare(right.text))
+    .slice(0, Math.max(1, Math.min(limit, 100)));
+}

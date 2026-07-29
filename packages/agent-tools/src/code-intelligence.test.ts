@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
+  aimHistorySearch,
   buildCodeIndex,
   changeImpact,
   codeHeatmap,
@@ -15,6 +16,8 @@ test('maps terms, symbols, and likely file impact', async () => {
   const projectPath = await mkdtemp(path.join(os.tmpdir(), 'aimparency-code-map-'));
   try {
     await mkdir(path.join(projectPath, '.bowman'));
+    await mkdir(path.join(projectPath, '.bowman', 'aims'));
+    await mkdir(path.join(projectPath, '.bowman', 'archived-aims'));
     await mkdir(path.join(projectPath, 'src'));
     await mkdir(path.join(projectPath, 'tests'));
     await writeFile(path.join(projectPath, 'src', 'signal.ts'), [
@@ -30,6 +33,19 @@ test('maps terms, symbols, and likely file impact', async () => {
       "import { observeSignal } from '../src/signal'",
       'void observeSignal()'
     ].join('\n'));
+    await writeFile(path.join(projectPath, '.bowman', 'aims', '11111111-1111-4111-8111-111111111111.json'), JSON.stringify({
+      id: '11111111-1111-4111-8111-111111111111',
+      text: 'Ground priorities in economic evidence',
+      description: 'Use authoritative signals instead of simulated credits.',
+      reflection: 'The economic signal must remain inspectable.',
+      status: { state: 'partially', comment: 'Signal ingestion is implemented.' }
+    }));
+    await writeFile(path.join(projectPath, '.bowman', 'archived-aims', '22222222-2222-4222-8222-222222222222.json'), JSON.stringify({
+      id: '22222222-2222-4222-8222-222222222222',
+      text: 'Old telemetry experiment',
+      reflections: [{ lesson: 'Economic measurements need an authoritative source.' }],
+      status: { state: 'archived', comment: '' }
+    }));
 
     const heatmap = await codeHeatmap(projectPath, 'signal');
     assert.ok(heatmap.some((entry) => entry.file === 'src/signal.ts' && entry.lexicalMatches > 0));
@@ -51,6 +67,11 @@ test('maps terms, symbols, and likely file impact', async () => {
     const unchanged = await buildCodeIndex(projectPath, { maxFiles: 10, maxChunks: 10 });
     assert.equal(unchanged.embedded, 0);
     assert.equal(unchanged.reused, unchanged.chunks);
+
+    const history = await aimHistorySearch(projectPath, 'economic signal');
+    assert.equal(history[0]?.aimId, '11111111-1111-4111-8111-111111111111');
+    assert.ok(history[0]?.matchedFields.includes('reflection'));
+    assert.ok(history.some((entry) => entry.status === 'archived'));
   } finally {
     await rm(projectPath, { recursive: true, force: true });
   }

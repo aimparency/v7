@@ -4,6 +4,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { jsonSchema, streamText, stepCountIs, tool } from 'ai';
 import {
   appendLoopEvent,
+  aimHistorySearch,
   buildCodeIndex,
   changeImpact,
   codeHeatmap,
@@ -527,9 +528,9 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         }
       }),
       code_intelligence: tool({
-        description: 'Inspect code through one compact interface: index builds local code embeddings; semantic searches them by meaning; heatmap combines lexical matches and churn; symbol finds definitions/references; impact finds dependents and tests.',
+        description: 'Inspect code and its aim history through one compact interface: index builds local code embeddings; semantic searches by meaning; heatmap combines lexical matches and churn; symbol finds definitions/references; impact finds dependents/tests; aim-history retrieves prior intent, reflections, status notes, and realized commits.',
         inputSchema: jsonSchema<{
-          mode: 'index' | 'semantic' | 'heatmap' | 'symbol' | 'impact';
+          mode: 'index' | 'semantic' | 'heatmap' | 'symbol' | 'impact' | 'aim-history';
           query?: string;
           limit?: number;
           maxFiles?: number;
@@ -537,7 +538,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         }>({
           type: 'object',
           properties: {
-            mode: { type: 'string', enum: ['index', 'semantic', 'heatmap', 'symbol', 'impact'] },
+            mode: { type: 'string', enum: ['index', 'semantic', 'heatmap', 'symbol', 'impact', 'aim-history'] },
             query: { type: 'string' },
             limit: { type: 'number' },
             maxFiles: { type: 'number' },
@@ -552,6 +553,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           if (mode === 'semantic') return semanticCodeSearch(executionPath, query, limit);
           if (mode === 'heatmap') return codeHeatmap(executionPath, query, limit);
           if (mode === 'symbol') return symbolContext(executionPath, query, limit);
+          if (mode === 'aim-history') return aimHistorySearch(executionPath, query, limit);
           return changeImpact(executionPath, query, limit);
         }
       }),
