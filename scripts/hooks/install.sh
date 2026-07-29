@@ -46,12 +46,27 @@ else
   echo "  ⚠️  Missing $GROK_HOOK (create it or restore from git)."
 fi
 
-# 4. Instructions to trust
+# 4. Verify Antigravity / AGY project hook configuration
+echo ""
+echo "Step 4: Checking Antigravity (AGY) project hook configuration..."
+AGY_CONFIG="$REPO_DIR/.gemini/settings.json"
+if [[ -f "$AGY_CONFIG" ]]; then
+  echo "  ✓ Found $AGY_CONFIG with post_invocation hook."
+else
+  echo "  ⚠️  Missing $AGY_CONFIG (create it or restore from git)."
+fi
+
+# 5. Instructions to trust
 echo ""
 echo "=========================================================="
 echo "                 Trusting the Hooks"
 echo "=========================================================="
 echo "AI assistants require manual approval before running scripts for security."
+echo ""
+echo "👉 For Antigravity / AGY:"
+echo "   1. Launch 'agy' in this directory."
+echo "   2. Run the slash command: /hooks"
+echo "   3. Trust the './scripts/hooks/on-stop.sh' hook under post_invocation."
 echo ""
 echo "👉 For Codex:"
 echo "   1. Run 'codex' in this directory."

@@ -7,5 +7,15 @@
         "puppeteer-mcp-server"
       ]
     }
+  },
+  "hooks": {
+    "post_invocation": [
+      {
+        "type": "command",
+        "command": "./scripts/hooks/on-stop.sh",
+        "statusMessage": "Exiting AGY / Antigravity...",
+        "timeout": 10
+      }
+    ]
   }
 }
