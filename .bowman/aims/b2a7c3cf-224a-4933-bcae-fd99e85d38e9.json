@@ -1,7 +1,8 @@
 {
   "id": "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
   "text": "Develop and calibrate a sound economic priority model",
-  "description": "Maintain an inspectable priority model that conserves graph value, distributes cost, discounts delayed returns, accounts for cost/value uncertainty, and uses aim surface as node mass in graph forces. The implemented model is a decision aid, not proof of economic value. Remaining work is calibration against authoritative observations from real deliveries: estimated versus actual duration, founder time, model/integration cost, external outcome, revenue, and prediction error. Do not auto-mutate human-set intrinsic value from activity counts or simulated credits. Revisit constants and uncertainty penalties only after enough comparable real runs exist.",
+  "description": "Maintain an inspectable, economically interpretable priority model that conserves graph value, attributes shared cost without duplication, discounts delayed returns, and presents a positive discounted-value/cost profitability ratio. Core mechanics now use strict positive real-aim costs, non-negative days-until-return, annual discounting, informational backward-compatible variance fields, SCC-condensed cyclic cost propagation, and a logarithmic break-even-centered color scale. Remaining work after acceptance is empirical calibration against authoritative observations from real deliveries: estimated versus actual duration, founder time, model/integration cost, external outcome, revenue, and prediction error. Do not auto-mutate human-set intrinsic value from activity counts or simulated credits.",
+  "reflection": "Implemented the economic priority refactor in commit 18d9bbb. Priority is now discounted estimated value / estimated present attributed cost (1.00x break-even); discounting is expressed at 10% effective annual rate and preserves duration 0; cost must be finite and >0 and duration finite and >=0 across shared/backend/MCP/UI boundaries; variance no longer applies an implicit risk penalty; cyclic cost attribution uses deterministic SCC condensation; graph colors use a robust symmetric log scale around break-even. Verified shared 29/29, backend 66/66, frontend 207/207, core/frontend/MCP builds. Four existing local cost:0 aims were detected and deliberately left unchanged so validation surfaces remediation instead of silently rewriting user data. Full MCP suite retains two unrelated pre-existing failures for explicitly removed system tools.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -12,15 +13,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Core mechanics are implemented and verified: value flow, cost distribution, duration discounting, variance penalties, and flow-force distribution by aim surface. Real-world calibration remains blocked on completed external-value runs with authoritative economics.",
-    "date": 1784794744906
+    "state": "review",
+    "comment": "Economic priority refactor implemented and internally verified in commit 18d9bbb. Awaiting explicit user acceptance before done; empirical real-delivery calibration remains future work.",
+    "date": 1785308441200
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Reconciled the broad stale aim against current code and graph evidence. surfaceMovementShares divides connection correction by squared endpoint radius, so larger aims are more inertial; the focused frontend suite passes 35 files / 177 tests. calculateAimValues already applies duration-based daily discounting plus proportional cost/value variance penalties; its focused 3-test suite passes. The remaining economic work is empirical calibration from paid or externally evaluated runs, not another speculative formula."
+  "valueVariance": 0
 }
