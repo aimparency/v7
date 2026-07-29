@@ -1712,20 +1712,34 @@ export const useListStore = defineStore('ui', {
       }
 
       const results: any[] = []
+      let mergedCount = 0
       for (const sourceId of others) {
         try {
           const res = await trpc.aim.merge.mutate({ projectPath, targetId, sourceId })
           results.push({ sourceId, ...res })
+          mergedCount++
         } catch (e: any) {
           console.error('merge failed for', sourceId, e)
           results.push({ sourceId, error: String(e) })
         }
       }
 
-      // Clean up selection state
+      const dataStore = useDataStore()
+      if (mergedCount > 0) {
+        // Merge rewires parents, children, phases, and archives sources. Refresh
+        // the complete graph so every affected list/column reflects the result.
+        await dataStore.loadAllAims(projectPath)
+      }
       this.clearMultiSelect()
 
-      return { success: true, results, mergedCount: others.length }
+      const failedCount = others.length - mergedCount
+      return {
+        success: failedCount === 0,
+        partial: mergedCount > 0 && failedCount > 0,
+        results,
+        mergedCount,
+        failedCount
+      }
     },
 
     async calculateAimPaths(aimId: string): Promise<AimPath[]> {

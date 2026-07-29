@@ -8,6 +8,10 @@ const { mockTrpc } = vi.hoisted(() => ({
     },
     phase: {
       get: { query: vi.fn() }
+    },
+    aim: {
+      merge: { mutate: vi.fn() },
+      list: { query: vi.fn() }
     }
   }
 }))
@@ -47,6 +51,60 @@ describe('list store phase selection', () => {
     uiStore.toggleMultiSelect('aim-b')
     expect(uiStore.multiSelectMode).toBe(false)
     expect(uiStore.multiSelectedAimIds).toEqual([])
+  })
+
+  it('merges selected sources into the target and refreshes the local graph', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
+    projectStore.projectPath = '/tmp/project'
+    dataStore.aims = {
+      target: { id: 'target', text: 'Target' },
+      source: { id: 'source', text: 'Source' }
+    } as any
+    const loadAllAims = vi.spyOn(dataStore, 'loadAllAims').mockResolvedValue(undefined)
+    mockTrpc.aim.merge.mutate.mockResolvedValue({ success: true, archivedSource: 'source' })
+    uiStore.multiSelectedAimIds = ['target', 'source']
+    uiStore.multiSelectMode = true
+
+    const result = await uiStore.mergeSelectedInto('target')
+
+    expect(mockTrpc.aim.merge.mutate).toHaveBeenCalledWith({
+      projectPath: '/tmp/project',
+      targetId: 'target',
+      sourceId: 'source'
+    })
+    expect(loadAllAims).toHaveBeenCalledWith('/tmp/project')
+    expect(result).toMatchObject({ success: true, mergedCount: 1, failedCount: 0 })
+    expect(uiStore.multiSelectedAimIds).toEqual([])
+  })
+
+  it('reports partial merge failures with accurate counts', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
+    projectStore.projectPath = '/tmp/project'
+    dataStore.aims = {
+      target: { id: 'target', text: 'Target' },
+      source1: { id: 'source1', text: 'Source 1' },
+      source2: { id: 'source2', text: 'Source 2' }
+    } as any
+    vi.spyOn(dataStore, 'loadAllAims').mockResolvedValue(undefined)
+    mockTrpc.aim.merge.mutate
+      .mockResolvedValueOnce({ success: true, archivedSource: 'source1' })
+      .mockRejectedValueOnce(new Error('merge conflict'))
+    uiStore.multiSelectedAimIds = ['target', 'source1', 'source2']
+    uiStore.multiSelectMode = true
+
+    const result = await uiStore.mergeSelectedInto('target')
+
+    expect(result).toMatchObject({
+      success: false,
+      partial: true,
+      mergedCount: 1,
+      failedCount: 1
+    })
+    expect(result.results).toHaveLength(2)
   })
 
   it('preserves selected child phase by id when reloading columns', async () => {
