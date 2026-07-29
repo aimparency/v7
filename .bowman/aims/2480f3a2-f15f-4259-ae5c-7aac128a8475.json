@@ -2,6 +2,7 @@
   "id": "2480f3a2-f15f-4259-ae5c-7aac128a8475",
   "text": "Separate aim status-transition time from relevance-review time",
   "description": "Preserve status.date as the time the status state actually changed; editing only the status comment must not refresh it. Add optional status.reviewedAt for an explicit human/agent confirmation that the current intention and status still hold. Stale status age is a review signal only, never automatic deprecation; central standing aims may remain valid indefinitely. Expose reviewedAt through backend and MCP update paths, with focused compatibility tests for legacy aims.",
+  "reflection": "Relevance audit found the requested behavior already implemented (introduced in commit 4c495b4): AimStatusSchema makes reviewedAt optional for legacy compatibility; backend aim.update preserves status.date for comment/same-state review changes and advances it only on state transition; MCP create/update schemas expose reviewedAt; and the focused MCP test verifies explicit review on creation, same-state review preserving transition time, and later transitions preserving reviewedAt. Fresh verification on 2026-07-29: packages/mcp/src/__tests__/tools-aims.test.ts passed 13/13, including 'status date changes only on state transition; reviewedAt is independent'.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -19,14 +20,13 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Implemented and internally verified; awaiting user acceptance per repository policy.",
-    "date": 1784740829305
+    "comment": "Already implemented and freshly verified; stale open status corrected to review pending user acceptance.",
+    "date": 1785319928451
   },
   "intrinsicValue": 0,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Implemented optional status.reviewedAt across the shared schema, backend create/update inputs, and MCP create/update schemas. Fixed backend update semantics so status.date changes only when the state actually transitions; same-state comment edits and explicit reviews preserve it. Legacy aims remain compatible. Verification: all 11 MCP aim-tool tests passed (including new same-state review/state-transition coverage); shared, backend, and MCP builds passed; git diff --check passed. The node test process retained an existing open handle after completing all tests and was manually terminated."
+  "valueVariance": 0
 }
