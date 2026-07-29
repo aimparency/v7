@@ -198,7 +198,7 @@ async function writeAim(rawProjectPath: string, aim: Aim): Promise<void> {
     await fs.remove(oldPath);
   }
 
-  ee.emit('change', { type: 'aim', id: aim.id, projectPath });
+  ee.emit('change', { type: 'aim', id: aim.id, projectPath, entity: aimToSave });
 }
 
 async function readAim(rawProjectPath: string, aimId: string): Promise<Aim> {
@@ -334,7 +334,7 @@ async function writePhase(rawProjectPath: string, phase: Phase, emitChange = tru
   const phasePath = path.join(projectPath, 'phases', `${phase.id}.json`);
   await writeJsonAtomic(phasePath, phase);
   if (emitChange) {
-    ee.emit('change', { type: 'phase', id: phase.id, projectPath });
+    ee.emit('change', { type: 'phase', id: phase.id, projectPath, entity: phase });
   }
 }
 

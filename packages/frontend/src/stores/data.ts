@@ -1097,7 +1097,7 @@ export const useDataStore = defineStore('data', {
 
       // @ts-ignore - trpc subscription typing might differ
       this.subscription = trpc.project.onUpdate.subscribe(undefined, {
-        onData: async (data: { type: string, id: string, projectPath: string }) => {
+        onData: async (data: { type: string, id: string, projectPath: string, entity?: BaseAim | BasePhase }) => {
           // Normalize paths for comparison (handle .bowman suffix mismatch)
           const suffix = '/' + AIMPARENCY_DIR_NAME;
           const eventPath = data.projectPath.endsWith(suffix) ? data.projectPath.slice(0, -suffix.length) : (data.projectPath.endsWith(AIMPARENCY_DIR_NAME) ? data.projectPath.slice(0, -AIMPARENCY_DIR_NAME.length) : data.projectPath);
@@ -1118,7 +1118,9 @@ export const useDataStore = defineStore('data', {
              if (this.deletedAims.has(data.id)) return;
              const revision = this.beginAimSync(data.id)
              try {
-               const aim = await trpc.aim.get.query({ projectPath, aimId: data.id });
+               const aim = data.entity
+                 ? data.entity as BaseAim
+                 : await trpc.aim.get.query({ projectPath, aimId: data.id });
                if (!this.replaceAimIfCurrent(aim.id, aim, revision)) return;
 
                // Logic to update floating aims list
@@ -1154,7 +1156,15 @@ export const useDataStore = defineStore('data', {
           } else if (data.type === 'phase') {
              try {
                const previousPhase = this.phases[data.id]
-               const phase = await this.loadPhaseById(projectPath, data.id, { force: true });
+               let phase: Phase | null
+               if (data.entity) {
+                 const revision = this.beginPhaseSync(data.id)
+                 const payload = data.entity as BasePhase
+                 this.replacePhaseIfCurrent(data.id, payload, revision)
+                 phase = this.phases[data.id] ?? null
+               } else {
+                 phase = await this.loadPhaseById(projectPath, data.id, { force: true });
+               }
                if (!phase) return
 
                // Ensure all committed aims are loaded

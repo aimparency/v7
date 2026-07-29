@@ -242,4 +242,33 @@ describe('Multi-Client Synchronization', () => {
 
     expect(store.phases[phaseId]!.name).toBe('Newest server state')
   })
+
+  it('applies subscription entity payloads without query round-trips', async () => {
+    const store = useDataStore()
+    const projectPath = '/test/project'
+    const aim = {
+      id: 'payload-aim',
+      text: 'Payload aim',
+      status: { state: 'open' },
+      committedIn: [],
+      supportedAims: [],
+      supportingConnections: []
+    }
+    const phase = {
+      id: 'payload-phase',
+      name: 'Payload phase',
+      parent: null,
+      commitments: [],
+      childPhaseIds: []
+    }
+    store.subscribeToUpdates(projectPath)
+
+    await subscriptionCallback({ type: 'aim', id: aim.id, projectPath, entity: aim })
+    await subscriptionCallback({ type: 'phase', id: phase.id, projectPath, entity: phase })
+
+    expect(store.aims[aim.id]!.text).toBe('Payload aim')
+    expect(store.phases[phase.id]!.name).toBe('Payload phase')
+    expect(mockTrpc.aim.get.query).not.toHaveBeenCalled()
+    expect(mockTrpc.phase.get.query).not.toHaveBeenCalled()
+  })
 })

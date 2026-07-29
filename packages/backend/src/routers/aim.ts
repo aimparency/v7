@@ -1330,9 +1330,6 @@ export const createAimRouter = (
         await removeEmbedding(projectPath, sourceId);
         invalidateSemanticCache(projectPath);
 
-        ee.emit('change', { type: 'aim', id: targetId, projectPath });
-        ee.emit('change', { type: 'aim', id: sourceId, projectPath });
-
         return {
           success: true,
           rewired,

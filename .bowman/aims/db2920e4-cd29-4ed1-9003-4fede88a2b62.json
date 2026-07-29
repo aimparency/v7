@@ -2,7 +2,7 @@
   "id": "db2920e4-cd29-4ed1-9003-4fede88a2b62",
   "text": "Refactor client-server communication and synchronization",
   "description": "Inspect and refactor client-server synchronization to eliminate latency and state discrepancies:\n- Address stale client-side overwrites where mutation responses overwrite updated subscription states.\n- Evaluate pushing fully updated aim/phase payloads in WebSocket events instead of triggering client-side query round-trips.\n- Investigate parallelizing server-side file listing to speed up full-project loads.\n- Explore sequence numbers/versions for resource atoms to prevent out-of-order updates.",
-  "reflection": "Synchronization refactor now covers response ordering and full-project enumeration. Monotonic per-resource revisions prevent delayed aim and phase mutation/fetch responses from overwriting fresher subscription state, with explicit race regressions. The backend's active/archive aim listing, phase enumeration, and loop-target aim/phase discovery now read independent JSON files concurrently instead of serially, while retaining deterministic result order and isolating malformed files. Verification: frontend MultiClient 4/4 and full frontend 214/214 plus vue-tsc passed for ordering; backend 68/68 tests and backend tsc passed for parallel enumeration; git diff checks passed.",
+  "reflection": "Completed the client/server synchronization refactor across all four requested areas. (1) Monotonic per-resource revisions prevent delayed aim and phase mutation/fetch responses from overwriting fresher subscription state, with explicit race regressions. (2) Central aim/phase writes now emit optional full entity payloads; the frontend applies payloads directly without query round-trips while ID-only deletion/compatibility events retain the fetch fallback, and redundant post-write notifications were removed. (3) Active/archive aim listing, phase enumeration, and loop-target discovery read independent JSON files concurrently while preserving deterministic order and malformed-file isolation. (4) The revision atoms provide the requested out-of-order protection. Verification: focused MultiClient 5/5, full frontend 215/215, backend 68/68, frontend vue-tsc, backend tsc, and git diff checks all pass.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -16,9 +16,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Stale aim/phase response races and serial full-project file reads are fixed and tested. Payload-bearing WebSocket events remain an optional next optimization and should be benchmarked against query refreshes before broadening event contracts.",
-    "date": 1784891840473
+    "state": "review",
+    "comment": "All synchronization-refactor clauses are implemented and internally verified; awaiting user acceptance.",
+    "date": 1785320325024
   },
   "intrinsicValue": 0,
   "cost": 1,

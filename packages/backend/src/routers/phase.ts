@@ -97,7 +97,6 @@ export const createPhaseRouter = (
           await writeMeta(input.projectPath, rootOwner);
         }
         addPhaseToIndex(input.projectPath, phase);
-        ee.emit('change', { type: 'phase', id: phaseId, projectPath: input.projectPath });
         emitOwnerChange(input.projectPath, phase.parent ?? null);
         return { id: phaseId };
       }),
@@ -174,7 +173,6 @@ export const createPhaseRouter = (
 
         await writePhase(input.projectPath, updatedPhase);
         updatePhaseInIndex(input.projectPath, updatedPhase);
-        ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath });
         emitOwnerChange(input.projectPath, oldParentId);
         emitOwnerChange(input.projectPath, updatedPhase.parent ?? null);
         return updatedPhase;
@@ -211,7 +209,6 @@ export const createPhaseRouter = (
           await writeMeta(input.projectPath, meta);
         }
 
-        ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath });
         emitOwnerChange(input.projectPath, parentId);
         return { success: true };
       }),
