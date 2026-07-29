@@ -240,34 +240,32 @@ export const createProjectRouter = (
   const listLoopPhases = async (rawProjectPath: string): Promise<Phase[]> => {
     const phasesDir = path.join(normalizeProjectPath(rawProjectPath), 'phases');
     if (!await fs.pathExists(phasesDir)) return [];
-    const files = await fs.readdir(phasesDir);
-    const phases: Phase[] = [];
-    for (const file of files) {
-      if (!file.endsWith('.json')) continue;
+    const files = (await fs.readdir(phasesDir)).filter((file) => file.endsWith('.json'));
+    const phases = await Promise.all(files.map(async (file): Promise<Phase | null> => {
       try {
-        phases.push(PhaseSchema.parse(await fs.readJson(path.join(phasesDir, file))));
+        return PhaseSchema.parse(await fs.readJson(path.join(phasesDir, file)));
       } catch {
         // Malformed phase files are ignored here; consistency checks surface them elsewhere.
+        return null;
       }
-    }
-    return phases;
+    }));
+    return phases.filter((phase): phase is Phase => phase !== null);
   };
 
   const listLoopAims = async (rawProjectPath: string): Promise<Aim[]> => {
     const aimsDir = path.join(normalizeProjectPath(rawProjectPath), 'aims');
     if (!await fs.pathExists(aimsDir)) return [];
-    const files = await fs.readdir(aimsDir);
-    const aims: Aim[] = [];
-    for (const file of files) {
-      if (!file.endsWith('.json')) continue;
+    const files = (await fs.readdir(aimsDir)).filter((file) => file.endsWith('.json'));
+    const aims = await Promise.all(files.map(async (file): Promise<Aim | null> => {
       try {
         const aim = AimSchema.parse(await fs.readJson(path.join(aimsDir, file)));
-        if (!aim.archived) aims.push(aim);
+        return aim.archived ? null : aim;
       } catch {
         // Malformed aim files are ignored here; consistency checks surface them elsewhere.
+        return null;
       }
-    }
-    return aims;
+    }));
+    return aims.filter((aim): aim is Aim => aim !== null);
   };
 
   const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPhaseId?: string | null) => {

@@ -2,7 +2,7 @@
   "id": "db2920e4-cd29-4ed1-9003-4fede88a2b62",
   "text": "Refactor client-server communication and synchronization",
   "description": "Inspect and refactor client-server synchronization to eliminate latency and state discrepancies:\n- Address stale client-side overwrites where mutation responses overwrite updated subscription states.\n- Evaluate pushing fully updated aim/phase payloads in WebSocket events instead of triggering client-side query round-trips.\n- Investigate parallelizing server-side file listing to speed up full-project loads.\n- Explore sequence numbers/versions for resource atoms to prevent out-of-order updates.",
-  "reflection": "Synchronization refactor now covers both aim and phase response ordering. Earlier work added monotonic per-aim client request revisions so delayed mutation responses cannot overwrite fresher subscription state. This slice adds the same per-resource revision guard for phase fetches and move mutation responses, routes subscription phase refreshes through the guarded loader, and routes post-commit phase reloads through it. Regression tests explicitly resolve a subscription refresh before a stale phase mutation response. Verification: focused MultiClient tests 4/4, full frontend unit suite 214/214, frontend vue-tsc type-check, and git diff check pass.",
+  "reflection": "Synchronization refactor now covers response ordering and full-project enumeration. Monotonic per-resource revisions prevent delayed aim and phase mutation/fetch responses from overwriting fresher subscription state, with explicit race regressions. The backend's active/archive aim listing, phase enumeration, and loop-target aim/phase discovery now read independent JSON files concurrently instead of serially, while retaining deterministic result order and isolating malformed files. Verification: frontend MultiClient 4/4 and full frontend 214/214 plus vue-tsc passed for ordering; backend 68/68 tests and backend tsc passed for parallel enumeration; git diff checks passed.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -17,7 +17,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Stale aim and phase mutation/subscription overwrite races are fixed and tested. Broader payload-push and measured load-performance work remain.",
+    "comment": "Stale aim/phase response races and serial full-project file reads are fixed and tested. Payload-bearing WebSocket events remain an optional next optimization and should be benchmarked against query refreshes before broadening event contracts.",
     "date": 1784891840473
   },
   "intrinsicValue": 0,

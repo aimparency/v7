@@ -281,11 +281,8 @@ async function listAims(rawProjectPath: string, archived: boolean = false): Prom
   
   if (!await fs.pathExists(aimsDir)) return [];
   
-  const files = await fs.readdir(aimsDir);
-  const aims: Aim[] = [];
-  
-  for (const file of files) {
-    if (file.endsWith('.json')) {
+  const files = (await fs.readdir(aimsDir)).filter((file) => file.endsWith('.json'));
+  const results = await Promise.all(files.map(async (file): Promise<Aim | null> => {
       const aimId = path.basename(file, '.json');
       // For listing, we can just read directly from the dir we are in to avoid double check overhead of readAim
       // BUT readAim has migration logic. So we should use readAim.
@@ -294,15 +291,14 @@ async function listAims(rawProjectPath: string, archived: boolean = false): Prom
       // If we are listing active, readAim will check 'aims' (success).
       // So it works.
       try {
-        const aim = await readAim(projectPath, aimId);
-        aims.push(aim);
+        return await readAim(projectPath, aimId);
       } catch (e) {
         console.error(`Failed to read aim ${aimId}`, e);
+        return null;
       }
-    }
-  }
-  
-  return aims;
+  }));
+
+  return results.filter((aim): aim is Aim => aim !== null);
 }
 
 function populateAimValues(projectPath: string, aims: Aim[]) {
@@ -512,23 +508,18 @@ async function listPhases(rawProjectPath: string, parentPhaseId?: string | null)
   const phasesDir = path.join(projectPath, 'phases');
   if (!await fs.pathExists(phasesDir)) return [];
   
-  const files = await fs.readdir(phasesDir);
-  const allPhases: Phase[] = [];
-  const rawPhases = new Map<string, any>();
-  
-  for (const file of files) {
-    if (file.endsWith('.json')) {
+  const files = (await fs.readdir(phasesDir)).filter((file) => file.endsWith('.json'));
+  const phaseResults = await Promise.all(files.map(async (file): Promise<Phase | null> => {
       const phaseId = path.basename(file, '.json');
       try {
         const rawPhase = await fs.readJson(path.join(phasesDir, file));
-        const normalized = normalizePhase(rawPhase);
-        rawPhases.set(normalized.id, rawPhase);
-        allPhases.push(normalized);
+        return normalizePhase(rawPhase);
       } catch (error) {
         console.warn(`[Phase] Skipping malformed phase file ${phaseId} in ${projectPath}:`, error);
+        return null;
       }
-    }
-  }
+  }));
+  const allPhases = phaseResults.filter((phase): phase is Phase => phase !== null);
 
   const meta = await readProjectMeta(projectPath);
   const phaseMap = new Map(allPhases.map((phase) => [phase.id, phase]));
