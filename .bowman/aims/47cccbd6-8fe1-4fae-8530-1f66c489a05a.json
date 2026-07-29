@@ -88,14 +88,15 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Done: temporal removal (648a2ea8), cursor persistence (7a870c2e), cursor-based APIs (687a7c08), insertion-order UI (fe0e0aaf), concatenated columns (5508ce83). Remaining: lazy migration (bb3d85e5, partial), windowing/virtual-scroll spec (dba842e7, open+unclear).",
-    "date": 1780073537312
+    "state": "review",
+    "comment": "All phase-refactor implementation children are done or review and fresh integrated tests pass; awaiting user acceptance.",
+    "date": 1785325322604
   },
   "intrinsicValue": 10,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Umbrella status reconciliation confirms the ordered, cursor-based phase refactor is implementation-complete: all nine child aims are done or review. Canonical root/child arrays and lazy legacy migration are implemented; temporal UI is removed; insertion-order creation/editing, cursor persistence/active path, concatenated multi-parent columns, separators/placeholders/windowing, cross-parent navigation, parent-edit refresh, and ancestry-aware search are present. Fresh verification on 2026-07-29: backend suite 68/68 and focused frontend phase/navigation/search/creation suites 18/18 passed. The lazy-migration and ancestry-search children remain in review only because repository policy requires user acceptance, not because implementation work remains."
 }
