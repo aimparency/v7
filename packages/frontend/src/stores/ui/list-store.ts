@@ -314,11 +314,6 @@ export const useListStore = defineStore('ui', {
       this.beginUIStateRestore()
       const restoreGeneration = this.restoreGeneration
       try {
-        if (meta.phaseActiveLevel !== undefined) {
-          this.activeColumn = meta.phaseActiveLevel
-          this.maxColumn = Math.max(this.activeColumn, 0)
-        }
-
         const maxLevel = Math.max(...Object.keys(meta.phaseCursors).map(Number).filter(n => !isNaN(n)))
         const shouldContinue = () => this.isRestoringUIState && this.restoreGeneration === restoreGeneration
 
@@ -343,6 +338,12 @@ export const useListStore = defineStore('ui', {
           }
         }
 
+        // Startup follows the complete authoritative cursor chain. Focus the
+        // deepest populated phase level rather than restoring a stale browser
+        // column or exposing a trailing empty child column.
+        const deepestLoadedLevel = Math.max(0, ...Object.keys(this.selectedPhaseIdByColumn).map(Number))
+        this.activeColumn = deepestLoadedLevel
+        this.maxColumn = deepestLoadedLevel
         this.ensureSelectionVisible()
         return true
       } finally {
@@ -373,6 +374,16 @@ export const useListStore = defineStore('ui', {
       try {
         parsed = JSON.parse(raw) as PersistedUIState
       } catch {
+        return await this.restoreCursorFromMeta()
+      }
+
+      // Phase cursors are shared project state and therefore authoritative over
+      // per-browser list selection. Preserve local presentation preferences,
+      // then rebuild the selected path recursively from project metadata.
+      if (dataStore.meta?.phaseCursors && Object.keys(dataStore.meta.phaseCursors).length > 0) {
+        if (parsed.currentView) projectStore.setCurrentView(parsed.currentView)
+        if (parsed.listViewState?.windowSize) this.windowSize = parsed.listViewState.windowSize
+        graphStore.applyPersistedGraphViewState(parsed.graphViewState)
         return await this.restoreCursorFromMeta()
       }
 

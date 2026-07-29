@@ -258,6 +258,47 @@ describe('list store phase selection', () => {
     expect(selectedEntry && selectedEntry.type === 'phase' ? selectedEntry.phase.id : null).toBe('child-b')
   })
 
+  it('prefers the authoritative cursor chain and focuses its deepest phase on startup', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
+    projectStore.projectPath = '/tmp/project'
+    dataStore.meta = {
+      rootPhaseIds: ['root-a', 'root-b'],
+      phaseCursors: { '0': 'root-b', '1': 'child-b', '2': 'grandchild-b' },
+      phaseActiveLevel: 0
+    } as any
+    dataStore.phases = {
+      'root-a': { id: 'root-a', name: 'Root A', parent: null, childPhaseIds: [], commitments: [] },
+      'root-b': { id: 'root-b', name: 'Root B', parent: null, childPhaseIds: ['child-b'], commitments: [] },
+      'child-b': { id: 'child-b', name: 'Child B', parent: 'root-b', childPhaseIds: ['grandchild-b'], commitments: [] },
+      'grandchild-b': { id: 'grandchild-b', name: 'Grandchild B', parent: 'child-b', childPhaseIds: [], commitments: [] }
+    } as any
+    localStorage.setItem(uiStore.getPersistedUIStateKey('/tmp/project'), JSON.stringify({
+      currentView: 'columns',
+      listViewState: {
+        ...uiStore.getListViewStateSnapshot(),
+        activeColumn: 0,
+        selectedPhaseByColumn: { '0': 0 },
+        selectedPhaseIdByColumn: { '0': 'root-a' },
+        windowSize: 2
+      }
+    }))
+
+    const restored = await uiStore.restoreProjectUIState()
+
+    expect(restored).toBe(true)
+    expect(uiStore.selectedPhaseIdByColumn).toMatchObject({
+      0: 'root-b',
+      1: 'child-b',
+      2: 'grandchild-b'
+    })
+    expect(uiStore.activeColumn).toBe(2)
+    expect(uiStore.maxColumn).toBe(2)
+    expect(uiStore.windowStart).toBe(1)
+    expect(uiStore.windowSize).toBe(2)
+  })
+
   it('keeps the current visible child selection when moving right into an already visible column', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()

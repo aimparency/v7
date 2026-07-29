@@ -16,14 +16,15 @@
     "ce8516bc-df20-44d3-9fea-6784401e8276"
   ],
   "status": {
-    "state": "open",
-    "comment": "Requested by user; pending selection rules and implementation decisions.",
-    "date": 1772690275434
+    "state": "review",
+    "comment": "Startup now auto-opens the authoritative active phase chain to its deepest populated level and avoids trailing empty columns. Awaiting explicit user acceptance before done.",
+    "date": 1785309381919
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Implemented authoritative startup phase-path restoration. When project phaseCursors exist, browser-local list selection no longer overrides them: startup recursively loads and selects the complete cursor chain, focuses the deepest populated phase level, sets maxColumn to that depth so no trailing empty child column appears, and shifts the viewport to keep the deepest phase visible. Local persistence still restores view mode, window size, and graph view state. Added a regression test proving stale local root selection and phaseActiveLevel cannot override a three-level cursor chain. Verification: frontend 213/213 tests and production build pass."
 }
