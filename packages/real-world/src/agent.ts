@@ -33,7 +33,7 @@ async function main() {
   console.log(`\nphase: ${target.phasePath.join(" > ")}`);
   for (const t of top) {
     console.log(
-      `  [${t.priority.toFixed(3)}] ${t.aim.text}` +
+      `  [${t.priority.toFixed(2)}x profitability] ${t.aim.text}` +
         ` (value ${t.flowedValue.toFixed(2)}, cost ${t.aggregatedCost.toFixed(2)})`
     );
   }

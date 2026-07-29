@@ -1,5 +1,51 @@
 import type { Aim } from './types.js';
-import { DISCOUNT_RATE, DAILY_DISCOUNT_RATE } from './constants.js';
+import { ANNUAL_DISCOUNT_RATE } from './constants.js';
+
+export function discountValue(
+  estimatedValue: number,
+  durationDays: number,
+  annualDiscountRate = ANNUAL_DISCOUNT_RATE
+): number {
+  if (!Number.isFinite(estimatedValue) || estimatedValue < 0) {
+    throw new Error('Estimated value must be a finite, non-negative number');
+  }
+  if (!Number.isFinite(durationDays) || durationDays < 0) {
+    throw new Error('Duration must be a finite number greater than or equal to 0 days');
+  }
+  if (!Number.isFinite(annualDiscountRate) || annualDiscountRate <= -1) {
+    throw new Error('Annual discount rate must be finite and greater than -1');
+  }
+  return estimatedValue / Math.pow(1 + annualDiscountRate, durationDays / 365);
+}
+
+export function calculateProfitabilityIndex(
+  discountedEstimatedValue: number,
+  estimatedPresentCost: number
+): number {
+  if (!Number.isFinite(discountedEstimatedValue) || discountedEstimatedValue < 0) {
+    throw new Error('Discounted estimated value must be finite and non-negative');
+  }
+  if (!Number.isFinite(estimatedPresentCost) || estimatedPresentCost <= 0) {
+    throw new Error('Estimated present cost must be a finite number greater than 0');
+  }
+  return discountedEstimatedValue / estimatedPresentCost;
+}
+
+function validateEconomicInputs(aims: Aim[]): void {
+  for (const aim of aims) {
+    if (!Number.isFinite(aim.cost) || aim.cost <= 0) {
+      throw new Error(`Aim "${aim.id}" has invalid cost: estimated direct cost must be a finite number greater than 0`);
+    }
+    const duration = aim.duration ?? 1;
+    if (!Number.isFinite(duration) || duration < 0) {
+      throw new Error(`Aim "${aim.id}" has invalid duration: days until return must be a finite number greater than or equal to 0`);
+    }
+    const intrinsicValue = aim.intrinsicValue ?? 0;
+    if (!Number.isFinite(intrinsicValue) || intrinsicValue < 0) {
+      throw new Error(`Aim "${aim.id}" has invalid intrinsic value: estimated direct value must be finite and non-negative`);
+    }
+  }
+}
 
 // Repo-level cross-repo links: a local aim's supportingRepos edge points at a
 // WHOLE external repo (by repoId, no aimId — see RepoConnectionSchema). For
@@ -82,6 +128,7 @@ export function calculateAimValues(inputAims: Aim[]): {
   doneCosts: Map<string, number>,
   priorities: Map<string, number>
 } {
+  validateEconomicInputs(inputAims);
   // Merge repo-link edges into zero-intrinsic leaf sink nodes before any
   // topology is built, so cross-repo flow runs on the same single code path.
   const aims = expandRepoSinkNodes(inputAims);
@@ -149,9 +196,10 @@ export function calculateAimValues(inputAims: Aim[]): {
   }
 
   if (totalIntrinsic === 0) {
-    const costs = distributeCosts(aims, aimMap, currentValues, flowValues, false);
-    const doneCosts = distributeCosts(aims, aimMap, currentValues, flowValues, true, costs);
-    return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, costs, doneCosts, priorities: new Map() };
+    const costs = distributeCostsStable(aims, aimMap, currentValues, flowValues, false);
+    const doneCosts = distributeCostsStable(aims, aimMap, currentValues, flowValues, true, costs);
+    const priorities = new Map(aims.map(aim => [aim.id, 0]));
+    return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, costs, doneCosts, priorities };
   }
 
   // 3. Iterate
@@ -224,39 +272,143 @@ export function calculateAimValues(inputAims: Aim[]): {
   }
 
   // Use the flow values (Parent->Child) to compute cost shares (Child->Parent)
-  const costs = distributeCosts(aims, aimMap, currentValues, flowValues, false);
-  const doneCosts = distributeCosts(aims, aimMap, currentValues, flowValues, true, costs);
+  const costs = distributeCostsStable(aims, aimMap, currentValues, flowValues, false);
+  const doneCosts = distributeCostsStable(aims, aimMap, currentValues, flowValues, true, costs);
 
-  // Priority = profitability index = NPV / cost
-  // NPV = discounted value - risk-adjusted cost
-  // Discounting uses duration in days and DAILY_DISCOUNT_RATE.
-  // Risk: valueVariance and costVariance are fractions (0–1) of their respective values,
-  // so the adjustment is proportional rather than absolute.
+  // Priority is the positive profitability ratio: discounted estimated
+  // flowed value divided by estimated present attributed cost. Variance fields
+  // remain persisted for compatibility but are informational in this model.
   const priorities = new Map<string, number>();
   for (const aim of aims) {
-      const val = (currentValues.get(aim.id) ?? 0) * totalIntrinsic;
+      const estimatedValue = (currentValues.get(aim.id) ?? 0) * totalIntrinsic;
       const cost = costs.get(aim.id) ?? 0;
-      const duration = aim.duration || 1;
-      const valueVariance = aim.valueVariance ?? 0;
-      const costVariance = aim.costVariance ?? 0;
-
-      let priority = 0;
-      if (cost > 0) {
-          const discountFactor = Math.pow(1 + DAILY_DISCOUNT_RATE, duration);
-          const presentValue = val / discountFactor;
-
-          // Treat variance as fractional uncertainty: penalise proportionally.
-          const riskAdjustedValue = presentValue * (1 - valueVariance * 0.5);
-          const riskAdjustedCost = cost * (1 + costVariance * 0.5);
-
-          priority = (riskAdjustedValue - riskAdjustedCost) / riskAdjustedCost;
-      } else if (val > 0) {
-          priority = Number.POSITIVE_INFINITY;
-      }
+      const duration = aim.duration ?? 1;
+      // Synthetic repo sinks deliberately have zero cost and are not persisted
+      // user aims. They do not have a meaningful profitability ratio.
+      const priority = cost > 0
+        ? calculateProfitabilityIndex(discountValue(estimatedValue, duration), cost)
+        : 0;
       priorities.set(aim.id, priority);
   }
 
   return { values: currentValues, totalIntrinsic, flowShares, flowValues, costs, doneCosts, priorities };
+}
+
+/**
+ * Deterministic attributed-cost propagation. Strongly connected components are
+ * collapsed before costs move from children to parents, preventing cycle
+ * amplification. A cyclic component's result is allocated to its members in
+ * proportion to their direct cost (equally if every basis is zero).
+ */
+function distributeCostsStable(
+  aims: Aim[],
+  aimMap: Map<string, Aim>,
+  values: Map<string, number>,
+  flowValues: Map<string, number>,
+  isDoneCost: boolean,
+  totalCosts?: Map<string, number>
+): Map<string, number> {
+  const childToParents = new Map<string, string[]>();
+  for (const parent of aims) {
+    for (const connection of parent.supportingConnections ?? []) {
+      if (!aimMap.has(connection.aimId)) continue;
+      const parents = childToParents.get(connection.aimId) ?? [];
+      parents.push(parent.id);
+      childToParents.set(connection.aimId, parents);
+    }
+  }
+  const dependencies = new Map<string, { childId: string; share: number }[]>();
+  for (const parent of aims) {
+    const deps: { childId: string; share: number }[] = [];
+    for (const connection of parent.supportingConnections ?? []) {
+      const childId = connection.aimId;
+      if (!aimMap.has(childId)) continue;
+      const childValue = values.get(childId) ?? 0;
+      const share = childValue > 1e-8
+        ? (flowValues.get(`${parent.id}->${childId}`) ?? 0) / childValue
+        : 1 / (childToParents.get(childId)?.length ?? 1);
+      if (share > 0) deps.push({ childId, share });
+    }
+    dependencies.set(parent.id, deps);
+  }
+
+  let nextIndex = 0;
+  const indexes = new Map<string, number>();
+  const lowLinks = new Map<string, number>();
+  const stack: string[] = [];
+  const onStack = new Set<string>();
+  const components: string[][] = [];
+  const visit = (id: string): void => {
+    indexes.set(id, nextIndex);
+    lowLinks.set(id, nextIndex++);
+    stack.push(id);
+    onStack.add(id);
+    for (const { childId } of dependencies.get(id) ?? []) {
+      if (!indexes.has(childId)) {
+        visit(childId);
+        lowLinks.set(id, Math.min(lowLinks.get(id)!, lowLinks.get(childId)!));
+      } else if (onStack.has(childId)) {
+        lowLinks.set(id, Math.min(lowLinks.get(id)!, indexes.get(childId)!));
+      }
+    }
+    if (lowLinks.get(id) !== indexes.get(id)) return;
+    const component: string[] = [];
+    let member: string;
+    do {
+      member = stack.pop()!;
+      onStack.delete(member);
+      component.push(member);
+    } while (member !== id);
+    components.push(component);
+  };
+  for (const aim of aims) if (!indexes.has(aim.id)) visit(aim.id);
+
+  const componentOf = new Map<string, number>();
+  components.forEach((members, componentId) =>
+    members.forEach(id => componentOf.set(id, componentId)));
+  const componentDependencies = new Map<number, Map<number, number>>();
+  for (const parent of aims) {
+    // A completed aim's done cost is already its full attributed total; pulling
+    // completed descendants again would double count it.
+    if (isDoneCost && parent.status.state === 'done') continue;
+    const parentComponent = componentOf.get(parent.id)!;
+    for (const dependency of dependencies.get(parent.id) ?? []) {
+      const childComponent = componentOf.get(dependency.childId)!;
+      if (parentComponent === childComponent) continue;
+      const outgoing = componentDependencies.get(parentComponent) ?? new Map<number, number>();
+      outgoing.set(childComponent, (outgoing.get(childComponent) ?? 0) + dependency.share);
+      componentDependencies.set(parentComponent, outgoing);
+    }
+  }
+
+  const memberBasis = (id: string): number => {
+    const aim = aimMap.get(id)!;
+    if (!isDoneCost) return aim.cost ?? 0;
+    return aim.status.state === 'done' ? (totalCosts?.get(id) ?? 0) : 0;
+  };
+  const componentCosts = new Map<number, number>();
+  const calculateComponent = (componentId: number): number => {
+    const cached = componentCosts.get(componentId);
+    if (cached !== undefined) return cached;
+    let cost = components[componentId]!.reduce((sum, id) => sum + memberBasis(id), 0);
+    for (const [childComponent, share] of componentDependencies.get(componentId) ?? []) {
+      cost += calculateComponent(childComponent) * share;
+    }
+    componentCosts.set(componentId, cost);
+    return cost;
+  };
+
+  const costs = new Map<string, number>();
+  components.forEach((members, componentId) => {
+    const componentCost = calculateComponent(componentId);
+    const bases = members.map(memberBasis);
+    const basisTotal = bases.reduce((sum, value) => sum + value, 0);
+    members.forEach((id, memberIndex) => {
+      const allocation = basisTotal > 0 ? bases[memberIndex]! / basisTotal : 1 / members.length;
+      costs.set(id, componentCost * allocation);
+    });
+  });
+  return costs;
 }
 
 function distributeCosts(

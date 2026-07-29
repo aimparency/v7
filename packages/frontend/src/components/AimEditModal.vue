@@ -32,7 +32,7 @@ const editingAims = computed(() => {
   return ids.map((id) => dataStore.aims[id]).filter((entry): entry is NonNullable<typeof entry> => !!entry)
 })
 const isBulk = computed(() => editingAims.value.length > 1)
-type BulkField = 'intrinsicValue' | 'cost' | 'loopWeight' | 'tags' |
+type BulkField = 'intrinsicValue' | 'cost' | 'duration' | 'loopWeight' | 'tags' |
   'status' | 'statusComment' | 'archived' | 'color' | 'reflection'
 const mixedFields = ref<Set<BulkField>>(new Set())
 const overriddenFields = ref<Set<BulkField>>(new Set())
@@ -52,7 +52,9 @@ const aimDescription = ref('')
 const descriptionRows = ref(3)
 const aimIntrinsicValue = ref(0)
 const aimCost = ref(0)
+const aimDuration = ref(1)
 const aimLoopWeight = ref(0)
+const validationError = ref('')
 const aimTags = ref<string[]>([])
 const selectedStatus = ref('')
 const statusComment = ref('')
@@ -160,6 +162,7 @@ const serializeFormState = () => JSON.stringify({
   description: aimDescription.value,
   intrinsicValue: aimIntrinsicValue.value,
   cost: aimCost.value,
+  duration: aimDuration.value,
   loopWeight: aimLoopWeight.value,
   tags: aimTags.value,
   status: selectedStatus.value,
@@ -288,7 +291,8 @@ watch(() => props.show, async (show) => {
     const targets = editingAims.value
     const fieldValues: Record<BulkField, unknown[]> = {
       intrinsicValue: targets.map((entry) => entry.intrinsicValue ?? 0),
-      cost: targets.map((entry) => entry.cost ?? 0),
+      cost: targets.map((entry) => entry.cost ?? 1),
+      duration: targets.map((entry) => entry.duration ?? 1),
       loopWeight: targets.map((entry) => entry.loopWeight ?? 0),
       tags: targets.map((entry) => entry.tags || []),
       status: targets.map((entry) => entry.status.state),
@@ -309,7 +313,8 @@ watch(() => props.show, async (show) => {
     aimDescription.value = aim.value.description || ''
     descriptionRows.value = getInitialDescriptionRows(aimDescription.value)
     aimIntrinsicValue.value = isMixed('intrinsicValue') ? 0 : (aim.value.intrinsicValue ?? 0)
-    aimCost.value = isMixed('cost') ? 0 : (aim.value.cost ?? 0)
+    aimCost.value = isMixed('cost') ? 1 : (aim.value.cost ?? 1)
+    aimDuration.value = isMixed('duration') ? 1 : (aim.value.duration ?? 1)
     aimLoopWeight.value = isMixed('loopWeight') ? 0 : (aim.value.loopWeight ?? 0)
     aimTags.value = isMixed('tags') ? [] : [...(aim.value.tags || [])]
     selectedStatus.value = isMixed('status') ? '' : aim.value.status.state
@@ -469,6 +474,17 @@ const handleTagNext = () => {
 
 const handleSave = async () => {
   if (!aim.value || !projectStore.projectPath) return
+  if ((!isMixed('cost') || overriddenFields.value.has('cost')) &&
+      (!Number.isFinite(aimCost.value) || aimCost.value <= 0)) {
+    validationError.value = 'Estimated direct cost must be greater than 0.'
+    return
+  }
+  if ((!isMixed('duration') || overriddenFields.value.has('duration')) &&
+      (!Number.isFinite(aimDuration.value) || aimDuration.value < 0)) {
+    validationError.value = 'Days until return must be 0 or greater.'
+    return
+  }
+  validationError.value = ''
 
   const shouldWrite = (field: BulkField) => !isBulk.value || !mixedFields.value.has(field) || overriddenFields.value.has(field)
   for (const target of editingAims.value) {
@@ -477,6 +493,7 @@ const handleSave = async () => {
     if (!isBulk.value) updates.description = aimDescription.value
     if (shouldWrite('intrinsicValue')) updates.intrinsicValue = aimIntrinsicValue.value
     if (shouldWrite('cost')) updates.cost = aimCost.value
+    if (shouldWrite('duration')) updates.duration = aimDuration.value
     if (shouldWrite('loopWeight')) updates.loopWeight = aimLoopWeight.value
     if (shouldWrite('tags')) updates.tags = aimTags.value
     if (shouldWrite('reflection')) updates.reflection = reflection.value || undefined
@@ -813,6 +830,8 @@ const discardChanges = () => {
         </div>
       </div>
 
+      <p v-if="validationError" class="validation-error" role="alert">{{ validationError }}</p>
+
       <div class="form-row">
         <div class="form-group" :class="{ 'mixed-field': isMixed('intrinsicValue') }" @click="activateOverride('intrinsicValue')">
           <label>Intrinsic Value</label>
@@ -827,13 +846,28 @@ const discardChanges = () => {
         </div>
 
         <div class="form-group" :class="{ 'mixed-field': isMixed('cost') }" @click="activateOverride('cost')">
-          <label>Cost</label>
+          <label>Estimated direct cost</label>
           <input
             v-model.number="aimCost"
             type="text"
             class="text-input"
             :placeholder="mixedPlaceholder('cost', '0')"
             :readonly="isMixed('cost')"
+            min="0.000000001"
+            @keydown="handleInputKeydown"
+          />
+        </div>
+
+        <div class="form-group" :class="{ 'mixed-field': isMixed('duration') }" @click="activateOverride('duration')">
+          <label>Estimated days until return</label>
+          <input
+            v-model.number="aimDuration"
+            type="number"
+            class="text-input"
+            min="0"
+            step="any"
+            :placeholder="mixedPlaceholder('duration', '1')"
+            :readonly="isMixed('duration')"
             @keydown="handleInputKeydown"
           />
         </div>

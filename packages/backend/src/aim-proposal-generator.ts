@@ -32,7 +32,7 @@ const GeneratedAimSchema: z.ZodType<GeneratedAim> = z.lazy(() => z.object({
     explanation: z.string().trim().max(1_000).optional()
   })).max(10),
   intrinsicValue: z.number().finite().nonnegative().optional(),
-  cost: z.number().finite().nonnegative().optional(),
+  cost: z.number().finite().positive().optional(),
   status: z.enum(['open', 'unclear', 'human-dependent']).optional(),
   statusComment: z.string().trim().max(1_000).optional(),
   tags: z.array(z.string().trim().min(1).max(100)).max(10).optional()

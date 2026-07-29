@@ -438,8 +438,9 @@ export const createAimRouter = (
             weight: z.number().optional(),
             explanation: z.string().optional()
           })).optional(),
-          intrinsicValue: z.number().optional(),
-          cost: z.number().optional(),
+          intrinsicValue: z.number().finite().nonnegative().optional(),
+          cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
+          duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
           color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
         })
@@ -732,8 +733,9 @@ export const createAimRouter = (
             date: z.number().optional(),
             reviewedAt: z.number().optional()
           }).optional(),
-          intrinsicValue: z.number().optional(),
-          cost: z.number().optional(),
+          intrinsicValue: z.number().finite().nonnegative().optional(),
+          cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
+          duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
           supportedAims: z.array(z.string()).optional(),
           supportingConnections: z.array(z.object({
@@ -826,8 +828,9 @@ export const createAimRouter = (
             date: z.number().optional(),
             reviewedAt: z.number().optional()
           }).optional(),
-          intrinsicValue: z.number().optional(),
-          cost: z.number().optional(),
+          intrinsicValue: z.number().finite().nonnegative().optional(),
+          cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
+          duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
           supportedAims: z.array(z.string()).optional(),
           supportingConnections: z.array(z.object({
@@ -915,8 +918,9 @@ export const createAimRouter = (
             date: z.number().optional(),
             reviewedAt: z.number().optional()
           }).optional(),
-          intrinsicValue: z.number().optional(),
-          cost: z.number().optional(),
+          intrinsicValue: z.number().finite().nonnegative().optional(),
+          cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
+          duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
           supportedAims: z.array(z.string()).optional(),
           supportingConnections: z.array(z.object({

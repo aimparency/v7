@@ -1,5 +1,28 @@
 # Economic Model
 
+## Aim priority
+
+Aim inputs are estimates. `intrinsicValue` is standalone estimated value,
+`cost` is positive estimated direct present cost, and `duration` is the
+estimated number of days until value is realized. Estimates should already
+account for likely partial completion, failure, or abandonment.
+
+Calculated value flows through the contribution graph and calculated costs are
+attributed upward without duplicating shared-child cost. Value is discounted at
+the shared 10% effective annual rate:
+
+```text
+discounted estimated value =
+  calculated estimated value / (1.10 ** (duration days / 365))
+
+priority = discounted estimated value / calculated estimated cost
+```
+
+Priority is a profitability ratio: `1.00x` is break-even, `2.00x` means twice
+as much discounted estimated value as cost, and `0.50x` means half as much.
+Variance fields remain stored for compatibility but are currently
+informational and do not alter priority.
+
 ## Value Creation Loop
 
 ```

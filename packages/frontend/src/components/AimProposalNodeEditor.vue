@@ -64,7 +64,7 @@ const removeChild = (child: ProposedAim) => {
       </label>
       <label>
         Estimated cost
-        <input v-model.number="node.cost" :readonly="readonly" type="number" min="0" step="any">
+        <input v-model.number="node.cost" :readonly="readonly" type="number" min="0.000000001" step="any">
       </label>
       <label>
         Status

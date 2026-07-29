@@ -38,7 +38,7 @@ export const ProposedAimSchema: z.ZodType<ProposedAim> = z.lazy(() => z.object({
     explanation: z.string().trim().max(1_000).optional(),
   })),
   intrinsicValue: z.number().finite().nonnegative().optional(),
-  cost: z.number().finite().nonnegative().optional(),
+  cost: z.number().finite().positive().optional(),
   status: ProposedAimStatusSchema.optional(),
   statusComment: z.string().trim().max(1_000).optional(),
   tags: z.array(z.string().trim().min(1).max(100)).max(30).optional(),

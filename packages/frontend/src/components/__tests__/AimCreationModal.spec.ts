@@ -82,7 +82,8 @@ describe('AimCreationModal', () => {
       [],
       null,
       'open',
-      ''
+      '',
+      1
     )
   })
 
@@ -146,7 +147,8 @@ describe('AimCreationModal', () => {
         [{ aimId: 'c1', weight: 5 }], // Children
         null,
         'open',
-        ''
+        '',
+        1
     )
   })
 
@@ -177,7 +179,8 @@ describe('AimCreationModal', () => {
       [],
       null,
       'open',
-      ''
+      '',
+      1
     )
   })
 
@@ -330,7 +333,8 @@ describe('AimCreationModal', () => {
       [],
       null,
       'open',
-      ''
+      '',
+      1
     )
 
     uiStore.createAim.mockClear()

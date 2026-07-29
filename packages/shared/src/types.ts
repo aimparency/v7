@@ -64,11 +64,11 @@ export const AimSchema = z.object({
   supportedAims: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
   status: AimStatusSchema,
-  intrinsicValue: z.number().default(0),
-  cost: z.number().default(1), // Effort/resource cost (not time)
+  intrinsicValue: z.number().finite().nonnegative().default(0), // Standalone estimated value
+  cost: z.number().finite().positive().default(1), // Estimated direct present cost
   loopWeight: z.number().default(0),
   // Economic refinement: temporal and uncertainty modeling
-  duration: z.number().default(1), // Time horizon in days (when will returns arrive?)
+  duration: z.number().finite().nonnegative().default(1), // Estimated days from now until value is realized
   costVariance: z.number().default(0), // Uncertainty in cost estimate (std deviation)
   valueVariance: z.number().default(0), // Uncertainty in value estimate (std deviation)
   calculatedValue: z.number().optional(),

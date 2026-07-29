@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { calculateAimValues } from './value-calculation.js';
+import { calculateAimValues, calculateProfitabilityIndex, discountValue } from './value-calculation.js';
 import type { Aim } from './types.js';
 
 function createMockAim(id: string, intrinsicValue: number, cost: number, duration?: number): Aim {
@@ -9,7 +9,7 @@ function createMockAim(id: string, intrinsicValue: number, cost: number, duratio
     text: `Aim ${id}`,
     intrinsicValue,
     cost,
-    duration: duration || 1, // Default 1 day
+    duration: duration ?? 1, // Zero means an immediate return
     costVariance: 0,
     valueVariance: 0,
     reflections: [],
@@ -52,8 +52,8 @@ test('calculateAimValues computes priority with temporal discounting', () => {
 
   // With duration-based discounting, shorter-duration aims are prioritized
   // Both should be positive (net present value > cost)
-  assert.ok(priorityA! > 0.9 && priorityA! < 1.1, `Priority A should be ~0.98, got ${priorityA}`);
-  assert.ok(priorityB! > 1.0 && priorityB! < 1.5, `Priority B should be ~1.27, got ${priorityB}`);
+  assert.ok(priorityA! > 1.9 && priorityA! < 2.1, `Priority A should be ~1.98, got ${priorityA}`);
+  assert.ok(priorityB! > 2.1 && priorityB! < 2.4, `Priority B should be ~2.27, got ${priorityB}`);
 
   // Key insight: B has higher absolute priority despite longer duration
   // because its value/cost ratio is much better (500/200 vs 10/5)
@@ -63,8 +63,8 @@ test('calculateAimValues distributes costs weighted by value share', () => {
   // Scenario: Roots A and B both support C.
   // C has high cost. A and B should split that cost.
   
-  const aimA = createMockAim('A', 10, 0);
-  const aimB = createMockAim('B', 10, 0);
+  const aimA = createMockAim('A', 10, 1);
+  const aimB = createMockAim('B', 10, 1);
   const aimC = createMockAim('C', 0, 100);
 
   // A -> C
@@ -117,8 +117,8 @@ test('calculateAimValues distributes costs weighted by value share', () => {
   assert.strictEqual(costC, 100, 'C Cost should be 100');
   
   // Allow small floating point diff
-  assert.ok(Math.abs(costA! - 50) < 0.1, `A Cost should be 50, got ${costA}`);
-  assert.ok(Math.abs(costB! - 50) < 0.1, `B Cost should be 50, got ${costB}`);
+  assert.ok(Math.abs(costA! - 51) < 0.1, `A Cost should be 51, got ${costA}`);
+  assert.ok(Math.abs(costB! - 51) < 0.1, `B Cost should be 51, got ${costB}`);
 });
 
 test('repo-link edge exports flow into a leaf sink, leaving totalIntrinsic unchanged', () => {
@@ -129,10 +129,10 @@ test('repo-link edge exports flow into a leaf sink, leaving totalIntrinsic uncha
   // full intrinsic. R carries no intrinsic, so totalIntrinsic stays = the local
   // intrinsics (200) — the repo node adds boundary, not value.
   const REPO_ID = '11111111-1111-4111-8111-111111111111';
-  const aimA = createMockAim('A', 100, 0);
+  const aimA = createMockAim('A', 100, 1);
   aimA.loopWeight = 0; // send everything downstream into the repo, retain nothing structurally
   aimA.supportingRepos = [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }];
-  const aimB = createMockAim('B', 100, 0); // control: no repo link
+  const aimB = createMockAim('B', 100, 1); // control: no repo link
 
   const result = calculateAimValues([aimA, aimB]);
 
@@ -161,4 +161,52 @@ test('repo-link edge exports flow into a leaf sink, leaving totalIntrinsic uncha
   // The export shows up as a parent→repo flow edge for the renderer to size.
   const exportedFlow = result.flowValues.get(`A->${REPO_ID}`);
   assert.ok(exportedFlow !== undefined && exportedFlow > 0, 'a parent→repo flow edge should exist');
+});
+
+test('economic helpers use annual discounting and a positive ratio', () => {
+  assert.strictEqual(discountValue(110, 0), 110);
+  assert.ok(Math.abs(discountValue(110, 365) - 100) < 1e-10);
+  assert.ok(Math.abs(discountValue(121, 730) - 100) < 1e-10);
+  assert.ok(discountValue(100, 0.5) < 100);
+  assert.strictEqual(calculateProfitabilityIndex(10, 10), 1);
+  assert.strictEqual(calculateProfitabilityIndex(20, 10), 2);
+  assert.strictEqual(calculateProfitabilityIndex(10, 20), 0.5);
+});
+
+test('missing duration defaults to one day while zero remains immediate', () => {
+  const missing = createMockAim('missing', 100, 100);
+  const backwardCompatibleMissing = { ...missing, duration: undefined } as unknown as Aim;
+  const immediate = createMockAim('immediate', 100, 100, 0);
+  const result = calculateAimValues([backwardCompatibleMissing, immediate]);
+  assert.ok(result.priorities.get('immediate')! > result.priorities.get('missing')!);
+});
+
+test('variance is informational and does not alter priority', () => {
+  const plain = createMockAim('plain', 10, 5, 0);
+  const uncertain = createMockAim('uncertain', 10, 5, 0);
+  uncertain.costVariance = 999;
+  uncertain.valueVariance = 999;
+  const result = calculateAimValues([plain, uncertain]);
+  assert.strictEqual(result.priorities.get('plain'), result.priorities.get('uncertain'));
+});
+
+test('invalid real economic inputs identify the aim', () => {
+  assert.throws(() => calculateAimValues([createMockAim('bad-cost', 1, 0)]), /Aim "bad-cost".*cost/);
+  assert.throws(() => calculateAimValues([createMockAim('bad-duration', 1, 1, -1)]), /Aim "bad-duration".*duration/);
+  assert.throws(
+    () => calculateAimValues([createMockAim('infinite-duration', 1, 1, Number.POSITIVE_INFINITY)]),
+    /Aim "infinite-duration".*duration/
+  );
+});
+
+test('cyclic attributed costs are deterministic and count direct costs once', () => {
+  const a = createMockAim('cycle-a', 10, 2, 0);
+  const b = createMockAim('cycle-b', 10, 3, 0);
+  a.supportingConnections = [{ aimId: b.id, weight: 1, relativePosition: [0, 0] }];
+  b.supportingConnections = [{ aimId: a.id, weight: 1, relativePosition: [0, 0] }];
+  const first = calculateAimValues([a, b]).costs;
+  const second = calculateAimValues([a, b]).costs;
+  assert.deepStrictEqual(first, second);
+  assert.ok(Math.abs(first.get(a.id)! - 2) < 1e-10);
+  assert.ok(Math.abs(first.get(b.id)! - 3) < 1e-10);
 });

@@ -21,6 +21,7 @@ const aimText = ref(AIM_DEFAULTS.text)
 const aimDescription = ref(AIM_DEFAULTS.description)
 const aimIntrinsicValue = ref(AIM_DEFAULTS.intrinsicValue)
 const aimCost = ref(AIM_DEFAULTS.cost)
+const aimDuration = ref(AIM_DEFAULTS.duration)
 const aimLoopWeight = ref(AIM_DEFAULTS.loopWeight)
 const aimTags = ref<string[]>([...AIM_DEFAULTS.tags])
 const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
@@ -114,6 +115,15 @@ const createNewOption = computed<AimSearchAdditionalOption[]>(() => {
 
 const createAim = async () => {
   if (!aimText.value.trim() && !selectedSearchResult.value) return
+  if (!Number.isFinite(aimCost.value) || aimCost.value <= 0) {
+    validationError.value = 'Estimated direct cost must be greater than 0.'
+    return
+  }
+  if (!Number.isFinite(aimDuration.value) || aimDuration.value < 0) {
+    validationError.value = 'Days until return must be 0 or greater.'
+    return
+  }
+  validationError.value = ''
 
   const weight = supportedAimsList.value.length > 0 ? (supportedAimsList.value[0]?.weight ?? 1) : 1
 
@@ -136,7 +146,8 @@ const createAim = async () => {
         supportingConnectionsList.value.map(a => ({ aimId: a.id, weight: a.weight })),
         aimColor.value || null,
         selectedStatus.value as any,
-        statusComment.value.trim()
+        statusComment.value.trim(),
+        aimDuration.value
       )
     }
   } catch (error) {
@@ -147,6 +158,8 @@ const createAim = async () => {
 const handleSubmit = () => {
   createAim()
 }
+
+const validationError = ref('')
 
 const handleInputKeydown = (event: KeyboardEvent) => {
   if (
@@ -265,6 +278,8 @@ onMounted(async () => {
   aimTags.value = [...AIM_DEFAULTS.tags]
   aimIntrinsicValue.value = AIM_DEFAULTS.intrinsicValue
   aimCost.value = AIM_DEFAULTS.cost
+  aimDuration.value = AIM_DEFAULTS.duration
+  validationError.value = ''
   aimLoopWeight.value = AIM_DEFAULTS.loopWeight
   searchSelection.value = null
   selectedStatus.value = 'open'
@@ -437,12 +452,26 @@ onMounted(async () => {
           </div>
 
           <div class="form-group">
-            <label>Cost</label>
+            <label>Estimated direct cost</label>
             <input
               ref="costInput"
               v-model.number="aimCost"
               type="number"
-              placeholder="0"
+              min="0.000000001"
+              step="any"
+              placeholder="1"
+              @keydown="handleInputKeydown"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Estimated days until return</label>
+            <input
+              v-model.number="aimDuration"
+              type="number"
+              min="0"
+              step="any"
+              placeholder="1"
               @keydown="handleInputKeydown"
             />
           </div>
@@ -459,6 +488,8 @@ onMounted(async () => {
             />
           </div>
         </div>
+
+        <p v-if="validationError" class="validation-error" role="alert">{{ validationError }}</p>
 
         <div class="form-group">
           <TagInput 

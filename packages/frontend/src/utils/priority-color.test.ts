@@ -1,25 +1,30 @@
 import { describe, expect, it } from 'vitest'
-import { priorityColor } from './priority-color'
+import { priorityColor, priorityLogMagnitude } from './priority-color'
 
-describe('priorityColor', () => {
-  it('renders non-positive priority as dark blue', () => {
-    expect(priorityColor(0, 10)).toBe('rgb(11, 37, 69)')
-    expect(priorityColor(-4, 10)).toBe('rgb(11, 37, 69)')
+describe('priority color scale', () => {
+  it('centers break-even on the neutral color', () => {
+    expect(priorityColor(1, 1)).toBe('rgb(148, 163, 184)')
   })
 
-  it('renders the highest finite priority as gold-orange', () => {
-    expect(priorityColor(10, 10)).toBe('rgb(245, 158, 11)')
+  it('maps zero to the low endpoint', () => {
+    expect(priorityColor(0, 1)).toBe('rgb(11, 37, 69)')
   })
 
-  it('renders infinite priority as gold-orange', () => {
-    expect(priorityColor(Number.POSITIVE_INFINITY, 10)).toBe('#f59e0b')
+  it('places reciprocal ratios symmetrically around the midpoint', () => {
+    const magnitude = Math.log(2)
+    expect(priorityColor(0.5, magnitude)).toBe('rgb(11, 37, 69)')
+    expect(priorityColor(2, magnitude)).toBe('rgb(245, 158, 11)')
   })
 
-  it('interpolates intermediate priorities from blue toward gold', () => {
-    expect(priorityColor(5, 10)).toBe('rgb(128, 98, 40)')
+  it('uses a stable fallback for empty and degenerate ranges', () => {
+    expect(priorityLogMagnitude([])).toBe(1)
+    expect(priorityLogMagnitude([1, 1])).toBe(1)
   })
 
-  it('uses a stable low-priority fallback when the range is empty', () => {
-    expect(priorityColor(0, 0)).toBe('rgb(11, 37, 69)')
+  it('uses a robust 95th-percentile magnitude and clamps outliers', () => {
+    const ordinary = Array.from({ length: 20 }, (_, index) => Math.exp((index + 1) / 20))
+    const magnitude = priorityLogMagnitude([...ordinary, Math.exp(100)])
+    expect(magnitude).toBeCloseTo(1)
+    expect(priorityColor(Math.exp(100), magnitude)).toBe('rgb(245, 158, 11)')
   })
 })

@@ -367,8 +367,9 @@ export function registerTools(server: Server, trpcClient: any) {
               },
               supportingConnections: connectionInputSchema("Child aim UUIDs, or objects with aimId/weight/explanation/relativePosition for edge metadata."),
               supportedAims: connectionInputSchema("Parent aim UUIDs, or objects with aimId/weight/explanation/relativePosition for the parent→new-aim edge."),
-              intrinsicValue: { type: "number", description: "Standalone worth; set on goals so value can flow to children" },
-              cost: { type: "number", description: "Effort/resource cost; set on tasks so priority is meaningful" },
+              intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
+              cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
+              duration: { type: "number", minimum: 0, description: "Estimated days from now until the aim's value is realized" },
               phaseId: { type: "string" },
               confirmationToken: { type: "string", description: "Token returned by the review-only first call. Any proposal edit requires a fresh review." },
             },
@@ -401,8 +402,9 @@ export function registerTools(server: Server, trpcClient: any) {
               removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child aim UUIDs to unlink without replacing other children." },
               addSupportedAims: connectionInputSchema("Append/update parent links without replacing other parents. Each item may include weight/explanation/relativePosition for the parent→this-aim edge."),
               removeSupportedAims: { type: "array", items: { type: "string" }, description: "Parent aim UUIDs to unlink without replacing other parents." },
-              intrinsicValue: { type: "number", description: "Standalone worth; set on goals so value can flow to children" },
-              cost: { type: "number", description: "Effort/resource cost; set on tasks so priority is meaningful" },
+              intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
+              cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
+              duration: { type: "number", minimum: 0, description: "Estimated days from now until the aim's value is realized" },
             },
             required: ["projectPath", "aimId"],
           },
@@ -911,6 +913,12 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "create_aim": {
+          if (args.cost !== undefined && (!Number.isFinite(args.cost) || (args.cost as number) <= 0)) {
+            throw new Error("Estimated direct cost must be a finite number greater than 0.");
+          }
+          if (args.duration !== undefined && (!Number.isFinite(args.duration) || (args.duration as number) < 0)) {
+            throw new Error("Duration must be a finite number greater than or equal to 0 days.");
+          }
           const expectedToken = aimCreationConfirmationToken(args);
           if (args.confirmationToken === undefined) {
             const related = await trpcClient.aim.search.query({
@@ -958,6 +966,9 @@ export function registerTools(server: Server, trpcClient: any) {
                 comment: "",
                 date: Date.now(),
               },
+              intrinsicValue: args.intrinsicValue as number | undefined,
+              cost: args.cost as number | undefined,
+              duration: args.duration as number | undefined,
             },
           });
 
@@ -989,18 +1000,6 @@ export function registerTools(server: Server, trpcClient: any) {
             });
           }
 
-          // Economic fields aren't accepted by createFloatingAim; set them in a follow-up update.
-          if (args.intrinsicValue !== undefined || args.cost !== undefined) {
-            const econ: any = {};
-            if (args.intrinsicValue !== undefined) econ.intrinsicValue = args.intrinsicValue;
-            if (args.cost !== undefined) econ.cost = args.cost;
-            await trpcClient.aim.update.mutate({
-              projectPath: args.projectPath as string,
-              aimId: result.id,
-              aim: econ,
-            });
-          }
-
           // If phaseId provided, commit to phase
           if (args.phaseId) {
             await trpcClient.aim.commitToPhase.mutate({
@@ -1021,6 +1020,12 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "update_aim": {
+          if (args.cost !== undefined && (!Number.isFinite(args.cost) || (args.cost as number) <= 0)) {
+            throw new Error("Estimated direct cost must be a finite number greater than 0.");
+          }
+          if (args.duration !== undefined && (!Number.isFinite(args.duration) || (args.duration as number) < 0)) {
+            throw new Error("Duration must be a finite number greater than or equal to 0 days.");
+          }
           const updateData: any = {};
           if (args.text) updateData.text = args.text;
           if (args.description !== undefined) updateData.description = args.description;
@@ -1029,6 +1034,7 @@ export function registerTools(server: Server, trpcClient: any) {
           if (args.status) updateData.status = args.status;
           if (args.intrinsicValue !== undefined) updateData.intrinsicValue = args.intrinsicValue;
           if (args.cost !== undefined) updateData.cost = args.cost;
+          if (args.duration !== undefined) updateData.duration = args.duration;
 
           const hasConnectionDeltas =
             args.addSupportingConnections !== undefined ||
@@ -1482,7 +1488,7 @@ export function registerTools(server: Server, trpcClient: any) {
                   phasePath,
                   phase: targetPhase.name,
                   selectionScope,
-                  model: "flow-based (top-down value, bottom-up cost, NPV/cost priority)",
+                  model: "flow-based (top-down estimated value, bottom-up estimated cost, discounted value/cost profitability ratio)",
                   economics: {
                     phaseFlowedValue: fmt(phaseFlowedValue),
                     phaseTotalCost: fmt(phaseTotalCost),

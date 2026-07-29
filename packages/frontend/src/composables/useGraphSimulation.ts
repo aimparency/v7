@@ -7,7 +7,7 @@ import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
 import { trpc } from '../trpc'
 import { normalizedFlowForceWeights, surfaceMovementShares } from '../utils/graph-forces'
-import { priorityColor } from '../utils/priority-color'
+import { priorityColor, priorityLogMagnitude } from '../utils/priority-color'
 
 // Constants
 const OUTER_MARGIN_FACTOR = 2
@@ -154,16 +154,11 @@ export function useGraphSimulation() {
     const avgValue = rawNodes.length > 0 ? totalValue / rawNodes.length : 0
     
     // Calculate Priority Range if needed
-    let maxPriority = 0
+    let priorityMagnitude = 1
     if (graphUIStore.graphColorMode === 'priority') {
-      for (const n of rawNodes) {
-        const p = dataStore.getAimPriority(n.id)
-        if (p !== Number.POSITIVE_INFINITY && p > maxPriority) {
-          maxPriority = p
-        }
-      }
-      // Logarithmic scaling often works better for distributions like this
-      if (maxPriority <= 0) maxPriority = 1
+      priorityMagnitude = priorityLogMagnitude(
+        rawNodes.map(node => dataStore.getAimPriority(node.id))
+      )
     }
     
     const SPACING_FACTOR = 64
@@ -177,7 +172,7 @@ export function useGraphSimulation() {
       let color: string | undefined = undefined
       if (graphUIStore.graphColorMode === 'priority') {
         const p = dataStore.getAimPriority(raw.id)
-        color = priorityColor(p, maxPriority)
+        color = priorityColor(p, priorityMagnitude)
       }
 
       const isLoadable = loadableSet ? loadableSet.has(raw.id) : false
