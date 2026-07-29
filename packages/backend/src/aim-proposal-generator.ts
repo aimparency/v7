@@ -17,6 +17,7 @@ type GeneratedAim = {
     explanation?: string;
   }>;
   intrinsicValue?: number;
+  valueRationale?: string;
   cost?: number;
   status?: 'open' | 'unclear' | 'human-dependent';
   statusComment?: string;
@@ -32,6 +33,7 @@ const GeneratedAimSchema: z.ZodType<GeneratedAim> = z.lazy(() => z.object({
     explanation: z.string().trim().max(1_000).optional()
   })).max(10),
   intrinsicValue: z.number().finite().nonnegative().optional(),
+  valueRationale: z.string().optional(),
   cost: z.number().finite().positive().optional(),
   status: z.enum(['open', 'unclear', 'human-dependent']).optional(),
   statusComment: z.string().trim().max(1_000).optional(),

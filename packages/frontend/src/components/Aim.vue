@@ -282,7 +282,10 @@ onMounted(() => {
             <div class="stat-top cost">{{ totalCost }}</div>
             <div class="stat-bottom cost">{{ intrinsicCost }}</div>
           </div>
-          <div class="stat-box" :title="`Total value: ${totalValue} | Intrinsic value: ${intrinsicValue}`">
+          <div
+            class="stat-box"
+            :title="`Total value: ${totalValue} | Intrinsic value: ${intrinsicValue}${props.aim.valueRationale ? ` | Rationale: ${props.aim.valueRationale}` : ''}`"
+          >
             <div class="stat-top value">{{ totalValue }}</div>
             <div class="stat-bottom value">{{ intrinsicValue }}</div>
           </div>

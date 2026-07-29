@@ -569,7 +569,8 @@ export const useListStore = defineStore('ui', {
       color?: string | null,
       statusState: AimStatusState = 'open',
       statusComment: string = '',
-      duration: number = AIM_DEFAULTS.duration
+      duration: number = AIM_DEFAULTS.duration,
+      valueRationale: string = AIM_DEFAULTS.valueRationale
     ) {
       const dataStore = useDataStore()
       const modalStore = useUIModalStore()
@@ -584,6 +585,7 @@ export const useListStore = defineStore('ui', {
         supportingConnections,
         supportedAims,
         intrinsicValue: intrinsicValue ?? 0,
+        valueRationale: valueRationale.trim() || undefined,
         loopWeight,
         cost,
         duration,

@@ -20,6 +20,7 @@ const projectStore = useProjectStore()
 const aimText = ref(AIM_DEFAULTS.text)
 const aimDescription = ref(AIM_DEFAULTS.description)
 const aimIntrinsicValue = ref(AIM_DEFAULTS.intrinsicValue)
+const aimValueRationale = ref(AIM_DEFAULTS.valueRationale)
 const aimCost = ref(AIM_DEFAULTS.cost)
 const aimDuration = ref(AIM_DEFAULTS.duration)
 const aimLoopWeight = ref(AIM_DEFAULTS.loopWeight)
@@ -147,7 +148,8 @@ const createAim = async () => {
         aimColor.value || null,
         selectedStatus.value as any,
         statusComment.value.trim(),
-        aimDuration.value
+        aimDuration.value,
+        aimValueRationale.value
       )
     }
   } catch (error) {
@@ -277,6 +279,7 @@ onMounted(async () => {
   aimDescription.value = AIM_DEFAULTS.description
   aimTags.value = [...AIM_DEFAULTS.tags]
   aimIntrinsicValue.value = AIM_DEFAULTS.intrinsicValue
+  aimValueRationale.value = AIM_DEFAULTS.valueRationale
   aimCost.value = AIM_DEFAULTS.cost
   aimDuration.value = AIM_DEFAULTS.duration
   validationError.value = ''
@@ -490,6 +493,16 @@ onMounted(async () => {
         </div>
 
         <p v-if="validationError" class="validation-error" role="alert">{{ validationError }}</p>
+
+        <div class="form-group">
+          <label>Why is this value reasonable?</label>
+          <textarea
+            v-model="aimValueRationale"
+            rows="2"
+            placeholder="Explain the evidence, assumptions, or human judgment behind the estimated value"
+            @keydown="handleTextareaKeydown"
+          />
+        </div>
 
         <div class="form-group">
           <TagInput 

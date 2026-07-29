@@ -557,7 +557,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
       }),
       create_aim: tool({
         description: 'Create a child/supporting aim or newly clarified aim.',
-        inputSchema: jsonSchema<{ text: string; description?: string; supportedAims?: string[]; phaseId?: string; cost?: number; intrinsicValue?: number }>({
+        inputSchema: jsonSchema<{ text: string; description?: string; supportedAims?: string[]; phaseId?: string; cost?: number; intrinsicValue?: number; valueRationale?: string }>({
           type: 'object',
           properties: {
             text: { type: 'string' },
@@ -565,7 +565,8 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
             supportedAims: { type: 'array', items: { type: 'string' } },
             phaseId: { type: 'string' },
             cost: { type: 'number' },
-            intrinsicValue: { type: 'number' }
+            intrinsicValue: { type: 'number' },
+            valueRationale: { type: 'string', description: 'Human-authored rationale for the estimated value' }
           },
           required: ['text'],
           additionalProperties: false
@@ -574,7 +575,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
       }),
       update_aim: tool({
         description: 'Update aim text/description/status/cost/value. Use human-dependent for ambiguous aims instead of asking humans too often.',
-        inputSchema: jsonSchema<{ aimId: string; text?: string; description?: string; status?: { state: string; comment?: string }; cost?: number; intrinsicValue?: number }>({
+        inputSchema: jsonSchema<{ aimId: string; text?: string; description?: string; status?: { state: string; comment?: string }; cost?: number; intrinsicValue?: number; valueRationale?: string }>({
           type: 'object',
           properties: {
             aimId: { type: 'string' },
@@ -587,7 +588,8 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
               additionalProperties: false
             },
             cost: { type: 'number' },
-            intrinsicValue: { type: 'number' }
+            intrinsicValue: { type: 'number' },
+            valueRationale: { type: 'string', description: 'Human-authored rationale for the estimated value' }
           },
           required: ['aimId'],
           additionalProperties: false

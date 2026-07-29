@@ -11,6 +11,7 @@ export type ProposedAim = {
   description?: string;
   children: ProposedConnection[];
   intrinsicValue?: number;
+  valueRationale?: string;
   cost?: number;
   status?: z.infer<typeof ProposedAimStatusSchema>;
   statusComment?: string;
@@ -38,6 +39,7 @@ export const ProposedAimSchema: z.ZodType<ProposedAim> = z.lazy(() => z.object({
     explanation: z.string().trim().max(1_000).optional(),
   })),
   intrinsicValue: z.number().finite().nonnegative().optional(),
+  valueRationale: z.string().optional(),
   cost: z.number().finite().positive().optional(),
   status: ProposedAimStatusSchema.optional(),
   statusComment: z.string().trim().max(1_000).optional(),

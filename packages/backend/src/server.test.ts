@@ -602,13 +602,14 @@ test('search - returns aim id prefix matches first with match metadata', async (
   assert.ok(shortResults.every(result => !result.idMatch));
 });
 
-test('createFloatingAim - sets and persists intrinsicValue', async () => {
+test('createFloatingAim - persists intrinsic value and its human rationale', async () => {
   const aimResult = await caller.aim.createFloatingAim({
     projectPath: testProjectPath,
     aim: {
       text: 'Valuable Aim',
       status: { state: 'open', comment: '', date: Date.now() },
-      intrinsicValue: 42
+      intrinsicValue: 42,
+      valueRationale: 'Based on a validated customer saving ten hours per week.'
     }
   });
 
@@ -618,6 +619,7 @@ test('createFloatingAim - sets and persists intrinsicValue', async () => {
   });
 
   assert.equal(aim.intrinsicValue, 42);
+  assert.equal(aim.valueRationale, 'Based on a validated customer saving ten hours per week.');
 });
 
 test('createFloatingAim - first aim defaults intrinsicValue to 1000', async () => {

@@ -65,6 +65,7 @@ export const AimSchema = z.object({
   committedIn: z.array(z.string().uuid()),
   status: AimStatusSchema,
   intrinsicValue: z.number().finite().nonnegative().default(0), // Standalone estimated value
+  valueRationale: z.string().optional(), // Human-authored explanation for the intrinsic value estimate
   cost: z.number().finite().positive().default(1), // Estimated direct present cost
   loopWeight: z.number().default(0),
   // Economic refinement: temporal and uncertainty modeling

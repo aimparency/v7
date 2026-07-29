@@ -32,7 +32,7 @@ const editingAims = computed(() => {
   return ids.map((id) => dataStore.aims[id]).filter((entry): entry is NonNullable<typeof entry> => !!entry)
 })
 const isBulk = computed(() => editingAims.value.length > 1)
-type BulkField = 'intrinsicValue' | 'cost' | 'duration' | 'loopWeight' | 'tags' |
+type BulkField = 'intrinsicValue' | 'valueRationale' | 'cost' | 'duration' | 'loopWeight' | 'tags' |
   'status' | 'statusComment' | 'archived' | 'color' | 'reflection'
 const mixedFields = ref<Set<BulkField>>(new Set())
 const overriddenFields = ref<Set<BulkField>>(new Set())
@@ -51,6 +51,7 @@ const aimText = ref('')
 const aimDescription = ref('')
 const descriptionRows = ref(3)
 const aimIntrinsicValue = ref(0)
+const aimValueRationale = ref('')
 const aimCost = ref(0)
 const aimDuration = ref(1)
 const aimLoopWeight = ref(0)
@@ -161,6 +162,7 @@ const serializeFormState = () => JSON.stringify({
   text: aimText.value,
   description: aimDescription.value,
   intrinsicValue: aimIntrinsicValue.value,
+  valueRationale: aimValueRationale.value,
   cost: aimCost.value,
   duration: aimDuration.value,
   loopWeight: aimLoopWeight.value,
@@ -291,6 +293,7 @@ watch(() => props.show, async (show) => {
     const targets = editingAims.value
     const fieldValues: Record<BulkField, unknown[]> = {
       intrinsicValue: targets.map((entry) => entry.intrinsicValue ?? 0),
+      valueRationale: targets.map((entry) => entry.valueRationale ?? ''),
       cost: targets.map((entry) => entry.cost ?? 1),
       duration: targets.map((entry) => entry.duration ?? 1),
       loopWeight: targets.map((entry) => entry.loopWeight ?? 0),
@@ -313,6 +316,7 @@ watch(() => props.show, async (show) => {
     aimDescription.value = aim.value.description || ''
     descriptionRows.value = getInitialDescriptionRows(aimDescription.value)
     aimIntrinsicValue.value = isMixed('intrinsicValue') ? 0 : (aim.value.intrinsicValue ?? 0)
+    aimValueRationale.value = isMixed('valueRationale') ? '' : (aim.value.valueRationale ?? '')
     aimCost.value = isMixed('cost') ? 1 : (aim.value.cost ?? 1)
     aimDuration.value = isMixed('duration') ? 1 : (aim.value.duration ?? 1)
     aimLoopWeight.value = isMixed('loopWeight') ? 0 : (aim.value.loopWeight ?? 0)
@@ -492,6 +496,7 @@ const handleSave = async () => {
     if (!isBulk.value) updates.text = aimText.value
     if (!isBulk.value) updates.description = aimDescription.value
     if (shouldWrite('intrinsicValue')) updates.intrinsicValue = aimIntrinsicValue.value
+    if (shouldWrite('valueRationale')) updates.valueRationale = aimValueRationale.value.trim() || undefined
     if (shouldWrite('cost')) updates.cost = aimCost.value
     if (shouldWrite('duration')) updates.duration = aimDuration.value
     if (shouldWrite('loopWeight')) updates.loopWeight = aimLoopWeight.value
@@ -885,6 +890,17 @@ const discardChanges = () => {
             @keydown.tab.exact="handleLoopWeightNext"
           />
         </div>
+      </div>
+
+      <div class="form-group" :class="{ 'mixed-field': isMixed('valueRationale') }" @click="activateOverride('valueRationale')">
+        <label>Value rationale</label>
+        <textarea
+          v-model="aimValueRationale"
+          class="textarea-input"
+          rows="3"
+          :placeholder="mixedPlaceholder('valueRationale', 'Explain the evidence, assumptions, or human judgment behind the estimated value')"
+          :readonly="isMixed('valueRationale')"
+        />
       </div>
 
       <div class="form-section" :class="{ 'mixed-field': isMixed('tags') }" @click="activateOverride('tags')">

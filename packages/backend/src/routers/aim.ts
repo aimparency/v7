@@ -354,6 +354,7 @@ export const createAimRouter = (
               date: Date.now()
             },
             intrinsicValue: proposed.intrinsicValue ?? 0,
+            valueRationale: proposed.valueRationale,
             cost: proposed.cost ?? 1,
             loopWeight: 1,
             duration: 1,
@@ -439,6 +440,7 @@ export const createAimRouter = (
             explanation: z.string().optional()
           })).optional(),
           intrinsicValue: z.number().finite().nonnegative().optional(),
+          valueRationale: z.string().optional(),
           cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
           duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
@@ -734,6 +736,7 @@ export const createAimRouter = (
             reviewedAt: z.number().optional()
           }).optional(),
           intrinsicValue: z.number().finite().nonnegative().optional(),
+          valueRationale: z.string().optional(),
           cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
           duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
@@ -778,6 +781,7 @@ export const createAimRouter = (
           committedIn: [],
           status,
           intrinsicValue: input.aim.intrinsicValue ?? (isFirstAim ? 1000 : 0),
+          valueRationale: input.aim.valueRationale,
           cost: input.aim.cost ?? 1,
           loopWeight: input.aim.loopWeight ?? 1,
           duration: input.aim.duration ?? 1,
@@ -829,6 +833,7 @@ export const createAimRouter = (
             reviewedAt: z.number().optional()
           }).optional(),
           intrinsicValue: z.number().finite().nonnegative().optional(),
+          valueRationale: z.string().optional(),
           cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
           duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
@@ -867,6 +872,7 @@ export const createAimRouter = (
           committedIn: [],
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0,
+          valueRationale: input.aim.valueRationale,
           cost: input.aim.cost ?? 1,
           loopWeight: input.aim.loopWeight ?? 1,
           duration: input.aim.duration ?? 1,
@@ -919,6 +925,7 @@ export const createAimRouter = (
             reviewedAt: z.number().optional()
           }).optional(),
           intrinsicValue: z.number().finite().nonnegative().optional(),
+          valueRationale: z.string().optional(),
           cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
           duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
@@ -956,6 +963,7 @@ export const createAimRouter = (
           committedIn: [input.phaseId], // Will be updated by commitAimToPhase
           status,
           intrinsicValue: input.aim.intrinsicValue ?? 0,
+          valueRationale: input.aim.valueRationale,
           cost: input.aim.cost ?? 1,
           loopWeight: input.aim.loopWeight ?? 1,
           duration: input.aim.duration ?? 1,

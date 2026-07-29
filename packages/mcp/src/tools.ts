@@ -368,6 +368,7 @@ export function registerTools(server: Server, trpcClient: any) {
               supportingConnections: connectionInputSchema("Child aim UUIDs, or objects with aimId/weight/explanation/relativePosition for edge metadata."),
               supportedAims: connectionInputSchema("Parent aim UUIDs, or objects with aimId/weight/explanation/relativePosition for the parent→new-aim edge."),
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
+              valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
               cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
               duration: { type: "number", minimum: 0, description: "Estimated days from now until the aim's value is realized" },
               phaseId: { type: "string" },
@@ -403,6 +404,7 @@ export function registerTools(server: Server, trpcClient: any) {
               addSupportedAims: connectionInputSchema("Append/update parent links without replacing other parents. Each item may include weight/explanation/relativePosition for the parent→this-aim edge."),
               removeSupportedAims: { type: "array", items: { type: "string" }, description: "Parent aim UUIDs to unlink without replacing other parents." },
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
+              valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
               cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
               duration: { type: "number", minimum: 0, description: "Estimated days from now until the aim's value is realized" },
             },
@@ -967,6 +969,7 @@ export function registerTools(server: Server, trpcClient: any) {
                 date: Date.now(),
               },
               intrinsicValue: args.intrinsicValue as number | undefined,
+              valueRationale: args.valueRationale as string | undefined,
               cost: args.cost as number | undefined,
               duration: args.duration as number | undefined,
             },
@@ -1033,6 +1036,7 @@ export function registerTools(server: Server, trpcClient: any) {
           if (args.tags) updateData.tags = args.tags;
           if (args.status) updateData.status = args.status;
           if (args.intrinsicValue !== undefined) updateData.intrinsicValue = args.intrinsicValue;
+          if (args.valueRationale !== undefined) updateData.valueRationale = args.valueRationale;
           if (args.cost !== undefined) updateData.cost = args.cost;
           if (args.duration !== undefined) updateData.duration = args.duration;
 

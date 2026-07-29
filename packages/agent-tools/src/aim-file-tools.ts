@@ -181,6 +181,7 @@ export async function createAim(projectPath: string, input: {
   phaseId?: string;
   cost?: number;
   intrinsicValue?: number;
+  valueRationale?: string;
 }) {
   const now = Date.now();
   const aim: Aim = AimSchema.parse({
@@ -195,6 +196,7 @@ export async function createAim(projectPath: string, input: {
     committedIn: input.phaseId ? [input.phaseId] : [],
     status: { state: 'open', comment: '', date: now },
     intrinsicValue: input.intrinsicValue ?? 0,
+    valueRationale: input.valueRationale,
     cost: input.cost ?? 1,
     loopWeight: 0,
     duration: 1,
@@ -239,7 +241,7 @@ export async function commitAimToPhase(projectPath: string, aimId: string, phase
   return { aimId, phaseId, committed: true };
 }
 
-export async function updateAim(projectPath: string, aimId: string, patch: Partial<Pick<Aim, 'text' | 'description' | 'status' | 'cost' | 'intrinsicValue'>>) {
+export async function updateAim(projectPath: string, aimId: string, patch: Partial<Pick<Aim, 'text' | 'description' | 'status' | 'cost' | 'intrinsicValue' | 'valueRationale'>>) {
   const aims = await listAimsFromFiles(projectPath, true).then(async (archived) => [...await listAimsFromFiles(projectPath), ...archived]);
   const aim = aims.find((candidate) => candidate.id === aimId);
   if (!aim) throw new Error(`Aim not found: ${aimId}`);

@@ -83,8 +83,18 @@ describe('AimCreationModal', () => {
       null,
       'open',
       '',
-      1
+      1,
+      ''
     )
+  })
+
+  it('passes the human-authored value rationale into aim creation', async () => {
+    await wrapper.find('input[placeholder="Enter aim text"]').setValue('Valued Aim')
+    await wrapper.find('textarea[placeholder^="Explain the evidence"]').setValue('Validated customer outcome')
+    await wrapper.find('.btn-primary').trigger('click')
+
+    const args = uiStore.createAim.mock.calls.at(-1)
+    expect(args?.at(-1)).toBe('Validated customer outcome')
   })
 
   it('adds supported aim (parent)', async () => {
@@ -148,7 +158,8 @@ describe('AimCreationModal', () => {
         null,
         'open',
         '',
-        1
+        1,
+        ''
     )
   })
 
@@ -180,7 +191,8 @@ describe('AimCreationModal', () => {
       null,
       'open',
       '',
-      1
+      1,
+      ''
     )
   })
 
@@ -334,7 +346,8 @@ describe('AimCreationModal', () => {
       null,
       'open',
       '',
-      1
+      1,
+      ''
     )
 
     uiStore.createAim.mockClear()

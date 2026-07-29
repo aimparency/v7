@@ -9,6 +9,7 @@ export const AIM_DEFAULTS = {
   description: '',
   tags: [] as string[],
   intrinsicValue: 0,
+  valueRationale: '',
   cost: 1,
   loopWeight: 1,
   duration: 1, // Default 1 day
@@ -29,6 +30,7 @@ export function getNewAimDefaults() {
     description: AIM_DEFAULTS.description,
     tags: [...AIM_DEFAULTS.tags],
     intrinsicValue: AIM_DEFAULTS.intrinsicValue,
+    valueRationale: AIM_DEFAULTS.valueRationale,
     cost: AIM_DEFAULTS.cost,
     loopWeight: AIM_DEFAULTS.loopWeight,
     duration: AIM_DEFAULTS.duration,
