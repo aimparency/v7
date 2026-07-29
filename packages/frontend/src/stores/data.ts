@@ -195,6 +195,8 @@ export const useDataStore = defineStore('data', {
     // Monotonic per-aim request order. A response may only replace local state
     // while it is still the newest request for that aim.
     aimSyncRevisions: {} as Record<string, number>,
+    // Phase reads and mutation responses use the same ordering guard.
+    phaseSyncRevisions: {} as Record<string, number>,
 
     // Value Recalculation Debounce
     recalculateTimeout: null as any,
@@ -422,9 +424,10 @@ export const useDataStore = defineStore('data', {
         return this.phases[phaseId] ?? null
       }
 
+      const revision = this.beginPhaseSync(phaseId)
       try {
         const phase = await trpc.phase.get.query({ projectPath, phaseId })
-        this.replacePhase(phase.id, phase)
+        this.replacePhaseIfCurrent(phase.id, phase, revision)
         return this.phases[phase.id] ?? null
       } catch (error) {
         console.error(`Failed to load phase ${phaseId}:`, error)
@@ -608,6 +611,18 @@ export const useDataStore = defineStore('data', {
       return true
     },
 
+    beginPhaseSync(phaseId: string): number {
+      const revision = (this.phaseSyncRevisions[phaseId] ?? 0) + 1
+      this.phaseSyncRevisions[phaseId] = revision
+      return revision
+    },
+
+    replacePhaseIfCurrent(phaseId: string, newPhase: BasePhase, revision: number): boolean {
+      if (this.phaseSyncRevisions[phaseId] !== revision) return false
+      this.replacePhase(phaseId, newPhase)
+      return true
+    },
+
     async createFloatingAim(projectPath: string, aim: AimCreationParams): Promise<{id: string}> {
       try {
         const newAim = await trpc.aim.createFloatingAim.mutate({
@@ -678,10 +693,7 @@ export const useDataStore = defineStore('data', {
         this.aims[newAim.id] = newAim
 
         // Reload the specific phase to get updated commitments
-        const phase = await trpc.phase.get.query({ projectPath, phaseId })
-        if (phase) {
-          this.replacePhase(phaseId, phase)
-        }
+        await this.loadPhaseById(projectPath, phaseId, { force: true })
         
         this.recalculateValues();
 
@@ -1142,8 +1154,8 @@ export const useDataStore = defineStore('data', {
           } else if (data.type === 'phase') {
              try {
                const previousPhase = this.phases[data.id]
-               const phase = await trpc.phase.get.query({ projectPath, phaseId: data.id });
-               this.replacePhase(phase.id, phase);
+               const phase = await this.loadPhaseById(projectPath, data.id, { force: true });
+               if (!phase) return
 
                // Ensure all committed aims are loaded
                const missingAimIds = phase.commitments.filter(id => !this.aims[id]);
@@ -1469,13 +1481,14 @@ export const useDataStore = defineStore('data', {
           return
         }
 
+        const revision = this.beginPhaseSync(phaseId)
         const updatedPhase = await trpc.phase.update.mutate({
           projectPath,
           phaseId,
           phase: { parent: parentId }
         })
         if (updatedPhase) {
-          this.replacePhase(phaseId, updatedPhase)
+          this.replacePhaseIfCurrent(phaseId, updatedPhase, revision)
         }
 
         await trpc.phase.reorder.mutate({

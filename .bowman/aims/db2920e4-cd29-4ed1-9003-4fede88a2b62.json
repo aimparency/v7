@@ -2,6 +2,7 @@
   "id": "db2920e4-cd29-4ed1-9003-4fede88a2b62",
   "text": "Refactor client-server communication and synchronization",
   "description": "Inspect and refactor client-server synchronization to eliminate latency and state discrepancies:\n- Address stale client-side overwrites where mutation responses overwrite updated subscription states.\n- Evaluate pushing fully updated aim/phase payloads in WebSocket events instead of triggering client-side query round-trips.\n- Investigate parallelizing server-side file listing to speed up full-project loads.\n- Explore sequence numbers/versions for resource atoms to prevent out-of-order updates.",
+  "reflection": "Synchronization refactor now covers both aim and phase response ordering. Earlier work added monotonic per-aim client request revisions so delayed mutation responses cannot overwrite fresher subscription state. This slice adds the same per-resource revision guard for phase fetches and move mutation responses, routes subscription phase refreshes through the guarded loader, and routes post-commit phase reloads through it. Regression tests explicitly resolve a subscription refresh before a stale phase mutation response. Verification: focused MultiClient tests 4/4, full frontend unit suite 214/214, frontend vue-tsc type-check, and git diff check pass.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -16,7 +17,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Stale aim mutation/subscription overwrite race is fixed and tested. Broader payload-push, phase sequencing, and load-performance work remains.",
+    "comment": "Stale aim and phase mutation/subscription overwrite races are fixed and tested. Broader payload-push and measured load-performance work remain.",
     "date": 1784891840473
   },
   "intrinsicValue": 0,
@@ -24,6 +25,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Added monotonic per-aim client request revisions. Both updateAim mutations and subscription-triggered aim fetches claim a revision; only the newest response may replace local state, preventing a delayed mutation response from overwriting fresher subscription state. Regression test explicitly resolves the subscription refresh before a stale mutation response. Verification: focused MultiClient tests 3/3, full frontend unit suite 191/191, frontend type-check, and git diff --check passed."
+  "valueVariance": 0
 }

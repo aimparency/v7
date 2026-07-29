@@ -33,6 +33,8 @@ const { mockTrpc } = vi.hoisted(() => {
         list: { query: vi.fn() },
         get: { query: vi.fn() },
         create: { mutate: vi.fn() },
+        update: { mutate: vi.fn() },
+        reorder: { mutate: vi.fn().mockResolvedValue({ success: true }) },
       }
     }
   }
@@ -208,5 +210,36 @@ describe('Multi-Client Synchronization', () => {
     await mutation
 
     expect(store.aims[aimId]!.text).toBe('Newest server state')
+  })
+
+  it('does not let an older phase mutation response overwrite a newer subscription refresh', async () => {
+    const store = useDataStore()
+    const projectPath = '/test/project'
+    const phaseId = 'phase-race'
+    const initialPhase = {
+      id: phaseId,
+      name: 'Initial',
+      parent: 'old-parent',
+      commitments: [],
+      childPhaseIds: []
+    }
+    store.replacePhase(phaseId, initialPhase as any)
+    store.subscribeToUpdates(projectPath)
+
+    let resolveMutation!: (phase: any) => void
+    const mutationResponse = new Promise(resolve => { resolveMutation = resolve })
+    mockTrpc.phase.update.mutate.mockReturnValue(mutationResponse)
+    mockTrpc.phase.get.query.mockResolvedValue({
+      ...initialPhase,
+      name: 'Newest server state',
+      parent: 'new-parent'
+    })
+
+    const mutation = store.movePhase(projectPath, phaseId, 'new-parent', 0)
+    await subscriptionCallback({ type: 'phase', id: phaseId, projectPath })
+    resolveMutation({ ...initialPhase, name: 'Mutation response', parent: 'new-parent' })
+    await mutation
+
+    expect(store.phases[phaseId]!.name).toBe('Newest server state')
   })
 })
