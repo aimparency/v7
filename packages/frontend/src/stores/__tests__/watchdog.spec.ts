@@ -178,4 +178,15 @@ describe('watchdog store project switching', () => {
     expect(localStorage.getItem('aimparency-watchdog-should-connect')).toBe('true')
     expect(store.selectedAgentType).toBe('grok')
   })
+
+  it('drops terminal input while a worker rebuild is in progress', () => {
+    const store = useWatchdogStore()
+    store.socket = mockSocket as any
+    store.isRebuilding = true
+
+    store.sendWorkerInput('unsafe worker input')
+    store.sendWatchdogInput('unsafe supervisor input')
+
+    expect(mockSocket.emit).not.toHaveBeenCalled()
+  })
 })

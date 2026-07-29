@@ -5,6 +5,7 @@ import WatchdogPanel from '../WatchdogPanel.vue'
 
 const watchdogStore = reactive({
   isConnected: true,
+  isRebuilding: false,
   connectionState: 'connected' as 'idle' | 'spawning' | 'connecting' | 'connected' | 'error',
   connectedAgentType: 'claude' as 'claude' | 'gemini' | 'codex' | 'agy' | 'grok' | null,
   selectedAgentType: 'claude' as 'claude' | 'gemini' | 'codex' | 'agy' | 'grok',
@@ -81,6 +82,7 @@ vi.mock('../../stores/ui/modal-store', () => ({
 describe('WatchdogPanel', () => {
   beforeEach(() => {
     watchdogStore.isConnected = true
+    watchdogStore.isRebuilding = false
     watchdogStore.connectionState = 'connected'
     watchdogStore.connectedAgentType = 'claude'
     watchdogStore.selectedAgentType = 'claude'
@@ -268,5 +270,34 @@ describe('WatchdogPanel', () => {
 
     expect(state.text()).toBe('State: wrapping_up')
     expect(state.attributes('style')).toContain('color: rgb(56, 189, 248)')
+  })
+
+  it('shows a rebuilding overlay and locks both terminals', async () => {
+    watchdogStore.isRebuilding = true
+
+    const wrapper = mount(WatchdogPanel, {
+      global: {
+        stubs: {
+          WatchdogTerminal: {
+            props: ['disabled', 'terminalKind'],
+            template: '<div class="terminal-stub" :data-kind="terminalKind" :data-disabled="String(disabled)" />',
+            methods: {
+              write() {},
+              clear() {},
+              focus() {}
+            }
+          },
+          WatchdogActionsOverlay: true
+        }
+      }
+    })
+
+    await nextTick()
+
+    expect(wrapper.get('.rebuild-overlay').text()).toContain('Rebuilding session worker')
+    expect(wrapper.get('.rebuild-overlay').text()).toContain('input is paused')
+    expect(wrapper.findAll('.terminal-stub')).toHaveLength(2)
+    expect(wrapper.findAll('.terminal-stub').every(terminal =>
+      terminal.attributes('data-disabled') === 'true')).toBe(true)
   })
 })

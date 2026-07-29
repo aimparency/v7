@@ -13,14 +13,15 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1780780336997
+    "state": "review",
+    "comment": "Rebuild progress overlay and terminal input lock implemented and internally verified. Awaiting explicit user acceptance before done.",
+    "date": 1785308700915
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Completed the rebuild-transition UI. The broker now exposes its existing in-flight rebuild state through getStatus; the frontend polls it while attached, immediately marks manual relaunches, blocks worker and supervisor input at both store and terminal boundaries, and renders an accessible rebuilding overlay until status clears/reconnection completes. Added focused panel/store tests. Verification: wrapped-agents-broker type-check passes, broker tests 8/8 pass, frontend tests 209/209 pass, frontend production build passes."
 }

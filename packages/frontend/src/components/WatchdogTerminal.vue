@@ -20,6 +20,7 @@ const props = defineProps<{
   onData?: (data: string) => void;
   terminalKind?: TerminalKind;
   socket?: Socket | null;
+  disabled?: boolean;
 }>();
 
 const terminalContainer = ref<HTMLElement | null>(null);
@@ -35,6 +36,7 @@ const ARROW_DOWN = '\x1b[B';
 const ARROW_RIGHT = '\x1b[C';
 const ARROW_LEFT = '\x1b[D';
 const sendKey = (seq: string) => {
+  if (props.disabled) return;
   props.onData?.(seq);
   // Keep the terminal focused so the soft keyboard stays up after tapping a key.
   term?.focus();
@@ -44,6 +46,7 @@ const sendKey = (seq: string) => {
 // character into its control code (Ctrl+C -> 0x03, etc.) and disarm. Multi-char
 // input (escape sequences, paste) passes through untouched but still disarms.
 const handleTermData = (data: string) => {
+  if (props.disabled) return;
   if (ctrlArmed.value) {
     ctrlArmed.value = false;
     if (data.length === 1) {
@@ -123,6 +126,7 @@ const BRACKETED_PASTE_END = '\x1b[201~';
 
 // Reads the system clipboard and sends it as a bracketed paste (mobile menu).
 const pasteFromClipboard = async () => {
+  if (props.disabled) return;
   try {
     const text = await navigator.clipboard.readText();
     if (!text) return;
@@ -207,7 +211,7 @@ const copyParserView = async () => {
 };
 
 const handlePaste = (event: ClipboardEvent) => {
-  if (!props.onData) return;
+  if (!props.onData || props.disabled) return;
 
   const pastedText = event.clipboardData?.getData('text/plain');
   if (!pastedText) return;
@@ -308,7 +312,13 @@ defineExpose({
 </script>
 
 <template>
-  <div ref="terminalContainer" class="terminal-container" @click="focus">
+  <div
+    ref="terminalContainer"
+    class="terminal-container"
+    :class="{ disabled }"
+    :aria-disabled="disabled"
+    @click="disabled ? undefined : focus()"
+  >
     <!-- Desktop: both copy buttons; mobile uses the ⌨ menu instead. -->
     <div class="copy-buttons copy-buttons-desktop" @mousedown.prevent>
       <button
@@ -403,6 +413,11 @@ defineExpose({
   /* We drive scrolling ourselves from touchmove; tell the browser not to claim
      drags for native panning/zoom, which otherwise steals the gesture mid-drag. */
   touch-action: none;
+}
+
+.terminal-container.disabled {
+  pointer-events: none;
+  filter: saturate(0.5) brightness(0.72);
 }
 
 /* The element the finger actually lands on is xterm's .xterm-viewport, which is

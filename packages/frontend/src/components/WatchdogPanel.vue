@@ -239,10 +239,12 @@ onUnmounted(() => {
 })
 
 const handleWorkerInput = (data: string) => {
+  if (store.isRebuilding) return
   store.sendWorkerInput(data)
 }
 
 const handleWatchdogInput = (data: string) => {
+  if (store.isRebuilding) return
   store.sendWatchdogInput(data)
 }
 
@@ -426,6 +428,7 @@ defineExpose({
           :initial-content="store.workerOutput"
           :onData="handleWorkerInput"
           :socket="store.socket"
+          :disabled="store.isRebuilding"
           terminal-kind="worker"
           @resize="(dims) => store.socket?.emit('resize-worker', dims)"
         />
@@ -451,10 +454,17 @@ defineExpose({
           :initial-content="store.watchdogOutput"
           :onData="handleWatchdogInput"
           :socket="store.socket"
+          :disabled="store.isRebuilding"
           terminal-kind="watchdog"
           @resize="(dims) => store.socket?.emit('resize-watchdog', dims)"
         />
       </div>
+    </div>
+
+    <div v-if="store.isRebuilding" class="rebuild-overlay" role="status" aria-live="polite">
+      <span class="rebuild-spinner" aria-hidden="true"></span>
+      <strong>Rebuilding session worker…</strong>
+      <span>Terminal input is paused until the updated session reconnects.</span>
     </div>
 
     <!-- Informative Log when not connected -->
@@ -481,6 +491,40 @@ defineExpose({
   background: #1e1e1e;
   border-top: 1px solid #333;
   position: relative;
+}
+
+.rebuild-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.88);
+  color: #e2e8f0;
+  text-align: center;
+  backdrop-filter: blur(2px);
+}
+
+.rebuild-overlay span:last-child {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.rebuild-spinner {
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 3px solid rgba(148, 163, 184, 0.35);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: rebuild-spin 0.9s linear infinite;
+}
+
+@keyframes rebuild-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Terminal-only mode: only the active terminal is shown, no dividers, and the

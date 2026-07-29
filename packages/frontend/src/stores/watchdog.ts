@@ -43,6 +43,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   // from the public type and provides no reactive value inside the instance.
   const socket = shallowRef<Socket | null>(null)
   const isConnected = ref(false)
+  const isRebuilding = ref(false)
   const connectionState = ref<'idle' | 'spawning' | 'connecting' | 'connected' | 'error'>('idle')
   const isEnabled = ref(false)
   const isEmergencyStopped = ref(false)
@@ -145,6 +146,32 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   let keepaliveTimer: number | NodeJS.Timeout | null = null
+  let rebuildStatusTimer: number | NodeJS.Timeout | null = null
+
+  async function refreshRebuildStatus(projectPath: string, agentType: AgentType) {
+    try {
+      const status = await trpcWatchdog.watchdog.getStatus.query({ projectPath, agentType })
+      isRebuilding.value = status.rebuilding
+    } catch {
+      // A broker restart briefly makes status unavailable. Preserve the active
+      // overlay until a successful status response or socket reconnection.
+    }
+  }
+
+  function startRebuildStatusPolling(projectPath: string, agentType: AgentType) {
+    stopRebuildStatusPolling()
+    void refreshRebuildStatus(projectPath, agentType)
+    rebuildStatusTimer = setInterval(() => {
+      void refreshRebuildStatus(projectPath, agentType)
+    }, 1000)
+  }
+
+  function stopRebuildStatusPolling() {
+    if (rebuildStatusTimer) {
+      clearInterval(rebuildStatusTimer)
+      rebuildStatusTimer = null
+    }
+  }
 
   function startKeepalive(projectPath: string, agentType: AgentType) {
     stopKeepalive()
@@ -323,10 +350,12 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     isConnected.value = false
     connectionState.value = 'idle'
     connectedAgentType.value = null
+    isRebuilding.value = false
     supervisorState.value = null
     localStorage.setItem('aimparency-show-watchdog', 'false')
     localStorage.setItem('aimparency-watchdog-should-connect', 'false')
     stopKeepalive()
+    stopRebuildStatusPolling()
     if (projectPath) {
       void hydrateRuntimeState(projectPath, agentType)
     }
@@ -338,6 +367,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       teardownSocket()
     }
     stopKeepalive()
+    stopRebuildStatusPolling()
     isConnected.value = false
     connectionState.value = 'idle'
     connectedAgentType.value = null
@@ -381,6 +411,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     }
 
     stopKeepalive()
+    stopRebuildStatusPolling()
     isConnected.value = false
     connectionState.value = 'idle'
     connectedAgentType.value = null
@@ -411,10 +442,12 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   }
 
   function sendWorkerInput(data: string) {
+    if (isRebuilding.value) return
     socket.value?.emit('worker-input', data)
   }
 
   function sendWatchdogInput(data: string) {
+    if (isRebuilding.value) return
     socket.value?.emit('watchdog-input', data)
   }
 
@@ -431,6 +464,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       isConnected.value = false
     }
     stopKeepalive()
+    stopRebuildStatusPolling()
 
     try {
       await trpcWatchdog.watchdog.stop.mutate({
@@ -456,6 +490,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     const agentType = connectedAgentType.value || selectedAgentType.value
     logStatus(`Relaunching ${agentType} session...`)
+    isRebuilding.value = true
     stopKeepalive()
 
     if (socket.value) {
@@ -481,7 +516,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
     } catch (e: any) {
         logStatus(`Relaunch failed: ${e.message}`)
-        connectionState.value = 'error'
+      connectionState.value = 'error'
+      isRebuilding.value = false
         connectedAgentType.value = null
         supervisorState.value = null
     }
@@ -645,6 +681,8 @@ export const useWatchdogStore = defineStore('watchdog', () => {
       terminalClearCounter.value++
       isConnected.value = true
       connectionState.value = 'connected'
+      void refreshRebuildStatus(projectPath, agentType)
+      startRebuildStatusPolling(projectPath, agentType)
       localStorage.setItem('aimparency-watchdog-should-connect', 'true')
       startKeepalive(projectPath, agentType)
       // Restore xterm focus after reload/reconnect once the terminal repaints.
@@ -738,6 +776,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   return {
     socket,
     isConnected,
+    isRebuilding,
     connectionState,
     isEnabled,
     isEmergencyStopped,

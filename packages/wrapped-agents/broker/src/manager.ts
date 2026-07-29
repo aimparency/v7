@@ -493,17 +493,23 @@ export const WatchdogManager = {
     return false;
   },
 
-  getStatus(projectPath: string, agentType: AgentType = 'gemini'): { running: boolean, port?: number, agentType?: AgentType } {
+  getStatus(projectPath: string, agentType: AgentType = 'gemini'): {
+    running: boolean,
+    rebuilding: boolean,
+    port?: number,
+    agentType?: AgentType
+  } {
       projectPath = normalizeProjectPath(projectPath);
+      const rebuilding = isRebuilding(projectPath, agentType);
       const key = getInstanceKey(projectPath, agentType);
       const instance = instances.get(key);
       if (instance) {
           if (isInstanceAlive(instance)) {
-              return { running: true, port: instance.port, agentType: instance.agentType };
+              return { running: true, rebuilding, port: instance.port, agentType: instance.agentType };
           }
           killInstance(instance);
       }
-      return { running: false };
+      return { running: false, rebuilding };
   },
 
   async relaunch(
