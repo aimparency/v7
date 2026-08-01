@@ -1,0 +1,25 @@
+{
+  "id": "504ca79c-8ebd-464c-a1ca-9d9b95b48e5e",
+  "text": "remove intrinsic values from most aims.",
+  "description": "Normal way is inheritance by connection. only achieve ASI (root) shall have",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1785613137549
+  },
+  "intrinsicValue": 1000,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
