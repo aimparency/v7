@@ -3,10 +3,12 @@ import { computed, ref, onMounted } from 'vue'
 import { useDataStore, type Phase} from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useProjectStore } from '../stores/project-store'
+import { useUIModalStore } from '../stores/ui/modal-store'
 import AimsList from './AimsList.vue'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu.vue'
 import { useLongPress } from '../composables/useLongPress'
 import { perfLog } from '../utils/perf-log'
+import { formatAimPriority, rankAimsForPhaseTree } from '../utils/phase-priority'
 
 interface Props {
   phase: Phase
@@ -27,6 +29,52 @@ const phaseContainerRef = ref<HTMLElement | null>(null)
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 const projectStore = useProjectStore()
+const modalStore = useUIModalStore()
+
+const showPriority = ref(false)
+const priorityState = ref('human-dependent')
+const loadingPriority = ref(false)
+
+const prioritizedAims = computed(() => rankAimsForPhaseTree(
+  props.phase.id,
+  dataStore.phases,
+  dataStore.aims,
+  dataStore.calculatedPriorities,
+  priorityState.value
+))
+
+const loadDescendantPhases = async () => {
+  const pending = [props.phase.id]
+  const visited = new Set<string>()
+
+  while (pending.length > 0) {
+    const phaseId = pending.shift()!
+    if (visited.has(phaseId)) continue
+    visited.add(phaseId)
+
+    await dataStore.loadPhases(projectStore.projectPath, phaseId)
+    pending.push(...(dataStore.phases[phaseId]?.childPhaseIds ?? []))
+  }
+}
+
+const togglePriority = async () => {
+  showPriority.value = !showPriority.value
+  if (!showPriority.value) return
+
+  loadingPriority.value = true
+  try {
+    await loadDescendantPhases()
+    // Transitive phase membership follows aim contribution edges, so ensure
+    // those descendants are present before ranking the phase tree.
+    await dataStore.loadAllAims(projectStore.projectPath)
+  } finally {
+    loadingPriority.value = false
+  }
+}
+
+const openPrioritizedAim = (aimId: string) => {
+  modalStore.openAimEditModal(aimId)
+}
 
 // Get aims from the store
 const phaseAims = computed(() => dataStore.getAimsForPhase(props.phase.id))
@@ -129,6 +177,17 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
       @contextmenu.prevent
     >
       <div class="phase-name">{{ phase.name }}</div>
+      <button
+        type="button"
+        class="priority-toggle"
+        :class="{ active: showPriority }"
+        :aria-expanded="showPriority"
+        :aria-controls="`phase-priority-${phase.id}`"
+        @pointerdown.stop
+        @click.stop="togglePriority"
+      >
+        {{ showPriority ? 'hide priority list' : 'list by priority' }}
+      </button>
     </div>
 
     <ContextMenu
@@ -139,8 +198,56 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
       @close="showMenu = false"
     />
 
+    <section
+      v-if="showPriority"
+      :id="`phase-priority-${phase.id}`"
+      class="priority-panel"
+      @click.stop
+    >
+      <label class="priority-state">
+        <span>State</span>
+        <select v-model="priorityState">
+          <option
+            v-for="status in dataStore.getStatuses"
+            :key="status.key"
+            :value="status.key"
+          >
+            {{ status.key }}
+          </option>
+        </select>
+      </label>
+
+      <div class="priority-summary">
+        Direct and transitive aims across this phase and its subphases
+      </div>
+
+      <div v-if="loadingPriority" class="priority-empty">Loading subphases…</div>
+      <div v-else-if="prioritizedAims.length === 0" class="priority-empty">
+        No {{ priorityState }} aims
+      </div>
+      <ol v-else class="priority-list">
+        <li v-for="result in prioritizedAims" :key="result.aim.id">
+          <button
+            type="button"
+            class="priority-aim"
+            :title="`Edit ${result.aim.text || 'untitled aim'}`"
+            @click="openPrioritizedAim(result.aim.id)"
+          >
+            <span class="priority-rank">{{ formatAimPriority(result.priority) }}</span>
+            <span class="priority-copy">
+              <span class="priority-text">{{ result.aim.text || '(untitled)' }}</span>
+              <span class="priority-phase">
+                {{ dataStore.phases[result.phaseId]?.name || 'This phase' }}
+                {{ result.directlyCommitted ? '' : ' · via committed aim' }}
+              </span>
+            </span>
+          </button>
+        </li>
+      </ol>
+    </section>
+
     <!-- Aims List -->
-    <div class="aims-container">
+    <div v-else class="aims-container">
       <AimsList
         :aims="phaseAims"
         :phase-id="phase.id"
@@ -212,6 +319,115 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
 .phase-name {
   font-weight: bold;
   color: #e0e0e0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.priority-toggle {
+  flex: none;
+  margin-left: 0.5rem;
+  border: 1px solid #666;
+  border-radius: 0.25rem;
+  padding: 0.2rem 0.4rem;
+  background: rgba(0, 0, 0, 0.18);
+  color: #cfcfcf;
+  font: inherit;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.priority-toggle:hover,
+.priority-toggle.active {
+  border-color: #d2a84a;
+  color: #ffd778;
+}
+
+.priority-panel {
+  padding: 0 0.5rem 0.5rem;
+}
+
+.priority-state {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #aaa;
+  font-size: 0.7rem;
+}
+
+.priority-state select {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid #555;
+  border-radius: 0.2rem;
+  padding: 0.2rem 0.3rem;
+  background: #292929;
+  color: #eee;
+}
+
+.priority-summary,
+.priority-empty {
+  padding: 0.35rem 0;
+  color: #888;
+  font-size: 0.65rem;
+}
+
+.priority-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.priority-aim {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: 0.45rem;
+  border: 1px solid #484848;
+  border-radius: 0.2rem;
+  padding: 0.35rem;
+  background: rgba(0, 0, 0, 0.16);
+  color: #e4e4e4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.priority-aim:hover {
+  border-color: #d2a84a;
+  background: rgba(210, 168, 74, 0.1);
+}
+
+.priority-rank {
+  flex: none;
+  min-width: 3.2rem;
+  color: #ffd778;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  font-weight: bold;
+}
+
+.priority-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.priority-text {
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+}
+
+.priority-phase {
+  overflow: hidden;
+  color: #888;
+  font-size: 0.62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .aims-container {

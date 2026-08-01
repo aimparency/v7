@@ -6,9 +6,13 @@ Pause product expansion that is not demanded by a qualified operator workflow.
 For two weeks, test whether Aimparency can earn access to real operations and a
 paid or clearly funded experiment.
 
-The first two conversations are Wilde Möhre and Herzog Records. The remaining
-eight should be owner-led organizations where Felix or a trusted introducer can
-reach a person who operates the workflow, not merely an AI enthusiast.
+The first conversations are with people Felix already values and wants involved
+in the broader human–AI cooperation experiment: Wilde Möhre, Herzog Records,
+and Robin through his existing Leipzig automation practice. They are
+participants with aims of their own, never marketing targets. Future invitations
+must state why that specific person or organization is appreciated, offer a
+connection that could advance their aims, and leave the form of participation
+to them.
 
 ## Falsifiable result
 
@@ -26,9 +30,10 @@ and an unpaid open-ended proof of concept do not satisfy the result.
 
 ## Sequence
 
-1. Felix sends one low-friction invitation from
+1. Felix sends or makes one personal invitation from
    `founder-actions-ai-transformation.md`.
-2. Reconstruct the latest real workflow run before showing Aimparency.
+2. Ask what the person wants to preserve or make possible, then reconstruct the
+   latest real workflow run before showing Aimparency.
 3. Quantify frequency, failure modes, human dependency, and economic cost.
 4. Ask directly about access, operator time, decision authority, budget, and
    reasons to reject the experiment.

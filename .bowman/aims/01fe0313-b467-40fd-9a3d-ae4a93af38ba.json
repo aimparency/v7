@@ -2,6 +2,8 @@
   "id": "01fe0313-b467-40fd-9a3d-ae4a93af38ba",
   "text": "bugfixes and sidequests",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -20,11 +22,15 @@
     "61ebf544-cd45-48d1-9c11-9763e8674ce1"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1766507881061
+    "state": "review",
+    "comment": "The only tracked bugfix child is done; awaiting acceptance of this finite maintenance bucket.",
+    "date": 1785399382373
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 found the sole child completed and no other specified work. Moved the finite bucket from open to review."
 }

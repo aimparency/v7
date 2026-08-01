@@ -24,14 +24,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Rendering core landed 2026-06-28 (commit pending). Injected black-box repo nodes into the graph at the data seam: data.ts graphData now emits ONE node per distinct repoId referenced by any aim's supportingRepos (id=repoId, label=registry name or repo:<short id> fallback, neutral grey #9e9e9e, value from calculatedValues sink, isRepo:true) plus a repo→aim link (source=repo/supporter, target=local aim, weight+flowValue from flowValues keyed `${aim}->${repoId}`) — so existing node + arrow rendering draws the black box with no shader changes. Threaded isRepo through GraphNode (useGraphSimulation) + the WebGL renderer (explicit isRepo grey branch so it stays grey in ALL color modes, not just custom). Read-only interaction guards in useGraphInteraction: no connect-FROM a repo node, no aim→repo connect onto one, click is a no-op (no aim selection). Phase-filter fixed so repo nodes ride along with their visible parent (they belong to no phase). Unit-tested: 3 new graphData tests (one node per repo, dedup across two linkers, registry-name label + grey + flow-sized + edge direction/weight). Verified: frontend vue-tsc clean (only pre-existing baseUrl warnings); new tests 3/3; full frontend suite 142 pass (the 1 failure in App.spec header-path is pre-existing on clean HEAD, unrelated). REMAINING (tracked in follow-up aim): (1) 'link a whole repo' creation UX — pick a repo from the registry in the connection funnel (currently repo edges can only be created via backend aim.update); (2) tint by the linked repo's actual meta color when checked out (grey-always for now); (3) click-to-open/focus the linked repo; (4) visual verification in the running app (WebGL not unit-verifiable).",
-    "date": 1782632977538
+    "state": "review",
+    "comment": "Single black-box linked-repo rendering, neutral coloring, flow edges, filtering, interaction guards, and focused tests are implemented. Awaiting visual acceptance; additional interaction refinements are tracked separately.",
+    "date": 1785399345405
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Reconciled on 2026-07-30 from partially to review: the stated rendering capability is implemented and tested. Creation UX, repo tint, and focus navigation are follow-up scope rather than blockers to the rendering slice."
 }

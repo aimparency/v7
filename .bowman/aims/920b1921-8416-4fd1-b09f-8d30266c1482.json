@@ -14,14 +14,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Verified 2026-06-27. Touch swipe NAVIGATION between columns is implemented: ColumnsView.vue onTouchStart/Move/End with a 50px swipe threshold, multi-touch aborts so vertical scroll isn't hijacked (commit 5370a43). Remaining: touch-based aim EDITING within columns (e.g. drag-to-reparent on touch) is not evident — confirm whether that's still wanted.",
-    "date": 1782545169824
+    "state": "human-dependent",
+    "comment": "Swipe navigation and core touch affordances exist. Further touch editing/reparenting requires user confirmation of the desired mobile interaction model.",
+    "date": 1785399345971
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 followed the existing explicit design question rather than guessing a complex touch-editing interaction."
 }

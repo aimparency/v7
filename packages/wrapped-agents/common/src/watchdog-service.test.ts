@@ -252,7 +252,14 @@ test('start_work sends the full instruct once, re-armed after compact', async ()
   await service.executeActionSideEffects({ type: 'start_work', message: 'do X' });
   await service.executeActionSideEffects({ type: 'start_work', message: 'do Y' });
 
+  const now = new Date();
+  const currentDate = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0')
+  ].join('-');
   assert.match(posts[0] || '', /FULL_GUIDE_TEXT/);          // first carries the guide
+  assert.match(posts[0] || '', new RegExp(`today's date \\(${currentDate}\\)`));
   assert.doesNotMatch(posts[1] || '', /FULL_GUIDE_TEXT/);   // second: short pointer only
   assert.match(posts[1] || '', /Check Aimparency MCP/);
 

@@ -63,14 +63,15 @@
     "2cb2e798-c679-489e-b168-8c02c89f78cd"
   ],
   "status": {
-    "state": "open",
-    "comment": "Individual route appears structurally suitable, subject to confirming German residence/tax and self-employment status for the funded period. Prepare in October; target submission by 31 October.",
-    "date": 1784390952126
+    "state": "human-dependent",
+    "comment": "Application preparation is ready or under review. Felix must confirm residence/tax and funded-period self-employment eligibility, approve the final framing, and submit through the institution’s portal in the October–November window.",
+    "date": 1785399138641
   },
   "intrinsicValue": 0,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 found no open implementation child: two branches are in review and three are human-dependent. Formal eligibility confirmation, final representations, and institutional submission cannot be performed autonomously."
 }

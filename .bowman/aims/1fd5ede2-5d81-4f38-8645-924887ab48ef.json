@@ -10,7 +10,17 @@
     "onchain",
     "trust"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "ca0cd74f-fe9c-44d1-9fa9-85fca97439de",
+      "relativePosition": [
+        -1.8507420000243018,
+        1.6807004638977308
+      ],
+      "weight": 1,
+      "explanation": "The concrete integration attempt belongs beneath the broader ERC-8004 identity direction; both remain cancelled context pending external demand."
+    }
+  ],
   "supportedAims": [
     "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
   ],

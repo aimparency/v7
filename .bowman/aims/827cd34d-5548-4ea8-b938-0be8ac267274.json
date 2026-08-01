@@ -1,14 +1,14 @@
 {
   "id": "827cd34d-5548-4ea8-b938-0be8ac267274",
   "text": "Refactor Graph to Match Reference Implementation",
+  "reflections": [],
+  "archived": false,
   "tags": [
     "refactor",
     "graph"
   ],
   "supportingConnections": [],
-  "supportedAims": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ],
+  "supportedAims": [],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -16,5 +16,9 @@
     "date": 1765729233078
   },
   "intrinsicValue": 0,
-  "loopWeight": 0
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

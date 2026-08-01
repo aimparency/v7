@@ -62,14 +62,15 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Drift fix 2026-06-28, surfaced by the reconcile_status code-only pass (cited by 2 real code commits while still 'open'). The core self-rebuild loop is shipped and WORKING end-to-end — verified live this session: I committed a wrapper self-edit, dropped .bowman/runtime/relaunch-request, and the broker consumed it + relaunched. Children: 4a96fff0 (detect self-edit) done, 310878de (warn worker) done, 29021d9a (broker rebuild+relaunch) done, 0d07b9dd (worker drops indicator) done. NOT fully done: a7fd4651 (render rebuilding status + lock terminal input during relaunch — UI) is open, and 220c106c (verify-and-rollback gate) is halted (the broker's verify gate partly covers it). So partially, not done.",
-    "date": 1782638334327
+    "state": "review",
+    "comment": "The self-rebuild/relaunch chain and rebuilding UI are implemented and internally verified; the optional halted rollback child does not leave open implementation work. Awaiting integrated user acceptance.",
+    "date": 1785399191440
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Relevance check on 2026-07-30 found the prior partial-status comment stale: the formerly open UI child a7fd4651 is now in review with broker/frontend implementation and test evidence. The other core children are done; the remaining verify/rollback child is halted and the broker already has a verification gate. Reconciled the finite parent to review instead of rebuilding completed behavior."
 }

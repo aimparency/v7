@@ -2,7 +2,7 @@
   "id": "7f2bae54-03a6-481f-8de7-114fba05c112",
   "text": "Demonstrate autonomous external value creation with a real beneficiary",
   "description": "Prove that the mission-continuous loop can produce value outside Aimparency. A human may define or approve the initial aim and supply necessary access; after that, the loop must discover the work, plan, execute with real tools, verify the deliverable, and present it without step-by-step steering. Success requires (1) a named external beneficiary or external open-source project, (2) a non-trivial deliverable addressing a real need, (3) a preserved run record showing the autonomous chain, and (4) external acceptance, use, merge, payment, or explicit useful/not-useful feedback. An internal Aimparency artifact, self-assessed usefulness, mock customer, simulated revenue, or unsubmitted patch does not satisfy this aim. Start with a credential-free external repository contribution or a deliverable requested by Wilde Möhre/Herzog Records; expand to paid/effectful work only with human authorization.",
-  "reflection": "Merged duplicate aim 0733cb72 into this canonical experiment. Its prior internal research brief was useful preparation but did not meet the stricter external-value criterion because no external beneficiary accepted, used, merged, or paid for it. The surviving aim remains open and now states falsifiable external evidence requirements.\n\nMerged source reflection (0733cb72): Investigated: not implemented (no prior artifacts matching description). Committed to phase, then produced research-brief-recent-supervisor-improvements.md from graph and git history and committed it as 93fdf3e. This proved internal autonomous artifact production, but not external value; the stricter canonical aim therefore remains open.",
+  "reflection": "Status reconciliation on 2026-07-30 found both direct experiment branches human-dependent. The success criterion explicitly requires an external beneficiary’s acceptance, use, merge, payment, or feedback, so the parent is blocked on institutional/human participation rather than open implementation work.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -14,6 +14,23 @@
         -1.812251967508309
       ],
       "weight": 1
+    },
+    {
+      "aimId": "5bd2c07e-babe-479e-a68d-ae3cfafe32ab",
+      "relativePosition": [
+        2.458286833542848,
+        -0.4547810946267208
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "93e0d4c2-eed1-4d42-8d12-a82c1b291d6b",
+      "relativePosition": [
+        1.4980744231605647,
+        2.0014427352967514
+      ],
+      "weight": 1,
+      "explanation": "Creates externally accepted, paid value for a named open-source beneficiary through an inspectable autonomous run."
     }
   ],
   "supportedAims": [
@@ -27,8 +44,8 @@
   ],
   "status": {
     "state": "open",
-    "comment": "",
-    "date": 1783368741173
+    "comment": "Reopened: the Compute Commons Maintainer branch provides an agent-actionable path. The agent can scan and score public bounties and prepare a candidate implementation plan before the separate standing identity/payment mandate is established.",
+    "date": 1785584926526
   },
   "intrinsicValue": 15,
   "cost": 5,

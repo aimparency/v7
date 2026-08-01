@@ -1,7 +1,7 @@
 {
   "id": "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
-  "text": "Sell Aimparency through paid owner-led AI-transformation engagements",
-  "description": "Use revenue as the primary reality signal. Start through Felix's trusted owner relationships with a paid, fixed-scope diagnostic of one economically meaningful workflow; only then offer a bounded reversible automation pilot and continuing stewardship. Every engagement must define the baseline, owner decision rights, access boundaries, stop conditions, price, and observable result. Avoid free pilots, bespoke promises that do not compound into product capability, and success claims based on activity rather than net customer value. Initial prospects are Wilde Möhre and Herzog Records.",
+  "text": "Invite people and owner-led organizations into paid, mutually useful AI-transformation collaborations",
+  "description": "Use real paid work as a reality signal while treating every named person and organization as a possible collaborator with aims of their own, never as a marketing target or source of access. Begin through relationships Felix genuinely values. Explain why the person's work or perspective matters to the broader attempt to develop capable AI through human cooperation; ask whether and how they would like to connect. When a useful paid engagement emerges, start with a fixed-scope diagnostic of one economically meaningful workflow, then offer bounded reversible automation and continuing stewardship only with consent. Define baseline, owner decision rights, access boundaries, stop conditions, price, and observable result. Avoid generic outreach, free extraction, implied endorsement, and success claims based on activity rather than net value for the collaborator.",
   "reflection": "The commercial path is now prepared through proposal stage: meta/ai-transformation-diagnostic-offer.de.md can be adapted after an owner call, using a two-week fixed-scope €2,500 first-price hypothesis with no free implementation. Remaining steps are founder outreach, client discovery, and actual commercial consent.",
   "reflections": [
     {
@@ -56,6 +56,14 @@
       ],
       "weight": 1,
       "explanation": "Validates the owner-led AI-transformation sales motion."
+    },
+    {
+      "aimId": "5bd2c07e-babe-479e-a68d-ae3cfafe32ab",
+      "relativePosition": [
+        -1.6737208445000689,
+        -1.8570564166675108
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [

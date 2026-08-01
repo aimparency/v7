@@ -322,6 +322,10 @@ const selectedLinkVisuals = computed(() => {
 const isSemanticForceActive = computed(() => simulation.targetSemanticForce.value > 0.5)
 const startSemanticForce = () => setSemanticForce(true)
 const stopSemanticForce = () => setSemanticForce(false)
+const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
+  percentile: 0.9,
+  zoomOut: 1.2,
+})
 
 async function autoRelaxLayout() {
   const proposals = proposeRelaxedConnections(
@@ -515,6 +519,21 @@ function toggleSpinOffPreview() {
            <circle cx="12" cy="12" r="10"></circle>
            <line x1="2" y1="12" x2="22" y2="12"></line>
            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+        </svg>
+      </button>
+
+      <button
+        class="control-btn"
+        @click="recenterGraph"
+        title="Recenter camera and fit the nearest 90% of aims with 1.2× breathing room"
+        aria-label="Recenter graph"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M12 2v4"></path>
+          <path d="M12 18v4"></path>
+          <path d="M2 12h4"></path>
+          <path d="M18 12h4"></path>
         </svg>
       </button>
 

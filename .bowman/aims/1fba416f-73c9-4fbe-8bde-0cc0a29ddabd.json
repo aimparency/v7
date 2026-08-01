@@ -2,7 +2,7 @@
   "id": "1fba416f-73c9-4fbe-8bde-0cc0a29ddabd",
   "text": "Add modular hybrid code intelligence for semantic maps and improvement discovery",
   "description": "Provide code search and mapping that combines exact search, symbols/references, syntax chunks, semantic embeddings, dependency structure, git churn, tests/coverage, and aim history. Expose focused tools such as code_search, symbol_context, change_impact, and high-leverage improvement discovery without loading every capability into every loop.",
-  "reflection": "Extended the modular code-intelligence capability with aim-history retrieval. The compact code_intelligence tool now has an optional aim-history mode that searches active and archived aim text, descriptions, free-text and structured reflections, and status notes; ranks exact/token matches; and surfaces realized Git commit references without loading another tool into every loop. Existing semantic index, heatmap/churn, symbol, and impact modes remain unchanged. Verification: focused code-intelligence behavior test passes with active and archived fixtures; agent-tools and loop-worker TypeScript checks pass; git diff check passes.",
+  "reflection": "Relevance check on 2026-07-30 found the defined core capability shipped. The previous partial status retained only optional, benchmark-driven refinements without a concrete failing use case, so the finite delivered slice moved to review rather than inviting speculative expansion.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -19,9 +19,9 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Semantic/heuristic code intelligence, incremental indexing, modular capability packs, and aim-history retrieval are implemented. LSP/AST precision and coverage/failure signals remain optional future improvements.",
-    "date": 1784500052492
+    "state": "review",
+    "comment": "The modular semantic/heuristic code-intelligence capability and aim-history retrieval are implemented and verified. LSP/AST and coverage signals remain optional future refinements; awaiting acceptance of the delivered capability.",
+    "date": 1785399223908
   },
   "intrinsicValue": 0,
   "cost": 6,

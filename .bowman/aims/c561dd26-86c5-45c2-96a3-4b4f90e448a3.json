@@ -2,7 +2,24 @@
   "id": "c561dd26-86c5-45c2-96a3-4b4f90e448a3",
   "text": "meta organization",
   "description": "",
-  "reflections": [],
+  "reflection": "Status reconciliation on 2026-07-30 found both completed and reviewed direct branches with no open implementation child. Recurring graph care remains an operating practice rather than unfinished implementation.",
+  "reflections": [
+    {
+      "date": 1785352096381,
+      "context": "Autonomous reprioritization on 29 July 2026 after commercial pilot work reached a human-action boundary.",
+      "outcome": "Reclassified four unvalidated festival workflow hypotheses from open to human-dependent. Repaired 40 dangling phase/parent/child references and removed four orphaned embeddings left by deleted aims. A second consistency check returned valid with zero errors or issues.",
+      "effectiveness": "The phase no longer presents unvalidated product guesses as executable work, and graph traversal/priority calculation no longer follows deleted aims.",
+      "lesson": "Run consistency checks after deleting or merging graph nodes, and represent discovery hypotheses as human-dependent whenever operator evidence is an explicit prerequisite.",
+      "pattern": "Keep autonomous selection honest by reconciling status semantics and dangling graph references before inventing new implementation work."
+    },
+    {
+      "date": 1785401072025,
+      "context": "Graph maintenance requested: organize aims and replace undifferentiated default connection weights where the graph supports a reasoned relative contribution.",
+      "outcome": "Reduced direct-child clutter on Achieve Economic Autonomy from 24 to 16 and on enable autonomy from 22 to 18 by removing redundant shortcut edges. Rehomed the completed AI NATION grant beneath non-dilutive funding and the cancelled ERC-8004 integration beneath its broader identity aim. Differentiated 31 formerly default-weight edges across the economic/autonomy branches, preserved the one existing non-default edge, added causal explanations, and retained existing relative-position hints.",
+      "effectiveness": "The two central catch-all branches now express program hierarchy and relative causal importance: real beneficiary value and the AI-transformation business dominate economic flow; the end-to-end agent loop, real-world effectors, and economic survival dominate autonomy flow. Historical, exploratory, and cancelled routes receive lower influence without deletion.",
+      "lesson": "Connection weights are sibling-relative flow allocations. Apply them locally at coherent strategy parents, preserve explicit prior weights and layout metadata, and remove redundant direct shortcuts before calibrating ratios."
+    }
+  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -46,9 +63,9 @@
     "6a3432ea-a0c5-4df4-b533-68298be7b7fc"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1779090933295
+    "state": "review",
+    "comment": "All direct meta-organization branches are done or awaiting review, including graph-maintenance tooling. Awaiting acceptance of the organized state.",
+    "date": 1785399382135
   },
   "intrinsicValue": 0,
   "cost": 1,

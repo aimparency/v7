@@ -15,7 +15,8 @@
         -1.3613170044740954,
         2.388866125632768
       ],
-      "weight": 1
+      "weight": 0.5,
+      "explanation": "Forecasting tournaments may sharpen judgment, but their path to operating revenue is indirect."
     },
     {
       "aimId": "297ad708-41ef-409e-a045-ff8dff0209ff",
@@ -23,7 +24,8 @@
         -1.1716741944137075,
         2.208433739586721
       ],
-      "weight": 1
+      "weight": 2,
+      "explanation": "Human cooperation is a major route from autonomous capability to trusted real-economy work."
     },
     {
       "aimId": "7dfd41bf-3244-4a39-87d8-89fe285671d6",
@@ -31,15 +33,8 @@
         -2.249848715034869,
         -1.0900370449924843
       ],
-      "weight": 1
-    },
-    {
-      "aimId": "16c7ebd4-7f1f-482a-b4c6-74f8fab21644",
-      "relativePosition": [
-        2.814066847737692,
-        0.5049905741352125
-      ],
-      "weight": 1
+      "weight": 1.5,
+      "explanation": "Authoritative financial visibility is necessary to tell whether autonomy is economically sustainable."
     },
     {
       "aimId": "365e78d0-ed64-47d7-9902-b575d493c6e4",
@@ -47,7 +42,8 @@
         -1.6275264632334234,
         1.766726295323816
       ],
-      "weight": 1
+      "weight": 1.5,
+      "explanation": "Real payment access matters once revenue exists, but should not outrank creating value people choose to pay for."
     },
     {
       "aimId": "22a8c239-ac3d-40d6-8668-ec443a456977",
@@ -55,15 +51,8 @@
         0.5584539676597016,
         -3.3023316901074047
       ],
-      "weight": 1
-    },
-    {
-      "aimId": "ca0cd74f-fe9c-44d1-9fa9-85fca97439de",
-      "relativePosition": [
-        -2.9811820994928944,
-        0.12338601790679775
-      ],
-      "weight": 1
+      "weight": 1,
+      "explanation": "Local-first open source supports adoption and trust, with an indirect contribution to economic survival."
     },
     {
       "aimId": "69ce064d-b98b-4453-a0cd-901e21040a67",
@@ -71,7 +60,8 @@
         -1.610236128350682,
         -1.8432860051978566
       ],
-      "weight": 1
+      "weight": 0.5,
+      "explanation": "Automatic prioritization is useful enabling infrastructure, but the completed feature is not itself market validation."
     },
     {
       "aimId": "5ebd58db-d352-4fe2-bd73-15ad620a2978",
@@ -79,7 +69,8 @@
         0.6958809868830791,
         2.40119754541242
       ],
-      "weight": 1
+      "weight": 3,
+      "explanation": "Creating substantial user benefit is a primary route to durable willingness to collaborate and pay."
     },
     {
       "aimId": "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
@@ -87,24 +78,16 @@
         -0.08911608104545472,
         4.527351567322584
       ],
-      "weight": 1
+      "weight": 1.5,
+      "explanation": "Non-dilutive funding extends runway, while remaining secondary to recurring externally valued work."
     },
     {
       "aimId": "0622adb1-e79d-483c-b894-199d92ca199d",
       "relativePosition": [
-        1.1507296264320126,
-        -1.6094202114261336
+        -0.956676014939872,
+        -3.6834442973609054
       ],
-      "weight": 0.9890109890109888,
-      "explanation": ""
-    },
-    {
-      "aimId": "19f32e9c-0ce1-4f61-9cf7-2bbaee656301",
-      "relativePosition": [
-        -0.0035944870417676895,
-        2.499997415931246
-      ],
-      "weight": 1
+      "weight": 0.9890109890109888
     },
     {
       "aimId": "cabe6e06-8988-4145-b884-9ef5bc68f660",
@@ -112,15 +95,8 @@
         -0.6159164165759955,
         2.4229418003311975
       ],
-      "weight": 1
-    },
-    {
-      "aimId": "80b53c24-a0e8-48af-8acc-b3a76fde7513",
-      "relativePosition": [
-        -2.4400960044370343,
-        0.543995853964365
-      ],
-      "weight": 1
+      "weight": 2,
+      "explanation": "The near-term funding milestone materially extends runway but combines revenue and grants rather than proving durable autonomy alone."
     },
     {
       "aimId": "9548e95a-a911-41a5-b404-0cc289633acd",
@@ -128,16 +104,8 @@
         0.14766557791481175,
         -2.4956351650630113
       ],
-      "weight": 1,
-      "explanation": "Paying client outcomes provide real economic survival feedback."
-    },
-    {
-      "aimId": "032b8a47-d3d2-4974-bdcd-559a377164ef",
-      "relativePosition": [
-        -2.4930910303838134,
-        -0.18573398778838252
-      ],
-      "weight": 1
+      "weight": 4,
+      "explanation": "A real AI-transformation business is the strongest current path to repeatable revenue and grounded autonomy."
     },
     {
       "aimId": "1a401004-2c03-45e7-96a9-a2c15e7c0b2d",
@@ -145,7 +113,8 @@
         0.08937054090362995,
         -2.49840207060805
       ],
-      "weight": 1
+      "weight": 1.5,
+      "explanation": "Reducing single-client dependence protects continuity once the first market foothold exists."
     },
     {
       "aimId": "c0a45822-0106-46fd-8819-244d3611488b",
@@ -153,8 +122,8 @@
         1.6381342479213292,
         1.8885222227411624
       ],
-      "weight": 1,
-      "explanation": "Real outcomes must change strategy; simulated credits do not count as survival evidence."
+      "weight": 3,
+      "explanation": "Closing the reality-to-priority loop is essential for adapting from actual economic outcomes."
     },
     {
       "aimId": "1171de2f-a08e-4bb3-bf2a-7d279e4cb066",
@@ -162,8 +131,8 @@
         -1.2746976051103918,
         -2.150615264412915
       ],
-      "weight": 1,
-      "explanation": "Economic stability must be observed through authoritative external systems."
+      "weight": 2,
+      "explanation": "Authoritative external signals keep economic decisions grounded without duplicating source systems."
     },
     {
       "aimId": "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
@@ -171,8 +140,8 @@
         0.8812891865630943,
         -2.339514772265172
       ],
-      "weight": 1,
-      "explanation": "The economic model defines measurable sustainability without simulating success."
+      "weight": 2,
+      "explanation": "A calibrated priority model turns real evidence into coherent allocation decisions."
     },
     {
       "aimId": "7f2bae54-03a6-481f-8de7-114fba05c112",
@@ -180,26 +149,26 @@
         0.9321784990755588,
         2.3197075776617275
       ],
-      "weight": 1,
-      "explanation": "External acceptance, use, or payment is the real survival feedback for economic autonomy."
+      "weight": 4,
+      "explanation": "Accepted value for a real beneficiary is the most direct falsifiable proof that autonomous work matters."
     },
     {
-      "aimId": "fdd2059a-2d3b-49b4-994b-023799c90397",
+      "aimId": "b52d435e-72b5-4839-b0cd-fbc916b46a03",
       "relativePosition": [
-        -2.4661367223582142,
-        0.4100849505118225
+        -1.2190095195571486,
+        -2.1826625463477054
       ],
       "weight": 1,
-      "explanation": "Turns economic autonomy into a near-term real-market falsification test."
+      "explanation": "The SPC application is a dilutive funding and company-building attempt that could extend runway, external validation, and the path to sustainable economic autonomy; it is not non-dilutive funding."
     },
     {
-      "aimId": "07178308-5d5c-4340-9697-3c68105602d5",
+      "aimId": "93e0d4c2-eed1-4d42-8d12-a82c1b291d6b",
       "relativePosition": [
-        -1.1707569349050446,
-        -2.20892014327629
+        0.8350248293188777,
+        -2.35642388682957
       ],
       "weight": 1,
-      "explanation": "Survival engine requires real economic stability."
+      "explanation": "Closes the first real revenue-to-compute reinvestment loop."
     }
   ],
   "supportedAims": [

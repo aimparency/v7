@@ -15,14 +15,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Technical draft preserved, but ordinary ZIM applications have been paused since 7 July 2026. Monitor the official reopening notice; do not submit meanwhile.",
-    "date": 1782854152141
+    "state": "human-dependent",
+    "comment": "The technical draft is preserved, but ordinary ZIM applications remain institutionally paused. Resume only after an official reopening and human confirmation of company eligibility and financing.",
+    "date": 1785399290682
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 recognized that the remainder is an external institutional-state change plus legal/company validation, not active autonomous implementation."
 }

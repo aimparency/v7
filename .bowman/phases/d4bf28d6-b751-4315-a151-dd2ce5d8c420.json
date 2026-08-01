@@ -4,6 +4,7 @@
   "to": 1734130800000,
   "order": 0,
   "parent": null,
+  "childPhaseIds": [],
   "commitments": [],
   "name": "early"
 }

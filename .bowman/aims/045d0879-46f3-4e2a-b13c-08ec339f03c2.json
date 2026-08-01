@@ -2,6 +2,8 @@
   "id": "045d0879-46f3-4e2a-b13c-08ec339f03c2",
   "text": "economic endeavors",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -28,11 +30,15 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1769966426220
+    "state": "human-dependent",
+    "comment": "The completed preparation branch leaves only the human-dependent economic endeavor; further progress requires Felix’s participation in a real venture or field test.",
+    "date": 1785399101103
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 found no actionable open child: one direct branch is done and the other is human-dependent. Changed the umbrella from open to human-dependent so autonomous discovery reflects the actual gate."
 }

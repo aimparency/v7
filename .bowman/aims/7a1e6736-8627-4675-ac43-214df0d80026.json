@@ -11,14 +11,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Reconciliation 2026-05-31: only the RAW weight field was built (AimCreationModal.vue:303 'Weight:' NumericTextInput). The specified %-input + loopWeight-aware weight calculation was NOT implemented — no percentage UI, no shareToWeight conversion anywhere. Superseded by the new connection contribution-% + explanation modal aim, which implements the %/loopWeight logic properly and extends it to the graph drag flows.",
-    "date": 1780232495154
+    "state": "cancelled",
+    "comment": "Superseded by the connection contribution-percentage and explanation modal, which implements the intended percentage/loopWeight conversion in a broader consistent flow.",
+    "date": 1785399345167
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Cancelled during status reconciliation on 2026-07-30 because the aim’s own prior analysis identifies a newer implementation that supersedes this raw creation-form approach."
 }

@@ -1,8 +1,8 @@
 {
   "id": "8cce82bb-e8f2-4845-b90e-6d6749238148",
-  "text": "Normalize connection-size force without slowing small-aim layout convergence",
-  "description": "Fix the regression introduced when hierarchy force changed from a 0.5–1.0 share weight to absolute flowValue*5 with a 0.02 floor. Absolute graph value scale should not determine convergence speed. Normalize positive transported flow against a robust reference across visible connections, compress extreme ratios, and retain a meaningful minimum force. Keep inverse-surface endpoint movement so smaller aims move more than larger aims. Verify relative strength, scale invariance, zero-flow fallback, and surface movement with focused tests.",
-  "reflection": "Confirmed regression from commit history: hierarchy force previously used 0.5+0.5*share, then changed to clamp(flowValue*5, 0.02, 1.5), causing many small-flow connections to receive ~0.02 rather than the former 0.5–1.0 and settle roughly 25× more slowly. Implemented median-relative visible-flow normalization with square-root compression and 0.5–1.5 bounds; a median connection is 0.75. Preserved inverse-surface endpoint movement. This is invariant to absolute graph value scale and computed only when graph links update, not every animation frame. Verification: graph-forces tests 7/7 pass; frontend vue-tsc passes.",
+  "text": "Normalize connection force per incident aim while preserving pair balance and thick-edge influence",
+  "description": "For each visible hierarchy connection, normalize its positive transported flow against the total positive flow incident to each endpoint. Combine the two endpoint shares symmetrically as flow/sqrt(sourceTotal*targetTotal), then compress to a stable settling range. This makes thick connections influence layout more than thin siblings, remains invariant to absolute graph value scale, and gives both endpoints exactly the same pair coefficient. Apply movement inversely by aim surface so every internal pair conserves the surface-weighted center; only deliberate external centering or user constraints may move the graph globally.",
+  "reflection": "Revisited after Felix's force-normalization observation on 29 July 2026. The previous implementation normalized flow against the median of all visible connections, so unrelated graph edges influenced a node's force scale. Replaced it with symmetric endpoint normalization: edgeStrength = flow/sqrt(totalIncidentFlow(source)*totalIncidentFlow(target)), square-root compressed into 0.25–0.75 with a sole edge at 0.75 and a 0.5 fallback for absent flow. Thick sibling edges remain stronger; multiplying every flow by the same constant changes nothing; source and target share one coefficient, so the existing radius² inverse-mass movement remains equal-and-opposite and conserves the surface-weighted graph center. Explicitly subtracting aggregate force is unnecessary and would hide asymmetric-force bugs. Verification: focused graph-force tests 9/9, frontend vue-tsc, staged/unstaged diff checks.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -24,13 +24,12 @@
     }
   ],
   "supportedAims": [
-    "7815eb52-72fc-410c-9e4a-935d6abb745e",
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+    "7815eb52-72fc-410c-9e4a-935d6abb745e"
   ],
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Normalized force weighting and focused verification are complete; awaiting Felix's visual acceptance in the existing runtime.",
+    "comment": "Symmetric per-aim connection normalization implemented and internally verified; awaiting visual acceptance in the existing graph runtime.",
     "date": 1784881877278
   },
   "intrinsicValue": 0,

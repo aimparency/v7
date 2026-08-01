@@ -22,6 +22,11 @@ export interface CameraFrame {
   scale: number
 }
 
+export interface GraphOverviewOptions {
+  percentile?: number
+  zoomOut?: number
+}
+
 export interface LayoutCandidate {
   fromWeight: number
   start: vec2.T
@@ -59,6 +64,73 @@ export function fitCameraRect(
     offset: vec2.fromValues(-(rect.minX + rect.maxX) / 2, -(rect.minY + rect.maxY) / 2),
     scale: Math.min(scaleX, scaleY, maxScale),
   }
+}
+
+function surfaceWeightedCenter(nodes: MapNode[]): vec2.T {
+  let weightedX = 0
+  let weightedY = 0
+  let totalWeight = 0
+
+  for (const node of nodes) {
+    const weight = Math.max(node.r, 0.000001) ** 2
+    weightedX += node.pos[0] * weight
+    weightedY += node.pos[1] * weight
+    totalWeight += weight
+  }
+
+  return totalWeight > 0
+    ? vec2.fromValues(weightedX / totalWeight, weightedY / totalWeight)
+    : vec2.fromValues(0, 0)
+}
+
+export function graphOverviewFrame(
+  nodes: MapNode[],
+  xratio: number,
+  yratio: number,
+  options: GraphOverviewOptions = {},
+): CameraFrame | null {
+  const validNodes = nodes.filter(node =>
+    Number.isFinite(node.pos[0])
+    && Number.isFinite(node.pos[1])
+    && Number.isFinite(node.r)
+    && node.r >= 0
+  )
+  if (validNodes.length === 0) return null
+
+  const percentile = Math.min(1, Math.max(0.01, options.percentile ?? 0.9))
+  const zoomOut = Math.max(1, options.zoomOut ?? 1.2)
+  const initialCenter = surfaceWeightedCenter(validNodes)
+  const retainedCount = Math.max(1, Math.ceil(validNodes.length * percentile))
+  const retainedNodes = [...validNodes]
+    .sort((a, b) => {
+      const distanceA = Math.hypot(
+        a.pos[0] - initialCenter[0],
+        a.pos[1] - initialCenter[1],
+      ) + a.r
+      const distanceB = Math.hypot(
+        b.pos[0] - initialCenter[0],
+        b.pos[1] - initialCenter[1],
+      ) + b.r
+      return distanceA - distanceB
+    })
+    .slice(0, retainedCount)
+
+  // Recompute after trimming so a distant outlier cannot still pull the
+  // camera away from the 90% of aims we intend to frame.
+  const center = surfaceWeightedCenter(retainedNodes)
+  let halfWidth = 1
+  let halfHeight = 1
+  for (const node of retainedNodes) {
+    halfWidth = Math.max(halfWidth, Math.abs(node.pos[0] - center[0]) + node.r)
+    halfHeight = Math.max(halfHeight, Math.abs(node.pos[1] - center[1]) + node.r)
+  }
+
+  return fitCameraRect({
+    minX: center[0] - halfWidth,
+    minY: center[1] - halfHeight,
+    maxX: center[0] + halfWidth,
+    maxY: center[1] + halfHeight,
+  }, xratio, yratio, 1 / zoomOut)
 }
 
 export const useMapStore = defineStore('map', {
@@ -212,6 +284,11 @@ export const useMapStore = defineStore('map', {
         maxX: node.pos[0] + radius,
         maxY: node.pos[1] + radius,
       }, duration, getNodeFocusScale(node))
+    },
+    centerOnGraph(nodes: MapNode[], duration = 1000, options: GraphOverviewOptions = {}) {
+      const destination = graphOverviewFrame(nodes, this.xratio, this.yratio, options)
+      if (!destination) return
+      this.animateCamera(destination.offset, destination.scale, duration)
     },
     resetView() {
       // Reset pan/zoom to defaults (called when switching projects)

@@ -29,23 +29,51 @@ describe('surfaceMovementShares', () => {
 })
 
 describe('normalizedFlowForceWeights', () => {
-  it('keeps a typical visible connection near the previous settling strength', () => {
-    expect(normalizedFlowForceWeights([1])).toEqual([0.75])
+  it('keeps a sole connection at the established settling strength', () => {
+    expect(normalizedFlowForceWeights([
+      { sourceId: 'a', targetId: 'b', flowValue: 1 },
+    ])).toEqual([0.75])
   })
 
-  it('makes larger flows stronger without starving smaller flows', () => {
-    const [small, typical, large] = normalizedFlowForceWeights([0.25, 1, 4])
-    expect(small).toBe(0.5)
-    expect(typical).toBe(0.75)
-    expect(large).toBe(1.5)
+  it('normalizes per aim while making a thicker sibling stronger', () => {
+    const weights = normalizedFlowForceWeights([
+      { sourceId: 'parent', targetId: 'small-child', flowValue: 1 },
+      { sourceId: 'parent', targetId: 'large-child', flowValue: 4 },
+    ])
+    const small = weights[0]!
+    const large = weights[1]!
+
+    expect(large).toBeGreaterThan(small)
+    expect(small).toBeGreaterThan(0.25)
+    expect(large).toBeLessThanOrEqual(0.75)
   })
 
   it('is invariant to the graph absolute value scale', () => {
-    expect(normalizedFlowForceWeights([0.01, 0.04, 0.16]))
-      .toEqual(normalizedFlowForceWeights([1, 4, 16]))
+    const links = [
+      { sourceId: 'a', targetId: 'b', flowValue: 1 },
+      { sourceId: 'a', targetId: 'c', flowValue: 4 },
+      { sourceId: 'c', targetId: 'd', flowValue: 16 },
+    ]
+    expect(normalizedFlowForceWeights(links.map(link => ({
+      ...link,
+      flowValue: link.flowValue * 0.01,
+    })))).toEqual(normalizedFlowForceWeights(links))
   })
 
   it('uses a stable non-trivial fallback for absent flow', () => {
-    expect(normalizedFlowForceWeights([0, Number.NaN])).toEqual([0.5, 0.5])
+    expect(normalizedFlowForceWeights([
+      { sourceId: 'a', targetId: 'b', flowValue: 0 },
+      { sourceId: 'b', targetId: 'c', flowValue: Number.NaN },
+    ])).toEqual([0.5, 0.5])
+  })
+
+  it('uses one symmetric strength for a pair regardless of its direction', () => {
+    const weights = normalizedFlowForceWeights([
+      { sourceId: 'a', targetId: 'b', flowValue: 3 },
+      { sourceId: 'b', targetId: 'a', flowValue: 3 },
+    ])
+    const forward = weights[0]!
+    const reverse = weights[1]!
+    expect(forward).toBe(reverse)
   })
 })

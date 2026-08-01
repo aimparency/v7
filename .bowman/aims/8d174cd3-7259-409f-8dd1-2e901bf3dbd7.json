@@ -2,6 +2,7 @@
   "id": "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
   "text": "Secure non-dilutive funding for Aimparency without delaying real revenue",
   "description": "Pursue funding routes that are officially open, structurally eligible, and proportionate to Aimparency's maturity. Current order as of 22 July 2026: (1) Prototype Fund individual open-infrastructure application for October, (2) paid Wilde Möhre/Herzog Records diagnostics in parallel as the fastest economic feedback, (3) monitor NLnet's general call reopening after summer, (4) run one EXIST eligibility check with a university network if founder qualifications fit, (5) pursue either Pro FIT Berlin or BayTOU only after deciding the company seat, and (6) monitor ZIM rather than submitting while its 7 July application stop remains. Source-verified analysis: meta/funding-landscape-2026-07-22.md. Grants complement real customers; they do not prove economic stability.",
+  "reflection": "Status reconciliation on 2026-07-30 found all five direct funding children human-dependent. The umbrella now reflects that gate.",
   "reflections": [],
   "archived": false,
   "color": null,
@@ -51,20 +52,28 @@
         0.09425458824001247
       ],
       "weight": 1
+    },
+    {
+      "aimId": "16c7ebd4-7f1f-482a-b4c6-74f8fab21644",
+      "relativePosition": [
+        1.9857510167245243,
+        1.5188129903241931
+      ],
+      "weight": 0.5,
+      "explanation": "Historical grant attempt belongs under the non-dilutive-funding strategy; its completed negative result is useful evidence but not a current primary path."
     }
   ],
   "supportedAims": [
     "3253bc9e-14fe-4c9b-9849-588620518517",
-    "cffdcd91-fd9c-45e4-98fd-e265650be143",
     "cabe6e06-8988-4145-b884-9ef5bc68f660"
   ],
   "committedIn": [
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Grant landscape researched; ZIM, KI4KMU, EIC application drafts written. Blocked on GmbH/UG incorporation for actual submission.",
-    "date": 1782853875599
+    "state": "human-dependent",
+    "comment": "Research and drafts are complete. Every remaining funding path requires founder eligibility/legal decisions, incorporation or credentials, outreach, and institutional submission.",
+    "date": 1785399345683
   },
   "intrinsicValue": 0,
   "cost": 1,

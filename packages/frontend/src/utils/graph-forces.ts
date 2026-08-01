@@ -11,34 +11,50 @@ export function surfaceMovementShares(fromRadius: number, intoRadius: number) {
   }
 }
 
-const BASE_FLOW_FORCE_WEIGHT = 0.75
-const MIN_FLOW_FORCE_WEIGHT = 0.5
-const MAX_FLOW_FORCE_WEIGHT = 1.5
+interface FlowForceLink {
+  sourceId: string
+  targetId: string
+  flowValue: number
+}
 
-export function normalizedFlowForceWeights(flowValues: number[]) {
-  const positiveFlows = flowValues
-    .filter(flow => Number.isFinite(flow) && flow > 0)
-    .sort((a, b) => a - b)
+const SINGLE_CONNECTION_FORCE_WEIGHT = 0.75
+const MIN_POSITIVE_FLOW_FORCE_WEIGHT = 0.25
+const ABSENT_FLOW_FORCE_WEIGHT = 0.5
 
-  if (positiveFlows.length === 0) {
-    return flowValues.map(() => MIN_FLOW_FORCE_WEIGHT)
+export function normalizedFlowForceWeights(links: FlowForceLink[]) {
+  const incidentFlow = new Map<string, number>()
+
+  for (const link of links) {
+    const flow = Number.isFinite(link.flowValue) && link.flowValue > 0
+      ? link.flowValue
+      : 0
+    if (flow === 0) continue
+    incidentFlow.set(link.sourceId, (incidentFlow.get(link.sourceId) ?? 0) + flow)
+    incidentFlow.set(link.targetId, (incidentFlow.get(link.targetId) ?? 0) + flow)
   }
 
-  const middle = Math.floor(positiveFlows.length / 2)
-  const referenceFlow = positiveFlows.length % 2 === 0
-    ? (positiveFlows[middle - 1]! + positiveFlows[middle]!) / 2
-    : positiveFlows[middle]!
+  return links.map(link => {
+    const flow = link.flowValue
+    if (!Number.isFinite(flow) || flow <= 0) return ABSENT_FLOW_FORCE_WEIGHT
 
-  return flowValues.map(flow => {
-    if (!Number.isFinite(flow) || flow <= 0) return MIN_FLOW_FORCE_WEIGHT
+    const sourceTotal = incidentFlow.get(link.sourceId) ?? flow
+    const targetTotal = incidentFlow.get(link.targetId) ?? flow
 
-    // Flow value is area-like and can span orders of magnitude. Comparing its
-    // square root to the visible median keeps relative strength without making
-    // the graph's absolute value scale determine overall convergence speed.
-    const relativeStrength = Math.sqrt(flow / referenceFlow)
-    return Math.max(
-      MIN_FLOW_FORCE_WEIGHT,
-      Math.min(MAX_FLOW_FORCE_WEIGHT, BASE_FLOW_FORCE_WEIGHT * relativeStrength),
+    // Normalize at both aims, then combine the two endpoint shares
+    // symmetrically. This is flow / sqrt(sourceTotal * targetTotal), so both
+    // ends use exactly the same pair strength: connection forces remain
+    // equal-and-opposite and cannot introduce global drift. A thicker
+    // connection still has more influence than a thinner sibling.
+    const endpointNormalizedStrength = Math.min(
+      1,
+      flow / Math.sqrt(sourceTotal * targetTotal),
     )
+
+    // Flow can span orders of magnitude. Square-root compression keeps small
+    // structural links active while a sole connection retains the established
+    // 0.75 settling strength.
+    return MIN_POSITIVE_FLOW_FORCE_WEIGHT
+      + (SINGLE_CONNECTION_FORCE_WEIGHT - MIN_POSITIVE_FLOW_FORCE_WEIGHT)
+        * Math.sqrt(endpointNormalizedStrength)
   })
 }

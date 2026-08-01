@@ -236,7 +236,11 @@ export function useGraphSimulation() {
         })
       }
     })
-    const flowForceWeights = normalizedFlowForceWeights(newLinks.map(link => link.flowValue))
+    const flowForceWeights = normalizedFlowForceWeights(newLinks.map(link => ({
+      sourceId: link.source.id,
+      targetId: link.target.id,
+      flowValue: link.flowValue,
+    })))
     newLinks.forEach((link, index) => {
       link.forceWeight = flowForceWeights[index]!
     })
@@ -474,8 +478,9 @@ export function useGraphSimulation() {
             
             vec2.scale(delta, link.relativePosition, rSum)
 
-            // Relative connection size affects layout, but the absolute graph
-            // value scale must not make every hierarchy force nearly vanish.
+            // Connection strength is normalized at both incident aims and
+            // combined symmetrically, so thick flows matter more without
+            // breaking the equal-and-opposite pair-force invariant.
             const flowWeight = link.forceWeight
 
             // Parent

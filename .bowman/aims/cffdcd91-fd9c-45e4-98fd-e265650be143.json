@@ -12,15 +12,8 @@
         0.8129022005477993,
         3.0211127554504777
       ],
-      "weight": 1
-    },
-    {
-      "aimId": "297ad708-41ef-409e-a045-ff8dff0209ff",
-      "relativePosition": [
-        0.4906069536446528,
-        -4.412688666099994
-      ],
-      "weight": 1
+      "weight": 1,
+      "explanation": "The completed Echo model remains evidence for one autonomous revenue pattern, not the whole autonomy program."
     },
     {
       "aimId": "045d0879-46f3-4e2a-b13c-08ec339f03c2",
@@ -28,7 +21,8 @@
         -1.6843274699234352,
         1.7728002509485083
       ],
-      "weight": 1
+      "weight": 2,
+      "explanation": "Real economic participation is a major autonomy constraint and feedback channel."
     },
     {
       "aimId": "facbacb5-1589-4b73-8ecb-97d7bb32bd99",
@@ -36,7 +30,8 @@
         -1.5916894469828695,
         -0.9420857653467262
       ],
-      "weight": 1
+      "weight": 1,
+      "explanation": "The completed runtime mapping supplies architectural evidence for the autonomy program."
     },
     {
       "aimId": "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d",
@@ -44,7 +39,8 @@
         1.468650285436083,
         -2.0231328031269995
       ],
-      "weight": 1
+      "weight": 2,
+      "explanation": "Durable project-local state is foundational for autonomy that survives browser and session boundaries."
     },
     {
       "aimId": "74b079de-667c-47f6-8017-fb202e2affd9",
@@ -52,7 +48,8 @@
         2.4699432845894744,
         0.38649731035462564
       ],
-      "weight": 1
+      "weight": 0.5,
+      "explanation": "External runtime comparison is exploratory and should not dominate delivery of the native loop."
     },
     {
       "aimId": "2ff1fd7a-7e02-4197-a558-174622db7cbe",
@@ -60,7 +57,8 @@
         0.2813711773672627,
         -2.4841155892081512
       ],
-      "weight": 1
+      "weight": 1.5,
+      "explanation": "A bounded local policy is important infrastructure for safe autonomous action."
     },
     {
       "aimId": "dec5c82b-c2cc-4d56-a2b4-8c0fa981a7cc",
@@ -68,7 +66,8 @@
         -3.154239628506225,
         -0.614828632450909
       ],
-      "weight": 1
+      "weight": 1.5,
+      "explanation": "Requesting genuinely human-dependent action is a core bridge across the autonomy boundary."
     },
     {
       "aimId": "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5",
@@ -76,7 +75,8 @@
         3.064965629209811,
         -1.2442914595315515
       ],
-      "weight": 1
+      "weight": 4,
+      "explanation": "The verified discover→plan→execute→verify→submit loop is the central technical autonomy capability."
     },
     {
       "aimId": "50188560-6c74-4005-8061-7e1090f28895",
@@ -84,7 +84,8 @@
         -2.464762689053946,
         0.4182641350242238
       ],
-      "weight": 1
+      "weight": 0.5,
+      "explanation": "The completed watchdog UI is supporting observability rather than autonomy itself."
     },
     {
       "aimId": "3253bc9e-14fe-4c9b-9849-588620518517",
@@ -92,7 +93,8 @@
         -1.273845889712005,
         -3.609367041913996
       ],
-      "weight": 1
+      "weight": 3,
+      "explanation": "Economic autonomy is the real-world survival test for otherwise technical agency."
     },
     {
       "aimId": "83c4a240-b5b5-4eec-ad83-552db27c2b53",
@@ -100,7 +102,8 @@
         -0.46082154662800157,
         -2.4571616760326083
       ],
-      "weight": 1
+      "weight": 0.25,
+      "explanation": "This cancelled hackathon route is retained as weak historical evidence, not a present strategy."
     },
     {
       "aimId": "5af61b3e-5b5e-43ba-af2c-23977d55b910",
@@ -108,7 +111,8 @@
         1.1241535381443817,
         -2.2329977211536667
       ],
-      "weight": 1
+      "weight": 1.5,
+      "explanation": "Self-rebuilding workers improve continuity, while remaining subordinate to the end-to-end loop."
     },
     {
       "aimId": "27d63681-1973-4243-883f-d91f3cc4e532",
@@ -116,7 +120,8 @@
         -1.760755060579601,
         1.7747511421727062
       ],
-      "weight": 1
+      "weight": 0.75,
+      "explanation": "Idle-agent guidance is a completed enabling mechanism with limited independent mission value."
     },
     {
       "aimId": "f02454a1-f8bf-4ce8-997b-fd52b2094a2f",
@@ -124,7 +129,8 @@
         -2.4619083681756306,
         0.43474956780519525
       ],
-      "weight": 1
+      "weight": 0.75,
+      "explanation": "Reliable supervisor communication supports continuity but is not the primary autonomy outcome."
     },
     {
       "aimId": "051ae7cd-9509-4451-a686-2041d9b38a98",
@@ -132,7 +138,8 @@
         0.3772041092225206,
         -2.471379586381996
       ],
-      "weight": 1
+      "weight": 0.75,
+      "explanation": "Mission-path context is enabling infrastructure for coherent autonomous decisions."
     },
     {
       "aimId": "12da17c9-7c18-479c-8dc3-e78bc0a35805",
@@ -140,7 +147,8 @@
         -0.8138262627739067,
         -2.363828846177205
       ],
-      "weight": 1
+      "weight": 0.5,
+      "explanation": "Accurate concise tool descriptions reduce execution errors but have indirect autonomy impact."
     },
     {
       "aimId": "cca28c6c-f3fa-4b13-9078-62fcb80a5f5e",
@@ -148,7 +156,8 @@
         2.3071775454641705,
         -0.9627729606225582
       ],
-      "weight": 1
+      "weight": 0.75,
+      "explanation": "Timeout reliability supports the loop without defining its capability."
     },
     {
       "aimId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
@@ -156,32 +165,17 @@
         -0.08699397359144834,
         -2.498485951243026
       ],
-      "weight": 1
+      "weight": 3,
+      "explanation": "Real-world effectors are essential for moving from internal reasoning to bounded external action."
     },
     {
-      "aimId": "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
+      "aimId": "b52d435e-72b5-4839-b0cd-fbc916b46a03",
       "relativePosition": [
-        -5.395365621715862,
-        -0.7865744836039664
+        -1.1700661175852607,
+        2.2092861472609098
       ],
-      "weight": 1.0526315789473684,
-      "explanation": ""
-    },
-    {
-      "aimId": "19f32e9c-0ce1-4f61-9cf7-2bbaee656301",
-      "relativePosition": [
-        2.4212563542487144,
-        -0.6225091702217925
-      ],
-      "weight": 1
-    },
-    {
-      "aimId": "cabe6e06-8988-4145-b884-9ef5bc68f660",
-      "relativePosition": [
-        -1.1085418605858717,
-        -2.2407889109259744
-      ],
-      "weight": 1
+      "weight": 0.8,
+      "explanation": "The application process is also a live demonstration that the aim graph can preserve human intent and direct replaceable autonomous AI executors across a long-running task."
     }
   ],
   "supportedAims": [

@@ -2,6 +2,7 @@
   "id": "812f2008-2ce4-4b66-bf87-53be001b712a",
   "text": "Performance optimization",
   "description": "",
+  "reflection": "Reconciled this stale open container. Its two children are already done with implementation evidence: 500ms viewport-based label culling and sweep-and-prune/thresholded graph layout updates. No open child remains; future measured performance problems should become concrete new aims.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -23,9 +24,7 @@
       "weight": 1
     }
   ],
-  "supportedAims": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ],
+  "supportedAims": [],
   "committedIn": [],
   "status": {
     "state": "review",
@@ -37,6 +36,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Reconciled this stale open container. Its two children are already done with implementation evidence: 500ms viewport-based label culling and sweep-and-prune/thresholded graph layout updates. No open child remains; future measured performance problems should become concrete new aims."
+  "valueVariance": 0
 }

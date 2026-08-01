@@ -16,14 +16,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Projektskizze complete (meta/ki4kmu-projektskizze-draft.md). Submit by 15 Oct 2026 after incorporation.",
-    "date": 1782854152141
+    "state": "human-dependent",
+    "comment": "Draft preparation exists. Submission requires Felix to establish/confirm eligibility, create EU Login access, approve and record the pitch, and make representations through the EU Funding Portal.",
+    "date": 1785399290576
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 converted the aim’s explicitly listed human actions into accurate state semantics. No credential-free autonomous submission step remains."
 }

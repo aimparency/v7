@@ -2,18 +2,11 @@
   "id": "22dd4138-d7c2-436a-8891-15568dacf338",
   "text": "UI",
   "description": "",
+  "reflection": "Autonomous relevance check on 2026-07-30 found this open aim was a completed umbrella, not an actionable implementation leaf. Its direct children are list view (done), watchdog enhancements (done), Project loading page (review), and Mobile support (review). Reconciled to review so priority discovery no longer mistakes the container for unfinished build work.",
   "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
-    {
-      "aimId": "6bbb740c-2281-4dbb-83c8-a391e626312a",
-      "relativePosition": [
-        2.523198469802153,
-        -3.124057484937025
-      ],
-      "weight": 1
-    },
     {
       "aimId": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
       "relativePosition": [
@@ -46,6 +39,14 @@
       ],
       "weight": 0.9987515605493135,
       "explanation": ""
+    },
+    {
+      "aimId": "a0e80284-510a-45d6-a55c-c40f727118e8",
+      "relativePosition": [
+        -2.3354779223600746,
+        0.8919321017704598
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -53,9 +54,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1774783343054
+    "state": "review",
+    "comment": "All direct UI branches are done or awaiting user acceptance in review; the umbrella itself now awaits integrated UI acceptance.",
+    "date": 1785399005237
   },
   "intrinsicValue": 0,
   "cost": 1,

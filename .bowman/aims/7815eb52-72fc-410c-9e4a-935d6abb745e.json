@@ -35,9 +35,7 @@
       "explanation": "Corrects the convergence regression while preserving connection-size-dependent force."
     }
   ],
-  "supportedAims": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ],
+  "supportedAims": [],
   "committedIn": [
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5",
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"

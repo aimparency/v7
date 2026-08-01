@@ -1,7 +1,7 @@
 {
   "id": "051ae7cd-9509-4451-a686-2041d9b38a98",
   "text": "get aim context should return (almost) all parent aims - path to root.",
-  "description": "when creating that path: beware of cycles. And maybe a max of 12 parents. When parents branch, follow those with the highest absolute/actual value inflow",
+  "description": "Return full root ancestry for orientation. Preserve the value-guided path_to_root for backward compatibility, and add paths_to_root containing every distinct root-first path through branching parents. Guard each branch against cycles, exclude cyclic dead ends from root paths, use explicit safety bounds with a truncation flag, and keep MCP and filesystem-backed agent-tools behavior aligned.",
   "reflections": [
     {
       "date": 1782054663539,
@@ -10,6 +10,14 @@
       "effectiveness": "Reusing the existing value model gave principled branch selection for free and replaced N per-parent round-trips with one graph load.",
       "lesson": "When a tool needs graph-wide reasoning, load the whole aim list once and reuse calculateAimValues rather than fetching node-by-node.",
       "pattern": "reuse-existing-value-model"
+    },
+    {
+      "date": 1785584783365,
+      "context": "Felix asked whether get_aim_context returns every ancestry path when parents branch; inspection confirmed it returned only one greedy highest-value path plus immediate parents.",
+      "outcome": "Added paths_to_root and paths_to_root_truncated to both MCP and filesystem-backed agent-tools implementations. Paths are root-first, branch-local cycle safe, include shared ancestors on each legitimate route, and exclude branches that only close cycles. Preserved path_to_root as the backward-compatible value-guided path and updated the tool description and regression test.",
+      "effectiveness": "The full MCP aim-tool test file passes using Node's direct tsx import (the package CLI is blocked only by sandbox IPC), MCP TypeScript compilation passes, agent-tools typecheck passes, and git diff --check passes. A live probe confirms the current long-running MCP process still has the old schema, so live acceptance waits for natural reconnect.",
+      "lesson": "Immediate parents plus one preferred lineage are insufficient for aims serving multiple missions; orientation must expose every legitimate root path while separately retaining a preferred path for compact prioritization.",
+      "pattern": "Represent exhaustive ancestry and preferred ancestry as separate fields; use per-branch cycle guards and disclose truncation rather than silently dropping alternate missions."
     }
   ],
   "archived": false,
@@ -22,9 +30,9 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "done",
-    "comment": "Implemented value-guided path_to_root in get_aim_context (cycle-guarded, max 12, follows highest value-inflow parent at branches). Committed on branch mcp-aim-context-path-to-root.",
-    "date": 1782054652071
+    "state": "review",
+    "comment": "Extended from one greedy highest-value path to all distinct root paths, preserving path_to_root compatibility. Focused/full MCP aim-tool test file and MCP/agent-tools TypeScript checks pass. Live MCP process still exposes the old schema until its next natural reconnect; awaiting live/user acceptance.",
+    "date": 1785584783269
   },
   "intrinsicValue": 0,
   "cost": 1,

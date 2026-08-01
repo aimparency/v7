@@ -164,6 +164,7 @@ addReflection({
 Prompts are pre-built workflows that guide the LLM through complex tasks:
 
 **Available Prompts:**
+- `dream` - Simulate possible futures, find distant synergies and tensions, optionally research reality, and return falsifiable hypotheses plus reversible experiments
 - `breakdown` - Break an aim into smaller sub-aims with dependencies
 - `analyze-dependencies` - Analyze aim relationships and suggest improvements
 - `plan-phase` - Help plan which aims to commit to a phase

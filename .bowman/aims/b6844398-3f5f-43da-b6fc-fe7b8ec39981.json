@@ -4,6 +4,7 @@
   "description": "Use October to turn the Prototype Fund opportunity into a submitted-quality application early in the 1 October-30 November window. Target an internal complete draft by 15 October and submission by 31 October, leaving November for corrections if the platform permits. Frame the funded project as a concrete new open-source software-infrastructure module, not as general operating support for an already-built application.",
   "reflections": [],
   "archived": false,
+  "color": null,
   "tags": [
     "funding",
     "october-2026",
@@ -27,9 +28,9 @@
     "0f3e2cde-2b03-43e9-b386-90b5d76eff1c"
   ],
   "status": {
-    "state": "open",
-    "comment": "Primary October objective. Prototype Fund application work is organized in the child phase.",
-    "date": 1784670251498
+    "state": "human-dependent",
+    "comment": "The October application objective depends on Felix’s eligibility confirmation, final approval, and institutional submission; preparation can resume when those inputs and the application window are available.",
+    "date": 1785399138935
   },
   "intrinsicValue": 10,
   "cost": 4,
@@ -37,5 +38,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "color": null
+  "reflection": "Status reconciliation on 2026-07-30 propagated the explicit human gate from the Prototype Fund application child. The objective is scheduled for October and requires human legal/eligibility representations and submission authority, so it is not currently actionable autonomous work."
 }

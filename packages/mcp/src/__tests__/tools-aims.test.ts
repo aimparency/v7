@@ -61,6 +61,48 @@ test('MCP Tools - Aims CRUD', async (t) => {
   assert.equal(aims.length, 0);
 });
 
+test('get_aim_context returns every distinct root path while preserving the highest-value path', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+
+  await createAim(server, { projectPath: ctx.projectPath, text: 'Root A', intrinsicValue: 10 });
+  await createAim(server, { projectPath: ctx.projectPath, text: 'Root B', intrinsicValue: 5 });
+  const roots = await caller.aim.list({ projectPath: ctx.projectPath });
+  const rootA = roots.find((aim) => aim.text === 'Root A')!;
+  const rootB = roots.find((aim) => aim.text === 'Root B')!;
+
+  await createAim(server, {
+    projectPath: ctx.projectPath,
+    text: 'Middle',
+    supportedAims: [rootA.id, rootB.id],
+  });
+  const middle = (await caller.aim.list({ projectPath: ctx.projectPath }))
+    .find((aim) => aim.text === 'Middle')!;
+  await createAim(server, {
+    projectPath: ctx.projectPath,
+    text: 'Leaf',
+    supportedAims: [middle.id, rootB.id],
+  });
+  const leaf = (await caller.aim.list({ projectPath: ctx.projectPath }))
+    .find((aim) => aim.text === 'Leaf')!;
+
+  const result = await server.callTool('get_aim_context', {
+    projectPath: ctx.projectPath,
+    aimId: leaf.id,
+  });
+  const payload = JSON.parse(result.content[0].text);
+  const paths = payload.paths_to_root.map((path: any[]) => path.map((aim) => aim.text));
+
+  assert.deepEqual(paths, [
+    ['Root A', 'Middle'],
+    ['Root B', 'Middle'],
+    ['Root B'],
+  ]);
+  assert.equal(payload.paths_to_root_truncated, false);
+  assert.ok(Array.isArray(payload.path_to_root), 'backward-compatible highest-value path remains');
+  assert.equal(payload.path_to_root.at(-1).text, 'Middle');
+});
+
 test('MCP Tools - create_aim requires review and surfaces cancelled context', async () => {
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);

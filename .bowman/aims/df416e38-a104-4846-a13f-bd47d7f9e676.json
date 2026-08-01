@@ -2,11 +2,11 @@
   "id": "df416e38-a104-4846-a13f-bd47d7f9e676",
   "text": "add \"cost\" to aim data model",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [
-    "e552723a-7f28-46b5-a1e9-5a64220e8710"
-  ],
+  "supportedAims": [],
   "committedIn": [],
   "status": {
     "state": "done",
@@ -14,5 +14,9 @@
     "date": 1766114046461
   },
   "intrinsicValue": 0,
-  "loopWeight": 0
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

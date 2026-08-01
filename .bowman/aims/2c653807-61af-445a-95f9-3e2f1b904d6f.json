@@ -1,16 +1,22 @@
 {
   "id": "2c653807-61af-445a-95f9-3e2f1b904d6f",
   "text": "Adapt Data Store for Graph",
+  "reflections": [],
+  "archived": false,
   "tags": [],
+  "supportingConnections": [],
   "incoming": [],
+  "supportedAims": [],
   "committedIn": [],
   "status": {
     "state": "done",
     "comment": "Implemented graphData getter in dataStore to transform Aims/Relationships into Nodes/Links for the graph view.",
     "date": 1765534357998
   },
-  "supportingConnections": [],
-  "supportedAims": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ]
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

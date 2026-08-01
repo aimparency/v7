@@ -44,11 +44,18 @@
       ],
       "weight": 1,
       "explanation": "Selects the bounded workflow for the first paid transformation pilot."
+    },
+    {
+      "aimId": "5bd2c07e-babe-479e-a68d-ae3cfafe32ab",
+      "relativePosition": [
+        -2.3960401825802173,
+        -0.7134363625867126
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
-    "9548e95a-a911-41a5-b404-0cc289633acd",
-    "3253bc9e-14fe-4c9b-9849-588620518517"
+    "9548e95a-a911-41a5-b404-0cc289633acd"
   ],
   "committedIn": [
     "111d2965-0ca2-4b07-ab5c-eef1571a820a"

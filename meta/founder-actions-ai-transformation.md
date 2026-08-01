@@ -1,10 +1,20 @@
-# Founder actions: first AI-transformation customers
+# Founder actions: inviting real-world collaborators
 
 These messages are starting points. Personalize the first sentence so they sound like Felix, then send them personally. The immediate goal is a conversation with an owner, not a software demo.
 
+## Relationship principle
+
+Nobody named here is a marketing target, lead, source of access, or instrument
+for Aimparency. They are people and organizations whose work, judgment, and
+aims we appreciate and would like to connect—if they want—to the experiment of
+building increasingly capable AI through real human cooperation. Say why this
+specific person matters. Offer a form of participation that could serve their
+own aims. Let them choose whether and how to connect, and never imply support,
+advice, partnership, or public association without permission.
+
 ## Wilde Möhre
 
-> Hey [name], ich probiere gerade im Kleinen aus, wie man einen wiederkehrenden Arbeitsablauf mit KI verbessern kann. Ich möchte euch keine große Automatisierungsvision pitchen, sondern verstehen: Welcher Prozess macht bei euch regelmäßig besonders viel Arbeit, ist chaotisch oder hängt zu stark an einer Person? Hättest du diese oder nächste Woche 30 Minuten, um einen solchen Ablauf gemeinsam anzuschauen – oder wer wäre dafür die richtige Person?
+> Hey [name], ich finde spannend, wie viel Wissen, Improvisation und Zusammenarbeit in der Wilden Möhre steckt. Ich versuche mit Aimparency herauszufinden, wie KI erst bei konkreter Arbeit helfen und später verantwortbar selbstständiger werden kann, ohne die Ziele und Entscheidungshoheit der beteiligten Menschen zu verlieren. Wenn das für euch interessant klingt, würde ich vor Ort gern verstehen, welcher wiederkehrende Ablauf euch wirklich Arbeit macht und ob es eine Form der Zusammenarbeit gibt, die für euch nützlich wäre. Kein großer Automatisierungspitch – eher die Frage, ob und wie ihr Teil dieses Experiments sein möchtet.
 
 If they ask for examples, offer categories rather than prescribing the problem: recurring planning dependencies, supplier/crew coordination, documentation and handoffs, or post-event reconciliation.
 
@@ -14,12 +24,13 @@ conversation; it does not imply that Wilde Möhre has agreed to a pilot.
 
 ## Herzog Records
 
-> Hey [name], ich baue mit Aimparency gerade ein sehr konkretes AI-Transformation-Angebot für inhabergeführte Unternehmen auf. Der Einstieg ist kein Tool-Verkauf, sondern ein bezahlter, begrenzter Check eines realen wiederkehrenden Ablaufs: Wo geht Zeit verloren, wer darf was entscheiden, welche Daten existieren, und was ließe sich reversibel automatisieren? Bei einem Label könnten das zum Beispiel Release-Koordination, Metadaten/Rechte, Abrechnung, Kampagnen oder Artist-Kommunikation sein – ich möchte aber nicht raten, was bei euch wirklich weh tut. Hättest du 30 Minuten, oder wer bei Herzog besitzt den repetitivsten Koordinationsprozess?
+> Hey [name], ich schätze an Herzog, dass persönliche Beziehungen und künstlerische Entwicklung nicht einfach durch mehr generischen Content ersetzt werden können. Mit Aimparency versuche ich herauszufinden, wie KI bei realer Koordinationsarbeit helfen und schrittweise selbstständiger werden kann, während Stimme, Beziehungen und Entscheidungen bei den Menschen bleiben. Ich würde gern verstehen, ob es bei euch einen wiederkehrenden Ablauf gibt, bei dem das wirklich nützlich wäre – etwa rund um Releases, Metadaten, Förderungen oder Follow-ups. Wenn du Interesse hast, lass uns 30 Minuten offen darüber sprechen, ob und in welcher Form Herzog mit diesem Experiment verbunden sein möchte.
 
 ## Discovery call
 
-Start with events, not opinions. Ask them to reconstruct the most recent run of
-the workflow before discussing Aimparency:
+Start by asking what they want to preserve or make possible and why their
+perspective matters to this experiment. Then use events, not assumptions: ask
+them to reconstruct the most recent workflow run before discussing a solution.
 
 1. What happened the last time this workflow ran, from trigger to result?
 2. Where did people wait, repeat work, search for context, or escalate?

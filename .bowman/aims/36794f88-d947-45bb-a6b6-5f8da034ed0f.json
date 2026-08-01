@@ -2,17 +2,10 @@
   "id": "36794f88-d947-45bb-a6b6-5f8da034ed0f",
   "text": "user defined aim stati. start with default set (as currently implemented)",
   "description": "user defines the text (no spaces, replace space with - when typing) and the color in the project meta settings.",
+  "reflections": [],
+  "archived": false,
   "tags": [],
-  "supportingConnections": [
-    {
-      "aimId": "b3b7e429-581e-4642-b9ee-d3aaf89213c3",
-      "relativePosition": [
-        -2.391683942520919,
-        0.7279065318346809
-      ],
-      "weight": 1
-    }
-  ],
+  "supportingConnections": [],
   "supportedAims": [],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
@@ -24,5 +17,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

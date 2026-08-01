@@ -1552,8 +1552,14 @@ Please choose one of the valid actions. Respond ONLY with ${this.currentPromptMa
 
   private async executeStartWork(message: string): Promise<void> {
     this.log('[StateMachine] Starting work');
+    const now = new Date();
+    const currentDate = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0')
+    ].join('-');
     const relevanceCheck = `Before making changes, perform this relevance check on the aim:
-1. DATE: Is the aim time-boxed or premised on a deadline/event? Compare against today's date (2026-07-14). If the driving event/deadline has passed (hackathons, dated milestones), the aim may be moot.
+1. DATE: Is the aim time-boxed or premised on a deadline/event? Compare against today's date (${currentDate}). If the driving event/deadline has passed (hackathons, dated milestones), the aim may be moot.
 2. ALREADY IMPLEMENTED: Investigate the codebase (grep/inspect) + git history. If the described work is already present, mark done with verification evidence instead of rebuilding.
 3. REASONING CHAIN (supporting connections up to root): Use get_aim_context's path_to_root. Does the chain of WHY still hold? Is a parent itself stale/abandoned/superseded? Is the aim premised on a requirement that no longer applies?
 DECISION RULES:

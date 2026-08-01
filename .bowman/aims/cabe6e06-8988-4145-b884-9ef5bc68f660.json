@@ -2,6 +2,7 @@
   "id": "cabe6e06-8988-4145-b884-9ef5bc68f660",
   "text": "Secure at least €15k committed funding for Aimparency by 31 August 2026",
   "description": "Success means at least €15,000 is contractually committed to Aimparency by 31 August 2026, not merely an application submitted. Primary path: one or more warm angels using a simple early-stage instrument after legal review, or paid design-partner/sponsorship agreements. Upside path: OpenAI Build Week prize announced around 12 August. Public grants with later decisions remain pipeline, not counted toward this deadline. Preserve optionality between open-source public-interest funding and venture financing until legal/IP structure is decided.",
+  "reflection": "Status reconciliation on 2026-07-30 followed the existing comment: remaining execution consists of founder decisions and institutionally human financing actions. Reclassified from partially to human-dependent.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -87,17 +88,16 @@
     }
   ],
   "supportedAims": [
-    "3253bc9e-14fe-4c9b-9849-588620518517",
-    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+    "3253bc9e-14fe-4c9b-9849-588620518517"
   ],
   "committedIn": [
     "e4c477a4-009b-4354-a2ad-2b4616ca3377",
     "d3c486d6-60a9-4843-a16f-b545c086fcc2"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Strategy researched. Requires founder decisions on financing instrument, legal vehicle, and outreach network before execution.",
-    "date": 1784387876766
+    "state": "human-dependent",
+    "comment": "The funding strategy and materials are prepared. Contractually committed funding requires Felix’s financing-instrument and legal-vehicle decisions, personal outreach, negotiations, and signatures.",
+    "date": 1785399290909
   },
   "intrinsicValue": 20,
   "cost": 6,

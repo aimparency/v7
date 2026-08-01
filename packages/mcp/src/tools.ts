@@ -282,7 +282,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "get_aim_context",
-          description: "Orient before acting: returns the aim, its highest-value mission path, related aims, parents, and children.",
+          description: "Orient before acting: returns the aim, every distinct root-first mission path (paths_to_root), the backward-compatible highest-value path (path_to_root), related aims, immediate parents, and children. Cyclic/non-root branches are excluded and truncation is reported.",
           inputSchema: {
             type: "object",
             properties: {
@@ -712,7 +712,8 @@ export function registerTools(server: Server, trpcClient: any) {
         case "get_aim_context": {
           const aimId = args.aimId as string;
           const projectPath = args.projectPath as string;
-          const MAX_PATH = 12; // cap lineage depth to keep context small
+          const MAX_PATH_DEPTH = 64;
+          const MAX_PATHS = 100;
 
           // Load the whole graph once: it powers the value model (to choose
           // which parent to follow at branches) and lets us resolve parent/child
@@ -747,7 +748,7 @@ export function registerTools(server: Server, trpcClient: any) {
             .filter(Boolean)
             .map((c: any) => ({ id: c.id, text: c.text, description: c.description }));
 
-          // Path to root: walk up supportedAims so the agent always sees its
+          // Highest-value path to root: walk up supportedAims so the agent sees
           // lineage toward the highest-value goal (e.g. "achieve ASI"). At a
           // branch (multiple parents) follow the one with the highest actual
           // value inflow into the current aim — i.e. the parent through which
@@ -755,7 +756,7 @@ export function registerTools(server: Server, trpcClient: any) {
           const pathToRoot: any[] = [];
           const visited = new Set<string>([aimId]);
           let cursor: any = aim;
-          while (pathToRoot.length < MAX_PATH) {
+          while (pathToRoot.length < MAX_PATH_DEPTH) {
             const parentIds = (cursor.supportedAims || []).filter(
               (id: string) => aimMap.has(id) && !visited.has(id)
             );
@@ -783,6 +784,57 @@ export function registerTools(server: Server, trpcClient: any) {
           // Order root-first so the north-star goal reads at the top.
           pathToRoot.reverse();
 
+          // All distinct root paths. Keep a visited set per branch so a node
+          // shared by several legitimate paths appears in each, while cycles
+          // cannot masquerade as roots. Bounds are explicit in the response.
+          const pathsToRoot: any[][] = [];
+          let pathsToRootTruncated = false;
+          const walkAllParents = (
+            current: any,
+            upwardPath: any[],
+            branchVisited: Set<string>
+          ) => {
+            if (pathsToRoot.length >= MAX_PATHS) {
+              pathsToRootTruncated = true;
+              return;
+            }
+            if (upwardPath.length >= MAX_PATH_DEPTH) {
+              pathsToRootTruncated = true;
+              return;
+            }
+
+            const existingParentIds = (current.supportedAims || [])
+              .filter((id: string) => aimMap.has(id));
+            if (existingParentIds.length === 0) {
+              pathsToRoot.push([...upwardPath].reverse());
+              return;
+            }
+
+            let followedParent = false;
+            for (const parentId of existingParentIds) {
+              if (branchVisited.has(parentId)) continue;
+              followedParent = true;
+              const parent = aimMap.get(parentId);
+              const flow = flowValues.get(`${parentId}->${current.id}`) ?? 0;
+              walkAllParents(
+                parent,
+                [...upwardPath, {
+                  id: parent.id,
+                  text: parent.text,
+                  description: parent.description,
+                  intrinsicValue: parent.intrinsicValue ?? 0,
+                  valueInflow: Number(flow.toFixed(4)),
+                }],
+                new Set([...branchVisited, parentId])
+              );
+            }
+            if (!followedParent) {
+              // Every branch closes a cycle; this is not a path to a root.
+              return;
+            }
+          };
+          walkAllParents(aim, [], new Set([aimId]));
+
           return {
             content: [
               {
@@ -790,6 +842,8 @@ export function registerTools(server: Server, trpcClient: any) {
                 text: JSON.stringify({
                     aim: { id: aim.id, text: aim.text, description: aim.description },
                     path_to_root: pathToRoot,
+                    paths_to_root: pathsToRoot,
+                    paths_to_root_truncated: pathsToRootTruncated,
                     semantic_context: semanticContext,
                     parents: parentContext,
                     children: childContext

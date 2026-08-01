@@ -117,10 +117,12 @@ export async function getAimContext(projectPath: string, aimId: string) {
   const aim = aimMap.get(aimId);
   if (!aim) throw new Error(`Aim not found: ${aimId}`);
   const { flowValues } = calculateAimValues(aims);
+  const MAX_PATH_DEPTH = 64;
+  const MAX_PATHS = 100;
   const pathToRoot = [];
   const visited = new Set<string>([aimId]);
   let cursor: Aim = aim;
-  while (pathToRoot.length < 12) {
+  while (pathToRoot.length < MAX_PATH_DEPTH) {
     const parentIds = (cursor.supportedAims ?? []).filter((id) => aimMap.has(id) && !visited.has(id));
     if (parentIds.length === 0) break;
     let best = parentIds[0];
@@ -144,6 +146,53 @@ export async function getAimContext(projectPath: string, aimId: string) {
     cursor = parent;
   }
   pathToRoot.reverse();
+  const pathsToRoot: Array<Array<{
+    id: string;
+    text: string;
+    description?: string;
+    intrinsicValue: number;
+    valueInflow: number;
+  }>> = [];
+  let pathsToRootTruncated = false;
+  const walkAllParents = (
+    current: Aim,
+    upwardPath: typeof pathsToRoot[number],
+    branchVisited: Set<string>
+  ) => {
+    if (pathsToRoot.length >= MAX_PATHS) {
+      pathsToRootTruncated = true;
+      return;
+    }
+    if (upwardPath.length >= MAX_PATH_DEPTH) {
+      pathsToRootTruncated = true;
+      return;
+    }
+    const existingParentIds = (current.supportedAims ?? []).filter((id) => aimMap.has(id));
+    if (existingParentIds.length === 0) {
+      pathsToRoot.push([...upwardPath].reverse());
+      return;
+    }
+    let followedParent = false;
+    for (const parentId of existingParentIds) {
+      if (branchVisited.has(parentId)) continue;
+      followedParent = true;
+      const parent = aimMap.get(parentId)!;
+      const flow = flowValues.get(`${parentId}->${current.id}`) ?? 0;
+      walkAllParents(
+        parent,
+        [...upwardPath, {
+          id: parent.id,
+          text: parent.text,
+          description: parent.description,
+          intrinsicValue: parent.intrinsicValue ?? 0,
+          valueInflow: Number(flow.toFixed(4))
+        }],
+        new Set([...branchVisited, parentId])
+      );
+    }
+    if (!followedParent) return;
+  };
+  walkAllParents(aim, [], new Set([aimId]));
   const parents = (aim.supportedAims ?? [])
     .map((id) => aimMap.get(id))
     .filter(Boolean)
@@ -155,6 +204,8 @@ export async function getAimContext(projectPath: string, aimId: string) {
   return {
     aim: { id: aim.id, text: aim.text, description: aim.description, status: aim.status },
     path_to_root: pathToRoot,
+    paths_to_root: pathsToRoot,
+    paths_to_root_truncated: pathsToRootTruncated,
     parents,
     children
   };

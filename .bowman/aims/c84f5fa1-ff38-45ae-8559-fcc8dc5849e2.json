@@ -2,13 +2,12 @@
   "id": "c84f5fa1-ff38-45ae-8559-fcc8dc5849e2",
   "text": "shift + click another aim when one is selected should select the connection from selected to clicked",
   "description": "",
+  "reflection": "Shift-clicking a second aim now selects the existing contribution connection between it and the currently selected aim, resolving the stored parent/child direction regardless of click order. It does not create an edge. If the aims are unrelated, existing shift-add multi-selection behavior remains unchanged. Verification: focused connection resolver tests 2/2, full frontend suite 194/194, frontend production build/type-check, and git diff --check passed.",
   "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedAims": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
-  ],
+  "supportedAims": [],
   "committedIn": [],
   "status": {
     "state": "review",
@@ -20,6 +19,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Shift-clicking a second aim now selects the existing contribution connection between it and the currently selected aim, resolving the stored parent/child direction regardless of click order. It does not create an edge. If the aims are unrelated, existing shift-add multi-selection behavior remains unchanged. Verification: focused connection resolver tests 2/2, full frontend suite 194/194, frontend production build/type-check, and git diff --check passed."
+  "valueVariance": 0
 }

@@ -5,7 +5,7 @@ import path from 'path';
 import { appRouter } from '../../../backend/src/server.js';
 import { closeDb } from '../../../backend/src/db.js';
 import { AIMPARENCY_DIR_NAME } from 'shared';
-import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import { CallToolRequestSchema, GetPromptRequestSchema, ListPromptsRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -50,6 +50,18 @@ export class MockServer {
         console.error(`Error reading resource ${uri}:`, e);
         throw e;
     }
+  }
+
+  async listPrompts() {
+    const handler = this.handlers.get(ListPromptsRequestSchema);
+    if (!handler) throw new Error("No list prompts handler registered");
+    return await handler();
+  }
+
+  async getPrompt(name: string, args: Record<string, string>) {
+    const handler = this.handlers.get(GetPromptRequestSchema);
+    if (!handler) throw new Error("No get prompt handler registered");
+    return await handler({ params: { name, arguments: args } });
   }
 }
 
