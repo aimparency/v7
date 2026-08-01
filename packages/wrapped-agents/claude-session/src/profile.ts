@@ -14,14 +14,12 @@ export const claudeProfile: AgentProfile = {
   defaultWatchdogModel: 'haiku',
 
   buildWorkerArgs: ({ resume, workerModel }) => {
-    const args = resume
-      ? ['--continue', '--dangerously-skip-permissions']
-      : ['--dangerously-skip-permissions'];
+    const args = resume ? ['--continue'] : [];
     if (workerModel !== undefined) args.push('--model', workerModel);
     return args;
   },
   buildWatchdogArgs: ({ watchdogModel }) => {
-    const args = ['--dangerously-skip-permissions'];
+    const args: string[] = [];
     if (watchdogModel !== undefined) args.push('--model', watchdogModel);
     return args;
   },

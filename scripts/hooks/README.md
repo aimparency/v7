@@ -1,51 +1,86 @@
-# Coding Assistant Hooks
+# Aimparency Codex Continuation Hook
 
-This directory contains lifecycle hooks for AI coding assistants (like OpenAI Codex and Claude Code) to integrate them with the local Aimparency workflow.
+> **This hook continues the current Codex conversation.** It does not contact
+> the wrapped-agent broker and does not require a watchdog session.
 
-## Available Hooks
+There are two separate mechanisms in this repository:
 
-### `on-stop.sh`
-This hook runs whenever the AI assistant tries to stop. It returns a continuation
-decision that sends the assistant back to Aimparency to select and execute the
-next valuable aim.
+| Mechanism | Purpose |
+| --- | --- |
+| [`codex-continue-on-stop.sh`](./codex-continue-on-stop.sh) | Blocks a Codex `Stop` event and creates another autonomous turn driven by the Aimparency MCP. |
+| [`wrapped-worker-halt-notify.sh`](../../packages/wrapped-agents/common/hooks/wrapped-worker-halt-notify.sh) | Notifies an already-running wrapped-agent watchdog that its worker finished a turn. It cannot continue an ordinary Codex conversation. |
 
-For a deliberate normal exit, launch the assistant with
-`AIMPARANCY_ALLOW_STOP=1` or interrupt the process directly.
+`on-stop.sh` and `worker-halt-hook.sh` remain only as deprecated compatibility
+names. New integrations should use the explicit names above.
 
-## Setup & Configuration
+## Install the Codex loop in another repository
 
-To enable these hooks, you can run the convenience installer script:
+The target must be a Git repository with an initialized `.bowman/` directory:
+
 ```bash
-./scripts/hooks/install.sh
+./scripts/hooks/install.sh --target /path/to/project --agent codex
 ```
 
-### Manual Configuration
+The installer:
 
-#### 1. OpenAI Codex
-The hook configuration is checked into [.codex/hooks.json](file:///home/felix/dev/aimparency/v7/.codex/hooks.json). To enable it:
-1. Ensure hooks are enabled in your global `~/.codex/config.toml`:
-   ```toml
-   [features]
-   hooks = true
-   ```
-2. Start an interactive session with `codex`.
-3. Run the `/hooks` slash command.
-4. Press `t` to trust the `./scripts/hooks/on-stop.sh` script.
+- verifies `.bowman/` and the Git root;
+- copies only the Codex continuation script and `.codex/hooks.json`;
+- makes the script executable;
+- validates the generated JSON and command target;
+- runs blocking and non-blocking smoke tests from a nested directory; and
+- prints the Codex restart and `/hooks` trust steps.
 
-#### 2. Claude Code
-The hook configuration is checked into [.claude/settings.json](file:///home/felix/dev/aimparency/v7/.claude/settings.json). To enable it:
-1. Start an interactive session with `claude`.
-2. Run the `/hooks` slash command.
-3. Trust the `./scripts/hooks/on-stop.sh` script.
+Re-running the command updates a recognized Aimparency hook in place and merges
+exactly one managed Stop group into `.codex/hooks.json`, preserving unrelated
+events and Stop handlers. It refuses to replace an unrecognized script already
+at the managed path unless `--force` is supplied.
 
-#### 3. Grok
-The hook configuration is checked into [.grok/hooks/stop.json](file:///home/felix/dev/aimparency/v7/.grok/hooks/stop.json).
-1. Trust the project once (`/hooks-trust` or launch with `--trust`). Folder trust is shared with MCP/LSP.
-2. Reload hooks mid-session with `/hooks` then `r`, or start a new session.
-3. Confirm the Stop hook is listed under Project in the Hooks tab.
+After installation, restart Codex in the target repository, run `/hooks`, and
+trust `scripts/hooks/codex-continue-on-stop.sh`. Confirm that the Aimparency MCP
+is connected and can access the target's `.bowman` graph.
 
-#### 4. Antigravity / AGY
-The hook configuration is checked into [.gemini/settings.json](file:///home/felix/dev/aimparency/v7/.gemini/settings.json).
-1. Start an interactive session with `agy`.
-2. Run the `/hooks` slash command.
-3. Trust the `./scripts/hooks/on-stop.sh` script under `post_invocation`.
+Codex project hooks are configured in [`.codex/hooks.json`](../../.codex/hooks.json).
+The hook command resolves through `git rev-parse --show-toplevel`, so starting
+Codex from a repository subdirectory still works.
+
+## Continuation contract
+
+On a normal Codex `Stop`, the hook returns valid JSON with
+`decision: "block"`. Its reason instructs Codex to use this graph loop:
+
+1. call `get_prioritized_aims`;
+2. orient with `get_aim_context`;
+3. implement and verify the selected actionable aim;
+4. record evidence and status with `update_aim` or `addReflection`; and
+5. reprioritize instead of substituting Markdown planning for graph state.
+
+Human waiting is an extreme-case, two-stage protocol. When Codex first believes
+progress requires human judgment, authorization, credentials, or an
+institutionally human action, it states the blocker and ends with
+`[AIMPARENCY_REQUEST_HUMAN]`. The hook does **not** yield. It creates one more
+turn challenging Codex to step back, inspect graph hygiene and reflections,
+decompose abstract aims, dream up hypotheses, and try safe reversible work.
+Only if that broader search still proves the human action indispensable may
+Codex restate the exact request and end with
+`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]`; the hook then yields. Markers are recognized
+only in Codex's `last_assistant_message`.
+
+For a deliberate normal exit, launch Codex with:
+
+```bash
+AIMPARENCY_ALLOW_STOP=1 codex
+```
+
+The historical misspelling `AIMPARANCY_ALLOW_STOP=1` remains temporarily
+supported but is deprecated.
+
+## Verify locally
+
+```bash
+npm run test:hooks
+```
+
+This contract test installs into a disposable Git repository and verifies JSON,
+stdin consumption, the MCP-specific continuation reason, both stop escape
+variables, the two-stage human-wait challenge, nested-directory invocation,
+executability, and exclusion of the wrapped-worker notifier.

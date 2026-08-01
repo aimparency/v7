@@ -427,6 +427,58 @@ test('get_prioritized_aims falls back to connected uncommitted work when a phase
   assert.deepEqual(payload.aims.map((aim: any) => aim.id), [childId]);
 });
 
+test('get_prioritized_aims returns a graph-native exploration contract when no actionable leaf exists', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+
+  const missionResult = await createAim(server, {
+    projectPath: ctx.projectPath,
+    text: 'Permanent mission A',
+    intrinsicValue: 10,
+    cost: 1,
+  });
+  const missionId = /Created aim with ID: ([0-9a-f-]+)/.exec(missionResult.content[0].text)?.[1];
+  assert.ok(missionId);
+  const peerResult = await createAim(server, {
+    projectPath: ctx.projectPath,
+    text: 'Permanent mission B',
+    supportedAims: [missionId],
+    cost: 1,
+  });
+  const peerId = /Created aim with ID: ([0-9a-f-]+)/.exec(peerResult.content[0].text)?.[1];
+  assert.ok(peerId);
+  await server.callTool('update_aim', {
+    projectPath: ctx.projectPath,
+    aimId: missionId,
+    addSupportedAims: [peerId],
+  });
+
+  const phase = await caller.phase.create({
+    projectPath: ctx.projectPath,
+    phase: { name: 'Exploration phase' },
+  });
+  await caller.aim.commitToPhase({
+    projectPath: ctx.projectPath,
+    aimId: missionId,
+    phaseId: phase.id,
+  });
+
+  const result = await server.callTool('get_prioritized_aims', {
+    projectPath: ctx.projectPath,
+    phaseId: phase.id,
+  });
+  const payload = JSON.parse(result.content[0].text);
+
+  assert.equal(payload.selectionScope, 'mission-containers-exploration');
+  assert.equal(payload.diagnostics.openLeafAims, 0);
+  assert.equal(payload.diagnostics.uncommittedFallbackAims, 0);
+  assert.equal(payload.exploration.required, true);
+  assert.match(payload.exploration.objective, /actionable leaf/i);
+  assert.ok(payload.exploration.moves.some((move: string) => /graph_hygiene/.test(move)));
+  assert.ok(payload.exploration.moves.some((move: string) => /hypothesis/.test(move)));
+  assert.deepEqual(payload.aims.map((aim: any) => aim.id), [missionId]);
+});
+
 test('countAimReferences counts commits referencing an aim id prefix (realized-cost signal)', () => {
   const ids = [
     'de22b7f3-ad77-4bcc-bd9f-aabbccddeeff', // referenced twice

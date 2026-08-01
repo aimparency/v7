@@ -1,0 +1,54 @@
+{
+  "id": "a48d03b3-2260-4109-b717-f86e1945bb55",
+  "text": "Preserve supervisor authority audit through backend runtime-state updates",
+  "description": "Fix the backend watchdog runtime-state schema and merge path, which currently strip supervisorState—and therefore the authority audit—from valid session-written snapshots. Define a focused Zod schema for payload-free authority entries and supervisor state, retain only the newest 50 audit entries, preserve supervisorState when updateWatchdogRuntimeState changes enabled/emergency/stop fields, and add deterministic schema/merge tests proving valid audit continuity and unknown payload stripping. Do not start or restart backend services.",
+  "reflections": [
+    {
+      "date": 1785601972166,
+      "context": "Inspection showed the backend runtime schema omitted supervisorState entirely, and updateWatchdogRuntimeState reconstructed agent state from four control fields. Any backend read/update could therefore strip the state engine metadata and new authority audit written by sessions.",
+      "outcome": "Extracted focused watchdog runtime Zod schemas, including payload-free bounded authority entries and supervisor state. Added a pure control-state merge that preserves supervisorState, switched the project router to it, strips unknown audit fields, and retains the newest 50 entries.",
+      "effectiveness": "Backend focused tests 2/2 and full suite 70/70 pass; backend TypeScript build passes. Wrapped-agents/common remains green at 161/161 with tsc --noEmit, and git diff --check passes. No backend or development server was started or restarted.",
+      "lesson": "Cross-component persistence contracts fail when each boundary owns an incomplete ad hoc schema. Unrelated partial updates must merge through a tested function that explicitly preserves opaque higher-level state.",
+      "pattern": "Extract shared-within-service persistence schemas and pure merge functions; test both field continuity and payload stripping at the component that rewrites the file."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "audit",
+    "backend",
+    "runtime-state"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "fc891a0b-8aaa-4cf2-9e8c-fc43dd315910",
+      "relativePosition": [
+        -1.2406986754179585,
+        -2.170407057861756
+      ],
+      "weight": 1,
+      "explanation": "Consumes the authority audit now preserved through backend runtime state."
+    }
+  ],
+  "supportedAims": [
+    "e3ffa4d6-1c88-4b41-820b-831f68afcbd7",
+    "ccf7385c-14b3-4e4a-8e94-c18da4b90d41"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Backend runtime schema and merge now preserve bounded supervisor authority audits; internally verified and awaiting explicit user acceptance.",
+    "date": 1785601972201
+  },
+  "intrinsicValue": 20,
+  "valueRationale": "Safety evidence must not be silently erased by an unrelated control-state update at another runtime boundary.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

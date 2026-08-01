@@ -18,7 +18,17 @@
     "watchdog",
     "persistence"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "e3ffa4d6-1c88-4b41-820b-831f68afcbd7",
+      "relativePosition": [
+        -2.224563840690002,
+        1.1407522599997544
+      ],
+      "weight": 0.7,
+      "explanation": "Uses the established project-local watchdog runtime restoration path."
+    }
+  ],
   "supportedAims": [
     "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
   ],

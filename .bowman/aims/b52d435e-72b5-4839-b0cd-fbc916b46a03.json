@@ -1,0 +1,149 @@
+{
+  "id": "b52d435e-72b5-4839-b0cd-fbc916b46a03",
+  "text": "Create and submit an exceptional SPC application for Aimparency",
+  "description": "Prepare a genuinely strong South Park Commons application that is deep, credible, specific, and intellectually intriguing. This aim has two inseparable purposes: (1) make a serious attempt to secure funding, community, and support for Aimparency; and (2) serve as a worked demonstration that a durable, inspectable aim graph can preserve human direction across long-running autonomous work by replaceable AI executors (Codex is the current executor, not the source of intent). The final application must stand on ordinary selection merits and must not rely on the recursive process as a gimmick. Capture program-specific requirements, founder truth, product thesis, technical substance, real-world evidence, skeptical review, drafts, and submission confirmation. Treat claims as hypotheses until supported.",
+  "reflections": [
+    {
+      "date": 1785581626974,
+      "context": "Felix requested a deadline phase, explicit human-dependent gates, and a priority list that reveals directly or transitively phase-committed human-dependent aims.",
+      "outcome": "Created the deadline-bounded SPC phase (dac299a1-e978-48ea-8552-ee5c2d2838ae), committed the application objective, created five child aims (three human-dependent), confirmed Boardy’s 1 Aug 15:00 meeting, and extended the frontend phase priority list to traverse committed aim subtrees with indirect-membership labels.",
+      "effectiveness": "Focused phase-priority tests pass (5/5) and frontend vue-tsc type-check passes. The list defaults to human-dependent, includes subphases and transitive aim descendants, handles cycles, and labels indirect membership.",
+      "lesson": "Phase commitments should represent coherent objectives; human gates beneath them must remain visible transitively so deadlines do not require duplicate phase commitments.",
+      "pattern": "Commit the outcome once, traverse its contribution subtree for operational views, and encode human authority as explicit human-dependent leaves."
+    },
+    {
+      "date": 1785583562698,
+      "context": "Audit whether the SPC objective can survive executor replacement after the autonomous pre-call preparation.",
+      "outcome": "Verified the phase path, parent and five child aims, transitive human-dependent gates, and graph consistency (valid with zero errors/issues). Added a canonical application README with ordered artifacts, next-event protocol, authority boundary, narrative default, and continuity snapshot.",
+      "effectiveness": "Every referenced artifact exists, the README passes git diff --check, the phase tree exposes all required states, and a replacement executor now has one deterministic entry point instead of six peer documents.",
+      "lesson": "Durable graph state still benefits from a compact artifact router: the graph preserves purpose and status, while the index controls reading order and event-specific procedure.",
+      "pattern": "For consequential multi-artifact work, pair graph-native state with a small canonical README that identifies authority, next event, verification snapshot, and source order."
+    },
+    {
+      "date": 1785583695771,
+      "context": "Pressure-test the pre-call SPC narrative from the perspective of a skeptical fellowship reviewer without relying on unavailable first-party selection copy.",
+      "outcome": "Created red-team-review.md with nine plausible rejection reasons, the minimum credible response to each, deletion priorities, three candidate falsifiable fellowship outcomes, and a six-question go/no-go test. Added it to the canonical README reading order.",
+      "effectiveness": "The memo contains nine non-duplicative objections, stays within evidence boundaries, does not convert suggested experiments into commitments, and passes git diff --check.",
+      "lesson": "The application’s central risk is not insufficient ambition but failure to connect one narrow present product, a causal founder advantage, a specific buyer, and a falsifiable fellowship learning agenda.",
+      "pattern": "Before finalizing a high-stakes application, write the rejection case in the evaluator’s voice and require a minimum evidence-based response rather than rhetorical rebuttal."
+    },
+    {
+      "date": 1785584175596,
+      "context": "Felix asked for reflection on the concrete aim graph followed by an executive summary for the Boardy call.",
+      "outcome": "Tracing the application upward exposed an incorrect economic edge: the dilutive SPC Fellowship aim supported a non-dilutive funding aim. Reconnected it to Achieve Economic Autonomy while retaining the autonomy-proof parent. Created a 1,008-word pre-call executive summary covering the corrected graph, core narrative, verified and unsupported claims, relationship-channel mismatch, rejection case, seven decisions, and recommended eight-week tests.",
+      "effectiveness": "The summary passes git diff --check and is the first item in the canonical reading order. Graph context now represents the application's two true purposes—economic autonomy and human-directed AI autonomy—without misclassifying the funding instrument.",
+      "lesson": "Concrete graph reflection is valuable when it tests whether edges state true causal contribution; a polished application narrative cannot compensate for a parent aim whose economic category is false.",
+      "pattern": "Before summarizing a consequential plan, trace each objective to its parents, challenge the semantic truth of every contribution edge, correct misclassification, then compress the resulting tensions and decisions."
+    },
+    {
+      "date": 1785584343133,
+      "context": "Return from the executive-summary request to strengthen verification of the SPC phase's human-dependent priority feature.",
+      "outcome": "Added Phase.spec.ts, a component-level test that opens the actual priority panel, verifies the human-dependent default, descendant-phase and full-aim loading, direct and transitive labels/order, hiding the normal aim list, and opening the selected aim modal. Updated application evidence documents from five logic tests to six logic+component tests.",
+      "effectiveness": "Both focused test files pass (6/6), frontend vue-tsc passes, and git diff --check passes. This closes the interaction-verification gap left by utility-only tests.",
+      "lesson": "A pure traversal test proves graph semantics, but the user-facing claim also requires verifying that the button invokes loading, renders the chosen state, and connects results to the editing action.",
+      "pattern": "For graph-backed UI controls, test traversal logic separately and add one component test covering the complete user interaction boundary."
+    },
+    {
+      "date": 1785587500329,
+      "context": "Audit the full SPC packet for contradictions after choosing `I'm exploring` and converging on direction debt as the application thesis.",
+      "outcome": "Updated the canonical README, working draft, executive summary, Boardy brief, and red-team memo. Removed stale assumptions that Felix is directly applying to the Founder Fellowship, promoted application-spine.md and answer-modules.md in the reading order, and aligned the buyer, failure, paid-result hypothesis, and company path across documents.",
+      "effectiveness": "A repository-wide phrase audit finds none of the targeted stale Fellowship or undecided-narrative formulations; git diff --check passes. Remaining references distinguish the actual offered option, stored phase name, or contextual Fellowship facts.",
+      "lesson": "Application quality depends on cross-document consistency: once a truthful form route or narrative default changes, every briefing and assembly surface must change with it.",
+      "pattern": "After a consequential application choice, run a targeted contradiction search across the full packet and update the canonical router last."
+    },
+    {
+      "date": 1785588506592,
+      "context": "Preserve the explicit funding objective after Felix truthfully chose `I'm exploring`, without treating certainty or a funded route as already established.",
+      "outcome": "Created funding-path.md grounded in SPC's current first-party program descriptions. It distinguishes Fellowship funding from no-equity Residency, maps four post-application scenarios, proposes six evidence gates for financing readiness, preserves parallel economic tests, gives Boardy five questions, and provides a 559-character application-safe summary.",
+      "effectiveness": "The scenario tree keeps economic autonomy visible while preventing Residency, credits, prospective investment, or program interest from being misreported as funding or revenue. The packet verifier passes all 36 current invariants and git diff --check passes.",
+      "lesson": "Truthful exploration and a real funding objective are compatible when conviction, program route, and financing are sequenced through explicit evidence gates rather than collapsed into one application choice.",
+      "pattern": "For an exploratory funding application, model each institutional route, its actual economics, human commitments, evidence gates, and fallback learning path."
+    },
+    {
+      "date": 1785588583583,
+      "context": "Recognize that the depth of autonomous application research had created a new human usability risk: a twenty-document linear reading order.",
+      "outcome": "Restructured the canonical README into a three-step Felix minimum path, three executor sources of truth, and a question-routed evidence library. Corrected the stale continuity snapshot from partially to the current human-dependent statuses.",
+      "effectiveness": "Felix now needs only the executive summary, live call card/record, and submission assembly. Executors have an explicit contradiction-resolution hierarchy. All supporting artifacts remain discoverable without becoming required reading. The packet verifier passes 36/36 invariants and git diff --check passes.",
+      "lesson": "Deep autonomous preparation should compress the human interface, not transfer its research burden to the human. Evidence belongs behind questions; action belongs in a minimum path.",
+      "pattern": "As an evidence packet grows, separate human minimum path, executor source of truth, and on-demand reference library."
+    },
+    {
+      "date": 1785588676481,
+      "context": "Determine where further work can still materially improve SPC selection readiness rather than continuing to expand an already deep evidence packet.",
+      "outcome": "Created selection-readiness.md assessing ten selection-relevant questions across current state, evidence, and missing proof. Ranked five human inputs by expected application improvement and declared seven categories of low-leverage work to stop doing before those inputs arrive.",
+      "effectiveness": "The audit finds product execution, intellectual fit, idea rejection, and learning design strong; founder causality, external necessity, team truth, and route commitment remain the decisive gaps. It converts an undifferentiated human-dependent state into an ordered intervention list. Packet verification passes 37/37 invariants and git diff --check passes.",
+      "lesson": "Once narrative and evidence architecture are mature, autonomous elaboration has diminishing returns. A selection audit should explicitly identify the few human facts that can still change belief and forbid lower-leverage polishing.",
+      "pattern": "Score readiness by evaluator question, pair each claim with missing proof, rank human inputs by belief impact, and stop expanding completed dimensions."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "funding",
+    "spc",
+    "application",
+    "autonomy-proof",
+    "human-intent"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "ad38cee4-2562-49b3-877f-e1b686e72300",
+      "relativePosition": [
+        -2.2772874917812675,
+        -1.0314851815593775
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ef0d8f25-72d0-4ca0-8276-e69da4e6fd38",
+      "relativePosition": [
+        -2.252419940022076,
+        -1.0847139778720238
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "ece096c7-9a22-4b9f-8e02-51ef09326929",
+      "relativePosition": [
+        -2.4813973196527837,
+        0.3044131107885793
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "4a36d8ae-656f-45d6-97c8-a6990275cc99",
+      "relativePosition": [
+        -0.8741510566002563,
+        -2.3421912667936953
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "d7f7c26b-b5ba-442e-84b3-05b65a9a26e1",
+      "relativePosition": [
+        -1.824619941669743,
+        1.7090237179340442
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [
+    "dac299a1-e978-48ea-8552-ee5c2d2838ae"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Autonomous thesis, evidence, red-team, answer modules, and known constrained drafts are ready and internally consistent. `I'm exploring` is decided. Remaining gates: reveal and copy Airtable's conditional route/questions; hold and record the Boardy call; confirm founder facts, Robin's role, location/commitments, and artifacts; then Felix reviews, authorizes, and submits.",
+    "date": 1785584436644
+  },
+  "intrinsicValue": 10,
+  "valueRationale": "A successful application could provide funding, community, credibility, and high-leverage feedback; even without acceptance, a rigorous application and inspectable execution record can clarify the thesis and demonstrate the product on a consequential real task.",
+  "cost": 4,
+  "loopWeight": 1,
+  "duration": 14,
+  "costVariance": 0,
+  "valueVariance": 0
+}

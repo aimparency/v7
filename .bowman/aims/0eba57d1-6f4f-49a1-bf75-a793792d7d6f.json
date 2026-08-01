@@ -2,10 +2,12 @@
   "id": "0eba57d1-6f4f-49a1-bf75-a793792d7d6f",
   "text": "In the side panel in graph view, changing the resoning is not being persisted",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "1e554f38-33ae-42d4-88e6-4a4b071a20d0"
   ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
@@ -17,5 +19,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

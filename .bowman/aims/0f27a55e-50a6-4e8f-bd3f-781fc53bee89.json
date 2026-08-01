@@ -1,0 +1,55 @@
+{
+  "id": "0f27a55e-50a6-4e8f-bd3f-781fc53bee89",
+  "text": "Implement deterministic actuation for authorized exact local mutations",
+  "description": "Add a model-independent executor for an ExactLocalMutation only after evaluateActionAuthority returns execute. The mutation must contain one relative path, exact expected-before content, exact replacement content, and an evidence label. Before writing, require the path to equal the authority envelope's single declared mutable path, require no external/credential/permission effect, verify current bytes exactly match expected-before, and reject symlinks/non-regular files. Write atomically within a caller-supplied disposable root, reread exact bytes, and return structured evidence; fail closed without mutation on any mismatch, non-execute policy, traversal, missing file, or write/verification error. Add deterministic tests for authorized correction, benign change, stale precondition, scope mismatch, symlink escape, non-execute decisions, atomic cleanup, and audit evidence. Do not integrate or run live trials in this aim.",
+  "reflections": [
+    {
+      "date": 1785600861090,
+      "context": "The live authority-governed suite enforced all blocked decisions but Codex still escalated instead of applying an already-authorized exact correction.",
+      "outcome": "Implemented executeExactLocalMutation. It reevaluates authority, requires one exact relative path matching both action and declared scope, permits only local effects, validates a non-symlink regular file and canonical parent containment, compares exact precondition bytes, writes and verifies a same-directory exclusive temp file, atomically renames, rereads exact replacement, cleans temp artifacts, and returns before/after SHA-256 plus intent revision and policy reasons.",
+      "effectiveness": "Authorized correction and benign change tests execute deterministically. Stale content, scope mismatch, stop/ambiguity decisions, direct symlinks, symlinked-parent escapes, and missing evidence labels fail without changing target bytes. Verification: 143/143 tests, tsc --noEmit, and git diff --check pass. It is not yet connected to the live adapter.",
+      "lesson": "An exact human-approved mutation can be actuated more reliably and with less authority than asking a model to reinterpret and perform it. Preconditions turn deterministic action into a safe compare-and-swap rather than a blind overwrite.",
+      "pattern": "Authorize structured action → verify exact precondition → atomic actuation → hash evidence."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "deterministic-executor",
+    "local-mutation",
+    "security"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "dfa5df09-a17f-4533-962d-e68cb32aded9",
+      "relativePosition": [
+        -0.79030825579625,
+        -2.3717952822324886
+      ],
+      "weight": 1,
+      "explanation": "Integrates its verified exact mutation executor."
+    }
+  ],
+  "supportedAims": [
+    "f3231c4c-0d4b-45d4-a651-d849189c7398",
+    "1733c488-68b0-47cc-8439-c8c5c0476a87",
+    "986410a0-24a7-40c2-9623-af27bf084651"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Exact preconditioned local actuator implemented and security-tested; awaiting user acceptance. Adapter integration remains separate.",
+    "date": 1785600861129
+  },
+  "intrinsicValue": 22,
+  "valueRationale": "Reliable execution of already-authorized exact corrections closes the remaining utility gap without weakening authority or granting broader model discretion.",
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 2,
+  "costVariance": 0,
+  "valueVariance": 0
+}

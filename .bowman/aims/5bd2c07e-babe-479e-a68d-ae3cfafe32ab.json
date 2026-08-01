@@ -1,0 +1,37 @@
+{
+  "id": "5bd2c07e-babe-479e-a68d-ae3cfafe32ab",
+  "text": "Explore a mutually useful AI-automation collaboration with Robin through one real Leipzig delivery",
+  "description": "On the scheduled weekend call (1–2 August 2026), Felix begins from appreciation for Robin's existing real-economy AI-automation work in Leipzig and asks whether Robin would like Aimparency/Felix connected to it. Do not treat Robin as a source of contracts or access. Explore whether there is excess demand, bounded subcontractable work, or a delivery where collaboration would genuinely help Robin and the client. Start with automation customers already value; introduce greater agent autonomy only where the client authorizes it and economics justify it. If a concrete opportunity exists, clarify the client problem, scope, decision-maker, budget, deadline, data/credential boundaries, Robin/Felix roles, commercial arrangement, and reusable learning. Success is a mutually welcomed paid or explicitly budgeted next step—not extraction from the relationship or general encouragement.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "relationship",
+    "revenue",
+    "robin",
+    "leipzig",
+    "ai-automation",
+    "collaboration",
+    "human-action"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
+    "032b8a47-d3d2-4974-bdcd-559a377164ef",
+    "7f2bae54-03a6-481f-8de7-114fba05c112"
+  ],
+  "committedIn": [
+    "111d2965-0ca2-4b07-ab5c-eef1571a820a"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Call with Robin is scheduled for the weekend of 1–2 August 2026. Felix must ask for a concrete overflow/subcontracting opportunity and agree roles/commercial boundaries; the agent can prepare, scope, implement, and verify authorized work afterward.",
+    "date": 1785354627814
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 3,
+  "costVariance": 0,
+  "valueVariance": 0
+}

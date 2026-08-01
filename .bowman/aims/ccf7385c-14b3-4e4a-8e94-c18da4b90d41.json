@@ -18,7 +18,17 @@
     "persistence",
     "runtime"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "a48d03b3-2260-4109-b717-f86e1945bb55",
+      "relativePosition": [
+        2.07995395543467,
+        -1.3870081266062104
+      ],
+      "weight": 0.8,
+      "explanation": "Repairs a regression in the existing supervisor runtime metadata contract."
+    }
+  ],
   "supportedAims": [
     "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
   ],

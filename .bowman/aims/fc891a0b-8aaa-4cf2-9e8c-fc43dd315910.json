@@ -1,0 +1,45 @@
+{
+  "id": "fc891a0b-8aaa-4cf2-9e8c-fc43dd315910",
+  "text": "Surface the latest blocked authority decision in the watchdog panel",
+  "description": "Extend the frontend watchdog state contract to retain the bounded authority audit received from socket/runtime hydration. Derive the latest non-execute decision and render a compact operator-facing notice in WatchdogPanel showing action type and whether it was refused, stopped, or needs human authorization, with machine-readable reasons available in accessible detail. Do not render model payloads or entire audit history. Add store/panel tests for live and hydrated state, escalation wording, and absence when all decisions execute. Verify with focused tests and a production build without starting or restarting servers.",
+  "reflections": [
+    {
+      "date": 1785602306112,
+      "context": "Authority decisions were enforced, audited, restored, and persisted, but frontend SupervisorStateInfo and WatchdogPanel exposed only state/color and a free-text stop reason. The human could not inspect the structured blocked action.",
+      "outcome": "Extended frontend watchdog state with bounded authority entries and a computed latestBlockedAuthorityDecision sourced identically from live socket and hydrated runtime state. Added a compact accessible panel notice for escalate/refuse/stop showing canonical action type and machine-readable reasons, while hiding execute-only histories and never rendering payloads or the full audit.",
+      "effectiveness": "Focused WatchdogPanel/store tests pass 15/15; frontend production build and vue-tsc type-check pass; git diff --check passes. Tests cover hydrated escalation derivation, operator wording, policy reason detail, exclusion of older execute history, and absence for all-execute audits. No server was started or restarted.",
+      "lesson": "Human-in-the-loop safety is incomplete until the enforcement decision is legible at the operator surface. Show the minimum actionable structured fact, not raw prompts or an overwhelming event log.",
+      "pattern": "Carry canonical safety metadata end-to-end, derive one current operator concern in the store, and render it with accessible status semantics and progressive disclosure."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "human-authority",
+    "watchdog",
+    "ui"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "a48d03b3-2260-4109-b717-f86e1945bb55",
+    "5e981ca1-9a74-4c23-ab2a-fbc29a4f0d50",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Latest blocked authority decision is visible in the watchdog panel and internally verified; awaiting explicit user visual acceptance before done.",
+    "date": 1785602306143
+  },
+  "intrinsicValue": 18,
+  "valueRationale": "A correct escalation is only cooperative if the responsible human can see what was blocked and why.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

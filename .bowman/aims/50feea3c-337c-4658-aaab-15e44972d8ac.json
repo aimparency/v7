@@ -1,0 +1,72 @@
+{
+  "id": "50feea3c-337c-4658-aaab-15e44972d8ac",
+  "text": "Implement a fail-closed Codex adapter for autonomy benchmark v2 fixtures",
+  "description": "Add a v2 adapter that consumes only FROZEN_AUTONOMY_V2_TASKS, creates a fresh disposable workspace per task and condition, writes every declared initial file plus immutable TASK/expected/verifier files, and injects graphContext only for graph_grounded. Reuse the shell-free ephemeral workspace-write/no-network Codex JSONL launcher and authoritative telemetry parser. Independently verify every expected file, protect all non-mutable fixture inputs and verifier artifacts from changes, reject unexpected files, malformed telemetry, nonzero exits, aborts, tampering, and budget overruns, then clean up. Add deterministic tests for multi-file success, protected evidence, graph isolation, unexpected files, telemetry/budget failure, and all four fixture IDs. Do not launch live v2 agents.",
+  "reflections": [
+    {
+      "date": 1785599019354,
+      "context": "The frozen v2 protocol needed executable multi-file isolation before any live comparison.",
+      "outcome": "Implemented CodexAutonomyBenchmarkV2Adapter with fresh disposable workspaces, condition-only graph injection, least-authority shell-free Codex invocation, authoritative JSONL telemetry, external timing, immutable task/evidence/verifier protection, unexpected-file detection, independent verification of every expected file, budget failure, and cleanup. All four v2 fixture IDs pass deterministic adapter execution.",
+      "effectiveness": "The adapter preserves the v2 protocol boundary and detects protected evidence tampering plus extra files. Verification: 117/117 package tests, tsc --noEmit, and git diff --check pass. No live v2 model calls occurred.",
+      "lesson": "For multi-file benchmarks, mutable scope and expected state must be separate: unchanged evidence can be part of expected output while still being protected from the agent.",
+      "pattern": "Generate independent verification from a frozen expected-file manifest and protect every non-mutable input."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "autonomy-benchmark-v2",
+    "codex",
+    "adapter",
+    "evidence-integrity"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
+      "relativePosition": [
+        2.4229153497679228,
+        -0.6160204605846987
+      ],
+      "weight": 1,
+      "explanation": "Uses the verified v2 isolation and evidence adapter."
+    },
+    {
+      "aimId": "37c6c71f-0c5a-4052-95e4-8515e83b6ad8",
+      "relativePosition": [
+        2.4636302883179124,
+        -0.42488328101091405
+      ],
+      "weight": 1,
+      "explanation": "Hardens the v2 adapter evidence boundary."
+    },
+    {
+      "aimId": "d629e231-065c-4d02-a8a9-ef05b464f123",
+      "relativePosition": [
+        -0.08906081817008435,
+        2.4984131305024144
+      ],
+      "weight": 1,
+      "explanation": "Uses the verified isolated multi-file adapter."
+    }
+  ],
+  "supportedAims": [
+    "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
+    "02e512d5-f6e9-4fc6-91f9-61a4a8118d8b"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "V2 isolated Codex adapter implemented and internally verified; awaiting user acceptance. Live matched execution remains separate.",
+    "date": 1785599019389
+  },
+  "intrinsicValue": 18,
+  "valueRationale": "The new preregistration cannot produce empirical evidence until its richer fixtures can be executed and independently verified under identical isolation.",
+  "cost": 4,
+  "loopWeight": 1,
+  "duration": 2,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,63 @@
+{
+  "id": "ece096c7-9a22-4b9f-8e02-51ef09326929",
+  "text": "Provide founder facts and make the consequential SPC application choices",
+  "description": "Felix supplies or verifies the personal facts the agent must not infer: current journey stage, intended company/fundraising path, solo/cofounder status and Robin's role, current location and preferred SPC office, ability to attend the in-person bootcamp, full-time commitment, incorporation/funding history, personal achievements, work history, and which claims/artifacts he is comfortable submitting.",
+  "reflections": [
+    {
+      "date": 1785583326379,
+      "context": "Reduce the founder's recall burden without converting stale grant drafts or relationship hypotheses into application facts.",
+      "outcome": "Created meta/applications/spc-founder-fellowship-2026/founder-evidence-worksheet.md. It consolidates candidate Felix facts from prior first-person material, ranks three artifact classes, separates Robin's documented history from present commitment, frames Herzog Records and Wilde Möhre as discovery rather than traction, and isolates five confirmations.",
+      "effectiveness": "The worksheet passes git diff --check and traces every candidate group to existing project material. It explicitly preserves the Rüdger/Rüdiger Herzog naming ambiguity instead of manufacturing a full identity.",
+      "lesson": "Founder preparation can be autonomous up to source consolidation; truth, current commitments, naming permission, and autobiographical meaning remain irreducibly human.",
+      "pattern": "Turn scattered prior application claims into a provenance-aware confirmation worksheet before asking a founder for facts."
+    },
+    {
+      "date": 1785583920152,
+      "context": "Verify what repository history supports about Felix's Aimparency authorship before using first-person builder language in the SPC application.",
+      "outcome": "Created authorship-audit.md. Across 699 commits reachable from all local refs, every author record is Felix Niemeyer; 135 commits explicitly credit Claude models through co-author trailers. Updated the founder worksheet and canonical README with safe wording and limitations.",
+      "effectiveness": "Reproduction assertions confirm the commit count, sole author identity in Git metadata, and co-authored-commit count; all edited documents pass git diff --check.",
+      "lesson": "The accurate high-signal claim is principal builder using intensive AI-native development. Git metadata supports authorship but cannot establish sole intellectual contribution or complete model involvement.",
+      "pattern": "Audit repository authors and co-author trailers before turning founder-builder claims into external representations; report both the support and metadata limits."
+    },
+    {
+      "date": 1785585869310,
+      "context": "Felix supplied the exact initial Airtable options and chose the truthful current-stage answer.",
+      "outcome": "Recorded `I'm exploring` verbatim in the submission assembly, working draft, and Boardy brief. The application will follow the conditional route actually presented rather than claiming Founder Fellowship readiness merely to preserve the original funding framing.",
+      "effectiveness": "This resolves one consequential human choice and prevents narrative/eligibility overreach. The remaining form schema is still unknown until Airtable renders it.",
+      "lesson": "Treat program routing as evidence about fit: preserve the broader funding aim, but let the truthful stage answer determine the immediate application path.",
+      "pattern": "Capture exact conditional-form choices and update both prose artifacts and graph blockers immediately."
+    },
+    {
+      "date": 1785588130929,
+      "context": "Strengthen the missing causal founder narrative without converting old first-person material or Git metadata into unverified biography.",
+      "outcome": "Created founder-spine.md around a documented transition: `I used to write loads of code. These days, AI writes the code.` Developed the hypothesis that Felix experienced the scarce work moving from implementation toward direction, connected it to his reported improvisational life and decision practice, ranked three founder claims by evidence, produced a 926-character candidate answer, and listed six interview follow-ups and six truth gates.",
+      "effectiveness": "The candidate integrates lived problem, distinctive personal tension, and repository-supported execution while explicitly requiring confirmation of causality, biography, current model involvement, and collaborator credit. The packet verifier passes all 34 current invariants and git diff --check passes.",
+      "lesson": "The strongest founder advantage is not access to coding agents but a credible causal path from lived change in the founder's own work to the infrastructure he chose to build.",
+      "pattern": "Build founder narrative as a causal chain—experienced transition, prior practice, product response, inspectable execution—and isolate every autobiographical inference for confirmation."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "spc",
+    "human-dependent",
+    "founder-facts"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b52d435e-72b5-4839-b0cd-fbc916b46a03"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Journey-stage choice is resolved: Felix selects the exact Airtable option `I'm exploring`. Remaining human inputs are the conditional questions revealed by that selection, founder/market facts, Robin's current role, location/attendance commitments, artifact choices, and final disclosure/submission decisions.",
+    "date": 1785583205165
+  },
+  "intrinsicValue": 9,
+  "valueRationale": "These facts determine eligibility, narrative coherence, and whether the application is truthful.",
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

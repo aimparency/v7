@@ -1,0 +1,88 @@
+{
+  "id": "4a36d8ae-656f-45d6-97c8-a6990275cc99",
+  "text": "Hold the SPC narrative working session with Boardy",
+  "description": "Felix joins Boardy for the focused video session, tests the founder narrative and maximally ambitious version of Aimparency, and records actionable corrections or notes for the application. Confirmed for 1 Aug 2026, 15:00–16:00 Berlin at https://meet.google.com/mew-okrp-cwa. Use meta/applications/spc-founder-fellowship-2026/boardy-call-brief.md as the decision record.",
+  "reflections": [
+    {
+      "date": 1785583078699,
+      "context": "Convert the broad SPC working draft and Boardy's prior critique into a useful one-hour founder conversation without letting prose polishing consume the session.",
+      "outcome": "Created a 724-word decision brief with one proposed narrative spine, a strict evidence/inference boundary, seven decisions, seven pressure-test questions, and an in-call decision record.",
+      "effectiveness": "The artifact passed git diff --check and isolates every consequential founder choice as HUMAN while supplying the strongest evidence-grounded default for Boardy to attack.",
+      "lesson": "External critique is most valuable when the session is structured around falsifiable choices and objections, not open-ended reactions to polished copy.",
+      "pattern": "Before a time-bounded human review, compress agent-produced context into a decision brief that states the default, evidence boundary, required decisions, and recording format."
+    },
+    {
+      "date": 1785583802069,
+      "context": "Turn the Boardy brief's three abstract global-maximum labels into decision-ready, internally coherent company narratives.",
+      "outcome": "Created narrative-options.md comparing developer intent infrastructure, a strategy layer for replaceable agents, and a constitutional layer for autonomous organizations across first buyer, painful event, current product, proof, eight-week test, expansion, fatal weakness, and prohibited claims. Linked it from the call brief and canonical README.",
+      "effectiveness": "All three options use the same core invariant but expose materially different evidence and market risks. The 1,256-word comparison passes git diff --check and produces a specific evidence-based recommendation without recording it as Felix's choice.",
+      "lesson": "The strongest current narrative is developer intent infrastructure, with model-independent agent strategy as earned expansion; organizational constitution is mission-consistent but presently outruns enforcement and external evidence.",
+      "pattern": "Compare strategic narratives as complete causal chains—buyer, pain, product, proof, test, expansion, fatal weakness—not as visionary taglines."
+    },
+    {
+      "date": 1785584030649,
+      "context": "Resolve whether Robin, Herzog Records, and Wilde Möhre strengthen or contradict the recommended SPC developer-infrastructure narrative.",
+      "outcome": "Created market-evidence-map.md comparing the developer wedge with three relationship-led organizational experiments. For each relationship it records known facts, possible tests, unsupported inferences, and safe SPC use; it then defines two coherent go-to-market choices and a direct Boardy decision question.",
+      "effectiveness": "The map passes git diff --check and prevents a major narrative error: presenting planned organizational discovery as traction for a different buyer/product. It also identifies the strongest truthful evidence from Wilde Möhre as a timing correction rather than customer interest.",
+      "lesson": "A warm relationship is a learning channel, not market evidence. Parallel experiments should not be combined into one traction story until the same buyer, pain, product motion, and paid outcome connect them.",
+      "pattern": "Map each relationship across known fact, testable hypothesis, unsupported inference, and narrative role before naming it in a funding application."
+    },
+    {
+      "date": 1785584175625,
+      "context": "Give Felix a short, self-contained briefing to read immediately before the Boardy video call.",
+      "outcome": "Created executive-summary-for-boardy-call.md as a four-to-five-minute briefing. It integrates graph purpose, recommended company spine, proof and limits, market-channel mismatch, strongest rejection case, seven decisions, and the concrete definition of a successful call.",
+      "effectiveness": "The summary is 1,008 words, references only audited or clearly labeled evidence, and passes git diff --check. It replaces the need to read the full application packet before the call.",
+      "lesson": "An executive briefing should expose the decision architecture and strongest contradiction, not summarize every artifact produced.",
+      "pattern": "For a high-stakes call, lead with objective and recommendation, separate evidence from absence, state the strongest rejection, and end with decisions and a completion sentence."
+    },
+    {
+      "date": 1785587304614,
+      "context": "Align the human working session with the newly consolidated application spine.",
+      "outcome": "Revised boardy-call-brief.md so Boardy attacks one concrete proposition: direction debt in AI-native repositories, measurable reduction of restatement and wrong-direction work, and an evidence-gated path toward a strategy layer. Removed stale presumptions that Felix is applying directly to the Founder Fellowship.",
+      "effectiveness": "The call brief now treats `I'm exploring` as decided, supplies strong defaults rather than seven blank strategic choices, and keeps only institutionally human decisions open. git diff --check passes.",
+      "lesson": "A critic produces more value by attacking a specific falsifiable default than by choosing among several abstract narratives.",
+      "pattern": "Before external review, converge the internal thesis and ask the reviewer to break or sharpen it."
+    },
+    {
+      "date": 1785588305537,
+      "context": "Refresh Felix's pre-call executive summary after the application developed a causal founder spine, fair competitive boundary, and controlled direction-debt benchmark.",
+      "outcome": "Updated the summary with the candidate transition from writing code to directing AI-produced implementation, acknowledged current memory/orchestration/project-agent capabilities, defined Aimparency's distinct-state hypothesis, replaced open-ended market choice with a concrete handoff wedge to attack, and replaced generic discovery with the paired benchmark and explicit losing outcomes.",
+      "effectiveness": "The 1,220-word summary remains a 5–6 minute read, carries the latest application defaults without turning them into customer evidence or unconfirmed biography, passes the 34-invariant packet verifier, and passes git diff --check.",
+      "lesson": "An executive brief must track the current decision frontier; once strong defaults and falsification exist, leaving earlier open-ended choices in place wastes scarce critic attention.",
+      "pattern": "Refresh pre-call material from unresolved topics to specific defaults, strongest objections, and decisions only the human critic can improve."
+    },
+    {
+      "date": 1785588399783,
+      "context": "Convert the now-deep application packet into a usable live-call instrument for Felix's one-hour Boardy session.",
+      "outcome": "Created boardy-call-card.md with a 90-second opening, five decision questions, personal facts to settle, minute-by-minute timebox, six narrative guardrails, and a closing sentence that forces the unresolved choice, verified product, founder causality, buyer/failure, baseline, SPC leverage, and disconfirming result into one record.",
+      "effectiveness": "The card is 540 words, avoids asking Boardy to select among vague narratives, and focuses the call on breaking specific defaults. The packet verifier passes all 35 current invariants and git diff --check passes.",
+      "lesson": "Deep preparation only improves a live conversation when compressed into a small agenda that demands decisions and records objections.",
+      "pattern": "Pair a comprehensive pre-read with a one-screen call card containing opener, decisions, timebox, guardrails, and closure test."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "spc",
+    "boardy",
+    "human-dependent",
+    "review"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b52d435e-72b5-4839-b0cd-fbc916b46a03"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Preparation complete and aligned around direction debt, the promise `change the executor without losing the project's direction`, and a falsifiable AI-native repository wedge. Felix holds the scheduled Boardy call and records objections, founder facts, route consequences, Robin's role, artifact choice, and learning agenda in boardy-call-brief.md.",
+    "date": 1785583078699
+  },
+  "intrinsicValue": 7,
+  "valueRationale": "A demanding external reader can expose weak framing before the deadline and sharpen founder-specific answers.",
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

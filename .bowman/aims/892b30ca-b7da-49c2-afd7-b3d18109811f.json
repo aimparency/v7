@@ -1,7 +1,7 @@
 {
   "id": "892b30ca-b7da-49c2-afd7-b3d18109811f",
   "text": "shift / ctrl + click on computer, long tap on touch/android for selecting multiple aims in graph view",
-  "description": "",
+  "description": "Multi-selection gestures specifically on the WebGL graph canvas: desktop modifier-click and touch long-press, using shared selection state.",
   "reflection": "Graph touch now starts a 450ms hold timer, cancels it on drag, toggles shared multi-selection on hold, and suppresses the following synthetic click. Focused frontend tests pass (11/11); production build passes.",
   "reflections": [],
   "archived": false,

@@ -1,0 +1,54 @@
+{
+  "id": "e9838c4f-9d0f-4e32-8fbd-e61051d4bcee",
+  "text": "Canonicalize model-authored supervisor payloads before worker delivery",
+  "description": "Extend the production dispatch boundary so an allowed action type does not implicitly authorize arbitrary model-authored text. Convert supervisor actions to bounded canonical forms before state transition and side effects: drop free-text message/text/reason/reflection fields, preserve only the action type and tightly bounded non-semantic controls such as wait duration, and use trusted local default prompts. Ensure terminal/repository content echoed by the supervisor cannot become worker instructions or durable session memory. Add tests proving injected payload text is absent from worker writes and state history while normal orchestration still proceeds. Do not restart the running stack or add capabilities.",
+  "reflections": [
+    {
+      "date": 1785601599519,
+      "context": "The new production action-type allowlist still passed arbitrary message/text/reason/reflection fields from a stochastic supervisor that reads attacker-influenced terminal content.",
+      "outcome": "Added canonicalizeSupervisorAction and applied it before state transitions, direct legacy actions, and state-machine side effects. Semantic payload fields are removed; wait duration is clamped to 1–60 seconds; send-prompt retains only the boolean trusted-context flag and uses a local canonical prompt. Compact reflection fields can no longer persist model/terminal injection into session memory.",
+      "effectiveness": "The full wrapped-agents/common suite passes 158/158 tests, TypeScript tsc --noEmit passes, and git diff --check passes. New tests prove injected text is absent from state transition history and worker prompts, canonical orchestration continues, semantic compact payloads are erased, and bounded controls are retained. No development server was touched.",
+      "lesson": "An allowlisted verb is not a bounded capability if it carries arbitrary semantic arguments. Treat model output as control selection only; executable language must come from trusted local templates.",
+      "pattern": "Canonicalize before authorization and state mutation, retain only explicitly typed non-semantic controls, and independently test both transient delivery and durable-memory channels."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "prompt-injection",
+    "watchdog",
+    "dispatch-boundary"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "a9fd2cb1-33a9-4b23-8da8-be13607df281",
+      "relativePosition": [
+        -2.3186872499144324,
+        -0.9347135588426256
+      ],
+      "weight": 1,
+      "explanation": "Audits only canonical action metadata, never stripped semantic payloads."
+    }
+  ],
+  "supportedAims": [
+    "29da921a-6bd9-423e-92ab-ef052a43892b",
+    "1733c488-68b0-47cc-8439-c8c5c0476a87"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Supervisor semantic payload canonicalization implemented and internally verified; awaiting explicit user acceptance before done.",
+    "date": 1785601599553
+  },
+  "intrinsicValue": 28,
+  "valueRationale": "An action-type allowlist is insufficient if attacker-controlled terminal text can ride inside allowed fields and instruct the capable worker.",
+  "cost": 4,
+  "loopWeight": 1,
+  "duration": 2,
+  "costVariance": 0,
+  "valueVariance": 0
+}

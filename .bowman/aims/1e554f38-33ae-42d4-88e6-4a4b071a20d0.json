@@ -59,6 +59,60 @@
         0.7236872348023317
       ],
       "weight": 1
+    },
+    {
+      "aimId": "70d6c137-9b3b-4c8f-87dc-7bb7041188ec",
+      "relativePosition": [
+        -0.4025931553014753,
+        2.467370817551428
+      ],
+      "weight": 1,
+      "explanation": "Creation-time parent/child selection and weights are prerequisites of connection-detail creation flows."
+    },
+    {
+      "aimId": "101bc40f-5b53-4c4c-aca4-bc91bcdf094a",
+      "relativePosition": [
+        -0.49774201691710995,
+        -2.4499495677656893
+      ],
+      "weight": 1,
+      "explanation": "Creation-time contribution share is directly generalized by the contribution-percentage modal."
+    },
+    {
+      "aimId": "0eba57d1-6f4f-49a1-bf75-a793792d7d6f",
+      "relativePosition": [
+        -2.175342639084723,
+        1.2320245137901729
+      ],
+      "weight": 1,
+      "explanation": "Persisting graph-side explanation edits is part of the connection explanation capability."
+    },
+    {
+      "aimId": "dd4e0829-abb1-455f-b51f-3a3112ff1138",
+      "relativePosition": [
+        -1.029647071259203,
+        -2.278119160326638
+      ],
+      "weight": 1,
+      "explanation": "Bidirectional connection consistency underpins safe connection-detail editing."
+    },
+    {
+      "aimId": "6314d50f-280e-4e56-b539-d0a614e90304",
+      "relativePosition": [
+        2.380118367350347,
+        -0.7648768249865591
+      ],
+      "weight": 1,
+      "explanation": "List-view connection editing reuses the contribution-share and explanation modal."
+    },
+    {
+      "aimId": "8a8f970c-b085-4f9a-b257-8645b3879b55",
+      "relativePosition": [
+        -2.340499100859094,
+        -0.8786717014208291
+      ],
+      "weight": 1,
+      "explanation": "Displaying additional parent relationships makes multi-connection semantics legible in list view."
     }
   ],
   "supportedAims": [

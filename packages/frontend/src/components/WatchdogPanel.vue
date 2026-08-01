@@ -121,6 +121,17 @@ const supervisorStateStyle = computed(() => {
     : undefined
 })
 
+const authorityNotice = computed(() => {
+  const decision = store.latestBlockedAuthorityDecision
+  if (!decision) return null
+  const label = decision.disposition === 'escalate'
+    ? `Human authorization required: ${decision.actionType}`
+    : decision.disposition === 'refuse'
+      ? `Supervisor action refused: ${decision.actionType}`
+      : `Supervisor stop enforced: ${decision.actionType}`
+  return { label, detail: decision.reasons.join(', ') }
+})
+
 const handleKeyDown = (e: KeyboardEvent) => {
   if (e.ctrlKey && e.code === 'Space') {
     e.preventDefault()
@@ -403,6 +414,17 @@ defineExpose({
       </div>
     </div>
 
+    <div
+      v-if="authorityNotice"
+      class="authority-notice"
+      role="status"
+      aria-live="polite"
+      :title="authorityNotice.detail"
+    >
+      <span class="authority-notice-label">{{ authorityNotice.label }}</span>
+      <span class="authority-notice-reason">{{ authorityNotice.detail }}</span>
+    </div>
+
     <div class="term-tabs" v-show="store.isConnected && !projectStore.terminalFullscreen">
       <button
         class="term-tab"
@@ -663,6 +685,26 @@ defineExpose({
   font-weight: bold;
   font-size: 0.8rem;
   margin-right: 0.5rem;
+}
+
+.authority-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid #7c2d12;
+  background: #431407;
+  color: #fed7aa;
+  font-size: 0.78rem;
+}
+
+.authority-notice-label {
+  font-weight: 700;
+}
+
+.authority-notice-reason {
+  color: #fdba74;
+  font-family: monospace;
 }
 
 .action-btn {

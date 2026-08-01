@@ -1,0 +1,34 @@
+{
+  "id": "6ed472d3-9211-46b6-a613-efb199b77b97",
+  "text": "Self-improvement cycle 3: reject invalid and budget-exceeding benchmark telemetry",
+  "description": "Generated from the recorded cycle-1 reflection that capability comparisons require matched budgets and authoritative evidence. Observed limitation: negative, non-finite, zero-budget, or budget-exceeding telemetry was accepted into benchmark aggregates. Frozen evaluation: require negative intervention counts, NaN token usage, and usage beyond the registered budget to produce an invalid result. Bounded change: validate every numeric field as finite and non-negative, require positive budgets, and reject token/time overruns. Regression gate: full wrapped-agents/common tests, TypeScript type-check, and diff check.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "self-improvement-cycle",
+    "benchmark",
+    "evidence-integrity"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "13d74766-60e4-4c0d-9cb4-810b93f985f9",
+    "ae0e65f3-7c39-4c19-86cf-7140e5c891ab"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Cycle implemented from a recorded system reflection and internally verified; awaiting user acceptance.",
+    "date": 1785594360524
+  },
+  "intrinsicValue": 0,
+  "valueRationale": "Invalid telemetry can manufacture apparent capability gains; rejecting it makes the recursive-improvement evidence more trustworthy.",
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

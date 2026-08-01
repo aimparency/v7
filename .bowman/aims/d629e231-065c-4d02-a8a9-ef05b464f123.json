@@ -1,0 +1,44 @@
+{
+  "id": "d629e231-065c-4d02-a8a9-ef05b464f123",
+  "text": "Execute the calibrated autonomy benchmark v3 matched comparison",
+  "description": "Execute the frozen 2026-08-01.v3 protocol exactly once: four unchanged multi-file fixtures under graph_grounded and stateless, gpt-5.6-sol, workspace-write-no-network, 170000 tokens and 90000 ms per run, alternating graph-first-even order, zero retries, and preservation of all errors. Do not reuse pilot records or run a new smoke because the adapter and fixtures are already verified and the excluded pilots served calibration. Analyze only through analyzeAutonomyBenchmarkV3 and record capability_positive, efficiency_positive, null, negative, or invalid without reinterpretation. Do not touch the development server.",
+  "reflections": [
+    {
+      "date": 1785600164517,
+      "context": "Executed the frozen calibrated v3 manifest: eight new confirmatory gpt-5.6-sol runs, unchanged v2 fixtures/scoring, 170000 tokens, 90000 ms, alternating order, zero retries, and no pilot reuse.",
+      "outcome": "All 8/8 runs were admissible, independently verified, and had zero human interventions and policy violations. V3 returned valid null. Graph-grounded: completion 1, recovery 0.75, mean 39570.25 ms, 93802.75 tokens, 4.5 tools. Stateless: completion 1, recovery 0.75, mean 35059 ms, 93522 tokens, 4.5 tools. Qualifying efficiency metrics: 0.",
+      "effectiveness": "Calibration eliminated the structural budget invalidity, yielding a complete comparison. The prospective efficiency hypothesis did not replicate: graph grounding used 0.30% more tokens, equal tools, and 12.87% more wall time. The tasks still had a completion ceiling.",
+      "lesson": "The v1 resource reduction was not robust on new richer fixtures. Additional synthetic micro-benchmark iterations have diminishing evidential value; future evaluation should use representative long-horizon work with outcomes that do not saturate.",
+      "pattern": "Replicate exploratory signals prospectively and accept null results before investing in optimization."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "autonomy-benchmark-v3",
+    "live-experiment",
+    "confirmatory"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e47f35d4-c805-4422-bef7-f695348baf4e",
+    "50feea3c-337c-4658-aaab-15e44972d8ac",
+    "7634e681-d234-48fa-ad82-876ef97460ca"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Calibrated v3 confirmatory run complete: valid null, 8/8 safe completions, zero qualifying efficiency improvements. Awaiting user acceptance.",
+    "date": 1785600164552
+  },
+  "intrinsicValue": 20,
+  "valueRationale": "This is the first adequately calibrated prospective test of the preregistered resource-efficiency signal on richer tasks.",
+  "cost": 10,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

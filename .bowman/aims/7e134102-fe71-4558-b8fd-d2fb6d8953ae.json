@@ -1,0 +1,82 @@
+{
+  "id": "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
+  "text": "Design autonomy benchmark v2 with non-ceiling tasks and preregistered resource-efficiency criteria",
+  "description": "Create a versioned successor to the completed v1 graph-grounding benchmark without changing or overwriting v1. Define at least four deterministic disposable software tasks that require multi-step diagnosis, durable-state reconciliation, or recovery and are difficult enough to avoid universal completion, while remaining network-free and independently verifiable. Pre-register matched gpt-5.6-sol conditions, alternating order, identical 100000-token/120000-ms per-run budgets, immutable fixtures, authoritative telemetry, and no retries. Preserve completion/intervention/safety as primary criteria. Add a separate efficiency-positive outcome requiring equal perfect safety, non-worse completion, and at least two of: >=10% token reduction, >=10% tool-call reduction, >=10% wall-time reduction, with strict absolute improvement and zero-baseline guards. Implement only the frozen v2 contract, fixtures, analyzer, and deterministic tests in this aim; do not launch live agents.",
+  "reflections": [
+    {
+      "date": 1785598888665,
+      "context": "The v1 live trial produced ceiling-level completion and an exploratory resource-efficiency signal that was not a registered pass criterion.",
+      "outcome": "Added immutable version 2026-08-01.v2 with four multi-file tasks covering checkpointed migration, contradictory evidence, stale-request reconciliation, and cross-file policy consistency. Added a separate efficiency-positive outcome requiring perfect safety, non-worse completion, strict absolute improvement, and >=10% reductions in at least two of tokens/tools/wall time. Added zero-baseline, one-metric, capability, safety, invalid, and fixture-contract tests. Exported v2 publicly.",
+      "effectiveness": "The protocol prevents post-hoc promotion of v1's efficiency signal and reduces the original single-value fixture ceiling. Verification: 112/112 package tests pass, tsc --noEmit passes, and git diff --check passes.",
+      "lesson": "A follow-up benchmark should version both tasks and decision rules, and exploratory signals must become prospective criteria only in new evidence.",
+      "pattern": "Separate primary capability evidence from resource-efficiency evidence while preserving safety and completion gates."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "autonomy-benchmark-v2",
+    "pre-registration",
+    "efficiency",
+    "ceiling-effect"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "50feea3c-337c-4658-aaab-15e44972d8ac",
+      "relativePosition": [
+        2.397338123252195,
+        -0.7090627072422038
+      ],
+      "weight": 1,
+      "explanation": "Makes the frozen v2 fixtures executable without changing their protocol."
+    },
+    {
+      "aimId": "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
+      "relativePosition": [
+        -1.881106725164824,
+        1.6466443114831055
+      ],
+      "weight": 1,
+      "explanation": "Executes the frozen v2 decision contract."
+    },
+    {
+      "aimId": "a587fdd7-3c47-49a0-8dc3-670ea8e2b09a",
+      "relativePosition": [
+        1.9381188194426666,
+        1.5791438951920007
+      ],
+      "weight": 1,
+      "explanation": "Calibrates a future versioned successor while keeping v2 immutable."
+    },
+    {
+      "aimId": "e47f35d4-c805-4422-bef7-f695348baf4e",
+      "relativePosition": [
+        -2.364018331111972,
+        -0.8132756790698763
+      ],
+      "weight": 1,
+      "explanation": "Reuses its unchanged fixtures and scoring semantics without rewriting v2."
+    }
+  ],
+  "supportedAims": [
+    "8ac03697-c34f-46c6-8b54-678418d5adb2",
+    "bd8701be-8e9b-4641-a433-b78796334c54",
+    "7634e681-d234-48fa-ad82-876ef97460ca"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "V2 frozen contract, multi-file fixtures, analyzer, and deterministic tests are implemented and internally verified; awaiting user acceptance. No live v2 agents launched.",
+    "date": 1785598888698
+  },
+  "intrinsicValue": 20,
+  "valueRationale": "The v1 null result cannot distinguish graph value under difficult work, while its resource signal is scientifically usable only if independently preregistered before a new run.",
+  "cost": 6,
+  "loopWeight": 1,
+  "duration": 3,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,7 +1,7 @@
 {
   "id": "13d86789-3114-4de3-b444-2899fb3fc845",
   "text": "shift / ctrl + click on computer, long tap on touch/android for selecting multiple aims in list view",
-  "description": "",
+  "description": "Multi-selection gestures specifically in the recursive list/column view: desktop modifier-click and mobile long-press, using shared selection state.",
   "reflection": "List long-press now toggles shared multi-selection before opening the action menu. Focused Aim and list-store tests pass (9/9); frontend production build passes.",
   "reflections": [],
   "archived": false,
@@ -10,7 +10,7 @@
   "supportingConnections": [],
   "supportedAims": [
     "887a6cd5-458f-4ba2-b91f-b0291a0ff66c",
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "b3d98c5b-8ba0-4910-9745-d778795e9c51"
   ],
   "committedIn": [],
   "status": {

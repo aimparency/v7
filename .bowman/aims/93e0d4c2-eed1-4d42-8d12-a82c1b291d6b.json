@@ -1,0 +1,62 @@
+{
+  "id": "93e0d4c2-eed1-4d42-8d12-a82c1b291d6b",
+  "text": "Earn the first €20 of compute through an accepted open-source bounty",
+  "description": "Run the Compute Commons Maintainer experiment defined in meta/autonomous-compute-earner.md. Select a reputable public repository issue with explicit bounty/payment and testable acceptance, implement and verify it without step-by-step steering, submit under a disclosed standing human-authorized identity, obtain maintainer merge and cleared payment, record all compute/rework costs, and allocate an agreed share to the next compute attempt. Success requires merge, cleared revenue, actual compute below €10, inspectable run evidence, and no human intervention beyond prior institutional mandate or exceptional legal judgment. Silence, an unsubmitted patch, mock revenue, or self-assessed usefulness does not count.",
+  "reflections": [
+    {
+      "date": 1785584926651,
+      "context": "Felix challenged the pattern of marking all real-world work human-dependent and asked how this executor itself could become autonomous by earning compute in human institutions.",
+      "outcome": "Designed the Compute Commons Maintainer in meta/autonomous-compute-earner.md: select explicit public open-source bounties, implement and verify patches, submit under a disclosed standing mandate, earn cleared payment, and reinvest a bounded share into compute. Defined selection economics, authority boundary, prohibited work, a €20 revenue/€10 compute first experiment, success/failure evidence, and growth path. Created the experiment plus separate open scan and human-dependent mandate children.",
+      "effectiveness": "The design converts one large human blocker into a one-time institutional mandate beside an immediately agent-actionable market scan. It uses external maintainer acceptance and cleared payment rather than self-report or simulated credits as selection pressure.",
+      "lesson": "Economic autonomy should begin in a domain where need, artifact, acceptance, and payment are machine-legible. Human law and authority define the arena once; autonomy is then measured by value created without step-by-step steering inside that mandate.",
+      "pattern": "Decompose real-world autonomy into an agent-actionable opportunity/execution loop and a narrow human-dependent institutional mandate; never label the whole endeavor human-dependent when useful work exists before the gate."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "economic-autonomy",
+    "open-source",
+    "bounty",
+    "external-value",
+    "compute"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "a1641a4c-4dd3-4e45-8c0b-befd59b22f17",
+      "relativePosition": [
+        2.492424462930057,
+        0.19447441113888642
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "07b33621-c9fa-4d51-9dde-10f242811f35",
+      "relativePosition": [
+        -1.4948670686951373,
+        -2.0038394264338666
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "7f2bae54-03a6-481f-8de7-114fba05c112",
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [
+    "111d2965-0ca2-4b07-ab5c-eef1571a820a"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "The current scan completed with no qualifying issue. Live execution additionally requires Felix's standing identity/payment/compute mandate. Resume autonomously when a qualifying primary issue appears and the mandate exists.",
+    "date": 1785594523538
+  },
+  "intrinsicValue": 12,
+  "valueRationale": "A small but closed real payment-to-compute loop is stronger evidence of economic autonomy than larger unaccepted or simulated work.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 14,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Current-market scan produced a legitimate negative result: 20 candidates/surfaces were checked and none satisfied the bounded first-attempt policy. Do not substitute stale or closed bounties merely to remain active."
+}

@@ -3,7 +3,15 @@
   "text": "Make the autonomous loop mission-continuous and evidence-driven",
   "description": "Keep the loop running indefinitely: orient to the highest-value mission, select an actionable descendant, verify and record evidence, then return and reprioritize. New instances should not pin a leaf aim by default. Explicit targets must fall back after completion; provider stream errors must fail visibly rather than enter a successful cooldown. Core worker and MCP prompts should state this invariant once, leanly.",
   "reflection": "Implemented infinite-loop semantics: new instances default to dynamic aim selection and never-stop policy; completed/missing explicit targets fall back to the next prioritized open aim; streamed provider errors fail the cycle instead of cooling down as success. Condensed default worker and MCP prompts around one invariant: mission → actionable descendant → real evidence → reprioritize indefinitely. Verification: loop-worker typecheck passed; backend build passed; MCP build passed; 3 focused loop policy/capability tests passed.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1785607107957,
+      "context": "Live Stop-hook evidence showed that an empty actionable queue could still produce useful work, but only because the hook prompt supplied exploration guidance. get_prioritized_aims itself returned mission containers as its connected-uncommitted fallback, so other MCP clients lacked the same graph-native recovery contract.",
+      "outcome": "Changed prioritization to treat only connected uncommitted open leaves as executable fallback work. When neither a committed nor connected-uncommitted actionable leaf exists, selectionScope is mission-containers-exploration and the response includes a required exploration contract: inspect hygiene/reflections, step back and decompose abstract missions, formulate a falsifiable safe reversible hypothesis with verification/stop condition, search before create, connect and phase-commit new work, and avoid low-value activity or Markdown-only plans. Updated the tool description and fallback diagnostic wording.",
+      "effectiveness": "Two focused get_prioritized_aims tests pass: hidden actionable leaf fallback remains intact, and a cyclic mission-container frontier returns the exploration contract with no false leaf fallback. MCP TypeScript build and git diff --check pass. An initially misordered name-filter command also ran unrelated system tests and surfaced two existing tools-system failures; the correctly scoped tools-aims run passed 2/2.",
+      "lesson": "Mission continuity must be encoded at the graph-tool boundary, not depend on one agent surface's prompt. Containers provide orientation; they must never masquerade as executable leaves when the system should enter explicit hypothesis-generation mode."
+    }
+  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -28,8 +36,8 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Mission-continuous defaults, target fallback, provider failure handling, and lean worker/MCP orientation are implemented and internally verified; awaiting user acceptance.",
-    "date": 1784737992126
+    "comment": "Mission-continuous loop now includes a graph-native empty-frontier exploration contract and leaf-only hidden-work fallback; internally verified, awaiting explicit acceptance.",
+    "date": 1785607112813
   },
   "intrinsicValue": 0,
   "cost": 3,

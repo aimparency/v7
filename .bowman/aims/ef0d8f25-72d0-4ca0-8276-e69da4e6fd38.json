@@ -1,0 +1,48 @@
+{
+  "id": "ef0d8f25-72d0-4ca0-8276-e69da4e6fd38",
+  "text": "Prepare the Aimparency recursive proof artifact for SPC",
+  "description": "Create a concise, inspectable account of how the SPC objective, constraints, decisions, corrections, phase, human gates, and executor work were represented in the aim graph. The proof must demonstrate operational continuity and human authority without asking reviewers to admire a gimmick. Include concrete examples of Codex being directed, corrected, or blocked by human-dependent aims.",
+  "reflection": "Created meta/applications/spc-founder-fellowship-2026/process-proof.md. It records the objective, dual mission, authority roles, deadline phase, human gates, the transitive-priority product correction, verification evidence, replacement-executor continuity test, and honest limits. git diff --check and all 5 phase-priority tests pass.",
+  "reflections": [
+    {
+      "date": 1785584343167,
+      "context": "Return from the executive-summary request to strengthen verification of the SPC phase's human-dependent priority feature.",
+      "outcome": "Added Phase.spec.ts, a component-level test that opens the actual priority panel, verifies the human-dependent default, descendant-phase and full-aim loading, direct and transitive labels/order, hiding the normal aim list, and opening the selected aim modal. Updated application evidence documents from five logic tests to six logic+component tests.",
+      "effectiveness": "Both focused test files pass (6/6), frontend vue-tsc passes, and git diff --check passes. This closes the interaction-verification gap left by utility-only tests.",
+      "lesson": "A pure traversal test proves graph semantics, but the user-facing claim also requires verifying that the button invokes loading, renders the chosen state, and connects results to the editing action.",
+      "pattern": "For graph-backed UI controls, test traversal logic separately and add one component test covering the complete user interaction boundary."
+    },
+    {
+      "date": 1785588017257,
+      "context": "Make the SPC continuity proof repeatable rather than relying only on prose and one-time manual inspection.",
+      "outcome": "Created verify-packet.mjs, a dependency-free repository-native verifier for both application mission parents, exact five-child decomposition, bidirectional deadline commitment, deadline timestamp, child backlinks, three human-dependent gates, exact `I'm exploring` choice, known answer limits, and every Markdown artifact indexed by the canonical README. Added its invocation and result to the README and process proof.",
+      "effectiveness": "The verifier passes 33/33 invariants and reports normalized answer lengths of 783, 648, and 723 characters. git diff --check passes.",
+      "lesson": "A continuity claim becomes more credible when critical graph and artifact invariants are executable, fail closed, and can be rerun by a replacement executor.",
+      "pattern": "Encode consequential run-state assertions in a small repository-local verifier beside the human-readable proof."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "spc",
+    "autonomy-proof",
+    "agent-actionable"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b52d435e-72b5-4839-b0cd-fbc916b46a03"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Concise operational proof written and internally checked; awaiting Felix/Boardy judgment on whether and how much to expose in the SPC application.",
+    "date": 1785582235783
+  },
+  "intrinsicValue": 6,
+  "valueRationale": "The process can provide differentiated product evidence if presented as a compact operational artifact rather than the application’s main claim.",
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

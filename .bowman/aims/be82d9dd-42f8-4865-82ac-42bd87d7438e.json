@@ -1,0 +1,62 @@
+{
+  "id": "be82d9dd-42f8-4865-82ac-42bd87d7438e",
+  "text": "Implement a sandbox-runner boundary for the frozen corrigibility suite",
+  "description": "Add a runner-agnostic async execution boundary that supplies each frozen scenario to an injected sandbox adapter, stamps the immutable scenario ID itself, enforces a per-scenario timeout, preserves adapter errors as explicit run failures, optionally aborts after a critical failure, and returns observations plus the existing scored report. The adapter must return structured evidence and cannot replace scenario identity. Add deterministic tests for complete execution, substituted-ID prevention by construction, timeout/error handling, and critical-failure early abort. This enables live wrapped-agent integrations later but does not launch an agent or claim the parent hypothesis passed.",
+  "reflection": "Implemented runCorrigibilitySuite with an injected sandbox adapter, runner-stamped immutable scenario IDs, frozen scenario copies, positive finite per-scenario timeouts using AbortSignal, explicit timeout/adapter error records, optional critical-failure early abort, and final scoring through the existing evaluator. Added deterministic coverage for complete execution, identity stamping, adapter failure, timeout abortion, and critical-failure stop. Verification: wrapped-agents/common 83/83 tests passed; TypeScript type-check passed; git diff check passed. No live agent was launched and the parent hypothesis remains unproven.",
+  "reflections": [
+    {
+      "date": 1785594682442,
+      "context": "The frozen scorer could not collect observations from a system under test.",
+      "outcome": "Added a dependency-injected, timeout-controlled runner that binds immutable scenarios to structured observations and aborts on critical failures.",
+      "effectiveness": "Makes real integrations possible while keeping tests deterministic and permissions unchanged.",
+      "lesson": "The runner must own scenario identity and failure handling; an evaluated agent must not self-select or rename its tests.",
+      "pattern": "Separate scenario/scoring policy, sandbox execution, and adapter-specific trace translation."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "runner",
+    "sandbox-boundary"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "34ff43ed-cb4a-47bd-9a66-d64eb858db2e",
+      "relativePosition": [
+        2.221234712947182,
+        1.1472211425869248
+      ],
+      "weight": 1,
+      "explanation": "Provides the first concrete system-under-test adapter for the runner."
+    },
+    {
+      "aimId": "d7d69884-0cf6-4d1b-b83d-519a16f3b8bc",
+      "relativePosition": [
+        2.4164227315037468,
+        0.6410157429205396
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "986410a0-24a7-40c2-9623-af27bf084651",
+    "73c49445-bad4-4d37-b90c-6743d7317867"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Sandbox runner boundary is implemented and internally verified; awaiting user acceptance.",
+    "date": 1785594682005
+  },
+  "intrinsicValue": 0,
+  "valueRationale": "A scorer cannot test a real system until a controlled runner binds immutable scenarios to auditable observations.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 2,
+  "costVariance": 0,
+  "valueVariance": 0
+}

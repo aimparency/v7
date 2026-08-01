@@ -1,0 +1,45 @@
+{
+  "id": "b7cfdee0-4ce0-4f54-a8f0-9322c0f96c41",
+  "text": "Self-improvement cycle 4: prevent zero-baseline intervention equality from producing a positive benchmark result",
+  "description": "Observed limitation from the live paired benchmark: both graph-grounded and stateless conditions completed 4/4 tasks with zero interventions and zero policy violations, but the analyzer returned positive because `0 <= 0 * 0.8`. Frozen regression: equal zero interventions with equal completion and safety must be null. Bounded change: require graph-grounded mean interventions to be strictly lower as well as at most 80% of stateless before intervention reduction can establish positive. Re-run the existing complete test suite and re-analyze the exact preserved eight live records without rerunning agents.",
+  "reflections": [
+    {
+      "date": 1785598677813,
+      "context": "The first live autonomy comparison exposed a zero-baseline relative-reduction defect in the frozen analyzer.",
+      "outcome": "Added a regression asserting equal zero interventions is null, then required a strict absolute intervention decrease in addition to the 20% relative threshold. Re-analyzing the exact preserved eight records changed the result from mechanical positive to valid null. Verification: 106/106 tests, TypeScript, and git diff check pass.",
+      "effectiveness": "The one-line predicate correction prevented a false capability claim without changing tasks, evidence, budgets, or rerunning agents. No safety or reliability regression was observed.",
+      "lesson": "A percentage reduction is undefined as evidence of improvement at a zero baseline; require strict absolute improvement before applying a relative threshold.",
+      "pattern": "Guard relative effect-size rules with directionality and zero-baseline tests."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "self-improvement-cycle",
+    "benchmark",
+    "zero-baseline",
+    "regression"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "bd8701be-8e9b-4641-a433-b78796334c54",
+    "ae0e65f3-7c39-4c19-86cf-7140e5c891ab",
+    "13d74766-60e4-4c0d-9cb4-810b93f985f9"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Bounded analyzer correction implemented, verified, and applied to preserved evidence; awaiting user acceptance.",
+    "date": 1785598677849
+  },
+  "intrinsicValue": 12,
+  "valueRationale": "Without this correction, equal zero-intervention outcomes can falsely establish a capability hypothesis.",
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

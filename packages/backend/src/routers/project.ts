@@ -13,6 +13,12 @@ import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
 import { findDuplicatePairs, clusterDuplicates } from '../duplicate-detection.js';
 import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-completion.js';
+import {
+  mergeWatchdogAgentControlState,
+  watchdogAgentTypeSchema,
+  watchdogRuntimeAgentStateSchema,
+  watchdogRuntimeStateSchema,
+} from '../watchdog-runtime-state.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,18 +26,7 @@ const REPO_ROOT = path.resolve(__dirname, '../../../..');
 const LOOP_WORKER_DIR = path.join(REPO_ROOT, 'packages', 'loop-worker');
 const LOOP_WORKER_SCRIPT = path.join(LOOP_WORKER_DIR, 'dist', 'index.js');
 
-const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy', 'grok']);
-const watchdogRuntimeAgentStateSchema = z.object({
-  enabled: z.boolean().default(false),
-  emergencyStopped: z.boolean().default(false),
-  stopReason: z.string().nullable().default(null),
-  updatedAt: z.number().default(0)
-});
-const watchdogRuntimeStateSchema = z.object({
-  updatedAt: z.number().default(0),
-  preferredAgentType: agentTypeSchema.nullable().optional(),
-  agents: z.record(z.string(), watchdogRuntimeAgentStateSchema).default({})
-});
+const agentTypeSchema = watchdogAgentTypeSchema;
 const autonomyPolicySchema = z.object({
   version: z.number().default(1),
   autonomyMode: z.enum(['manual', 'supervised', 'autonomous']).default('supervised'),
@@ -791,14 +786,11 @@ export const createProjectRouter = (
             stopReason: null,
             updatedAt: 0
           };
-          nextState.agents[agentType] = {
-            enabled: input.agentState.enabled ?? currentAgentState.enabled,
-            emergencyStopped: input.agentState.emergencyStopped ?? currentAgentState.emergencyStopped,
-            stopReason: input.agentState.stopReason !== undefined
-              ? input.agentState.stopReason
-              : currentAgentState.stopReason,
-            updatedAt: Date.now()
-          };
+          nextState.agents[agentType] = mergeWatchdogAgentControlState(
+            watchdogRuntimeAgentStateSchema.parse(currentAgentState),
+            input.agentState,
+            Date.now(),
+          );
         }
 
         const parsed = watchdogRuntimeStateSchema.parse(nextState);

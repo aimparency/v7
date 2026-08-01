@@ -8,6 +8,8 @@ import { generateSupervisorPrompt, type PromptContext, ActionPrompts } from './s
 import { getState } from './state-machine-definition';
 import type { AgentProfile } from './agent-profile';
 import { readAgentViewportLines, WATCHDOG_PARSER_LINE_COUNT } from './terminal-view';
+import { canonicalizeSupervisorAction, evaluateSupervisorDispatch, supervisorDispatchAllowed } from './supervisor-action-authority';
+import type { SupervisorDispatchDecision } from './supervisor-action-authority';
 
 /**
  * Configurable timing constants and behavior flags
@@ -64,6 +66,12 @@ const WORKER_IDLE_STABILITY_MS = parseInt(process.env.WATCHDOG_WORKER_IDLE_STABI
 // per-tick cost; statting the source tree every IDLE_CHECK_INTERVAL would be
 // wasteful, so throttle to ~15s.
 const WRAPPER_DIRTY_CHECK_INTERVAL_MS = parseInt(process.env.WATCHDOG_WRAPPER_CHECK_INTERVAL || '15000', 10);
+const AUTHORITY_AUDIT_LIMIT = 50;
+
+export interface SupervisorAuthorityAuditEntry extends SupervisorDispatchDecision {
+  timestamp: number;
+  actionType: string;
+}
 
 function stripAnsi(str: string): string {
   return str.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
@@ -303,6 +311,7 @@ export class WatchdogService {
     lastSnapshotAt: 0,
   };
   private sessionMemory: SessionMemory | null = null;
+  private authorityAudit: SupervisorAuthorityAuditEntry[] = [];
 
   /**
    * Timestamp of last "main worker halted" signal received from an external
@@ -523,6 +532,27 @@ export class WatchdogService {
     this.onStateChange?.();
   }
 
+  private authorizeSupervisorAction(action: any): boolean {
+    const authority = evaluateSupervisorDispatch(action);
+    const actionType = typeof action?.type === 'string' ? action.type : '(invalid)';
+    this.authorityAudit.push({
+      timestamp: Date.now(),
+      actionType,
+      disposition: authority.disposition,
+      reasons: [...authority.reasons],
+    });
+    if (this.authorityAudit.length > AUTHORITY_AUDIT_LIMIT) {
+      this.authorityAudit.splice(0, this.authorityAudit.length - AUTHORITY_AUDIT_LIMIT);
+    }
+    if (supervisorDispatchAllowed(authority)) return true;
+
+    this.log(`[Authority] ${authority.disposition} ${actionType}: ${authority.reasons.join(',')}`);
+    if (authority.disposition === 'escalate') {
+      this.stop(`Human authorization required for supervisor action: ${actionType}`);
+    }
+    return false;
+  }
+
   /**
    * Called when the main worker CLI signals (via configured hook) that it has
    * halted / finished its turn. Forces the idle detection so the supervisor
@@ -683,8 +713,42 @@ export class WatchdogService {
       const stateDefinition = getState(stateName);
       return {
           state: stateName,
-          color: stateDefinition?.color ?? '#cccccc'
+          color: stateDefinition?.color ?? '#cccccc',
+          authorityAudit: this.authorityAudit.map(entry => ({ ...entry, reasons: [...entry.reasons] })),
       };
+  }
+
+  /**
+   * Restore local runtime audit telemetry without trusting persisted policy
+   * claims. Invalid records are discarded and valid decisions are recomputed
+   * solely from their canonical action type.
+   */
+  restoreAuthorityAudit(value: unknown): void {
+    if (!Array.isArray(value)) return;
+
+    const restored: SupervisorAuthorityAuditEntry[] = [];
+    for (const candidate of value) {
+      if (!candidate || typeof candidate !== 'object') continue;
+      const raw = candidate as Record<string, unknown>;
+      if (typeof raw.timestamp !== 'number' || !Number.isFinite(raw.timestamp) || raw.timestamp < 0) continue;
+      if (typeof raw.actionType !== 'string' || raw.actionType.length === 0) continue;
+      if (!Array.isArray(raw.reasons) || raw.reasons.some(reason => typeof reason !== 'string')) continue;
+
+      const recomputed = evaluateSupervisorDispatch(
+        raw.actionType === '(invalid)' ? {} : { type: raw.actionType },
+      );
+      if (raw.disposition !== recomputed.disposition) continue;
+      if (raw.reasons.length !== recomputed.reasons.length
+        || raw.reasons.some((reason, index) => reason !== recomputed.reasons[index])) continue;
+
+      restored.push({
+        timestamp: raw.timestamp,
+        actionType: raw.actionType,
+        disposition: recomputed.disposition,
+        reasons: [...recomputed.reasons],
+      });
+    }
+    this.authorityAudit = restored.slice(-AUTHORITY_AUDIT_LIMIT);
   }
 
   /** Has the wrapped-agents source changed since this process launched? */
@@ -1228,11 +1292,13 @@ export class WatchdogService {
       const decision = JSON.parse(jsonString);
 
       if (decision.action) {
-         const result = this.supervisorState.attemptAction(decision.action);
+         const boundedAction = canonicalizeSupervisorAction(decision.action);
+         if (!this.authorizeSupervisorAction(boundedAction)) return;
+         const result = this.supervisorState.attemptAction(boundedAction as any);
 
          if (result.success) {
-           this.log(`[StateMachine] Executing ${decision.action.type} → ${result.newState}`);
-           await this.executeActionSideEffects(decision.action);
+           this.log(`[StateMachine] Executing ${String(boundedAction.type)} → ${result.newState}`);
+           await this.executeAuthorizedActionSideEffects(boundedAction);
            this.onStateChange?.();
          } else if (result.backoffActive) {
            this.log(`[StateMachine] Action rejected: ${result.error}`);
@@ -1349,7 +1415,10 @@ export class WatchdogService {
   }
 
   async executeAction(action: any) {
-    this.log(`Executing Action: ${action.type}`);
+    action = canonicalizeSupervisorAction(action);
+    this.log(`Executing Action: ${String(action.type)}`);
+
+    if (!this.authorizeSupervisorAction(action)) return;
 
     if (!this.worker || !this.watchdog) {
       this.log("Cannot execute action: agents not initialized");
@@ -1357,7 +1426,7 @@ export class WatchdogService {
     }
 
     if (action.type === 'send-prompt') {
-      let textToSend = action.text || '';
+      let textToSend = 'Keep advancing the current human-authorized work.';
 
       if (action.instruct && this.instructTextWithMemory) {
         this.log('Including aimparency instruction text with session memory');
@@ -1465,6 +1534,12 @@ Please choose one of the valid actions. Respond ONLY with ${this.currentPromptMa
   // ========== STATE MACHINE METHODS ==========
 
   async executeActionSideEffects(action: any): Promise<void> {
+    action = canonicalizeSupervisorAction(action);
+    if (!this.authorizeSupervisorAction(action)) return;
+    await this.executeAuthorizedActionSideEffects(action);
+  }
+
+  private async executeAuthorizedActionSideEffects(action: any): Promise<void> {
     const actionType = action.type;
 
     this.log(`[StateMachine] Executing side effects for "${actionType}"`);

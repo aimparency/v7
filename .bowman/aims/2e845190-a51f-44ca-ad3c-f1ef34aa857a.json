@@ -2,6 +2,7 @@
   "id": "2e845190-a51f-44ca-ad3c-f1ef34aa857a",
   "text": "keyboard shortcuts",
   "description": "",
+  "reflection": "Reconciled this broad container after checking its only supporting aim (57ae35f3): the requested shortcut exists, avoids editable-field interference, appears in keyboard hints, and is already in review. No open implementation leaf remains beneath this container.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -14,6 +15,60 @@
       ],
       "weight": 1,
       "explanation": ""
+    },
+    {
+      "aimId": "db5d5014-30b7-4362-b84f-57983f38fc8b",
+      "relativePosition": [
+        -0.4010845966387844,
+        -2.4676164909359604
+      ],
+      "weight": 1,
+      "explanation": "Vim-style l/h/Escape list traversal is keyboard navigation behavior."
+    },
+    {
+      "aimId": "f50a5919-91f5-4ce7-a0db-ff4919a8893a",
+      "relativePosition": [
+        2.0401238900873095,
+        -1.4449548481163774
+      ],
+      "weight": 1,
+      "explanation": "Cross-phase j/k focus traversal is keyboard navigation behavior."
+    },
+    {
+      "aimId": "03e895c0-7f2e-4fb5-a427-078a235c3b7f",
+      "relativePosition": [
+        0.029511764261208554,
+        -2.4998258050852646
+      ],
+      "weight": 1,
+      "explanation": "Boundary j/k scrolling is keyboard navigation behavior."
+    },
+    {
+      "aimId": "2e6e9dee-98f5-4a0e-afbb-4bb6a5ade583",
+      "relativePosition": [
+        0.5817474161733028,
+        -2.4313720290765226
+      ],
+      "weight": 1,
+      "explanation": "Suppressing global shortcuts inside text input is keyboard shortcut scoping."
+    },
+    {
+      "aimId": "033c340d-0c82-4f37-9a0a-987d80b89108",
+      "relativePosition": [
+        0.24663257720184184,
+        -2.487804729447787
+      ],
+      "weight": 1,
+      "explanation": "Project and numeric navigation keys are explicit keyboard shortcuts."
+    },
+    {
+      "aimId": "2a9e3aba-e9a5-4238-bd34-ef2d3384b41e",
+      "relativePosition": [
+        2.4327728862349134,
+        -0.5758611672966397
+      ],
+      "weight": 1,
+      "explanation": "Escape ownership and propagation are modal keyboard shortcut behavior."
     }
   ],
   "supportedAims": [
@@ -30,6 +85,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Reconciled this broad container after checking its only supporting aim (57ae35f3): the requested shortcut exists, avoids editable-field interference, appears in keyboard hints, and is already in review. No open implementation leaf remains beneath this container."
+  "valueVariance": 0
 }

@@ -9,7 +9,17 @@
     "hooks",
     "continuity"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "c59fe055-757e-4084-8326-4ad61ffc6d5f",
+      "relativePosition": [
+        2.05729503276133,
+        1.4204003478511116
+      ],
+      "weight": 1,
+      "explanation": "Makes the existing indefinite continuation behavior portable, explicit, and testable."
+    }
+  ],
   "supportedAims": [
     "0622adb1-e79d-483c-b894-199d92ca199d"
   ],

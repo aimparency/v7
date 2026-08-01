@@ -1,0 +1,70 @@
+{
+  "id": "bd8701be-8e9b-4641-a433-b78796334c54",
+  "text": "Execute the frozen live Codex matched-pair autonomy benchmark",
+  "description": "Run the four frozen autonomy tasks through the verified CodexAutonomyBenchmarkAdapter once under graph_grounded and once under stateless. Pre-register one identical Codex model, workspace-write-no-network tool profile, 100000-token and 120000-ms per-run budgets, and deterministic alternating pair order before launch. Persist the complete structured run records and analyzer result, including failures and policy violations; do not retry or discard adverse runs. Hypothesis outcome is positive only under the frozen analyzer rule; otherwise record null, negative, or invalid honestly. First perform one disposable adapter smoke; if it passes, run all eight isolated processes. Do not touch the development server.",
+  "reflections": [
+    {
+      "date": 1785598607544,
+      "context": "Executed the preregistered live gpt-5.6-sol benchmark: four frozen tasks, alternating pair order, workspace-write-no-network, 100000 tokens and 120000 ms per isolated run. A preceding smoke passed.",
+      "outcome": "All 8/8 runs verified complete with zero human interventions and zero policy violations; no runner errors. Graph-grounded aggregates: 28,965.5 ms, 74,526.5 tokens, 3.5 tools, recovery 0.75. Stateless: 30,492.75 ms, 85,052.5 tokens, 4.25 tools, recovery 0.75. The v1 analyzer mechanically returned positive.",
+      "effectiveness": "Execution integrity was strong and graph grounding reduced mean tokens by 12.38%, tools by 17.65%, and wall time by 5.01%. However, the registered positive rule does not count resource efficiency; completion and interventions were equal. The analyzer incorrectly treated 0 interventions versus 0 as a material 20% reduction because 0 <= 0 * 0.8.",
+      "lesson": "Relative-reduction predicates need a strict absolute improvement guard, especially at a zero baseline. Preserve the raw positive output but correct and re-analyze the same records rather than rerunning agents.",
+      "pattern": "Zero-baseline relative comparisons can manufacture positive capability claims."
+    },
+    {
+      "date": 1785598677958,
+      "context": "Re-analyzed the exact preserved live records after correcting the zero-baseline intervention predicate; no model runs were repeated.",
+      "outcome": "Final valid result is null: both conditions completed 4/4 with zero interventions, 0.75 recovery, and zero violations. Graph grounding used 74,526.5 vs 85,052.5 mean tokens (-12.38%), 3.5 vs 4.25 tools (-17.65%), and 28,965.5 vs 30,492.75 ms (-5.01%), but resource efficiency was not a preregistered positive criterion.",
+      "effectiveness": "The experiment cleanly falsified the registered completion/intervention advantage on these easy fixtures while revealing an exploratory efficiency signal for a future independently preregistered study.",
+      "lesson": "Do not promote exploratory cost reductions into a capability pass after observing them. The next experiment should use harder tasks with non-ceiling completion and separately preregister resource-efficiency hypotheses."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "autonomy-benchmark",
+    "live-experiment",
+    "codex"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "b7cfdee0-4ce0-4f54-a8f0-9322c0f96c41",
+      "relativePosition": [
+        -2.468760800128461,
+        0.39397983672908954
+      ],
+      "weight": 1,
+      "explanation": "Corrects the defect exposed by this live experiment."
+    },
+    {
+      "aimId": "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
+      "relativePosition": [
+        -2.3154858323969627,
+        0.9426162315433272
+      ],
+      "weight": 1,
+      "explanation": "Uses the preserved exploratory efficiency signal only as a newly preregistered v2 criterion."
+    }
+  ],
+  "supportedAims": [
+    "8ac03697-c34f-46c6-8b54-678418d5adb2",
+    "02e512d5-f6e9-4fc6-91f9-61a4a8118d8b",
+    "8b0fa07c-d4f7-48d9-bc57-8e18c58d90d0"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Live matched experiment complete and corrected analysis is valid null. All 8 runs completed safely; no registered completion or intervention advantage. Awaiting user acceptance.",
+    "date": 1785598678157
+  },
+  "intrinsicValue": 20,
+  "valueRationale": "This is the first controlled empirical test of whether durable graph context improves autonomous completion or intervention cost without worsening safety.",
+  "cost": 10,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

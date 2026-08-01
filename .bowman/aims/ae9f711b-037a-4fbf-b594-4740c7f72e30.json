@@ -1,0 +1,44 @@
+{
+  "id": "ae9f711b-037a-4fbf-b594-4740c7f72e30",
+  "text": "Rate-limit wrapped-agent control effects per socket connection",
+  "description": "Add deterministic per-connection token-bucket budgets after payload validation and before capability-bearing effects. Use separate budgets suited to interaction shape: terminal input burst 200/refill 100 per second, resize burst/refill 30 per second, and watchdog toggles burst 5/refill 1 per second. Share each category across worker/watchdog variants so alternating event names cannot multiply capacity. Drop over-budget events without calling WatchdogService, Agent.write, Agent.resize, or creating repaint timers; recover predictably with injected monotonic time. Add unit tests for burst limits, refill, clock rollback, category isolation/shared variants, and zero-effect rejection. Do not launch or restart servers.",
+  "reflections": [
+    {
+      "date": 1785603921852,
+      "context": "Per-event socket validation bounded shape and size, but an allowed-origin client could still emit unlimited valid PTY writes, resize repaint sequences/timers, or watchdog state toggles. Worker/watchdog variants used separate event names that could otherwise multiply any naive per-handler limit.",
+      "outcome": "Added one deterministic token-bucket limiter per Socket.IO connection with shared categories across worker/watchdog variants: terminal input capacity 200/refill 100 per second, resize 30/30, and watchdog toggle 5/1. Validation occurs first; only canonical valid payloads consume category capacity. Over-budget events return before WatchdogService, PTY writes, resizes, or repaint timers. Time is injectable, capacities are clamped, and backward clock movement grants no tokens.",
+      "effectiveness": "Five focused limiter tests cover exact burst rejection, refill/capacity clamping, clock rollback recovery, category isolation with shared variant budget, and zero terminal effects after exhaustion. The complete wrapped-agents/common suite passes 185/185 tests, TypeScript tsc --noEmit passes, and git diff --check passes. The first verification also caught and corrected a test-only Array.at incompatibility with the package's configured TS lib. No server or session was launched or restarted.",
+      "lesson": "Bounding individual messages is not enough for an availability-sensitive control plane; aggregate effect rate is a separate capability. Apply rate accounting after validation so malformed traffic cannot consume legitimate capacity, and share budgets across aliases of the same effect.",
+      "pattern": "Use per-connection, per-capability token buckets with injected monotonic time and test effect absence—not just limiter return values—at exhaustion."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "socket-security",
+    "rate-limiting",
+    "wrapped-agents"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e10e8e8f-f6ff-476f-b2a4-cd47001aeb01",
+    "0f307c81-d707-43f0-97ed-af7613e03801"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Per-connection rate limits now bound all capability-bearing socket effects with shared worker/watchdog category budgets; 185/185 common tests pass. Awaiting explicit user acceptance before done.",
+    "date": 1785603921884
+  },
+  "intrinsicValue": 16,
+  "valueRationale": "An allowed client can otherwise turn individually valid control events into unbounded PTY work, repaint timers, and state churn, undermining availability of the human control plane.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,54 @@
+{
+  "id": "e3ffa4d6-1c88-4b41-820b-831f68afcbd7",
+  "text": "Restore authority audit safely across watchdog session restarts",
+  "description": "Complete local runtime continuity for the bounded authority audit. Add a WatchdogService restoration boundary that accepts unknown persisted data, validates timestamp/action/disposition/reasons, recomputes each policy decision from canonical action type instead of trusting stored authority claims, drops malformed or mismatched entries, and retains only the newest 50. Wire session-server startup to restore the validated audit from the existing supervisor runtime snapshot before emitting state. Add tests for valid restoration, tampering rejection, payload stripping, and retention bounds. This does not change the separate policy for version-controlled durable audit data and must not restart the running stack.",
+  "reflections": [
+    {
+      "date": 1785601835523,
+      "context": "The authority audit was included in watchdog runtime snapshots but a newly constructed WatchdogService ignored it, so safety evidence disappeared across process replacement.",
+      "outcome": "Added restoreAuthorityAudit(unknown), which validates record shape and timestamp, recomputes the authoritative decision from canonical action type, requires exact disposition/reason agreement, reconstructs payload-free records, and keeps only the newest 50. Session startup restores this audit before enablement and state emission.",
+      "effectiveness": "Full wrapped-agents/common verification passes: 161/161 tests, TypeScript tsc --noEmit, and git diff --check. Tests prove valid continuity, rejection of a forged execute claim for choice, malformed-record rejection, extra-payload stripping, and 50-entry retention. No server was started or restarted.",
+      "lesson": "Persisted audit data is evidence, not authority. On restoration, recompute policy outcomes rather than deserializing prior permission claims as trusted state.",
+      "pattern": "Restore untrusted operational state through a validating reconstruction boundary, never by assigning parsed JSON directly to safety-critical structures."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "audit",
+    "watchdog",
+    "restart-integrity"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "a48d03b3-2260-4109-b717-f86e1945bb55",
+      "relativePosition": [
+        -2.381246749933262,
+        0.7613566286125549
+      ],
+      "weight": 1,
+      "explanation": "Prevents the backend from deleting the validated audit that session startup can now restore."
+    }
+  ],
+  "supportedAims": [
+    "a9fd2cb1-33a9-4b23-8da8-be13607df281",
+    "67c40d89-123f-4c3b-a8aa-0b703d274b14"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Validated authority-audit restart restoration implemented and internally verified; awaiting explicit user acceptance before done.",
+    "date": 1785601835561
+  },
+  "intrinsicValue": 18,
+  "valueRationale": "A safety audit that disappears or trusts tampered claims on process replacement cannot support reliable autonomous operation.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

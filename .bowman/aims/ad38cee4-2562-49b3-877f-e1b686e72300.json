@@ -1,0 +1,120 @@
+{
+  "id": "ad38cee4-2562-49b3-877f-e1b686e72300",
+  "text": "Extract the live SPC form and prepare an evidence-grounded answer draft",
+  "description": "Capture every current conditional application field and limit from the official Airtable form. Build a field-by-field draft using repository, graph, and founder-provided facts; mark uncertain claims and human-only inputs explicitly. Include a compact claim/evidence ledger and avoid generic AI language.",
+  "reflections": [
+    {
+      "date": 1785582191788,
+      "context": "Prepare evidence-grounded working material for the confirmed 1 Aug 15:00 Boardy session without inventing conditional form fields or personal facts.",
+      "outcome": "Created meta/applications/spc-founder-fellowship-2026/working-draft.md with the founder insight, company thesis, honest evidence boundary, recursive-proof framing, seven live fields recovered from the official form, two under-1,000-character answers, claim ledger, and seven explicit human decisions.",
+      "effectiveness": "Both constrained drafts are within the live 1,000-character limits (823 and 838 characters), and git diff --check passes for the draft and priority-list changes.",
+      "lesson": "Lead with the governance problem and working product. Treat the recursive application process as operational evidence, not the main reason to select the founder; isolate every unverified personal or market claim.",
+      "pattern": "Separate verified product evidence, human-confirmed biography, and venture hypotheses in an explicit claim ledger before external submission."
+    },
+    {
+      "date": 1785583205165,
+      "context": "Audit the SPC draft's product claims against implementation after the official Airtable conditional form proved inaccessible to the document reader and local Chromium was blocked by the browser sandbox.",
+      "outcome": "Created meta/applications/spc-founder-fellowship-2026/product-evidence-audit.md: five repository-grounded claim groups, safe wording for each, explicit overclaim warnings, a three-link proof bundle, and a compact product paragraph.",
+      "effectiveness": "All referenced implementation files exist and the document passes git diff --check. The audit now separates adapter existence from cross-provider reliability, human planning gates from tool security, and commit evidence from causal proof.",
+      "lesson": "A credible early-stage application should make the strongest narrow claim the implementation supports and name the stronger unproven claim as the learning agenda.",
+      "pattern": "For each product assertion, pair inspectable implementation evidence with safe external wording and a nearby overclaim boundary."
+    },
+    {
+      "date": 1785583447204,
+      "context": "Create a deterministic path from the Boardy conversation and founder confirmations to final form answers before those human inputs arrive.",
+      "outcome": "Created meta/applications/spc-founder-fellowship-2026/submission-assembly.md with an input gate, narrative lock, live-form transcript table, answer bank, idea-evolution material, adversarial review, and submission record.",
+      "effectiveness": "The known constrained drafts are 782 characters for PROUD, 648 characters for the placeholder ARTIFACTS answer, and 648 characters for OTHER after whitespace normalization; all remain below 1,000 characters and the document passes git diff --check.",
+      "lesson": "Near a deadline, consolidate source material into one controlled assembly surface so human decisions update a small number of explicit slots rather than trigger another broad drafting pass.",
+      "pattern": "Use an input gate, narrative lock, exact field transcript, bounded answer bank, adversarial checklist, and submission record for high-stakes forms."
+    },
+    {
+      "date": 1785587151328,
+      "context": "Advance the SPC application without inventing missing conditional fields or founder facts after the prior formal goal was removed.",
+      "outcome": "Created application-spine.md around the concrete concept of direction debt: problem, first user, painful event, product invariant, alternatives, why now, narrow proof, conditional company path, falsification plan, moat hypothesis, founder-story gaps, and a three-sentence compression. Updated the Boardy executive summary to reflect the truthful `I'm exploring` route.",
+      "effectiveness": "The spine consolidates three competing narratives into one causal argument and explicitly bounds every unproven claim. git diff --check passes; graph consistency was valid before this reflection.",
+      "lesson": "When external form schema is blocked, useful application progress comes from increasing narrative compression and falsifiability, not fabricating answers to unseen questions.",
+      "pattern": "Build one application spine from observed failure through falsification, then derive field answers from it."
+    },
+    {
+      "date": 1785587253715,
+      "context": "Continue application-focused autonomous work while the conditional Airtable schema and founder decisions remain human-gated.",
+      "outcome": "Created answer-modules.md with ten compact, non-overlapping modules covering problem, product, first user, alternatives, why now, current evidence, narrow proof, eight-week test, company path, and moat. Updated submission-assembly.md to lock the direction-debt narrative and mark the exact `I'm exploring` choice as decided.",
+      "effectiveness": "Every module is 352–505 characters after whitespace normalization, leaving adaptation room under common short-answer limits. git diff --check passes. Claims explicitly separate verified product evidence from hypotheses.",
+      "lesson": "Question-independent modules preserve momentum without inventing a conditional form schema; compact modules also reduce repetition and make contradictions visible during final assembly.",
+      "pattern": "Prepare bounded answer primitives first, then map each primitive to one exact application question."
+    },
+    {
+      "date": 1785587410906,
+      "context": "Improve the two known narrative-bearing Airtable answers after consolidating the application around direction debt.",
+      "outcome": "Rewrote PROUD to connect a repeatedly experienced problem to Felix's operational craft, and OTHER to state the smallest product promise, concrete application defect, honest proof boundary, and paid external test. Removed stale duplicated prose from working-draft.md so submission-assembly.md remains authoritative.",
+      "effectiveness": "Whitespace-normalized answers are 783 and 723 characters, both safely below the form's 1,000-character limit; git diff --check passes.",
+      "lesson": "Use the achievement field for founder causality and craft; use optional context for one bounded proof and its next falsification. Repeating a feature inventory or recursive framing weakens both.",
+      "pattern": "Assign each application field one rhetorical job and verify its exact normalized length."
+    },
+    {
+      "date": 1785587583764,
+      "context": "Ground the chosen `I'm exploring` route and the application's SPC-specific motivation in current first-party program information.",
+      "outcome": "Created program-fit.md from SPC's Fall 2026 Fellowship, homepage, FAQ, and Residency pages. It identifies the substantive convergence between SPC's concern about accelerated building toward local maxima and Aimparency's direction-debt thesis; explains why exploring is epistemically precise; defines five institution-specific forms of leverage; and adds a compact Why SPC module.",
+      "effectiveness": "The argument relies only on current first-party SPC sources, distinguishes inference from endorsement, and avoids treating route, customers, or funding as promised outcomes. All eleven answer modules are 352–513 characters; git diff --check passes.",
+      "lesson": "The strongest program-fit claim is a shared hard question and a uniquely relevant falsification environment, not generic access to capital or community.",
+      "pattern": "Derive `why this institution` from its current first-party theory of change, then state exactly which unresolved project hypothesis its environment can test."
+    },
+    {
+      "date": 1785587695101,
+      "context": "Prepare evidence for SPC's explicit interest in how applicants generate, test, and discard ideas.",
+      "outcome": "Created idea-evolution.md from five preserved cancelled aims: autonomous will, fixed multi-agent roles, first-class plan structures, generic information ingestion, and ERC-8004 identity. Distinguished rejected implementation, demoted long-term vision, and the current falsifiable wedge. Added a 980-character candidate answer with explicit human-confirmation gates.",
+      "effectiveness": "Every cited aim file exists and records the stated cancellation rationale. The answer remains under 1,000 characters after whitespace normalization; git diff --check passes.",
+      "lesson": "A preserved rejection ledger is stronger evidence of exploration than a list of idea names: it shows the decision rule, why attractive complexity was refused, and what evidence could revive it.",
+      "pattern": "For application questions about idea generation, reconstruct a small set of consequential rejected branches and state the shared selection method."
+    },
+    {
+      "date": 1785587808391,
+      "context": "Address the red-team objection that agent memory, orchestration frameworks, or project-management products can absorb Aimparency.",
+      "outcome": "Created competitive-boundary.md using current official documentation for Claude Code memory, GitHub Copilot repository instructions, LangGraph persistence, and Linear agents. Replaced dismissive category claims with a falsifiable differentiation: these systems preserve knowledge, execution state, or planned work; Aimparency attempts to preserve contribution, priority, evidence-driven revision, and authority across them.",
+      "effectiveness": "The memo acknowledges strong adjacent capabilities, defines integration relationships, names memory-plus-issues as the experimental baseline, and states that Aimparency should narrow or lose if it cannot reduce restatement or wrong-direction work. The compact module is 511 characters; git diff --check passes.",
+      "lesson": "A credible application must differentiate against competitors at their current strongest capability. The distinct durable object and measurable behavioral effect matter more than a feature checklist.",
+      "pattern": "Compare adjacent tools by the state they preserve, then test whether the proposed additional state changes real outcomes."
+    },
+    {
+      "date": 1785587929433,
+      "context": "Convert the direction-debt market hypothesis from a generic customer-discovery plan into a falsifiable experimental design.",
+      "outcome": "Created direction-debt-benchmark.md: unit of observation, strong baseline, treatment, observational and paired designs, primary/secondary measures, net-direction-value formula, provisional thresholds, failure interpretations, evidence schema, privacy boundary, and useful losing outcomes. Updated the compact eight-week module and Boardy agenda.",
+      "effectiveness": "The study compares Aimparency against repository instructions, issues, Git, and ordinary agent memory rather than a straw baseline. It measures maintenance cost as well as avoided reconstruction/rework and predefines updates for negative results. The answer module is 552 characters; git diff --check passes.",
+      "lesson": "A credible early-stage learning agenda specifies the baseline, unit, measures, costs, and belief updates before speaking to users; otherwise interviews can be narrated as validation regardless of outcome.",
+      "pattern": "Turn a product thesis into a paired field benchmark whose losing result changes the roadmap."
+    },
+    {
+      "date": 1785588241370,
+      "context": "Validate the public artifact bundle and ensure the application remains usable if no strong non-Aimparency artifact is confirmed before submission.",
+      "outcome": "Attempted clean external checks of GitHub, YouTube, and Devpost; both the browser tool and executor shell were unable to resolve/fetch them, so no false availability claim was recorded. Added a 725-character fallback artifacts answer covering source/graph, demo, and Build Week experiment, while retaining the preferred two-plus-one contrasting-artifact version. Extended verify-packet.mjs to validate multiple answer variants independently.",
+      "effectiveness": "The local Git remote matches github.com/aimparency/v7. External accessibility remains a human browser check. The packet verifier passes 34/34 invariants and reports both ARTIFACTS variants at 648 and 725 characters; git diff --check passes.",
+      "lesson": "A blocked network check is unknown evidence, not evidence of a broken link. High-stakes applications need a complete fallback answer and an explicit final-browser gate.",
+      "pattern": "When external artifact verification is unavailable, preserve the uncertainty, prepare a bounded fallback, and make clean-browser validation an explicit human gate."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "spc",
+    "application",
+    "draft",
+    "agent-actionable"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b52d435e-72b5-4839-b0cd-fbc916b46a03"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "The exact initial route is resolved as `I'm exploring`, and the evidence-grounded spine is prepared. Felix must now copy every conditional question/option/limit rendered by that choice and supply the remaining founder/Boardy decisions before field-level finalization.",
+    "date": 1785584436558
+  },
+  "intrinsicValue": 8,
+  "valueRationale": "A precise, evidence-grounded draft is the core artifact needed before the near-term deadline.",
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

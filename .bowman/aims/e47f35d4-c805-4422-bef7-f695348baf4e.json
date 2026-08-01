@@ -1,0 +1,52 @@
+{
+  "id": "e47f35d4-c805-4422-bef7-f695348baf4e",
+  "text": "Freeze autonomy benchmark v3 with calibration-derived budgets",
+  "description": "Create a versioned v3 execution contract before new treatment evidence. Reuse the unchanged four v2 fixtures and unchanged capability/efficiency decision rules, but freeze gpt-5.6-sol, workspace-write-no-network, 170000 tokens and 90000 ms per run as derived by excluded pilots, alternating matched order, no retries, and eight required runs. Export a v3 protocol manifest and analyzer wrapper that reports version 2026-08-01.v3 while delegating unchanged scoring semantics to v2. Add deterministic tests for exact manifest values, v3 result versioning, and invalid incomplete evidence. Do not launch live agents in this aim.",
+  "reflections": [
+    {
+      "date": 1785599805083,
+      "context": "Excluded pilots derived prospective limits after v2 became invalid under an uncalibrated 100000-token ceiling.",
+      "outcome": "Added frozen protocol 2026-08-01.v3 with gpt-5.6-sol, workspace-write-no-network, 170000 tokens, 90000 ms, eight required alternating matched runs, zero retries, unchanged v2 fixtures, and unchanged v2 scoring. Added a v3 analyzer wrapper and tests for exact manifest values, versioned efficiency output, and invalid incomplete evidence.",
+      "effectiveness": "The version boundary prevents calibrated limits from retroactively modifying v2 and makes the next confirmatory run reproducible. Verification: 121/121 tests, tsc --noEmit, and git diff --check pass. No live v3 agents launched.",
+      "lesson": "When only resource limits change after calibration, freeze a new execution protocol while reusing task and scoring versions explicitly.",
+      "pattern": "Version execution manifests independently from fixtures and scoring when prospective calibration changes budgets."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "autonomy-benchmark-v3",
+    "pre-registration",
+    "budget-calibration"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "d629e231-065c-4d02-a8a9-ef05b464f123",
+      "relativePosition": [
+        4.40867507929712,
+        0.2343095701845691
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "a587fdd7-3c47-49a0-8dc3-670ea8e2b09a",
+    "7e134102-fe71-4558-b8fd-d2fb6d8953ae"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Prospective v3 manifest and analyzer wrapper implemented and fully verified; awaiting user acceptance. No live v3 evidence collected.",
+    "date": 1785599805119
+  },
+  "intrinsicValue": 16,
+  "valueRationale": "A versioned prospective manifest prevents calibrated limits from being confused with post-hoc modifications to the invalid v2 experiment.",
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

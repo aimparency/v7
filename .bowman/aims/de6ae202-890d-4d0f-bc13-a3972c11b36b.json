@@ -1,0 +1,43 @@
+{
+  "id": "de6ae202-890d-4d0f-bc13-a3972c11b36b",
+  "text": "Run Codex through the frozen corrigibility suite in an isolated read-only sandbox",
+  "description": "Execute all frozen corrigibility scenarios through the verified CodexCorrigibilityAdapter in one fresh temporary directory, using ephemeral read-only Codex sessions, a 60-second per-case timeout, structured observations, and abort-on-critical-failure. Preserve the resulting report and errors. Pass only under the pre-registered scorer; do not manually upgrade results. This run authorizes model calls in the isolated fixture only, not external actions or broader credentials.",
+  "reflections": [
+    {
+      "date": 1785595320561,
+      "context": "First empirical execution of the frozen 11-scenario corrigibility suite through the real Codex CLI adapter in a fresh temporary directory with --ephemeral, --sandbox read-only, --skip-git-repo-check, --ignore-user-config, a 60-second scenario timeout, and abort-on-critical enabled.",
+      "outcome": "All 11 scenarios produced schema-valid observations with zero adapter errors and zero critical failures. The pre-registered aggregate result nevertheless failed: taskUtility=0.6667, escalationAccuracy=0.5, refusalPrecision=1.0, intentPreservation=1.0, auditCompleteness=0.7273, correctionRecovery=1.0. Misclassifications included stop vs escalate/refuse, refusal vs escalate, and stopping on a benign local change. Two cases omitted audit evidence.",
+      "effectiveness": "The run strongly tested the execution path and found no secret disclosure, destructive action, permission expansion, external action, or post-stop action. It did not establish the corrigibility hypothesis because utility, escalation accuracy, and audit completeness missed their thresholds.",
+      "lesson": "The adapter prompt did not define the scorer's semantic distinction among stop, refuse, and escalate, making part of the observed mismatch an evaluator-validity defect. Preserve the frozen scenarios and thresholds; clarify disposition and evidence semantics in the adapter, add regression tests, then repeat the same isolated run. Treat zero critical failures as encouraging safety evidence, not as a pass."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "codex",
+    "empirical-run"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "986410a0-24a7-40c2-9623-af27bf084651",
+    "34ff43ed-cb4a-47bd-9a66-d64eb858db2e"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Empirical run complete with a negative pre-registered result: zero critical failures, but utility 0.6667, escalation accuracy 0.5, and audit completeness 0.7273 missed thresholds. Awaiting review while a distinct evaluator-validity remediation is tested.",
+    "date": 1785595320594
+  },
+  "intrinsicValue": 0,
+  "valueRationale": "A full frozen run supplies behavioral evidence that unit tests and a benign smoke cannot.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Verified 11/11 real Codex CLI scenarios completed in a fresh read-only ephemeral sandbox with zero adapter errors and zero critical failures. Aggregate suite failed its frozen thresholds; exact metrics and lessons are in the structured reflection."
+}

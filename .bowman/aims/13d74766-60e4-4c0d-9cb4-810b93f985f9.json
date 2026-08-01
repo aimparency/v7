@@ -1,0 +1,73 @@
+{
+  "id": "13d74766-60e4-4c0d-9cb4-810b93f985f9",
+  "text": "Hypothesis: Three bounded self-improvement cycles produce cumulative capability gains without regression",
+  "description": "Select one recurring, locally testable limitation from real run evidence. For each of three cycles: establish a frozen evaluation set, diagnose the limitation, propose one bounded change, require review for permission-expanding changes, implement, rerun the full evaluation, and record effect size and regressions. Success requires monotonic improvement on the target metric across the sequence, no material regression on safety/reliability tests, reproducible artifacts, and at least one improvement proposal generated from the system's own recorded reflection. Stop and revert a cycle when its predefined regression threshold is crossed.",
+  "reflection": "Completed three bounded self-improvement cycles on 2026-08-01. Cycle 1 corrected an over-optimistic benchmark rule after a frozen negative test failed (77/77 final suite). Cycle 2 made the corrigibility evaluator fail closed on substituted scenario IDs (78/78). Cycle 3 was generated from cycle 1's recorded evidence-integrity reflection and rejected invalid/budget-exceeding telemetry (79/79). TypeScript and diff checks passed after every cycle. The monotonic target was frozen regression coverage: each cycle added a previously missing invalid-behavior detector while retaining all earlier passing checks and introducing no permission expansion.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "hypothesis",
+    "recursive-self-improvement",
+    "evaluation",
+    "safety"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "b639c3c5-dcbc-4f9f-8330-748a1079b366",
+      "relativePosition": [
+        2.4688161534180497,
+        -0.3936328246248081
+      ],
+      "weight": 1,
+      "explanation": "Provides the first measured diagnose-change-regression cycle."
+    },
+    {
+      "aimId": "88135653-1ca4-4f15-bdc7-15266cf3a523",
+      "relativePosition": [
+        -2.499319305649517,
+        -0.058335310127022096
+      ],
+      "weight": 1,
+      "explanation": "Provides the second measured diagnose-change-regression cycle."
+    },
+    {
+      "aimId": "6ed472d3-9211-46b6-a613-efb199b77b97",
+      "relativePosition": [
+        2.3526237986178957,
+        0.8456720772123814
+      ],
+      "weight": 1,
+      "explanation": "Provides the third measured cycle and is explicitly generated from the first cycle's recorded reflection."
+    },
+    {
+      "aimId": "b7cfdee0-4ce0-4f54-a8f0-9322c0f96c41",
+      "relativePosition": [
+        -1.998697418861774,
+        -1.501735205632232
+      ],
+      "weight": 1,
+      "explanation": "Adds another measured recursive self-improvement cycle."
+    }
+  ],
+  "supportedAims": [
+    "7634e681-d234-48fa-ad82-876ef97460ca",
+    "b03ad58e-4518-455f-8a35-36f58eb8ee7d"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Three bounded diagnose→change→regression cycles are complete and internally verified, including one derived from a recorded reflection; awaiting user acceptance.",
+    "date": 1785594360811
+  },
+  "intrinsicValue": 25,
+  "valueRationale": "Recursive improvement is central to the ASI hypothesis, but only measured, repeatable gains with regression control count as evidence.",
+  "cost": 13,
+  "loopWeight": 1,
+  "duration": 21,
+  "costVariance": 0,
+  "valueVariance": 0
+}

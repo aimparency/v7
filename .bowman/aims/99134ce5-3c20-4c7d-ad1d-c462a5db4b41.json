@@ -1,0 +1,31 @@
+{
+  "id": "99134ce5-3c20-4c7d-ad1d-c462a5db4b41",
+  "text": "Invite Matthias Röder to advise and mentor Aimparency without a sales or investment ask",
+  "description": "Felix makes a relationship-first invitation to Matthias Röder because his perspective and judgment would be genuinely valuable to the attempt to develop increasingly capable AI through human cooperation. Matthias is not a marketing, sales, status, or funding target. Share the concrete thesis and current experiments, say specifically why Felix would appreciate his involvement, and ask whether—and in what form—he would like to be connected. One possible form is occasional strategic criticism or mentorship, but Matthias chooses the relationship. Ask permission before using his name or implying advice, endorsement, partnership, or public association. Success is an honest conversation and a mutually desired next step, or clear feedback that updates the strategy.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "advisor",
+    "mentor",
+    "relationship",
+    "human-action"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "9548e95a-a911-41a5-b404-0cc289633acd"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix identified Matthias Röder as a potential advisor/mentor, explicitly not a sales target. Felix must make the personal invitation and control any public association.",
+    "date": 1785354628120
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 7,
+  "costVariance": 0,
+  "valueVariance": 0
+}

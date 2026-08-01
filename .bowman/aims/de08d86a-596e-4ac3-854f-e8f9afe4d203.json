@@ -1,7 +1,7 @@
 {
   "id": "de08d86a-596e-4ac3-854f-e8f9afe4d203",
   "text": "Merged cross-repo value flow (external intrinsics zeroed)",
-  "description": "Extend the value engine so cross-repo edges propagate flow. Merged aim array = local aims (real intrinsicValue) + referenced external aims with intrinsicValue forced to 0 + the cross-repo edges, fed to the existing calculateAimValues — externals receive value ONLY from inflow. totalIntrinsic stays = local intrinsics, so exporting flow to externals reduces local retained values (intended: value is conserved flow, not aggregate). v1: treat directly-referenced external aims as leaf sinks; cascade into their subtree only when expanded. Add a numeric two-repo fixture test confirming the boundary semantics.",
+  "description": "PARKED HISTORICAL AIM-LEVEL DESIGN — not the implemented repo-node model. This proposal would load referenced external aims, zero their intrinsic values, and eventually cascade into their subtrees when expanded. It was halted by the 2026-06-27 decision to use opaque whole-repository boundaries. The implemented successor is 3023ebec: exactly one zero-intrinsic leaf-sink node per linked repository, with no external graph loading or cascade.",
   "reflections": [],
   "archived": false,
   "tags": [

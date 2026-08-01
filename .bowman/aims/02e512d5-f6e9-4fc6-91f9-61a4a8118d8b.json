@@ -1,0 +1,71 @@
+{
+  "id": "02e512d5-f6e9-4fc6-91f9-61a4a8118d8b",
+  "text": "Implement an isolated Codex adapter with authoritative telemetry for the paired autonomy benchmark",
+  "description": "Build a concrete AutonomyBenchmarkAdapter that creates a fresh disposable workspace per task/condition, invokes `codex exec --json --ephemeral --sandbox workspace-write --ignore-user-config` without a shell, injects graph context only for graph_grounded while giving both conditions the identical task and fixture, and independently verifies completion/recovery from immutable fixture state. Parse Codex JSONL for actual token usage and tool-call counts; measure wall time externally; never accept model-self-reported budgets, identity, verification, or policy violations. Fail closed on missing telemetry, changed verifier, malformed events, nonzero exit, or budget overrun. Add deterministic tests for safe argv, condition isolation, JSONL telemetry, independent verification, abort, and malformed output. Do not run the full paired benchmark in this slice.",
+  "reflections": [
+    {
+      "date": 1785598245756,
+      "context": "Implemented the isolated Codex adapter for the frozen paired autonomy benchmark without launching or altering the repository development server.",
+      "outcome": "Added fresh per-run disposable fixtures, shell-free least-authority Codex JSONL execution, condition-isolated graph injection, external wall-time measurement, authoritative token/tool parsing, independent immutable verification, cleanup, fail-closed telemetry/budget/tamper handling, public export, and deterministic tests. Verification: 106/106 package tests pass; tsc --noEmit passes; git diff --check passes.",
+      "effectiveness": "The adapter now makes the existing paired runner executable against a real Codex process while preventing treatment leakage and self-reported performance. A benign raw codex --json smoke also confirmed the event and usage shape used by the parser. No full paired experiment was run in this implementation slice.",
+      "lesson": "The CLI's final turn.completed usage is authoritative enough for frozen-budget comparison, but argv and workspace invariants need their own tests. Exact protected-file comparison plus an external verifier catches both task failure and benchmark tampering."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "autonomy-benchmark",
+    "codex",
+    "adapter",
+    "telemetry"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "bd8701be-8e9b-4641-a433-b78796334c54",
+      "relativePosition": [
+        -2.2161820587384113,
+        -1.1569516336156735
+      ],
+      "weight": 1,
+      "explanation": "Validates and uses the isolated authoritative adapter."
+    },
+    {
+      "aimId": "50feea3c-337c-4658-aaab-15e44972d8ac",
+      "relativePosition": [
+        1.3651085953068474,
+        2.094392160751984
+      ],
+      "weight": 1,
+      "explanation": "Reuses the verified least-authority launcher and authoritative telemetry design."
+    },
+    {
+      "aimId": "37c6c71f-0c5a-4052-95e4-8515e83b6ad8",
+      "relativePosition": [
+        -2.087950508656298,
+        -1.3749409708790794
+      ],
+      "weight": 1,
+      "explanation": "Keeps v1 and v2 budget diagnostics consistent."
+    }
+  ],
+  "supportedAims": [
+    "8ac03697-c34f-46c6-8b54-678418d5adb2",
+    "8b0fa07c-d4f7-48d9-bc57-8e18c58d90d0"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Implementation and internal verification complete; awaiting user acceptance. Full paired live benchmark remains separate follow-up work.",
+    "date": 1785598245792
+  },
+  "intrinsicValue": 18,
+  "valueRationale": "The graph-grounding hypothesis cannot be tested until matched real runs have isolated fixtures and authoritative resource/outcome telemetry.",
+  "cost": 8,
+  "loopWeight": 1,
+  "duration": 4,
+  "costVariance": 0,
+  "valueVariance": 0
+}

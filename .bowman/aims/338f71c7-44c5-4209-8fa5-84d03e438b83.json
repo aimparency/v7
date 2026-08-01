@@ -2,10 +2,12 @@
   "id": "338f71c7-44c5-4209-8fa5-84d03e438b83",
   "text": "aims im Graph haben Farbe je nach priorisierung",
   "description": "Golden/gelb hohe Priorität. dunkel cyan niedrige priorität",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedAims": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "9fa43c99-d00c-4b4a-883e-5410cbe689dd"
   ],
   "committedIn": [
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
@@ -17,5 +19,8 @@
   },
   "intrinsicValue": 1,
   "cost": 10,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

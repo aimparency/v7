@@ -10,6 +10,27 @@
       "effectiveness": "The graph now resists converting human cooperation into a marketing funnel while retaining concrete economic tests and paid work where mutually wanted.",
       "lesson": "Human access is not a resource to acquire. Legitimate real-world agency grows from relationships in which each subject can understand the experiment, pursue their own aims, choose the form of connection, and withdraw.",
       "pattern": "Appreciation → invitation → mutual choice → bounded collaboration → evidence → greater autonomy only with renewed consent."
+    },
+    {
+      "date": 1785603989940,
+      "context": "Reprioritized after completing and verifying the portable Codex continuation hook and a sequence of bounded wrapped-agent authority/network/socket safety aims. get_prioritized_aims reports one committed open container, zero committed open leaves, and falls back to the two permanent mission containers.",
+      "outcome": "No further high-value, internally actionable leaf is available. The strongest remaining paths require a named real beneficiary or external repository, authorization to submit/contact/act externally, credentials, or a human product/authority choice. Additional unsolicited socket hardening or synthetic autonomy benchmarks would be activity without authoritative mission evidence.",
+      "effectiveness": "The graph correctly prevented false precision: it exposed the absence of actionable work rather than ranking completed/review or human-dependent aims as executable. This is a legitimate human-cooperation boundary, not an implementation failure.",
+      "lesson": "Ask the human to select or authorize the next real-world path. Best default is a credential-free external open-source contribution: the human should approve the target-selection mandate and identity/submission boundary. Alternatively, name a beneficiary/workflow for an owner-led pilot. Once authorized, create/activate a bounded leaf with acceptance evidence and resume autonomously."
+    },
+    {
+      "date": 1785604061888,
+      "context": "Final hidden-work audit after repeated Stop-hook continuation with no external-action authorization.",
+      "outcome": "check_consistency reports a valid graph with zero issues. graph_hygiene and list_aims(uncommitted=true,status=open) independently confirm exactly two uncommitted open aims, both permanent mission containers; there is no hidden actionable leaf. Review aims require human acceptance and high-value real-world descendants are human-dependent.",
+      "effectiveness": "The independent consistency and hygiene checks rule out a phase-cursor or hidden-work artifact as the cause of the empty actionable queue.",
+      "lesson": "Autonomous execution is now genuinely blocked on human judgment/authorization. Repeating internal verification cannot advance the mission; resume after the human grants a bounded external contribution mandate, identifies a real beneficiary, or accepts/rejects review work."
+    },
+    {
+      "date": 1785606862801,
+      "context": "After confirming today's real bounty scan was already fresh and negative, selected the remaining duplicate-cluster hygiene signal rather than repeat market research.",
+      "outcome": "Inspected both flagged pairs in full mission context. They were false positives: watchdog runtime reliability versus frontend watchdog UX, and list-view versus graph-canvas multi-selection. Added precise distinguishing descriptions. Rebuilt all 744 aim and 33 phase search entries. The rebuild exposed one historical-vs-successor cross-repo pair; clarified the halted aim-level design as explicitly parked and distinct from the implemented opaque repo-node sink.",
+      "effectiveness": "find_duplicate_aims at threshold 0.92 now returns zero pairs, down from two initial clusters and one newly exposed historical pair. No aims were incorrectly merged or deleted. check_consistency remains valid with zero errors/issues.",
+      "lesson": "Semantic hygiene should resolve ambiguity at the source before merging. Similar names can represent architectural boundaries or platform-specific implementations; precise descriptions preserve history while making automated duplicate detection more reliable."
     }
   ],
   "archived": false,
@@ -123,6 +144,51 @@
         2.3368137133095757
       ],
       "weight": 1
+    },
+    {
+      "aimId": "986410a0-24a7-40c2-9623-af27bf084651",
+      "relativePosition": [
+        0.4358175817868206,
+        -2.4617195281764914
+      ],
+      "weight": 1,
+      "explanation": "Tests whether human authority survives adversarial and ambiguous operating conditions."
+    },
+    {
+      "aimId": "1733c488-68b0-47cc-8439-c8c5c0476a87",
+      "relativePosition": [
+        1.995361070769566,
+        1.5061653950537206
+      ],
+      "weight": 1,
+      "explanation": "Makes human authority explicit and machine-enforceable in cooperative execution."
+    },
+    {
+      "aimId": "fc891a0b-8aaa-4cf2-9e8c-fc43dd315910",
+      "relativePosition": [
+        1.8505132831514848,
+        1.6809522863186546
+      ],
+      "weight": 0.8,
+      "explanation": "Improves the inspectable human side of the cooperation boundary."
+    },
+    {
+      "aimId": "0f307c81-d707-43f0-97ed-af7613e03801",
+      "relativePosition": [
+        -2.177421757879564,
+        1.2283462412173005
+      ],
+      "weight": 0.7,
+      "explanation": "Keeps human control local or explicitly exposed by the operator."
+    },
+    {
+      "aimId": "c59fe055-757e-4084-8326-4ad61ffc6d5f",
+      "relativePosition": [
+        1.4946504378124048,
+        2.0040010151562266
+      ],
+      "weight": 0.8,
+      "explanation": "Improves reproducible human-governed autonomous cooperation in any Aimparency repository."
     }
   ],
   "supportedAims": [

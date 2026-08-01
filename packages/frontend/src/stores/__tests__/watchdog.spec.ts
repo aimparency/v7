@@ -83,6 +83,40 @@ describe('watchdog store project switching', () => {
     })
   })
 
+  it('hydrates and derives the latest blocked authority decision', async () => {
+    const projectStore = useProjectStore()
+    const store = useWatchdogStore()
+    projectStore.projectPath = '/projects/a'
+    mockTrpc.project.getWatchdogRuntimeState.query.mockResolvedValueOnce({
+      updatedAt: 3,
+      agents: {
+        claude: {
+          enabled: false,
+          emergencyStopped: false,
+          stopReason: 'Human authorization required',
+          updatedAt: 3,
+          supervisorState: {
+            state: 'WORKING',
+            color: '#ffffff',
+            authorityAudit: [
+              { timestamp: 1, actionType: 'start_work', disposition: 'execute', reasons: ['authorized_bounded_action'] },
+              { timestamp: 2, actionType: 'choice', disposition: 'escalate', reasons: ['material_choice_required'] }
+            ]
+          }
+        }
+      }
+    })
+
+    await store.hydrateRuntimeState('/projects/a', 'claude', { suppressAutoStart: true })
+
+    expect(store.latestBlockedAuthorityDecision).toEqual({
+      timestamp: 2,
+      actionType: 'choice',
+      disposition: 'escalate',
+      reasons: ['material_choice_required']
+    })
+  })
+
   it('tears down the previous socket when switching projects', async () => {
     const projectStore = useProjectStore()
     const store = useWatchdogStore()

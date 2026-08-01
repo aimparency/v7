@@ -1,0 +1,80 @@
+{
+  "id": "c59fe055-757e-4084-8326-4ad61ffc6d5f",
+  "text": "Package and distinguish the portable Aimparency Codex continuation loop",
+  "description": "Turn the existing Codex Stop continuation into a reproducible cross-repository installation. Rename the continuation and wrapped-worker notification scripts for unmistakable roles while retaining compatibility shims; correct AIMPARENCY_ALLOW_STOP with temporary misspelled-variable support; make the continuation prompt name the Aimparency MCP graph loop; update the checked-in Codex configuration to omit the ignored matcher and resolve from the Git root; add a --target/--agent codex installer that verifies .bowman, copies only the continuation hook/config, validates JSON and executability, and runs dry-run contract checks; put the continuation-vs-notification distinction first in portable documentation; add automated contract tests including nested-cwd invocation and exclusion of the watchdog notifier. Separately repair the wrapped-worker notifier to require/infer agent type and inspect tRPC application-level success. Do not start or restart any server or wrapped-agent session.",
+  "reflections": [
+    {
+      "date": 1785603596878,
+      "context": "User testing exposed that the Codex Stop continuation and wrapped-worker halt notification were described with overlapping stop/halt language. The existing installer only inspected v7, the Codex config was ignored by Git and used a cwd-relative command plus ignored matcher, the stop escape variable was misspelled, and the worker notifier treated any HTTP 200 as success while defaulting missing identity to Grok.",
+      "outcome": "Added canonical codex-continue-on-stop.sh and wrapped-worker-halt-notify.sh names with executable compatibility shims. The Codex continuation now names the Aimparency MCP graph loop and supports canonical AIMPARENCY_ALLOW_STOP plus the deprecated spelling. Added a target-aware, conflict-safe --target/--agent codex installer that requires a Git-root .bowman project, copies only continuation assets, validates JSON/executability, smoke-tests from .bowman, and prints restart/trust/MCP steps. Reworked README around the two-system distinction and portable links. Made .codex/hooks.json actually trackable, removed Stop matcher, used Git-root resolution, and corrected status text. The worker notifier now normalizes root/.bowman paths, requires or uniquely infers agent type, parses tRPC application success, and falls back on success:false. Added disposable contract tests and npm test:hooks.",
+      "effectiveness": "npm run test:hooks passes, covering Stop-event stdin, valid block JSON, MCP-specific reason, canonical and deprecated stop escapes, nested-cwd Git-root invocation, config parsing/executability, installer exclusion of the worker notifier, tRPC success:false fallback, unique agent inference, and ambiguous-agent refusal. Bash syntax checks pass for all hook scripts, Grok session TypeScript passes, JSON validation and git diff --check pass. No server or wrapped-agent session was started or restarted.",
+      "lesson": "Lifecycle naming is part of the control model: conversation continuation and worker-state notification must never share an ambiguous label. Portable configuration also requires checking ignore rules; a locally present hook file is not a checked-in hook. HTTP transport success must not be confused with application success.",
+      "pattern": "Name hooks by actor plus effect, install only the requested mechanism, resolve commands from the repository root, verify the installed contract in a disposable target, and retain compatibility only through explicit deprecated shims."
+    },
+    {
+      "date": 1785604033886,
+      "context": "Fresh post-completion verification triggered by another Codex Stop continuation, without new authorization for external action.",
+      "outcome": "Re-ran npm run test:hooks successfully. Inspected installer preflight/copy/permission/JSON/nested-cwd smoke-test behavior, canonical hook output and escape variables, checked-in hooks.json, README distinction and relative links, and ran git diff --check on the hook-related paths. No concrete defect was found; no code was changed.",
+      "effectiveness": "The verification independently reconfirmed the portable install contract and avoided inventing unrelated work in an already very dirty shared worktree.",
+      "lesson": "Keep this aim in review pending human acceptance. Further useful mission progress still requires the previously identified real-world mandate rather than another internal hook iteration."
+    },
+    {
+      "date": 1785604165701,
+      "context": "Repeated live Stop continuations showed that the original indefinite hook could not yield after Codex correctly identified a genuine need for human judgment or authorization. Official Codex hook documentation confirms Stop input includes last_assistant_message and that decision:block creates a new continuation prompt.",
+      "outcome": "Added an explicit [AIMPARENCY_WAITING_FOR_HUMAN] protocol. The continuation prompt tells Codex to state the exact blocker/request and end its final response with the marker only when a human response is genuinely required. The hook parses the Stop JSON and returns valid non-blocking JSON only when the marker occurs in last_assistant_message. README documents the boundary.",
+      "effectiveness": "npm run test:hooks passes after adding positive human-wait coverage, negative coverage proving a marker in another Stop field cannot disable continuation, and an assertion that installed prompts carry the protocol. Bash syntax and git diff --check pass. Existing normal continuation, explicit environment escapes, nested-cwd installation, and worker-notifier separation remain covered.",
+      "lesson": "Autonomous persistence needs a first-class yield protocol. A loop that can ask for human authority but cannot wait for the answer undermines cooperation and produces empty continuation turns. Bind the escape to a deliberate model-output marker in the documented lifecycle field, not arbitrary event input."
+    },
+    {
+      "date": 1785605179090,
+      "context": "User rejected a single-step human-wait marker as too easy an escape and required a strong autonomy challenge first: reconsider scope, decompose abstract aims, inspect hygiene/reflections, dream, and try new hypotheses.",
+      "outcome": "Replaced the one-step marker with a two-stage protocol. [AIMPARENCY_REQUEST_HUMAN] always blocks Stop and creates a challenge turn requiring broader graph-based search and recorded attempts. Only a subsequent [AIMPARENCY_CONFIRM_HUMAN_BLOCK] in last_assistant_message yields. The normal continuation prompt now frames human waiting as an extreme case and requires stepping back before requesting it. README and portable installed script carry the same contract.",
+      "effectiveness": "npm run test:hooks passes. Tests prove normal continuation advertises only the request stage, a request produces the mandatory challenge (including graph hygiene), confirmation yields valid non-blocking JSON, and a confirmation marker outside last_assistant_message cannot disable the loop. Bash syntax and git diff --check pass.",
+      "lesson": "Persistence and corrigibility need productive friction: make escalation possible, but require an explicit second-pass search against scope fixation and premature helplessness before allowing the loop to wait."
+    },
+    {
+      "date": 1785606754181,
+      "context": "Stepping back from graph hygiene exposed a portability risk in the prior answer: updating another repository required --force, and the installer treated .codex/hooks.json as an owned whole file even though projects may have unrelated Codex hooks.",
+      "outcome": "Made installation idempotent and compositional. The installer parses an existing hooks.json, preserves its description, every unrelated event, and unrelated Stop handlers, removes legacy/canonical Aimparency handlers, and appends exactly one canonical managed Stop group. A recognized older Aimparency script upgrades without --force. An unrecognized script occupying the managed path is refused unless force is explicit.",
+      "effectiveness": "npm run test:hooks passes with new coverage for preserving an existing PreToolUse hook, preserving an unrelated Stop hook, retaining target description, exactly-one managed handler after reinstall, updating a recognized older script without force, and refusing/preserving an unrecognized conflicting script. Existing nested-cwd, two-stage human wait, JSON, permission, and notifier-separation coverage remains green; Bash syntax and git diff --check pass.",
+      "lesson": "Portable lifecycle tooling must own an entry, not an application's entire configuration file. Explicit installation is enough authority to update a recognizable managed asset, but not to overwrite an unknown file at the same path."
+    },
+    {
+      "date": 1785606937914,
+      "context": "Failure-atomicity review of the new compositional installer found that a syntactically valid hooks.json with a malformed hooks or hooks.Stop shape could be treated as empty and silently replaced.",
+      "outcome": "The merge now fails closed unless existing hooks is an object, hooks.Stop is an array, and each Stop group is an object with a hooks array. Because validation and merge happen into a temporary file before copies, malformed target configuration leaves both hooks.json and the recognized older managed script unchanged.",
+      "effectiveness": "npm run test:hooks passes with a new malformed-Stop fixture that snapshots both target assets, expects installation failure, and proves byte-identical preservation. Bash syntax and git diff --check pass; all prior idempotent-update, unrelated-hook preservation, nested-cwd, human-wait, and notifier tests remain green.",
+      "lesson": "A preserving configuration merge must reject structures it cannot understand; coercing malformed existing state into defaults is data loss disguised as repair."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "aimparency-mcp",
+    "codex",
+    "hooks",
+    "installer",
+    "documentation",
+    "watchdog"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "61dc3d49-4b9a-4d21-b6b0-131a69e82bf2",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Portable Codex loop installer is idempotent, compositional, and failure-atomic for malformed existing hook configuration; internally verified and awaiting explicit acceptance.",
+    "date": 1785606942434
+  },
+  "intrinsicValue": 28,
+  "valueRationale": "A reliable one-command continuation-loop installer removes setup ambiguity and lets other Aimparency projects reproduce autonomous graph-driven work without confusing it with watchdog signaling.",
+  "cost": 6,
+  "loopWeight": 1,
+  "duration": 2,
+  "costVariance": 0,
+  "valueVariance": 0
+}

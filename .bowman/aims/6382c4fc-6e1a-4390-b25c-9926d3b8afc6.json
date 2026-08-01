@@ -1,0 +1,30 @@
+{
+  "id": "6382c4fc-6e1a-4390-b25c-9926d3b8afc6",
+  "text": "Add a robust graph recenter control beside semantic force and label toggle",
+  "description": "Add a graph toolbar button beside the hold-to-align semantic-force control and T label toggle. On activation, compute a surface-weighted spatial center from visible aims, retain the nearest 90% by center distance so remote outliers do not dominate framing, recompute the surface-weighted center of the retained set, include aim radii in symmetric bounds, fit those bounds to the current viewport, then zoom out by 1.2 for breathing room. Animate the camera without changing graph positions or selection. Empty graphs are a no-op.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "graph",
+    "camera",
+    "recenter",
+    "ux"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "b0f6a19a-7d09-4454-97e5-8da581f14bb1"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Recenter control and robust 90%-fit camera framing are implemented and internally verified; awaiting visual interaction acceptance in the existing runtime.",
+    "date": 1785393038152
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

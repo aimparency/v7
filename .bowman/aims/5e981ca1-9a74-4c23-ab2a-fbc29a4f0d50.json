@@ -1,0 +1,54 @@
+{
+  "id": "5e981ca1-9a74-4c23-ab2a-fbc29a4f0d50",
+  "text": "Align supervisor choice prompts with mandatory human authorization",
+  "description": "Correct the declarative supervisor action contract after authority enforcement: remove guidance telling the model to choose durable allow/session permission options, state that choice is an escalation signal that stops automation without emitting terminal input, and update examples to request human review rather than select a key. Keep interactive prompt detection and the fail-closed dispatch policy unchanged. Add prompt regression tests proving generated supervisor guidance no longer recommends permission grants and explicitly describes human authorization. Do not restart the running stack.",
+  "reflections": [
+    {
+      "date": 1785602100105,
+      "context": "The deterministic boundary escalated all terminal choices, but the model-facing state machine still instructed the supervisor to select options and prefer durable permission grants such as Always allow.",
+      "outcome": "Reframed choice as a human-authorization request that stops automation and emits no terminal key. Replaced numeric/shortcut examples with human-review, and updated EXPLORING, WORKING, and WRAPPING_UP instructions to forbid autonomous selection and permission grants.",
+      "effectiveness": "Full wrapped-agents/common verification passes: 163/163 tests, TypeScript tsc --noEmit, and git diff --check. Regression tests inspect both the declarative contract and a generated supervisor prompt for human-authorization language and absence of durable-allow recommendations. No server was touched.",
+      "lesson": "Deterministic enforcement and model-facing affordances must agree. A safe gate paired with an unsafe recommendation creates avoidable escalations and trains the stochastic layer toward prohibited behavior.",
+      "pattern": "After tightening a capability boundary, update every declarative action description, state instruction, and example so proposed actions converge on the enforceable contract."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "human-authority",
+    "watchdog",
+    "prompt-contract"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "fc891a0b-8aaa-4cf2-9e8c-fc43dd315910",
+      "relativePosition": [
+        1.4741127670784715,
+        -2.0191561479826796
+      ],
+      "weight": 1,
+      "explanation": "Gives the human a visible explanation when the supervisor requests authorization."
+    }
+  ],
+  "supportedAims": [
+    "29da921a-6bd9-423e-92ab-ef052a43892b",
+    "eca92d1b-d6e7-40dd-9f35-c01730d569c2"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Supervisor choice contract aligned with mandatory human authorization and internally verified; awaiting explicit user acceptance.",
+    "date": 1785602100142
+  },
+  "intrinsicValue": 16,
+  "valueRationale": "A supervisor should not be instructed to seek permission expansion that its deterministic safety boundary must reject; aligned contracts reduce unsafe proposals and needless automation stops.",
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

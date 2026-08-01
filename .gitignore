@@ -22,7 +22,8 @@ cache.db
 
 .test-tmp
 
-.codex
+.codex/*
+!.codex/hooks.json
 .DS_Store
 
 **/package-lock.json

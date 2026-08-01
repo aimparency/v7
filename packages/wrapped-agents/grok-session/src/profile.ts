@@ -17,14 +17,12 @@ export const grokProfile: AgentProfile = {
   buildWorkerArgs: ({ resume, workerModel }) => {
     // Modeled after common patterns; adjust if grok CLI uses different resume flag
     // (e.g. 'resume' subcommand like codex or '--resume latest' like gemini).
-    const args = resume
-      ? ['--continue', '--dangerously-skip-permissions']
-      : ['--dangerously-skip-permissions'];
+    const args = resume ? ['--continue'] : [];
     if (workerModel !== undefined) args.push('--model', workerModel);
     return args;
   },
   buildWatchdogArgs: ({ watchdogModel }) => {
-    const args = ['--dangerously-skip-permissions'];
+    const args: string[] = [];
     if (watchdogModel !== undefined) args.push('--model', watchdogModel);
     return args;
   },
@@ -36,7 +34,8 @@ export const grokProfile: AgentProfile = {
   //
   // For *reliable* "main worker halt" recognition (the supervisor needs to know
   // when the main agent has finished a turn), configure a hook in your grok CLI
-  // that runs the on-halt script. See common/hooks/worker-halt-hook.sh .
+  // that runs common/hooks/wrapped-worker-halt-notify.sh. This notification is
+  // separate from the Codex conversation-continuation hook.
   // The session wrapper injects AIMPARENCY_* env vars that the hook uses to
   // notify the broker -> session watchdog.
   spinnerPattern: /(?:…|\.\.\.)\s*\((?:\d+h\s*)?(?:\d+m\s*)?\d+s\b/,

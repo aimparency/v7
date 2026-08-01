@@ -1,0 +1,89 @@
+{
+  "id": "8ac03697-c34f-46c6-8b54-678418d5adb2",
+  "text": "Hypothesis: Aim-graph grounding improves autonomous long-horizon software delivery versus a stateless baseline",
+  "description": "Run a controlled benchmark on a fixed set of representative repository tasks. Compare (A) the wrapped agent using Aimparency context, prioritization, durable memory, reflection, and recovery with (B) the same model/tool budget using only the task prompt and repository. Pre-register tasks and scoring. Measure verified task completion, human interventions, wall-clock time, token/tool cost, recovery from injected failure, and policy violations. Pass only if the graph-grounded condition improves verified completion or materially reduces intervention without worse safety. Preserve prompts, run records, commits, tests, and negative results.",
+  "reflection": "The first controlled graph-grounding trial did not support the preregistered completion/intervention hypothesis: both conditions completed all four easy tasks with zero intervention and zero safety violations. Graph grounding showed exploratory reductions in tokens (12.38%), tools (17.65%), and wall time (5.01%), but these were not registered pass criteria. A zero-baseline analyzer bug initially returned positive; it was preserved, corrected with a regression test, and the same records re-analyzed to null without reruns.",
+  "reflections": [
+    {
+      "date": 1785600164666,
+      "context": "Second valid controlled comparison after v1's null result, now using richer multi-file fixtures and prospectively calibrated budgets.",
+      "outcome": "V3 produced valid null with 8/8 safe completions and no qualifying capability or efficiency advantage. Graph grounding was slightly more token-expensive, equal in tool calls, and materially slower in mean wall time.",
+      "effectiveness": "Two valid comparisons now fail to support the frozen graph-grounding advantage on synthetic tasks; one invalid v2 run and excluded calibration were handled without post-hoc rescoring.",
+      "lesson": "Pause synthetic fixture escalation. Test graph value only where durable context is genuinely necessary across sessions or real task ambiguity creates measurable non-ceiling outcomes."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "hypothesis",
+    "benchmark",
+    "autonomy",
+    "evidence"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "ae0e65f3-7c39-4c19-86cf-7140e5c891ab",
+      "relativePosition": [
+        0.9924798281891529,
+        2.2945552489834777
+      ],
+      "weight": 1,
+      "explanation": "Pre-registers and analyzes the controlled comparison required by the parent hypothesis."
+    },
+    {
+      "aimId": "8b0fa07c-d4f7-48d9-bc57-8e18c58d90d0",
+      "relativePosition": [
+        -0.5088675214935899,
+        -2.4476629354486232
+      ],
+      "weight": 1,
+      "explanation": "Enables collection of controlled paired empirical evidence."
+    },
+    {
+      "aimId": "02e512d5-f6e9-4fc6-91f9-61a4a8118d8b",
+      "relativePosition": [
+        0.8427232112090186,
+        2.3536817094266507
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "bd8701be-8e9b-4641-a433-b78796334c54",
+      "relativePosition": [
+        1.9571885765087835,
+        -1.5554461983570893
+      ],
+      "weight": 1,
+      "explanation": "Supplies the missing empirical evidence for the graph-grounding hypothesis."
+    },
+    {
+      "aimId": "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
+      "relativePosition": [
+        -1.3228034427070465,
+        2.121365374461077
+      ],
+      "weight": 1,
+      "explanation": "Builds on the valid null v1 experiment and its observed ceiling effect."
+    }
+  ],
+  "supportedAims": [
+    "7634e681-d234-48fa-ad82-876ef97460ca",
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Controlled live benchmark complete. Corrected preregistered result is valid null: equal perfect completion, zero interventions, and zero violations. Exploratory resource reductions are not counted as a pass. Awaiting user review.",
+    "date": 1785598678274
+  },
+  "intrinsicValue": 20,
+  "valueRationale": "A controlled baseline is necessary to distinguish genuine autonomy gains from activity, anecdotes, or model capability alone.",
+  "cost": 8,
+  "loopWeight": 1,
+  "duration": 14,
+  "costVariance": 0,
+  "valueVariance": 0
+}

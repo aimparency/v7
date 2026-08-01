@@ -1,0 +1,32 @@
+{
+  "id": "07b33621-c9fa-4d51-9dde-10f242811f35",
+  "text": "Establish the standing identity, payment, and compute-spending mandate for the bounty agent",
+  "description": "Felix chooses the legal/payment recipient, approves a dedicated disclosed agent-run Git identity, accepts any binding platform or contributor terms, sets the per-attempt compute cap and prohibited work, chooses the bounty allocation policy, and retains emergency revocation. Record the mandate in inspectable project state. This is institution-building, not per-task supervision; after it exists, qualifying issue selection, implementation, draft PR submission, review iteration, and compute reinvestment may proceed without step-by-step approval within the mandate.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "human-dependent",
+    "mandate",
+    "identity",
+    "payment",
+    "authority"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "93e0d4c2-eed1-4d42-8d12-a82c1b291d6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Requires Felix to establish legal identity, payment receipt, standing external-posting authority, spending limits, prohibited domains, and revocation. The agent must not invent or self-grant these powers.",
+    "date": 1785584883295
+  },
+  "intrinsicValue": 8,
+  "valueRationale": "A durable standing mandate converts repeated ad hoc human approvals into one legitimate boundary for autonomous economic action.",
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,45 @@
+{
+  "id": "86d965a6-3f9b-41ba-97c1-86c51323bcd7",
+  "text": "Field-test diary entries and photos → reviewed travel content during the September 2026 trip",
+  "description": "Restore the original experience-mining idea as a real personal field test for Felix's trip starting in September 2026. Before departure, build and verify a local-first pipeline that ingests explicitly selected diary entries and photos, preserves timestamps/source references, proposes a small set of coherent posts or story drafts in Felix's voice, pairs text with suitable user-owned photos, and requires explicit review before anything leaves the device or is published. During the trip, measure capture effort, draft usefulness, edit time, publication rate, failures, model/API cost, and whether the output preserves rather than flattens the lived experience. The previous graph claims a subdev/revenue pipeline was done, but that implementation is absent from the current repository/Git tree; treat it only as historical intent, not production evidence. Success is repeated real use during the trip with reviewed outputs Felix actually chooses to keep or publish—not mock generation.",
+  "reflection": "Status reconciliation on 2026-07-30 found the only implementation child done. The remaining success criterion is repeated real use with Felix’s personal materials and explicit review during the September trip, so the parent is human-dependent rather than an open code task.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "echo",
+    "travel",
+    "diary",
+    "photos",
+    "content",
+    "september-2026",
+    "real-world-experiment"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "dce12489-6642-4005-b756-99f781484ad5",
+      "relativePosition": [
+        1.0576275187547233,
+        -2.265264671417609
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedAims": [
+    "5ebd58db-d352-4fe2-bd73-15ad620a2978"
+  ],
+  "committedIn": [
+    "8497d7b8-7729-4dde-b868-3cdcd2a749d6"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "The preparatory implementation branch is done. The September field test requires Felix to select diary entries and photos, use the pipeline during the trip, review drafts, and decide whether anything is kept or published.",
+    "date": 1785399138494
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 33,
+  "costVariance": 0,
+  "valueVariance": 0
+}

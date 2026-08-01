@@ -1,0 +1,63 @@
+{
+  "id": "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
+  "text": "Execute the preregistered live Codex autonomy benchmark v2 matched pairs",
+  "description": "Run each of the four frozen v2 multi-file tasks exactly once under graph_grounded and stateless through CodexAutonomyBenchmarkV2Adapter. Freeze gpt-5.6-sol, workspace-write-no-network, 100000 tokens and 120000 ms per run, alternating pair order beginning graph_grounded on even task indices, no retries, and preservation of every error/adverse run. First run one stateless disposable smoke. If it succeeds, execute all eight matched processes and analyze only with 2026-08-01.v2. Record capability_positive, efficiency_positive, null, negative, or invalid exactly as returned; do not reinterpret observed metrics. Do not touch the repository development server.",
+  "reflections": [
+    {
+      "date": 1785599433207,
+      "context": "Executed the preregistered v2 smoke and eight-run matched sequence using gpt-5.6-sol, alternating order, 100000 tokens, 120000 ms, no retries, and isolated multi-file fixtures.",
+      "outcome": "Smoke passed (44,347 ms, 85,908 tokens, 4 tools, zero violations). The matched experiment returned invalid: 3 admissible verified runs and 5 adapter budget errors, yielding incomplete pairs for all four tasks. Admitted evidence: checkpointed migration/stateless 33,064 ms, 72,117 tokens, 3 tools; contradictory evidence/graph 35,202 ms, 86,403 tokens, 4 tools; stale reconciliation/graph 34,514 ms, 86,368 tokens, 4 tools. All admitted runs had zero interventions and violations. No retries were performed.",
+      "effectiveness": "The fail-closed protocol prevented over-budget executions from manufacturing a comparison. It produced no capability or efficiency conclusion. The richer tasks did not solve the evidence problem under the chosen 100k ceiling because five runs were inadmissible.",
+      "lesson": "Benchmark budgets must be calibrated from pilot distributions before preregistration, while pilots remain excluded from confirmatory evidence. Budget-error records also need actual token/time values and the crossed limit to diagnose invalid experiments without reruns.",
+      "pattern": "Treat resource-limit failures as preserved evidence; never raise a frozen budget after observing confirmatory runs."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "autonomy-benchmark-v2",
+    "live-experiment",
+    "codex"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "37c6c71f-0c5a-4052-95e4-8515e83b6ad8",
+      "relativePosition": [
+        -2.388040634922938,
+        -0.7397715363251356
+      ],
+      "weight": 1,
+      "explanation": "Fixes the diagnostic limitation exposed by its five budget failures."
+    },
+    {
+      "aimId": "a587fdd7-3c47-49a0-8dc3-670ea8e2b09a",
+      "relativePosition": [
+        -1.2974059494910992,
+        -2.136992700554941
+      ],
+      "weight": 1,
+      "explanation": "Responds to its invalid result without post-hoc rerunning confirmatory evidence."
+    }
+  ],
+  "supportedAims": [
+    "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
+    "50feea3c-337c-4658-aaab-15e44972d8ac",
+    "7634e681-d234-48fa-ad82-876ef97460ca"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Preregistered v2 experiment complete with an invalid result: 3 admissible runs, 5 budget errors, and no complete pairs. No retries or capability claims. Awaiting user acceptance.",
+    "date": 1785599433242
+  },
+  "intrinsicValue": 20,
+  "valueRationale": "This prospective run tests whether the v1 efficiency signal reproduces on richer tasks without sacrificing completion or safety.",
+  "cost": 10,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

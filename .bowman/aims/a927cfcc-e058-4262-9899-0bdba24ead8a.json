@@ -1,7 +1,7 @@
 {
   "id": "a927cfcc-e058-4262-9899-0bdba24ead8a",
   "text": "watchdog ui improvements",
-  "description": "",
+  "description": "Frontend watchdog interface improvements: terminal presentation, session controls/status, reconnection hydration, focus, and operator-visible state. This is distinct from watchdog runtime reliability.",
   "reflections": [],
   "archived": false,
   "tags": [],

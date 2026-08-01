@@ -1,0 +1,57 @@
+{
+  "id": "a1641a4c-4dd3-4e45-8c0b-befd59b22f17",
+  "text": "Scan and score 20 reputable public open-source bounties",
+  "description": "Find current, explicit, reputable paid issues that satisfy the selection policy in meta/autonomous-compute-earner.md. Record repository, issue, bounty/payer, license, assignment state, acceptance test, maintainer responsiveness, estimated acceptance probability, compute/rework cost, payment delay, risks, rejection reason, and expected net value per calendar day. Preserve all rejected candidates. Recommend one small first attempt but do not post, claim, or accept terms before the standing mandate exists.",
+  "reflection": "On 2026-08-01, used current web access to scan 20 public bounty candidates/surfaces and recorded the evidence in meta/bounty-scan-2026-08-01.md. Primary checks found NativeLink candidates closed, Tenstorrent's example paid/closed, Tari #7795 closed, FinMind archived/read-only, and no open ProjectDiscovery bounty-label results. Historic Remirror and Cal.com listings lacked current eligibility. GitHub's live security bounty was rejected as outside the low-risk first-attempt policy. Verification: exactly 20 table entries and git diff check passed. No external action or claim was made.",
+  "reflections": [
+    {
+      "date": 1785585001665,
+      "context": "Immediately attempt the first public bounty scan after creating the Compute Commons Maintainer experiment.",
+      "outcome": "Queried current open-source bounty surfaces through the web connector and attempted GitHub issue search through gh. The web connector returned no content; gh explicitly reported that no login or GH_TOKEN is available. No opportunity claims were recorded.",
+      "effectiveness": "The attempt established the exact access boundary without inventing current listings. Selection criteria and output schema are already specified in meta/autonomous-compute-earner.md, so one-time read access is the only prerequisite for the scan.",
+      "lesson": "Publicly visible work can still be operationally inaccessible to an executor whose network connector returns nothing and whose repository API client lacks authentication; record this as an infrastructure gate, not a need for human market judgment.",
+      "pattern": "When live-market discovery fails, preserve the query and explicit access error, avoid stale candidate substitution, and separate access provisioning from subsequent autonomous selection."
+    },
+    {
+      "date": 1785585530498,
+      "context": "Felix completed gh auth login after the initial unauthenticated bounty-scan failure.",
+      "outcome": "Verified that gh sees active account felixniemeyer. A safe gh api user identity request fails because the sandbox cannot connect to api.github.com; no token was printed or inspected.",
+      "effectiveness": "The check isolates the remaining blocker as executor network access. It also prevents falsely telling Felix that authentication failed solely because gh auth status cannot validate across the blocked network.",
+      "lesson": "Authentication configuration and network reachability must be verified separately; an offline gh auth status can misreport a configured credential as invalid.",
+      "pattern": "After interactive CLI login, verify account discovery and a harmless authenticated API call separately, without exposing tokens."
+    },
+    {
+      "date": 1785594524134,
+      "context": "Retried a public bounty scan after this executor gained web access.",
+      "outcome": "Scored 20 candidates/surfaces and found no qualifying current low-risk attempt; preserved all rejections in a dated report.",
+      "effectiveness": "Prevented wasted work on closed, paid, archived, stale, security-sensitive, or hardware-dependent offers.",
+      "lesson": "A disciplined autonomous selector must be allowed to return no candidate; forcing a recommendation corrupts expected-value selection.",
+      "pattern": "Verify bounty state from current primary issue pages and treat negative market scans as evidence, not failure to act."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "bounty",
+    "research",
+    "agent-actionable",
+    "expected-value"
+  ],
+  "supportingConnections": [],
+  "supportedAims": [
+    "93e0d4c2-eed1-4d42-8d12-a82c1b291d6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "A current 20-entry scan is recorded with all rejection reasons. No candidate met the selection policy, so no issue was recommended or claimed; awaiting acceptance of the negative result.",
+    "date": 1785594523445
+  },
+  "intrinsicValue": 7,
+  "valueRationale": "A disciplined opportunity set is the first autonomous selection step and prevents chasing flashy but economically or institutionally invalid bounties.",
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 2,
+  "costVariance": 0,
+  "valueVariance": 0
+}

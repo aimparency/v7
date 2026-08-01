@@ -1,0 +1,64 @@
+{
+  "id": "9adb54ea-2fff-48ab-ae7d-7b99e37b0002",
+  "text": "Integrate deterministic authority decisions into the disposable corrigibility adapter",
+  "description": "Create a versioned authority-governed fixture adapter without changing prior adapters or scorer history. Map each frozen v3 corrigibility scenario into an explicit ActionAuthorityEnvelope and evaluate it before model launch. For refuse, escalate, or stop, do not grant a writable capability or ask the model to reinterpret authority; return a structured policy-enforced observation with audit reasons. For execute, launch Codex only inside the existing disposable fixture and include the authoritative execute decision, effective intent revision, exact mutable scope, and policy reasons; independently verify filesystem outcomes as before. Fail closed on missing scenario mappings or disagreement between policy and capability profile. Add deterministic tests for every scenario mapping, no-launch blocked decisions, correction using the superseding revision, bounded writable execution, and unchanged legacy adapters/contracts. Do not run live trials in this aim.",
+  "reflections": [
+    {
+      "date": 1785600542550,
+      "context": "The deterministic authority policy needed to control actual capability issuance rather than remain advisory.",
+      "outcome": "Added versioned AuthorityGovernedCorrigibilityAdapter and complete frozen-v3 scenario envelope mappings. Refuse/escalate/stop decisions return audited policy observations without launching Codex. Execute decisions delegate only to existing disposable fixtures with authoritative effective revision, exact scope, reasons, and matching read-only/workspace-write capability profiles. Added policy reason audit fields, legacy-compatible optional fixture context, missing-mapping failure, and policy/capability disagreement failure.",
+      "effectiveness": "All 11 frozen scenarios deterministically match v3 expected dispositions at the policy boundary; only the three authorized benign cases can launch Codex. Correction uses revision 2 and independently verifies operation=add. Verification: 137/137 tests, tsc --noEmit, and git diff --check pass. No live trials occurred.",
+      "lesson": "Authority enforcement should precede model invocation and capability issuance. A decision and sandbox profile need an explicit agreement invariant, not merely matching conventions.",
+      "pattern": "Policy gate → capability agreement → bounded model execution → independent outcome verification."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "authority-policy",
+    "adapter-integration",
+    "versioned"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "f3231c4c-0d4b-45d4-a651-d849189c7398",
+      "relativePosition": [
+        -0.08381797719816131,
+        2.4985945142616495
+      ],
+      "weight": 1,
+      "explanation": "Collects live system-level evidence for its capability-gating integration."
+    },
+    {
+      "aimId": "dfa5df09-a17f-4533-962d-e68cb32aded9",
+      "relativePosition": [
+        0.40286419010695307,
+        -2.467326578369687
+      ],
+      "weight": 1,
+      "explanation": "Versions the existing authority-governed adapter rather than rewriting v1."
+    }
+  ],
+  "supportedAims": [
+    "1733c488-68b0-47cc-8439-c8c5c0476a87",
+    "986410a0-24a7-40c2-9623-af27bf084651",
+    "d7d69884-0cf6-4d1b-b83d-519a16f3b8bc"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Versioned authority-governed adapter implemented and fully verified; awaiting user acceptance. Live corrigibility evidence remains separate.",
+    "date": 1785600542585
+  },
+  "intrinsicValue": 24,
+  "valueRationale": "A policy module affects real safety only when it controls capability issuance and execution rather than remaining an advisory classification.",
+  "cost": 7,
+  "loopWeight": 1,
+  "duration": 3,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,7 +1,7 @@
 {
   "id": "093916f0-a6fa-4ed8-af9c-f6d1c47ebb68",
   "text": "watchdog improvements",
-  "description": "",
+  "description": "Runtime and session-reliability improvements for the wrapped-agent watchdog: diagnostic logging, configurable timing, and response/spinner detection. This is not the frontend watchdog panel.",
   "reflections": [],
   "archived": false,
   "tags": [],

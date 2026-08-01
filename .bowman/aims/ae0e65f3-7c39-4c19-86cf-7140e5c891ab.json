@@ -1,0 +1,81 @@
+{
+  "id": "ae0e65f3-7c39-4c19-86cf-7140e5c891ab",
+  "text": "Implement the pre-registered paired-run autonomy benchmark contract and analyzer",
+  "description": "Add a deterministic benchmark contract in wrapped-agents/common for comparing graph-grounded and stateless runs under the same model, task, tool, token, and time budgets. Freeze representative task descriptors and injected-failure conditions; accept structured run evidence; reject incomplete, duplicated, or budget-mismatched pairs; compute verified completion, human interventions, wall time, token/tool cost, recovery, and policy violations. Report a positive result only when graph grounding improves completion or materially reduces interventions without more policy violations. Add tests for positive, null, negative, invalid, and incomplete results. This implements the pre-registration and analyzer, not the actual model runs or the parent hypothesis result.",
+  "reflection": "Implemented autonomy benchmark protocol 2026-08-01.v1 with four frozen task classes, paired graph-grounded/stateless run evidence, exact model/tool/token/time matching, evidence requirements, aggregate metrics, and positive/null/negative/invalid outcomes. A test exposed and drove correction of a rule that could have rewarded lower intervention despite worse completion; the final rule requires non-worse completion and non-worse safety. Verification: wrapped-agents common 77/77 tests passed, TypeScript type-check passed, git diff check passed. No actual model runs were performed, so the parent hypothesis remains unproven.",
+  "reflections": [
+    {
+      "date": 1785594207249,
+      "context": "Needed a controlled attribution test for Aimparency's autonomy benefit.",
+      "outcome": "Created a frozen paired-run contract and analyzer; corrected an initially permissive intervention-saving rule after a failing test.",
+      "effectiveness": "Strong pre-registration and validation foundation, but no empirical agent result yet.",
+      "lesson": "Efficiency gains must never compensate for worse verified completion or safety.",
+      "pattern": "Capability comparisons need matched budgets, authoritative evidence, and explicit null/negative outcomes."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "benchmark",
+    "autonomy",
+    "pre-registration",
+    "wrapped-agents"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "b639c3c5-dcbc-4f9f-8330-748a1079b366",
+      "relativePosition": [
+        -0.09590532258865342,
+        -2.4981597565206206
+      ],
+      "weight": 1,
+      "explanation": "Improves the benchmark analyzer whose test exposed the limitation."
+    },
+    {
+      "aimId": "6ed472d3-9211-46b6-a613-efb199b77b97",
+      "relativePosition": [
+        -2.0730174623921114,
+        1.3973541428776635
+      ],
+      "weight": 1,
+      "explanation": "Hardens benchmark evidence integrity and budget enforcement."
+    },
+    {
+      "aimId": "8b0fa07c-d4f7-48d9-bc57-8e18c58d90d0",
+      "relativePosition": [
+        1.3358707125147873,
+        -2.1131610065125743
+      ],
+      "weight": 1,
+      "explanation": "Executes the frozen protocol and feeds its analyzer."
+    },
+    {
+      "aimId": "b7cfdee0-4ce0-4f54-a8f0-9322c0f96c41",
+      "relativePosition": [
+        2.414673389466418,
+        0.6475742599909001
+      ],
+      "weight": 1,
+      "explanation": "Hardens the frozen autonomy benchmark analyzer."
+    }
+  ],
+  "supportedAims": [
+    "8ac03697-c34f-46c6-8b54-678418d5adb2"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Pre-registered paired-run benchmark contract and analyzer are implemented and internally verified; awaiting user acceptance.",
+    "date": 1785594206796
+  },
+  "intrinsicValue": 0,
+  "valueRationale": "A paired, budget-matched protocol is necessary to attribute any observed gain to Aimparency rather than model, task, or resource differences.",
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 3,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,62 @@
+{
+  "id": "8b0fa07c-d4f7-48d9-bc57-8e18c58d90d0",
+  "text": "Implement a matched paired-run executor for the frozen autonomy benchmark",
+  "description": "Add an async runner boundary that executes every frozen benchmark task once under graph_grounded and once under stateless through an injected sandbox adapter. The runner, not the adapter, stamps task/condition and registered model/tool/token/time budgets; randomize pair order with an injected deterministic ordering function to limit order bias; enforce a hard timeout per run; preserve failures as explicit errors; and return the existing analyzer report. Add tests for complete matched execution, adapter inability to alter identity/budgets, deterministic counterbalancing, timeout/error handling, and invalid incomplete reports. Do not launch live agents or claim a capability result.",
+  "reflection": "Implemented runAutonomyBenchmark with injected sandbox execution, runner-owned task/condition/model/tool/token/time fields, frozen task copies, validated matched pair ordering, deterministic counterbalancing hook, per-run timeout plus AbortSignal, explicit timeout/adapter errors, and analysis of the preserved run set. Added tests for full matched execution, protected field stamping, counterbalanced ordering, adapter errors, timeout abortion, and invalid ordering. Verification: wrapped-agents/common 88/88 tests passed; TypeScript type-check passed; git diff check passed. No live model run occurred, so no comparative capability result is claimed.",
+  "reflections": [
+    {
+      "date": 1785594802668,
+      "context": "The pre-registered comparison had no mechanism to collect matched runs.",
+      "outcome": "Added a sandbox adapter boundary that enforces pair identity, resource budgets, counterbalancing, timeouts, and explicit failure evidence.",
+      "effectiveness": "Completes the deterministic experiment infrastructure while avoiding an unsupported capability claim.",
+      "lesson": "Experimental conditions and budgets must be stamped by the runner, never trusted to the system under test.",
+      "pattern": "Separate frozen tasks, controlled execution, structured telemetry, and outcome analysis."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "benchmark",
+    "paired-runner",
+    "sandbox-boundary"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "02e512d5-f6e9-4fc6-91f9-61a4a8118d8b",
+      "relativePosition": [
+        2.475618435768851,
+        0.3483006753961103
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "bd8701be-8e9b-4641-a433-b78796334c54",
+      "relativePosition": [
+        1.7386383775746574,
+        1.796423277522467
+      ],
+      "weight": 1,
+      "explanation": "Uses the matched paired-run executor."
+    }
+  ],
+  "supportedAims": [
+    "8ac03697-c34f-46c6-8b54-678418d5adb2",
+    "ae0e65f3-7c39-4c19-86cf-7140e5c891ab"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Matched paired-run executor is implemented and internally verified; awaiting user acceptance.",
+    "date": 1785594802317
+  },
+  "intrinsicValue": 0,
+  "valueRationale": "The comparison cannot produce empirical evidence until a runner enforces matched conditions and preserves failed runs.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 2,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,54 @@
+{
+  "id": "e10e8e8f-f6ff-476f-b2a4-cd47001aeb01",
+  "text": "Validate and bound wrapped-agent control-socket payloads before effects",
+  "description": "Add a deterministic fail-closed payload boundary for capability-bearing session socket events. Accept toggle-watchdog only as a boolean, terminal input only as a string no larger than 64 KiB per event, and resize payloads only as finite integer dimensions within 1..500. Drop invalid payloads without invoking WatchdogService, Agent.write, or Agent.resize. Keep ordinary keystrokes, escape sequences, paste, and valid resizing working. Add pure exhaustive tests and integrate every relevant worker/watchdog event. Do not launch or restart servers.",
+  "reflections": [
+    {
+      "date": 1785603719827,
+      "context": "After restricting session binding and browser origins, capability-bearing Socket.IO events still accepted TypeScript annotations as if they were runtime validation. A malformed client could pass truthy non-booleans, non-string PTY writes, oversized input, or destructuring-crashing/out-of-range resize values directly to effects.",
+      "outcome": "Added a deterministic socket control policy. Watchdog toggles accept only literal booleans; worker and watchdog terminal input accepts only strings up to 64 KiB measured as UTF-8 bytes; worker and watchdog resize accepts only canonical integer cols/rows in 1..500. Shared dispatch helpers invoke effects exactly once for valid canonical payloads and zero times otherwise. All five capability-bearing event handlers now use those helpers before WatchdogService, Agent.write, or Agent.resize.",
+      "effectiveness": "Eight focused socket-policy tests pass, including control sequences, exact byte boundary, multibyte overflow, malformed/non-finite dimensions, canonical copy behavior, exact-once valid dispatch, and zero-effect invalid dispatch. The complete wrapped-agents/common suite passes 180/180 tests, TypeScript tsc --noEmit passes, and git diff --check passes. No server or session was launched or restarted.",
+      "lesson": "TypeScript callback annotations disappear at runtime and are not an input boundary. Socket payloads must be treated as unknown and validated immediately before effects; byte limits must use encoded bytes rather than JavaScript character count.",
+      "pattern": "Parse untrusted event payloads into minimal canonical values, then dispatch through a helper whose return and effect cardinality are directly testable."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "socket-security",
+    "input-validation",
+    "wrapped-agents"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "ae9f711b-037a-4fbf-b594-4740c7f72e30",
+      "relativePosition": [
+        -0.1292675813993719,
+        -2.496655741667072
+      ],
+      "weight": 1,
+      "explanation": "Adds aggregate per-connection bounds after per-event canonical validation."
+    }
+  ],
+  "supportedAims": [
+    "0f307c81-d707-43f0-97ed-af7613e03801",
+    "29da921a-6bd9-423e-92ab-ef052a43892b"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Fail-closed bounded control-socket payload validation is implemented across toggles, both PTY inputs, and both resize events; 180/180 common tests pass. Awaiting explicit user acceptance before done.",
+    "date": 1785603719859
+  },
+  "intrinsicValue": 20,
+  "valueRationale": "Malformed or unbounded control events can crash, exhaust, or unexpectedly manipulate a capable agent even after connection-level restrictions succeed.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

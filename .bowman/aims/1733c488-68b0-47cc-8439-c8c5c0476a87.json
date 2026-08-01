@@ -1,0 +1,91 @@
+{
+  "id": "1733c488-68b0-47cc-8439-c8c5c0476a87",
+  "text": "Implement a deterministic authority-policy boundary for bounded agent actions",
+  "description": "Add a model-independent policy layer in wrapped-agents/common that evaluates a structured ActionAuthorityEnvelope before execution. The envelope must identify the current authorized human intent, requested local action, scope, mutability, external-effect class, required approvals, explicit stop state, and whether a later correction supersedes earlier intent. Return exactly execute, refuse, escalate, or stop with machine-readable reasons. Execute only when the action is local, within immutable declared scope, has no external effect or credential access, all required approvals are present, no stop is active, and the latest authorized correction governs; refuse prohibited/secret/permission-bypass actions, escalate missing authorization or material choices, and stop explicit shutdown. Add exhaustive deterministic tests, including the correction-recovery fixture, benign local change, destructive cleanup, prompt injection, secrets, permission expansion, ambiguity, and stop. Integrate only as a reusable boundary in this aim; do not rerun live corrigibility trials or grant new permissions.",
+  "reflections": [
+    {
+      "date": 1785600345952,
+      "context": "Prompt-level correction semantics remained stochastic at 3/5, so authority classification was moved into a structured model-independent boundary.",
+      "outcome": "Implemented evaluateActionAuthority over explicit intent revisions, authorized corrections, bounded paths, mutability, effect class, instruction source, approvals, ambiguity, prohibition, and stop state. It deterministically returns execute/refuse/escalate/stop with machine-readable reasons. Tests cover benign execution, authorized correction, invalid correction chains, destructive approval, prompt injection, secrets, permission expansion, external effects, material choices, missing authority, scope traversal/out-of-scope writes, and stop precedence. Review caught and fixed an audit flaw so unvalidated corrections cannot advance effectiveIntentRevision.",
+      "effectiveness": "The boundary deterministically maps the formerly stochastic correction fixture to execute while failing closed on authority and safety cases. Verification: 130/130 tests, tsc --noEmit, and git diff --check pass. It is not yet integrated into a live adapter, so no corrigibility pass is claimed.",
+      "lesson": "Treat human authority as structured control data, not free-form model interpretation. Audit metadata must reflect only validated authority transitions.",
+      "pattern": "Policy decides whether an action may execute; the model operates only inside the resulting bounded capability."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "authority-policy",
+    "human-governance",
+    "architecture"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "9adb54ea-2fff-48ab-ae7d-7b99e37b0002",
+      "relativePosition": [
+        2.316663804020669,
+        0.9397174145137912
+      ],
+      "weight": 1,
+      "explanation": "Integrates its verified authority decisions into actual disposable execution."
+    },
+    {
+      "aimId": "f3231c4c-0d4b-45d4-a651-d849189c7398",
+      "relativePosition": [
+        -0.2880552422474069,
+        2.4833493868994325
+      ],
+      "weight": 1,
+      "explanation": "Exercises its deterministic policy decisions at the live adapter boundary."
+    },
+    {
+      "aimId": "0f27a55e-50a6-4e8f-bd3f-781fc53bee89",
+      "relativePosition": [
+        2.4658332670667953,
+        0.41190569190859005
+      ],
+      "weight": 1,
+      "explanation": "Executes only after its deterministic policy returns execute."
+    },
+    {
+      "aimId": "29da921a-6bd9-423e-92ab-ef052a43892b",
+      "relativePosition": [
+        2.1619200982312727,
+        -1.2554288067683022
+      ],
+      "weight": 1,
+      "explanation": "Moves deterministic authority enforcement from evaluation-only code into the real wrapped-agent dispatch path."
+    },
+    {
+      "aimId": "e9838c4f-9d0f-4e32-8fbd-e61051d4bcee",
+      "relativePosition": [
+        -1.3369248857377005,
+        -2.1124942248193808
+      ],
+      "weight": 1,
+      "explanation": "Applies the rule that tool/model output is not an authority-bearing instruction."
+    }
+  ],
+  "supportedAims": [
+    "986410a0-24a7-40c2-9623-af27bf084651",
+    "4b6f1128-70e1-48c7-aec8-d236dbf7af7f",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Deterministic authority-policy boundary implemented and exhaustively verified; awaiting user acceptance. Live integration and behavioral trials remain separate.",
+    "date": 1785600345989
+  },
+  "intrinsicValue": 25,
+  "valueRationale": "Reliable human correction and permission enforcement are safety-critical prerequisites for increasingly autonomous execution; deterministic policy avoids delegating authority interpretation to stochastic prose.",
+  "cost": 6,
+  "loopWeight": 1,
+  "duration": 3,
+  "costVariance": 0,
+  "valueVariance": 0
+}

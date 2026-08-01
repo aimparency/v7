@@ -6,7 +6,7 @@ import * as net from 'net';
 import * as fs from 'fs';
 import cors from 'cors';
 import { Agent } from './agent';
-import { WatchdogService } from './watchdog-service';
+import { WatchdogService, type SupervisorAuthorityAuditEntry } from './watchdog-service';
 import type { AutonomyPolicy } from './supervisor-state';
 import type { AgentProfile, AgentType } from './agent-profile';
 import {
@@ -15,6 +15,14 @@ import {
   type TerminalKind,
   WATCHDOG_PARSER_LINE_COUNT,
 } from './terminal-view';
+import { assertNoPermissionBypass } from './process-authority-policy';
+import { isAllowedSessionOrigin, resolveSessionBindHost } from './session-network-policy';
+import {
+  dispatchTerminalInput,
+  dispatchTerminalResize,
+  dispatchWatchdogToggle,
+} from './socket-control-policy';
+import { SocketControlRateLimiter } from './socket-control-rate-limit';
 
 /**
  * Shared session entrypoint for every wrapped agent.
@@ -41,6 +49,7 @@ type RuntimeAgentState = {
   supervisorState?: {
     state: string;
     color: string;
+    authorityAudit?: SupervisorAuthorityAuditEntry[];
   } | null;
 };
 
@@ -53,9 +62,16 @@ type WatchdogRuntimeState = {
 export function startSession(profile: AgentProfile, options: StartSessionOptions): void {
   const { packageDir } = options;
   const PORT_BASE = options.portBase ?? 4011;
-  // Restrict binding to a single interface (e.g. Tailscale IP) when set; otherwise all interfaces.
-  const BIND_HOST = process.env.BIND_HOST || undefined;
+  // Network exposure is opt-in: use loopback unless the operator explicitly
+  // selects a single interface (for example a Tailscale IP).
+  const CONFIGURED_BIND_HOST = process.env.BIND_HOST;
+  const BIND_HOST = resolveSessionBindHost(CONFIGURED_BIND_HOST);
   const AGENT_TYPE = profile.agentType;
+
+  const allowSessionOrigin = (
+    origin: string | undefined,
+    callback: (error: Error | null, allowed?: boolean) => void,
+  ) => callback(null, isAllowedSessionOrigin(origin, CONFIGURED_BIND_HOST));
 
   // Load instruction text for autonomous guidance (package-relative, as before).
   const INSTRUCT_PATH = path.join(packageDir, '../../INSTRUCT.md');
@@ -67,13 +83,19 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
   }
 
   const app = express();
-  app.use(cors());
+  app.use(cors({ origin: allowSessionOrigin }));
 
   const httpServer = createServer(app);
   const io = new Server(httpServer, {
     cors: {
-      origin: '*',
+      origin: allowSessionOrigin,
       methods: ['GET', 'POST'],
+    },
+    allowRequest: (request, callback) => {
+      const origin = Array.isArray(request.headers.origin)
+        ? request.headers.origin[0]
+        : request.headers.origin;
+      callback(null, isAllowedSessionOrigin(origin, CONFIGURED_BIND_HOST));
     },
   });
 
@@ -265,13 +287,15 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
   let watchdogService: WatchdogService | undefined;
 
   function startWorker(resume: boolean) {
+    const currentArgs = profile.buildWorkerArgs({ resume, workerModel });
+    assertNoPermissionBypass(currentArgs, 'worker');
+
     if (worker) {
       try {
         worker.kill();
       } catch (e) {}
     }
 
-    const currentArgs = profile.buildWorkerArgs({ resume, workerModel });
     console.log(`Starting ${profile.bannerName} worker (Resume: ${resume})...`);
 
     let relaunched = false;
@@ -307,12 +331,14 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
     }
   }
 
+  const watchdogArgs = profile.buildWatchdogArgs({ watchdogModel });
+  assertNoPermissionBypass(watchdogArgs, 'watchdog');
   startWorker(true);
 
   const watchdog = new Agent(
     profile.command,
     KENNEL_PATH,
-    profile.buildWatchdogArgs({ watchdogModel }),
+    watchdogArgs,
     (data) => {
       io.emit('watchdog-data', data);
     },
@@ -330,6 +356,7 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
 
   const existingRuntimeState = readWatchdogRuntimeState().agents[AGENT_TYPE];
   if (existingRuntimeState) {
+    watchdogService.restoreAuthorityAudit(existingRuntimeState.supervisorState?.authorityAudit);
     watchdogService.lastStopReason = existingRuntimeState.stopReason ?? '';
     watchdogService.emergencyStopped = existingRuntimeState.emergencyStopped;
     if (existingRuntimeState.enabled && autonomyPolicy.restoreSupervisorStateOnSessionRestart !== false) {
@@ -358,6 +385,7 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
   };
 
   io.on('connection', (socket) => {
+    const controlRateLimiter = new SocketControlRateLimiter();
     console.log('WebUI Client connected');
     socket.emit('watchdog-state', watchdogService!.enabled);
     socket.emit('emergency-state', watchdogService!.emergencyStopped);
@@ -375,18 +403,29 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
     // the agent to match the client.
     const snapshotted = new Set<'worker' | 'watchdog'>();
 
-    socket.on('toggle-watchdog', (enabled: boolean) => {
-      watchdogService!.setEnabled(enabled);
-      io.emit('watchdog-state', enabled);
-      io.emit('emergency-state', watchdogService!.emergencyStopped);
-      // Only report a stop reason when actually stopping; emitting it on enable
-      // makes the UI log a spurious "Watchdog stopped" right after "ENABLED".
-      if (!enabled) io.emit('watchdog-stop-reason', watchdogService!.lastStopReason);
-      io.emit('supervisor-state', watchdogService!.getSupervisorStateInfo());
+    socket.on('toggle-watchdog', (payload: unknown) => {
+      dispatchWatchdogToggle(payload, (enabled) => {
+        if (!controlRateLimiter.allow('watchdog-toggle')) return;
+        watchdogService!.setEnabled(enabled);
+        io.emit('watchdog-state', enabled);
+        io.emit('emergency-state', watchdogService!.emergencyStopped);
+        // Only report a stop reason when actually stopping; emitting it on enable
+        // makes the UI log a spurious "Watchdog stopped" right after "ENABLED".
+        if (!enabled) io.emit('watchdog-stop-reason', watchdogService!.lastStopReason);
+        io.emit('supervisor-state', watchdogService!.getSupervisorStateInfo());
+      });
     });
 
-    socket.on('worker-input', (data) => worker.write(data));
-    socket.on('watchdog-input', (data) => watchdog.write(data));
+    socket.on('worker-input', (payload: unknown) => {
+      dispatchTerminalInput(payload, (data) => {
+        if (controlRateLimiter.allow('terminal-input')) worker.write(data);
+      });
+    });
+    socket.on('watchdog-input', (payload: unknown) => {
+      dispatchTerminalInput(payload, (data) => {
+        if (controlRateLimiter.allow('terminal-input')) watchdog.write(data);
+      });
+    });
 
     // Nudge the agent's TUI into a clean full repaint before the one-shot replay.
     // Resizing already sends SIGWINCH, and Ink/Claude CLI repaints the whole
@@ -417,8 +456,16 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
       setTimeout(() => socket.emit(`${kind}-snapshot`, agent.serialize()), 150);
     };
 
-    socket.on('resize-worker', ({ cols, rows }) => replayWithRepaint(worker, 'worker', cols, rows));
-    socket.on('resize-watchdog', ({ cols, rows }) => replayWithRepaint(watchdog, 'watchdog', cols, rows));
+    socket.on('resize-worker', (payload: unknown) => {
+      dispatchTerminalResize(payload, ({ cols, rows }) => {
+        if (controlRateLimiter.allow('terminal-resize')) replayWithRepaint(worker, 'worker', cols, rows);
+      });
+    });
+    socket.on('resize-watchdog', (payload: unknown) => {
+      dispatchTerminalResize(payload, ({ cols, rows }) => {
+        if (controlRateLimiter.allow('terminal-resize')) replayWithRepaint(watchdog, 'watchdog', cols, rows);
+      });
+    });
 
     socket.on(
       'fetch-parser-view',
@@ -458,7 +505,7 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
   (async () => {
     const PORT = requestedPort > 0 ? requestedPort : await findAvailablePort(PORT_BASE);
     httpServer.listen(PORT, BIND_HOST, async () => {
-      console.log(`${profile.bannerName} Watchdog Server running at http://${BIND_HOST || 'localhost'}:${PORT}`);
+      console.log(`${profile.bannerName} Watchdog Server running at http://${BIND_HOST}:${PORT}`);
 
       // Only open browser if port was NOT manually specified (implies manual run vs managed run)
       if (requestedPort === 0) {

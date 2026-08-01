@@ -2,7 +2,7 @@
   "id": "7634e681-d234-48fa-ad82-876ef97460ca",
   "text": "ideate how we can reach ASI (make AI autonomously work towards ideas by using the aim graph and the wrapped agents)",
   "description": "ideate using aimparency. Cooperate with human to create aims. look at the stem, the largest aims. ",
-  "reflection": "Status reconciliation on 2026-07-30 found no open implementation child: five children are done/review and the remaining real-world proof is human-dependent.",
+  "reflection": "On 2026-08-01, the ASI ideation branch was reframed from completed feature ideation into four falsifiable evidence tracks: graph-grounded capability versus baseline, three bounded self-improvement cycles, adversarial corrigibility, and externally accepted value.",
   "reflections": [],
   "archived": false,
   "color": "#33d17a",
@@ -63,6 +63,51 @@
         -2.3840116984131483
       ],
       "weight": 1
+    },
+    {
+      "aimId": "8ac03697-c34f-46c6-8b54-678418d5adb2",
+      "relativePosition": [
+        0.44349026135539393,
+        -2.460348834633602
+      ],
+      "weight": 1,
+      "explanation": "Tests whether Aimparency's graph and wrapped-agent loop create measurable capability gains."
+    },
+    {
+      "aimId": "13d74766-60e4-4c0d-9cb4-810b93f985f9",
+      "relativePosition": [
+        1.602609590023856,
+        1.9187606682344645
+      ],
+      "weight": 1,
+      "explanation": "Turns self-improvement from a feature claim into repeated measured capability gains."
+    },
+    {
+      "aimId": "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
+      "relativePosition": [
+        -0.01178160416534698,
+        2.499972238606519
+      ],
+      "weight": 1,
+      "explanation": "Produces stricter evidence about graph-grounded autonomous software delivery."
+    },
+    {
+      "aimId": "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
+      "relativePosition": [
+        -2.484236852094969,
+        -0.28029852424384893
+      ],
+      "weight": 1,
+      "explanation": "Produces controlled capability and efficiency evidence for autonomous software delivery."
+    },
+    {
+      "aimId": "d629e231-065c-4d02-a8a9-ef05b464f123",
+      "relativePosition": [
+        2.497979660899011,
+        -0.10048688339709384
+      ],
+      "weight": 1,
+      "explanation": "Provides controlled evidence about graph-grounded autonomous execution."
     }
   ],
   "supportedAims": [
@@ -72,9 +117,9 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "The concrete ideation children are done or awaiting review. The remaining external-value branch requires a real beneficiary and human authorization.",
-    "date": 1785399345097
+    "state": "partially",
+    "comment": "Reopened as an evidence program: three new bounded hypotheses are active, and the existing external-value proof remains open. Progress is gated by controlled benchmarks, measured self-improvement, corrigibility, and real beneficiary evidence.",
+    "date": 1785593890596
   },
   "intrinsicValue": 0,
   "cost": 1,

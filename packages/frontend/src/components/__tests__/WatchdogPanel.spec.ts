@@ -15,6 +15,10 @@ const watchdogStore = reactive({
   autonomyPolicy: null as any,
   runtimeMetadata: null as any,
   supervisorState: null as any,
+  get latestBlockedAuthorityDecision() {
+    const audit = watchdogStore.supervisorState?.authorityAudit ?? []
+    return [...audit].reverse().find((entry: any) => entry.disposition !== 'execute') ?? null
+  },
   workerOutput: '',
   watchdogOutput: '',
   spawningLog: [] as string[],
@@ -270,6 +274,42 @@ describe('WatchdogPanel', () => {
 
     expect(state.text()).toBe('State: wrapping_up')
     expect(state.attributes('style')).toContain('color: rgb(56, 189, 248)')
+  })
+
+  it('shows the latest blocked authority decision without rendering audit history', async () => {
+    watchdogStore.supervisorState = {
+      state: 'WORKING',
+      authorityAudit: [
+        { timestamp: 1, actionType: 'start_work', disposition: 'execute', reasons: ['authorized_bounded_action'] },
+        { timestamp: 2, actionType: 'choice', disposition: 'escalate', reasons: ['material_choice_required'] }
+      ]
+    }
+
+    const wrapper = mount(WatchdogPanel, {
+      global: { stubs: { WatchdogTerminal: true, WatchdogActionsOverlay: true } }
+    })
+    await nextTick()
+
+    const notice = wrapper.get('.authority-notice')
+    expect(notice.text()).toContain('Human authorization required: choice')
+    expect(notice.text()).toContain('material_choice_required')
+    expect(notice.text()).not.toContain('start_work')
+  })
+
+  it('hides the authority notice when every decision executed', async () => {
+    watchdogStore.supervisorState = {
+      state: 'WORKING',
+      authorityAudit: [
+        { timestamp: 1, actionType: 'start_work', disposition: 'execute', reasons: ['authorized_bounded_action'] }
+      ]
+    }
+
+    const wrapper = mount(WatchdogPanel, {
+      global: { stubs: { WatchdogTerminal: true, WatchdogActionsOverlay: true } }
+    })
+    await nextTick()
+
+    expect(wrapper.find('.authority-notice').exists()).toBe(false)
   })
 
   it('shows a rebuilding overlay and locks both terminals', async () => {

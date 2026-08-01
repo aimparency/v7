@@ -532,7 +532,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable aim, update aims/connections/phases as understanding changes, verify real outcomes, record the result on the aim, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open aims; if the phase contains only open containers and no open leaf, falls back to connected uncommitted open aims so hidden work cannot empty the loop.",
+          description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable aim, update aims/connections/phases as understanding changes, verify real outcomes, record the result on the aim, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open aims; if the phase contains only open containers, falls back to connected uncommitted open leaves. If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene/reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
           inputSchema: {
             type: "object",
             properties: {
@@ -1476,14 +1476,18 @@ export function registerTools(server: Server, trpcClient: any) {
                 aim.status?.state === 'open'
                 && (aim.committedIn ?? []).length === 0
                 && (aim.supportedAims ?? []).length > 0
+                && !hasActiveChild(aim)
               )
             : [];
           const rankedOpenAims = uncommittedFallback.length > 0
             ? uncommittedFallback
             : openInPhase;
+          const emptyActionableFrontier = openLeavesInPhase.length === 0 && uncommittedFallback.length === 0;
           const selectionScope = uncommittedFallback.length > 0
             ? 'connected-uncommitted-fallback'
-            : 'phase-commitments';
+            : emptyActionableFrontier
+              ? 'mission-containers-exploration'
+              : 'phase-commitments';
 
           // Diagnostics: how many committed aims are missing economic data
           const allCommitted = (allAims as any[]).filter((a: any) => aimIdSet.has(a.id));
@@ -1563,13 +1567,26 @@ export function registerTools(server: Server, trpcClient: any) {
                     realizedSignal: realizedSignalAvailable ? "git-commit-references" : "unavailable (not a git repo / no commits)",
                     openAimsWithNoRealizedOutput: realizedSignalAvailable ? noRealizedOutput : undefined,
                     note: uncommittedFallback.length > 0
-                      ? `No open leaf aim is committed to this phase; ranked ${uncommittedFallback.length} connected uncommitted open aim(s) as a fallback.`
+                      ? `No open leaf aim is committed to this phase; ranked ${uncommittedFallback.length} connected uncommitted open leaf aim(s) as a fallback.`
+                      : emptyActionableFrontier
+                      ? "No open actionable leaf exists in the phase or connected uncommitted graph. Mission containers are context for exploration, not executable work."
                       : missingValue > 0
                       ? `${missingValue} aim(s) have zero flowed value — they are disconnected from any intrinsic value source in the graph. Their priorities are unreliable.`
                       : missingCost > 0
                         ? `${missingCost} aim(s) lack a cost estimate. Set via update_aim { cost: N }.`
                         : "All committed aims have economic data.",
                   },
+                  exploration: emptyActionableFrontier ? {
+                    required: true,
+                    objective: "Create or uncover the next valuable actionable leaf in Aimparency graph state before implementing.",
+                    moves: [
+                      "Inspect graph_hygiene and recent reflections for structural or learned opportunities.",
+                      "Step back from the most recent scope and decompose a high-value abstract non-done mission into a bounded leaf.",
+                      "Dream up a falsifiable hypothesis with a safe reversible experiment, explicit verification, and stop condition.",
+                      "Search before create_aim; connect genuinely new work to the mission and commit it to the active phase.",
+                      "Do not manufacture low-value activity or substitute Markdown planning for graph state."
+                    ]
+                  } : undefined,
                   aims: prioritized.map((a: any) => ({
                     id: a.id,
                     text: a.text,

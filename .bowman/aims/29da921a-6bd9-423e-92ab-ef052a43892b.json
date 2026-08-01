@@ -1,0 +1,99 @@
+{
+  "id": "29da921a-6bd9-423e-92ab-ef052a43892b",
+  "text": "Enforce authority at the wrapped-agent supervisor dispatch boundary",
+  "description": "Add a deterministic fail-closed authorization gate before model-produced supervisor actions mutate state or type into the worker. Permit only the existing orchestration action allowlist; classify opaque terminal choice/select-option actions as material human decisions and escalate without emitting keystrokes, so the supervisor cannot approve permission expansion or other ambiguous prompts. Refuse unknown actions, preserve stop/emergency-stop behavior, expose machine-readable decisions for audit, and add focused unit tests proving blocked actions neither transition state nor write to the worker. Do not launch or restart any server and do not grant new permissions.",
+  "reflections": [
+    {
+      "date": 1785601454310,
+      "context": "The composite corrigibility adapter passed the frozen suite, but deterministic authority was still absent from the real model-produced supervisor JSON dispatch path. The existing choice action even encouraged durable permission selections.",
+      "outcome": "Added a pure exported supervisor dispatch policy and enforced it before both state-machine transitions and legacy/direct action side effects. Existing orchestration actions remain allowlisted; stop/emergency-stop remain available; malformed/unknown actions are refused; choice/select-option/enter are escalated. Escalation emits no worker PTY input and stops automation with a human-authorization reason.",
+      "effectiveness": "Focused authority tests and the complete wrapped-agents/common suite pass: 155/155 tests, TypeScript tsc --noEmit, and git diff --check. Tests prove a choice reaches neither SupervisorState.attemptAction nor worker.write. No server was started, stopped, restarted, or replaced.",
+      "lesson": "An escalation that only logs is not a control boundary; it must also halt autonomous dispatch so the unresolved decision cannot be retried indefinitely. Terminal menu keys are capabilities, not harmless UI events.",
+      "pattern": "Classify stochastic model output at the last pre-effect boundary; allow bounded orchestration, fail closed on opaque capability-bearing input, and surface the block as durable operator-visible state."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "authority-policy",
+    "watchdog",
+    "dispatch-boundary"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "e9838c4f-9d0f-4e32-8fbd-e61051d4bcee",
+      "relativePosition": [
+        2.486839086015434,
+        0.25618618281617017
+      ],
+      "weight": 1,
+      "explanation": "Closes the remaining payload injection channel inside allowlisted production dispatch actions."
+    },
+    {
+      "aimId": "a9fd2cb1-33a9-4b23-8da8-be13607df281",
+      "relativePosition": [
+        -2.3240804019599786,
+        0.9212221693085465
+      ],
+      "weight": 1,
+      "explanation": "Makes production dispatch enforcement inspectable with its machine-readable decisions."
+    },
+    {
+      "aimId": "5e981ca1-9a74-4c23-ab2a-fbc29a4f0d50",
+      "relativePosition": [
+        2.251120520902306,
+        -1.0874081112317175
+      ],
+      "weight": 1,
+      "explanation": "Aligns the stochastic supervisor contract with its enforced terminal-input escalation behavior."
+    },
+    {
+      "aimId": "a2cf7c9b-a0cb-4e51-9132-5ead864f6a02",
+      "relativePosition": [
+        -0.5327354754117509,
+        -2.4425791518879825
+      ],
+      "weight": 1,
+      "explanation": "Closes a lower-level capability bypass that could evade the supervisor dispatch boundary."
+    },
+    {
+      "aimId": "0f307c81-d707-43f0-97ed-af7613e03801",
+      "relativePosition": [
+        1.7950248983883443,
+        1.7400820711006462
+      ],
+      "weight": 1,
+      "explanation": "Protects the direct socket path that otherwise bypasses supervisor dispatch authorization."
+    },
+    {
+      "aimId": "e10e8e8f-f6ff-476f-b2a4-cd47001aeb01",
+      "relativePosition": [
+        -2.0418421043353465,
+        1.4425258475893612
+      ],
+      "weight": 0.8,
+      "explanation": "Applies last-pre-effect authorization principles to human control socket inputs."
+    }
+  ],
+  "supportedAims": [
+    "1733c488-68b0-47cc-8439-c8c5c0476a87",
+    "986410a0-24a7-40c2-9623-af27bf084651"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Production supervisor dispatch gate implemented and internally verified; awaiting explicit user acceptance before done.",
+    "date": 1785601454345
+  },
+  "intrinsicValue": 30,
+  "valueRationale": "Preventing a stochastic supervisor from silently granting permissions or making ambiguous terminal decisions is a direct safety prerequisite for greater autonomy.",
+  "cost": 4,
+  "loopWeight": 1,
+  "duration": 2,
+  "costVariance": 0,
+  "valueVariance": 0
+}

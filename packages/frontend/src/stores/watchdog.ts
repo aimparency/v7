@@ -25,6 +25,14 @@ interface WatchdogRuntimeState {
 interface SupervisorStateInfo {
   state: string
   color?: string
+  authorityAudit?: AuthorityAuditEntry[]
+}
+
+export interface AuthorityAuditEntry {
+  timestamp: number
+  actionType: string
+  disposition: 'execute' | 'refuse' | 'escalate' | 'stop'
+  reasons: string[]
 }
 
 interface AutonomyPolicy {
@@ -49,6 +57,14 @@ export const useWatchdogStore = defineStore('watchdog', () => {
   const isEmergencyStopped = ref(false)
   const stopReason = ref('')
   const supervisorState = ref<SupervisorStateInfo | null>(null)
+  const latestBlockedAuthorityDecision = computed(() => {
+    const audit = supervisorState.value?.authorityAudit ?? []
+    for (let index = audit.length - 1; index >= 0; index--) {
+      const entry = audit[index]
+      if (entry && entry.disposition !== 'execute') return entry
+    }
+    return null
+  })
   const commStatus = ref('')
   const showActionsOverlay = ref(false)
   const focusRequestCounter = ref(0)
@@ -782,6 +798,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     isEmergencyStopped,
     stopReason,
     supervisorState,
+    latestBlockedAuthorityDecision,
     commStatus,
     workerOutput,
     watchdogOutput,

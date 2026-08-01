@@ -16,7 +16,17 @@
     "user-input",
     "automation"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "5e981ca1-9a74-4c23-ab2a-fbc29a4f0d50",
+      "relativePosition": [
+        2.498963820170674,
+        -0.07197100442534263
+      ],
+      "weight": 0.5,
+      "explanation": "Corrects the older automatic option-selection behavior while retaining input detection."
+    }
+  ],
   "supportedAims": [
     "31e7e8b7-bc95-4968-bd4f-44e7963a93fd"
   ],

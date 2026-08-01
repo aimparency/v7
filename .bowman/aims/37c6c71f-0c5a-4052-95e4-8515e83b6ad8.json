@@ -1,0 +1,55 @@
+{
+  "id": "37c6c71f-0c5a-4052-95e4-8515e83b6ad8",
+  "text": "Self-improvement cycle 5: preserve actual usage in benchmark budget failures",
+  "description": "Observed limitation from the invalid v2 live run: five adapter errors said only `exceeded registered budget`, losing whether tokens, wall time, or both crossed their limits and by how much. Add a shared deterministic budget-error formatter used by both Codex autonomy adapters. Its error must report actual/limit token and millisecond values and explicitly name each exceeded dimension, while retaining fail-closed behavior and never converting the failed run into admissible evidence. Add boundary tests for token-only, time-only, both, and exact-limit acceptance; run the full package suite, TypeScript, and diff checks. Do not rerun the invalid experiment.",
+  "reflections": [
+    {
+      "date": 1785599501523,
+      "context": "Five v2 confirmatory runs were correctly rejected but their generic budget messages discarded the authoritative overrun dimension and magnitude.",
+      "outcome": "Added shared assertCodexBenchmarkBudget used by both v1 and v2 adapters. It accepts exact limits and reports actual/limit values for token-only, wall-time-only, and dual overruns while still throwing and excluding the run. Added four boundary assertions. Verification: 118/118 tests, tsc --noEmit, and git diff --check pass. The invalid v2 experiment was not rerun.",
+      "effectiveness": "Future invalid experiments retain actionable resource evidence without weakening budgets or admissibility. Existing adapter error handling remains compatible because messages retain the registered-budget marker.",
+      "lesson": "Fail-closed evidence should still be information-rich; rejection and diagnostic preservation are complementary.",
+      "pattern": "Centralize resource-boundary checks so experimental adapters cannot drift in acceptance or error detail."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "self-improvement-cycle",
+    "benchmark",
+    "budget",
+    "diagnostics"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "a587fdd7-3c47-49a0-8dc3-670ea8e2b09a",
+      "relativePosition": [
+        1.7519270085521677,
+        -1.783466219670407
+      ],
+      "weight": 1,
+      "explanation": "Uses improved actual/limit diagnostics if calibration caps are exceeded."
+    }
+  ],
+  "supportedAims": [
+    "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
+    "50feea3c-337c-4658-aaab-15e44972d8ac",
+    "02e512d5-f6e9-4fc6-91f9-61a4a8118d8b"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Budget diagnostics hardened across both autonomy adapters and fully verified; awaiting user acceptance.",
+    "date": 1785599501562
+  },
+  "intrinsicValue": 10,
+  "valueRationale": "Diagnostic completeness allows invalid experiments to inform future preregistration without rerunning or weakening fail-closed evidence rules.",
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

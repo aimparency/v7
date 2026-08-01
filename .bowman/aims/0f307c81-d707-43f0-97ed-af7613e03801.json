@@ -1,0 +1,72 @@
+{
+  "id": "0f307c81-d707-43f0-97ed-af7613e03801",
+  "text": "Restrict wrapped-agent control sockets to an explicit network authority boundary",
+  "description": "Make wrapped-agent session servers bind to loopback by default instead of every interface, while preserving explicit BIND_HOST remote exposure. Replace wildcard Socket.IO CORS with a deterministic origin policy allowing loopback origins by default and the explicitly configured bind hostname when present; reject malformed, opaque, or unrelated browser origins. Add pure tests for loopback, configured host, ports/protocols, and hostile origins. Do not implement identity authentication in this bounded aim, do not alter backend/broker exposure, and do not launch or restart any server.",
+  "reflections": [
+    {
+      "date": 1785602759114,
+      "context": "The wrapped-agent session exposes direct worker-input, watchdog-input, automation toggles, resize, and parser-view controls. It previously listened on every interface when BIND_HOST was unset and advertised wildcard CORS, allowing unrelated browser origins to reach a capability-bearing surface beneath supervisor authorization.",
+      "outcome": "Session servers now resolve an absent/blank BIND_HOST to 127.0.0.1. Explicit BIND_HOST remains the operator opt-in for remote access. A pure origin policy allows HTTP(S) loopback origins and the exact explicitly configured hostname while rejecting malformed, opaque, credentialed, and unrelated origins. The policy is enforced through Express CORS, Socket.IO CORS, and Socket.IO allowRequest so direct WebSocket handshakes are covered.",
+      "effectiveness": "The complete common suite passes 172/172 tests, including five network-policy tests. TypeScript checks pass for common plus all five session profiles (Claude, Agy, Grok, Gemini, Codex), and git diff --check passes. No server or session was launched or restarted.",
+      "lesson": "Binding defaults and browser CORS are separate boundaries, and Socket.IO WebSockets require allowRequest because WebSocket transport is not protected by browser CORS alone. Missing-Origin native clients remain allowed for compatibility; explicit remote BIND_HOST is therefore an exposure decision, not identity authentication.",
+      "pattern": "Default capability-bearing control planes to loopback; require explicit interface exposure; enforce the same origin predicate at HTTP, polling, and WebSocket handshake layers."
+    },
+    {
+      "date": 1785602815919,
+      "context": "Post-review audit questioned the compatibility allowance for originless Socket.IO clients, which would leave a direct native-client path around the browser-origin handshake gate.",
+      "outcome": "Repository-wide usage inspection found that both session control clients are browser Vue applications. Tightened the policy to reject missing Origin headers rather than retaining an unused native compatibility path.",
+      "effectiveness": "All five focused network-policy tests and common TypeScript checks pass; git diff --check passes. The regression now explicitly requires originless clients to be denied.",
+      "lesson": "Compatibility exceptions at capability boundaries need concrete consumers. When none exist, fail closed rather than preserving a hypothetical bypass.",
+      "pattern": "Audit every allow-by-default exception against actual call sites, then remove allowances unsupported by a real workflow."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "network-authority",
+    "wrapped-agents",
+    "websocket"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "e10e8e8f-f6ff-476f-b2a4-cd47001aeb01",
+      "relativePosition": [
+        0.4703521829326052,
+        -2.4553551319535294
+      ],
+      "weight": 1,
+      "explanation": "Adds event-level fail-closed validation inside the newly restricted network boundary."
+    },
+    {
+      "aimId": "ae9f711b-037a-4fbf-b594-4740c7f72e30",
+      "relativePosition": [
+        2.4434164867403263,
+        0.5288817186531989
+      ],
+      "weight": 0.8,
+      "explanation": "Hardens the network control surface against resource-exhaustion floods."
+    }
+  ],
+  "supportedAims": [
+    "a2cf7c9b-a0cb-4e51-9132-5ead864f6a02",
+    "29da921a-6bd9-423e-92ab-ef052a43892b",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Loopback-by-default binding and browser-origin handshake boundary implemented and internally verified; awaiting explicit user acceptance before done. Explicit remote binding still requires a future identity/authentication design for hostile-network use.",
+    "date": 1785602759143
+  },
+  "intrinsicValue": 30,
+  "valueRationale": "Unauthenticated network clients able to type into a capable agent can bypass every model-side authority control; safe local defaults materially reduce that attack surface.",
+  "cost": 4,
+  "loopWeight": 1,
+  "duration": 2,
+  "costVariance": 0,
+  "valueVariance": 0
+}

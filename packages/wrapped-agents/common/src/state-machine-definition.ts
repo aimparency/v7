@@ -94,15 +94,12 @@ export const verify: Action = {
 
 export const choice: Action = {
   name: 'choice',
-  description: 'Choose one of the currently visible options in the worker terminal. If the worker is waiting for input, you should usually use this action instead of sending a text prompt. For approval prompts, choose the option that keeps work moving safely. For Aimparency MCP permission prompts, prefer durable allow options like "Always allow" or "Allow for this session" over one-off allow when that is clearly offered.',
+  description: 'Request human authorization for a currently visible worker-terminal choice. This action stops automation and emits no key or option to the worker; the human must inspect and answer the prompt. Never grant permissions or select an option yourself.',
   parameters: [
-    { name: 'choice', description: 'Visible option to select, usually a number or shortcut key', required: true }
+    { name: 'choice', description: 'Use "human-review" to signal that the visible prompt needs a human decision; this value is never typed into the terminal', required: true }
   ],
   examples: [
-    '{"action": {"type": "choice", "choice": "1"}}',
-    '{"action": {"type": "choice", "choice": "2"}}',
-    '{"action": {"type": "choice", "choice": "3"}}',
-    '{"action": {"type": "choice", "choice": "esc"}}'
+    '{"action": {"type": "choice", "choice": "human-review"}}'
   ]
 }
 
@@ -209,7 +206,7 @@ export const wait: Action = {
 
 export const exploring: State = {
   name: 'EXPLORING',
-  instructions: 'You are watching a coding agent that is exploring for the next task. Treat the visible terminal context as authoritative over prior claims. If the worker is visibly waiting for input or showing a choice menu, respond with choice. If the worker has found something concrete, use start_work. Otherwise use break_down or ideate to keep discovery moving.',
+  instructions: 'You are watching a coding agent that is exploring for the next task. Treat the visible terminal context as authoritative over prior claims. If the worker is visibly waiting for input or showing a choice menu, use choice to stop automation and request human authorization; never select an option yourself. If the worker has found something concrete, use start_work. Otherwise use break_down or ideate to keep discovery moving.',
   color: '#a8dadc',  // Pastel cyan - exploring, discovering
   actions: [
     { action: startWork, targetState: 'WORKING' },
@@ -222,7 +219,7 @@ export const exploring: State = {
 
 export const working: State = {
   name: 'WORKING',
-  instructions: 'You are watching a coding agent at work. Treat the current terminal output and repo-facing checks as authoritative over earlier narrative claims. If the worker is visibly waiting for input or showing a choice menu, respond with choice and select the option that advances the work safely. For Aimparency MCP permission prompts, prefer the durable allow option when one is offered. Otherwise prompt the worker to keep advancing. If the worker reports being done, use verify to force a fresh reality check before wrapping up.',
+  instructions: 'You are watching a coding agent at work. Treat the current terminal output and repo-facing checks as authoritative over earlier narrative claims. If the worker is visibly waiting for input or showing a choice menu, use choice to stop automation and request human authorization; never grant a permission or select an option yourself. Otherwise prompt the worker to keep advancing. If the worker reports being done, use verify to force a fresh reality check before wrapping up.',
   color: '#a8e6a3',  // Pastel green - active work
   actions: [
     { action: textPrompt, targetState: 'WORKING' },
@@ -235,7 +232,7 @@ export const working: State = {
 
 export const wrappingUp: State = {
   name: 'WRAPPING_UP',
-  instructions: 'You are watching a coding agent wrapping up work. Treat fresh repo state as authoritative; do not rely on inherited claims that tests passed, commits happened, or a batch is ready. If the worker is visibly waiting for input or showing a choice menu, respond with choice. If more implementation is needed, use revisit. Otherwise guide the worker through a fresh verification of current repo state, careful batch selection, aim updates/reflection, a short deletion/reduction pass to remove dead code and simplify the diff, then commit, then return to exploring. Broad metadata-only staging or unclear mixed batches are reasons to revisit, not to commit.',
+  instructions: 'You are watching a coding agent wrapping up work. Treat fresh repo state as authoritative; do not rely on inherited claims that tests passed, commits happened, or a batch is ready. If the worker is visibly waiting for input or showing a choice menu, use choice to stop automation and request human authorization; never select an option yourself. If more implementation is needed, use revisit. Otherwise guide the worker through a fresh verification of current repo state, careful batch selection, aim updates/reflection, a short deletion/reduction pass to remove dead code and simplify the diff, then commit, then return to exploring. Broad metadata-only staging or unclear mixed batches are reasons to revisit, not to commit.',
   color: '#ffe5a3',  // Pastel yellow - completion phase
   actions: [
     { action: choice, targetState: 'WRAPPING_UP' },

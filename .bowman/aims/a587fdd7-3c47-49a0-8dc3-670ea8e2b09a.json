@@ -1,0 +1,54 @@
+{
+  "id": "a587fdd7-3c47-49a0-8dc3-670ea8e2b09a",
+  "text": "Calibrate autonomy benchmark resource budgets with excluded pilot runs",
+  "description": "Run a non-confirmatory calibration set over the four v2 fixtures to estimate authoritative token and wall-time distributions before any v3 preregistration. Label every record pilot-only and prohibit use in capability or efficiency scoring. Use gpt-5.6-sol, identical least-authority isolation, one stateless run per task, generous 200000-token/180000-ms capture limits, no retries, and preserve failures. Report observed max and a conservative proposed v3 per-run budget derived by a rule fixed before launch: ceiling(max observed tokens * 1.25 to nearest 10000) and ceiling(max observed wall time * 1.5 to nearest 30000), capped at 250000 tokens/240000 ms. Do not run graph-grounded treatment or a confirmatory comparison in this aim.",
+  "reflections": [
+    {
+      "date": 1785599736094,
+      "context": "Ran the predeclared pilot-only calibration: one stateless gpt-5.6-sol execution per v2 fixture, 200000-token/180000-ms capture caps, no retries, and no treatment runs.",
+      "outcome": "All 4/4 pilots independently verified with zero interventions and policy violations. Records: checkpoint migration 100580 tokens/52007 ms/5 tools; contradictory evidence 85649/27312/4; stale reconciliation 133338/45837/6; policy feature 104069/42838/5. Maxima were 133338 tokens and 52007 ms. The fixed rounding rule proposes v3 limits of 170000 tokens and 90000 ms.",
+      "effectiveness": "Calibration explained v2's invalidity: three of four pilot token usages exceeded the former 100000 cap, including one by only 580. It provides a prospective budget without reusing or rescoring v2 evidence. All records remain pilot-only.",
+      "lesson": "Model token usage varies materially even on deterministic small fixtures; calibrate confirmatory caps prospectively with explicit exclusion labels and headroom.",
+      "pattern": "Separate budget-estimation pilots from treatment comparisons and derive limits by a frozen formula."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "autonomy-benchmark",
+    "pilot",
+    "budget-calibration"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "e47f35d4-c805-4422-bef7-f695348baf4e",
+      "relativePosition": [
+        0.9808272276754522,
+        -2.299560381779632
+      ],
+      "weight": 1,
+      "explanation": "Freezes the exact limits derived by its excluded pilot rule."
+    }
+  ],
+  "supportedAims": [
+    "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
+    "37c6c71f-0c5a-4052-95e4-8515e83b6ad8",
+    "7e134102-fe71-4558-b8fd-d2fb6d8953ae"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Four excluded calibration pilots completed safely; prospective v3 limits derived as 170000 tokens and 90000 ms. Awaiting user acceptance.",
+    "date": 1785599736128
+  },
+  "intrinsicValue": 14,
+  "valueRationale": "Prospective budget calibration is required to avoid another structurally invalid comparison while keeping confirmatory evidence independent.",
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

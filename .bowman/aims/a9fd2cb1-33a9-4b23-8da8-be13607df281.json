@@ -1,0 +1,54 @@
+{
+  "id": "a9fd2cb1-33a9-4b23-8da8-be13607df281",
+  "text": "Expose a bounded structured authority audit in watchdog runtime state",
+  "description": "Record each canonical supervisor dispatch decision as a structured runtime entry containing timestamp, action type, disposition, and machine-readable reasons, with no semantic payload or terminal content. Keep a bounded in-memory ring and expose it through getSupervisorStateInfo so existing session persistence and socket state surfaces make recent decisions inspectable. Avoid duplicate entries for the same processDecision dispatch. This is local operational telemetry under the existing runtime policy, not a decision about version-controlled durable audit storage. Add focused tests for allowed, refused, escalated, and bounded retention behavior. Do not restart the running stack.",
+  "reflections": [
+    {
+      "date": 1785601737862,
+      "context": "Production authority enforcement was machine-readable in pure policy returns but runtime decisions were only emitted as console strings, limiting after-the-fact inspection.",
+      "outcome": "Added a bounded 50-entry SupervisorAuthorityAuditEntry ring to WatchdogService. Every canonical dispatch records timestamp, action type, disposition, and reasons. getSupervisorStateInfo returns defensive copies, so the existing socket and runtime-state persistence paths expose recent decisions. Refactored state-machine dispatch to avoid recording the same decision twice.",
+      "effectiveness": "Full wrapped-agents/common verification passes: 159/159 tests, TypeScript tsc --noEmit, and git diff --check. Tests cover execute and escalate records, absence of injected semantic payloads, single-entry dispatch semantics, ring eviction, and defensive-copy integrity. No server was touched.",
+      "lesson": "Auditability belongs at the same pre-effect boundary as enforcement, but audit records should contain canonical control metadata rather than attacker-influenced prompt content.",
+      "pattern": "Keep recent operational authority evidence bounded, structured, payload-free, and exposed through an existing state surface; leave long-term/version-control retention to explicit governance."
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "asi",
+    "corrigibility",
+    "audit",
+    "watchdog",
+    "runtime-state"
+  ],
+  "supportingConnections": [
+    {
+      "aimId": "e3ffa4d6-1c88-4b41-820b-831f68afcbd7",
+      "relativePosition": [
+        1.5090657040887585,
+        1.9931685078645758
+      ],
+      "weight": 1,
+      "explanation": "Completes continuity of its runtime audit across process replacement."
+    }
+  ],
+  "supportedAims": [
+    "29da921a-6bd9-423e-92ab-ef052a43892b",
+    "e9838c4f-9d0f-4e32-8fbd-e61051d4bcee"
+  ],
+  "committedIn": [
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Bounded structured runtime authority audit implemented and internally verified; awaiting explicit user acceptance before done.",
+    "date": 1785601737898
+  },
+  "intrinsicValue": 22,
+  "valueRationale": "Corrigibility controls must be inspectable after execution; structured bounded telemetry permits verification without retaining attacker-controlled prompt content.",
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
