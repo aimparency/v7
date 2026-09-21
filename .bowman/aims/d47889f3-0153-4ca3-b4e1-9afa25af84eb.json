@@ -1,0 +1,27 @@
+{
+  "id": "d47889f3-0153-4ca3-b4e1-9afa25af84eb",
+  "text": "MCP surface for black-box repo links (list/register/link/unlink + visible supportingRepos)",
+  "description": "Repo-level cross-repo links are GUI-only: the MCP server exposes no repo-link tools, and get_aim/get_aim_context omit supportingRepos, so an agent can neither see that an external repo carries part of an aim nor create such a link. The backend already has everything (linkedRepo.list/register/unregister/resolve, aim.linkRepo/unlinkRepo) — this is a thin MCP wrapper over it.\n\nSCOPE: list_linked_repos, register_linked_repo, link_repo, unlink_repo; plus supportingRepos surfaced (with repo names resolved from the registry) in get_aim and as supporting_repos in get_aim_context.\n\nBLACK BOX HOLDS: every tool takes {repoId} only, never an external aimId, and none of them reads the linked repo's aims. Link health stays minimal — resolved / not-checked-out / unknown-repo — not the per-edge vocabulary cancelled in f2e3dad3.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and internally verified; awaiting user acceptance (and a first real link through the reconnected MCP server).",
+    "date": 1789935997382
+  },
+  "intrinsicValue": 0.15,
+  "valueRationale": "Unblocks agents from participating in cross-repo structure at all; without it the feature only exists for a human clicking in the GUI, which contradicts the human-AI cooperation thesis.",
+  "cost": 0.4,
+  "loopWeight": 1,
+  "duration": 0,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Added four tools to packages/mcp/src/tools.ts over existing tRPC procedures — list_linked_repos, register_linked_repo, link_repo, unlink_repo — plus a describeRepoEdges helper that resolves each {repoId} edge to a name and a three-state health (resolved / not-checked-out / unknown-repo), wired into get_aim and as supporting_repos in get_aim_context. link_repo rejects a repoId absent from the registry and names the known repos, so an agent cannot write an edge that drains value into a dead sink. Verification: 3 new node:test cases in tools-repo-links.test.ts (round-trip register→link→read→unlink, unregistered-repoId refusal, not-checked-out degradation) pass against the real backend router; MCP suite 29 pass / 2 fail where both failures (Project Meta, Consistency) reproduce on a stashed baseline and are unrelated; mcp tsc clean; backend linked-repos + repo-connections 15 pass. Also corrected a stale backend comment that described linkedRepo.resolve as a step toward loading external aims."
+}

@@ -1,0 +1,17 @@
+{
+  "description": "Continue autonomous Aimparency work when Codex tries to stop.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$(git rev-parse --show-toplevel)/scripts/hooks/codex-continue-on-stop.sh\"",
+            "statusMessage": "Checking for the next Aimparency aim...",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "id": "6f9bef89-69cb-4354-9f6c-98e93156c445",
+  "text": "Stop MCP wording from framing uncommitted aims as a defect",
+  "description": "Observed failure: an agent read the tool schemas and concluded that uncommitted open aims are broken work needing repair — without ever calling a tool. The wording alone did it. list_aims said uncommitted work is what \"phase-based discovery misses — then commit_aim_to_phase to make it rankable\" (a repair instruction), get_prioritized_aims called the uncommitted path a \"falls back to\" (a degraded path), and graph_hygiene listed uncommittedOpen as \"hidden work\" among genuine smells.\n\nGround truth to encode: an aim with a parent already contributes through that parent, so having no phase is a normal resting state. A phase commitment means \"I intend to act on this in this phase\", not \"this aim is properly filed\". Only floating (no parent AND no phase) is a defect.\n\nFIX PART 1 (wording): reword those three descriptions, the runtime note and the selectionScope label (connected-uncommitted-fallback → connected-uncommitted-leaves), the loop-worker graph_hygiene description, and the backend comment above the uncommittedOpen section.\n\nFIX PART 2 (structure, Felix 2026-09-21): drop the uncommittedOpen section from graph_hygiene entirely, in both implementations (backend project.graphHygiene and agent-tools graphHygiene). Wording is the weaker fix — every other section of that dashboard is a defect, so position alone re-teaches the wrong lesson, and a count in a hygiene report is an implicit target to drive to zero, which here means phase-committing aims nobody intends to act on. The discovery need that put it there (5b992c55) is already met elsewhere: get_prioritized_aims ranks connected uncommitted open leaves (b79ba621) and list_aims uncommitted=true browses them deliberately. graph_hygiene is now documented as a defects-only dashboard.",
+  "reflection": "Origin: the wording came from 5b992c55, which made uncommitted aims discoverable — correctly — but described them as work that discovery \"misses\", turning a visibility win into an implied defect. The terminology 5b992c55 lacked is already written down in b0ca7191: no parent = root, no phase = uncommitted, neither = free floating.\n\nPart 1 reworded list_aims, get_prioritized_aims and graph_hygiene descriptions, the runtime note, the selectionScope label and the uncommittedLeaves identifiers (packages/mcp/src/tools.ts), the loop-worker graph_hygiene description, and the backend comment over the uncommittedOpen section.\n\nPart 2 removed the section outright: packages/backend/src/routers/project.ts (computation + output field, replaced by a comment stating why it is absent), packages/agent-tools/src/aim-file-tools.ts (same, used by loop-worker), and both graph_hygiene tool descriptions now say hygiene reports defects only and point at list_aims uncommitted=true. No consumer broke — nothing in the frontend, tests or hooks read the field; the only other references are historical aim records.\n\nVerification: tsc clean for backend, agent-tools, loop-worker and mcp; backend 70/70; MCP suite 29 pass with the two pre-existing failures (Project Meta, Consistency) unchanged from a stashed baseline; agent-tools has no test script. Not verified: whether the change actually alters agent behaviour — that needs a fresh session reading the schemas cold, the same way the failure was found.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "12da17c9-7c18-479c-8dc3-e78bc0a35805"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Reworded and internally verified; awaiting acceptance of the new wording (and a reconnect before agents see it).",
+    "date": 1789975863500
+  },
+  "intrinsicValue": 0.12,
+  "valueRationale": "Tool descriptions are the standing instructions every agent reads before acting; a misleading one silently distorts every session's judgment and costs graph-churn that looks like diligence.",
+  "cost": 0.2,
+  "loopWeight": 1,
+  "duration": 0,
+  "costVariance": 0,
+  "valueVariance": 0
+}

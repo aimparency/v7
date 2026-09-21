@@ -1,0 +1,27 @@
+{
+  "id": "624f8d49-3a71-4b76-942b-d01be87bbfb9",
+  "text": "make shift j/k for moving aims reliable",
+  "description": "currently, shift j/k will lose selection for a moment. thus, when quickly moving aims, you end up moving others. Analyze where the timing can go wrong. Consider a wider improvement refactoring about the aim movement. Check that phase moving does not suffer the same",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "01fe0313-b467-40fd-9a3d-ae4a93af38ba"
+  ],
+  "committedIn": [
+    "8533ae0b-2ba7-4eb0-b5ec-f55e7a5a7e3b"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1787813018339
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

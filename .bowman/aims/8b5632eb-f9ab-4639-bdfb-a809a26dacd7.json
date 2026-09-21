@@ -1,0 +1,25 @@
+{
+  "id": "8b5632eb-f9ab-4639-bdfb-a809a26dacd7",
+  "text": "\"show git diff\" feature for aims",
+  "description": "if an aim had a status change, it should be possible to show a status change history and for each status change commit the diff of the entire repo (code) of that commit. Since aim status changes are committed along with code changes. \nUi wise... make a \"show history\" button next to the status select box in the edit aim modal. \nAnd then bring up a diff modal... \nThe diff modal shows on the top a row of status changes: \n<status A (unclickable)> date of commit (clickable) <status B (unclickable)> date of commit (clickable) <status C (unclickable)>\nline breaks if too long. \n\nthen, below, on the left side a tree of changed files. \nand on the right side the diff of the selected file. \n\nmaybe there is already an npm/vite plugin for git diff visualization? \nthen consider using this for conformity",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [],
+  "committedIn": [
+    "8533ae0b-2ba7-4eb0-b5ec-f55e7a5a7e3b"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1787813444955
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
