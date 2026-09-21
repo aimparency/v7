@@ -88,6 +88,29 @@ describe('AimCreationModal', () => {
     )
   })
 
+  it('ignores repeated Enter while a creation is still in flight', async () => {
+    let resolveCreate: () => void = () => {}
+    uiStore.createAim.mockImplementation(() => new Promise<void>(resolve => {
+      resolveCreate = resolve
+    }))
+
+    const input = wrapper.find('input[placeholder="Enter aim text"]')
+    await input.setValue('Slow Aim')
+
+    await input.trigger('keydown', { key: 'Enter' })
+    await input.trigger('keydown', { key: 'Enter' })
+    await input.trigger('keydown', { key: 'Enter' })
+
+    expect(uiStore.createAim).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('.btn-primary').attributes('disabled')).toBeDefined()
+
+    resolveCreate()
+    await wrapper.vm.$nextTick()
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.btn-primary').attributes('disabled')).toBeUndefined()
+  })
+
   it('passes the human-authored value rationale into aim creation', async () => {
     await wrapper.find('input[placeholder="Enter aim text"]').setValue('Valued Aim')
     await wrapper.find('textarea[placeholder^="Explain the evidence"]').setValue('Validated customer outcome')

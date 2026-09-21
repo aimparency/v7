@@ -114,7 +114,10 @@ const createNewOption = computed<AimSearchAdditionalOption[]>(() => {
   return [{ id: 'create-new', label: `Create new: "${aimText.value}"` }]
 })
 
+const isSubmitting = ref(false)
+
 const createAim = async () => {
+  if (isSubmitting.value) return
   if (!aimText.value.trim() && !selectedSearchResult.value) return
   if (!Number.isFinite(aimCost.value) || aimCost.value <= 0) {
     validationError.value = 'Estimated direct cost must be greater than 0.'
@@ -128,6 +131,7 @@ const createAim = async () => {
 
   const weight = supportedAimsList.value.length > 0 ? (supportedAimsList.value[0]?.weight ?? 1) : 1
 
+  isSubmitting.value = true
   try {
     if (selectedSearchResult.value) {
       // Link existing aim
@@ -154,6 +158,9 @@ const createAim = async () => {
     }
   } catch (error) {
     console.error('Failed to create/link aim:', error)
+    validationError.value = 'Failed to create aim. Please try again.'
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -522,10 +529,10 @@ onMounted(async () => {
           ref="submitBtn"
           @click="handleSubmit"
           class="btn-primary"
-          :disabled="!aimText.trim() && !selectedSearchResult"
+          :disabled="isSubmitting || (!aimText.trim() && !selectedSearchResult)"
           @keydown.tab.exact.prevent="aimTextInput?.focus()"
         >
-          {{ selectedSearchResult ? 'Link Existing' : 'Create New' }}
+          {{ isSubmitting ? 'Creating…' : (selectedSearchResult ? 'Link Existing' : 'Create New') }}
         </button>
     </template>
   </FormModalShell>

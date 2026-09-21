@@ -190,6 +190,11 @@ async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
   await fs.move(tempPath, filePath, { overwrite: true });
 }
 
+// Vectors are stored in one JSON file, so each flush rewrites the whole store.
+// Batch the startup backfill instead of paying that per aim.
+const EMBEDDING_BACKFILL_FLUSH_SIZE = 25;
+const EMBEDDING_BACKFILL_MAX_PAUSE_MS = 250;
+
 export const createProjectRouter = (
   t: RouterBuilder,
   delayedProcedure: BaseProcedure,
@@ -204,7 +209,7 @@ export const createProjectRouter = (
   loadVectorStore: (projectPath: string) => Promise<Record<string, any>>,
   hasCurrentEmbedding: (value: unknown) => boolean,
   generateEmbedding: (text: string) => Promise<number[] | null>,
-  saveEmbedding: (projectPath: string, aimId: string, vector: number[]) => Promise<void>,
+  saveEmbeddings: (projectPath: string, entries: { aimId: string, vector: number[] }[]) => Promise<void>,
   removeEmbedding: (projectPath: string, aimId: string) => Promise<void>,
   migrateCommittedInField: (projectPath: string) => Promise<void>,
   cleanupCommitments: (projectPath: string, specificPhaseId?: string) => Promise<number>,
@@ -1202,12 +1207,29 @@ export const createProjectRouter = (
 
               if (aimsToEmbed.length > 0) {
                   console.log(`Starting embedding generation for ${aimsToEmbed.length} aims (skipped ${aims.length - aimsToEmbed.length} existing)...`);
+                  // This backfill runs right after startup, while the user is already
+                  // working. Flush in batches (one vectors.json rewrite per batch, not
+                  // per aim) and yield between aims so queued requests - e.g. creating
+                  // an aim - are not stuck behind the loop.
+                  let pending: { aimId: string, vector: number[] }[] = [];
                   for (const aim of aimsToEmbed) {
+                      const startedAt = Date.now();
                       const vector = await generateEmbedding(embeddingTextForAim(aim));
                       if (vector) {
-                          await saveEmbedding(input.projectPath, aim.id, vector);
+                          pending.push({ aimId: aim.id, vector });
                       }
+                      if (pending.length >= EMBEDDING_BACKFILL_FLUSH_SIZE) {
+                          await saveEmbeddings(input.projectPath, pending);
+                          pending = [];
+                      }
+                      // Tokenization and tensor post-processing run on the JS thread and
+                      // block it for tens of milliseconds per aim. Idle for roughly as
+                      // long as the last aim took, so the backfill uses at most half the
+                      // event loop and interactive requests keep getting served.
+                      const busyMs = Date.now() - startedAt;
+                      await new Promise(resolve => setTimeout(resolve, Math.min(busyMs, EMBEDDING_BACKFILL_MAX_PAUSE_MS)));
                   }
+                  await saveEmbeddings(input.projectPath, pending);
                   console.log('Embedding generation complete.');
               } else {
                   console.log(`Embeddings up to date (checked ${aims.length} aims).`);
@@ -1829,15 +1851,13 @@ export const createProjectRouter = (
           .filter((a: Aim) => (a.supportedAims?.length ?? 0) === 0 && (a.committedIn?.length ?? 0) === 0)
           .map((a: Aim) => ({ id: a.id, text: a.text, status: a.status.state }));
 
-        // 1b. Uncommitted-open: open aims connected to the graph (have a parent)
-        // but not in any phase, so phase-based discovery (get_prioritized_aims)
-        // never surfaces them — the hidden work backlog. Commit them into a phase
-        // to make them rankable.
-        const uncommittedOpen = active
-          .filter((a: Aim) => a.status.state === 'open'
-            && (a.committedIn?.length ?? 0) === 0
-            && (a.supportedAims?.length ?? 0) > 0)
-          .map((a: Aim) => ({ id: a.id, text: a.text }));
+        // NOTE: uncommitted-open aims are deliberately NOT a section here. Every
+        // other section is a defect, so listing them made a normal state read as
+        // one, and a count in a hygiene report is an implicit target to drive to
+        // zero — which here means phase-committing aims nobody intends to act on.
+        // An aim with a parent contributes through that parent; get_prioritized_aims
+        // ranks these when a phase holds no open leaf, and aim.list({uncommitted})
+        // browses them on purpose. See aim 6f9bef89.
 
         // 2. Mega-parents: too many direct children (catch-all smell).
         const megaParents = active
@@ -1881,7 +1901,6 @@ export const createProjectRouter = (
           activeAims: active.length,
           thresholds: { megaParentThreshold, duplicateThreshold },
           floating: section(floating),
-          uncommittedOpen: section(uncommittedOpen),
           megaParents: section(megaParents),
           staleStatus: section(staleStatus),
           collapseCandidates: section(collapseCandidates),

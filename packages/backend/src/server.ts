@@ -25,7 +25,7 @@ import {
   updatePhaseInIndex,
   removePhaseFromIndex
 } from './search.js';
-import { generateEmbedding, generateQueryEmbedding, warmupEmbedder, saveEmbedding, removeEmbedding, searchVectors, loadVectorStore, hasCurrentEmbedding } from './embeddings.js';
+import { generateEmbedding, generateQueryEmbedding, warmupEmbedder, saveEmbedding, saveEmbeddings, removeEmbedding, searchVectors, loadVectorStore, hasCurrentEmbedding } from './embeddings.js';
 import { getSemanticGraph, invalidateSemanticCache } from './forces.js';
 import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues, planSpinOff, computeSpinOff, remapSpinOffCollisions } from 'shared';
@@ -1036,7 +1036,8 @@ const linkedRepoRouter = t.router({
       return { repoId: input.repoId, removed: true };
     }),
 
-  // Resolve a repoId to its local checkout (for loading external aims).
+  // Resolve a repoId to its local checkout — for the black-box node's name and
+  // health only. Aims inside the linked repo are never read (see e81b11c3).
   resolve: delayedProcedure
     .input(z.object({ projectPath: z.string(), repoId: z.string().uuid() }))
     .output(z.object({
@@ -1131,7 +1132,7 @@ const appRouter = t.router({
     loadVectorStore,
     hasCurrentEmbedding,
     generateEmbedding,
-    saveEmbedding,
+    saveEmbeddings,
     removeEmbedding,
     migrateCommittedInField,
     cleanupCommitments,

@@ -166,13 +166,30 @@ export async function loadVectorStore(projectPath: string): Promise<VectorStore>
 }
 
 export async function saveEmbedding(projectPath: string, aimId: string, vector: number[]) {
+  return saveEmbeddings(projectPath, [{ aimId, vector }]);
+}
+
+/**
+ * Persist several vectors with a single rewrite of vectors.json.
+ *
+ * The store is one JSON file, so every save serializes and writes all of it
+ * (megabytes once a project has a few hundred aims). Saving per aim inside a
+ * backfill loop is quadratic and stalls the event loop in long synchronous
+ * stringify bursts, which shows up as multi-second latency on unrelated
+ * requests. Batch the writes instead; the in-memory cache is updated up front,
+ * so searches see the new vectors before the file lands.
+ */
+export async function saveEmbeddings(projectPath: string, entries: { aimId: string, vector: number[] }[]) {
+  if (entries.length === 0) return;
   const store = await loadVectorStore(projectPath);
   const lock = getProjectLock(projectPath);
   const release = await lock.acquire();
   try {
-    // Reduce precision to 6 decimals to save space (plenty for cosine similarity)
-    store[aimId] = vector.map(v => parseFloat(v.toFixed(6)));
-    // Cache is updated by reference
+    for (const { aimId, vector } of entries) {
+      // Reduce precision to 6 decimals to save space (plenty for cosine similarity)
+      store[aimId] = vector.map(v => parseFloat(v.toFixed(6)));
+      // Cache is updated by reference
+    }
 
     const storePath = await getVectorStorePath(projectPath);
     const tempPath = `${storePath}.tmp`;
