@@ -335,8 +335,9 @@ export function useGraphSimulation() {
     // Camera Auto-Pan (Smooth)
     const currentAimId = graphUIStore.graphSelectedAimId
     
-    // Detect target change or tracking start to prevent jumps
-    if (currentAimId !== lastSelectedAimId || (mapStore.isTracking && !wasTracking)) {
+    // Detect target change or tracking start to prevent jumps. While a camera
+    // flight runs, keep following it so tracking resumes from where it landed.
+    if (currentAimId !== lastSelectedAimId || (mapStore.isTracking && !wasTracking) || mapStore.anim.update) {
         cameraTarget[0] = mapStore.offset[0]
         cameraTarget[1] = mapStore.offset[1]
     }
@@ -359,20 +360,9 @@ export function useGraphSimulation() {
         if (currentAimId) {
             const node = nodeMap.get(currentAimId)
             if (node) {
-                // Shift target to account for sidebar (center in remaining space)
-                let shiftX = 0
-                if (graphUIStore.graphSelectedAimId || graphUIStore.selectedLink) {
-                    const panelW = (graphUIStore.graphPanelWidth || 300) + 20
-                    const physicalShift = -panelW / 2
-                    // Convert to logical
-                    const s = (mapStore.scale * mapStore.halfSide) / LOGICAL_HALF_SIDE
-                    if (s > 0.0001) {
-                        shiftX = physicalShift / s
-                    }
-                }
-
-                const ultimateTargetX = -node.pos[0] + shiftX
-                const ultimateTargetY = -node.pos[1]
+                const focus = mapStore.nodeFocusFrame(node)
+                const ultimateTargetX = focus.offset[0]
+                const ultimateTargetY = focus.offset[1]
                 
                 // Distance to ultimate target for zoom logic
                 const totalDx = ultimateTargetX - mapStore.offset[0]
@@ -393,8 +383,8 @@ export function useGraphSimulation() {
                 }
 
                 // 3. Dynamic zoom based on total distance
-                const zoomPadding = 7 // Zoomed out (was 3)
-                let targetScale = LOGICAL_HALF_SIDE / (zoomPadding * node.r + totalDist * 0.75)
+                // Rests at the focus zoom; zooms out while the aim is far away.
+                let targetScale = 1 / (1 / focus.scale + totalDist * 0.75 / LOGICAL_HALF_SIDE)
 
                 if (isNaN(targetScale) || !isFinite(targetScale)) {
                     targetScale = 1

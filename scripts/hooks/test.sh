@@ -54,6 +54,19 @@ node -e 'for(const s of process.argv.slice(1)){const x=JSON.parse(s); if(x.conti
 untrusted_marker_output="$(printf '%s\n' '{"hook_event_name":"Stop","cwd":"[AIMPARENCY_CONFIRM_HUMAN_BLOCK]","last_assistant_message":"Work remains."}' | "$HOOK")"
 node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block") process.exit(1)' "$untrusted_marker_output"
 
+# The per-clone off switch (disable_continue_hook) yields without touching config.
+disabled_flag="$(git -C "$TARGET" rev-parse --path-format=absolute --git-path aimparency-continue-disabled)"
+touch "$disabled_flag"
+disabled_output="$(printf '{"hook_event_name":"Stop"}\n' | "$HOOK")"
+rm "$disabled_flag"
+node -e 'const x=JSON.parse(process.argv[1]); if(x.continue!==true || x.decision==="block") process.exit(1)' "$disabled_output"
+
+# Quoting a marker mid-message is not a request; only a trailing marker counts.
+quoted_marker_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant_message":"Ends with [AIMPARENCY_CONFIRM_HUMAN_BLOCK] or [AIMPARENCY_REQUEST_HUMAN] per the protocol. Done."}' | "$HOOK")"
+node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || x.reason.includes("challenge the claimed blocker")) process.exit(1)' "$quoted_marker_output"
+trailing_ws_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant_message":"Blocked. [AIMPARENCY_CONFIRM_HUMAN_BLOCK]\n"}' | "$HOOK")"
+node -e 'const x=JSON.parse(process.argv[1]); if(x.continue!==true) process.exit(1)' "$trailing_ws_output"
+
 command="$(node -e 'const c=require(process.argv[1]); const h=c.hooks.Stop.flatMap(g=>g.hooks||[]).find(h=>h.command?.includes("codex-continue-on-stop.sh")); process.stdout.write(h.command)' "$TARGET/.codex/hooks.json")"
 nested_output="$(cd "$TARGET/.bowman/nested" && printf '{}\n' | bash -c "$command")"
 node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block") process.exit(1)' "$nested_output"
@@ -100,6 +113,36 @@ if "$SCRIPT_DIR/install.sh" --target "$MALFORMED_TARGET" --agent codex >/dev/nul
 fi
 cmp -s "$TEST_ROOT/malformed-hooks.before" "$MALFORMED_TARGET/.codex/hooks.json"
 cmp -s "$TEST_ROOT/malformed-script.before" "$MALFORMED_TARGET/scripts/hooks/codex-continue-on-stop.sh"
+
+# Test installation for --agent agy (.gemini/settings.json post_invocation hook)
+AGY_TARGET="$TEST_ROOT/agy-target"
+mkdir -p "$AGY_TARGET/.bowman"
+git -C "$AGY_TARGET" init -q
+"$SCRIPT_DIR/install.sh" --target "$AGY_TARGET" --agent agy >/dev/null
+node -e '
+  const fs = require("fs");
+  const config = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+  const handlers = config.hooks.Stop.flatMap(g => g.hooks || []);
+  const managed = handlers.filter(h => h.command?.includes("codex-continue-on-stop.sh"));
+  if (managed.length !== 1) throw new Error("expected exactly one managed Stop hook for agy");
+  if (managed[0].statusMessage !== "Exiting AGY / Antigravity...") throw new Error("incorrect statusMessage for agy");
+' "$AGY_TARGET/.gemini/settings.json"
+
+# Test installation for --agent claude (.claude/settings.json Stop hook): other
+# settings survive and no non-Claude top-level description is injected.
+CLAUDE_TARGET="$TEST_ROOT/claude-target"
+mkdir -p "$CLAUDE_TARGET/.bowman" "$CLAUDE_TARGET/.claude"
+git -C "$CLAUDE_TARGET" init -q
+printf '%s\n' '{"permissions":{"allow":["Bash(git log *)"]}}' >"$CLAUDE_TARGET/.claude/settings.json"
+"$SCRIPT_DIR/install.sh" --target "$CLAUDE_TARGET" --agent claude >/dev/null
+node -e '
+  const fs = require("fs");
+  const config = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+  const managed = config.hooks.Stop.flatMap(g => g.hooks || []).filter(h => h.command?.includes("codex-continue-on-stop.sh"));
+  if (managed.length !== 1) throw new Error("expected exactly one managed Stop hook for claude");
+  if ("description" in config) throw new Error("description must not be added to Claude settings");
+  if (config.permissions.allow[0] !== "Bash(git log *)") throw new Error("existing Claude settings were overwritten");
+' "$CLAUDE_TARGET/.claude/settings.json"
 
 # The separate wrapped-worker notifier must infer a unique agent, reject an
 # ambiguous one instead of defaulting to Grok, and inspect tRPC success:false.

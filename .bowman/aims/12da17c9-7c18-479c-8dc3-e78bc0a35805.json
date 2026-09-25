@@ -32,6 +32,14 @@
       ],
       "weight": 1,
       "explanation": "Makes deduplication and prior graph decisions unavoidable at aim creation time."
+    },
+    {
+      "aimId": "6f9bef89-69cb-4354-9f6c-98e93156c445",
+      "relativePosition": [
+        1.168112796057493,
+        -2.210319546058159
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [

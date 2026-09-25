@@ -48,14 +48,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "halted",
-    "comment": "Parked 2026-06-27: repo-level-links-only pivot. Rendering individual external AIMS (dotted stubs, expand-to-load) is dropped; a linked repo is now ONE opaque black-box node. Superseded by the new 'render linked repos as black-box nodes' aim under e81b11c3.",
-    "date": 1782583714240
+    "state": "cancelled",
+    "comment": "Cancelled 2026-09-20: a linked repo renders as ONE opaque node, tinted by the target's meta color — its internal aims are never drawn. That opacity IS the modular border. Superseded by 8c09ea74 (black-box repo nodes).",
+    "date": 1789935645229
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Cancelled, not parked: rendering individual external aims contradicts the black-box rule Felix reaffirmed, so there is no revival path."
 }

@@ -21,6 +21,16 @@ The target must be a Git repository with an initialized `.bowman/` directory:
 ./scripts/hooks/install.sh --target /path/to/project --agent codex
 ```
 
+The same continuation script also works for Claude Code, whose `Stop` hook uses
+the same `decision: "block"` contract and passes `last_assistant_message`:
+
+```bash
+./scripts/hooks/install.sh --target /path/to/project --agent claude
+```
+
+This merges the managed Stop group into `.claude/settings.json`. Exit normally
+with `AIMPARENCY_ALLOW_STOP=1 claude`.
+
 The installer:
 
 - verifies `.bowman/` and the Git root;
@@ -43,6 +53,16 @@ Codex project hooks are configured in [`.codex/hooks.json`](../../.codex/hooks.j
 The hook command resolves through `git rev-parse --show-toplevel`, so starting
 Codex from a repository subdirectory still works.
 
+## Enable / disable
+
+The Aimparency MCP exposes `enable_continue_hook` and `disable_continue_hook`,
+plus matching prompts (in Claude Code: `/mcp__aimparency__enable-hook [projectPath] [agent]`
+and `/mcp__aimparency__disable-hook`). Disabling writes a per-clone flag,
+`$(git rev-parse --git-path aimparency-continue-disabled)`, that the hook checks
+on every Stop, so it takes effect immediately without reloading agent hook
+config. Enabling removes the flag; with an agent it also (re)installs the hook.
+Manually: `touch "$(git rev-parse --git-path aimparency-continue-disabled)"`.
+
 ## Continuation contract
 
 On a normal Codex `Stop`, the hook returns valid JSON with
@@ -63,7 +83,8 @@ decompose abstract aims, dream up hypotheses, and try safe reversible work.
 Only if that broader search still proves the human action indispensable may
 Codex restate the exact request and end with
 `[AIMPARENCY_CONFIRM_HUMAN_BLOCK]`; the hook then yields. Markers are recognized
-only in Codex's `last_assistant_message`.
+only as the final token of the agent's `last_assistant_message`; quoting one
+mid-message does not count.
 
 For a deliberate normal exit, launch Codex with:
 

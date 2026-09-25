@@ -57,6 +57,36 @@ describe('AimCreationModal', () => {
     vi.useRealTimers()
   })
 
+  const mountWithSelectedSubAim = (source: 'columns' | 'graph') => {
+    const pinia = createTestingPinia({
+      createSpy: vi.fn,
+      initialState: {
+        'ui-modal': { aimModalSource: source },
+        'ui-project': { projectPath: '/test/project' },
+        data: { meta: { statuses: [{ key: 'open', color: '#fff' }] } }
+      }
+    })
+    const store = useUIStore(pinia)
+    store.getSelectionPath.mockReturnValue({
+      aims: [{ id: 'columns-parent', text: 'Columns parent' }, { id: 'columns-child', text: 'Columns child' }],
+      aimStates: [{}, {}],
+      phase: null
+    })
+    return mount(AimCreationModal, { global: { plugins: [pinia] } })
+  }
+
+  it('prefills the columns selection parent when opened from columns', async () => {
+    const columnsWrapper = mountWithSelectedSubAim('columns')
+    await columnsWrapper.vm.$nextTick()
+    expect(columnsWrapper.text()).toContain('Columns parent')
+  })
+
+  it('does not prefill a columns parent when opened from the graph', async () => {
+    const graphWrapper = mountWithSelectedSubAim('graph')
+    await graphWrapper.vm.$nextTick()
+    expect(graphWrapper.text()).not.toContain('Columns parent')
+  })
+
   it('renders correctly', () => {
     expect(wrapper.text()).toContain('Add Aim')
   })

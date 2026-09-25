@@ -2,6 +2,7 @@
   "id": "01fe0313-b467-40fd-9a3d-ae4a93af38ba",
   "text": "bugfixes and sidequests",
   "description": "",
+  "reflection": "Status reconciliation on 2026-07-30 found the sole child completed and no other specified work. Moved the finite bucket from open to review.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -11,6 +12,14 @@
       "relativePosition": [
         -1.8716540208073362,
         1.657380833241332
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "624f8d49-3a71-4b76-942b-d01be87bbfb9",
+      "relativePosition": [
+        2.265695219135804,
+        -1.0567048660743261
       ],
       "weight": 1
     }
@@ -31,6 +40,5 @@
   "loopWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Status reconciliation on 2026-07-30 found the sole child completed and no other specified work. Moved the finite bucket from open to review."
+  "valueVariance": 0
 }

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { fitCameraRect, graphOverviewFrame, unionCameraRects, useMapStore } from './map'
+import { LOGICAL_HALF_SIDE, graphOverviewFrame, useMapStore, zoomPath } from './map'
 
 describe('map store camera focus', () => {
   beforeEach(() => {
@@ -23,7 +23,7 @@ describe('map store camera focus', () => {
     mapStore.anim.t0 = Date.now() - 1000
     mapStore.anim.update?.()
 
-    expect(mapStore.scale).toBeCloseTo(22 / 25, 5)
+    expect(mapStore.scale).toBeLessThanOrEqual(LOGICAL_HALF_SIDE / (5 * 25))
     expect(mapStore.offset[0]).toBeCloseTo(-5, 5)
     expect(mapStore.offset[1]).toBeCloseTo(-5, 5)
   })
@@ -44,28 +44,60 @@ describe('map store camera focus', () => {
     mapStore.anim.t0 = Date.now() - 1000
     mapStore.anim.update?.()
 
-    expect(mapStore.scale).toBeLessThan(22 / 25)
+    expect(mapStore.scale).toBeLessThan(LOGICAL_HALF_SIDE / (5 * 25))
     expect(mapStore.offset[0]).toBeCloseTo(-800, 5)
     expect(mapStore.offset[1]).toBeCloseTo(0, 5)
   })
 
-  it('passes through the fitted union of the current viewport and destination', () => {
+  it('focuses an aim so its bounding square fills 1/25 of the canvas', () => {
     const mapStore = useMapStore()
-    mapStore.xratio = 1
+    mapStore.xratio = 16 / 9
     mapStore.yratio = 1
-    mapStore.scale = 2
-    mapStore.offset = [-100, 50]
-    const fromRect = mapStore.currentViewportRect()
-    const toRect = { minX: 1900, minY: -100, maxX: 2100, maxY: 100 }
-    const expectedOverview = fitCameraRect(unionCameraRects(fromRect, toRect), 1, 1, 0.75)
+    mapStore.scale = 0.3
+    mapStore.offset = [400, -200]
 
-    mapStore.animateCameraToRect(toRect, 1000)
-    mapStore.anim.t0 = Date.now() - 500
+    const node = { id: 'a', pos: [120, 80] as [number, number], r: 30 }
+    mapStore.centerOnNode(node, 1000)
+    mapStore.anim.t0 = Date.now() - 1000
     mapStore.anim.update?.()
 
-    expect(mapStore.offset[0]).toBeCloseTo(expectedOverview.offset[0], 2)
-    expect(mapStore.offset[1]).toBeCloseTo(expectedOverview.offset[1], 2)
-    expect(mapStore.scale).toBeCloseTo(expectedOverview.scale, 2)
+    const view = mapStore.currentViewportRect()
+    const viewArea = (view.maxX - view.minX) * (view.maxY - view.minY)
+    expect((2 * node.r) ** 2 / viewArea).toBeCloseTo(1 / 25, 5)
+    expect(mapStore.offset[0]).toBeCloseTo(-120, 5)
+    expect(mapStore.offset[1]).toBeCloseTo(-80, 5)
+  })
+
+  it('zooms out far enough mid-flight that both aims are on screen', () => {
+    const scale = LOGICAL_HALF_SIDE / (5 * 20)
+    const path = zoomPath(
+      { offset: [0, 0], scale },
+      { offset: [-5000, -3000], scale },
+      1,
+    )
+    const bothVisible = (t: number) => {
+      const frame = path.at(t)
+      const halfSide = LOGICAL_HALF_SIDE / frame.scale
+      return [[0, 0], [5000, 3000]].every(([x, y]) =>
+        Math.abs(x! + frame.offset[0]) < halfSide && Math.abs(y! + frame.offset[1]) < halfSide)
+    }
+
+    expect(bothVisible(0)).toBe(false)
+    expect(bothVisible(0.5)).toBe(true)
+    expect(path.at(1).offset[0]).toBeCloseTo(-5000, 5)
+    expect(path.at(1).scale).toBeCloseTo(scale, 5)
+  })
+
+  it('zooms monotonically without panning when the target shares the center', () => {
+    const path = zoomPath({ offset: [10, 10], scale: 1 }, { offset: [10, 10], scale: 8 }, 1)
+    let previous = 1
+    for (let t = 0.1; t <= 1; t += 0.1) {
+      const frame = path.at(t)
+      expect(frame.scale).toBeGreaterThan(previous)
+      expect(frame.offset[0]).toBeCloseTo(10, 5)
+      previous = frame.scale
+    }
+    expect(path.at(1).scale).toBeCloseTo(8, 5)
   })
 })
 

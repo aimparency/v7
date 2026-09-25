@@ -39,14 +39,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "halted",
-    "comment": "Parked 2026-06-27: repo-level-links-only pivot. Merged value flow over external AIMS (zeroed external intrinsics, cascade-on-expand) is replaced by a much simpler model — one zero-intrinsic leaf-sink node per linked repo. Superseded by the new 'repo-link value flow (repo node as leaf sink)' aim under e81b11c3.",
-    "date": 1782583717096
+    "state": "cancelled",
+    "comment": "Cancelled 2026-09-20: merged value flow over loaded external aims (zeroed intrinsics, cascade-on-expand) needs the other repo's internals. Superseded by 3023ebec: one zero-intrinsic leaf-sink node per linked repo, no external graph loading.",
+    "date": 1789935649478
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Cancelled, not parked: the leaf-sink model is simpler and is what shipped; the aim-level cascade has no revival path under black-box repos."
 }

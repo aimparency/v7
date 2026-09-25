@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1785613137549
+    "state": "human-dependent",
+    "comment": "Ready to execute; blocked on authorization for a graph-wide rewrite (the auto-mode permission classifier denied the bulk update as a shared-resource modification). Plan: raise ASI→Cooperation Engine edge weight to ≈19.9 (≈50% of root flow, preserving the cooperation thesis that its intrinsic 100 currently encodes), then set intrinsicValue=0 on the 103 non-root aims via backend aim.update. Needs Felix to approve the run and confirm the ≈50% share.",
+    "date": 1790196227583
   },
   "intrinsicValue": 1000,
   "cost": 1,

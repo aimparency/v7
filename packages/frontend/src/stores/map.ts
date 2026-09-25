@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import * as vec2 from '../utils/vec2'
+import { useGraphUIStore } from './ui/graph-store'
 
 export const LOGICAL_HALF_SIDE = 1000
 
@@ -36,8 +37,72 @@ export interface LayoutCandidate {
   frozenAimId?: string
 }
 
-function getNodeFocusScale(node: MapNode): number {
-  return 22 / node.r
+// Fraction of the canvas area the focused aim's bounding square should cover.
+const NODE_FOCUS_AREA_FILL = 1 / 25
+
+function getNodeFocusScale(node: MapNode, xratio: number, yratio: number): number {
+  // Visible area in logical units is (2 * L)^2 * xratio * yratio / scale^2;
+  // solve (2r)^2 = fill * visibleArea for scale.
+  return LOGICAL_HALF_SIDE * Math.sqrt(NODE_FOCUS_AREA_FILL * xratio * yratio) / Math.max(node.r, 0.000001)
+}
+
+// Van Wijk & Nuij, "Smooth and efficient zooming and panning" (2003), the same
+// model as d3.interpolateZoom. The camera is (center, width) with width the
+// visible extent of the short canvas side. The resulting path zooms out while
+// travelling far and back in on arrival; a larger rho zooms out further.
+// rho^2 = 2.56 puts the peak width at ~1.28x the travel distance, so both
+// endpoints are on screen around the middle of a long move.
+const ZOOM_PATH_RHO = 1.6
+
+export interface ZoomPath {
+  // Path length in the model's units (roughly "screen widths travelled").
+  length: number
+  at(t: number): CameraFrame
+}
+
+export function zoomPath(from: CameraFrame, to: CameraFrame, shortRatio: number, rho = ZOOM_PATH_RHO): ZoomPath {
+  const widthOf = (scale: number) => 2 * LOGICAL_HALF_SIDE * shortRatio / Math.max(scale, 0.000001)
+  const scaleOf = (width: number) => 2 * LOGICAL_HALF_SIDE * shortRatio / width
+  const x0 = -from.offset[0]
+  const y0 = -from.offset[1]
+  const w0 = widthOf(from.scale)
+  const dx = -to.offset[0] - x0
+  const dy = -to.offset[1] - y0
+  const w1 = widthOf(to.scale)
+  const d2 = dx * dx + dy * dy
+  const rho2 = rho * rho
+
+  const frame = (u: number, width: number): CameraFrame => ({
+    offset: vec2.fromValues(-(x0 + u * dx), -(y0 + u * dy)),
+    scale: scaleOf(width),
+  })
+
+  if (d2 < 1e-12) {
+    const length = Math.abs(Math.log(w1 / w0)) / rho
+    return {
+      length,
+      at: t => frame(t, w0 * Math.pow(w1 / w0, t)),
+    }
+  }
+
+  const d1 = Math.sqrt(d2)
+  const b0 = (w1 * w1 - w0 * w0 + rho2 * rho2 * d2) / (2 * w0 * rho2 * d1)
+  const b1 = (w1 * w1 - w0 * w0 - rho2 * rho2 * d2) / (2 * w1 * rho2 * d1)
+  const r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0)
+  const r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1)
+  const length = (r1 - r0) / rho
+  const coshR0 = Math.cosh(r0)
+  const sinhR0 = Math.sinh(r0)
+
+  return {
+    length,
+    at: t => {
+      if (t >= 1) return frame(1, w1)
+      const s = t * length
+      const u = w0 / (rho2 * d1) * (coshR0 * Math.tanh(rho * s + r0) - sinhR0)
+      return frame(u, w0 * coshR0 / Math.cosh(rho * s + r0))
+    },
+  }
 }
 
 export function unionCameraRects(a: CameraRect, b: CameraRect): CameraRect {
@@ -205,7 +270,7 @@ export const useMapStore = defineStore('map', {
     setNodeGetter(fn: (id: string) => MapNode | undefined) {
       this.getNode = fn
     },
-    centerOnConnection(idA: string, idB: string, duration = 1000) {
+    centerOnConnection(idA: string, idB: string, duration?: number) {
       const nodeA = this.getNode(idA)
       const nodeB = this.getNode(idB)
       if (!nodeA || !nodeB) return
@@ -216,8 +281,12 @@ export const useMapStore = defineStore('map', {
       const minY = Math.min(nodeA.pos[1] - nodeA.r, nodeB.pos[1] - nodeB.r) - padding
       const maxY = Math.max(nodeA.pos[1] + nodeA.r, nodeB.pos[1] + nodeB.r) + padding
 
-      const maxNodeScale = Math.min(getNodeFocusScale(nodeA), getNodeFocusScale(nodeB))
-      this.animateCameraToRect({ minX, minY, maxX, maxY }, duration, maxNodeScale)
+      const maxNodeScale = Math.min(
+        getNodeFocusScale(nodeA, this.xratio, this.yratio),
+        getNodeFocusScale(nodeB, this.xratio, this.yratio),
+      )
+      const destination = fitCameraRect({ minX, minY, maxX, maxY }, this.xratio, this.yratio, 0.3, maxNodeScale)
+      this.flyCamera(destination.offset, destination.scale, duration)
     },
     animateCamera(targetOffset: vec2.T, targetScale: number, duration: number) {
       const offset0 = vec2.clone(this.offset)
@@ -252,38 +321,45 @@ export const useMapStore = defineStore('map', {
         maxY: centerY + halfHeight,
       }
     },
-    animateCameraToRect(targetRect: CameraRect, duration: number, maxScale = Number.POSITIVE_INFINITY) {
-      const start: CameraFrame = { offset: vec2.clone(this.offset), scale: this.scale }
-      const destination = fitCameraRect(targetRect, this.xratio, this.yratio, 0.3, maxScale)
-      const overview = fitCameraRect(
-        unionCameraRects(this.currentViewportRect(), targetRect),
-        this.xratio,
-        this.yratio,
-        0.75,
+    // Smooth zoom-and-pan from the current camera to the target frame. Without
+    // an explicit duration it scales with how far the path travels.
+    flyCamera(targetOffset: vec2.T, targetScale: number, duration?: number) {
+      const path = zoomPath(
+        { offset: vec2.clone(this.offset), scale: this.scale },
+        { offset: vec2.clone(targetOffset), scale: targetScale },
+        Math.min(this.xratio, this.yratio),
       )
+      const ms = duration ?? Math.min(1600, Math.max(500, path.length * 450))
 
       this.anim.t0 = Date.now()
-      this.anim.duration = duration
+      this.anim.duration = ms
       this.anim.update = () => {
-        const progress = Math.min((Date.now() - this.anim.t0) / duration, 1)
-        const firstHalf = progress <= 0.5
-        const localProgress = firstHalf ? progress * 2 : (progress - 0.5) * 2
-        const eased = (1 - Math.cos(localProgress * Math.PI)) / 2
-        const from = firstHalf ? start : overview
-        const to = firstHalf ? overview : destination
-        vec2.mix(this.offset, to.offset, from.offset, eased)
-        this.scale = from.scale * (1 - eased) + to.scale * eased
+        const progress = Math.min((Date.now() - this.anim.t0) / ms, 1)
+        const eased = (1 - Math.cos(progress * Math.PI)) / 2
+        const frame = path.at(progress >= 1 ? 1 : eased)
+        this.offset[0] = frame.offset[0]
+        this.offset[1] = frame.offset[1]
+        this.scale = frame.scale
         if (progress >= 1) this.anim.update = undefined
       }
     },
-    centerOnNode(node: MapNode, duration = 1000) {
-      const radius = node.r
-      this.animateCameraToRect({
-        minX: node.pos[0] - radius,
-        minY: node.pos[1] - radius,
-        maxX: node.pos[0] + radius,
-        maxY: node.pos[1] + radius,
-      }, duration, getNodeFocusScale(node))
+    // Camera frame that focuses an aim. Shared by the fly-to animation and the
+    // tracking auto-pan so they agree on where to rest and never fight.
+    nodeFocusFrame(node: MapNode): CameraFrame {
+      const scale = getNodeFocusScale(node, this.xratio, this.yratio)
+      // Center the aim in the space left of the side panel.
+      let shiftX = 0
+      const graphUIStore = useGraphUIStore()
+      if (graphUIStore.graphSelectedAimId || graphUIStore.selectedLink) {
+        const panelW = (graphUIStore.graphPanelWidth || 300) + 20
+        const physicalToLogical = LOGICAL_HALF_SIDE / (scale * this.halfSide)
+        shiftX = -panelW / 2 * physicalToLogical
+      }
+      return { offset: vec2.fromValues(-node.pos[0] + shiftX, -node.pos[1]), scale }
+    },
+    centerOnNode(node: MapNode, duration?: number) {
+      const frame = this.nodeFocusFrame(node)
+      this.flyCamera(frame.offset, frame.scale, duration)
     },
     centerOnGraph(nodes: MapNode[], duration = 1000, options: GraphOverviewOptions = {}) {
       const destination = graphOverviewFrame(nodes, this.xratio, this.yratio, options)

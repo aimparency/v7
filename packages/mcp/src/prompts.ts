@@ -2,6 +2,25 @@ import { GetPromptRequestSchema, ListPromptsRequestSchema } from "@modelcontextp
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { PROJECT_PATH_PROMPT_ARGUMENT } from "./constants.js";
 
+// Optional so `/mcp__aimparency__disable-hook` works without typing a path.
+const HOOK_PROJECT_PATH_ARGUMENT = {
+  name: "projectPath",
+  description: "Absolute path to the .bowman dir; defaults to the current repository",
+  required: false,
+};
+
+function hookTogglePrompt(name: "enable-hook" | "disable-hook", args: Record<string, string> | undefined) {
+  const target = args?.projectPath?.trim() || "the current repository's .bowman directory (absolute path)";
+  const agent = args?.agent?.trim();
+  const text = name === "disable-hook"
+    ? `The human explicitly asks to disable the Aimparency continuation hook. Call the aimparency MCP tool disable_continue_hook with projectPath = ${target}, report its result in one line, and then stop.`
+    : `The human explicitly asks to enable the Aimparency continuation hook. Call the aimparency MCP tool enable_continue_hook with projectPath = ${target}${agent ? ` and agent = ${agent}` : " (if it reports no hook is installed, pass agent = the coding assistant you are, e.g. claude)"}, then report its result in one line.`;
+  return {
+    description: name === "disable-hook" ? "Disable the Aimparency continuation hook" : "Enable the Aimparency continuation hook",
+    messages: [{ role: "user", content: { type: "text", text } }],
+  };
+}
+
 export function registerPrompts(server: Server, caller: any) {
   server.setRequestHandler(ListPromptsRequestSchema, async () => ({
     prompts: [
@@ -27,11 +46,26 @@ export function registerPrompts(server: Server, caller: any) {
           },
         ],
       },
+      {
+        name: "enable-hook",
+        description: "Turn the Aimparency Stop continuation hook on (installing it if an agent is given) for this repository",
+        arguments: [HOOK_PROJECT_PATH_ARGUMENT, {
+          name: "agent",
+          description: "claude, codex or agy — installs the hook for that assistant; omit to just re-enable",
+          required: false,
+        }],
+      },
+      {
+        name: "disable-hook",
+        description: "Turn the Aimparency Stop continuation hook off for this repository",
+        arguments: [HOOK_PROJECT_PATH_ARGUMENT],
+      },
     ],
   }));
 
   server.setRequestHandler(GetPromptRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
+    if (name === "enable-hook" || name === "disable-hook") return hookTogglePrompt(name, args);
     if (name !== "dream") throw new Error(`Unknown prompt: ${name}`);
 
     const projectPath = args?.projectPath as string | undefined;

@@ -48,14 +48,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "halted",
-    "comment": "Parked 2026-06-27: repo-level-links-only pivot. With repo-only links you pick a REPO from the registry, not search for an external aim, so cross-repo aim-search fan-out in the connection modal is not needed. Revive only if deep aim-level links return.",
-    "date": 1782583719431
+    "state": "cancelled",
+    "comment": "Cancelled 2026-09-20: with black-box repo links you pick a REPO from the registry — there is no external aim to search for. Searching another repo's aims would require reading its internals, which the model forbids.",
+    "date": 1789935647183
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Cancelled, not parked: repo-level-only is final. The registry picker in the connection funnel (672d430f) is the whole selection UX."
 }

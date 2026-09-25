@@ -12,10 +12,23 @@
     "post_invocation": [
       {
         "type": "command",
-        "command": "./scripts/hooks/on-stop.sh",
+        "command": "/home/felix/dev/aimparency/v7/scripts/hooks/codex-continue-on-stop.sh",
         "statusMessage": "Exiting AGY / Antigravity...",
         "timeout": 10
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/felix/dev/aimparency/v7/scripts/hooks/codex-continue-on-stop.sh",
+            "statusMessage": "Exiting AGY / Antigravity...",
+            "timeout": 10
+          }
+        ]
+      }
     ]
-  }
+  },
+  "description": "Continue autonomous Aimparency work when Antigravity tries to stop."
 }

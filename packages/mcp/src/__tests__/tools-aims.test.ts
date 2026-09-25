@@ -421,9 +421,9 @@ test('get_prioritized_aims falls back to connected uncommitted work when a phase
   });
   const payload = JSON.parse(result.content[0].text);
 
-  assert.equal(payload.selectionScope, 'connected-uncommitted-fallback');
+  assert.equal(payload.selectionScope, 'connected-uncommitted-leaves');
   assert.equal(payload.diagnostics.openLeafAims, 0);
-  assert.equal(payload.diagnostics.uncommittedFallbackAims, 1);
+  assert.equal(payload.diagnostics.uncommittedLeafAims, 1);
   assert.deepEqual(payload.aims.map((aim: any) => aim.id), [childId]);
 });
 
@@ -471,7 +471,7 @@ test('get_prioritized_aims returns a graph-native exploration contract when no a
 
   assert.equal(payload.selectionScope, 'mission-containers-exploration');
   assert.equal(payload.diagnostics.openLeafAims, 0);
-  assert.equal(payload.diagnostics.uncommittedFallbackAims, 0);
+  assert.equal(payload.diagnostics.uncommittedLeafAims, 0);
   assert.equal(payload.exploration.required, true);
   assert.match(payload.exploration.objective, /actionable leaf/i);
   assert.ok(payload.exploration.moves.some((move: string) => /graph_hygiene/.test(move)));

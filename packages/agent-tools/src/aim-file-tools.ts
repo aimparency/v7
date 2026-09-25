@@ -305,17 +305,18 @@ export async function updateAim(projectPath: string, aimId: string, patch: Parti
   return next;
 }
 
+// Hygiene = defects only. Uncommitted-open aims are not one: they contribute
+// through their parents (see aim 6f9bef89), so they are browsed via the
+// uncommitted filter rather than reported here.
 export async function graphHygiene(projectPath: string) {
   const [aims, phases] = await Promise.all([listAimsFromFiles(projectPath), listPhasesFromFiles(projectPath)]);
   const committed = new Set(phases.flatMap((phase) => phase.commitments ?? []));
   const floating = aims.filter((aim) => !committed.has(aim.id) && (aim.supportedAims ?? []).length === 0);
-  const uncommittedOpen = aims.filter((aim) => aim.status.state === 'open' && !committed.has(aim.id) && (aim.supportedAims ?? []).length > 0);
   const megaParents = aims
     .filter((aim) => (aim.supportingConnections ?? []).length >= 25)
     .map((aim) => ({ id: aim.id, text: aim.text, childCount: aim.supportingConnections.length }));
   return {
     floating: floating.slice(0, 30).map((aim) => ({ id: aim.id, text: aim.text })),
-    uncommittedOpen: uncommittedOpen.slice(0, 30).map((aim) => ({ id: aim.id, text: aim.text })),
     megaParents: megaParents.slice(0, 30)
   };
 }

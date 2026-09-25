@@ -16,14 +16,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "halted",
-    "comment": "Parked 2026-06-27: repo-level-links-only pivot. Preserving a seam edge B→A (A an uncopied ancestor) as a cross-repo AIM link no longer matches the model — a repo-only link can't target ancestor aim A specifically. Reconsider as a whole-repo link to the source repo if/when this is revisited.",
-    "date": 1782583728805
+    "state": "cancelled",
+    "comment": "Cancelled 2026-09-20: preserving a spin-off seam edge B→A means pointing at ancestor aim A inside the source repo — an aim-level target. Under black-box links a spun-off repo can only say 'the source repo as a whole supports me', which is a plain repo link the user can add by hand after the spin-off.",
+    "date": 1789935658145
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Cancelled, not parked: the seam-preservation premise is aim-level. The whole-repo fallback needs no dedicated feature — it is the ordinary registry + link-repo flow."
 }

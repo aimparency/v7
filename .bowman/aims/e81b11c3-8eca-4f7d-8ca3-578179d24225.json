@@ -1,7 +1,8 @@
 {
   "id": "e81b11c3-8eca-4f7d-8ca3-578179d24225",
   "text": "inter-repository links",
-  "description": "Enable an aim to link to ANOTHER locally-checked-out repository AS A WHOLE — a black-box dependency: \"that project supports this aim\" without referencing its internals. Decision 2026-06-27: REPO-LEVEL links only. The earlier aim→aim model (target a specific external aim, render external aims, merged external-aim value flow, cross-repo aim search) is PARKED (halted children) — repo-level is more elegant and gives a clean modular border (you care about a project without knowing its internals).\n\nDIRECTION & OWNERSHIP: a local aim is the supported (parent) side; the external repo is the supporter (child). You declare what supports you, never that another repo needs you. Weight stays on the local side; value flows OUT of this repo into the external repo. The other repo keeps NO back-reference.\n\nIDENTITY: the edge stores just {repoId} (no aimId) — the \"link the whole repo\" form the old design had explicitly rejected, now embraced. Registry split unchanged: portable {repoId,url,name} in meta.json; machine-local {localPath,access} in .bowman/runtime/ (gitignored). Resolution: repoId → localPath; unresolved ⇒ \"repo not checked out here\" stub (name from portable registry), not a broken edge.\n\nRENDERING: each linked repo is ONE node — a black box, tinted by the repo's meta color (neutral grey when not checked out), read-only, labeled by repo name. A flow-sized arrow runs from the repo node into the local aim. No internal aims are loaded or drawn — that opacity IS the modular border.\n\nVALUE: the repo node is a leaf SINK. Merged calc = local aims (real intrinsic) + one zero-intrinsic node per linked repo + the repo edges, fed to the existing calculateAimValues. The repo node receives value only from inflow; local values shrink as flow is exported (intended — value is conserved flow, not aggregate). totalIntrinsic stays = local intrinsics.\n\nFoundation (repoId + split portable/local registry) shipped in 1585aa46. v1 implementation = data-model + black-box rendering + repo-node value sink.",
+  "description": "Enable an aim to link to ANOTHER locally-checked-out repository AS A WHOLE — a black-box dependency: \"that project supports this aim\" without referencing its internals. Decision 2026-06-27, REAFFIRMED AND MADE FINAL 2026-09-20: REPO-LEVEL links only, permanently. Each linked repo is a black box. The earlier aim→aim model (target a specific external aim, render external aims, merged external-aim value flow, cross-repo aim search, per-edge link-health vocabulary, writable external aims, spin-off seam edges) is CANCELLED, not parked — those children are closed as cancelled and should not be revived. Requests to point at a specific aim or phase inside another repo are answered by the black-box link, or by opening that repo.\n\nDIRECTION & OWNERSHIP: a local aim is the supported (parent) side; the external repo is the supporter (child). You declare what supports you, never that another repo needs you. Weight stays on the local side; value flows OUT of this repo into the external repo. The other repo keeps NO back-reference.\n\nIDENTITY: the edge stores just {repoId} (no aimId) — the \"link the whole repo\" form the old design had explicitly rejected, now embraced. Registry split unchanged: portable {repoId,url,name} in meta.json; machine-local {localPath,access} in .bowman/runtime/ (gitignored). Resolution: repoId → localPath; unresolved ⇒ \"repo not checked out here\" stub (name from portable registry), not a broken edge.\n\nRENDERING: each linked repo is ONE node — a black box, tinted by the repo's meta color (neutral grey when not checked out), read-only, labeled by repo name. A flow-sized arrow runs from the repo node into the local aim. No internal aims are loaded or drawn — that opacity IS the modular border.\n\nVALUE: the repo node is a leaf SINK. Merged calc = local aims (real intrinsic) + one zero-intrinsic node per linked repo + the repo edges, fed to the existing calculateAimValues. The repo node receives value only from inflow; local values shrink as flow is exported (intended — value is conserved flow, not aggregate). totalIntrinsic stays = local intrinsics.\n\nFoundation (repoId + split portable/local registry) shipped in 1585aa46. v1 implementation = data-model + black-box rendering + repo-node value sink. REMAINING GAP: the whole feature is GUI-only — the MCP server exposes no repo-link tools and get_aim_context omits supportingRepos, so an agent can neither see nor create a black-box link.",
+  "reflection": "Reconciled the stale open parent against its implemented v1: stable repo identity and portable/local registry, {repoId}-only supportingRepos edges, registration and link/unlink UX, black-box repo-node rendering, and leaf-sink value flow are present. Verification: backend linked-repo/repo-connection suites passed (18 tests); frontend registry/modal/repo-node suites passed (30 tests); shared value calculation passed (3 tests including repo flow). An initial root-level Vitest invocation used the wrong configs and failed to load Vue/node:test suites; rerunning each package with its own runner/config passed.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -85,6 +86,14 @@
         -2.0669897301220477
       ],
       "weight": 1
+    },
+    {
+      "aimId": "d47889f3-0153-4ca3-b4e1-9afa25af84eb",
+      "relativePosition": [
+        1.460029320488796,
+        2.029363048671436
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [
@@ -103,6 +112,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Reconciled the stale open parent against its implemented v1: stable repo identity and portable/local registry, {repoId}-only supportingRepos edges, registration and link/unlink UX, black-box repo-node rendering, and leaf-sink value flow are present. Verification: backend linked-repo/repo-connection suites passed (18 tests); frontend registry/modal/repo-node suites passed (30 tests); shared value calculation passed (3 tests including repo flow). An initial root-level Vitest invocation used the wrong configs and failed to load Vue/node:test suites; rerunning each package with its own runner/config passed."
+  "valueVariance": 0
 }

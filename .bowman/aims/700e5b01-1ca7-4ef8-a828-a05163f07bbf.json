@@ -25,14 +25,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "halted",
-    "comment": "Parked 2026-06-27: repo-level-links-only pivot. The bulk here — load external AIMS from the linked .bowman, tag them read-only, search-within fan-out — is aim-level and dropped. The still-needed bit (resolve repoId→localPath + read the linked repo's meta name/color for the black-box node) is small and folded into the new repo-link data-model + rendering aims under e81b11c3.",
-    "date": 1782583731459
+    "state": "cancelled",
+    "comment": "Cancelled 2026-09-20: loading aims out of a linked .bowman is precisely what a black-box repo link must never do. The one needed piece — resolve repoId to a local path plus the target's meta name — shipped in 1585aa46 / linkedRepo.resolve. No external-aim loading, no cross-repo search fan-out.",
+    "date": 1789935642990
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Cancelled, not parked: repo-level-only is final, so external-aim loading has no revival path. The surviving resolve endpoint lives in packages/backend/src/server.ts (linkedRepo.resolve)."
 }

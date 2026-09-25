@@ -45,6 +45,29 @@
       "outcome": "The merge now fails closed unless existing hooks is an object, hooks.Stop is an array, and each Stop group is an object with a hooks array. Because validation and merge happen into a temporary file before copies, malformed target configuration leaves both hooks.json and the recognized older managed script unchanged.",
       "effectiveness": "npm run test:hooks passes with a new malformed-Stop fixture that snapshots both target assets, expects installation failure, and proves byte-identical preservation. Bash syntax and git diff --check pass; all prior idempotent-update, unrelated-hook preservation, nested-cwd, human-wait, and notifier tests remain green.",
       "lesson": "A preserving configuration merge must reject structures it cannot understand; coercing malformed existing state into defaults is data loss disguised as repair."
+    },
+    {
+      "date": 1790196072333,
+      "context": "Felix asked to install the continuation loop for Claude Code in v7 and to check whether the install_hooks MCP guide covered Claude. It did not; install.sh supported only codex/agy (agy support was another agent's uncommitted work).",
+      "outcome": "Added --agent claude to install.sh (merges one managed Stop group into .claude/settings.json, no top-level description since Claude settings have none), a preservation test in test.sh, Claude sections in README and the install_hooks guide in packages/mcp/src/tools.ts, and installed into v7 (.claude/settings.json is gitignored, so local only). The live hook immediately fired in the installing Claude session and exposed a bug: markers were matched with includes(), so a message merely quoting [AIMPARENCY_REQUEST_HUMAN] while documenting the protocol triggered the human-wait challenge. Changed detection to trimEnd().endsWith(marker), matching the documented 'end with' contract; added tests for a mid-message quote (must not count) and trailing whitespace (must still count).",
+      "effectiveness": "bash scripts/hooks/test.sh passes; packages/mcp tsc --noEmit passes; installer smoke test passed on v7. The live firing also confirmed Claude Code passes last_assistant_message in Stop input, so the two-stage protocol works unchanged for Claude.",
+      "lesson": "Control markers in free text must be positional (final token), not substring matches, or any agent that talks about the protocol trips it. Dogfooding the hook in the very session that installs it surfaced this within one turn.",
+      "pattern": "positional control markers; dogfood lifecycle hooks in the installing session"
+    },
+    {
+      "date": 1790237945625,
+      "context": "Stop-hook continuation turn in Claude Code; checked whether --agent agy install actually works against official Antigravity docs (antigravity.google/docs/hooks).",
+      "outcome": "Found --agent agy is broken three ways, not fixed yet (user asked to stop the loop): (1) wrong file — Antigravity reads .agents/hooks.json (workspace) / ~/.gemini/config/hooks.json (user), NOT .gemini/settings.json, which is silently ignored; (2) wrong schema — top-level named groups {\"<name>\": {\"Stop\": [{type,command,timeout}]}}; (3) wrong output — Stop expects {\"decision\":\"continue\",\"reason\":...} to re-enter; 'block' allows stop. Stop stdin has no last_assistant_message (fields: executionNum, terminationReason, fullyIdle, transcriptPath, ...), so the human-wait markers would need transcript parsing; env escape still works. test.sh currently asserts the wrong agy shape.",
+      "effectiveness": "Diagnosis only; no code changed.",
+      "lesson": "Verify each agent's hook contract against its docs before claiming multi-agent support; Gemini-CLI-shaped config does not transfer to Antigravity."
+    },
+    {
+      "date": 1790238178624,
+      "context": "Felix got stuck in the Claude Stop loop and asked for simple enable/disable via MCP (slash commands). Removing the hook from .claude/settings.json was blocked by auto mode and would anyway need a hooks reload.",
+      "outcome": "Added a per-clone off switch: the hook checks $(git rev-parse --git-path aimparency-continue-disabled) on every Stop and yields if present (resolved from the script's own dir). New packages/mcp/src/continue-hook.ts + MCP tools enable_continue_hook (removes flag; with agent runs install.sh idempotently) and disable_continue_hook (writes flag; upgrades an old recognized hook copy lacking the check). MCP prompts enable-hook / disable-hook (Claude: /mcp__aimparency__disable-hook) with optional projectPath. Tool descriptions restrict use to explicit human requests. README + install_hooks guide updated.",
+      "effectiveness": "scripts/hooks/test.sh passes (new flag case); packages/mcp tsc passes; new continue-hook.test.ts (enable->block, disable->yield, re-enable, missing agent, old-copy upgrade) and prompt tests pass. Full mcp suite: 31 pass, 2 pre-existing failures in tools-system.test.ts (update_project_meta tool doesn't exist in HEAD either). Build watcher compiled the new tools; needs /mcp reconnect. Not called against v7 by the agent itself.",
+      "lesson": "An off switch for an autonomy loop must be a runtime check the hook reads each time, not a config edit the agent has to reload — and the agent must not be the one flipping it.",
+      "pattern": "runtime flag over config mutation for lifecycle toggles"
     }
   ],
   "archived": false,

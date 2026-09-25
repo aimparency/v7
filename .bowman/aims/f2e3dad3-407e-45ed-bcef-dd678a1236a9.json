@@ -23,14 +23,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "halted",
-    "comment": "Parked 2026-06-27: repo-level-links-only pivot. The rich per-edge link-health vocabulary (target-deleted etc.) was for aim-level edges. Repo-only links need just resolved vs repo-not-checked-out, folded into the data-model + rendering aims (neutral stub when unresolved). Revive if richer states are needed.",
-    "date": 1782583722217
+    "state": "cancelled",
+    "comment": "Cancelled 2026-09-20: the rich per-edge health vocabulary (target-deleted, repoId-mismatch) presumes aim-level targets. A black-box repo link has exactly two states — resolved or repo-not-checked-out — already handled by the registry lookup and the neutral-grey unresolved stub.",
+    "date": 1789935652192
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Cancelled, not parked: repo-level-only leaves nothing to diagnose beyond resolved/unresolved, which the data-model and rendering aims already cover."
 }

@@ -261,8 +261,11 @@ const handleModalKeydown = (event: KeyboardEvent) => {
 onMounted(async () => {
   supportedAimsList.value = []
 
+  // The implicit parent comes from the columns selection path. Graph-opened
+  // modals connect via their own creation callback, so prefilling here would
+  // attach the new aim to an unrelated columns-view aim as well.
   const path = uiStore.getSelectionPath()
-  if (path.aims.length > 0) {
+  if (modalStore.aimModalSource === 'columns' && path.aims.length > 0) {
     let parentAim: Aim | undefined
     const currentAim = path.aims[path.aims.length - 1]
     const currentAimState = path.aimStates[path.aimStates.length - 1]

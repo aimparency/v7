@@ -18,6 +18,7 @@ import * as path from "path";
 export { countAimReferences, findReconciliationCandidates } from "./reconcile.js";
 import { countAimReferences, findReconciliationCandidates } from "./reconcile.js";
 import { extractCodeTokens, scoreCodePresence } from "./code-presence.js";
+import { CONTINUE_HOOK_AGENTS, disableContinueHook, enableContinueHook } from "./continue-hook.js";
 
 /**
  * Verification evidence expected before an aim may be 'done', tailored to the
@@ -95,6 +96,7 @@ function formatAim(aim: any) {
         });
     }
   }
+  if (aim.supportingRepos && aim.supportingRepos.length === 0) delete aim.supportingRepos;
   if (aim.supportedAims && aim.supportedAims.length === 0) delete aim.supportedAims;
   if (aim.committedIn && aim.committedIn.length === 0) delete aim.committedIn;
   if (aim.tags && aim.tags.length === 0) delete aim.tags;
@@ -104,6 +106,36 @@ function formatAim(aim: any) {
 
 function formatAims(aims: any[]) {
   return aims.map(formatAim);
+}
+
+// Repo-level cross-repo links are black-box edges: {repoId} and no aimId, so a
+// raw supportingRepos array tells an agent nothing but a UUID. Resolve each one
+// against the linked-repo registry to a name plus a minimal health state.
+// Deliberately only three states — the richer per-edge vocabulary belongs to the
+// cancelled aim-level design; a whole-repo link is either resolvable or not.
+async function describeRepoEdges(trpcClient: any, projectPath: string, aims: any[]) {
+  if (!aims.some((a) => a?.supportingRepos?.length)) return; // no registry round-trip
+  let registry: any[] = [];
+  try {
+    registry = await trpcClient.linkedRepo.list.query({ projectPath });
+  } catch {
+    // Registry unreadable: degrade to bare repoIds rather than failing the read.
+  }
+  const byId = new Map(registry.map((r: any) => [r.repoId, r]));
+  for (const aim of aims) {
+    if (!aim?.supportingRepos?.length) continue;
+    aim.supportingRepos = aim.supportingRepos.map((edge: any) => {
+      const entry = byId.get(edge.repoId);
+      return {
+        repoId: edge.repoId,
+        ...(entry?.name ? { name: entry.name } : {}),
+        weight: edge.weight ?? 1,
+        ...(edge.explanation !== undefined ? { explanation: edge.explanation } : {}),
+        ...(edge.reflection !== undefined ? { reflection: edge.reflection } : {}),
+        health: !entry ? "unknown-repo" : entry.resolved ? "resolved" : "not-checked-out",
+      };
+    });
+  }
 }
 
 type ConnectionInput = string | {
@@ -520,6 +552,59 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
+          name: "list_linked_repos",
+          description: "List the repos this project can link an aim to: repoId, name, and whether the repo is checked out on this machine (resolved). Call it to get the repoId that link_repo needs.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+            },
+            required: ["projectPath"],
+          },
+        },
+        {
+          name: "register_linked_repo",
+          description: "Make another locally checked-out .bowman project linkable from this one: reads its repoId+name and records the portable entry in meta plus the machine-local path. Only needed once per repo, before the first link_repo to it.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              targetPath: { type: "string", description: "Absolute path to the other project's .bowman dir (or its repo root)" },
+              url: { type: "string", description: "Optional relocation hint, e.g. the git remote, so collaborators can find the repo" },
+              access: { type: "string", enum: ["read", "write"], description: "Machine-local access intent for the linked checkout. Default read." },
+            },
+            required: ["projectPath", "targetPath"],
+          },
+        },
+        {
+          name: "link_repo",
+          description: "Declare that a WHOLE external repo supports this aim — a black-box dependency. Targets a repo, never an aim inside it: there is no cross-repo aim link by design. Idempotent per repoId (re-linking updates weight/explanation). Value flows out of this aim into the repo, and the other repo keeps no back-reference.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              aimId: { type: "string", description: "The LOCAL aim being supported" },
+              repoId: { type: "string", description: "Linked repo UUID from list_linked_repos" },
+              weight: { type: "number", description: "Share of this aim's value flowing into the repo, like any child edge. Default 1." },
+              explanation: { type: "string", description: "Why that repo supports this aim" },
+            },
+            required: ["projectPath", "aimId", "repoId"],
+          },
+        },
+        {
+          name: "unlink_repo",
+          description: "Remove an aim→repo black-box link. Leaves the repo in the linked-repo registry.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              aimId: { type: "string" },
+              repoId: { type: "string" },
+            },
+            required: ["projectPath", "aimId", "repoId"],
+          },
+        },
+        {
           name: "get_active_path",
           description: "Get the active phase path from stored cursor state (root → deepest selected phase)",
           inputSchema: {
@@ -532,7 +617,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "get_prioritized_aims",
-          description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable aim, update aims/connections/phases as understanding changes, verify real outcomes, record the result on the aim, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open aims; if the phase contains only open containers, falls back to connected uncommitted open leaves. If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene/reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
+          description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable aim, update aims/connections/phases as understanding changes, verify real outcomes, record the result on the aim, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open aims; if the phase contains only open containers, ranks connected uncommitted open leaves instead (an equal path — work reaches you through parents as well as phases). If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene/reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
           inputSchema: {
             type: "object",
             properties: {
@@ -545,7 +630,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "list_aims",
-          description: "List all aims. Filter by status, phaseId, floating (no phase AND no parents — orphans to reparent), or uncommitted (not in any phase, regardless of parents). Use uncommitted=true with status=open to find connected work that phase-based discovery (get_prioritized_aims) misses — then commit_aim_to_phase to make it rankable.",
+          description: "List all aims. Filter by status, phaseId, floating (no phase AND no parents — orphans to reparent), or uncommitted (not in any phase). An aim with a parent needs no phase: it already contributes through that parent, so uncommitted is a normal resting state, not a gap. Use uncommitted=true with status=open to browse that backlog; commit_aim_to_phase only what you intend to act on in the phase.",
           inputSchema: {
             type: "object",
             properties: {
@@ -631,7 +716,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "graph_hygiene",
-          description: "Read-only graph-hygiene dashboard: floating aims (no phase, no parents), uncommittedOpen (open aims with a parent but no phase — hidden work that get_prioritized_aims misses; commit_aim_to_phase to surface them), mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent aims, collapse candidates (parents whose active children are all done), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Act on results via commit_aim_to_phase / merge_aims / suggest_reparents / update_aim.",
+          description: "Read-only dashboard of graph DEFECTS only: floating aims (no phase AND no parents), mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent aims, collapse candidates (parents whose active children are all done), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Uncommitted aims are NOT reported here — having no phase is a normal state, not a defect; browse them with list_aims uncommitted=true. Act on results via merge_aims / suggest_reparents / update_aim.",
           inputSchema: {
             type: "object",
             properties: {
@@ -681,6 +766,41 @@ export function registerTools(server: Server, trpcClient: any) {
             required: ["projectPath"],
           },
         },
+        {
+          name: "install_hooks",
+          description: "Returns the coding assistant hook installation and setup guide (for Codex continuation hooks, wrapped worker halt notification hooks, installation script usage, and human-wait protocols).",
+          inputSchema: {
+            type: "object",
+            properties: {},
+          },
+        },
+        {
+          name: "enable_continue_hook",
+          description: "Turn the Aimparency Stop continuation hook ON for a repository; with agent, first installs it idempotently. Call ONLY when the human explicitly asks to enable/install the hook.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+              agent: {
+                type: "string",
+                enum: [...CONTINUE_HOOK_AGENTS],
+                description: "Coding assistant to install the hook for. Omit to only re-enable an already installed hook.",
+              },
+            },
+            required: ["projectPath"],
+          },
+        },
+        {
+          name: "disable_continue_hook",
+          description: "Turn the Aimparency Stop continuation hook OFF for a repository (per-clone flag, effective from the next Stop, agent config untouched). Call ONLY when the human explicitly asks — never to escape the continuation loop on your own.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              projectPath: PROJECT_PATH_TOOL_PROPERTY,
+            },
+            required: ["projectPath"],
+          },
+        },
       ],
     };
   });
@@ -699,6 +819,7 @@ export function registerTools(server: Server, trpcClient: any) {
             projectPath: args.projectPath as string,
             aimId: args.aimId as string,
           });
+          await describeRepoEdges(trpcClient, args.projectPath as string, [aim]);
           return {
             content: [
               {
@@ -747,6 +868,13 @@ export function registerTools(server: Server, trpcClient: any) {
             .map((c: any) => aimMap.get(c.aimId))
             .filter(Boolean)
             .map((c: any) => ({ id: c.id, text: c.text, description: c.description }));
+
+          // Black-box repo supporters: whole external repos carrying part of
+          // this aim. They are not in aimMap (nothing inside them is loaded, by
+          // design), so they would be invisible without this.
+          const repoCarrier = { supportingRepos: [...(aim.supportingRepos || [])] };
+          await describeRepoEdges(trpcClient, projectPath, [repoCarrier]);
+          const repoContext = repoCarrier.supportingRepos;
 
           // Highest-value path to root: walk up supportedAims so the agent sees
           // lineage toward the highest-value goal (e.g. "achieve ASI"). At a
@@ -846,7 +974,8 @@ export function registerTools(server: Server, trpcClient: any) {
                     paths_to_root_truncated: pathsToRootTruncated,
                     semantic_context: semanticContext,
                     parents: parentContext,
-                    children: childContext
+                    children: childContext,
+                    supporting_repos: repoContext
                 }, null, 2),
               },
             ],
@@ -1368,6 +1497,96 @@ export function registerTools(server: Server, trpcClient: any) {
           };
         }
 
+        case "list_linked_repos": {
+          const repos = await trpcClient.linkedRepo.list.query({
+            projectPath: args.projectPath as string,
+          });
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(
+                  (repos as any[]).map((r: any) => ({
+                    repoId: r.repoId,
+                    name: r.name,
+                    ...(r.url ? { url: r.url } : {}),
+                    resolved: r.resolved,
+                    ...(r.localPath ? { localPath: r.localPath } : {}),
+                  })),
+                  null,
+                  2
+                ),
+              },
+            ],
+          };
+        }
+
+        case "register_linked_repo": {
+          const repo = await trpcClient.linkedRepo.register.mutate({
+            projectPath: args.projectPath as string,
+            targetPath: args.targetPath as string,
+            url: args.url as string | undefined,
+            access: (args.access as "read" | "write" | undefined) ?? "read",
+          });
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Registered linked repo "${repo.name}" (${repo.repoId}). Use link_repo with that repoId to attach it to an aim.`,
+              },
+            ],
+          };
+        }
+
+        case "link_repo": {
+          const projectPath = args.projectPath as string;
+          const repoId = args.repoId as string;
+
+          // Fail loudly on an unregistered repoId: aim.linkRepo would happily
+          // store an edge pointing at nothing, which renders as a nameless
+          // black box and silently drains value into a dead sink.
+          const repos = await trpcClient.linkedRepo.list.query({ projectPath });
+          const repo = (repos as any[]).find((r: any) => r.repoId === repoId);
+          if (!repo) {
+            const known = (repos as any[]).map((r: any) => `${r.repoId} (${r.name})`).join(", ") || "none";
+            throw new Error(
+              `Repo ${repoId} is not in this project's linked-repo registry. Register it first with register_linked_repo. Known repos: ${known}`
+            );
+          }
+
+          await trpcClient.aim.linkRepo.mutate({
+            projectPath,
+            aimId: args.aimId as string,
+            repoId,
+            weight: args.weight as number | undefined,
+            explanation: args.explanation as string | undefined,
+          });
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Linked aim ${args.aimId} to repo "${repo.name}" (${repoId})${repo.resolved ? "" : " — note: that repo is not checked out on this machine, so it renders as an unresolved stub"}`,
+              },
+            ],
+          };
+        }
+
+        case "unlink_repo": {
+          await trpcClient.aim.unlinkRepo.mutate({
+            projectPath: args.projectPath as string,
+            aimId: args.aimId as string,
+            repoId: args.repoId as string,
+          });
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Unlinked repo ${args.repoId} from aim ${args.aimId}`,
+              },
+            ],
+          };
+        }
+
         case "remove_aim_from_phase": {
           await trpcClient.aim.removeFromPhase.mutate({
             projectPath: args.projectPath as string,
@@ -1471,7 +1690,7 @@ export function registerTools(server: Server, trpcClient: any) {
             return child && ['open', 'partially'].includes(child.status?.state);
           });
           const openLeavesInPhase = openInPhase.filter((aim: any) => !hasActiveChild(aim));
-          const uncommittedFallback = openLeavesInPhase.length === 0
+          const uncommittedLeaves = openLeavesInPhase.length === 0
             ? (allAims as any[]).filter((aim: any) =>
                 aim.status?.state === 'open'
                 && (aim.committedIn ?? []).length === 0
@@ -1479,12 +1698,12 @@ export function registerTools(server: Server, trpcClient: any) {
                 && !hasActiveChild(aim)
               )
             : [];
-          const rankedOpenAims = uncommittedFallback.length > 0
-            ? uncommittedFallback
+          const rankedOpenAims = uncommittedLeaves.length > 0
+            ? uncommittedLeaves
             : openInPhase;
-          const emptyActionableFrontier = openLeavesInPhase.length === 0 && uncommittedFallback.length === 0;
-          const selectionScope = uncommittedFallback.length > 0
-            ? 'connected-uncommitted-fallback'
+          const emptyActionableFrontier = openLeavesInPhase.length === 0 && uncommittedLeaves.length === 0;
+          const selectionScope = uncommittedLeaves.length > 0
+            ? 'connected-uncommitted-leaves'
             : emptyActionableFrontier
               ? 'mission-containers-exploration'
               : 'phase-commitments';
@@ -1561,13 +1780,13 @@ export function registerTools(server: Server, trpcClient: any) {
                     committedAims: allCommitted.length,
                     openAims: openInPhase.length,
                     openLeafAims: openLeavesInPhase.length,
-                    uncommittedFallbackAims: uncommittedFallback.length,
+                    uncommittedLeafAims: uncommittedLeaves.length,
                     missingCostEstimate: missingCost,
                     disconnectedFromValue: missingValue,
                     realizedSignal: realizedSignalAvailable ? "git-commit-references" : "unavailable (not a git repo / no commits)",
                     openAimsWithNoRealizedOutput: realizedSignalAvailable ? noRealizedOutput : undefined,
-                    note: uncommittedFallback.length > 0
-                      ? `No open leaf aim is committed to this phase; ranked ${uncommittedFallback.length} connected uncommitted open leaf aim(s) as a fallback.`
+                    note: uncommittedLeaves.length > 0
+                      ? `No open leaf aim is committed to this phase; ranked ${uncommittedLeaves.length} connected uncommitted open leaf aim(s) instead. They are reachable through their parents — rank and work them as they are; committing them to a phase is optional.`
                       : emptyActionableFrontier
                       ? "No open actionable leaf exists in the phase or connected uncommitted graph. Mission containers are context for exploration, not executable work."
                       : missingValue > 0
@@ -1791,6 +2010,109 @@ export function registerTools(server: Server, trpcClient: any) {
               }, null, 2),
             }],
           };
+        }
+
+        case "install_hooks": {
+          const guide = `# Aimparency Coding Assistant Hook Installation & Setup Guide
+
+## Overview
+
+Aimparency provides lifecycle hooks for coding assistants (Codex, Claude Code, Antigravity / AGY) to enable autonomous continuation through the Aimparency MCP aim graph loop.
+
+There are two separate hook mechanisms:
+- \`codex-continue-on-stop.sh\` (in \`scripts/hooks/\`): Blocks a coding assistant's stop event (Codex / Claude Code \`Stop\` or AGY \`post_invocation\`) and starts another autonomous turn driven by the Aimparency MCP graph.
+- \`wrapped-worker-halt-notify.sh\` (in \`packages/wrapped-agents/common/hooks/\`): Notifies a running wrapped-agent watchdog that its worker finished a turn (does not continue an ordinary conversation).
+
+---
+
+## Installing Continuation Hook in a Target Repository
+
+### Prerequisites
+- Target directory must be a Git repository root.
+- Target directory must contain an initialized \`.bowman/\` directory.
+
+### Installation Command
+
+Run the installer from the Aimparency repository:
+\`\`\`bash
+# For Codex (.codex/hooks.json):
+./scripts/hooks/install.sh --target /path/to/project --agent codex
+
+# For Claude Code (.claude/settings.json):
+./scripts/hooks/install.sh --target /path/to/project --agent claude
+
+# For Antigravity / AGY (.gemini/settings.json):
+./scripts/hooks/install.sh --target /path/to/project --agent agy
+\`\`\`
+
+### What the Installer Does
+1. Verifies the target is a Git root containing \`.bowman/\`.
+2. Copies \`codex-continue-on-stop.sh\` to \`<target>/scripts/hooks/\`.
+3. Idempotently merges a single managed continuation handler into \`<target>/.codex/hooks.json\` (Codex), \`<target>/.claude/settings.json\` (Claude Code) or \`<target>/.gemini/settings.json\` (AGY), preserving existing hooks.
+4. Makes the script executable (\`chmod +x\`).
+5. Validates JSON format and runs blocking/non-blocking smoke tests from a nested directory.
+
+### Post-Installation Setup
+1. Restart the coding assistant (Codex, Claude Code or AGY) in the target repository so it reloads project hooks.
+2. For Codex, run \`/hooks\` and trust \`scripts/hooks/codex-continue-on-stop.sh\`. For Claude Code, check \`/hooks\` lists the Stop hook. For AGY, verify \`.gemini/settings.json\` \`post_invocation\` hook.
+3. Verify that the Aimparency MCP is connected and has access to the target's \`.bowman/\` graph.
+
+---
+
+## Autonomous Continuation & Human-Wait Protocol
+
+### Graph Loop (Normal Continuation)
+When the coding assistant attempts to stop normally, the hook blocks the stop event and instructs the assistant to:
+1. Call \`get_prioritized_aims\`
+2. Orient with \`get_aim_context\`
+3. Implement and verify the selected actionable aim
+4. Record evidence and status with \`update_aim\` or \`addReflection\`
+5. Reprioritize and continue
+
+### Two-Stage Human-Wait Protocol
+If the assistant determines human intervention (credentials, explicit authorization, human judgment) is indispensable:
+1. The assistant states the exact blocker and ends its response with \`[AIMPARENCY_REQUEST_HUMAN]\`.
+2. The hook challenges the assistant once: stepping back to check graph hygiene, decompose abstract aims, or find safe reversible work.
+3. If human action is still strictly required, the assistant re-states the request and ends with \`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]\`. The hook then yields to the human.
+
+### Enable / Disable
+Use the \`enable_continue_hook\` / \`disable_continue_hook\` tools (or the \`enable-hook\` / \`disable-hook\` prompts) only when the human asks. Disabling writes a per-clone flag (\`$(git rev-parse --git-path aimparency-continue-disabled)\`) checked on every Stop — no hook-config reload needed.
+
+### Deliberate Exit
+To allow the coding assistant to exit normally without triggering continuation:
+\`\`\`bash
+AIMPARENCY_ALLOW_STOP=1 codex
+# or for Claude Code:
+AIMPARENCY_ALLOW_STOP=1 claude
+# or for AGY:
+AIMPARENCY_ALLOW_STOP=1 agy
+\`\`\`
+
+---
+
+## Testing & Verification
+
+To verify hook contract integrity locally:
+\`\`\`bash
+npm run test:hooks
+\`\`\``;
+
+          return {
+            content: [{
+              type: "text",
+              text: guide,
+            }],
+          };
+        }
+
+        case "enable_continue_hook": {
+          const text = enableContinueHook(args.projectPath as string, args.agent as string | undefined);
+          return { content: [{ type: "text", text }] };
+        }
+
+        case "disable_continue_hook": {
+          const text = disableContinueHook(args.projectPath as string);
+          return { content: [{ type: "text", text }] };
         }
 
         default:

@@ -54,3 +54,17 @@ test("dream can explicitly write back selected residues", async () => {
 test("dream rejects missing projectPath", async () => {
   await assert.rejects(() => setup().getPrompt("dream", {}), /projectPath argument is required/);
 });
+
+test("disable-hook works without a path and instructs a single explicit tool call", async () => {
+  const result = await setup().getPrompt("disable-hook", {});
+  const text = result.messages[0].content.text;
+  assert.match(text, /explicitly asks/);
+  assert.match(text, /disable_continue_hook/);
+  assert.match(text, /current repository/);
+});
+
+test("enable-hook passes through projectPath and agent", async () => {
+  const result = await setup().getPrompt("enable-hook", { projectPath: "/p/.bowman", agent: "claude" });
+  const text = result.messages[0].content.text;
+  assert.match(text, /enable_continue_hook with projectPath = \/p\/\.bowman and agent = claude/);
+});

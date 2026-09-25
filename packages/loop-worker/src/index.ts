@@ -423,7 +423,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         execute: async ({ query, limit }) => searchAimsSemanticLite(projectPath, query, limit ?? 8)
       }),
       graph_hygiene: tool({
-        description: 'Return graph hygiene signals: floating aims, uncommitted open aims, mega parents.',
+        description: 'Return graph defect signals: floating aims (no parent and no phase) and mega parents. Uncommitted aims are a normal state and are not reported here.',
         inputSchema: jsonSchema<Record<string, never>>({
           type: 'object',
           properties: {},

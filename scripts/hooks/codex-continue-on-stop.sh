@@ -6,11 +6,22 @@ set -euo pipefail
 # Codex sends the Stop event as JSON on stdin. Human waiting is deliberately a
 # two-stage protocol: request, reconsider under challenge, then confirm.
 stop_event="$(cat)"
+
+# A per-clone off switch toggled by the enable/disable_continue_hook MCP tools.
+# Checked on every Stop, so it works without the agent reloading its hook config.
+disabled_flag="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --path-format=absolute --git-path aimparency-continue-disabled 2>/dev/null || true)"
+if [[ -n "$disabled_flag" && -e "$disabled_flag" ]]; then
+  printf '{"continue":true}\n'
+  exit 0
+fi
+
 human_wait_state="$(node -e '
   const event = JSON.parse(process.argv[1]);
-  const message = typeof event.last_assistant_message === "string" ? event.last_assistant_message : "";
-  if (message.includes("[AIMPARENCY_CONFIRM_HUMAN_BLOCK]")) process.stdout.write("confirmed");
-  else if (message.includes("[AIMPARENCY_REQUEST_HUMAN]")) process.stdout.write("requested");
+  // Markers count only as the final token, so merely quoting one mid-message
+  // (e.g. while documenting the protocol) does not trigger a human wait.
+  const message = typeof event.last_assistant_message === "string" ? event.last_assistant_message.trimEnd() : "";
+  if (message.endsWith("[AIMPARENCY_CONFIRM_HUMAN_BLOCK]")) process.stdout.write("confirmed");
+  else if (message.endsWith("[AIMPARENCY_REQUEST_HUMAN]")) process.stdout.write("requested");
   else process.stdout.write("none");
 ' "$stop_event")"
 if [[ "$human_wait_state" == "confirmed" ]]; then
