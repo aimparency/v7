@@ -299,6 +299,41 @@ describe('list store phase selection', () => {
     expect(uiStore.windowSize).toBe(2)
   })
 
+  it('loads the children of every parent in a column on restore, not just the selected parent', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
+    projectStore.projectPath = '/tmp/project'
+
+    const childIdsA = Array.from({ length: 10 }, (_, index) => `child-a${index}`)
+    const serverPhases: Record<string, any> = {
+      'root-a': { id: 'root-a', name: 'Root A', parent: null, childPhaseIds: childIdsA, commitments: [] },
+      'root-b': { id: 'root-b', name: 'Root B', parent: null, childPhaseIds: ['child-b0'], commitments: [] },
+      'child-b0': { id: 'child-b0', name: 'Child B0', parent: 'root-b', childPhaseIds: [], commitments: [] }
+    }
+    for (const id of childIdsA) {
+      serverPhases[id] = { id, name: id, parent: 'root-a', childPhaseIds: [], commitments: [] }
+    }
+    mockTrpc.phase.get.query.mockImplementation(({ phaseId }: { phaseId: string }) => Promise.resolve(serverPhases[phaseId]))
+
+    // Only the roots are known locally, as after a reload.
+    dataStore.meta = {
+      rootPhaseIds: ['root-a', 'root-b'],
+      phaseCursors: { '0': 'root-a', '1': 'child-a9' }
+    } as any
+    dataStore.phases = {
+      'root-a': { ...serverPhases['root-a'] },
+      'root-b': { ...serverPhases['root-b'] }
+    } as any
+
+    await uiStore.restoreProjectUIState()
+
+    const columnOne = dataStore.getSelectableColumnEntries(1)
+    expect(columnOne.filter((entry) => entry.type === 'placeholder')).toEqual([])
+    expect(columnOne.map((entry) => entry.type === 'phase' ? entry.phase.id : entry.key)).toEqual([...childIdsA, 'child-b0'])
+    expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-a9')
+  })
+
   it('keeps the current visible child selection when moving right into an already visible column', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()

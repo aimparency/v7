@@ -984,14 +984,6 @@ export const useListStore = defineStore('ui', {
       return this.windowStart + this.windowSize - 1
     },
 
-    getEstimatedEntryHeight(entry: PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry) {
-      return entry.type === 'phase' ? 180 : 44
-    },
-
-    getEstimatedSelectableHeight(columnIndex: number) {
-      return this.getSelectableEntries(columnIndex).reduce((sum, entry) => sum + this.getEstimatedEntryHeight(entry), 0)
-    },
-
     getSelectableEntries(columnIndex: number): Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry> {
       const dataStore = useDataStore()
       return dataStore.getSelectableColumnEntries(columnIndex)
@@ -1111,8 +1103,10 @@ export const useListStore = defineStore('ui', {
       return this.getSelectableEntries(columnIndex).findIndex((entry) => entry.type === 'phase' && entry.phase.id === phaseId)
     },
 
+    // Every parent group in the column must be loaded: an unloaded parent would
+    // otherwise render as an empty placeholder. Loads are cache hits once the
+    // project's phases are loaded, so only invalidated groups hit the backend.
     async ensureColumnNeighborhoodLoaded(columnIndex: number) {
-      const startedAt = performance.now()
       const dataStore = useDataStore()
       const projectStore = useProjectStore()
 
@@ -1126,75 +1120,8 @@ export const useListStore = defineStore('ui', {
       if (parentPhases.length === 0) return
 
       const currentToken = this.getCurrentSelectionToken(columnIndex)
-      const selectedParentPhaseId =
-        currentToken?.type === 'placeholder'
-          ? currentToken.parentPhaseId
-          : this.getSelectedPhaseEntry(columnIndex)?.parentPhaseId ?? this.selectedPhaseIdByColumn[columnIndex - 1]
-
-      if (!selectedParentPhaseId) return
-
-      const selectedParentIndex = parentPhases.findIndex((phase) => phase.id === selectedParentPhaseId)
-      if (selectedParentIndex < 0) return
-
-      let leftIndex = selectedParentIndex
-      let rightIndex = selectedParentIndex
-      const targetHeight = typeof window !== 'undefined' ? window.innerHeight * 2 : 1600
-
-      await dataStore.loadPhases(projectStore.projectPath, selectedParentPhaseId)
+      await Promise.all(parentPhases.map((phase) => dataStore.loadPhases(projectStore.projectPath, phase.id)))
       this.restoreColumnSelectionFromToken(columnIndex, currentToken)
-
-      let groupsLoaded = 1
-      while (true) {
-        const entries = this.getSelectableEntries(columnIndex)
-        const currentIndex = entries.findIndex((entry) => {
-          if (!currentToken) return false
-          return currentToken.type === 'phase'
-            ? entry.type === 'phase' && entry.phase.id === currentToken.phaseId
-            : entry.type === 'placeholder' && entry.parentPhaseId === currentToken.parentPhaseId
-        })
-
-        const effectiveIndex = currentIndex >= 0 ? currentIndex : this.getSelectedPhase(columnIndex)
-        const hasBefore = effectiveIndex > 0 || leftIndex === 0
-        const hasAfter = (effectiveIndex >= 0 && effectiveIndex < entries.length - 1) || rightIndex === parentPhases.length - 1
-        const hasVisualPadding = this.getEstimatedSelectableHeight(columnIndex) >= targetHeight || (leftIndex === 0 && rightIndex === parentPhases.length - 1)
-
-        if (hasBefore && hasAfter && hasVisualPadding) {
-          break
-        }
-
-        let progressed = false
-
-        if ((!hasBefore || !hasVisualPadding) && leftIndex > 0) {
-          leftIndex--
-          await dataStore.loadPhases(projectStore.projectPath, parentPhases[leftIndex]!.id)
-          groupsLoaded++
-          progressed = true
-          this.restoreColumnSelectionFromToken(columnIndex, currentToken)
-        }
-
-        const entriesAfterLeft = this.getSelectableEntries(columnIndex)
-        const currentIndexAfterLeft = entriesAfterLeft.findIndex((entry) => {
-          if (!currentToken) return false
-          return currentToken.type === 'phase'
-            ? entry.type === 'phase' && entry.phase.id === currentToken.phaseId
-            : entry.type === 'placeholder' && entry.parentPhaseId === currentToken.parentPhaseId
-        })
-        const effectiveIndexAfterLeft = currentIndexAfterLeft >= 0 ? currentIndexAfterLeft : this.getSelectedPhase(columnIndex)
-        const hasAfterAfterLeft = (effectiveIndexAfterLeft >= 0 && effectiveIndexAfterLeft < entriesAfterLeft.length - 1) || rightIndex === parentPhases.length - 1
-        const hasVisualPaddingAfterLeft = this.getEstimatedSelectableHeight(columnIndex) >= targetHeight || (leftIndex === 0 && rightIndex === parentPhases.length - 1)
-
-        if ((!hasAfterAfterLeft || !hasVisualPaddingAfterLeft) && rightIndex < parentPhases.length - 1) {
-          rightIndex++
-          await dataStore.loadPhases(projectStore.projectPath, parentPhases[rightIndex]!.id)
-          groupsLoaded++
-          progressed = true
-          this.restoreColumnSelectionFromToken(columnIndex, currentToken)
-        }
-
-        if (!progressed) {
-          break
-        }
-      }
     },
 
     applyPhaseSelection(columnIndex: number, phaseIndex: number) {
@@ -1232,19 +1159,6 @@ export const useListStore = defineStore('ui', {
 
       // Browsing focus no longer defines the current phase — only `c` (markPhaseAsCurrent) does.
       return entry
-    },
-
-    async ensureColumnsLoaded(maxLevel: number) {
-      for (let level = 0; level <= maxLevel; level++) {
-        await this.loadColumn(level)
-      }
-    },
-
-    ensureVisibleColumnSelections(direction: PhaseMoveDirection = 'preserve') {
-      const maxVisibleColumn = Math.min(this.maxColumn, this.getVisibleMaxColumn())
-      for (let columnIndex = 0; columnIndex <= maxVisibleColumn; columnIndex++) {
-        this.initializeColumnSelection(columnIndex, direction)
-      }
     },
 
     async realignVisibleColumnsFrom(fromColumn: number, direction: PhaseMoveDirection = 'preserve') {

@@ -96,73 +96,84 @@ function getOrderedSiblingIds(
     : (state.phases[parentId]?.childPhaseIds || [])
 }
 
-function getActualPhasesForColumn(
-  state: { phases: Record<string, Phase>, meta: any | null },
-  columnIndex: number
-): Phase[] {
-  if (columnIndex === 0) {
-    return getSortedPhasesByParentId(state, null)
-  }
-
-  const parentColumnPhases = getActualPhasesForColumn(state, columnIndex - 1)
-  const phases: Phase[] = []
-
-  for (const parentPhase of parentColumnPhases) {
-    phases.push(...getSortedPhasesByParentId(state, parentPhase.id))
-  }
-
-  return phases
+type PhaseColumn = {
+  phases: Phase[]
+  entries: PhaseLevelEntry[]
+  selectableEntries: Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry>
 }
 
-function buildColumnEntries(
-  state: { phases: Record<string, Phase>, meta: any | null },
-  columnIndex: number
-): PhaseLevelEntry[] {
-  if (columnIndex === 0) {
-    return getActualPhasesForColumn(state, 0).map((phase, index) => ({
+// Guards against cyclic parent/child data producing an endless column chain.
+const MAX_PHASE_DEPTH = 64
+
+// Builds every phase column in a single top-down pass. Column 0 holds the root
+// phases; column N concatenates the children of all phases in column N-1, with
+// a separator between parent groups and a placeholder for childless parents.
+function buildPhaseColumns(state: { phases: Record<string, Phase>, meta: any | null }): PhaseColumn[] {
+  const rootPhases = getSortedPhasesByParentId(state, null)
+  const columns: PhaseColumn[] = []
+
+  columns.push(toPhaseColumn(
+    rootPhases,
+    rootPhases.map((phase, index) => ({
       type: 'phase' as const,
       key: `phase:${phase.id}`,
       phase,
       parentPhaseId: null,
       childIndex: index
     }))
-  }
+  ))
 
-  const parentColumnPhases = getActualPhasesForColumn(state, columnIndex - 1)
-  const entries: PhaseLevelEntry[] = []
+  for (let columnIndex = 1; columnIndex < MAX_PHASE_DEPTH; columnIndex++) {
+    const parentColumnPhases = columns[columnIndex - 1]!.phases
+    if (parentColumnPhases.length === 0) break
 
-  parentColumnPhases.forEach((parentPhase, parentIndex) => {
-    if (parentIndex > 0) {
-      entries.push({
-        type: 'separator',
-        key: `separator:${columnIndex}:${parentPhase.id}`,
-        parentPhaseId: parentPhase.id
-      })
-    }
+    const phases: Phase[] = []
+    const entries: PhaseLevelEntry[] = []
 
-    const children = getSortedPhasesByParentId(state, parentPhase.id)
-    if (children.length === 0) {
-      entries.push({
-        type: 'placeholder',
-        key: `placeholder:${parentPhase.id}`,
-        parentPhaseId: parentPhase.id,
-        childIndex: 0
-      })
-      return
-    }
+    parentColumnPhases.forEach((parentPhase, parentIndex) => {
+      if (parentIndex > 0) {
+        entries.push({
+          type: 'separator',
+          key: `separator:${columnIndex}:${parentPhase.id}`,
+          parentPhaseId: parentPhase.id
+        })
+      }
 
-    children.forEach((phase, childIndex) => {
-      entries.push({
-        type: 'phase',
-        key: `phase:${phase.id}`,
-        phase,
-        parentPhaseId: parentPhase.id,
-        childIndex
+      const children = getSortedPhasesByParentId(state, parentPhase.id)
+      if (children.length === 0) {
+        entries.push({
+          type: 'placeholder',
+          key: `placeholder:${parentPhase.id}`,
+          parentPhaseId: parentPhase.id,
+          childIndex: 0
+        })
+        return
+      }
+
+      children.forEach((phase, childIndex) => {
+        phases.push(phase)
+        entries.push({
+          type: 'phase',
+          key: `phase:${phase.id}`,
+          phase,
+          parentPhaseId: parentPhase.id,
+          childIndex
+        })
       })
     })
-  })
 
-  return entries
+    columns.push(toPhaseColumn(phases, entries))
+  }
+
+  return columns
+}
+
+function toPhaseColumn(phases: Phase[], entries: PhaseLevelEntry[]): PhaseColumn {
+  return {
+    phases,
+    entries,
+    selectableEntries: entries.filter((entry): entry is PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry => entry.type !== 'separator')
+  }
 }
 
 export const useDataStore = defineStore('data', {
@@ -219,14 +230,16 @@ export const useDataStore = defineStore('data', {
     getPhasesByParentId: (state) => (parentId: string | null): Phase[] => {
       return getSortedPhasesByParentId(state, parentId)
     },
-    getColumnEntries: (state) => (level: number): PhaseLevelEntry[] => {
-      return buildColumnEntries(state, level)
+    // Cached: recomputed only when phases or root order change, not per lookup.
+    phaseColumns: (state): PhaseColumn[] => buildPhaseColumns(state),
+    getColumnEntries(): (level: number) => PhaseLevelEntry[] {
+      return (level) => this.phaseColumns[level]?.entries ?? []
     },
-    getSelectableColumnEntries: (state) => (level: number): Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry> => {
-      return buildColumnEntries(state, level).filter((entry): entry is PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry => entry.type !== 'separator')
+    getSelectableColumnEntries(): (level: number) => Array<PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry> {
+      return (level) => this.phaseColumns[level]?.selectableEntries ?? []
     },
-    getActualPhasesForColumn: (state) => (level: number): Phase[] => {
-      return getActualPhasesForColumn(state, level)
+    getActualPhasesForColumn(): (level: number) => Phase[] {
+      return (level) => this.phaseColumns[level]?.phases ?? []
     },
     floatingAims(state): Aim[] {
       return state.floatingAimsIds.map(id => state.aims[id]).filter((a): a is Aim => !!a);
@@ -416,6 +429,21 @@ export const useDataStore = defineStore('data', {
       const meta = await trpc.project.getMeta.query({ projectPath })
       this.meta = meta
       return meta
+    },
+
+    // Loads the whole phase tree in one request. The subscription keeps it in
+    // sync afterwards, so columns never render a parent's unloaded children as
+    // an empty placeholder.
+    async loadAllPhases(projectPath: string) {
+      if (!projectPath) return
+      const phases = await trpc.phase.list.query({ projectPath })
+      for (const phase of phases) {
+        this.replacePhaseIfCurrent(phase.id, phase, this.beginPhaseSync(phase.id))
+      }
+      this.loadedPhaseChildrenByParentId[this.getPhaseChildrenCacheKey(null)] = true
+      for (const phase of phases) {
+        this.loadedPhaseChildrenByParentId[this.getPhaseChildrenCacheKey(phase.id)] = true
+      }
     },
 
     async loadPhaseById(projectPath: string, phaseId: string, options: { force?: boolean } = {}): Promise<Phase | null> {
@@ -1054,7 +1082,13 @@ export const useDataStore = defineStore('data', {
 
         // Load initial data
         await this.loadFloatingAims(projectPath);
-        await this.loadPhases(projectPath, null); // Load root phases
+        try {
+          await this.loadAllPhases(projectPath);
+        } catch (error) {
+          // Columns still load lazily per parent group without the bulk list.
+          console.error('Failed to load all phases:', error);
+          await this.loadPhases(projectPath, null);
+        }
 
         perfLog('data.loadProject:done', {
           projectPath,

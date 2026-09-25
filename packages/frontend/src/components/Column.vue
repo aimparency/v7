@@ -171,9 +171,11 @@ const visibleEntries = computed(() => {
   return rendered
 })
 
-const getSelectableIndex = (entryKey: string) => {
-  return selectableEntries.value.findIndex((entry) => entry.key === entryKey)
-}
+const selectableIndexByKey = computed(() => new Map(
+  selectableEntries.value.map((entry, index) => [entry.key, index])
+))
+
+const getSelectableIndex = (entryKey: string) => selectableIndexByKey.value.get(entryKey) ?? -1
 
 // Touch affordance: tapping an empty child-slot placeholder selects it and opens
 // the phase creation modal — the click equivalent of pressing 'o'.
