@@ -738,7 +738,7 @@ export const createProjectRouter = (
 
   return t.router({
     onUpdate: t.procedure.subscription(() => {
-      return observable<{ type: string, id: string, projectPath: string, entity?: Aim | Phase }>((emit) => {
+      return observable<{ type: string, id: string, projectPath: string, entity?: Aim | Phase | ProjectMeta, deleted?: boolean }>((emit) => {
         const onChange = (data: any) => emit.next(data);
         ee.on('change', onChange);
         return () => ee.off('change', onChange);

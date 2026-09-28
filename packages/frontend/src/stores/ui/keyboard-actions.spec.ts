@@ -145,8 +145,6 @@ describe('keyboard actions', () => {
         commitments: []
       }
     } as any
-
-    vi.spyOn(dataStore, 'loadPhases').mockResolvedValue([] as any)
     const movePhase = vi.spyOn(dataStore, 'movePhase').mockImplementation(async (_projectPath, phaseId, parentId, newIndex) => {
       const phase = dataStore.phases[phaseId]
       if (!phase || !phase.parent || !parentId) throw new Error('invalid test phase move')
@@ -194,7 +192,6 @@ describe('keyboard actions', () => {
       'child-b': { id: 'child-b', name: 'Child B', parent: 'root', childPhaseIds: ['grandchild-b'], commitments: [] },
       'grandchild-b': { id: 'grandchild-b', name: 'Grandchild B', parent: 'child-b', childPhaseIds: [], commitments: [] }
     } as any
-    vi.spyOn(dataStore, 'loadPhases').mockResolvedValue([] as any)
 
     uiStore.windowStart = 0
     uiStore.windowSize = 4
@@ -264,8 +261,6 @@ describe('keyboard actions', () => {
         commitments: []
       }
     } as any
-
-    vi.spyOn(dataStore, 'loadPhases').mockResolvedValue([] as any)
     const movePhase = vi.spyOn(dataStore, 'movePhase').mockImplementation(async (_projectPath, phaseId, parentId, newIndex) => {
       const phase = dataStore.phases[phaseId]
       if (!phase || !phase.parent || !parentId) throw new Error('invalid test phase move')

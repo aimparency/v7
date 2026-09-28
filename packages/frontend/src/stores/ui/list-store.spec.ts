@@ -138,18 +138,8 @@ describe('list store phase selection', () => {
 
     uiStore.lastSelectedSubPhaseIndexByPhase['root-1'] = 0
 
-    mockTrpc.phase.get.query.mockImplementation(({ phaseId }: { phaseId: string }) => {
-      if (phaseId === 'root-1') {
-        return Promise.resolve({ id: 'root-1', name: 'Root 1', from: 0, to: 10, parent: null, childPhaseIds: ['child-a', 'child-b'], commitments: [] })
-      }
-      if (phaseId === 'child-a') {
-        return Promise.resolve({ id: 'child-a', name: 'Child A', from: 0, to: 5, parent: 'root-1', childPhaseIds: [], commitments: [] })
-      }
-      if (phaseId === 'child-b') {
-        return Promise.resolve({ id: 'child-b', name: 'Child B', from: 5, to: 10, parent: 'root-1', childPhaseIds: [], commitments: [] })
-      }
-      throw new Error(`unexpected phase ${phaseId}`)
-    })
+    dataStore.phases['child-a'] = { id: 'child-a', name: 'Child A', parent: 'root-1', childPhaseIds: [], commitments: [] } as any
+    dataStore.phases['child-b'] = { id: 'child-b', name: 'Child B', parent: 'root-1', childPhaseIds: [], commitments: [] } as any
 
     await uiStore.selectPhase(0, 0)
 
@@ -221,22 +211,9 @@ describe('list store phase selection', () => {
 
     restoredProjectStore.projectPath = '/tmp/project'
 
-    mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: ['root-1', 'root-2'] })
-    mockTrpc.phase.get.query.mockImplementation(({ phaseId }: { phaseId: string }) => {
-      if (phaseId === 'root-1') {
-        return Promise.resolve({ id: 'root-1', name: 'Root 1', from: 0, to: 10, parent: null, childPhaseIds: [], commitments: [] })
-      }
-      if (phaseId === 'root-2') {
-        return Promise.resolve({ id: 'root-2', name: 'Root 2', from: 10, to: 20, parent: null, childPhaseIds: ['child-a', 'child-b'], commitments: [] })
-      }
-      if (phaseId === 'child-a') {
-        return Promise.resolve({ id: 'child-a', name: 'Child A', from: 0, to: 5, parent: 'root-2', childPhaseIds: [], commitments: [] })
-      }
-      if (phaseId === 'child-b') {
-        return Promise.resolve({ id: 'child-b', name: 'Child B', from: 5, to: 10, parent: 'root-2', childPhaseIds: [], commitments: [] })
-      }
-      throw new Error(`unexpected phase ${phaseId}`)
-    })
+    // loadProject loads the whole phase tree before the UI state is restored.
+    restoredDataStore.meta = initialDataStore.meta
+    restoredDataStore.phases = JSON.parse(JSON.stringify(initialDataStore.phases))
 
     const restored = await restoredUIStore.restoreProjectUIState()
 
@@ -290,41 +267,6 @@ describe('list store phase selection', () => {
     expect(uiStore.maxColumn).toBe(2)
     expect(uiStore.windowStart).toBe(1)
     expect(uiStore.windowSize).toBe(2)
-  })
-
-  it('loads the children of every parent in a column on restore, not just the selected parent', async () => {
-    const dataStore = useDataStore()
-    const uiStore = useUIStore()
-    const projectStore = useProjectStore()
-    projectStore.projectPath = '/tmp/project'
-
-    const childIdsA = Array.from({ length: 10 }, (_, index) => `child-a${index}`)
-    const serverPhases: Record<string, any> = {
-      'root-a': { id: 'root-a', name: 'Root A', parent: null, childPhaseIds: childIdsA, commitments: [] },
-      'root-b': { id: 'root-b', name: 'Root B', parent: null, childPhaseIds: ['child-b0'], commitments: [] },
-      'child-b0': { id: 'child-b0', name: 'Child B0', parent: 'root-b', childPhaseIds: [], commitments: [] }
-    }
-    for (const id of childIdsA) {
-      serverPhases[id] = { id, name: id, parent: 'root-a', childPhaseIds: [], commitments: [] }
-    }
-    mockTrpc.phase.get.query.mockImplementation(({ phaseId }: { phaseId: string }) => Promise.resolve(serverPhases[phaseId]))
-
-    // Only the roots are known locally, as after a reload.
-    dataStore.meta = {
-      rootPhaseIds: ['root-a', 'root-b'],
-      phaseCursors: { '0': 'root-a', '1': 'child-a9' }
-    } as any
-    dataStore.phases = {
-      'root-a': { ...serverPhases['root-a'] },
-      'root-b': { ...serverPhases['root-b'] }
-    } as any
-
-    await uiStore.restoreProjectUIState()
-
-    const columnOne = dataStore.getSelectableColumnEntries(1)
-    expect(columnOne.filter((entry) => entry.type === 'placeholder')).toEqual([])
-    expect(columnOne.map((entry) => entry.type === 'phase' ? entry.phase.id : entry.key)).toEqual([...childIdsA, 'child-b0'])
-    expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-a9')
   })
 
   it('keeps the current visible child selection when moving right into an already visible column', async () => {

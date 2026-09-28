@@ -117,7 +117,7 @@ export async function moveAimDownAction(uiStore: any) {
         if (col >= 0) {
           const nextPhaseIndex = uiStore.findSelectableIndexForPhase(col, nextPhaseId)
           if (nextPhaseIndex >= 0) {
-            await uiStore.selectPhase(col, nextPhaseIndex, 'preserve', true)
+            await uiStore.selectPhase(col, nextPhaseIndex, 'preserve')
           }
         }
 
@@ -256,7 +256,7 @@ export async function moveAimUpAction(uiStore: any) {
         if (col >= 0) {
           const prevPhaseIndex = uiStore.findSelectableIndexForPhase(col, prevPhaseId)
           if (prevPhaseIndex >= 0) {
-            await uiStore.selectPhase(col, prevPhaseIndex, 'preserve', true)
+            await uiStore.selectPhase(col, prevPhaseIndex, 'preserve')
           }
         }
 
@@ -742,7 +742,6 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
         destinationPhase.selectedAimIndex = Math.max(0, destinationPhase.commitments.indexOf(cutAimId))
       }
     } else if (destinationFloating) {
-      await dataStore.loadFloatingAims(getProjectPath())
       const idx = dataStore.floatingAimsIds.indexOf(cutAimId)
       if (idx >= 0) uiStore.floatingAimIndex = idx
     }

@@ -25,14 +25,6 @@ export const createPhaseRouter = (
   const readMeta = readProjectMeta;
   const writeMeta = writeProjectMeta;
 
-  const emitOwnerChange = (projectPath: string, ownerParentId: string | null) => {
-    if (ownerParentId) {
-      ee.emit('change', { type: 'phase', id: ownerParentId, projectPath });
-    } else {
-      ee.emit('change', { type: 'project', id: 'meta', projectPath });
-    }
-  };
-
   const phaseAncestorNames = (phase: Phase, phasesById: Map<string, Phase>) => {
     const names: string[] = [];
     const visited = new Set<string>([phase.id]);
@@ -97,7 +89,6 @@ export const createPhaseRouter = (
           await writeMeta(input.projectPath, rootOwner);
         }
         addPhaseToIndex(input.projectPath, phase);
-        emitOwnerChange(input.projectPath, phase.parent ?? null);
         return { id: phaseId };
       }),
 
@@ -173,8 +164,6 @@ export const createPhaseRouter = (
 
         await writePhase(input.projectPath, updatedPhase);
         updatePhaseInIndex(input.projectPath, updatedPhase);
-        emitOwnerChange(input.projectPath, oldParentId);
-        emitOwnerChange(input.projectPath, updatedPhase.parent ?? null);
         return updatedPhase;
       }),
 
@@ -208,8 +197,6 @@ export const createPhaseRouter = (
           meta.rootPhaseIds = siblingIds;
           await writeMeta(input.projectPath, meta);
         }
-
-        emitOwnerChange(input.projectPath, parentId);
         return { success: true };
       }),
 
@@ -238,8 +225,7 @@ export const createPhaseRouter = (
         await cleanupCommitments(input.projectPath, input.phaseId);
 
         removePhaseFromIndex(input.projectPath, input.phaseId);
-        ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath });
-        emitOwnerChange(input.projectPath, phase.parent ?? null);
+        ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath, deleted: true });
         return { success: true };
       }),
 

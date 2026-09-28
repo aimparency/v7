@@ -93,6 +93,7 @@ describe('Multi-Client Synchronization', () => {
     // Mock initial load responses
     mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
     mockTrpc.aim.list.query.mockResolvedValue([initialAim])
+    mockTrpc.phase.list.query.mockResolvedValue([initialPhase])
     mockTrpc.phase.get.query.mockImplementation(({phaseId: id}: any) => {
         if (id === phaseId) return Promise.resolve(initialPhase)
         return Promise.resolve(null)
@@ -137,7 +138,7 @@ describe('Multi-Client Synchronization', () => {
     expect(store.getAimsForPhase(phaseId).length).toBe(1)
   })
 
-  it('loads missing aims when a phase update is received via subscription', async () => {
+  it('applies pushed entities and deletions without refetching', async () => {
     const store = useDataStore()
     const projectStore = useProjectStore()
     const projectPath = '/test/project'
@@ -145,43 +146,30 @@ describe('Multi-Client Synchronization', () => {
 
     const aimId = 'new-aim-3'
     const phaseId = 'phase-3'
-    
-    const initialPhase = {
-      id: phaseId,
-      name: 'Phase 3',
-      from: 1000,
-      to: 2000,
-      commitments: []
-    }
-
-    const updatedPhase = { ...initialPhase, commitments: [aimId] }
+    const initialPhase = { id: phaseId, name: 'Phase 3', parent: null, childPhaseIds: [], commitments: [] }
     const newAim = { id: aimId, text: 'New Aim', status: { state: 'open' }, committedIn: [phaseId], supportingConnections: [], supportedAims: [] }
 
     mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
-    mockTrpc.aim.list.query.mockResolvedValue([]) // No aims initially
-    mockTrpc.phase.get.query.mockResolvedValue(updatedPhase)
-    mockTrpc.aim.get.query.mockResolvedValue(newAim)
-    
-    mockTrpc.aim.getMany.query.mockImplementation(({ aimIds }: any) => {
-        if (aimIds && aimIds.includes(aimId)) return Promise.resolve([newAim])
-        return Promise.resolve([])
-    })
+    mockTrpc.aim.list.query.mockResolvedValue([])
+    mockTrpc.phase.list.query.mockResolvedValue([initialPhase])
 
     await store.loadProject(projectPath)
 
-    // Trigger Phase update
-    await subscriptionCallback({ type: 'phase', id: phaseId, projectPath })
+    await subscriptionCallback({ type: 'aim', id: aimId, projectPath, entity: newAim })
+    await subscriptionCallback({ type: 'phase', id: phaseId, projectPath, entity: { ...initialPhase, commitments: [aimId] } })
+    await subscriptionCallback({ type: 'project', id: 'meta', projectPath, entity: { rootPhaseIds: [phaseId], name: 'Renamed' } })
 
-    // Check: loadAims should have been called for the missing aim
-    expect(mockTrpc.aim.getMany.query).toHaveBeenCalledWith(expect.objectContaining({
-      aimIds: [aimId]
-    }))
+    expect(store.getAimsForPhase(phaseId).map((aim) => aim.id)).toEqual([aimId])
+    expect(store.meta.name).toBe('Renamed')
+    expect(mockTrpc.aim.get.query).not.toHaveBeenCalled()
+    expect(mockTrpc.phase.get.query).not.toHaveBeenCalled()
+    expect(mockTrpc.project.getMeta.query).toHaveBeenCalledTimes(1)
 
-    // Check: Now in phase
-    expect(store.getAimsForPhase(phaseId).length).toBe(1)
-    // Verify sync
-    await new Promise(resolve => setTimeout(resolve, 500))
-    expect(store.aims[aimId]!.text).toBe('New Aim')
+    await subscriptionCallback({ type: 'aim', id: aimId, projectPath, deleted: true })
+    await subscriptionCallback({ type: 'phase', id: phaseId, projectPath, deleted: true })
+
+    expect(store.aims[aimId]).toBeUndefined()
+    expect(store.phases[phaseId]).toBeUndefined()
   })
 
   it('does not let an older mutation response overwrite a newer subscription refresh', async () => {

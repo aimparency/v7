@@ -95,9 +95,6 @@ describe('Phase priority list', () => {
     await wrapper.find('.priority-toggle').trigger('click')
     await flushPromises()
 
-    expect(dataStore.loadPhases).toHaveBeenCalledWith('/test/project', 'root')
-    expect(dataStore.loadPhases).toHaveBeenCalledWith('/test/project', 'child-phase')
-    expect(dataStore.loadAllAims).toHaveBeenCalledWith('/test/project')
     expect((wrapper.find('.priority-state select').element as HTMLSelectElement).value).toBe('human-dependent')
     expect(wrapper.find('.aims-container').exists()).toBe(false)
 

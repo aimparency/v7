@@ -298,14 +298,12 @@ describe('UI teleport cut/paste', () => {
     })
 
     const deletePhaseSpy = vi.spyOn(dataStore, 'deletePhase').mockResolvedValue(undefined as any)
-    const loadPhasesSpy = vi.spyOn(dataStore, 'loadPhases').mockResolvedValue([])
 
     await uiStore.handleColumnNavigationKeys(keyEvent('d'), dataStore)
     expect(uiStore.pendingDeletePhaseId).toBe('phase-1')
 
     await uiStore.handleColumnNavigationKeys(keyEvent('d'), dataStore)
     expect(deletePhaseSpy).toHaveBeenCalledWith('phase-1', null)
-    expect(loadPhasesSpy).toHaveBeenCalled()
     expect(uiStore.pendingDeletePhaseId).toBeNull()
   })
 })

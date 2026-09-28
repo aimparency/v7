@@ -276,9 +276,6 @@ export const useListStore = defineStore('ui', {
       let node = phaseId
       while (node && !seen.has(`down:${node}`)) {
         seen.add(`down:${node}`)
-        if (projectStore.projectPath) {
-          await dataStore.loadPhases(projectStore.projectPath, node)
-        }
         const firstChild = dataStore.phases[node]?.childPhaseIds?.[0]
         if (!firstChild || seen.has(firstChild)) break
         seen.add(firstChild)
@@ -340,7 +337,7 @@ export const useListStore = defineStore('ui', {
       let deepestLevel = 0
 
       for (let level = 0; level <= maxLevel; level++) {
-        await this.loadColumn(level)
+        this.ensureColumnSelection(level)
         if (!shouldContinue()) return undefined
 
         const phaseId = phaseIdByLevel[level]
@@ -460,8 +457,6 @@ export const useListStore = defineStore('ui', {
           if (this.navigatingAims && this.activeColumn >= 0) {
             const activePhaseId = this.selectedPhaseIdByColumn[this.activeColumn]
             if (activePhaseId) {
-              await dataStore.loadPhaseAims(projectStore.projectPath, activePhaseId)
-              if (!shouldContinue()) return true
               const phase = dataStore.phases[activePhaseId]
               if (phase && listViewState.selectedAimIndexByPhaseId[activePhaseId] !== undefined) {
                 phase.selectedAimIndex = Math.min(
@@ -606,8 +601,6 @@ export const useListStore = defineStore('ui', {
             newAimId = result.id
             createdAsPhaseCommitmentWithoutImplicitSupportedAim = true
           }
-
-          await dataStore.loadPhaseAims(projectStore.projectPath, path.phase.id)
         } else if (isExistingAim) {
           if (modalStore.aimCreationCallback) {
             newAimId = aimTextOrId
@@ -908,47 +901,12 @@ export const useListStore = defineStore('ui', {
       )
     },
 
-    async loadColumn(columnIndex: number) {
-      const startedAt = performance.now()
-      const dataStore = useDataStore()
-      const projectStore = useProjectStore()
-      logNav('loadColumn:start', {
-        columnIndex,
-        projectPath: projectStore.projectPath
-      })
-
-      if (columnIndex < 0) {
-        return
-      }
-
-      if (columnIndex === 0) {
-        await dataStore.loadPhases(projectStore.projectPath, null)
-      } else {
-        const selectedParentId = this.selectedPhaseIdByColumn[columnIndex - 1]
-        if (selectedParentId) {
-          await dataStore.loadPhases(projectStore.projectPath, selectedParentId)
-        }
-      }
-
+    // A column below the root needs a selection among the children of the
+    // phase selected to its left.
+    ensureColumnSelection(columnIndex: number) {
       if (columnIndex > 0 && this.selectedEntryKeyByColumn[columnIndex] === undefined) {
         this.selectOwnedChild(columnIndex)
       }
-
-      if (columnIndex >= 0) {
-        await this.ensureColumnNeighborhoodLoaded(columnIndex)
-      }
-
-      perfLog('ui.loadColumn:done', {
-        columnIndex,
-        durationMs: Math.round((performance.now() - startedAt) * 10) / 10,
-        entries: dataStore.getSelectableColumnEntries(columnIndex).length,
-        selectedPhaseId: this.selectedPhaseIdByColumn[columnIndex]
-      })
-      logNav('loadColumn', {
-        columnIndex,
-        phaseCount: dataStore.getSelectableColumnEntries(columnIndex).length,
-        selectedPhaseId: this.selectedPhaseIdByColumn[columnIndex]
-      })
     },
 
     getVisibleMaxColumn() {
@@ -1007,25 +965,6 @@ export const useListStore = defineStore('ui', {
       return this.getSelectableEntries(columnIndex).findIndex((entry) => entry.type === 'phase' && entry.phase.id === phaseId)
     },
 
-    // Every parent group in the column must be loaded: an unloaded parent would
-    // otherwise render as an empty placeholder. Loads are cache hits once the
-    // project's phases are loaded, so only invalidated groups hit the backend.
-    async ensureColumnNeighborhoodLoaded(columnIndex: number) {
-      const dataStore = useDataStore()
-      const projectStore = useProjectStore()
-
-      if (columnIndex < 0) return
-      if (columnIndex === 0) {
-        await dataStore.loadPhases(projectStore.projectPath, null)
-        return
-      }
-
-      const parentPhases = this.getParentPhasesForColumn(columnIndex)
-      if (parentPhases.length === 0) return
-
-      await Promise.all(parentPhases.map((phase) => dataStore.loadPhases(projectStore.projectPath, phase.id)))
-    },
-
     applyPhaseSelection(columnIndex: number, phaseIndex: number) {
       const entries = this.getSelectableEntries(columnIndex)
       if (entries.length === 0) {
@@ -1063,7 +1002,7 @@ export const useListStore = defineStore('ui', {
     async resolveSelectionPath(fromColumn: number, direction: PhaseMoveDirection, maxLevel: number) {
       let deepestLevel = Math.max(0, fromColumn - 1)
       for (let level = Math.max(0, fromColumn); level <= maxLevel; level++) {
-        await this.loadColumn(level)
+        this.ensureColumnSelection(level)
         const entry = this.selectOwnedChild(level, direction)
         if (!entry) break
         deepestLevel = level
@@ -1146,22 +1085,18 @@ export const useListStore = defineStore('ui', {
     async selectPhase(
       columnIndex: number,
       phaseIndex: number,
-      direction: PhaseMoveDirection = 'preserve',
-      alreadyLoaded: boolean = false
+      direction: PhaseMoveDirection = 'preserve'
     ) {
       logNav('selectPhase:start', {
         columnIndex,
         requestedPhaseIndex: phaseIndex,
         direction,
-        alreadyLoaded,
         activeColumn: this.activeColumn,
         selectedPhaseIdByColumn: { ...this.selectedPhaseIdByColumn }
       })
 
       this.setActiveColumn(columnIndex)
-      if (!alreadyLoaded) {
-        await this.loadColumn(columnIndex)
-      }
+      this.ensureColumnSelection(columnIndex)
       const selectedEntry = this.applyPhaseSelection(columnIndex, phaseIndex)
       if (!selectedEntry) {
         this.setMaxColumn(columnIndex)
@@ -1184,29 +1119,12 @@ export const useListStore = defineStore('ui', {
       }
 
       const direction: PhaseMoveDirection = delta < 0 ? 'backward' : 'forward'
-      const entries = this.getSelectableEntries(columnIndex)
-      if (entries.length === 0) {
-        await this.loadColumn(columnIndex)
-      }
-
-      let refreshedEntries = this.getSelectableEntries(columnIndex)
-      if (refreshedEntries.length === 0) {
+      const nextIndex = this.getSelectedPhase(columnIndex) + delta
+      if (nextIndex < 0 || nextIndex >= this.getSelectableEntries(columnIndex).length) {
         return false
       }
 
-      let currentIndex = this.getSelectedPhase(columnIndex)
-      let nextIndex = currentIndex + delta
-      if (nextIndex < 0 || nextIndex >= refreshedEntries.length) {
-        await this.ensureColumnNeighborhoodLoaded(columnIndex)
-        refreshedEntries = this.getSelectableEntries(columnIndex)
-        currentIndex = this.getSelectedPhase(columnIndex)
-        nextIndex = currentIndex + delta
-        if (nextIndex < 0 || nextIndex >= refreshedEntries.length) {
-          return false
-        }
-      }
-
-      await this.selectPhase(columnIndex, nextIndex, direction, true)
+      await this.selectPhase(columnIndex, nextIndex, direction)
       return true
     },
 
@@ -1226,7 +1144,6 @@ export const useListStore = defineStore('ui', {
           continue
         }
 
-        await dataStore.loadPhaseAims(projectStore.projectPath, selectedEntry.phase.id)
         const newPhase = dataStore.phases[selectedEntry.phase.id]
         if (!newPhase) {
           return false
@@ -1551,12 +1468,10 @@ export const useListStore = defineStore('ui', {
       if (phaseId) {
         // Walk up to the root to get the phase id for every column.
         const phasePath: Phase[] = []
-        let currentPhase = await dataStore.loadPhaseById(projectStore.projectPath, phaseId)
+        let currentPhase = dataStore.phases[phaseId]
         while (currentPhase && !phasePath.includes(currentPhase)) {
           phasePath.unshift(currentPhase)
-          currentPhase = currentPhase.parent
-            ? await dataStore.loadPhaseById(projectStore.projectPath, currentPhase.parent)
-            : null
+          currentPhase = currentPhase.parent ? dataStore.phases[currentPhase.parent] : undefined
         }
 
         await this.restoreSelectionPath(
@@ -1567,10 +1482,8 @@ export const useListStore = defineStore('ui', {
 
         this.activeColumn = phasePath.length - 1
         this.setMaxColumn(phasePath.length)
-        await dataStore.loadPhaseAims(projectStore.projectPath, phaseId)
       } else {
         this.activeColumn = -1
-        await dataStore.loadFloatingAims(projectStore.projectPath)
       }
 
       const contextAims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
@@ -1596,12 +1509,6 @@ export const useListStore = defineStore('ui', {
 
         const parentState = ensureAimUIState(stateTree, parent.id)
         parentState.expanded = true
-        if (parent.supportingConnections && parent.supportingConnections.length > 0) {
-          await dataStore.loadAims(
-            projectStore.projectPath,
-            parent.supportingConnections.map((c: any) => c.aimId)
-          )
-        }
 
         const childIndex = parent.supportingConnections.findIndex((c: any) => c.aimId === child.id)
         if (childIndex !== -1) {

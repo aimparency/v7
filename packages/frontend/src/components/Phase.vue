@@ -2,7 +2,6 @@
 import { computed, ref, onMounted } from 'vue'
 import { useDataStore, type Phase} from '../stores/data'
 import { useUIStore } from '../stores/ui'
-import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import AimsList from './AimsList.vue'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu.vue'
@@ -28,12 +27,10 @@ const phaseContainerRef = ref<HTMLElement | null>(null)
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
-const projectStore = useProjectStore()
 const modalStore = useUIModalStore()
 
 const showPriority = ref(false)
 const priorityState = ref('human-dependent')
-const loadingPriority = ref(false)
 
 const prioritizedAims = computed(() => rankAimsForPhaseTree(
   props.phase.id,
@@ -43,33 +40,8 @@ const prioritizedAims = computed(() => rankAimsForPhaseTree(
   priorityState.value
 ))
 
-const loadDescendantPhases = async () => {
-  const pending = [props.phase.id]
-  const visited = new Set<string>()
-
-  while (pending.length > 0) {
-    const phaseId = pending.shift()!
-    if (visited.has(phaseId)) continue
-    visited.add(phaseId)
-
-    await dataStore.loadPhases(projectStore.projectPath, phaseId)
-    pending.push(...(dataStore.phases[phaseId]?.childPhaseIds ?? []))
-  }
-}
-
-const togglePriority = async () => {
+const togglePriority = () => {
   showPriority.value = !showPriority.value
-  if (!showPriority.value) return
-
-  loadingPriority.value = true
-  try {
-    await loadDescendantPhases()
-    // Transitive phase membership follows aim contribution edges, so ensure
-    // those descendants are present before ranking the phase tree.
-    await dataStore.loadAllAims(projectStore.projectPath)
-  } finally {
-    loadingPriority.value = false
-  }
 }
 
 const openPrioritizedAim = (aimId: string) => {
@@ -87,7 +59,6 @@ onMounted(() => {
     isSelected: props.isSelected,
     isActive: props.isActive
   })
-  dataStore.loadPhaseAims(projectStore.projectPath, props.phase.id)
 })
 
 // Check if this phase is pending delete
@@ -221,8 +192,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
         Direct and transitive aims across this phase and its subphases
       </div>
 
-      <div v-if="loadingPriority" class="priority-empty">Loading subphases…</div>
-      <div v-else-if="prioritizedAims.length === 0" class="priority-empty">
+      <div v-if="prioritizedAims.length === 0" class="priority-empty">
         No {{ priorityState }} aims
       </div>
       <ol v-else class="priority-list">

@@ -65,8 +65,6 @@ const updatePhase = async () => {
 
   try {
     const editingPhaseId = modalStore.phaseModalEditingPhaseId
-    const oldPhase = dataStore.phases[editingPhaseId]
-    const oldParentId = oldPhase?.parent ?? null
     const previousFocusedColumn = uiStore.activeColumn
     const previousSelectionIds = { ...uiStore.selectedPhaseIdByColumn }
 
@@ -81,11 +79,6 @@ const updatePhase = async () => {
 
     if (updatedPhase) {
       dataStore.replacePhase(updatedPhase.id, updatedPhase)
-      await dataStore.loadPhases(projectStore.projectPath, updatedPhase.parent, { force: true })
-
-      if (oldParentId !== updatedPhase.parent) {
-        await dataStore.loadPhases(projectStore.projectPath, oldParentId, { force: true })
-      }
 
       await uiStore.restoreSelectionPath(
         previousSelectionIds,

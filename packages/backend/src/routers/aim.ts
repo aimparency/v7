@@ -630,7 +630,7 @@ export const createAimRouter = (
           invalidateSemanticCache(input.projectPath);
         }
 
-        ee.emit('change', { type: 'aim', id: input.aimId, projectPath: input.projectPath });
+        ee.emit('change', { type: 'aim', id: input.aimId, projectPath: input.projectPath, deleted: true });
 
         return { success: true };
       }),

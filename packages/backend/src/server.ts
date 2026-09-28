@@ -395,6 +395,7 @@ async function writeProjectMeta(rawProjectPath: string, meta: ProjectMeta): Prom
   await ensureProjectStructure(projectPath);
   const metaPath = path.join(projectPath, 'meta.json');
   await writeJsonAtomic(metaPath, meta);
+  ee.emit('change', { type: 'project', id: 'meta', projectPath, entity: meta });
 }
 
 function normalizePhase(rawPhase: unknown): Phase {
@@ -532,7 +533,15 @@ async function listPhases(rawProjectPath: string, parentPhaseId?: string | null)
   }
 
   if (parentPhaseId === undefined) {
-    return allPhases;
+    // Same child reconciliation as readPhaseFile, in memory: legacy phases may
+    // only carry the `parent` backlink.
+    return allPhases.map((phase) => ({
+      ...phase,
+      childPhaseIds: reconcileSiblingIds(
+        phase.childPhaseIds,
+        [...(childrenByParent.get(phase.id) ?? [])].sort(compareLegacyPhaseOrder).map((child) => child.id)
+      )
+    }));
   }
 
   const siblingPhases = childrenByParent.get(parentPhaseId ?? null) ?? [];
