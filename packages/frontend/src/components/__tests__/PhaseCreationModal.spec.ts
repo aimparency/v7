@@ -19,7 +19,6 @@ function mountPhaseModal() {
     initialState: {
       ui: {
         activeColumn: 0,
-        selectedPhaseByColumn: { 0: 0 },
         maxColumn: 0
       },
       'ui-modal': {

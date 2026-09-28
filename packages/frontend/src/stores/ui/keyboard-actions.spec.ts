@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { handleColumnNavigationKeysAction, handleGraphKeydownAction } from './keyboard-actions'
+import { handleColumnNavigationKeysAction, handleGraphKeydownAction, navigateColumnForward } from './keyboard-actions'
 import { useGraphUIStore } from './graph-store'
 import { useProjectStore } from '../project-store'
 import { useDataStore } from '../data'
@@ -164,10 +164,8 @@ describe('keyboard actions', () => {
     uiStore.maxColumn = 1
     uiStore.windowStart = 0
     uiStore.windowSize = 2
-    uiStore.selectedPhaseByColumn[0] = 0
-    uiStore.selectedPhaseIdByColumn[0] = 'root-a'
-    uiStore.selectedPhaseByColumn[1] = 0
-    uiStore.selectedPhaseIdByColumn[1] = 'child-a'
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:root-a'
+    uiStore.selectedEntryKeyByColumn[1] = 'phase:child-a'
 
     await handleColumnNavigationKeysAction(uiStore, {
       key: 'J',
@@ -179,6 +177,37 @@ describe('keyboard actions', () => {
     expect(dataStore.phases['root-b']?.childPhaseIds).toEqual(['child-a', 'child-b'])
     expect(uiStore.selectedPhaseIdByColumn[0]).toBe('root-b')
     expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-a')
+  })
+
+  it('does not move right past a selected empty-child placeholder', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
+    projectStore.projectPath = '/tmp/project'
+
+    // Column 1 holds child-a (childless) and child-b (has a grandchild), so
+    // column 2 has entries even though child-a has nothing to its right.
+    dataStore.meta = { rootPhaseIds: ['root'] } as any
+    dataStore.phases = {
+      root: { id: 'root', name: 'Root', parent: null, childPhaseIds: ['child-a', 'child-b'], commitments: [] },
+      'child-a': { id: 'child-a', name: 'Child A', parent: 'root', childPhaseIds: [], commitments: [] },
+      'child-b': { id: 'child-b', name: 'Child B', parent: 'root', childPhaseIds: ['grandchild-b'], commitments: [] },
+      'grandchild-b': { id: 'grandchild-b', name: 'Grandchild B', parent: 'child-b', childPhaseIds: [], commitments: [] }
+    } as any
+    vi.spyOn(dataStore, 'loadPhases').mockResolvedValue([] as any)
+
+    uiStore.windowStart = 0
+    uiStore.windowSize = 4
+    uiStore.activeColumn = 2
+    uiStore.maxColumn = 2
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:root'
+    uiStore.selectedEntryKeyByColumn[1] = 'phase:child-a'
+    uiStore.selectedEntryKeyByColumn[2] = 'placeholder:child-a'
+
+    await navigateColumnForward(uiStore, dataStore)
+
+    expect(uiStore.activeColumn).toBe(2)
+    expect(uiStore.maxColumn).toBe(2)
   })
 
   it('moves a phase upward after the previous parent children when crossing parent boundaries', async () => {
@@ -254,10 +283,8 @@ describe('keyboard actions', () => {
     uiStore.maxColumn = 1
     uiStore.windowStart = 0
     uiStore.windowSize = 2
-    uiStore.selectedPhaseByColumn[0] = 1
-    uiStore.selectedPhaseIdByColumn[0] = 'root-b'
-    uiStore.selectedPhaseByColumn[1] = 2
-    uiStore.selectedPhaseIdByColumn[1] = 'child-b'
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:root-b'
+    uiStore.selectedEntryKeyByColumn[1] = 'phase:child-b'
 
     await handleColumnNavigationKeysAction(uiStore, {
       key: 'K',

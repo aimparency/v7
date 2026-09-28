@@ -114,10 +114,9 @@ export async function navigateColumnForward(uiStore: any, dataStore: any) {
     const rootEntries = dataStore.getSelectableColumnEntries(0)
     if (rootEntries.length > 0) {
       uiStore.ensureMaxColumn(0)
-      uiStore.initializeColumnSelection(0)
       uiStore.setActiveColumn(0)
       uiStore.ensureSelectionVisible()
-      await uiStore.realignVisibleColumnsFrom(0, 'preserve')
+      await uiStore.resolveSelectionPath(0, 'preserve', Math.min(uiStore.maxColumn, uiStore.getVisibleMaxColumn()))
     }
     return
   }
@@ -130,10 +129,10 @@ export async function navigateColumnForward(uiStore: any, dataStore: any) {
 
   if (nextColumn > uiStore.maxColumn) {
     await uiStore.loadColumn(nextColumn)
-    const discoveredEntries = dataStore.getSelectableColumnEntries(nextColumn)
-    if (discoveredEntries.length > 0) {
+    // Only descend when the current selection is a phase with an owned child
+    // entry; a selected placeholder has nothing to its right.
+    if (uiStore.selectOwnedChild(nextColumn)) {
       uiStore.ensureMaxColumn(nextColumn)
-      uiStore.initializeColumnSelection(nextColumn)
     }
   }
 
@@ -146,7 +145,7 @@ export async function navigateColumnForward(uiStore: any, dataStore: any) {
     }
     uiStore.setActiveColumn(nextColumn)
     if (!wasVisible) {
-      await uiStore.realignVisibleColumnsFrom(nextColumn, 'preserve')
+      await uiStore.resolveSelectionPath(nextColumn, 'preserve', Math.min(uiStore.maxColumn, uiStore.getVisibleMaxColumn()))
     }
   }
 }
@@ -263,8 +262,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
           const selectedIndex = uiStore.getSelectedPhase(uiStore.activeColumn)
           const selectedEntry = selectableEntries[selectedIndex] ?? selectableEntries[0]
           if (selectedEntry?.type === 'phase') {
-            uiStore.selectedPhaseByColumn[uiStore.activeColumn] = selectableEntries.indexOf(selectedEntry)
-            uiStore.selectedPhaseIdByColumn[uiStore.activeColumn] = selectedEntry.phase.id
+            uiStore.applyPhaseSelection(uiStore.activeColumn, selectableEntries.indexOf(selectedEntry))
             const selectedPhase = selectedEntry.phase
             const aims = localDataStore.getAimsForPhase(selectedPhase.id)
             if (aims.length > 0 && selectedPhase.selectedAimIndex === undefined) {
@@ -350,6 +348,9 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         if (!selectedPhase) break
 
         if (uiStore.pendingDeletePhaseId === selectedPhase.id) {
+          // The deleted phase's key disappears from the column, so capture its
+          // position to select the entry that takes its place.
+          const deletedIndex = uiStore.getSelectedPhase(currentCol)
           const parentId = selectedPhase.parent
           await dataStore.deletePhase(selectedPhase.id, parentId)
           uiStore.pendingDeletePhaseId = null
@@ -358,13 +359,12 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
 
           await uiStore.loadColumn(currentCol)
           const selectableEntries = dataStore.getSelectableColumnEntries(currentCol)
-          const newIndex = Math.min(uiStore.selectedPhaseByColumn[currentCol] || 0, Math.max(0, selectableEntries.length - 1))
+          const newIndex = Math.min(deletedIndex, Math.max(0, selectableEntries.length - 1))
 
           if (selectableEntries.length > 0) {
             await uiStore.selectPhase(currentCol, newIndex)
           } else {
-            uiStore.selectedPhaseByColumn[currentCol] = 0
-            delete uiStore.selectedPhaseIdByColumn[currentCol]
+            uiStore.applyPhaseSelection(currentCol, 0)
             uiStore.setMaxColumn(currentCol)
           }
         } else {

@@ -76,8 +76,7 @@ describe('UI teleport cut/paste', () => {
     projectStore.projectPath = '/tmp/project'
     uiStore.navigatingAims = true
     uiStore.activeColumn = 0
-    uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
-    uiStore.selectedPhaseByColumn[0] = 0
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
     dataStore.meta = { rootPhaseIds: ['phase-1'] }
 
     dataStore.phases['phase-1'] = {
@@ -132,8 +131,7 @@ describe('UI teleport cut/paste', () => {
     projectStore.projectPath = '/tmp/project'
     uiStore.navigatingAims = true
     uiStore.activeColumn = 0
-    uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
-    uiStore.selectedPhaseByColumn[0] = 0
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
     dataStore.meta = { rootPhaseIds: ['phase-1'] }
 
     const parentA = baseAim('parent-a', 'Parent A') as any
@@ -216,7 +214,7 @@ describe('UI teleport cut/paste', () => {
     uiStore.navigatingAims = true
     modalStore.showAimModal = false
     uiStore.activeColumn = 0
-    uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-empty'
 
     dataStore.phases['phase-empty'] = {
       id: 'phase-empty',
@@ -253,8 +251,7 @@ describe('UI teleport cut/paste', () => {
 
     uiStore.navigatingAims = false
     uiStore.activeColumn = 0
-    uiStore.selectedPhaseByColumn[0] = 0
-    uiStore.selectedPhaseIdByColumn[0] = 'phase-empty'
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-empty'
     dataStore.meta = { rootPhaseIds: ['phase-empty'] }
     dataStore.phases['phase-empty'] = {
       id: 'phase-empty',
@@ -279,8 +276,7 @@ describe('UI teleport cut/paste', () => {
 
     projectStore.projectPath = '/tmp/project'
     uiStore.activeColumn = 0
-    uiStore.selectedPhaseByColumn[0] = 0
-    uiStore.selectedPhaseIdByColumn[0] = 'phase-1'
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
     dataStore.meta = { rootPhaseIds: ['phase-1'] }
     dataStore.phases['phase-1'] = {
       id: 'phase-1',

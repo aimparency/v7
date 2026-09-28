@@ -217,7 +217,7 @@ const runProjectRestore = async (path: string) => {
   uiStore.beginUIStateRestore()
   await dataStore.loadProject(path)
   const restored = await uiStore.restoreProjectUIState()
-  if (!restored && !Object.keys(uiStore.selectedPhaseByColumn).length) {
+  if (!restored && !Object.keys(uiStore.selectedEntryKeyByColumn).length) {
     uiStore.beginUIStateRestore()
     await uiStore.selectPhase(0, 0)
     uiStore.ensureSelectionVisible()
@@ -394,8 +394,7 @@ watch(() => [modalStore.showPhaseModal, modalStore.showAimModal], async () => {
 watch(() => [
   uiStore.activeColumn,
   uiStore.maxColumn,
-  uiStore.selectedPhaseByColumn,
-  uiStore.selectedPhaseIdByColumn,
+  uiStore.selectedEntryKeyByColumn,
   uiStore.floatingAimIndex,
   uiStore.windowStart,
   uiStore.windowSize,

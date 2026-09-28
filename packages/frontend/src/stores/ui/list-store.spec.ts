@@ -133,12 +133,8 @@ describe('list store phase selection', () => {
       commitments: []
     } as any
     dataStore.meta = { rootPhaseIds: ['root-1', 'root-2'] }
-
-    uiStore.selectedPhaseByColumn[0] = 0
-    uiStore.selectedPhaseIdByColumn[0] = 'root-1'
-
-    uiStore.selectedPhaseByColumn[1] = 1
-    uiStore.selectedPhaseIdByColumn[1] = 'child-b'
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:root-1'
+    uiStore.selectedEntryKeyByColumn[1] = 'phase:child-b'
 
     uiStore.lastSelectedSubPhaseIndexByPhase['root-1'] = 0
 
@@ -158,7 +154,7 @@ describe('list store phase selection', () => {
     await uiStore.selectPhase(0, 0)
 
     expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-b')
-    expect(uiStore.selectedPhaseByColumn[1]).toBe(1)
+    expect(uiStore.getSelectedPhase(1)).toBe(1)
   })
 
   it('restores obvious list UI state after reload', async () => {
@@ -211,10 +207,8 @@ describe('list store phase selection', () => {
     initialUIStore.windowStart = 0
     initialUIStore.activeColumn = 1
     initialUIStore.maxColumn = 1
-    initialUIStore.selectedPhaseByColumn[0] = 1
-    initialUIStore.selectedPhaseIdByColumn[0] = 'root-2'
-    initialUIStore.selectedPhaseByColumn[1] = 1
-    initialUIStore.selectedPhaseIdByColumn[1] = 'child-b'
+    initialUIStore.selectedEntryKeyByColumn[0] = 'phase:root-2'
+    initialUIStore.selectedEntryKeyByColumn[1] = 'phase:child-b'
     initialUIStore.lastSelectedSubPhaseIndexByPhase['root-2'] = 1
     initialUIStore.navigatingAims = false
 
@@ -279,7 +273,6 @@ describe('list store phase selection', () => {
       listViewState: {
         ...uiStore.getListViewStateSnapshot(),
         activeColumn: 0,
-        selectedPhaseByColumn: { '0': 0 },
         selectedPhaseIdByColumn: { '0': 'root-a' },
         windowSize: 2
       }
@@ -384,12 +377,8 @@ describe('list store phase selection', () => {
     uiStore.windowSize = 2
     uiStore.maxColumn = 1
     uiStore.activeColumn = 0
-
-    uiStore.selectedPhaseByColumn[0] = 0
-    uiStore.selectedPhaseIdByColumn[0] = 'root-1'
-
-    uiStore.selectedPhaseByColumn[1] = 2
-    uiStore.selectedPhaseIdByColumn[1] = 'child-c'
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:root-1'
+    uiStore.selectedEntryKeyByColumn[1] = 'phase:child-c'
 
     // Simulate older remembered child position that should not override the visible selection.
     uiStore.lastSelectedSubPhaseIndexByPhase['root-1'] = 0
@@ -401,6 +390,6 @@ describe('list store phase selection', () => {
 
     expect(uiStore.activeColumn).toBe(1)
     expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-c')
-    expect(uiStore.selectedPhaseByColumn[1]).toBe(2)
+    expect(uiStore.getSelectedPhase(1)).toBe(2)
   })
 })

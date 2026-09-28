@@ -87,17 +87,11 @@ const updatePhase = async () => {
         await dataStore.loadPhases(projectStore.projectPath, oldParentId, { force: true })
       }
 
-      const maxVisibleColumn = Math.min(uiStore.maxColumn, uiStore.getVisibleMaxColumn())
-      for (let columnIndex = 0; columnIndex <= maxVisibleColumn; columnIndex++) {
-        const selectedPhaseId = previousSelectionIds[columnIndex]
-        if (!selectedPhaseId) continue
-
-        await uiStore.loadColumn(columnIndex)
-        const selectedIndex = uiStore.findSelectableIndexForPhase(columnIndex, selectedPhaseId)
-        if (selectedIndex >= 0) {
-          uiStore.applyPhaseSelection(columnIndex, selectedIndex)
-        }
-      }
+      await uiStore.restoreSelectionPath(
+        previousSelectionIds,
+        undefined,
+        Math.min(uiStore.maxColumn, uiStore.getVisibleMaxColumn())
+      )
 
       uiStore.setActiveColumn(Math.min(previousFocusedColumn, uiStore.maxColumn))
       uiStore.ensureSelectionVisible()
