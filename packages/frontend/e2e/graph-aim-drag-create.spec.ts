@@ -1,7 +1,34 @@
 import { test, expect, Page } from '@playwright/test';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { mkdirSync, rmSync } from 'fs';
+import { mkdirSync, rmSync, readdirSync, readFileSync } from 'fs';
+import { finishAimCreation } from './test-utils';
+
+// The graph draws nodes and links with WebGL, so tests locate nodes through the
+// dev-only window.__aimparencyGraph hook and read links from the project files.
+function readAims(projectPath: string): any[] {
+  const aimsDir = join(projectPath, '.bowman', 'aims');
+  return readdirSync(aimsDir)
+    .filter((file) => file.endsWith('.json'))
+    .map((file) => JSON.parse(readFileSync(join(aimsDir, file), 'utf8')));
+}
+
+function countConnections(projectPath: string): number {
+  return readAims(projectPath).reduce((total, aim) => total + (aim.supportingConnections?.length ?? 0), 0);
+}
+
+// Waits until the node has settled (camera tracking and layout move it at first).
+async function getNodePosition(page: Page, aimText: string): Promise<{ x: number, y: number }> {
+  const read = () => page.evaluate((text) => (window as any).__aimparencyGraph?.getNodeClientPosition(text) ?? null, aimText);
+  let previous = await read();
+  for (let attempt = 0; attempt < 30; attempt++) {
+    await page.waitForTimeout(100);
+    const current = await read();
+    if (previous && current && Math.hypot(current.x - previous.x, current.y - previous.y) < 0.5) return current;
+    previous = current;
+  }
+  throw new Error(`Node "${aimText}" did not settle`);
+}
 
 async function setupBlankProject(page: Page, projectPath: string) {
   await page.goto('/');
@@ -43,7 +70,7 @@ test('graph view: create first aim by double-click, then drag to create sub-aim'
     await expect(graphView).toBeVisible();
 
     // Get SVG element
-    const svg = page.locator('.graph-view > svg');
+    const svg = page.locator('.graph-view > svg.graph-overlay');
     await expect(svg).toBeVisible();
 
     // Double-click on empty space to create first aim
@@ -57,26 +84,23 @@ test('graph view: create first aim by double-click, then drag to create sub-aim'
     await page.waitForTimeout(300);
 
     // Fill in first aim
-    const modal = page.locator('.modal');
+    const modal = page.locator('.modal-panel');
     await expect(modal).toBeVisible({ timeout: 3000 });
 
     const aimInput = modal.locator('input[type="text"]').first();
     await aimInput.fill('Root Aim');
     await aimInput.press('Enter');
 
-    await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+    await finishAimCreation(page);
     await page.waitForTimeout(500);
 
-    // Verify first aim node exists in graph
-    const firstNode = page.locator('.graph-node').first();
-    await expect(firstNode).toBeVisible();
+    // Verify first aim exists and find its node
+    await expect.poll(() => readAims(tempDir).length).toBe(1);
+    const { x: nodeX, y: nodeY } = await getNodePosition(page, 'Root Aim');
 
-    // Get the position of the first node
-    const firstNodeBox = await firstNode.boundingBox();
-    if (!firstNodeBox) throw new Error('First node not found');
-
-    const nodeX = firstNodeBox.x + firstNodeBox.width / 2;
-    const nodeY = firstNodeBox.y + firstNodeBox.height / 2;
+    // Dragging a selected node draws a connection (an unselected one just moves)
+    await page.mouse.click(nodeX, nodeY);
+    await page.waitForTimeout(300);
 
     // Drag from the first node to create a sub-aim
     // Move to node center, mouse down, drag, mouse up
@@ -98,16 +122,12 @@ test('graph view: create first aim by double-click, then drag to create sub-aim'
     await subAimInput.fill('Sub Aim');
     await subAimInput.press('Enter');
 
-    await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+    await finishAimCreation(page);
     await page.waitForTimeout(1000);
 
-    // Verify both nodes exist
-    const nodes = page.locator('.graph-node');
-    await expect(nodes).toHaveCount(2);
-
-    // Verify a connection link exists
-    const links = page.locator('.graph-link');
-    await expect(links).toHaveCount(1);
+    // Verify both aims exist and are connected
+    await expect.poll(() => readAims(tempDir).length).toBe(2);
+    await expect.poll(() => countConnections(tempDir)).toBe(1);
 
     // Check for console errors (especially NaN errors)
     const nanErrors = consoleErrors.filter(err =>
@@ -148,7 +168,7 @@ test('graph view: drag from existing node to another existing node creates conne
     await page.keyboard.press('g');
     await page.waitForTimeout(500);
 
-    const svg = page.locator('.graph-view > svg');
+    const svg = page.locator('.graph-view > svg.graph-overlay');
     const svgBox = await svg.boundingBox();
     if (!svgBox) throw new Error('SVG not found');
 
@@ -156,11 +176,11 @@ test('graph view: drag from existing node to another existing node creates conne
     await page.mouse.dblclick(svgBox.x + 300, svgBox.y + 300);
     await page.waitForTimeout(200);
 
-    const modal = page.locator('.modal');
+    const modal = page.locator('.modal-panel');
     await expect(modal).toBeVisible();
     await modal.locator('input[type="text"]').first().fill('Parent Aim');
     await modal.locator('input[type="text"]').first().press('Enter');
-    await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+    await finishAimCreation(page);
     await page.waitForTimeout(500);
 
     // Create second aim (unconnected)
@@ -170,36 +190,25 @@ test('graph view: drag from existing node to another existing node creates conne
     await expect(modal).toBeVisible();
     await modal.locator('input[type="text"]').first().fill('Child Aim');
     await modal.locator('input[type="text"]').first().press('Enter');
-    await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+    await finishAimCreation(page);
     await page.waitForTimeout(500);
 
-    // Verify two nodes exist
-    const nodes = page.locator('.graph-node');
-    await expect(nodes).toHaveCount(2);
-
-    // Verify no links yet
-    let links = page.locator('.graph-link');
-    await expect(links).toHaveCount(0);
-
-    // Get node positions
-    const firstNode = nodes.first();
-    const secondNode = nodes.last();
-
-    const firstBox = await firstNode.boundingBox();
-    const secondBox = await secondNode.boundingBox();
-    if (!firstBox || !secondBox) throw new Error('Nodes not found');
+    // Verify two aims exist and no links yet
+    await expect.poll(() => readAims(tempDir).length).toBe(2);
+    expect(countConnections(tempDir)).toBe(0);
 
     // Drag from first to second to create connection
-    await page.mouse.move(firstBox.x + firstBox.width / 2, firstBox.y + firstBox.height / 2);
+    const parentPosition = await getNodePosition(page, 'Parent Aim');
+    const childPosition = await getNodePosition(page, 'Child Aim');
+    await page.mouse.click(parentPosition.x, parentPosition.y);
+    await page.waitForTimeout(300);
+    await page.mouse.move(parentPosition.x, parentPosition.y);
     await page.mouse.down();
-    await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y + secondBox.height / 2, { steps: 10 });
+    await page.mouse.move(childPosition.x, childPosition.y, { steps: 10 });
     await page.mouse.up();
 
-    await page.waitForTimeout(1000);
-
     // Verify link was created
-    links = page.locator('.graph-link');
-    await expect(links).toHaveCount(1);
+    await expect.poll(() => countConnections(tempDir)).toBe(1);
 
     // Check for NaN errors
     const nanErrors = consoleErrors.filter(err =>
@@ -222,7 +231,7 @@ test('graph view: drag from existing node to another existing node creates conne
   }
 });
 
-test('graph view: ctrl/shift click for multi-select (range add) and bulk bar', async ({ page }) => {
+test('graph view: ctrl/shift click for multi-select (range add) and bulk selection bar', async ({ page }) => {
   const tempDir = join(tmpdir(), 'aimparency-graph-multi-' + Date.now());
   mkdirSync(tempDir, { recursive: true });
 
@@ -247,11 +256,11 @@ test('graph view: ctrl/shift click for multi-select (range add) and bulk bar', a
     const ay = box.y + box.height * 0.4;
     await page.mouse.dblclick(ax, ay);
     await page.waitForTimeout(400);
-    let modal = page.locator('.modal');
+    let modal = page.locator('.modal-panel');
     if (await modal.count() > 0 && await modal.isVisible()) {
       await modal.locator('input[type="text"]').first().fill('GMulti A');
       await modal.locator('input[type="text"]').first().press('Enter');
-      await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+      await finishAimCreation(page);
     }
     await page.waitForTimeout(500);
 
@@ -263,28 +272,30 @@ test('graph view: ctrl/shift click for multi-select (range add) and bulk bar', a
     if (await modal.count() > 0 && await modal.isVisible()) {
       await modal.locator('input[type="text"]').first().fill('GMulti B');
       await modal.locator('input[type="text"]').first().press('Enter');
-      await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+      await finishAimCreation(page);
     }
     await page.waitForTimeout(600);
 
     // Ctrl click first
-    await page.mouse.click(ax, ay, { modifiers: ['Control'] });
+    const firstPosition = await getNodePosition(page, 'GMulti A');
+    // mouse.click ignores modifiers, so hold the keys explicitly
+    await page.keyboard.down('Control');
+    await page.mouse.click(firstPosition.x, firstPosition.y);
+    await page.keyboard.up('Control');
     await page.waitForTimeout(300);
 
     // Shift click second (range/add)
-    await page.mouse.click(bx, by, { modifiers: ['Shift'] });
+    const secondPosition = await getNodePosition(page, 'GMulti B');
+    await page.keyboard.down('Shift');
+    await page.mouse.click(secondPosition.x, secondPosition.y);
+    await page.keyboard.up('Shift');
     await page.waitForTimeout(400);
 
-    // Check bulk bar
-    const multiBar = page.locator('.multi-select-bar');
-    await expect(multiBar).toBeVisible({ timeout: 2000 });
-    await expect(multiBar).toContainText(/2 aims multi-selected/);
-
-    const clearBtn = multiBar.locator('button:has-text("Clear")');
-    if (await clearBtn.count() > 0) {
-      await clearBtn.first().click();
-      await expect(multiBar).toBeHidden({ timeout: 1000 });
-    }
+    // Check the app-wide bulk selection bar
+    const bulkBar = page.locator('.bulk-selection-bar');
+    await expect(bulkBar).toContainText('2 selected', { timeout: 2000 });
+    await bulkBar.locator('button', { hasText: 'Clear' }).click();
+    await expect(bulkBar).toBeHidden({ timeout: 1000 });
 
   } finally {
     try { rmSync(tempDir, { recursive: true, force: true }); } catch {}

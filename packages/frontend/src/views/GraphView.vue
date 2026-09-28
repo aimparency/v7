@@ -151,6 +151,16 @@ function handleCanvasClick(e: MouseEvent) {
 // Lifecycle
 let labelCullInterval: ReturnType<typeof setInterval> | undefined
 
+// Dev-only e2e hook: nodes are WebGL-drawn, so tests look up a node's client
+// position by aim text to drive clicks and drags.
+function getNodeClientPosition(aimText: string) {
+    const node = nodes.value.find((candidate) => candidate.text === aimText)
+    const rect = canvasRef.value?.getBoundingClientRect()
+    if (!node || !rect) return null
+    const [x, y] = mapStore.logicalToPhysicalCoord([node.renderPos[0], node.renderPos[1]])
+    return { x: rect.left + x!, y: rect.top + y! }
+}
+
 onMounted(() => {
     mapStore.isTracking = true
     simulation.init()
@@ -158,9 +168,13 @@ onMounted(() => {
     window.addEventListener('keydown', onKeydown)
     updateVisibleLabels()
     labelCullInterval = setInterval(updateVisibleLabels, 500)
+    if (import.meta.env.DEV) {
+        (window as any).__aimparencyGraph = { getNodeClientPosition }
+    }
 })
 
 onUnmounted(() => {
+    if (import.meta.env.DEV) delete (window as any).__aimparencyGraph
     simulation.cleanup()
     interaction.cleanupListeners()
     window.removeEventListener('keydown', onKeydown)

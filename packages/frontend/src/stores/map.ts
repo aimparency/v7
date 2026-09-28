@@ -238,9 +238,18 @@ export const useMapStore = defineStore('map', {
       vec2.scale(result, result, 1 / this.halfSide) 
       vec2.sub(result, result, [1,1]) 
       vec2.scale(result, result, LOGICAL_HALF_SIDE / this.scale) 
-      vec2.sub(result, result, this.offset) 
+      vec2.sub(result, result, this.offset)
       return result
-    }, 
+    },
+    logicalToPhysicalCoord(coord: vec2.T) : vec2.T {
+      let result = vec2.clone(coord)
+      vec2.add(result, result, this.offset)
+      vec2.scale(result, result, this.scale / LOGICAL_HALF_SIDE)
+      vec2.add(result, result, [1,1])
+      vec2.scale(result, result, this.halfSide)
+      vec2.add(result, result, this.clientOffset)
+      return result
+    },
     zoom(f: number, mouse: vec2.T) {
       let mouseBefore = this.physicalToLogicalCoord(mouse)
       this.scale *= f
