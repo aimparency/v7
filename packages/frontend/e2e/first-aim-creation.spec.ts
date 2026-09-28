@@ -5,12 +5,12 @@ import { mkdirSync, rmSync } from 'fs';
 
 async function createPhase(page: Page, name: string) {
   await page.keyboard.press('o');
-  await page.waitForSelector('.modal', { timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { timeout: 3000 });
   const phaseNameInput = page.locator('input[placeholder="Enter phase name"]');
   await expect(phaseNameInput).toBeVisible();
   await phaseNameInput.fill(name);
   await phaseNameInput.press('Enter');
-  await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 }
 
 test('create first aim in empty phase shows modal and creates aim', async ({ page }) => {
@@ -86,26 +86,26 @@ test('create first aim in empty phase shows modal and creates aim', async ({ pag
     await page.waitForTimeout(300);
 
     // Check if modal appeared
-    const modalVisible = await page.locator('.modal').isVisible().catch(() => false);
+    const modalVisible = await page.locator('.modal-panel').isVisible().catch(() => false);
     console.log('Modal visible:', modalVisible);
     console.log('Console logs:', consoleLogs.filter(log => log.includes('KEYDOWN') || log.includes('aim')));
     console.log('Console errors:', consoleErrors);
 
     // ASSERTION: Modal should be visible
-    await expect(page.locator('.modal')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('.modal-panel')).toBeVisible({ timeout: 3000 });
 
     // Fill in the aim text
-    const aimInput = page.locator('.modal input[type="text"]').first();
+    const aimInput = page.locator('.modal-panel input[type="text"]').first();
     await expect(aimInput).toBeVisible();
     await aimInput.fill('First Aim');
     await aimInput.press('Enter');
 
     // Wait for modal to close
-    await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+    await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
     await page.waitForTimeout(500);
 
     // ASSERTION: The aim should now be visible
-    const aimTexts = await page.locator('.aim-content .aim-text').allTextContents();
+    const aimTexts = await page.locator('.aim-content .aim-text').allTextContents().then(texts => texts.map(text => text.trim()));
     expect(aimTexts).toContain('First Aim');
 
   } finally {

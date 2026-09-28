@@ -78,3 +78,24 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
     writeFileSync(join(bowmanPath, 'aims', `${id}.json`), JSON.stringify(aim, null, 2));
   });
 }
+
+// Creating an aim can open a follow-up prompt: "Connect to Supported Aim" for
+// new phase commitments, "Connection details" for new sub-aims. Waits for the
+// Add Aim modal to close, then skips any such prompt with Escape.
+export async function finishAimCreation(page: import('@playwright/test').Page) {
+  const addAimTitle = page.locator('.modal-panel .modal-header h2', { hasText: 'Add Aim' });
+  await addAimTitle.waitFor({ state: 'hidden', timeout: 3000 });
+  const followUpPrompt = page.locator('.search-modal, .modal-panel').first();
+  try {
+    await followUpPrompt.waitFor({ state: 'visible', timeout: 1000 });
+  } catch {
+    return;
+  }
+  const cancelButton = page.locator('.modal-panel button', { hasText: 'Cancel' });
+  if (await cancelButton.count() > 0) {
+    await cancelButton.first().click();
+  } else {
+    await page.keyboard.press('Escape');
+  }
+  await followUpPrompt.waitFor({ state: 'hidden', timeout: 3000 });
+}

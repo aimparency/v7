@@ -2,31 +2,31 @@ import { test, expect, Page } from '@playwright/test';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { mkdirSync, rmSync } from 'fs';
-import { seedProject } from './test-utils';
+import { seedProject, finishAimCreation } from './test-utils';
 import { randomUUID } from 'crypto';
 
 // Helpers
 async function createPhase(page: Page, name: string) {
   await page.keyboard.press('o');
-  await page.waitForSelector('.modal', { timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { timeout: 3000 });
   const phaseNameInput = page.locator('input[placeholder="Enter phase name"]');
   await expect(phaseNameInput).toBeVisible();
   await phaseNameInput.fill(name);
   await phaseNameInput.press('Enter');
-  await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 }
 
 async function createAim(page: Page, text: string, tags: string[] = []) {
   await page.keyboard.press('o');
-  await page.waitForSelector('.modal', { timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { timeout: 3000 });
   await page.waitForTimeout(200);
-  const aimInput = page.locator('.modal input[type="text"]').first();
+  const aimInput = page.locator('.modal-panel input[type="text"]').first();
   await expect(aimInput).toBeVisible();
   await aimInput.click(); 
   await aimInput.fill(text);
   
   if (tags.length > 0) {
-    const tagInput = page.locator('.modal .area input[type="text"]');
+    const tagInput = page.locator('.modal-panel .area input[type="text"]');
     await expect(tagInput).toBeVisible();
     for (const tag of tags) {
       await tagInput.fill(tag);
@@ -35,9 +35,9 @@ async function createAim(page: Page, text: string, tags: string[] = []) {
   }
 
   await page.waitForTimeout(100); 
-  const createBtn = page.locator('.modal button.btn-primary');
+  const createBtn = page.locator('.modal-panel button.btn-primary');
   await createBtn.click();
-  await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+  await finishAimCreation(page);
 }
 
 test.describe('Regression Tests', () => {
@@ -147,75 +147,26 @@ test.describe('Regression Tests', () => {
     // 1. Verify Floating Aim exists in Root
     await expect(page.locator('.root-aims-column .aim-text', { hasText: 'Target Floating Aim' })).toBeVisible();
 
-    // 2. Select Committed Aim
-    await page.locator('.phase-column .aim-text', { hasText: 'Link Target' }).click();
-
-    // 3. Open Create Modal
-    await page.keyboard.press('o');
-    await page.waitForSelector('.modal');
-
-    // Wait a bit for any background indexing/embeddings
-    await page.waitForTimeout(3000);
-
-    // 4. Type Name of Floating Aim
-    const input = page.locator('.modal input[type="text"]').first();
-    await input.click();
-    await input.type('Target Floating Aim', { delay: 100 });
-    
-    // Wait for search results container to appear and populate
-    try {
-      await page.waitForSelector('.search-result.existing-aim', { timeout: 15000 });
-    } catch (e) {
-      console.log('Timeout waiting for search results. Current input value:', await page.locator('.modal input[type="text"]').first().inputValue());
-      throw e;
-    }
-
-    // 5. Select from Search Results (click first result)
-    const searchResult = page.locator('.search-result.existing-aim').first();
-    await expect(searchResult).toBeVisible();
-    await expect(searchResult).toContainText('Target Floating Aim');
-    await searchResult.click();
-
-    // 6. Submit (Link Existing)
-    await page.locator('.modal button.btn-primary').click();
-    await page.waitForSelector('.modal', { state: 'hidden' });
-    await page.waitForTimeout(500);
-
-    // 7. Verify it is now a sub-aim
-    // Need to expand 'Link Target' if not already
-    // Since we used 'o', it might just be inserted. 
-    // Wait, 'o' creates sibling by default unless expanded?
-    // If 'Link Target' was not expanded, we created a SIBLING.
-    // To create a sub-aim, we should have expanded 'Link Target' first OR used 'o' on an expanded aim.
-    // BUT 'createAim' logic in store:
-    // If path.aims.length > 0 (we selected 'Link Target'):
-    // If currentAim.expanded && insertPosition == 'after' -> Create Sub-aim.
-    // Else -> Create Sibling.
-    
-    // So we need to Expand 'Link Target' first!
-    // Let's retry logic:
-    
-    // Reset interaction
-    await page.reload(); 
-    await page.waitForSelector('.main-split');
-    
-    await page.locator('.phase-column .aim-text', { hasText: 'Link Target' }).click();
+    // 2. Select the committed aim and expand it, so 'o' creates a sub-aim
+    await page.locator('.column-panel .aim-text', { hasText: 'Link Target' }).click();
     await page.keyboard.press('l'); // Expand (even if empty)
     await page.waitForTimeout(200);
-    
-    await page.keyboard.press('o'); // Now it should create sub-aim
-    await page.locator('.modal input[type="text"]').first().fill('Target Floating Aim');
-    await page.waitForTimeout(500);
-    await page.locator('.search-result.existing-aim').first().click();
-    await page.locator('.modal button.btn-primary').click();
-    await page.waitForSelector('.modal', { state: 'hidden' });
+
+    // 3. Type the floating aim's name; clicking the matching result links it and submits
+    await page.keyboard.press('o');
+    await page.waitForSelector('.modal-panel');
+    await page.locator('.modal-panel input[type="text"]').first().fill('Target Floating Aim');
+    const searchResult = page.locator('.modal-panel .search-results .result-item:not(.additional-option)', { hasText: 'Target Floating Aim' }).first();
+    await expect(searchResult).toBeVisible({ timeout: 15000 });
+    await searchResult.click();
+    await finishAimCreation(page);
     await page.waitForTimeout(500);
 
-    // 8. Verify sub-aim existence
-    const subAim = page.locator('.phase-column .incoming-aims .aim-text', { hasText: 'Target Floating Aim' });
+    // 4. Verify sub-aim existence
+    const subAim = page.locator('.column-panel .incoming-aims .aim-text', { hasText: 'Target Floating Aim' });
     await expect(subAim).toBeVisible();
 
-    // 9. Verify removed from Floating List
+    // 5. Verify removed from Floating List
     // Note: Floating list refreshes on scroll or init. Might need to check if it's gone.
     // Infinite scroll logic might keep it until refresh? 
     // Store updates `floatingAims` getter which filters based on committedIn/outgoing.
@@ -226,14 +177,14 @@ test.describe('Regression Tests', () => {
   test('Move: J/K reordering', async ({ page }) => {
     // Initial: Move 1, Move 2, Move 3
     // Select Move 2
-    const move2 = page.locator('.phase-column .aim-text', { hasText: 'Move 2' });
+    const move2 = page.locator('.column-panel .aim-text', { hasText: 'Move 2' });
     await move2.click();
 
     // Move Up (K) -> 2, 1, 3
     await page.keyboard.press('K');
     await page.waitForTimeout(500); // Wait for sync
 
-    const aimsAfterUp = await page.locator('.phase-column .aim-text').allTextContents();
+    const aimsAfterUp = await page.locator('.column-panel .aim-text').allTextContents().then(texts => texts.map(text => text.trim()));
     // Filter to just our move aims
     const moveAimsUp = aimsAfterUp.filter(t => t.includes('Move'));
     // Should be 2, 1, 3
@@ -245,7 +196,7 @@ test.describe('Regression Tests', () => {
     await page.keyboard.press('J');
     await page.waitForTimeout(500);
 
-    const aimsAfterDown = await page.locator('.phase-column .aim-text').allTextContents();
+    const aimsAfterDown = await page.locator('.column-panel .aim-text').allTextContents().then(texts => texts.map(text => text.trim()));
     const moveAimsDown = aimsAfterDown.filter(t => t.includes('Move'));
     expect(moveAimsDown[0]).toBe('Move 1');
     expect(moveAimsDown[1]).toBe('Move 2');
@@ -255,7 +206,7 @@ test.describe('Regression Tests', () => {
   test('Move In (L): Indent aim', async ({ page }) => {
     // Initial: Move 1, Move 2
     // Select Move 2
-    const move2 = page.locator('.phase-column .aim-text', { hasText: 'Move 2' });
+    const move2 = page.locator('.column-panel .aim-text', { hasText: 'Move 2' });
     await move2.click();
 
     // Indent (L) -> Move 1 > Move 2
@@ -271,12 +222,12 @@ test.describe('Regression Tests', () => {
   test('Move Out (H): Un-indent aim', async ({ page }) => {
     // Initial: Parent > Child
     // Select Child
-    const parent = page.locator('.phase-column .aim-text', { hasText: 'Parent' });
+    const parent = page.locator('.column-panel .aim-text', { hasText: 'Parent' });
     await parent.click();
     await page.keyboard.press('l'); // Expand
     await page.waitForTimeout(200);
     
-    const child = page.locator('.phase-column .aim-text', { hasText: 'Child' });
+    const child = page.locator('.column-panel .aim-text', { hasText: 'Child' });
     await child.click();
 
     // Un-indent (H)
@@ -291,6 +242,6 @@ test.describe('Regression Tests', () => {
     await expect(nestedChild).toBeHidden();
 
     // And Child is visible
-    await expect(page.locator('.phase-column .aim-text', { hasText: 'Child' })).toBeVisible();
+    await expect(page.locator('.column-panel .aim-text', { hasText: 'Child' })).toBeVisible();
   });
 });

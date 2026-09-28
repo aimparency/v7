@@ -18,16 +18,16 @@ async function createPhase(page: Page, name: string) {
   await page.keyboard.press('Escape');
   
   await page.keyboard.press('o');
-  await page.waitForSelector('.modal', { timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { timeout: 3000 });
   
   // Verify it's Create mode
-  await expect(page.locator('.modal-header h3')).toHaveText('Create New Phase');
+  await expect(page.locator('.modal-header h2')).toHaveText('Create New Phase');
   
   const phaseNameInput = page.locator('input[placeholder="Enter phase name"]');
   await expect(phaseNameInput).toBeVisible();
   await phaseNameInput.fill(name);
   await phaseNameInput.press('Enter');
-  await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 }
 
 test('edit phase and search for parent phase', async ({ page }) => {
@@ -35,7 +35,7 @@ test('edit phase and search for parent phase', async ({ page }) => {
   await page.goto('/');
   await page.getByPlaceholder('Enter project folder path...').fill(PROJECT_PATH);
   await page.getByRole('button', { name: 'Open Project' }).click();
-  await expect(page.locator('.project-path')).toHaveText(PROJECT_PATH);
+  await expect(page.locator('.project-path:not(.bowman-path)')).toHaveText(PROJECT_PATH);
   
   // Wait for main UI
   await page.waitForSelector('.main-split', { timeout: 10000 });
@@ -55,8 +55,8 @@ test('edit phase and search for parent phase', async ({ page }) => {
 
   // 4. Open Edit Modal (press 'e')
   await page.keyboard.press('e');
-  await page.waitForSelector('.modal', { timeout: 3000 });
-  await expect(page.locator('.modal-header h3')).toHaveText('Edit Phase');
+  await page.waitForSelector('.modal-panel', { timeout: 3000 });
+  await expect(page.locator('.modal-header h2')).toHaveText('Edit Phase');
   await expect(page.locator('input[placeholder="Enter phase name"]')).toHaveValue('Child Phase');
 
   // 5. Click "Add Parent Phase" to open Phase Search Modal
@@ -85,7 +85,7 @@ test('edit phase and search for parent phase', async ({ page }) => {
 
   // 10. Save changes
   await page.getByRole('button', { name: 'Update' }).click();
-  await page.waitForSelector('.modal', { state: 'hidden' });
+  await page.waitForSelector('.modal-panel', { state: 'hidden' });
 
   // 11. Verify in UI (This might be tricky as UI structure changes with hierarchy)
   // But we can check if data persisted by reloading or inspecting via backend if possible.
@@ -103,6 +103,6 @@ test('edit phase and search for parent phase', async ({ page }) => {
   // We need to move focus to column 1 ('l')
   await page.keyboard.press('l');
   
-  const nestedChildHeader = page.locator('.phase-column').nth(1).locator('.phase-container .phase-name', { hasText: 'Child Phase' });
+  const nestedChildHeader = page.locator('.column-panel').nth(1).locator('.phase-container .phase-name', { hasText: 'Child Phase' });
   await expect(nestedChildHeader).toBeVisible();
 });

@@ -68,7 +68,7 @@ test.describe('Sub-phase Navigation', () => {
 
   test('Navigate to aim in sub-phase', async ({ page }) => {
     // Initial state: Root Phase should be visible.
-    await expect(page.locator('.phase-column').first()).toContainText('Root Phase');
+    await expect(page.locator('.column-panel').first()).toContainText('Root Phase');
 
     // Search for Target Aim
     await page.keyboard.type('/');
@@ -85,11 +85,11 @@ test.describe('Sub-phase Navigation', () => {
 
     // Verify:
     // 1. Target Aim is visible in the column
-    const targetAim = page.locator('.phase-column .aim-text', { hasText: 'Target Aim' });
+    const targetAim = page.locator('.column-panel .aim-text', { hasText: 'Target Aim' });
     await expect(targetAim).toBeVisible();
 
     // 2. Check Columns specifically
-    const columns = page.locator('.phase-column');
+    const columns = page.locator('.column-panel');
     
     // Column 0: Root Phase
     await expect(columns.nth(0).locator('.phase-container', { hasText: 'Root Phase' })).toBeVisible();

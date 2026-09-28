@@ -69,7 +69,7 @@ test.describe('Navigation Tests', () => {
     // The phase 'Nav Phase' should be selected by default as it's the only one (or first).
     // Verify Phase Column has focus style (active)
     // Wait, by default selectPhase selects column 0.
-    await expect(page.locator('.phase-column').first()).toHaveClass(/active/);
+    await expect(page.locator('.column-panel').first()).toHaveClass(/active/);
     
     // Aims should NOT be active yet
     const getAimItem = (text: string) => 
@@ -110,7 +110,7 @@ test.describe('Navigation Tests', () => {
     // Aims should lose focus
     await expect(getAimItem('Aim 2')).not.toHaveClass(/active/);
     // Column should have focus
-    await expect(page.locator('.phase-column').first()).toHaveClass(/active/);
+    await expect(page.locator('.column-panel').first()).toHaveClass(/active/);
   });
 
   test('Expansion and Hierarchy Navigation (l/h)', async ({ page }) => {
@@ -139,21 +139,18 @@ test.describe('Navigation Tests', () => {
     // Verify Child is visible
     await expect(getAimItem('Child Aim')).toBeVisible();
 
-    // 2. Move Down (j) - Should enter the expanded child
-    await page.keyboard.press('j');
+    // 2. Step in (l again) - j/k stay on the current level; l enters the expanded children
+    await page.keyboard.press('l');
     await expect(getAimItem('Child Aim')).toHaveClass(/active/);
 
-    // 3. Collapse (h) - Should collapse Parent and select Parent
-    // Note: 'h' on a child collapses the parent if it's the only child or logic dictates?
-    // uiStore: "case h: if currentAim... else if path > 1... collapse parent"
+    // 3. Step out (h) - returns selection to Parent, which stays expanded
     await page.keyboard.press('h');
     await page.waitForTimeout(200);
-
-    // Verify Parent is selected again
     await expect(getAimItem('Parent Aim')).toHaveClass(/active/);
-    
-    // Verify Child is hidden (or parent expanded=false)
-    // .expanded class on parent should be gone
+
+    // 4. Collapse (h again) - hides the children
+    await page.keyboard.press('h');
+    await page.waitForTimeout(200);
     await expect(getAimItem('Parent Aim')).not.toHaveClass(/expanded/);
     await expect(getAimItem('Child Aim')).not.toBeVisible();
   });

@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { finishAimCreation } from './test-utils';
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -15,22 +16,22 @@ test.afterEach(async () => {
 
 async function createPhase(page: Page, name: string) {
   await page.keyboard.press('o');
-  await page.waitForSelector('.modal', { timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { timeout: 3000 });
   const phaseNameInput = page.locator('input[placeholder="Enter phase name"]');
   await expect(phaseNameInput).toBeVisible();
   await phaseNameInput.fill(name);
   await phaseNameInput.press('Enter');
-  await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 }
 
 async function createAim(page: Page, text: string) {
   await page.keyboard.press('o');
-  await page.waitForSelector('.modal', { timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { timeout: 3000 });
   const aimInput = page.locator('input[placeholder="Enter aim text"]');
   await expect(aimInput).toBeVisible();
   await aimInput.fill(text);
   await aimInput.press('Enter');
-  await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+  await finishAimCreation(page);
 }
 
 async function indentAim(page: Page) {
@@ -43,7 +44,7 @@ test('search finds deep nested aim and expands path', async ({ page }) => {
   await page.goto('/');
   await page.getByPlaceholder('Enter project folder path...').fill(PROJECT_PATH);
   await page.getByRole('button', { name: 'Open Project' }).click();
-  await expect(page.locator('.project-path')).toHaveText(PROJECT_PATH);
+  await expect(page.locator('.project-path:not(.bowman-path)')).toHaveText(PROJECT_PATH);
   
   // Wait for main UI
   await page.waitForSelector('.main-split', { timeout: 10000 });
@@ -114,7 +115,7 @@ test('search finds deep nested aim and expands path', async ({ page }) => {
   
   // Check if it's selected
   const targetAimItem = page.locator('.aim-item').filter({ 
-    has: page.locator('> .aim-content .aim-text', { hasText: /^target aim$/ }) 
+    has: page.locator('> .aim-content .aim-text', { hasText: /^\s*target aim\s*$/ }) 
   });
   await expect(targetAimItem).toHaveClass(/active/);
 });
@@ -161,7 +162,7 @@ test('search finds deep nested aim after reload', async ({ page }) => {
   // 2. Reload Page
   await page.reload();
   
-  await expect(page.locator('.project-path')).toHaveText(PROJECT_PATH);
+  await expect(page.locator('.project-path:not(.bowman-path)')).toHaveText(PROJECT_PATH);
   await page.waitForSelector('.main-split', { timeout: 10000 });
   await page.focus('.app');
   
@@ -179,7 +180,7 @@ test('search finds deep nested aim after reload', async ({ page }) => {
   await expect(targetAim).toBeVisible();
   
   const targetAimItem = page.locator('.aim-item').filter({ 
-    has: page.locator('> .aim-content .aim-text', { hasText: /^target aim$/ }) 
+    has: page.locator('> .aim-content .aim-text', { hasText: /^\s*target aim\s*$/ }) 
   }).last();
   await expect(targetAimItem).toHaveClass(/active/);
 });

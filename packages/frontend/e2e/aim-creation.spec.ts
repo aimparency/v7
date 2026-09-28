@@ -1,30 +1,31 @@
 import { test, expect, Page } from '@playwright/test';
+import { finishAimCreation } from './test-utils';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { mkdirSync, rmSync } from 'fs';
 
 async function createPhase(page: Page, name: string) {
   await page.keyboard.press('o');
-  await page.waitForSelector('.modal', { timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { timeout: 3000 });
   const phaseNameInput = page.locator('input[placeholder="Enter phase name"]');
   await expect(phaseNameInput).toBeVisible();
   await phaseNameInput.fill(name);
   await phaseNameInput.press('Enter');
-  await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 }
 
 async function createAim(page: Page, text: string) {
   await page.keyboard.press('o');
-  await page.waitForSelector('.modal', { timeout: 3000 });
+  await page.waitForSelector('.modal-panel', { timeout: 3000 });
   // Wait a bit for the modal to fully render
   await page.waitForTimeout(200);
-  const aimInput = page.locator('.modal input[type="text"]').first();
+  const aimInput = page.locator('.modal-panel input[type="text"]').first();
   await expect(aimInput).toBeVisible();
   await aimInput.click(); // Ensure focus
   await aimInput.fill(text);
   await page.waitForTimeout(100); // Wait for fill to complete
   await aimInput.press('Enter');
-  await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+  await finishAimCreation(page);
 }
 
 async function getAllAimTexts(page: Page): Promise<string[]> {
@@ -172,14 +173,14 @@ test('aim creation with O key inserts before selected aim', async ({ page }) => 
 
     // Create Aim 1.5 BEFORE Aim 2
     await page.keyboard.press('O'); // shift+o
-    await page.waitForSelector('.modal', { timeout: 3000 });
+    await page.waitForSelector('.modal-panel', { timeout: 3000 });
     
     // Fill and submit
-    const aimInput = page.locator('.modal input[type="text"]').first();
+    const aimInput = page.locator('.modal-panel input[type="text"]').first();
     await expect(aimInput).toBeVisible();
     await aimInput.fill('Aim 1.5');
     await aimInput.press('Enter');
-    await page.waitForSelector('.modal', { state: 'hidden', timeout: 3000 });
+    await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 
     // Verify order: should be [Aim 1, Aim 1.5, Aim 2, Aim 3]
     aimTexts = await getAllAimTexts(page);
