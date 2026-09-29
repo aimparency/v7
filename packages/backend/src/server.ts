@@ -221,8 +221,10 @@ function normalizeAimRecord(raw: any): { aim: any; changed: boolean } {
       .filter((incomingId: string) => !existing.some((c: any) => c.aimId === incomingId))
       .map((incomingId: string) => ({ aimId: incomingId, relativePosition: [0, 0] as [number, number], weight: 1 }));
     aim.supportingConnections = [...added, ...existing];
+    // An empty legacy array carries nothing; dropping it is not worth a rewrite
+    // (the next regular save omits it anyway).
+    changed ||= aim.incoming.length > 0;
     delete aim.incoming;
-    changed = true;
   }
 
   // 'outgoing' became 'supportedAims'
@@ -232,8 +234,8 @@ function normalizeAimRecord(raw: any): { aim: any; changed: boolean } {
       if (!supportedAims.includes(parentId)) supportedAims.push(parentId);
     }
     aim.supportedAims = supportedAims;
+    changed ||= aim.outgoing.length > 0;
     delete aim.outgoing;
-    changed = true;
   }
 
   if (!aim.supportingConnections) aim.supportingConnections = [];
