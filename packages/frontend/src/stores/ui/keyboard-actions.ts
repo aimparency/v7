@@ -210,12 +210,12 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
     }
     case 'J':
       event.preventDefault()
-      await reorderSelectedPhase(1)
+      await uiStore.runStructuralEdit(() => reorderSelectedPhase(1))
       break
     case 'j':
       if (event.shiftKey) {
         event.preventDefault()
-        await reorderSelectedPhase(1)
+        await uiStore.runStructuralEdit(() => reorderSelectedPhase(1))
         break
       }
       if (col >= 0) {
@@ -227,12 +227,12 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       break
     case 'K':
       event.preventDefault()
-      await reorderSelectedPhase(-1)
+      await uiStore.runStructuralEdit(() => reorderSelectedPhase(-1))
       break
     case 'k':
       if (event.shiftKey) {
         event.preventDefault()
-        await reorderSelectedPhase(-1)
+        await uiStore.runStructuralEdit(() => reorderSelectedPhase(-1))
         break
       }
       if (col >= 0) {

@@ -75,6 +75,14 @@ type PersistedListViewState = {
   selection?: SelectionAnchor
 }
 
+// Structural edits (J/K/H/L on aims or phases, paste) run one after another.
+// Each computes its target from the current, index-based selection and applies
+// an optimistic change; a key pressed while the previous edit's server round
+// trip is in flight would otherwise start from optimistic state that the
+// arriving push then overwrites, leaving the index on a different aim — so
+// fast repeated J/K moved other aims.
+let structuralEditQueue: Promise<unknown> = Promise.resolve()
+
 // The list the aim cursor moves in; see getAimListScope.
 type AimListScope = {
   aims: Aim[]
@@ -1661,23 +1669,30 @@ export const useListStore = defineStore('ui', {
     },
 
     // Move aim down (J)
+    // Queues a structural edit behind the ones in flight; see structuralEditQueue.
+    runStructuralEdit<T>(edit: () => Promise<T>): Promise<T> {
+      const run = structuralEditQueue.then(edit, edit)
+      structuralEditQueue = run.catch(() => undefined)
+      return run
+    },
+
     async moveAimDown() {
-      await moveAimDownAction(this)
+      await this.runStructuralEdit(() => moveAimDownAction(this))
     },
 
     // Move aim up (K)
     async moveAimUp() {
-      await moveAimUpAction(this)
+      await this.runStructuralEdit(() => moveAimUpAction(this))
     },
 
     // Move aim out of sub-aim list (H) - make it sibling of parent
     async moveAimOut() {
-      await moveAimOutAction(this)
+      await this.runStructuralEdit(() => moveAimOutAction(this))
     },
 
     // Move aim in (L) - make it a sub-aim of previous sibling
     async moveAimIn() {
-      await moveAimInAction(this)
+      await this.runStructuralEdit(() => moveAimInAction(this))
     },
 
     cutAimForTeleport() {
@@ -1722,11 +1737,11 @@ export const useListStore = defineStore('ui', {
     },
 
     async pasteCutAim(dataStore: any) {
-      await pasteCutAimAction(this, dataStore)
+      await this.runStructuralEdit(() => pasteCutAimAction(this, dataStore))
     },
 
     async pasteCopiedAim(dataStore: any) {
-      await pasteCopiedAimAction(this, dataStore)
+      await this.runStructuralEdit(() => pasteCopiedAimAction(this, dataStore))
     },
 
     // Keyboard navigation handlers
