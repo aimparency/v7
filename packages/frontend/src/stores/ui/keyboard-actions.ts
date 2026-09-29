@@ -4,6 +4,7 @@ import { useGraphUIStore } from './graph-store'
 import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
 import { hasQueryFlag } from '../../utils/perf-log'
+import { useHistoryStore } from '../history'
 
 export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const graphStore = useGraphUIStore()
@@ -351,8 +352,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
           // The deleted phase's key disappears from the column, so capture its
           // position to select the entry that takes its place.
           const deletedIndex = uiStore.getSelectedPhase(currentCol)
-          const parentId = selectedPhase.parent
-          await dataStore.deletePhase(selectedPhase.id, parentId)
+          await dataStore.deletePhase(selectedPhase.id)
           uiStore.pendingDeletePhaseId = null
 
           uiStore.ensureColumnSelection(currentCol)
@@ -605,6 +605,17 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
   if (event.key === '/') {
     event.preventDefault()
     modalStore.openAimSearch()
+    return
+  }
+
+  if (event.key === 'u' || event.key === 'r') {
+    event.preventDefault()
+    const historyStore = useHistoryStore()
+    await (event.key === 'u' ? historyStore.undo() : historyStore.redo())
+    // The restored state may have removed or re-added the selected entries.
+    if (projectStore.currentView === 'columns' && uiStore.activeColumn >= 0) {
+      uiStore.ensureColumnSelection(uiStore.activeColumn)
+    }
     return
   }
 

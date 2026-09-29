@@ -11,7 +11,8 @@ import {
   findPathToAim as findPathToAimHelper,
   type SelectionPath
 } from './navigation-helpers'
-import { createAimUIState, ensureAimUIState, type AimUIState, type AimUIStateTree } from './aim-ui-state'
+import { captureSelectionAnchor, applySelectionAnchor, type SelectionAnchor } from './selection-anchor'
+import { createAimUIState, ensureAimUIState, insertsAsFirstChild, type AimUIState, type AimUIStateTree } from './aim-ui-state'
 import {
   handleAimNavigationKeysAction,
   handleColumnNavigationKeysAction,
@@ -67,6 +68,9 @@ type PersistedListViewState = {
   expandedAimIds?: string[]
   floatingAimUIStates?: AimUIStateTree
   phaseAimUIStatesByPhaseId?: Record<string, AimUIStateTree>
+  // Authoritative selection by identity; the index fields above only seed
+  // remembered per-phase positions (and older saved states).
+  selection?: SelectionAnchor
 }
 
 type PersistedUIState = {
@@ -130,11 +134,18 @@ export const useListStore = defineStore('ui', {
     isInProjectSelection: () => useProjectStore().isInProjectSelection,
 
     // Index of the selected entry among the column's selectable entries (0 if unset or gone).
-    getSelectedPhase: (state) => (columnIndex: number): number => {
+    getSelectedPhase(): (columnIndex: number) => number {
+      return (columnIndex) => Math.max(0, this.findSelectedPhaseIndex(columnIndex))
+    },
+
+    // Like getSelectedPhase, but -1 while the selected key is absent from the
+    // column. A multi-write move (e.g. a phase changing parent) briefly drops the
+    // entry from every parent's child list; falling back to 0 there would treat
+    // that transient as a jump to the first entry (scrolling, or J/K acting on it).
+    findSelectedPhaseIndex: (state) => (columnIndex: number): number => {
       const key = state.selectedEntryKeyByColumn[columnIndex]
       if (!key) return 0
-      const index = useDataStore().getSelectableColumnEntries(columnIndex).findIndex((entry) => entry.key === key)
-      return Math.max(0, index)
+      return useDataStore().getSelectableColumnEntries(columnIndex).findIndex((entry) => entry.key === key)
     },
 
     selectedPhaseIdByColumn: (state): Record<number, string> => {
@@ -210,7 +221,8 @@ export const useListStore = defineStore('ui', {
         navigatingAims: this.navigatingAims,
         selectedAimIndexByPhaseId,
         floatingAimUIStates: this.floatingAimUIStates,
-        phaseAimUIStatesByPhaseId: this.phaseAimUIStatesByPhaseId
+        phaseAimUIStatesByPhaseId: this.phaseAimUIStatesByPhaseId,
+        selection: captureSelectionAnchor(this)
       }
     },
 
@@ -378,12 +390,10 @@ export const useListStore = defineStore('ui', {
         return await this.restoreCursorFromMeta()
       }
 
-      // Phase cursors are shared project state and therefore authoritative over
-      // per-browser list selection. Preserve local presentation preferences,
-      // then rebuild the selected path recursively from project metadata.
-      if (dataStore.meta?.phaseCursors && Object.keys(dataStore.meta.phaseCursors).length > 0) {
+      // This browser's own saved selection wins: reopen exactly where it left
+      // off. The shared phase cursors only seed a browser without saved state.
+      if (!parsed.listViewState) {
         if (parsed.currentView) projectStore.setCurrentView(parsed.currentView)
-        if (parsed.listViewState?.windowSize) this.windowSize = parsed.listViewState.windowSize
         graphStore.applyPersistedGraphViewState(parsed.graphViewState)
         return await this.restoreCursorFromMeta()
       }
@@ -465,6 +475,10 @@ export const useListStore = defineStore('ui', {
                 )
               }
             }
+          }
+
+          if (listViewState.selection) {
+            await applySelectionAnchor(this, listViewState.selection)
           }
 
           this.ensureSelectionVisible()
@@ -620,7 +634,7 @@ export const useListStore = defineStore('ui', {
           return
         }
 
-        if (currentAimState?.expanded && modalStore.aimModalInsertPosition === 'after') {
+        if (insertsAsFirstChild(currentAim, currentAimState, modalStore.aimModalInsertPosition)) {
           if (isExistingAim) {
             await trpc.aim.connectAims.mutate({
               projectPath: projectStore.projectPath,
@@ -920,7 +934,7 @@ export const useListStore = defineStore('ui', {
 
     getSelectedPhaseEntry(columnIndex: number): PhaseLevelPhaseEntry | PhaseLevelPlaceholderEntry | undefined {
       const entries = this.getSelectableEntries(columnIndex)
-      return entries[this.getSelectedPhase(columnIndex)]
+      return entries[this.findSelectedPhaseIndex(columnIndex)]
     },
 
     getParentPhasesForColumn(columnIndex: number) {
@@ -1119,7 +1133,11 @@ export const useListStore = defineStore('ui', {
       }
 
       const direction: PhaseMoveDirection = delta < 0 ? 'backward' : 'forward'
-      const nextIndex = this.getSelectedPhase(columnIndex) + delta
+      const selectedIndex = this.findSelectedPhaseIndex(columnIndex)
+      // The selected entry is mid-move; swallow the key rather than navigating
+      // from a stand-in position.
+      if (selectedIndex < 0) return true
+      const nextIndex = selectedIndex + delta
       if (nextIndex < 0 || nextIndex >= this.getSelectableEntries(columnIndex).length) {
         return false
       }

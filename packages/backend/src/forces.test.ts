@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
 import { calculateSemanticGraph, invalidateSemanticCache, getSemanticGraph } from './forces.js';
-import { saveEmbedding } from './embeddings.js';
+import { saveEmbedding, invalidateVectorCache } from './embeddings.js';
 
 test('calculateSemanticGraph: assigns 3 nearest and 3 furthest aims for each aim', async () => {
   const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
@@ -127,7 +127,8 @@ test('invalidateSemanticCache: clears memory cache', async () => {
     // Note: timestamps might differ, so compare structure not exact object
     assert.equal(graph2.links.length, graph1.links.length, 'Should return same number of links (cached)');
 
-    // Invalidate cache
+    // Invalidate caches (vectors.json was edited behind the store's back)
+    invalidateVectorCache(testDir);
     invalidateSemanticCache(testDir);
 
     // Now we should get a fresh calculation with new aims

@@ -38,21 +38,27 @@ import { createVoiceRouter } from './routers/voice.js';
 import { createGraphRouter } from './routers/graph.js';
 import { createMarketRouter } from './routers/market.js';
 import { createProjectRouter } from './routers/project.js';
+import { createHistoryRouter } from './routers/history.js';
+import { normalizeProjectPath } from './project-path.js';
+import { runWithOrigin } from './change-origin.js';
 import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from './path-completion.js';
 
 // Create context for tRPC
-const createContext = () => ({});
+type Context = { clientId?: string };
+const createContext = (opts?: { info?: { connectionParams?: Record<string, string | undefined> | null } }): Context => ({
+  clientId: opts?.info?.connectionParams?.clientId
+});
 
-const t = initTRPC.context<typeof createContext>().create();
+const t = initTRPC.context<Context>().create();
 const ee = new EventEmitter();
 
 // Middleware to add artificial delay for testing
 const DEV_DELAY_MS = process.env.DEV_DELAY === 'true' ? 300 : 0;
-const delayMiddleware = t.middleware(async ({ next }) => {
+const delayMiddleware = t.middleware(async ({ ctx, next }) => {
   if (DEV_DELAY_MS > 0) {
     await new Promise(resolve => setTimeout(resolve, DEV_DELAY_MS));
   }
-  return next();
+  return runWithOrigin(ctx.clientId, () => next());
 });
 
 // Create procedures with delay middleware
@@ -71,27 +77,25 @@ const DEFAULT_AUTONOMY_POLICY = {
   askForHumanOn: ['destructive-git', 'network', 'api-keys']
 };
 
-function normalizeProjectPath(p: string): string {
-  if (!p) return p;
-  return p.endsWith(AIMPARENCY_DIR_NAME) ? p : path.join(p, AIMPARENCY_DIR_NAME);
-}
 
-const indexedProjects = new Set<string>();
+const searchIndexBuilds = new Map<string, Promise<void>>();
 
-async function ensureSearchIndex(projectPath: string) {
-    // Normalize path for consistent cache key
-    const normalizedPath = normalizeProjectPath(projectPath);
-    if (indexedProjects.has(normalizedPath)) return;
-    
-    console.log(`[Search] Building index for ${normalizedPath}...`);
-    // Pass raw projectPath to list functions (they normalize internally) but use normalized for map key
-    const aims = await listAims(normalizedPath);
-    const phases = await listPhases(normalizedPath);
-    
-    indexAims(normalizedPath, aims);
-    indexPhases(normalizedPath, phases);
-    
-    indexedProjects.add(normalizedPath);
+function ensureSearchIndex(projectPath: string): Promise<void> {
+  // Normalize path for consistent cache key
+  const normalizedPath = normalizeProjectPath(projectPath);
+  let build = searchIndexBuilds.get(normalizedPath);
+  if (!build) {
+    build = (async () => {
+      console.log(`[Search] Building index for ${normalizedPath}...`);
+      const [aims, phases] = await Promise.all([listAims(normalizedPath), listPhases(normalizedPath)]);
+      indexAims(normalizedPath, aims);
+      indexPhases(normalizedPath, phases);
+    })();
+    // A failed build must not stick; the next caller retries.
+    build.catch(() => searchIndexBuilds.delete(normalizedPath));
+    searchIndexBuilds.set(normalizedPath, build);
+  }
+  return build;
 }
 
 // Recalculation Queue
@@ -191,6 +195,8 @@ async function writeAim(rawProjectPath: string, aim: Aim): Promise<void> {
   // Strip calculated values before saving
   const { calculatedValue, calculatedCost, ...aimToSave } = aim;
 
+  // Raw prior content rides along on the change event (undo history).
+  const previous = (await readJsonOrNull(aimPath)) ?? (await readJsonOrNull(oldPath));
   await writeJsonAtomic(aimPath, aimToSave);
   
   // Clean up if it was in the other location
@@ -198,7 +204,7 @@ async function writeAim(rawProjectPath: string, aim: Aim): Promise<void> {
     await fs.remove(oldPath);
   }
 
-  ee.emit('change', { type: 'aim', id: aim.id, projectPath, entity: aimToSave });
+  ee.emit('change', { type: 'aim', id: aim.id, projectPath, entity: aimToSave, previous });
 }
 
 async function readAim(rawProjectPath: string, aimId: string): Promise<Aim> {
@@ -318,6 +324,14 @@ function populateAimValues(projectPath: string, aims: Aim[]) {
     }
 }
 
+async function readJsonOrNull(filePath: string): Promise<any | null> {
+  try {
+    return await fs.readJson(filePath);
+  } catch {
+    return null;
+  }
+}
+
 async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
   const dir = path.dirname(filePath);
   const tempPath = path.join(
@@ -332,9 +346,10 @@ async function writePhase(rawProjectPath: string, phase: Phase, emitChange = tru
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   const phasePath = path.join(projectPath, 'phases', `${phase.id}.json`);
+  const previous = emitChange ? await readJsonOrNull(phasePath) : null;
   await writeJsonAtomic(phasePath, phase);
   if (emitChange) {
-    ee.emit('change', { type: 'phase', id: phase.id, projectPath, entity: phase });
+    ee.emit('change', { type: 'phase', id: phase.id, projectPath, entity: phase, previous });
   }
 }
 
@@ -394,8 +409,9 @@ async function writeProjectMeta(rawProjectPath: string, meta: ProjectMeta): Prom
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   const metaPath = path.join(projectPath, 'meta.json');
+  const previous = await readJsonOrNull(metaPath);
   await writeJsonAtomic(metaPath, meta);
-  ee.emit('change', { type: 'project', id: 'meta', projectPath, entity: meta });
+  ee.emit('change', { type: 'project', id: 'meta', projectPath, entity: meta, previous });
 }
 
 function normalizePhase(rawPhase: unknown): Phase {
@@ -1148,10 +1164,20 @@ const appRouter = t.router({
     getDb,
     readAim,
     writePhase,
+    ensureSearchIndex,
     ee
   ),
   spinOff: spinOffRouter,
-  linkedRepo: linkedRepoRouter
+  linkedRepo: linkedRepoRouter,
+  history: createHistoryRouter(
+    t,
+    delayedProcedure,
+    normalizeProjectPath,
+    writeAim,
+    writePhase,
+    writeProjectMeta,
+    ee
+  )
 });
 
 

@@ -514,7 +514,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "delete_phase",
-          description: "Delete phase (aims remain, just uncommitted)",
+          description: "Delete phase (aims remain, just uncommitted; child phases move up into its place)",
           inputSchema: {
             type: "object",
             properties: {

@@ -4,6 +4,7 @@ import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useScrollIntoView } from '../composables/useScrollIntoView'
+import { useKeepSelectedAimVisible } from '../composables/useKeepSelectedAimVisible'
 import PhaseComponent from './Phase.vue'
 import type { PhaseLevelEntry } from '../stores/data'
 
@@ -30,6 +31,8 @@ const hasInitialAnchorPosition = ref(false)
 const pendingSelectionRealignTimeout = ref<number | null>(null)
 const revealedPlaceholderKey = ref<string | null>(null)
 const selectionTravelDirection = ref<'forward' | 'backward' | 'preserve'>('preserve')
+// Last selection the column acted on; transient gaps never overwrite it.
+let settledSelection: { index: number; key: string; isSelected: boolean } | null = null
 
 const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isCtrl = !!(mods && mods.ctrl)
@@ -461,6 +464,8 @@ const { handleScrollRequest } = useScrollIntoView(
   (top, behavior) => requestScroll(top, behavior, 'aim')
 )
 
+useKeepSelectedAimVisible(phaseListRef, () => uiStore.activeColumn === props.columnIndex, handleScrollRequest)
+
 const updateRevealedPlaceholder = async () => {
   const selectedEntry = getSelectedEntry()
   if (!selectedEntry || selectedEntry.type !== 'placeholder') {
@@ -494,34 +499,34 @@ watch(
       entries.value.map((entry) => entry.key).join('|')
     ] as const
   },
-  ([selectedPhaseIndex, selectedEntryKey], previousValue) => {
-    const previousSelectedPhaseIndex = previousValue?.[0] ?? selectedPhaseIndex
-    const previousSelectedEntryKey = previousValue?.[1] ?? selectedEntryKey
-    const previousIsSelected = previousValue?.[2] ?? props.isSelected
+  ([selectedPhaseIndex, selectedEntryKey, isSelected]) => {
+    // The selected entry is absent mid-move (a parent change arrives as several
+    // pushes). Hold everything until it reappears instead of reacting to the gap.
+    if (!selectedEntryKey) return
+
+    const settled = settledSelection
+    settledSelection = { index: selectedPhaseIndex, key: selectedEntryKey, isSelected }
 
     // The watch also depends on the entries-key list, so it re-fires whenever
-    // entries churn during a scroll. Only treat it as a navigation event — and
-    // thus recenter — when the selection identity changes or this column just
+    // entries change. Only treat it as a navigation event — and thus recenter —
+    // when the selection identity or position changes or this column just
     // became the focused one. Otherwise we'd yank the view back mid-scroll.
-    const selectionChanged =
-      selectedEntryKey !== previousSelectedEntryKey ||
-      selectedPhaseIndex !== previousSelectedPhaseIndex ||
-      (props.isSelected && !previousIsSelected)
+    const keyChanged = !!settled && selectedEntryKey !== settled.key
+    const indexChanged = !!settled && selectedPhaseIndex !== settled.index
+    const selectionChanged = keyChanged || indexChanged || (isSelected && !settled?.isSelected)
 
-    if (selectedEntryKey && previousSelectedEntryKey && selectedEntryKey !== previousSelectedEntryKey) {
-      const currentSelectableEntries = selectableEntries.value
-      const currentSelectedIndex = currentSelectableEntries.findIndex((entry) => entry.key === selectedEntryKey)
-      const previousSelectedIndex = currentSelectableEntries.findIndex((entry) => entry.key === previousSelectedEntryKey)
-
-      if (currentSelectedIndex >= 0 && previousSelectedIndex >= 0) {
-        selectionTravelDirection.value = currentSelectedIndex > previousSelectedIndex ? 'forward' : 'backward'
-      } else if (selectedPhaseIndex !== previousSelectedPhaseIndex) {
-        selectionTravelDirection.value = selectedPhaseIndex > previousSelectedPhaseIndex ? 'forward' : 'backward'
-      } else {
-        selectionTravelDirection.value = 'preserve'
-      }
-    } else if (!previousValue) {
+    if (!settled) {
       selectionTravelDirection.value = 'preserve'
+    } else if (keyChanged || indexChanged) {
+      // Compare positions in the current entries: j/k change the key, J/K keep
+      // the key and move the entry, so both reduce to "where is it now vs. before".
+      const previousIndex = keyChanged
+        ? selectableEntries.value.findIndex((entry) => entry.key === settled.key)
+        : settled.index
+      const fromIndex = previousIndex >= 0 ? previousIndex : settled.index
+      selectionTravelDirection.value = selectedPhaseIndex === fromIndex
+        ? 'preserve'
+        : selectedPhaseIndex > fromIndex ? 'forward' : 'backward'
     }
 
     void updateRevealedPlaceholder()

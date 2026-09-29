@@ -341,6 +341,22 @@
       ],
       "weight": 1,
       "explanation": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "aimId": "eb645cb0-b894-4f85-b9bd-0c4a2ac2757b",
+      "relativePosition": [
+        -2.2577639125870537,
+        1.073546512741576
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "562cdb60-c42d-446e-a2a5-e9a27ffe10e6",
+      "relativePosition": [
+        1.4262373804633404,
+        2.0532527692831852
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [

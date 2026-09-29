@@ -1,6 +1,7 @@
 import { Document } from 'flexsearch';
 import Fuse from 'fuse.js';
 import type { Aim, Phase, SearchAimResult } from 'shared';
+import { normalizeProjectPath } from './project-path.js';
 
 // FlexSearch indices per project
 const aimIndices = new Map<string, Document<Aim>>();
@@ -20,7 +21,8 @@ function createAimIdPrefixIndex(): AimIdPrefixIndex {
 }
 
 // ... existing getAimIndex ...
-function getAimIndex(projectPath: string): Document<Aim> {
+function getAimIndex(rawProjectPath: string): Document<Aim> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   if (!aimIndices.has(projectPath)) {
     const index = new Document<Aim>({
       document: {
@@ -35,7 +37,8 @@ function getAimIndex(projectPath: string): Document<Aim> {
   return aimIndices.get(projectPath)!;
 }
 
-function getAimIdPrefixIndex(projectPath: string): AimIdPrefixIndex {
+function getAimIdPrefixIndex(rawProjectPath: string): AimIdPrefixIndex {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   if (!aimIdPrefixIndices.has(projectPath)) {
     aimIdPrefixIndices.set(projectPath, createAimIdPrefixIndex());
   }
@@ -94,7 +97,8 @@ function searchAimIdsByPrefix(projectPath: string, query: string): string[] {
 }
 
 // ... existing getPhaseIndex ...
-function getPhaseIndex(projectPath: string): Document<Phase> {
+function getPhaseIndex(rawProjectPath: string): Document<Phase> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   if (!phaseIndices.has(projectPath)) {
     const index = new Document<Phase>({
       document: {
@@ -120,7 +124,7 @@ export function indexAims(projectPath: string, aims: Aim[]): void {
   for (const aim of aims) index.remove(aim.id);
   for (const aim of aims) index.add(aim);
 
-  aimIdPrefixIndices.set(projectPath, createAimIdPrefixIndex());
+  aimIdPrefixIndices.set(normalizeProjectPath(projectPath), createAimIdPrefixIndex());
   for (const aim of aims) addAimIdToPrefixIndex(projectPath, aim.id);
 }
 
@@ -241,7 +245,8 @@ export async function searchPhases(projectPath: string, query: string, allPhases
 }
 
 // Clear indices for a project (e.g., when project is closed)
-export function clearIndices(projectPath: string): void {
+export function clearIndices(rawProjectPath: string): void {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   aimIndices.delete(projectPath);
   phaseIndices.delete(projectPath);
   aimIdPrefixIndices.delete(projectPath);

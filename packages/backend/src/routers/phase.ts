@@ -120,10 +120,18 @@ export const createPhaseRouter = (
           to: z.number().optional(),
           parent: z.string().nullable().optional(),
           commitments: z.array(z.string()).optional()
-        })
+        }),
+        // Position among the new parent's children when `parent` changes;
+        // appends when omitted. Lets a move be one mutation instead of
+        // update + reorder, so clients never see the phase at a stand-in slot.
+        insertionIndex: z.number().int().nonnegative().optional()
       }))
       .mutation(async ({ input }: any) => {
         const existingPhase = await readPhase(input.projectPath, input.phaseId);
+        const insertAt = (siblingIds: string[]) => {
+          const index = Math.min(input.insertionIndex ?? siblingIds.length, siblingIds.length);
+          return [...siblingIds.slice(0, index), input.phaseId, ...siblingIds.slice(index)];
+        };
         const oldParentId = existingPhase.parent ?? null;
 
         const updatedPhase: Phase = {
@@ -153,11 +161,11 @@ export const createPhaseRouter = (
             const newParent = await readPhase(input.projectPath, updatedPhase.parent);
             await writePhase(input.projectPath, {
               ...newParent,
-              childPhaseIds: [...(newParent.childPhaseIds ?? []), input.phaseId]
+              childPhaseIds: insertAt(newParent.childPhaseIds ?? [])
             });
           } else {
             const meta = await readMeta(input.projectPath);
-            meta.rootPhaseIds = [...(meta.rootPhaseIds ?? []), input.phaseId];
+            meta.rootPhaseIds = insertAt(meta.rootPhaseIds ?? []);
             await writeMeta(input.projectPath, meta);
           }
         }
@@ -208,24 +216,38 @@ export const createPhaseRouter = (
       .mutation(async ({ input }: any) => {
         const projectPath = normalizeProjectPath(input.projectPath);
         const phase = await readPhase(input.projectPath, input.phaseId);
+        // Child phases take the deleted phase's slot in its parent, in order, so
+        // the column keeps its shape instead of the children jumping to the end.
+        const childPhaseIds = phase.childPhaseIds ?? [];
+        const spliceChildren = (siblingIds: string[]) => {
+          const index = siblingIds.indexOf(input.phaseId);
+          const withoutPhase = siblingIds.filter((id) => id !== input.phaseId && !childPhaseIds.includes(id));
+          withoutPhase.splice(index === -1 ? withoutPhase.length : index, 0, ...childPhaseIds);
+          return withoutPhase;
+        };
+        for (const childId of childPhaseIds) {
+          const child = await readPhase(input.projectPath, childId).catch(() => null);
+          if (child) await writePhase(input.projectPath, { ...child, parent: phase.parent ?? null });
+        }
         if (phase.parent) {
           const parent = await readPhase(input.projectPath, phase.parent);
           await writePhase(input.projectPath, {
             ...parent,
-            childPhaseIds: (parent.childPhaseIds ?? []).filter((id) => id !== input.phaseId)
+            childPhaseIds: spliceChildren(parent.childPhaseIds ?? [])
           });
         } else {
           const meta = await readMeta(input.projectPath);
-          meta.rootPhaseIds = (meta.rootPhaseIds ?? []).filter((id: string) => id !== input.phaseId);
+          meta.rootPhaseIds = spliceChildren(meta.rootPhaseIds ?? []);
           await writeMeta(input.projectPath, meta);
         }
         const phasePath = path.join(projectPath, 'phases', `${input.phaseId}.json`);
+        const previous = await fs.readJson(phasePath).catch(() => null);
         await fs.remove(phasePath);
 
         await cleanupCommitments(input.projectPath, input.phaseId);
 
         removePhaseFromIndex(input.projectPath, input.phaseId);
-        ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath, deleted: true });
+        ee.emit('change', { type: 'phase', id: input.phaseId, projectPath: input.projectPath, deleted: true, previous });
         return { success: true };
       }),
 

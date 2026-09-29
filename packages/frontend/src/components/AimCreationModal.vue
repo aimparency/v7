@@ -11,6 +11,7 @@ import { AIM_DEFAULTS } from '../constants/aimDefaults'
 import AimSearchPicker from './AimSearchPicker.vue'
 import NumericTextInput from './NumericTextInput.vue'
 import type { AimSearchAdditionalOption } from '../stores/ui/aim-search-types'
+import { insertsAsFirstChild } from '../stores/ui/aim-ui-state'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -270,7 +271,7 @@ onMounted(async () => {
     const currentAim = path.aims[path.aims.length - 1]
     const currentAimState = path.aimStates[path.aimStates.length - 1]
     
-    if (currentAim && currentAimState?.expanded && modalStore.aimModalInsertPosition === 'after') {
+    if (insertsAsFirstChild(currentAim, currentAimState, modalStore.aimModalInsertPosition)) {
       parentAim = currentAim
     } else if (path.aims.length > 1) {
       parentAim = path.aims[path.aims.length - 2]

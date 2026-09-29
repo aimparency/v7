@@ -1,0 +1,25 @@
+{
+  "id": "edde0079-1c06-4e14-9c89-793423c253cc",
+  "text": "Backend: stop writing aim files from the read path",
+  "description": "Audit finding (2026-09-28). server.ts readAim migrates legacy fields (outgoing -> supportedAims) and replaces [0,0] relativePositions with random ones, writing the file back — during every aim.get/aim.list. Reads therefore mutate the repo (noisy .bowman diffs, races with concurrent writers/agents, nondeterministic positions). Move these migrations into an explicit, idempotent migration step (project open / fix_consistency) and make readAim pure.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "33be4e0c-fa52-42ba-a86b-4c209b34e2be"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1790626945045
+  },
+  "intrinsicValue": 2,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

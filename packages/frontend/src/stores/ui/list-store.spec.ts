@@ -147,6 +147,36 @@ describe('list store phase selection', () => {
     expect(uiStore.getSelectedPhase(1)).toBe(1)
   })
 
+  it('reports a selected phase that is absent mid-move as missing instead of the first entry', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const phase = (id: string, parent: string | null, childPhaseIds: string[] = []) =>
+      ({ id, name: id, parent, childPhaseIds, commitments: [] }) as any
+
+    dataStore.phases['root-a'] = phase('root-a', null, ['child-a', 'moving'])
+    dataStore.phases['root-b'] = phase('root-b', null, ['child-b'])
+    dataStore.phases['child-a'] = phase('child-a', 'root-a')
+    dataStore.phases['child-b'] = phase('child-b', 'root-b')
+    dataStore.phases['moving'] = phase('moving', 'root-a')
+    dataStore.meta = { rootPhaseIds: ['root-a', 'root-b'] }
+    uiStore.activeColumn = 1
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:root-a'
+    uiStore.selectedEntryKeyByColumn[1] = 'phase:moving'
+
+    // First push of a parent change: the old parent no longer lists the phase,
+    // the new parent does not list it yet.
+    dataStore.phases['root-a'] = phase('root-a', null, ['child-a'])
+
+    expect(uiStore.findSelectedPhaseIndex(1)).toBe(-1)
+    expect(uiStore.getSelectedPhaseEntry(1)).toBeUndefined()
+    // j during the gap must not navigate from a stand-in position.
+    expect(await uiStore.moveActivePhase(1)).toBe(true)
+    expect(uiStore.selectedEntryKeyByColumn[1]).toBe('phase:moving')
+
+    dataStore.phases['root-b'] = phase('root-b', null, ['moving', 'child-b'])
+    expect(uiStore.getSelectedPhaseEntry(1)).toMatchObject({ key: 'phase:moving', parentPhaseId: 'root-b' })
+  })
+
   it('restores obvious list UI state after reload', async () => {
     setActivePinia(createPinia())
     const initialDataStore = useDataStore()
@@ -229,11 +259,9 @@ describe('list store phase selection', () => {
     expect(selectedEntry && selectedEntry.type === 'phase' ? selectedEntry.phase.id : null).toBe('child-b')
   })
 
-  it('prefers the authoritative cursor chain and focuses its deepest phase on startup', async () => {
+  const seedCursorProject = () => {
     const dataStore = useDataStore()
-    const uiStore = useUIStore()
-    const projectStore = useProjectStore()
-    projectStore.projectPath = '/tmp/project'
+    useProjectStore().projectPath = '/tmp/project'
     dataStore.meta = {
       rootPhaseIds: ['root-a', 'root-b'],
       phaseCursors: { '0': 'root-b', '1': 'child-b', '2': 'grandchild-b' },
@@ -242,31 +270,57 @@ describe('list store phase selection', () => {
     dataStore.phases = {
       'root-a': { id: 'root-a', name: 'Root A', parent: null, childPhaseIds: [], commitments: [] },
       'root-b': { id: 'root-b', name: 'Root B', parent: null, childPhaseIds: ['child-b'], commitments: [] },
-      'child-b': { id: 'child-b', name: 'Child B', parent: 'root-b', childPhaseIds: ['grandchild-b'], commitments: [] },
+      'child-b': { id: 'child-b', name: 'Child B', parent: 'root-b', childPhaseIds: ['grandchild-b'], commitments: ['aim-1', 'aim-2'] },
       'grandchild-b': { id: 'grandchild-b', name: 'Grandchild B', parent: 'child-b', childPhaseIds: [], commitments: [] }
     } as any
-    localStorage.setItem(uiStore.getPersistedUIStateKey('/tmp/project'), JSON.stringify({
-      currentView: 'columns',
-      listViewState: {
-        ...uiStore.getListViewStateSnapshot(),
-        activeColumn: 0,
-        selectedPhaseIdByColumn: { '0': 'root-a' },
-        windowSize: 2
-      }
-    }))
+    dataStore.aims = {
+      'aim-1': { id: 'aim-1', text: 'One', supportingConnections: [], supportedAims: [], committedIn: ['child-b'] },
+      'aim-2': { id: 'aim-2', text: 'Two', supportingConnections: [{ aimId: 'sub' }], supportedAims: [], committedIn: ['child-b'] },
+      sub: { id: 'sub', text: 'Sub', supportingConnections: [], supportedAims: ['aim-2'], committedIn: [] }
+    } as any
+  }
+
+  it('follows the cursor chain to its deepest phase in a browser without saved state', async () => {
+    seedCursorProject()
+    const uiStore = useUIStore()
 
     const restored = await uiStore.restoreProjectUIState()
 
     expect(restored).toBe(true)
-    expect(uiStore.selectedPhaseIdByColumn).toMatchObject({
-      0: 'root-b',
-      1: 'child-b',
-      2: 'grandchild-b'
-    })
+    expect(uiStore.selectedPhaseIdByColumn).toMatchObject({ 0: 'root-b', 1: 'child-b', 2: 'grandchild-b' })
     expect(uiStore.activeColumn).toBe(2)
     expect(uiStore.maxColumn).toBe(2)
-    expect(uiStore.windowStart).toBe(1)
-    expect(uiStore.windowSize).toBe(2)
+  })
+
+  it('restores this browser\'s own selection by identity over the cursor chain', async () => {
+    seedCursorProject()
+    const uiStore = useUIStore()
+    useDataStore().meta!.phaseCursors = { '0': 'root-a' } as any
+    localStorage.setItem(uiStore.getPersistedUIStateKey('/tmp/project'), JSON.stringify({
+      currentView: 'columns',
+      listViewState: {
+        ...uiStore.getListViewStateSnapshot(),
+        windowSize: 2,
+        activeColumn: 1,
+        navigatingAims: true,
+        // Stale index (aims were reordered since): identity must win.
+        selectedAimIndexByPhaseId: { 'child-b': 0 },
+        selection: {
+          activeColumn: 1,
+          maxColumn: 2,
+          entryKeyByColumn: { 0: 'phase:root-b', 1: 'phase:child-b', 2: 'phase:grandchild-b' },
+          navigatingAims: true,
+          aimPath: ['aim-2', 'sub']
+        }
+      }
+    }))
+
+    await uiStore.restoreProjectUIState()
+
+    expect(uiStore.selectedPhaseIdByColumn).toMatchObject({ 0: 'root-b', 1: 'child-b' })
+    expect(uiStore.activeColumn).toBe(1)
+    expect(uiStore.navigatingAims).toBe(true)
+    expect(uiStore.getCurrentAim()?.id).toBe('sub')
   })
 
   it('keeps the current visible child selection when moving right into an already visible column', async () => {

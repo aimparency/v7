@@ -8,6 +8,9 @@ import { perfLog } from '../utils/perf-log'
 import { useUIStore } from './ui'
 import { useMapStore } from './map'
 import { useProjectStore } from './project-store'
+import { useHistoryStore } from './history'
+import { keepAimSelection } from './ui/selection-anchor'
+import { clientId } from '../utils/mutation-activity'
 import { loadAllAimsCache, saveAims } from '../utils/db'
 
 type RouterOutputs = inferRouterOutputs<AppRouter>
@@ -956,6 +959,7 @@ export const useDataStore = defineStore('data', {
 
         // Reset view state when switching projects
         uiStore.resetViewState();
+        useHistoryStore().reset();
         projectStore.setCurrentView('columns');
         mapStore.resetView();
 
@@ -1011,7 +1015,7 @@ export const useDataStore = defineStore('data', {
 
       // @ts-ignore - trpc subscription typing might differ
       this.subscription = trpc.project.onUpdate.subscribe(undefined, {
-        onData: async (data: { type: string, id: string, projectPath: string, entity?: any, deleted?: boolean }) => {
+        onData: async (data: { type: string, id: string, projectPath: string, entity?: any, deleted?: boolean, previous?: unknown, origin?: string }) => {
           // Normalize paths for comparison (handle .bowman suffix mismatch)
           const suffix = '/' + AIMPARENCY_DIR_NAME;
           const eventPath = data.projectPath.endsWith(suffix) ? data.projectPath.slice(0, -suffix.length) : (data.projectPath.endsWith(AIMPARENCY_DIR_NAME) ? data.projectPath.slice(0, -AIMPARENCY_DIR_NAME.length) : data.projectPath);
@@ -1019,21 +1023,32 @@ export const useDataStore = defineStore('data', {
           
           if (eventPath !== myPath) return;
 
+          // Before applying: the history needs the event, not the store state.
+          useHistoryStore().recordChange(data);
+
+          // Another client's reorder/insert must not move this client's aim
+          // selection (it's index-based) onto a different aim.
+          const applyEntity = data.origin !== undefined && data.origin !== clientId
+            ? (apply: () => void) => keepAimSelection(useUIStore(), apply)
+            : (apply: () => void) => apply()
+
           if (data.type === 'project') {
             this.meta = data.entity ?? await trpc.project.getMeta.query({ projectPath })
           } else if (data.type === 'aim') {
             if (data.deleted) {
-              this.removeAimLocally(data.id)
+              applyEntity(() => this.removeAimLocally(data.id))
             } else if (!this.deletedAims.has(data.id)) {
               const revision = this.beginAimSync(data.id)
               const aim = data.entity as BaseAim ?? await trpc.aim.get.query({ projectPath, aimId: data.id })
-              if (this.replaceAimIfCurrent(aim.id, aim, revision)) this.syncFloatingAim(aim)
+              applyEntity(() => {
+                if (this.replaceAimIfCurrent(aim.id, aim, revision)) this.syncFloatingAim(aim)
+              })
             }
           } else if (data.type === 'phase') {
             if (data.deleted) {
               delete this.phases[data.id]
             } else if (data.entity) {
-              this.replacePhaseIfCurrent(data.id, data.entity as BasePhase, this.beginPhaseSync(data.id))
+              applyEntity(() => this.replacePhaseIfCurrent(data.id, data.entity as BasePhase, this.beginPhaseSync(data.id)))
             } else {
               await this.loadPhaseById(projectPath, data.id, { force: true })
             }
@@ -1043,25 +1058,12 @@ export const useDataStore = defineStore('data', {
       });
     },
 
-    async deletePhase(phaseId: string, parentPhaseId: string | null) {
+    async deletePhase(phaseId: string) {
       const projectStore = useProjectStore();
 
       try {
-        const phase = await this.loadPhaseById(projectStore.projectPath, phaseId, { force: true })
-        const childPhaseIds = [...(phase?.childPhaseIds ?? [])]
-        const childPhases = (
-          await Promise.all(childPhaseIds.map((childId) => this.loadPhaseById(projectStore.projectPath, childId, { force: true })))
-        ).filter((child): child is Phase => !!child)
-
-        for (const child of childPhases) {
-          await trpc.phase.update.mutate({
-            projectPath: projectStore.projectPath,
-            phaseId: child.id,
-            phase: { parent: parentPhaseId }
-          });
-        }
-
-        // Delete the phase
+        // One mutation: the backend moves child phases into the deleted phase's
+        // slot, so the column isn't re-rendered through intermediate states.
         await trpc.phase.delete.mutate({
           projectPath: projectStore.projectPath,
           phaseId: phaseId
@@ -1304,17 +1306,12 @@ export const useDataStore = defineStore('data', {
         const updatedPhase = await trpc.phase.update.mutate({
           projectPath,
           phaseId,
-          phase: { parent: parentId }
+          phase: { parent: parentId },
+          insertionIndex: newIndex
         })
         if (updatedPhase) {
           this.replacePhaseIfCurrent(phaseId, updatedPhase, revision)
         }
-
-        await trpc.phase.reorder.mutate({
-          projectPath,
-          phaseId,
-          newIndex
-        })
       } catch (error) {
         console.error('Failed to move phase:', error)
       }

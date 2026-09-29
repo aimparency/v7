@@ -620,6 +620,7 @@ export const createAimRouter = (
         const isArchived = aim.status.state === 'archived';
         const dirName = isArchived ? 'archived-aims' : 'aims';
         const aimPath = path.join(projectPath, dirName, `${input.aimId}.json`);
+        const previous = await fs.readJson(aimPath).catch(() => null);
         await fs.remove(aimPath);
 
         // Remove from search index
@@ -630,7 +631,7 @@ export const createAimRouter = (
           invalidateSemanticCache(input.projectPath);
         }
 
-        ee.emit('change', { type: 'aim', id: input.aimId, projectPath: input.projectPath, deleted: true });
+        ee.emit('change', { type: 'aim', id: input.aimId, projectPath: input.projectPath, deleted: true, previous });
 
         return { success: true };
       }),
@@ -1058,16 +1059,22 @@ export const createAimRouter = (
               resultMap.set(r.id, r);
           }
 
-          results = Array.from(resultMap.values());
-
-          // Fallback: Simple substring if hybrid failed entirely
-          if (results.length === 0) {
-            const lowerQuery = input.query.toLowerCase();
-            const fallbackResults = allAims.filter((aim: Aim) =>
-                aim.text.toLowerCase().includes(lowerQuery)
-            ).map((aim: Aim) => ({ ...aim, score: 0.05 }));
-            results = fallbackResults;
+          // Literal title matches always outrank fuzzy/semantic ones: the embedder is
+          // English-only, so for other languages a verbatim hit is the strongest signal.
+          const lowerQuery = input.query.trim().toLowerCase();
+          for (const aim of allAims) {
+              const position = aim.text.toLowerCase().indexOf(lowerQuery);
+              if (position === -1) continue;
+              const literalScore = position === 0 ? 1.5 : 1.3;
+              const existing = resultMap.get(aim.id);
+              if (existing) {
+                  existing.score = Math.max(existing.score || 0, literalScore);
+              } else {
+                  resultMap.set(aim.id, { ...aim, score: literalScore });
+              }
           }
+
+          results = Array.from(resultMap.values());
         } else {
           // No query provided: start with all aims, scored by their recency
           const now = Date.now();

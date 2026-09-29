@@ -303,7 +303,7 @@ describe('UI teleport cut/paste', () => {
     expect(uiStore.pendingDeletePhaseId).toBe('phase-1')
 
     await uiStore.handleColumnNavigationKeys(keyEvent('d'), dataStore)
-    expect(deletePhaseSpy).toHaveBeenCalledWith('phase-1', null)
+    expect(deletePhaseSpy).toHaveBeenCalledWith('phase-1')
     expect(uiStore.pendingDeletePhaseId).toBeNull()
   })
 })

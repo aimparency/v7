@@ -142,6 +142,24 @@
       ],
       "weight": 1,
       "explanation": "Fuzzy phase lookup supports selecting nodes in the hierarchical phase structure."
+    },
+    {
+      "aimId": "171748db-95ff-4dba-b32a-1c72c25fd48f",
+      "relativePosition": [
+        0.8953144199630414,
+        2.3341833881266147
+      ],
+      "weight": 1,
+      "explanation": "Fixes a loading correctness bug in the concatenated child-phase columns introduced by the phase-system refactor."
+    },
+    {
+      "aimId": "10b68653-57be-4cdd-a41b-1a4bf405a6da",
+      "relativePosition": [
+        2.1775458402883876,
+        1.228126261197415
+      ],
+      "weight": 1,
+      "explanation": "Simplifies the phase-column navigation model built by the phase-system refactor."
     }
   ],
   "supportedAims": [

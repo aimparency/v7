@@ -212,13 +212,8 @@ const statusColor = computed(() => {
     })
     return colorMap[props.aim.status.state] ?? '#888'
   })
-// Scroll into view when this aim becomes selected or active
-watch(() => [props.isThisAimSelected, props.isActive], ([isSelected, isActive]) => {
-  const hasSelectedChild = isExpanded.value && props.aimUiState.selectedIncomingIndex !== undefined
-  if (isSelected && isActive && !hasSelectedChild && aimContainerRef.value) {
-    emit('scroll-request', aimContainerRef.value)
-  }
-}, { flush: 'post' })
+// Keeping the selection in view during navigation is the column's job
+// (useKeepSelectedAimVisible); aims only request a scroll when they mount.
 
 // Ensure sub-aims and parent aims are loaded when expanded
 watch(isExpanded, (newVal) => {

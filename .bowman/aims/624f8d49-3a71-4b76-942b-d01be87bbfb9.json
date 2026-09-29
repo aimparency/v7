@@ -6,7 +6,16 @@
   "archived": false,
   "color": "#666666",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "98f05e67-b165-4aef-83e0-6de71f672b0e",
+      "relativePosition": [
+        -1.0806981955126695,
+        2.2543494427917916
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "01fe0313-b467-40fd-9a3d-ae4a93af38ba"
   ],

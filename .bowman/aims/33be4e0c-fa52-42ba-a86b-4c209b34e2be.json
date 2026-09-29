@@ -2,6 +2,8 @@
   "id": "33be4e0c-fa52-42ba-a86b-4c209b34e2be",
   "text": "bugfixes",
   "description": "",
+  "reflections": [],
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -35,6 +37,14 @@
         -0.058657425789915445
       ],
       "weight": 1
+    },
+    {
+      "aimId": "edde0079-1c06-4e14-9c89-793423c253cc",
+      "relativePosition": [
+        -0.023927193445881137,
+        -2.4998854952604934
+      ],
+      "weight": 1
     }
   ],
   "supportedAims": [],
@@ -48,5 +58,8 @@
   },
   "intrinsicValue": 3,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

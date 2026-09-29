@@ -434,6 +434,28 @@ test('phase.list skips malformed phase files', async () => {
   assert.equal(phases[0]?.id, validPhase.id);
 });
 
+test('phase update moves a phase into a new parent at insertionIndex in one mutation', async () => {
+  const projectPath = testProjectPath;
+  const create = (name: string, parent: string | null) =>
+    caller.phase.create({ projectPath, phase: { name, parent, commitments: [] } });
+
+  const oldParent = await create('Old parent', null);
+  const newParent = await create('New parent', null);
+  const moved = await create('Moved', oldParent.id);
+  const first = await create('First', newParent.id);
+  const second = await create('Second', newParent.id);
+
+  await caller.phase.update({ projectPath, phaseId: moved.id, phase: { parent: newParent.id }, insertionIndex: 1 });
+
+  assert.deepEqual((await caller.phase.get({ projectPath, phaseId: newParent.id })).childPhaseIds, [first.id, moved.id, second.id]);
+  assert.deepEqual((await caller.phase.get({ projectPath, phaseId: oldParent.id })).childPhaseIds, []);
+
+  // Moving to the root level honours the index too.
+  await caller.phase.update({ projectPath, phaseId: moved.id, phase: { parent: null }, insertionIndex: 0 });
+  const meta = await fs.readJson(path.join(projectPath, 'meta.json')) as ProjectMeta;
+  assert.equal(meta.rootPhaseIds?.[0], moved.id);
+});
+
 test('phase reorder preserves canonical parent-owned order for roots and children', async () => {
   const projectPath = testProjectPath;
 
@@ -655,6 +677,24 @@ test('search - matches aims using search index', async () => {
   const texts = results.map(r => r.text);
   assert.ok(texts.includes('Apple Pie'), 'Should find Apple Pie');
   assert.ok(texts.includes('Apple Cider'), 'Should find Apple Cider');
+});
+
+test('search - finds aims created after the index was built, whichever path form was used', async () => {
+  // Build the index first (the live server does this on the first search).
+  await caller.aim.search({ projectPath: testProjectPath, query: 'anything' });
+
+  await caller.aim.createFloatingAim({
+    projectPath: testRootPath,
+    aim: { text: 'Neustart. Ich bin 33. Aber ich gebe das Leben auf', status: { state: 'open', comment: '', date: Date.now() } }
+  });
+
+  for (const projectPath of [testProjectPath, testRootPath]) {
+    const results = await caller.aim.search({ projectPath, query: 'Neustart' });
+    assert.equal(results[0]?.text, 'Neustart. Ich bin 33. Aber ich gebe das Leben auf');
+  }
+  // Literal matches in the middle of a title count too.
+  const midTitle = await caller.aim.search({ projectPath: testProjectPath, query: 'Leben' });
+  assert.equal(midTitle[0]?.text, 'Neustart. Ich bin 33. Aber ich gebe das Leben auf');
 });
 
 test('search - returns aim id prefix matches first with match metadata', async () => {
@@ -1067,4 +1107,65 @@ test('inspectPath - distinguishes an existing .bowman from a new project path', 
   assert.equal(existing.bowmanExists, true);
   assert.equal(existing.bowmanPath, path.join(existingRoot, '.bowman'));
   assert.equal(fresh.bowmanExists, false);
+});
+
+test('phase.delete - child phases take the deleted phase slot in order', async () => {
+  const create = async (name: string, parent: string | null) =>
+    (await caller.phase.create({ projectPath: testProjectPath, phase: { name, parent } })).id;
+  const root = await create('Root', null);
+  const before = await create('Before', root);
+  const doomed = await create('Doomed', root);
+  const after = await create('After', root);
+  const childA = await create('Child A', doomed);
+  const childB = await create('Child B', doomed);
+
+  await caller.phase.delete({ projectPath: testProjectPath, phaseId: doomed });
+
+  const rootPhase = await caller.phase.get({ projectPath: testProjectPath, phaseId: root });
+  assert.deepStrictEqual(rootPhase.childPhaseIds, [before, childA, childB, after]);
+  for (const childId of [childA, childB]) {
+    const child = await caller.phase.get({ projectPath: testProjectPath, phaseId: childId });
+    assert.strictEqual(child.parent, root);
+  }
+});
+
+test('history.restore - restores snapshots, and refuses when an entity changed since', async () => {
+  const create = async (name: string, parent: string | null) =>
+    (await caller.phase.create({ projectPath: testProjectPath, phase: { name, parent } })).id;
+  const root = await create('Root', null);
+  const doomed = await create('Doomed', root);
+  const child = await create('Child', doomed);
+
+  const files = {
+    root: path.join(testProjectPath, 'phases', `${root}.json`),
+    doomed: path.join(testProjectPath, 'phases', `${doomed}.json`),
+    child: path.join(testProjectPath, 'phases', `${child}.json`)
+  };
+  const read = async (file: string) => (await fs.pathExists(file)) ? fs.readJson(file) : null;
+  const before = { root: await read(files.root), doomed: await read(files.doomed), child: await read(files.child) };
+
+  await caller.phase.delete({ projectPath: testProjectPath, phaseId: doomed });
+  const after = { root: await read(files.root), doomed: await read(files.doomed), child: await read(files.child) };
+  assert.strictEqual(after.doomed, null);
+
+  const undoChanges = [
+    { type: 'phase' as const, id: root, expected: after.root, target: before.root },
+    { type: 'phase' as const, id: doomed, expected: after.doomed, target: before.doomed },
+    { type: 'phase' as const, id: child, expected: after.child, target: before.child }
+  ];
+
+  // Another client renames the promoted child: undo must be blocked, nothing written.
+  await caller.phase.update({ projectPath: testProjectPath, phaseId: child, phase: { name: 'Renamed elsewhere' } });
+  const blocked = await caller.history.restore({ projectPath: testProjectPath, changes: undoChanges });
+  assert.strictEqual(blocked.ok, false);
+  assert.deepStrictEqual(blocked.conflicts, [{ type: 'phase', id: child }]);
+  assert.strictEqual(await read(files.doomed), null);
+
+  // Without the interfering edit the undo restores the exact prior state.
+  await fs.writeJson(files.child, after.child, { spaces: 2 });
+  const undone = await caller.history.restore({ projectPath: testProjectPath, changes: undoChanges });
+  assert.strictEqual(undone.ok, true);
+  assert.deepStrictEqual(await read(files.root), before.root);
+  assert.deepStrictEqual(await read(files.doomed), before.doomed);
+  assert.deepStrictEqual(await read(files.child), before.child);
 });

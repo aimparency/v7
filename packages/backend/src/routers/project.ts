@@ -11,6 +11,7 @@ import { INITIAL_STATES, AimSchema, PhaseSchema, calculateAimValues, cosineSimil
 import { spawn, type ChildProcess } from 'child_process';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
+import { currentOrigin } from '../change-origin.js';
 import { findDuplicatePairs, clusterDuplicates } from '../duplicate-detection.js';
 import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-completion.js';
 import {
@@ -216,6 +217,7 @@ export const createProjectRouter = (
   getDb: (projectPath: string) => any,
   readAim: (projectPath: string, aimId: string) => Promise<Aim>,
   writePhase: (projectPath: string, phase: Phase) => Promise<void>,
+  ensureSearchIndex: (projectPath: string) => Promise<void>,
   ee: any
 ) => {
   const getWatchdogRuntimeStatePath = (rawProjectPath: string) =>
@@ -738,8 +740,10 @@ export const createProjectRouter = (
 
   return t.router({
     onUpdate: t.procedure.subscription(() => {
-      return observable<{ type: string, id: string, projectPath: string, entity?: Aim | Phase | ProjectMeta, deleted?: boolean }>((emit) => {
-        const onChange = (data: any) => emit.next(data);
+      return observable<{ type: string, id: string, projectPath: string, entity?: Aim | Phase | ProjectMeta, deleted?: boolean, previous?: unknown, origin?: string }>((emit) => {
+        // Listeners run inside the emitting request's context: tag the origin
+        // so clients can recognize (and undo) their own changes.
+        const onChange = (data: any) => emit.next({ ...data, origin: currentOrigin() });
         ee.on('change', onChange);
         return () => ee.off('change', onChange);
       });
@@ -750,6 +754,10 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .query(async ({ input }: any) => {
+        // Clients call getMeta first when opening a project: warm the search index
+        // and vector store now so the first aim-creation search isn't the cold one.
+        void Promise.all([ensureSearchIndex(input.projectPath), loadVectorStore(input.projectPath)])
+          .catch(error => console.warn('[Search] Warm-up failed:', error));
         return await readProjectMeta(input.projectPath);
       }),
 

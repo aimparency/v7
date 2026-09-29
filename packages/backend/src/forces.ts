@@ -1,6 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { loadVectorStore, invalidateVectorCache } from './embeddings.js';
+import { loadVectorStore } from './embeddings.js';
+import { normalizeProjectPath } from './project-path.js';
 import { cosineSimilarity } from 'shared';
 
 interface SemanticLink {
@@ -18,7 +19,8 @@ interface SemanticGraph {
 
 const semanticCache = new Map<string, SemanticGraph>();
 
-export async function getSemanticGraph(projectPath: string): Promise<SemanticGraph> {
+export async function getSemanticGraph(rawProjectPath: string): Promise<SemanticGraph> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const cacheKey = projectPath;
   
   // 1. Check Memory Cache
@@ -28,7 +30,7 @@ export async function getSemanticGraph(projectPath: string): Promise<SemanticGra
   }
 
   // 2. Check Disk Cache
-  const cacheFile = path.join(projectPath, '.bowman', 'semantic-graph.json');
+  const cacheFile = path.join(projectPath, 'semantic-graph.json');
   if (await fs.pathExists(cacheFile)) {
     const diskGraph = await fs.readJson(cacheFile);
     // basic check to see if it's stale? For now, trust it.
@@ -40,7 +42,8 @@ export async function getSemanticGraph(projectPath: string): Promise<SemanticGra
   return await calculateSemanticGraph(projectPath);
 }
 
-export async function calculateSemanticGraph(projectPath: string): Promise<SemanticGraph> {
+export async function calculateSemanticGraph(rawProjectPath: string): Promise<SemanticGraph> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const store = await loadVectorStore(projectPath);
   const ids = Object.keys(store);
   const links: SemanticLink[] = [];
@@ -99,7 +102,7 @@ export async function calculateSemanticGraph(projectPath: string): Promise<Seman
   };
 
   // Save to disk
-  const cacheFile = path.join(projectPath, '.bowman', 'semantic-graph.json');
+  const cacheFile = path.join(projectPath, 'semantic-graph.json');
   await fs.ensureDir(path.dirname(cacheFile)); // Ensure .bowman directory exists
   await fs.writeJson(cacheFile, result);
   
@@ -110,9 +113,9 @@ export async function calculateSemanticGraph(projectPath: string): Promise<Seman
 /**
  * Invalidate the semantic graph cache for a project.
  * Call this after creating/updating/deleting aims or their embeddings.
- * Also invalidates the vector cache to ensure fresh data on recalculation.
+ * The vector cache stays: saveEmbeddings/removeEmbedding mutate it in place, and
+ * re-parsing vectors.json (megabytes) on every aim write blocked the event loop.
  */
 export function invalidateSemanticCache(projectPath: string): void {
-  semanticCache.delete(projectPath);
-  invalidateVectorCache(projectPath);
+  semanticCache.delete(normalizeProjectPath(projectPath));
 }

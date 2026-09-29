@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useScrollIntoView } from '../composables/useScrollIntoView'
+import { useKeepSelectedAimVisible } from '../composables/useKeepSelectedAimVisible'
 import AimsList from './AimsList.vue'
 
 const dataStore = useDataStore()
@@ -15,6 +16,7 @@ const rootColumnRef = ref<HTMLElement | null>(null)
 
 // Handle scroll requests from child aims
 const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
+useKeepSelectedAimVisible(rootColumnRef, () => isActive.value, handleScrollRequest)
 
 const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isCtrl = !!(mods && mods.ctrl)

@@ -1,0 +1,34 @@
+{
+  "id": "98f05e67-b165-4aef-83e0-6de71f672b0e",
+  "text": "Phase Shift+J/K across parents: keep auto-scroll steady",
+  "description": "Cross-parent phase moves arrived as several pushes (old parent written without the phase, new parent with it appended, then a reorder). While the phase was in no child list, getSelectedPhase fell back to index 0, so Column.vue treated the gap as navigation to entry 0 and smooth-scrolled toward the top, then back (same for every descendant column). A J/K pressed during the gap acted on entry 0. Direction for key-preserving moves was also stale. Fix: findSelectedPhaseIndex returns -1 for a missing key; getSelectedPhaseEntry/moveActivePhase/Column honor it; Column compares against the last settled selection; phase.update takes insertionIndex so movePhase is one mutation.",
+  "reflections": [
+    {
+      "date": 1790716228405,
+      "context": "Felix reported auto-scroll going haywire after Shift+J/K phase moves across parent boundaries, and asked to question the selection model.",
+      "outcome": "Root cause: per-write entity pushes expose intermediate states, and the key->index derivation silently fell back to 0 for a missing key. Fixed the fallback (explicit -1), made Column scroll only from settled selections with direction recomputed on reorders, and made cross-parent moves one mutation (phase.update insertionIndex). Backend test for insertionIndex + list-store spec for the mid-move gap added; frontend 245/245 and backend phase tests green; vue-tsc/tsc clean. Not verified visually in the live UI.",
+      "effectiveness": "Fixes the reported symptom and a latent correctness bug (J/K during the gap would move entry 0). Does not restructure the model.",
+      "lesson": "Derived state must represent 'missing' explicitly; a clamp-to-0 fallback turns every transient data state into a fake user action. Open follow-up (awaiting Felix): selection as one focused entry + parent-chain derivation + remembered child ids, and explicit scroll intents from actions instead of inferring navigation from state diffs.",
+      "pattern": "transient-state-as-navigation"
+    }
+  ],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "624f8d49-3a71-4b76-942b-d01be87bbfb9"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and tested (frontend 245/245, backend phase tests, vue-tsc/tsc clean) but NOT committed: the Stop hook requires committing everything incl. .bowman before proceeding, and the auto-mode permission check denied a commit that sweeps parallel sessions' uncommitted work. Waiting on Felix to commit or authorize git commit. Also needs a live Shift+J/K check.",
+    "date": 1790716219695
+  },
+  "intrinsicValue": 1,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

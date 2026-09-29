@@ -3,6 +3,7 @@ import path from 'path';
 import { cosineSimilarity } from 'shared';
 import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers';
 import type { Aim } from 'shared';
+import { normalizeProjectPath } from './project-path.js';
 
 // bge-small-en-v1.5: 384-dim sentence embeddings, native ONNX, 512-token window.
 // Runs in-process via onnxruntime-node (inference on native threads, off the JS event loop).
@@ -92,7 +93,7 @@ export interface VectorStore {
 }
 
 async function getVectorStorePath(projectPath: string) {
-  return path.join(projectPath, '.bowman', 'vectors.json');
+  return path.join(normalizeProjectPath(projectPath), 'vectors.json');
 }
 
 // Cache per project
@@ -121,7 +122,8 @@ function getProjectLock(projectPath: string): Mutex {
   return projectLocks.get(projectPath)!;
 }
 
-export async function loadVectorStore(projectPath: string): Promise<VectorStore> {
+export async function loadVectorStore(rawProjectPath: string): Promise<VectorStore> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const lock = getProjectLock(projectPath);
   const release = await lock.acquire();
   try {
@@ -138,7 +140,8 @@ export async function loadVectorStore(projectPath: string): Promise<VectorStore>
         const rawStore = await fs.readJson(storePath);
         for (const [aimId, vector] of Object.entries(rawStore as Record<string, unknown>)) {
           if (isStoredVector(vector)) {
-            store[aimId] = vector.map(v => parseFloat(v.toFixed(6)));
+            // Already rounded on write (saveEmbeddings); no need to re-round on load.
+            store[aimId] = vector;
           } else {
             needsRewrite = true;
           }
@@ -179,7 +182,8 @@ export async function saveEmbedding(projectPath: string, aimId: string, vector: 
  * requests. Batch the writes instead; the in-memory cache is updated up front,
  * so searches see the new vectors before the file lands.
  */
-export async function saveEmbeddings(projectPath: string, entries: { aimId: string, vector: number[] }[]) {
+export async function saveEmbeddings(rawProjectPath: string, entries: { aimId: string, vector: number[] }[]) {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   if (entries.length === 0) return;
   const store = await loadVectorStore(projectPath);
   const lock = getProjectLock(projectPath);
@@ -208,7 +212,8 @@ export async function saveEmbeddings(projectPath: string, entries: { aimId: stri
   }
 }
 
-export async function removeEmbedding(projectPath: string, aimId: string) {
+export async function removeEmbedding(rawProjectPath: string, aimId: string) {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const store = await loadVectorStore(projectPath);
   if (store[aimId]) {
     const lock = getProjectLock(projectPath);
@@ -225,7 +230,8 @@ export async function removeEmbedding(projectPath: string, aimId: string) {
   }
 }
 
-export async function searchVectors(projectPath: string, queryVector: number[], limit: number = 10): Promise<{ id: string, score: number }[]> {
+export async function searchVectors(rawProjectPath: string, queryVector: number[], limit: number = 10): Promise<{ id: string, score: number }[]> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   const store = await loadVectorStore(projectPath);
   const results = [];
 
@@ -244,7 +250,8 @@ export async function searchVectors(projectPath: string, queryVector: number[], 
  * Invalidate the vector store cache for a project.
  * Call this when vectors.json is modified externally or needs to be reloaded.
  */
-export function invalidateVectorCache(projectPath: string): void {
+export function invalidateVectorCache(rawProjectPath: string): void {
+  const projectPath = normalizeProjectPath(rawProjectPath);
   vectorCache.delete(projectPath);
 }
 

@@ -1,0 +1,25 @@
+{
+  "id": "562cdb60-c42d-446e-a2a5-e9a27ffe10e6",
+  "text": "List view: vim-style aim cursor over the flat list of visible rows",
+  "description": "Audit finding (2026-09-28). Aim navigation is not vim-like: j never descends into an expanded aim's children (navigateDown ignores expansion; its dontDescend param is unused), while k descends into an expanded previous sibling only if a stale selectedIncomingIndex is set, so j and k are not inverses. Cursor state is scattered: phase.selectedAimIndex lives on data-store Phase entities, floatingAimIndex separately, and nested AimUIState.selectedIncomingIndex chains encode the sub-aim path. Target: derive the visible rows of the active column (phase aims / floating aims, recursively through expanded aims) as a flat list of {aimId, path}; the cursor is one row key; j/k = ±1 row (crossing into neighbouring phases at the ends as today), h = collapse or go to parent, l = expand or step into first child, Esc leaves aim mode, J/K reorder, L/H indent/outdent. Remove navigateDown/navigateUp/goToLastChildAim index juggling and UI fields on entities. Update e2e/navigation.spec l/h test (currently encodes the non-vim behaviour).",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1790626942205
+  },
+  "intrinsicValue": 5,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

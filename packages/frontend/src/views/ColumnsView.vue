@@ -76,7 +76,7 @@ const onTouchEnd = (event: TouchEvent) => {
       class="column"
       :is-selected="uiStore.activeColumn === colIndex"
       :is-active="uiStore.activeColumn === colIndex"
-      :selected-phase-index="uiStore.getSelectedPhase(colIndex)"
+      :selected-phase-index="uiStore.findSelectedPhaseIndex(colIndex)"
     />
   </div>
 </template>

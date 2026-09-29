@@ -7,6 +7,8 @@ import { useProjectStore } from './stores/project-store'
 import { useWatchdogStore } from './stores/watchdog'
 import { useDataStore, type Aim } from './stores/data'
 import { useMapStore } from './stores/map'
+import { useHistoryStore } from './stores/history'
+import { captureSelectionAnchor } from './stores/ui/selection-anchor'
 import { trpc } from './trpc'
 import type { AimSearchAdditionalOption, AimSearchPickPayload } from './stores/ui/aim-search-types'
 import type { PhaseSearchSelection } from './stores/ui/phase-search-types'
@@ -36,6 +38,8 @@ const projectStore = useProjectStore()
 const watchdogStore = useWatchdogStore()
 const dataStore = useDataStore()
 const mapStore = useMapStore()
+const historyStore = useHistoryStore()
+historyStore.install()
 const voiceEnabled = getRuntimeConfig().voiceEnabled
 
 const normalizedProjectRoot = computed(() => projectStore.projectPath.replace(/\/+$/, ''))
@@ -347,6 +351,7 @@ watch(() => [uiStore.navigatingAims, uiStore.activeColumn], ([navigatingAims, ac
       { key: 'j/k', action: 'navigate phases/aims' },
       { key: 'i', action: 'enter edit mode' },
       { key: 'o', action: 'create phase/aim' },
+      { key: 'u/r', action: 'undo/redo' },
       { key: 'a', action: 'toggle loop panel' },
       { key: 'w', action: 'toggle watchdog' }
     ]
@@ -372,6 +377,7 @@ watch(() => [uiStore.navigatingAims, uiStore.activeColumn], ([navigatingAims, ac
       { key: 'e', action: 'edit aim' },
       { key: 'd', action: 'delete aim' },
       { key: 'o/O', action: 'create aim below/above' },
+      { key: 'u/r', action: 'undo/redo' },
       { key: 'Esc', action: 'exit edit mode' },
       { key: 'a', action: 'toggle loop panel' },
       { key: 'w', action: 'toggle watchdog' }
@@ -400,6 +406,10 @@ watch(() => [
   uiStore.windowSize,
   uiStore.lastSelectedSubPhaseIndexByPhase,
   uiStore.navigatingAims,
+  // Aim-level selection and expansion live in phases and the aim UI trees.
+  captureSelectionAnchor(uiStore),
+  uiStore.phaseAimUIStatesByPhaseId,
+  uiStore.floatingAimUIStates,
   projectStore.currentView,
   graphUIStore.graphSelectedAimId,
   graphUIStore.selectedLink,
@@ -716,6 +726,7 @@ onUnmounted(() => {
           <span class="action">{{ hint.action }}</span>
         </div>
       </div>
+      <div v-if="historyStore.message" class="history-message">{{ historyStore.message }}</div>
     </footer>
   </div>
 </template>
@@ -973,6 +984,10 @@ onUnmounted(() => {
   padding: 0.25rem 1rem;
   border-top: 1px solid #444;
   font-size: 0.8rem;
+
+  & .history-message {
+    color: #fff;
+  }
 }
 
 .help-keys {
