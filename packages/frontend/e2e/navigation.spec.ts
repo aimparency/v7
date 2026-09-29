@@ -139,7 +139,7 @@ test.describe('Navigation Tests', () => {
     // Verify Child is visible
     await expect(getAimItem('Child Aim')).toBeVisible();
 
-    // 2. Step in (l again) - j/k stay on the current level; l enters the expanded children
+    // 2. Step in (l again) - l enters the expanded children (j would too: j/k walk the visible rows)
     await page.keyboard.press('l');
     await expect(getAimItem('Child Aim')).toHaveClass(/active/);
 

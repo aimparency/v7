@@ -6,15 +6,32 @@
   "archived": false,
   "color": "#666666",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "e612081a-7893-49d5-884a-eeaa5ac6ae84",
+      "relativePosition": [
+        2.184806031999705,
+        1.2151636114275732
+      ],
+      "weight": 1
+    },
+    {
+      "aimId": "73c110aa-addd-406b-9430-2ab9446201a5",
+      "relativePosition": [
+        2.178808797494246,
+        -1.2258842620580777
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1790626942205
+    "state": "partially",
+    "comment": "Slice 1 (j/k over visible rows, e612081a) implemented, in review. h/l already match the target (h collapses or goes to parent, l expands or steps into first child), so no change needed there. Slice 3 (single row-key cursor state) open and waiting on the selection-model decision.",
+    "date": 1790717118608
   },
   "intrinsicValue": 5,
   "cost": 5,

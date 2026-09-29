@@ -177,6 +177,42 @@ describe('list store phase selection', () => {
     expect(uiStore.getSelectedPhaseEntry(1)).toMatchObject({ key: 'phase:moving', parentPhaseId: 'root-b' })
   })
 
+  it('moves the aim cursor over visible rows: j enters expanded children and k retraces it', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const aim = (id: string, children: string[] = []) =>
+      ({ id, text: id, supportingConnections: children.map((aimId) => ({ aimId, weight: 1, relativePosition: [1, 1] })), supportedAims: [], committedIn: [] }) as any
+    const phase = (id: string, commitments: string[]) =>
+      ({ id, name: id, parent: null, childPhaseIds: [], commitments }) as any
+
+    for (const a of [aim('parent', ['child-1', 'child-2']), aim('child-1'), aim('child-2'), aim('sibling'), aim('next-phase-aim')]) {
+      dataStore.aims[a.id] = a
+    }
+    dataStore.phases['phase-1'] = phase('phase-1', ['parent', 'sibling'])
+    dataStore.phases['phase-2'] = phase('phase-2', ['next-phase-aim'])
+    dataStore.meta = { rootPhaseIds: ['phase-1', 'phase-2'] }
+    uiStore.activeColumn = 0
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
+    uiStore.navigatingAims = true
+    dataStore.phases['phase-1'].selectedAimIndex = 0
+    uiStore.ensureAimUIState(uiStore.getPhaseAimUIStates('phase-1'), 'parent').expanded = true
+
+    const selected = () => uiStore.getCurrentAim()?.id
+    const visited = [selected()]
+    for (let step = 0; step < 4; step++) {
+      await uiStore.navigateDown()
+      visited.push(selected())
+    }
+    expect(visited).toEqual(['parent', 'child-1', 'child-2', 'sibling', 'next-phase-aim'])
+
+    const back = [selected()]
+    for (let step = 0; step < 4; step++) {
+      await uiStore.navigateUp()
+      back.push(selected())
+    }
+    expect(back).toEqual(['next-phase-aim', 'sibling', 'child-2', 'child-1', 'parent'])
+  })
+
   it('restores obvious list UI state after reload', async () => {
     setActivePinia(createPinia())
     const initialDataStore = useDataStore()

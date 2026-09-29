@@ -9,6 +9,8 @@ import {
   getSelectionPathFromState,
   setCurrentAimIndexInState,
   findPathToAim as findPathToAimHelper,
+  getVisibleAimRows,
+  type AimRow,
   type SelectionPath
 } from './navigation-helpers'
 import { captureSelectionAnchor, applySelectionAnchor, type SelectionAnchor } from './selection-anchor'
@@ -71,6 +73,13 @@ type PersistedListViewState = {
   // Authoritative selection by identity; the index fields above only seed
   // remembered per-phase positions (and older saved states).
   selection?: SelectionAnchor
+}
+
+// The list the aim cursor moves in; see getAimListScope.
+type AimListScope = {
+  aims: Aim[]
+  tree: AimUIStateTree
+  setTopIndex: (index: number) => void
 }
 
 type PersistedUIState = {
@@ -1168,16 +1177,11 @@ export const useListStore = defineStore('ui', {
         }
 
         if (newPhase.commitments.length > 0) {
-          newPhase.selectedAimIndex = selectLastAim ? newPhase.commitments.length - 1 : 0
-
-          if (selectLastAim) {
-            const aims = dataStore.getAimsForPhase(selectedEntry.phase.id)
-            const target = aims[newPhase.selectedAimIndex]
-            const targetState = target ? ensureAimUIState(this.getPhaseAimUIStates(selectedEntry.phase.id), target.id) : undefined
-            if (target && targetState?.expanded && targetState.selectedIncomingIndex !== undefined) {
-              this.goToLastChildAim(target, targetState)
-            }
-          }
+          // Enter at the first row going down, the last visible row going up.
+          const scope = this.getAimListScope(newPhase.id)
+          const rows = scope ? getVisibleAimRows(scope.aims, scope.tree, dataStore) : []
+          const row = selectLastAim ? rows[rows.length - 1] : rows[0]
+          if (scope && row) this.selectAimRow(scope, row)
         }
 
         return true
@@ -1556,149 +1560,95 @@ export const useListStore = defineStore('ui', {
       await handleGlobalKeydownAction(this, event, dataStore)
     },
 
-    // Universal navigation down (j) - works on selection path
-    async navigateDown(dontDescend: boolean = false) {
+    // The list the aim cursor moves in: a phase's committed aims (the active
+    // column's selected phase unless `phaseId` is given) or, in column -1, the
+    // floating aims — with its UI-state tree and top-level cursor setter.
+    getAimListScope(phaseId?: string): AimListScope | undefined {
       const dataStore = useDataStore()
-      const previousPath = this.getSelectionPath()
-      const previousAimState = previousPath.aimStates[previousPath.aimStates.length - 1]
+      if (phaseId === undefined && this.activeColumn === -1) {
+        return {
+          aims: dataStore.floatingAims,
+          tree: this.getFloatingAimUIStates(),
+          setTopIndex: (index: number) => { this.floatingAimIndex = index }
+        }
+      }
+      const phase = dataStore.phases[phaseId ?? this.getSelectedPhaseId(this.activeColumn) ?? '']
+      if (!phase) return undefined
+      return {
+        aims: dataStore.getAimsForPhase(phase.id),
+        tree: this.getPhaseAimUIStates(phase.id),
+        setTopIndex: (index: number) => { phase.selectedAimIndex = index }
+      }
+    },
+
+    // Points the selection chain at `row`, ending the chain there.
+    selectAimRow(scope: AimListScope, row: AimRow) {
+      const dataStore = useDataStore()
+      const [topIndex, ...connectionIndices] = row.indexPath
+      scope.setTopIndex(topIndex!)
+      let aim: Aim | undefined = scope.aims[topIndex!]
+      let state = aim ? ensureAimUIState(scope.tree, aim.id) : undefined
+      for (const connectionIndex of connectionIndices) {
+        if (!aim || !state) return
+        state.selectedIncomingIndex = connectionIndex
+        const connection = aim.supportingConnections?.[connectionIndex]
+        aim = connection ? dataStore.aims[connection.aimId] : undefined
+        state = aim ? ensureAimUIState(state.children, aim.id) : undefined
+      }
+      if (state) state.selectedIncomingIndex = undefined
+    },
+
+    // Moves the aim cursor one visible row (into expanded children and back
+    // out, like a vim tree view). Returns false at either end of the list.
+    stepAimRow(delta: -1 | 1): boolean {
+      const scope = this.getAimListScope()
+      const path = this.getSelectionPath()
+      if (!scope || path.aims.length === 0) return false
+
+      const topIndex = path.phase
+        ? path.phase.selectedAimIndex ?? 0
+        : Math.max(0, Math.min(this.floatingAimIndex, scope.aims.length - 1))
+      const currentPath = [topIndex, ...path.aimStates.slice(0, -1).map((state) => state.selectedIncomingIndex!)]
+      const rows = getVisibleAimRows(scope.aims, scope.tree, useDataStore())
+      const currentRow = rows.findIndex((row) =>
+        row.indexPath.length === currentPath.length && row.indexPath.every((index, depth) => index === currentPath[depth])
+      )
+      const target = rows[currentRow + delta]
+      if (currentRow < 0 || !target) return false
+      this.selectAimRow(scope, target)
+      return true
+    },
+
+    // Universal navigation down (j)
+    async navigateDown() {
+      const previousStates = this.getSelectionPath().aimStates
+      const previousAimState = previousStates[previousStates.length - 1]
       if (previousAimState) previousAimState.pendingDelete = false
       logNav('navigateDown:start', {
-        dontDescend,
         activeColumn: this.activeColumn,
         navigatingAims: this.navigatingAims
       })
 
-      const col = this.activeColumn
-      const path = this.getSelectionPath()
-
-      if (path.aims.length === 0) {
-        if (col >= 0) {
-          await this.continueAimBoundaryPhaseMove(1)
-        }
-        return
-      }
-
-      if (path.aims.length === 1) {
-        if (col === -1) {
-          if (this.floatingAimIndex < dataStore.floatingAims.length - 1) {
-            this.floatingAimIndex++
-          }
-        } else if (path.phase) {
-          if (path.phase.selectedAimIndex! < path.phase.commitments.length - 1) {
-            path.phase.selectedAimIndex!++
-          } else if (col >= 0) {
-            await this.continueAimBoundaryPhaseMove(1)
-          }
-        }
-      } else {
-        let broke = false
-        for (let i = path.aims.length - 2; i >= 0; i--) {
-          const ancestorAim = path.aims[i]
-          const ancestorState = path.aimStates[i]
-          if (!ancestorAim || !ancestorState) continue
-          const ancestorConnections = ancestorAim.supportingConnections || []
-          if (ancestorState.selectedIncomingIndex !== undefined && ancestorState.selectedIncomingIndex < ancestorConnections.length - 1) {
-            ancestorState.selectedIncomingIndex++
-            broke = true
-            break
-          }
-        }
-
-        if (!broke) {
-          if (path.phase) {
-            if (path.phase.selectedAimIndex! < path.phase.commitments.length - 1) {
-              path.phase.selectedAimIndex!++
-            } else if (col >= 0) {
-              await this.continueAimBoundaryPhaseMove(1)
-            }
-          } else if (this.floatingAimIndex < dataStore.floatingAims.length - 1) {
-            this.floatingAimIndex++
-          }
-        }
+      if (this.stepAimRow(1)) return
+      if (this.activeColumn >= 0) {
+        await this.continueAimBoundaryPhaseMove(1)
       }
     },
 
-    // Universal navigation up (k) - works on selection path
+    // Universal navigation up (k)
     async navigateUp() {
-      const dataStore = useDataStore()
-      const projectStore = useProjectStore()
-      const previousPath = this.getSelectionPath()
-      const previousAimState = previousPath.aimStates[previousPath.aimStates.length - 1]
+      const path = this.getSelectionPath()
+      const previousAimState = path.aimStates[path.aimStates.length - 1]
       if (previousAimState) previousAimState.pendingDelete = false
       logNav('navigateUp:start', {
         activeColumn: this.activeColumn,
         navigatingAims: this.navigatingAims
       })
 
-      const path = this.getSelectionPath()
-      const col = this.activeColumn
-
-      if (path.aims.length === 0) {
-        if (col >= 0) {
-          await this.continueAimBoundaryPhaseMove(-1)
-        }
-        return
-      }
-
-      if (!this.navigatingAims) return
-
-      if (path.aims.length === 1) {
-        if (col === -1) {
-          if (this.floatingAimIndex > 0) {
-            this.floatingAimIndex--
-            const target = dataStore.floatingAims[this.floatingAimIndex]
-            const targetState = target ? ensureAimUIState(this.floatingAimUIStates, target.id) : undefined
-            if (target && targetState?.expanded && targetState.selectedIncomingIndex !== undefined) {
-              this.goToLastChildAim(target, targetState)
-            }
-          }
-        } else if (col >= 0 && path.phase) {
-          if (path.phase.selectedAimIndex !== undefined && path.phase.selectedAimIndex > 0) {
-            path.phase.selectedAimIndex--
-            const target = dataStore.getAimsForPhase(path.phase.id)[path.phase.selectedAimIndex]
-            const targetState = target ? ensureAimUIState(this.getPhaseAimUIStates(path.phase.id), target.id) : undefined
-            if (target && targetState?.expanded && targetState.selectedIncomingIndex !== undefined) {
-              this.goToLastChildAim(target, targetState)
-            }
-          } else {
-            await this.continueAimBoundaryPhaseMove(-1)
-          }
-        }
-      } else {
-        const parentAim = path.aims[path.aims.length - 2]
-        const parentState = path.aimStates[path.aimStates.length - 2]
-        if (parentAim && parentState) {
-          if (parentState.selectedIncomingIndex == 0) {
-            parentState.selectedIncomingIndex = undefined
-          } else if (parentState.selectedIncomingIndex !== undefined) {
-            parentState.selectedIncomingIndex--
-            const parentConnections = parentAim.supportingConnections || []
-            const targetConn = parentConnections[parentState.selectedIncomingIndex]
-            if (targetConn) {
-              const target = dataStore.aims[targetConn.aimId]
-              const targetState = target ? ensureAimUIState(parentState.children, target.id) : undefined
-              if (target && targetState?.expanded && targetState.selectedIncomingIndex !== undefined) {
-                this.goToLastChildAim(target, targetState)
-              }
-            }
-          }
-        }
-      }
-    },
-
-    goToLastChildAim(target: Aim, targetState: AimUIState) {
-      const dataStore = useDataStore()
-      let connections = target.supportingConnections || []
-      while (targetState.expanded && connections.length > 0) {
-        const lastIdx = connections.length - 1
-        targetState.selectedIncomingIndex = lastIdx
-        const nextTargetConn = connections[lastIdx]
-        if (!nextTargetConn) break
-        const nextTarget = dataStore.aims[nextTargetConn.aimId]
-        if (!nextTarget) break
-        targetState = ensureAimUIState(targetState.children, nextTarget.id)
-        target = nextTarget
-        connections = target.supportingConnections || []
+      if (path.aims.length > 0 && !this.navigatingAims) return
+      if (this.stepAimRow(-1)) return
+      if (this.activeColumn >= 0) {
+        await this.continueAimBoundaryPhaseMove(-1)
       }
     },
 

@@ -1,0 +1,25 @@
+{
+  "id": "73c110aa-addd-406b-9430-2ab9446201a5",
+  "text": "Aim cursor: one row key instead of selection fields scattered over entities",
+  "description": "Slice 3 of 562cdb60. Replace phase.selectedAimIndex (a UI field on data-store Phase entities), floatingAimIndex and the nested AimUIState.selectedIncomingIndex chains with one cursor row key per list, e.g. the aimId path. Derive the selection path from it; move-actions (J/K/H/L, x/p) and restore/persist use the same key. Should be decided together with the phase selection model question (focused entry + derived path + children remembered by id, explicit scroll intents); see 98f05e67.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "562cdb60-c42d-446e-a2a5-e9a27ffe10e6"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Waiting on Felix's decision about the overall selection model (asked 2026-09-29, alongside the phase auto-scroll fix): a single focused entry with derived path vs. the current per-column/per-level state.",
+    "date": 1790717116535
+  },
+  "intrinsicValue": 2,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

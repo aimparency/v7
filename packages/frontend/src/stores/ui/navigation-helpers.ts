@@ -114,6 +114,26 @@ export function getSelectionPathFromState(
   return { phase, aims: aimPath, aimStates: statePath }
 }
 
+// One row per rendered aim of a list: the top-level aims and, recursively, the
+// children of expanded aims, in display order. `indexPath` is the top-level
+// index followed by connection indices, the encoding of the selection chain
+// (selectedAimIndex / floatingAimIndex, then selectedIncomingIndex per level).
+export type AimRow = { aimId: string; indexPath: number[] }
+
+export function getVisibleAimRows(topLevelAims: Aim[], tree: AimUIStateTree, dataStore: DataStore): AimRow[] {
+  const rows: AimRow[] = []
+  const visit = (aim: Aim, state: AimUIState | undefined, indexPath: number[]) => {
+    rows.push({ aimId: aim.id, indexPath })
+    if (!state?.expanded) return
+    ;(aim.supportingConnections ?? []).forEach((connection, index) => {
+      const child = dataStore.aims[connection.aimId]
+      if (child) visit(child, state.children?.[child.id], [...indexPath, index])
+    })
+  }
+  topLevelAims.forEach((aim, index) => visit(aim, tree[aim.id], [index]))
+  return rows
+}
+
 export function setCurrentAimIndexInState(
   activeColumn: number,
   getSelectedPhaseId: (columnIndex: number) => string | undefined,
