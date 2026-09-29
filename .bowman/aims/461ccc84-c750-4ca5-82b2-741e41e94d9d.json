@@ -12,14 +12,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1790716750096
+    "state": "done",
+    "comment": "readPhaseFile, listPhases and readProjectMeta trust stored childPhaseIds/rootPhaseIds and only derive from .parent in memory for legacy files lacking the field; none of them write (readProjectMeta still persists a first-time repoId). New reconcilePhaseTree (server.ts) does the old drop-stale/append-missing repair explicitly with change events, run from project.fixConsistency. Also removes the per-read directory scan for non-legacy phases.",
+    "date": 1790716873348
   },
   "intrinsicValue": 2,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Verified: backend vitest 76/76. Includes a new regression test that writes the mid-move state (old parent without the child, child still pointing at it), then does phase.get + phase.list and asserts the old parent file stays unchanged. The two legacy-migration tests now assert reads don't write and fixConsistency persists. tsc clean. A read-only drift scan of the live .bowman found 34 phases with 0 parent/child mismatches, so trusting stored lists changes nothing for current data."
 }

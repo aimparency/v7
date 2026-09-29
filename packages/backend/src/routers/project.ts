@@ -219,6 +219,7 @@ export const createProjectRouter = (
   writePhase: (projectPath: string, phase: Phase) => Promise<void>,
   ensureSearchIndex: (projectPath: string) => Promise<void>,
   migrateAimFiles: (projectPath: string) => Promise<string[]>,
+  reconcilePhaseTree: (projectPath: string) => Promise<string[]>,
   ee: any
 ) => {
   const getWatchdogRuntimeStatePath = (rawProjectPath: string) =>
@@ -1518,6 +1519,7 @@ export const createProjectRouter = (
         for (const aimId of await migrateAimFiles(input.projectPath)) {
           fixes.push(`Upgraded legacy fields / placed connections of Aim ${aimId}`);
         }
+        fixes.push(...await reconcilePhaseTree(input.projectPath));
 
         const aims = await listAims(input.projectPath);
         const phases = await listPhases(input.projectPath);

@@ -434,6 +434,22 @@ test('phase.list skips malformed phase files', async () => {
   assert.equal(phases[0]?.id, validPhase.id);
 });
 
+test('reading a phase mid-move does not persist a re-derived child list', async () => {
+  const projectPath = testProjectPath;
+  const oldParent = await caller.phase.create({ projectPath, phase: { name: 'Old', parent: null, commitments: [] } });
+  const moving = await caller.phase.create({ projectPath, phase: { name: 'Moving', parent: oldParent.id, commitments: [] } });
+  const oldParentFile = path.join(projectPath, 'phases', `${oldParent.id}.json`);
+
+  // State between phase.update's writes: old parent no longer lists the phase,
+  // whose own file still points at it.
+  await fs.writeJson(oldParentFile, { ...(await fs.readJson(oldParentFile)), childPhaseIds: [] });
+  await caller.phase.get({ projectPath, phaseId: oldParent.id });
+  await caller.phase.list({ projectPath });
+
+  assert.deepEqual((await fs.readJson(oldParentFile) as Phase).childPhaseIds, []);
+  assert.equal((await fs.readJson(path.join(projectPath, 'phases', `${moving.id}.json`)) as Phase).parent, oldParent.id);
+});
+
 test('phase update moves a phase into a new parent at insertionIndex in one mutation', async () => {
   const projectPath = testProjectPath;
   const create = (name: string, parent: string | null) =>
@@ -560,7 +576,7 @@ test('phase reorder preserves canonical parent-owned order for roots and childre
   assert.deepEqual(meta.rootPhaseIds, [rootB.id, rootA.id]);
 });
 
-test('phase reads lazily persist legacy root and child ordering', async () => {
+test('phase reads derive legacy root and child ordering in memory; fixConsistency persists it', async () => {
   const rootEarlyId = uuidv4();
   const rootLateId = uuidv4();
   const childEarlyId = uuidv4();
@@ -600,10 +616,11 @@ test('phase reads lazily persist legacy root and child ordering', async () => {
     phaseId: rootEarlyId
   });
   assert.deepEqual(parent.childPhaseIds, [childEarlyId, childLateId]);
-  assert.deepEqual(
-    (await fs.readJson(path.join(phasesDir, `${rootEarlyId}.json`)) as Phase).childPhaseIds,
-    [childEarlyId, childLateId]
-  );
+  const parentFile = path.join(phasesDir, `${rootEarlyId}.json`);
+  assert.equal((await fs.readJson(parentFile) as Phase).childPhaseIds, undefined, 'reads must not write');
+
+  await caller.project.fixConsistency({ projectPath: testProjectPath });
+  assert.deepEqual((await fs.readJson(parentFile) as Phase).childPhaseIds, [childEarlyId, childLateId]);
 });
 
 test('phase migration preserves canonical order while repairing missing and stale links', async () => {
@@ -637,6 +654,10 @@ test('phase migration preserves canonical order while repairing missing and stal
   for (const phase of phases) {
     await fs.writeJson(path.join(phasesDir, `${phase.id}.json`), phase);
   }
+
+  // Reads return what is stored; the repair is explicit.
+  assert.deepEqual((await caller.project.getMeta({ projectPath: testProjectPath })).rootPhaseIds, [rootSecondId, staleId]);
+  await caller.project.fixConsistency({ projectPath: testProjectPath });
 
   const meta = await caller.project.getMeta({ projectPath: testProjectPath });
   assert.deepEqual(meta.rootPhaseIds, [rootSecondId, rootFirstId]);
