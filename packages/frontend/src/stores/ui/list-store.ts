@@ -147,14 +147,22 @@ export const useListStore = defineStore('ui', {
       return (columnIndex) => Math.max(0, this.findSelectedPhaseIndex(columnIndex))
     },
 
-    // Like getSelectedPhase, but -1 while the selected key is absent from the
-    // column. A multi-write move (e.g. a phase changing parent) briefly drops the
-    // entry from every parent's child list; falling back to 0 there would treat
-    // that transient as a jump to the first entry (scrolling, or J/K acting on it).
+    // Like getSelectedPhase, but -1 while the selected phase is in transit: a
+    // multi-write move (e.g. a phase changing parent) briefly drops it from every
+    // parent's child list. Falling back to 0 there would treat that transient as
+    // a jump to the first entry (scrolling, or J/K acting on it). A key that is
+    // gone for good (phase deleted, or listed in another column) still falls back.
     findSelectedPhaseIndex: (state) => (columnIndex: number): number => {
       const key = state.selectedEntryKeyByColumn[columnIndex]
       if (!key) return 0
-      return useDataStore().getSelectableColumnEntries(columnIndex).findIndex((entry) => entry.key === key)
+      const dataStore = useDataStore()
+      const index = dataStore.getSelectableColumnEntries(columnIndex).findIndex((entry) => entry.key === key)
+      if (index >= 0 || !key.startsWith(PHASE_KEY_PREFIX)) return Math.max(0, index)
+      const phaseId = key.slice(PHASE_KEY_PREFIX.length)
+      const inTransit = !!dataStore.phases[phaseId] &&
+        !(dataStore.meta?.rootPhaseIds ?? []).includes(phaseId) &&
+        !Object.values(dataStore.phases).some((phase) => phase.childPhaseIds?.includes(phaseId))
+      return inTransit ? -1 : 0
     },
 
     selectedPhaseIdByColumn: (state): Record<number, string> => {

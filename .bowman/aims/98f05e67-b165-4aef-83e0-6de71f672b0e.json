@@ -10,6 +10,14 @@
       "effectiveness": "Fixes the reported symptom and a latent correctness bug (J/K during the gap would move entry 0). Does not restructure the model.",
       "lesson": "Derived state must represent 'missing' explicitly; a clamp-to-0 fallback turns every transient data state into a fake user action. Open follow-up (awaiting Felix): selection as one focused entry + parent-chain derivation + remembered child ids, and explicit scroll intents from actions instead of inferring navigation from state diffs.",
       "pattern": "transient-state-as-navigation"
+    },
+    {
+      "date": 1790717208603,
+      "context": "Follow-up self-review of the first fix while reading Felix's notes about scrolling after phase deletion.",
+      "outcome": "The first version returned -1 for any missing phase key, so a phase deleted by another client (or moved to a different column) would leave the column permanently without a selection and swallow j/k. Narrowed: -1 only while the phase still exists and no parent lists it (in transit); otherwise fall back to the first entry as before. Spec extended; 246/246 frontend tests, vue-tsc clean.",
+      "effectiveness": "Closes a regression I introduced before it shipped to use.",
+      "lesson": "When replacing a silent fallback with an explicit 'missing' state, enumerate every way the state can become missing (transient vs. permanent) and give the permanent ones a recovery path.",
+      "pattern": "explicit-missing-needs-recovery"
     }
   ],
   "archived": false,

@@ -175,6 +175,13 @@ describe('list store phase selection', () => {
 
     dataStore.phases['root-b'] = phase('root-b', null, ['moving', 'child-b'])
     expect(uiStore.getSelectedPhaseEntry(1)).toMatchObject({ key: 'phase:moving', parentPhaseId: 'root-b' })
+
+    // Gone for good (e.g. deleted by another client): fall back instead of
+    // leaving the column without a selection.
+    dataStore.phases['root-b'] = phase('root-b', null, ['child-b'])
+    delete dataStore.phases['moving']
+    expect(uiStore.findSelectedPhaseIndex(1)).toBe(0)
+    expect(uiStore.getSelectedPhaseEntry(1)).toMatchObject({ key: 'phase:child-a' })
   })
 
   it('moves the aim cursor over visible rows: j enters expanded children and k retraces it', async () => {
@@ -194,7 +201,7 @@ describe('list store phase selection', () => {
     uiStore.activeColumn = 0
     uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
     uiStore.navigatingAims = true
-    dataStore.phases['phase-1'].selectedAimIndex = 0
+    dataStore.phases['phase-1']!.selectedAimIndex = 0
     uiStore.ensureAimUIState(uiStore.getPhaseAimUIStates('phase-1'), 'parent').expanded = true
 
     const selected = () => uiStore.getCurrentAim()?.id
