@@ -7,7 +7,7 @@ import { AimProposalSchema, flattenAimProposal, type Aim, type AimProposal, type
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
 import { defaultAimColor } from '../aim-color.js';
-import { getAimCommitEvidence } from '../git-evidence.js';
+import { getAimCommitEvidence, getAimStatusHistory, getCommitDiff } from '../git-evidence.js';
 
 export const createAimRouter = (
   t: RouterBuilder,
@@ -79,6 +79,26 @@ export const createAimRouter = (
         const bowmanPath = normalizeProjectPath(input.projectPath);
         const repositoryPath = path.dirname(bowmanPath);
         return getAimCommitEvidence(repositoryPath, input.aimId, input.limit);
+      }),
+
+    // Status changes of the aim as committed to git, oldest first.
+    statusHistory: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        aimId: z.string().uuid()
+      }))
+      .query(async ({ input }: any) => {
+        return getAimStatusHistory(normalizeProjectPath(input.projectPath), input.aimId);
+      }),
+
+    // Per-file patches of one commit in the project's repository.
+    commitDiff: delayedProcedure
+      .input(z.object({
+        projectPath: z.string(),
+        hash: z.string().regex(/^[0-9a-f]{7,40}$/i)
+      }))
+      .query(async ({ input }: any) => {
+        return getCommitDiff(normalizeProjectPath(input.projectPath), input.hash);
       }),
 
     get: delayedProcedure

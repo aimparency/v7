@@ -5,6 +5,7 @@ import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { trpc } from '../trpc'
 import FormModalShell from './FormModalShell.vue'
+import AimHistoryModal from './AimHistoryModal.vue'
 import TagInput from './TagInput.vue'
 import NumericTextInput from './NumericTextInput.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
@@ -59,6 +60,7 @@ const validationError = ref('')
 const aimTags = ref<string[]>([])
 const selectedStatus = ref('')
 const statusComment = ref('')
+const showStatusHistory = ref(false)
 const archived = ref(false)
 const DEFAULT_COLOR = '#007acc'
 const aimColor = ref('')
@@ -678,16 +680,26 @@ const discardChanges = () => {
         >
           Multiple values - click to override all
         </button>
-        <select
-          v-else
-          v-model="selectedStatus"
-          class="status-select"
-          @keydown="handleInputKeydown"
-        >
-          <option v-for="status in statuses" :key="status.key" :value="status.key">
-            {{ status.key }}
-          </option>
-        </select>
+        <div v-else class="status-row">
+          <select
+            v-model="selectedStatus"
+            class="status-select"
+            @keydown="handleInputKeydown"
+          >
+            <option v-for="status in statuses" :key="status.key" :value="status.key">
+              {{ status.key }}
+            </option>
+          </select>
+          <button
+            v-if="!isBulk && aim"
+            type="button"
+            class="history-button"
+            title="Status changes and the commits they came with"
+            @click="showStatusHistory = true"
+          >
+            history
+          </button>
+        </div>
       </div>
 
       <div class="form-section" :class="{ 'mixed-field': isMixed('statusComment') }" @click="activateOverride('statusComment')">
@@ -940,6 +952,11 @@ const discardChanges = () => {
       </button>
     </template>
   </FormModalShell>
+  <AimHistoryModal
+    :show="showStatusHistory"
+    :aim-id="aim?.id ?? null"
+    @close="showStatusHistory = false"
+  />
 </template>
 
 <style scoped>
@@ -1078,6 +1095,22 @@ label {
   border-radius: 0.1875rem;
   color: #e0e0e0;
   font-size: 0.9rem;
+}
+
+.status-row {
+  display: flex;
+  gap: 0.375rem;
+
+  .history-button {
+    flex-shrink: 0;
+    padding: 0 0.6rem;
+    background: #1a1a1a;
+    border: 1px solid #555;
+    border-radius: 0.1875rem;
+    color: #ccc;
+    cursor: pointer;
+    &:hover { color: #fff; border-color: #888; }
+  }
 }
 
 .status-select:focus,

@@ -12,9 +12,9 @@
     "8533ae0b-2ba7-4eb0-b5ec-f55e7a5a7e3b"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1787813444955
+    "state": "partially",
+    "comment": "Backend done and tested: aim.statusHistory (status changes from the aim file's git history, following archived-aims) and aim.commitDiff (per-file patches). Frontend AimHistoryModal plus a 'history' button next to the status select in AimEditModal: vue-tsc clean, but not yet opened in a browser (dev server was down). Next: open an aim's edit modal, click history, and check the chips, file tree and diff; then review.",
+    "date": 1790718008754
   },
   "intrinsicValue": 0,
   "cost": 1,
