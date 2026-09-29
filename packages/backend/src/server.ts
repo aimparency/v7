@@ -193,7 +193,7 @@ async function writeAim(rawProjectPath: string, aim: Aim): Promise<void> {
   const oldPath = path.join(projectPath, sourceDir, `${aim.id}.json`);
   
   // Strip calculated values before saving
-  const { calculatedValue, calculatedCost, ...aimToSave } = aim;
+  const { calculatedValue, calculatedCost, ...aimToSave } = placeUnplacedConnections(aim);
 
   // Raw prior content rides along on the change event (undo history).
   const previous = (await readJsonOrNull(aimPath)) ?? (await readJsonOrNull(oldPath));
@@ -207,6 +207,59 @@ async function writeAim(rawProjectPath: string, aim: Aim): Promise<void> {
   ee.emit('change', { type: 'aim', id: aim.id, projectPath, entity: aimToSave, previous });
 }
 
+// Upgrades legacy fields of a raw aim record in memory. Pure: reads must not
+// write, or every aim.get/aim.list would dirty .bowman and race concurrent
+// writers. migrateAimFiles persists the result explicitly.
+function normalizeAimRecord(raw: any): { aim: any; changed: boolean } {
+  const aim = { ...raw };
+  let changed = false;
+
+  // 'incoming' became 'supportingConnections'
+  if (Array.isArray(aim.incoming)) {
+    const existing = aim.supportingConnections ?? [];
+    const added = aim.incoming
+      .filter((incomingId: string) => !existing.some((c: any) => c.aimId === incomingId))
+      .map((incomingId: string) => ({ aimId: incomingId, relativePosition: [0, 0] as [number, number], weight: 1 }));
+    aim.supportingConnections = [...added, ...existing];
+    delete aim.incoming;
+    changed = true;
+  }
+
+  // 'outgoing' became 'supportedAims'
+  if (Array.isArray(aim.outgoing)) {
+    const supportedAims = [...(aim.supportedAims ?? [])];
+    for (const parentId of aim.outgoing) {
+      if (!supportedAims.includes(parentId)) supportedAims.push(parentId);
+    }
+    aim.supportedAims = supportedAims;
+    delete aim.outgoing;
+    changed = true;
+  }
+
+  if (!aim.supportingConnections) aim.supportingConnections = [];
+  if (!aim.supportedAims) aim.supportedAims = [];
+  if (!aim.committedIn) aim.committedIn = [];
+
+  return { aim, changed };
+}
+
+// [0,0] is the schema default for a connection without a position; it would
+// stack the child onto its parent in the graph, so writes spread it out.
+const hasUnplacedConnection = (aim: { supportingConnections?: Array<{ relativePosition?: [number, number] }> }) =>
+  (aim.supportingConnections ?? []).some((c) => c.relativePosition?.[0] === 0 && c.relativePosition?.[1] === 0);
+
+function placeUnplacedConnections<T extends { supportingConnections?: any[] }>(aim: T): T {
+  if (!hasUnplacedConnection(aim)) return aim;
+  return {
+    ...aim,
+    supportingConnections: aim.supportingConnections!.map((c: any) =>
+      c.relativePosition?.[0] === 0 && c.relativePosition?.[1] === 0
+        ? { ...c, relativePosition: getRandomRelativePosition() }
+        : c
+    )
+  };
+}
+
 async function readAim(rawProjectPath: string, aimId: string): Promise<Aim> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   
@@ -217,67 +270,27 @@ async function readAim(rawProjectPath: string, aimId: string): Promise<Aim> {
     aimPath = path.join(projectPath, 'archived-aims', `${aimId}.json`);
   }
   
-  const aim = await fs.readJson(aimPath);
-  
-  // Lazy Migration: Integrate 'incoming' into 'supportingConnections'
-  if (aim.incoming && Array.isArray(aim.incoming)) {
-    if (!aim.supportingConnections) {
-      aim.supportingConnections = [];
-    }
-    
-    const newConnections = [];
-    for (const incomingId of aim.incoming) {
-      if (!aim.supportingConnections.some((c: any) => c.aimId === incomingId)) {
-        newConnections.push({
-          aimId: incomingId,
-          relativePosition: [0, 0] as [number, number],
-          weight: 1
-        });
-      }
-    }
+  return AimSchema.parse(normalizeAimRecord(await fs.readJson(aimPath)).aim);
+}
 
-    if (newConnections.length > 0 || aim.incoming.length > 0) {
-       aim.supportingConnections = [...newConnections, ...aim.supportingConnections];
-       delete aim.incoming;
-       await writeAim(projectPath, aim);
+// Explicit, idempotent upgrade of aim files: legacy fields and unplaced
+// connections. Returns the ids of rewritten aims.
+async function migrateAimFiles(rawProjectPath: string): Promise<string[]> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  const migrated: string[] = [];
+  for (const dirName of ['aims', 'archived-aims']) {
+    const dir = path.join(projectPath, dirName);
+    if (!(await fs.pathExists(dir))) continue;
+    for (const file of (await fs.readdir(dir)).filter((name) => name.endsWith('.json'))) {
+      const raw = await readJsonOrNull(path.join(dir, file));
+      if (!raw) continue;
+      const { aim, changed } = normalizeAimRecord(raw);
+      if (!changed && !hasUnplacedConnection(aim)) continue;
+      await writeAim(projectPath, AimSchema.parse(aim));
+      migrated.push(aim.id);
     }
   }
-
-  // Lazy Migration: Rename 'outgoing' to 'supportedAims'
-  if (aim.outgoing && Array.isArray(aim.outgoing)) {
-    if (!aim.supportedAims) {
-        aim.supportedAims = [];
-    }
-    // Merge outgoing into supportedAims
-    for (const parentId of aim.outgoing) {
-        if (!aim.supportedAims.includes(parentId)) {
-            aim.supportedAims.push(parentId);
-        }
-    }
-    delete aim.outgoing;
-    await writeAim(projectPath, aim);
-  }
-
-  // Ensure default array values and fix [0,0] positions
-  if (!aim.supportingConnections) {
-    aim.supportingConnections = [];
-  } else {
-    // Check for [0,0] relative positions and fix them
-    let changed = false;
-    for (const conn of aim.supportingConnections) {
-        if (conn.relativePosition && conn.relativePosition[0] === 0 && conn.relativePosition[1] === 0) {
-            conn.relativePosition = getRandomRelativePosition();
-            changed = true;
-        }
-    }
-    if (changed) {
-        await writeAim(projectPath, aim);
-    }
-  }
-  if (!aim.supportedAims) aim.supportedAims = [];
-  if (!aim.committedIn) aim.committedIn = [];
-  
-  return AimSchema.parse(aim);
+  return migrated;
 }
 
 async function listAims(rawProjectPath: string, archived: boolean = false): Promise<Aim[]> {
@@ -291,7 +304,7 @@ async function listAims(rawProjectPath: string, archived: boolean = false): Prom
   const results = await Promise.all(files.map(async (file): Promise<Aim | null> => {
       const aimId = path.basename(file, '.json');
       // For listing, we can just read directly from the dir we are in to avoid double check overhead of readAim
-      // BUT readAim has migration logic. So we should use readAim.
+      // BUT readAim upgrades legacy fields in memory. So we should use readAim.
       // readAim checks 'aims' first. 
       // If we are listing archived, readAim will check 'aims' (fail) then 'archived-aims' (success).
       // If we are listing active, readAim will check 'aims' (success).
@@ -1165,6 +1178,7 @@ const appRouter = t.router({
     readAim,
     writePhase,
     ensureSearchIndex,
+    migrateAimFiles,
     ee
   ),
   spinOff: spinOffRouter,

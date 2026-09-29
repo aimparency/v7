@@ -12,14 +12,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1790626945045
+    "state": "done",
+    "comment": "readAim is pure: normalizeAimRecord upgrades incoming/outgoing in memory only. [0,0] (schema-default) connection positions are now placed in writeAim, where writes happen anyway. migrateAimFiles persists legacy upgrades explicitly and runs first in project.fixConsistency (reported as 'Upgraded ...' fixes).",
+    "date": 1790716738147
   },
   "intrinsicValue": 2,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Verified: backend vitest 75/75 incl. new test asserting aim.get + aim.list leave a [0,0]-linked aim file byte-identical and fixConsistency places it; legacy incoming/outgoing tests now assert the file is untouched by reads and upgraded by fixConsistency. tsc clean. Scan of .query procedures found no other aim writes. Found the same read-writes pattern for phases (readPhaseFile reconcile + silent writePhase) — filed as a separate aim."
 }

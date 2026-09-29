@@ -784,7 +784,7 @@ test('createFloatingAim - first aim defaults intrinsicValue to 1000', async () =
   assert.equal(secondAim.intrinsicValue, 0);
 });
 
-test('readAim - performs lazy migration of incoming array', async () => {
+test('readAim - upgrades legacy incoming array in memory; fixConsistency persists it', async () => {
   // Manually create a file with legacy structure
   const aimId = uuidv4();
   const child1Id = uuidv4();
@@ -820,13 +820,18 @@ test('readAim - performs lazy migration of incoming array', async () => {
   assert.equal(migratedAim.supportingConnections[2].aimId, newChildId);
   assert.equal((migratedAim as any).incoming, undefined);
 
-  // Verify persistence
-  const persistedAim = await fs.readJson(path.join(testProjectPath, 'aims', `${aimId}.json`));
-  assert.equal(persistedAim.supportingConnections.length, 3);
-  assert.equal(persistedAim.incoming, undefined);
+  // Reads must not write
+  const aimFile = path.join(testProjectPath, 'aims', `${aimId}.json`);
+  assert.deepEqual(await fs.readJson(aimFile), legacyAim);
+
+  // The referenced children don't exist, so later consistency fixes drop the
+  // links again; this only checks that the upgrade itself was persisted.
+  const { fixes } = await caller.project.fixConsistency({ projectPath: testProjectPath });
+  assert.ok(fixes.some((fix: string) => fix.startsWith('Upgraded') && fix.includes(aimId)));
+  assert.equal((await fs.readJson(aimFile)).incoming, undefined);
 });
 
-test('readAim - performs lazy migration of outgoing array', async () => {
+test('readAim - upgrades legacy outgoing array in memory; fixConsistency persists it', async () => {
   const aimId = uuidv4();
   const parent1Id = uuidv4();
   const parent2Id = uuidv4();
@@ -853,10 +858,38 @@ test('readAim - performs lazy migration of outgoing array', async () => {
   assert.deepEqual(migratedAim.supportedAims, [parent1Id, parent2Id]);
   assert.equal((migratedAim as any).outgoing, undefined);
 
-  // Verify persistence
-  const persistedAim = await fs.readJson(path.join(testProjectPath, 'aims', `${aimId}.json`));
-  assert.deepEqual(persistedAim.supportedAims, [parent1Id, parent2Id]);
-  assert.equal(persistedAim.outgoing, undefined);
+  // Reads must not write
+  const aimFile = path.join(testProjectPath, 'aims', `${aimId}.json`);
+  assert.deepEqual(await fs.readJson(aimFile), legacyAim);
+
+  const { fixes } = await caller.project.fixConsistency({ projectPath: testProjectPath });
+  assert.ok(fixes.some((fix: string) => fix.startsWith('Upgraded') && fix.includes(aimId)));
+  assert.equal((await fs.readJson(aimFile)).outgoing, undefined);
+});
+
+test('readAim leaves unplaced [0,0] connections on disk; fixConsistency places them', async () => {
+  const parentId = uuidv4();
+  const childId = uuidv4();
+  const base = { status: { state: 'open', comment: '', date: Date.now() }, committedIn: [] };
+  const parentFile = path.join(testProjectPath, 'aims', `${parentId}.json`);
+  await fs.ensureDir(path.join(testProjectPath, 'aims'));
+  await fs.writeJson(parentFile, {
+    ...base, id: parentId, text: 'Parent', supportedAims: [],
+    supportingConnections: [{ aimId: childId, relativePosition: [0, 0], weight: 1 }]
+  });
+  await fs.writeJson(path.join(testProjectPath, 'aims', `${childId}.json`), {
+    ...base, id: childId, text: 'Child', supportedAims: [parentId], supportingConnections: []
+  });
+  const before = await fs.readFile(parentFile, 'utf8');
+
+  await caller.aim.get({ projectPath: testProjectPath, aimId: parentId });
+  await caller.aim.list({ projectPath: testProjectPath });
+  assert.equal(await fs.readFile(parentFile, 'utf8'), before);
+
+  await caller.project.fixConsistency({ projectPath: testProjectPath });
+  const [connection] = (await fs.readJson(parentFile)).supportingConnections;
+  assert.equal(connection.aimId, childId);
+  assert.notDeepEqual(connection.relativePosition, [0, 0]);
 });
 
 test('connectAims - connects with relative position', async () => {

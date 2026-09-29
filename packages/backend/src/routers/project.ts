@@ -218,6 +218,7 @@ export const createProjectRouter = (
   readAim: (projectPath: string, aimId: string) => Promise<Aim>,
   writePhase: (projectPath: string, phase: Phase) => Promise<void>,
   ensureSearchIndex: (projectPath: string) => Promise<void>,
+  migrateAimFiles: (projectPath: string) => Promise<string[]>,
   ee: any
 ) => {
   const getWatchdogRuntimeStatePath = (rawProjectPath: string) =>
@@ -1512,9 +1513,14 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .mutation(async ({ input }: any) => {
+        const fixes: string[] = [];
+        // Reads no longer upgrade aim files as a side effect; persist it here.
+        for (const aimId of await migrateAimFiles(input.projectPath)) {
+          fixes.push(`Upgraded legacy fields / placed connections of Aim ${aimId}`);
+        }
+
         const aims = await listAims(input.projectPath);
         const phases = await listPhases(input.projectPath);
-        const fixes: string[] = [];
 
         const aimMap = new Map(aims.map((a: Aim) => [a.id, a]));
         const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
