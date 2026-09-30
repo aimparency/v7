@@ -2,6 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { trpc } from '../trpc'
 import { useProjectStore } from '../stores/project-store'
+import { useDataStore } from '../stores/data'
 import FormModalShell from './FormModalShell.vue'
 
 type StatusChange = Awaited<ReturnType<typeof trpc.aim.statusHistory.query>>[number]
@@ -11,6 +12,7 @@ const props = defineProps<{ show: boolean; aimId: string | null }>()
 const emit = defineEmits<{ close: [] }>()
 
 const projectStore = useProjectStore()
+const dataStore = useDataStore()
 const shell = ref<InstanceType<typeof FormModalShell>>()
 
 const history = ref<StatusChange[]>([])
@@ -47,6 +49,10 @@ const diffLines = computed(() => (selectedFile.value?.patch ?? '').split('\n').m
   text,
   kind: text.startsWith('@@') ? 'hunk' : text.startsWith('+') ? 'add' : text.startsWith('-') ? 'del' : ''
 })))
+
+// Same colors as the status select (project-defined statuses).
+const statusColor = (state: string) =>
+  dataStore.getStatuses.find((status: { key: string; color?: string }) => status.key === state)?.color ?? '#888'
 
 const formatDate = (iso: string) => new Date(iso).toLocaleString(undefined, {
   year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -117,7 +123,7 @@ watch(() => [props.show, props.aimId] as const, async ([show, aimId]) => {
           >
             {{ formatDate(change.commit.authoredAt) }}
           </button>
-          <span class="status-chip" :style="{ '--chip-color': `var(--status-${change.state}, #888)` }">
+          <span class="status-chip" :style="{ '--chip-color': statusColor(change.state) }">
             {{ change.state }}
           </span>
         </template>
@@ -139,6 +145,7 @@ watch(() => [props.show, props.aimId] as const, async ([show, aimId]) => {
               class="tree-row"
               :class="[row.kind, { selected: row.path === selectedPath }]"
               :style="{ paddingLeft: `${row.depth * 0.75 + 0.25}rem` }"
+              :title="row.path"
               @click="row.kind === 'file' && (selectedPath = row.path)"
             >
               {{ row.kind === 'dir' ? `${row.name}/` : row.name }}
@@ -161,7 +168,6 @@ watch(() => [props.show, props.aimId] as const, async ([show, aimId]) => {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  min-height: 50vh;
 
   .hint {
     color: #999;
@@ -201,9 +207,9 @@ watch(() => [props.show, props.aimId] as const, async ([show, aimId]) => {
   .diff-area {
     display: flex;
     gap: 0.6rem;
-    flex: 1;
     min-height: 0;
-    height: 60vh;
+    /* Fill the panel (max 90vh) below the header and status rows without an outer scrollbar. */
+    height: calc(90vh - 13rem);
   }
 
   .file-tree {

@@ -61,6 +61,12 @@ const aimTags = ref<string[]>([])
 const selectedStatus = ref('')
 const statusComment = ref('')
 const showStatusHistory = ref(false)
+const historyButton = ref<HTMLButtonElement>()
+// The history modal held focus; hand it back so Escape etc. reach this modal again.
+const closeStatusHistory = () => {
+  showStatusHistory.value = false
+  nextTick(() => historyButton.value?.focus())
+}
 const archived = ref(false)
 const DEFAULT_COLOR = '#007acc'
 const aimColor = ref('')
@@ -692,6 +698,7 @@ const discardChanges = () => {
           </select>
           <button
             v-if="!isBulk && aim"
+            ref="historyButton"
             type="button"
             class="history-button"
             title="Status changes and the commits they came with"
@@ -955,7 +962,7 @@ const discardChanges = () => {
   <AimHistoryModal
     :show="showStatusHistory"
     :aim-id="aim?.id ?? null"
-    @close="showStatusHistory = false"
+    @close="closeStatusHistory"
   />
 </template>
 

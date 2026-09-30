@@ -12,14 +12,15 @@
     "8533ae0b-2ba7-4eb0-b5ec-f55e7a5a7e3b"
   ],
   "status": {
-    "state": "partially",
-    "comment": "Backend done and tested: aim.statusHistory (status changes from the aim file's git history, following archived-aims) and aim.commitDiff (per-file patches). Frontend AimHistoryModal plus a 'history' button next to the status select in AimEditModal: vue-tsc clean, but not yet opened in a browser (dev server was down). Next: open an aim's edit modal, click history, and check the chips, file tree and diff; then review.",
-    "date": 1790718008754
+    "state": "review",
+    "comment": "Implemented and checked in the live UI (localhost:4000). A 'history' button next to the status select opens status chips (project status colors) joined by clickable commit dates; the latest change is preselected. Below: a tree of the commit's changed files (code first) and a colored unified diff. Escape closes only the history and returns focus to the button. Plain unified diff, no diff library. Awaiting Felix's acceptance.",
+    "date": 1790749779993
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Live check on two aims (open→human-dependent; open→cancelled→open→done): chips and dates rendered, the diff loaded, no outer scrollbar after removing a flex:1 that overrode the diff area's height, and Escape/Escape closed history then the edit modal. Found and fixed during the check: grey chips for statuses without CSS variables (now project status colors), the outer scrollbar, and lost focus after closing (Escape no longer reached the edit modal). An apparent Escape failure mid-session was a hot-reload artifact and did not reproduce after a page reload. Backend tested against a temp git repo (4/4 git-evidence tests)."
 }
