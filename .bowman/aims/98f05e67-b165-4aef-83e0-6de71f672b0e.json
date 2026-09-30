@@ -23,14 +23,23 @@
   "archived": false,
   "color": "#666666",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "aimId": "49b755ef-dac5-4b1f-8246-49a8e7d3ca1d",
+      "relativePosition": [
+        0.3982091801215297,
+        2.468082139813612
+      ],
+      "weight": 1
+    }
+  ],
   "supportedAims": [
     "624f8d49-3a71-4b76-942b-d01be87bbfb9"
   ],
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Implemented and tested (frontend 245/245, backend phase tests, vue-tsc/tsc clean) but NOT committed: the Stop hook requires committing everything incl. .bowman before proceeding, and the auto-mode permission check denied a commit that sweeps parallel sessions' uncommitted work. Waiting on Felix to commit or authorize git commit. Also needs a live Shift+J/K check.",
+    "comment": "Committed (fb3a1de by Felix, refined in 8e0d832; deletion case in child aim). Tests green. Needs Felix's live Shift+J/K check across parent boundaries.",
     "date": 1790716219695
   },
   "intrinsicValue": 1,

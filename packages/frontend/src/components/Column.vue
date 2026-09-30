@@ -513,7 +513,11 @@ watch(
     // became the focused one. Otherwise we'd yank the view back mid-scroll.
     const keyChanged = !!settled && selectedEntryKey !== settled.key
     const indexChanged = !!settled && selectedPhaseIndex !== settled.index
-    const selectionChanged = keyChanged || indexChanged || (isSelected && !settled?.isSelected)
+    // The previous entry vanished (deleted, here or by another client): the
+    // selection fell back to a stand-in until whoever removed it reselects.
+    // That is not navigation, so don't scroll toward the stand-in.
+    const previousRemoved = keyChanged && !selectableEntries.value.some((entry) => entry.key === settled!.key)
+    const selectionChanged = !previousRemoved && (keyChanged || indexChanged || (isSelected && !settled?.isSelected))
 
     if (!settled) {
       selectionTravelDirection.value = 'preserve'
@@ -554,6 +558,12 @@ watch(() => entries.value.map((entry) => entry.key).join('|'), async () => {
 }, { flush: 'post' })
 
 onMounted(() => {
+  // The selection watch isn't immediate; seed what it compares against so the
+  // first change after mounting is judged like any later one.
+  const initialKey = getSelectedEntry()?.key
+  if (initialKey) {
+    settledSelection = { index: props.selectedPhaseIndex, key: initialKey, isSelected: props.isSelected }
+  }
   updateViewportMetrics(false)
   resizeObserver.value = new ResizeObserver((observedEntries) => {
     for (const observedEntry of observedEntries) {
