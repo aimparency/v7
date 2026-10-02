@@ -3,11 +3,11 @@ import test from 'node:test';
 import {
   IDEA_PROPOSAL_MAX_IDEAS,
   IdeaProposalSchema,
-  flattenAimProposal,
-  type ProposedAim,
+  flattenIdeaProposal,
+  type ProposedIdea,
 } from './idea-proposal.js';
 
-const leaf = (proposalId: string): ProposedAim => ({
+const leaf = (proposalId: string): ProposedIdea => ({
   proposalId,
   text: proposalId,
   children: [],
@@ -37,7 +37,7 @@ test('validates and flattens an editable proposal tree deterministically', () =>
     },
   });
 
-  const flattened = flattenAimProposal(proposal.root);
+  const flattened = flattenIdeaProposal(proposal.root);
   assert.deepEqual(flattened.ideas.map(idea => idea.proposalId), [
     'root',
     'paid-diagnostic',

@@ -43,7 +43,7 @@ export interface Position {
   y: number;
 }
 
-export async function saveAims(projectPath: string, ideas: any[]) {
+export async function saveIdeas(projectPath: string, ideas: any[]) {
   const db = await getDB();
   return new Promise<void>((resolve, reject) => {
     const transaction = db.transaction(IDEA_STORE_NAME, 'readwrite');
@@ -63,7 +63,7 @@ export async function saveAims(projectPath: string, ideas: any[]) {
   });
 }
 
-export async function loadAllAimsCache(expectedProjectPath: string): Promise<any[]> {
+export async function loadAllIdeasCache(expectedProjectPath: string): Promise<any[]> {
   const db = await getDB();
   return new Promise((resolve, reject) => {
     if (!db.objectStoreNames.contains(IDEA_STORE_NAME)) {

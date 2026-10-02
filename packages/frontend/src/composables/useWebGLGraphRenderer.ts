@@ -60,7 +60,7 @@ export function useWebGLGraphRenderer(
 
   // Convert graph nodes to WebGL format with per-element movement tracking
   function convertNodes(graphNodes: GraphNode[]): NodeData[] {
-    const currentAimId = graphUIStore.graphSelectedAimId
+    const currentIdeaId = graphUIStore.graphSelectedIdeaId
     const colorMode = graphUIStore.graphColorMode
     const configuredStatuses = (dataStore.getStatuses || []) as StatusColorEntry[]
 
@@ -141,7 +141,7 @@ export function useWebGLGraphRenderer(
         y: useOldPos ? state.y : y,
         r: node.r,
         color,
-        selected: node.id === currentAimId || uiStore.isMultiSelected(node.id),
+        selected: node.id === currentIdeaId || uiStore.isMultiSelected(node.id),
         loadable: node.loadable ?? false,
         moving: state.state > 0
       }
@@ -248,11 +248,11 @@ export function useWebGLGraphRenderer(
       // color mode, falling back to neutral gray if the node isn't found.
       const color: [number, number, number] = nodeColorById.get(link.source.id) ?? [0.5, 0.5, 0.5]
 
-      const currentAimId = graphUIStore.graphSelectedAimId
+      const currentIdeaId = graphUIStore.graphSelectedIdeaId
       const selected = (!!selectedLink &&
         link.source.id === selectedLink.childId &&
         link.target.id === selectedLink.parentId) ||
-        (!!currentAimId && (link.source.id === currentAimId || link.target.id === currentAimId))
+        (!!currentIdeaId && (link.source.id === currentIdeaId || link.target.id === currentIdeaId))
 
       return {
         id: edgeKey,
@@ -460,7 +460,7 @@ export function useWebGLGraphRenderer(
   }
 
   // Watch for selection changes
-  watch(() => graphUIStore.graphSelectedAimId, () => {
+  watch(() => graphUIStore.graphSelectedIdeaId, () => {
     if (!renderer || !isInitialized.value) return
     // Selection change doesn't affect positions, just re-render with current cached data
     cachedNodeData = convertNodes(nodes.value)

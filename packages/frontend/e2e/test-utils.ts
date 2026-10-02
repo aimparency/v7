@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { randomUUID } from 'crypto';
 import { AIMPARENCY_DIR_NAME } from 'shared';
 
-export interface MockAim {
+export interface MockIdea {
   id?: string;
   text: string;
   status?: string;
@@ -21,7 +21,7 @@ export interface MockPhase {
   childPhaseIds?: string[];
 }
 
-export function seedProject(projectPath: string, data: { phases?: MockPhase[], ideas?: MockAim[], meta?: { name?: string, color?: string, statuses?: any[], rootPhaseIds?: string[], dataModelVersion?: number } }) {
+export function seedProject(projectPath: string, data: { phases?: MockPhase[], ideas?: MockIdea[], meta?: { name?: string, color?: string, statuses?: any[], rootPhaseIds?: string[], dataModelVersion?: number } }) {
   const bowmanPath = join(projectPath, AIMPARENCY_DIR_NAME);
   mkdirSync(join(bowmanPath, 'ideas'), { recursive: true });
   mkdirSync(join(bowmanPath, 'phases'), { recursive: true });
@@ -71,7 +71,7 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], i
         weight: 1, 
         relativePosition: [0, 0] 
       })),
-      supportedAims: a.outgoing || [],
+      supportedIdeas: a.outgoing || [],
       committedIn: a.committedIn || []
     };
 
@@ -83,9 +83,9 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], i
 // new phase commitments, "Connection details" for new sub-ideas, and "Commit to
 // Phase" for new graph ideas (possibly one after another). Waits for the Add Idea
 // modal to close, then skips each prompt until none is left.
-export async function finishAimCreation(page: import('@playwright/test').Page) {
-  const addAimTitle = page.locator('.modal-panel .modal-header h2', { hasText: 'Add Idea' });
-  await addAimTitle.waitFor({ state: 'hidden', timeout: 3000 });
+export async function finishIdeaCreation(page: import('@playwright/test').Page) {
+  const addIdeaTitle = page.locator('.modal-panel .modal-header h2', { hasText: 'Add Idea' });
+  await addIdeaTitle.waitFor({ state: 'hidden', timeout: 3000 });
   const followUpPrompt = page.locator('.search-modal, .modal-panel').first();
   for (let prompt = 0; prompt < 3; prompt++) {
     try {

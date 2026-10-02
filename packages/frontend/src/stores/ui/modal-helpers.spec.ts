@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   clearTeleportBuffer,
-  closeAimModal,
-  closeAimSearchModal,
+  closeIdeaModal,
+  closeIdeaSearchModal,
   closePhaseModal,
   closeSettingsModal,
-  openAimCreateModal,
-  openAimSearchModal,
+  openIdeaCreateModal,
+  openIdeaSearchModal,
   openPhaseCreateModal,
   openSettingsModal,
   type UIModalState
@@ -19,23 +19,23 @@ const createState = (): UIModalState => ({
   phaseModalEditingParentId: null,
   newPhaseName: '',
   phaseModalInsertPosition: 'before',
-  showAimModal: false,
+  showIdeaModal: false,
   ideaModalInsertPosition: 'before',
   ideaModalSource: 'columns',
-  showAimSearch: false,
+  showIdeaSearch: false,
   ideaSearchMode: 'navigate',
   ideaSearchCallback: null,
-  ideaSearchInitialAimId: null,
+  ideaSearchInitialIdeaId: null,
   ideaSearchTitle: 'Search Ideas',
   ideaSearchPlaceholder: 'Go to idea...',
   ideaSearchShowFilters: true,
   ideaSearchAdditionalOptions: [],
   showSettingsModal: false,
-  teleportCutAimId: 'x',
-  teleportSource: { parentAimId: 'p' },
-  teleportCopyAimId: 'c',
+  teleportCutIdeaId: 'x',
+  teleportSource: { parentIdeaId: 'p' },
+  teleportCopyIdeaId: 'c',
   teleportCopySource: { phaseId: 'ph' },
-  movingAimId: 'm'
+  movingIdeaId: 'm'
 })
 
 describe('modal helpers', () => {
@@ -52,25 +52,25 @@ describe('modal helpers', () => {
   it('toggles idea modal and search state', () => {
     const state = createState()
     const callback = () => undefined
-    openAimCreateModal(state)
-    expect(state.showAimModal).toBe(true)
-    openAimSearchModal(state, 'pick', callback, 'a1', {
+    openIdeaCreateModal(state)
+    expect(state.showIdeaModal).toBe(true)
+    openIdeaSearchModal(state, 'pick', callback, 'a1', {
       title: 'Pick Parent',
       placeholder: 'Search parents...',
       showFilters: false,
       additionalOptions: [{ id: 'skip', label: 'Skip' }]
     })
-    expect(state.showAimSearch).toBe(true)
+    expect(state.showIdeaSearch).toBe(true)
     expect(state.ideaSearchMode).toBe('pick')
-    expect(state.ideaSearchInitialAimId).toBe('a1')
+    expect(state.ideaSearchInitialIdeaId).toBe('a1')
     expect(state.ideaSearchTitle).toBe('Pick Parent')
     expect(state.ideaSearchPlaceholder).toBe('Search parents...')
     expect(state.ideaSearchShowFilters).toBe(false)
     expect(state.ideaSearchAdditionalOptions).toEqual([{ id: 'skip', label: 'Skip' }])
-    closeAimSearchModal(state)
-    closeAimModal(state)
-    expect(state.showAimSearch).toBe(false)
-    expect(state.showAimModal).toBe(false)
+    closeIdeaSearchModal(state)
+    closeIdeaModal(state)
+    expect(state.showIdeaSearch).toBe(false)
+    expect(state.showIdeaModal).toBe(false)
   })
 
   it('toggles settings and clears teleport buffer', () => {
@@ -80,10 +80,10 @@ describe('modal helpers', () => {
     closeSettingsModal(state)
     expect(state.showSettingsModal).toBe(false)
     clearTeleportBuffer(state)
-    expect(state.teleportCutAimId).toBe(null)
+    expect(state.teleportCutIdeaId).toBe(null)
     expect(state.teleportSource).toBe(null)
-    expect(state.teleportCopyAimId).toBe(null)
+    expect(state.teleportCopyIdeaId).toBe(null)
     expect(state.teleportCopySource).toBe(null)
-    expect(state.movingAimId).toBe(null)
+    expect(state.movingIdeaId).toBe(null)
   })
 })

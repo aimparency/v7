@@ -1,10 +1,10 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { IdeaSchema, PhaseSchema, calculateAimValues, type Idea, type Phase } from 'shared';
+import { IdeaSchema, PhaseSchema, calculateIdeaValues, type Idea, type Phase } from 'shared';
 import { normalizeBowmanPath, writeJsonAtomic } from './loop-state.js';
 
-export type PrioritizedAim = {
+export type PrioritizedIdea = {
   idea: Idea;
   phase: Phase;
   priority: number;
@@ -20,7 +20,7 @@ function phasesDir(projectPath: string): string {
   return path.join(normalizeBowmanPath(projectPath), 'phases');
 }
 
-export async function listAimsFromFiles(projectPath: string, archived = false): Promise<Idea[]> {
+export async function listIdeasFromFiles(projectPath: string, archived = false): Promise<Idea[]> {
   const dir = ideasDir(projectPath);
   const files = (await fs.pathExists(dir)) ? await fs.readdir(dir) : [];
   const ideas: Idea[] = [];
@@ -51,7 +51,7 @@ export async function listPhasesFromFiles(projectPath: string): Promise<Phase[]>
   return phases;
 }
 
-export async function writeAimToFile(projectPath: string, idea: Idea): Promise<void> {
+export async function writeIdeaToFile(projectPath: string, idea: Idea): Promise<void> {
   await writeJsonAtomic(path.join(ideasDir(projectPath), `${idea.id}.json`), IdeaSchema.parse(idea));
 }
 
@@ -59,9 +59,9 @@ export async function writePhaseToFile(projectPath: string, phase: Phase): Promi
   await writeJsonAtomic(path.join(phasesDir(projectPath), `${phase.id}.json`), PhaseSchema.parse(phase));
 }
 
-export async function getPrioritizedAims(projectPath: string, limit = 10, phaseId?: string | null): Promise<PrioritizedAim[]> {
+export async function getPrioritizedIdeas(projectPath: string, limit = 10, phaseId?: string | null): Promise<PrioritizedIdea[]> {
   const [ideas, phases] = await Promise.all([
-    listAimsFromFiles(projectPath),
+    listIdeasFromFiles(projectPath),
     listPhasesFromFiles(projectPath)
   ]);
   const phaseById = new Map(phases.map((phase) => [phase.id, phase]));
@@ -90,9 +90,9 @@ export async function getPrioritizedAims(projectPath: string, limit = 10, phaseI
       .map((phase) => findWithCommitments(phase))
       .filter((phase): phase is Phase => phase !== null);
   }
-  const { priorities, values, costs, totalIntrinsic } = calculateAimValues(ideas);
+  const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(ideas);
   const byId = new Map(ideas.map((idea) => [idea.id, idea]));
-  const rows: PrioritizedAim[] = [];
+  const rows: PrioritizedIdea[] = [];
   for (const phase of targetPhases) {
     for (const ideaId of phase.commitments ?? []) {
       const idea = byId.get(ideaId);
@@ -111,19 +111,19 @@ export async function getPrioritizedAims(projectPath: string, limit = 10, phaseI
     .slice(0, limit);
 }
 
-export async function getAimContext(projectPath: string, ideaId: string) {
-  const ideas = await listAimsFromFiles(projectPath);
+export async function getIdeaContext(projectPath: string, ideaId: string) {
+  const ideas = await listIdeasFromFiles(projectPath);
   const ideaMap = new Map(ideas.map((idea) => [idea.id, idea]));
   const idea = ideaMap.get(ideaId);
   if (!idea) throw new Error(`Idea not found: ${ideaId}`);
-  const { flowValues } = calculateAimValues(ideas);
+  const { flowValues } = calculateIdeaValues(ideas);
   const MAX_PATH_DEPTH = 64;
   const MAX_PATHS = 100;
   const pathToRoot = [];
   const visited = new Set<string>([ideaId]);
   let cursor: Idea = idea;
   while (pathToRoot.length < MAX_PATH_DEPTH) {
-    const parentIds = (cursor.supportedAims ?? []).filter((id) => ideaMap.has(id) && !visited.has(id));
+    const parentIds = (cursor.supportedIdeas ?? []).filter((id) => ideaMap.has(id) && !visited.has(id));
     if (parentIds.length === 0) break;
     let best = parentIds[0];
     let bestFlow = flowValues.get(`${best}->${cursor.id}`) ?? 0;
@@ -167,7 +167,7 @@ export async function getAimContext(projectPath: string, ideaId: string) {
       pathsToRootTruncated = true;
       return;
     }
-    const existingParentIds = (current.supportedAims ?? []).filter((id) => ideaMap.has(id));
+    const existingParentIds = (current.supportedIdeas ?? []).filter((id) => ideaMap.has(id));
     if (existingParentIds.length === 0) {
       pathsToRoot.push([...upwardPath].reverse());
       return;
@@ -193,7 +193,7 @@ export async function getAimContext(projectPath: string, ideaId: string) {
     if (!followedParent) return;
   };
   walkAllParents(idea, [], new Set([ideaId]));
-  const parents = (idea.supportedAims ?? [])
+  const parents = (idea.supportedIdeas ?? [])
     .map((id) => ideaMap.get(id))
     .filter(Boolean)
     .map((parent) => ({ id: parent!.id, text: parent!.text, description: parent!.description }));
@@ -211,9 +211,9 @@ export async function getAimContext(projectPath: string, ideaId: string) {
   };
 }
 
-export async function searchAimsSemanticLite(projectPath: string, query: string, limit = 8) {
+export async function searchIdeasSemanticLite(projectPath: string, query: string, limit = 8) {
   const terms = query.toLowerCase().split(/\W+/).filter((term) => term.length >= 3);
-  const ideas = await listAimsFromFiles(projectPath);
+  const ideas = await listIdeasFromFiles(projectPath);
   return ideas
     .map((idea) => {
       const hay = `${idea.text} ${idea.description ?? ''} ${(idea.tags ?? []).join(' ')}`.toLowerCase();
@@ -225,10 +225,10 @@ export async function searchAimsSemanticLite(projectPath: string, query: string,
     .slice(0, limit);
 }
 
-export async function createAim(projectPath: string, input: {
+export async function createIdea(projectPath: string, input: {
   text: string;
   description?: string;
-  supportedAims?: string[];
+  supportedIdeas?: string[];
   phaseId?: string;
   cost?: number;
   intrinsicValue?: number;
@@ -243,7 +243,7 @@ export async function createAim(projectPath: string, input: {
     archived: false,
     tags: [],
     supportingConnections: [],
-    supportedAims: input.supportedAims ?? [],
+    supportedIdeas: input.supportedIdeas ?? [],
     committedIn: input.phaseId ? [input.phaseId] : [],
     status: { state: 'open', comment: '', date: now },
     intrinsicValue: input.intrinsicValue ?? 0,
@@ -254,14 +254,14 @@ export async function createAim(projectPath: string, input: {
     costVariance: 0,
     valueVariance: 0
   });
-  await writeAimToFile(projectPath, idea);
-  const ideas = new Map((await listAimsFromFiles(projectPath)).map((candidate) => [candidate.id, candidate]));
-  for (const parentId of idea.supportedAims ?? []) {
+  await writeIdeaToFile(projectPath, idea);
+  const ideas = new Map((await listIdeasFromFiles(projectPath)).map((candidate) => [candidate.id, candidate]));
+  for (const parentId of idea.supportedIdeas ?? []) {
     const parent = ideas.get(parentId);
     if (!parent) continue;
     if (!(parent.supportingConnections ?? []).some((connection) => connection.ideaId === idea.id)) {
       parent.supportingConnections = [...(parent.supportingConnections ?? []), { ideaId: idea.id, relativePosition: [0, 0], weight: 1 }];
-      await writeAimToFile(projectPath, parent);
+      await writeIdeaToFile(projectPath, parent);
     }
   }
   if (input.phaseId) {
@@ -275,8 +275,8 @@ export async function createAim(projectPath: string, input: {
   return idea;
 }
 
-export async function commitAimToPhase(projectPath: string, ideaId: string, phaseId: string) {
-  const ideas = await listAimsFromFiles(projectPath, true).then(async (archived) => [...await listAimsFromFiles(projectPath), ...archived]);
+export async function commitIdeaToPhase(projectPath: string, ideaId: string, phaseId: string) {
+  const ideas = await listIdeasFromFiles(projectPath, true).then(async (archived) => [...await listIdeasFromFiles(projectPath), ...archived]);
   const idea = ideas.find((candidate) => candidate.id === ideaId);
   if (!idea) throw new Error(`Idea not found: ${ideaId}`);
   const phasePath = path.join(phasesDir(projectPath), `${phaseId}.json`);
@@ -287,13 +287,13 @@ export async function commitAimToPhase(projectPath: string, ideaId: string, phas
   }
   if (!(idea.committedIn ?? []).includes(phaseId)) {
     idea.committedIn = [...(idea.committedIn ?? []), phaseId];
-    await writeAimToFile(projectPath, idea);
+    await writeIdeaToFile(projectPath, idea);
   }
   return { ideaId, phaseId, committed: true };
 }
 
-export async function updateAim(projectPath: string, ideaId: string, patch: Partial<Pick<Idea, 'text' | 'description' | 'status' | 'cost' | 'intrinsicValue' | 'valueRationale'>>) {
-  const ideas = await listAimsFromFiles(projectPath, true).then(async (archived) => [...await listAimsFromFiles(projectPath), ...archived]);
+export async function updateIdea(projectPath: string, ideaId: string, patch: Partial<Pick<Idea, 'text' | 'description' | 'status' | 'cost' | 'intrinsicValue' | 'valueRationale'>>) {
+  const ideas = await listIdeasFromFiles(projectPath, true).then(async (archived) => [...await listIdeasFromFiles(projectPath), ...archived]);
   const idea = ideas.find((candidate) => candidate.id === ideaId);
   if (!idea) throw new Error(`Idea not found: ${ideaId}`);
   const next = IdeaSchema.parse({
@@ -301,7 +301,7 @@ export async function updateAim(projectPath: string, ideaId: string, patch: Part
     ...patch,
     status: patch.status ? { ...patch.status, date: patch.status.date ?? Date.now() } : idea.status
   });
-  await writeAimToFile(projectPath, next);
+  await writeIdeaToFile(projectPath, next);
   return next;
 }
 
@@ -309,9 +309,9 @@ export async function updateAim(projectPath: string, ideaId: string, patch: Part
 // through their parents (see idea 6f9bef89), so they are browsed via the
 // uncommitted filter rather than reported here.
 export async function graphHygiene(projectPath: string) {
-  const [ideas, phases] = await Promise.all([listAimsFromFiles(projectPath), listPhasesFromFiles(projectPath)]);
+  const [ideas, phases] = await Promise.all([listIdeasFromFiles(projectPath), listPhasesFromFiles(projectPath)]);
   const committed = new Set(phases.flatMap((phase) => phase.commitments ?? []));
-  const floating = ideas.filter((idea) => !committed.has(idea.id) && (idea.supportedAims ?? []).length === 0);
+  const floating = ideas.filter((idea) => !committed.has(idea.id) && (idea.supportedIdeas ?? []).length === 0);
   const megaParents = ideas
     .filter((idea) => (idea.supportingConnections ?? []).length >= 25)
     .map((idea) => ({ id: idea.id, text: idea.text, childCount: idea.supportingConnections.length }));

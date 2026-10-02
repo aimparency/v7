@@ -7,10 +7,10 @@ import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { observable } from '@trpc/server/observable';
 import type { Idea, Phase, ProjectMeta } from 'shared';
-import { INITIAL_STATES, IdeaSchema, PhaseSchema, calculateAimValues, cosineSimilarity } from 'shared';
+import { INITIAL_STATES, IdeaSchema, PhaseSchema, calculateIdeaValues, cosineSimilarity } from 'shared';
 import { spawn, type ChildProcess } from 'child_process';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
-import { embeddingTextForAim } from '../embeddings.js';
+import { embeddingTextForIdea } from '../embeddings.js';
 import { currentOrigin } from '../change-origin.js';
 import { findDuplicatePairs, clusterDuplicates } from '../duplicate-detection.js';
 import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-completion.js';
@@ -81,7 +81,7 @@ const loopInstanceSchema = z.object({
   name: z.string(),
   status: z.enum(['idle', 'running', 'waiting_for_human', 'waiting_for_external', 'stopped', 'done', 'error']),
   targetPhaseId: z.string().nullable().default(null),
-  targetAimId: z.string().nullable().default(null),
+  targetIdeaId: z.string().nullable().default(null),
   stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).default('never'),
   currentActivity: z.string().nullable().default(null),
   createdAt: z.number(),
@@ -201,11 +201,11 @@ export const createProjectRouter = (
   delayedProcedure: BaseProcedure,
   normalizeProjectPath: (p: string) => string,
   ensureProjectStructure: (projectPath: string) => Promise<void>,
-  listAims: (projectPath: string, archived?: boolean) => Promise<Idea[]>,
+  listIdeas: (projectPath: string, archived?: boolean) => Promise<Idea[]>,
   listPhases: (projectPath: string, parentPhaseId?: string | null) => Promise<Phase[]>,
   readProjectMeta: (projectPath: string) => Promise<ProjectMeta>,
-  writeAim: (projectPath: string, idea: Idea) => Promise<void>,
-  indexAims: (projectPath: string, ideas: Idea[]) => void,
+  writeIdea: (projectPath: string, idea: Idea) => Promise<void>,
+  indexIdeas: (projectPath: string, ideas: Idea[]) => void,
   indexPhases: (projectPath: string, phases: Phase[]) => void,
   loadVectorStore: (projectPath: string) => Promise<Record<string, any>>,
   hasCurrentEmbedding: (value: unknown) => boolean,
@@ -215,10 +215,10 @@ export const createProjectRouter = (
   migrateCommittedInField: (projectPath: string) => Promise<void>,
   cleanupCommitments: (projectPath: string, specificPhaseId?: string) => Promise<number>,
   getDb: (projectPath: string) => any,
-  readAim: (projectPath: string, ideaId: string) => Promise<Idea>,
+  readIdea: (projectPath: string, ideaId: string) => Promise<Idea>,
   writePhase: (projectPath: string, phase: Phase) => Promise<void>,
   ensureSearchIndex: (projectPath: string) => Promise<void>,
-  migrateAimFiles: (projectPath: string) => Promise<string[]>,
+  migrateIdeaFiles: (projectPath: string) => Promise<string[]>,
   reconcilePhaseTree: (projectPath: string) => Promise<string[]>,
   ee: any
 ) => {
@@ -256,7 +256,7 @@ export const createProjectRouter = (
     return phases.filter((phase): phase is Phase => phase !== null);
   };
 
-  const listLoopAims = async (rawProjectPath: string): Promise<Idea[]> => {
+  const listLoopIdeas = async (rawProjectPath: string): Promise<Idea[]> => {
     const ideasDir = path.join(normalizeProjectPath(rawProjectPath), 'ideas');
     if (!await fs.pathExists(ideasDir)) return [];
     const files = (await fs.readdir(ideasDir)).filter((file) => file.endsWith('.json'));
@@ -277,7 +277,7 @@ export const createProjectRouter = (
     const [meta, phases, ideas] = await Promise.all([
       readLoopProjectMeta(projectPath),
       listLoopPhases(projectPath),
-      listLoopAims(projectPath)
+      listLoopIdeas(projectPath)
     ]);
     const phaseById = new Map(phases.map((phase) => [phase.id, phase]));
     const explicitPhase = preferredPhaseId ? phaseById.get(preferredPhaseId) : undefined;
@@ -289,18 +289,18 @@ export const createProjectRouter = (
       (phase.from ?? 0) > 0 && (phase.to ?? 0) > 0 && phase.from! <= now && now <= phase.to!
     );
     const phase = explicitPhase ?? cursorPhase ?? activePhase ?? phases[0] ?? null;
-    if (!phase) return { targetPhaseId: null, targetAimId: null };
+    if (!phase) return { targetPhaseId: null, targetIdeaId: null };
 
-    const { priorities } = calculateAimValues(ideas);
+    const { priorities } = calculateIdeaValues(ideas);
     const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
-    const targetAim = [...(phase.commitments ?? [])]
+    const targetIdea = [...(phase.commitments ?? [])]
       .map((ideaId) => ideaById.get(ideaId))
       .filter((idea): idea is Idea => idea !== undefined && idea.status.state === 'open')
       .sort((left, right) => (priorities.get(right.id) ?? 0) - (priorities.get(left.id) ?? 0))[0] ?? null;
 
     return {
       targetPhaseId: phase.id,
-      targetAimId: targetAim?.id ?? null
+      targetIdeaId: targetIdea?.id ?? null
     };
   };
 
@@ -308,10 +308,10 @@ export const createProjectRouter = (
     rawProjectPath: string,
     instance: z.infer<typeof loopInstanceSchema>
   ) => {
-    if (instance.targetPhaseId && instance.targetAimId) return instance;
+    if (instance.targetPhaseId && instance.targetIdeaId) return instance;
     const defaults = await pickDefaultLoopTarget(rawProjectPath, instance.targetPhaseId);
     instance.targetPhaseId = instance.targetPhaseId ?? defaults.targetPhaseId;
-    instance.targetAimId = instance.targetAimId ?? defaults.targetAimId;
+    instance.targetIdeaId = instance.targetIdeaId ?? defaults.targetIdeaId;
     instance.updatedAt = Date.now();
     return instance;
   };
@@ -1041,7 +1041,7 @@ export const createProjectRouter = (
             name: input.name?.trim() || `Instance ${state.instances.filter((i) => i.loopId === input.loopId).length + 1}`,
             status: 'idle',
             targetPhaseId: target.targetPhaseId,
-            targetAimId: null,
+            targetIdeaId: null,
             stopPolicy: 'never',
             currentActivity: null,
             createdAt: now,
@@ -1059,11 +1059,11 @@ export const createProjectRouter = (
         instanceId: z.string(),
         name: z.string().optional(),
         targetPhaseId: z.string().nullable().optional(),
-        targetAimId: z.string().nullable().optional(),
+        targetIdeaId: z.string().nullable().optional(),
         stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).optional()
       }))
       .mutation(async ({ input }: any) => {
-        const defaultTarget = input.targetPhaseId && input.targetAimId === undefined
+        const defaultTarget = input.targetPhaseId && input.targetIdeaId === undefined
           ? await pickDefaultLoopTarget(input.projectPath, input.targetPhaseId)
           : null;
         return mutateLoopRuntimeState(input.projectPath, (state) => {
@@ -1072,9 +1072,9 @@ export const createProjectRouter = (
           if (input.name !== undefined) instance.name = input.name.trim() || instance.name;
           if (input.targetPhaseId !== undefined) {
             instance.targetPhaseId = input.targetPhaseId;
-            if (input.targetAimId === undefined) instance.targetAimId = defaultTarget?.targetAimId ?? null;
+            if (input.targetIdeaId === undefined) instance.targetIdeaId = defaultTarget?.targetIdeaId ?? null;
           }
-          if (input.targetAimId !== undefined) instance.targetAimId = input.targetAimId;
+          if (input.targetIdeaId !== undefined) instance.targetIdeaId = input.targetIdeaId;
           if (input.stopPolicy !== undefined) instance.stopPolicy = input.stopPolicy;
           instance.updatedAt = Date.now();
         });
@@ -1203,10 +1203,10 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .mutation(async ({ input }: any) => {
-        const ideas = await listAims(input.projectPath);
+        const ideas = await listIdeas(input.projectPath);
         const phases = await listPhases(input.projectPath);
 
-        indexAims(input.projectPath, ideas);
+        indexIdeas(input.projectPath, ideas);
         indexPhases(input.projectPath, phases);
 
         // Background embedding generation
@@ -1224,7 +1224,7 @@ export const createProjectRouter = (
                   let pending: { ideaId: string, vector: number[] }[] = [];
                   for (const idea of ideasToEmbed) {
                       const startedAt = Date.now();
-                      const vector = await generateEmbedding(embeddingTextForAim(idea));
+                      const vector = await generateEmbedding(embeddingTextForIdea(idea));
                       if (vector) {
                           pending.push({ ideaId: idea.id, vector });
                       }
@@ -1358,11 +1358,11 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .mutation(async ({ input }: any) => {
-        const ideas = await listAims(input.projectPath);
+        const ideas = await listIdeas(input.projectPath);
         for (const idea of ideas) {
           if (!idea.tags) {
             idea.tags = [];
-            await writeAim(input.projectPath, idea);
+            await writeIdea(input.projectPath, idea);
           }
         }
         return { success: true };
@@ -1373,19 +1373,19 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .mutation(async ({ input }: any) => {
-        const ideas = await listAims(input.projectPath);
+        const ideas = await listIdeas(input.projectPath);
         let count = 0;
         for (const idea of ideas) {
-          const anyAim = idea as any;
-          if (anyAim.incoming && Array.isArray(anyAim.incoming)) {
+          const anyIdea = idea as any;
+          if (anyIdea.incoming && Array.isArray(anyIdea.incoming)) {
              if (!idea.supportingConnections) idea.supportingConnections = [];
-             for (const id of anyAim.incoming) {
+             for (const id of anyIdea.incoming) {
                 if (!idea.supportingConnections.some((c: any) => c.ideaId === id)) {
                     idea.supportingConnections.push({ ideaId: id, relativePosition: [0, 0], weight: 1 });
                 }
              }
-             delete anyAim.incoming;
-             await writeAim(input.projectPath, idea);
+             delete anyIdea.incoming;
+             await writeIdea(input.projectPath, idea);
              count++;
           }
         }
@@ -1398,7 +1398,7 @@ export const createProjectRouter = (
       }))
       .mutation(async ({ input }: any) => {
         const count = await cleanupCommitments(input.projectPath);
-        return { fixedAims: count };
+        return { fixedIdeas: count };
       }),
 
     checkConsistency: delayedProcedure
@@ -1406,7 +1406,7 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .query(async ({ input }: any) => {
-        const ideas = await listAims(input.projectPath);
+        const ideas = await listIdeas(input.projectPath);
         const phases = await listPhases(input.projectPath);
         const issues: ConsistencyIssue[] = [];
 
@@ -1452,7 +1452,7 @@ export const createProjectRouter = (
           }
         }
 
-        // Check 2: Idea <-> Idea consistency (supportingConnections/supportedAims)
+        // Check 2: Idea <-> Idea consistency (supportingConnections/supportedIdeas)
         for (const idea of ideas) {
           // supportingConnections (Children)
           if (idea.supportingConnections) {
@@ -1465,22 +1465,22 @@ export const createProjectRouter = (
                 ));
                 } else {
                 const child = ideaMap.get(childId)!;
-                if (!child.supportedAims.includes(idea.id)) {
+                if (!child.supportedIdeas.includes(idea.id)) {
                     issues.push(createConsistencyIssue(
                       'idea_missing_child_supported_idea',
-                      `Idea ${idea.id} lists ${childId} as supporting, but ${childId} does not list ${idea.id} as supportedAims`
+                      `Idea ${idea.id} lists ${childId} as supporting, but ${childId} does not list ${idea.id} as supportedIdeas`
                     ));
                 }
                 }
             }
           }
 
-          // supportedAims (Parents)
-          for (const parentId of idea.supportedAims) {
+          // supportedIdeas (Parents)
+          for (const parentId of idea.supportedIdeas) {
             if (!ideaMap.has(parentId)) {
               issues.push(createConsistencyIssue(
                 'idea_nonexistent_parent',
-                `Idea ${idea.id} has non-existent supportedAims (parent) ${parentId}`
+                `Idea ${idea.id} has non-existent supportedIdeas (parent) ${parentId}`
               ));
             } else {
               const parent = ideaMap.get(parentId)!;
@@ -1488,7 +1488,7 @@ export const createProjectRouter = (
               if (!parentHasConnection) {
                 issues.push(createConsistencyIssue(
                   'idea_missing_parent_supporting_connection',
-                  `Idea ${idea.id} lists ${parentId} as supportedAims, but ${parentId} does not list ${idea.id} in supportingConnections`
+                  `Idea ${idea.id} lists ${parentId} as supportedIdeas, but ${parentId} does not list ${idea.id} in supportingConnections`
                 ));
               }
             }
@@ -1516,12 +1516,12 @@ export const createProjectRouter = (
       .mutation(async ({ input }: any) => {
         const fixes: string[] = [];
         // Reads no longer upgrade idea files as a side effect; persist it here.
-        for (const ideaId of await migrateAimFiles(input.projectPath)) {
+        for (const ideaId of await migrateIdeaFiles(input.projectPath)) {
           fixes.push(`Upgraded legacy fields / placed connections of Idea ${ideaId}`);
         }
         fixes.push(...await reconcilePhaseTree(input.projectPath));
 
-        const ideas = await listAims(input.projectPath);
+        const ideas = await listIdeas(input.projectPath);
         const phases = await listPhases(input.projectPath);
 
         const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
@@ -1544,7 +1544,7 @@ export const createProjectRouter = (
           });
 
           if (idea.committedIn.length !== originalCommittedIn.length) {
-            await writeAim(input.projectPath, idea);
+            await writeIdea(input.projectPath, idea);
           }
         }
 
@@ -1560,7 +1560,7 @@ export const createProjectRouter = (
 
             if (!idea.committedIn.includes(phase.id)) {
               idea.committedIn.push(phase.id);
-              await writeAim(input.projectPath, idea);
+              await writeIdea(input.projectPath, idea);
               fixes.push(`Added phase ${phase.id} to Idea ${idea.id}`);
             }
           }
@@ -1585,38 +1585,38 @@ export const createProjectRouter = (
                 }
                 validConnections.push(conn);
 
-                if (!child.supportedAims.includes(idea.id)) {
-                child.supportedAims.push(idea.id);
-                await writeAim(input.projectPath, child);
-                fixes.push(`Added supportedAims parent ${idea.id} to Child ${child.id}`);
+                if (!child.supportedIdeas.includes(idea.id)) {
+                child.supportedIdeas.push(idea.id);
+                await writeIdea(input.projectPath, child);
+                fixes.push(`Added supportedIdeas parent ${idea.id} to Child ${child.id}`);
                 }
             }
             if (validConnections.length !== idea.supportingConnections.length) {
                 idea.supportingConnections = validConnections;
-                await writeAim(input.projectPath, idea);
+                await writeIdea(input.projectPath, idea);
             }
           }
 
-          // supportedAims (Parents)
-          const validSupportedAims = [];
-          for (const parentId of idea.supportedAims) {
+          // supportedIdeas (Parents)
+          const validSupportedIdeas = [];
+          for (const parentId of idea.supportedIdeas) {
             const parent = ideaMap.get(parentId);
             if (!parent) {
               fixes.push(`Removed non-existent parent ${parentId} from Idea ${idea.id}`);
               continue;
             }
-            validSupportedAims.push(parentId);
+            validSupportedIdeas.push(parentId);
 
             if (!parent.supportingConnections) parent.supportingConnections = [];
             if (!parent.supportingConnections.some((c: any) => c.ideaId === idea.id)) {
               parent.supportingConnections.push({ ideaId: idea.id, relativePosition: [0,0], weight: 1 });
-              await writeAim(input.projectPath, parent);
+              await writeIdea(input.projectPath, parent);
               fixes.push(`Added supporting connection ${idea.id} to Parent ${parent.id}`);
             }
           }
-          if (validSupportedAims.length !== idea.supportedAims.length) {
-            idea.supportedAims = validSupportedAims;
-            await writeAim(input.projectPath, idea);
+          if (validSupportedIdeas.length !== idea.supportedIdeas.length) {
+            idea.supportedIdeas = validSupportedIdeas;
+            await writeIdea(input.projectPath, idea);
           }
         }
 
@@ -1679,7 +1679,7 @@ export const createProjectRouter = (
         const limit = input.limit ?? 50;
 
         const [ideas, vectorStore] = await Promise.all([
-          listAims(input.projectPath),
+          listIdeas(input.projectPath),
           loadVectorStore(input.projectPath),
         ]);
 
@@ -1708,7 +1708,7 @@ export const createProjectRouter = (
         return {
           threshold,
           totalIndexed: indexed.length,
-          totalAims: ideas.length,
+          totalIdeas: ideas.length,
           unindexed: ideas.length - indexed.length,
           pairsFound: pairs.length,
           pairs: topPairs,
@@ -1728,20 +1728,20 @@ export const createProjectRouter = (
     suggestReparents: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        parentAimId: z.string(),                              // the catch-all parent
+        parentIdeaId: z.string(),                              // the catch-all parent
         candidateParentIds: z.array(z.string()).optional(),   // override structural sub-parents
         limit: z.number().int().positive().optional(),        // default 200
       }))
       .query(async ({ input }: any) => {
         const limit = input.limit ?? 200;
         const [ideas, vectorStore] = await Promise.all([
-          listAims(input.projectPath),
+          listIdeas(input.projectPath),
           loadVectorStore(input.projectPath),
         ]);
         const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
-        const catchAll = ideaMap.get(input.parentAimId);
+        const catchAll = ideaMap.get(input.parentIdeaId);
         if (!catchAll) {
-          return { error: `Catch-all parent ${input.parentAimId} not found.` };
+          return { error: `Catch-all parent ${input.parentIdeaId} not found.` };
         }
 
         const vecOf = (id: string): number[] | undefined => {
@@ -1853,7 +1853,7 @@ export const createProjectRouter = (
         const limit = input.limit ?? 30;
 
         const [ideas, vectorStore] = await Promise.all([
-          listAims(input.projectPath),
+          listIdeas(input.projectPath),
           loadVectorStore(input.projectPath),
         ]);
         const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
@@ -1864,7 +1864,7 @@ export const createProjectRouter = (
 
         // 1. Floating: no parents and not committed to any phase.
         const floating = active
-          .filter((a: Idea) => (a.supportedAims?.length ?? 0) === 0 && (a.committedIn?.length ?? 0) === 0)
+          .filter((a: Idea) => (a.supportedIdeas?.length ?? 0) === 0 && (a.committedIn?.length ?? 0) === 0)
           .map((a: Idea) => ({ id: a.id, text: a.text, status: a.status.state }));
 
         // NOTE: uncommitted-open ideas are deliberately NOT a section here. Every
@@ -1913,8 +1913,8 @@ export const createProjectRouter = (
         const section = <T>(items: T[]) => ({ count: items.length, items: items.slice(0, limit) });
 
         return {
-          totalAims: ideas.length,
-          activeAims: active.length,
+          totalIdeas: ideas.length,
+          activeIdeas: active.length,
           thresholds: { megaParentThreshold, duplicateThreshold },
           floating: section(floating),
           megaParents: section(megaParents),

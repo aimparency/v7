@@ -1,11 +1,11 @@
-import type { PrioritizedAim } from 'agent-tools';
+import type { PrioritizedIdea } from 'agent-tools';
 
 export function selectCycleTarget(
-  prioritized: PrioritizedAim[],
-  targetAimId?: string | null
-): PrioritizedAim | undefined {
-  return targetAimId
-    ? prioritized.find((candidate) => candidate.idea.id === targetAimId) ?? prioritized[0]
+  prioritized: PrioritizedIdea[],
+  targetIdeaId?: string | null
+): PrioritizedIdea | undefined {
+  return targetIdeaId
+    ? prioritized.find((candidate) => candidate.idea.id === targetIdeaId) ?? prioritized[0]
     : prioritized[0];
 }
 

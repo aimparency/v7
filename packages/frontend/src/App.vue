@@ -52,7 +52,7 @@ const activeProjectName = computed(() => {
   return segments[segments.length - 1] || projectRoot
 })
 
-const handleAimSearchSelect = (payload: { type: 'idea' | 'path', data: Idea | IdeaPath, keepOpen?: boolean } | { type: 'option', data: IdeaSearchAdditionalOption, keepOpen?: boolean }) => {
+const handleIdeaSearchSelect = (payload: { type: 'idea' | 'path', data: Idea | IdeaPath, keepOpen?: boolean } | { type: 'option', data: IdeaSearchAdditionalOption, keepOpen?: boolean }) => {
   if (modalStore.ideaSearchMode === 'pick') {
     if (modalStore.ideaSearchCallback && payload.type !== 'path') {
       modalStore.ideaSearchCallback(payload as IdeaSearchPickPayload)
@@ -71,7 +71,7 @@ const handleAimSearchSelect = (payload: { type: 'idea' | 'path', data: Idea | Id
     }
   }
   if (!payload.keepOpen) {
-    modalStore.closeAimSearch()
+    modalStore.closeIdeaSearch()
   }
 }
 
@@ -90,7 +90,7 @@ const loopHeight = ref(parseInt(localStorage.getItem('aimparency-loop-height') |
 const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
 const loopRef = ref<InstanceType<typeof LoopPanel>>()
 const showConsistencyModal = ref(false)
-const showAimProposalEntry = ref(false)
+const showIdeaProposalEntry = ref(false)
 const isResizingWatchdog = ref(false)
 const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
 const discoveredProjectRoots = ref<string[]>([])
@@ -258,11 +258,11 @@ const handleVisibilityChange = () => {
   }
 }
 
-const handleProposalPersisted = async (result: { rootAimId: string }) => {
-  showAimProposalEntry.value = false
-  await dataStore.loadAllAims(projectStore.projectPath)
+const handleProposalPersisted = async (result: { rootIdeaId: string }) => {
+  showIdeaProposalEntry.value = false
+  await dataStore.loadAllIdeas(projectStore.projectPath)
   uiStore.setView('graph')
-  graphUIStore.setGraphSelection(result.rootAimId)
+  graphUIStore.setGraphSelection(result.rootIdeaId)
 }
 
 // Global keydown handler
@@ -298,7 +298,7 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
     uiStore.interruptUIStateRestore()
   }
 
-  if (event.key === 'p' && !uiStore.navigatingAims && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  if (event.key === 'p' && !uiStore.navigatingIdeas && !event.ctrlKey && !event.metaKey && !event.altKey) {
     event.preventDefault()
     openProjectSelection()
     return
@@ -343,8 +343,8 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
 }
 
 // Update keyboard hints based on navigation state and selected column
-watch(() => [uiStore.navigatingAims, uiStore.activeColumn], ([navigatingAims, activeColumn]) => {
-  if (!navigatingAims) {
+watch(() => [uiStore.navigatingIdeas, uiStore.activeColumn], ([navigatingIdeas, activeColumn]) => {
+  if (!navigatingIdeas) {
     const hints = [
       { key: '/', action: 'search' },
       { key: 'h/l', action: 'switch columns' },
@@ -392,7 +392,7 @@ watch(() => projectStore.currentView, (currentView) => {
 }, { immediate: true })
 
 // Watch for modal close
-watch(() => [modalStore.showPhaseModal, modalStore.showAimModal], async () => {
+watch(() => [modalStore.showPhaseModal, modalStore.showIdeaModal], async () => {
   // When both modals are closed, we don't need to manually restore focus 
   // because we use window listener now.
 })
@@ -401,17 +401,17 @@ watch(() => [
   uiStore.activeColumn,
   uiStore.maxColumn,
   uiStore.selectedEntryKeyByColumn,
-  uiStore.floatingAimIndex,
+  uiStore.floatingIdeaIndex,
   uiStore.windowStart,
   uiStore.windowSize,
   uiStore.lastSelectedSubPhaseIndexByPhase,
-  uiStore.navigatingAims,
+  uiStore.navigatingIdeas,
   // Idea-level selection and expansion live in phases and the idea UI trees.
   captureSelectionAnchor(uiStore),
-  uiStore.phaseAimUIStatesByPhaseId,
-  uiStore.floatingAimUIStates,
+  uiStore.phaseIdeaUIStatesByPhaseId,
+  uiStore.floatingIdeaUIStates,
   projectStore.currentView,
-  graphUIStore.graphSelectedAimId,
+  graphUIStore.graphSelectedIdeaId,
   graphUIStore.selectedLink,
   graphUIStore.graphColorMode,
   graphUIStore.graphPanelWidth,
@@ -477,14 +477,14 @@ onUnmounted(() => {
 
         <button
           class="icon-btn search-btn"
-          @click="modalStore.openAimSearch()"
+          @click="modalStore.openIdeaSearch()"
           title="Search ideas (/)"
         >🔍</button>
 
         <button
           class="view-btn"
           title="Turn a goal into an editable idea tree"
-          @click="showAimProposalEntry = true"
+          @click="showIdeaProposalEntry = true"
         >New goal</button>
 
         <div class="view-controls">
@@ -672,24 +672,24 @@ onUnmounted(() => {
     <PhaseCreationModal />
     
     <!-- Idea Creation Modal -->
-    <IdeaCreationModal v-if="modalStore.showAimModal" />
+    <IdeaCreationModal v-if="modalStore.showIdeaModal" />
 
     <!-- Connection Details Modal (contribution % + explanation) -->
     <ConnectionDetailsModal v-if="modalStore.showConnectionDetailsModal" />
 
     <!-- Idea Edit Modal -->
     <IdeaEditModal
-      :show="modalStore.showAimEditModal"
-      :idea-id="modalStore.ideaEditModalAimId"
-      :idea-ids="modalStore.ideaEditModalAimIds"
-      @close="modalStore.closeAimEditModal()"
+      :show="modalStore.showIdeaEditModal"
+      :idea-id="modalStore.ideaEditModalIdeaId"
+      :idea-ids="modalStore.ideaEditModalIdeaIds"
+      @close="modalStore.closeIdeaEditModal()"
     />
 
     <!-- Idea Search Modal -->
     <IdeaSearchModal
-      v-if="modalStore.showAimSearch"
-      @select="handleAimSearchSelect"
-      @close="modalStore.closeAimSearch()"
+      v-if="modalStore.showIdeaSearch"
+      @select="handleIdeaSearchSelect"
+      @close="modalStore.closeIdeaSearch()"
     />
     <PhaseSearchModal
       v-if="modalStore.showPhaseSearchPrompt"
@@ -708,9 +708,9 @@ onUnmounted(() => {
 
     <ProjectSettingsModal v-if="modalStore.showSettingsModal" />
     <IdeaProposalEntry
-      :show="showAimProposalEntry"
+      :show="showIdeaProposalEntry"
       :project-path="projectStore.projectPath"
-      @close="showAimProposalEntry = false"
+      @close="showIdeaProposalEntry = false"
       @persisted="handleProposalPersisted"
     />
     <LoopActionsOverlay

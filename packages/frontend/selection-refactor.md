@@ -1,7 +1,7 @@
 # Selection Refactoring - Path-Based Selection Model
 
 ## Context
-The current selection system uses a global `selectedAim` object with `ideaId` to track which idea is selected. This creates complexity when navigating nested sub-ideas and handling deletion. We're refactoring to a **path-based selection model** where selection flows down the tree via indices.
+The current selection system uses a global `selectedIdea` object with `ideaId` to track which idea is selected. This creates complexity when navigating nested sub-ideas and handling deletion. We're refactoring to a **path-based selection model** where selection flows down the tree via indices.
 
 ## Goal
 Remove redundant `ideaId` tracking and use implicit path-based selection that follows the data structure:
@@ -12,29 +12,29 @@ Remove redundant `ideaId` tracking and use implicit path-based selection that fo
 ### Old (Current):
 ```typescript
 // UI Store
-selectedAim: { phaseId: string, ideaIndex: number, ideaId?: string } | null
-lastSelectedRootAimIndex: number
-lastSelectedAimIndexByPhase: Record<string, number>
+selectedIdea: { phaseId: string, ideaIndex: number, ideaId?: string } | null
+lastSelectedRootIdeaIndex: number
+lastSelectedIdeaIndexByPhase: Record<string, number>
 
 // Selection determined by:
-uiStore.selectedAim?.ideaId === idea.id
+uiStore.selectedIdea?.ideaId === idea.id
 ```
 
 ### New (Target):
 ```typescript
 // UI Store
 mode: 'column-navigation' | 'ideas-edit' | 'idea-edit'
-rootAimsSelectedIndex: number  // For column -1
+rootIdeasSelectedIndex: number  // For column -1
 
 // Data Store - Phase type (UI-only properties)
-phase.selectedAimIndex?: number
+phase.selectedIdeaIndex?: number
 
 // Data Store - Idea type (already exists)
 idea.selectedIncomingIndex?: number
 
 // Selection path reconstruction:
-// 1. Root ideas: rootAimsSelectedIndex → ideas[index].selectedIncomingIndex → recurse
-// 2. Phase ideas: selectedPhaseByColumn[col] → phase.selectedAimIndex → ideas[index].selectedIncomingIndex → recurse
+// 1. Root ideas: rootIdeasSelectedIndex → ideas[index].selectedIncomingIndex → recurse
+// 2. Phase ideas: selectedPhaseByColumn[col] → phase.selectedIdeaIndex → ideas[index].selectedIncomingIndex → recurse
 
 // Selection determined by checking if index matches parent's selection
 ```
@@ -42,55 +42,55 @@ idea.selectedIncomingIndex?: number
 ## Completed Work ✅ (Updated)
 
 ### 1. Type Definitions (data.ts)
-- ✅ Extended Phase type with `selectedAimIndex?: number`
+- ✅ Extended Phase type with `selectedIdeaIndex?: number`
 - ✅ Extended Idea type already had `selectedIncomingIndex?: number`
 
 ### 2. UI Store State (ui.ts)
 - ✅ Changed mode type: `'phase-edit'` → `'ideas-edit'`
-- ✅ Added `rootAimsSelectedIndex: number`
-- ⚠️ Removed `lastSelectedRootAimIndex` and `lastSelectedAimIndexByPhase`
-- ⚠️ `selectedAim` object still exists but mostly unused (7 remaining references)
+- ✅ Added `rootIdeasSelectedIndex: number`
+- ⚠️ Removed `lastSelectedRootIdeaIndex` and `lastSelectedIdeaIndexByPhase`
+- ⚠️ `selectedIdea` object still exists but mostly unused (7 remaining references)
 
 ### 3. Mode String Updates
 - ✅ Updated all `'phase-edit'` → `'ideas-edit'` in:
-  - ui.ts: mode checks, setMode calls, handlePhaseEditKeys → handleAimsEditKeys
+  - ui.ts: mode checks, setMode calls, handlePhaseEditKeys → handleIdeasEditKeys
   - App.vue: keyboard hints watch
   - data.ts: comment in deletion logic
 
 ### 4. Helper Methods (ui.ts)
-- ✅ Added `getCurrentAimContext(dataStore)` - returns phaseId, idea, ideaIndex
-- ✅ Added `setCurrentAimIndex(ideaIndex, dataStore)` - sets appropriate index
+- ✅ Added `getCurrentIdeaContext(dataStore)` - returns phaseId, idea, ideaIndex
+- ✅ Added `setCurrentIdeaIndex(ideaIndex, dataStore)` - sets appropriate index
 
-### 5. handleAimsEditKeys Method (ui.ts)
-- ✅ Refactored to use `context = getCurrentAimContext(dataStore)`
-- ✅ Escape key: No longer calls setSelectedAim, indices stay in place
+### 5. handleIdeasEditKeys Method (ui.ts)
+- ✅ Refactored to use `context = getCurrentIdeaContext(dataStore)`
+- ✅ Escape key: No longer calls setSelectedIdea, indices stay in place
 - ✅ o/O keys: Uses context.idea, context.ideaIndex
-- ✅ j/k navigation: Uses setCurrentAimIndex, updates selectedIncomingIndex
+- ✅ j/k navigation: Uses setCurrentIdeaIndex, updates selectedIncomingIndex
 - ✅ e/d/h/l keys: All use context.idea
 
 ### 6. handleColumnNavigationKeys Method (ui.ts)
-- ✅ 'i' key: Sets index via setCurrentAimIndex, uses phase.selectedAimIndex
-- ✅ 'j'/'k' keys in root column: Updates rootAimsSelectedIndex
+- ✅ 'i' key: Sets index via setCurrentIdeaIndex, uses phase.selectedIdeaIndex
+- ✅ 'j'/'k' keys in root column: Updates rootIdeasSelectedIndex
 
 ### 7. Deletion Logic (data.ts)
-- ✅ Gets deletedIndex from rootAimsSelectedIndex or phase.selectedAimIndex
+- ✅ Gets deletedIndex from rootIdeasSelectedIndex or phase.selectedIdeaIndex
 - ✅ Sets new index after deletion to appropriate location
 - ✅ Sub-idea deletion: Updates parent's selectedIncomingIndex
 
 ## Remaining Work 🚧 (Updated)
 
-### Remaining selectedAim References (~7 in ui.ts)
+### Remaining selectedIdea References (~7 in ui.ts)
 
 **Locations:**
-1. Line 1008-1012: `setSelectedAim` method definition - CAN BE REMOVED
+1. Line 1008-1012: `setSelectedIdea` method definition - CAN BE REMOVED
 2. Line 1055: `selectPhase` cascade restoration logic
-3. Line 1073: `selectPhase` calls setSelectedAim
-4. Line 1160, 1187: Comments about clearing selectedAim
+3. Line 1073: `selectPhase` calls setSelectedIdea
+4. Line 1160, 1187: Comments about clearing selectedIdea
 5. Line 1207-1216: `clearPendingDelete` method saves selection
 
 **Strategy:**
-- Remove `setSelectedAim` method entirely
-- Update `selectPhase` to not use selectedAim
+- Remove `setSelectedIdea` method entirely
+- Update `selectPhase` to not use selectedIdea
 - Update `clearPendingDelete` to use indices instead
 
 ### Critical: Component Selection Rendering
@@ -98,14 +98,14 @@ idea.selectedIncomingIndex?: number
 #### Pattern 1: Getting current idea in navigation/operations
 **Old:**
 ```typescript
-const currentAimId = selectedAim.ideaId || ideas[selectedAim.ideaIndex]?.id
+const currentIdeaId = selectedIdea.ideaId || ideas[selectedIdea.ideaIndex]?.id
 ```
 
 **New (Root ideas):**
 ```typescript
 if (selectedColumn === -1) {
-  const ideas = dataStore.getAimsForPhase('null')
-  const currentAim = ideas[rootAimsSelectedIndex]
+  const ideas = dataStore.getIdeasForPhase('null')
+  const currentIdea = ideas[rootIdeasSelectedIndex]
 }
 ```
 
@@ -114,15 +114,15 @@ if (selectedColumn === -1) {
 if (selectedColumn >= 0) {
   const phaseId = getSelectedPhaseId(selectedColumn)
   const phase = dataStore.phases[phaseId]
-  const ideas = dataStore.getAimsForPhase(phaseId)
-  const currentAim = ideas[phase.selectedAimIndex!]
+  const ideas = dataStore.getIdeasForPhase(phaseId)
+  const currentIdea = ideas[phase.selectedIdeaIndex!]
 }
 ```
 
 #### Pattern 2: Mode checking
 **Old:**
 ```typescript
-if (selectedAim?.phaseId === phaseId) { ... }
+if (selectedIdea?.phaseId === phaseId) { ... }
 ```
 
 **New:**
@@ -141,89 +141,89 @@ if (mode === 'ideas-edit') {
 **Old:**
 ```typescript
 setMode('ideas-edit')
-setSelectedAim(phaseId, ideaIndex, idea?.id)
-lastSelectedAimIndexByPhase[phaseId] = ideaIndex
+setSelectedIdea(phaseId, ideaIndex, idea?.id)
+lastSelectedIdeaIndexByPhase[phaseId] = ideaIndex
 ```
 
 **New (Root ideas):**
 ```typescript
 setMode('ideas-edit')
-rootAimsSelectedIndex = ideaIndex
+rootIdeasSelectedIndex = ideaIndex
 ```
 
 **New (Phase ideas):**
 ```typescript
 setMode('ideas-edit')
 const phase = dataStore.phases[phaseId]
-phase.selectedAimIndex = ideaIndex
+phase.selectedIdeaIndex = ideaIndex
 ```
 
 #### Pattern 4: Exiting ideas-edit mode
 **Old:**
 ```typescript
 setMode('column-navigation')
-setSelectedAim(null, null)
+setSelectedIdea(null, null)
 ```
 
 **New:**
 ```typescript
 setMode('column-navigation')
-// Indices stay in place (rootAimsSelectedIndex, phase.selectedAimIndex)
+// Indices stay in place (rootIdeasSelectedIndex, phase.selectedIdeaIndex)
 ```
 
 ### Specific Files to Update
 
 #### ui.ts - Key Methods
 
-**handleAimsEditKeys (line 667):**
-- Replace `const selectedAim = this.selectedAim` with helper to get current context
-- Update all `selectedAim.phaseId`, `selectedAim.ideaIndex` references
+**handleIdeasEditKeys (line 667):**
+- Replace `const selectedIdea = this.selectedIdea` with helper to get current context
+- Update all `selectedIdea.phaseId`, `selectedIdea.ideaIndex` references
 - Update navigation (j/k) to update correct index:
-  - Root: `this.rootAimsSelectedIndex`
-  - Phase: `phase.selectedAimIndex`
+  - Root: `this.rootIdeasSelectedIndex`
+  - Phase: `phase.selectedIdeaIndex`
 
 **handleColumnNavigationKeys - 'i' key (line 504):**
-- Update idea selection logic to set appropriate index instead of selectedAim
+- Update idea selection logic to set appropriate index instead of selectedIdea
 
 **o/O key handling (line 698):**
-- Get current idea via index instead of selectedAim
+- Get current idea via index instead of selectedIdea
 - Update insertion index tracking
 
-**Navigation helpers (findNextAimInTree, etc.):**
+**Navigation helpers (findNextIdeaInTree, etc.):**
 - These might still work as-is since they take ideaId and phaseId as parameters
 - Call sites need updating to pass correct parameters
 
-**setSelectedAim method (line 1008):**
+**setSelectedIdea method (line 1008):**
 - **Remove this method entirely** - replaced by setting indices directly
-- Or refactor to `setAimSelection(columnIndex: number, ideaIndex: number)`
+- Or refactor to `setIdeaSelection(columnIndex: number, ideaIndex: number)`
 
 #### data.ts - Deletion Logic
 
-**deleteAim method (line 319):**
-- Line 324-326: Replace `deletedIndex` from `selectedAim.ideaIndex`
+**deleteIdea method (line 319):**
+- Line 324-326: Replace `deletedIndex` from `selectedIdea.ideaIndex`
   ```typescript
   // Old
-  const deletedIndex = uiStore.selectedAim?.phaseId === phaseId && uiStore.selectedAim?.ideaIndex !== undefined
-    ? uiStore.selectedAim.ideaIndex : -1
+  const deletedIndex = uiStore.selectedIdea?.phaseId === phaseId && uiStore.selectedIdea?.ideaIndex !== undefined
+    ? uiStore.selectedIdea.ideaIndex : -1
 
   // New (Root)
-  const deletedIndex = phaseId === 'null' ? uiStore.rootAimsSelectedIndex : -1
+  const deletedIndex = phaseId === 'null' ? uiStore.rootIdeasSelectedIndex : -1
 
   // New (Phase)
   const phase = this.phases[phaseId]
-  const deletedIndex = phase?.selectedAimIndex ?? -1
+  const deletedIndex = phase?.selectedIdeaIndex ?? -1
   ```
 
 - Line 404-416: Update selection adjustment logic to set appropriate index
   ```typescript
   // Root ideas
   if (phaseId === 'null') {
-    uiStore.rootAimsSelectedIndex = newIndex
+    uiStore.rootIdeasSelectedIndex = newIndex
   } else {
     // Phase ideas
     const phase = this.phases[phaseId]
     if (phase) {
-      phase.selectedAimIndex = newIndex
+      phase.selectedIdeaIndex = newIndex
     }
   }
   ```
@@ -233,8 +233,8 @@ setMode('column-navigation')
 **Idea.vue (line 38-40):**
 ```typescript
 // Old
-const isThisAimSelected = computed(() => {
-  return uiStore.selectedAim?.ideaId === props.idea.id
+const isThisIdeaSelected = computed(() => {
+  return uiStore.selectedIdea?.ideaId === props.idea.id
 })
 
 // New - need parent context passed as prop
@@ -249,7 +249,7 @@ const props = defineProps<{
 **IdeasList.vue (line 50-51):**
 ```typescript
 // Old
-'selected-outlined': isActive && uiStore.selectedAim?.ideaId === idea.id
+'selected-outlined': isActive && uiStore.selectedIdea?.ideaId === idea.id
 
 // New - compute selection per idea
 <IdeaComponent
@@ -269,21 +269,21 @@ const computeIsSelected = (index: number, idea: Idea) => {
 
   if (uiStore.selectedColumn === -1) {
     // Root ideas: check if this is the selected top-level index
-    if (index === uiStore.rootAimsSelectedIndex) {
-      return !parentAim // Top-level
+    if (index === uiStore.rootIdeasSelectedIndex) {
+      return !parentIdea // Top-level
     }
     // Check if we're a selected sub-idea
-    if (parentAim && parentAim.selectedIncomingIndex === indexInParent) {
+    if (parentIdea && parentIdea.selectedIncomingIndex === indexInParent) {
       return true
     }
   } else {
-    // Phase ideas: similar logic with phase.selectedAimIndex
+    // Phase ideas: similar logic with phase.selectedIdeaIndex
     const phaseId = uiStore.getSelectedPhaseId(uiStore.selectedColumn)
     const phase = dataStore.phases[phaseId]
-    if (index === phase?.selectedAimIndex) {
-      return !parentAim
+    if (index === phase?.selectedIdeaIndex) {
+      return !parentIdea
     }
-    if (parentAim && parentAim.selectedIncomingIndex === indexInParent) {
+    if (parentIdea && parentIdea.selectedIncomingIndex === indexInParent) {
       return true
     }
   }
@@ -300,40 +300,40 @@ Pass selection context down recursively:
 
 ### Helper Methods to Add
 
-**ui.ts - getCurrentAimContext():**
+**ui.ts - getCurrentIdeaContext():**
 ```typescript
-getCurrentAimContext(): { phaseId: string, idea: Idea, ideaIndex: number } | null {
+getCurrentIdeaContext(): { phaseId: string, idea: Idea, ideaIndex: number } | null {
   if (this.mode !== 'ideas-edit') return null
 
   if (this.selectedColumn === -1) {
     // Root ideas
-    const ideas = dataStore.getAimsForPhase('null')
-    const idea = ideas[this.rootAimsSelectedIndex]
-    return idea ? { phaseId: 'null', idea, ideaIndex: this.rootAimsSelectedIndex } : null
+    const ideas = dataStore.getIdeasForPhase('null')
+    const idea = ideas[this.rootIdeasSelectedIndex]
+    return idea ? { phaseId: 'null', idea, ideaIndex: this.rootIdeasSelectedIndex } : null
   } else {
     // Phase ideas
     const phaseId = this.getSelectedPhaseId(this.selectedColumn)
     if (!phaseId) return null
     const phase = dataStore.phases[phaseId]
-    const ideas = dataStore.getAimsForPhase(phaseId)
-    const ideaIndex = phase?.selectedAimIndex ?? 0
+    const ideas = dataStore.getIdeasForPhase(phaseId)
+    const ideaIndex = phase?.selectedIdeaIndex ?? 0
     const idea = ideas[ideaIndex]
     return idea ? { phaseId, idea, ideaIndex } : null
   }
 }
 ```
 
-**ui.ts - setCurrentAimIndex(index: number):**
+**ui.ts - setCurrentIdeaIndex(index: number):**
 ```typescript
-setCurrentAimIndex(index: number) {
+setCurrentIdeaIndex(index: number) {
   if (this.selectedColumn === -1) {
-    this.rootAimsSelectedIndex = index
+    this.rootIdeasSelectedIndex = index
   } else {
     const phaseId = this.getSelectedPhaseId(this.selectedColumn)
     if (phaseId) {
       const phase = dataStore.phases[phaseId]
       if (phase) {
-        phase.selectedAimIndex = index
+        phase.selectedIdeaIndex = index
       }
     }
   }
@@ -365,19 +365,19 @@ After refactoring, verify:
 ### Cross-cutting
 - [ ] Selection persists when switching between columns
 - [ ] Selection restores when re-entering ideas-edit mode
-- [ ] No console errors about undefined selectedAim
+- [ ] No console errors about undefined selectedIdea
 - [ ] Visual selection highlighting works correctly
 
 ## Key Principles
 
 1. **Separation of concerns:**
-   - Root ideas: Use `rootAimsSelectedIndex` in UI store
-   - Phase ideas: Use `phase.selectedAimIndex` in data store
+   - Root ideas: Use `rootIdeasSelectedIndex` in UI store
+   - Phase ideas: Use `phase.selectedIdeaIndex` in data store
    - Sub-ideas: Use `idea.selectedIncomingIndex` (already working)
 
 2. **Minimal code duplication:**
    - Check `selectedColumn === -1` to branch root vs phase logic
-   - Use helper methods like `getCurrentAimContext()` for common patterns
+   - Use helper methods like `getCurrentIdeaContext()` for common patterns
 
 3. **Selection is implicit path:**
    - No need to store `ideaId` - reconstruct from indices
@@ -394,7 +394,7 @@ After refactoring, verify:
    - This is what allows nested sub-idea selection to work
 
 2. **Phase objects are reactive:**
-   - Setting `phase.selectedAimIndex` works because phases are in Pinia store
+   - Setting `phase.selectedIdeaIndex` works because phases are in Pinia store
    - Make sure to use the phase object from `dataStore.phases[phaseId]`
 
 3. **Root vs Phase branching:**
@@ -413,9 +413,9 @@ After completing the refactor:
 git add -p  # Stage changes incrementally
 git commit -m "refactor: migrate to path-based selection model
 
-- Replace selectedAim object with index-based selection
-- Add Phase.selectedAimIndex for phase idea selection
-- Add rootAimsSelectedIndex for root ideas selection
+- Replace selectedIdea object with index-based selection
+- Add Phase.selectedIdeaIndex for phase idea selection
+- Add rootIdeasSelectedIndex for root ideas selection
 - Rename 'phase-edit' mode to 'ideas-edit'
 - Update all navigation/creation/deletion logic
 - Update components to compute selection from indices
@@ -437,34 +437,34 @@ tracking a global ideaId, simplifying nested idea handling."
 - ✅ Mode switching
 
 **What Needs Finishing:**
-1. Remove 7 remaining `selectedAim` references in ui.ts
+1. Remove 7 remaining `selectedIdea` references in ui.ts
 2. Update component selection rendering (Idea.vue, IdeasList.vue)
 3. Test all scenarios thoroughly
 
 ## Next Steps for LLM
 
-### Step 1: Clean up remaining selectedAim references
+### Step 1: Clean up remaining selectedIdea references
 
 **In ui.ts:**
-1. Line 1055-1073: `selectPhase` method - remove setSelectedAim call, use indices
-2. Line 1207-1216: `clearPendingDelete` - use getCurrentAimContext instead
-3. Line 1008-1012: Delete `setSelectedAim` method entirely
-4. Update comments mentioning selectedAim
+1. Line 1055-1073: `selectPhase` method - remove setSelectedIdea call, use indices
+2. Line 1207-1216: `clearPendingDelete` - use getCurrentIdeaContext instead
+3. Line 1008-1012: Delete `setSelectedIdea` method entirely
+4. Update comments mentioning selectedIdea
 
 ### Step 2: Update Components
 
 **Idea.vue (line 38-40):**
 Change from:
 ```typescript
-const isThisAimSelected = computed(() => {
-  return uiStore.selectedAim?.ideaId === props.idea.id
+const isThisIdeaSelected = computed(() => {
+  return uiStore.selectedIdea?.ideaId === props.idea.id
 })
 ```
 
 To - pass selection as prop from parent, OR compute from context:
 ```typescript
-const isThisAimSelected = computed(() => {
-  const context = uiStore.getCurrentAimContext(dataStore)
+const isThisIdeaSelected = computed(() => {
+  const context = uiStore.getCurrentIdeaContext(dataStore)
   return context?.idea.id === props.idea.id
 })
 ```

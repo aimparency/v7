@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers';
 import { cosineSimilarity } from 'shared';
-import { listAimsFromFiles } from './idea-file-tools.js';
+import { listIdeasFromFiles } from './idea-file-tools.js';
 import { normalizeBowmanPath } from './loop-state.js';
 
 const MODEL_ID = 'BAAI/bge-small-en-v1.5';
@@ -71,10 +71,10 @@ export function selectAssociation(
   candidates: AssociationCandidate[],
   chance: number,
   random: () => number = Math.random,
-  excludeAimIds: string[] = []
+  excludeIdeaIds: string[] = []
 ) {
   const boundedChance = Math.max(0, Math.min(chance, 1));
-  const excluded = new Set(excludeAimIds);
+  const excluded = new Set(excludeIdeaIds);
   const eligible = candidates.filter((candidate) => !excluded.has(candidate.id));
   if (boundedChance <= 0 || eligible.length === 0) return null;
   const best = eligible[0];
@@ -95,7 +95,7 @@ export async function maybeFindAssociation(
   projectPath: string,
   stateText: string,
   chance = 0.1,
-  excludeAimIds: string[] = []
+  excludeIdeaIds: string[] = []
 ) {
   const boundedChance = Math.max(0, Math.min(chance, 1));
   if (boundedChance <= 0 || !stateText.trim()) return null;
@@ -103,7 +103,7 @@ export async function maybeFindAssociation(
   if (!queryVector) return null;
   const [vectors, ideas] = await Promise.all([
     readVectorStore(projectPath),
-    listAimsFromFiles(projectPath)
+    listIdeasFromFiles(projectPath)
   ]);
   const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
   const scored = Object.entries(vectors)
@@ -111,5 +111,5 @@ export async function maybeFindAssociation(
     .map(([id, vector]) => ({ id, score: cosineSimilarity(queryVector, vector), idea: ideaById.get(id) }))
     .filter((row) => row.idea && !row.idea.archived)
     .sort((left, right) => right.score - left.score);
-  return selectAssociation(scored as AssociationCandidate[], boundedChance, Math.random, excludeAimIds);
+  return selectAssociation(scored as AssociationCandidate[], boundedChance, Math.random, excludeIdeaIds);
 }

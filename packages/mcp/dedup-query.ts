@@ -7,7 +7,7 @@ async function main() {
 
   const res: any = await trpc.project.findDuplicates.query({ projectPath, threshold, limit });
 
-  console.log(`threshold=${res.threshold} totalAims=${res.totalAims} totalIndexed=${res.totalIndexed} unindexed=${res.unindexed} pairsFound=${res.pairsFound}`);
+  console.log(`threshold=${res.threshold} totalIdeas=${res.totalIdeas} totalIndexed=${res.totalIndexed} unindexed=${res.unindexed} pairsFound=${res.pairsFound}`);
   if (res.note) console.log('NOTE:', res.note);
   console.log('');
   for (const p of res.pairs) {

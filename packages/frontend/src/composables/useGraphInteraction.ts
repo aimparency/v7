@@ -223,10 +223,10 @@ export function useGraphInteraction(
                 const parentNode = mapStore.connectFrom
                 const dropPosLogical = mapStore.mouse.logical  // Use already-computed logical coords
                 
-                modalStore.ideaCreationCallback = async (newAimId, onConnectionConfirmed) => {
+                modalStore.ideaCreationCallback = async (newIdeaId, onConnectionConfirmed) => {
                      // Wait for node to exist in the graph
                      const checkNode = () => {
-                         const newNode = nodeMap.get(newAimId)
+                         const newNode = nodeMap.get(newIdeaId)
                          if (newNode) {
                              // Validate drop position
                              const x = dropPosLogical[0] ?? 0
@@ -239,7 +239,7 @@ export function useGraphInteraction(
                              newNode.renderPos[1] = y
                              newNode.shift = [0, 0]
 
-                             // 2. Connect parent -> newAim
+                             // 2. Connect parent -> newIdea
                              const parentX = parentNode.pos[0] ?? 0
                              const parentY = parentNode.pos[1] ?? 0
                              const parentR = parentNode.r ?? 25
@@ -250,14 +250,14 @@ export function useGraphInteraction(
                              const rSum = parentR + childR
                              const relPos: [number, number] = [deltaX/rSum, deltaY/rSum]
 
-                             trpc.idea.connectAims.mutate({
+                             trpc.idea.connectIdeas.mutate({
                                 projectPath: projectStore.projectPath,
-                                parentAimId: parentNode.id,
-                                childAimId: newAimId,
+                                parentIdeaId: parentNode.id,
+                                childIdeaId: newIdeaId,
                                 relativePosition: relPos as [number, number]
                              }).then(async () => {
                                  // Reload both ideas to get updated incoming/outgoing arrays
-                                 await dataStore.loadAims(projectStore.projectPath, [parentNode.id, newAimId])
+                                 await dataStore.loadIdeas(projectStore.projectPath, [parentNode.id, newIdeaId])
                                  // Let Vue's watcher flush so updateGraphData runs and newNode.r reflects
                                  // the actual post-connection value (not the zero-value initial radius).
                                  await nextTick()
@@ -270,12 +270,12 @@ export function useGraphInteraction(
                                  newNode.renderPos[1] = y
                                  newNode.shift = [0, 0]
                                  // Update the link so the flow force uses the corrected relPos immediately
-                                 const correctedLink = links.value.find(l => l.source.id === newAimId && l.target.id === parentNode.id)
+                                 const correctedLink = links.value.find(l => l.source.id === newIdeaId && l.target.id === parentNode.id)
                                  if (correctedLink) correctedLink.relativePosition = correctedRelPos
                                  // Persist the corrected relative position
-                                 await (dataStore as any).updateConnectionPosition(projectStore.projectPath, parentNode.id, newAimId, correctedRelPos)
+                                 await (dataStore as any).updateConnectionPosition(projectStore.projectPath, parentNode.id, newIdeaId, correctedRelPos)
                                  // Offer contribution % + explanation for the new connection.
-                                 modalStore.openConnectionDetailsModal(parentNode.id, newAimId, onConnectionConfirmed)
+                                 modalStore.openConnectionDetailsModal(parentNode.id, newIdeaId, onConnectionConfirmed)
                              }).catch(err => {
                                  console.error('Graph: Connection failed', err)
                              })
@@ -285,7 +285,7 @@ export function useGraphInteraction(
                      }
                      checkNode()
                 }
-                modalStore.openAimModal('graph')
+                modalStore.openIdeaModal('graph')
             }
             mapStore.connecting = false
             mapStore.connectFrom = undefined
@@ -467,7 +467,7 @@ export function useGraphInteraction(
                 if (mapStore.cursorMoved) return
                 if (node.isRepo) return
                 if (uiStore.multiSelectMode && uiStore.isMultiSelected(node.id)) {
-                    modalStore.openAimEditModal(node.id, [...uiStore.multiSelectedAimIds])
+                    modalStore.openIdeaEditModal(node.id, [...uiStore.multiSelectedIdeaIds])
                     longPressedNodeId = node.id
                     return
                 }
@@ -488,7 +488,7 @@ export function useGraphInteraction(
             mapStore.startDragging(node)
             return
         }
-        const selectedId = graphUIStore.graphSelectedAimId
+        const selectedId = graphUIStore.graphSelectedIdeaId
         if (selectedId && selectedId === node.id) {
             mapStore.startConnecting(node)
             connectionHandled = false
@@ -533,14 +533,14 @@ export function useGraphInteraction(
             const relativePosition: [number, number] = [deltaX / rSum, deltaY / rSum]
 
             try {
-                await trpc.idea.connectAims.mutate({
+                await trpc.idea.connectIdeas.mutate({
                     projectPath: projectStore.projectPath,
-                    parentAimId: parent.id,
-                    childAimId: child.id,
+                    parentIdeaId: parent.id,
+                    childIdeaId: child.id,
                     relativePosition,
                 })
                 // Reload both ideas to get updated incoming/outgoing arrays
-                await dataStore.loadAims(projectStore.projectPath, [parent.id, child.id])
+                await dataStore.loadIdeas(projectStore.projectPath, [parent.id, child.id])
                 // Offer contribution % + explanation for the new connection.
                 modalStore.openConnectionDetailsModal(parent.id, child.id)
             } catch (e) {
@@ -569,7 +569,7 @@ export function useGraphInteraction(
         const isShift = event && event.shiftKey
 
         if (isShift) {
-            const selectedId = graphUIStore.graphSelectedAimId
+            const selectedId = graphUIStore.graphSelectedIdeaId
             const existingConnection = selectedId && selectedId !== node.id
                 ? findConnectionBetween(selectedId, node.id, dataStore.ideas)
                 : null
@@ -601,7 +601,7 @@ export function useGraphInteraction(
 
         if (!mapStore.cursorMoved) {
             uiStore.clearMultiSelect()
-            if (graphUIStore.graphSelectedAimId === node.id) {
+            if (graphUIStore.graphSelectedIdeaId === node.id) {
                 // Already selected -> Start tracking
                 mapStore.isTracking = true
             } else {
@@ -658,7 +658,7 @@ export function useGraphInteraction(
         if (!hitNode) {
             // Deselect to ensure creating floating idea
             graphUIStore.setGraphSelection(null)
-            uiStore.deselectAim()
+            uiStore.deselectIdea()
             uiStore.setActiveColumn(-1)
 
             modalStore.ideaCreationCallback = (id, onPositionConfirmed) => {
@@ -690,7 +690,7 @@ export function useGraphInteraction(
                  }
             }
             
-            modalStore.openAimModal('graph')
+            modalStore.openIdeaModal('graph')
         }
     }
 

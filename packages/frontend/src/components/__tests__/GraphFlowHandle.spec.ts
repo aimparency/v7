@@ -29,8 +29,8 @@ describe('GraphFlowHandle', () => {
     await handles[0]!.trigger('mousedown')
 
     expect(mapStore.layouting).toBe(true)
-    expect(mapStore.layoutCandidate?.activeAimId).toBe('source-idea')
-    expect(mapStore.layoutCandidate?.frozenAimId).toBe('target-idea')
+    expect(mapStore.layoutCandidate?.activeIdeaId).toBe('source-idea')
+    expect(mapStore.layoutCandidate?.frozenIdeaId).toBe('target-idea')
   })
 
   it('freezes the opposite idea when dragging the target handle', async () => {
@@ -53,7 +53,7 @@ describe('GraphFlowHandle', () => {
     await handles[1]!.trigger('mousedown')
 
     expect(mapStore.layouting).toBe(true)
-    expect(mapStore.layoutCandidate?.activeAimId).toBe('target-idea')
-    expect(mapStore.layoutCandidate?.frozenAimId).toBe('source-idea')
+    expect(mapStore.layoutCandidate?.activeIdeaId).toBe('target-idea')
+    expect(mapStore.layoutCandidate?.frozenIdeaId).toBe('source-idea')
   })
 })

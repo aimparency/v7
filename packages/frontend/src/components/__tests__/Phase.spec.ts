@@ -14,7 +14,7 @@ const makePhase = (id: string, commitments: string[], childPhaseIds: string[] = 
   childPhaseIds
 })
 
-const makeAim = (
+const makeIdea = (
   id: string,
   text: string,
   state: string,
@@ -30,7 +30,7 @@ const makeAim = (
     weight: 1,
     relativePosition: [0, 0] as [number, number]
   })),
-  supportedAims: [],
+  supportedIdeas: [],
   committedIn,
   status: { state, comment: '', date: 0 },
   intrinsicValue: 0,
@@ -51,9 +51,9 @@ function mountPhase() {
       data: {
         phases: { root, 'child-phase': childPhase },
         ideas: {
-          application: makeAim('application', 'SPC application', 'partially', ['root'], ['founder-facts']),
-          'founder-facts': makeAim('founder-facts', 'Confirm founder facts', 'human-dependent', []),
-          direct: makeAim('direct', 'Authorize submission', 'human-dependent', ['root'])
+          application: makeIdea('application', 'SPC application', 'partially', ['root'], ['founder-facts']),
+          'founder-facts': makeIdea('founder-facts', 'Confirm founder facts', 'human-dependent', []),
+          direct: makeIdea('direct', 'Authorize submission', 'human-dependent', ['root'])
         },
         meta: {
           statuses: [
@@ -107,6 +107,6 @@ describe('Phase priority list', () => {
     expect(results[1]!.text()).not.toContain('via committed idea')
 
     await results[0]!.trigger('click')
-    expect(modalStore.openAimEditModal).toHaveBeenCalledWith('founder-facts')
+    expect(modalStore.openIdeaEditModal).toHaveBeenCalledWith('founder-facts')
   })
 })

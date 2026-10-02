@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createManualAimProposal } from './idea-proposal'
+import { createManualIdeaProposal } from './idea-proposal'
 
-describe('createManualAimProposal', () => {
+describe('createManualIdeaProposal', () => {
   it('creates the same proposal contract for text and voice input', () => {
     vi.spyOn(crypto, 'randomUUID').mockReturnValue('00000000-0000-4000-8000-000000000001')
     vi.spyOn(Date, 'now').mockReturnValue(123)
 
-    const text = createManualAimProposal('  Reach economic stability  ', 'text')
-    const voice = createManualAimProposal('  Reach economic stability  ', 'voice')
+    const text = createManualIdeaProposal('  Reach economic stability  ', 'text')
+    const voice = createManualIdeaProposal('  Reach economic stability  ', 'voice')
 
     expect(text).toEqual({
       ...voice,
@@ -19,6 +19,6 @@ describe('createManualAimProposal', () => {
   })
 
   it('rejects empty input', () => {
-    expect(() => createManualAimProposal('   ')).toThrow('A goal is required')
+    expect(() => createManualIdeaProposal('   ')).toThrow('A goal is required')
   })
 })

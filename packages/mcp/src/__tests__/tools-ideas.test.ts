@@ -1,11 +1,11 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { registerTools, countAimReferences, verificationHintForAim } from '../tools.js';
+import { registerTools, countIdeaReferences, verificationHintForIdea } from '../tools.js';
 import { MockServer, caller, createCallerProxy, createTestContext } from './test-utils.js';
 
 let ctx: ReturnType<typeof createTestContext>;
 
-async function createAim(server: MockServer, args: Record<string, unknown>) {
+async function createIdea(server: MockServer, args: Record<string, unknown>) {
   const review = await server.callTool('create_idea', args);
   const confirmationToken = JSON.parse(review.content[0].text).confirmationToken;
   assert.ok(confirmationToken, 'create_idea review returns a confirmation token');
@@ -27,7 +27,7 @@ test('MCP Tools - Ideas CRUD', async (t) => {
   registerTools(server as any, callerProxy as any);
 
   // 1. Create
-  await createAim(server, {
+  await createIdea(server, {
     projectPath: ctx.projectPath, 
     text: 'MCP Idea',
     tags: ['test']
@@ -46,14 +46,14 @@ test('MCP Tools - Ideas CRUD', async (t) => {
     status: { state: 'done' }
   });
 
-  const updatedAim = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
-  assert.equal(updatedAim.text, 'Updated MCP Idea');
-  assert.equal(updatedAim.status.state, 'done');
+  const updatedIdea = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
+  assert.equal(updatedIdea.text, 'Updated MCP Idea');
+  assert.equal(updatedIdea.status.state, 'done');
 
   // 3. Get
   const getResult = await server.callTool('get_idea', { projectPath: ctx.projectPath, ideaId });
-  const fetchedAim = JSON.parse(getResult.content[0].text);
-  assert.equal(fetchedAim.id, ideaId);
+  const fetchedIdea = JSON.parse(getResult.content[0].text);
+  assert.equal(fetchedIdea.id, ideaId);
 
   // 4. Delete
   await server.callTool('delete_idea', { projectPath: ctx.projectPath, ideaId });
@@ -65,23 +65,23 @@ test('get_idea_context returns every distinct root path while preserving the hig
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
 
-  await createAim(server, { projectPath: ctx.projectPath, text: 'Root A', intrinsicValue: 10 });
-  await createAim(server, { projectPath: ctx.projectPath, text: 'Root B', intrinsicValue: 5 });
+  await createIdea(server, { projectPath: ctx.projectPath, text: 'Root A', intrinsicValue: 10 });
+  await createIdea(server, { projectPath: ctx.projectPath, text: 'Root B', intrinsicValue: 5 });
   const roots = await caller.idea.list({ projectPath: ctx.projectPath });
   const rootA = roots.find((idea) => idea.text === 'Root A')!;
   const rootB = roots.find((idea) => idea.text === 'Root B')!;
 
-  await createAim(server, {
+  await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Middle',
-    supportedAims: [rootA.id, rootB.id],
+    supportedIdeas: [rootA.id, rootB.id],
   });
   const middle = (await caller.idea.list({ projectPath: ctx.projectPath }))
     .find((idea) => idea.text === 'Middle')!;
-  await createAim(server, {
+  await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Leaf',
-    supportedAims: [middle.id, rootB.id],
+    supportedIdeas: [middle.id, rootB.id],
   });
   const leaf = (await caller.idea.list({ projectPath: ctx.projectPath }))
     .find((idea) => idea.text === 'Leaf')!;
@@ -107,7 +107,7 @@ test('MCP Tools - create_idea requires review and surfaces cancelled context', a
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
 
-  const cancelled = await caller.idea.createFloatingAim({
+  const cancelled = await caller.idea.createFloatingIdea({
     projectPath: ctx.projectPath,
     idea: {
       text: 'Build explicit first-class workflow plans',
@@ -128,7 +128,7 @@ test('MCP Tools - create_idea requires review and surfaces cancelled context', a
   assert.equal(payload.reviewRequired, true);
   assert.ok(payload.confirmationToken);
   assert.ok(
-    payload.relatedAims.some((idea: any) =>
+    payload.relatedIdeas.some((idea: any) =>
       idea.id === cancelled.id &&
       idea.status.state === 'cancelled' &&
       /contribution edges/.test(idea.status.comment)
@@ -158,7 +158,7 @@ test('status date changes only on state transition; reviewedAt is independent', 
   registerTools(server as any, createCallerProxy(caller) as any);
 
   const initialReview = 1_700_000_000_000;
-  await createAim(server, {
+  await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Long-standing intent',
     status: { state: 'open', reviewedAt: initialReview },
@@ -193,7 +193,7 @@ test('MCP Tools - update_idea nudges to verify when marking done without a refle
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await createAim(server, { projectPath: ctx.projectPath, text: 'Verify me' });
+  await createIdea(server, { projectPath: ctx.projectPath, text: 'Verify me' });
   const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0].id;
 
   // Done without a reflection -> nudge.
@@ -228,17 +228,17 @@ test('MCP Tools - update_idea nudges to verify when marking done without a refle
   assert.doesNotMatch(openUpdate.content[0].text, /verified-done/, 'no nudge on non-done updates');
 });
 
-test('MCP Tools - verificationHintForAim tailors evidence to idea type', () => {
+test('MCP Tools - verificationHintForIdea tailors evidence to idea type', () => {
   // UI/visual takes precedence — a visual change is best proven by seeing it run.
-  assert.match(verificationHintForAim({ text: 'Fix select dropdown flicker' }), /screenshot|interaction/);
-  assert.match(verificationHintForAim({ text: 'feature', tags: ['ui'] }), /screenshot|interaction/);
+  assert.match(verificationHintForIdea({ text: 'Fix select dropdown flicker' }), /screenshot|interaction/);
+  assert.match(verificationHintForIdea({ text: 'feature', tags: ['ui'] }), /screenshot|interaction/);
   // Bugfix/behavior -> a passing repro.
-  assert.match(verificationHintForAim({ text: 'Bug: watchdog connects to wrong project' }), /repro/);
+  assert.match(verificationHintForIdea({ text: 'Bug: watchdog connects to wrong project' }), /repro/);
   // Code/backend -> tests + typecheck.
-  assert.match(verificationHintForAim({ text: 'Implement the spin-off backend endpoint' }), /typecheck/);
+  assert.match(verificationHintForIdea({ text: 'Implement the spin-off backend endpoint' }), /typecheck/);
   // Unknown -> generic fallback still asks for concrete evidence.
-  assert.match(verificationHintForAim({ text: 'Negotiate partnership' }), /tests|repro|screenshot/);
-  assert.match(verificationHintForAim(null), /tests|repro|screenshot/);
+  assert.match(verificationHintForIdea({ text: 'Negotiate partnership' }), /tests|repro|screenshot/);
+  assert.match(verificationHintForIdea(null), /tests|repro|screenshot/);
 });
 
 test('MCP Tools - done nudge surfaces the type-specific evidence hint', async () => {
@@ -246,7 +246,7 @@ test('MCP Tools - done nudge surfaces the type-specific evidence hint', async ()
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await createAim(server, { projectPath: ctx.projectPath, text: 'Fix the modal flicker bug', tags: ['ui'] });
+  await createIdea(server, { projectPath: ctx.projectPath, text: 'Fix the modal flicker bug', tags: ['ui'] });
   const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0].id;
 
   const res = await server.callTool('update_idea', {
@@ -262,7 +262,7 @@ test('MCP Tools - update_idea stores free-text reflection with status', async ()
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await createAim(server, { projectPath: ctx.projectPath, text: 'Reflectable idea' });
+  await createIdea(server, { projectPath: ctx.projectPath, text: 'Reflectable idea' });
   const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0].id;
 
   const result = await server.callTool('update_idea', {
@@ -284,12 +284,12 @@ test('MCP Tools - create_idea accepts edge metadata for parent and child links',
   registerTools(server as any, callerProxy as any);
 
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
-  const parentId = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Parent' }));
-  const childId = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Child' }));
-  const ideaId = idOf(await createAim(server, {
+  const parentId = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'Parent' }));
+  const childId = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'Child' }));
+  const ideaId = idOf(await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Middle',
-    supportedAims: [{ ideaId: parentId, weight: 2, explanation: 'parent rationale' }],
+    supportedIdeas: [{ ideaId: parentId, weight: 2, explanation: 'parent rationale' }],
     supportingConnections: [{ ideaId: childId, weight: 3, explanation: 'child rationale' }],
   }));
 
@@ -301,8 +301,8 @@ test('MCP Tools - create_idea accepts edge metadata for parent and child links',
   assert.equal(parent.supportingConnections.find((c: any) => c.ideaId === ideaId)?.explanation, 'parent rationale');
   assert.equal(middle.supportingConnections.find((c: any) => c.ideaId === childId)?.weight, 3);
   assert.equal(middle.supportingConnections.find((c: any) => c.ideaId === childId)?.explanation, 'child rationale');
-  assert.ok(middle.supportedAims.includes(parentId));
-  assert.ok(child.supportedAims.includes(ideaId));
+  assert.ok(middle.supportedIdeas.includes(parentId));
+  assert.ok(child.supportedIdeas.includes(ideaId));
 });
 
 test('MCP Tools - update_idea supports append and remove connection deltas', async () => {
@@ -311,10 +311,10 @@ test('MCP Tools - update_idea supports append and remove connection deltas', asy
   registerTools(server as any, callerProxy as any);
 
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
-  const parentId = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Parent' }));
-  const child1Id = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Child 1' }));
-  const child2Id = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'Child 2' }));
-  const ideaId = idOf(await createAim(server, {
+  const parentId = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'Parent' }));
+  const child1Id = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'Child 1' }));
+  const child2Id = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'Child 2' }));
+  const ideaId = idOf(await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Target',
     supportingConnections: [child1Id],
@@ -323,13 +323,13 @@ test('MCP Tools - update_idea supports append and remove connection deltas', asy
   await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId,
-    addSupportedAims: [{ ideaId: parentId, weight: 4, explanation: 'added parent edge' }],
+    addSupportedIdeas: [{ ideaId: parentId, weight: 4, explanation: 'added parent edge' }],
     addSupportingConnections: [{ ideaId: child2Id, weight: 5, explanation: 'added child edge' }],
   });
 
   let parent = await caller.idea.get({ projectPath: ctx.projectPath, ideaId: parentId });
   let target = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
-  assert.ok(target.supportedAims.includes(parentId));
+  assert.ok(target.supportedIdeas.includes(parentId));
   assert.equal(parent.supportingConnections.find((c: any) => c.ideaId === ideaId)?.weight, 4);
   assert.equal(parent.supportingConnections.find((c: any) => c.ideaId === ideaId)?.explanation, 'added parent edge');
   assert.deepEqual(
@@ -341,17 +341,17 @@ test('MCP Tools - update_idea supports append and remove connection deltas', asy
   await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId,
-    removeSupportedAims: [parentId],
+    removeSupportedIdeas: [parentId],
     removeSupportingConnections: [child1Id],
   });
 
   parent = await caller.idea.get({ projectPath: ctx.projectPath, ideaId: parentId });
   target = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
   const child1 = await caller.idea.get({ projectPath: ctx.projectPath, ideaId: child1Id });
-  assert.ok(!target.supportedAims.includes(parentId));
+  assert.ok(!target.supportedIdeas.includes(parentId));
   assert.ok(!parent.supportingConnections.some((c: any) => c.ideaId === ideaId));
   assert.deepEqual(target.supportingConnections.map((c: any) => c.ideaId), [child2Id]);
-  assert.ok(!child1.supportedAims.includes(ideaId));
+  assert.ok(!child1.supportedIdeas.includes(ideaId));
 });
 
 test('MCP Tools - list_ideas uncommitted surfaces parented-but-unphased ideas that floating misses', async () => {
@@ -362,12 +362,12 @@ test('MCP Tools - list_ideas uncommitted surfaces parented-but-unphased ideas th
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
 
   // A: no phase, no parent -> floating AND uncommitted.
-  const a = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'orphan' }));
+  const a = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'orphan' }));
   // B: committed to a phase.
   const phase = await caller.phase.create({ projectPath: ctx.projectPath, phase: { name: 'P', from: 0, to: 1000 } });
-  const b = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'phased', phaseId: phase.id }));
+  const b = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'phased', phaseId: phase.id }));
   // C: has a parent (B) but no phase -> uncommitted but NOT floating (the invisible class).
-  const c = idOf(await createAim(server, { projectPath: ctx.projectPath, text: 'connected-unphased', supportedAims: [b] }));
+  const c = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'connected-unphased', supportedIdeas: [b] }));
 
   const uncommitted = JSON.parse((await server.callTool('list_ideas', {
     projectPath: ctx.projectPath, status: 'open', uncommitted: true,
@@ -387,7 +387,7 @@ test('get_prioritized_ideas falls back to connected uncommitted work when a phas
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
 
-  const parentResult = await createAim(server, {
+  const parentResult = await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Mission container',
     intrinsicValue: 10,
@@ -396,10 +396,10 @@ test('get_prioritized_ideas falls back to connected uncommitted work when a phas
   const parentId = /Created idea with ID: ([0-9a-f-]+)/.exec(parentResult.content[0].text)?.[1];
   assert.ok(parentId);
 
-  const childResult = await createAim(server, {
+  const childResult = await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Executable hidden work',
-    supportedAims: [parentId],
+    supportedIdeas: [parentId],
     cost: 1,
   });
   const childId = /Created idea with ID: ([0-9a-f-]+)/.exec(childResult.content[0].text)?.[1];
@@ -422,8 +422,8 @@ test('get_prioritized_ideas falls back to connected uncommitted work when a phas
   const payload = JSON.parse(result.content[0].text);
 
   assert.equal(payload.selectionScope, 'connected-uncommitted-leaves');
-  assert.equal(payload.diagnostics.openLeafAims, 0);
-  assert.equal(payload.diagnostics.uncommittedLeafAims, 1);
+  assert.equal(payload.diagnostics.openLeafIdeas, 0);
+  assert.equal(payload.diagnostics.uncommittedLeafIdeas, 1);
   assert.deepEqual(payload.ideas.map((idea: any) => idea.id), [childId]);
 });
 
@@ -431,7 +431,7 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
 
-  const missionResult = await createAim(server, {
+  const missionResult = await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Permanent mission A',
     intrinsicValue: 10,
@@ -439,10 +439,10 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   });
   const missionId = /Created idea with ID: ([0-9a-f-]+)/.exec(missionResult.content[0].text)?.[1];
   assert.ok(missionId);
-  const peerResult = await createAim(server, {
+  const peerResult = await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Permanent mission B',
-    supportedAims: [missionId],
+    supportedIdeas: [missionId],
     cost: 1,
   });
   const peerId = /Created idea with ID: ([0-9a-f-]+)/.exec(peerResult.content[0].text)?.[1];
@@ -450,7 +450,7 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId: missionId,
-    addSupportedAims: [peerId],
+    addSupportedIdeas: [peerId],
   });
 
   const phase = await caller.phase.create({
@@ -470,8 +470,8 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   const payload = JSON.parse(result.content[0].text);
 
   assert.equal(payload.selectionScope, 'mission-containers-exploration');
-  assert.equal(payload.diagnostics.openLeafAims, 0);
-  assert.equal(payload.diagnostics.uncommittedLeafAims, 0);
+  assert.equal(payload.diagnostics.openLeafIdeas, 0);
+  assert.equal(payload.diagnostics.uncommittedLeafIdeas, 0);
   assert.equal(payload.exploration.required, true);
   assert.match(payload.exploration.objective, /actionable leaf/i);
   assert.ok(payload.exploration.moves.some((move: string) => /graph_hygiene/.test(move)));
@@ -479,7 +479,7 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   assert.deepEqual(payload.ideas.map((idea: any) => idea.id), [missionId]);
 });
 
-test('countAimReferences counts commits referencing an idea id prefix (realized-cost signal)', () => {
+test('countIdeaReferences counts commits referencing an idea id prefix (realized-cost signal)', () => {
   const ids = [
     'de22b7f3-ad77-4bcc-bd9f-aabbccddeeff', // referenced twice
     'b03ad58e-4518-4a35-9a35-36f58ee9b001', // referenced once
@@ -490,7 +490,7 @@ test('countAimReferences counts commits referencing an idea id prefix (realized-
     'chore(graph): split b03ad58e; also touched de22b7f3 followup',
     'unrelated cleanup commit with no idea id',
   ];
-  const counts = countAimReferences(commits, ids);
+  const counts = countIdeaReferences(commits, ids);
   assert.equal(counts.get(ids[0]), 2, 'de22b7f3 referenced in two commits');
   assert.equal(counts.get(ids[1]), 1, 'b03ad58e referenced once');
   assert.equal(counts.get(ids[2]) ?? 0, 0, 'unreferenced idea has zero');
@@ -506,16 +506,16 @@ test('MCP Tools - list_phase_ideas_recursive', async () => {
     phase: { name: 'P1', from: 0, to: 1000 }
   });
 
-  const parent = await caller.idea.createAimInPhase({
+  const parent = await caller.idea.createIdeaInPhase({
     projectPath: ctx.projectPath,
     phaseId: phase.id,
     idea: { text: 'Parent', status: { state: 'open', comment: '', date: Date.now() } },
     insertionIndex: 0
   });
 
-  await caller.idea.createSubAim({
+  await caller.idea.createSubIdea({
     projectPath: ctx.projectPath,
-    parentAimId: parent.id,
+    parentIdeaId: parent.id,
     idea: { text: 'Child', status: { state: 'open', comment: '', date: Date.now() } },
     positionInParent: 0
   });

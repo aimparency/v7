@@ -40,7 +40,7 @@ function mountEditModal(description = 'Old description', statusState = 'open', a
             cost: 1,
             loopWeight: 1,
             reflection: '',
-            supportedAims: [],
+            supportedIdeas: [],
             supportingConnections: [],
             incoming: [],
             committedIn: []
@@ -76,7 +76,7 @@ function mountEditModal(description = 'Old description', statusState = 'open', a
     cost: 1,
     loopWeight: 1,
     reflection: '',
-    supportedAims: [],
+    supportedIdeas: [],
     supportingConnections: [],
     committedIn: []
   } as any
@@ -103,7 +103,7 @@ function mountBulkEditModal() {
             cost: 1,
             loopWeight: 1,
             reflection: '',
-            supportedAims: [],
+            supportedIdeas: [],
             supportingConnections: [],
             committedIn: []
           },
@@ -118,7 +118,7 @@ function mountBulkEditModal() {
             cost: 2,
             loopWeight: 2,
             reflection: 'Learned',
-            supportedAims: [],
+            supportedIdeas: [],
             supportingConnections: [],
             committedIn: []
           }
@@ -174,12 +174,12 @@ describe('IdeaEditModal keyboard save behavior', () => {
       .find((button) => button.text().includes('Multiple values'))
     await statusOverride!.trigger('click')
     await wrapper.find('select').setValue('done')
-    expect(dataStore.updateAim).not.toHaveBeenCalled()
+    expect(dataStore.updateIdea).not.toHaveBeenCalled()
 
     await wrapper.find('.btn-save').trigger('click')
 
-    expect(dataStore.updateAim).toHaveBeenCalledTimes(2)
-    for (const call of vi.mocked(dataStore.updateAim).mock.calls) {
+    expect(dataStore.updateIdea).toHaveBeenCalledTimes(2)
+    for (const call of vi.mocked(dataStore.updateIdea).mock.calls) {
       expect(call[2]).not.toHaveProperty('text')
       expect(call[2]).not.toHaveProperty('description')
       expect(call[2]).toMatchObject({ status: { state: 'done' } })
@@ -199,7 +199,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     await wrapper.vm.$nextTick()
     await wrapper.find('.btn-discard').trigger('click')
 
-    expect(dataStore.updateAim).not.toHaveBeenCalled()
+    expect(dataStore.updateIdea).not.toHaveBeenCalled()
   })
 
   it('uses explicit activation for mixed selects and protects mixed ongoing ideas from archive', async () => {
@@ -221,7 +221,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     await status.setValue('done')
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('Archive this idea')
-    expect(dataStore.updateAim).not.toHaveBeenCalled()
+    expect(dataStore.updateIdea).not.toHaveBeenCalled()
   })
 
   it('saves and closes on Enter from title input', async () => {
@@ -235,7 +235,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     await title.trigger('keydown', { key: 'Enter' })
     await wrapper.vm.$nextTick()
 
-    expect(dataStore.updateAim).toHaveBeenCalled()
+    expect(dataStore.updateIdea).toHaveBeenCalled()
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
@@ -250,13 +250,13 @@ describe('IdeaEditModal keyboard save behavior', () => {
     await description.trigger('keydown', { key: 'Enter' })
     await wrapper.vm.$nextTick()
 
-    expect(dataStore.updateAim).not.toHaveBeenCalled()
+    expect(dataStore.updateIdea).not.toHaveBeenCalled()
     expect(wrapper.emitted('close')).toBeFalsy()
 
     await description.trigger('keydown', { key: 'Enter', ctrlKey: true })
     await wrapper.vm.$nextTick()
 
-    expect(dataStore.updateAim).toHaveBeenCalled()
+    expect(dataStore.updateIdea).toHaveBeenCalled()
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
@@ -305,7 +305,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
 
     await wrapper.find('button[title="Add supported idea"]').trigger('click')
 
-    expect(modalStore.openAimSearch).toHaveBeenCalledWith(
+    expect(modalStore.openIdeaSearch).toHaveBeenCalledWith(
       'pick',
       expect.any(Function),
       undefined,
@@ -314,7 +314,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
         placeholder: 'Search for a parent idea...'
       })
     )
-    const calls = vi.mocked(modalStore.openAimSearch).mock.calls
+    const calls = vi.mocked(modalStore.openIdeaSearch).mock.calls
     expect(calls[0]).toBeDefined()
     expect(calls[0]![1]).toEqual(expect.any(Function))
 
@@ -343,7 +343,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.emitted('close')).toBeTruthy()
-    expect(dataStore.updateAim).not.toHaveBeenCalled()
+    expect(dataStore.updateIdea).not.toHaveBeenCalled()
   })
 
   it('closes on Escape from the status select', async () => {
@@ -357,7 +357,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.emitted('close')).toBeTruthy()
-    expect(dataStore.updateAim).not.toHaveBeenCalled()
+    expect(dataStore.updateIdea).not.toHaveBeenCalled()
   })
 
   it('closes on Escape handled by the modal shell', async () => {
@@ -370,7 +370,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.emitted('close')).toBeTruthy()
-    expect(dataStore.updateAim).not.toHaveBeenCalled()
+    expect(dataStore.updateIdea).not.toHaveBeenCalled()
   })
 
   it('saves on Enter from the modal content root when no field handles it', async () => {
@@ -382,7 +382,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
     await wrapper.vm.$nextTick()
 
-    expect(dataStore.updateAim).toHaveBeenCalled()
+    expect(dataStore.updateIdea).toHaveBeenCalled()
     expect(wrapper.emitted('close')).toBeTruthy()
   })
 
@@ -400,7 +400,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
               id: 'idea-1', text: 'Old title', description: '', tags: [],
               status: { state: 'open', comment: '' }, archived: false,
               intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
-              supportedAims: [], supportingConnections: [], incoming: [], committedIn: []
+              supportedIdeas: [], supportingConnections: [], incoming: [], committedIn: []
             }
           },
           meta: {
@@ -421,7 +421,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
       id: 'idea-1', text: 'Old title', description: '', tags: [],
       status: { state: 'open', comment: '', date: Date.now() }, archived: false,
       intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
-      supportedAims: [], supportingConnections: [], committedIn: []
+      supportedIdeas: [], supportingConnections: [], committedIn: []
     } as any
 
     await wrapper.setProps({ show: true })
@@ -464,7 +464,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
               id: 'idea-1', text: 'Old title', description: '', tags: [],
               status: { state: 'open', comment: '' }, archived: false,
               intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
-              supportedAims: [], supportingConnections: [], incoming: [], committedIn: []
+              supportedIdeas: [], supportingConnections: [], incoming: [], committedIn: []
             }
           },
           meta: {
@@ -485,7 +485,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
       id: 'idea-1', text: 'Old title', description: '', tags: [],
       status: { state: 'open', comment: '', date: Date.now() }, archived: false,
       intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
-      supportedAims: [], supportingConnections: [], committedIn: []
+      supportedIdeas: [], supportingConnections: [], committedIn: []
     } as any
 
     await wrapper.setProps({ show: true })
@@ -547,7 +547,7 @@ describe('IdeaEditModal archive checkbox', () => {
     await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
     await wrapper.vm.$nextTick()
 
-    expect(dataStore.updateAim).toHaveBeenCalledWith(
+    expect(dataStore.updateIdea).toHaveBeenCalledWith(
       '/test/project',
       'idea-1',
       expect.objectContaining({ archived: true })
@@ -566,7 +566,7 @@ describe('IdeaEditModal archive checkbox', () => {
     await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
     await wrapper.vm.$nextTick()
 
-    expect(dataStore.updateAim).toHaveBeenCalledWith(
+    expect(dataStore.updateIdea).toHaveBeenCalledWith(
       '/test/project',
       'idea-1',
       expect.objectContaining({ archived: false })
@@ -590,7 +590,7 @@ describe('IdeaEditModal linked repos', () => {
       id: 'idea-1', text: 'Local idea', description: '', tags: [],
       status: { state: 'open', comment: '', date: Date.now() }, archived: false,
       intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
-      supportedAims: [], supportingConnections: [], committedIn: [],
+      supportedIdeas: [], supportingConnections: [], committedIn: [],
       supportingRepos: [{ repoId: R1, weight: 1, relativePosition: [0, 0] }]
     } as any
     dataStore.meta = {
@@ -613,7 +613,7 @@ describe('IdeaEditModal linked repos', () => {
     const modalStore = useUIModalStore()
     await wrapper.find('button[title="Link a whole repo"]').trigger('click')
 
-    const calls = vi.mocked(modalStore.openAimSearch).mock.calls
+    const calls = vi.mocked(modalStore.openIdeaSearch).mock.calls
     const options = (calls[0]![3] as any).additionalOptions
     // Only Repo Two is offered — Repo One is already linked.
     expect(options).toEqual([expect.objectContaining({ id: R2, label: 'Repo Two' })])
@@ -637,7 +637,7 @@ describe('IdeaEditModal linked repos', () => {
     const modalStore = useUIModalStore()
     // Add R2 through the funnel.
     await wrapper.find('button[title="Link a whole repo"]').trigger('click')
-    const callback = vi.mocked(modalStore.openAimSearch).mock.calls[0]![1] as (payload: any) => void
+    const callback = vi.mocked(modalStore.openIdeaSearch).mock.calls[0]![1] as (payload: any) => void
     callback({ type: 'option', data: { id: R2, label: 'Repo Two' } })
     await wrapper.vm.$nextTick()
 
@@ -670,7 +670,7 @@ describe('IdeaEditModal custom color', () => {
     await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
     await wrapper.vm.$nextTick()
 
-    expect(dataStore.updateAim).toHaveBeenCalledWith(
+    expect(dataStore.updateIdea).toHaveBeenCalledWith(
       '/test/project',
       'idea-1',
       expect.objectContaining({ color: '#ff8800' })
@@ -686,7 +686,7 @@ describe('IdeaEditModal custom color', () => {
     await wrapper.find('.modal-content-root').trigger('keydown', { key: 'Enter' })
     await wrapper.vm.$nextTick()
 
-    expect(dataStore.updateAim).toHaveBeenCalledWith(
+    expect(dataStore.updateIdea).toHaveBeenCalledWith(
       '/test/project',
       'idea-1',
       expect.objectContaining({ color: null })

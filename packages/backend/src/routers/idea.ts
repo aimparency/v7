@@ -3,33 +3,33 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs-extra';
 import { createHash } from 'node:crypto';
-import { IdeaProposalSchema, flattenAimProposal, type Idea, type IdeaProposal, type SearchAimResult } from 'shared';
+import { IdeaProposalSchema, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
-import { embeddingTextForAim } from '../embeddings.js';
-import { defaultAimColor } from '../idea-color.js';
-import { getAimCommitEvidence, getAimStatusHistory, getCommitDiff } from '../git-evidence.js';
+import { embeddingTextForIdea } from '../embeddings.js';
+import { defaultIdeaColor } from '../idea-color.js';
+import { getIdeaCommitEvidence, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 
-export const createAimRouter = (
+export const createIdeaRouter = (
   t: RouterBuilder,
   delayedProcedure: BaseProcedure,
-  readAim: (projectPath: string, ideaId: string) => Promise<Idea>,
-  listAims: (projectPath: string, archived?: boolean) => Promise<Idea[]>,
-  writeAim: (projectPath: string, idea: Idea) => Promise<void>,
+  readIdea: (projectPath: string, ideaId: string) => Promise<Idea>,
+  listIdeas: (projectPath: string, archived?: boolean) => Promise<Idea[]>,
+  writeIdea: (projectPath: string, idea: Idea) => Promise<void>,
   readPhase: (projectPath: string, phaseId: string) => Promise<any>,
-  commitAimToPhase: (projectPath: string, ideaId: string, phaseId: string, insertionIndex?: number) => Promise<void>,
-  removeAimFromPhase: (projectPath: string, ideaId: string, phaseId: string) => Promise<void>,
-  connectAimsInternal: (projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number, relativePosition?: [number, number], weight?: number, explanation?: string) => Promise<void>,
+  commitIdeaToPhase: (projectPath: string, ideaId: string, phaseId: string, insertionIndex?: number) => Promise<void>,
+  removeIdeaFromPhase: (projectPath: string, ideaId: string, phaseId: string) => Promise<void>,
+  connectIdeasInternal: (projectPath: string, parentIdeaId: string, childIdeaId: string, parentIncomingIndex?: number, childSupportedIdeasIndex?: number, relativePosition?: [number, number], weight?: number, explanation?: string) => Promise<void>,
   getRandomRelativePosition: () => [number, number],
   normalizeProjectPath: (p: string) => string,
-  addAimToIndex: (projectPath: string, idea: Idea) => void,
-  updateAimInIndex: (projectPath: string, idea: Idea) => void,
-  removeAimFromIndex: (projectPath: string, ideaId: string) => void,
+  addIdeaToIndex: (projectPath: string, idea: Idea) => void,
+  updateIdeaInIndex: (projectPath: string, idea: Idea) => void,
+  removeIdeaFromIndex: (projectPath: string, ideaId: string) => void,
   generateEmbedding: (text: string) => Promise<number[] | null>,
   generateQueryEmbedding: (query: string) => Promise<number[] | null>,
   saveEmbedding: (projectPath: string, ideaId: string, vector: number[]) => Promise<void>,
   removeEmbedding: (projectPath: string, ideaId: string) => Promise<void>,
   searchVectors: (projectPath: string, queryVector: number[], limit: number) => Promise<Array<{ id: string, score: number }>>,
-  searchAims: (projectPath: string, query: string, ideas: Idea[]) => Promise<SearchAimResult[]>,
+  searchIdeas: (projectPath: string, query: string, ideas: Idea[]) => Promise<SearchIdeaResult[]>,
   invalidateSemanticCache: (projectPath: string) => void,
   ensureSearchIndex: (projectPath: string) => Promise<void>,
   generateProposal: (input: {
@@ -47,9 +47,9 @@ export const createAimRouter = (
     parentId?: string
   ) => {
     if (explicitColor) return explicitColor;
-    if (!parentId) return defaultAimColor();
-    const parent = await readAim(projectPath, parentId);
-    return defaultAimColor(parent.color ?? '#666666', parent.supportingConnections.length);
+    if (!parentId) return defaultIdeaColor();
+    const parent = await readIdea(projectPath, parentId);
+    return defaultIdeaColor(parent.color ?? '#666666', parent.supportingConnections.length);
   };
 
   type ApprovalJournal = {
@@ -78,7 +78,7 @@ export const createAimRouter = (
       .query(async ({ input }: any) => {
         const bowmanPath = normalizeProjectPath(input.projectPath);
         const repositoryPath = path.dirname(bowmanPath);
-        return getAimCommitEvidence(repositoryPath, input.ideaId, input.limit);
+        return getIdeaCommitEvidence(repositoryPath, input.ideaId, input.limit);
       }),
 
     // Status changes of the idea as committed to git, oldest first.
@@ -88,7 +88,7 @@ export const createAimRouter = (
         ideaId: z.string().uuid()
       }))
       .query(async ({ input }: any) => {
-        return getAimStatusHistory(normalizeProjectPath(input.projectPath), input.ideaId);
+        return getIdeaStatusHistory(normalizeProjectPath(input.projectPath), input.ideaId);
       }),
 
     // Per-file patches of one commit in the project's repository.
@@ -107,7 +107,7 @@ export const createAimRouter = (
         ideaId: z.string().uuid()
       }))
       .query(async ({ input }: any) => {
-        return await readAim(input.projectPath, input.ideaId);
+        return await readIdea(input.projectPath, input.ideaId);
       }),
 
     getMany: delayedProcedure
@@ -117,7 +117,7 @@ export const createAimRouter = (
       }))
       .query(async ({ input }: any) => {
         const results = await Promise.allSettled(
-          input.ideaIds.map((ideaId: string) => readAim(input.projectPath, ideaId))
+          input.ideaIds.map((ideaId: string) => readIdea(input.projectPath, ideaId))
         );
 
         return results.flatMap((result, index) => {
@@ -137,7 +137,7 @@ export const createAimRouter = (
         projectPath: z.string(),
         status: z.union([z.string(), z.array(z.string())]).optional(),
         phaseId: z.string().uuid().optional(),
-        parentAimId: z.string().uuid().optional(),
+        parentIdeaId: z.string().uuid().optional(),
         floating: z.boolean().optional(),
         uncommitted: z.boolean().optional(),
         archived: z.boolean().optional(),
@@ -148,7 +148,7 @@ export const createAimRouter = (
         sortOrder: z.enum(['asc', 'desc']).optional()
       }))
       .query(async ({ input }: any) => {
-        let ideas = await listAims(input.projectPath, input.archived);
+        let ideas = await listIdeas(input.projectPath, input.archived);
 
         if (input.ids) {
           ideas = ideas.filter((idea: Idea) => input.ids!.includes(idea.id));
@@ -160,10 +160,10 @@ export const createAimRouter = (
 
           if (input.phaseId) {
             ideas = ideas.filter((idea: Idea) => idea.committedIn.includes(input.phaseId!));
-          } else if (input.parentAimId) {
-            ideas = ideas.filter((idea: Idea) => idea.supportedAims.includes(input.parentAimId!));
+          } else if (input.parentIdeaId) {
+            ideas = ideas.filter((idea: Idea) => idea.supportedIdeas.includes(input.parentIdeaId!));
           } else if (input.floating) {
-            ideas = ideas.filter((idea: Idea) => (!idea.committedIn || idea.committedIn.length === 0) && (!idea.supportedAims || idea.supportedAims.length === 0));
+            ideas = ideas.filter((idea: Idea) => (!idea.committedIn || idea.committedIn.length === 0) && (!idea.supportedIdeas || idea.supportedIdeas.length === 0));
           } else if (input.uncommitted) {
             // Not committed to any phase, regardless of parents. Surfaces ideas
             // that are connected (have a parent) but invisible to phase-based
@@ -222,8 +222,8 @@ export const createAimRouter = (
         phaseId: z.string().uuid()
       }))
       .query(async ({ input }: any) => {
-        const allAims = await listAims(input.projectPath);
-        const ideaMap = new Map(allAims.map((a: Idea) => [a.id, a]));
+        const allIdeas = await listIdeas(input.projectPath);
+        const ideaMap = new Map(allIdeas.map((a: Idea) => [a.id, a]));
         const result = new Set<Idea>();
 
         // Get phase root commitments
@@ -253,7 +253,7 @@ export const createAimRouter = (
         return Array.from(result);
       }),
 
-    proposeAimSubtree: delayedProcedure
+    proposeIdeaSubtree: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         transcript: z.string().trim().min(1).max(10_000),
@@ -261,7 +261,7 @@ export const createAimRouter = (
         phaseId: z.string().uuid().optional()
       }))
       .mutation(async ({ input }: any) => {
-        const parents = await Promise.all(input.existingParentIds.map((id: string) => readAim(input.projectPath, id)));
+        const parents = await Promise.all(input.existingParentIds.map((id: string) => readIdea(input.projectPath, id)));
         if (parents.some(parent => parent.archived || parent.status.state === 'archived')) {
           throw new Error('Cannot generate a proposal under an archived idea');
         }
@@ -278,7 +278,7 @@ export const createAimRouter = (
         });
       }),
 
-    approveAimSubtree: delayedProcedure
+    approveIdeaSubtree: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         proposal: IdeaProposalSchema,
@@ -293,14 +293,14 @@ export const createAimRouter = (
 
         // Validate every external reference before the first graph write.
         for (const parentId of proposal.existingParentIds) {
-          const parent = await readAim(input.projectPath, parentId);
+          const parent = await readIdea(input.projectPath, parentId);
           if (parent.archived || parent.status.state === 'archived') {
             throw new Error(`Cannot attach proposal to archived idea ${parentId}`);
           }
         }
         if (proposal.phaseId) await readPhase(input.projectPath, proposal.phaseId);
 
-        const flat = flattenAimProposal(proposal.root);
+        const flat = flattenIdeaProposal(proposal.root);
         const hash = proposalHash(proposal);
         const journalPath = approvalJournalPath(input.projectPath, input.idempotencyKey);
         await fs.ensureDir(path.dirname(journalPath));
@@ -312,12 +312,12 @@ export const createAimRouter = (
             throw new Error('Idempotency key is already bound to a different proposal snapshot');
           }
           if (journal.complete) {
-            const replayedRootAimId = journal.idMap[proposal.root.proposalId];
-            if (!replayedRootAimId) throw new Error('Completed approval journal has no root idea ID');
+            const replayedRootIdeaId = journal.idMap[proposal.root.proposalId];
+            if (!replayedRootIdeaId) throw new Error('Completed approval journal has no root idea ID');
             return {
               complete: true,
               replayed: true,
-              rootAimId: replayedRootAimId,
+              rootIdeaId: replayedRootIdeaId,
               idMap: journal.idMap,
               completedOperations: journal.completedOperations
             };
@@ -351,7 +351,7 @@ export const createAimRouter = (
         const operations: Array<() => Promise<void>> = flat.ideas.map(proposed => async () => {
           const internalParent = parentByChild.get(proposed.proposalId);
           const isRoot = proposed.proposalId === proposal.root.proposalId;
-          const supportedAims = internalParent
+          const supportedIdeas = internalParent
             ? [durableId(internalParent)]
             : proposal.existingParentIds;
           const idea: Idea = {
@@ -366,7 +366,7 @@ export const createAimRouter = (
               weight: connection.weight,
               ...(connection.explanation ? { explanation: connection.explanation } : {})
             })),
-            supportedAims,
+            supportedIdeas,
             committedIn: isRoot && proposal.phaseId ? [proposal.phaseId] : [],
             status: {
               state: proposed.status ?? 'open',
@@ -381,18 +381,18 @@ export const createAimRouter = (
             costVariance: 0,
             valueVariance: 0,
             archived: false,
-            color: defaultAimColor()
+            color: defaultIdeaColor()
           };
-          await writeAim(input.projectPath, idea);
-          addAimToIndex(input.projectPath, idea);
+          await writeIdea(input.projectPath, idea);
+          addIdeaToIndex(input.projectPath, idea);
         });
 
-        const rootAimId = durableId(proposal.root.proposalId);
+        const rootIdeaId = durableId(proposal.root.proposalId);
         for (const parentId of proposal.existingParentIds) {
-          operations.push(() => connectAimsInternal(input.projectPath, parentId, rootAimId));
+          operations.push(() => connectIdeasInternal(input.projectPath, parentId, rootIdeaId));
         }
         if (proposal.phaseId) {
-          operations.push(() => commitAimToPhase(input.projectPath, rootAimId, proposal.phaseId!));
+          operations.push(() => commitIdeaToPhase(input.projectPath, rootIdeaId, proposal.phaseId!));
         }
 
         try {
@@ -408,7 +408,7 @@ export const createAimRouter = (
           return {
             complete: true,
             replayed: false,
-            rootAimId,
+            rootIdeaId,
             idMap: journal.idMap,
             completedOperations: journal.completedOperations
           };
@@ -416,7 +416,7 @@ export const createAimRouter = (
           return {
             complete: false,
             replayed: false,
-            rootAimId,
+            rootIdeaId,
             idMap: journal.idMap,
             completedOperations: journal.completedOperations,
             failedOperation: journal.completedOperations,
@@ -442,7 +442,7 @@ export const createAimRouter = (
             reviewedAt: z.number().optional()
           }).optional(),
           incoming: z.array(z.string()).optional(),
-          supportedAims: z.array(z.string()).optional(),
+          supportedIdeas: z.array(z.string()).optional(),
           committedIn: z.array(z.string()).optional(),
           supportingConnections: z.array(z.object({
             ideaId: z.string().uuid(),
@@ -468,21 +468,21 @@ export const createAimRouter = (
         })
       }))
       .mutation(async ({ input }: any) => {
-        const existingAim = await readAim(input.projectPath, input.ideaId);
+        const existingIdea = await readIdea(input.projectPath, input.ideaId);
 
-        // Handle consistency for supportedAims (Parents)
-        if (input.idea.supportedAims) {
-            const oldParents = new Set<string>(existingAim.supportedAims || []);
-            const newParents = new Set<string>(input.idea.supportedAims);
+        // Handle consistency for supportedIdeas (Parents)
+        if (input.idea.supportedIdeas) {
+            const oldParents = new Set<string>(existingIdea.supportedIdeas || []);
+            const newParents = new Set<string>(input.idea.supportedIdeas);
 
             // Removed Parents
             for (const parentId of oldParents) {
                 if (!newParents.has(parentId)) {
                     try {
-                        const parent = await readAim(input.projectPath, parentId);
+                        const parent = await readIdea(input.projectPath, parentId);
                         if (parent.supportingConnections) {
                             parent.supportingConnections = parent.supportingConnections.filter((c: any) => c.ideaId !== input.ideaId);
-                            await writeAim(input.projectPath, parent);
+                            await writeIdea(input.projectPath, parent);
                         }
                     } catch(e) { console.warn(`Failed to update removed parent ${parentId}`, e); }
                 }
@@ -492,7 +492,7 @@ export const createAimRouter = (
             for (const parentId of Array.from(newParents)) {
                 if (!oldParents.has(parentId)) {
                     try {
-                        const parent = await readAim(input.projectPath, parentId);
+                        const parent = await readIdea(input.projectPath, parentId);
                         if (!parent.supportingConnections) parent.supportingConnections = [];
                         if (!parent.supportingConnections.some((c: any) => c.ideaId === input.ideaId)) {
                             parent.supportingConnections.push({
@@ -500,7 +500,7 @@ export const createAimRouter = (
                                 relativePosition: getRandomRelativePosition(),
                                 weight: 1
                             });
-                            await writeAim(input.projectPath, parent);
+                            await writeIdea(input.projectPath, parent);
                         }
                     } catch(e) { console.warn(`Failed to update added parent ${parentId}`, e); }
                 }
@@ -509,17 +509,17 @@ export const createAimRouter = (
 
         // Handle consistency for supportingConnections (Children)
         if (input.idea.supportingConnections) {
-             const oldChildren = new Set<string>((existingAim.supportingConnections || []).map((c: any) => c.ideaId));
+             const oldChildren = new Set<string>((existingIdea.supportingConnections || []).map((c: any) => c.ideaId));
              const newChildren = new Set<string>(input.idea.supportingConnections.map((c: any) => c.ideaId));
 
              // Removed Children
              for (const childId of oldChildren) {
                  if (!newChildren.has(childId)) {
                      try {
-                         const child = await readAim(input.projectPath, childId);
-                         if (child.supportedAims) {
-                             child.supportedAims = child.supportedAims.filter((id: string) => id !== input.ideaId);
-                             await writeAim(input.projectPath, child);
+                         const child = await readIdea(input.projectPath, childId);
+                         if (child.supportedIdeas) {
+                             child.supportedIdeas = child.supportedIdeas.filter((id: string) => id !== input.ideaId);
+                             await writeIdea(input.projectPath, child);
                          }
                      } catch(e) { console.warn(`Failed to update removed child ${childId}`, e); }
                  }
@@ -529,11 +529,11 @@ export const createAimRouter = (
              for (const childId of Array.from(newChildren)) {
                  if (!oldChildren.has(childId)) {
                      try {
-                         const child = await readAim(input.projectPath, childId);
-                         if (!child.supportedAims) child.supportedAims = [];
-                         if (!child.supportedAims.includes(input.ideaId)) {
-                             child.supportedAims.push(input.ideaId);
-                             await writeAim(input.projectPath, child);
+                         const child = await readIdea(input.projectPath, childId);
+                         if (!child.supportedIdeas) child.supportedIdeas = [];
+                         if (!child.supportedIdeas.includes(input.ideaId)) {
+                             child.supportedIdeas.push(input.ideaId);
+                             await writeIdea(input.projectPath, child);
                          }
                      } catch(e) { console.warn(`Failed to update added child ${childId}`, e); }
                  }
@@ -542,18 +542,18 @@ export const createAimRouter = (
 
         // `date` means state-transition time, not "last status-object edit".
         // A comment edit or explicit relevance review must preserve it.
-        let status = existingAim.status;
+        let status = existingIdea.status;
         if (input.idea.status) {
           const stateChanged = input.idea.status.state !== undefined &&
-            input.idea.status.state !== existingAim.status.state;
+            input.idea.status.state !== existingIdea.status.state;
           status = {
-            ...existingAim.status,
+            ...existingIdea.status,
             ...input.idea.status,
-            date: input.idea.status.date ?? (stateChanged ? Date.now() : existingAim.status.date)
+            date: input.idea.status.date ?? (stateChanged ? Date.now() : existingIdea.status.date)
           };
         }
 
-        let supportingConnections = existingAim.supportingConnections;
+        let supportingConnections = existingIdea.supportingConnections;
         if (input.idea.supportingConnections) {
             supportingConnections = input.idea.supportingConnections.map((c: any) => ({
                 ideaId: c.ideaId,
@@ -563,7 +563,7 @@ export const createAimRouter = (
             }));
         }
 
-        let supportingRepos = existingAim.supportingRepos;
+        let supportingRepos = existingIdea.supportingRepos;
         if (input.idea.supportingRepos) {
             supportingRepos = input.idea.supportingRepos.map((c: any) => ({
                 repoId: c.repoId,
@@ -573,20 +573,20 @@ export const createAimRouter = (
             }));
         }
 
-        const updatedAim = {
-          ...existingAim,
+        const updatedIdea = {
+          ...existingIdea,
           ...input.idea,
           status,
           supportingConnections,
           supportingRepos
         };
 
-        await writeAim(input.projectPath, updatedAim);
-        updateAimInIndex(input.projectPath, updatedAim);
+        await writeIdea(input.projectPath, updatedIdea);
+        updateIdeaInIndex(input.projectPath, updatedIdea);
 
         // Update embedding (async)
-        if (process.env.NODE_ENV !== 'test' && updatedAim.text) {
-          generateEmbedding(embeddingTextForAim(updatedAim)).then(vector => {
+        if (process.env.NODE_ENV !== 'test' && updatedIdea.text) {
+          generateEmbedding(embeddingTextForIdea(updatedIdea)).then(vector => {
              if(vector) {
                saveEmbedding(input.projectPath, input.ideaId, vector);
                invalidateSemanticCache(input.projectPath);
@@ -594,7 +594,7 @@ export const createAimRouter = (
           });
         }
 
-        return updatedAim;
+        return updatedIdea;
       }),
 
     delete: delayedProcedure
@@ -604,18 +604,18 @@ export const createAimRouter = (
       }))
       .mutation(async ({ input }: any) => {
         // First remove the idea from all phases where it's committed
-        const idea = await readAim(input.projectPath, input.ideaId);
+        const idea = await readIdea(input.projectPath, input.ideaId);
         for (const phaseId of idea.committedIn) {
-          await removeAimFromPhase(input.projectPath, input.ideaId, phaseId);
+          await removeIdeaFromPhase(input.projectPath, input.ideaId, phaseId);
         }
 
-        // Clean up parent connections (supportedAims)
-        for (const parentId of idea.supportedAims || []) {
+        // Clean up parent connections (supportedIdeas)
+        for (const parentId of idea.supportedIdeas || []) {
             try {
-                const parent = await readAim(input.projectPath, parentId);
+                const parent = await readIdea(input.projectPath, parentId);
                 if (parent.supportingConnections) {
                     parent.supportingConnections = parent.supportingConnections.filter((c: any) => c.ideaId !== input.ideaId);
-                    await writeAim(input.projectPath, parent);
+                    await writeIdea(input.projectPath, parent);
                 }
             } catch (e) {
                 console.warn(`Failed to cleanup parent ${parentId} for deleted idea ${input.ideaId}: ${e}`);
@@ -625,10 +625,10 @@ export const createAimRouter = (
         // Clean up child connections (supportingConnections)
         for (const conn of idea.supportingConnections || []) {
             try {
-                const child = await readAim(input.projectPath, conn.ideaId);
-                if (child.supportedAims) {
-                    child.supportedAims = child.supportedAims.filter((id: string) => id !== input.ideaId);
-                    await writeAim(input.projectPath, child);
+                const child = await readIdea(input.projectPath, conn.ideaId);
+                if (child.supportedIdeas) {
+                    child.supportedIdeas = child.supportedIdeas.filter((id: string) => id !== input.ideaId);
+                    await writeIdea(input.projectPath, child);
                 }
             } catch (e) {
                 console.warn(`Failed to cleanup child ${conn.ideaId} for deleted idea ${input.ideaId}: ${e}`);
@@ -644,7 +644,7 @@ export const createAimRouter = (
         await fs.remove(ideaPath);
 
         // Remove from search index
-        removeAimFromIndex(input.projectPath, input.ideaId);
+        removeIdeaFromIndex(input.projectPath, input.ideaId);
 
         if (process.env.NODE_ENV !== 'test') {
           await removeEmbedding(input.projectPath, input.ideaId);
@@ -664,7 +664,7 @@ export const createAimRouter = (
         insertionIndex: z.number().optional()
       }))
       .mutation(async ({ input }: any) => {
-        await commitAimToPhase(input.projectPath, input.ideaId, input.phaseId, input.insertionIndex);
+        await commitIdeaToPhase(input.projectPath, input.ideaId, input.phaseId, input.insertionIndex);
         return { success: true };
       }),
 
@@ -675,23 +675,23 @@ export const createAimRouter = (
         phaseId: z.string().uuid()
       }))
       .mutation(async ({ input }: any) => {
-        await removeAimFromPhase(input.projectPath, input.ideaId, input.phaseId);
+        await removeIdeaFromPhase(input.projectPath, input.ideaId, input.phaseId);
         return { success: true };
       }),
 
-    connectAims: delayedProcedure
+    connectIdeas: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        parentAimId: z.string().uuid(),
-        childAimId: z.string().uuid(),
+        parentIdeaId: z.string().uuid(),
+        childIdeaId: z.string().uuid(),
         parentIncomingIndex: z.number().optional(),
-        childSupportedAimsIndex: z.number().optional(),
+        childSupportedIdeasIndex: z.number().optional(),
         relativePosition: z.tuple([z.number(), z.number()]).optional(),
         weight: z.number().optional(),
         explanation: z.string().optional()
       }))
       .mutation(async ({ input }: any) => {
-        await connectAimsInternal(input.projectPath, input.parentAimId, input.childAimId, input.parentIncomingIndex, input.childSupportedAimsIndex, input.relativePosition, input.weight, input.explanation);
+        await connectIdeasInternal(input.projectPath, input.parentIdeaId, input.childIdeaId, input.parentIncomingIndex, input.childSupportedIdeasIndex, input.relativePosition, input.weight, input.explanation);
       }),
 
     // Repo-level cross-repo link: attach a {repoId} edge (no ideaId) to an idea's
@@ -710,7 +710,7 @@ export const createAimRouter = (
         explanation: z.string().optional()
       }))
       .mutation(async ({ input }: any) => {
-        const idea = await readAim(input.projectPath, input.ideaId);
+        const idea = await readIdea(input.projectPath, input.ideaId);
         const existing = idea.supportingRepos ?? [];
         const idx = existing.findIndex((r: any) => r.repoId === input.repoId);
         const edge = {
@@ -722,10 +722,10 @@ export const createAimRouter = (
         const supportingRepos = idx >= 0
           ? existing.map((r: any, i: number) => (i === idx ? { ...r, ...edge } : r))
           : [...existing, edge];
-        const updatedAim = { ...idea, supportingRepos };
-        await writeAim(input.projectPath, updatedAim);
-        updateAimInIndex(input.projectPath, updatedAim);
-        return updatedAim;
+        const updatedIdea = { ...idea, supportingRepos };
+        await writeIdea(input.projectPath, updatedIdea);
+        updateIdeaInIndex(input.projectPath, updatedIdea);
+        return updatedIdea;
       }),
 
     unlinkRepo: delayedProcedure
@@ -735,15 +735,15 @@ export const createAimRouter = (
         repoId: z.string().uuid()
       }))
       .mutation(async ({ input }: any) => {
-        const idea = await readAim(input.projectPath, input.ideaId);
+        const idea = await readIdea(input.projectPath, input.ideaId);
         const supportingRepos = (idea.supportingRepos ?? []).filter((r: any) => r.repoId !== input.repoId);
-        const updatedAim = { ...idea, supportingRepos };
-        await writeAim(input.projectPath, updatedAim);
-        updateAimInIndex(input.projectPath, updatedAim);
-        return updatedAim;
+        const updatedIdea = { ...idea, supportingRepos };
+        await writeIdea(input.projectPath, updatedIdea);
+        updateIdeaInIndex(input.projectPath, updatedIdea);
+        return updatedIdea;
       }),
 
-    createFloatingAim: delayedProcedure
+    createFloatingIdea: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         idea: z.object({
@@ -761,7 +761,7 @@ export const createAimRouter = (
           cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
           duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
-          supportedAims: z.array(z.string()).optional(),
+          supportedIdeas: z.array(z.string()).optional(),
           supportingConnections: z.array(z.object({
              ideaId: z.string(),
              weight: z.number().optional(),
@@ -785,12 +785,12 @@ export const createAimRouter = (
         // Check if this is the first idea in the project
         const normalizedPath = normalizeProjectPath(input.projectPath);
         const ideasDir = path.join(normalizedPath, 'ideas');
-        const existingAims = await fs.pathExists(ideasDir)
+        const existingIdeas = await fs.pathExists(ideasDir)
           ? (await fs.readdir(ideasDir)).filter(f => f.endsWith('.json')).length
           : 0;
-        const isFirstAim = existingAims === 0;
+        const isFirstIdea = existingIdeas === 0;
 
-        const primaryParentId = input.idea.supportedAims?.[0];
+        const primaryParentId = input.idea.supportedIdeas?.[0];
         const idea: Idea = {
           id: ideaId,
           text: input.idea.text,
@@ -798,10 +798,10 @@ export const createAimRouter = (
           tags: input.idea.tags || [],
           reflections: [],
           supportingConnections: [],
-          supportedAims: [],
+          supportedIdeas: [],
           committedIn: [],
           status,
-          intrinsicValue: input.idea.intrinsicValue ?? (isFirstAim ? 1000 : 0),
+          intrinsicValue: input.idea.intrinsicValue ?? (isFirstIdea ? 1000 : 0),
           valueRationale: input.idea.valueRationale,
           cost: input.idea.cost ?? 1,
           loopWeight: input.idea.loopWeight ?? 1,
@@ -812,11 +812,11 @@ export const createAimRouter = (
           color: await resolveCreationColor(input.projectPath, input.idea.color, primaryParentId)
         };
 
-        await writeAim(input.projectPath, idea);
-        addAimToIndex(input.projectPath, idea);
+        await writeIdea(input.projectPath, idea);
+        addIdeaToIndex(input.projectPath, idea);
 
         if (process.env.NODE_ENV !== 'test') {
-          generateEmbedding(embeddingTextForAim(idea)).then(vector => {
+          generateEmbedding(embeddingTextForIdea(idea)).then(vector => {
              if(vector) {
                saveEmbedding(input.projectPath, ideaId, vector);
                invalidateSemanticCache(input.projectPath);
@@ -824,25 +824,25 @@ export const createAimRouter = (
           });
         }
 
-        if (input.idea.supportedAims) {
-            for (const parentId of input.idea.supportedAims) {
-                await connectAimsInternal(input.projectPath, parentId, ideaId);
+        if (input.idea.supportedIdeas) {
+            for (const parentId of input.idea.supportedIdeas) {
+                await connectIdeasInternal(input.projectPath, parentId, ideaId);
             }
         }
 
         if (input.idea.supportingConnections) {
             for (const conn of input.idea.supportingConnections) {
-                await connectAimsInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
+                await connectIdeasInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
             }
         }
 
         return idea;
       }),
 
-    createSubAim: delayedProcedure
+    createSubIdea: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        parentAimId: z.string().uuid(),
+        parentIdeaId: z.string().uuid(),
         idea: z.object({
           text: z.string(),
           description: z.string().optional(),
@@ -858,7 +858,7 @@ export const createAimRouter = (
           cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
           duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
-          supportedAims: z.array(z.string()).optional(),
+          supportedIdeas: z.array(z.string()).optional(),
           supportingConnections: z.array(z.object({
              ideaId: z.string(),
              weight: z.number().optional(),
@@ -872,7 +872,7 @@ export const createAimRouter = (
         explanation: z.string().optional()
       }))
       .mutation(async ({ input }: any) => {
-        const childAimId = uuidv4();
+        const childIdeaId = uuidv4();
         const status = input.idea.status
           ? {
               state: input.idea.status.state || 'open',
@@ -882,14 +882,14 @@ export const createAimRouter = (
             }
           : { state: 'open' as const, comment: '', date: Date.now() };
 
-        const childAim: Idea = {
-          id: childAimId,
+        const childIdea: Idea = {
+          id: childIdeaId,
           text: input.idea.text,
           description: input.idea.description,
           tags: input.idea.tags || [],
           reflections: [],
           supportingConnections: [],
-          supportedAims: [],
+          supportedIdeas: [],
           committedIn: [],
           status,
           intrinsicValue: input.idea.intrinsicValue ?? 0,
@@ -900,38 +900,38 @@ export const createAimRouter = (
           costVariance: input.idea.costVariance ?? 0,
           valueVariance: input.idea.valueVariance ?? 0,
           archived: false,
-          color: await resolveCreationColor(input.projectPath, input.idea.color, input.parentAimId)
+          color: await resolveCreationColor(input.projectPath, input.idea.color, input.parentIdeaId)
         };
 
-        await writeAim(input.projectPath, childAim);
-        addAimToIndex(input.projectPath, childAim);
+        await writeIdea(input.projectPath, childIdea);
+        addIdeaToIndex(input.projectPath, childIdea);
 
         if (process.env.NODE_ENV !== 'test') {
-          generateEmbedding(embeddingTextForAim(childAim)).then(vector => {
-             if(vector) saveEmbedding(input.projectPath, childAimId, vector);
+          generateEmbedding(embeddingTextForIdea(childIdea)).then(vector => {
+             if(vector) saveEmbedding(input.projectPath, childIdeaId, vector);
           });
         }
 
-        await connectAimsInternal(input.projectPath, input.parentAimId, childAimId, input.positionInParent, 0, undefined, input.weight, input.explanation);
+        await connectIdeasInternal(input.projectPath, input.parentIdeaId, childIdeaId, input.positionInParent, 0, undefined, input.weight, input.explanation);
 
-        if (input.idea.supportedAims) {
-            for (const parentId of input.idea.supportedAims) {
-                if (parentId !== input.parentAimId) {
-                    await connectAimsInternal(input.projectPath, parentId, childAimId);
+        if (input.idea.supportedIdeas) {
+            for (const parentId of input.idea.supportedIdeas) {
+                if (parentId !== input.parentIdeaId) {
+                    await connectIdeasInternal(input.projectPath, parentId, childIdeaId);
                 }
             }
         }
 
         if (input.idea.supportingConnections) {
             for (const conn of input.idea.supportingConnections) {
-                await connectAimsInternal(input.projectPath, childAimId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
+                await connectIdeasInternal(input.projectPath, childIdeaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
             }
         }
 
-        return childAim;
+        return childIdea;
       }),
 
-    createAimInPhase: delayedProcedure
+    createIdeaInPhase: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         phaseId: z.string().uuid(),
@@ -950,7 +950,7 @@ export const createAimRouter = (
           cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
           duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
           loopWeight: z.number().optional(),
-          supportedAims: z.array(z.string()).optional(),
+          supportedIdeas: z.array(z.string()).optional(),
           supportingConnections: z.array(z.object({
              ideaId: z.string(),
              weight: z.number().optional(),
@@ -972,7 +972,7 @@ export const createAimRouter = (
             }
           : { state: 'open' as const, comment: '', date: Date.now() };
 
-        const primaryParentId = input.idea.supportedAims?.[0];
+        const primaryParentId = input.idea.supportedIdeas?.[0];
         const idea: Idea = {
           id: ideaId,
           text: input.idea.text,
@@ -980,8 +980,8 @@ export const createAimRouter = (
           tags: input.idea.tags || [],
           reflections: [],
           supportingConnections: [],
-          supportedAims: [],
-          committedIn: [input.phaseId], // Will be updated by commitAimToPhase
+          supportedIdeas: [],
+          committedIn: [input.phaseId], // Will be updated by commitIdeaToPhase
           status,
           intrinsicValue: input.idea.intrinsicValue ?? 0,
           valueRationale: input.idea.valueRationale,
@@ -994,11 +994,11 @@ export const createAimRouter = (
           color: await resolveCreationColor(input.projectPath, input.idea.color, primaryParentId)
         };
 
-        await writeAim(input.projectPath, idea);
-        addAimToIndex(input.projectPath, idea);
+        await writeIdea(input.projectPath, idea);
+        addIdeaToIndex(input.projectPath, idea);
 
         if (process.env.NODE_ENV !== 'test') {
-          generateEmbedding(embeddingTextForAim(idea)).then(vector => {
+          generateEmbedding(embeddingTextForIdea(idea)).then(vector => {
              if(vector) {
                saveEmbedding(input.projectPath, ideaId, vector);
                invalidateSemanticCache(input.projectPath);
@@ -1006,17 +1006,17 @@ export const createAimRouter = (
           });
         }
 
-        await commitAimToPhase(input.projectPath, ideaId, input.phaseId, input.insertionIndex);
+        await commitIdeaToPhase(input.projectPath, ideaId, input.phaseId, input.insertionIndex);
 
-        if (input.idea.supportedAims) {
-            for (const parentId of input.idea.supportedAims) {
-                await connectAimsInternal(input.projectPath, parentId, ideaId);
+        if (input.idea.supportedIdeas) {
+            for (const parentId of input.idea.supportedIdeas) {
+                await connectIdeasInternal(input.projectPath, parentId, ideaId);
             }
         }
 
         if (input.idea.supportingConnections) {
             for (const conn of input.idea.supportingConnections) {
-                await connectAimsInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
+                await connectIdeasInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
             }
         }
 
@@ -1036,14 +1036,14 @@ export const createAimRouter = (
       .query(async ({ input }: any) => {
         const projectPath = normalizeProjectPath(input.projectPath);
         await ensureSearchIndex(projectPath);
-        const allAims = await listAims(projectPath, input.archived);
-        console.log(`[Search] Query: "${input.query}" | Total Ideas: ${allAims.length} | Archived: ${input.archived}`);
+        const allIdeas = await listIdeas(projectPath, input.archived);
+        console.log(`[Search] Query: "${input.query}" | Total Ideas: ${allIdeas.length} | Archived: ${input.archived}`);
 
-        let results: SearchAimResult[] = [];
+        let results: SearchIdeaResult[] = [];
 
         if (input.query && input.query.trim().length > 0) {
           // 1. Text Search (FlexSearch)
-          const textPromise = searchAims(projectPath, input.query, allAims);
+          const textPromise = searchIdeas(projectPath, input.query, allIdeas);
 
           // 2. Semantic Search (Embeddings)
           const vectorPromise = (async () => {
@@ -1059,11 +1059,11 @@ export const createAimRouter = (
           const [textResults, vectorCandidates] = await Promise.all([textPromise, vectorPromise]);
 
           // Merge results
-          const resultMap = new Map<string, SearchAimResult>();
+          const resultMap = new Map<string, SearchIdeaResult>();
 
           // Add Semantic Candidates
           for (const cand of vectorCandidates) {
-              const idea = allAims.find((a: Idea) => a.id === cand.id);
+              const idea = allIdeas.find((a: Idea) => a.id === cand.id);
               if (idea) {
                   resultMap.set(idea.id, { ...idea, score: cand.score });
               }
@@ -1082,7 +1082,7 @@ export const createAimRouter = (
           // Literal title matches always outrank fuzzy/semantic ones: the embedder is
           // English-only, so for other languages a verbatim hit is the strongest signal.
           const lowerQuery = input.query.trim().toLowerCase();
-          for (const idea of allAims) {
+          for (const idea of allIdeas) {
               const position = idea.text.toLowerCase().indexOf(lowerQuery);
               if (position === -1) continue;
               const literalScore = position === 0 ? 1.5 : 1.3;
@@ -1098,7 +1098,7 @@ export const createAimRouter = (
         } else {
           // No query provided: start with all ideas, scored by their recency
           const now = Date.now();
-          results = allAims.map((idea: Idea) => ({ 
+          results = allIdeas.map((idea: Idea) => ({ 
             ...idea, 
             score: idea.status?.date ? Math.max(0, 1 - (now - idea.status.date) / (365 * 24 * 60 * 60 * 1000)) : 0
           }));
@@ -1106,11 +1106,11 @@ export const createAimRouter = (
 
         if (input.status) {
           const statuses = Array.isArray(input.status) ? input.status : [input.status];
-          results = results.filter((idea: SearchAimResult) => statuses.includes(idea.status.state));
+          results = results.filter((idea: SearchIdeaResult) => statuses.includes(idea.status.state));
         }
 
         if (input.phaseId) {
-          results = results.filter((idea: SearchAimResult) => idea.committedIn.includes(input.phaseId!));
+          results = results.filter((idea: SearchIdeaResult) => idea.committedIn.includes(input.phaseId!));
         }
 
         // Sort by score (descending) before pagination
@@ -1147,7 +1147,7 @@ export const createAimRouter = (
         const results = [];
         for (const res of vectorResults) {
             try {
-                const idea = await readAim(input.projectPath, res.id);
+                const idea = await readIdea(input.projectPath, res.id);
 
                 let match = true;
                 if (input.status) {
@@ -1182,7 +1182,7 @@ export const createAimRouter = (
         })
       }))
       .mutation(async ({ input }: any) => {
-        const idea = await readAim(input.projectPath, input.ideaId);
+        const idea = await readIdea(input.projectPath, input.ideaId);
 
         const newReflection = {
           date: Date.now(),
@@ -1198,8 +1198,8 @@ export const createAimRouter = (
         }
         idea.reflections.push(newReflection);
 
-        await writeAim(input.projectPath, idea);
-        updateAimInIndex(input.projectPath, idea);
+        await writeIdea(input.projectPath, idea);
+        updateIdeaInIndex(input.projectPath, idea);
 
         return { success: true, reflection: newReflection };
       }),
@@ -1224,8 +1224,8 @@ export const createAimRouter = (
         }
 
         const [target, source] = await Promise.all([
-          readAim(projectPath, targetId),
-          readAim(projectPath, sourceId),
+          readIdea(projectPath, targetId),
+          readIdea(projectPath, sourceId),
         ]);
 
         if (source.status.state === 'archived') {
@@ -1244,10 +1244,10 @@ export const createAimRouter = (
         const rewired: string[] = [];
 
         // 1. Rewire source's parents onto target
-        for (const parentId of source.supportedAims ?? []) {
+        for (const parentId of source.supportedIdeas ?? []) {
           if (parentId === targetId) continue; // already a parent of target
           try {
-            const parent = await readAim(projectPath, parentId);
+            const parent = await readIdea(projectPath, parentId);
             // Replace source with target in parent's supportingConnections (or add if missing)
             const hasSource = (parent.supportingConnections ?? []).some((c: any) => c.ideaId === sourceId);
             const hasTarget = (parent.supportingConnections ?? []).some((c: any) => c.ideaId === targetId);
@@ -1264,11 +1264,11 @@ export const createAimRouter = (
                   return true;
                 });
               }
-              await writeAim(projectPath, parent);
+              await writeIdea(projectPath, parent);
             }
-            // Add parentId to target.supportedAims if not already present
-            if (!target.supportedAims.includes(parentId)) {
-              target.supportedAims.push(parentId);
+            // Add parentId to target.supportedIdeas if not already present
+            if (!target.supportedIdeas.includes(parentId)) {
+              target.supportedIdeas.push(parentId);
             }
             rewired.push(`parent ${parentId}`);
           } catch (e) {
@@ -1281,14 +1281,14 @@ export const createAimRouter = (
           const childId = conn.ideaId;
           if (childId === targetId) continue; // target is already a child of itself? skip
           try {
-            const child = await readAim(projectPath, childId);
-            // Replace source with target in child's supportedAims (or add if missing)
-            if ((child.supportedAims ?? []).includes(sourceId)) {
-              child.supportedAims = child.supportedAims.filter((id: string) => id !== sourceId);
-              if (!child.supportedAims.includes(targetId)) {
-                child.supportedAims.push(targetId);
+            const child = await readIdea(projectPath, childId);
+            // Replace source with target in child's supportedIdeas (or add if missing)
+            if ((child.supportedIdeas ?? []).includes(sourceId)) {
+              child.supportedIdeas = child.supportedIdeas.filter((id: string) => id !== sourceId);
+              if (!child.supportedIdeas.includes(targetId)) {
+                child.supportedIdeas.push(targetId);
               }
-              await writeAim(projectPath, child);
+              await writeIdea(projectPath, child);
             }
             // Add child connection to target if not already present
             const alreadyConnected = (target.supportingConnections ?? []).some((c: any) => c.ideaId === childId);
@@ -1309,10 +1309,10 @@ export const createAimRouter = (
         // 3. Rewire source's phase commitments onto target
         for (const phaseId of source.committedIn ?? []) {
           try {
-            await commitAimToPhase(projectPath, targetId, phaseId);
-            await removeAimFromPhase(projectPath, sourceId, phaseId);
-            // commitAimToPhase persists committedIn on the target's file directly,
-            // but the final writeAim(target) below writes our in-memory copy and
+            await commitIdeaToPhase(projectPath, targetId, phaseId);
+            await removeIdeaFromPhase(projectPath, sourceId, phaseId);
+            // commitIdeaToPhase persists committedIn on the target's file directly,
+            // but the final writeIdea(target) below writes our in-memory copy and
             // would clobber it — so mirror the commit into the in-memory target.
             target.committedIn = target.committedIn ?? [];
             if (!target.committedIn.includes(phaseId)) target.committedIn.push(phaseId);
@@ -1335,21 +1335,21 @@ export const createAimRouter = (
         // Drop any direct edge between target and source in either direction: folding
         // source into target would otherwise leave target with a self-reference (an
         // edge to its own merged-away identity / a soon-archived idea).
-        target.supportedAims = (target.supportedAims ?? []).filter((id: string) => id !== sourceId);
+        target.supportedIdeas = (target.supportedIdeas ?? []).filter((id: string) => id !== sourceId);
         target.supportingConnections = (target.supportingConnections ?? []).filter((c: any) => c.ideaId !== sourceId);
 
         // 5. Archive source — clear its connections since they've been rewired
-        source.supportedAims = [];
+        source.supportedIdeas = [];
         source.supportingConnections = [];
         source.committedIn = [];
         source.archived = true;
         source.status = { state: 'archived', comment: `Merged into ${targetId}`, date: Date.now() };
 
         // Write both
-        await writeAim(projectPath, target);
-        await writeAim(projectPath, source); // writeAim moves to archived-ideas/ automatically
-        updateAimInIndex(projectPath, target);
-        removeAimFromIndex(projectPath, sourceId);
+        await writeIdea(projectPath, target);
+        await writeIdea(projectPath, source); // writeIdea moves to archived-ideas/ automatically
+        updateIdeaInIndex(projectPath, target);
+        removeIdeaFromIndex(projectPath, sourceId);
 
         // Merging changes the source's lifecycle and identity in every
         // environment. Skipping this in test-mode also affects real MCP

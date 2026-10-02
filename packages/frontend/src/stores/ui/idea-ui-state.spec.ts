@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { createAimUIState, ensureAimUIState, insertsAsFirstChild, type IdeaUIStateTree } from './idea-ui-state'
+import { createIdeaUIState, ensureIdeaUIState, insertsAsFirstChild, type IdeaUIStateTree } from './idea-ui-state'
 
 describe('idea UI state', () => {
   it('keeps delete confirmation local to each rendered idea instance', () => {
     const firstTree: IdeaUIStateTree = {}
     const secondTree: IdeaUIStateTree = {}
 
-    ensureAimUIState(firstTree, 'shared-idea').pendingDelete = true
+    ensureIdeaUIState(firstTree, 'shared-idea').pendingDelete = true
 
-    expect(ensureAimUIState(firstTree, 'shared-idea').pendingDelete).toBe(true)
-    expect(ensureAimUIState(secondTree, 'shared-idea').pendingDelete).toBe(false)
+    expect(ensureIdeaUIState(firstTree, 'shared-idea').pendingDelete).toBe(true)
+    expect(ensureIdeaUIState(secondTree, 'shared-idea').pendingDelete).toBe(false)
   })
 
   it('adds the transient flag to older persisted UI state', () => {
@@ -17,12 +17,12 @@ describe('idea UI state', () => {
       idea: { expanded: true, children: {} }
     } as unknown as IdeaUIStateTree
 
-    expect(ensureAimUIState(tree, 'idea').pendingDelete).toBe(false)
+    expect(ensureIdeaUIState(tree, 'idea').pendingDelete).toBe(false)
   })
 })
 
 describe('insertsAsFirstChild', () => {
-  const expanded = { ...createAimUIState(), expanded: true }
+  const expanded = { ...createIdeaUIState(), expanded: true }
 
   it('adds the first child to an expanded idea without sub-ideas', () => {
     expect(insertsAsFirstChild({ supportingConnections: [] }, expanded, 'after')).toBe(true)
@@ -34,6 +34,6 @@ describe('insertsAsFirstChild', () => {
 
   it('never nests for O or collapsed ideas', () => {
     expect(insertsAsFirstChild({ supportingConnections: [] }, expanded, 'before')).toBe(false)
-    expect(insertsAsFirstChild({ supportingConnections: [] }, createAimUIState(), 'after')).toBe(false)
+    expect(insertsAsFirstChild({ supportingConnections: [] }, createIdeaUIState(), 'after')).toBe(false)
   })
 })

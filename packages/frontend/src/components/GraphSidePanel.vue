@@ -13,9 +13,9 @@ const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const mapStore = useMapStore()
 
-const selectedAim = computed(() => {
-    if (!graphUIStore.graphSelectedAimId) return null
-    return dataStore.ideas[graphUIStore.graphSelectedAimId] || null
+const selectedIdea = computed(() => {
+    if (!graphUIStore.graphSelectedIdeaId) return null
+    return dataStore.ideas[graphUIStore.graphSelectedIdeaId] || null
 })
 
 const selectedLink = computed(() => {
@@ -36,12 +36,12 @@ const selectedLink = computed(() => {
 })
 
 const statusColor = computed(() => {
-    if (!selectedAim.value) return '#888'
+    if (!selectedIdea.value) return '#888'
     const colorMap: Record<string, string> = {}
     dataStore.getStatuses.forEach((s: any) => {
         colorMap[s.key] = s.color
     })
-    return colorMap[selectedAim.value.status.state] ?? '#888'
+    return colorMap[selectedIdea.value.status.state] ?? '#888'
 })
 
 // Editing state
@@ -78,7 +78,7 @@ watch(selectedLink, (newVal) => {
     }
 }, { immediate: true })
 
-watch(selectedAim, (newVal) => {
+watch(selectedIdea, (newVal) => {
     if (newVal) {
         editedIntrinsicValue.value = newVal.intrinsicValue || 0
         editedCost.value = newVal.cost ?? 0
@@ -91,7 +91,7 @@ watch(selectedAim, (newVal) => {
     }
 }, { immediate: true })
 
-const focusAim = (ideaId: string) => {
+const focusIdea = (ideaId: string) => {
     const node = mapStore.getNode(ideaId)
     if (node) {
         graphUIStore.setGraphSelection(ideaId)
@@ -116,9 +116,9 @@ const onLoopWeightInput = (event: Event) => {
     editedLoopWeight.value = parseK(input)
 }
 
-const updateAimAttributes = async () => {
-    if (!selectedAim.value) return
-    const ideaId = selectedAim.value.id
+const updateIdeaAttributes = async () => {
+    if (!selectedIdea.value) return
+    const ideaId = selectedIdea.value.id
     const updates = {
         intrinsicValue: editedIntrinsicValue.value,
         cost: editedCost.value,
@@ -126,7 +126,7 @@ const updateAimAttributes = async () => {
     }
 
     try {
-        await dataStore.updateAim(projectStore.projectPath, ideaId, updates)
+        await dataStore.updateIdea(projectStore.projectPath, ideaId, updates)
     } catch (e) {
         console.error('Failed to update idea attributes', e)
     }
@@ -219,11 +219,11 @@ const removeConnection = async () => {
     }
 }
 
-const getSupportedAims = (idea: Idea) => {
-    return idea.supportedAims.map((id: string) => dataStore.ideas[id]).filter(Boolean) as Idea[]
+const getSupportedIdeas = (idea: Idea) => {
+    return idea.supportedIdeas.map((id: string) => dataStore.ideas[id]).filter(Boolean) as Idea[]
 }
 
-const getSupportingAims = (idea: Idea) => {
+const getSupportingIdeas = (idea: Idea) => {
     return idea.supportingConnections.map((c: any) => dataStore.ideas[c.ideaId]).filter(Boolean) as Idea[]
 }
 
@@ -260,7 +260,7 @@ const stopResize = () => {
 // Interaction tracking for opacity
 const hasInteracted = ref(false)
 
-watch([selectedAim, selectedLink], () => {
+watch([selectedIdea, selectedLink], () => {
     hasInteracted.value = false
 })
 
@@ -285,7 +285,7 @@ const isOpaque = computed(() => !hasInteracted.value)
 <template>
     <div 
         class="side-panel" 
-        v-if="selectedAim || selectedLink"
+        v-if="selectedIdea || selectedLink"
         :style="{ width: panelWidth + 'px' }"
         :class="{ opaque: isOpaque }"
     >
@@ -296,12 +296,12 @@ const isOpaque = computed(() => !hasInteracted.value)
             <h3>Connection</h3>
             
             <div class="idea-buttons">
-                <button class="idea-card source" @click="focusAim(selectedLink.parent.id)">
+                <button class="idea-card source" @click="focusIdea(selectedLink.parent.id)">
                     <span class="label">From (Child)</span>
                     <span class="text">{{ selectedLink.parent.text }}</span>
                 </button>
                 <div class="arrow">↓</div>
-                <button class="idea-card target" @click="focusAim(selectedLink.child.id)">
+                <button class="idea-card target" @click="focusIdea(selectedLink.child.id)">
                     <span class="label">To (Parent)</span>
                     <span class="text">{{ selectedLink.child.text }}</span>
                 </button>
@@ -338,9 +338,9 @@ const isOpaque = computed(() => !hasInteracted.value)
         </div>
 
         <!-- IDEA SELECTED -->
-        <div v-else-if="selectedAim" class="panel-content">
-            <h3>{{ selectedAim.text }}</h3>
-            <div class="idea-status" :style="{ color: statusColor }">{{ selectedAim.status.state }}</div>
+        <div v-else-if="selectedIdea" class="panel-content">
+            <h3>{{ selectedIdea.text }}</h3>
+            <div class="idea-status" :style="{ color: statusColor }">{{ selectedIdea.status.state }}</div>
             
             <div class="metrics-section">
                 <h4>Value</h4>
@@ -351,7 +351,7 @@ const isOpaque = computed(() => !hasInteracted.value)
                             type="text"
                             v-model="editedIntrinsicValueStr"
                             @input="onIntrinsicValueInput"
-                            @change="updateAimAttributes"
+                            @change="updateIdeaAttributes"
                             class="value-input"
                             placeholder="e.g. 10k, 1500"
                         />
@@ -362,14 +362,14 @@ const isOpaque = computed(() => !hasInteracted.value)
                             type="text"
                             v-model="editedLoopWeightStr"
                             @input="onLoopWeightInput"
-                            @change="updateAimAttributes"
+                            @change="updateIdeaAttributes"
                             class="value-input"
                             placeholder="e.g. 5k"
                         />
                     </div>
                     <div class="metric">
                         <span class="label">Total</span>
-                        <span class="value highlight">{{ formatWithK(dataStore.getAimValue(selectedAim.id)) }}</span>
+                        <span class="value highlight">{{ formatWithK(dataStore.getIdeaValue(selectedIdea.id)) }}</span>
                     </div>
                 </div>
             </div>
@@ -383,38 +383,38 @@ const isOpaque = computed(() => !hasInteracted.value)
                             type="text"
                             v-model="editedCostStr"
                             @input="onCostInput"
-                            @change="updateAimAttributes"
+                            @change="updateIdeaAttributes"
                             class="value-input"
                             placeholder="e.g. 2k, 500"
                         />
                     </div>
                     <div class="metric">
                         <span class="label">Total</span>
-                        <span class="value">{{ formatWithK(dataStore.getAimCost(selectedAim.id)) }}</span>
+                        <span class="value">{{ formatWithK(dataStore.getIdeaCost(selectedIdea.id)) }}</span>
                     </div>
                     <div class="metric">
                         <span class="label">Progress</span>
-                        <span class="value">{{ dataStore.getAimProgress(selectedAim.id).toFixed(0) }}%</span>
+                        <span class="value">{{ dataStore.getIdeaProgress(selectedIdea.id).toFixed(0) }}%</span>
                     </div>
                 </div>
             </div>
             
-            <div v-if="selectedAim.description" class="idea-description">
-                {{ selectedAim.description }}
+            <div v-if="selectedIdea.description" class="idea-description">
+                {{ selectedIdea.description }}
             </div>
             
             <div class="section">
                 <h4>Supported Ideas (Parents)</h4>
                 <div class="list">
                     <div 
-                        v-for="parent in getSupportedAims(selectedAim)" 
+                        v-for="parent in getSupportedIdeas(selectedIdea)" 
                         :key="parent.id"
                         class="idea-card clickable"
-                        @click="focusConnection(parent.id, selectedAim!.id)"
+                        @click="focusConnection(parent.id, selectedIdea!.id)"
                     >
                         {{ parent.text }}
                     </div>
-                    <div v-if="getSupportedAims(selectedAim).length === 0" class="empty">None</div>
+                    <div v-if="getSupportedIdeas(selectedIdea).length === 0" class="empty">None</div>
                 </div>
             </div>
 
@@ -422,14 +422,14 @@ const isOpaque = computed(() => !hasInteracted.value)
                 <h4>Supporting Ideas (Children)</h4>
                 <div class="list">
                     <div 
-                        v-for="child in getSupportingAims(selectedAim)" 
+                        v-for="child in getSupportingIdeas(selectedIdea)" 
                         :key="child.id"
                         class="idea-card clickable"
-                        @click="focusConnection(selectedAim!.id, child.id)"
+                        @click="focusConnection(selectedIdea!.id, child.id)"
                     >
                         {{ child.text }}
                     </div>
-                    <div v-if="getSupportingAims(selectedAim).length === 0" class="empty">None</div>
+                    <div v-if="getSupportingIdeas(selectedIdea).length === 0" class="empty">None</div>
                 </div>
             </div>
         </div>

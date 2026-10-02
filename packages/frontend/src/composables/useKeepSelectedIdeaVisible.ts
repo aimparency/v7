@@ -3,12 +3,12 @@ import { useUIStore } from '../stores/ui'
 
 // Keeps the selected idea of a column in view while navigating ideas.
 //
-// Ideas used to request their own scroll when their `isThisAimSelected`/`isActive`
+// Ideas used to request their own scroll when their `isThisIdeaSelected`/`isActive`
 // props flipped. Selection moves that don't flip those props on the newly
 // selected idea (returning to a parent with k/h, reordering with J/K, stale
 // sub-selection indices) then never scrolled. Watching the whole selection path
 // from the column covers every move with one mechanism.
-export function useKeepSelectedAimVisible(
+export function useKeepSelectedIdeaVisible(
   containerRef: Ref<HTMLElement | null>,
   isColumnActive: () => boolean,
   scrollToElement: (element: HTMLElement) => void
@@ -16,12 +16,12 @@ export function useKeepSelectedAimVisible(
   const uiStore = useUIStore()
 
   const selectionKey = () => {
-    if (!uiStore.navigatingAims || !isColumnActive()) return ''
+    if (!uiStore.navigatingIdeas || !isColumnActive()) return ''
     const path = uiStore.getSelectionPath()
     if (path.ideas.length === 0) return ''
     return [
       path.phase?.id ?? 'floating',
-      path.phase?.selectedAimIndex ?? uiStore.floatingAimIndex,
+      path.phase?.selectedIdeaIndex ?? uiStore.floatingIdeaIndex,
       ...path.ideas.map((idea: { id: string }, depth: number) => `${idea.id}@${path.ideaStates[depth]?.selectedIncomingIndex ?? ''}`)
     ].join('/')
   }
@@ -33,8 +33,8 @@ export function useKeepSelectedAimVisible(
     if (!container) return
     // Every idea on the selection path carries `.active`; ancestors precede their
     // descendants in document order, so the last match is the selected idea.
-    const activeAims = container.querySelectorAll<HTMLElement>('.idea-item.active')
-    const selected = activeAims[activeAims.length - 1]
+    const activeIdeas = container.querySelectorAll<HTMLElement>('.idea-item.active')
+    const selected = activeIdeas[activeIdeas.length - 1]
     if (selected) scrollToElement(selected)
   }, { flush: 'post' })
 }

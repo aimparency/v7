@@ -96,7 +96,7 @@ test('Context injection - limits summary content length', async () => {
 });
 
 test('Context injection - limits idea list to 3', async () => {
-  const manyAimsSummary: SessionSummary = {
+  const manyIdeasSummary: SessionSummary = {
     sessionId: 'test-many-ideas',
     timestamp: Date.now(),
     duration: 600000,
@@ -107,7 +107,7 @@ test('Context injection - limits idea list to 3', async () => {
     rawReflection: 'Context'
   };
 
-  const formatted = SessionMemory.formatForContext([manyAimsSummary]);
+  const formatted = SessionMemory.formatForContext([manyIdeasSummary]);
 
   const lines = formatted.split('\n');
   const ideasLine = lines.find(l => l.includes('Ideas:'));

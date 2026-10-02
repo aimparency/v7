@@ -6,11 +6,11 @@ import { useProjectStore } from '../project-store'
 import { useDataStore } from '../data'
 import { useUIStore } from './list-store'
 
-const makeAim = (id: string, text: string) => ({
+const makeIdea = (id: string, text: string) => ({
   id,
   text,
   description: '',
-  supportedAims: [] as string[],
+  supportedIdeas: [] as string[],
   supportingConnections: [] as Array<{ ideaId: string, weight: number, relativePosition: [number, number] }>,
   status: { state: 'open', comment: '', date: 0 },
   intrinsicValue: 0,
@@ -30,38 +30,38 @@ describe('keyboard actions', () => {
     const projectStore = useProjectStore()
     projectStore.projectPath = '/tmp/project'
 
-    const parent = makeAim('parent', 'Parent')
-    const child = makeAim('child', 'Child')
+    const parent = makeIdea('parent', 'Parent')
+    const child = makeIdea('child', 'Child')
     parent.supportingConnections = [
       { ideaId: 'child', weight: 1, relativePosition: [0, 0] }
     ]
-    child.supportedAims = ['parent']
+    child.supportedIdeas = ['parent']
 
     const dataStore = {
       ideas: { parent, child },
-      replaceAim: vi.fn((id: string, idea: any) => {
+      replaceIdea: vi.fn((id: string, idea: any) => {
         dataStore.ideas[id as 'parent' | 'child'] = idea
       }),
       recalculateValues: vi.fn(),
-      updateAim: vi.fn().mockResolvedValue(undefined)
+      updateIdea: vi.fn().mockResolvedValue(undefined)
     }
 
     graphStore.selectLink('parent', 'child')
 
     await handleGraphKeydownAction({}, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
     expect(graphStore.pendingDeleteLink).toEqual({ parentId: 'parent', childId: 'child' })
-    expect(dataStore.updateAim).not.toHaveBeenCalled()
+    expect(dataStore.updateIdea).not.toHaveBeenCalled()
 
     await handleGraphKeydownAction({}, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
 
     expect(graphStore.selectedLink).toBe(null)
     expect(dataStore.ideas.parent.supportingConnections).toEqual([])
-    expect(dataStore.ideas.child.supportedAims).toEqual([])
-    expect(dataStore.updateAim).toHaveBeenCalledWith('/tmp/project', 'parent', {
+    expect(dataStore.ideas.child.supportedIdeas).toEqual([])
+    expect(dataStore.updateIdea).toHaveBeenCalledWith('/tmp/project', 'parent', {
       supportingConnections: []
     })
-    expect(dataStore.updateAim).toHaveBeenCalledWith('/tmp/project', 'child', {
-      supportedAims: []
+    expect(dataStore.updateIdea).toHaveBeenCalledWith('/tmp/project', 'child', {
+      supportedIdeas: []
     })
   })
 
@@ -69,7 +69,7 @@ describe('keyboard actions', () => {
     const graphStore = useGraphUIStore()
     const uiStore = useUIStore()
     const dataStore = useDataStore()
-    const idea = makeAim('idea-a', 'Idea A')
+    const idea = makeIdea('idea-a', 'Idea A')
     dataStore.ideas[idea.id] = idea as any
     graphStore.setGraphSelection(idea.id)
     uiStore.enterMultiSelect(idea.id)
@@ -78,26 +78,26 @@ describe('keyboard actions', () => {
     await handleGraphKeydownAction(uiStore, event, dataStore)
 
     expect(event.defaultPrevented).toBe(true)
-    expect(uiStore.multiSelectedAimIds).toEqual([])
+    expect(uiStore.multiSelectedIdeaIds).toEqual([])
     expect(uiStore.multiSelectMode).toBe(false)
   })
 
   it('keeps graph delete confirmation in graph UI state', async () => {
     const graphStore = useGraphUIStore()
     const uiStore = useUIStore()
-    const dataStore = { deleteAim: vi.fn().mockResolvedValue(undefined) }
+    const dataStore = { deleteIdea: vi.fn().mockResolvedValue(undefined) }
     graphStore.setGraphSelection('idea-a')
 
     await handleGraphKeydownAction(uiStore, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
 
-    expect(graphStore.pendingDeleteAimId).toBe('idea-a')
-    expect('pendingDeleteAimId' in uiStore).toBe(false)
+    expect(graphStore.pendingDeleteIdeaId).toBe('idea-a')
+    expect('pendingDeleteIdeaId' in uiStore).toBe(false)
 
     await handleGraphKeydownAction(uiStore, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
 
-    expect(dataStore.deleteAim).toHaveBeenCalledWith('idea-a')
-    expect(graphStore.pendingDeleteAimId).toBe(null)
-    expect(graphStore.graphSelectedAimId).toBe(null)
+    expect(dataStore.deleteIdea).toHaveBeenCalledWith('idea-a')
+    expect(graphStore.pendingDeleteIdeaId).toBe(null)
+    expect(graphStore.graphSelectedIdeaId).toBe(null)
   })
 
   it('moves a phase across parent boundaries and repairs the selected parent path', async () => {

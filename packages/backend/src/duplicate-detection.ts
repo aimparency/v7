@@ -18,7 +18,7 @@ import { cosineSimilarity } from 'shared';
 export function isDirectParentChild(ideaMap: Map<string, Idea>, x: string, y: string): boolean {
   const ax = ideaMap.get(x);
   if (!ax) return false;
-  return (ax.supportedAims ?? []).includes(y)
+  return (ax.supportedIdeas ?? []).includes(y)
     || (ax.supportingConnections ?? []).some((c: any) => c.ideaId === y);
 }
 

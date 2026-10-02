@@ -57,7 +57,7 @@ async function embed(text: string): Promise<number[] | null> {
 
 /**
  * Embed an idea/document for storage. Used when creating or updating ideas.
- * Pass the combined text from {@link embeddingTextForAim}.
+ * Pass the combined text from {@link embeddingTextForIdea}.
  */
 export async function generateEmbedding(text: string): Promise<number[] | null> {
   return embed(text);
@@ -76,7 +76,7 @@ export async function generateQueryEmbedding(query: string): Promise<number[] | 
  * The old hash embedder only used the title; descriptions/tags are often the
  * richest signal, so we include them.
  */
-export function embeddingTextForAim(idea: Pick<Idea, 'text' | 'description' | 'tags'>): string {
+export function embeddingTextForIdea(idea: Pick<Idea, 'text' | 'description' | 'tags'>): string {
   const parts: string[] = [idea.text];
   if (idea.description && idea.description.trim()) {
     parts.push(idea.description.trim());

@@ -386,7 +386,7 @@ ${ctx.supervisedOutput.slice(-20).join('\n')}
 
 Current project:
 - Active phases: ${ctx.activePhases.join(', ')}
-- Open ideas: ${ctx.openAimsCount}
+- Open ideas: ${ctx.openIdeasCount}
 - Compute budget: ${ctx.computeCredits} credits
 
 Available actions (respond with ONE as JSON):

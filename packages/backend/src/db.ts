@@ -57,7 +57,7 @@ export function closeDb(rawProjectPath: string) {
   }
 }
 
-export function saveAimValues(projectPath: string, values: Map<string, { value: number, cost: number, doneCost: number, priority: number }>) {
+export function saveIdeaValues(projectPath: string, values: Map<string, { value: number, cost: number, doneCost: number, priority: number }>) {
   const db = getDb(projectPath);
   
   const insert = db.prepare(`
@@ -88,7 +88,7 @@ export function saveAimValues(projectPath: string, values: Map<string, { value: 
     // That's faster/safer than "NOT IN (?...)".
     
     // Let's try Delete All + Insert All for correctness since we have the full snapshot.
-    // But wait, 'values' map comes from `calculateAimValues` which receives `ideas: Idea[]`.
+    // But wait, 'values' map comes from `calculateIdeaValues` which receives `ideas: Idea[]`.
     // If `ideas` is the full list, then `values` is the full list.
     
     db.prepare('DELETE FROM idea_values').run();
@@ -105,7 +105,7 @@ export function saveAimValues(projectPath: string, values: Map<string, { value: 
   })();
 }
 
-export function getAimValues(projectPath: string): Map<string, { value: number, cost: number, doneCost: number, priority: number }> {
+export function getIdeaValues(projectPath: string): Map<string, { value: number, cost: number, doneCost: number, priority: number }> {
   const db = getDb(projectPath);
   const rows = db.prepare('SELECT id, value, cost, done_cost as doneCost, priority FROM idea_values').all() as any[];
   

@@ -7,7 +7,7 @@ function conn(ideaId: string): Connection {
   return { ideaId, relativePosition: [0, 0], weight: 1 };
 }
 
-/** Build an idea. parents = supportedAims (up); children = supportingConnections (down). */
+/** Build an idea. parents = supportedIdeas (up); children = supportingConnections (down). */
 function idea(id: string, parents: string[], children: string[], committedIn: string[] = []): Idea {
   return {
     id,
@@ -16,7 +16,7 @@ function idea(id: string, parents: string[], children: string[], committedIn: st
     archived: false,
     tags: [],
     supportingConnections: children.map(conn),
-    supportedAims: parents,
+    supportedIdeas: parents,
     committedIn,
     status: { state: 'open', comment: '', date: 0 },
     intrinsicValue: 0,
@@ -51,22 +51,22 @@ test('planSpinOff: worked example — B+C move, D overlaps, A kept', () => {
 test('computeSpinOff: seam edges dropped, shared edges split, phases cleared', () => {
   const res = computeSpinOff(exampleGraph(), ['B']);
 
-  const so = new Map(res.spinOffAims.map((a) => [a.id, a]));
+  const so = new Map(res.spinOffIdeas.map((a) => [a.id, a]));
   // B's seam edge B->A is dropped (A not copied); B keeps children C and D.
-  assert.deepEqual(so.get('B')!.supportedAims, []);
+  assert.deepEqual(so.get('B')!.supportedIdeas, []);
   assert.deepEqual(sorted(so.get('B')!.supportingConnections.map((c) => c.ideaId)), ['C', 'D']);
   // D in the spin-off keeps only D->B (D->A dropped, A not copied).
-  assert.deepEqual(so.get('D')!.supportedAims, ['B']);
+  assert.deepEqual(so.get('D')!.supportedIdeas, ['B']);
   // phases are not carried.
   assert.deepEqual(so.get('B')!.committedIn, []);
 
   // Source: B and C deleted.
-  assert.deepEqual(sorted(res.sourceAimIdsToDelete), ['B', 'C']);
-  const rewrites = new Map(res.sourceAimsToRewrite.map((a) => [a.id, a]));
+  assert.deepEqual(sorted(res.sourceIdeaIdsToDelete), ['B', 'C']);
+  const rewrites = new Map(res.sourceIdeasToRewrite.map((a) => [a.id, a]));
   // A loses its child B, keeps D.
   assert.deepEqual(rewrites.get('A')!.supportingConnections.map((c) => c.ideaId), ['D']);
   // D (overlap) loses parent B in the source, keeps A.
-  assert.deepEqual(rewrites.get('D')!.supportedAims, ['A']);
+  assert.deepEqual(rewrites.get('D')!.supportedIdeas, ['A']);
 });
 
 test('conservative: a supporter that also serves an outside idea is kept (overlap), not deleted', () => {
@@ -119,15 +119,15 @@ test('preserveInflow: external inflow folded into intrinsicValue of the seam ide
   ];
 
   const without = computeSpinOff(ideas, ['B']);
-  const wB = without.spinOffAims.find((a) => a.id === 'B')!;
+  const wB = without.spinOffIdeas.find((a) => a.id === 'B')!;
   assert.equal(wB.intrinsicValue, 0); // default: no compensation
 
   const withInflow = computeSpinOff(ideas, ['B'], { preserveInflow: true });
-  const b = withInflow.spinOffAims.find((a) => a.id === 'B')!;
+  const b = withInflow.spinOffIdeas.find((a) => a.id === 'B')!;
   // B had no intrinsic of its own but received flow from A; that is now its intrinsic.
   assert.ok(b.intrinsicValue > 0, `expected B to gain intrinsic inflow, got ${b.intrinsicValue}`);
   // C has no external parents (its only parent B is copied) → unchanged.
-  const c = withInflow.spinOffAims.find((a) => a.id === 'C')!;
+  const c = withInflow.spinOffIdeas.find((a) => a.id === 'C')!;
   assert.equal(c.intrinsicValue, 0);
 });
 
@@ -138,7 +138,7 @@ test('empty / unknown roots produce an empty plan', () => {
 });
 
 test('existing target collisions are remapped consistently without flattening the branch', () => {
-  const copied = computeSpinOff(exampleGraph(), ['B']).spinOffAims;
+  const copied = computeSpinOff(exampleGraph(), ['B']).spinOffIdeas;
   const generated = ['D', 'new-B'];
   const result = remapSpinOffCollisions(copied, ['B', 'target-only'], () => generated.shift()!);
 
@@ -146,7 +146,7 @@ test('existing target collisions are remapped consistently without flattening th
   const byId = new Map(result.ideas.map((candidate) => [candidate.id, candidate]));
   assert.equal(byId.has('B'), false);
   assert.deepEqual(sorted(byId.get('new-B')!.supportingConnections.map((c) => c.ideaId)), ['C', 'D']);
-  assert.deepEqual(byId.get('C')!.supportedAims, ['new-B']);
-  assert.deepEqual(byId.get('D')!.supportedAims, ['new-B']);
+  assert.deepEqual(byId.get('C')!.supportedIdeas, ['new-B']);
+  assert.deepEqual(byId.get('D')!.supportedIdeas, ['new-B']);
   assert.ok(result.ideas.every((candidate) => candidate.committedIn.length === 0));
 });

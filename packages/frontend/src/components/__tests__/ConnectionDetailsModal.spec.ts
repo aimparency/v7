@@ -135,8 +135,8 @@ describe('ConnectionDetailsModal', () => {
 
     await nextTick()
 
-    // It should NOT have called replaceAim or closeConnectionDetailsModal
-    expect(dataStore.replaceAim).not.toHaveBeenCalled()
+    // It should NOT have called replaceIdea or closeConnectionDetailsModal
+    expect(dataStore.replaceIdea).not.toHaveBeenCalled()
     expect(modalStore.closeConnectionDetailsModal).not.toHaveBeenCalled()
 
     wrapper.unmount()

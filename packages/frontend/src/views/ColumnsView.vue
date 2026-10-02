@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { navigateColumnBackward, navigateColumnForward } from '../stores/ui/keyboard-actions'
-import RootAimsColumn from '../components/RootAimsColumn.vue'
+import RootIdeasColumn from '../components/RootIdeasColumn.vue'
 import Column from '../components/Column.vue'
 
 const uiStore = useUIStore()
@@ -67,7 +67,7 @@ const onTouchEnd = (event: TouchEvent) => {
     @touchmove.passive="onTouchMove"
     @touchend.passive="onTouchEnd"
   >
-    <RootAimsColumn class="column-ideas" />
+    <RootIdeasColumn class="column-ideas" />
 
     <Column
       v-for="colIndex in [...Array(uiStore.maxColumn + 1).keys()]"

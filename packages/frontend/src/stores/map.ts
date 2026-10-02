@@ -33,8 +33,8 @@ export interface LayoutCandidate {
   start: vec2.T
   dScale: number
   link: any // Avoid circular dependency with GraphLink
-  activeAimId?: string
-  frozenAimId?: string
+  activeIdeaId?: string
+  frozenIdeaId?: string
 }
 
 // Fraction of the canvas area the focused idea's bounding square should cover.
@@ -359,7 +359,7 @@ export const useMapStore = defineStore('map', {
       // Center the idea in the space left of the side panel.
       let shiftX = 0
       const graphUIStore = useGraphUIStore()
-      if (graphUIStore.graphSelectedAimId || graphUIStore.selectedLink) {
+      if (graphUIStore.graphSelectedIdeaId || graphUIStore.selectedLink) {
         const panelW = (graphUIStore.graphPanelWidth || 300) + 20
         const physicalToLogical = LOGICAL_HALF_SIDE / (scale * this.halfSide)
         shiftX = -panelW / 2 * physicalToLogical

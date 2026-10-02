@@ -1,6 +1,6 @@
 import { createTRPCClient, createWSClient, wsLink } from "@trpc/client";
 import { WebSocket } from "ws";
-import { calculateAimValues } from "shared";
+import { calculateIdeaValues } from "shared";
 import type { AppRouter, Idea, Phase, Reflection } from "shared";
 
 export const wsClient = createWSClient({
@@ -11,7 +11,7 @@ export const trpc = createTRPCClient<AppRouter>({
   links: [wsLink({ client: wsClient })],
 });
 
-export interface PrioritizedAim {
+export interface PrioritizedIdea {
   idea: Idea;
   priority: number;
   flowedValue: number;
@@ -23,10 +23,10 @@ export interface PrioritizedAim {
  * Same resolution as the MCP's get_prioritized_ideas: deepest currently-active
  * leaf phase with open commitments, ranked by the flow-based economic model.
  */
-export async function getTopAims(
+export async function getTopIdeas(
   projectPath: string,
   limit = 3
-): Promise<PrioritizedAim[]> {
+): Promise<PrioritizedIdea[]> {
   const allPhases = (await trpc.phase.list.query({ projectPath })) as Phase[];
   const phaseById = new Map(allPhases.map((p) => [p.id, p]));
 
@@ -59,11 +59,11 @@ export async function getTopAims(
   }
   if (!targetPhase) throw new Error("No active phase with commitments found.");
 
-  const allAims = (await trpc.idea.list.query({ projectPath })) as Idea[];
-  const { priorities, values, costs, totalIntrinsic } = calculateAimValues(allAims);
+  const allIdeas = (await trpc.idea.list.query({ projectPath })) as Idea[];
+  const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas);
 
   const committed = new Set(targetPhase.commitments ?? []);
-  const open = allAims.filter(
+  const open = allIdeas.filter(
     (a) => committed.has(a.id) && a.status.state === "open"
   );
 

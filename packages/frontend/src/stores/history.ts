@@ -194,7 +194,7 @@ export const useHistoryStore = defineStore('history', {
       const dataStore = useDataStore()
       // Ideas deleted by this client are filtered from pushes; let restored ones back in.
       for (const change of changes) {
-        if (change.type === 'idea' && change.target !== null) dataStore.deletedAims.delete(change.id)
+        if (change.type === 'idea' && change.target !== null) dataStore.deletedIdeas.delete(change.id)
       }
 
       restoring = true

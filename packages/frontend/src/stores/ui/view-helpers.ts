@@ -4,7 +4,7 @@ export type GraphColorMode = 'status' | 'priority' | 'custom' | 'spin-off'
 type ViewState = {
   windowSize: number
   currentView: UIViewMode
-  graphSelectedAimId: string | null
+  graphSelectedIdeaId: string | null
 }
 
 type GraphState = {
@@ -18,9 +18,9 @@ type ResettableViewState = {
   windowStart: number
   windowSize: number
   maxColumn: number
-  floatingAimIndex: number
-  navigatingAims: boolean
-  graphSelectedAimId: string | null
+  floatingIdeaIndex: number
+  navigatingIdeas: boolean
+  graphSelectedIdeaId: string | null
   selectedLink: { parentId: string; childId: string } | null
 }
 
@@ -33,13 +33,13 @@ export function setWindowSize(state: ViewState, size: number): number {
 export function setView(
   state: ViewState,
   view: UIViewMode,
-  getCurrentAimId: () => string | null,
-  navigateToAim: (ideaId: string) => void
+  getCurrentIdeaId: () => string | null,
+  navigateToIdea: (ideaId: string) => void
 ): void {
   if (view === 'graph') {
-    state.graphSelectedAimId = getCurrentAimId()
-  } else if (view === 'columns' && state.graphSelectedAimId) {
-    navigateToAim(state.graphSelectedAimId)
+    state.graphSelectedIdeaId = getCurrentIdeaId()
+  } else if (view === 'columns' && state.graphSelectedIdeaId) {
+    navigateToIdea(state.graphSelectedIdeaId)
   }
 
   state.currentView = view
@@ -65,8 +65,8 @@ export function resetViewState(state: ResettableViewState): void {
   state.windowStart = 0
   state.windowSize = 2
   state.maxColumn = 0
-  state.floatingAimIndex = -1
-  state.navigatingAims = false
-  state.graphSelectedAimId = null
+  state.floatingIdeaIndex = -1
+  state.navigatingIdeas = false
+  state.graphSelectedIdeaId = null
   state.selectedLink = null
 }

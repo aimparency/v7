@@ -7,7 +7,7 @@
  * commit "references" an idea when its message contains the idea's 8-char id
  * prefix — the convention used in this repo's commit messages.
  */
-export function countAimReferences(commitMessages: string[], ideaIds: string[]): Map<string, number> {
+export function countIdeaReferences(commitMessages: string[], ideaIds: string[]): Map<string, number> {
   const counts = new Map<string, number>();
   const prefixes = ideaIds
     .filter((id) => typeof id === "string" && id.length >= 8)

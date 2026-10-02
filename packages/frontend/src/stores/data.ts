@@ -1,17 +1,17 @@
 import { defineStore } from 'pinia'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from 'backend'
-import type { Phase as BasePhase, Idea as BaseAim, Connection } from 'shared'
-import { calculateAimValues, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
+import type { Phase as BasePhase, Idea as BaseIdea, Connection } from 'shared'
+import { calculateIdeaValues, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
 import { trpc } from '../trpc'
 import { perfLog } from '../utils/perf-log'
 import { useUIStore } from './ui'
 import { useMapStore } from './map'
 import { useProjectStore } from './project-store'
 import { useHistoryStore } from './history'
-import { keepAimSelection } from './ui/selection-anchor'
+import { keepIdeaSelection } from './ui/selection-anchor'
 import { clientId } from '../utils/mutation-activity'
-import { loadAllAimsCache, saveAims } from '../utils/db'
+import { loadAllIdeasCache, saveIdeas } from '../utils/db'
 
 type RouterOutputs = inferRouterOutputs<AppRouter>
 type ConsistencyIssue = RouterOutputs['project']['checkConsistency']['issues'][number]
@@ -28,7 +28,7 @@ const REPO_NODE_COLOR = '#9e9e9e'
 
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
-  selectedAimIndex?: number
+  selectedIdeaIndex?: number
   lastSelectedSubPhaseIndex?: number
 }
 
@@ -59,15 +59,15 @@ export type PhaseLevelEntry =
   | PhaseLevelSeparatorEntry
 
 // Extend Idea type with UI-only properties
-export type Idea = BaseAim & {
+export type Idea = BaseIdea & {
   expanded?: boolean
   selectedIncomingIndex?: number
 }
 
 // Type for creating new ideas (omits server-generated fields)
 // Connections can be partial since backend provides defaults
-export type IdeaCreationParams = Omit<BaseAim, 'id' | 'incoming' | 'committedIn' | 'calculatedValue' | 'calculatedCost' | 'calculatedDoneCost' | 'calculatedPriority' | 'supportingConnections'> & {
-  supportedAims?: string[]
+export type IdeaCreationParams = Omit<BaseIdea, 'id' | 'incoming' | 'committedIn' | 'calculatedValue' | 'calculatedCost' | 'calculatedDoneCost' | 'calculatedPriority' | 'supportingConnections'> & {
+  supportedIdeas?: string[]
   supportingConnections?: Array<{
     ideaId: string
     weight?: number
@@ -180,7 +180,7 @@ function toPhaseColumn(phases: Phase[], entries: PhaseLevelEntry[]): PhaseColumn
 }
 
 // A floating idea has no phase commitment and no parent.
-const isFloatingAim = (idea: BaseAim) => !idea.committedIn?.length && !idea.supportedAims?.length
+const isFloatingIdea = (idea: BaseIdea) => !idea.committedIn?.length && !idea.supportedIdeas?.length
 
 export const useDataStore = defineStore('data', {
   state: () => ({
@@ -192,7 +192,7 @@ export const useDataStore = defineStore('data', {
     subscription: null as { unsubscribe: () => void } | null,
     
     // Floating ideas
-    floatingAimsIds: [] as string[],
+    floatingIdeasIds: [] as string[],
     
     // Calculated values
     calculatedValues: new Map<string, number>(),
@@ -206,7 +206,7 @@ export const useDataStore = defineStore('data', {
     // Persistence Debounce
     saveTimeout: null as any,
     pendingUpdates: new Set<string>(),
-    deletedAims: new Set<string>(),
+    deletedIdeas: new Set<string>(),
     // Monotonic per-idea request order. A response may only replace local state
     // while it is still the newest request for that idea.
     ideaSyncRevisions: {} as Record<string, number>,
@@ -221,7 +221,7 @@ export const useDataStore = defineStore('data', {
     consistencyIssues: [] as ConsistencyIssue[],
 
     // Project Meta
-    meta: null as BaseAim['status'] | any | null, // ProjectMeta
+    meta: null as BaseIdea['status'] | any | null, // ProjectMeta
   }),
 
   getters: {
@@ -245,32 +245,32 @@ export const useDataStore = defineStore('data', {
     getActualPhasesForColumn(): (level: number) => Phase[] {
       return (level) => this.phaseColumns[level]?.phases ?? []
     },
-    floatingAims(state): Idea[] {
-      return state.floatingAimsIds.map(id => state.ideas[id]).filter((a): a is Idea => !!a);
+    floatingIdeas(state): Idea[] {
+      return state.floatingIdeasIds.map(id => state.ideas[id]).filter((a): a is Idea => !!a);
     }, 
-    getFloatingAimByIndex() { 
-      return (index: number) => this.floatingAims[index]
+    getFloatingIdeaByIndex() { 
+      return (index: number) => this.floatingIdeas[index]
     }, 
-    getAimsForPhase: (state) => (phaseId: string): Idea[] => {
+    getIdeasForPhase: (state) => (phaseId: string): Idea[] => {
       const phase = state.phases[phaseId]
       if (!phase) return []
       return phase.commitments.map(ideaId => state.ideas[ideaId]).filter((a): a is Idea => !!a)
     },
 
-    getAimValue: (state) => (ideaId: string): number => {
+    getIdeaValue: (state) => (ideaId: string): number => {
       const normalized = state.calculatedValues.get(ideaId) || 0
       return normalized * state.totalIntrinsicValue
     },
 
-    getAimCost: (state) => (ideaId: string): number => {
+    getIdeaCost: (state) => (ideaId: string): number => {
       return state.calculatedCosts.get(ideaId) || 0
     },
 
-    getAimPriority: (state) => (ideaId: string): number => {
+    getIdeaPriority: (state) => (ideaId: string): number => {
       return state.calculatedPriorities.get(ideaId) || 0
     },
 
-    getAimProgress: (state) => (ideaId: string): number => {
+    getIdeaProgress: (state) => (ideaId: string): number => {
       const total = state.calculatedCosts.get(ideaId) || 0
       if (total === 0) return 0 // should never happen
       const done = state.calculatedDoneCosts.get(ideaId) || 0
@@ -290,7 +290,7 @@ export const useDataStore = defineStore('data', {
       
       // Find roots (no parents)
       ideas.forEach(idea => {
-        if (!idea.supportedAims || idea.supportedAims.length === 0) {
+        if (!idea.supportedIdeas || idea.supportedIdeas.length === 0) {
           depthMap.set(idea.id, 0)
           queue.push({ id: idea.id, depth: 0 })
         }
@@ -364,7 +364,7 @@ export const useDataStore = defineStore('data', {
       // black-box node (never its internal ideas). The repo is the supporter
       // (child) of the local idea, mirroring the supportingConnections direction
       // above (source=child/supporter, target=parent/supported). Value already
-      // flows into these repo sink nodes via calculateAimValues' repo expansion
+      // flows into these repo sink nodes via calculateIdeaValues' repo expansion
       // (the sink node is keyed by the repoId), so we reuse calculatedValues and
       // flowValues/flowShares keyed `${ideaId}->${repoId}` here.
       const linkedRepos = (state.meta?.linkedRepos ?? []) as Array<{ repoId: string; name?: string }>
@@ -456,8 +456,8 @@ export const useDataStore = defineStore('data', {
         if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout)
         
         this.recalculateTimeout = setTimeout(() => {
-            const allAims = Object.values(this.ideas) as Idea[];
-            const result = calculateAimValues(allAims);
+            const allIdeas = Object.values(this.ideas) as Idea[];
+            const result = calculateIdeaValues(allIdeas);
             this.calculatedValues = result.values;
             this.calculatedCosts = result.costs;
             this.calculatedDoneCosts = result.doneCosts;
@@ -509,7 +509,7 @@ export const useDataStore = defineStore('data', {
     // Helper to replace phase while preserving UI-only properties
     replacePhase(phaseId: string, newPhase: BasePhase) {
       const oldPhase = this.phases[phaseId]
-      const oldSelectedAimIndex = oldPhase?.selectedAimIndex
+      const oldSelectedIdeaIndex = oldPhase?.selectedIdeaIndex
       const oldSelectedSubPhaseIndex = oldPhase?.lastSelectedSubPhaseIndex
 
       // Replace with new data
@@ -519,14 +519,14 @@ export const useDataStore = defineStore('data', {
       }
 
       // Restore validated UI state
-      if (oldSelectedAimIndex !== undefined && newPhase.commitments.length > 0) {
+      if (oldSelectedIdeaIndex !== undefined && newPhase.commitments.length > 0) {
         const maxIndex = newPhase.commitments.length - 1
-        if (oldSelectedAimIndex <= maxIndex) {
-          this.phases[phaseId].selectedAimIndex = oldSelectedAimIndex
+        if (oldSelectedIdeaIndex <= maxIndex) {
+          this.phases[phaseId].selectedIdeaIndex = oldSelectedIdeaIndex
         } else {
           // Index out of bounds - clamp to last valid index
-          console.warn(`Phase ${phaseId} selectedAimIndex ${oldSelectedAimIndex} out of bounds (max ${maxIndex}), clamping to ${maxIndex}`)
-          this.phases[phaseId].selectedAimIndex = maxIndex
+          console.warn(`Phase ${phaseId} selectedIdeaIndex ${oldSelectedIdeaIndex} out of bounds (max ${maxIndex}), clamping to ${maxIndex}`)
+          this.phases[phaseId].selectedIdeaIndex = maxIndex
         }
       }
 
@@ -536,14 +536,14 @@ export const useDataStore = defineStore('data', {
     },
 
     // Helper to replace idea while preserving UI-only properties
-    replaceAim(ideaId: string, newAim: BaseAim) {
-      const oldAim = this.ideas[ideaId]
-      const oldExpanded = oldAim?.expanded ?? false
-      const oldSelectedIndex = oldAim?.selectedIncomingIndex
+    replaceIdea(ideaId: string, newIdea: BaseIdea) {
+      const oldIdea = this.ideas[ideaId]
+      const oldExpanded = oldIdea?.expanded ?? false
+      const oldSelectedIndex = oldIdea?.selectedIncomingIndex
 
       // NORMALIZE: Ensure supportingConnections exists if incoming is present (server backward compatibility)
-      if (!newAim.supportingConnections && newAim.incoming) {
-        newAim.supportingConnections = newAim.incoming.map(id => ({ 
+      if (!newIdea.supportingConnections && newIdea.incoming) {
+        newIdea.supportingConnections = newIdea.incoming.map(id => ({ 
             ideaId: id, 
             weight: 1, 
             relativePosition: [0, 0] as [number, number] 
@@ -554,27 +554,27 @@ export const useDataStore = defineStore('data', {
       this.ideas[ideaId] = Object.assign({
         expanded: false,
         selectedIncomingIndex: undefined
-      }, newAim) as Idea
+      }, newIdea) as Idea
 
       // Restore validated UI state
       this.ideas[ideaId].expanded = oldExpanded
 
       // Initialize calculated values from backend injection (Optimistic Display)
-      if (newAim.calculatedValue !== undefined) {
-        this.calculatedValues.set(ideaId, newAim.calculatedValue)
+      if (newIdea.calculatedValue !== undefined) {
+        this.calculatedValues.set(ideaId, newIdea.calculatedValue)
       }
-      if (newAim.calculatedCost !== undefined) {
-        this.calculatedCosts.set(ideaId, newAim.calculatedCost)
+      if (newIdea.calculatedCost !== undefined) {
+        this.calculatedCosts.set(ideaId, newIdea.calculatedCost)
       }
-      if (newAim.calculatedDoneCost !== undefined) {
-        this.calculatedDoneCosts.set(ideaId, newAim.calculatedDoneCost)
+      if (newIdea.calculatedDoneCost !== undefined) {
+        this.calculatedDoneCosts.set(ideaId, newIdea.calculatedDoneCost)
       }
-      if (newAim.calculatedPriority !== undefined) {
-        this.calculatedPriorities.set(ideaId, newAim.calculatedPriority)
+      if (newIdea.calculatedPriority !== undefined) {
+        this.calculatedPriorities.set(ideaId, newIdea.calculatedPriority)
       }
 
-      if (oldSelectedIndex !== undefined && newAim.supportingConnections && newAim.supportingConnections.length > 0) {
-        const maxIndex = newAim.supportingConnections.length - 1
+      if (oldSelectedIndex !== undefined && newIdea.supportingConnections && newIdea.supportingConnections.length > 0) {
+        const maxIndex = newIdea.supportingConnections.length - 1
         if (oldSelectedIndex <= maxIndex) {
           this.ideas[ideaId].selectedIncomingIndex = oldSelectedIndex
         } else {
@@ -585,15 +585,15 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    beginAimSync(ideaId: string): number {
+    beginIdeaSync(ideaId: string): number {
       const revision = (this.ideaSyncRevisions[ideaId] ?? 0) + 1
       this.ideaSyncRevisions[ideaId] = revision
       return revision
     },
 
-    replaceAimIfCurrent(ideaId: string, newAim: BaseAim, revision: number): boolean {
+    replaceIdeaIfCurrent(ideaId: string, newIdea: BaseIdea, revision: number): boolean {
       if (this.ideaSyncRevisions[ideaId] !== revision) return false
-      this.replaceAim(ideaId, newAim)
+      this.replaceIdea(ideaId, newIdea)
       return true
     },
 
@@ -609,94 +609,94 @@ export const useDataStore = defineStore('data', {
       return true
     },
 
-    async createFloatingAim(projectPath: string, idea: IdeaCreationParams): Promise<{id: string}> {
+    async createFloatingIdea(projectPath: string, idea: IdeaCreationParams): Promise<{id: string}> {
       try {
-        const newAim = await trpc.idea.createFloatingAim.mutate({
+        const newIdea = await trpc.idea.createFloatingIdea.mutate({
           projectPath,
           idea
         })
 
-        this.ideas[newAim.id] = newAim
+        this.ideas[newIdea.id] = newIdea
         
         // Add to floating list if it matches criteria (it should)
         // Add to START of list (if sorted by date desc?) or END? 
         // list-ideas default sort is probably filesystem order or date? 
         // Let's prepend for now as "newest".
-        if (!this.floatingAimsIds.includes(newAim.id)) {
-          this.floatingAimsIds.unshift(newAim.id);
+        if (!this.floatingIdeasIds.includes(newIdea.id)) {
+          this.floatingIdeasIds.unshift(newIdea.id);
         }
         
         this.recalculateValues();
 
-        return newAim // Returns { id: string }
+        return newIdea // Returns { id: string }
       } catch (error) {
         console.error('Failed to create idea:', error)
         throw error
       }
     },
 
-    async createSubAim(projectPath: string, parentAimId: string, idea: IdeaCreationParams, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
+    async createSubIdea(projectPath: string, parentIdeaId: string, idea: IdeaCreationParams, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
       try {
-        const newAim = await trpc.idea.createSubAim.mutate({
+        const newIdea = await trpc.idea.createSubIdea.mutate({
           projectPath,
-          parentAimId,
+          parentIdeaId,
           idea,
           positionInParent,
           weight
         })
 
         // Reload parent idea to get updated connections
-        const parentAim = await trpc.idea.get.query({ projectPath, ideaId: parentAimId })
-        if (parentAim) {
-          this.replaceAim(parentAimId, parentAim)
+        const parentIdea = await trpc.idea.get.query({ projectPath, ideaId: parentIdeaId })
+        if (parentIdea) {
+          this.replaceIdea(parentIdeaId, parentIdea)
         }
 
-        // Reload child idea to get updated supportedAims array
+        // Reload child idea to get updated supportedIdeas array
         // This ensures it doesn't appear in floating ideas
-        const updatedChildAim = await trpc.idea.get.query({ projectPath, ideaId: newAim.id })
-        if (updatedChildAim) {
-          this.replaceAim(newAim.id, updatedChildAim)
+        const updatedChildIdea = await trpc.idea.get.query({ projectPath, ideaId: newIdea.id })
+        if (updatedChildIdea) {
+          this.replaceIdea(newIdea.id, updatedChildIdea)
         }
         
         this.recalculateValues();
 
-        return newAim // Returns { id: string }
+        return newIdea // Returns { id: string }
       } catch (error) {
         console.error('Failed to create sub-idea:', error)
         throw error
       }
     }, 
 
-    async createCommittedAim(projectPath: string, phaseId: string, idea: IdeaCreationParams, insertionIndex?: number): Promise<{id: string}> {
+    async createCommittedIdea(projectPath: string, phaseId: string, idea: IdeaCreationParams, insertionIndex?: number): Promise<{id: string}> {
       try {
-        const newAim = await trpc.idea.createAimInPhase.mutate({
+        const newIdea = await trpc.idea.createIdeaInPhase.mutate({
           projectPath,
           phaseId,
           idea,
           insertionIndex
         })
 
-        this.ideas[newAim.id] = newAim
+        this.ideas[newIdea.id] = newIdea
         this.recalculateValues();
 
-        return newAim
+        return newIdea
       } catch (error) {
         console.error('Failed to create idea in phase:', error)
         throw error
       }
     },
 
-    async updateAim(projectPath: string, ideaId: string, updates: Partial<Omit<Idea, 'id'>>): Promise<void> {
-      const revision = this.beginAimSync(ideaId)
+    async updateIdea(projectPath: string, ideaId: string, updates: Partial<Omit<Idea, 'id'>>): Promise<void> {
+      const revision = this.beginIdeaSync(ideaId)
       try {
-        const updatedAim = await trpc.idea.update.mutate({
+        const updatedIdea = await trpc.idea.update.mutate({
           projectPath,
           ideaId,
           idea: updates
         })
 
         // Update local state
-        if (this.replaceAimIfCurrent(ideaId, updatedAim, revision)) {
+        if (this.replaceIdeaIfCurrent(ideaId, updatedIdea, revision)) {
           this.recalculateValues();
         }
       } catch (error) {
@@ -720,7 +720,7 @@ export const useDataStore = defineStore('data', {
       const updatedConnections = parent.supportingConnections.map((connection, index) => (
         index === connectionIndex ? { ...connection, ...updates } : connection
       ))
-      this.replaceAim(parentId, { ...parent, supportingConnections: updatedConnections })
+      this.replaceIdea(parentId, { ...parent, supportingConnections: updatedConnections })
       this.recalculateValues()
 
       try {
@@ -729,10 +729,10 @@ export const useDataStore = defineStore('data', {
           ideaId: parentId,
           idea: { supportingConnections: updatedConnections }
         })
-        this.replaceAim(parentId, updatedParent)
+        this.replaceIdea(parentId, updatedParent)
         this.recalculateValues()
       } catch (error) {
-        this.replaceAim(parentId, originalParent)
+        this.replaceIdea(parentId, originalParent)
         this.recalculateValues()
         throw error
       }
@@ -746,9 +746,9 @@ export const useDataStore = defineStore('data', {
       const originalParent = parent
       const originalChild = child
       const updatedConnections = parent.supportingConnections.filter(connection => connection.ideaId !== childId)
-      const updatedSupportedAims = child.supportedAims.filter(id => id !== parentId)
-      this.replaceAim(parentId, { ...parent, supportingConnections: updatedConnections })
-      this.replaceAim(childId, { ...child, supportedAims: updatedSupportedAims })
+      const updatedSupportedIdeas = child.supportedIdeas.filter(id => id !== parentId)
+      this.replaceIdea(parentId, { ...parent, supportingConnections: updatedConnections })
+      this.replaceIdea(childId, { ...child, supportedIdeas: updatedSupportedIdeas })
       this.recalculateValues()
 
       try {
@@ -761,26 +761,26 @@ export const useDataStore = defineStore('data', {
           trpc.idea.update.mutate({
             projectPath,
             ideaId: childId,
-            idea: { supportedAims: updatedSupportedAims }
+            idea: { supportedIdeas: updatedSupportedIdeas }
           })
         ])
-        this.replaceAim(parentId, updatedParent)
-        this.replaceAim(childId, updatedChild)
+        this.replaceIdea(parentId, updatedParent)
+        this.replaceIdea(childId, updatedChild)
         this.recalculateValues()
       } catch (error) {
-        this.replaceAim(parentId, originalParent)
-        this.replaceAim(childId, originalChild)
+        this.replaceIdea(parentId, originalParent)
+        this.replaceIdea(childId, originalChild)
         this.recalculateValues()
         throw error
       }
     },
 
-    async updateConnectionPosition(projectPath: string, parentId: string, childAimId: string, newRelativePosition: [number, number]) {
+    async updateConnectionPosition(projectPath: string, parentId: string, childIdeaId: string, newRelativePosition: [number, number]) {
       const parent = this.ideas[parentId]
       if (!parent) return
 
       const connections = parent.supportingConnections || []
-      const connectionIndex = connections.findIndex(c => c.ideaId === childAimId)
+      const connectionIndex = connections.findIndex(c => c.ideaId === childIdeaId)
       
       if (connectionIndex !== -1) {
         // 1. Update local state immediately
@@ -814,7 +814,7 @@ export const useDataStore = defineStore('data', {
         await Promise.all(updates.map(ideaId => {
           const idea = this.ideas[ideaId]
           if (!idea) return Promise.resolve()
-          return this.updateAim(projectPath, ideaId, {
+          return this.updateIdea(projectPath, ideaId, {
             supportingConnections: idea.supportingConnections
           })
         }))
@@ -823,7 +823,7 @@ export const useDataStore = defineStore('data', {
       }
     },
     
-    async commitAimToPhase(projectPath: string, ideaId: string, phaseId: string, insertionIndex?: number) {
+    async commitIdeaToPhase(projectPath: string, ideaId: string, phaseId: string, insertionIndex?: number) {
       try {
         // Use the new backend endpoint that maintains bidirectional relationship
         await trpc.idea.commitToPhase.mutate({
@@ -842,13 +842,13 @@ export const useDataStore = defineStore('data', {
         // Reload the idea to get updated committedIn field
         const idea = await trpc.idea.get.query({ projectPath, ideaId })
         if (idea) {
-          this.replaceAim(ideaId, idea)
+          this.replaceIdea(ideaId, idea)
         }
         
         // Remove from floating ideas if present
-        const index = this.floatingAimsIds.indexOf(ideaId)
+        const index = this.floatingIdeasIds.indexOf(ideaId)
         if (index !== -1) {
-            this.floatingAimsIds.splice(index, 1)
+            this.floatingIdeasIds.splice(index, 1)
         }
         this.recalculateValues();
       } catch (error) {
@@ -857,23 +857,23 @@ export const useDataStore = defineStore('data', {
       }
     },
     
-    removeAimLocally(ideaId: string) {
+    removeIdeaLocally(ideaId: string) {
       delete this.ideas[ideaId]
-      this.floatingAimsIds = this.floatingAimsIds.filter((id) => id !== ideaId)
+      this.floatingIdeasIds = this.floatingIdeasIds.filter((id) => id !== ideaId)
       this.recalculateValues()
     },
 
-    syncFloatingAim(idea: BaseAim) {
-      const index = this.floatingAimsIds.indexOf(idea.id)
-      if (isFloatingAim(idea)) {
-        if (index === -1) this.floatingAimsIds.unshift(idea.id)
+    syncFloatingIdea(idea: BaseIdea) {
+      const index = this.floatingIdeasIds.indexOf(idea.id)
+      if (isFloatingIdea(idea)) {
+        if (index === -1) this.floatingIdeasIds.unshift(idea.id)
       } else if (index !== -1) {
-        this.floatingAimsIds.splice(index, 1)
+        this.floatingIdeasIds.splice(index, 1)
       }
       this.recalculateValues()
     },
 
-    async deleteAimFromStore(projectPath: string, ideaId: string) {
+    async deleteIdeaFromStore(projectPath: string, ideaId: string) {
       try {
         await trpc.idea.delete.mutate({
           projectPath,
@@ -886,7 +886,7 @@ export const useDataStore = defineStore('data', {
       }
     },
     
-    async removeAimFromPhase(projectPath: string, ideaId: string, phaseId: string) {
+    async removeIdeaFromPhase(projectPath: string, ideaId: string, phaseId: string) {
       try {
         await trpc.idea.removeFromPhase.mutate({
           projectPath,
@@ -902,16 +902,16 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async loadAllAims(projectPath: string) {
+    async loadAllIdeas(projectPath: string) {
       if (!projectPath) return;
       this.loading = true;
       try {
         // 1. Try cache first; it is optional (no IndexedDB in private windows or tests)
-        const cachedAims = await loadAllAimsCache(projectPath).catch(() => []);
-        if (cachedAims && cachedAims.length > 0) {
-            console.log(`[DataStore] Loaded ${cachedAims.length} ideas from cache`);
-            for (const idea of cachedAims) {
-                this.replaceAim(idea.id, idea);
+        const cachedIdeas = await loadAllIdeasCache(projectPath).catch(() => []);
+        if (cachedIdeas && cachedIdeas.length > 0) {
+            console.log(`[DataStore] Loaded ${cachedIdeas.length} ideas from cache`);
+            for (const idea of cachedIdeas) {
+                this.replaceIdea(idea.id, idea);
             }
             this.recalculateValues();
         }
@@ -920,23 +920,23 @@ export const useDataStore = defineStore('data', {
         const ideas = await trpc.idea.list.query({ projectPath });
         console.log(`[DataStore] Fetched ${ideas.length} ideas from server`);
         
-        const serverAimIds = new Set(ideas.map(a => a.id));
+        const serverIdeaIds = new Set(ideas.map(a => a.id));
         
         // Remove stale ideas
         for (const id in this.ideas) {
-            if (!serverAimIds.has(id)) {
+            if (!serverIdeaIds.has(id)) {
                 delete this.ideas[id];
             }
         }
 
         for (const idea of ideas) {
-          this.replaceAim(idea.id, idea);
+          this.replaceIdea(idea.id, idea);
         }
-        this.floatingAimsIds = ideas.filter(isFloatingAim).map((idea) => idea.id);
+        this.floatingIdeasIds = ideas.filter(isFloatingIdea).map((idea) => idea.id);
         this.recalculateValues();
         
         // 3. Update cache
-        saveAims(projectPath, ideas).catch(() => {});
+        saveIdeas(projectPath, ideas).catch(() => {});
         
       } catch (error) {
         console.error('Failed to load all ideas:', error);
@@ -972,12 +972,12 @@ export const useDataStore = defineStore('data', {
 
         // The whole project is small enough to load at once (~100ms for 750
         // ideas); the subscription keeps it live afterwards.
-        await Promise.all([this.loadAllPhases(projectPath), this.loadAllAims(projectPath)]);
+        await Promise.all([this.loadAllPhases(projectPath), this.loadAllIdeas(projectPath)]);
 
         perfLog('data.loadProject:done', {
           projectPath,
           rootPhases: this.meta?.rootPhaseIds?.length ?? 0,
-          floatingAims: this.floatingAimsIds.length
+          floatingIdeas: this.floatingIdeasIds.length
         })
 
         projectStore.setConnectionStatus('connected');
@@ -1029,19 +1029,19 @@ export const useDataStore = defineStore('data', {
           // Another client's reorder/insert must not move this client's idea
           // selection (it's index-based) onto a different idea.
           const applyEntity = data.origin !== undefined && data.origin !== clientId
-            ? (apply: () => void) => keepAimSelection(useUIStore(), apply)
+            ? (apply: () => void) => keepIdeaSelection(useUIStore(), apply)
             : (apply: () => void) => apply()
 
           if (data.type === 'project') {
             this.meta = data.entity ?? await trpc.project.getMeta.query({ projectPath })
           } else if (data.type === 'idea') {
             if (data.deleted) {
-              applyEntity(() => this.removeAimLocally(data.id))
-            } else if (!this.deletedAims.has(data.id)) {
-              const revision = this.beginAimSync(data.id)
-              const idea = data.entity as BaseAim ?? await trpc.idea.get.query({ projectPath, ideaId: data.id })
+              applyEntity(() => this.removeIdeaLocally(data.id))
+            } else if (!this.deletedIdeas.has(data.id)) {
+              const revision = this.beginIdeaSync(data.id)
+              const idea = data.entity as BaseIdea ?? await trpc.idea.get.query({ projectPath, ideaId: data.id })
               applyEntity(() => {
-                if (this.replaceAimIfCurrent(idea.id, idea, revision)) this.syncFloatingAim(idea)
+                if (this.replaceIdeaIfCurrent(idea.id, idea, revision)) this.syncFloatingIdea(idea)
               })
             }
           } else if (data.type === 'phase') {
@@ -1074,50 +1074,50 @@ export const useDataStore = defineStore('data', {
     },
 
     // Recursive helper to delete a sub-idea and all its children
-    async deleteSubAimRecursive(projectPath: string, ideaId: string, parentAimId: string) {
+    async deleteSubIdeaRecursive(projectPath: string, ideaId: string, parentIdeaId: string) {
       const idea = this.ideas[ideaId]
       if (!idea) return
 
       // 1. Recursively delete all children first
       if (idea.supportingConnections && idea.supportingConnections.length > 0) {
         for (const conn of [...idea.supportingConnections]) {
-          await this.deleteSubAimRecursive(projectPath, conn.ideaId, ideaId)
+          await this.deleteSubIdeaRecursive(projectPath, conn.ideaId, ideaId)
         }
       }
 
       // 2. Remove this idea from the parent's supportingConnections array
-      const parentAim = this.ideas[parentAimId]
-      if (parentAim && parentAim.supportingConnections) {
-        const wasExpanded = parentAim.expanded
-        const updatedConnections = parentAim.supportingConnections.filter(c => c.ideaId !== ideaId)
-        await this.updateAim(projectPath, parentAimId, {
+      const parentIdea = this.ideas[parentIdeaId]
+      if (parentIdea && parentIdea.supportingConnections) {
+        const wasExpanded = parentIdea.expanded
+        const updatedConnections = parentIdea.supportingConnections.filter(c => c.ideaId !== ideaId)
+        await this.updateIdea(projectPath, parentIdeaId, {
           supportingConnections: updatedConnections
         })
         // Restore expanded state (it's UI-only, not persisted)
-        if (wasExpanded && this.ideas[parentAimId]) {
-          this.ideas[parentAimId].expanded = true
+        if (wasExpanded && this.ideas[parentIdeaId]) {
+          this.ideas[parentIdeaId].expanded = true
         }
       }
 
-      // 3. Remove the parent from this idea's supportedAims array
-      const updatedSupportedAims = idea.supportedAims.filter(id => id !== parentAimId)
+      // 3. Remove the parent from this idea's supportedIdeas array
+      const updatedSupportedIdeas = idea.supportedIdeas.filter(id => id !== parentIdeaId)
 
-      // 4. If this idea has no other parents (supportedAims connections), delete it completely
-      if (updatedSupportedAims.length === 0) {
+      // 4. If this idea has no other parents (supportedIdeas connections), delete it completely
+      if (updatedSupportedIdeas.length === 0) {
         await trpc.idea.delete.mutate({
           projectPath,
           ideaId: ideaId
         })
         delete this.ideas[ideaId]
       } else {
-        // Still has other parents, just update the supportedAims array
-        await this.updateAim(projectPath, ideaId, {
-          supportedAims: updatedSupportedAims
+        // Still has other parents, just update the supportedIdeas array
+        await this.updateIdea(projectPath, ideaId, {
+          supportedIdeas: updatedSupportedIdeas
         })
       }
     },
 
-    async deleteAim(ideaId: string) {
+    async deleteIdea(ideaId: string) {
       const uiStore = useUIStore();
       const projectStore = useProjectStore();
 
@@ -1135,20 +1135,20 @@ export const useDataStore = defineStore('data', {
 
         if (path.ideas.length > 1) {
           // B) Sub-idea: remove from parent idea's supporting list
-          const parentAim = path.ideas[path.ideas.length - 2]
-          if (parentAim) {
-            await this.deleteSubAimRecursive(projectStore.projectPath, ideaId, parentAim.id)
+          const parentIdea = path.ideas[path.ideas.length - 2]
+          if (parentIdea) {
+            await this.deleteSubIdeaRecursive(projectStore.projectPath, ideaId, parentIdea.id)
 
             // Adjust parent's selectedIncomingIndex to stay in valid range
-            const updatedParentAim = this.ideas[parentAim.id]
-            if (updatedParentAim && updatedParentAim.selectedIncomingIndex !== undefined && updatedParentAim.supportingConnections) {
-                if (updatedParentAim.supportingConnections.length > 0) {
-                updatedParentAim.selectedIncomingIndex = Math.min(
-                    updatedParentAim.selectedIncomingIndex,
-                    updatedParentAim.supportingConnections.length - 1
+            const updatedParentIdea = this.ideas[parentIdea.id]
+            if (updatedParentIdea && updatedParentIdea.selectedIncomingIndex !== undefined && updatedParentIdea.supportingConnections) {
+                if (updatedParentIdea.supportingConnections.length > 0) {
+                updatedParentIdea.selectedIncomingIndex = Math.min(
+                    updatedParentIdea.selectedIncomingIndex,
+                    updatedParentIdea.supportingConnections.length - 1
                 )
                 } else {
-                updatedParentAim.selectedIncomingIndex = undefined
+                updatedParentIdea.selectedIncomingIndex = undefined
                 }
             }
           }
@@ -1168,56 +1168,56 @@ export const useDataStore = defineStore('data', {
 
           // Update idea's committedIn array
           // TODO implement idea removal server side, then reload parent idea/phase in client
-          const updatedAim = this.ideas[ideaId]
-          if (updatedAim) {
-            updatedAim.committedIn = updatedAim.committedIn?.filter(id => id !== path.phase?.id) || []
+          const updatedIdea = this.ideas[ideaId]
+          if (updatedIdea) {
+            updatedIdea.committedIn = updatedIdea.committedIn?.filter(id => id !== path.phase?.id) || []
           }
         } else {
           // C) Floating idea: delete entirely (including all sub-ideas)
           // First recursively delete all sub-ideas
           if (idea.supportingConnections && idea.supportingConnections.length > 0) {
             for (const conn of [...idea.supportingConnections]) {
-              await this.deleteSubAimRecursive(projectStore.projectPath, conn.ideaId, ideaId)
+              await this.deleteSubIdeaRecursive(projectStore.projectPath, conn.ideaId, ideaId)
             }
           }
 
           // Then delete the idea itself
-          this.deletedAims.add(ideaId)
+          this.deletedIdeas.add(ideaId)
           await trpc.idea.delete.mutate({
             projectPath: projectStore.projectPath,
             ideaId: ideaId
           });
 
           delete this.ideas[ideaId]
-          this.floatingAimsIds = this.floatingAimsIds.filter(id => id !== ideaId)
+          this.floatingIdeasIds = this.floatingIdeasIds.filter(id => id !== ideaId)
         }
 
         // Adjust selection if needed
-        if (uiStore.navigatingAims) {
-          const ideas = path.phase ? this.getAimsForPhase(path.phase.id) : this.floatingAims
+        if (uiStore.navigatingIdeas) {
+          const ideas = path.phase ? this.getIdeasForPhase(path.phase.id) : this.floatingIdeas
 
           if (ideas.length === 0) {
-            uiStore.navigatingAims = false
+            uiStore.navigatingIdeas = false
           } else {
             // Select next/previous idea at same level
             if (!path.phase) {
-              uiStore.floatingAimIndex = Math.min(uiStore.floatingAimIndex, ideas.length - 1)
+              uiStore.floatingIdeaIndex = Math.min(uiStore.floatingIdeaIndex, ideas.length - 1)
             } else {
               const phase = this.phases[path.phase.id]
-              if (phase && phase.selectedAimIndex !== undefined) {
-                phase.selectedAimIndex = Math.min(phase.selectedAimIndex, ideas.length - 1)
+              if (phase && phase.selectedIdeaIndex !== undefined) {
+                phase.selectedIdeaIndex = Math.min(phase.selectedIdeaIndex, ideas.length - 1)
               }
             }
           }
         }
         this.recalculateValues();
       } catch (error) {
-        this.deletedAims.delete(ideaId);
+        this.deletedIdeas.delete(ideaId);
         console.error('Failed to delete idea:', error);
       }
     },
 
-    async loadAims(projectPath: string, ideaIds: string[]) {
+    async loadIdeas(projectPath: string, ideaIds: string[]) {
       if (!projectPath || ideaIds.length === 0) return;
       const projectStore = useProjectStore()
 
@@ -1229,7 +1229,7 @@ export const useDataStore = defineStore('data', {
         if (projectStore.projectPath !== projectPath) return;
 
         for (const idea of ideas) {
-          this.replaceAim(idea.id, idea);
+          this.replaceIdea(idea.id, idea);
         }
         this.recalculateValues();
       } catch (error) {
@@ -1239,7 +1239,7 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async reorderPhaseAim(projectPath: string, phaseId: string, ideaId: string, newIndex: number) {
+    async reorderPhaseIdea(projectPath: string, phaseId: string, ideaId: string, newIndex: number) {
       try {
         await trpc.idea.commitToPhase.mutate({
           projectPath,
@@ -1255,21 +1255,21 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async reorderSubAim(projectPath: string, parentAimId: string, childAimId: string, newIndex: number) {
+    async reorderSubIdea(projectPath: string, parentIdeaId: string, childIdeaId: string, newIndex: number) {
       try {
-        const childAim = this.ideas[childAimId];
-        const childSupportedAimsIndex = childAim?.supportedAims.indexOf(parentAimId) ?? 0;
+        const childIdea = this.ideas[childIdeaId];
+        const childSupportedIdeasIndex = childIdea?.supportedIdeas.indexOf(parentIdeaId) ?? 0;
 
-        await trpc.idea.connectAims.mutate({
+        await trpc.idea.connectIdeas.mutate({
           projectPath,
-          parentAimId,
-          childAimId: childAimId,
+          parentIdeaId,
+          childIdeaId: childIdeaId,
           parentIncomingIndex: newIndex,
-          childSupportedAimsIndex: childSupportedAimsIndex !== -1 ? childSupportedAimsIndex : undefined
+          childSupportedIdeasIndex: childSupportedIdeasIndex !== -1 ? childSupportedIdeasIndex : undefined
         });
 
-        const parentAim = await trpc.idea.get.query({ projectPath, ideaId: parentAimId });
-        if (parentAim) this.replaceAim(parentAimId, parentAim);
+        const parentIdea = await trpc.idea.get.query({ projectPath, ideaId: parentIdeaId });
+        if (parentIdea) this.replaceIdea(parentIdeaId, parentIdea);
         this.recalculateValues();
       } catch (error) {
         console.error('Failed to reorder sub-idea:', error);

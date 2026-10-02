@@ -20,7 +20,7 @@ test('MCP Resources - List & Read', async () => {
   registerResources(server as any, callerProxy as any);
 
   // 1. Create Data
-  const idea = await caller.idea.createFloatingAim({
+  const idea = await caller.idea.createFloatingIdea({
     projectPath: ctx.projectPath,
     idea: { text: 'Resource Idea', status: { state: 'open', comment: '', date: Date.now() } }
   });
@@ -35,8 +35,8 @@ test('MCP Resources - List & Read', async () => {
   // 3. Read Idea Resource
   // URI format: idea://{uuid}?projectPath=...
   const ideaUri = `idea://${idea.id}?projectPath=${encodeURIComponent(ctx.projectPath)}`;
-  const readAim = await server.readResource(ideaUri);
+  const readIdea = await server.readResource(ideaUri);
   
-  const ideaContent = JSON.parse(readAim.contents[0].text);
+  const ideaContent = JSON.parse(readIdea.contents[0].text);
   assert.equal(ideaContent.text, 'Resource Idea');
 });

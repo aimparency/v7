@@ -7,7 +7,7 @@ import {
 } from './view-helpers'
 
 export type PersistedGraphViewState = {
-  graphSelectedAimId: string | null
+  graphSelectedIdeaId: string | null
   selectedLink: { parentId: string; childId: string } | null
   graphColorMode: GraphColorMode
   graphPanelWidth: number
@@ -36,7 +36,7 @@ export function findConnectionBetween(
 }
 
 type GraphUIState = PersistedGraphViewState & {
-  pendingDeleteAimId: string | null
+  pendingDeleteIdeaId: string | null
   pendingDeleteLink: { parentId: string; childId: string } | null
   phaseFilter: PhaseFilter | null
   // Ephemeral spin-off preview: when non-empty, the graph colors nodes by their
@@ -47,9 +47,9 @@ type GraphUIState = PersistedGraphViewState & {
 
 export const useGraphUIStore = defineStore('ui-graph', {
   state: (): GraphUIState => ({
-    graphSelectedAimId: null,
+    graphSelectedIdeaId: null,
     selectedLink: null,
-    pendingDeleteAimId: null,
+    pendingDeleteIdeaId: null,
     pendingDeleteLink: null,
     graphColorMode: 'status',
     graphPanelWidth: 300,
@@ -62,7 +62,7 @@ export const useGraphUIStore = defineStore('ui-graph', {
   actions: {
     getPersistedGraphViewState(): PersistedGraphViewState {
       return {
-        graphSelectedAimId: this.graphSelectedAimId,
+        graphSelectedIdeaId: this.graphSelectedIdeaId,
         selectedLink: this.selectedLink,
         graphColorMode: this.graphColorMode,
         graphPanelWidth: this.graphPanelWidth,
@@ -72,7 +72,7 @@ export const useGraphUIStore = defineStore('ui-graph', {
 
     applyPersistedGraphViewState(state?: Partial<GraphUIState> | null) {
       if (!state) return
-      this.graphSelectedAimId = state.graphSelectedAimId ?? null
+      this.graphSelectedIdeaId = state.graphSelectedIdeaId ?? null
       this.selectedLink = state.selectedLink ?? null
       if (state.graphColorMode) {
         this.graphColorMode = state.graphColorMode
@@ -86,17 +86,17 @@ export const useGraphUIStore = defineStore('ui-graph', {
     },
 
     setGraphSelection(ideaId: string | null) {
-      this.graphSelectedAimId = ideaId
-      this.pendingDeleteAimId = null
+      this.graphSelectedIdeaId = ideaId
+      this.pendingDeleteIdeaId = null
     },
 
     clearGraphSelection() {
-      this.graphSelectedAimId = null
-      this.pendingDeleteAimId = null
+      this.graphSelectedIdeaId = null
+      this.pendingDeleteIdeaId = null
     },
 
-    setPendingDeleteAim(ideaId: string | null) {
-      this.pendingDeleteAimId = ideaId
+    setPendingDeleteIdea(ideaId: string | null) {
+      this.pendingDeleteIdeaId = ideaId
     },
 
     selectLink(parentId: string, childId: string) {
@@ -125,12 +125,12 @@ export const useGraphUIStore = defineStore('ui-graph', {
       toggleGraphShowLabelsHelper(this)
     },
 
-    setPhaseFilter(phaseId: string, phaseName: string, commitments: string[], ideasById: Record<string, { supportedAims?: string[] }>) {
+    setPhaseFilter(phaseId: string, phaseName: string, commitments: string[], ideasById: Record<string, { supportedIdeas?: string[] }>) {
       const visibleIds = commitments.filter(id => !!ideasById[id])
       const visibleSet = new Set(visibleIds)
       const loadableSet = new Set<string>()
       for (const id of visibleIds) {
-        for (const parentId of (ideasById[id]?.supportedAims ?? [])) {
+        for (const parentId of (ideasById[id]?.supportedIdeas ?? [])) {
           if (!visibleSet.has(parentId) && !!ideasById[parentId]) {
             loadableSet.add(parentId)
           }
@@ -139,7 +139,7 @@ export const useGraphUIStore = defineStore('ui-graph', {
       this.phaseFilter = { phaseId, phaseName, visibleIds, loadableIds: [...loadableSet] }
     },
 
-    expandLoadableAim(ideaId: string, ideasById: Record<string, { supportedAims?: string[]; supportingConnections?: { ideaId: string }[] }>) {
+    expandLoadableIdea(ideaId: string, ideasById: Record<string, { supportedIdeas?: string[]; supportingConnections?: { ideaId: string }[] }>) {
       if (!this.phaseFilter) return
       const idea = ideasById[ideaId]
       if (!idea) return
@@ -156,7 +156,7 @@ export const useGraphUIStore = defineStore('ui-graph', {
         if (ideasById[conn.ideaId]) visibleSet.add(conn.ideaId)
       }
       // Its parents become loadable (if not already visible)
-      for (const parentId of (idea.supportedAims ?? [])) {
+      for (const parentId of (idea.supportedIdeas ?? [])) {
         if (!visibleSet.has(parentId) && !!ideasById[parentId]) loadableSet.add(parentId)
       }
 

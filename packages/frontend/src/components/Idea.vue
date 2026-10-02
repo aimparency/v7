@@ -17,10 +17,10 @@ interface Props {
   indentationLevel?: number
   isActive?: boolean
   isSelected?: boolean
-  isThisAimSelected?: boolean
+  isThisIdeaSelected?: boolean
   phaseId: string
   columnIndex: number
-  parentAimId?: string
+  parentIdeaId?: string
   ideaUiState: IdeaUIState
 }
 
@@ -28,8 +28,8 @@ const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0,
   isActive: false,
   isSelected: false,
-  isThisAimSelected: false,
-  parentAimId: undefined
+  isThisIdeaSelected: false,
+  parentIdeaId: undefined
 })
 
 const emit = defineEmits<{
@@ -56,7 +56,7 @@ const dispatchKey = (key: string) =>
 
 // Tap normally selects/edits; swallow the click that trails a long-press so the
 // menu doesn't also re-trigger selection (which would pop the edit modal).
-const onAimClick = (event?: MouseEvent) => {
+const onIdeaClick = (event?: MouseEvent) => {
   if (Date.now() - lastMenuOpenAt < 600) return
 
   const modifiers = event
@@ -70,23 +70,23 @@ const onAimClick = (event?: MouseEvent) => {
 const openMenu = (_event: PointerEvent) => {
   if (uiStore.multiSelectMode && uiStore.isMultiSelected(props.idea.id)) {
     lastMenuOpenAt = Date.now()
-    useUIModalStore().openAimEditModal(props.idea.id, [...uiStore.multiSelectedAimIds])
+    useUIModalStore().openIdeaEditModal(props.idea.id, [...uiStore.multiSelectedIdeaIds])
     return
   }
 
   if (uiStore.multiSelectMode) {
     uiStore.toggleMultiSelect(props.idea.id)
-    uiStore.selectAimById(props.columnIndex, props.phaseId || undefined, props.idea.id).catch(() => {})
-    uiStore.navigatingAims = true
+    uiStore.selectIdeaById(props.columnIndex, props.phaseId || undefined, props.idea.id).catch(() => {})
+    uiStore.navigatingIdeas = true
     lastMenuOpenAt = Date.now()
     return
   }
 
-  if (!props.isThisAimSelected) {
-    uiStore.selectAimById(props.columnIndex, props.phaseId || undefined, props.idea.id).catch(() => {})
+  if (!props.isThisIdeaSelected) {
+    uiStore.selectIdeaById(props.columnIndex, props.phaseId || undefined, props.idea.id).catch(() => {})
   }
   uiStore.enterMultiSelect(props.idea.id)
-  uiStore.navigatingAims = true
+  uiStore.navigatingIdeas = true
   lastMenuOpenAt = Date.now()
 }
 
@@ -143,23 +143,23 @@ const ideaMenuItems = computed<ContextMenuItem[]>(() => {
   return base
 })
 
-const hasIncomingAims = computed(() => props.idea.supportingConnections && props.idea.supportingConnections.length > 0)
+const hasIncomingIdeas = computed(() => props.idea.supportingConnections && props.idea.supportingConnections.length > 0)
 const isExpanded = computed(() => props.ideaUiState.expanded)
 
-const subAimCount = computed(() => {
+const subIdeaCount = computed(() => {
   return props.idea.supportingConnections?.length || 0
 })
 
-const parentAimCount = computed(() => {
-  return props.idea.supportedAims?.length || 0
+const parentIdeaCount = computed(() => {
+  return props.idea.supportedIdeas?.length || 0
 })
 
 const totalValue = computed(() => {
-  return Math.round(dataStore.getAimValue(props.idea.id))
+  return Math.round(dataStore.getIdeaValue(props.idea.id))
 })
 
 const totalCost = computed(() => {
-  return Math.round(dataStore.getAimCost(props.idea.id))
+  return Math.round(dataStore.getIdeaCost(props.idea.id))
 })
 
 const intrinsicValue = computed(() => {
@@ -172,37 +172,37 @@ const intrinsicCost = computed(() => {
 
 const hasStats = computed(() =>
   totalValue.value > 0 || totalCost.value > 0 ||
-  subAimCount.value > 0 || parentAimCount.value > 0
+  subIdeaCount.value > 0 || parentIdeaCount.value > 0
 )
 
 // Get incoming ideas from the data store
-const incomingAims = computed(() => {
-  if (!hasIncomingAims.value || !props.idea.supportingConnections) return []
+const incomingIdeas = computed(() => {
+  if (!hasIncomingIdeas.value || !props.idea.supportingConnections) return []
   return props.idea.supportingConnections
     .map(conn => dataStore.ideas[conn.ideaId])
     .filter((a): a is Idea => !!a)
 })
 
-// Get parent ideas (supportedAims) from the data store
-const parentAims = computed(() => {
-  if (!props.idea.supportedAims || props.idea.supportedAims.length === 0) return []
-  return props.idea.supportedAims
+// Get parent ideas (supportedIdeas) from the data store
+const parentIdeas = computed(() => {
+  if (!props.idea.supportedIdeas || props.idea.supportedIdeas.length === 0) return []
+  return props.idea.supportedIdeas
     .map(parentId => dataStore.ideas[parentId])
     .filter((a): a is Idea => !!a)
 })
 
-const otherParentAims = computed(() => {
-  if (!parentAims.value) return []
-  return parentAims.value.filter(p => p.id !== props.parentAimId)
+const otherParentIdeas = computed(() => {
+  if (!parentIdeas.value) return []
+  return parentIdeas.value.filter(p => p.id !== props.parentIdeaId)
 })
 
-const hasMultipleParents = computed(() => parentAims.value.length > 1)
+const hasMultipleParents = computed(() => parentIdeas.value.length > 1)
 
 const isMultiSelected = computed(() => uiStore.isMultiSelected(props.idea.id))
 
 const editParentConnection = () => {
-  if (!props.parentAimId) return
-  modalStore.openConnectionDetailsModal(props.parentAimId, props.idea.id)
+  if (!props.parentIdeaId) return
+  modalStore.openConnectionDetailsModal(props.parentIdeaId, props.idea.id)
 }
 
 const statusColor = computed(() => {
@@ -213,25 +213,25 @@ const statusColor = computed(() => {
     return colorMap[props.idea.status.state] ?? '#888'
   })
 // Keeping the selection in view during navigation is the column's job
-// (useKeepSelectedAimVisible); ideas only request a scroll when they mount.
+// (useKeepSelectedIdeaVisible); ideas only request a scroll when they mount.
 
 // Ensure sub-ideas and parent ideas are loaded when expanded
 watch(isExpanded, (newVal) => {
   if (newVal) {
     // Load child ideas (supportingConnections)
     if (props.idea.supportingConnections && props.idea.supportingConnections.length > 0) {
-      dataStore.loadAims(projectStore.projectPath, props.idea.supportingConnections.map(c => c.ideaId))
+      dataStore.loadIdeas(projectStore.projectPath, props.idea.supportingConnections.map(c => c.ideaId))
     }
-    // Load parent ideas (supportedAims)
-    if (props.idea.supportedAims && props.idea.supportedAims.length > 0) {
-      dataStore.loadAims(projectStore.projectPath, props.idea.supportedAims)
+    // Load parent ideas (supportedIdeas)
+    if (props.idea.supportedIdeas && props.idea.supportedIdeas.length > 0) {
+      dataStore.loadIdeas(projectStore.projectPath, props.idea.supportedIdeas)
     }
   }
 }, { immediate: true })
 
 // Scroll on mount if already selected (for cascade restoration)
 onMounted(() => {
-  if (props.isThisAimSelected && ideaContainerRef.value) {
+  if (props.isThisIdeaSelected && ideaContainerRef.value) {
     emit('scroll-request', ideaContainerRef.value)
   }
 })
@@ -245,7 +245,7 @@ onMounted(() => {
       expanded: isExpanded,
       'multi-selected': isMultiSelected 
     }]"
-    @click.stop="onAimClick($event)"
+    @click.stop="onIdeaClick($event)"
   >
     <!-- Idea content -->
     <div class="idea-content">
@@ -269,9 +269,9 @@ onMounted(() => {
         </div>
 
         <div v-if="hasStats" class="stats-container">
-          <div class="stat-box" :title="`Supported ideas: ${parentAimCount} | Supporting ideas: ${subAimCount}`">
-            <div class="stat-top">{{ parentAimCount }}</div>
-            <div class="stat-bottom">{{ subAimCount }}</div>
+          <div class="stat-box" :title="`Supported ideas: ${parentIdeaCount} | Supporting ideas: ${subIdeaCount}`">
+            <div class="stat-top">{{ parentIdeaCount }}</div>
+            <div class="stat-bottom">{{ subIdeaCount }}</div>
           </div>
           <div class="stat-box" :title="`Total cost: ${totalCost} | Intrinsic cost: ${intrinsicCost}`">
             <div class="stat-top cost">{{ totalCost }}</div>
@@ -286,7 +286,7 @@ onMounted(() => {
           </div>
         </div>
         <button
-          v-if="parentAimId"
+          v-if="parentIdeaId"
           type="button"
           class="connection-edit-button"
           title="Edit contribution to parent"
@@ -300,11 +300,11 @@ onMounted(() => {
           {{ idea.description }}
         </div>
 
-        <div v-if="otherParentAims.length > 0" class="idea-parents">
-          <div class="parents-label">{{ parentAimId ? 'Also supports:' : 'Supports:' }}</div>
+        <div v-if="otherParentIdeas.length > 0" class="idea-parents">
+          <div class="parents-label">{{ parentIdeaId ? 'Also supports:' : 'Supports:' }}</div>
           <div class="parents-list">
             <button
-              v-for="parent in otherParentAims"
+              v-for="parent in otherParentIdeas"
               :key="parent.id"
               class="parent-idea"
               @click.stop="$emit('idea-clicked', parent.id, { ctrl: false, shift: false })"
@@ -339,14 +339,14 @@ onMounted(() => {
         <div class="indent-line"></div>
       </div>
       <IdeasList
-        :ideas="incomingAims"
+        :ideas="incomingIdeas"
         :phase-id="phaseId"
         :parent-idea-id="idea.id"
         :column-index="columnIndex"
         :indentation-level="indentationLevel + 1"
         :idea-ui-states="ideaUiState.children"
-        :is-active="isActive && isThisAimSelected"
-        :is-selected="isSelected && isThisAimSelected"
+        :is-active="isActive && isThisIdeaSelected"
+        :is-selected="isSelected && isThisIdeaSelected"
         :selected-idea-index="ideaUiState.selectedIncomingIndex"
         @scroll-request="$emit('scroll-request', $event)"
         @idea-clicked="(id, mods) => $emit('idea-clicked', id, mods)"

@@ -22,11 +22,11 @@ const { mockTrpc } = vi.hoisted(() => {
         list: { query: vi.fn() },
         getMany: { query: vi.fn() },
         get: { query: vi.fn() },
-        createFloatingAim: { mutate: vi.fn() },
+        createFloatingIdea: { mutate: vi.fn() },
         update: { mutate: vi.fn() },
         delete: { mutate: vi.fn() },
         commitToPhase: { mutate: vi.fn() },
-        connectAims: { mutate: vi.fn() },
+        connectIdeas: { mutate: vi.fn() },
         removeFromPhase: { mutate: vi.fn() }
       },
       phase: {
@@ -51,7 +51,7 @@ vi.mock('shared', async (importOriginal) => {
   const actual: any = await importOriginal()
   return {
     ...actual,
-    calculateAimValues: vi.fn(() => ({ 
+    calculateIdeaValues: vi.fn(() => ({ 
         values: new Map(), costs: new Map(), doneCosts: new Map(), flowShares: new Map(), flowValues: new Map(), totalIntrinsic: 0 
     }))
   }
@@ -73,12 +73,12 @@ describe('Multi-Client Synchronization', () => {
     const ideaId = 'idea-1'
     const phaseId = 'phase-1'
     
-    const initialAim = {
+    const initialIdea = {
       id: ideaId,
       text: 'Idea 1',
       status: { state: 'open' },
       committedIn: [],
-      supportedAims: [],
+      supportedIdeas: [],
       supportingConnections: []
     }
 
@@ -92,22 +92,22 @@ describe('Multi-Client Synchronization', () => {
 
     // Mock initial load responses
     mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
-    mockTrpc.idea.list.query.mockResolvedValue([initialAim])
+    mockTrpc.idea.list.query.mockResolvedValue([initialIdea])
     mockTrpc.phase.list.query.mockResolvedValue([initialPhase])
     mockTrpc.phase.get.query.mockImplementation(({phaseId: id}: any) => {
         if (id === phaseId) return Promise.resolve(initialPhase)
         return Promise.resolve(null)
     })
     mockTrpc.idea.get.query.mockImplementation(({ideaId: id}: any) => {
-        if (id === ideaId) return Promise.resolve(initialAim)
+        if (id === ideaId) return Promise.resolve(initialIdea)
         return Promise.resolve(null)
     })
 
     await store.loadProject(projectPath)
 
-    expect(store.floatingAims.length).toBe(1)
-    expect(store.floatingAims[0]!.id).toBe(ideaId)
-    expect(store.getAimsForPhase(phaseId).length).toBe(0)
+    expect(store.floatingIdeas.length).toBe(1)
+    expect(store.floatingIdeas[0]!.id).toBe(ideaId)
+    expect(store.getIdeasForPhase(phaseId).length).toBe(0)
 
     // 2. Simulate Remote Update: Phase updated (commitments added)
     const updatedPhase = { ...initialPhase, commitments: [ideaId] }
@@ -119,23 +119,23 @@ describe('Multi-Client Synchronization', () => {
     await subscriptionCallback({ type: 'phase', id: phaseId, projectPath })
 
     // Check state: Idea should be in phase list?
-    const phaseAims = store.getAimsForPhase(phaseId)
-    expect(phaseAims.length).toBe(1)
-    expect(phaseAims[0]!.id).toBe(ideaId)
+    const phaseIdeas = store.getIdeasForPhase(phaseId)
+    expect(phaseIdeas.length).toBe(1)
+    expect(phaseIdeas[0]!.id).toBe(ideaId)
 
     // 3. Simulate Remote Update: Idea updated (committedIn added)
-    const updatedAim = { ...initialAim, committedIn: [phaseId] }
-    mockTrpc.idea.get.query.mockResolvedValue(updatedAim)
+    const updatedIdea = { ...initialIdea, committedIn: [phaseId] }
+    mockTrpc.idea.get.query.mockResolvedValue(updatedIdea)
 
     // Trigger callback
     await subscriptionCallback({ type: 'idea', id: ideaId, projectPath })
 
     // Check: Removed from floating
-    expect(store.floatingAimsIds).not.toContain(ideaId)
-    expect(store.floatingAims.length).toBe(0)
+    expect(store.floatingIdeasIds).not.toContain(ideaId)
+    expect(store.floatingIdeas.length).toBe(0)
     
     // And still in phase
-    expect(store.getAimsForPhase(phaseId).length).toBe(1)
+    expect(store.getIdeasForPhase(phaseId).length).toBe(1)
   })
 
   it('applies pushed entities and deletions without refetching', async () => {
@@ -147,7 +147,7 @@ describe('Multi-Client Synchronization', () => {
     const ideaId = 'new-idea-3'
     const phaseId = 'phase-3'
     const initialPhase = { id: phaseId, name: 'Phase 3', parent: null, childPhaseIds: [], commitments: [] }
-    const newAim = { id: ideaId, text: 'New Idea', status: { state: 'open' }, committedIn: [phaseId], supportingConnections: [], supportedAims: [] }
+    const newIdea = { id: ideaId, text: 'New Idea', status: { state: 'open' }, committedIn: [phaseId], supportingConnections: [], supportedIdeas: [] }
 
     mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
     mockTrpc.idea.list.query.mockResolvedValue([])
@@ -155,11 +155,11 @@ describe('Multi-Client Synchronization', () => {
 
     await store.loadProject(projectPath)
 
-    await subscriptionCallback({ type: 'idea', id: ideaId, projectPath, entity: newAim })
+    await subscriptionCallback({ type: 'idea', id: ideaId, projectPath, entity: newIdea })
     await subscriptionCallback({ type: 'phase', id: phaseId, projectPath, entity: { ...initialPhase, commitments: [ideaId] } })
     await subscriptionCallback({ type: 'project', id: 'meta', projectPath, entity: { rootPhaseIds: [phaseId], name: 'Renamed' } })
 
-    expect(store.getAimsForPhase(phaseId).map((idea) => idea.id)).toEqual([ideaId])
+    expect(store.getIdeasForPhase(phaseId).map((idea) => idea.id)).toEqual([ideaId])
     expect(store.meta.name).toBe('Renamed')
     expect(mockTrpc.idea.get.query).not.toHaveBeenCalled()
     expect(mockTrpc.phase.get.query).not.toHaveBeenCalled()
@@ -176,25 +176,25 @@ describe('Multi-Client Synchronization', () => {
     const store = useDataStore()
     const projectPath = '/test/project'
     const ideaId = 'idea-race'
-    const initialAim = {
+    const initialIdea = {
       id: ideaId,
       text: 'Initial',
       status: { state: 'open' },
       committedIn: [],
-      supportedAims: [],
+      supportedIdeas: [],
       supportingConnections: []
     }
-    store.replaceAim(ideaId, initialAim as any)
+    store.replaceIdea(ideaId, initialIdea as any)
     store.subscribeToUpdates(projectPath)
 
     let resolveMutation!: (idea: any) => void
     const mutationResponse = new Promise(resolve => { resolveMutation = resolve })
     mockTrpc.idea.update.mutate.mockReturnValue(mutationResponse)
-    mockTrpc.idea.get.query.mockResolvedValue({ ...initialAim, text: 'Newest server state' })
+    mockTrpc.idea.get.query.mockResolvedValue({ ...initialIdea, text: 'Newest server state' })
 
-    const mutation = store.updateAim(projectPath, ideaId, { text: 'Mutation response' } as any)
+    const mutation = store.updateIdea(projectPath, ideaId, { text: 'Mutation response' } as any)
     await subscriptionCallback({ type: 'idea', id: ideaId, projectPath })
-    resolveMutation({ ...initialAim, text: 'Mutation response' })
+    resolveMutation({ ...initialIdea, text: 'Mutation response' })
     await mutation
 
     expect(store.ideas[ideaId]!.text).toBe('Newest server state')
@@ -239,7 +239,7 @@ describe('Multi-Client Synchronization', () => {
       text: 'Payload idea',
       status: { state: 'open' },
       committedIn: [],
-      supportedAims: [],
+      supportedIdeas: [],
       supportingConnections: []
     }
     const phase = {

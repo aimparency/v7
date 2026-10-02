@@ -96,7 +96,7 @@ Examples:
 - To wait (when no work is available right now): `{"comment": "No open ideas found, checking again later", "action": {"type": "wait", "duration": 60000}}`
 - To finish: `{"comment": "All done", "action": {"type": "stop", "reason": "everything-completed"}}`
 
-If the main agent seems to be done with all open (or partial) ideas, ask him to confirm that there are no open or partially implemented ideas inside the currently active phases or subaims of these phases. 
+If the main agent seems to be done with all open (or partial) ideas, ask him to confirm that there are no open or partially implemented ideas inside the currently active phases or subideas of these phases. 
 If the model confirms, send action "wait" with a duration of 60000 (1 minute) to check back later. Do NOT stop unless explicitly requested or if it's a permanent completion.
 
 ## Strategy for Completion

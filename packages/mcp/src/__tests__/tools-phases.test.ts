@@ -62,7 +62,7 @@ test('MCP Tools - Phase Commitments', async () => {
     phase: { name: 'P1', from: 0, to: 1000 }
   });
 
-  const idea = await caller.idea.createFloatingAim({
+  const idea = await caller.idea.createFloatingIdea({
     projectPath: ctx.projectPath,
     idea: { text: 'Idea', status: { state: 'open', comment: '', date: Date.now() } }
   });
@@ -77,8 +77,8 @@ test('MCP Tools - Phase Commitments', async () => {
   let fetchedPhase = await caller.phase.get({ projectPath: ctx.projectPath, phaseId: phase.id });
   assert.ok(fetchedPhase.commitments.includes(idea.id));
 
-  let fetchedAim = await caller.idea.get({ projectPath: ctx.projectPath, ideaId: idea.id });
-  assert.ok(fetchedAim.committedIn.includes(phase.id));
+  let fetchedIdea = await caller.idea.get({ projectPath: ctx.projectPath, ideaId: idea.id });
+  assert.ok(fetchedIdea.committedIn.includes(phase.id));
 
   // 2. Remove
   await server.callTool('remove_idea_from_phase', {

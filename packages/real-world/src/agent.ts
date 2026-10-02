@@ -3,7 +3,7 @@ import { Composio } from "@composio/core";
 import { VercelProvider } from "@composio/vercel";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { stepCountIs, streamText } from "ai";
-import { appendReflection, getTopAims, wsClient } from "./idea-client.js";
+import { appendReflection, getTopIdeas, wsClient } from "./idea-client.js";
 
 const projectPath = process.argv[2] ?? process.cwd();
 const act = process.env.REAL_WORLD_ACT === "1";
@@ -26,7 +26,7 @@ async function main() {
   console.log(`project: ${projectPath}`);
   console.log(`mode: ${act ? "ACT (mutations allowed)" : "PLAN (read-only)"}`);
 
-  const top = await getTopAims(projectPath, 3);
+  const top = await getTopIdeas(projectPath, 3);
   if (top.length === 0) throw new Error("No open ideas in the active phase.");
   const target = top[0]!;
 

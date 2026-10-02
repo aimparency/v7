@@ -8,11 +8,11 @@ import { IdeaProposalSchema, type IdeaProposal } from 'shared';
 const generateObjectUntyped = generateObject as unknown as (options: Record<string, unknown>) =>
   Promise<{ object: unknown }>;
 
-type GeneratedAim = {
+type GeneratedIdea = {
   text: string;
   description?: string;
   children: Array<{
-    child: GeneratedAim;
+    child: GeneratedIdea;
     weight: number;
     explanation?: string;
   }>;
@@ -24,11 +24,11 @@ type GeneratedAim = {
   tags?: string[];
 };
 
-const GeneratedAimSchema: z.ZodType<GeneratedAim> = z.lazy(() => z.object({
+const GeneratedIdeaSchema: z.ZodType<GeneratedIdea> = z.lazy(() => z.object({
   text: z.string().trim().min(1).max(500),
   description: z.string().trim().max(5_000).optional(),
   children: z.array(z.object({
-    child: GeneratedAimSchema,
+    child: GeneratedIdeaSchema,
     weight: z.number().finite().positive(),
     explanation: z.string().trim().max(1_000).optional()
   })).max(10),
@@ -41,7 +41,7 @@ const GeneratedAimSchema: z.ZodType<GeneratedAim> = z.lazy(() => z.object({
 }));
 
 const GeneratedProposalSchema = z.object({
-  root: GeneratedAimSchema,
+  root: GeneratedIdeaSchema,
   assumptions: z.array(z.string().trim().min(1).max(1_000)).max(10).default([]),
   questions: z.array(z.string().trim().min(1).max(1_000)).max(10).default([])
 });
@@ -78,7 +78,7 @@ async function readProposalModelConfig(projectPath: string): Promise<ProposalMod
   return { provider, model: config.model, baseUrl: config.baseUrl, apiKey };
 }
 
-export function buildAimProposalFromGenerated(input: {
+export function buildIdeaProposalFromGenerated(input: {
   transcript: string;
   existingParentIds: string[];
   phaseId?: string;
@@ -86,7 +86,7 @@ export function buildAimProposalFromGenerated(input: {
   revision?: string;
 }): IdeaProposal {
   let nextId = 0;
-  const addDraftIds = (idea: GeneratedAim): IdeaProposal['root'] => {
+  const addDraftIds = (idea: GeneratedIdea): IdeaProposal['root'] => {
     nextId += 1;
     return {
       ...idea,
@@ -109,7 +109,7 @@ export function buildAimProposalFromGenerated(input: {
   });
 }
 
-export async function generateAimProposal(input: {
+export async function generateIdeaProposal(input: {
   projectPath: string;
   transcript: string;
   existingParentIds: string[];
@@ -144,7 +144,7 @@ export async function generateAimProposal(input: {
     prompt: `Human goal:\n${input.transcript}${context}`
   });
 
-  return buildAimProposalFromGenerated({
+  return buildIdeaProposalFromGenerated({
     transcript: input.transcript,
     existingParentIds: input.existingParentIds,
     phaseId: input.phaseId,

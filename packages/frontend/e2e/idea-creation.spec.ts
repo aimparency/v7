@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { finishAimCreation } from './test-utils';
+import { finishIdeaCreation } from './test-utils';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { mkdirSync, rmSync } from 'fs';
@@ -14,7 +14,7 @@ async function createPhase(page: Page, name: string) {
   await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 }
 
-async function createAim(page: Page, text: string) {
+async function createIdea(page: Page, text: string) {
   await page.keyboard.press('o');
   await page.waitForSelector('.modal-panel', { timeout: 3000 });
   // Wait a bit for the modal to fully render
@@ -25,10 +25,10 @@ async function createAim(page: Page, text: string) {
   await ideaInput.fill(text);
   await page.waitForTimeout(100); // Wait for fill to complete
   await ideaInput.press('Enter');
-  await finishAimCreation(page);
+  await finishIdeaCreation(page);
 }
 
-async function getAllAimTexts(page: Page): Promise<string[]> {
+async function getAllIdeaTexts(page: Page): Promise<string[]> {
   // Get all idea texts including (untitled), then map them
   const ideaElements = await page.locator('.idea-content .idea-text').all();
   const texts: string[] = [];
@@ -77,19 +77,19 @@ test('idea creation with o key inserts after selected idea', async ({ page }) =>
     await page.waitForTimeout(500);
 
     // Create first idea
-    await createAim(page, 'Idea 1');
+    await createIdea(page, 'Idea 1');
     await page.waitForTimeout(500);
 
     // Create second idea (should be after Idea 1)
-    await createAim(page, 'Idea 2');
+    await createIdea(page, 'Idea 2');
     await page.waitForTimeout(500);
 
     // Create third idea (should be after Idea 2)
-    await createAim(page, 'Idea 3');
+    await createIdea(page, 'Idea 3');
     await page.waitForTimeout(500);
 
     // Verify order: should be [Idea 1, Idea 2, Idea 3]
-    let ideaTexts = await getAllAimTexts(page);
+    let ideaTexts = await getAllIdeaTexts(page);
     expect(ideaTexts).toEqual(['Idea 1', 'Idea 2', 'Idea 3']);
 
     // Now select Idea 1 (index 0) and insert after it
@@ -100,25 +100,25 @@ test('idea creation with o key inserts after selected idea', async ({ page }) =>
     await expect(page.locator('.idea-item', { hasText: 'Idea 1' }).first()).toHaveClass(/active/);
 
     // Create a new idea after Idea 1
-    await createAim(page, 'Idea 1.5');
+    await createIdea(page, 'Idea 1.5');
     await page.waitForTimeout(500);
 
     // Verify order: should be [Idea 1, Idea 1.5, Idea 2, Idea 3]
-    ideaTexts = await getAllAimTexts(page);
+    ideaTexts = await getAllIdeaTexts(page);
     expect(ideaTexts).toEqual(['Idea 1', 'Idea 1.5', 'Idea 2', 'Idea 3']);
 
     // Select Idea 2 (now at index 2) and insert after it
-    // We are currently at Idea 1.5 (index 1) because createAim selects the new idea.
+    // We are currently at Idea 1.5 (index 1) because createIdea selects the new idea.
     await page.keyboard.press('j'); // Move down to Idea 2
     
     // Wait for selection to update
     await expect(page.locator('.idea-item', { hasText: 'Idea 2' }).first()).toHaveClass(/active/);
 
-    await createAim(page, 'Idea 2.5');
+    await createIdea(page, 'Idea 2.5');
     await page.waitForTimeout(500);
 
     // Verify order: should be [Idea 1, Idea 1.5, Idea 2, Idea 2.5, Idea 3]
-    ideaTexts = await getAllAimTexts(page);
+    ideaTexts = await getAllIdeaTexts(page);
     expect(ideaTexts).toEqual(['Idea 1', 'Idea 1.5', 'Idea 2', 'Idea 2.5', 'Idea 3']);
 
   } finally {
@@ -154,15 +154,15 @@ test('idea creation with O key inserts before selected idea', async ({ page }) =
     await page.waitForTimeout(500);
 
     // Create initial ideas
-    await createAim(page, 'Idea 1');
+    await createIdea(page, 'Idea 1');
     await page.waitForTimeout(500);
-    await createAim(page, 'Idea 2');
+    await createIdea(page, 'Idea 2');
     await page.waitForTimeout(500);
-    await createAim(page, 'Idea 3');
+    await createIdea(page, 'Idea 3');
     await page.waitForTimeout(500);
 
     // Verify initial order
-    let ideaTexts = await getAllAimTexts(page);
+    let ideaTexts = await getAllIdeaTexts(page);
     expect(ideaTexts).toEqual(['Idea 1', 'Idea 2', 'Idea 3']);
 
     // Select Idea 2 (index 1)
@@ -183,7 +183,7 @@ test('idea creation with O key inserts before selected idea', async ({ page }) =
     await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 
     // Verify order: should be [Idea 1, Idea 1.5, Idea 2, Idea 3]
-    ideaTexts = await getAllAimTexts(page);
+    ideaTexts = await getAllIdeaTexts(page);
     expect(ideaTexts).toEqual(['Idea 1', 'Idea 1.5', 'Idea 2', 'Idea 3']);
 
   } finally {

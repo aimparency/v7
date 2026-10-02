@@ -40,7 +40,7 @@ export const appRouter = router({
         throw new Error('Not implemented');
       }),
 
-    createFloatingAim: publicProcedure
+    createFloatingIdea: publicProcedure
       .input(z.object({
         projectPath: z.string(),
         idea: z.object({

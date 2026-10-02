@@ -283,7 +283,7 @@ class AnimatorStateMachine {
         await this.startWork(action.idea_id, action.strategy)
         break
       case 'break_down_ideas':
-        await this.breakDownAim(action.idea_id)
+        await this.breakDownIdea(action.idea_id)
         break
       case 'ideate':
         await this.ideate(action.ideation_type)
@@ -334,7 +334,7 @@ const PROMPTS = {
 
 Current project context:
 - Active phases: ${context.activePhases}
-- Open ideas: ${context.openAimsCount}
+- Open ideas: ${context.openIdeasCount}
 - Compute budget: ${context.computeCredits} credits
 
 Available actions:

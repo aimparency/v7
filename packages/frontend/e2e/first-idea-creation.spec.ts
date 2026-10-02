@@ -71,7 +71,7 @@ test('create first idea in empty phase shows modal and creates idea', async ({ p
         return {
           mode: store.mode,
           selectedColumn: store.selectedColumn,
-          rootAimsSelectedIndex: store.rootAimsSelectedIndex
+          rootIdeasSelectedIndex: store.rootIdeasSelectedIndex
         };
       }
       return null;

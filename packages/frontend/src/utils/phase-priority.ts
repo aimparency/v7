@@ -1,6 +1,6 @@
 import type { Idea, Phase } from '../stores/data'
 
-export type PrioritizedPhaseAim = {
+export type PrioritizedPhaseIdea = {
   idea: Idea
   phaseId: string
   priority: number
@@ -27,13 +27,13 @@ export function collectDescendantPhaseIds(
   return ids
 }
 
-export function rankAimsForPhaseTree(
+export function rankIdeasForPhaseTree(
   rootPhaseId: string,
   phases: Record<string, Phase>,
   ideas: Record<string, Idea>,
   priorities: Map<string, number>,
   state: string
-): PrioritizedPhaseAim[] {
+): PrioritizedPhaseIdea[] {
   const phaseIds = collectDescendantPhaseIds(rootPhaseId, phases)
   const membership = new Map<string, { phaseId: string, directlyCommitted: boolean }>()
   const pending: Array<{ ideaId: string, phaseId: string }> = []
@@ -95,7 +95,7 @@ export function rankAimsForPhaseTree(
     )
 }
 
-export function formatAimPriority(priority: number): string {
+export function formatIdeaPriority(priority: number): string {
   if (!Number.isFinite(priority) || priority < 0) return '0×'
   if (priority >= 100) return `${Math.round(priority)}×`
   if (priority >= 10) return `${priority.toFixed(1)}×`

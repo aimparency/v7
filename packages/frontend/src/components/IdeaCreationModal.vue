@@ -5,7 +5,7 @@ import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import FormModalShell from './FormModalShell.vue'
-import type { Idea, SearchAimResult } from 'shared'
+import type { Idea, SearchIdeaResult } from 'shared'
 import TagInput from './TagInput.vue'
 import { IDEA_DEFAULTS } from '../constants/ideaDefaults'
 import IdeaSearchPicker from './IdeaSearchPicker.vue'
@@ -26,9 +26,9 @@ const ideaCost = ref(IDEA_DEFAULTS.cost)
 const ideaDuration = ref(IDEA_DEFAULTS.duration)
 const ideaLoopWeight = ref(IDEA_DEFAULTS.loopWeight)
 const ideaTags = ref<string[]>([...IDEA_DEFAULTS.tags])
-const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
+const supportedIdeasList = ref<{ id: string, text: string, weight: number }[]>([])
 const supportingConnectionsList = ref<{ id: string, text: string, weight: number }[]>([])
-const searchSelection = ref<{ type: 'idea'; data: SearchAimResult } | { type: 'option'; data: IdeaSearchAdditionalOption } | null>(null)
+const searchSelection = ref<{ type: 'idea'; data: SearchIdeaResult } | { type: 'option'; data: IdeaSearchAdditionalOption } | null>(null)
 const ideaSearchPicker = ref<InstanceType<typeof IdeaSearchPicker>>()
 
 const statuses = computed(() => dataStore.getStatuses)
@@ -72,11 +72,11 @@ const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 
 const openParentSearch = () => {
-  modalStore.openAimSearch('pick', (payload) => {
+  modalStore.openIdeaSearch('pick', (payload) => {
     if (payload.type !== 'idea') return
     const idea = payload.data
-    if (!supportedAimsList.value.some(a => a.id === idea.id)) {
-      supportedAimsList.value.push({ id: idea.id, text: idea.text, weight: 1 })
+    if (!supportedIdeasList.value.some(a => a.id === idea.id)) {
+      supportedIdeasList.value.push({ id: idea.id, text: idea.text, weight: 1 })
     }
   }, undefined, {
     title: 'Select Supported Idea',
@@ -85,7 +85,7 @@ const openParentSearch = () => {
 }
 
 const openChildSearch = () => {
-  modalStore.openAimSearch('pick', (payload) => {
+  modalStore.openIdeaSearch('pick', (payload) => {
     if (payload.type !== 'idea') return
     const idea = payload.data
     if (!supportingConnectionsList.value.some(a => a.id === idea.id)) {
@@ -98,7 +98,7 @@ const openChildSearch = () => {
 }
 
 const removeParent = (index: number) => {
-  supportedAimsList.value.splice(index, 1)
+  supportedIdeasList.value.splice(index, 1)
 }
 
 const removeChild = (index: number) => {
@@ -117,7 +117,7 @@ const createNewOption = computed<IdeaSearchAdditionalOption[]>(() => {
 
 const isSubmitting = ref(false)
 
-const createAim = async () => {
+const createIdea = async () => {
   if (isSubmitting.value) return
   if (!ideaText.value.trim() && !selectedSearchResult.value) return
   if (!Number.isFinite(ideaCost.value) || ideaCost.value <= 0) {
@@ -130,16 +130,16 @@ const createAim = async () => {
   }
   validationError.value = ''
 
-  const weight = supportedAimsList.value.length > 0 ? (supportedAimsList.value[0]?.weight ?? 1) : 1
+  const weight = supportedIdeasList.value.length > 0 ? (supportedIdeasList.value[0]?.weight ?? 1) : 1
 
   isSubmitting.value = true
   try {
     if (selectedSearchResult.value) {
       // Link existing idea
-      await uiStore.createAim(selectedSearchResult.value.id, true, undefined, undefined, 0, 1, 1, weight)
+      await uiStore.createIdea(selectedSearchResult.value.id, true, undefined, undefined, 0, 1, 1, weight)
     } else {
       // Create new idea with text and description
-      await uiStore.createAim(
+      await uiStore.createIdea(
         ideaText.value.trim(), 
         false, 
         ideaDescription.value.trim(), 
@@ -148,7 +148,7 @@ const createAim = async () => {
         ideaLoopWeight.value,
         ideaCost.value,
         weight,
-        supportedAimsList.value.map(a => a.id),
+        supportedIdeasList.value.map(a => a.id),
         supportingConnectionsList.value.map(a => ({ ideaId: a.id, weight: a.weight })),
         ideaColor.value || null,
         selectedStatus.value as any,
@@ -166,7 +166,7 @@ const createAim = async () => {
 }
 
 const handleSubmit = () => {
-  createAim()
+  createIdea()
 }
 
 const validationError = ref('')
@@ -188,7 +188,7 @@ const handleInputKeydown = (event: KeyboardEvent) => {
   } else if (event.key === 'Escape') {
     event.preventDefault()
     event.stopPropagation() // Prevent escape from bubbling to global handler
-    modalStore.closeAimModal()
+    modalStore.closeIdeaModal()
   }
 }
 
@@ -209,13 +209,13 @@ const handleDescriptionEscape = () => {
 }
 
 const handleSearchActivate = (
-  payload: { type: 'idea'; data: SearchAimResult } | { type: 'option'; data: IdeaSearchAdditionalOption }
+  payload: { type: 'idea'; data: SearchIdeaResult } | { type: 'option'; data: IdeaSearchAdditionalOption }
 ) => {
   searchSelection.value = payload
   handleSubmit()
 }
 
-const focusAimTextInput = () => {
+const focusIdeaTextInput = () => {
   ideaTextInput.value?.focus()
 }
 
@@ -260,27 +260,27 @@ const handleModalKeydown = (event: KeyboardEvent) => {
 }
 
 onMounted(async () => {
-  supportedAimsList.value = []
+  supportedIdeasList.value = []
 
   // The implicit parent comes from the columns selection path. Graph-opened
   // modals connect via their own creation callback, so prefilling here would
   // attach the new idea to an unrelated columns-view idea as well.
   const path = uiStore.getSelectionPath()
   if (modalStore.ideaModalSource === 'columns' && path.ideas.length > 0) {
-    let parentAim: Idea | undefined
-    const currentAim = path.ideas[path.ideas.length - 1]
-    const currentAimState = path.ideaStates[path.ideaStates.length - 1]
+    let parentIdea: Idea | undefined
+    const currentIdea = path.ideas[path.ideas.length - 1]
+    const currentIdeaState = path.ideaStates[path.ideaStates.length - 1]
     
-    if (insertsAsFirstChild(currentAim, currentAimState, modalStore.ideaModalInsertPosition)) {
-      parentAim = currentAim
+    if (insertsAsFirstChild(currentIdea, currentIdeaState, modalStore.ideaModalInsertPosition)) {
+      parentIdea = currentIdea
     } else if (path.ideas.length > 1) {
-      parentAim = path.ideas[path.ideas.length - 2]
+      parentIdea = path.ideas[path.ideas.length - 2]
     }
     
-    if (parentAim) {
-      supportedAimsList.value.push({
-        id: parentAim.id,
-        text: parentAim.text,
+    if (parentIdea) {
+      supportedIdeasList.value.push({
+        id: parentIdea.id,
+        text: parentIdea.text,
         weight: 1
       })
     }
@@ -310,7 +310,7 @@ onMounted(async () => {
     :show="true"
     title="Add Idea"
     :header-style="headerStyle"
-    @request-close="modalStore.closeAimModal()"
+    @request-close="modalStore.closeIdeaModal()"
   >
     <template #header-right>
       <div class="color-picker-wrapper">
@@ -365,7 +365,7 @@ onMounted(async () => {
         <div
           v-if="hasSearchText"
           class="search-results"
-          @keydown.shift.tab.exact.prevent="focusAimTextInput"
+          @keydown.shift.tab.exact.prevent="focusIdeaTextInput"
         >
           <IdeaSearchPicker
             ref="ideaSearchPicker"
@@ -379,7 +379,7 @@ onMounted(async () => {
             :select-on-hover="false"
             :result-limit="5"
             @activate="handleSearchActivate"
-            @escape="focusAimTextInput"
+            @escape="focusIdeaTextInput"
             @selection-change="searchSelection = $event"
           />
 
@@ -428,7 +428,7 @@ onMounted(async () => {
                 <label>Supports (Parents)</label>
                 <button ref="addParentBtn" @click="openParentSearch" class="btn-small" title="Add Parent">+</button>
             </div>
-            <div v-for="(parent, index) in supportedAimsList" :key="parent.id" class="supported-idea-row">
+            <div v-for="(parent, index) in supportedIdeasList" :key="parent.id" class="supported-idea-row">
                 <span class="parent-text">{{ parent.text }}</span>
                 <div class="weight-input">
                     <span class="weight-label">Weight:</span>
@@ -526,7 +526,7 @@ onMounted(async () => {
     </div>
       
     <template #footer>
-        <button @click="modalStore.closeAimModal" class="btn-secondary">
+        <button @click="modalStore.closeIdeaModal" class="btn-secondary">
           Cancel
         </button>
         <button

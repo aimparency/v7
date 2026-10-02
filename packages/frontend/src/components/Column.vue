@@ -4,7 +4,7 @@ import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useScrollIntoView } from '../composables/useScrollIntoView'
-import { useKeepSelectedAimVisible } from '../composables/useKeepSelectedAimVisible'
+import { useKeepSelectedIdeaVisible } from '../composables/useKeepSelectedIdeaVisible'
 import PhaseComponent from './Phase.vue'
 import type { PhaseLevelEntry } from '../stores/data'
 
@@ -34,7 +34,7 @@ const selectionTravelDirection = ref<'forward' | 'backward' | 'preserve'>('prese
 // Last selection the column acted on; transient gaps never overwrite it.
 let settledSelection: { index: number; key: string; isSelected: boolean } | null = null
 
-const handleAimClicked = (columnIndex: number, phaseId: string | undefined, ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
+const handleIdeaClicked = (columnIndex: number, phaseId: string | undefined, ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isCtrl = !!(mods && mods.ctrl)
   const isShift = !!(mods && mods.shift)
   const isModeToggle = uiStore.multiSelectMode && !isShift
@@ -42,7 +42,7 @@ const handleAimClicked = (columnIndex: number, phaseId: string | undefined, idea
     uiStore.toggleMultiSelect(ideaId)
   } else if (isShift) {
     if (phaseId) {
-      const ordered = dataStore.getAimsForPhase(phaseId).map((a: any) => a.id)
+      const ordered = dataStore.getIdeasForPhase(phaseId).map((a: any) => a.id)
       if (ordered.includes(ideaId)) {
         uiStore.selectMultiRange(ideaId, ordered)
       }
@@ -53,9 +53,9 @@ const handleAimClicked = (columnIndex: number, phaseId: string | undefined, idea
   } else {
     uiStore.clearMultiSelect()
   }
-  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentAim()?.id === ideaId) return
+  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentIdea()?.id === ideaId) return
   // Always update primary nav selection (so keyboard etc still work on it)
-  uiStore.selectAimById(columnIndex, phaseId, ideaId).catch(() => {})
+  uiStore.selectIdeaById(columnIndex, phaseId, ideaId).catch(() => {})
 }
 
 const ESTIMATED_PHASE_HEIGHT = 180
@@ -328,7 +328,7 @@ const SCROLL_PRIORITY = { phase: 0, idea: 1 } as const
 // How long a just-applied idea scroll suppresses a late phase realign that would
 // otherwise yank the view off the selected idea (the realign runs ~120ms later).
 const IDEA_SCROLL_HOLD_MS = 300
-let lastAimScrollAt = 0
+let lastIdeaScrollAt = 0
 let pendingScroll: { top: number; behavior: ScrollBehavior; priority: number } | null = null
 let pendingScrollFrame: number | null = null
 
@@ -339,7 +339,7 @@ const requestScroll = (
 ) => {
   const container = phaseListRef.value
   if (!container) return
-  if (source === 'idea') lastAimScrollAt = performance.now()
+  if (source === 'idea') lastIdeaScrollAt = performance.now()
 
   const priority = SCROLL_PRIORITY[source]
   // Keep an already-queued higher-priority target; otherwise the latest wins.
@@ -369,8 +369,8 @@ const scrollSelectedEntryIntoView = async (
   // back off it. Skip the realign in that window. The immediate, same-frame
   // call is NOT skipped here — the coalescer already lets the idea target win
   // over the phase target within the frame, and aimless placeholder entries
-  // (which never set lastAimScrollAt) keep realigning normally.
-  if (isRealign && performance.now() - lastAimScrollAt < IDEA_SCROLL_HOLD_MS) return
+  // (which never set lastIdeaScrollAt) keep realigning normally.
+  if (isRealign && performance.now() - lastIdeaScrollAt < IDEA_SCROLL_HOLD_MS) return
 
   await nextTick()
   const selectedEntry = getSelectedEntry()
@@ -464,7 +464,7 @@ const { handleScrollRequest } = useScrollIntoView(
   (top, behavior) => requestScroll(top, behavior, 'idea')
 )
 
-useKeepSelectedAimVisible(phaseListRef, () => uiStore.activeColumn === props.columnIndex, handleScrollRequest)
+useKeepSelectedIdeaVisible(phaseListRef, () => uiStore.activeColumn === props.columnIndex, handleScrollRequest)
 
 const updateRevealedPlaceholder = async () => {
   const selectedEntry = getSelectedEntry()
@@ -647,7 +647,7 @@ onBeforeUnmount(() => {
             :is-selected="getSelectableIndex(entry.key) === selectedPhaseIndex"
             :is-active="getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex"
             @phase-clicked="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
-            @idea-clicked="(ideaId, mods) => handleAimClicked(columnIndex, entry.phase.id, ideaId, mods)"
+            @idea-clicked="(ideaId, mods) => handleIdeaClicked(columnIndex, entry.phase.id, ideaId, mods)"
             @scroll-request="handleScrollRequest"
           />
         </div>

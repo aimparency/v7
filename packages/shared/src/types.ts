@@ -26,7 +26,7 @@ export type Connection = z.infer<typeof ConnectionSchema>;
 // which the value engine treats as a leaf sink. Kept in its own array
 // (supportingRepos) rather than overloaded onto ConnectionSchema so idea edges
 // keep their required ideaId and the consistency checker skips repo edges for
-// free (it only walks supportingConnections/supportedAims).
+// free (it only walks supportingConnections/supportedIdeas).
 export const RepoConnectionSchema = z.object({
   repoId: z.string().uuid(),
   relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
@@ -61,7 +61,7 @@ export const IdeaSchema = z.object({
   supportingConnections: z.array(ConnectionSchema).default([]),
   supportingRepos: z.array(RepoConnectionSchema).optional(), // repo-level cross-repo links (this idea is supported by a whole external repo)
   incoming: z.array(z.string().uuid()).optional(), // Deprecated: use supportingConnections
-  supportedAims: z.array(z.string().uuid()),
+  supportedIdeas: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
   status: IdeaStatusSchema,
   intrinsicValue: z.number().finite().nonnegative().default(0), // Standalone estimated value
@@ -153,7 +153,7 @@ export type Phase = z.infer<typeof PhaseSchema>;
 export type IdeaStatus = z.infer<typeof IdeaStatusSchema>;
 export type ProjectMeta = z.infer<typeof ProjectMetaSchema>;
 export type SystemStatus = z.infer<typeof SystemStatusSchema>;
-export type SearchAimResult = Idea & {
+export type SearchIdeaResult = Idea & {
   score?: number;
   idMatch?: {
     prefix: string;

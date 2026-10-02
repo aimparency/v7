@@ -70,7 +70,7 @@ async askWatchdog() {
     supervisedContext,
     // TODO: Get these from MCP or project state
     activePhases: [],
-    openAimsCount: 0,
+    openIdeasCount: 0,
     computeCredits: 0
   };
 
@@ -276,7 +276,7 @@ Begin implementation.`;
 private async executeBreakDown(ideaId: string): Promise<void> {
   this.log(`[StateMachine] Breaking down idea: ${ideaId}`);
 
-  const prompt = `Break down this idea into smaller sub-ideas. Use create_idea MCP tool with supportedAims array pointing to parent: ${ideaId}`;
+  const prompt = `Break down this idea into smaller sub-ideas. Use create_idea MCP tool with supportedIdeas array pointing to parent: ${ideaId}`;
 
   await this.post(this.worker, prompt);
 }

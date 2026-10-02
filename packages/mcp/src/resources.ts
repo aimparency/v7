@@ -4,7 +4,7 @@ import { PROJECT_PATH_PARAMETER, PROJECT_PATH_MISSING_ERROR } from "./constants.
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { AIMPARENCY_DIR_NAME } from "shared";
 
-function formatAim(idea: any) {
+function formatIdea(idea: any) {
   if (idea.supportingConnections) {
     if (idea.supportingConnections.length === 0) {
         delete idea.supportingConnections;
@@ -15,15 +15,15 @@ function formatAim(idea: any) {
         });
     }
   }
-  if (idea.supportedAims && idea.supportedAims.length === 0) delete idea.supportedAims;
+  if (idea.supportedIdeas && idea.supportedIdeas.length === 0) delete idea.supportedIdeas;
   if (idea.committedIn && idea.committedIn.length === 0) delete idea.committedIn;
   if (idea.tags && idea.tags.length === 0) delete idea.tags;
   
   return idea;
 }
 
-function formatAims(ideas: any[]) {
-  return ideas.map(formatAim);
+function formatIdeas(ideas: any[]) {
+  return ideas.map(formatIdea);
 }
 
 // Helper to parse resource URIs
@@ -79,7 +79,7 @@ export function registerResources(server: Server, caller: any) {
               {
                 uri,
                 mimeType: "application/json",
-                text: JSON.stringify(formatAims(ideas), null, 2),
+                text: JSON.stringify(formatIdeas(ideas), null, 2),
               },
             ],
           };
@@ -89,7 +89,7 @@ export function registerResources(server: Server, caller: any) {
 
         if (parsed.subpath === "supporting_connections") {
           const connections = idea.supportingConnections || [];
-          const supportingAims = await Promise.all(
+          const supportingIdeas = await Promise.all(
             connections.map((conn: any) => caller.idea.get.query({ projectPath, ideaId: conn.ideaId }))
           );
           return {
@@ -97,15 +97,15 @@ export function registerResources(server: Server, caller: any) {
               {
                 uri,
                 mimeType: "application/json",
-                text: JSON.stringify(formatAims(supportingAims), null, 2),
+                text: JSON.stringify(formatIdeas(supportingIdeas), null, 2),
               },
             ],
           };
         }
 
         if (parsed.subpath === "supported_ideas") {
-          const supported = idea.supportedAims || [];
-          const supportedAims = await Promise.all(
+          const supported = idea.supportedIdeas || [];
+          const supportedIdeas = await Promise.all(
             supported.map((id: string) => caller.idea.get.query({ projectPath, ideaId: id }))
           );
           return {
@@ -113,7 +113,7 @@ export function registerResources(server: Server, caller: any) {
               {
                 uri,
                 mimeType: "application/json",
-                text: JSON.stringify(formatAims(supportedAims), null, 2),
+                text: JSON.stringify(formatIdeas(supportedIdeas), null, 2),
               },
             ],
           };
@@ -124,7 +124,7 @@ export function registerResources(server: Server, caller: any) {
             {
               uri,
               mimeType: "application/json",
-              text: JSON.stringify(formatAim(idea), null, 2),
+              text: JSON.stringify(formatIdea(idea), null, 2),
             },
           ],
         };
@@ -144,7 +144,7 @@ export function registerResources(server: Server, caller: any) {
             {
               uri,
               mimeType: "application/json",
-                              text: JSON.stringify(formatAims(ideas), null, 2),            },
+                              text: JSON.stringify(formatIdeas(ideas), null, 2),            },
           ],
         };
       }
@@ -161,7 +161,7 @@ export function registerResources(server: Server, caller: any) {
               {
                 uri,
                 mimeType: "application/json",
-                                text: JSON.stringify(formatAims(ideas), null, 2),              },
+                                text: JSON.stringify(formatIdeas(ideas), null, 2),              },
             ],
           };
         }

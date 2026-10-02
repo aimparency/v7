@@ -24,7 +24,7 @@ export const IDEA_DEFAULTS = {
 /**
  * Helper to get a fresh copy of defaults (to avoid mutation)
  */
-export function getNewAimDefaults() {
+export function getNewIdeaDefaults() {
   return {
     text: IDEA_DEFAULTS.text,
     description: IDEA_DEFAULTS.description,

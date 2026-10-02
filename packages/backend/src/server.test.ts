@@ -27,10 +27,10 @@ afterEach(async () => {
   clearIndices(testProjectPath);
 });
 
-test('connectAims - connects two existing ideas', async () => {
+test('connectIdeas - connects two existing ideas', async () => {
 
   // Create parent idea
-  const parentResult = await caller.idea.createFloatingAim({
+  const parentResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Parent Idea',
@@ -39,7 +39,7 @@ test('connectAims - connects two existing ideas', async () => {
   });
 
   // Create child idea
-  const childResult = await caller.idea.createFloatingAim({
+  const childResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Child Idea',
@@ -48,12 +48,12 @@ test('connectAims - connects two existing ideas', async () => {
   });
 
   // Connect them
-  await caller.idea.connectAims({
+  await caller.idea.connectIdeas({
     projectPath: testProjectPath,
-    parentAimId: parentResult.id,
-    childAimId: childResult.id,
+    parentIdeaId: parentResult.id,
+    childIdeaId: childResult.id,
     parentIncomingIndex: 0, 
-    childSupportedAimsIndex: 0
+    childSupportedIdeasIndex: 0
   });
 
   // Verify connection
@@ -68,13 +68,13 @@ test('connectAims - connects two existing ideas', async () => {
 
   assert.equal(updatedParent.supportingConnections.length, 1);
   assert.equal(updatedParent.supportingConnections[0].ideaId, childResult.id);
-  assert.deepEqual(updatedChild.supportedAims, [parentResult.id]);
+  assert.deepEqual(updatedChild.supportedIdeas, [parentResult.id]);
 });
 
-test('createSubAim - creates and connects sub-idea', async () => {
+test('createSubIdea - creates and connects sub-idea', async () => {
 
   // Create parent idea
-  const parentResult = await caller.idea.createFloatingAim({
+  const parentResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Parent Idea',
@@ -83,9 +83,9 @@ test('createSubAim - creates and connects sub-idea', async () => {
   });
 
   // Create sub-idea
-  const subAimResult = await caller.idea.createSubAim({
+  const subIdeaResult = await caller.idea.createSubIdea({
     projectPath: testProjectPath,
-    parentAimId: parentResult.id,
+    parentIdeaId: parentResult.id,
     idea: {
       text: 'Sub Idea',
       status: { state: 'open', comment: '', date: Date.now() }
@@ -98,35 +98,35 @@ test('createSubAim - creates and connects sub-idea', async () => {
     projectPath: testProjectPath,
     ideaId: parentResult.id
   });
-  const subAim = await caller.idea.get({
+  const subIdea = await caller.idea.get({
     projectPath: testProjectPath,
-    ideaId: subAimResult.id
+    ideaId: subIdeaResult.id
   });
 
   assert.equal(updatedParent.supportingConnections.length, 1);
-  assert.equal(updatedParent.supportingConnections[0].ideaId, subAimResult.id);
-  assert.deepEqual(subAim.supportedAims, [parentResult.id]);
-  assert.equal(subAim.text, 'Sub Idea');
+  assert.equal(updatedParent.supportingConnections[0].ideaId, subIdeaResult.id);
+  assert.deepEqual(subIdea.supportedIdeas, [parentResult.id]);
+  assert.equal(subIdea.text, 'Sub Idea');
 });
 
 test('idea creation assigns grey roots and distinct parent-derived child colors', async () => {
-  const parent = await caller.idea.createFloatingAim({
+  const parent = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Root' }
   });
-  const firstChild = await caller.idea.createSubAim({
+  const firstChild = await caller.idea.createSubIdea({
     projectPath: testProjectPath,
-    parentAimId: parent.id,
+    parentIdeaId: parent.id,
     idea: { text: 'First child' }
   });
-  const secondChild = await caller.idea.createSubAim({
+  const secondChild = await caller.idea.createSubIdea({
     projectPath: testProjectPath,
-    parentAimId: parent.id,
+    parentIdeaId: parent.id,
     idea: { text: 'Second child' }
   });
-  const explicitChild = await caller.idea.createSubAim({
+  const explicitChild = await caller.idea.createSubIdea({
     projectPath: testProjectPath,
-    parentAimId: parent.id,
+    parentIdeaId: parent.id,
     idea: { text: 'Explicit child', color: '#123456' }
   });
 
@@ -137,7 +137,7 @@ test('idea creation assigns grey roots and distinct parent-derived child colors'
   assert.equal(explicitChild.color, '#123456');
 });
 
-test('createCommittedAim - creates and commits idea to phase', async () => {
+test('createCommittedIdea - creates and commits idea to phase', async () => {
 
   // Create phase
   const phaseResult = await caller.phase.create({
@@ -150,7 +150,7 @@ test('createCommittedAim - creates and commits idea to phase', async () => {
   });
 
   // Create committed idea
-  const ideaResult = await caller.idea.createAimInPhase({
+  const ideaResult = await caller.idea.createIdeaInPhase({
     projectPath: testProjectPath,
     phaseId: phaseResult.id,
     idea: {
@@ -176,7 +176,7 @@ test('createCommittedAim - creates and commits idea to phase', async () => {
 });
 
 test('getMany - skips missing ideas instead of failing the full batch', async () => {
-  const ideaResult = await caller.idea.createFloatingAim({
+  const ideaResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Existing Idea',
@@ -195,8 +195,8 @@ test('getMany - skips missing ideas instead of failing the full batch', async ()
   assert.deepEqual(results.map((idea) => idea.id), [ideaResult.id]);
 });
 
-test('approveAimSubtree persists the approved structure once and safely replays retries', async () => {
-  const parent = await caller.idea.createFloatingAim({
+test('approveIdeaSubtree persists the approved structure once and safely replays retries', async () => {
+  const parent = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Existing parent' }
   });
@@ -233,13 +233,13 @@ test('approveAimSubtree persists the approved structure once and safely replays 
     }
   };
 
-  const first = await caller.idea.approveAimSubtree({
+  const first = await caller.idea.approveIdeaSubtree({
     projectPath: testProjectPath,
     proposal,
     revision: proposal.revision,
     idempotencyKey: 'approval-test-key'
   });
-  const replay = await caller.idea.approveAimSubtree({
+  const replay = await caller.idea.approveIdeaSubtree({
     projectPath: testProjectPath,
     proposal,
     revision: proposal.revision,
@@ -254,13 +254,13 @@ test('approveAimSubtree persists the approved structure once and safely replays 
 
   const ideas = await caller.idea.list({ projectPath: testProjectPath });
   assert.equal(ideas.length, 4);
-  const root = await caller.idea.get({ projectPath: testProjectPath, ideaId: first.rootAimId });
+  const root = await caller.idea.get({ projectPath: testProjectPath, ideaId: first.rootIdeaId });
   const child = await caller.idea.get({ projectPath: testProjectPath, ideaId: first.idMap.child });
-  assert.deepEqual(root.supportedAims, [parent.id]);
+  assert.deepEqual(root.supportedIdeas, [parent.id]);
   assert.equal(root.supportingConnections[0].ideaId, child.id);
   assert.equal(root.supportingConnections[0].weight, 2);
   assert.equal(root.supportingConnections[0].explanation, 'Reduces repetitive coordination');
-  assert.deepEqual(child.supportedAims, [root.id]);
+  assert.deepEqual(child.supportedIdeas, [root.id]);
 
   const updatedParent = await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id });
   assert.equal(updatedParent.supportingConnections.filter(connection => connection.ideaId === root.id).length, 1);
@@ -268,7 +268,7 @@ test('approveAimSubtree persists the approved structure once and safely replays 
   assert.deepEqual(updatedPhase.commitments, [root.id]);
 });
 
-test('approveAimSubtree validates references and exact revision before graph writes', async () => {
+test('approveIdeaSubtree validates references and exact revision before graph writes', async () => {
   const proposal = {
     revision: 'revision-2',
     sourceText: 'A proposed goal',
@@ -279,7 +279,7 @@ test('approveAimSubtree validates references and exact revision before graph wri
   };
 
   await assert.rejects(
-    caller.idea.approveAimSubtree({
+    caller.idea.approveIdeaSubtree({
       projectPath: testProjectPath,
       proposal,
       revision: 'stale-revision',
@@ -288,7 +288,7 @@ test('approveAimSubtree validates references and exact revision before graph wri
     /Stale approval revision/
   );
   await assert.rejects(
-    caller.idea.approveAimSubtree({
+    caller.idea.approveIdeaSubtree({
       projectPath: testProjectPath,
       proposal,
       revision: proposal.revision,
@@ -298,10 +298,10 @@ test('approveAimSubtree validates references and exact revision before graph wri
   assert.deepEqual(await caller.idea.list({ projectPath: testProjectPath }), []);
 });
 
-test('connectAims - repositioning existing connections', async () => {
+test('connectIdeas - repositioning existing connections', async () => {
 
   // Create parent idea
-  const parentResult = await caller.idea.createFloatingAim({
+  const parentResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Parent Idea',
@@ -310,7 +310,7 @@ test('connectAims - repositioning existing connections', async () => {
   });
 
   // Create two child ideas
-  const child1Result = await caller.idea.createFloatingAim({
+  const child1Result = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Child 1',
@@ -318,7 +318,7 @@ test('connectAims - repositioning existing connections', async () => {
     }
   });
 
-  const child2Result = await caller.idea.createFloatingAim({
+  const child2Result = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Child 2',
@@ -327,21 +327,21 @@ test('connectAims - repositioning existing connections', async () => {
   });
 
   // Connect first child at position 0
-  await caller.idea.connectAims({
+  await caller.idea.connectIdeas({
     projectPath: testProjectPath,
-    parentAimId: parentResult.id,
-    childAimId: child1Result.id,
+    parentIdeaId: parentResult.id,
+    childIdeaId: child1Result.id,
     parentIncomingIndex: 0,
-    childSupportedAimsIndex: 0
+    childSupportedIdeasIndex: 0
   });
 
   // Connect second child at position 0 (should move first child to position 1)
-  await caller.idea.connectAims({
+  await caller.idea.connectIdeas({
     projectPath: testProjectPath,
-    parentAimId: parentResult.id,
-    childAimId: child2Result.id,
+    parentIdeaId: parentResult.id,
+    childIdeaId: child2Result.id,
     parentIncomingIndex: 0, 
-    childSupportedAimsIndex: 0
+    childSupportedIdeasIndex: 0
   });
 
   // Verify repositioning
@@ -367,7 +367,7 @@ test('list - filters ideas by status and phase', async () => {
   });
 
   // Create open idea in phase
-  await caller.idea.createAimInPhase({
+  await caller.idea.createIdeaInPhase({
     projectPath: testProjectPath,
     phaseId: phaseResult.id,
     idea: {
@@ -377,7 +377,7 @@ test('list - filters ideas by status and phase', async () => {
   });
 
   // Create done idea floating
-  await caller.idea.createFloatingAim({
+  await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Done Floating Idea',
@@ -386,28 +386,28 @@ test('list - filters ideas by status and phase', async () => {
   });
 
   // Test status filter
-  const openAims = await caller.idea.list({
+  const openIdeas = await caller.idea.list({
     projectPath: testProjectPath,
     status: 'open'
   });
-  assert.equal(openAims.length, 1);
-  assert.equal(openAims[0].text, 'Open Idea In Phase');
+  assert.equal(openIdeas.length, 1);
+  assert.equal(openIdeas[0].text, 'Open Idea In Phase');
 
   // Test phase filter
-  const phaseAims = await caller.idea.list({
+  const phaseIdeas = await caller.idea.list({
     projectPath: testProjectPath,
     phaseId: phaseResult.id
   });
-  assert.equal(phaseAims.length, 1);
-  assert.equal(phaseAims[0].text, 'Open Idea In Phase');
+  assert.equal(phaseIdeas.length, 1);
+  assert.equal(phaseIdeas[0].text, 'Open Idea In Phase');
 
   // Test combined filter
-  const filteredAims = await caller.idea.list({
+  const filteredIdeas = await caller.idea.list({
     projectPath: testProjectPath,
     status: 'open',
     phaseId: phaseResult.id
   });
-  assert.equal(filteredAims.length, 1);
+  assert.equal(filteredIdeas.length, 1);
 });
 
 test('phase.list skips malformed phase files', async () => {
@@ -671,21 +671,21 @@ test('phase migration preserves canonical order while repairing missing and stal
 
 test('search - matches ideas using search index', async () => {
   // Create test ideas
-  await caller.idea.createFloatingAim({
+  await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Apple Pie', status: { state: 'open', comment: '', date: Date.now() } }
   });
-  await caller.idea.createFloatingAim({
+  await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Banana Split', status: { state: 'open', comment: '', date: Date.now() } }
   });
-  await caller.idea.createFloatingAim({
+  await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Apple Cider', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
-  // Build index (usually happens on project load, but we can trigger it or trust createFloatingAim updates it)
-  // createFloatingAim calls addAimToIndex, so it should be immediate.
+  // Build index (usually happens on project load, but we can trigger it or trust createFloatingIdea updates it)
+  // createFloatingIdea calls addIdeaToIndex, so it should be immediate.
   
   // Search for "Apple"
   const results = await caller.idea.search({
@@ -704,7 +704,7 @@ test('search - finds ideas created after the index was built, whichever path for
   // Build the index first (the live server does this on the first search).
   await caller.idea.search({ projectPath: testProjectPath, query: 'anything' });
 
-  await caller.idea.createFloatingAim({
+  await caller.idea.createFloatingIdea({
     projectPath: testRootPath,
     idea: { text: 'Neustart. Ich bin 33. Aber ich gebe das Leben auf', status: { state: 'open', comment: '', date: Date.now() } }
   });
@@ -719,11 +719,11 @@ test('search - finds ideas created after the index was built, whichever path for
 });
 
 test('search - returns idea id prefix matches first with match metadata', async () => {
-  const target = await caller.idea.createFloatingAim({
+  const target = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Unrelated target', status: { state: 'open', comment: '', date: Date.now() } }
   });
-  await caller.idea.createFloatingAim({
+  await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Target by text only', status: { state: 'open', comment: '', date: Date.now() } }
   });
@@ -751,8 +751,8 @@ test('search - returns idea id prefix matches first with match metadata', async 
   assert.ok(shortResults.every(result => !result.idMatch));
 });
 
-test('createFloatingAim - persists intrinsic value and its human rationale', async () => {
-  const ideaResult = await caller.idea.createFloatingAim({
+test('createFloatingIdea - persists intrinsic value and its human rationale', async () => {
+  const ideaResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Valuable Idea',
@@ -771,9 +771,9 @@ test('createFloatingAim - persists intrinsic value and its human rationale', asy
   assert.equal(idea.valueRationale, 'Based on a validated customer saving ten hours per week.');
 });
 
-test('createFloatingAim - first idea defaults intrinsicValue to 1000', async () => {
+test('createFloatingIdea - first idea defaults intrinsicValue to 1000', async () => {
   // First idea in empty project should default to 1000
-  const firstAimResult = await caller.idea.createFloatingAim({
+  const firstIdeaResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'First Idea',
@@ -781,15 +781,15 @@ test('createFloatingAim - first idea defaults intrinsicValue to 1000', async () 
     }
   });
 
-  const firstAim = await caller.idea.get({
+  const firstIdea = await caller.idea.get({
     projectPath: testProjectPath,
-    ideaId: firstAimResult.id
+    ideaId: firstIdeaResult.id
   });
 
-  assert.equal(firstAim.intrinsicValue, 1000);
+  assert.equal(firstIdea.intrinsicValue, 1000);
 
   // Second idea should default to 0
-  const secondAimResult = await caller.idea.createFloatingAim({
+  const secondIdeaResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Second Idea',
@@ -797,22 +797,22 @@ test('createFloatingAim - first idea defaults intrinsicValue to 1000', async () 
     }
   });
 
-  const secondAim = await caller.idea.get({
+  const secondIdea = await caller.idea.get({
     projectPath: testProjectPath,
-    ideaId: secondAimResult.id
+    ideaId: secondIdeaResult.id
   });
 
-  assert.equal(secondAim.intrinsicValue, 0);
+  assert.equal(secondIdea.intrinsicValue, 0);
 });
 
-test('readAim - upgrades legacy incoming array in memory; fixConsistency persists it', async () => {
+test('readIdea - upgrades legacy incoming array in memory; fixConsistency persists it', async () => {
   // Manually create a file with legacy structure
   const ideaId = uuidv4();
   const child1Id = uuidv4();
   const child2Id = uuidv4();
   const newChildId = uuidv4();
 
-  const legacyAim = {
+  const legacyIdea = {
     id: ideaId,
     text: 'Legacy Idea',
     status: { state: 'open', comment: '', date: Date.now() },
@@ -825,25 +825,25 @@ test('readAim - upgrades legacy incoming array in memory; fixConsistency persist
   };
 
   await fs.ensureDir(path.join(testProjectPath, 'ideas'));
-  await fs.writeJson(path.join(testProjectPath, 'ideas', `${ideaId}.json`), legacyAim);
+  await fs.writeJson(path.join(testProjectPath, 'ideas', `${ideaId}.json`), legacyIdea);
 
   // Read the idea (should trigger migration)
-  const migratedAim = await caller.idea.get({
+  const migratedIdea = await caller.idea.get({
     projectPath: testProjectPath,
     ideaId: ideaId
   });
 
   // Verify in-memory result
-  assert.equal(migratedAim.supportingConnections.length, 3);
+  assert.equal(migratedIdea.supportingConnections.length, 3);
   // Order: legacy (prepended) then existing
-  assert.equal(migratedAim.supportingConnections[0].ideaId, child1Id);
-  assert.equal(migratedAim.supportingConnections[1].ideaId, child2Id);
-  assert.equal(migratedAim.supportingConnections[2].ideaId, newChildId);
-  assert.equal((migratedAim as any).incoming, undefined);
+  assert.equal(migratedIdea.supportingConnections[0].ideaId, child1Id);
+  assert.equal(migratedIdea.supportingConnections[1].ideaId, child2Id);
+  assert.equal(migratedIdea.supportingConnections[2].ideaId, newChildId);
+  assert.equal((migratedIdea as any).incoming, undefined);
 
   // Reads must not write
   const ideaFile = path.join(testProjectPath, 'ideas', `${ideaId}.json`);
-  assert.deepEqual(await fs.readJson(ideaFile), legacyAim);
+  assert.deepEqual(await fs.readJson(ideaFile), legacyIdea);
 
   // The referenced children don't exist, so later consistency fixes drop the
   // links again; this only checks that the upgrade itself was persisted.
@@ -852,12 +852,12 @@ test('readAim - upgrades legacy incoming array in memory; fixConsistency persist
   assert.equal((await fs.readJson(ideaFile)).incoming, undefined);
 });
 
-test('readAim - upgrades legacy outgoing array in memory; fixConsistency persists it', async () => {
+test('readIdea - upgrades legacy outgoing array in memory; fixConsistency persists it', async () => {
   const ideaId = uuidv4();
   const parent1Id = uuidv4();
   const parent2Id = uuidv4();
 
-  const legacyAim = {
+  const legacyIdea = {
     id: ideaId,
     text: 'Legacy Idea',
     status: { state: 'open', comment: '', date: Date.now() },
@@ -867,39 +867,39 @@ test('readAim - upgrades legacy outgoing array in memory; fixConsistency persist
   };
 
   await fs.ensureDir(path.join(testProjectPath, 'ideas'));
-  await fs.writeJson(path.join(testProjectPath, 'ideas', `${ideaId}.json`), legacyAim);
+  await fs.writeJson(path.join(testProjectPath, 'ideas', `${ideaId}.json`), legacyIdea);
 
   // Read the idea (should trigger migration)
-  const migratedAim = await caller.idea.get({
+  const migratedIdea = await caller.idea.get({
     projectPath: testProjectPath,
     ideaId: ideaId
   });
 
   // Verify in-memory result
-  assert.deepEqual(migratedAim.supportedAims, [parent1Id, parent2Id]);
-  assert.equal((migratedAim as any).outgoing, undefined);
+  assert.deepEqual(migratedIdea.supportedIdeas, [parent1Id, parent2Id]);
+  assert.equal((migratedIdea as any).outgoing, undefined);
 
   // Reads must not write
   const ideaFile = path.join(testProjectPath, 'ideas', `${ideaId}.json`);
-  assert.deepEqual(await fs.readJson(ideaFile), legacyAim);
+  assert.deepEqual(await fs.readJson(ideaFile), legacyIdea);
 
   const { fixes } = await caller.project.fixConsistency({ projectPath: testProjectPath });
   assert.ok(fixes.some((fix: string) => fix.startsWith('Upgraded') && fix.includes(ideaId)));
   assert.equal((await fs.readJson(ideaFile)).outgoing, undefined);
 });
 
-test('readAim leaves unplaced [0,0] connections on disk; fixConsistency places them', async () => {
+test('readIdea leaves unplaced [0,0] connections on disk; fixConsistency places them', async () => {
   const parentId = uuidv4();
   const childId = uuidv4();
   const base = { status: { state: 'open', comment: '', date: Date.now() }, committedIn: [] };
   const parentFile = path.join(testProjectPath, 'ideas', `${parentId}.json`);
   await fs.ensureDir(path.join(testProjectPath, 'ideas'));
   await fs.writeJson(parentFile, {
-    ...base, id: parentId, text: 'Parent', supportedAims: [],
+    ...base, id: parentId, text: 'Parent', supportedIdeas: [],
     supportingConnections: [{ ideaId: childId, relativePosition: [0, 0], weight: 1 }]
   });
   await fs.writeJson(path.join(testProjectPath, 'ideas', `${childId}.json`), {
-    ...base, id: childId, text: 'Child', supportedAims: [parentId], supportingConnections: []
+    ...base, id: childId, text: 'Child', supportedIdeas: [parentId], supportingConnections: []
   });
   const before = await fs.readFile(parentFile, 'utf8');
 
@@ -913,10 +913,10 @@ test('readAim leaves unplaced [0,0] connections on disk; fixConsistency places t
   assert.notDeepEqual(connection.relativePosition, [0, 0]);
 });
 
-test('connectAims - connects with relative position', async () => {
+test('connectIdeas - connects with relative position', async () => {
 
   // Create parent idea
-  const parentResult = await caller.idea.createFloatingAim({
+  const parentResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Parent Idea',
@@ -925,7 +925,7 @@ test('connectAims - connects with relative position', async () => {
   });
 
   // Create child idea
-  const childResult = await caller.idea.createFloatingAim({
+  const childResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Child Idea',
@@ -936,10 +936,10 @@ test('connectAims - connects with relative position', async () => {
   const relativePosition: [number, number] = [0.5, 0.8];
 
   // Connect them
-  await caller.idea.connectAims({
+  await caller.idea.connectIdeas({
     projectPath: testProjectPath,
-    parentAimId: parentResult.id,
-    childAimId: childResult.id,
+    parentIdeaId: parentResult.id,
+    childIdeaId: childResult.id,
     relativePosition: relativePosition
   });
 
@@ -955,18 +955,18 @@ test('connectAims - connects with relative position', async () => {
 });
 
 test('idea.update - persists explanation on supportingConnections', async () => {
-  const parentResult = await caller.idea.createFloatingAim({
+  const parentResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Parent', status: { state: 'open', comment: '', date: Date.now() } }
   });
-  const childResult = await caller.idea.createFloatingAim({
+  const childResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Child', status: { state: 'open', comment: '', date: Date.now() } }
   });
-  await caller.idea.connectAims({
+  await caller.idea.connectIdeas({
     projectPath: testProjectPath,
-    parentAimId: parentResult.id,
-    childAimId: childResult.id
+    parentIdeaId: parentResult.id,
+    childIdeaId: childResult.id
   });
 
   const before = await caller.idea.get({ projectPath: testProjectPath, ideaId: parentResult.id });
@@ -985,14 +985,14 @@ test('idea.update - persists explanation on supportingConnections', async () => 
 });
 
 test('idea.update - persists custom color', async () => {
-  const ideaResult = await caller.idea.createFloatingAim({
+  const ideaResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Color test', status: { state: 'open', comment: '', date: Date.now() }, color: '#ff8800' }
   });
   
   assert.strictEqual(ideaResult.color, '#ff8800');
 
-  const updatedAim = await caller.idea.update({
+  const updatedIdea = await caller.idea.update({
     projectPath: testProjectPath,
     ideaId: ideaResult.id,
     idea: {
@@ -1000,14 +1000,14 @@ test('idea.update - persists custom color', async () => {
     }
   });
 
-  assert.strictEqual(updatedAim.color, '#00ff00');
+  assert.strictEqual(updatedIdea.color, '#00ff00');
 
-  const fetchedAim = await caller.idea.get({ projectPath: testProjectPath, ideaId: ideaResult.id });
-  assert.strictEqual(fetchedAim.color, '#00ff00');
+  const fetchedIdea = await caller.idea.get({ projectPath: testProjectPath, ideaId: ideaResult.id });
+  assert.strictEqual(fetchedIdea.color, '#00ff00');
 });
 
 test('idea.update - persists edit-modal reflection and archive fields', async () => {
-  const ideaResult = await caller.idea.createFloatingAim({
+  const ideaResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Reflection test',
@@ -1024,17 +1024,17 @@ test('idea.update - persists edit-modal reflection and archive fields', async ()
     }
   });
 
-  const fetchedAim = await caller.idea.get({ projectPath: testProjectPath, ideaId: ideaResult.id });
-  assert.strictEqual(fetchedAim.reflection, 'This worked better after reducing scope.');
-  assert.strictEqual(fetchedAim.archived, true);
+  const fetchedIdea = await caller.idea.get({ projectPath: testProjectPath, ideaId: ideaResult.id });
+  assert.strictEqual(fetchedIdea.reflection, 'This worked better after reducing scope.');
+  assert.strictEqual(fetchedIdea.archived, true);
 });
 
 test('idea.merge - preserves source knowledge and archives it consistently', async () => {
-  const parent = await caller.idea.createFloatingAim({
+  const parent = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Parent', status: { state: 'open', comment: '', date: Date.now() } }
   });
-  const target = await caller.idea.createFloatingAim({
+  const target = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
       text: 'Canonical idea',
@@ -1042,9 +1042,9 @@ test('idea.merge - preserves source knowledge and archives it consistently', asy
       status: { state: 'open', comment: '', date: Date.now() }
     }
   });
-  const source = await caller.idea.createSubAim({
+  const source = await caller.idea.createSubIdea({
     projectPath: testProjectPath,
-    parentAimId: parent.id,
+    parentIdeaId: parent.id,
     idea: {
       text: 'Duplicate idea',
       tags: ['duplicate', 'canonical'],
@@ -1101,7 +1101,7 @@ test('idea.merge - preserves source knowledge and archives it consistently', asy
   assert.strictEqual(result.reflectionsCopied, 1);
 
   const merged = await caller.idea.get({ projectPath: testProjectPath, ideaId: target.id });
-  assert.deepEqual(merged.supportedAims, [parent.id]);
+  assert.deepEqual(merged.supportedIdeas, [parent.id]);
   assert.deepEqual(merged.committedIn, [phase.id]);
   assert.deepEqual(merged.tags, ['canonical', 'duplicate']);
   assert.match(merged.reflection ?? '', /Target legacy reflection/);
@@ -1114,7 +1114,7 @@ test('idea.merge - preserves source knowledge and archives it consistently', asy
   const archivedSource = await caller.idea.get({ projectPath: testProjectPath, ideaId: source.id });
   assert.strictEqual(archivedSource.status.state, 'archived');
   assert.strictEqual(archivedSource.archived, true);
-  assert.deepEqual(archivedSource.supportedAims, []);
+  assert.deepEqual(archivedSource.supportedIdeas, []);
   assert.deepEqual(archivedSource.supportingConnections, []);
   assert.deepEqual(archivedSource.committedIn, []);
   assert.strictEqual(await fs.pathExists(path.join(testProjectPath, 'ideas', `${source.id}.json`)), false);

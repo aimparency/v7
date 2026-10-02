@@ -6,19 +6,19 @@ import type { Idea } from 'shared'
 // data.ts pulls in browser-only deps at module load; stub them — graphData is a
 // pure getter over store state and needs none of them.
 vi.mock('../../trpc', () => ({ trpc: {} }))
-vi.mock('../../utils/db', () => ({ loadAllAimsCache: vi.fn(), saveAims: vi.fn() }))
+vi.mock('../../utils/db', () => ({ loadAllIdeasCache: vi.fn(), saveIdeas: vi.fn() }))
 vi.mock('../../utils/perf-log', () => ({ perfLog: vi.fn() }))
 
 const REPO_ID = '11111111-1111-4111-8111-111111111111'
 
-function mkAim(partial: Partial<Idea> & { id: string }): Idea {
+function mkIdea(partial: Partial<Idea> & { id: string }): Idea {
   return {
     text: partial.id,
     reflections: [],
     archived: false,
     tags: [],
     supportingConnections: [],
-    supportedAims: [],
+    supportedIdeas: [],
     committedIn: [],
     status: { state: 'open', comment: '', date: 0 },
     intrinsicValue: 0,
@@ -39,7 +39,7 @@ describe('graphData repo-node injection', () => {
   it('emits one black-box repo node + a repo→idea link for a supportingRepos edge', () => {
     const store = useDataStore()
 
-    const idea = mkAim({ id: 'idea-1', supportedAims: [], supportingRepos: [{ repoId: REPO_ID, weight: 2, relativePosition: [0, 0] }] })
+    const idea = mkIdea({ id: 'idea-1', supportedIdeas: [], supportingRepos: [{ repoId: REPO_ID, weight: 2, relativePosition: [0, 0] }] })
     store.ideas = { 'idea-1': idea }
     store.meta = { name: 'p', color: '#ffffff', linkedRepos: [{ repoId: REPO_ID, name: 'Cool Lib' }] } as any
     // Value engine output (as recalculateValues would set it): the repo sink
@@ -72,8 +72,8 @@ describe('graphData repo-node injection', () => {
   it('emits a single repo node when two ideas link the same repo', () => {
     const store = useDataStore()
     store.ideas = {
-      'a': mkAim({ id: 'a', supportingRepos: [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }] }),
-      'b': mkAim({ id: 'b', supportingRepos: [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }] })
+      'a': mkIdea({ id: 'a', supportingRepos: [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }] }),
+      'b': mkIdea({ id: 'b', supportingRepos: [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }] })
     }
     store.meta = { name: 'p', color: '#ffffff', linkedRepos: [{ repoId: REPO_ID, name: 'Shared' }] } as any
     store.calculatedValues = new Map()
@@ -87,7 +87,7 @@ describe('graphData repo-node injection', () => {
 
   it('falls back to a short-id label when the repo is absent from the registry', () => {
     const store = useDataStore()
-    store.ideas = { 'a': mkAim({ id: 'a', supportingRepos: [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }] }) }
+    store.ideas = { 'a': mkIdea({ id: 'a', supportingRepos: [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }] }) }
     store.meta = { name: 'p', color: '#ffffff' } as any // no linkedRepos
     store.calculatedValues = new Map()
     store.flowShares = new Map()

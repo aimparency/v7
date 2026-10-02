@@ -3,7 +3,7 @@ import { nextTick, ref, watch } from 'vue'
 import type { IdeaProposal } from 'shared'
 import FormModalShell from './FormModalShell.vue'
 import IdeaProposalReview from './IdeaProposalReview.vue'
-import { createManualAimProposal } from '../utils/idea-proposal'
+import { createManualIdeaProposal } from '../utils/idea-proposal'
 import { trpc } from '../trpc'
 
 const props = defineProps<{
@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  persisted: [result: { rootAimId: string, idMap: Record<string, string> }]
+  persisted: [result: { rootIdeaId: string, idMap: Record<string, string> }]
 }>()
 
 const sourceText = ref('')
@@ -37,7 +37,7 @@ watch(() => props.show, async (show) => {
 const createDraft = () => {
   const text = sourceText.value.trim()
   if (!text) return
-  proposal.value = createManualAimProposal(text)
+  proposal.value = createManualIdeaProposal(text)
 }
 
 const generateDraft = async () => {
@@ -46,7 +46,7 @@ const generateDraft = async () => {
   generating.value = true
   error.value = ''
   try {
-    proposal.value = await trpc.idea.proposeAimSubtree.mutate({
+    proposal.value = await trpc.idea.proposeIdeaSubtree.mutate({
       projectPath: props.projectPath,
       transcript: text,
       existingParentIds: []

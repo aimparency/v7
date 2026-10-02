@@ -99,7 +99,7 @@ export function useGraphSimulation() {
   const freezings = new Map<string, number>()
   const semanticMaxGap = ref(2000)
   const cameraTarget = vec2.create()
-  let lastSelectedAimId: string | null = null
+  let lastSelectedIdeaId: string | null = null
   let wasTracking = false
   
   // Simulation Control
@@ -157,7 +157,7 @@ export function useGraphSimulation() {
     let priorityMagnitude = 1
     if (graphUIStore.graphColorMode === 'priority') {
       priorityMagnitude = priorityLogMagnitude(
-        rawNodes.map(node => dataStore.getAimPriority(node.id))
+        rawNodes.map(node => dataStore.getIdeaPriority(node.id))
       )
     }
     
@@ -171,7 +171,7 @@ export function useGraphSimulation() {
       
       let color: string | undefined = undefined
       if (graphUIStore.graphColorMode === 'priority') {
-        const p = dataStore.getAimPriority(raw.id)
+        const p = dataStore.getIdeaPriority(raw.id)
         color = priorityColor(p, priorityMagnitude)
       }
 
@@ -333,15 +333,15 @@ export function useGraphSimulation() {
     }
 
     // Camera Auto-Pan (Smooth)
-    const currentAimId = graphUIStore.graphSelectedAimId
+    const currentIdeaId = graphUIStore.graphSelectedIdeaId
     
     // Detect target change or tracking start to prevent jumps. While a camera
     // flight runs, keep following it so tracking resumes from where it landed.
-    if (currentAimId !== lastSelectedAimId || (mapStore.isTracking && !wasTracking) || mapStore.anim.update) {
+    if (currentIdeaId !== lastSelectedIdeaId || (mapStore.isTracking && !wasTracking) || mapStore.anim.update) {
         cameraTarget[0] = mapStore.offset[0]
         cameraTarget[1] = mapStore.offset[1]
     }
-    lastSelectedAimId = currentAimId
+    lastSelectedIdeaId = currentIdeaId
     wasTracking = mapStore.isTracking
 
     if (!mapStore.panBeginning && !mapStore.dragBeginning && !mapStore.anim.update && mapStore.isTracking) {
@@ -357,8 +357,8 @@ export function useGraphSimulation() {
             mapStore.scale = 1
         }
 
-        if (currentAimId) {
-            const node = nodeMap.get(currentAimId)
+        if (currentIdeaId) {
+            const node = nodeMap.get(currentIdeaId)
             if (node) {
                 const focus = mapStore.nodeFocusFrame(node)
                 const ultimateTargetX = focus.offset[0]
@@ -442,7 +442,7 @@ export function useGraphSimulation() {
         }
 
         // Debug Setup - Track force contributions for selected node
-        const debugId = graphUIStore.graphSelectedAimId
+        const debugId = graphUIStore.graphSelectedIdeaId
         const debugNode = debugId ? nodeMap.get(debugId) : null
         const shouldLog = debugNode && (trigger.value % 60 === 0)
 
@@ -664,7 +664,7 @@ export function useGraphSimulation() {
                 n.renderPos[1] = n.pos[1]
                 hasVisualChange = true
                 n.freezeCounter = 0
-            } else if (mapStore.layouting && mapStore.layoutCandidate?.frozenAimId === n.id) {
+            } else if (mapStore.layouting && mapStore.layoutCandidate?.frozenIdeaId === n.id) {
                 // While dragging a connection handle, keep the opposite endpoint stable.
                 n.shift[0] = 0
                 n.shift[1] = 0
@@ -713,7 +713,7 @@ export function useGraphSimulation() {
     
     // Load Data
     if (projectStore.projectPath) {
-      dataStore.loadAllAims(projectStore.projectPath)
+      dataStore.loadAllIdeas(projectStore.projectPath)
       
       trpc.graph.getSemanticForces.query({ projectPath: projectStore.projectPath })
         .then(graph => {

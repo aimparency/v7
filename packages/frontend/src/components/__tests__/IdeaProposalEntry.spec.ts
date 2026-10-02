@@ -6,8 +6,8 @@ import { trpc } from '../../trpc'
 vi.mock('../../trpc', () => ({
   trpc: {
     idea: {
-      approveAimSubtree: { mutate: vi.fn() },
-      proposeAimSubtree: { mutate: vi.fn() }
+      approveIdeaSubtree: { mutate: vi.fn() },
+      proposeIdeaSubtree: { mutate: vi.fn() }
     }
   }
 }))
@@ -30,7 +30,7 @@ describe('IdeaProposalEntry', () => {
   })
 
   it('opens a validated model proposal without persisting it', async () => {
-    vi.mocked(trpc.idea.proposeAimSubtree.mutate).mockResolvedValue({
+    vi.mocked(trpc.idea.proposeIdeaSubtree.mutate).mockResolvedValue({
       revision: 'model-r1',
       sourceText: 'Improve operations',
       existingParentIds: [],
@@ -49,14 +49,14 @@ describe('IdeaProposalEntry', () => {
     await wrapper.get('textarea').setValue('Improve operations')
     await wrapper.get('button.primary').trigger('click')
 
-    expect(trpc.idea.proposeAimSubtree.mutate).toHaveBeenCalledWith({
+    expect(trpc.idea.proposeIdeaSubtree.mutate).toHaveBeenCalledWith({
       projectPath: '/project',
       transcript: 'Improve operations',
       existingParentIds: []
     })
     expect(wrapper.text()).toContain('Review proposed ideas')
     expect((wrapper.get('input').element as HTMLInputElement).value).toBe('Reliable operations')
-    expect(trpc.idea.approveAimSubtree.mutate).not.toHaveBeenCalled()
+    expect(trpc.idea.approveIdeaSubtree.mutate).not.toHaveBeenCalled()
   })
 
   it('returns from the editor to text entry without closing the whole flow', async () => {

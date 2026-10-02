@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useScrollIntoView } from '../composables/useScrollIntoView'
-import { useKeepSelectedAimVisible } from '../composables/useKeepSelectedAimVisible'
+import { useKeepSelectedIdeaVisible } from '../composables/useKeepSelectedIdeaVisible'
 import IdeasList from './IdeasList.vue'
 
 const dataStore = useDataStore()
@@ -16,22 +16,22 @@ const rootColumnRef = ref<HTMLElement | null>(null)
 
 // Handle scroll requests from child ideas
 const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
-useKeepSelectedAimVisible(rootColumnRef, () => isActive.value, handleScrollRequest)
+useKeepSelectedIdeaVisible(rootColumnRef, () => isActive.value, handleScrollRequest)
 
-const handleAimClicked = (columnIndex: number, phaseId: string | undefined, ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
+const handleIdeaClicked = (columnIndex: number, phaseId: string | undefined, ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isCtrl = !!(mods && mods.ctrl)
   const isShift = !!(mods && mods.shift)
   const isModeToggle = uiStore.multiSelectMode && !isShift
   if (isShift) {
-    const ordered = dataStore.floatingAims.map((a: any) => a.id)
+    const ordered = dataStore.floatingIdeas.map((a: any) => a.id)
     uiStore.selectMultiRange(ideaId, ordered)
   } else if (isCtrl || isModeToggle) {
     uiStore.toggleMultiSelect(ideaId)
   } else {
     uiStore.clearMultiSelect()
   }
-  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentAim()?.id === ideaId) return
-  uiStore.selectAimById(columnIndex, phaseId, ideaId).catch(() => {})
+  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentIdea()?.id === ideaId) return
+  uiStore.selectIdeaById(columnIndex, phaseId, ideaId).catch(() => {})
 }
 </script>
 
@@ -43,14 +43,14 @@ const handleAimClicked = (columnIndex: number, phaseId: string | undefined, idea
     >
       <div class="info">free floating ideas</div>
       <IdeasList
-        :ideas="dataStore.floatingAims"
+        :ideas="dataStore.floatingIdeas"
         phase-id=""
         :column-index="-1"
-        :is-active="isActive && uiStore.navigatingAims"
+        :is-active="isActive && uiStore.navigatingIdeas"
         :is-selected="isSelected"
-        :selected-idea-index="uiStore.floatingAimIndex"
-        :idea-ui-states="uiStore.floatingAimUIStates"
-        @idea-clicked="(ideaId, mods) => handleAimClicked(-1, undefined, ideaId, mods)"
+        :selected-idea-index="uiStore.floatingIdeaIndex"
+        :idea-ui-states="uiStore.floatingIdeaUIStates"
+        @idea-clicked="(ideaId, mods) => handleIdeaClicked(-1, undefined, ideaId, mods)"
         @scroll-request="handleScrollRequest"
       />
     </div>

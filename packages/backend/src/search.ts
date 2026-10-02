@@ -1,6 +1,6 @@
 import { Document } from 'flexsearch';
 import Fuse from 'fuse.js';
-import type { Idea, Phase, SearchAimResult } from 'shared';
+import type { Idea, Phase, SearchIdeaResult } from 'shared';
 import { normalizeProjectPath } from './project-path.js';
 
 // FlexSearch indices per project
@@ -13,15 +13,15 @@ type IdeaIdPrefixIndex = {
 
 const ideaIdPrefixIndices = new Map<string, IdeaIdPrefixIndex>();
 
-function createAimIdPrefixIndex(): IdeaIdPrefixIndex {
+function createIdeaIdPrefixIndex(): IdeaIdPrefixIndex {
   return {
     ideaIds: new Set<string>(),
     children: new Map<string, IdeaIdPrefixIndex>()
   };
 }
 
-// ... existing getAimIndex ...
-function getAimIndex(rawProjectPath: string): Document<Idea> {
+// ... existing getIdeaIndex ...
+function getIdeaIndex(rawProjectPath: string): Document<Idea> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   if (!ideaIndices.has(projectPath)) {
     const index = new Document<Idea>({
@@ -37,22 +37,22 @@ function getAimIndex(rawProjectPath: string): Document<Idea> {
   return ideaIndices.get(projectPath)!;
 }
 
-function getAimIdPrefixIndex(rawProjectPath: string): IdeaIdPrefixIndex {
+function getIdeaIdPrefixIndex(rawProjectPath: string): IdeaIdPrefixIndex {
   const projectPath = normalizeProjectPath(rawProjectPath);
   if (!ideaIdPrefixIndices.has(projectPath)) {
-    ideaIdPrefixIndices.set(projectPath, createAimIdPrefixIndex());
+    ideaIdPrefixIndices.set(projectPath, createIdeaIdPrefixIndex());
   }
   return ideaIdPrefixIndices.get(projectPath)!;
 }
 
-function addAimIdToPrefixIndex(projectPath: string, ideaId: string): void {
+function addIdeaIdToPrefixIndex(projectPath: string, ideaId: string): void {
   const normalizedId = ideaId.toLowerCase();
-  let node = getAimIdPrefixIndex(projectPath);
+  let node = getIdeaIdPrefixIndex(projectPath);
 
   for (const char of normalizedId) {
     let child = node.children.get(char);
     if (!child) {
-      child = createAimIdPrefixIndex();
+      child = createIdeaIdPrefixIndex();
       node.children.set(char, child);
     }
     child.ideaIds.add(ideaId);
@@ -60,9 +60,9 @@ function addAimIdToPrefixIndex(projectPath: string, ideaId: string): void {
   }
 }
 
-function removeAimIdFromPrefixIndex(projectPath: string, ideaId: string): void {
+function removeIdeaIdFromPrefixIndex(projectPath: string, ideaId: string): void {
   const normalizedId = ideaId.toLowerCase();
-  const root = getAimIdPrefixIndex(projectPath);
+  const root = getIdeaIdPrefixIndex(projectPath);
   const path: Array<{ parent: IdeaIdPrefixIndex; char: string; node: IdeaIdPrefixIndex }> = [];
   let node = root;
 
@@ -82,11 +82,11 @@ function removeAimIdFromPrefixIndex(projectPath: string, ideaId: string): void {
   }
 }
 
-function searchAimIdsByPrefix(projectPath: string, query: string): string[] {
+function searchIdeaIdsByPrefix(projectPath: string, query: string): string[] {
   const normalizedQuery = query.trim().toLowerCase();
   if (normalizedQuery.length < 8) return [];
 
-  let node = getAimIdPrefixIndex(projectPath);
+  let node = getIdeaIdPrefixIndex(projectPath);
   for (const char of normalizedQuery) {
     const child = node.children.get(char);
     if (!child) return [];
@@ -119,13 +119,13 @@ function getPhaseIndex(rawProjectPath: string): Document<Phase> {
 }
 
 // ... existing index/update/remove functions ...
-export function indexAims(projectPath: string, ideas: Idea[]): void {
-  const index = getAimIndex(projectPath);
+export function indexIdeas(projectPath: string, ideas: Idea[]): void {
+  const index = getIdeaIndex(projectPath);
   for (const idea of ideas) index.remove(idea.id);
   for (const idea of ideas) index.add(idea);
 
-  ideaIdPrefixIndices.set(normalizeProjectPath(projectPath), createAimIdPrefixIndex());
-  for (const idea of ideas) addAimIdToPrefixIndex(projectPath, idea.id);
+  ideaIdPrefixIndices.set(normalizeProjectPath(projectPath), createIdeaIdPrefixIndex());
+  for (const idea of ideas) addIdeaIdToPrefixIndex(projectPath, idea.id);
 }
 
 export function indexPhases(projectPath: string, phases: Phase[]): void {
@@ -134,23 +134,23 @@ export function indexPhases(projectPath: string, phases: Phase[]): void {
   for (const phase of phases) index.add(phase);
 }
 
-export function addAimToIndex(projectPath: string, idea: Idea): void {
-  const index = getAimIndex(projectPath);
+export function addIdeaToIndex(projectPath: string, idea: Idea): void {
+  const index = getIdeaIndex(projectPath);
   index.add(idea);
-  addAimIdToPrefixIndex(projectPath, idea.id);
+  addIdeaIdToPrefixIndex(projectPath, idea.id);
 }
 
-export function updateAimInIndex(projectPath: string, idea: Idea): void {
-  const index = getAimIndex(projectPath);
+export function updateIdeaInIndex(projectPath: string, idea: Idea): void {
+  const index = getIdeaIndex(projectPath);
   index.update(idea);
-  removeAimIdFromPrefixIndex(projectPath, idea.id);
-  addAimIdToPrefixIndex(projectPath, idea.id);
+  removeIdeaIdFromPrefixIndex(projectPath, idea.id);
+  addIdeaIdToPrefixIndex(projectPath, idea.id);
 }
 
-export function removeAimFromIndex(projectPath: string, ideaId: string): void {
-  const index = getAimIndex(projectPath);
+export function removeIdeaFromIndex(projectPath: string, ideaId: string): void {
+  const index = getIdeaIndex(projectPath);
   index.remove(ideaId);
-  removeAimIdFromPrefixIndex(projectPath, ideaId);
+  removeIdeaIdFromPrefixIndex(projectPath, ideaId);
 }
 
 export function addPhaseToIndex(projectPath: string, phase: Phase): void {
@@ -169,12 +169,12 @@ export function removePhaseFromIndex(projectPath: string, phaseId: string): void
 }
 
 // Search ideas by text (FlexSearch)
-export async function searchAims(projectPath: string, query: string, allAims: Idea[]): Promise<SearchAimResult[]> {
+export async function searchIdeas(projectPath: string, query: string, allIdeas: Idea[]): Promise<SearchIdeaResult[]> {
   if (!query.trim()) {
     return []; // Return empty if no query, consistent with search behavior
   }
 
-  const index = getAimIndex(projectPath);
+  const index = getIdeaIndex(projectPath);
   const results = await index.searchAsync(query, { limit: 100 });
   const normalizedQuery = query.trim().toLowerCase();
 
@@ -198,8 +198,8 @@ export async function searchAims(projectPath: string, query: string, allAims: Id
     }
   }
 
-  const ideasById = new Map(allAims.map(idea => [idea.id, idea]));
-  const idMatches = searchAimIdsByPrefix(projectPath, query)
+  const ideasById = new Map(allIdeas.map(idea => [idea.id, idea]));
+  const idMatches = searchIdeaIdsByPrefix(projectPath, query)
     .map(ideaId => ideasById.get(ideaId))
     .filter((idea): idea is Idea => Boolean(idea))
     .map(idea => ({
@@ -211,7 +211,7 @@ export async function searchAims(projectPath: string, query: string, allAims: Id
   // Return ideas in order of search results with scores
   return [
     ...idMatches,
-    ...allAims
+    ...allIdeas
     .filter(idea => ideaIds.has(idea.id))
     .map(idea => ({
       ...idea,

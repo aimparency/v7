@@ -37,7 +37,7 @@ function hsvToHex({ h, s, v }: Hsv): string {
   return `#${channel(r)}${channel(g)}${channel(b)}`
 }
 
-export function deriveChildAimColor(parentColor: string, siblingIndex: number): string {
+export function deriveChildIdeaColor(parentColor: string, siblingIndex: number): string {
   const parent = hexToHsv(parentColor)
   const direction = siblingIndex % 2 === 0 ? 1 : -1
   const step = 9 + Math.floor(siblingIndex / 2) * 4
@@ -48,6 +48,6 @@ export function deriveChildAimColor(parentColor: string, siblingIndex: number): 
   })
 }
 
-export function defaultAimColor(parentColor?: string, siblingIndex = 0): string {
-  return parentColor ? deriveChildAimColor(parentColor, siblingIndex) : ROOT_IDEA_COLOR
+export function defaultIdeaColor(parentColor?: string, siblingIndex = 0): string {
+  return parentColor ? deriveChildIdeaColor(parentColor, siblingIndex) : ROOT_IDEA_COLOR
 }

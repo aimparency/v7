@@ -16,7 +16,7 @@ test.describe('Sub-phase Navigation', () => {
     const rootPhaseId = randomUUID();
     const subPhaseId = randomUUID();
     const subSubPhaseId = randomUUID();
-    const targetAimId = randomUUID();
+    const targetIdeaId = randomUUID();
 
     seedProject(tempDir, {
       phases: [
@@ -34,12 +34,12 @@ test.describe('Sub-phase Navigation', () => {
           id: subSubPhaseId, 
           name: 'Sub Sub Phase', 
           parent: subPhaseId,
-          commitments: [targetAimId]
+          commitments: [targetIdeaId]
         }
       ],
       ideas: [
         { 
-          id: targetAimId, 
+          id: targetIdeaId, 
           text: 'Target Idea', 
           committedIn: [subSubPhaseId] 
         }
@@ -85,8 +85,8 @@ test.describe('Sub-phase Navigation', () => {
 
     // Verify:
     // 1. Target Idea is visible in the column
-    const targetAim = page.locator('.column-panel .idea-text', { hasText: 'Target Idea' });
-    await expect(targetAim).toBeVisible();
+    const targetIdea = page.locator('.column-panel .idea-text', { hasText: 'Target Idea' });
+    await expect(targetIdea).toBeVisible();
 
     // 2. Check Columns specifically
     const columns = page.locator('.column-panel');

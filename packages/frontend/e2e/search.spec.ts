@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { finishAimCreation } from './test-utils';
+import { finishIdeaCreation } from './test-utils';
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -24,17 +24,17 @@ async function createPhase(page: Page, name: string) {
   await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 }
 
-async function createAim(page: Page, text: string) {
+async function createIdea(page: Page, text: string) {
   await page.keyboard.press('o');
   await page.waitForSelector('.modal-panel', { timeout: 3000 });
   const ideaInput = page.locator('input[placeholder="Enter idea text"]');
   await expect(ideaInput).toBeVisible();
   await ideaInput.fill(text);
   await ideaInput.press('Enter');
-  await finishAimCreation(page);
+  await finishIdeaCreation(page);
 }
 
-async function indentAim(page: Page) {
+async function indentIdea(page: Page) {
   await page.keyboard.press('L');
   await page.waitForTimeout(100); // Wait for animation/update
 }
@@ -58,35 +58,35 @@ test('search finds deep nested idea and expands path', async ({ page }) => {
   await page.keyboard.press('k'); // Go up to Phase A
   await page.keyboard.press('i'); // Enter edit mode (navigating ideas)
   
-  await createAim(page, 'Phase A Idea 1');
-  await createAim(page, 'Phase A Idea 2');
+  await createIdea(page, 'Phase A Idea 1');
+  await createIdea(page, 'Phase A Idea 2');
 
   // 4. Create ideas in Phase B
   await page.keyboard.press('Escape'); // Exit edit mode
   await page.keyboard.press('j'); // Go down to Phase B
   await page.keyboard.press('i'); // Enter edit mode
 
-  await createAim(page, 'Phase B Idea 1');
-  await createAim(page, 'Phase B Idea 2');
+  await createIdea(page, 'Phase B Idea 1');
+  await createIdea(page, 'Phase B Idea 2');
 
   // 5. Create Sub-ideas for Phase B Idea 1
   await page.keyboard.press('k'); // Select Phase B Idea 1
   
   // Create Sub-idea "Idea 1.1" (as sibling then indent)
-  await createAim(page, 'Idea 1.1');
-  await indentAim(page);
+  await createIdea(page, 'Idea 1.1');
+  await indentIdea(page);
 
   // 6. Create Sub-sub-ideas for Idea 1.1
   // Idea 1.1 is now selected.
-  await createAim(page, 'Idea 1.1.1');
-  await indentAim(page);
+  await createIdea(page, 'Idea 1.1.1');
+  await indentIdea(page);
 
   // Create "target idea"
-  await createAim(page, 'target idea');
+  await createIdea(page, 'target idea');
   // Sibling of 1.1.1, so effectively sub-sub-idea of Idea 1
 
   // Create "Idea 1.1.3"
-  await createAim(page, 'Idea 1.1.3');
+  await createIdea(page, 'Idea 1.1.3');
 
   // 7. Collapse and navigate away
   await page.keyboard.press('h'); // Collapse 1.1 (parent of target)
@@ -110,14 +110,14 @@ test('search finds deep nested idea and expands path', async ({ page }) => {
   await page.waitForTimeout(200);
 
   // 9. Verify visibility and expansion
-  const targetAim = page.locator('.idea-text', { hasText: 'target idea' }).last();
-  await expect(targetAim).toBeVisible();
+  const targetIdea = page.locator('.idea-text', { hasText: 'target idea' }).last();
+  await expect(targetIdea).toBeVisible();
   
   // Check if it's selected
-  const targetAimItem = page.locator('.idea-item').filter({ 
+  const targetIdeaItem = page.locator('.idea-item').filter({ 
     has: page.locator('> .idea-content .idea-text', { hasText: /^\s*target idea\s*$/ }) 
   });
-  await expect(targetAimItem).toHaveClass(/active/);
+  await expect(targetIdeaItem).toHaveClass(/active/);
 });
 
 test('search finds deep nested idea after reload', async ({ page }) => {
@@ -136,28 +136,28 @@ test('search finds deep nested idea after reload', async ({ page }) => {
   // Create Ideas Phase A
   await page.keyboard.press('k'); 
   await page.keyboard.press('i');
-  await createAim(page, 'Phase A Idea 1');
-  await createAim(page, 'Phase A Idea 2');
+  await createIdea(page, 'Phase A Idea 1');
+  await createIdea(page, 'Phase A Idea 2');
 
   // Create Ideas Phase B
   await page.keyboard.press('Escape');
   await page.keyboard.press('j');
   await page.keyboard.press('i');
-  await createAim(page, 'Phase B Idea 1');
-  await createAim(page, 'Phase B Idea 2');
+  await createIdea(page, 'Phase B Idea 1');
+  await createIdea(page, 'Phase B Idea 2');
 
   // Create nested structure
   await page.keyboard.press('k'); // Select Phase B Idea 1
   
-  await createAim(page, 'Idea 1.1');
-  await indentAim(page);
+  await createIdea(page, 'Idea 1.1');
+  await indentIdea(page);
 
-  await createAim(page, 'Idea 1.1.1');
-  await indentAim(page);
+  await createIdea(page, 'Idea 1.1.1');
+  await indentIdea(page);
 
-  await createAim(page, 'target idea');
+  await createIdea(page, 'target idea');
 
-  await createAim(page, 'Idea 1.1.3');
+  await createIdea(page, 'Idea 1.1.3');
 
   // 2. Reload Page
   await page.reload();
@@ -176,11 +176,11 @@ test('search finds deep nested idea after reload', async ({ page }) => {
   await page.waitForTimeout(200);
 
   // 4. Verify
-  const targetAim = page.locator('.idea-text', { hasText: 'target idea' }).last();
-  await expect(targetAim).toBeVisible();
+  const targetIdea = page.locator('.idea-text', { hasText: 'target idea' }).last();
+  await expect(targetIdea).toBeVisible();
   
-  const targetAimItem = page.locator('.idea-item').filter({ 
+  const targetIdeaItem = page.locator('.idea-item').filter({ 
     has: page.locator('> .idea-content .idea-text', { hasText: /^\s*target idea\s*$/ }) 
   }).last();
-  await expect(targetAimItem).toHaveClass(/active/);
+  await expect(targetIdeaItem).toHaveClass(/active/);
 });

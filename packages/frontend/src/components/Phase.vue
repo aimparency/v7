@@ -7,7 +7,7 @@ import IdeasList from './IdeasList.vue'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu.vue'
 import { useLongPress } from '../composables/useLongPress'
 import { perfLog } from '../utils/perf-log'
-import { formatAimPriority, rankAimsForPhaseTree } from '../utils/phase-priority'
+import { formatIdeaPriority, rankIdeasForPhaseTree } from '../utils/phase-priority'
 
 interface Props {
   phase: Phase
@@ -32,7 +32,7 @@ const modalStore = useUIModalStore()
 const showPriority = ref(false)
 const priorityState = ref('human-dependent')
 
-const prioritizedAims = computed(() => rankAimsForPhaseTree(
+const prioritizedIdeas = computed(() => rankIdeasForPhaseTree(
   props.phase.id,
   dataStore.phases,
   dataStore.ideas,
@@ -44,12 +44,12 @@ const togglePriority = () => {
   showPriority.value = !showPriority.value
 }
 
-const openPrioritizedAim = (ideaId: string) => {
-  modalStore.openAimEditModal(ideaId)
+const openPrioritizedIdea = (ideaId: string) => {
+  modalStore.openIdeaEditModal(ideaId)
 }
 
 // Get ideas from the store
-const phaseAims = computed(() => dataStore.getAimsForPhase(props.phase.id))
+const phaseIdeas = computed(() => dataStore.getIdeasForPhase(props.phase.id))
 
 // Load ideas and scroll on mount
 onMounted(() => {
@@ -81,7 +81,7 @@ const dispatchKey = (key: string) =>
 
 const openMenu = (event: PointerEvent) => {
   emit('phase-clicked')        // select this phase first
-  uiStore.navigatingAims = false // ensure column (phase) shortcuts are routed
+  uiStore.navigatingIdeas = false // ensure column (phase) shortcuts are routed
   menuX.value = event.clientX
   menuY.value = event.clientY
   showMenu.value = true
@@ -93,7 +93,7 @@ const longPress = useLongPress(openMenu)
 // an idea directly, so "enter ideas"/"add idea" only makes sense when there are none.
 // Mirrors the keyboard flow: `i` enters idea mode for the phase, `o` opens the
 // create-idea modal against it.
-const addAimToEmptyPhase = async () => {
+const addIdeaToEmptyPhase = async () => {
   await dispatchKey('i')
   await dispatchKey('o')
 }
@@ -104,8 +104,8 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
     { id: 'add-after', label: 'Add phase after', run: () => dispatchKey('o') },
     { id: 'edit', label: 'Edit phase', run: () => dispatchKey('e') }
   ]
-  if (phaseAims.value.length === 0) {
-    items.push({ id: 'add-idea', label: 'Add idea', run: addAimToEmptyPhase })
+  if (phaseIdeas.value.length === 0) {
+    items.push({ id: 'add-idea', label: 'Add idea', run: addIdeaToEmptyPhase })
   }
   items.push(
     { id: 'mark-current', label: 'Mark as current', run: () => dispatchKey('c') },
@@ -134,7 +134,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
       'current': isCurrent,
       'pending-delete': isPendingDelete,
       /* Phase is the action target when selected in this column and not in idea mode. */
-      'action-target': isActive && !uiStore.navigatingAims
+      'action-target': isActive && !uiStore.navigatingIdeas
     }"
     @click="$emit('phase-clicked')"
   >
@@ -192,18 +192,18 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
         Direct and transitive ideas across this phase and its subphases
       </div>
 
-      <div v-if="prioritizedAims.length === 0" class="priority-empty">
+      <div v-if="prioritizedIdeas.length === 0" class="priority-empty">
         No {{ priorityState }} ideas
       </div>
       <ol v-else class="priority-list">
-        <li v-for="result in prioritizedAims" :key="result.idea.id">
+        <li v-for="result in prioritizedIdeas" :key="result.idea.id">
           <button
             type="button"
             class="priority-idea"
             :title="`Edit ${result.idea.text || 'untitled idea'}`"
-            @click="openPrioritizedAim(result.idea.id)"
+            @click="openPrioritizedIdea(result.idea.id)"
           >
-            <span class="priority-rank">{{ formatAimPriority(result.priority) }}</span>
+            <span class="priority-rank">{{ formatIdeaPriority(result.priority) }}</span>
             <span class="priority-copy">
               <span class="priority-text">{{ result.idea.text || '(untitled)' }}</span>
               <span class="priority-phase">
@@ -219,13 +219,13 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
     <!-- Ideas List -->
     <div v-else class="ideas-container">
       <IdeasList
-        :ideas="phaseAims"
+        :ideas="phaseIdeas"
         :phase-id="phase.id"
         :column-index="0"
-        :is-active="isActive && uiStore.navigatingAims"
+        :is-active="isActive && uiStore.navigatingIdeas"
         :is-selected="isSelected"
-        :selected-idea-index="phase.selectedAimIndex"
-        :idea-ui-states="uiStore.getPhaseAimUIStates(phase.id)"
+        :selected-idea-index="phase.selectedIdeaIndex"
+        :idea-ui-states="uiStore.getPhaseIdeaUIStates(phase.id)"
         @scroll-request="$emit('scroll-request', $event)"
         @idea-clicked="(id, mods) => $emit('idea-clicked', id, mods)"
       />

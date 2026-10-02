@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import {
   clearTeleportBuffer as clearTeleportBufferHelper,
-  closeAimModal as closeAimModalHelper,
-  closeAimSearchModal as closeAimSearchModalHelper,
+  closeIdeaModal as closeIdeaModalHelper,
+  closeIdeaSearchModal as closeIdeaSearchModalHelper,
   closePhaseModal as closePhaseModalHelper,
   closeSettingsModal as closeSettingsModalHelper,
-  openAimCreateModal as openAimCreateModalHelper,
-  openAimSearchModal as openAimSearchModalHelper,
+  openIdeaCreateModal as openIdeaCreateModalHelper,
+  openIdeaSearchModal as openIdeaSearchModalHelper,
   openPhaseCreateModal as openPhaseCreateModalHelper,
   openPhaseEditModal as openPhaseEditModalHelper,
   openSettingsModal as openSettingsModalHelper
@@ -16,7 +16,7 @@ import type { PhaseSearchAdditionalOption, PhaseSearchModalOptions, PhaseSearchS
 
 type RelativePosition = 'before' | 'after'
 type TeleportSource = {
-  parentAimId?: string
+  parentIdeaId?: string
   phaseId?: string
 }
 
@@ -29,13 +29,13 @@ export const useUIModalStore = defineStore('ui-modal', {
     newPhaseName: '',
     phaseModalInsertPosition: 'before' as RelativePosition,
 
-    showAimModal: false,
+    showIdeaModal: false,
     ideaModalInsertPosition: 'before' as RelativePosition,
     ideaModalSource: 'columns' as 'columns' | 'graph',
 
-    showAimEditModal: false,
-    ideaEditModalAimId: null as string | null,
-    ideaEditModalAimIds: [] as string[],
+    showIdeaEditModal: false,
+    ideaEditModalIdeaId: null as string | null,
+    ideaEditModalIdeaIds: [] as string[],
 
     // Connection details (contribution % + explanation) for a freshly-created connection.
     // parentId = supported idea, childId = supporting idea; the connection already exists.
@@ -43,12 +43,12 @@ export const useUIModalStore = defineStore('ui-modal', {
     connectionDetailsParentId: null as string | null,
     connectionDetailsChildId: null as string | null,
 
-    showAimSearch: false,
+    showIdeaSearch: false,
     ideaSearchMode: 'navigate' as 'navigate' | 'pick',
     ideaSearchCallback: null as ((payload: IdeaSearchPickPayload) => void) | null,
     ideaCreationCallback: null as ((ideaId: string, onConnectionConfirmed?: () => void) => void) | null,
     connectionDetailsCallback: null as (() => void) | null,
-    ideaSearchInitialAimId: null as string | null,
+    ideaSearchInitialIdeaId: null as string | null,
     ideaSearchShowParentPaths: false,
     ideaSearchTitle: 'Search Ideas',
     ideaSearchPlaceholder: 'Go to idea...',
@@ -64,11 +64,11 @@ export const useUIModalStore = defineStore('ui-modal', {
     // Spin-off apply: target-path chooser dialog opened from the spin-off split button.
     showSpinOffApplyModal: false,
 
-    teleportCutAimId: null as string | null,
+    teleportCutIdeaId: null as string | null,
     teleportSource: null as TeleportSource | null,
-    teleportCopyAimId: null as string | null,
+    teleportCopyIdeaId: null as string | null,
     teleportCopySource: null as TeleportSource | null,
-    movingAimId: null as string | null
+    movingIdeaId: null as string | null
   }),
 
   actions: {
@@ -88,25 +88,25 @@ export const useUIModalStore = defineStore('ui-modal', {
       closePhaseModalHelper(this)
     },
 
-    openAimModal(source: 'columns' | 'graph' = 'columns') {
-      openAimCreateModalHelper(this, source)
+    openIdeaModal(source: 'columns' | 'graph' = 'columns') {
+      openIdeaCreateModalHelper(this, source)
     },
 
-    closeAimModal() {
-      closeAimModalHelper(this)
+    closeIdeaModal() {
+      closeIdeaModalHelper(this)
     },
 
-    openAimSearch(
+    openIdeaSearch(
       mode: 'navigate' | 'pick' = 'navigate',
       callback?: (payload: IdeaSearchPickPayload) => void,
-      initialAimId?: string,
+      initialIdeaId?: string,
       options?: Partial<IdeaSearchModalOptions>
     ) {
-      openAimSearchModalHelper(this, mode, callback, initialAimId, options)
+      openIdeaSearchModalHelper(this, mode, callback, initialIdeaId, options)
     },
 
-    closeAimSearch() {
-      closeAimSearchModalHelper(this)
+    closeIdeaSearch() {
+      closeIdeaSearchModalHelper(this)
       this.ideaSearchShowParentPaths = false
     },
 
@@ -131,11 +131,11 @@ export const useUIModalStore = defineStore('ui-modal', {
 
     openParentPathsModal(ideaId: string) {
       // Open search modal in path selection mode showing all paths to parent ideas
-      this.ideaSearchInitialAimId = ideaId
+      this.ideaSearchInitialIdeaId = ideaId
       this.ideaSearchShowParentPaths = true
       this.ideaSearchMode = 'navigate'
       this.ideaSearchCallback = null
-      this.showAimSearch = true
+      this.showIdeaSearch = true
     },
 
     clearTeleportBuffer() {
@@ -150,16 +150,16 @@ export const useUIModalStore = defineStore('ui-modal', {
       closeSettingsModalHelper(this)
     },
 
-    openAimEditModal(ideaId: string, ideaIds: string[] = [ideaId]) {
-      this.showAimEditModal = true
-      this.ideaEditModalAimId = ideaId
-      this.ideaEditModalAimIds = [...new Set(ideaIds)]
+    openIdeaEditModal(ideaId: string, ideaIds: string[] = [ideaId]) {
+      this.showIdeaEditModal = true
+      this.ideaEditModalIdeaId = ideaId
+      this.ideaEditModalIdeaIds = [...new Set(ideaIds)]
     },
 
-    closeAimEditModal() {
-      this.showAimEditModal = false
-      this.ideaEditModalAimId = null
-      this.ideaEditModalAimIds = []
+    closeIdeaEditModal() {
+      this.showIdeaEditModal = false
+      this.ideaEditModalIdeaId = null
+      this.ideaEditModalIdeaIds = []
     },
 
     openSpinOffApplyModal() {

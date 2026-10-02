@@ -1,5 +1,5 @@
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { calculateAimValues } from "shared";
+import { calculateIdeaValues } from "shared";
 import { IDEA_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { execFileSync } from "child_process";
@@ -14,9 +14,9 @@ import * as path from "path";
 // prefix — the convention used in this repo's commit messages.
 // Pure realized-commit / reconciliation helpers live in ./reconcile.ts (no MCP
 // server / tRPC client imports) so they stay unit-testable. Re-exported here to
-// preserve the existing import surface (countAimReferences).
-export { countAimReferences, findReconciliationCandidates } from "./reconcile.js";
-import { countAimReferences, findReconciliationCandidates } from "./reconcile.js";
+// preserve the existing import surface (countIdeaReferences).
+export { countIdeaReferences, findReconciliationCandidates } from "./reconcile.js";
+import { countIdeaReferences, findReconciliationCandidates } from "./reconcile.js";
 import { extractCodeTokens, scoreCodePresence } from "./code-presence.js";
 import { CONTINUE_HOOK_AGENTS, disableContinueHook, enableContinueHook } from "./continue-hook.js";
 
@@ -26,7 +26,7 @@ import { CONTINUE_HOOK_AGENTS, disableContinueHook, enableContinueHook } from ".
  * done-gate concrete — "done = verified-done, not claimed-done" — instead of a
  * generic reminder. Exported for unit testing.
  */
-export function verificationHintForAim(
+export function verificationHintForIdea(
   idea: { text?: string; description?: string; tags?: string[] } | null | undefined,
 ): string {
   const hay = `${idea?.text ?? ""} ${idea?.description ?? ""} ${(idea?.tags ?? []).join(" ")}`.toLowerCase();
@@ -85,7 +85,7 @@ function gitGrepMatches(projectPath: string, token: string): boolean {
   }
 }
 
-function formatAim(idea: any) {
+function formatIdea(idea: any) {
   if (idea.supportingConnections) {
     if (idea.supportingConnections.length === 0) {
         delete idea.supportingConnections;
@@ -97,15 +97,15 @@ function formatAim(idea: any) {
     }
   }
   if (idea.supportingRepos && idea.supportingRepos.length === 0) delete idea.supportingRepos;
-  if (idea.supportedAims && idea.supportedAims.length === 0) delete idea.supportedAims;
+  if (idea.supportedIdeas && idea.supportedIdeas.length === 0) delete idea.supportedIdeas;
   if (idea.committedIn && idea.committedIn.length === 0) delete idea.committedIn;
   if (idea.tags && idea.tags.length === 0) delete idea.tags;
   
   return idea;
 }
 
-function formatAims(ideas: any[]) {
-  return ideas.map(formatAim);
+function formatIdeas(ideas: any[]) {
+  return ideas.map(formatIdea);
 }
 
 // Repo-level cross-repo links are black-box edges: {repoId} and no ideaId, so a
@@ -398,7 +398,7 @@ export function registerTools(server: Server, trpcClient: any) {
                 },
               },
               supportingConnections: connectionInputSchema("Child idea UUIDs, or objects with ideaId/weight/explanation/relativePosition for edge metadata."),
-              supportedAims: connectionInputSchema("Parent idea UUIDs, or objects with ideaId/weight/explanation/relativePosition for the parent→new-idea edge."),
+              supportedIdeas: connectionInputSchema("Parent idea UUIDs, or objects with ideaId/weight/explanation/relativePosition for the parent→new-idea edge."),
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
               valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
               cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
@@ -411,7 +411,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "update_idea",
-          description: "Update idea fields. Sparse by default. supportedAims/supportingConnections still REPLACE existing links; use add*/remove* connection fields for safer append/remove edits. reflection is a free-text note and can be set with status=done to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
+          description: "Update idea fields. Sparse by default. supportedIdeas/supportingConnections still REPLACE existing links; use add*/remove* connection fields for safer append/remove edits. reflection is a free-text note and can be set with status=done to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
           inputSchema: {
             type: "object",
             properties: {
@@ -430,11 +430,11 @@ export function registerTools(server: Server, trpcClient: any) {
                 },
               },
               supportingConnections: connectionInputSchema("REPLACE child links. Each item may be a child UUID or { ideaId, weight, explanation, relativePosition }."),
-              supportedAims: connectionInputSchema("REPLACE parent links. Each item may be a parent UUID or { ideaId, weight, explanation, relativePosition }. Metadata applies to the parent→this-idea edge."),
+              supportedIdeas: connectionInputSchema("REPLACE parent links. Each item may be a parent UUID or { ideaId, weight, explanation, relativePosition }. Metadata applies to the parent→this-idea edge."),
               addSupportingConnections: connectionInputSchema("Append/update child links without replacing other children. Each item may include weight/explanation/relativePosition."),
               removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child idea UUIDs to unlink without replacing other children." },
-              addSupportedAims: connectionInputSchema("Append/update parent links without replacing other parents. Each item may include weight/explanation/relativePosition for the parent→this-idea edge."),
-              removeSupportedAims: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink without replacing other parents." },
+              addSupportedIdeas: connectionInputSchema("Append/update parent links without replacing other parents. Each item may include weight/explanation/relativePosition for the parent→this-idea edge."),
+              removeSupportedIdeas: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink without replacing other parents." },
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
               valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
               cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
@@ -707,11 +707,11 @@ export function registerTools(server: Server, trpcClient: any) {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              parentAimId: { type: "string", description: "UUID of the catch-all parent idea" },
+              parentIdeaId: { type: "string", description: "UUID of the catch-all parent idea" },
               candidateParentIds: { type: "array", items: { type: "string" }, description: "Optional explicit candidate sub-parent UUIDs (default: the catch-all's children that have children)" },
               limit: { type: "number", description: "Max suggestions to return (default 200)" },
             },
-            required: ["projectPath", "parentAimId"],
+            required: ["projectPath", "parentIdeaId"],
           },
         },
         {
@@ -824,7 +824,7 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(formatAim(idea), null, 2),
+                text: JSON.stringify(formatIdea(idea), null, 2),
               },
             ],
           };
@@ -839,26 +839,26 @@ export function registerTools(server: Server, trpcClient: any) {
           // Load the whole graph once: it powers the value model (to choose
           // which parent to follow at branches) and lets us resolve parent/child
           // text from a map instead of N round-trips.
-          const allAims = await trpcClient.idea.list.query({ projectPath });
-          const ideaMap = new Map<string, any>((allAims as any[]).map((a: any) => [a.id, a]));
-          const { flowValues } = calculateAimValues(allAims as any);
+          const allIdeas = await trpcClient.idea.list.query({ projectPath });
+          const ideaMap = new Map<string, any>((allIdeas as any[]).map((a: any) => [a.id, a]));
+          const { flowValues } = calculateIdeaValues(allIdeas as any);
 
           const idea = ideaMap.get(ideaId) || await trpcClient.idea.get.query({ projectPath, ideaId });
 
           // Semantic Search
           const queryText = `${idea.text} ${idea.description || ''}`.trim();
-          const similarAims = await trpcClient.idea.searchSemantic.query({
+          const similarIdeas = await trpcClient.idea.searchSemantic.query({
             projectPath,
             query: queryText,
             limit: 6 // Request 6, filter self
           });
-          const semanticContext = similarAims
+          const semanticContext = similarIdeas
             .filter((a: any) => a.id !== ideaId)
             .slice(0, 5)
             .map((a: any) => ({ id: a.id, text: a.text, description: a.description }));
 
           // Immediate parents (an idea may have several)
-          const parentContext = (idea.supportedAims || [])
+          const parentContext = (idea.supportedIdeas || [])
             .map((id: string) => ideaMap.get(id))
             .filter(Boolean)
             .map((p: any) => ({ id: p.id, text: p.text, description: p.description }));
@@ -876,7 +876,7 @@ export function registerTools(server: Server, trpcClient: any) {
           await describeRepoEdges(trpcClient, projectPath, [repoCarrier]);
           const repoContext = repoCarrier.supportingRepos;
 
-          // Highest-value path to root: walk up supportedAims so the agent sees
+          // Highest-value path to root: walk up supportedIdeas so the agent sees
           // lineage toward the highest-value goal (e.g. "achieve ASI"). At a
           // branch (multiple parents) follow the one with the highest actual
           // value inflow into the current idea — i.e. the parent through which
@@ -885,7 +885,7 @@ export function registerTools(server: Server, trpcClient: any) {
           const visited = new Set<string>([ideaId]);
           let cursor: any = idea;
           while (pathToRoot.length < MAX_PATH_DEPTH) {
-            const parentIds = (cursor.supportedAims || []).filter(
+            const parentIds = (cursor.supportedIdeas || []).filter(
               (id: string) => ideaMap.has(id) && !visited.has(id)
             );
             if (parentIds.length === 0) break; // reached a root (or only cycles remain)
@@ -931,7 +931,7 @@ export function registerTools(server: Server, trpcClient: any) {
               return;
             }
 
-            const existingParentIds = (current.supportedAims || [])
+            const existingParentIds = (current.supportedIdeas || [])
               .filter((id: string) => ideaMap.has(id));
             if (existingParentIds.length === 0) {
               pathsToRoot.push([...upwardPath].reverse());
@@ -984,10 +984,10 @@ export function registerTools(server: Server, trpcClient: any) {
 
         case "list_phase_ideas_recursive": {
             // 1. Get all ideas (cache them)
-            const allAims: any[] = await trpcClient.idea.list.query({
+            const allIdeas: any[] = await trpcClient.idea.list.query({
                 projectPath: args.projectPath as string,
             });
-            const ideaMap = new Map(allAims.map((a: any) => [a.id, a]));
+            const ideaMap = new Map(allIdeas.map((a: any) => [a.id, a]));
 
             // 2. Fetch the target phase directly
             const phase = await trpcClient.phase.get.query({
@@ -1060,7 +1060,7 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(formatAims(ideas), null, 2),
+                text: JSON.stringify(formatIdeas(ideas), null, 2),
               },
             ],
           };
@@ -1122,7 +1122,7 @@ export function registerTools(server: Server, trpcClient: any) {
                     "Review the related ideas, especially cancelled ones and their reasons. " +
                     "Reuse, update, connect, or merge when appropriate. If this proposal is still distinct and useful, " +
                     "repeat the identical create_idea call with confirmationToken.",
-                  relatedAims: (related as any[]).map((idea: any) => ({
+                  relatedIdeas: (related as any[]).map((idea: any) => ({
                     id: idea.id,
                     text: idea.text,
                     description: idea.description,
@@ -1140,7 +1140,7 @@ export function registerTools(server: Server, trpcClient: any) {
             );
           }
 
-          const result = await trpcClient.idea.createFloatingAim.mutate({
+          const result = await trpcClient.idea.createFloatingIdea.mutate({
             projectPath: args.projectPath as string,
             idea: {
               text: args.text as string,
@@ -1162,24 +1162,24 @@ export function registerTools(server: Server, trpcClient: any) {
           const children = (args.supportingConnections as ConnectionInput[]) || [];
           for (const childInput of children) {
             const child = normalizeConnectionInput(childInput);
-            await trpcClient.idea.connectAims.mutate({
+            await trpcClient.idea.connectIdeas.mutate({
               projectPath: args.projectPath as string,
-              parentAimId: result.id,
-              childAimId: child.ideaId,
+              parentIdeaId: result.id,
+              childIdeaId: child.ideaId,
               relativePosition: child.relativePosition,
               weight: child.weight,
               explanation: child.explanation,
             });
           }
 
-          // Handle supportedAims (parents)
-          const parents = (args.supportedAims as ConnectionInput[]) || [];
+          // Handle supportedIdeas (parents)
+          const parents = (args.supportedIdeas as ConnectionInput[]) || [];
           for (const parentInput of parents) {
             const parent = normalizeConnectionInput(parentInput);
-            await trpcClient.idea.connectAims.mutate({
+            await trpcClient.idea.connectIdeas.mutate({
               projectPath: args.projectPath as string,
-              parentAimId: parent.ideaId,
-              childAimId: result.id,
+              parentIdeaId: parent.ideaId,
+              childIdeaId: result.id,
               relativePosition: parent.relativePosition,
               weight: parent.weight,
               explanation: parent.explanation,
@@ -1226,11 +1226,11 @@ export function registerTools(server: Server, trpcClient: any) {
           const hasConnectionDeltas =
             args.addSupportingConnections !== undefined ||
             args.removeSupportingConnections !== undefined ||
-            args.addSupportedAims !== undefined ||
-            args.removeSupportedAims !== undefined;
+            args.addSupportedIdeas !== undefined ||
+            args.removeSupportedIdeas !== undefined;
 
           const parentMetadataToApply: Array<{
-            parentAimId: string;
+            parentIdeaId: string;
             relativePosition?: [number, number];
             weight?: number;
             explanation?: string;
@@ -1239,14 +1239,14 @@ export function registerTools(server: Server, trpcClient: any) {
           if (args.supportingConnections !== undefined) {
               updateData.supportingConnections = (args.supportingConnections as ConnectionInput[]).map(toStoredConnection);
           }
-          if (args.supportedAims !== undefined) {
-            const supportedAimInputs = args.supportedAims as ConnectionInput[];
-            updateData.supportedAims = supportedAimInputs.map(connectionId);
-            for (const input of supportedAimInputs) {
+          if (args.supportedIdeas !== undefined) {
+            const supportedIdeaInputs = args.supportedIdeas as ConnectionInput[];
+            updateData.supportedIdeas = supportedIdeaInputs.map(connectionId);
+            for (const input of supportedIdeaInputs) {
               if (typeof input === "string") continue;
               const parent = normalizeConnectionInput(input);
               parentMetadataToApply.push({
-                parentAimId: parent.ideaId,
+                parentIdeaId: parent.ideaId,
                 relativePosition: parent.relativePosition,
                 weight: parent.weight,
                 explanation: parent.explanation,
@@ -1255,14 +1255,14 @@ export function registerTools(server: Server, trpcClient: any) {
           }
 
           if (hasConnectionDeltas) {
-            const existingAim = await trpcClient.idea.get.query({
+            const existingIdea = await trpcClient.idea.get.query({
               projectPath: args.projectPath as string,
               ideaId: args.ideaId as string,
             });
 
             if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined) {
               const byChildId = new Map<string, any>();
-              const baseSupportingConnections = updateData.supportingConnections ?? existingAim.supportingConnections ?? [];
+              const baseSupportingConnections = updateData.supportingConnections ?? existingIdea.supportingConnections ?? [];
               for (const conn of baseSupportingConnections) {
                 byChildId.set(conn.ideaId, { ...conn });
               }
@@ -1276,24 +1276,24 @@ export function registerTools(server: Server, trpcClient: any) {
               updateData.supportingConnections = Array.from(byChildId.values());
             }
 
-            if (args.addSupportedAims !== undefined || args.removeSupportedAims !== undefined) {
-              const parentIds = new Set<string>(updateData.supportedAims ?? existingAim.supportedAims ?? []);
-              for (const parentId of (args.removeSupportedAims as string[] | undefined) ?? []) {
+            if (args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined) {
+              const parentIds = new Set<string>(updateData.supportedIdeas ?? existingIdea.supportedIdeas ?? []);
+              for (const parentId of (args.removeSupportedIdeas as string[] | undefined) ?? []) {
                 parentIds.delete(parentId);
               }
-              for (const input of (args.addSupportedAims as ConnectionInput[] | undefined) ?? []) {
+              for (const input of (args.addSupportedIdeas as ConnectionInput[] | undefined) ?? []) {
                 const parent = normalizeConnectionInput(input);
                 parentIds.add(parent.ideaId);
                 if (typeof input !== "string") {
                   parentMetadataToApply.push({
-                    parentAimId: parent.ideaId,
+                    parentIdeaId: parent.ideaId,
                     relativePosition: parent.relativePosition,
                     weight: parent.weight,
                     explanation: parent.explanation,
                   });
                 }
               }
-              updateData.supportedAims = Array.from(parentIds);
+              updateData.supportedIdeas = Array.from(parentIds);
             }
           }
 
@@ -1310,17 +1310,17 @@ export function registerTools(server: Server, trpcClient: any) {
               parent.explanation === undefined
             ) continue;
 
-            const parentAim = await trpcClient.idea.get.query({
+            const parentIdea = await trpcClient.idea.get.query({
               projectPath: args.projectPath as string,
-              ideaId: parent.parentAimId,
+              ideaId: parent.parentIdeaId,
             });
-            const childAimId = args.ideaId as string;
-            const supportingConnections = [...(parentAim.supportingConnections ?? [])];
-            const existingIndex = supportingConnections.findIndex((conn: any) => conn.ideaId === childAimId);
-            const previous = existingIndex === -1 ? { ideaId: childAimId } : supportingConnections[existingIndex];
+            const childIdeaId = args.ideaId as string;
+            const supportingConnections = [...(parentIdea.supportingConnections ?? [])];
+            const existingIndex = supportingConnections.findIndex((conn: any) => conn.ideaId === childIdeaId);
+            const previous = existingIndex === -1 ? { ideaId: childIdeaId } : supportingConnections[existingIndex];
             const next = {
               ...previous,
-              ideaId: childAimId,
+              ideaId: childIdeaId,
               relativePosition: parent.relativePosition ?? previous.relativePosition ?? [0, 0],
               weight: parent.weight ?? previous.weight ?? 1,
               ...(parent.explanation !== undefined ? { explanation: parent.explanation } : {}),
@@ -1332,7 +1332,7 @@ export function registerTools(server: Server, trpcClient: any) {
             }
             await trpcClient.idea.update.mutate({
               projectPath: args.projectPath as string,
-              ideaId: parent.parentAimId,
+              ideaId: parent.parentIdeaId,
               idea: { supportingConnections },
             });
           }
@@ -1354,7 +1354,7 @@ export function registerTools(server: Server, trpcClient: any) {
               if (!hasReflection) {
                 verificationNudge =
                   "\n\nReminder: marked done without a reflection. Record the verification evidence in update_idea.reflection or addReflection — " +
-                  verificationHintForAim(idea) +
+                  verificationHintForIdea(idea) +
                   " — so the graph reflects verified-done rather than claimed-done.";
               }
             } catch {
@@ -1676,29 +1676,29 @@ export function registerTools(server: Server, trpcClient: any) {
           // cost aggregates bottom-up. Ranking a single idea by its own
           // intrinsicValue/cost ignores the graph and is near-useless when most
           // intrinsic value sits at the top.
-          const allAims = await trpcClient.idea.list.query({
+          const allIdeas = await trpcClient.idea.list.query({
             projectPath: args.projectPath as string,
           });
-          const { priorities, values, costs, totalIntrinsic } = calculateAimValues(allAims as any);
+          const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas as any);
 
           const ideaIdSet = new Set<string>(targetPhase.commitments ?? []);
-          const openInPhase = (allAims as any[]).filter(
+          const openInPhase = (allIdeas as any[]).filter(
             (a: any) => ideaIdSet.has(a.id) && a.status.state === 'open'
           );
           const hasActiveChild = (idea: any) => (idea.supportingConnections ?? []).some((connection: any) => {
-            const child = (allAims as any[]).find((candidate: any) => candidate.id === connection.ideaId);
+            const child = (allIdeas as any[]).find((candidate: any) => candidate.id === connection.ideaId);
             return child && ['open', 'partially'].includes(child.status?.state);
           });
           const openLeavesInPhase = openInPhase.filter((idea: any) => !hasActiveChild(idea));
           const uncommittedLeaves = openLeavesInPhase.length === 0
-            ? (allAims as any[]).filter((idea: any) =>
+            ? (allIdeas as any[]).filter((idea: any) =>
                 idea.status?.state === 'open'
                 && (idea.committedIn ?? []).length === 0
-                && (idea.supportedAims ?? []).length > 0
+                && (idea.supportedIdeas ?? []).length > 0
                 && !hasActiveChild(idea)
               )
             : [];
-          const rankedOpenAims = uncommittedLeaves.length > 0
+          const rankedOpenIdeas = uncommittedLeaves.length > 0
             ? uncommittedLeaves
             : openInPhase;
           const emptyActionableFrontier = openLeavesInPhase.length === 0 && uncommittedLeaves.length === 0;
@@ -1709,7 +1709,7 @@ export function registerTools(server: Server, trpcClient: any) {
               : 'phase-commitments';
 
           // Diagnostics: how many committed ideas are missing economic data
-          const allCommitted = (allAims as any[]).filter((a: any) => ideaIdSet.has(a.id));
+          const allCommitted = (allIdeas as any[]).filter((a: any) => ideaIdSet.has(a.id));
           const missingCost = allCommitted.filter((a: any) => !a.cost || a.cost <= 0).length;
           // An idea with effectively-zero flowed value is disconnected from any intrinsic
           // value source in the graph — its priority is meaningless regardless of cost.
@@ -1734,15 +1734,15 @@ export function registerTools(server: Server, trpcClient: any) {
           // output. Grounds attention in reality (which ranked ideas have actually
           // produced work) without mutating the human-set value model.
           const commitMessages = getRepoCommitMessages(args.projectPath as string);
-          const realized = countAimReferences(commitMessages, rankedOpenAims.map((a: any) => a.id));
+          const realized = countIdeaReferences(commitMessages, rankedOpenIdeas.map((a: any) => a.id));
           const realizedSignalAvailable = commitMessages.length > 0;
           // High-priority ideas with a real cost but zero realized output are the
           // ones the loop keeps ranking yet never actually advances — surface them.
           const noRealizedOutput = realizedSignalAvailable
-            ? rankedOpenAims.filter((a: any) => (a.cost ?? 0) > 0 && !(realized.get(a.id) ?? 0)).length
+            ? rankedOpenIdeas.filter((a: any) => (a.cost ?? 0) > 0 && !(realized.get(a.id) ?? 0)).length
             : 0;
 
-          const prioritized = rankedOpenAims
+          const prioritized = rankedOpenIdeas
             .map((a: any) => ({
               ...a,
               _priority: priorities.get(a.id) ?? 0,
@@ -1777,14 +1777,14 @@ export function registerTools(server: Server, trpcClient: any) {
                     totalGraphIntrinsicValue: totalIntrinsic,
                   },
                   diagnostics: {
-                    committedAims: allCommitted.length,
-                    openAims: openInPhase.length,
-                    openLeafAims: openLeavesInPhase.length,
-                    uncommittedLeafAims: uncommittedLeaves.length,
+                    committedIdeas: allCommitted.length,
+                    openIdeas: openInPhase.length,
+                    openLeafIdeas: openLeavesInPhase.length,
+                    uncommittedLeafIdeas: uncommittedLeaves.length,
                     missingCostEstimate: missingCost,
                     disconnectedFromValue: missingValue,
                     realizedSignal: realizedSignalAvailable ? "git-commit-references" : "unavailable (not a git repo / no commits)",
-                    openAimsWithNoRealizedOutput: realizedSignalAvailable ? noRealizedOutput : undefined,
+                    openIdeasWithNoRealizedOutput: realizedSignalAvailable ? noRealizedOutput : undefined,
                     note: uncommittedLeaves.length > 0
                       ? `No open leaf idea is committed to this phase; ranked ${uncommittedLeaves.length} connected uncommitted open leaf idea(s) instead. They are reachable through their parents — rank and work them as they are; committing them to a phase is optional.`
                       : emptyActionableFrontier
@@ -1835,7 +1835,7 @@ export function registerTools(server: Server, trpcClient: any) {
             offset: args.offset as number | undefined,
           });
           return {
-            content: [{ type: "text", text: JSON.stringify(ideas.map(formatAim), null, 2) }],
+            content: [{ type: "text", text: JSON.stringify(ideas.map(formatIdea), null, 2) }],
           };
         }
 
@@ -1875,7 +1875,7 @@ export function registerTools(server: Server, trpcClient: any) {
             limit: args.limit as number | undefined,
           });
           return {
-            content: [{ type: "text", text: JSON.stringify(results.map(formatAim), null, 2) }],
+            content: [{ type: "text", text: JSON.stringify(results.map(formatIdea), null, 2) }],
           };
         }
 
@@ -1893,7 +1893,7 @@ export function registerTools(server: Server, trpcClient: any) {
         case "suggest_reparents": {
           const result = await trpcClient.project.suggestReparents.query({
             projectPath: args.projectPath as string,
-            parentAimId: args.parentAimId as string,
+            parentIdeaId: args.parentIdeaId as string,
             candidateParentIds: args.candidateParentIds as string[] | undefined,
             limit: args.limit as number | undefined,
           });
@@ -1927,21 +1927,21 @@ export function registerTools(server: Server, trpcClient: any) {
 
         case "reconcile_status": {
           const limit = (args.limit as number | undefined) ?? 30;
-          const allAims = await trpcClient.idea.list.query({
+          const allIdeas = await trpcClient.idea.list.query({
             projectPath: args.projectPath as string,
           });
-          const openAims = (allAims as any[]).filter((a: any) => a.status?.state === "open");
+          const openIdeas = (allIdeas as any[]).filter((a: any) => a.status?.state === "open");
           // Code-only: a graph-bookkeeping commit that merely cites an idea id is
           // not evidence the idea was implemented (see CODE_ONLY_PATHSPEC).
           const commitMessages = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
-          const counts = countAimReferences(commitMessages, openAims.map((a: any) => a.id));
-          const candidates = findReconciliationCandidates(openAims as any[], counts);
+          const counts = countIdeaReferences(commitMessages, openIdeas.map((a: any) => a.id));
+          const candidates = findReconciliationCandidates(openIdeas as any[], counts);
           return {
             content: [{
               type: "text",
               text: JSON.stringify({
                 gitAvailable: commitMessages.length > 0,
-                openAims: openAims.length,
+                openIdeas: openIdeas.length,
                 candidatesFound: candidates.length,
                 note: commitMessages.length === 0
                   ? "No git commits found (not a git repo, or no history) — commit-reference reconciliation is unavailable."
@@ -1960,21 +1960,21 @@ export function registerTools(server: Server, trpcClient: any) {
           const MAX_TOKENS_PER_IDEA = 12;
           const MAX_UNIQUE_TOKENS = 400;
 
-          const allAims = await trpcClient.idea.list.query({ projectPath: args.projectPath as string });
-          const openAims = (allAims as any[]).filter((a: any) => a.status?.state === "open");
+          const allIdeas = await trpcClient.idea.list.query({ projectPath: args.projectPath as string });
+          const openIdeas = (allIdeas as any[]).filter((a: any) => a.status?.state === "open");
 
           // Ideas already cited by a code commit are reconcile_status's job — skip
           // them so this heuristic focuses on its complement (no commit reference).
           const codeCommits = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
-          const cited = countAimReferences(codeCommits, openAims.map((a: any) => a.id));
-          const ideasToScan = openAims.filter((a: any) => !((cited.get(a.id) ?? 0) > 0));
+          const cited = countIdeaReferences(codeCommits, openIdeas.map((a: any) => a.id));
+          const ideasToScan = openIdeas.filter((a: any) => !((cited.get(a.id) ?? 0) > 0));
 
-          const tokensByAim = new Map<string, string[]>();
+          const tokensByIdea = new Map<string, string[]>();
           const uniqueTokens = new Set<string>();
           for (const a of ideasToScan) {
             const toks = extractCodeTokens(`${a.text}\n${a.description ?? ""}`).slice(0, MAX_TOKENS_PER_IDEA);
             if (toks.length >= 2) {
-              tokensByAim.set(a.id, toks);
+              tokensByIdea.set(a.id, toks);
               for (const t of toks) if (uniqueTokens.size < MAX_UNIQUE_TOKENS) uniqueTokens.add(t);
             }
           }
@@ -1983,8 +1983,8 @@ export function registerTools(server: Server, trpcClient: any) {
           const present = new Set<string>();
           for (const tok of uniqueTokens) if (gitGrepMatches(args.projectPath as string, tok)) present.add(tok);
 
-          const ideaById = new Map<string, any>(openAims.map((a: any) => [a.id, a]));
-          const candidates = [...tokensByAim.entries()]
+          const ideaById = new Map<string, any>(openIdeas.map((a: any) => [a.id, a]));
+          const candidates = [...tokensByIdea.entries()]
             .map(([id, toks]) => ({ id, ...scoreCodePresence(toks, present) }))
             .filter((c) => c.scorable && c.score >= minScore && c.matched.length >= 2)
             .sort((x, y) => y.score - x.score)
@@ -2000,9 +2000,9 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [{
               type: "text",
               text: JSON.stringify({
-                openAims: openAims.length,
-                skippedCommitCited: openAims.length - ideasToScan.length,
-                scanned: tokensByAim.size,
+                openIdeas: openIdeas.length,
+                skippedCommitCited: openIdeas.length - ideasToScan.length,
+                scanned: tokensByIdea.size,
                 minScore,
                 candidatesFound: candidates.length,
                 note: "OPEN ideas whose code-shaped tokens are mostly present in the codebase — likely already implemented. Heuristic/noisy (a token can exist for unrelated reasons): verify each against the code using the matched/missing tokens, then update_idea to done if confirmed. Ideas cited by a code commit are handled by reconcile_status and skipped here.",

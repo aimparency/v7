@@ -26,9 +26,9 @@ const selected = computed(() => {
 })
 
 const ideaSelected = computed(() => {
-  const currentAimId = graphUIStore.graphSelectedAimId
-  return currentAimId === props.link.source.id || 
-         currentAimId === props.link.target.id
+  const currentIdeaId = graphUIStore.graphSelectedIdeaId
+  return currentIdeaId === props.link.source.id || 
+         currentIdeaId === props.link.target.id
 })
 
 const d = computed(() => {

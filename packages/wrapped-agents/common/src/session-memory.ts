@@ -75,7 +75,7 @@ export class SessionMemory {
         sessionId: this.sessionId,
         timestamp: this.sessionStartTime,
         duration: Date.now() - this.sessionStartTime,
-        ideasWorked: this.extractAimIds(workerContext),
+        ideasWorked: this.extractIdeaIds(workerContext),
         outcomes: this.extractOutcomes(workerContext),
         patterns: reflection?.patterns?.trim() ?? '',
         lessonsLearned: reflection?.lessonsLearned?.trim() ?? '',
@@ -93,7 +93,7 @@ export class SessionMemory {
   /**
    * Extract idea IDs from worker output
    */
-  private extractAimIds(context: string): string[] {
+  private extractIdeaIds(context: string): string[] {
     const ideaIds: string[] = [];
     // Match UUID patterns (idea IDs)
     const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;

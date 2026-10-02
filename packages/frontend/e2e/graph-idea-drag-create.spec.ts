@@ -2,11 +2,11 @@ import { test, expect, Page } from '@playwright/test';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { mkdirSync, rmSync, readdirSync, readFileSync } from 'fs';
-import { finishAimCreation } from './test-utils';
+import { finishIdeaCreation } from './test-utils';
 
 // The graph draws nodes and links with WebGL, so tests locate nodes through the
 // dev-only window.__aimparencyGraph hook and read links from the project files.
-function readAims(projectPath: string): any[] {
+function readIdeas(projectPath: string): any[] {
   const ideasDir = join(projectPath, '.bowman', 'ideas');
   return readdirSync(ideasDir)
     .filter((file) => file.endsWith('.json'))
@@ -14,7 +14,7 @@ function readAims(projectPath: string): any[] {
 }
 
 function countConnections(projectPath: string): number {
-  return readAims(projectPath).reduce((total, idea) => total + (idea.supportingConnections?.length ?? 0), 0);
+  return readIdeas(projectPath).reduce((total, idea) => total + (idea.supportingConnections?.length ?? 0), 0);
 }
 
 // Waits until the node has settled (camera tracking and layout move it at first).
@@ -91,11 +91,11 @@ test('graph view: create first idea by double-click, then drag to create sub-ide
     await ideaInput.fill('Root Idea');
     await ideaInput.press('Enter');
 
-    await finishAimCreation(page);
+    await finishIdeaCreation(page);
     await page.waitForTimeout(500);
 
     // Verify first idea exists and find its node
-    await expect.poll(() => readAims(tempDir).length).toBe(1);
+    await expect.poll(() => readIdeas(tempDir).length).toBe(1);
     const { x: nodeX, y: nodeY } = await getNodePosition(page, 'Root Idea');
 
     // Dragging a selected node draws a connection (an unselected one just moves)
@@ -118,15 +118,15 @@ test('graph view: create first idea by double-click, then drag to create sub-ide
     // Modal should appear for the sub-idea
     await expect(modal).toBeVisible({ timeout: 3000 });
 
-    const subAimInput = modal.locator('input[type="text"]').first();
-    await subAimInput.fill('Sub Idea');
-    await subAimInput.press('Enter');
+    const subIdeaInput = modal.locator('input[type="text"]').first();
+    await subIdeaInput.fill('Sub Idea');
+    await subIdeaInput.press('Enter');
 
-    await finishAimCreation(page);
+    await finishIdeaCreation(page);
     await page.waitForTimeout(1000);
 
     // Verify both ideas exist and are connected
-    await expect.poll(() => readAims(tempDir).length).toBe(2);
+    await expect.poll(() => readIdeas(tempDir).length).toBe(2);
     await expect.poll(() => countConnections(tempDir)).toBe(1);
 
     // Check for console errors (especially NaN errors)
@@ -180,7 +180,7 @@ test('graph view: drag from existing node to another existing node creates conne
     await expect(modal).toBeVisible();
     await modal.locator('input[type="text"]').first().fill('Parent Idea');
     await modal.locator('input[type="text"]').first().press('Enter');
-    await finishAimCreation(page);
+    await finishIdeaCreation(page);
     await page.waitForTimeout(500);
 
     // Create second idea (unconnected)
@@ -190,11 +190,11 @@ test('graph view: drag from existing node to another existing node creates conne
     await expect(modal).toBeVisible();
     await modal.locator('input[type="text"]').first().fill('Child Idea');
     await modal.locator('input[type="text"]').first().press('Enter');
-    await finishAimCreation(page);
+    await finishIdeaCreation(page);
     await page.waitForTimeout(500);
 
     // Verify two ideas exist and no links yet
-    await expect.poll(() => readAims(tempDir).length).toBe(2);
+    await expect.poll(() => readIdeas(tempDir).length).toBe(2);
     expect(countConnections(tempDir)).toBe(0);
 
     // Drag from first to second to create connection
@@ -260,7 +260,7 @@ test('graph view: ctrl/shift click for multi-select (range add) and bulk selecti
     if (await modal.count() > 0 && await modal.isVisible()) {
       await modal.locator('input[type="text"]').first().fill('GMulti A');
       await modal.locator('input[type="text"]').first().press('Enter');
-      await finishAimCreation(page);
+      await finishIdeaCreation(page);
     }
     await page.waitForTimeout(500);
 
@@ -272,7 +272,7 @@ test('graph view: ctrl/shift click for multi-select (range add) and bulk selecti
     if (await modal.count() > 0 && await modal.isVisible()) {
       await modal.locator('input[type="text"]').first().fill('GMulti B');
       await modal.locator('input[type="text"]').first().press('Enter');
-      await finishAimCreation(page);
+      await finishIdeaCreation(page);
     }
     await page.waitForTimeout(600);
 

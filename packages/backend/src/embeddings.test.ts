@@ -55,11 +55,11 @@ test('loadVectorStore drops malformed vectors but keeps numeric ones', async () 
 });
 
 test('semantic search works with local embeddings', async () => {
-  const releaseAim = await caller.idea.createFloatingAim({
+  const releaseIdea = await caller.idea.createFloatingIdea({
     projectPath: testRootPath,
     idea: { text: 'Open source release checklist', status: { state: 'open', comment: '', date: Date.now() } }
   });
-  const gardenAim = await caller.idea.createFloatingAim({
+  const gardenIdea = await caller.idea.createFloatingIdea({
     projectPath: testRootPath,
     idea: { text: 'Water the balcony tomatoes', status: { state: 'open', comment: '', date: Date.now() } }
   });
@@ -70,8 +70,8 @@ test('semantic search works with local embeddings', async () => {
   assert.ok(releaseVector);
   assert.ok(gardenVector);
 
-  await saveEmbedding(testRootPath, releaseAim.id, releaseVector);
-  await saveEmbedding(testRootPath, gardenAim.id, gardenVector);
+  await saveEmbedding(testRootPath, releaseIdea.id, releaseVector);
+  await saveEmbedding(testRootPath, gardenIdea.id, gardenVector);
 
   const results = await caller.idea.searchSemantic({
     projectPath: testRootPath,
@@ -80,6 +80,6 @@ test('semantic search works with local embeddings', async () => {
   });
 
   assert.equal(results.length, 2);
-  assert.equal(results[0]?.id, releaseAim.id);
+  assert.equal(results[0]?.id, releaseIdea.id);
   assert.ok((results[0]?.score ?? 0) > (results[1]?.score ?? 0));
 });

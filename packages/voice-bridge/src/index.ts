@@ -112,7 +112,7 @@ async function handleToolCall(name: string, args: any, projectPath: string) {
         return ideas;
       }
       case 'create_idea': {
-        const res = await trpc.idea.createFloatingAim.mutate({ 
+        const res = await trpc.idea.createFloatingIdea.mutate({ 
           projectPath, 
           idea: { 
             text: args.text,

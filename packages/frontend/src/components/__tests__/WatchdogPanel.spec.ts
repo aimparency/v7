@@ -63,12 +63,12 @@ const projectStore = reactive({
 })
 
 const modalStore = reactive({
-  showAimSearch: false,
+  showIdeaSearch: false,
   showPhaseSearchPrompt: false,
-  showAimModal: false,
+  showIdeaModal: false,
   showPhaseModal: false,
   showSettingsModal: false,
-  openAimSearch: vi.fn()
+  openIdeaSearch: vi.fn()
 })
 
 vi.mock('../../stores/watchdog', () => ({

@@ -5,7 +5,7 @@ import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
-import type { Idea, SearchAimResult } from 'shared'
+import type { Idea, SearchIdeaResult } from 'shared'
 import type { IdeaSearchAdditionalOption } from '../stores/ui/idea-search-types'
 import IdeaSearchPicker, { type IdeaSearchSelection } from './IdeaSearchPicker.vue'
 
@@ -29,16 +29,16 @@ const loading = ref(false)
 
 const pathSelectionMode = ref(false)
 const availablePaths = ref<(IdeaPath & { label: string })[]>([])
-const selectedAimText = ref('')
+const selectedIdeaText = ref('')
 
-const externalResults = computed<SearchAimResult[] | undefined>(() => {
+const externalResults = computed<SearchIdeaResult[] | undefined>(() => {
   if (!pathSelectionMode.value) return undefined
   return availablePaths.value.map((path, index) => ({
     id: `path-${index}`,
     text: path.label,
     status: { state: 'open', comment: '', date: Date.now() },
     committedIn: [],
-    supportedAims: [],
+    supportedIdeas: [],
     supportingConnections: [],
     intrinsicValue: 0,
     cost: 0,
@@ -63,11 +63,11 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const selectAim = async (idea: Idea, keepOpen = false) => {
+const selectIdea = async (idea: Idea, keepOpen = false) => {
   if (modalStore.ideaSearchMode === 'pick') {
     try {
-      const fullAim = await trpc.idea.get.query({ projectPath: projectStore.projectPath, ideaId: idea.id })
-      emit('select', keepOpen ? { type: 'idea', data: fullAim, keepOpen } : { type: 'idea', data: fullAim })
+      const fullIdea = await trpc.idea.get.query({ projectPath: projectStore.projectPath, ideaId: idea.id })
+      emit('select', keepOpen ? { type: 'idea', data: fullIdea, keepOpen } : { type: 'idea', data: fullIdea })
     } catch (error) {
       console.error('Failed to load idea for selection', error)
       emit('select', keepOpen ? { type: 'idea', data: idea, keepOpen } : { type: 'idea', data: idea })
@@ -82,8 +82,8 @@ const selectAim = async (idea: Idea, keepOpen = false) => {
 
   if (projectStore.currentView === 'graph') {
     try {
-      const fullAim = await trpc.idea.get.query({ projectPath: projectStore.projectPath, ideaId: idea.id })
-      emit('select', { type: 'idea', data: fullAim })
+      const fullIdea = await trpc.idea.get.query({ projectPath: projectStore.projectPath, ideaId: idea.id })
+      emit('select', { type: 'idea', data: fullIdea })
     } catch (error) {
       console.error('Failed to load idea for graph navigation', error)
       emit('select', { type: 'idea', data: idea })
@@ -102,7 +102,7 @@ const selectAim = async (idea: Idea, keepOpen = false) => {
       emit('select', { type: 'path', data: paths[0] })
       close()
     } else {
-      selectedAimText.value = idea.text.length > 50 ? `${idea.text.substring(0, 50)}...` : idea.text
+      selectedIdeaText.value = idea.text.length > 50 ? `${idea.text.substring(0, 50)}...` : idea.text
 
       // Merge paths sharing common suffixes
       const mergedPaths: (IdeaPath & { isMerged?: boolean })[] = []
@@ -168,8 +168,8 @@ const selectAim = async (idea: Idea, keepOpen = false) => {
           label = 'Floating'
         }
 
-        const trailAims = path.isMerged ? path.ideas : path.ideas.slice(0, -1)
-        const trail = trailAims.map(step => step.text).join(' > ')
+        const trailIdeas = path.isMerged ? path.ideas : path.ideas.slice(0, -1)
+        const trail = trailIdeas.map(step => step.text).join(' > ')
         
         if (path.isMerged) {
           label += ` > ... > ${trail}`
@@ -220,7 +220,7 @@ const handlePickerActivate = (payload: IdeaSearchSelection) => {
     return
   }
 
-  void selectAim(payload.data, keepOpen)
+  void selectIdea(payload.data, keepOpen)
 }
 
 const handleEscape = () => {
@@ -235,7 +235,7 @@ const handleEscape = () => {
 const close = () => {
   pathSelectionMode.value = false
   availablePaths.value = []
-  selectedAimText.value = ''
+  selectedIdeaText.value = ''
   emit('close')
 }
 
@@ -268,25 +268,25 @@ watch(pathSelectionMode, (active) => {
 })
 
 onMounted(async () => {
-  if (modalStore.ideaSearchInitialAimId && modalStore.ideaSearchShowParentPaths) {
-    const ideaId = modalStore.ideaSearchInitialAimId
+  if (modalStore.ideaSearchInitialIdeaId && modalStore.ideaSearchShowParentPaths) {
+    const ideaId = modalStore.ideaSearchInitialIdeaId
     loading.value = true
     try {
       const idea = await trpc.idea.get.query({ projectPath: projectStore.projectPath, ideaId })
 
-      if (!idea.supportedAims || idea.supportedAims.length === 0) {
+      if (!idea.supportedIdeas || idea.supportedIdeas.length === 0) {
         loading.value = false
         nextTick(() => pickerRef.value?.focusInput())
         return
       }
 
       const allPaths: IdeaPath[] = []
-      for (const parentId of idea.supportedAims) {
+      for (const parentId of idea.supportedIdeas) {
         const paths = await uiStore.prepareNavigation(parentId)
         allPaths.push(...paths)
       }
 
-      selectedAimText.value = `Parent ideas of: ${idea.text.length > 40 ? `${idea.text.substring(0, 40)}...` : idea.text}`
+      selectedIdeaText.value = `Parent ideas of: ${idea.text.length > 40 ? `${idea.text.substring(0, 40)}...` : idea.text}`
       availablePaths.value = await Promise.all(allPaths.map(async path => {
         let label = ''
         if (path.phaseId) {
@@ -320,14 +320,14 @@ onMounted(async () => {
     return
   }
 
-  if (modalStore.ideaSearchInitialAimId) {
+  if (modalStore.ideaSearchInitialIdeaId) {
     loading.value = true
     try {
       const idea = await trpc.idea.get.query({
         projectPath: projectStore.projectPath,
-        ideaId: modalStore.ideaSearchInitialAimId
+        ideaId: modalStore.ideaSearchInitialIdeaId
       })
-      await selectAim(idea)
+      await selectIdea(idea)
     } catch (error) {
       console.error('Failed to load initial idea', error)
     } finally {
@@ -359,7 +359,7 @@ onUnmounted(() => {
         :autofocus="true"
         :additional-options="!pathSelectionMode ? modalStore.ideaSearchAdditionalOptions : []"
         :external-results="externalResults"
-        :navigation-title="pathSelectionMode ? selectedAimText : ''"
+        :navigation-title="pathSelectionMode ? selectedIdeaText : ''"
         @activate="handlePickerActivate"
         @escape="handleEscape"
       />

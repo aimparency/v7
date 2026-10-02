@@ -57,7 +57,7 @@ describe('IdeaCreationModal', () => {
     vi.useRealTimers()
   })
 
-  const mountWithSelectedSubAim = (source: 'columns' | 'graph') => {
+  const mountWithSelectedSubIdea = (source: 'columns' | 'graph') => {
     const pinia = createTestingPinia({
       createSpy: vi.fn,
       initialState: {
@@ -76,13 +76,13 @@ describe('IdeaCreationModal', () => {
   }
 
   it('prefills the columns selection parent when opened from columns', async () => {
-    const columnsWrapper = mountWithSelectedSubAim('columns')
+    const columnsWrapper = mountWithSelectedSubIdea('columns')
     await columnsWrapper.vm.$nextTick()
     expect(columnsWrapper.text()).toContain('Columns parent')
   })
 
   it('does not prefill a columns parent when opened from the graph', async () => {
-    const graphWrapper = mountWithSelectedSubAim('graph')
+    const graphWrapper = mountWithSelectedSubIdea('graph')
     await graphWrapper.vm.$nextTick()
     expect(graphWrapper.text()).not.toContain('Columns parent')
   })
@@ -97,9 +97,9 @@ describe('IdeaCreationModal', () => {
     
     await wrapper.find('.btn-primary').trigger('click')
     
-    // Check arguments passed to createAim
+    // Check arguments passed to createIdea
     // (text, isExisting, desc, tags, intrinsic, loop, cost, weight, supported, supporting)
-    expect(uiStore.createAim).toHaveBeenCalledWith(
+    expect(uiStore.createIdea).toHaveBeenCalledWith(
       'New Idea',
       false,
       '',
@@ -120,7 +120,7 @@ describe('IdeaCreationModal', () => {
 
   it('ignores repeated Enter while a creation is still in flight', async () => {
     let resolveCreate: () => void = () => {}
-    uiStore.createAim.mockImplementation(() => new Promise<void>(resolve => {
+    uiStore.createIdea.mockImplementation(() => new Promise<void>(resolve => {
       resolveCreate = resolve
     }))
 
@@ -131,7 +131,7 @@ describe('IdeaCreationModal', () => {
     await input.trigger('keydown', { key: 'Enter' })
     await input.trigger('keydown', { key: 'Enter' })
 
-    expect(uiStore.createAim).toHaveBeenCalledTimes(1)
+    expect(uiStore.createIdea).toHaveBeenCalledTimes(1)
     expect(wrapper.find('.btn-primary').attributes('disabled')).toBeDefined()
 
     resolveCreate()
@@ -146,7 +146,7 @@ describe('IdeaCreationModal', () => {
     await wrapper.find('textarea[placeholder^="Explain the evidence"]').setValue('Validated customer outcome')
     await wrapper.find('.btn-primary').trigger('click')
 
-    const args = uiStore.createAim.mock.calls.at(-1)
+    const args = uiStore.createIdea.mock.calls.at(-1)
     expect(args?.at(-1)).toBe('Validated customer outcome')
   })
 
@@ -154,13 +154,13 @@ describe('IdeaCreationModal', () => {
     const addBtn = wrapper.find('button[title="Add Parent"]')
     await addBtn.trigger('click')
 
-    expect(modalStore.openAimSearch).toHaveBeenCalledWith(
+    expect(modalStore.openIdeaSearch).toHaveBeenCalledWith(
       'pick',
       expect.any(Function),
       undefined,
       expect.objectContaining({ title: 'Select Supported Idea' })
     )
-    const callback = modalStore.openAimSearch.mock.calls[0]?.[1]
+    const callback = modalStore.openIdeaSearch.mock.calls[0]?.[1]
     callback({ type: 'idea', data: { id: 'p1', text: 'Parent 1' } })
     await wrapper.vm.$nextTick()
     
@@ -176,13 +176,13 @@ describe('IdeaCreationModal', () => {
     const addBtn = wrapper.find('button[title="Add Child"]')
     await addBtn.trigger('click')
 
-    expect(modalStore.openAimSearch).toHaveBeenCalledWith(
+    expect(modalStore.openIdeaSearch).toHaveBeenCalledWith(
       'pick',
       expect.any(Function),
       undefined,
       expect.objectContaining({ title: 'Select Supporting Idea' })
     )
-    const callback = modalStore.openAimSearch.mock.calls[0]?.[1]
+    const callback = modalStore.openIdeaSearch.mock.calls[0]?.[1]
     callback({ type: 'idea', data: { id: 'c1', text: 'Child 1' } })
     await wrapper.vm.$nextTick()
     
@@ -197,7 +197,7 @@ describe('IdeaCreationModal', () => {
     await input.setValue('Parent Idea')
     await wrapper.find('.btn-primary').trigger('click')
     
-    expect(uiStore.createAim).toHaveBeenCalledWith(
+    expect(uiStore.createIdea).toHaveBeenCalledWith(
         expect.anything(),
         expect.anything(),
         expect.anything(),
@@ -230,7 +230,7 @@ describe('IdeaCreationModal', () => {
     await wrapper.find('.btn-primary').trigger('click')
 
     // With ambiguous perfect matches, index stays on "create new" entry.
-    expect(uiStore.createAim).toHaveBeenCalledWith(
+    expect(uiStore.createIdea).toHaveBeenCalledWith(
       'Refactor',
       false,
       '',
@@ -267,7 +267,7 @@ describe('IdeaCreationModal', () => {
     await results[0]!.trigger('keydown', { key: 'j' })
     await results[1]!.trigger('keydown', { key: 'Enter' })
 
-    expect(uiStore.createAim).toHaveBeenCalledWith(
+    expect(uiStore.createIdea).toHaveBeenCalledWith(
       'a1',
       true,
       undefined,
@@ -320,7 +320,7 @@ describe('IdeaCreationModal', () => {
   it('closes on Escape handled by the modal shell', async () => {
     await wrapper.find('.modal-overlay').trigger('keydown', { key: 'Escape' })
 
-    expect(modalStore.closeAimModal).toHaveBeenCalled()
+    expect(modalStore.closeIdeaModal).toHaveBeenCalled()
   })
 
   it('keeps description Escape local and does not bubble to close the modal', async () => {
@@ -337,7 +337,7 @@ describe('IdeaCreationModal', () => {
     expect(preventDefault).toHaveBeenCalled()
     expect(stopPropagation).toHaveBeenCalled()
 
-    modalStore.closeAimModal.mockClear()
+    modalStore.closeIdeaModal.mockClear()
     description.element.dispatchEvent(new KeyboardEvent('keydown', {
       key: 'Escape',
       bubbles: true,
@@ -345,7 +345,7 @@ describe('IdeaCreationModal', () => {
     }))
     await wrapper.vm.$nextTick()
 
-    expect(modalStore.closeAimModal).not.toHaveBeenCalled()
+    expect(modalStore.closeIdeaModal).not.toHaveBeenCalled()
   })
 
   it('returns focus to the title input on Shift+Tab from embedded search', async () => {
@@ -385,7 +385,7 @@ describe('IdeaCreationModal', () => {
     await results[2]!.trigger('mouseenter')
     await wrapper.find('.btn-primary').trigger('click')
 
-    expect(uiStore.createAim).toHaveBeenCalledWith(
+    expect(uiStore.createIdea).toHaveBeenCalledWith(
       'Refactor',
       false,
       '',
@@ -403,10 +403,10 @@ describe('IdeaCreationModal', () => {
       ''
     )
 
-    uiStore.createAim.mockClear()
+    uiStore.createIdea.mockClear()
 
     await results[2]!.trigger('click')
-    expect(uiStore.createAim).toHaveBeenCalledWith(
+    expect(uiStore.createIdea).toHaveBeenCalledWith(
       'a2',
       true,
       undefined,

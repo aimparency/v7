@@ -44,7 +44,7 @@ const actions = [
     key: 'a',
     label: () => 'Search & Insert Idea',
     action: () => {
-      modalStore.openAimSearch('pick', (payload) => {
+      modalStore.openIdeaSearch('pick', (payload) => {
         if (payload.type !== 'idea') return
         const idea = payload.data
         const textToInsert = `[${idea.id}] ${idea.text}`
@@ -147,9 +147,9 @@ onUnmounted(() => {
 
   // Restore focus only when no follow-up modal/action UI took focus.
   const hasActiveFollowupModal =
-    modalStore.showAimSearch ||
+    modalStore.showIdeaSearch ||
     modalStore.showPhaseSearchPrompt ||
-    modalStore.showAimModal ||
+    modalStore.showIdeaModal ||
     modalStore.showPhaseModal ||
     modalStore.showSettingsModal
 

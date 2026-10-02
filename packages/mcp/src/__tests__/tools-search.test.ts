@@ -19,7 +19,7 @@ test('MCP Tools - Search', async () => {
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await caller.idea.createFloatingAim({
+  await caller.idea.createFloatingIdea({
     projectPath: ctx.projectPath,
     idea: { text: 'Find Me', status: { state: 'open', comment: '', date: Date.now() } }
   });

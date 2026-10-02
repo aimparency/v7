@@ -39,7 +39,7 @@ type LoopInstance = {
   name: string
   status: 'idle' | 'running' | 'waiting_for_human' | 'waiting_for_external' | 'stopped' | 'done' | 'error'
   targetPhaseId: string | null
-  targetAimId: string | null
+  targetIdeaId: string | null
   stopPolicy: LoopStopPolicy
   currentActivity: string | null
   createdAt: number
@@ -101,13 +101,13 @@ const selectedTargetPhaseLabel = computed(() => {
   if (!id) return 'No phase'
   return dataStore.phases[id]?.name ?? phaseLabels.value[id] ?? 'Loading phase...'
 })
-const selectedTargetAimLabel = computed(() => {
-  const id = selectedInstance.value?.targetAimId
+const selectedTargetIdeaLabel = computed(() => {
+  const id = selectedInstance.value?.targetIdeaId
   if (!id) return 'No idea'
   return dataStore.ideas[id]?.text ?? ideaLabels.value[id] ?? 'Loading idea...'
 })
 const stopPolicyOptions = computed<Array<{ value: LoopStopPolicy; label: string }>>(() => [
-  ...(selectedInstance.value?.targetAimId ? [{ value: 'target_halted' as const, label: 'idea halted' }] : []),
+  ...(selectedInstance.value?.targetIdeaId ? [{ value: 'target_halted' as const, label: 'idea halted' }] : []),
   ...(selectedInstance.value?.targetPhaseId ? [{ value: 'phase_done' as const, label: 'phase done' }] : []),
   { value: 'never', label: 'never' },
   { value: 'asap', label: 'asap' }
@@ -123,7 +123,7 @@ const requiredSecretLabel = computed(() => {
 const resolveTargetLabels = async () => {
   if (!projectStore.projectPath) return
   const phaseIds = [...new Set(instances.value.map((instance) => instance.targetPhaseId).filter((id): id is string => Boolean(id)))]
-  const ideaIds = [...new Set(instances.value.map((instance) => instance.targetAimId).filter((id): id is string => Boolean(id)))]
+  const ideaIds = [...new Set(instances.value.map((instance) => instance.targetIdeaId).filter((id): id is string => Boolean(id)))]
   await Promise.all([
     ...phaseIds
       .filter((id) => !dataStore.phases[id] && !phaseLabels.value[id])
@@ -287,7 +287,7 @@ const deleteInstance = async () => {
   selectedInstanceId.value = null
 }
 
-const updateSelectedInstance = async (patch: Partial<Pick<LoopInstance, 'name' | 'targetPhaseId' | 'targetAimId' | 'stopPolicy'>>) => {
+const updateSelectedInstance = async (patch: Partial<Pick<LoopInstance, 'name' | 'targetPhaseId' | 'targetIdeaId' | 'stopPolicy'>>) => {
   if (!projectStore.projectPath || !selectedInstance.value) return
   const runtime = await trpc.project.updateLoopInstance.mutate({
     projectPath: projectStore.projectPath,
@@ -303,9 +303,9 @@ const updateStopPolicy = async () => {
   await updateSelectedInstance({ stopPolicy: stopPolicyDraft.value })
 }
 
-const retargetSelectedInstance = async (patch: Partial<Pick<LoopInstance, 'targetPhaseId' | 'targetAimId'>>) => {
+const retargetSelectedInstance = async (patch: Partial<Pick<LoopInstance, 'targetPhaseId' | 'targetIdeaId'>>) => {
   const nextStopPolicy = (
-    (patch.targetAimId === null && stopPolicyDraft.value === 'target_halted') ||
+    (patch.targetIdeaId === null && stopPolicyDraft.value === 'target_halted') ||
     (patch.targetPhaseId === null && stopPolicyDraft.value === 'phase_done')
   ) ? 'never' : stopPolicyDraft.value
   await updateSelectedInstance({ ...patch, stopPolicy: nextStopPolicy })
@@ -321,7 +321,7 @@ const saveInstanceName = async () => {
 const openPhaseTargetSearch = () => {
   modalStore.openPhaseSearchPrompt(async (payload: PhaseSearchSelection) => {
     if (payload.type === 'option' && payload.data.id === 'none') {
-      await retargetSelectedInstance({ targetPhaseId: null, targetAimId: null })
+      await retargetSelectedInstance({ targetPhaseId: null, targetIdeaId: null })
       modalStore.closePhaseSearchPrompt()
       return
     }
@@ -341,11 +341,11 @@ const openPhaseTargetSearch = () => {
   })
 }
 
-const openAimTargetSearch = () => {
-  modalStore.openAimSearch('pick', async (payload: IdeaSearchPickPayload) => {
+const openIdeaTargetSearch = () => {
+  modalStore.openIdeaSearch('pick', async (payload: IdeaSearchPickPayload) => {
     if (payload.type === 'option' && payload.data.id === 'none') {
-      await retargetSelectedInstance({ targetAimId: null })
-      modalStore.closeAimSearch()
+      await retargetSelectedInstance({ targetIdeaId: null })
+      modalStore.closeIdeaSearch()
       return
     }
     if (payload.type !== 'idea') return
@@ -353,9 +353,9 @@ const openAimTargetSearch = () => {
     const targetPhaseId = selectedInstance.value?.targetPhaseId ?? payload.data.committedIn?.[0] ?? null
     await retargetSelectedInstance({
       targetPhaseId,
-      targetAimId: payload.data.id
+      targetIdeaId: payload.data.id
     })
-    modalStore.closeAimSearch()
+    modalStore.closeIdeaSearch()
   }, undefined, {
     title: 'Select Loop Idea',
     placeholder: 'Search target idea...',
@@ -573,7 +573,7 @@ onUnmounted(() => {
               @keydown.enter.prevent="saveInstanceName"
             >
             <button class="target-chip" @click="openPhaseTargetSearch">{{ selectedTargetPhaseLabel }}</button>
-            <button class="target-chip idea-chip" @click="openAimTargetSearch">{{ selectedTargetAimLabel }}</button>
+            <button class="target-chip idea-chip" @click="openIdeaTargetSearch">{{ selectedTargetIdeaLabel }}</button>
             <button class="primary-btn header-btn" :disabled="selectedInstance.status === 'running'" @click="startInstance">Start</button>
             <button class="action-btn header-btn" :disabled="selectedInstance.status !== 'running'" @click="stopInstance">Stop</button>
             <button class="action-btn header-btn" @click="restartInstance">Restart</button>

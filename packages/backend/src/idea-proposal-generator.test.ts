@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildAimProposalFromGenerated } from './idea-proposal-generator';
+import { buildIdeaProposalFromGenerated } from './idea-proposal-generator';
 
-describe('buildAimProposalFromGenerated', () => {
+describe('buildIdeaProposalFromGenerated', () => {
   it('assigns deterministic draft-local IDs and preserves contribution structure', () => {
-    const proposal = buildAimProposalFromGenerated({
+    const proposal = buildIdeaProposalFromGenerated({
       transcript: 'Make festival operations reliable',
       existingParentIds: ['00000000-0000-4000-8000-000000000001'],
       revision: 'test-revision',
@@ -35,7 +35,7 @@ describe('buildAimProposalFromGenerated', () => {
       text: `Depth ${depth}`,
       children: depth === 0 ? [] : [{ weight: 1, child: chain(depth - 1) }]
     });
-    expect(() => buildAimProposalFromGenerated({
+    expect(() => buildIdeaProposalFromGenerated({
       transcript: 'Too deep',
       existingParentIds: [],
       revision: 'test-revision',

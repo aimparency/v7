@@ -28,11 +28,11 @@ const idea = computed(() => {
   if (!props.ideaId) return null
   return dataStore.ideas[props.ideaId] || null
 })
-const editingAims = computed(() => {
+const editingIdeas = computed(() => {
   const ids = props.ideaIds?.length ? props.ideaIds : (props.ideaId ? [props.ideaId] : [])
   return ids.map((id) => dataStore.ideas[id]).filter((entry): entry is NonNullable<typeof entry> => !!entry)
 })
-const isBulk = computed(() => editingAims.value.length > 1)
+const isBulk = computed(() => editingIdeas.value.length > 1)
 type BulkField = 'intrinsicValue' | 'valueRationale' | 'cost' | 'duration' | 'loopWeight' | 'tags' |
   'status' | 'statusComment' | 'archived' | 'color' | 'reflection'
 const mixedFields = ref<Set<BulkField>>(new Set())
@@ -105,7 +105,7 @@ const headerStyle = computed((): Record<string, string> => {
 // human-dependent) are still active work and must not be archived directly.
 const canArchive = computed(() => {
   const states = isBulk.value && isMixed('status')
-    ? editingAims.value.map((entry) => entry.status.state)
+    ? editingIdeas.value.map((entry) => entry.status.state)
     : [selectedStatus.value]
   return states.length > 0 && states.every((state) => {
     const status = statuses.value.find((entry: any) => entry.key === state)
@@ -119,7 +119,7 @@ watch(canArchive, (allowed) => {
   if (!allowed) archived.value = false
 })
 const reflection = ref('')
-const supportedAimsList = ref<{ id: string, text: string, weight: number }[]>([])
+const supportedIdeasList = ref<{ id: string, text: string, weight: number }[]>([])
 const committedPhasesList = ref<{ id: string, name: string }[]>([])
 // Repo-level cross-repo links: whole external repos that support this idea
 // (black-box supporters, identified by repoId — no ideaId). Staged locally like
@@ -180,7 +180,7 @@ const serializeFormState = () => JSON.stringify({
   archived: archived.value,
   color: ideaColor.value,
   reflection: reflection.value,
-  supportedAims: supportedAimsList.value.map((entry) => ({ id: entry.id, weight: entry.weight })),
+  supportedIdeas: supportedIdeasList.value.map((entry) => ({ id: entry.id, weight: entry.weight })),
   committedPhases: committedPhasesList.value.map((phase) => phase.id),
   linkedRepos: linkedReposList.value.map((entry) => entry.repoId),
   overrides: [...overriddenFields.value].sort()
@@ -208,11 +208,11 @@ const getInitialDescriptionRows = (description: string) => {
 
 const openParentSearch = () => {
   pendingFocusRestore.value = 'parent'
-  modalStore.openAimSearch('pick', (payload) => {
+  modalStore.openIdeaSearch('pick', (payload) => {
     if (payload.type !== 'idea') return
-    const selectedAim = payload.data
-    if (!supportedAimsList.value.some((entry) => entry.id === selectedAim.id)) {
-      supportedAimsList.value.push({ id: selectedAim.id, text: selectedAim.text, weight: 1 })
+    const selectedIdea = payload.data
+    if (!supportedIdeasList.value.some((entry) => entry.id === selectedIdea.id)) {
+      supportedIdeasList.value.push({ id: selectedIdea.id, text: selectedIdea.text, weight: 1 })
     }
   }, undefined, {
     title: 'Select Supported Idea',
@@ -240,7 +240,7 @@ const removeParent = (parentId: string) => {
     return
   }
 
-  supportedAimsList.value = supportedAimsList.value.filter((parent) => parent.id !== parentId)
+  supportedIdeasList.value = supportedIdeasList.value.filter((parent) => parent.id !== parentId)
   confirmRemoveParentId.value = null
 }
 
@@ -270,7 +270,7 @@ const openRepoSearch = () => {
   pendingFocusRestore.value = 'repo'
   // Reuse the idea-search funnel but drive it entirely off additionalOptions:
   // one option per available linked repo (always visible, not idea results).
-  modalStore.openAimSearch('pick', (payload) => {
+  modalStore.openIdeaSearch('pick', (payload) => {
     if (payload.type !== 'option') return
     const repoId = payload.data.id
     if (linkedReposList.value.some((entry) => entry.repoId === repoId)) return
@@ -298,7 +298,7 @@ const removeLinkedRepo = (repoId: string) => {
 
 watch(() => props.show, async (show) => {
   if (show && idea.value) {
-    const targets = editingAims.value
+    const targets = editingIdeas.value
     const fieldValues: Record<BulkField, unknown[]> = {
       intrinsicValue: targets.map((entry) => entry.intrinsicValue ?? 0),
       valueRationale: targets.map((entry) => entry.valueRationale ?? ''),
@@ -335,7 +335,7 @@ watch(() => props.show, async (show) => {
     ideaColor.value = isMixed('color') ? '' : (idea.value.color ?? '')
     reflection.value = isMixed('reflection') ? '' : (idea.value.reflection || '')
 
-    supportedAimsList.value = []
+    supportedIdeasList.value = []
     committedPhasesList.value = []
     originalCommittedPhaseIds.value = [...(idea.value.committedIn || [])]
 
@@ -347,13 +347,13 @@ watch(() => props.show, async (show) => {
     }))
     originalLinkedRepoIds.value = linkedReposList.value.map((entry) => entry.repoId)
 
-    if (idea.value.supportedAims && idea.value.supportedAims.length > 0) {
+    if (idea.value.supportedIdeas && idea.value.supportedIdeas.length > 0) {
       try {
         const parents = await trpc.idea.list.query({
           projectPath: projectStore.projectPath,
-          ids: idea.value.supportedAims
+          ids: idea.value.supportedIdeas
         })
-        supportedAimsList.value = parents.map((parent) => ({
+        supportedIdeasList.value = parents.map((parent) => ({
           id: parent.id,
           text: parent.text,
           weight: 1
@@ -392,7 +392,7 @@ watch(() => props.show, async (show) => {
   }
 })
 
-watch(() => modalStore.showAimSearch, async (isOpen, wasOpen) => {
+watch(() => modalStore.showIdeaSearch, async (isOpen, wasOpen) => {
   if (!isOpen && wasOpen && pendingFocusRestore.value === 'parent' && props.show) {
     await nextTick()
     addParentBtn.value?.focus()
@@ -408,7 +408,7 @@ watch(() => modalStore.showPhaseSearchPrompt, async (isOpen, wasOpen) => {
   }
 })
 
-watch(() => modalStore.showAimSearch, async (isOpen, wasOpen) => {
+watch(() => modalStore.showIdeaSearch, async (isOpen, wasOpen) => {
   if (!isOpen && wasOpen && pendingFocusRestore.value === 'repo' && props.show) {
     await nextTick()
     addRepoBtn.value?.focus()
@@ -499,7 +499,7 @@ const handleSave = async () => {
   validationError.value = ''
 
   const shouldWrite = (field: BulkField) => !isBulk.value || !mixedFields.value.has(field) || overriddenFields.value.has(field)
-  for (const target of editingAims.value) {
+  for (const target of editingIdeas.value) {
     const updates: any = {}
     if (!isBulk.value) updates.text = ideaText.value
     if (!isBulk.value) updates.description = ideaDescription.value
@@ -519,8 +519,8 @@ const handleSave = async () => {
         date: Date.now()
       }
     }
-    if (!isBulk.value) updates.supportedAims = supportedAimsList.value.map((entry) => entry.id)
-    await dataStore.updateAim(projectStore.projectPath, target.id, updates)
+    if (!isBulk.value) updates.supportedIdeas = supportedIdeasList.value.map((entry) => entry.id)
+    await dataStore.updateIdea(projectStore.projectPath, target.id, updates)
   }
 
   if (isBulk.value) {
@@ -532,14 +532,14 @@ const handleSave = async () => {
   const phasesToAdd = currentCommittedPhaseIds.filter((phaseId) => !originalCommittedPhaseIds.value.includes(phaseId))
 
   for (const phaseId of phasesToRemove) {
-    await dataStore.removeAimFromPhase(projectStore.projectPath, idea.value.id, phaseId)
+    await dataStore.removeIdeaFromPhase(projectStore.projectPath, idea.value.id, phaseId)
   }
 
   for (const phaseId of phasesToAdd) {
-    await dataStore.commitAimToPhase(projectStore.projectPath, idea.value.id, phaseId)
+    await dataStore.commitIdeaToPhase(projectStore.projectPath, idea.value.id, phaseId)
   }
 
-  // Reconcile repo links against the original set (handleSave's updateAim above
+  // Reconcile repo links against the original set (handleSave's updateIdea above
   // doesn't touch supportingRepos, so these dedicated mutations own them).
   const currentLinkedRepoIds = linkedReposList.value.map((entry) => entry.repoId)
   const reposToRemove = originalLinkedRepoIds.value.filter((repoId) => !currentLinkedRepoIds.includes(repoId))
@@ -554,7 +554,7 @@ const handleSave = async () => {
   }
 
   if (reposToRemove.length > 0 || reposToAdd.length > 0) {
-    await dataStore.loadAims(projectStore.projectPath, [idea.value.id])
+    await dataStore.loadIdeas(projectStore.projectPath, [idea.value.id])
   }
 
   emit('close')
@@ -591,7 +591,7 @@ const discardChanges = () => {
 <template>
   <FormModalShell
     :show="show"
-    :title="isBulk ? `Edit ${editingAims.length} Ideas` : 'Edit Idea'"
+    :title="isBulk ? `Edit ${editingIdeas.length} Ideas` : 'Edit Idea'"
     :entity-id="ideaId"
     :header-style="headerStyle"
     @request-close="handleCancel"
@@ -645,10 +645,10 @@ const discardChanges = () => {
     <div class="modal-content-root" tabindex="-1" @keydown.capture="handleModalKeydown">
       <template v-if="isBulk">
         <p class="bulk-notice">
-          Editing {{ editingAims.length }} ideas. Mixed fields are unchanged unless you click them to override all.
+          Editing {{ editingIdeas.length }} ideas. Mixed fields are unchanged unless you click them to override all.
         </p>
         <ul class="bulk-idea-titles">
-          <li v-for="editingAim in editingAims" :key="editingAim.id">{{ editingAim.text }}</li>
+          <li v-for="editingIdea in editingIdeas" :key="editingIdea.id">{{ editingIdea.text }}</li>
         </ul>
       </template>
       <div v-if="!isBulk" class="form-section">
@@ -759,7 +759,7 @@ const discardChanges = () => {
       <div v-if="!isBulk" class="form-section">
         <label>Supports (Parents)</label>
         <div class="entry-list">
-          <div v-for="parent in supportedAimsList" :key="parent.id" class="entry-row">
+          <div v-for="parent in supportedIdeasList" :key="parent.id" class="entry-row">
             <span class="entry-name">{{ parent.text }}</span>
             <label class="entry-meta">
               <span class="entry-meta-label">Weight</span>

@@ -38,19 +38,19 @@ const fromHandlePos = computed(() => {
 
 const startLayouting = (from: boolean) => {
   const rSum = props.sourceR + props.targetR
-  const activeAimId = from ? props.link.source.id : props.link.target.id
-  const frozenAimId = from ? props.link.target.id : props.link.source.id
+  const activeIdeaId = from ? props.link.source.id : props.link.target.id
+  const frozenIdeaId = from ? props.link.target.id : props.link.source.id
   mapStore.startLayouting({
     fromWeight: props.sourceR / rSum,
     start: from ? fromHandlePos.value : intoHandlePos.value,
     dScale: from ? 1 / props.targetR : -1 / props.sourceR,
     link: props.link,
-    activeAimId,
-    frozenAimId
+    activeIdeaId,
+    frozenIdeaId
   })
 }
 
-const selectAim = (ideaId: string) => {
+const selectIdea = (ideaId: string) => {
   if (!mapStore.cursorMoved) {
     graphUIStore.setGraphSelection(ideaId)
   }
@@ -77,7 +77,7 @@ const selectAim = (ideaId: string) => {
       :stroke-width="sourceR * 0.05"
       @mousedown="startLayouting(true)" 
       @touchstart="startLayouting(true)"
-      @click.stop="selectAim(link.source.id)"
+      @click.stop="selectIdea(link.source.id)"
     />
     <!-- Into Handle -->
     <circle 
@@ -88,7 +88,7 @@ const selectAim = (ideaId: string) => {
       :stroke-width="targetR * 0.05"
       @mousedown="startLayouting(false)" 
       @touchstart="startLayouting(false)"
-      @click.stop="selectAim(link.target.id)"
+      @click.stop="selectIdea(link.target.id)"
     />
   </g>
 </template>

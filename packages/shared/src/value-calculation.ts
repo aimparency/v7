@@ -111,7 +111,7 @@ function makeRepoSinkNode(repoId: string): Idea {
     status: { state: 'open', comment: '', date: 0 },
     supportingConnections: [], // leaf ⇒ retains all inflow (the sink)
     supportingRepos: [],
-    supportedAims: [],
+    supportedIdeas: [],
     committedIn: [],
     tags: [],
     loopWeight: 0,
@@ -119,7 +119,7 @@ function makeRepoSinkNode(repoId: string): Idea {
   } as Idea;
 }
 
-export function calculateAimValues(inputAims: Idea[]): {
+export function calculateIdeaValues(inputIdeas: Idea[]): {
   values: Map<string, number>, 
   totalIntrinsic: number, 
   flowShares: Map<string, number>,
@@ -128,10 +128,10 @@ export function calculateAimValues(inputAims: Idea[]): {
   doneCosts: Map<string, number>,
   priorities: Map<string, number>
 } {
-  validateEconomicInputs(inputAims);
+  validateEconomicInputs(inputIdeas);
   // Merge repo-link edges into zero-intrinsic leaf sink nodes before any
   // topology is built, so cross-repo flow runs on the same single code path.
-  const ideas = expandRepoSinkNodes(inputAims);
+  const ideas = expandRepoSinkNodes(inputIdeas);
 
   const ideaMap = new Map<string, Idea>();
   const currentValues = new Map<string, number>();

@@ -10,7 +10,7 @@ import { MockServer, caller, createCallerProxy, createTestContext } from './test
 let ctx: ReturnType<typeof createTestContext>;
 let targetCtx: ReturnType<typeof createTestContext>;
 
-async function createAim(server: MockServer, args: Record<string, unknown>) {
+async function createIdea(server: MockServer, args: Record<string, unknown>) {
   const review = await server.callTool('create_idea', args);
   const confirmationToken = JSON.parse(review.content[0].text).confirmationToken;
   return await server.callTool('create_idea', { ...args, confirmationToken });
@@ -38,7 +38,7 @@ afterEach(async () => {
 test('register -> link -> read -> unlink round-trip over MCP', async () => {
   const server = makeServer();
 
-  await createAim(server, { projectPath: ctx.projectPath, text: 'Local idea carried by another repo' });
+  await createIdea(server, { projectPath: ctx.projectPath, text: 'Local idea carried by another repo' });
   const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0]!.id;
 
   // register_linked_repo picks up the target's generated repoId + name.
@@ -99,7 +99,7 @@ test('register -> link -> read -> unlink round-trip over MCP', async () => {
 
 test('link_repo refuses an unregistered repoId and names the known repos', async () => {
   const server = makeServer();
-  await createAim(server, { projectPath: ctx.projectPath, text: 'Local idea' });
+  await createIdea(server, { projectPath: ctx.projectPath, text: 'Local idea' });
   const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0]!.id;
 
   await server.callTool('register_linked_repo', {
@@ -122,7 +122,7 @@ test('link_repo refuses an unregistered repoId and names the known repos', async
 
 test('a linked repo that is not checked out here reads as not-checked-out, not broken', async () => {
   const server = makeServer();
-  await createAim(server, { projectPath: ctx.projectPath, text: 'Local idea' });
+  await createIdea(server, { projectPath: ctx.projectPath, text: 'Local idea' });
   const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0]!.id;
 
   await server.callTool('register_linked_repo', {

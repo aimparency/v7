@@ -3,9 +3,9 @@ import { z } from 'zod';
 export const IDEA_PROPOSAL_MAX_IDEAS = 30;
 export const IDEA_PROPOSAL_MAX_DEPTH = 5;
 
-export const ProposedAimStatusSchema = z.enum(['open', 'unclear', 'human-dependent']);
+export const ProposedIdeaStatusSchema = z.enum(['open', 'unclear', 'human-dependent']);
 
-export type ProposedAim = {
+export type ProposedIdea = {
   proposalId: string;
   text: string;
   description?: string;
@@ -13,18 +13,18 @@ export type ProposedAim = {
   intrinsicValue?: number;
   valueRationale?: string;
   cost?: number;
-  status?: z.infer<typeof ProposedAimStatusSchema>;
+  status?: z.infer<typeof ProposedIdeaStatusSchema>;
   statusComment?: string;
   tags?: string[];
 };
 
 export type ProposedConnection = {
-  child: ProposedAim;
+  child: ProposedIdea;
   weight: number;
   explanation?: string;
 };
 
-export const ProposedAimSchema: z.ZodType<ProposedAim> = z.lazy(() => z.object({
+export const ProposedIdeaSchema: z.ZodType<ProposedIdea> = z.lazy(() => z.object({
   // Draft-local identifier only. Deliberately rejects UUID-shaped values so a
   // proposal cannot smuggle a durable idea identity into approval.
   proposalId: z.string().min(1).max(100).refine(
@@ -34,14 +34,14 @@ export const ProposedAimSchema: z.ZodType<ProposedAim> = z.lazy(() => z.object({
   text: z.string().trim().min(1).max(500),
   description: z.string().trim().max(5_000).optional(),
   children: z.array(z.object({
-    child: ProposedAimSchema,
+    child: ProposedIdeaSchema,
     weight: z.number().finite().positive(),
     explanation: z.string().trim().max(1_000).optional(),
   })),
   intrinsicValue: z.number().finite().nonnegative().optional(),
   valueRationale: z.string().optional(),
   cost: z.number().finite().positive().optional(),
-  status: ProposedAimStatusSchema.optional(),
+  status: ProposedIdeaStatusSchema.optional(),
   statusComment: z.string().trim().max(1_000).optional(),
   tags: z.array(z.string().trim().min(1).max(100)).max(30).optional(),
 }));
@@ -49,7 +49,7 @@ export const ProposedAimSchema: z.ZodType<ProposedAim> = z.lazy(() => z.object({
 export const IdeaProposalSchema = z.object({
   revision: z.string().trim().min(1).max(200),
   sourceText: z.string().trim().min(1).max(10_000),
-  root: ProposedAimSchema,
+  root: ProposedIdeaSchema,
   existingParentIds: z.array(z.string().uuid()).max(20).default([]),
   phaseId: z.string().uuid().optional(),
   assumptions: z.array(z.string().trim().min(1).max(1_000)).max(30).default([]),
@@ -58,7 +58,7 @@ export const IdeaProposalSchema = z.object({
   const ids = new Set<string>();
   let count = 0;
 
-  const visit = (idea: ProposedAim, depth: number) => {
+  const visit = (idea: ProposedIdea, depth: number) => {
     count += 1;
     if (count > IDEA_PROPOSAL_MAX_IDEAS) {
       context.addIssue({
@@ -93,7 +93,7 @@ export const IdeaProposalSchema = z.object({
 
 export type IdeaProposal = z.infer<typeof IdeaProposalSchema>;
 
-export type FlatProposedAim = Omit<ProposedAim, 'children'>;
+export type FlatProposedIdea = Omit<ProposedIdea, 'children'>;
 
 export type FlatProposedConnection = {
   parentProposalId: string;
@@ -102,16 +102,16 @@ export type FlatProposedConnection = {
   explanation?: string;
 };
 
-export function flattenAimProposal(root: ProposedAim): {
-  ideas: FlatProposedAim[];
+export function flattenIdeaProposal(root: ProposedIdea): {
+  ideas: FlatProposedIdea[];
   connections: FlatProposedConnection[];
 } {
-  const ideas: FlatProposedAim[] = [];
+  const ideas: FlatProposedIdea[] = [];
   const connections: FlatProposedConnection[] = [];
 
-  const visit = (idea: ProposedAim) => {
-    const { children, ...flatAim } = idea;
-    ideas.push(flatAim);
+  const visit = (idea: ProposedIdea) => {
+    const { children, ...flatIdea } = idea;
+    ideas.push(flatIdea);
     for (const connection of children) {
       connections.push({
         parentProposalId: idea.proposalId,

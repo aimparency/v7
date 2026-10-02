@@ -3,11 +3,11 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { getAimStatusHistory, getCommitDiff, parseAimCommitEvidence } from './git-evidence.js';
+import { getIdeaStatusHistory, getCommitDiff, parseIdeaCommitEvidence } from './git-evidence.js';
 
-describe('parseAimCommitEvidence', () => {
+describe('parseIdeaCommitEvidence', () => {
   it('parses Git log records used by the idea evidence query', () => {
-    const evidence = parseAimCommitEvidence(
+    const evidence = parseIdeaCommitEvidence(
       '0123456789012345678901234567890123456789\x1f01234567\x1ffeat: realize idea abc-123\x1fTest User\x1f2026-07-21T18:00:00+02:00\x1e'
     );
 
@@ -17,7 +17,7 @@ describe('parseAimCommitEvidence', () => {
   });
 
   it('preserves empty history as no implementation evidence', () => {
-    expect(parseAimCommitEvidence('')).toEqual([]);
+    expect(parseIdeaCommitEvidence('')).toEqual([]);
   });
 });
 
@@ -43,7 +43,7 @@ describe('idea status history and commit diffs', () => {
     fs.rmSync(path.join(bowman, 'ideas'), { recursive: true });
     write('archived-ideas', 'archived'); commit('archive');
 
-    const history = await getAimStatusHistory(bowman, ideaId);
+    const history = await getIdeaStatusHistory(bowman, ideaId);
     expect(history.map((change) => [change.state, change.commit.subject])).toEqual([
       ['open', 'create'], ['done', 'implement'], ['archived', 'archive']
     ]);

@@ -51,25 +51,25 @@ describe('structural edits', () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
     for (const id of server.commitments) {
-      dataStore.ideas[id] = { id, text: id, supportingConnections: [], supportedAims: [], committedIn: ['phase'] } as any
+      dataStore.ideas[id] = { id, text: id, supportingConnections: [], supportedIdeas: [], committedIn: ['phase'] } as any
     }
     const phase = (commitments: string[]) => ({ id: 'phase', name: 'phase', parent: null, childPhaseIds: [], commitments })
-    dataStore.phases['phase'] = { ...phase([...server.commitments]), selectedAimIndex: 0 } as any
+    dataStore.phases['phase'] = { ...phase([...server.commitments]), selectedIdeaIndex: 0 } as any
     // What the subscription does with the pushed entity.
     server.push = (commitments) => dataStore.replacePhaseIfCurrent('phase', phase(commitments) as any, dataStore.beginPhaseSync('phase'))
     dataStore.meta = { rootPhaseIds: ['phase'] }
     uiStore.activeColumn = 0
     uiStore.selectedEntryKeyByColumn[0] = 'phase:phase'
-    uiStore.navigatingAims = true
+    uiStore.navigatingIdeas = true
 
-    const presses = [uiStore.moveAimDown(), uiStore.moveAimDown()]
+    const presses = [uiStore.moveIdeaDown(), uiStore.moveIdeaDown()]
     // Third press between the first and the second push.
     await sleep(15)
-    presses.push(uiStore.moveAimDown())
+    presses.push(uiStore.moveIdeaDown())
     await Promise.all(presses)
     await server.busy
 
     expect(server.commitments).toEqual(['b', 'c', 'd', 'a'])
-    expect(uiStore.getCurrentAim()?.id).toBe('a')
+    expect(uiStore.getCurrentIdea()?.id).toBe('a')
   })
 })

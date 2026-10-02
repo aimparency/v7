@@ -12,7 +12,7 @@ export type IdeaCommitEvidence = {
   authoredAt: string;
 };
 
-export function parseAimCommitEvidence(stdout: string): IdeaCommitEvidence[] {
+export function parseIdeaCommitEvidence(stdout: string): IdeaCommitEvidence[] {
   return stdout
     .split('\x1e')
     .map((record) => record.trim())
@@ -25,7 +25,7 @@ export function parseAimCommitEvidence(stdout: string): IdeaCommitEvidence[] {
     });
 }
 
-export async function getAimCommitEvidence(
+export async function getIdeaCommitEvidence(
   repositoryPath: string,
   ideaId: string,
   limit = 20
@@ -44,7 +44,7 @@ export async function getAimCommitEvidence(
     '--format=%H%x1f%h%x1f%s%x1f%an%x1f%aI%x1e'
   ]);
 
-  return parseAimCommitEvidence(stdout);
+  return parseIdeaCommitEvidence(stdout);
 }
 
 export type IdeaStatusChange = {
@@ -66,7 +66,7 @@ export async function getRepositoryRoot(anyPathInRepository: string): Promise<st
 // Status changes of an idea as recorded in git: walks the commits touching the
 // idea's file (active or archived), oldest first, and keeps those whose
 // committed status differs from the previous commit's.
-export async function getAimStatusHistory(
+export async function getIdeaStatusHistory(
   bowmanPath: string,
   ideaId: string,
   limit = 200

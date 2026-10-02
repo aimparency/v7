@@ -5,7 +5,7 @@ import IdeaComponent from '../components/Idea.vue'
 import { useDataStore, type Idea } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { createAimUIState } from '../stores/ui/idea-ui-state'
+import { createIdeaUIState } from '../stores/ui/idea-ui-state'
 import { v4 as uuidv4 } from 'uuid'
 
 // Mock sub-component to avoid recursion issues in testing
@@ -15,20 +15,20 @@ vi.mock('../components/IdeasList.vue', () => ({
     props: [
       'ideas',
       'phaseId',
-      'parentAimId',
+      'parentIdeaId',
       'columnIndex',
       'indentationLevel',
       'ideaUiStates',
       'isActive',
       'isSelected',
-      'selectedAimIndex',
-      'isThisAimSelected'  // for multi/selection compatibility
+      'selectedIdeaIndex',
+      'isThisIdeaSelected'  // for multi/selection compatibility
     ]
   }
 }))
 
 describe('Idea.vue', () => {
-  const createMockAim = (overrides: Partial<Idea> = {}): Idea => ({
+  const createMockIdea = (overrides: Partial<Idea> = {}): Idea => ({
     id: uuidv4(),
     text: 'Test Idea',
     description: 'Test Description',
@@ -40,7 +40,7 @@ describe('Idea.vue', () => {
       date: Date.now()
     },
     supportingConnections: [], // Updated from incoming
-    supportedAims: [],
+    supportedIdeas: [],
     committedIn: [],
     expanded: false,
     selectedIncomingIndex: undefined,
@@ -64,7 +64,7 @@ describe('Idea.vue', () => {
   })
 
   it('renders idea text', () => {
-    const idea = createMockAim()
+    const idea = createMockIdea()
     const wrapper = mount(IdeaComponent, {
       global: { plugins: [pinia] },
       props: {
@@ -73,7 +73,7 @@ describe('Idea.vue', () => {
         columnIndex: 0,
         isActive: false,
         isSelected: false,
-        ideaUiState: createAimUIState()
+        ideaUiState: createIdeaUIState()
       }
     })
 
@@ -82,19 +82,19 @@ describe('Idea.vue', () => {
 
   it('opens the shared connection editor for a nested list idea', async () => {
     const parentId = uuidv4()
-    const idea = createMockAim({ supportedAims: [parentId] })
+    const idea = createMockIdea({ supportedIdeas: [parentId] })
     const modalStore = useUIModalStore()
     const openEditor = vi.spyOn(modalStore, 'openConnectionDetailsModal')
     const wrapper = mount(IdeaComponent, {
       global: { plugins: [pinia] },
       props: {
         idea,
-        parentAimId: parentId,
+        parentIdeaId: parentId,
         phaseId: 'test-phase',
         columnIndex: 0,
         isActive: false,
         isSelected: false,
-        ideaUiState: createAimUIState()
+        ideaUiState: createIdeaUIState()
       }
     })
 
@@ -109,7 +109,7 @@ describe('Idea.vue', () => {
         { ideaId: uuidv4(), relativePosition: [0,0] as [number, number], weight: 1 },
         { ideaId: uuidv4(), relativePosition: [0,0] as [number, number], weight: 1 }
     ]
-    const idea = createMockAim({ supportingConnections: connections }) 
+    const idea = createMockIdea({ supportingConnections: connections }) 
     
     const wrapper = mount(IdeaComponent, {
       global: { plugins: [pinia] },
@@ -119,7 +119,7 @@ describe('Idea.vue', () => {
         columnIndex: 0,
         isActive: false,
         isSelected: false,
-        ideaUiState: createAimUIState()
+        ideaUiState: createIdeaUIState()
       }
     })
 
@@ -131,16 +131,16 @@ describe('Idea.vue', () => {
 
   it('loads sub-ideas when expanded', async () => {
     const dataStore = useDataStore()
-    const subAimId = uuidv4()
+    const subIdeaId = uuidv4()
     const connections = [
-        { ideaId: subAimId, relativePosition: [0,0] as [number, number], weight: 1 }
+        { ideaId: subIdeaId, relativePosition: [0,0] as [number, number], weight: 1 }
     ]
     
-    const idea = createMockAim({ supportingConnections: connections })
-    const ideaUiState = createAimUIState()
+    const idea = createMockIdea({ supportingConnections: connections })
+    const ideaUiState = createIdeaUIState()
     
-    // Mock loadAims action
-    dataStore.loadAims = vi.fn()
+    // Mock loadIdeas action
+    dataStore.loadIdeas = vi.fn()
 
     const wrapper = mount(IdeaComponent, {
       global: { plugins: [pinia] },
@@ -159,22 +159,22 @@ describe('Idea.vue', () => {
       ideaUiState: { ...ideaUiState }
     })
 
-    expect(dataStore.loadAims).toHaveBeenCalled()
+    expect(dataStore.loadIdeas).toHaveBeenCalled()
   })
 
   it('uses per-rendered-idea UI state for expansion', () => {
     const dataStore = useDataStore()
-    const childAimId = uuidv4()
-    const idea = createMockAim({
+    const childIdeaId = uuidv4()
+    const idea = createMockIdea({
       supportingConnections: [
-        { ideaId: childAimId, relativePosition: [0, 0], weight: 1 }
+        { ideaId: childIdeaId, relativePosition: [0, 0], weight: 1 }
       ]
     })
-    const collapsedState = createAimUIState()
-    const expandedState = createAimUIState()
+    const collapsedState = createIdeaUIState()
+    const expandedState = createIdeaUIState()
     expandedState.expanded = true
 
-    dataStore.loadAims = vi.fn()
+    dataStore.loadIdeas = vi.fn()
 
     const collapsedWrapper = mount(IdeaComponent, {
       global: { plugins: [pinia] },
@@ -205,7 +205,7 @@ describe('Idea.vue', () => {
   })
 
   it('emits idea-clicked with modifiers for multi-select (ctrl/shift)', async () => {
-    const idea = createMockAim()
+    const idea = createMockIdea()
     const wrapper = mount(IdeaComponent, {
       global: { plugins: [pinia] },
       props: {
@@ -214,7 +214,7 @@ describe('Idea.vue', () => {
         columnIndex: 0,
         isActive: false,
         isSelected: false,
-        ideaUiState: createAimUIState()
+        ideaUiState: createIdeaUIState()
       }
     })
 
@@ -241,7 +241,7 @@ describe('Idea.vue', () => {
 
   it('toggles multi-selection on touch long-press', async () => {
     vi.useFakeTimers()
-    const idea = createMockAim()
+    const idea = createMockIdea()
     const dataStore = useDataStore()
     const uiStore = useUIStore()
     dataStore.ideas[idea.id] = idea
@@ -253,7 +253,7 @@ describe('Idea.vue', () => {
         columnIndex: 0,
         isActive: false,
         isSelected: false,
-        ideaUiState: createAimUIState()
+        ideaUiState: createIdeaUIState()
       }
     })
 
@@ -266,7 +266,7 @@ describe('Idea.vue', () => {
     wrapper.find('.idea-header').element.dispatchEvent(pointerDown)
     await vi.advanceTimersByTimeAsync(450)
 
-    expect(uiStore.multiSelectedAimIds).toEqual([idea.id])
+    expect(uiStore.multiSelectedIdeaIds).toEqual([idea.id])
     expect(uiStore.multiSelectMode).toBe(true)
     vi.useRealTimers()
   })

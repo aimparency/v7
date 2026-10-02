@@ -10,7 +10,7 @@ import { clearIndices } from './search';
 // an idea can be supported by a WHOLE external repo via a {repoId}-only edge
 // stored in its own supportingRepos array — no ideaId, no back-reference. These
 // tests pin the persistence round-trip and that the consistency checker leaves
-// repo edges alone (it only walks supportingConnections/supportedAims).
+// repo edges alone (it only walks supportingConnections/supportedIdeas).
 
 const caller = appRouter.createCaller({});
 
@@ -32,13 +32,13 @@ afterEach(async () => {
   clearIndices(projectPath);
 });
 
-async function makeAim(text: string): Promise<string> {
-  const idea = await caller.idea.createFloatingAim({ projectPath, idea: { text } });
+async function makeIdea(text: string): Promise<string> {
+  const idea = await caller.idea.createFloatingIdea({ projectPath, idea: { text } });
   return idea.id;
 }
 
 test('update persists a {repoId}-only supportingRepos edge with defaults', async () => {
-  const ideaId = await makeAim('local idea that leans on an external project');
+  const ideaId = await makeIdea('local idea that leans on an external project');
 
   await caller.idea.update({
     projectPath,
@@ -56,7 +56,7 @@ test('update persists a {repoId}-only supportingRepos edge with defaults', async
 });
 
 test('an unrelated update does not wipe an existing repo edge', async () => {
-  const ideaId = await makeAim('idea');
+  const ideaId = await makeIdea('idea');
   await caller.idea.update({ projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
 
   // Touch a different field; supportingRepos is absent from this payload.
@@ -68,7 +68,7 @@ test('an unrelated update does not wipe an existing repo edge', async () => {
 });
 
 test('consistency check ignores repo edges (no phantom non-existent-child issue)', async () => {
-  const ideaId = await makeAim('idea with a black-box repo supporter');
+  const ideaId = await makeIdea('idea with a black-box repo supporter');
   await caller.idea.update({ projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
 
   const report = await caller.project.checkConsistency({ projectPath });
@@ -80,7 +80,7 @@ test('consistency check ignores repo edges (no phantom non-existent-child issue)
 });
 
 test('fixConsistency does not prune a repo edge', async () => {
-  const ideaId = await makeAim('idea');
+  const ideaId = await makeIdea('idea');
   await caller.idea.update({ projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
 
   await caller.project.fixConsistency({ projectPath });
@@ -90,7 +90,7 @@ test('fixConsistency does not prune a repo edge', async () => {
 });
 
 test('linkRepo attaches a {repoId}-only edge with a defaulted position', async () => {
-  const ideaId = await makeAim('idea that will lean on a repo');
+  const ideaId = await makeIdea('idea that will lean on a repo');
 
   await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 3 });
 
@@ -104,7 +104,7 @@ test('linkRepo attaches a {repoId}-only edge with a defaulted position', async (
 });
 
 test('linkRepo is idempotent on repoId (upsert, not duplicate)', async () => {
-  const ideaId = await makeAim('idea');
+  const ideaId = await makeIdea('idea');
   await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 1 });
   await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 5, explanation: 'leans harder now' });
 
@@ -116,7 +116,7 @@ test('linkRepo is idempotent on repoId (upsert, not duplicate)', async () => {
 
 test('linkRepo preserves an existing edge to a different repo', async () => {
   const OTHER_REPO_ID = '22222222-2222-4222-8222-222222222222';
-  const ideaId = await makeAim('idea leaning on two repos');
+  const ideaId = await makeIdea('idea leaning on two repos');
   await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID });
   await caller.idea.linkRepo({ projectPath, ideaId, repoId: OTHER_REPO_ID });
 
@@ -126,7 +126,7 @@ test('linkRepo preserves an existing edge to a different repo', async () => {
 
 test('unlinkRepo removes only the matching repo edge', async () => {
   const OTHER_REPO_ID = '22222222-2222-4222-8222-222222222222';
-  const ideaId = await makeAim('idea');
+  const ideaId = await makeIdea('idea');
   await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID });
   await caller.idea.linkRepo({ projectPath, ideaId, repoId: OTHER_REPO_ID });
 

@@ -24,7 +24,7 @@ afterEach(async () => {
 });
 
 test('spin-off merges into an existing graph, preserves metadata, and remaps collisions', async () => {
-  const sourceRoot = await caller.idea.createFloatingAim({
+  const sourceRoot = await caller.idea.createFloatingIdea({
     projectPath: source,
     idea: { text: 'Imported branch root' },
   });
@@ -62,12 +62,12 @@ test('spin-off merges into an existing graph, preserves metadata, and remaps col
   const imported = await caller.idea.get({ projectPath: target, ideaId: importedId });
   assert.equal(original.text, 'Pre-existing target idea');
   assert.equal(imported.text, 'Imported branch root');
-  assert.deepEqual(imported.supportedAims, []);
+  assert.deepEqual(imported.supportedIdeas, []);
   assert.deepEqual(imported.committedIn, []);
 });
 
 test('spin-off refuses to target its source graph', async () => {
-  const root = await caller.idea.createFloatingAim({
+  const root = await caller.idea.createFloatingIdea({
     projectPath: source,
     idea: { text: 'Root' },
   });

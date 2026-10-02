@@ -15,7 +15,7 @@ vi.mock('../../trpc', () => ({
           id: ideaId,
           text: 'Updated idea',
           status: { state: 'open' },
-          supportedAims: [],
+          supportedIdeas: [],
           supportingConnections: [],
           committedIn: [],
           intrinsicValue: 0,
@@ -30,11 +30,11 @@ vi.mock('../../trpc', () => ({
 
 import { trpc } from '../../trpc'
 
-const makeAim = (id: string, text: string) => ({
+const makeIdea = (id: string, text: string) => ({
   id,
   text,
   description: '',
-  supportedAims: [] as string[],
+  supportedIdeas: [] as string[],
   supportingConnections: [] as Array<{ ideaId: string, weight: number, relativePosition: [number, number], explanation?: string }>,
   status: { state: 'open' as const },
   intrinsicValue: 0,
@@ -58,9 +58,9 @@ describe('GraphSidePanel', () => {
     const projectStore = useProjectStore()
     const dataStore = useDataStore()
     projectStore.projectPath = '/tmp/project'
-    dataStore.ideas = { a1: makeAim('a1', 'Idea 1') } as any
+    dataStore.ideas = { a1: makeIdea('a1', 'Idea 1') } as any
     graphStore.setGraphSelection('a1')
-    const updateAim = vi.spyOn(dataStore, 'updateAim').mockResolvedValue()
+    const updateIdea = vi.spyOn(dataStore, 'updateIdea').mockResolvedValue()
 
     const wrapper = mount(GraphSidePanel, {
       global: { plugins: [pinia] }
@@ -69,7 +69,7 @@ describe('GraphSidePanel', () => {
     await valueInput.setValue('2k')
     await valueInput.trigger('change')
 
-    expect(updateAim).toHaveBeenCalledWith('/tmp/project', 'a1', {
+    expect(updateIdea).toHaveBeenCalledWith('/tmp/project', 'a1', {
       intrinsicValue: 2000,
       cost: 1,
       loopWeight: 1
@@ -83,14 +83,14 @@ describe('GraphSidePanel', () => {
 
     projectStore.projectPath = '/tmp/project'
 
-    const parent1 = makeAim('p1', 'Parent 1')
-    const child1 = makeAim('c1', 'Child 1')
+    const parent1 = makeIdea('p1', 'Parent 1')
+    const child1 = makeIdea('c1', 'Child 1')
     parent1.supportingConnections = [
       { ideaId: 'c1', weight: 1, relativePosition: [0, 0], explanation: 'old-1' }
     ]
 
-    const parent2 = makeAim('p2', 'Parent 2')
-    const child2 = makeAim('c2', 'Child 2')
+    const parent2 = makeIdea('p2', 'Parent 2')
+    const child2 = makeIdea('c2', 'Child 2')
     parent2.supportingConnections = [
       { ideaId: 'c2', weight: 1, relativePosition: [0, 0], explanation: 'old-2' }
     ]

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { ProposedAim } from 'shared'
+import type { ProposedIdea } from 'shared'
 
 const props = withDefaults(defineProps<{
-  node: ProposedAim
+  node: ProposedIdea
   readonly?: boolean
   root?: boolean
 }>(), {
@@ -27,7 +27,7 @@ const addChild = () => {
   })
 }
 
-const removeChild = (child: ProposedAim) => {
+const removeChild = (child: ProposedIdea) => {
   const index = props.node.children.findIndex(connection => connection.child === child)
   if (index >= 0) props.node.children.splice(index, 1)
 }

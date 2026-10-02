@@ -130,7 +130,7 @@ Plan work for: {idea_text}
 Steps:
 1. Get context: get_idea_context("{idea_id}")
 2. Understand parent ideas if needed
-3. Break into sub-ideas if complex: create_idea with supportedAims
+3. Break into sub-ideas if complex: create_idea with supportedIdeas
 4. Assess tools needed
 
 Available actions:

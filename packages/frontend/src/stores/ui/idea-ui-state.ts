@@ -7,7 +7,7 @@ export type IdeaUIState = {
 
 export type IdeaUIStateTree = Record<string, IdeaUIState>
 
-export function createAimUIState(): IdeaUIState {
+export function createIdeaUIState(): IdeaUIState {
   return {
     expanded: false,
     pendingDelete: false,
@@ -16,8 +16,8 @@ export function createAimUIState(): IdeaUIState {
   }
 }
 
-export function ensureAimUIState(tree: IdeaUIStateTree, ideaId: string): IdeaUIState {
-  tree[ideaId] ??= createAimUIState()
+export function ensureIdeaUIState(tree: IdeaUIStateTree, ideaId: string): IdeaUIState {
+  tree[ideaId] ??= createIdeaUIState()
   tree[ideaId].expanded ??= false
   tree[ideaId].pendingDelete ??= false
   tree[ideaId].children ??= {}

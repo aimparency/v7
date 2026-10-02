@@ -165,7 +165,7 @@ test('semantic graph regression: cache invalidation on idea creation', async () 
 
     assert.equal(sourcesBefore.size, 3, 'Should have 3 ideas initially');
 
-    // Simulate creating a new idea (what happens in server.ts createFloatingAim)
+    // Simulate creating a new idea (what happens in server.ts createFloatingIdea)
     await saveEmbedding(testDir, 'idea-4-new', [1, 1, 0]);
     invalidateSemanticCache(testDir); // This is the fix!
 
@@ -177,8 +177,8 @@ test('semantic graph regression: cache invalidation on idea creation', async () 
     assert.ok(sourcesAfter.has('idea-4-new'), 'Should include the newly created idea');
 
     // Verify the new idea has its relationships
-    const newAimLinks = graphAfter.links.filter(l => l.source === 'idea-4-new');
-    assert.equal(newAimLinks.length, 6, 'New idea should have 6 links (3 nearest + 3 furthest)');
+    const newIdeaLinks = graphAfter.links.filter(l => l.source === 'idea-4-new');
+    assert.equal(newIdeaLinks.length, 6, 'New idea should have 6 links (3 nearest + 3 furthest)');
 
   } finally {
     await fs.remove(testDir);

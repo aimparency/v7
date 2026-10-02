@@ -129,7 +129,7 @@ function handleCanvasClick(e: MouseEvent) {
   const clickedNode = hitTestNode(physX, physY)
   if (clickedNode) {
     if (clickedNode.loadable) {
-      graphUIStore.expandLoadableAim(clickedNode.id, dataStore.ideas)
+      graphUIStore.expandLoadableIdea(clickedNode.id, dataStore.ideas)
     } else {
       onNodeClick(clickedNode, e)
     }
@@ -248,8 +248,8 @@ const visibleLabelIds = ref<Set<string>>(new Set())
 
 const renderNodes = computed(() => {
     trigger.value;
-    const currentAimId = graphUIStore.graphSelectedAimId
-    const activeAim = uiStore.getCurrentAim()
+    const currentIdeaId = graphUIStore.graphSelectedIdeaId
+    const activeIdea = uiStore.getCurrentIdea()
     const visible = visibleLabelIds.value
     const result = []
     for (const n of nodes.value) {
@@ -260,8 +260,8 @@ const renderNodes = computed(() => {
             y: n.renderPos[1],
             r: n.r,
             text: n.text,
-            selected: n.id === currentAimId,
-            active: n.id === activeAim?.id,
+            selected: n.id === currentIdeaId,
+            active: n.id === activeIdea?.id,
             scale: visualScale.value
         })
     }
@@ -372,7 +372,7 @@ async function autoRelaxLayout() {
   await Promise.all([...proposalsByParent].map(async ([parentId, children]) => {
     const parent = dataStore.ideas[parentId]
     if (!parent) return
-    await dataStore.updateAim(projectStore.projectPath, parentId, {
+    await dataStore.updateIdea(projectStore.projectPath, parentId, {
       supportingConnections: parent.supportingConnections.map(connection => ({
         ...connection,
         relativePosition: children.get(connection.ideaId) ?? connection.relativePosition
@@ -416,7 +416,7 @@ function toggleSpinOffPreview() {
   } else {
     // Seed with the current selection if any; otherwise start empty and let the
     // user pick roots by clicking ideas.
-    const seed = graphUIStore.graphSelectedAimId ? [graphUIStore.graphSelectedAimId] : []
+    const seed = graphUIStore.graphSelectedIdeaId ? [graphUIStore.graphSelectedIdeaId] : []
     graphUIStore.previewSpinOff(seed)
   }
 }
@@ -500,7 +500,7 @@ function toggleSpinOffPreview() {
 
     <GraphSidePanel v-if="graphUIStore.graphColorMode !== 'spin-off'" />
     <div class="top-controls">
-      <button class="control-btn" @click="dataStore.loadAllAims(projectStore.projectPath)" title="Reload Data">
+      <button class="control-btn" @click="dataStore.loadAllIdeas(projectStore.projectPath)" title="Reload Data">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 4v6h-6"></path>
           <path d="M1 20v-6h6"></path>

@@ -4,8 +4,8 @@ import path from 'path';
 import { isDeepStrictEqual } from 'node:util';
 import type { Idea, Phase, ProjectMeta } from 'shared';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
-import { addAimToIndex, addPhaseToIndex, removeAimFromIndex, removePhaseFromIndex } from '../search.js';
-import { embeddingTextForAim, generateEmbedding, removeEmbedding, saveEmbedding } from '../embeddings.js';
+import { addIdeaToIndex, addPhaseToIndex, removeIdeaFromIndex, removePhaseFromIndex } from '../search.js';
+import { embeddingTextForIdea, generateEmbedding, removeEmbedding, saveEmbedding } from '../embeddings.js';
 import { invalidateSemanticCache } from '../forces.js';
 
 const EntityChangeSchema = z.object({
@@ -28,7 +28,7 @@ export const createHistoryRouter = (
   t: RouterBuilder,
   delayedProcedure: BaseProcedure,
   normalizeProjectPath: (p: string) => string,
-  writeAim: (projectPath: string, idea: Idea) => Promise<void>,
+  writeIdea: (projectPath: string, idea: Idea) => Promise<void>,
   writePhase: (projectPath: string, phase: Phase) => Promise<void>,
   writeProjectMeta: (projectPath: string, meta: ProjectMeta) => Promise<void>,
   ee: any
@@ -58,7 +58,7 @@ export const createHistoryRouter = (
     if (change.target === null) {
       for (const file of entityFiles(projectPath, change)) await fs.remove(file);
       if (change.type === 'idea') {
-        removeAimFromIndex(projectPath, change.id);
+        removeIdeaFromIndex(projectPath, change.id);
         if (process.env.NODE_ENV !== 'test') await removeEmbedding(projectPath, change.id);
       } else {
         removePhaseFromIndex(projectPath, change.id);
@@ -69,11 +69,11 @@ export const createHistoryRouter = (
 
     if (change.type === 'idea') {
       const idea = change.target as Idea;
-      await writeAim(projectPath, idea);
-      removeAimFromIndex(projectPath, idea.id);
-      addAimToIndex(projectPath, idea);
+      await writeIdea(projectPath, idea);
+      removeIdeaFromIndex(projectPath, idea.id);
+      addIdeaToIndex(projectPath, idea);
       if (process.env.NODE_ENV !== 'test') {
-        generateEmbedding(embeddingTextForAim(idea)).then((vector) => {
+        generateEmbedding(embeddingTextForIdea(idea)).then((vector) => {
           if (vector) saveEmbedding(projectPath, idea.id, vector);
         });
       }

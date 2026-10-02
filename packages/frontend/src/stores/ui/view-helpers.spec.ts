@@ -16,21 +16,21 @@ describe('view helpers', () => {
   })
 
   it('clamps viewport size', () => {
-    const state = { windowSize: 3, currentView: 'columns' as UIViewMode, graphSelectedAimId: null as string | null }
+    const state = { windowSize: 3, currentView: 'columns' as UIViewMode, graphSelectedIdeaId: null as string | null }
     expect(setWindowSize(state, 99)).toBe(10)
     expect(state.windowSize).toBe(10)
   })
 
   it('syncs between list and graph view selection', () => {
-    const state = { windowSize: 3, currentView: 'columns' as UIViewMode, graphSelectedAimId: null as string | null }
-    const navigateToAim = vi.fn()
+    const state = { windowSize: 3, currentView: 'columns' as UIViewMode, graphSelectedIdeaId: null as string | null }
+    const navigateToIdea = vi.fn()
 
-    setView(state, 'graph', () => 'a1', navigateToAim)
-    expect(state.graphSelectedAimId).toBe('a1')
+    setView(state, 'graph', () => 'a1', navigateToIdea)
+    expect(state.graphSelectedIdeaId).toBe('a1')
 
-    state.graphSelectedAimId = 'a2'
-    setView(state, 'columns', () => null, navigateToAim)
-    expect(navigateToAim).toHaveBeenCalledWith('a2')
+    state.graphSelectedIdeaId = 'a2'
+    setView(state, 'columns', () => null, navigateToIdea)
+    expect(navigateToIdea).toHaveBeenCalledWith('a2')
   })
 
   it('updates graph display options and resets state', () => {
@@ -50,14 +50,14 @@ describe('view helpers', () => {
       windowStart: 4,
       windowSize: 6,
       maxColumn: 8,
-      floatingAimIndex: 5,
-      navigatingAims: true,
-      graphSelectedAimId: 'x',
+      floatingIdeaIndex: 5,
+      navigatingIdeas: true,
+      graphSelectedIdeaId: 'x',
       selectedLink: { parentId: 'p', childId: 'c' }
     }
     resetViewState(state)
     expect(state.activeColumn).toBe(0)
     expect(state.windowSize).toBe(2)
-    expect(state.graphSelectedAimId).toBe(null)
+    expect(state.graphSelectedIdeaId).toBe(null)
   })
 })

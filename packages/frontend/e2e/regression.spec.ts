@@ -2,7 +2,7 @@ import { test, expect, Page } from '@playwright/test';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { mkdirSync, rmSync } from 'fs';
-import { seedProject, finishAimCreation } from './test-utils';
+import { seedProject, finishIdeaCreation } from './test-utils';
 import { randomUUID } from 'crypto';
 
 // Helpers
@@ -16,7 +16,7 @@ async function createPhase(page: Page, name: string) {
   await page.waitForSelector('.modal-panel', { state: 'hidden', timeout: 3000 });
 }
 
-async function createAim(page: Page, text: string, tags: string[] = []) {
+async function createIdea(page: Page, text: string, tags: string[] = []) {
   await page.keyboard.press('o');
   await page.waitForSelector('.modal-panel', { timeout: 3000 });
   await page.waitForTimeout(200);
@@ -37,7 +37,7 @@ async function createAim(page: Page, text: string, tags: string[] = []) {
   await page.waitForTimeout(100); 
   const createBtn = page.locator('.modal-panel button.btn-primary');
   await createBtn.click();
-  await finishAimCreation(page);
+  await finishIdeaCreation(page);
 }
 
 test.describe('Regression Tests', () => {
@@ -123,7 +123,7 @@ test.describe('Regression Tests', () => {
     await page.waitForTimeout(200);
 
     // Create Grandchild
-    await createAim(page, 'Grandchild');
+    await createIdea(page, 'Grandchild');
     await page.waitForTimeout(500);
 
     // Verify hierarchy: Parent -> Child -> Grandchild
@@ -143,7 +143,7 @@ test.describe('Regression Tests', () => {
     await expect(hierarchy).toBeVisible();
   });
 
-  test('Linking: Add floating idea as subaim', async ({ page }) => {
+  test('Linking: Add floating idea as subidea', async ({ page }) => {
     // 1. Verify Floating Idea exists in Root
     await expect(page.locator('.root-ideas-column .idea-text', { hasText: 'Target Floating Idea' })).toBeVisible();
 
@@ -159,17 +159,17 @@ test.describe('Regression Tests', () => {
     const searchResult = page.locator('.modal-panel .search-results .result-item:not(.additional-option)', { hasText: 'Target Floating Idea' }).first();
     await expect(searchResult).toBeVisible({ timeout: 15000 });
     await searchResult.click();
-    await finishAimCreation(page);
+    await finishIdeaCreation(page);
     await page.waitForTimeout(500);
 
     // 4. Verify sub-idea existence
-    const subAim = page.locator('.column-panel .incoming-ideas .idea-text', { hasText: 'Target Floating Idea' });
-    await expect(subAim).toBeVisible();
+    const subIdea = page.locator('.column-panel .incoming-ideas .idea-text', { hasText: 'Target Floating Idea' });
+    await expect(subIdea).toBeVisible();
 
     // 5. Verify removed from Floating List
     // Note: Floating list refreshes on scroll or init. Might need to check if it's gone.
     // Infinite scroll logic might keep it until refresh? 
-    // Store updates `floatingAims` getter which filters based on committedIn/outgoing.
+    // Store updates `floatingIdeas` getter which filters based on committedIn/outgoing.
     // Creating link updates the idea's outgoing. So it should disappear reactively.
     await expect(page.locator('.root-ideas-column .idea-text', { hasText: 'Target Floating Idea' })).toBeHidden();
   });
@@ -186,21 +186,21 @@ test.describe('Regression Tests', () => {
 
     const ideasAfterUp = await page.locator('.column-panel .idea-text').allTextContents().then(texts => texts.map(text => text.trim()));
     // Filter to just our move ideas
-    const moveAimsUp = ideasAfterUp.filter(t => t.includes('Move'));
+    const moveIdeasUp = ideasAfterUp.filter(t => t.includes('Move'));
     // Should be 2, 1, 3
-    expect(moveAimsUp[0]).toBe('Move 2');
-    expect(moveAimsUp[1]).toBe('Move 1');
-    expect(moveAimsUp[2]).toBe('Move 3');
+    expect(moveIdeasUp[0]).toBe('Move 2');
+    expect(moveIdeasUp[1]).toBe('Move 1');
+    expect(moveIdeasUp[2]).toBe('Move 3');
 
     // Move Down (J) -> 1, 2, 3
     await page.keyboard.press('J');
     await page.waitForTimeout(500);
 
     const ideasAfterDown = await page.locator('.column-panel .idea-text').allTextContents().then(texts => texts.map(text => text.trim()));
-    const moveAimsDown = ideasAfterDown.filter(t => t.includes('Move'));
-    expect(moveAimsDown[0]).toBe('Move 1');
-    expect(moveAimsDown[1]).toBe('Move 2');
-    expect(moveAimsDown[2]).toBe('Move 3');
+    const moveIdeasDown = ideasAfterDown.filter(t => t.includes('Move'));
+    expect(moveIdeasDown[0]).toBe('Move 1');
+    expect(moveIdeasDown[1]).toBe('Move 2');
+    expect(moveIdeasDown[2]).toBe('Move 3');
   });
 
   test('Move In (L): Indent idea', async ({ page }) => {

@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import os from 'node:os';
 import path from 'path';
 import fs from 'fs-extra';
-import { getDb, closeDb, saveAimValues, getAimValues } from './db.js';
+import { getDb, closeDb, saveIdeaValues, getIdeaValues } from './db.js';
 
 let testProjectPath = '';
 
@@ -16,14 +16,14 @@ afterEach(async () => {
   await fs.remove(testProjectPath);
 });
 
-test('saveAimValues and getAimValues', () => {
+test('saveIdeaValues and getIdeaValues', () => {
   const values = new Map();
   values.set('idea-1', { value: 10, cost: 5, doneCost: 2 });
   values.set('idea-2', { value: 20, cost: 10, doneCost: 0 });
 
-  saveAimValues(testProjectPath, values);
+  saveIdeaValues(testProjectPath, values);
 
-  const retrieved = getAimValues(testProjectPath);
+  const retrieved = getIdeaValues(testProjectPath);
   
   assert.equal(retrieved.size, 2);
   
@@ -38,19 +38,19 @@ test('saveAimValues and getAimValues', () => {
   assert.equal(idea2.value, 20);
 });
 
-test('saveAimValues replaces existing values', () => {
+test('saveIdeaValues replaces existing values', () => {
   const values1 = new Map();
   values1.set('idea-1', { value: 10, cost: 5, doneCost: 0 });
-  saveAimValues(testProjectPath, values1);
+  saveIdeaValues(testProjectPath, values1);
 
   const values2 = new Map();
   values2.set('idea-1', { value: 15, cost: 6, doneCost: 1 }); // Updated
   values2.set('idea-3', { value: 30, cost: 1, doneCost: 0 }); // New
   // idea-2 missing, should be removed if we are doing full snapshot replace
   
-  saveAimValues(testProjectPath, values2);
+  saveIdeaValues(testProjectPath, values2);
 
-  const retrieved = getAimValues(testProjectPath);
+  const retrieved = getIdeaValues(testProjectPath);
   
   assert.equal(retrieved.size, 2);
   

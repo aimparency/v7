@@ -3,11 +3,11 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
-import type { SearchAimResult } from 'shared'
+import type { SearchIdeaResult } from 'shared'
 import type { IdeaSearchAdditionalOption } from '../stores/ui/idea-search-types'
 
 export type IdeaSearchSelection =
-  | { type: 'idea'; data: SearchAimResult; keepOpen?: boolean }
+  | { type: 'idea'; data: SearchIdeaResult; keepOpen?: boolean }
   | { type: 'option'; data: IdeaSearchAdditionalOption; keepOpen?: boolean }
   | null
 
@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<{
   activateOnEnter?: boolean
   selectOnHover?: boolean
   resultLimit?: number
-  externalResults?: SearchAimResult[]
+  externalResults?: SearchIdeaResult[]
   navigationTitle?: string
 }>(), {
   query: undefined,
@@ -55,10 +55,10 @@ const dataStore = useDataStore()
 const projectStore = useProjectStore()
 
 const localQuery = ref(props.initialQuery)
-const searchResults = ref<SearchAimResult[]>([])
+const searchResults = ref<SearchIdeaResult[]>([])
 const navigationMode = ref(false)
 const localNavigationTitle = ref('')
-const navigationHistory = ref<{ title: string, results: SearchAimResult[] }[]>([])
+const navigationHistory = ref<{ title: string, results: SearchIdeaResult[] }[]>([])
 const selectedIndex = ref(0)
 const searchInput = ref<HTMLInputElement>()
 const resultsListRef = ref<HTMLDivElement>()
@@ -73,21 +73,21 @@ const currentQuery = computed(() => (props.query ?? localQuery.value).trim())
 const displayTitle = computed(() => props.navigationTitle || localNavigationTitle.value)
 
 const items = computed(() => {
-  const toAimItem = (result: SearchAimResult) => ({
+  const toIdeaItem = (result: SearchIdeaResult) => ({
     type: 'idea' as const,
     data: result,
-    pathContext: getAimPathContext(result)
+    pathContext: getIdeaPathContext(result)
   })
 
   if (!navigationMode.value && props.externalResults) {
-    return props.externalResults.map(toAimItem)
+    return props.externalResults.map(toIdeaItem)
   }
 
   return [
     ...props.additionalOptions
       .filter(option => !option.showWhenQueryEmptyOnly || currentQuery.value.length === 0)
       .map(option => ({ type: 'option' as const, data: option })),
-    ...searchResults.value.map(toAimItem)
+    ...searchResults.value.map(toIdeaItem)
   ]
 })
 
@@ -102,19 +102,19 @@ const toggleStatus = (status: string) => {
   }
 }
 
-const getAimPathContext = (idea: SearchAimResult): string | null => {
+const getIdeaPathContext = (idea: SearchIdeaResult): string | null => {
   const maxLength = 100
   if (idea.text.length >= maxLength) return null
 
   const buildPath = (ideaId: string, currentPath: string[]): string[] => {
-    const currentAim = dataStore.ideas[ideaId]
-    if (!currentAim || !currentAim.supportedAims?.length) return currentPath
+    const currentIdea = dataStore.ideas[ideaId]
+    if (!currentIdea || !currentIdea.supportedIdeas?.length) return currentPath
 
-    const parentId = currentAim.supportedAims[0]
-    const parentAim = parentId ? dataStore.ideas[parentId] : null
-    if (!parentAim) return currentPath
+    const parentId = currentIdea.supportedIdeas[0]
+    const parentIdea = parentId ? dataStore.ideas[parentId] : null
+    if (!parentIdea) return currentPath
 
-    const newPath = [parentAim.text, ...currentPath]
+    const newPath = [parentIdea.text, ...currentPath]
     if (newPath.join(' / ').length > maxLength) return currentPath
     return buildPath(parentId!, newPath)
   }
@@ -124,7 +124,7 @@ const getAimPathContext = (idea: SearchAimResult): string | null => {
   return parentPath.join(' / ')
 }
 
-const getAimIdRemainder = (idea: SearchAimResult): string => {
+const getIdeaIdRemainder = (idea: SearchIdeaResult): string => {
   const prefixLength = idea.idMatch?.prefix.length ?? 0
   return idea.id.slice(prefixLength)
 }
@@ -191,7 +191,7 @@ const performSearch = async (query: string) => {
       })
     ])
 
-    const combined = new Map<string, SearchAimResult>()
+    const combined = new Map<string, SearchIdeaResult>()
     semanticResults.forEach(result => combined.set(result.id, { ...result }))
     keywordResults.forEach(result => {
       const existing = combined.get(result.id)
@@ -230,11 +230,11 @@ watch([() => currentQuery.value, () => includeArchived.value, () => selectedStat
   scheduleSearch(query)
 }, { immediate: true })
 
-const navigateToParents = async (idea: SearchAimResult, wasFocused = false) => {
-  if (!idea.supportedAims?.length) return
+const navigateToParents = async (idea: SearchIdeaResult, wasFocused = false) => {
+  if (!idea.supportedIdeas?.length) return
   loading.value = true
   try {
-    const parents = await trpc.idea.getMany.query({ projectPath: projectStore.projectPath, ideaIds: idea.supportedAims })
+    const parents = await trpc.idea.getMany.query({ projectPath: projectStore.projectPath, ideaIds: idea.supportedIdeas })
     navigationHistory.value.push({ title: localNavigationTitle.value || 'Search Results', results: [...searchResults.value] })
     searchResults.value = parents.map(p => ({ ...p, score: 1 }))
     localNavigationTitle.value = `Parents of: ${idea.text}`
@@ -247,10 +247,10 @@ const navigateToParents = async (idea: SearchAimResult, wasFocused = false) => {
   }
 }
 
-const navigateToChildren = async (idea: SearchAimResult, wasFocused = false) => {
+const navigateToChildren = async (idea: SearchIdeaResult, wasFocused = false) => {
   loading.value = true
   try {
-    const children = await trpc.idea.list.query({ projectPath: projectStore.projectPath, parentAimId: idea.id })
+    const children = await trpc.idea.list.query({ projectPath: projectStore.projectPath, parentIdeaId: idea.id })
     if (children.length === 0) return
     navigationHistory.value.push({ title: localNavigationTitle.value || 'Search Results', results: [...searchResults.value] })
     searchResults.value = children.map(c => ({ ...c, score: 1 }))
@@ -323,7 +323,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (key === 'h' && (!isInput || currentQuery.value.length === 0)) {
     event.preventDefault()
     const item = selectedItem.value
-    if (item?.type === 'idea' && item.data.supportedAims?.length) {
+    if (item?.type === 'idea' && item.data.supportedIdeas?.length) {
       void navigateToParents(item.data, true)
     } else if (navigationMode.value) {
       navigateBack(true)
@@ -451,7 +451,7 @@ onUnmounted(() => {
                 <div class="idea-primary">
                   <span class="idea-title">{{ item.data.text }}</span>
                   <div class="idea-meta">
-                    <span v-if="item.data.supportedAims?.length" class="nav-indicator">H ←</span>
+                    <span v-if="item.data.supportedIdeas?.length" class="nav-indicator">H ←</span>
                     <span class="idea-status" :class="item.data.status.state">{{ item.data.status.state }}</span>
                     <span v-if="item.data.supportingConnections?.length" class="nav-indicator">→ L</span>
                   </div>
@@ -459,7 +459,7 @@ onUnmounted(() => {
                 <span v-if="item.pathContext" class="idea-path">{{ item.pathContext }}</span>
               </div>
               <div v-if="item.data.idMatch" class="idea-id-match">
-                <span class="idea-id-prefix">{{ item.data.idMatch.prefix }}</span><span>{{ getAimIdRemainder(item.data) }}</span>
+                <span class="idea-id-prefix">{{ item.data.idMatch.prefix }}</span><span>{{ getIdeaIdRemainder(item.data) }}</span>
               </div>
             </div>
           </template>

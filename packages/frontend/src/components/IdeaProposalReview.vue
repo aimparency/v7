@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { flattenAimProposal, type IdeaProposal } from 'shared'
+import { flattenIdeaProposal, type IdeaProposal } from 'shared'
 import { trpc } from '../trpc'
 import FormModalShell from './FormModalShell.vue'
 import IdeaProposalNodeEditor from './IdeaProposalNodeEditor.vue'
@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
-  persisted: [result: { rootAimId: string, idMap: Record<string, string> }]
+  persisted: [result: { rootIdeaId: string, idMap: Record<string, string> }]
 }>()
 
 // IdeaProposal is deliberately JSON-only. Serializing also unwraps Vue's
@@ -40,7 +40,7 @@ watch(draft, () => {
   }
 }, { deep: true })
 
-const flattened = computed(() => flattenAimProposal(draft.value.root))
+const flattened = computed(() => flattenIdeaProposal(draft.value.root))
 const ideaCount = computed(() => flattened.value.ideas.length)
 const connectionCount = computed(() =>
   flattened.value.connections.length + draft.value.existingParentIds.length
@@ -63,7 +63,7 @@ const approve = async () => {
   error.value = ''
   idempotencyKey.value ||= `${draft.value.revision}:${crypto.randomUUID()}`
   try {
-    const result = await trpc.idea.approveAimSubtree.mutate({
+    const result = await trpc.idea.approveIdeaSubtree.mutate({
       projectPath: props.projectPath,
       proposal: draft.value,
       revision: draft.value.revision,
@@ -74,8 +74,8 @@ const approve = async () => {
       error.value = `Persistence stopped after ${result.completedOperations} operation(s): ${detail}`
       return
     }
-    if (!result.rootAimId) throw new Error('Persistence completed without returning a root idea ID')
-    emit('persisted', { rootAimId: result.rootAimId, idMap: result.idMap })
+    if (!result.rootIdeaId) throw new Error('Persistence completed without returning a root idea ID')
+    emit('persisted', { rootIdeaId: result.rootIdeaId, idMap: result.idMap })
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : 'Could not add the proposal to the graph'
   } finally {

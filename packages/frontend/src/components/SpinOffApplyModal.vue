@@ -113,7 +113,7 @@ const apply = async () => {
     }
     modalStore.closeSpinOffApplyModal()
     graphUIStore.clearSpinOffPreview()
-    await dataStore.loadAllAims(projectStore.projectPath)
+    await dataStore.loadAllIdeas(projectStore.projectPath)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : String(error)
   } finally {

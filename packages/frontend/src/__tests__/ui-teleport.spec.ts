@@ -8,7 +8,7 @@ const { mockTrpc } = vi.hoisted(() => ({
       get: { query: vi.fn() },
       update: { mutate: vi.fn() },
       commitToPhase: { mutate: vi.fn() },
-      connectAims: { mutate: vi.fn() },
+      connectIdeas: { mutate: vi.fn() },
       removeFromPhase: { mutate: vi.fn() }
     },
     phase: {
@@ -25,7 +25,7 @@ vi.mock('shared', async (importOriginal) => {
   const actual: any = await importOriginal()
   return {
     ...actual,
-    calculateAimValues: vi.fn(() => ({
+    calculateIdeaValues: vi.fn(() => ({
       values: new Map(),
       costs: new Map(),
       doneCosts: new Map(),
@@ -46,7 +46,7 @@ function keyEvent(key: string) {
   return { key, preventDefault: vi.fn() } as unknown as KeyboardEvent
 }
 
-function baseAim(id: string, text: string) {
+function baseIdea(id: string, text: string) {
   return {
     id,
     text,
@@ -54,7 +54,7 @@ function baseAim(id: string, text: string) {
     tags: [],
     status: { state: 'open', comment: '', date: Date.now() },
     supportingConnections: [],
-    supportedAims: [],
+    supportedIdeas: [],
     committedIn: [],
     intrinsicValue: 0,
     cost: 1,
@@ -74,7 +74,7 @@ describe('UI teleport cut/paste', () => {
     const projectStore = useProjectStore()
 
     projectStore.projectPath = '/tmp/project'
-    uiStore.navigatingAims = true
+    uiStore.navigatingIdeas = true
     uiStore.activeColumn = 0
     uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
     dataStore.meta = { rootPhaseIds: ['phase-1'] }
@@ -87,13 +87,13 @@ describe('UI teleport cut/paste', () => {
       parent: null,
       childPhaseIds: [],
       commitments: ['idea-1', 'idea-2'],
-      selectedAimIndex: 1
+      selectedIdeaIndex: 1
     } as any
 
-    dataStore.ideas['idea-1'] = baseAim('idea-1', 'A1') as any
-    dataStore.ideas['idea-2'] = baseAim('idea-2', 'A2') as any
+    dataStore.ideas['idea-1'] = baseIdea('idea-1', 'A1') as any
+    dataStore.ideas['idea-2'] = baseIdea('idea-2', 'A2') as any
 
-    mockTrpc.idea.get.query.mockResolvedValue(baseAim('idea-2', 'A2'))
+    mockTrpc.idea.get.query.mockResolvedValue(baseIdea('idea-2', 'A2'))
     mockTrpc.phase.get.query.mockResolvedValue({
       id: 'phase-1',
       name: 'P1',
@@ -103,15 +103,15 @@ describe('UI teleport cut/paste', () => {
       commitments: ['idea-1', 'idea-2']
     })
 
-    await uiStore.handleAimNavigationKeys(keyEvent('x'), dataStore)
+    await uiStore.handleIdeaNavigationKeys(keyEvent('x'), dataStore)
     const modalStore = useUIModalStore()
-    expect(modalStore.teleportCutAimId).toBe('idea-2')
-    expect(modalStore.movingAimId).toBe('idea-2')
+    expect(modalStore.teleportCutIdeaId).toBe('idea-2')
+    expect(modalStore.movingIdeaId).toBe('idea-2')
 
     const selectedPhase = dataStore.phases['phase-1']
     if (!selectedPhase) throw new Error('phase-1 should exist in test setup')
-    selectedPhase.selectedAimIndex = 0
-    await uiStore.handleAimNavigationKeys(keyEvent('p'), dataStore)
+    selectedPhase.selectedIdeaIndex = 0
+    await uiStore.handleIdeaNavigationKeys(keyEvent('p'), dataStore)
 
     expect(mockTrpc.idea.commitToPhase.mutate).toHaveBeenCalledWith({
       projectPath: '/tmp/project',
@@ -119,8 +119,8 @@ describe('UI teleport cut/paste', () => {
       phaseId: 'phase-1',
       insertionIndex: 1
     })
-    expect(modalStore.teleportCutAimId).toBeNull()
-    expect(modalStore.movingAimId).toBeNull()
+    expect(modalStore.teleportCutIdeaId).toBeNull()
+    expect(modalStore.movingIdeaId).toBeNull()
   })
 
   it('moves from one parent to another on paste', async () => {
@@ -129,21 +129,21 @@ describe('UI teleport cut/paste', () => {
     const projectStore = useProjectStore()
 
     projectStore.projectPath = '/tmp/project'
-    uiStore.navigatingAims = true
+    uiStore.navigatingIdeas = true
     uiStore.activeColumn = 0
     uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
     dataStore.meta = { rootPhaseIds: ['phase-1'] }
 
-    const parentA = baseAim('parent-a', 'Parent A') as any
+    const parentA = baseIdea('parent-a', 'Parent A') as any
     parentA.supportingConnections = [{ ideaId: 'child', weight: 1, relativePosition: [0, 0] }]
 
-    const parentB = baseAim('parent-b', 'Parent B') as any
+    const parentB = baseIdea('parent-b', 'Parent B') as any
     parentB.supportingConnections = [{ ideaId: 'target', weight: 1, relativePosition: [0, 0] }]
 
-    const child = baseAim('child', 'Child') as any
-    child.supportedAims = ['parent-a']
-    const target = baseAim('target', 'Target') as any
-    target.supportedAims = ['parent-b']
+    const child = baseIdea('child', 'Child') as any
+    child.supportedIdeas = ['parent-a']
+    const target = baseIdea('target', 'Target') as any
+    target.supportedIdeas = ['parent-b']
 
     dataStore.ideas['parent-a'] = parentA
     dataStore.ideas['parent-b'] = parentB
@@ -158,20 +158,20 @@ describe('UI teleport cut/paste', () => {
       parent: null,
       childPhaseIds: [],
       commitments: ['parent-b'],
-      selectedAimIndex: 0
+      selectedIdeaIndex: 0
     } as any
 
     const modalStore = useUIModalStore()
-    modalStore.teleportCutAimId = 'child'
-    modalStore.teleportSource = { parentAimId: 'parent-a' }
-    modalStore.movingAimId = 'child'
+    modalStore.teleportCutIdeaId = 'child'
+    modalStore.teleportSource = { parentIdeaId: 'parent-a' }
+    modalStore.movingIdeaId = 'child'
 
-    const parentBState = uiStore.ensureAimUIState(uiStore.getPhaseAimUIStates('phase-1'), 'parent-b')
+    const parentBState = uiStore.ensureIdeaUIState(uiStore.getPhaseIdeaUIStates('phase-1'), 'parent-b')
     parentBState.expanded = true
     parentBState.selectedIncomingIndex = 0
 
     mockTrpc.idea.update.mutate.mockResolvedValue({})
-    mockTrpc.idea.connectAims.mutate.mockResolvedValue({})
+    mockTrpc.idea.connectIdeas.mutate.mockResolvedValue({})
     mockTrpc.idea.get.query.mockImplementation(({ ideaId }: any) => {
       if (ideaId === 'parent-a') {
         return Promise.resolve({
@@ -190,20 +190,20 @@ describe('UI teleport cut/paste', () => {
       }
       return Promise.resolve({
         ...child,
-        supportedAims: ['parent-b']
+        supportedIdeas: ['parent-b']
       })
     })
 
-    await uiStore.pasteCutAim(dataStore)
+    await uiStore.pasteCutIdea(dataStore)
 
     expect(mockTrpc.idea.update.mutate).toHaveBeenCalled()
-    expect(mockTrpc.idea.connectAims.mutate).toHaveBeenCalledWith({
+    expect(mockTrpc.idea.connectIdeas.mutate).toHaveBeenCalledWith({
       projectPath: '/tmp/project',
-      parentAimId: 'parent-b',
-      childAimId: 'child',
+      parentIdeaId: 'parent-b',
+      childIdeaId: 'child',
       parentIncomingIndex: 1
     })
-    expect(modalStore.teleportCutAimId).toBeNull()
+    expect(modalStore.teleportCutIdeaId).toBeNull()
   })
 
   it('opens create modal in idea-navigation for an empty selected phase', async () => {
@@ -211,8 +211,8 @@ describe('UI teleport cut/paste', () => {
     const uiStore = useUIStore()
     const modalStore = useUIModalStore()
 
-    uiStore.navigatingAims = true
-    modalStore.showAimModal = false
+    uiStore.navigatingIdeas = true
+    modalStore.showIdeaModal = false
     uiStore.activeColumn = 0
     uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-empty'
 
@@ -223,12 +223,12 @@ describe('UI teleport cut/paste', () => {
       to: 1,
       parent: null,
       commitments: [],
-      selectedAimIndex: undefined
+      selectedIdeaIndex: undefined
     } as any
 
-    await uiStore.handleAimNavigationKeys(keyEvent('o'), dataStore)
+    await uiStore.handleIdeaNavigationKeys(keyEvent('o'), dataStore)
 
-    expect(modalStore.showAimModal).toBe(true)
+    expect(modalStore.showIdeaModal).toBe(true)
     expect(modalStore.ideaModalInsertPosition).toBe('after')
   })
 
@@ -236,20 +236,20 @@ describe('UI teleport cut/paste', () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
 
-    uiStore.navigatingAims = false
+    uiStore.navigatingIdeas = false
     uiStore.activeColumn = 0
     dataStore.meta = { rootPhaseIds: [] }
 
     await uiStore.handleColumnNavigationKeys(keyEvent('i'), dataStore)
 
-    expect(uiStore.navigatingAims).toBe(false)
+    expect(uiStore.navigatingIdeas).toBe(false)
   })
 
   it('enters idea mode with i when selected phase exists even if it has no ideas', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
 
-    uiStore.navigatingAims = false
+    uiStore.navigatingIdeas = false
     uiStore.activeColumn = 0
     uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-empty'
     dataStore.meta = { rootPhaseIds: ['phase-empty'] }
@@ -261,12 +261,12 @@ describe('UI teleport cut/paste', () => {
       parent: null,
       childPhaseIds: [],
       commitments: [],
-      selectedAimIndex: undefined
+      selectedIdeaIndex: undefined
     } as any
 
     await uiStore.handleColumnNavigationKeys(keyEvent('i'), dataStore)
 
-    expect(uiStore.navigatingAims).toBe(true)
+    expect(uiStore.navigatingIdeas).toBe(true)
   })
 
   it('deletes selected phase on second d press', async () => {

@@ -1,13 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { countAimReferences, findReconciliationCandidates } from "./reconcile.js";
+import { countIdeaReferences, findReconciliationCandidates } from "./reconcile.js";
 
 const OPEN = (id: string, text = id) => ({ id, text, status: { state: "open" } });
 const DONE = (id: string, text = id) => ({ id, text, status: { state: "done" } });
 
-test("countAimReferences matches an idea by its 8-char id prefix", () => {
+test("countIdeaReferences matches an idea by its 8-char id prefix", () => {
   const id = "8ae69400-1743-4569-b77f-0ae6f1109273";
-  const counts = countAimReferences(
+  const counts = countIdeaReferences(
     ["feat(graph): data model (8ae69400)", "unrelated commit", "fix: more (8ae69400) again"],
     [id, "11111111-2222-3333-4444-555555555555"],
   );

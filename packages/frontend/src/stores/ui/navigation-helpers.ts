@@ -1,5 +1,5 @@
 import { useDataStore, type Idea, type Phase } from '../data'
-import { ensureAimUIState, type IdeaUIState, type IdeaUIStateTree } from './idea-ui-state'
+import { ensureIdeaUIState, type IdeaUIState, type IdeaUIStateTree } from './idea-ui-state'
 
 export type SelectionPath = {
   phase: Phase | undefined
@@ -10,31 +10,31 @@ export type SelectionPath = {
 export type TreeTraversalResult = {
   ideaId: string
   topLevelIndex: number
-  parentAimId?: string
+  parentIdeaId?: string
   indexInParent?: number
 }
 
 type DataStore = ReturnType<typeof useDataStore>
 
-export function isAimInTree(ideaId: string, rootAim: Idea, dataStore: DataStore, visited: Set<string> = new Set()): boolean {
-  if (rootAim.id === ideaId) {
+export function isIdeaInTree(ideaId: string, rootIdea: Idea, dataStore: DataStore, visited: Set<string> = new Set()): boolean {
+  if (rootIdea.id === ideaId) {
     return true
   }
 
-  if (visited.has(rootAim.id)) {
+  if (visited.has(rootIdea.id)) {
     return false
   }
 
-  if (!rootAim.supportingConnections?.length) {
+  if (!rootIdea.supportingConnections?.length) {
     return false
   }
 
   const nextVisited = new Set(visited)
-  nextVisited.add(rootAim.id)
+  nextVisited.add(rootIdea.id)
 
-  for (const connection of rootAim.supportingConnections) {
+  for (const connection of rootIdea.supportingConnections) {
     const child = dataStore.ideas[connection.ideaId]
-    if (child && isAimInTree(ideaId, child, dataStore, nextVisited)) {
+    if (child && isIdeaInTree(ideaId, child, dataStore, nextVisited)) {
       return true
     }
   }
@@ -42,7 +42,7 @@ export function isAimInTree(ideaId: string, rootAim: Idea, dataStore: DataStore,
   return false
 }
 
-export function makeSelectedAimPath(idea: Idea, state: IdeaUIState, path: Idea[], statePath: IdeaUIState[], dataStore: DataStore): Idea {
+export function makeSelectedIdeaPath(idea: Idea, state: IdeaUIState, path: Idea[], statePath: IdeaUIState[], dataStore: DataStore): Idea {
   path.push(idea)
   statePath.push(state)
 
@@ -50,10 +50,10 @@ export function makeSelectedAimPath(idea: Idea, state: IdeaUIState, path: Idea[]
     const connections = idea.supportingConnections || []
     if (state.selectedIncomingIndex < connections.length) {
       const selectedConnection = connections[state.selectedIncomingIndex]
-      const childAim = selectedConnection ? dataStore.ideas[selectedConnection.ideaId] : undefined
-      if (childAim) {
-        const childState = ensureAimUIState(state.children, childAim.id)
-        return makeSelectedAimPath(childAim, childState, path, statePath, dataStore)
+      const childIdea = selectedConnection ? dataStore.ideas[selectedConnection.ideaId] : undefined
+      if (childIdea) {
+        const childState = ensureIdeaUIState(state.children, childIdea.id)
+        return makeSelectedIdeaPath(childIdea, childState, path, statePath, dataStore)
       }
     }
   }
@@ -62,34 +62,34 @@ export function makeSelectedAimPath(idea: Idea, state: IdeaUIState, path: Idea[]
 }
 
 export function getSelectionPathFromState(
-  navigatingAims: boolean,
+  navigatingIdeas: boolean,
   activeColumn: number,
-  floatingAimIndex: number,
+  floatingIdeaIndex: number,
   getSelectedPhaseId: (columnIndex: number) => string | undefined,
-  getFloatingAimUIStates: () => IdeaUIStateTree,
-  getPhaseAimUIStates: (phaseId: string) => IdeaUIStateTree
+  getFloatingIdeaUIStates: () => IdeaUIStateTree,
+  getPhaseIdeaUIStates: (phaseId: string) => IdeaUIStateTree
 ): SelectionPath {
   const dataStore = useDataStore()
-  if (!navigatingAims) {
+  if (!navigatingIdeas) {
     return { phase: undefined, ideas: [], ideaStates: [] }
   }
 
   if (activeColumn === -1) {
-    const floatingAims = dataStore.floatingAims
-    if (!floatingAims.length) {
+    const floatingIdeas = dataStore.floatingIdeas
+    if (!floatingIdeas.length) {
       return { phase: undefined, ideas: [], ideaStates: [] }
     }
 
-    const validIndex = Math.max(0, Math.min(floatingAimIndex, floatingAims.length - 1))
-    const selectedAim = floatingAims[validIndex]
-    if (!selectedAim) {
+    const validIndex = Math.max(0, Math.min(floatingIdeaIndex, floatingIdeas.length - 1))
+    const selectedIdea = floatingIdeas[validIndex]
+    if (!selectedIdea) {
       return { phase: undefined, ideas: [], ideaStates: [] }
     }
 
     const ideaPath: Idea[] = []
     const statePath: IdeaUIState[] = []
-    const selectedState = ensureAimUIState(getFloatingAimUIStates(), selectedAim.id)
-    makeSelectedAimPath(selectedAim, selectedState, ideaPath, statePath, dataStore)
+    const selectedState = ensureIdeaUIState(getFloatingIdeaUIStates(), selectedIdea.id)
+    makeSelectedIdeaPath(selectedIdea, selectedState, ideaPath, statePath, dataStore)
     return { phase: undefined, ideas: ideaPath, ideaStates: statePath }
   }
 
@@ -99,15 +99,15 @@ export function getSelectionPathFromState(
   }
 
   const phase = dataStore.phases[phaseId]
-  const ideas = dataStore.getAimsForPhase(phaseId)
+  const ideas = dataStore.getIdeasForPhase(phaseId)
   const ideaPath: Idea[] = []
   const statePath: IdeaUIState[] = []
 
-  if (phase?.selectedAimIndex !== undefined) {
-    const selectedAim = ideas[phase.selectedAimIndex]
-    if (selectedAim) {
-      const selectedState = ensureAimUIState(getPhaseAimUIStates(phaseId), selectedAim.id)
-      makeSelectedAimPath(selectedAim, selectedState, ideaPath, statePath, dataStore)
+  if (phase?.selectedIdeaIndex !== undefined) {
+    const selectedIdea = ideas[phase.selectedIdeaIndex]
+    if (selectedIdea) {
+      const selectedState = ensureIdeaUIState(getPhaseIdeaUIStates(phaseId), selectedIdea.id)
+      makeSelectedIdeaPath(selectedIdea, selectedState, ideaPath, statePath, dataStore)
     }
   }
 
@@ -117,10 +117,10 @@ export function getSelectionPathFromState(
 // One row per rendered idea of a list: the top-level ideas and, recursively, the
 // children of expanded ideas, in display order. `indexPath` is the top-level
 // index followed by connection indices, the encoding of the selection chain
-// (selectedAimIndex / floatingAimIndex, then selectedIncomingIndex per level).
+// (selectedIdeaIndex / floatingIdeaIndex, then selectedIncomingIndex per level).
 export type IdeaRow = { ideaId: string; indexPath: number[] }
 
-export function getVisibleAimRows(topLevelAims: Idea[], tree: IdeaUIStateTree, dataStore: DataStore): IdeaRow[] {
+export function getVisibleIdeaRows(topLevelIdeas: Idea[], tree: IdeaUIStateTree, dataStore: DataStore): IdeaRow[] {
   const rows: IdeaRow[] = []
   const visit = (idea: Idea, state: IdeaUIState | undefined, indexPath: number[]) => {
     rows.push({ ideaId: idea.id, indexPath })
@@ -130,19 +130,19 @@ export function getVisibleAimRows(topLevelAims: Idea[], tree: IdeaUIStateTree, d
       if (child) visit(child, state.children?.[child.id], [...indexPath, index])
     })
   }
-  topLevelAims.forEach((idea, index) => visit(idea, tree[idea.id], [index]))
+  topLevelIdeas.forEach((idea, index) => visit(idea, tree[idea.id], [index]))
   return rows
 }
 
-export function setCurrentAimIndexInState(
+export function setCurrentIdeaIndexInState(
   activeColumn: number,
   getSelectedPhaseId: (columnIndex: number) => string | undefined,
-  setFloatingAimIndex: (index: number) => void,
+  setFloatingIdeaIndex: (index: number) => void,
   ideaIndex: number,
   dataStore: DataStore
 ): void {
   if (activeColumn === -1) {
-    setFloatingAimIndex(ideaIndex)
+    setFloatingIdeaIndex(ideaIndex)
     return
   }
 
@@ -153,13 +153,13 @@ export function setCurrentAimIndexInState(
 
   const phase = dataStore.phases[phaseId]
   if (phase) {
-    phase.selectedAimIndex = ideaIndex
+    phase.selectedIdeaIndex = ideaIndex
   }
 }
 
-export function findPathToAim(targetId: string, topLevelAims: Idea[], dataStore: DataStore): TreeTraversalResult[] | null {
-  for (let i = 0; i < topLevelAims.length; i++) {
-    const root = topLevelAims[i]
+export function findPathToIdea(targetId: string, topLevelIdeas: Idea[], dataStore: DataStore): TreeTraversalResult[] | null {
+  for (let i = 0; i < topLevelIdeas.length; i++) {
+    const root = topLevelIdeas[i]
     if (!root) {
       continue
     }
@@ -175,33 +175,33 @@ export function findPathToAim(targetId: string, topLevelAims: Idea[], dataStore:
 
 export function findPathInTree(
   targetId: string,
-  currentAim: Idea,
+  currentIdea: Idea,
   dataStore: DataStore,
   topLevelIndex: number,
   indexInParent: number | undefined,
   visited: Set<string> = new Set()
 ): TreeTraversalResult[] | null {
-  if (currentAim.id === targetId) {
-    return [{ ideaId: currentAim.id, topLevelIndex, indexInParent }]
+  if (currentIdea.id === targetId) {
+    return [{ ideaId: currentIdea.id, topLevelIndex, indexInParent }]
   }
 
-  if (visited.has(currentAim.id)) {
+  if (visited.has(currentIdea.id)) {
     return null
   }
   const nextVisited = new Set(visited)
-  nextVisited.add(currentAim.id)
+  nextVisited.add(currentIdea.id)
 
-  if (currentAim.supportingConnections?.length) {
-    for (let i = 0; i < currentAim.supportingConnections.length; i++) {
-      const childConnection = currentAim.supportingConnections[i]
-      const childAim = childConnection ? dataStore.ideas[childConnection.ideaId] : undefined
-      if (!childAim) {
+  if (currentIdea.supportingConnections?.length) {
+    for (let i = 0; i < currentIdea.supportingConnections.length; i++) {
+      const childConnection = currentIdea.supportingConnections[i]
+      const childIdea = childConnection ? dataStore.ideas[childConnection.ideaId] : undefined
+      if (!childIdea) {
         continue
       }
 
-      const childPath = findPathInTree(targetId, childAim, dataStore, topLevelIndex, i, nextVisited)
+      const childPath = findPathInTree(targetId, childIdea, dataStore, topLevelIndex, i, nextVisited)
       if (childPath) {
-        return [{ ideaId: currentAim.id, topLevelIndex, indexInParent }, ...childPath]
+        return [{ ideaId: currentIdea.id, topLevelIndex, indexInParent }, ...childPath]
       }
     }
   }

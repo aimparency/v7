@@ -3,12 +3,12 @@ import { ref, onUnmounted, nextTick } from 'vue'
 import { useProjectStore } from '../stores/project-store'
 import type { IdeaProposal } from 'shared'
 import IdeaProposalReview from '../components/IdeaProposalReview.vue'
-import { createManualAimProposal } from '../utils/idea-proposal'
+import { createManualIdeaProposal } from '../utils/idea-proposal'
 import { trpc } from '../trpc'
 
 const projectStore = useProjectStore()
 const emit = defineEmits<{
-  proposalPersisted: [result: { rootAimId: string, idMap: Record<string, string> }]
+  proposalPersisted: [result: { rootIdeaId: string, idMap: Record<string, string> }]
 }>()
 
 const isListening = ref(false)
@@ -96,13 +96,13 @@ const handleTranscript = async (text: string) => {
   void scrollToBottom()
   error.value = ''
   try {
-    proposal.value = await trpc.idea.proposeAimSubtree.mutate({
+    proposal.value = await trpc.idea.proposeIdeaSubtree.mutate({
       projectPath: projectStore.projectPath,
       transcript: text,
       existingParentIds: []
     })
   } catch (cause) {
-    proposal.value = createManualAimProposal(text, 'voice')
+    proposal.value = createManualIdeaProposal(text, 'voice')
     error.value = `${cause instanceof Error ? cause.message : 'Could not generate a proposal'} A manual draft was opened instead.`
   }
 }

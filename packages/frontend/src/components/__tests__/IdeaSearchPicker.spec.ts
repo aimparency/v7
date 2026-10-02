@@ -15,13 +15,13 @@ vi.mock('../../trpc', () => ({
   }
 }))
 
-const parentAim = { id: 'parent-1', text: 'Parent idea', status: { state: 'open' }, supportedAims: [], supportingConnections: [], score: 1 }
-const childAim = { id: 'child-1', text: 'Child idea', status: { state: 'open' }, supportedAims: ['idea-with-relatives'], supportingConnections: [], score: 1 }
+const parentIdea = { id: 'parent-1', text: 'Parent idea', status: { state: 'open' }, supportedIdeas: [], supportingConnections: [], score: 1 }
+const childIdea = { id: 'child-1', text: 'Child idea', status: { state: 'open' }, supportedIdeas: ['idea-with-relatives'], supportingConnections: [], score: 1 }
 const ideaWithRelatives = {
   id: 'idea-with-relatives',
   text: 'Idea with relatives',
   status: { state: 'open' },
-  supportedAims: ['parent-1'],
+  supportedIdeas: ['parent-1'],
   supportingConnections: ['child-1'],
   score: 1
 }
@@ -38,8 +38,8 @@ describe('IdeaSearchPicker h/l navigation', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     vi.clearAllMocks()
-    vi.mocked(trpc.idea.getMany.query).mockResolvedValue([parentAim] as any)
-    vi.mocked(trpc.idea.list.query).mockResolvedValue([childAim] as any)
+    vi.mocked(trpc.idea.getMany.query).mockResolvedValue([parentIdea] as any)
+    vi.mocked(trpc.idea.list.query).mockResolvedValue([childIdea] as any)
   })
 
   afterEach(() => {
@@ -76,7 +76,7 @@ describe('IdeaSearchPicker h/l navigation', () => {
     await flushPromises()
 
     expect(trpc.idea.list.query).toHaveBeenCalledWith(
-      expect.objectContaining({ parentAimId: 'idea-with-relatives' })
+      expect.objectContaining({ parentIdeaId: 'idea-with-relatives' })
     )
     expect(wrapper.text()).toContain('Child idea')
     expect(wrapper.find('.nav-title').text()).toContain('Children of:')
@@ -125,7 +125,7 @@ describe('IdeaSearchPicker h/l navigation', () => {
     await flushPromises()
     expect(wrapper.find('.nav-title').exists()).toBe(true)
 
-    // parentAim has no parents, so h should go back instead
+    // parentIdea has no parents, so h should go back instead
     const parentItem = wrapper.find('.result-item')
     await parentItem.trigger('click')
     await parentItem.trigger('keydown', { key: 'h' })
@@ -160,7 +160,7 @@ describe('IdeaSearchPicker h/l navigation', () => {
       id: 'child-with-parent',
       text: 'Child idea',
       status: { state: 'open' },
-      supportedAims: ['parent-1'],
+      supportedIdeas: ['parent-1'],
       supportingConnections: [],
       score: 1
     }
@@ -174,7 +174,7 @@ describe('IdeaSearchPicker h/l navigation', () => {
             data: {
               meta: { statuses: [{ key: 'open', color: '#fff' }] },
               ideas: {
-                'parent-1': parentAim,
+                'parent-1': parentIdea,
                 'child-with-parent': childWithParent
               }
             },
@@ -190,7 +190,7 @@ describe('IdeaSearchPicker h/l navigation', () => {
   })
 
   it('shows H and L indicators only when relatives exist', async () => {
-    const ideaNoRelatives = { id: 'lonely', text: 'Lonely idea', status: { state: 'open' }, supportedAims: [], supportingConnections: [], score: 1 }
+    const ideaNoRelatives = { id: 'lonely', text: 'Lonely idea', status: { state: 'open' }, supportedIdeas: [], supportingConnections: [], score: 1 }
     const wrapper = mount(IdeaSearchPicker, {
       props: { externalResults: [ideaWithRelatives, ideaNoRelatives] as any },
       global: { plugins: [pluginConfig()] }

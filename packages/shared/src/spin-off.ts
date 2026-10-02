@@ -1,11 +1,11 @@
 import type { Idea } from './types.js';
-import { calculateAimValues } from './value-calculation.js';
+import { calculateIdeaValues } from './value-calculation.js';
 
 /**
  * Classification of every idea under a spin-off of one or more selected root ideas.
  *
  * Direction: a child *supports* a parent (an idea's `supportingConnections` are
- * its children; its `supportedAims` are its parents). "Contributes to R" means
+ * its children; its `supportedIdeas` are its parents). "Contributes to R" means
  * "is a transitive supporter of R", i.e. lives in the sub-graph feeding into R.
  *
  *   copyIds    = roots + every transitive supporter (what goes to the spin-off)
@@ -30,11 +30,11 @@ export interface SpinOffResult {
   plan: SpinOffPlan;
   /** Ideas to write into the new .bowman: copied, connections restricted to the
    *  copy set (seam edges dropped), phase commitments cleared. */
-  spinOffAims: Idea[];
+  spinOffIdeas: Idea[];
   /** Kept source ideas whose edges to removed ideas were stripped — rewrite these. */
-  sourceAimsToRewrite: Idea[];
+  sourceIdeasToRewrite: Idea[];
   /** Idea ids to delete from source (== plan.spinOffIds). */
-  sourceAimIdsToDelete: string[];
+  sourceIdeaIdsToDelete: string[];
 }
 
 export interface RemappedSpinOff {
@@ -75,7 +75,7 @@ export function remapSpinOffCollisions(
     ideas: ideas.map((idea) => ({
       ...idea,
       id: mapId(idea.id),
-      supportedAims: (idea.supportedAims ?? []).map(mapId),
+      supportedIdeas: (idea.supportedIdeas ?? []).map(mapId),
       supportingConnections: (idea.supportingConnections ?? []).map((connection) => ({
         ...connection,
         ideaId: mapId(connection.ideaId),
@@ -93,7 +93,7 @@ function childIds(idea: Idea, present: Map<string, Idea>): string[] {
 }
 
 function parentIds(idea: Idea, present: Map<string, Idea>): string[] {
-  return (idea.supportedAims ?? []).filter((id) => present.has(id));
+  return (idea.supportedIdeas ?? []).filter((id) => present.has(id));
 }
 
 /** Classify ideas into copy / spin-off / overlap / kept buckets (no idea copying). */
@@ -157,16 +157,16 @@ export interface SpinOffOptions {
  * copy set in the original graph. Dropping those seam edges would otherwise
  * silently zero this contribution in the isolated spin-off.
  */
-function externalInflowByAim(ideas: Idea[], copySet: Set<string>, byId: Map<string, Idea>): Map<string, number> {
+function externalInflowByIdea(ideas: Idea[], copySet: Set<string>, byId: Map<string, Idea>): Map<string, number> {
   const inflow = new Map<string, number>();
-  const { flowValues, totalIntrinsic } = calculateAimValues(ideas);
+  const { flowValues, totalIntrinsic } = calculateIdeaValues(ideas);
   if (totalIntrinsic <= 0) return inflow; // no value signal to preserve
 
   for (const id of copySet) {
     const a = byId.get(id);
     if (!a) continue;
     let lost = 0;
-    for (const parentId of a.supportedAims ?? []) {
+    for (const parentId of a.supportedIdeas ?? []) {
       if (copySet.has(parentId)) continue; // internal edge: recomputed in the new graph
       // flowValues are normalized (sum to 1); scale back to intrinsic units.
       lost += (flowValues.get(`${parentId}->${id}`) ?? 0) * totalIntrinsic;
@@ -184,19 +184,19 @@ export function computeSpinOff(ideas: Idea[], rootIds: string[], options: SpinOf
   const redSet = new Set(plan.spinOffIds);
 
   const inflow = options.preserveInflow
-    ? externalInflowByAim(ideas, copySet, byId)
+    ? externalInflowByIdea(ideas, copySet, byId)
     : new Map<string, number>();
 
   // Spin-off copies: keep only edges whose other end is also copied (drop seam
   // edges to uncopied ancestors), and clear phase commitments (phases not carried).
   // When preserving inflow, fold each idea's lost external inflow into intrinsicValue.
-  const spinOffAims: Idea[] = plan.copyIds.map((id) => {
+  const spinOffIdeas: Idea[] = plan.copyIds.map((id) => {
     const a = byId.get(id)!;
     const extraIntrinsic = inflow.get(id) ?? 0;
     return {
       ...a,
       ...(extraIntrinsic > 0 ? { intrinsicValue: (a.intrinsicValue ?? 0) + extraIntrinsic } : {}),
-      supportedAims: (a.supportedAims ?? []).filter((p) => copySet.has(p)),
+      supportedIdeas: (a.supportedIdeas ?? []).filter((p) => copySet.has(p)),
       supportingConnections: (a.supportingConnections ?? []).filter((c) => copySet.has(c.ideaId)),
       incoming: a.incoming ? a.incoming.filter((p) => copySet.has(p)) : a.incoming,
       committedIn: [],
@@ -204,10 +204,10 @@ export function computeSpinOff(ideas: Idea[], rootIds: string[], options: SpinOf
   });
 
   // Source rewrites: drop edges from kept ideas to removed (RED) ideas.
-  const sourceAimsToRewrite: Idea[] = [];
+  const sourceIdeasToRewrite: Idea[] = [];
   for (const a of ideas) {
     if (redSet.has(a.id)) continue; // deleted, no rewrite
-    const supported = a.supportedAims ?? [];
+    const supported = a.supportedIdeas ?? [];
     const conns = a.supportingConnections ?? [];
     const incoming = a.incoming ?? [];
     const newSupported = supported.filter((p) => !redSet.has(p));
@@ -218,9 +218,9 @@ export function computeSpinOff(ideas: Idea[], rootIds: string[], options: SpinOf
       newConns.length !== conns.length ||
       newIncoming.length !== incoming.length
     ) {
-      sourceAimsToRewrite.push({
+      sourceIdeasToRewrite.push({
         ...a,
-        supportedAims: newSupported,
+        supportedIdeas: newSupported,
         supportingConnections: newConns,
         ...(a.incoming ? { incoming: newIncoming } : {}),
       });
@@ -229,8 +229,8 @@ export function computeSpinOff(ideas: Idea[], rootIds: string[], options: SpinOf
 
   return {
     plan,
-    spinOffAims,
-    sourceAimsToRewrite,
-    sourceAimIdsToDelete: plan.spinOffIds,
+    spinOffIdeas,
+    sourceIdeasToRewrite,
+    sourceIdeaIdsToDelete: plan.spinOffIds,
   };
 }

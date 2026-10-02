@@ -12,7 +12,7 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
   const projectStore = useProjectStore()
   if (event.key === ' ' && uiStore.multiSelectMode) {
     event.preventDefault()
-    const ideaId = graphStore.graphSelectedAimId
+    const ideaId = graphStore.graphSelectedIdeaId
     if (ideaId) uiStore.toggleMultiSelect(ideaId)
   } else if (event.key === 'd') {
     event.preventDefault()
@@ -38,49 +38,49 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
       if (!parent || !child) return
 
       const updatedConnections = (parent.supportingConnections || []).filter((connection: any) => connection.ideaId !== child.id)
-      const updatedChildSupported = (child.supportedAims || []).filter((ideaId: string) => ideaId !== parent.id)
+      const updatedChildSupported = (child.supportedIdeas || []).filter((ideaId: string) => ideaId !== parent.id)
 
-      dataStore.replaceAim(parent.id, { ...parent, supportingConnections: updatedConnections })
-      dataStore.replaceAim(child.id, { ...child, supportedAims: updatedChildSupported })
+      dataStore.replaceIdea(parent.id, { ...parent, supportingConnections: updatedConnections })
+      dataStore.replaceIdea(child.id, { ...child, supportedIdeas: updatedChildSupported })
       dataStore.recalculateValues()
       graphStore.deselectLink()
 
-      await dataStore.updateAim(projectStore.projectPath, parent.id, {
+      await dataStore.updateIdea(projectStore.projectPath, parent.id, {
         supportingConnections: updatedConnections
       })
-      await dataStore.updateAim(projectStore.projectPath, child.id, {
-        supportedAims: updatedChildSupported
+      await dataStore.updateIdea(projectStore.projectPath, child.id, {
+        supportedIdeas: updatedChildSupported
       })
       return
     }
 
-    const ideaId = graphStore.graphSelectedAimId
+    const ideaId = graphStore.graphSelectedIdeaId
     if (!ideaId) return
 
-    if (graphStore.pendingDeleteAimId === ideaId) {
-      await dataStore.deleteAim(ideaId)
-      graphStore.setPendingDeleteAim(null)
+    if (graphStore.pendingDeleteIdeaId === ideaId) {
+      await dataStore.deleteIdea(ideaId)
+      graphStore.setPendingDeleteIdea(null)
       graphStore.setGraphSelection(null)
     } else {
-      graphStore.setPendingDeleteAim(ideaId)
+      graphStore.setPendingDeleteIdea(ideaId)
     }
   } else if (event.key === 'Escape') {
     event.preventDefault()
     if (graphStore.pendingDeleteLink) {
       graphStore.setPendingDeleteLink(null)
-    } else if (graphStore.pendingDeleteAimId) {
-      graphStore.setPendingDeleteAim(null)
+    } else if (graphStore.pendingDeleteIdeaId) {
+      graphStore.setPendingDeleteIdea(null)
     } else {
       graphStore.setGraphSelection(null)
       graphStore.deselectLink()
     }
   } else if (event.key === 'e' || event.key === 'Enter') {
     event.preventDefault()
-    const ideaId = graphStore.graphSelectedAimId
+    const ideaId = graphStore.graphSelectedIdeaId
     if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
-      modalStore.openAimEditModal(uiStore.multiSelectedAimIds[0], [...uiStore.multiSelectedAimIds])
+      modalStore.openIdeaEditModal(uiStore.multiSelectedIdeaIds[0], [...uiStore.multiSelectedIdeaIds])
     } else if (ideaId) {
-      modalStore.openAimEditModal(ideaId, [ideaId])
+      modalStore.openIdeaEditModal(ideaId, [ideaId])
     }
   }
 }
@@ -254,8 +254,8 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       event.preventDefault()
       const localDataStore = useDataStore()
 
-      const currentAimState = uiStore.getCurrentAimUIState()
-      if (currentAimState) currentAimState.pendingDelete = false
+      const currentIdeaState = uiStore.getCurrentIdeaUIState()
+      if (currentIdeaState) currentIdeaState.pendingDelete = false
 
       if (uiStore.activeColumn >= 0) {
         const selectableEntries = localDataStore.getSelectableColumnEntries(uiStore.activeColumn)
@@ -265,20 +265,20 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
           if (selectedEntry?.type === 'phase') {
             uiStore.applyPhaseSelection(uiStore.activeColumn, selectableEntries.indexOf(selectedEntry))
             const selectedPhase = selectedEntry.phase
-            const ideas = localDataStore.getAimsForPhase(selectedPhase.id)
-            if (ideas.length > 0 && selectedPhase.selectedAimIndex === undefined) {
-              selectedPhase.selectedAimIndex = 0
+            const ideas = localDataStore.getIdeasForPhase(selectedPhase.id)
+            if (ideas.length > 0 && selectedPhase.selectedIdeaIndex === undefined) {
+              selectedPhase.selectedIdeaIndex = 0
             }
-            uiStore.navigatingAims = true
+            uiStore.navigatingIdeas = true
           }
         }
       } else {
-        const floatingAims = localDataStore.floatingAims
-        if (floatingAims.length > 0) {
-          if (uiStore.floatingAimIndex < 0 || uiStore.floatingAimIndex >= floatingAims.length) {
-            uiStore.floatingAimIndex = 0
+        const floatingIdeas = localDataStore.floatingIdeas
+        if (floatingIdeas.length > 0) {
+          if (uiStore.floatingIdeaIndex < 0 || uiStore.floatingIdeaIndex >= floatingIdeas.length) {
+            uiStore.floatingIdeaIndex = 0
           }
-          uiStore.navigatingAims = true
+          uiStore.navigatingIdeas = true
         }
       }
       break
@@ -310,7 +310,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
     case 'O':
       event.preventDefault()
       if (uiStore.activeColumn === -1) {
-        modalStore.openAimModal()
+        modalStore.openIdeaModal()
       } else {
         modalStore.openPhaseModal(event.key === 'o' ? 'after' : 'before')
       }
@@ -320,18 +320,18 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       const currentCol = uiStore.activeColumn
 
       if (currentCol === -1) {
-        if (uiStore.navigatingAims) {
+        if (uiStore.navigatingIdeas) {
           const selectedIndex = uiStore.getSelectedPhase(currentCol)
 
-          const ideas = dataStore.floatingAims
+          const ideas = dataStore.floatingIdeas
           if (!ideas || selectedIndex >= ideas.length) break
 
           const ideaToDelete = ideas[selectedIndex]
           if (!ideaToDelete) break
-          const ideaState = uiStore.ensureAimUIState(uiStore.floatingAimUIStates, ideaToDelete.id)
+          const ideaState = uiStore.ensureIdeaUIState(uiStore.floatingIdeaUIStates, ideaToDelete.id)
 
           if (ideaState.pendingDelete) {
-            await dataStore.deleteAim(ideaToDelete.id)
+            await dataStore.deleteIdea(ideaToDelete.id)
             ideaState.pendingDelete = false
           } else {
             ideaState.pendingDelete = true
@@ -377,10 +377,10 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         uiStore.pendingDeletePhaseId = null
       }
       const escapePath = uiStore.getSelectionPath()
-      const escapeAimState = escapePath.ideaStates[escapePath.ideaStates.length - 1]
-      if (escapeAimState) escapeAimState.pendingDelete = false
-      if (uiStore.navigatingAims) {
-        uiStore.navigatingAims = false
+      const escapeIdeaState = escapePath.ideaStates[escapePath.ideaStates.length - 1]
+      if (escapeIdeaState) escapeIdeaState.pendingDelete = false
+      if (uiStore.navigatingIdeas) {
+        uiStore.navigatingIdeas = false
       }
       break
     case 'g':
@@ -390,12 +390,12 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
   }
 }
 
-export async function handleAimNavigationKeysAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
+export async function handleIdeaNavigationKeysAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
   const path = uiStore.getSelectionPath()
-  const currentAim = path.ideas[path.ideas.length - 1]
-  const currentAimState = path.ideaStates[path.ideaStates.length - 1]
+  const currentIdea = path.ideas[path.ideas.length - 1]
+  const currentIdeaState = path.ideaStates[path.ideaStates.length - 1]
 
   if (event.key === 'j') {
     await uiStore.navigateDown()
@@ -409,25 +409,25 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
 
   if (event.key === 'J') {
     event.preventDefault()
-    await uiStore.moveAimDown()
+    await uiStore.moveIdeaDown()
     return
   }
 
   if (event.key === 'K') {
     event.preventDefault()
-    await uiStore.moveAimUp()
+    await uiStore.moveIdeaUp()
     return
   }
 
   if (event.key === 'x') {
     event.preventDefault()
-    uiStore.cutAimForTeleport()
+    uiStore.cutIdeaForTeleport()
     return
   }
 
   if (event.key === 'c') {
     event.preventDefault()
-    uiStore.copyAimForTeleport()
+    uiStore.copyIdeaForTeleport()
     return
   }
 
@@ -435,32 +435,32 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
     event.preventDefault()
     const modalStore = useUIModalStore()
     // Paste handles both cut and copy - prioritize cut if both are present
-    if (modalStore.teleportCutAimId) {
-      await uiStore.pasteCutAim(dataStore)
-    } else if (modalStore.teleportCopyAimId) {
-      await uiStore.pasteCopiedAim(dataStore)
+    if (modalStore.teleportCutIdeaId) {
+      await uiStore.pasteCutIdea(dataStore)
+    } else if (modalStore.teleportCopyIdeaId) {
+      await uiStore.pasteCopiedIdea(dataStore)
     }
     return
   }
 
   if (event.key === 's') {
     event.preventDefault()
-    if (currentAim) {
+    if (currentIdea) {
       // Show parent paths
-      modalStore.openParentPathsModal(currentAim.id)
+      modalStore.openParentPathsModal(currentIdea.id)
     }
     return
   }
 
   if (event.key === 'H') {
     event.preventDefault()
-    await uiStore.moveAimOut()
+    await uiStore.moveIdeaOut()
     return
   }
 
   if (event.key === 'L') {
     event.preventDefault()
-    await uiStore.moveAimIn()
+    await uiStore.moveIdeaIn()
     return
   }
 
@@ -473,11 +473,11 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
     creationPos = 'before'
   }
 
-  if (creationPos !== undefined && currentAim) {
-    modalStore.showAimModal = true
+  if (creationPos !== undefined && currentIdea) {
+    modalStore.showIdeaModal = true
     modalStore.ideaModalInsertPosition = creationPos
   } else if (creationPos !== undefined && path.phase) {
-    modalStore.showAimModal = true
+    modalStore.showIdeaModal = true
     modalStore.ideaModalInsertPosition = creationPos
   }
 
@@ -486,19 +486,19 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
       event.preventDefault()
       if (uiStore.multiSelectMode) {
         uiStore.clearMultiSelect()
-      } else if (currentAimState?.pendingDelete) {
-        currentAimState.pendingDelete = false
+      } else if (currentIdeaState?.pendingDelete) {
+        currentIdeaState.pendingDelete = false
       } else {
-        uiStore.navigatingAims = false
+        uiStore.navigatingIdeas = false
       }
       break
     case ' ':
-      if (currentAim) {
+      if (currentIdea) {
         event.preventDefault()
         if (uiStore.multiSelectMode) {
-          uiStore.toggleMultiSelect(currentAim.id)
+          uiStore.toggleMultiSelect(currentIdea.id)
         } else {
-          uiStore.enterMultiSelect(currentAim.id)
+          uiStore.enterMultiSelect(currentIdea.id)
         }
       }
       break
@@ -506,9 +506,9 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
     case 'Enter': {
       event.preventDefault()
       if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
-        modalStore.openAimEditModal(uiStore.multiSelectedAimIds[0], [...uiStore.multiSelectedAimIds])
-      } else if (currentAim) {
-        modalStore.openAimEditModal(currentAim.id, [currentAim.id])
+        modalStore.openIdeaEditModal(uiStore.multiSelectedIdeaIds[0], [...uiStore.multiSelectedIdeaIds])
+      } else if (currentIdea) {
+        modalStore.openIdeaEditModal(currentIdea.id, [currentIdea.id])
       }
       break
     }
@@ -516,12 +516,12 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
       event.preventDefault()
       if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
         await uiStore.requestBulkDelete()
-      } else if (currentAim) {
-        if (currentAimState?.pendingDelete) {
-          await dataStore.deleteAim(currentAim.id)
-          currentAimState.pendingDelete = false
+      } else if (currentIdea) {
+        if (currentIdeaState?.pendingDelete) {
+          await dataStore.deleteIdea(currentIdea.id)
+          currentIdeaState.pendingDelete = false
         } else {
-          if (currentAimState) currentAimState.pendingDelete = true
+          if (currentIdeaState) currentIdeaState.pendingDelete = true
         }
         break
       }
@@ -529,13 +529,13 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
       break
     case 'h': {
       event.preventDefault()
-      if (currentAimState) {
-        if (currentAimState.expanded) {
-          currentAimState.expanded = false
+      if (currentIdeaState) {
+        if (currentIdeaState.expanded) {
+          currentIdeaState.expanded = false
         } else if (path.ideas.length > 1) {
-          const parentAimState = path.ideaStates[path.ideaStates.length - 2]
-          if (parentAimState) {
-            parentAimState.selectedIncomingIndex = undefined
+          const parentIdeaState = path.ideaStates[path.ideaStates.length - 2]
+          if (parentIdeaState) {
+            parentIdeaState.selectedIncomingIndex = undefined
           }
         }
       }
@@ -544,23 +544,23 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
     case 'l': {
       event.preventDefault()
       if (uiStore.activeColumn === -1) {
-        uiStore.navigatingAims = false
+        uiStore.navigatingIdeas = false
         await handleColumnNavigationKeysAction(uiStore, event, dataStore)
         return
       }
 
-      const selectedAim = uiStore.getCurrentAim()
-      const selectedAimState = uiStore.getCurrentAimUIState()
-      if (selectedAim && selectedAimState) {
-        if (!selectedAimState.expanded) {
-          selectedAimState.expanded = true
-          const connections = selectedAim.supportingConnections || []
+      const selectedIdea = uiStore.getCurrentIdea()
+      const selectedIdeaState = uiStore.getCurrentIdeaUIState()
+      if (selectedIdea && selectedIdeaState) {
+        if (!selectedIdeaState.expanded) {
+          selectedIdeaState.expanded = true
+          const connections = selectedIdea.supportingConnections || []
           if (connections.length > 0) {
-            dataStore.loadAims(projectStore.projectPath, connections.map((connection: any) => connection.ideaId))
+            dataStore.loadIdeas(projectStore.projectPath, connections.map((connection: any) => connection.ideaId))
           }
-        } else if (selectedAim.supportingConnections && selectedAim.supportingConnections.length > 0) {
-          if (selectedAimState.selectedIncomingIndex === undefined) {
-            selectedAimState.selectedIncomingIndex = 0
+        } else if (selectedIdea.supportingConnections && selectedIdea.supportingConnections.length > 0) {
+          if (selectedIdeaState.selectedIncomingIndex === undefined) {
+            selectedIdeaState.selectedIncomingIndex = 0
           }
         }
       }
@@ -576,7 +576,7 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
     console.log('[PhaseNav] keydown', {
       key: event.key,
       activeColumn: uiStore.activeColumn,
-      navigatingAims: uiStore.navigatingAims,
+      navigatingIdeas: uiStore.navigatingIdeas,
       ctrl: event.ctrlKey,
       meta: event.metaKey,
       alt: event.altKey,
@@ -584,17 +584,17 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
       view: projectStore.currentView,
       modalOpen:
         modalStore.showPhaseModal ||
-        modalStore.showAimModal ||
-        modalStore.showAimSearch ||
+        modalStore.showIdeaModal ||
+        modalStore.showIdeaSearch ||
         modalStore.showPhaseSearchPrompt ||
-        modalStore.showAimEditModal ||
+        modalStore.showIdeaEditModal ||
         modalStore.showSettingsModal
     })
   }
 
   if (event.ctrlKey || event.metaKey) return
 
-  if (modalStore.showPhaseModal || modalStore.showAimModal || modalStore.showAimSearch || modalStore.showPhaseSearchPrompt || modalStore.showAimEditModal || modalStore.showSettingsModal) {
+  if (modalStore.showPhaseModal || modalStore.showIdeaModal || modalStore.showIdeaSearch || modalStore.showPhaseSearchPrompt || modalStore.showIdeaEditModal || modalStore.showSettingsModal) {
     return
   }
 
@@ -604,7 +604,7 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
 
   if (event.key === '/') {
     event.preventDefault()
-    modalStore.openAimSearch()
+    modalStore.openIdeaSearch()
     return
   }
 
@@ -630,8 +630,8 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
     return
   }
 
-  if (uiStore.navigatingAims) {
-    await uiStore.handleAimNavigationKeys(event, dataStore)
+  if (uiStore.navigatingIdeas) {
+    await uiStore.handleIdeaNavigationKeys(event, dataStore)
   } else {
     await uiStore.handleColumnNavigationKeys(event, dataStore)
   }

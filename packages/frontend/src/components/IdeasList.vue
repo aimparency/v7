@@ -16,15 +16,15 @@ interface Props {
   isActive: boolean
   isSelected: boolean
   indentationLevel?: number
-  selectedAimIndex?: number  // Index of selected idea in this list
-  parentAimId?: string
+  selectedIdeaIndex?: number  // Index of selected idea in this list
+  parentIdeaId?: string
   ideaUiStates: IdeaUIStateTree
 }
 
 const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0,
-  selectedAimIndex: undefined,
-  parentAimId: undefined
+  selectedIdeaIndex: undefined,
+  parentIdeaId: undefined
 })
 
 const emit = defineEmits<{
@@ -37,10 +37,10 @@ const projectStore = useProjectStore()
 const modalStore = useUIModalStore()
 const dataStore = useDataStore()
 const ideasListRef = ref<HTMLElement | null>(null)
-const localAims = ref<Idea[]>([...props.ideas])
+const localIdeas = ref<Idea[]>([...props.ideas])
 
 watch(() => props.ideas, (newVal) => {
-  localAims.value = [...newVal]
+  localIdeas.value = [...newVal]
 })
 
 const handleChange = async (event: any) => {
@@ -48,10 +48,10 @@ const handleChange = async (event: any) => {
     const { newIndex, element } = event.moved
     const ideaId = element.id
     
-    if (props.parentAimId) {
-      await dataStore.reorderSubAim(projectStore.projectPath, props.parentAimId, ideaId, newIndex)
+    if (props.parentIdeaId) {
+      await dataStore.reorderSubIdea(projectStore.projectPath, props.parentIdeaId, ideaId, newIndex)
     } else {
-      await dataStore.reorderPhaseAim(projectStore.projectPath, props.phaseId, ideaId, newIndex)
+      await dataStore.reorderPhaseIdea(projectStore.projectPath, props.phaseId, ideaId, newIndex)
     }
   }
 }
@@ -62,11 +62,11 @@ const handleScrollRequest = (element: HTMLElement) => {
   emit('scroll-request', element)
 }
 
-const handleAimClickedInList = (ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
+const handleIdeaClickedInList = (ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isShift = !!(mods && mods.shift)
   if (isShift) {
     // Range within this sub-list's ideas
-    const ordered = localAims.value.map((a: any) => a.id)
+    const ordered = localIdeas.value.map((a: any) => a.id)
     uiStore.selectMultiRange(ideaId, ordered)
   }
   // Always forward for primary selection / higher level handling (ctrl handled higher too if needed)
@@ -77,7 +77,7 @@ const handleAimClickedInList = (ideaId: string, mods?: { ctrl: boolean; shift: b
 <template>
   <div ref="ideasListRef" class="ideas-list-wrapper">
     <draggable
-      v-model="localAims"
+      v-model="localIdeas"
       item-key="id"
       group="ideas"
       @change="handleChange"
@@ -93,17 +93,17 @@ const handleAimClickedInList = (ideaId: string, mods?: { ctrl: boolean; shift: b
           :indentation-level="indentationLevel"
           :is-active="isActive"
           :is-selected="isSelected"
-          :is-this-idea-selected="selectedAimIndex === index"
-          :parent-idea-id="parentAimId"
-          :idea-ui-state="uiStore.ensureAimUIState(ideaUiStates, idea.id)"
+          :is-this-idea-selected="selectedIdeaIndex === index"
+          :parent-idea-id="parentIdeaId"
+          :idea-ui-state="uiStore.ensureIdeaUIState(ideaUiStates, idea.id)"
           :class="{
-            'active': isActive && selectedAimIndex === index,
-            'selected': isSelected && selectedAimIndex === index,
-            'pending-delete': uiStore.ensureAimUIState(ideaUiStates, idea.id).pendingDelete,
-            'moving': modalStore.movingAimId === idea.id
+            'active': isActive && selectedIdeaIndex === index,
+            'selected': isSelected && selectedIdeaIndex === index,
+            'pending-delete': uiStore.ensureIdeaUIState(ideaUiStates, idea.id).pendingDelete,
+            'moving': modalStore.movingIdeaId === idea.id
           }"
           @scroll-request="handleScrollRequest"
-          @idea-clicked="(id, mods) => handleAimClickedInList(id, mods)"
+          @idea-clicked="(id, mods) => handleIdeaClickedInList(id, mods)"
         />
       </template>
       <template #footer>

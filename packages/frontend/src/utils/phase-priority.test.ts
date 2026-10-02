@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import type { Idea, Phase } from '../stores/data'
 import {
   collectDescendantPhaseIds,
-  formatAimPriority,
-  rankAimsForPhaseTree
+  formatIdeaPriority,
+  rankIdeasForPhaseTree
 } from './phase-priority'
 
 const phase = (id: string, childPhaseIds: string[] = []): Phase => ({
@@ -31,7 +31,7 @@ const idea = (
     weight: 1,
     relativePosition: [0, 0] as [number, number]
   })),
-  supportedAims: [],
+  supportedIdeas: [],
   committedIn,
   status: { state, comment: '', date: 0 },
   intrinsicValue: 0,
@@ -68,7 +68,7 @@ describe('phase priority ranking', () => {
       archived: idea('archived', 'Archived', 'human-dependent', ['root'], true)
     }
 
-    expect(rankAimsForPhaseTree(
+    expect(rankIdeasForPhaseTree(
       'root',
       phases,
       ideas,
@@ -87,7 +87,7 @@ describe('phase priority ranking', () => {
       submit: idea('submit', 'Submit', 'human-dependent', [])
     }
 
-    expect(rankAimsForPhaseTree(
+    expect(rankIdeasForPhaseTree(
       'root',
       phases,
       ideas,
@@ -105,14 +105,14 @@ describe('phase priority ranking', () => {
       facts: idea('facts', 'Founder facts', 'human-dependent', [], false, ['application'])
     }
 
-    expect(rankAimsForPhaseTree(
+    expect(rankIdeasForPhaseTree(
       'root', phases, ideas, new Map(), 'human-dependent'
     )).toHaveLength(1)
   })
 
   it('formats the profitability ratio compactly', () => {
-    expect(formatAimPriority(0.5)).toBe('0.50×')
-    expect(formatAimPriority(12.34)).toBe('12.3×')
-    expect(formatAimPriority(123.4)).toBe('123×')
+    expect(formatIdeaPriority(0.5)).toBe('0.50×')
+    expect(formatIdeaPriority(12.34)).toBe('12.3×')
+    expect(formatIdeaPriority(123.4)).toBe('123×')
   })
 })

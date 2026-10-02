@@ -8,19 +8,19 @@ import {
   buildCodeIndex,
   changeImpact,
   codeHeatmap,
-  commitAimToPhase,
+  commitIdeaToPhase,
   createExperiment,
-  createAim,
+  createIdea,
   drainInbox,
-  getAimContext,
-  getPrioritizedAims,
+  getIdeaContext,
+  getPrioritizedIdeas,
   gitDiff,
   gitStatus,
   graphHygiene,
   applyUnifiedPatch,
   lineReplace,
   listExperiments,
-  listAimsFromFiles,
+  listIdeasFromFiles,
   listFiles,
   listPhasesFromFiles,
   maybeFindAssociation,
@@ -32,13 +32,13 @@ import {
   readLoopRuntimeState,
   readWorkerState,
   runCommand,
-  searchAimsSemanticLite,
+  searchIdeasSemanticLite,
   searchFiles,
   semanticCodeSearch,
   setLoopActivity,
   strReplace,
   symbolContext,
-  updateAim,
+  updateIdea,
   updateExperiment,
   type LoopDefinition,
   type LoopInboxMessage,
@@ -185,9 +185,9 @@ async function evaluateStopPolicy(projectPath: string, instance: LoopInstance) {
   }
 
   if (instance.stopPolicy === 'target_halted') {
-    if (!instance.targetAimId) return null;
-    const ideas = await listAimsFromFiles(projectPath);
-    const idea = ideas.find((candidate) => candidate.id === instance.targetAimId);
+    if (!instance.targetIdeaId) return null;
+    const ideas = await listIdeasFromFiles(projectPath);
+    const idea = ideas.find((candidate) => candidate.id === instance.targetIdeaId);
     if (idea?.status.state === 'halted') {
       return { status: 'done' as const, message: `Target idea halted: ${idea.text}` };
     }
@@ -196,7 +196,7 @@ async function evaluateStopPolicy(projectPath: string, instance: LoopInstance) {
 
   if (!instance.targetPhaseId) return null;
   const [ideas, phases] = await Promise.all([
-    listAimsFromFiles(projectPath),
+    listIdeasFromFiles(projectPath),
     listPhasesFromFiles(projectPath)
   ]);
   const phase = phases.find((candidate) => candidate.id === instance.targetPhaseId);
@@ -236,16 +236,16 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
   await markLoopPhase(projectPath, instanceId, 'orienting in idea graph');
   const runtimeState = await readLoopRuntimeState(projectPath);
   const currentInstance = runtimeState.instances.find((candidate) => candidate.id === instanceId);
-  const prioritized = await getPrioritizedAims(
+  const prioritized = await getPrioritizedIdeas(
     projectPath,
-    currentInstance?.targetAimId ? Number.MAX_SAFE_INTEGER : 5,
+    currentInstance?.targetIdeaId ? Number.MAX_SAFE_INTEGER : 5,
     currentInstance?.targetPhaseId
   );
-  const target = selectCycleTarget(prioritized, currentInstance?.targetAimId);
+  const target = selectCycleTarget(prioritized, currentInstance?.targetIdeaId);
   if (!target) throw new Error('No open prioritized idea found in the active phase.');
 
-  const context = await getAimContext(projectPath, target.idea.id);
-  const related = await searchAimsSemanticLite(
+  const context = await getIdeaContext(projectPath, target.idea.id);
+  const related = await searchIdeasSemanticLite(
     projectPath,
     `${target.idea.text} ${target.idea.description ?? ''}`,
     8
@@ -400,7 +400,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           properties: { limit: { type: 'number' } },
           additionalProperties: false
         }),
-        execute: async ({ limit }) => getPrioritizedAims(projectPath, limit ?? 10, currentInstance?.targetPhaseId)
+        execute: async ({ limit }) => getPrioritizedIdeas(projectPath, limit ?? 10, currentInstance?.targetPhaseId)
       }),
       get_idea_context: tool({
         description: 'Return an idea, parents, children, and root path context.',
@@ -410,7 +410,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['ideaId'],
           additionalProperties: false
         }),
-        execute: async ({ ideaId }) => getAimContext(projectPath, ideaId)
+        execute: async ({ ideaId }) => getIdeaContext(projectPath, ideaId)
       }),
       search_ideas_semantic: tool({
         description: 'Find related ideas. Current v1 uses lightweight text matching until embedding core is extracted.',
@@ -420,7 +420,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['query'],
           additionalProperties: false
         }),
-        execute: async ({ query, limit }) => searchAimsSemanticLite(projectPath, query, limit ?? 8)
+        execute: async ({ query, limit }) => searchIdeasSemanticLite(projectPath, query, limit ?? 8)
       }),
       graph_hygiene: tool({
         description: 'Return graph defect signals: floating ideas (no parent and no phase) and mega parents. Uncommitted ideas are a normal state and are not reported here.',
@@ -559,12 +559,12 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
       }),
       create_idea: tool({
         description: 'Create a child/supporting idea or newly clarified idea.',
-        inputSchema: jsonSchema<{ text: string; description?: string; supportedAims?: string[]; phaseId?: string; cost?: number; intrinsicValue?: number; valueRationale?: string }>({
+        inputSchema: jsonSchema<{ text: string; description?: string; supportedIdeas?: string[]; phaseId?: string; cost?: number; intrinsicValue?: number; valueRationale?: string }>({
           type: 'object',
           properties: {
             text: { type: 'string' },
             description: { type: 'string' },
-            supportedAims: { type: 'array', items: { type: 'string' } },
+            supportedIdeas: { type: 'array', items: { type: 'string' } },
             phaseId: { type: 'string' },
             cost: { type: 'number' },
             intrinsicValue: { type: 'number' },
@@ -573,7 +573,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['text'],
           additionalProperties: false
         }),
-        execute: async (input) => createAim(projectPath, input)
+        execute: async (input) => createIdea(projectPath, input)
       }),
       update_idea: tool({
         description: 'Update idea text/description/status/cost/value. Use human-dependent for ambiguous ideas instead of asking humans too often.',
@@ -596,7 +596,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['ideaId'],
           additionalProperties: false
         }),
-        execute: async ({ ideaId, status, ...patch }) => updateAim(projectPath, ideaId, {
+        execute: async ({ ideaId, status, ...patch }) => updateIdea(projectPath, ideaId, {
           ...patch,
           status: status ? { state: status.state, comment: status.comment ?? '', date: Date.now() } : undefined
         })
@@ -612,7 +612,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['ideaId', 'phaseId'],
           additionalProperties: false
         }),
-        execute: async ({ ideaId, phaseId }) => commitAimToPhase(projectPath, ideaId, phaseId)
+        execute: async ({ ideaId, phaseId }) => commitIdeaToPhase(projectPath, ideaId, phaseId)
       }),
       list_files: tool({
         description: 'List project files using rg --files when available.',

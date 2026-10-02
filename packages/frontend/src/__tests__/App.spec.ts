@@ -232,7 +232,7 @@ describe('App', () => {
     })
 
     const modalStore = useUIModalStore()
-    modalStore.showAimSearch = true
+    modalStore.showIdeaSearch = true
     modalStore.ideaSearchMode = 'pick'
     modalStore.ideaSearchCallback = callback
     await nextTick()
@@ -240,7 +240,7 @@ describe('App', () => {
     await wrapper.find('.emit-idea').trigger('click')
 
     expect(callback).toHaveBeenCalledWith(expect.objectContaining({ type: 'idea', keepOpen: true }))
-    expect(modalStore.showAimSearch).toBe(true)
+    expect(modalStore.showIdeaSearch).toBe(true)
   })
 
   it('keeps phase search mounted after a keepOpen selection', async () => {
