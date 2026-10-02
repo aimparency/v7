@@ -1,0 +1,161 @@
+{
+  "id": "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5",
+  "text": "Achieve full autonomous agent capability: discover→plan→execute→verify→submit loop",
+  "description": "Build the autonomous discover→plan→execute→verify→submit loop: the agent finds work, plans, executes with real tools, verifies outcomes, and reports — recovering from failures across sessions. IMPORTANT framing: autonomy here is an ENABLER of the Human-AI Cooperation Engine (3d868d5b) — continuity, recovery, and self-improvement so the agent can faithfully carry human-set goals across many sessions — NOT an end in itself. Fully autonomous ASI is a separate moonshot. The agent should default to cooperating with humans (asking where judgment/authorization is needed) rather than maximizing independence.",
+  "reflection": "Status reconciliation on 2026-07-30 inspected every direct child after reconciling stale partial states. No autonomous implementation leaf remains: children are done, review, cancelled, or human-dependent. Reclassified this capability container accordingly while preserving the higher continuous mission aims.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "ASI",
+    "agent-capabilities",
+    "north-star"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "0622adb1-e79d-483c-b894-199d92ca199d",
+      "relativePosition": [
+        -3.581497682183422,
+        -2.4888264435565404
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "1fd5ede2-5d81-4f38-8645-924887ab48ef",
+      "relativePosition": [
+        -2.4956347774647396,
+        -0.14767212840789765
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "5cc73338-d648-4440-98ef-035217d06fcd",
+      "relativePosition": [
+        2.3164487605880963,
+        0.9402473821127459
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "4545e25f-1c14-43ad-a2e4-06ac79786273",
+      "relativePosition": [
+        -1.9723983542567085,
+        1.536113515377502
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "c8016ad1-fa37-45e4-af5d-875acb5c4b5a",
+      "relativePosition": [
+        2.177678839557381,
+        1.2278904152016248
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "39ea33de-2b08-48d4-b5f0-0cacb817a827",
+      "relativePosition": [
+        0.25934627443435976,
+        2.48651151413723
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "3ae8bb39-e6e2-49a8-ac15-58d2c454acbd",
+      "relativePosition": [
+        2.499681539775726,
+        -0.03990237717797983
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "ad057bce-0bfc-4248-a2a5-9d8bc91360fb",
+      "relativePosition": [
+        -1.8904839430057174,
+        1.635869940196211
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "0e646aa6-4ff7-48b8-a5d2-178cfb96c6a1",
+      "relativePosition": [
+        -2.4813404333630436,
+        -0.3048764565487205
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "b03ad58e-4518-455f-8a35-36f58eb8ee7d",
+      "relativePosition": [
+        -0.41935150557464734,
+        -1.574907224205172
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "31e7e8b7-bc95-4968-bd4f-44e7963a93fd",
+      "relativePosition": [
+        -2.0784753942701744,
+        -1.3892228170503975
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "3045f505-1214-4618-82f3-d36544327059",
+      "relativePosition": [
+        -2.4775248890428028,
+        -0.3344703636698596
+      ],
+      "weight": 1,
+      "explanation": "graph maintenance: reparented floating aim by semantic similarity"
+    },
+    {
+      "ideaId": "a1f62047-5be3-4178-9274-3e060285fd29",
+      "relativePosition": [
+        -2.0397673090403674,
+        1.445458171297329
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "5b992c55-cf3b-4e6b-8897-9754f11cf852",
+      "relativePosition": [
+        -2.3420872196128926,
+        -0.8744297889058616
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "8197b533-9e2a-4702-a7c0-810be75cd288",
+      "relativePosition": [
+        2.0333652009851173,
+        1.4544503977182428
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "8ac03697-c34f-46c6-8b54-678418d5adb2",
+      "relativePosition": [
+        2.485465681372878,
+        -0.26918459598880246
+      ],
+      "weight": 1,
+      "explanation": "Provides an evidence gate for the autonomous execution capability."
+    }
+  ],
+  "supportedIdeas": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "The discover→plan→execute→verify→reflect machinery and supporting autonomy capabilities are implemented or awaiting review. The remaining frontier requires human decisions, external authorization/credentials, or acceptance—not another generic loop build.",
+    "date": 1785399273299
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,21 @@
+{
+  "id": "2d53986f-6add-480c-b6b6-a6c827f54fd3",
+  "text": "Item visibility controls (private/unlisted/public)",
+  "tags": [
+    "privacy",
+    "visibility"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c22c084f-fbb4-4449-9ad2-ff93c69db5e3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Part of cancelled Share-Ring project",
+    "date": 1771523644775
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

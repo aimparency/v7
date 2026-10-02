@@ -1,0 +1,33 @@
+{
+  "id": "e552723a-7f28-46b5-a1e9-5a64220e8710",
+  "text": "add an mpc function: get highest priority aims for current phases",
+  "description": "priority = value / effort",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "df416e38-a104-4846-a13f-bd47d7f9e676",
+      "relativePosition": [
+        -0.19883378987341158,
+        2.5538504632169503
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "",
+    "date": 1765829925097
+  },
+  "intrinsicValue": 10,
+  "cost": 0,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

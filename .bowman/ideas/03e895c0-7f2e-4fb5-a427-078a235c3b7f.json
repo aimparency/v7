@@ -1,0 +1,24 @@
+{
+  "id": "03e895c0-7f2e-4fb5-a427-078a235c3b7f",
+  "text": "when a phase is so long (and at the bottom of phases such that there is no next phase), that j does not change the scroll by definition, it would be nice to move to the end of the page instead. same for up of course.",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "2e845190-a51f-44ca-ad3c-f1ef34aa857a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Implemented scrolling to bottom/top of phase column when navigation ('j'/'k') hits the boundaries. Added columnScrollRequest state and watcher in PhaseColumn.vue.",
+    "date": 1768334545274
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

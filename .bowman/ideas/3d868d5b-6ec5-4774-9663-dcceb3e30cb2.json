@@ -1,0 +1,217 @@
+{
+  "id": "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+  "text": "Build the Human-AI Cooperation Engine",
+  "description": "The core, enduring purpose of this project: a coordination & legitimacy layer between human needs and capable (\"free\") AI. Humans express high-level goals; the aim graph models their will — inspectable, revisable, human stays final authority; wrapped agents execute cooperatively, asking humans where judgment or authorization is needed and doing the rest. The bet: cooperative human+AI beats pure autonomous optimization on legitimacy and real-world traction (see GTM thesis 7032fa7f). ASI is reached THROUGH human cooperation. Fully autonomous ASI is a separate moonshot that will likely arrive regardless; Aimparency's lasting role is this human↔AI link. AI acting on its own is a side effect of serving human needs well, not the goal — which is why this aim, not the autonomy hub, carries the bulk of intrinsic value.\n\nREAL-WORLD RELATIONSHIP PRINCIPLE: People and organizations connected to Aimparency are subjects with aims, judgment, dignity, and a choice of relationship—not marketing targets, leads, access mechanisms, or instruments. Every invitation should say why that specific person is appreciated, offer a connection that could serve their own aims, let them choose whether and how to participate, and require permission before implying advice, endorsement, partnership, or public association.",
+  "reflections": [
+    {
+      "date": 1785357792730,
+      "context": "Felix established a durable wording and relationship constraint on 29 July 2026 for every real-world connection.",
+      "outcome": "Encoded a subject-to-subject relationship principle in the mission graph and active outreach artifacts. Reframed Robin, Wilde Möhre, Herzog Records, Matthias Röder, and the paid-collaboration parent around appreciation, the other party's aims, voluntary forms of participation, and permission before public association.",
+      "effectiveness": "The graph now resists converting human cooperation into a marketing funnel while retaining concrete economic tests and paid work where mutually wanted.",
+      "lesson": "Human access is not a resource to acquire. Legitimate real-world agency grows from relationships in which each subject can understand the experiment, pursue their own aims, choose the form of connection, and withdraw.",
+      "pattern": "Appreciation → invitation → mutual choice → bounded collaboration → evidence → greater autonomy only with renewed consent."
+    },
+    {
+      "date": 1785603989940,
+      "context": "Reprioritized after completing and verifying the portable Codex continuation hook and a sequence of bounded wrapped-agent authority/network/socket safety aims. get_prioritized_aims reports one committed open container, zero committed open leaves, and falls back to the two permanent mission containers.",
+      "outcome": "No further high-value, internally actionable leaf is available. The strongest remaining paths require a named real beneficiary or external repository, authorization to submit/contact/act externally, credentials, or a human product/authority choice. Additional unsolicited socket hardening or synthetic autonomy benchmarks would be activity without authoritative mission evidence.",
+      "effectiveness": "The graph correctly prevented false precision: it exposed the absence of actionable work rather than ranking completed/review or human-dependent aims as executable. This is a legitimate human-cooperation boundary, not an implementation failure.",
+      "lesson": "Ask the human to select or authorize the next real-world path. Best default is a credential-free external open-source contribution: the human should approve the target-selection mandate and identity/submission boundary. Alternatively, name a beneficiary/workflow for an owner-led pilot. Once authorized, create/activate a bounded leaf with acceptance evidence and resume autonomously."
+    },
+    {
+      "date": 1785604061888,
+      "context": "Final hidden-work audit after repeated Stop-hook continuation with no external-action authorization.",
+      "outcome": "check_consistency reports a valid graph with zero issues. graph_hygiene and list_aims(uncommitted=true,status=open) independently confirm exactly two uncommitted open aims, both permanent mission containers; there is no hidden actionable leaf. Review aims require human acceptance and high-value real-world descendants are human-dependent.",
+      "effectiveness": "The independent consistency and hygiene checks rule out a phase-cursor or hidden-work artifact as the cause of the empty actionable queue.",
+      "lesson": "Autonomous execution is now genuinely blocked on human judgment/authorization. Repeating internal verification cannot advance the mission; resume after the human grants a bounded external contribution mandate, identifies a real beneficiary, or accepts/rejects review work."
+    },
+    {
+      "date": 1785606862801,
+      "context": "After confirming today's real bounty scan was already fresh and negative, selected the remaining duplicate-cluster hygiene signal rather than repeat market research.",
+      "outcome": "Inspected both flagged pairs in full mission context. They were false positives: watchdog runtime reliability versus frontend watchdog UX, and list-view versus graph-canvas multi-selection. Added precise distinguishing descriptions. Rebuilt all 744 aim and 33 phase search entries. The rebuild exposed one historical-vs-successor cross-repo pair; clarified the halted aim-level design as explicitly parked and distinct from the implemented opaque repo-node sink.",
+      "effectiveness": "find_duplicate_aims at threshold 0.92 now returns zero pairs, down from two initial clusters and one newly exposed historical pair. No aims were incorrectly merged or deleted. check_consistency remains valid with zero errors/issues.",
+      "lesson": "Semantic hygiene should resolve ambiguity at the source before merging. Similar names can represent architectural boundaries or platform-specific implementations; precise descriptions preserve history while making automated duplicate detection more reliable."
+    },
+    {
+      "date": 1790927020728,
+      "context": "2026-10-02 continuation loop after Felix's aim→idea rename question (recorded as 44056715, unclear). get_prioritized_aims returned only the two root missions: zero open leaves.",
+      "outcome": "Broad search for reversible no-authority work found none worth doing. Status census: 458 done, 158 review, 86 human-dependent, 5 open (all roots/containers), 1 unclear. Hygiene: 1 duplicate cluster (list-view vs graph-view multi-select — intentional siblings, not merged); 79 collapse candidates mostly blocked on children in review (review→done needs Felix per AGENTS.md); 22 floating aims, mostly old done graph work. Code: 562cdb60 slice 3 blocked on 73c110aa selection-model decision. Funding: Prototype Fund scope/draft/user-research kit already exist (06423345, 1d9cecd8 in review); submission, interviews, KI4KMU PIC/video all need Felix. Experiments: v1/v3 valid nulls, v2 invalid, all in review; launching v4 would spend compute and add to the unreviewed pile. Considered a review-inbox/bulk-accept UI: AimSearchPicker already has a status filter, so 'show review aims' exists; bulk-accept is an unrequested UX decision.",
+      "effectiveness": "Search was thorough; the result is a confirmed human block, not lack of effort.",
+      "lesson": "The binding constraint is human review throughput (158 review vs 5 open), not available work. Generating more agent output into review lowers marginal value. Next agent step should follow Felix's decisions on 73c110aa and the review backlog rather than new speculative work.",
+      "pattern": "review-backlog-bottleneck"
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "vision",
+    "core"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "b45149aa-c0f5-49de-8aec-f589dd3c7453",
+      "relativePosition": [
+        -0.5883423473575428,
+        -2.153556177428377
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "22a8c239-ac3d-40d6-8668-ec443a456977",
+      "relativePosition": [
+        -3.1577664356882416,
+        2.410360340902444
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "47cccbd6-8fe1-4fae-8530-1f66c489a05a",
+      "relativePosition": [
+        -3.8768091475843978,
+        -2.790665684432881
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "1c27fb5d-0a77-470e-a3f2-d5c8023d4464",
+      "relativePosition": [
+        -2.129682764665444,
+        0.12911710346803176
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "22dd4138-d7c2-436a-8891-15568dacf338",
+      "relativePosition": [
+        2.6149372463822185,
+        -4.513956698054294
+      ],
+      "weight": 5
+    },
+    {
+      "ideaId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
+      "relativePosition": [
+        0.19845649502581342,
+        -2.492110555248717
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "0697d033-bb95-4433-8a9c-20f2afd06c31",
+      "relativePosition": [
+        -2.02256176011638,
+        1.4694366017337837
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "2fbd88df-3698-4f48-8e66-a001c37a99ea",
+      "relativePosition": [
+        -1.843963421655553,
+        -1.60016078852884
+      ],
+      "weight": 1.0434782608695652,
+      "explanation": "i sometimes feel the urge to say something like \"work directly on main\" - throughout the project. And need a place to configure this. maybe even a separate file next to the meta.json. something that get's posted when a new worker session starts. Same for the watchdog session maybe? There is already a prompt there, i think"
+    },
+    {
+      "ideaId": "2d0ab64b-228e-49d2-80fc-2e43e6c5a893",
+      "relativePosition": [
+        -0.5877965067346034,
+        2.429916720110094
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "b5348ae2-62d6-42ac-8191-b877e0570c61",
+      "relativePosition": [
+        2.499997286804896,
+        -0.003683200803492261
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "2480f3a2-f15f-4259-ae5c-7aac128a8475",
+      "relativePosition": [
+        2.4818783177668644,
+        0.3004663305575495
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "07178308-5d5c-4340-9697-3c68105602d5",
+      "relativePosition": [
+        -0.27985217280303143,
+        2.4842871736933763
+      ],
+      "weight": 1,
+      "explanation": "Moonshot engine makes human intent the strategic layer for increasingly capable AI."
+    },
+    {
+      "ideaId": "99134ce5-3c20-4c7d-ad1d-c462a5db4b41",
+      "relativePosition": [
+        0.8884265131615066,
+        2.3368137133095757
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "986410a0-24a7-40c2-9623-af27bf084651",
+      "relativePosition": [
+        0.4358175817868206,
+        -2.4617195281764914
+      ],
+      "weight": 1,
+      "explanation": "Tests whether human authority survives adversarial and ambiguous operating conditions."
+    },
+    {
+      "ideaId": "1733c488-68b0-47cc-8439-c8c5c0476a87",
+      "relativePosition": [
+        1.995361070769566,
+        1.5061653950537206
+      ],
+      "weight": 1,
+      "explanation": "Makes human authority explicit and machine-enforceable in cooperative execution."
+    },
+    {
+      "ideaId": "fc891a0b-8aaa-4cf2-9e8c-fc43dd315910",
+      "relativePosition": [
+        1.8505132831514848,
+        1.6809522863186546
+      ],
+      "weight": 0.8,
+      "explanation": "Improves the inspectable human side of the cooperation boundary."
+    },
+    {
+      "ideaId": "0f307c81-d707-43f0-97ed-af7613e03801",
+      "relativePosition": [
+        -2.177421757879564,
+        1.2283462412173005
+      ],
+      "weight": 0.7,
+      "explanation": "Keeps human control local or explicitly exposed by the operator."
+    },
+    {
+      "ideaId": "c59fe055-757e-4084-8326-4ad61ffc6d5f",
+      "relativePosition": [
+        1.4946504378124048,
+        2.0040010151562266
+      ],
+      "weight": 0.8,
+      "explanation": "Improves reproducible human-governed autonomous cooperation in any Aimparency repository."
+    }
+  ],
+  "supportedIdeas": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1768763893265
+  },
+  "intrinsicValue": 100,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,22 @@
+{
+  "id": "d3b97d82-dfc0-4db6-841b-b90e678e6546",
+  "text": "make the follow-selected-aim target zoom 0.333 as large (zoomed out 3 times as much)",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Updated mapStore.centerOnNode heuristic from 66/r to 22/r, effectively zooming out 3x more when following selected aim.",
+    "date": 1769096259881
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

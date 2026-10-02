@@ -1,0 +1,29 @@
+{
+  "id": "9f83a877-1b9d-42a4-a7f8-72344ff27459",
+  "text": "CPU-based Interaction using spatial tree",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "effdb188-3862-42b5-bbc2-d247c59c1184",
+      "relativePosition": [
+        -2.4999161592024257,
+        -0.02047429995365323
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "CPU-based hit testing using spatial tree is implemented in InteractionManager.ts with screen-to-world conversion, node/edge picking, and mouse event handling",
+    "date": 1769700149594
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

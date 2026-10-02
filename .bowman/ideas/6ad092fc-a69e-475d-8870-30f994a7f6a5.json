@@ -1,0 +1,92 @@
+{
+  "id": "6ad092fc-a69e-475d-8870-30f994a7f6a5",
+  "text": "aim graph backend development",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "b5c6fda9-4c32-4b3a-94f0-31d0f2760040",
+      "relativePosition": [
+        3.053485741266225,
+        -0.6360029354069239
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "bc9b94d3-606f-4756-a22a-52444f6021ef",
+      "relativePosition": [
+        -1.5732232876238452,
+        1.942927813192765
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "3427a68e-791e-4f59-bc46-bd72d85e6d71",
+      "relativePosition": [
+        0.15429028717923685,
+        -2.4952343591899635
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "756cf129-0c66-43dd-84cf-58e94450e325",
+      "relativePosition": [
+        2.0268881166946957,
+        -1.4634632084209798
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "22c4140b-9ae2-4805-9071-a3f30b1c4ec3",
+      "relativePosition": [
+        2.2456978467141973,
+        1.098563234986142
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "f7f8d418-d855-4c25-8b46-802f254b4c60",
+      "relativePosition": [
+        -2.1881450599285936,
+        -1.209140685243074
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "10a0561b-a10d-47ae-8fd9-823416faa412",
+      "relativePosition": [
+        2.221273536709269,
+        -1.1471459694019304
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "827cb5c7-f4eb-42d1-89dd-2a5361721318",
+      "relativePosition": [
+        1.9239950165853876,
+        -2.7690395668119416
+      ],
+      "weight": 0.9887640449438202
+    }
+  ],
+  "supportedIdeas": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "All active backend-development children are done and the remaining child was cancelled; awaiting integrated acceptance.",
+    "date": 1785399071887
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Autonomous relevance check on 2026-07-30 inspected every direct child: seven are done and one is cancelled. No open implementation leaf remains under this finite backend-development umbrella, so it was reconciled from open to review instead of generating duplicate work."
+}

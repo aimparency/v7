@@ -1,0 +1,18 @@
+{
+  "id": "fb2a372d-88aa-4700-8940-162805695557",
+  "text": "MCP function \"get all aims from the the lowest current phase with priorities\"",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "",
+    "date": 1765829913081
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

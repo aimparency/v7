@@ -1,0 +1,20 @@
+{
+  "id": "ff2e9a3b-b65e-4e45-abec-c19cffe59bad",
+  "text": "WebGL Shader-based rendering for nodes and curved edges",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Shader-based rendering complete: nodes use instanced circle shaders (node.vert/frag.glsl), curved edges use arc-based arrow shaders (arrow.vert/frag.glsl + arrow-head.vert/frag.glsl)",
+    "date": 1769700149929
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,0 +1,42 @@
+{
+  "id": "da74d69e-b275-4412-b186-0ccc7a0d0440",
+  "text": "Aim adding",
+  "description": "",
+  "reflection": "Reconciled this container after checking its two children. 87a9f3b2 fixes and tests sequential connection/phase dialogs; b0ca7191 corrects floating vs uncommitted wording. Both are in review and no open implementation leaf remains.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "87a9f3b2-89d0-4f78-85d5-a25dfe72acf2",
+      "relativePosition": [
+        0.11005469289144057,
+        -2.1207794473548076
+      ],
+      "weight": 1,
+      "explanation": ""
+    },
+    {
+      "ideaId": "b0ca7191-a484-4d5c-bd86-7fbb86efce4e",
+      "relativePosition": [
+        -2.3607222324120434,
+        0.5285644803575131
+      ],
+      "weight": 0.9850746268656718,
+      "explanation": ""
+    }
+  ],
+  "supportedIdeas": [],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Both concrete children are implemented and internally verified: sequential post-creation dialogs and accurate uncommitted terminology. Awaiting user acceptance.",
+    "date": 1784895190034
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

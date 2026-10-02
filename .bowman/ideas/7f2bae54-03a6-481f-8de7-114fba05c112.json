@@ -1,0 +1,57 @@
+{
+  "id": "7f2bae54-03a6-481f-8de7-114fba05c112",
+  "text": "Demonstrate autonomous external value creation with a real beneficiary",
+  "description": "Prove that the mission-continuous loop can produce value outside Aimparency. A human may define or approve the initial aim and supply necessary access; after that, the loop must discover the work, plan, execute with real tools, verify the deliverable, and present it without step-by-step steering. Success requires (1) a named external beneficiary or external open-source project, (2) a non-trivial deliverable addressing a real need, (3) a preserved run record showing the autonomous chain, and (4) external acceptance, use, merge, payment, or explicit useful/not-useful feedback. An internal Aimparency artifact, self-assessed usefulness, mock customer, simulated revenue, or unsubmitted patch does not satisfy this aim. Start with a credential-free external repository contribution or a deliverable requested by Wilde Möhre/Herzog Records; expand to paid/effectful work only with human authorization.",
+  "reflection": "The reopened agent-actionable bounty scan is complete with a negative selection result. Remaining success criteria require external institutional participation, authorization, and beneficiary acceptance; internal work cannot satisfy them.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "9a1c0cf3-98f4-4534-b742-d4e13e766345",
+      "relativePosition": [
+        1.7221332138549164,
+        -1.812251967508309
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "5bd2c07e-babe-479e-a68d-ae3cfafe32ab",
+      "relativePosition": [
+        2.458286833542848,
+        -0.4547810946267208
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "93e0d4c2-eed1-4d42-8d12-a82c1b291d6b",
+      "relativePosition": [
+        1.4980744231605647,
+        2.0014427352967514
+      ],
+      "weight": 1,
+      "explanation": "Creates externally accepted, paid value for a named open-source beneficiary through an inspectable autonomous run."
+    }
+  ],
+  "supportedIdeas": [
+    "7634e681-d234-48fa-ad82-876ef97460ca",
+    "3253bc9e-14fe-4c9b-9849-588620518517",
+    "07178308-5d5c-4340-9697-3c68105602d5"
+  ],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6",
+    "37bee25a-dfee-4595-8eba-628a6f5a3d5b",
+    "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "No qualifying public bounty was found in the verified 20-entry scan. External proof now requires either a future qualifying issue plus the standing mandate, or a consenting real beneficiary such as the scheduled Robin collaboration.",
+    "date": 1785594523840
+  },
+  "intrinsicValue": 15,
+  "cost": 5,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

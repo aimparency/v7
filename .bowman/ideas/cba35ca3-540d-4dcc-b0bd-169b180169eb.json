@@ -1,0 +1,20 @@
+{
+  "id": "cba35ca3-540d-4dcc-b0bd-169b180169eb",
+  "text": "Graph Interaction: Edit Relative Positions & Weights",
+  "tags": [
+    "graph",
+    "ui"
+  ],
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Ported reference visual logic (make-circular-path) to frontend. Updated GraphLink.vue to render beautiful curved arrows instead of straight lines. Implemented vec2 utilities. Builds successful. Visual gap addressed.",
+    "date": 1765572978952
+  },
+  "description": "",
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "b439cf5f-d9b8-4406-a73b-65236c321c91"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "793cbea9-7d33-4393-b875-b9d44cca604c",
+  "text": "move tags to the end of the aim edit modal (below status)",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "",
+    "date": 1766324698478
+  },
+  "intrinsicValue": 1,
+  "cost": 1,
+  "loopWeight": 0
+}

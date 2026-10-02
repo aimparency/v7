@@ -1,0 +1,19 @@
+{
+  "id": "7d390089-8573-4c99-b580-c602daee5c55",
+  "text": "when watchdog was minimized the xterm.js terminals are empty, can we fix that? like an initial redraw of the lines after a resize or something?",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [],
+  "committedIn": [
+    "4c960ff4-05ba-4ff8-b523-1a104d750503"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Passed store.workerOutput and store.watchdogOutput as initial-content to WatchdogTerminal components to restore state on remount. Also added requestAnimationFrame debouncing to ResizeObserver and forced term.refresh() after fit.",
+    "date": 1766052654222
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

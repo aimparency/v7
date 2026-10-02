@@ -1,0 +1,92 @@
+{
+  "id": "865e4b34-0c68-4e34-9361-809c4d90db4c",
+  "text": "Improve backend api and data model",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "2cfed9fa-7106-475c-a293-b80ef4498885",
+      "relativePosition": [
+        -1.0800668466506629,
+        2.2546519923850985
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "5e17a550-2c37-407e-a25f-b14b52b915aa",
+      "relativePosition": [
+        2.4838572000824795,
+        0.2836431025045843
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "02bc1b88-14cc-46db-82e5-464f01878596",
+      "relativePosition": [
+        -2.2698010230691916,
+        1.047856533917717
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "602b8c5c-4846-449a-8427-bb86030f7eab",
+      "relativePosition": [
+        1.567494620275013,
+        -1.9475524679476268
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "65d8bc11-9b3b-4450-8fd3-ed5d48514dc5",
+      "relativePosition": [
+        2.3317144154803153,
+        -0.9017249495501896
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "9b8c3dcc-b16d-48dd-92a5-f849d6794965",
+      "relativePosition": [
+        0.49250338721221415,
+        2.451008040293727
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "183a5586-f523-4d2d-9cab-59eb10991ca1",
+      "relativePosition": [
+        2.4448047865312224,
+        0.5224266032219487
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "9f88d152-c3d2-49de-a1e6-6426c34ada69",
+      "relativePosition": [
+        -2.315265942994016,
+        0.9431561976746112
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "bd798495-12e4-4584-9192-666e654d9940",
+      "relativePosition": [
+        -1.8012573303356691,
+        -1.7336297268771146
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Implemented extensive regression tests (e2e/regression.spec.ts) covering: Nesting, Linking (search+attach), Reordering (J/K), Indenting/Outdenting (L/H). Fixed search reliability by adding a fallback simple-text filter in backend (server.ts) to cover for FlexSearch indexing race/failure on transient seeded data. All tests passed.",
+    "date": 1765113163499
+  },
+  "intrinsicValue": 5,
+  "cost": 1,
+  "loopWeight": 0
+}

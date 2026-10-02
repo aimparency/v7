@@ -1,0 +1,29 @@
+{
+  "id": "030805d1-90e2-4e90-b2a4-0ae97df3e27d",
+  "text": "Qualify Pro FIT only if Aimparency will be a young Berlin company",
+  "description": "Pro FIT early-stage financing is relevant only if Aimparency becomes a newly founded small technology company based in Berlin. Official 2026 terms describe up to €500,000 total early-stage financing; Phase 1 is normally 50% non-repayable grant and 50% loan, capped at €200,000, with a company-age limit normally 12 months. Do not treat this as a pure €50–200k grant and do not adapt a full application before the location decision. If Berlin is chosen, request IBB's free scoping consultation, validate the R&D anchor project and company-age clock, then update meta/applications/inquiry-ibb-pro-fit.md.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "grant",
+    "berlin",
+    "ibb"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8d174cd3-7259-409f-8dd1-2e901bf3dbd7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Blocked on the founder's Berlin-versus-Bavaria company-location decision; if Berlin is chosen, Felix must request the official IBB qualification call.",
+    "date": 1784745151315
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

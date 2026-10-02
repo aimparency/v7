@@ -1,0 +1,20 @@
+{
+  "id": "dc90ccef-5e1e-4a57-ae57-9833bde682fd",
+  "text": "Switch Graph Scale to 1000 and Fix Jitter",
+  "tags": [
+    "graph",
+    "physics"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [],
+  "committedIn": [
+    "ab939925-1be6-43fc-b7a9-958b49b2c66a"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "",
+    "date": 1765718660030
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

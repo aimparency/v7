@@ -1,0 +1,22 @@
+{
+  "id": "f1550eb7-d02e-40bc-af94-1fb1076076bd",
+  "text": "make sure cache.db vectors.json semantic-graph.json are created in <project>/.bowman/ and not in <project>/",
+  "description": "make sure when setting up the project, all files that are not aims and connections are listed in the initial .gitignore in ./.bowman",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
+  ],
+  "committedIn": [
+    "173bdd80-4cb8-44bc-a4b8-13ac1267795d",
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Fixed db.ts to create cache.db in .bowman/ directory. Updated path normalization to match other functions (embeddings, forces). All 19 backend tests pass. Cleaned up old cache files from project root.",
+    "date": 1772064463419
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

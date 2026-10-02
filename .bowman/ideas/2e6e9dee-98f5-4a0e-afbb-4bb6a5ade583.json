@@ -1,0 +1,24 @@
+{
+  "id": "2e6e9dee-98f5-4a0e-afbb-4bb6a5ade583",
+  "text": "when entering aim title in add/edit aim modal, typing c (and maybe other shortcut letters) should not actually cause the color toggle",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "2e845190-a51f-44ca-ad3c-f1ef34aa857a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Fixed: Added input check in GraphView onKeydown to prevent color toggle when typing in modals",
+    "date": 1769551539387
+  },
+  "intrinsicValue": 1,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

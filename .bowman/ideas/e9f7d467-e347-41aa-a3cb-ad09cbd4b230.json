@@ -1,0 +1,41 @@
+{
+  "id": "e9f7d467-e347-41aa-a3cb-ad09cbd4b230",
+  "text": "Create demo video",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "f68c165d-c18d-4174-a4ed-864cb840fdb0",
+      "relativePosition": [
+        2.4962369281481718,
+        0.13711746259823274
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "254f8ae4-cb52-4a64-b565-5fc6aae0c33c",
+      "relativePosition": [
+        0.530445830994792,
+        2.4430774077749247
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "16c7ebd4-7f1f-482a-b4c6-74f8fab21644"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Blocked by need for screen recording - see supporting aim 254f8ae4",
+    "date": 1774590174564
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

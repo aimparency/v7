@@ -1,0 +1,29 @@
+{
+  "id": "57ae35f3-1104-4ee0-9d14-bab843070f3a",
+  "text": "'a' should toggle agent loop area",
+  "description": "",
+  "reflection": "The global A shortcut toggles the loop panel when focus is outside editable fields, and the shortcut is included in keyboard hints. Verified by production Vite compilation.",
+  "reflections": [],
+  "archived": false,
+  "color": null,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "2e845190-a51f-44ca-ad3c-f1ef34aa857a",
+    "c7a6e6fc-7f9b-411a-9696-c60cc10354e0"
+  ],
+  "committedIn": [
+    "173bdd80-4cb8-44bc-a4b8-13ac1267795d"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and internally verified; awaiting user demonstration and acceptance before marking done.",
+    "date": 1784471515169
+  },
+  "intrinsicValue": 0,
+  "cost": 0.1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

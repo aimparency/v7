@@ -1,0 +1,30 @@
+{
+  "id": "26b7516b-6e54-4a1e-a27a-69cafa14baa5",
+  "text": "Submit EIC Accelerator Step 1 (EU)",
+  "description": "EU parallel track. Low-cost Step 1 (12-page form + deck + 3min video). Grant up to €2.5M if successful.\n\n**Outline ready:** meta/eic-accelerator-step1-outline.md\n**Submit:** Rolling, batched 1st Tuesday/month 17:00 Brussels\n\n**Human actions:**\n- Create EU Login account\n- Record 3-min video pitch\n- Build 10-slide PDF deck\n- Submit via EU Funding Portal\n\nCan use 'intending to launch SME' eligibility at Step 1.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "grant",
+    "eu",
+    "eic"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8d174cd3-7259-409f-8dd1-2e901bf3dbd7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Draft preparation exists. Submission requires Felix to establish/confirm eligibility, create EU Login access, approve and record the pitch, and make representations through the EU Funding Portal.",
+    "date": 1785399290576
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 converted the aim’s explicitly listed human actions into accurate state semantics. No credential-free autonomous submission step remains."
+}

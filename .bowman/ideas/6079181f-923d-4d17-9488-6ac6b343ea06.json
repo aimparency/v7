@@ -1,0 +1,24 @@
+{
+  "id": "6079181f-923d-4d17-9488-6ac6b343ea06",
+  "text": "put the current project into a get param in the url",
+  "description": "so that reloading different tabs with different projects as get param reload to their project each. \nCheck that the state restoring logic will still work.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "7f122bed-ff75-43fc-ba0b-1b74c8141270"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Implemented updating the URL query string with ?project=path when a project is opened, and restoring the project from the URL parameter on startup.",
+    "date": 1779644513063
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

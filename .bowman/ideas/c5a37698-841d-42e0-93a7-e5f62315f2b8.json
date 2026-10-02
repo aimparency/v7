@@ -1,0 +1,19 @@
+{
+  "id": "c5a37698-841d-42e0-93a7-e5f62315f2b8",
+  "text": "deploy on \"zentest.quest\"",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "55abf645-bfa1-4def-ada3-f8f40357db50"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Website finalized (Design, Favicon, Particles, Content). Deployment script ready. Git repo initialization pending push.",
+    "date": 1768330125753
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

@@ -1,0 +1,130 @@
+{
+  "id": "7634e681-d234-48fa-ad82-876ef97460ca",
+  "text": "ideate how we can reach ASI (make AI autonomously work towards ideas by using the aim graph and the wrapped agents)",
+  "description": "ideate using aimparency. Cooperate with human to create aims. look at the stem, the largest aims. ",
+  "reflection": "On 2026-08-01, the ASI ideation branch was reframed from completed feature ideation into four falsifiable evidence tracks: graph-grounded capability versus baseline, three bounded self-improvement cycles, adversarial corrigibility, and externally accepted value.",
+  "reflections": [],
+  "archived": false,
+  "color": "#33d17a",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "7f2bae54-03a6-481f-8de7-114fba05c112",
+      "relativePosition": [
+        2.4999863415243997,
+        -0.008263908968960029
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "654b56f9-0dec-480e-88fa-b6f2756d7ccf",
+      "relativePosition": [
+        -1.613074223103432,
+        -1.9099716099354092
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "8025ab20-c497-43c0-b365-fbfa60b7428c",
+      "relativePosition": [
+        1.5410392427392208,
+        1.9685522732042777
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "2b1ef4a8-0276-4159-aa0b-91035a3ae2c0",
+      "relativePosition": [
+        -0.5772926415355183,
+        2.43243359745522
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "2d0ab64b-228e-49d2-80fc-2e43e6c5a893",
+      "relativePosition": [
+        2.4650424362260717,
+        -0.4166122749087382
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "25c7b4e9-d1d3-476c-beb3-599fffcaa95b",
+      "relativePosition": [
+        2.195728184767559,
+        1.1953149119028679
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "073ea968-fc31-45ef-b90e-15bb9237c38d",
+      "relativePosition": [
+        -0.7526541183234547,
+        -2.3840116984131483
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "8ac03697-c34f-46c6-8b54-678418d5adb2",
+      "relativePosition": [
+        0.44349026135539393,
+        -2.460348834633602
+      ],
+      "weight": 1,
+      "explanation": "Tests whether Aimparency's graph and wrapped-agent loop create measurable capability gains."
+    },
+    {
+      "ideaId": "13d74766-60e4-4c0d-9cb4-810b93f985f9",
+      "relativePosition": [
+        1.602609590023856,
+        1.9187606682344645
+      ],
+      "weight": 1,
+      "explanation": "Turns self-improvement from a feature claim into repeated measured capability gains."
+    },
+    {
+      "ideaId": "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
+      "relativePosition": [
+        -0.01178160416534698,
+        2.499972238606519
+      ],
+      "weight": 1,
+      "explanation": "Produces stricter evidence about graph-grounded autonomous software delivery."
+    },
+    {
+      "ideaId": "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
+      "relativePosition": [
+        -2.484236852094969,
+        -0.28029852424384893
+      ],
+      "weight": 1,
+      "explanation": "Produces controlled capability and efficiency evidence for autonomous software delivery."
+    },
+    {
+      "ideaId": "d629e231-065c-4d02-a8a9-ef05b464f123",
+      "relativePosition": [
+        2.497979660899011,
+        -0.10048688339709384
+      ],
+      "weight": 1,
+      "explanation": "Provides controlled evidence about graph-grounded autonomous execution."
+    }
+  ],
+  "supportedIdeas": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [
+    "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
+  ],
+  "status": {
+    "state": "partially",
+    "comment": "Reopened as an evidence program: three new bounded hypotheses are active, and the existing external-value proof remains open. Progress is gated by controlled benchmarks, measured self-improvement, corrigibility, and real beneficiary evidence.",
+    "date": 1785593890596
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

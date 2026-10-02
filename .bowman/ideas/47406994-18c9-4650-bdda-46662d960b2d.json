@@ -1,0 +1,19 @@
+{
+  "id": "47406994-18c9-4650-bdda-46662d960b2d",
+  "text": "native android project setup",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "93149e0b-ef1a-424d-b9db-ffef9f50957d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Scaffolded Android project structure with Gradle Kotlin DSL, AndroidManifest, and a basic Jetpack Compose MainActivity.",
+    "date": 1766405027423
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

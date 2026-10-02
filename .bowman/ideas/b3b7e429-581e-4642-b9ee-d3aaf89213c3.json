@@ -1,0 +1,19 @@
+{
+  "id": "b3b7e429-581e-4642-b9ee-d3aaf89213c3",
+  "text": "project meta settings",
+  "description": ".bowman/meta.json\nthings like aim states. \nInitialize with defaults on absence or initialization.\n\nAddition: store it in .bowman/meta.json not directly in project dir",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "36794f88-d947-45bb-a6b6-5f8da034ed0f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Implemented backend initialization of default meta.json. Created ProjectSettingsModal.vue for editing name and color. Added Settings button to App header.",
+    "date": 1766345310577
+  },
+  "intrinsicValue": 0,
+  "cost": 0,
+  "loopWeight": 0
+}

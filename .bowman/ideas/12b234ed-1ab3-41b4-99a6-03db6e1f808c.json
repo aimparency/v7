@@ -1,0 +1,25 @@
+{
+  "id": "12b234ed-1ab3-41b4-99a6-03db6e1f808c",
+  "text": "Frontend data layer: load the whole project once and keep it live via pushed entities",
+  "description": "Audit finding (2026-09-28). The full graph (753 aims / 34 phases, 1.1MB) loads via aim.list in ~100-150ms, yet the frontend loads lazily per parent/phase: 55 call sites of loadPhases/loadPhaseAims/loadAims/loadFloatingAims, promise caches (phaseChildrenLoadPromises, loadedPhaseChildrenByParentId), ensureColumnNeighborhoodLoaded, 'missing aims' top-ups in the subscription handler. Correctness bug: loadProject only loads floating aims + phases, and the full aim set only arrives when GraphView mounts, so recalculateValues computes list-view value/cost/priority over a partial graph. Target: loadProject = meta + phase.list + aim.list (IndexedDB cache first), subscription always carries the entity, delete all lazy-load paths and their guards. Step 1: load all aims in loadProject.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Committed; vitest 234/234, backend 70/70, e2e 19/19, type checks clean. Awaiting Felix's check that the list view feels right (values correct without opening the graph, edits from agents appear live).",
+    "date": 1790627594892
+  },
+  "intrinsicValue": 5,
+  "cost": 5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

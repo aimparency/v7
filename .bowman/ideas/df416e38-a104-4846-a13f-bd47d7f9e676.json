@@ -1,0 +1,22 @@
+{
+  "id": "df416e38-a104-4846-a13f-bd47d7f9e676",
+  "text": "add \"cost\" to aim data model",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "",
+    "date": 1766114046461
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

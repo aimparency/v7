@@ -1,0 +1,19 @@
+{
+  "id": "0855f086-1055-4214-81d5-a422e1189707",
+  "text": "fix embedding distance force.",
+  "description": "not sure how. \nconstant force independent of aim size is the right thing theoretically.",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Fixed TypeScript errors in forces.ts and useGraphSimulation.ts. Replaced missing naiveBoxIntersect with gridIntersect and added safety checks for undefined values.",
+    "date": 1767788809683
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

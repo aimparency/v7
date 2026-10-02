@@ -1,0 +1,69 @@
+{
+  "id": "9fa43c99-d00c-4b4a-883e-5410cbe689dd",
+  "text": "custom aim colors",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "4a05d4ff-51c8-4946-b174-72d59c685b12",
+      "relativePosition": [
+        2.1950899521759903,
+        -0.7193021188203499
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "667df056-3263-4179-9ed5-7fb9d778f666",
+      "relativePosition": [
+        2.424070310740202,
+        0.6895248151607082
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "3ffd9fb8-e4a5-428e-990d-4c17bf622678",
+      "relativePosition": [
+        2.4990316049584633,
+        0.06957756404708045
+      ],
+      "weight": 1,
+      "explanation": "graph maintenance: reparented floating aim by semantic similarity"
+    },
+    {
+      "ideaId": "2e7239eb-cef5-4254-a7b9-74626195abd4",
+      "relativePosition": [
+        -0.46996360968712364,
+        -2.5670596978964566
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "338f71c7-44c5-4209-8fa5-84d03e438b83",
+      "relativePosition": [
+        0.6417064597578852,
+        2.416239396149521
+      ],
+      "weight": 1,
+      "explanation": "Priority-derived graph coloring is a concrete aim-color behavior."
+    }
+  ],
+  "supportedIdeas": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Custom aim colors implemented end to end: color field on the Aim schema (4a05d4ff), color picker in AimEditModal, nodes rendered in their custom color (convertNodes: custom color overrides priority/status), and arrows rendered in the supporting aim's color (667df056). graphData carries aim.color -> GraphNode.customColor -> renderer. Frontend suite 132/132, both typechecks clean. Visual rendering verified by code inspection; in-browser smoke test still recommended.",
+    "date": 1780144871096
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

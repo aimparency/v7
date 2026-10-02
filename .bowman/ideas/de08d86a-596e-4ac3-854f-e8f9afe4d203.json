@@ -1,0 +1,53 @@
+{
+  "id": "de08d86a-596e-4ac3-854f-e8f9afe4d203",
+  "text": "Merged cross-repo value flow (external intrinsics zeroed)",
+  "description": "PARKED HISTORICAL AIM-LEVEL DESIGN — not the implemented repo-node model. This proposal would load referenced external aims, zero their intrinsic values, and eventually cascade into their subtrees when expanded. It was halted by the 2026-06-27 decision to use opaque whole-repository boundaries. The implemented successor is 3023ebec: exactly one zero-intrinsic leaf-sink node per linked repository, with no external graph loading or cascade.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "value-calculation"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "535d5d5a-883a-434f-892f-856f144482bb",
+      "relativePosition": [
+        1.1459455644601089,
+        2.2218930584738326
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "5a45cb28-dd71-47c7-8ba3-78b543b2647b",
+      "relativePosition": [
+        -1.8710746451155829,
+        -1.6580348827469207
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "700e5b01-1ca7-4ef8-a828-a05163f07bbf",
+      "relativePosition": [
+        -0.1875796170447536,
+        2.4929528449750795
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Cancelled 2026-09-20: merged value flow over loaded external aims (zeroed intrinsics, cascade-on-expand) needs the other repo's internals. Superseded by 3023ebec: one zero-intrinsic leaf-sink node per linked repo, no external graph loading.",
+    "date": 1789935649478
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Cancelled, not parked: the leaf-sink model is simpler and is what shipped; the aim-level cascade has no revival path under black-box repos."
+}

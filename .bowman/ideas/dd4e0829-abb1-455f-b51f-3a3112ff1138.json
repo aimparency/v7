@@ -1,0 +1,24 @@
+{
+  "id": "dd4e0829-abb1-455f-b51f-3a3112ff1138",
+  "text": "when changing connections (supported) on aims in aim edit mode, or when creating connections alongside creating an aim with the create aim modal, we have to create and remove connections consitently with the involved aim",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "1e554f38-33ae-42d4-88e6-4a4b071a20d0"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Updated backend/src/server.ts aim.update mutation to handle consistency for supportedAims (parents) and supportingConnections (children). Added logic to automatically add/remove reverse connections on related aims.",
+    "date": 1768983759593
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

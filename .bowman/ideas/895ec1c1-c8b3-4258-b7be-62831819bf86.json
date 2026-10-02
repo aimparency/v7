@@ -1,0 +1,158 @@
+{
+  "id": "895ec1c1-c8b3-4258-b7be-62831819bf86",
+  "text": "achieve ASI",
+  "description": "Achieve ASI through human cooperation. Aimparency is the durable link between human needs and free AI — a coordination/legitimacy layer where humans express needs and AI helps achieve them, with humans as final authority. Fully autonomous ASI is the moonshot (likely to arrive regardless of this project); Aimparency's enduring role is the human↔AI cooperation engine (3d868d5b). AI acting autonomously is a side effect of serving human needs well, not the end goal.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "vision",
+    "strategy"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+      "relativePosition": [
+        -1.6201815228408196,
+        -2.174654959117845
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "3253bc9e-14fe-4c9b-9849-588620518517",
+      "relativePosition": [
+        -6.499346820729702,
+        1.607099565115129
+      ],
+      "weight": 2
+    },
+    {
+      "ideaId": "133934ba-f325-4b92-b57c-517bb1ea497f",
+      "relativePosition": [
+        2.5489383412640962,
+        1.5700962560449003
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "6ad092fc-a69e-475d-8870-30f994a7f6a5",
+      "relativePosition": [
+        0.5479027984928304,
+        -2.5423244699560104
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "c254d8bd-d7ba-494e-8a97-8c46636fdb2f",
+      "relativePosition": [
+        1.5178449188891885,
+        4.201359028371041
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "cffdcd91-fd9c-45e4-98fd-e265650be143",
+      "relativePosition": [
+        -1.8992733608288328,
+        2.400914594273455
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "22a8c239-ac3d-40d6-8668-ec443a456977",
+      "relativePosition": [
+        -2.2249007787122035,
+        -1.3523594956417833
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "f6af0b7a-39b9-4f22-866e-8f13bca532e8",
+      "relativePosition": [
+        1.091380829774152,
+        3.0238097458665965
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "e81b11c3-8eca-4f7d-8ca3-578179d24225",
+      "relativePosition": [
+        2.2866986932330007,
+        0.5959463621101372
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "629396d0-891d-42c7-b2b2-1be5423de649",
+      "relativePosition": [
+        2.111582240311859,
+        -0.5472641023805007
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "c561dd26-86c5-45c2-96a3-4b4f90e448a3",
+      "relativePosition": [
+        2.9062573035719894,
+        -2.105023332450373
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
+      "relativePosition": [
+        -1.6317177855060447,
+        2.8725944532029932
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "7634e681-d234-48fa-ad82-876ef97460ca",
+      "relativePosition": [
+        -1.1531943816026653,
+        1.7896810647484733
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "0622adb1-e79d-483c-b894-199d92ca199d",
+      "relativePosition": [
+        -3.7871310255930912,
+        -1.3772576188855445
+      ],
+      "weight": 3
+    },
+    {
+      "ideaId": "986410a0-24a7-40c2-9623-af27bf084651",
+      "relativePosition": [
+        -6.382872452096173,
+        0.6133460791735853
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "504ca79c-8ebd-464c-a1ca-9d9b95b48e5e",
+      "relativePosition": [
+        -8.671188037814845,
+        -0.06666189832739673
+      ],
+      "weight": 0.9473684210526316,
+      "explanation": ""
+    }
+  ],
+  "incoming": [],
+  "supportedIdeas": [],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1769975942434
+  },
+  "intrinsicValue": 1000,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

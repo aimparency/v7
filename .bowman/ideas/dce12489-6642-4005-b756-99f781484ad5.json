@@ -1,0 +1,72 @@
+{
+  "id": "dce12489-6642-4005-b756-99f781484ad5",
+  "text": "Implement 'Experience Automation' Pipeline (Journal -> Social Post) using Gemini CLI",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "automation",
+    "social-media"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "5d24451d-e630-462e-94c8-ac4754d1c31d",
+      "relativePosition": [
+        0.7404176316563227,
+        2.3878403905480035
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "00344a8d-7743-48cf-a147-b7636138fd62",
+      "relativePosition": [
+        0.4802072597016816,
+        2.4534467566527303
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "ad3e7a2a-65aa-4486-804e-c4a99d1c9f7d",
+      "relativePosition": [
+        1.8134689034976061,
+        -1.720851689149065
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "c609d23e-1f69-4cde-8972-11f6ecac63a3",
+      "relativePosition": [
+        1.9866532770383725,
+        -1.5176326158964482
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "0013d4a8-4ce6-4794-8667-24eae73674d4",
+      "relativePosition": [
+        1.997201581892953,
+        1.503723991058295
+      ],
+      "weight": 1
+    }
+  ],
+  "incoming": [],
+  "supportedIdeas": [
+    "045d0879-46f3-4e2a-b13c-08ec339f03c2",
+    "86d965a6-3f9b-41ba-97c1-86c51323bcd7"
+  ],
+  "committedIn": [
+    "2abfd425-ee90-4286-a019-ba0ff703c73a"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Complete automation pipeline implemented: (1) Ingestion extracts thoughts from markdown journals using Gemini CLI, (2) Content generation creates tweets and Instagram posts with captions, (3) Publishing automates posting to Twitter/X and Instagram via APIs. All components working and tested. Ready for production use with API credentials. Comprehensive documentation in README. Manual content posting can continue in parallel for quality control.",
+    "date": 1769970573503
+  },
+  "intrinsicValue": 10,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

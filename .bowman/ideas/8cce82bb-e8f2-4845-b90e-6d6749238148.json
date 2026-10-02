@@ -1,0 +1,41 @@
+{
+  "id": "8cce82bb-e8f2-4845-b90e-6d6749238148",
+  "text": "Normalize connection force per incident aim while preserving pair balance and thick-edge influence",
+  "description": "For each visible hierarchy connection, normalize its positive transported flow against the total positive flow incident to each endpoint. Combine the two endpoint shares symmetrically as flow/sqrt(sourceTotal*targetTotal), then compress to a stable settling range. This makes thick connections influence layout more than thin siblings, remains invariant to absolute graph value scale, and gives both endpoints exactly the same pair coefficient. Apply movement inversely by aim surface so every internal pair conserves the surface-weighted center; only deliberate external centering or user constraints may move the graph globally.",
+  "reflection": "Revisited after Felix's force-normalization observation on 29 July 2026. The previous implementation normalized flow against the median of all visible connections, so unrelated graph edges influenced a node's force scale. Replaced it with symmetric endpoint normalization: edgeStrength = flow/sqrt(totalIncidentFlow(source)*totalIncidentFlow(target)), square-root compressed into 0.25–0.75 with a sole edge at 0.75 and a 0.5 fallback for absent flow. Thick sibling edges remain stronger; multiplying every flow by the same constant changes nothing; source and target share one coefficient, so the existing radius² inverse-mass movement remains equal-and-opposite and conserves the surface-weighted graph center. Explicitly subtracting aggregate force is unnecessary and would hide asymmetric-force bugs. Verification: focused graph-force tests 9/9, frontend vue-tsc, staged/unstaged diff checks.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "graph-layout",
+    "bug",
+    "force-normalization",
+    "performance"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "c9f92866-13aa-4011-97ca-aff081b152c8",
+      "relativePosition": [
+        1.6385877590381372,
+        -1.888128744532633
+      ],
+      "weight": 1,
+      "explanation": "Preserves normalized connection flow while fixing residual whole-graph drift."
+    }
+  ],
+  "supportedIdeas": [
+    "7815eb52-72fc-410c-9e4a-935d6abb745e"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Symmetric per-aim connection normalization implemented and internally verified; awaiting visual acceptance in the existing graph runtime.",
+    "date": 1784881877278
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

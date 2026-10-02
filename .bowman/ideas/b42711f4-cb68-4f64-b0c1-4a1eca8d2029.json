@@ -1,0 +1,87 @@
+{
+  "id": "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
+  "text": "Invite people and owner-led organizations into paid, mutually useful AI-transformation collaborations",
+  "description": "Use real paid work as a reality signal while treating every named person and organization as a possible collaborator with aims of their own, never as a marketing target or source of access. Begin through relationships Felix genuinely values. Explain why the person's work or perspective matters to the broader attempt to develop capable AI through human cooperation; ask whether and how they would like to connect. When a useful paid engagement emerges, start with a fixed-scope diagnostic of one economically meaningful workflow, then offer bounded reversible automation and continuing stewardship only with consent. Define baseline, owner decision rights, access boundaries, stop conditions, price, and observable result. Avoid generic outreach, free extraction, implied endorsement, and success claims based on activity rather than net value for the collaborator.",
+  "reflection": "The commercial path is now prepared through proposal stage: meta/ai-transformation-diagnostic-offer.de.md can be adapted after an owner call, using a two-week fixed-scope €2,500 first-price hypothesis with no free implementation. Remaining steps are founder outreach, client discovery, and actual commercial consent.",
+  "reflections": [
+    {
+      "date": 1784741481383,
+      "context": "Align the existing outreach machinery with the paid AI-transformation offer and make the two warm prospects actionable without claiming contact.",
+      "outcome": "Updated outreach-process.md from the stale €5k design-partner package to a €2.5k two-week paid diagnostic, and replaced the example tracker row with Wilde Möhre and Herzog Records rows marked ready-for-founder with no outreach recorded.",
+      "effectiveness": "The commercial sequence is now consistent across the graph, proposal, process, and tracker; CSV structure was validated at 17 columns per row.",
+      "lesson": "Sales infrastructure must be reconciled when positioning changes, or old templates silently steer behavior back to obsolete offers.",
+      "pattern": "strategy-to-operating-artifact consistency"
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "funding",
+    "revenue",
+    "design-partner",
+    "open-source",
+    "human-dependent"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "43021984-0a79-4bdb-a961-81396ddfe877",
+      "relativePosition": [
+        2.4288982907330032,
+        -0.5919907881667534
+      ],
+      "weight": 1,
+      "explanation": "Warm relationship and concrete first paid owner-diagnostic prospect."
+    },
+    {
+      "ideaId": "493d4f17-9781-4dff-a32c-2916e298f0bb",
+      "relativePosition": [
+        -2.268960988945114,
+        1.049674249777144
+      ],
+      "weight": 1,
+      "explanation": "Second warm owner-diagnostic prospect in the music industry."
+    },
+    {
+      "ideaId": "acb5797b-f4a9-494d-9751-8740d7d111e0",
+      "relativePosition": [
+        0.38791205415650976,
+        2.4697214900146287
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "fdd2059a-2d3b-49b4-994b-023799c90397",
+      "relativePosition": [
+        -1.1722473464035421,
+        2.208129561155743
+      ],
+      "weight": 1,
+      "explanation": "Validates the owner-led AI-transformation sales motion."
+    },
+    {
+      "ideaId": "5bd2c07e-babe-479e-a68d-ae3cfafe32ab",
+      "relativePosition": [
+        -1.6737208445000689,
+        -1.8570564166675108
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "cabe6e06-8988-4145-b884-9ef5bc68f660",
+    "9548e95a-a911-41a5-b404-0cc289633acd"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "The offer, outreach messages, diagnostic, and pilot model are ready. Felix must personally approach Wilde Möhre and/or Herzog Records, qualify an owner-owned workflow, and approve any commercial terms.",
+    "date": 1784541264141
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

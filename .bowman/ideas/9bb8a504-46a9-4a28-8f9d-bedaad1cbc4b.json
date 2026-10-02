@@ -1,0 +1,28 @@
+{
+  "id": "9bb8a504-46a9-4a28-8f9d-bedaad1cbc4b",
+  "text": "Evaluate wiring a sponsor API (Composio tools / Tavily search) into the agent's information streams",
+  "description": "Optional strengthener that aligns with existing aim \"Maintain information streams for autonomous agent context\" (3045f505). Tavily search → real web-research input during the DISCOVERING state; Composio → broader tool orchestration (ties to \"Build multi-tool orchestration capability\"). Scope tightly: only worth it if it visibly improves the demo within the build window, otherwise defer. Keep it from becoming a rabbit hole — a sponsor logo is not worth derailing the core demo.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "builders-hackathon",
+    "integration",
+    "sponsor-api"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "83c4a240-b5b5-4eec-ad83-552db27c2b53"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Cancelled 22 July 2026: sponsor integration was justified only as an optional strengthener inside the expired BuilderShip window. Generic information-stream integrations remain separate aims.",
+    "date": 1784745208761
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

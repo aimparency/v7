@@ -1,0 +1,22 @@
+{
+  "id": "40a2db34-aa80-48bf-ac13-dfe17004e351",
+  "text": "enlarge the semantic target connection in graph layout by 1.2",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Enlarged semantic target connection spacing by factor of 1.2 in useGraphSimulation.ts.",
+    "date": 1768403578806
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

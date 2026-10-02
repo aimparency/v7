@@ -1,0 +1,18 @@
+{
+  "id": "632f83e7-f22b-4c98-b75b-f1e517bcce98",
+  "text": "prevent shift + tab on first input field of add/edit aim and phase modal",
+  "description": "focus should stay inside modal",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Implemented focus trap in AimCreationModal and PhaseCreationModal. Tab wraps from last to first, Shift+Tab wraps from first to last. Focus stays inside modal.",
+    "date": 1765909176850
+  },
+  "intrinsicValue": 0,
+  "loopWeight": 0
+}

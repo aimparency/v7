@@ -1,0 +1,38 @@
+{
+  "id": "b5da0d8d-b089-4eb4-b14d-05f772867446",
+  "text": "Graph layout live-update on MCP/multi-client changes",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "fdf0ee47-98d1-43b8-9b0f-4d2da54f89c3",
+      "relativePosition": [
+        2.9659665105278994,
+        -1.8678606296195495
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "a242d139-ff3c-4344-bcd1-1f0136cd0115",
+      "relativePosition": [
+        1.3768661824278396,
+        -2.494105750903047
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Verified working - graph updates live across clients via tRPC subscription. Connections, costs, and aim data all sync correctly.",
+    "date": 1768943799800
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

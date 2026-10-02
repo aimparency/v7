@@ -1,0 +1,44 @@
+{
+  "id": "d7ba6b8b-5150-4ab2-b6a4-79a556f10ab1",
+  "text": "refactor side panel vs. modal - maybe use the same code? just modal vs side panel?",
+  "description": "Decision: do not reuse one complete form. Keep the graph side panel as a persistent inspect/navigate surface with narrow immediate-save edits; keep modals transactional and staged. Refactor shared typed data-store mutations first (aim metrics, then connection update/removal), and share only small presentational controls where duplication is real. See meta/ui-side-panel-modal-analysis.md.",
+  "reflection": "Kept panel and modal as separate presentation/state surfaces. Added typed data-store actions for connection detail updates and removal, including optimistic local updates and rollback on failure. Routed GraphSidePanel and ConnectionDetailsModal through the shared connection API; side-panel metrics already route through dataStore.updateAim. Updated focused tests for the store contract. Verification: 34 focused tests pass, production frontend build passes, git diff --check passes.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "6314d50f-280e-4e56-b539-d0a614e90304",
+      "relativePosition": [
+        -17.437511353916317,
+        0.49636496395748175
+      ],
+      "weight": 1,
+      "explanation": ""
+    },
+    {
+      "ideaId": "3103d302-2896-4ee4-b33a-e8358d96b1f6",
+      "relativePosition": [
+        0.27203844115815556,
+        -1.5793666394414803
+      ],
+      "weight": 0.9850746268656718,
+      "explanation": ""
+    }
+  ],
+  "supportedIdeas": [],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Decision and shared mutation refactor complete; ready to show the user.",
+    "date": 1784540973732
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

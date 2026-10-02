@@ -1,0 +1,27 @@
+{
+  "id": "5c35771c-a152-4be7-8c93-e1baefb6baa2",
+  "text": "in the search results: display aim title first, then path afterwards (smaller font)",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "1c27fb5d-0a77-470e-a3f2-d5c8023d4464"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Render order and styling already match the spec.",
+    "date": 1784018173389
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Verified current implementation in AimSearchPicker.vue:\n\nTemplate (result-text):\n- <span class=\"aim-title\">{{ item.data.text }}</span> first\n- Then <span class=\"aim-path\" v-if=\"...\">{{ item.pathContext }}</span> (the parent path built recursively)\n\nCSS:\n.aim-path { color: #8c8c8c; font-size: 0.78rem; line-height: 1.2; }\n\ngetAimPathContext builds 'Parent / Grandparent' (limited length) and attaches as pathContext for search results.\n\nThis exactly fulfills: 'display aim title first, then path afterwards (smaller font)'\n\nNo code change needed; status was lagging the implementation. (Part of July phase open aims cleanup.)\nEvidence: direct code read of the component + CSS; matches aim text 1:1. Related parent 'aim search'."
+}

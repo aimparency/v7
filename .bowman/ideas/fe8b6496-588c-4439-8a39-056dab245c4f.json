@@ -1,0 +1,107 @@
+{
+  "id": "fe8b6496-588c-4439-8a39-056dab245c4f",
+  "text": "Graph maintenance tooling",
+  "description": "Tooling to keep the aim graph healthy as it accumulates cruft over long autonomous-development runs: duplicates, resolved-but-uncollapsed chains, status drift from the actual code, and vague catch-all parents. The reorganization of subtrees (e.g. the 'UI' catch-all, see 18263fc2) should become a byproduct of this tooling rather than a manual slog. Evidence motivating this: 2a9e3aba and f592b156 are byte-identical duplicates; a05ea545/891e2ee0/855e26a1 are three aims for one shipped feature; 8ae9e8da/fe0e0aaf/b3f8518f/4e50493a were all already implemented but still marked open.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "75af098f-9e98-4dae-a56d-9d39f3fc1331",
+      "relativePosition": [
+        -1.4833196767758807,
+        -2.012402230293312
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "338c12e5-d411-42ed-8d39-e26665880dd2",
+      "relativePosition": [
+        0.8725686729340125,
+        -2.3427812341348
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "b0fb3242-8866-435f-9765-a1d89256996f",
+      "relativePosition": [
+        -1.5185512105537546,
+        1.9859512131282897
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "7625d5e6-a29b-4b07-a4fb-94bfff3edba7",
+      "relativePosition": [
+        -1.6353456200377021,
+        -1.8909375195980176
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "d6734796-cb97-4afa-863b-fc4d0a599f8d",
+      "relativePosition": [
+        0.8595000816615289,
+        2.3476072093993547
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "c69ab6f7-aaa5-4e3b-acec-6cdfd08e49a2",
+      "relativePosition": [
+        -1.2663947143646448,
+        2.1555148868493785
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "f82a961e-552a-49f1-b2f5-cf9ce4945991",
+      "relativePosition": [
+        -2.4561247957134964,
+        0.4663164031870793
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "a7f10b45-40af-4963-b0af-f5448da0cedf",
+      "relativePosition": [
+        -1.6633057501632023,
+        1.8663906293897927
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "d9bb168f-014b-466b-935e-b14be16ff39b",
+      "relativePosition": [
+        -1.7947278503021338,
+        -1.7403884461090522
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "8e8d8f7a-375d-46b8-8f03-192527b59106",
+      "relativePosition": [
+        2.491101872485013,
+        0.21074026881842278
+      ],
+      "weight": 1,
+      "explanation": "Uses cancelled and similar aims as durable graph memory to prevent noise."
+    }
+  ],
+  "supportedIdeas": [
+    "c561dd26-86c5-45c2-96a3-4b4f90e448a3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Duplicate detection, merge, hygiene reporting, reparent suggestions, threshold calibration, status reconciliation, and durable cancellation memory are implemented. Awaiting acceptance; taxonomy choices remain a separate human-governed concern.",
+    "date": 1785399347038
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 found the tooling essentially complete and all direct children done or review. Recurring use of the tools is operation, not unfinished implementation."
+}

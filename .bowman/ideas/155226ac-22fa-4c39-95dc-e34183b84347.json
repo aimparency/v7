@@ -1,0 +1,26 @@
+{
+  "id": "155226ac-22fa-4c39-95dc-e34183b84347",
+  "text": "Throughout the app, allow for value and cost input \"k\" unit for 1000. When displaying, if 3 last digits are 0 => replace with \"k\". And if >= 9500 round to thousands and add ~ in front: 9700 => ~10k",
+  "description": "3 zeros has prevalance => 10000 becomes \"10k\" with out the leading ~",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [
+    "5c2f9450-0feb-4755-b59a-081e9ab43037"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Implemented k-unit formatting for value/cost inputs and displays in GraphSidePanel. Users can now input values like '10k' for 10000, and display shows smart formatting (10000→'10k', 9700→'~10k').",
+    "date": 1769003484028
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

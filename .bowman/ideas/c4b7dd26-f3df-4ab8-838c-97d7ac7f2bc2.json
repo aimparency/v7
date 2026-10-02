@@ -1,0 +1,39 @@
+{
+  "id": "c4b7dd26-f3df-4ab8-838c-97d7ac7f2bc2",
+  "text": "Audit repository metadata and public-facing package manifests",
+  "description": "Check root and workspace metadata for open source publishing readiness: name, description, license, repository URLs, private flags where intended, and obviously accidental dependency or manifest noise. The repo surface should look intentional before publishing.",
+  "reflections": [
+    {
+      "date": 1773908500429,
+      "context": "Make the repository metadata coherent and safe for a public local-first OSS release.",
+      "outcome": "Cleaned the root and workspace manifests, added a top-level ISC LICENSE, marked internal workspaces private, and removed misleading root package runtime dependencies.",
+      "effectiveness": "A single audit pass across all manifests was efficient because the problems were repetitive and could be normalized consistently.",
+      "lesson": "For repo-first open source projects, private workspace manifests with clear descriptions and repository links are better than leaving packages looking accidentally publishable.",
+      "pattern": "This matches earlier release-prep work where repository surface clarity matters more than adding new features."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "release",
+    "repo-hygiene",
+    "metadata"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8ad3d334-7b71-4068-98b0-0e860ccf0d31"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Audited root and workspace manifests for repo publishability. Added intentional descriptions, repository metadata, private flags for internal workspaces, removed accidental root runtime dependencies, and added a top-level ISC LICENSE.",
+    "date": 1773908500409
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

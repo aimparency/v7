@@ -1,0 +1,25 @@
+{
+  "id": "57adbd70-2bb7-4642-833c-52c1db2a15ec",
+  "text": "high prio = gold/orange, low prio = dark blue",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "e2dc1422-5f19-4841-9f17-d38296886461"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Priority mode now maps low/non-positive priority to dark blue and the highest priority to gold-orange; implementation is internally verified and awaits Felix's visual acceptance.",
+    "date": 1784794866288
+  },
+  "intrinsicValue": 0,
+  "cost": 0.01,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Fixed the reversed priority palette. Extracted priorityColor as a pure helper: non-positive priorities are dark blue (#0b2545), finite values interpolate toward gold-orange (#f59e0b), and positive infinity is gold-orange. Replaced the old orange→azure mapping in useGraphSimulation. Verification: 8 focused frontend tests pass across priority color and graph forces; frontend vue-tsc passes; git diff --check passes."
+}

@@ -1,0 +1,19 @@
+{
+  "id": "da7e3b8a-0b9f-4e46-a3c5-7cdb653a4880",
+  "text": "when aims are too small (less than say 20 pixel radius), don't display the text",
+  "description": "For the check whether the lable get's shown we have to consider radius, half page size and zoom. Individually per aim!",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "28134f24-5279-465d-bf6a-38795df36b8c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Corrected visual radius calculation in GraphNode.vue to use the computed `visualScale`. Now strictly hides labels if visual radius is < 20px. Also removed static visibility threshold for links in GraphLink.vue per user feedback.",
+    "date": 1769096087260
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

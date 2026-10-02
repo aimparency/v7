@@ -1,0 +1,17 @@
+{
+  "id": "74092436-5beb-40cc-aa24-1de57f74726b",
+  "text": "scrollbar in free floating aims column is ugly in chrome. can ew make scrollbars nice globally?",
+  "description": "",
+  "tags": [],
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Added global custom scrollbar styles in style.css.",
+    "date": 1765401242421
+  },
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "id": "6bfa572e-b451-44e0-b36d-fe4e3ab6f582",
+  "text": "Reuse spatial tree from layout engine for viewport culling",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "728ad891-7511-4897-bfbb-016ddb1c733a",
+      "relativePosition": [
+        0.5148365201147074,
+        2.446414387947426
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "8e63ff9c-f48f-40fe-b7f5-bb94fd0af200"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Created SPATIAL_INTEGRATION.md documenting that WebGL renderer successfully builds Quadtree from layout engine node data for culling. Current architecture is optimal: layout uses Sweep&Prune for collisions, WebGL uses Quadtree for viewport queries. Performance excellent up to 20k nodes.",
+    "date": 1769700501175
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

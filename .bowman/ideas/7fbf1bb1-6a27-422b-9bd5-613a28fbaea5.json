@@ -1,0 +1,24 @@
+{
+  "id": "7fbf1bb1-6a27-422b-9bd5-613a28fbaea5",
+  "text": "when watchdog is in fullscreen, disabling watchdog still hides colum/graph view. fix that",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Fixed logic in App.vue to show content area when Watchdog is hidden, even if watchdogMaximized flag was left true.",
+    "date": 1768334569566
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

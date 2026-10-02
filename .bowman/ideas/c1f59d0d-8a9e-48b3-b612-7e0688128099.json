@@ -1,0 +1,23 @@
+{
+  "id": "c1f59d0d-8a9e-48b3-b612-7e0688128099",
+  "text": "combine trigram & semantic search. score threshold",
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Implemented in AimSearchModal.vue by merging results from FlexSearch and Semantic Search with a boosting strategy.",
+    "date": 1765134198132
+  },
+  "supportingConnections": [
+    {
+      "ideaId": "b5c6fda9-4c32-4b3a-94f0-31d0f2760040",
+      "relativePosition": [
+        2.4432601491985046,
+        -0.5296034774607338
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "b5c6fda9-4c32-4b3a-94f0-31d0f2760040"
+  ]
+}

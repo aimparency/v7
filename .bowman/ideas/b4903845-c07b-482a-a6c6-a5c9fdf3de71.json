@@ -1,0 +1,37 @@
+{
+  "id": "b4903845-c07b-482a-a6c6-a5c9fdf3de71",
+  "text": "Implement Value Flow System",
+  "tags": [
+    "feature",
+    "graph",
+    "value"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "e8dbdd91-2516-4786-9c1b-392ae960d95e",
+      "relativePosition": [
+        -2.3974750072237434,
+        -0.7085997387365522
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "7b789c67-5ad2-4138-94a2-102f05f8de19",
+      "relativePosition": [
+        2.4940778286003726,
+        -0.17197611719087613
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Starting implementation of value flow system",
+    "date": 1765701026902
+  },
+  "intrinsicValue": 0
+}

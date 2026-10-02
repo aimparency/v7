@@ -1,0 +1,37 @@
+{
+  "id": "624f8d49-3a71-4b76-942b-d01be87bbfb9",
+  "text": "make shift j/k for moving aims reliable",
+  "description": "currently, shift j/k will lose selection for a moment. thus, when quickly moving aims, you end up moving others. Analyze where the timing can go wrong. Consider a wider improvement refactoring about the aim movement. Check that phase moving does not suffer the same",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "98f05e67-b165-4aef-83e0-6de71f672b0e",
+      "relativePosition": [
+        -1.0806981955126695,
+        2.2543494427917916
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "01fe0313-b467-40fd-9a3d-ae4a93af38ba"
+  ],
+  "committedIn": [
+    "8533ae0b-2ba7-4eb0-b5ec-f55e7a5a7e3b"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "Aim side: J/K (and H/L, x/p paste) apply an optimistic swap and move the index-based selectedAimIndex, then await the server. The server's push for an earlier move arrives with the older order, and replacePhase keeps the latest local index, so the index lands on another aim and the next J moves that one. Fix: list-store.runStructuralEdit queues all structural edits (aim J/K/H/L, paste, phase Shift+J/K), so each starts from settled state. Phase side: 98f05e67. Needs Felix to hold/tap J quickly in the UI.",
+    "date": 1790717819419
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Verified: new move-serialization.spec.ts simulates a one-mutation-at-a-time server that pushes before resolving, with a third J landing between the first and second push. Without the queue it fails (server order [b,c,a,d], wrong aim moved); with the queue it ends [b,c,d,a] with 'a' still selected. Full frontend suite 247/247; vue-tsc clean. The first mock version passed without the queue because it lacked the push, which is the part that re-bases the index."
+}

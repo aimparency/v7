@@ -1,0 +1,39 @@
+{
+  "id": "f09a7c0a-b880-4448-a433-eef89c1f27bc",
+  "text": "Emit and hydrate supervisor state-machine state across all session runtimes",
+  "description": "Ensure every supported session runtime exposes the current state-engine state (for example EXPLORING, WORKING, WRAPPING_UP, ERROR) on connect and on transition, and ensure the frontend can hydrate that state reliably instead of falling back to generic connection labels.",
+  "reflections": [
+    {
+      "date": 1778795062191,
+      "context": "The UI needed a more reliable way to display the current supervisor state than just generic connection labels.",
+      "outcome": "State machine states are now consistently reported and displayed in the watchdog panel.",
+      "effectiveness": "Standardizing the supervisor-state emission event across all agent session wrappers allowed for a unified hydration pattern in the frontend. This significantly improved UI feedback during state transitions.",
+      "lesson": "Explicit state machine state reporting is essential for complex autonomous systems to remain transparent and debuggable for human operators."
+    }
+  ],
+  "archived": false,
+  "tags": [
+    "watchdog",
+    "autonomy",
+    "runtime",
+    "ui"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d"
+  ],
+  "committedIn": [
+    "33ccb9f5-38de-463b-b7be-7c5615817564"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Implemented supervisor-state emissions across all session wrappers (Claude, Gemini, Codex) and added hydration logic to the frontend store. UI now reflects real state-engine state on connect and transition. (RE-APPLYING DONE STATUS)",
+    "date": 1778795092137
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

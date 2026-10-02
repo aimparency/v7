@@ -1,0 +1,25 @@
+{
+  "id": "eb8a3522-71e4-422d-8503-a736cd587763",
+  "text": "on mobile webgl might need to use device pixel ratio or so. It seems kind of blurry and the TAA jitter is too larger",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "43632e76-c211-4f2f-b563-130022a6771f"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "DPR-aware WebGL/TAA rendering is implemented and internally verified; awaiting visual confirmation on a high-density mobile display.",
+    "date": 1784887290636
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Confirmed TAA already existed; the blur came from sizing the WebGL framebuffer to CSS pixels. Added DPR-aware framebuffer sizing (capped at 3× to bound GPU memory), resized before TAAPass.begin so TAA attachments match the physical canvas in the same frame, and scaled camera pan/zoom into physical pixels for nodes, arrows, culling, and selection spinner. TAA jitter remains ±0.5 physical pixels because shaders now divide it by the physical viewport. Verification: pixel-ratio unit tests 3/3 pass; frontend vue-tsc passes. Needs visual confirmation on an actual high-DPR/mobile display."
+}

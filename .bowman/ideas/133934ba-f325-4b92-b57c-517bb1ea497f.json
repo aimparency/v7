@@ -1,0 +1,84 @@
+{
+  "id": "133934ba-f325-4b92-b57c-517bb1ea497f",
+  "text": "Develop Aligned Autonomous Will",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "vision",
+    "core"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "562935a6-d271-4946-add7-af50ed543baf",
+      "relativePosition": [
+        -1.7583934973779274,
+        2.643777385103603
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "7f1a1d20-790f-4850-8410-2f3ee8348900",
+      "relativePosition": [
+        -5.016279654643242,
+        -6.594337153006266
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "cf86e8af-afe6-4df6-9f75-501b7a0ac673",
+      "relativePosition": [
+        -2.4854876721694255,
+        0.26898147053990545
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "ef72ebb0-4e0b-4536-8096-bf084de3bd28",
+      "relativePosition": [
+        -2.4973424190974307,
+        0.11524253458074007
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "de2686b1-db2b-4524-a969-adc4a3acc1b8",
+      "relativePosition": [
+        0.46961208840745017,
+        3.8666067517452336
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "69321b93-d540-45a9-9a25-8f2d5254d43c",
+      "relativePosition": [
+        -2.4650249792668832,
+        0.4167155523739209
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "5558caa1-cb54-40a9-a383-8b4c77568226",
+      "relativePosition": [
+        -2.4768244220767723,
+        -0.33961858341978896
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026 as a vague and misleading umbrella. Aimparency preserves and helps execute human/organizational intent; it should not develop a separate autonomous will. Concrete reflection, memory, loop, and spin-off work remains preserved under practical parents. Future proposals will see this cancellation through contextual aim creation.",
+    "date": 1784887373212,
+    "reviewedAt": 1784887372689
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

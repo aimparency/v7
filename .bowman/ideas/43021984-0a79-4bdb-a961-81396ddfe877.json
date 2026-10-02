@@ -1,0 +1,47 @@
+{
+  "id": "43021984-0a79-4bdb-a961-81396ddfe877",
+  "text": "Invite Wilde Möhre to connect its hard-won organizational knowledge with the human–AI cooperation experiment",
+  "description": "Felix will soon be on site and can speak personally with someone whose work and judgment he values. Appreciate the knowledge, improvisation, community, and coordination embodied in Wilde Möhre; do not approach the organization as a marketing target. Explain that Aimparency is exploring how AI can first help with concrete work and later become more autonomous without losing the aims and authority of participating people. Ask whether—and in what form—they would find a connection useful. Because the final Wilde Möhre Original is scheduled for 21–24 August 2026, do not introduce broad operational change beforehand. A possible post-event collaboration is a paid diagnostic that preserves hard-won operating knowledge, maps decisions and dependencies, and identifies what should survive or become reusable. Any pre-event work must be owner-requested, tiny, reversible, and unrelated to safety, access, payments, people, or compliance.",
+  "reflection": "Channel decision on 29 July 2026: Felix declined written outreach because he will soon be on site. The aim remains relevant, but the next evidence is an in-person proposal rather than a sent message. Do not count presence on site as validation; record the actual response and any permission to inspect a workflow.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "relationship",
+    "paid-collaboration",
+    "ai-transformation",
+    "wilde-moehre",
+    "human-action"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "bc43297c-ca7c-4861-9111-d79ba6f95851",
+      "relativePosition": [
+        0.8147632826977818,
+        2.3635060383183992
+      ],
+      "weight": 1,
+      "explanation": "Turns the warm introduction into a concrete, measurable festival workflow discovery."
+    }
+  ],
+  "supportedIdeas": [
+    "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
+    "9548e95a-a911-41a5-b404-0cc289633acd",
+    "032b8a47-d3d2-4974-bdcd-559a377164ef",
+    "fdd2059a-2d3b-49b4-994b-023799c90397"
+  ],
+  "committedIn": [
+    "e4c477a4-009b-4354-a2ad-2b4616ca3377",
+    "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix will not send the prepared message; he expects to be on site soon and can propose the operator conversation personally. Await the on-site conversation and record the operator, workflow pain, permission, and next step.",
+    "date": 1784740519611
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

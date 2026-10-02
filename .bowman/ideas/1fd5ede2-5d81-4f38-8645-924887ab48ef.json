@@ -1,0 +1,40 @@
+{
+  "id": "1fd5ede2-5d81-4f38-8645-924887ab48ef",
+  "text": "Establish agent identity with ERC-8004 registration",
+  "description": "Register Bowman agent with unique ERC-8004 identity linked to operator wallet. This creates verifiable onchain identity enabling trust-based ecosystems, reputation systems, and agent-to-agent collaboration. Includes: agent identity creation, operator wallet association, ERC-8004 registration transaction on appropriate chain.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "identity",
+    "ERC-8004",
+    "onchain",
+    "trust"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "ca0cd74f-fe9c-44d1-9fa9-85fca97439de",
+      "relativePosition": [
+        -1.8507420000243018,
+        1.6807004638977308
+      ],
+      "weight": 1,
+      "explanation": "The concrete integration attempt belongs beneath the broader ERC-8004 identity direction; both remain cancelled context pending external demand."
+    }
+  ],
+  "supportedIdeas": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026: speculative on-chain registration inherited from the unvalidated ERC-8004 hackathon branch. Wallet identity and registration add operational/security burden without a current user or partner need. Retained as cancelled context so it is not recreated casually.",
+    "date": 1784886078459,
+    "reviewedAt": 1784886078351
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

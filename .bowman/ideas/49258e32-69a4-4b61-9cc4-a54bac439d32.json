@@ -1,0 +1,28 @@
+{
+  "id": "49258e32-69a4-4b61-9cc4-a54bac439d32",
+  "text": "improved formatting for MCP output",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "88b84303-cb64-4c05-a62d-56dc03d7e532",
+      "relativePosition": [
+        2.1422395203021254,
+        -1.288724112312531
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Enhanced MCP output formatting by stripping visual data (relativePosition) and removing empty arrays (connections, tags, phases) to optimize token usage. Applied to both Tools and Resources.",
+    "date": 1768083978925
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

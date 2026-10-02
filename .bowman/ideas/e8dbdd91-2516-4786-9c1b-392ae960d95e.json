@@ -1,0 +1,28 @@
+{
+  "id": "e8dbdd91-2516-4786-9c1b-392ae960d95e",
+  "text": "Add loopWeight to Data Model",
+  "tags": [
+    "backend",
+    "schema"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "b439cf5f-d9b8-4406-a73b-65236c321c91",
+      "relativePosition": [
+        -1.7849049750191255,
+        -2.2565332822043116
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "b4903845-c07b-482a-a6c6-a5c9fdf3de71"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "",
+    "date": 1765700157413
+  },
+  "intrinsicValue": 0
+}

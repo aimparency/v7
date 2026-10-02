@@ -1,0 +1,29 @@
+{
+  "id": "4c027fd6-90f1-4158-93e5-64572098b4a8",
+  "text": "Monitor ZIM reopening and preserve the R&D draft",
+  "description": "ZIM is technically plausible for a German Aimparency company, but ordinary applications and sketches have been temporarily stopped since 7 July 2026 because of constrained budget; only specified international-partner calls are exempt. Preserve meta/zim-projektskizze-draft.md, recheck the official stop notice monthly, and do not spend founder time attempting submission until reopening. If it reopens, revalidate legal entity, German establishment, R&D novelty, project start, eligible personnel costs, own financing, and the then-current funding rate before adapting the draft.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "grant",
+    "zim"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8d174cd3-7259-409f-8dd1-2e901bf3dbd7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "The technical draft is preserved, but ordinary ZIM applications remain institutionally paused. Resume only after an official reopening and human confirmation of company eligibility and financing.",
+    "date": 1785399290682
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 recognized that the remainder is an external institutional-state change plus legal/company validation, not active autonomous implementation."
+}

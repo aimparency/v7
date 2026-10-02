@@ -1,0 +1,25 @@
+{
+  "id": "756cf129-0c66-43dd-84cf-58e94450e325",
+  "text": "Code refactoring: Split App.vue (841 lines)",
+  "description": "Extract view components from App.vue:\n- ColumnView.vue\n- GraphViewWrapper.vue  \n- VoiceView.vue\n- Keep App.vue as router + layout only\n\nCleaner separation of concerns, easier to test views independently",
+  "tags": [
+    "refactoring",
+    "technical-debt",
+    "code-quality"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "6ad092fc-a69e-475d-8870-30f994a7f6a5"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "App.vue refactoring complete: 841→590 lines (-30%). Extracted ColumnsView, GraphViewWrapper, ProjectSelectionView components. All tests pass.",
+    "date": 1772063945845
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

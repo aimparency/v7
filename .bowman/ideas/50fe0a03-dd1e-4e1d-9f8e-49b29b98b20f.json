@@ -1,0 +1,20 @@
+{
+  "id": "50fe0a03-dd1e-4e1d-9f8e-49b29b98b20f",
+  "text": "Deep Refactor Data Model: incoming -> supportingConnections",
+  "tags": [
+    "refactor",
+    "backend",
+    "shared"
+  ],
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Completed deep refactoring of data model from 'incoming' to 'supportingConnections'. Updated shared types, backend server, and frontend store. Migration script provided.",
+    "date": 1765571835149
+  },
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "b439cf5f-d9b8-4406-a73b-65236c321c91"
+  ]
+}

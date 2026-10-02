@@ -1,0 +1,35 @@
+{
+  "id": "827cb5c7-f4eb-42d1-89dd-2a5361721318",
+  "text": "revise aim archiving",
+  "description": "",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "891c4776-a7ab-4367-a8ac-a31eb20c4210",
+      "relativePosition": [
+        -1.1140825110499495,
+        -1.6569234196706684
+      ],
+      "weight": 1,
+      "explanation": ""
+    }
+  ],
+  "supportedIdeas": [
+    "6ad092fc-a69e-475d-8870-30f994a7f6a5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Cancelled after relevance review on 24 July 2026: the aim contains no concrete revision requirement. Archiving is implemented, archived-source merge preservation has its own reviewed aim, and future defects should be recorded as specific reproducible aims.",
+    "date": 1784887372695,
+    "reviewedAt": 1784887372689
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

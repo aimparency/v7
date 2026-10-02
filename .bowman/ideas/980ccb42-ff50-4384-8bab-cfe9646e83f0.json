@@ -1,0 +1,21 @@
+{
+  "id": "980ccb42-ff50-4384-8bab-cfe9646e83f0",
+  "text": "when browser is zoomed in, watchdog response does not get parsed (at least for claude sessions).",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Confirmed with reproducible automated regression. Added/ran zoom-wrapped-output path tests: (1) busy indicator detection scans recent lines (not only last line), (2) timeout in waitingForResponseStart does not advance without response candidate, and (3) end-to-end tick path executes wrapped newline-in-string JSON after marker into worker prompt. Verified with node --test --import tsx packages/wrapped-agents/codex-session/src/watchdog.test.ts and TypeScript noEmit check for watchdog.ts + watchdog.test.ts.",
+    "date": 1771796842767
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

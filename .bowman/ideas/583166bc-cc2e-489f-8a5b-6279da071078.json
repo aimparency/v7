@@ -1,0 +1,21 @@
+{
+  "id": "583166bc-cc2e-489f-8a5b-6279da071078",
+  "text": "Calendar and availability management",
+  "tags": [
+    "calendar",
+    "availability"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d6f545d2-df08-463c-a884-38ae6e3b11df"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Part of cancelled Share-Ring project",
+    "date": 1771523644464
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

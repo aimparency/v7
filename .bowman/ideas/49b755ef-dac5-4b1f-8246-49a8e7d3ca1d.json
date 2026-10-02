@@ -1,0 +1,25 @@
+{
+  "id": "49b755ef-dac5-4b1f-8246-49a8e7d3ca1d",
+  "text": "Phase column: don't scroll when the selected phase is deleted",
+  "description": "From Felix's note \"after deleting a phase, the parent column scrolling behaved weirdly\". A deletion reaches clients as pushes: the owner stops listing the phase (held as in-transit), then it is removed. At that point the selection falls back to the first entry until the delete action reselects the neighbour. Column.vue treated the fallback as navigation and smooth-scrolled toward the top, then back. Also, settledSelection was null until the watch first fired, so a freshly mounted column judged its first change without a baseline. Fix: seed it on mount, and treat \"previous entry vanished\" as not navigation.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "98f05e67-b165-4aef-83e0-6de71f672b0e"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implemented; new Column.spec.ts (component test, jsdom) fails without the fix and passes with it; 249/249 frontend tests, vue-tsc clean. Not reproduced live because that would mean deleting a phase in Felix's real graph. Felix: delete a phase and watch its column.",
+    "date": 1790750048391
+  },
+  "intrinsicValue": 1,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

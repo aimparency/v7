@@ -1,0 +1,31 @@
+{
+  "id": "0e646aa6-4ff7-48b8-a5d2-178cfb96c6a1",
+  "text": "Design multi-agent coordination with specialized roles",
+  "description": "BONUS FEATURE: Create agent swarm architecture with specialized roles - planner agent (decomposes aims), developer agent (writes code), QA agent (tests/verifies), deployment agent (ships). Agents coordinate through shared .bowman state, passing work via aims, with trust-based handoffs. Demonstrates coordination at scale.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "multi-agent",
+    "coordination",
+    "swarm",
+    "bonus",
+    "specialization"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "2b76f62f-3f7b-42f0-ab2e-b571dabf2ca5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Cancelled 24 July 2026 as hackathon-oriented architecture noise. Fixed planner/developer/QA/deployment roles and a separate swarm layer are not needed: agents coordinate through ordinary aims, contribution edges, statuses, reflections, and human-dependent boundaries. Reconsider only if a real workflow exposes a concrete coordination failure that the graph cannot express.",
+    "date": 1784893677741
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Relevance review found this was framed as a BONUS FEATURE that “demonstrates coordination at scale,” not a validated user need. Preserving the intention here prevents a future agent from recreating a role taxonomy without evidence."
+}

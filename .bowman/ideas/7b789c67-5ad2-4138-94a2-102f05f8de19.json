@@ -1,0 +1,19 @@
+{
+  "id": "7b789c67-5ad2-4138-94a2-102f05f8de19",
+  "text": "new aim",
+  "description": "",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "b4903845-c07b-482a-a6c6-a5c9fdf3de71"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "",
+    "date": 1766050997233
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0
+}

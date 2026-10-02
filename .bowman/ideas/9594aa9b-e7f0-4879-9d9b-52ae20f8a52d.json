@@ -1,0 +1,112 @@
+{
+  "id": "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d",
+  "text": "Persist autonomy state in .bowman instead of the browser session",
+  "description": "Move long-running autonomy state toward durable local storage in .bowman: identity, constitution/policy, runtime objectives, heartbeat/scheduler state, and recovery metadata. The frontend should observe and control that state, not own it.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "autonomy",
+    "persistence",
+    "local-first"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "038522a0-3f35-4f06-82ef-2dd0b2d3736e",
+      "relativePosition": [
+        1.873544419068394,
+        -1.6552435801952754
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "0fee8918-1087-4e7f-bb0e-ba506be3a8c6",
+      "relativePosition": [
+        2.1791463314954047,
+        -1.2252841572182835
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "67c40d89-123f-4c3b-a8aa-0b703d274b14",
+      "relativePosition": [
+        0.6942429382227877,
+        2.4016716558946585
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "dadcd0a7-511b-4152-b971-2c11ea17bc40",
+      "relativePosition": [
+        0.4371263510593643,
+        -2.4614874676117133
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "300f5452-f7e9-452d-9f3e-078c988e8af8",
+      "relativePosition": [
+        2.1568857053350805,
+        -1.264058564355779
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "b69e9372-2207-4624-8a18-9a814f3938b2",
+      "relativePosition": [
+        -1.4399903484016279,
+        2.043631032380884
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "fa735173-548c-4830-84a4-de7738024cf7",
+      "relativePosition": [
+        2.135601744975615,
+        -1.2996942666862499
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "f09a7c0a-b880-4448-a433-eef89c1f27bc",
+      "relativePosition": [
+        1.1710501773535782,
+        -2.2087646959601996
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "ccf7385c-14b3-4e4a-8e94-c18da4b90d41",
+      "relativePosition": [
+        0.8397651291987479,
+        2.3547387387525203
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "42c92b27-ed17-4319-9f1a-f2f57af54651",
+      "relativePosition": [
+        -0.39034803633044285,
+        -2.46933764611747
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [
+    "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "All implementation children are done. Felix must decide which runtime identity/policy/state files remain machine-local and gitignored versus durable committed project state.",
+    "date": 1785399273062
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Status reconciliation on 2026-07-30 found nine implementation children done and the sole remaining child human-dependent. Runtime persistence, backend ownership, UI ownership, supervisor hydration, and policy behavior are implemented; only the commit-versus-local policy decision remains."
+}

@@ -1,0 +1,28 @@
+{
+  "id": "9d446f62-f092-4a4b-a33c-4d5ca01f5a13",
+  "text": "Choose company timing and location without losing individual grant eligibility",
+  "description": "HUMAN DECISION REQUIRED. Do not incorporate merely because older grant notes said every route requires a company. Prototype Fund is an individual route and companies cannot receive that grant; EXIST also normally supports a pre-incorporation university-linked team. Company programs differ by registered location: Pro FIT requires a young Berlin company, while BayTOU requires a Bavarian formation/young company. Before signing: confirm Prototype Fund and possible EXIST compatibility, decide Berlin versus Bavaria from the actual operating plan rather than one grant, confirm Robin's role and ownership, and obtain German legal/tax advice. Then use meta/applications/incorporation-quickstart.md as a checklist, updating its older Berlin assumptions first.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "funding",
+    "legal",
+    "human-dependent"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8d174cd3-7259-409f-8dd1-2e901bf3dbd7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix must decide timing, Berlin versus Bavaria, ownership/Robin's role, and obtain legal/tax advice after checking individual-grant compatibility.",
+    "date": 1782854152141
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

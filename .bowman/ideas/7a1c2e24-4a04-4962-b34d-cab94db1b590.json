@@ -1,0 +1,24 @@
+{
+  "id": "7a1c2e24-4a04-4962-b34d-cab94db1b590",
+  "text": "Fix parent phase selection with reusable phase search modal.",
+  "description": "When changing the parent phase of an aim, the list of available phases is mostly empty or just one entry. Fix that. And while we're at it, let's implement a phase search modal analogous to the aim search modal that can be used at dfferent places such as the parent phase selection within phase edit modal",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Refactored PhaseCreationModal to use new PhaseSearchModal. Implemented focus restoration and unified styles. Refactored AimSearchModal to use events.",
+    "date": 1767787001715
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

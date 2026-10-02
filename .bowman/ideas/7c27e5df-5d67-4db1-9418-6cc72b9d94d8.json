@@ -1,0 +1,22 @@
+{
+  "id": "7c27e5df-5d67-4db1-9418-6cc72b9d94d8",
+  "text": "Research and prototype text rendering solution for WebGL",
+  "tags": [
+    "research",
+    "text-rendering",
+    "webgl"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d7f7b02f-e650-4cb5-aeaa-e7ef36279b67"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Created comprehensive TEXT_RENDERING_RESEARCH.md with MSDF vs SDF comparison, implementation plan with shaders, recommended tools (msdf-bmfont-web), performance targets, and complete resource list. MSDF with pre-generated atlas is the recommended approach.",
+    "date": 1769700297015
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1
+}

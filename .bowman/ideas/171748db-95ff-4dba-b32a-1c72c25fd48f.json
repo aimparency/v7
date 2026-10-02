@@ -1,0 +1,31 @@
+{
+  "id": "171748db-95ff-4dba-b32a-1c72c25fd48f",
+  "text": "List view: load all phases up front so columns never show unloaded children as empty",
+  "description": "Bug: after reload, column N+1 only shows children of the selected parent; siblings' children render as empty placeholders until navigating in column N. Cause: buildColumnEntries cannot distinguish 'children not loaded' from 'no children', and ensureColumnNeighborhoodLoaded's termination checks count those fake placeholders as content. Fix (step 1 of list-view loading cleanup): load all phases in one phase.list call (34 phases / 140KB), keep synced via onUpdate subscription, drop per-parent lazy/neighborhood loading, and memoize column entries. Step 2 (selection-state consolidation into an id path + single resolveSelectionPath) is a follow-up.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "frontend",
+    "phase-navigation",
+    "bug"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implemented in c915155. Awaiting Felix's confirmation that reload in column N+1 now shows all phases.",
+    "date": 1790322115592
+  },
+  "intrinsicValue": 3,
+  "valueRationale": "User-reported list view bug; phases silently missing after reload undermines trust in the main navigation surface.",
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Commit c915155. loadProject loads all phases via one phase.list call (falls back to lazy loading on error); ensureColumnNeighborhoodLoaded now loads every parent group of a column in parallel instead of the height-driven loop that counted fake placeholders as content; column entries built once in a cached phaseColumns getter; Column.vue selectable-index lookup is O(1); removed dead ensureColumnsLoaded/ensureVisibleColumnSelections/height estimators. Verification: new regression test (10-child first parent group, cursor on last child) fails on HEAD~1 with a placeholder for root-b, passes now; frontend 234/234 tests, vue-tsc clean. Live app on :4000 with v7 project: 34/34 phases loaded, columns 4/8/13/9 phases, 0 placeholders under parents that actually have children. Follow-up not done: selection-state consolidation (index+id+lastSelected triple, duplicated repairSelectionRight/realignVisibleColumnsFrom/restore loops)."
+}

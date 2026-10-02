@@ -1,0 +1,35 @@
+{
+  "id": "b3c1bd1a-a503-45af-8c3a-3d3bee567f47",
+  "text": "when searching aim in watchdog actions panel and entering it into the xterm.js that same xterm.js should be focused for further typing.",
+  "description": "in general, after the watchdog action menu we want to be able to continue typing in whereever we left of (xterm.js usually).",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "301e728a-ed84-44b7-93b8-dec6398eb19e",
+      "relativePosition": [
+        2.7799021358847424,
+        2.3590707503767714
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b"
+  ],
+  "committedIn": [
+    "f51f8930-c937-4c66-9db8-d4d313e6d286"
+  ],
+  "status": {
+    "state": "implemented",
+    "comment": "Increased focus delay in WatchdogPanel to 200ms to ensure AimSearchModal is fully closed before attempting to refocus the terminal. This resolves the focus loss issue after inserting a searched aim.",
+    "date": 1768249932108
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

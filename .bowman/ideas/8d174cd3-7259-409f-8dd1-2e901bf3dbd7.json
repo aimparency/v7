@@ -1,0 +1,84 @@
+{
+  "id": "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
+  "text": "Secure non-dilutive funding for Aimparency without delaying real revenue",
+  "description": "Pursue funding routes that are officially open, structurally eligible, and proportionate to Aimparency's maturity. Current order as of 22 July 2026: (1) Prototype Fund individual open-infrastructure application for October, (2) paid Wilde Möhre/Herzog Records diagnostics in parallel as the fastest economic feedback, (3) monitor NLnet's general call reopening after summer, (4) run one EXIST eligibility check with a university network if founder qualifications fit, (5) pursue either Pro FIT Berlin or BayTOU only after deciding the company seat, and (6) monitor ZIM rather than submitting while its 7 July application stop remains. Source-verified analysis: meta/funding-landscape-2026-07-22.md. Grants complement real customers; they do not prove economic stability.",
+  "reflection": "Status reconciliation on 2026-07-30 found all five direct funding children human-dependent. The umbrella now reflects that gate.",
+  "reflections": [],
+  "archived": false,
+  "color": null,
+  "tags": [
+    "funding",
+    "grant",
+    "germany",
+    "eu"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "9d446f62-f092-4a4b-a33c-4d5ca01f5a13",
+      "relativePosition": [
+        0.15671684958514895,
+        -2.4950831306904595
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "4c027fd6-90f1-4158-93e5-64572098b4a8",
+      "relativePosition": [
+        -1.8867336692946257,
+        -1.6401939096186275
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "030805d1-90e2-4e90-b2a4-0ae97df3e27d",
+      "relativePosition": [
+        -2.4863890234146004,
+        0.2605179921682749
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "26b7516b-6e54-4a1e-a27a-69cafa14baa5",
+      "relativePosition": [
+        -0.803431991840601,
+        2.3673818945170306
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "21202fb8-b4c3-4636-9de3-5084bb2ad6ab",
+      "relativePosition": [
+        2.498222582676673,
+        0.09425458824001247
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "16c7ebd4-7f1f-482a-b4c6-74f8fab21644",
+      "relativePosition": [
+        1.9857510167245243,
+        1.5188129903241931
+      ],
+      "weight": 0.5,
+      "explanation": "Historical grant attempt belongs under the non-dilutive-funding strategy; its completed negative result is useful evidence but not a current primary path."
+    }
+  ],
+  "supportedIdeas": [
+    "3253bc9e-14fe-4c9b-9849-588620518517",
+    "cabe6e06-8988-4145-b884-9ef5bc68f660"
+  ],
+  "committedIn": [
+    "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Research and drafts are complete. Every remaining funding path requires founder eligibility/legal decisions, incorporation or credentials, outreach, and institutional submission.",
+    "date": 1785399345683
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

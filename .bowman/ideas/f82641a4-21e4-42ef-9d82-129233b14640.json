@@ -1,0 +1,15 @@
+{
+  "id": "f82641a4-21e4-42ef-9d82-129233b14640",
+  "text": "save learning in state comment (through mcp)",
+  "incoming": [],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Functionality exists via 'update-aim' tool. A comment can be provided when changing status to 'done' or 'failed'.",
+    "date": 1764322145855
+  },
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "71ad0cd7-ac9d-4df7-abb9-101ead31f118"
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "id": "a82b1530-fbcf-424f-b323-3bfea4f76048",
+  "text": "Render external aims (read-only, repo-tinted)",
+  "description": "Render aims that live in a linked repo: tinted by their source repo's meta color, marked read-only by default, integrated with partial rendering (dotted stub until loaded). Navigating/expanding an external aim loads it (and its relatives as dotted stubs) from the linked repo. Cross-repo edges drawn across the boundary using the same flow-sized arrow visualization.",
+  "reflections": [],
+  "archived": false,
+  "tags": [
+    "cross-repo",
+    "graph",
+    "ui"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "71627e32-84ec-4969-b552-679cc04ca254",
+      "relativePosition": [
+        2.093056161932723,
+        -1.367156137021466
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "bd1cefe0-6895-4247-b6fd-319972c8bd6e",
+      "relativePosition": [
+        -2.35516234705812,
+        -0.8385763644413591
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "5a45cb28-dd71-47c7-8ba3-78b543b2647b",
+      "relativePosition": [
+        -2.4621571522369528,
+        -0.43333838704691174
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "700e5b01-1ca7-4ef8-a828-a05163f07bbf",
+      "relativePosition": [
+        -2.0331105200161472,
+        1.454806383475022
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "e81b11c3-8eca-4f7d-8ca3-578179d24225"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Cancelled 2026-09-20: a linked repo renders as ONE opaque node, tinted by the target's meta color — its internal aims are never drawn. That opacity IS the modular border. Superseded by 8c09ea74 (black-box repo nodes).",
+    "date": 1789935645229
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "Cancelled, not parked: rendering individual external aims contradicts the black-box rule Felix reaffirmed, so there is no revival path."
+}

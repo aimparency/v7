@@ -1,0 +1,183 @@
+{
+  "id": "47cccbd6-8fe1-4fae-8530-1f66c489a05a",
+  "text": "Phase system refactor: phases don't have start and end times. and then they just line up. User advances the 'cursor' on each level.",
+  "description": "Refactor phases from time-based scheduling to an explicitly ordered hierarchy with per-level cursor navigation. Each depth is conceptually one virtual list formed by concatenating the children of all phases in the parent level, not only the selected parent, with non-selectable separators marking boundaries between parent-owned child ranges. Canonical persistence should use `meta.rootPhaseIds` for root ordering and `phase.childPhaseIds` for child ordering, while each phase keeps `parent: string | null` as a backlink. The active phase exists only in the focused level; other levels keep remembered selected positions. Navigating with j/k updates the active level, can move across parent boundaries within the same level, recursively updates parent selections up to root when crossing into items owned by different parents, and auto-scrolls related levels to keep the selected-path item near center. Child selection should remember per-parent child index when possible and fall back to a valid in-bounds index if the child set changes while away. Empty child ranges still expose a selectable placeholder item so o/O can create the first subphase; in that empty case o and O behave the same because they both create the first child. Windowing should be implemented with virtual scrolling and enough overflow before/after the viewport to cover at least 50% of page height. Migration from the old date-based phase model must be lazy and compatibility-preserving: legacy phases remain readable, initial order is derived from prior temporal ordering when needed, and persisted data is upgraded incrementally as phases or project metadata are touched rather than through a mandatory one-shot migration.",
+  "reflection": "Umbrella status reconciliation confirms the ordered, cursor-based phase refactor is implementation-complete: all nine child aims are done or review. Canonical root/child arrays and lazy legacy migration are implemented; temporal UI is removed; insertion-order creation/editing, cursor persistence/active path, concatenated multi-parent columns, separators/placeholders/windowing, cross-parent navigation, parent-edit refresh, and ancestry-aware search are present. Fresh verification on 2026-07-29: backend suite 68/68 and focused frontend phase/navigation/search/creation suites 18/18 passed. The lazy-migration and ancestry-search children remain in review only because repository policy requires user acceptance, not because implementation work remains.",
+  "reflections": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "5508ce83-89b2-42c9-90f9-9a6c15f04f54",
+      "relativePosition": [
+        2.030711433435536,
+        0.9783175263619054
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "bb3d85e5-3667-48d4-8d91-9bf73008bb49",
+      "relativePosition": [
+        2.0878580143206,
+        1.3750814201483634
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "7a870c2e-c91f-453b-86e1-130e17a3cfbd",
+      "relativePosition": [
+        -2.3943740216534577,
+        -0.7190083757725274
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "687a7c08-d9ce-426a-a30d-51d03d1c8fdd",
+      "relativePosition": [
+        -0.9149018290927152,
+        2.3265757333735784
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "fe0e0aaf-1507-4b9f-8699-0d29e213c8e9",
+      "relativePosition": [
+        0.9196106878849792,
+        -2.3247185168806386
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "648a2ea8-9692-4945-9232-4451e4df3ff0",
+      "relativePosition": [
+        2.2482455742891987,
+        1.0933397631518895
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "dba842e7-aee0-45c8-8efb-b60e2a4d837e",
+      "relativePosition": [
+        0.9453362916361043,
+        2.3143766538132247
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "54a82679-d41c-4878-99b6-4135d3ee834e",
+      "relativePosition": [
+        1.2721410236518151,
+        -2.152128531464167
+      ],
+      "weight": 1,
+      "explanation": "graph maintenance: reparented floating aim by semantic similarity"
+    },
+    {
+      "ideaId": "607f6b45-2a65-4702-8b47-d83e967ed4c8",
+      "relativePosition": [
+        -2.2314957302429224,
+        1.1271321155515026
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "b3f8518f-9c37-4392-bd64-81a55c6da74c",
+      "relativePosition": [
+        2.2573357304713833,
+        -1.074446555179562
+      ],
+      "weight": 1,
+      "explanation": "Phase reordering across parent boundaries is part of the ordered hierarchical phase navigation refactor."
+    },
+    {
+      "ideaId": "4e50493a-94ca-4bb7-aefb-c78ed3107f62",
+      "relativePosition": [
+        -2.0368246925751556,
+        -1.449601728653813
+      ],
+      "weight": 1,
+      "explanation": "Aim movement across parent-owned phase ranges depends on the ordered hierarchical phase model."
+    },
+    {
+      "ideaId": "e33ca34b-b3d4-4b98-bcad-0c0aaf8db644",
+      "relativePosition": [
+        -0.4484356090668713,
+        -2.4594522773416085
+      ],
+      "weight": 1,
+      "explanation": "Empty-phase traversal implements navigation across the ordered phase sequence."
+    },
+    {
+      "ideaId": "e266c632-dc74-4c44-8cf6-c184378cdc68",
+      "relativePosition": [
+        -1.0411266226534301,
+        2.2728958083471977
+      ],
+      "weight": 1,
+      "explanation": "Moving focus into the next phase implements traversal across the ordered phase sequence."
+    },
+    {
+      "ideaId": "1ec81038-54e4-406e-8851-d47c8a4799f1",
+      "relativePosition": [
+        -2.167334376890542,
+        -1.2460584652208275
+      ],
+      "weight": 1,
+      "explanation": "Moving aims across phases implements cross-boundary behavior in the ordered phase hierarchy."
+    },
+    {
+      "ideaId": "7a1c2e24-4a04-4962-b34d-cab94db1b590",
+      "relativePosition": [
+        2.49999362257371,
+        -0.005646865571339337
+      ],
+      "weight": 1,
+      "explanation": "Reusable parent-phase selection supports editing the hierarchical phase structure."
+    },
+    {
+      "ideaId": "75d48504-226a-4316-a395-e3f0a1aa87d4",
+      "relativePosition": [
+        -2.45840135669612,
+        -0.45416161153787116
+      ],
+      "weight": 1,
+      "explanation": "Fuzzy phase lookup supports selecting nodes in the hierarchical phase structure."
+    },
+    {
+      "ideaId": "171748db-95ff-4dba-b32a-1c72c25fd48f",
+      "relativePosition": [
+        0.8953144199630414,
+        2.3341833881266147
+      ],
+      "weight": 1,
+      "explanation": "Fixes a loading correctness bug in the concatenated child-phase columns introduced by the phase-system refactor."
+    },
+    {
+      "ideaId": "10b68653-57be-4cdd-a41b-1a4bf405a6da",
+      "relativePosition": [
+        2.1775458402883876,
+        1.228126261197415
+      ],
+      "weight": 1,
+      "explanation": "Simplifies the phase-column navigation model built by the phase-system refactor."
+    }
+  ],
+  "supportedIdeas": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [
+    "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
+  ],
+  "status": {
+    "state": "review",
+    "comment": "All phase-refactor implementation children are done or review and fresh integrated tests pass; awaiting user acceptance.",
+    "date": 1785325322604
+  },
+  "intrinsicValue": 10,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
