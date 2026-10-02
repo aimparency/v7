@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { calculateAimValues, calculateProfitabilityIndex, discountValue } from './value-calculation.js';
-import type { Aim } from './types.js';
+import type { Idea } from './types.js';
 
-function createMockAim(id: string, intrinsicValue: number, cost: number, duration?: number): Aim {
+function createMockAim(id: string, intrinsicValue: number, cost: number, duration?: number): Idea {
   return {
     id,
-    text: `Aim ${id}`,
+    text: `Idea ${id}`,
     intrinsicValue,
     cost,
     duration: duration ?? 1, // Zero means an immediate return
@@ -25,10 +25,10 @@ function createMockAim(id: string, intrinsicValue: number, cost: number, duratio
 
 test('calculateAimValues computes priority with temporal discounting', () => {
   // Test with explicit durations to show time-based discounting
-  const aimA = createMockAim('A', 10, 5, 30);  // 30 days to complete
-  const aimB = createMockAim('B', 500, 200, 365); // 1 year to complete
+  const ideaA = createMockAim('A', 10, 5, 30);  // 30 days to complete
+  const ideaB = createMockAim('B', 500, 200, 365); // 1 year to complete
 
-  const result = calculateAimValues([aimA, aimB]);
+  const result = calculateAimValues([ideaA, ideaB]);
 
   // Total Intrinsic = 510
   // Value A = 10 (normalized)
@@ -50,7 +50,7 @@ test('calculateAimValues computes priority with temporal discounting', () => {
   const priorityA = result.priorities?.get('A');
   const priorityB = result.priorities?.get('B');
 
-  // With duration-based discounting, shorter-duration aims are prioritized
+  // With duration-based discounting, shorter-duration ideas are prioritized
   // Both should be positive (net present value > cost)
   assert.ok(priorityA! > 1.9 && priorityA! < 2.1, `Priority A should be ~1.98, got ${priorityA}`);
   assert.ok(priorityB! > 2.1 && priorityB! < 2.4, `Priority B should be ~2.27, got ${priorityB}`);
@@ -63,18 +63,18 @@ test('calculateAimValues distributes costs weighted by value share', () => {
   // Scenario: Roots A and B both support C.
   // C has high cost. A and B should split that cost.
   
-  const aimA = createMockAim('A', 10, 1);
-  const aimB = createMockAim('B', 10, 1);
-  const aimC = createMockAim('C', 0, 100);
+  const ideaA = createMockAim('A', 10, 1);
+  const ideaB = createMockAim('B', 10, 1);
+  const ideaC = createMockAim('C', 0, 100);
 
   // A -> C
-  aimA.supportingConnections = [{ aimId: 'C', weight: 1, relativePosition: [0,0] }];
-  aimC.supportedAims = ['A', 'B']; // Just for consistency, calculation uses parent's connections
+  ideaA.supportingConnections = [{ ideaId: 'C', weight: 1, relativePosition: [0,0] }];
+  ideaC.supportedAims = ['A', 'B']; // Just for consistency, calculation uses parent's connections
 
   // B -> C
-  aimB.supportingConnections = [{ aimId: 'C', weight: 1, relativePosition: [0,0] }];
+  ideaB.supportingConnections = [{ ideaId: 'C', weight: 1, relativePosition: [0,0] }];
 
-  const result = calculateAimValues([aimA, aimB, aimC]);
+  const result = calculateAimValues([ideaA, ideaB, ideaC]);
 
   // Total Intrinsic Value = 20.
   // A Value = 10/20 = 0.5
@@ -89,8 +89,8 @@ test('calculateAimValues distributes costs weighted by value share', () => {
   // Flow A->C = 0.5 * 0.5 = 0.25?
   
   // Let's force loopWeight=0 for A and B to send ALL value to C
-  aimA.loopWeight = 0;
-  aimB.loopWeight = 0;
+  ideaA.loopWeight = 0;
+  ideaB.loopWeight = 0;
   
   // Now:
   // A (Weight 1 to C). Total 1. Flow A->C = 100% of A's value.
@@ -129,12 +129,12 @@ test('repo-link edge exports flow into a leaf sink, leaving totalIntrinsic uncha
   // full intrinsic. R carries no intrinsic, so totalIntrinsic stays = the local
   // intrinsics (200) — the repo node adds boundary, not value.
   const REPO_ID = '11111111-1111-4111-8111-111111111111';
-  const aimA = createMockAim('A', 100, 1);
-  aimA.loopWeight = 0; // send everything downstream into the repo, retain nothing structurally
-  aimA.supportingRepos = [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }];
-  const aimB = createMockAim('B', 100, 1); // control: no repo link
+  const ideaA = createMockAim('A', 100, 1);
+  ideaA.loopWeight = 0; // send everything downstream into the repo, retain nothing structurally
+  ideaA.supportingRepos = [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }];
+  const ideaB = createMockAim('B', 100, 1); // control: no repo link
 
-  const result = calculateAimValues([aimA, aimB]);
+  const result = calculateAimValues([ideaA, ideaB]);
 
   // Repo node carries no intrinsic ⇒ the total is just A + B's intrinsics.
   assert.strictEqual(result.totalIntrinsic, 200, 'totalIntrinsic must stay = local intrinsics');
@@ -175,7 +175,7 @@ test('economic helpers use annual discounting and a positive ratio', () => {
 
 test('missing duration defaults to one day while zero remains immediate', () => {
   const missing = createMockAim('missing', 100, 100);
-  const backwardCompatibleMissing = { ...missing, duration: undefined } as unknown as Aim;
+  const backwardCompatibleMissing = { ...missing, duration: undefined } as unknown as Idea;
   const immediate = createMockAim('immediate', 100, 100, 0);
   const result = calculateAimValues([backwardCompatibleMissing, immediate]);
   assert.ok(result.priorities.get('immediate')! > result.priorities.get('missing')!);
@@ -190,20 +190,20 @@ test('variance is informational and does not alter priority', () => {
   assert.strictEqual(result.priorities.get('plain'), result.priorities.get('uncertain'));
 });
 
-test('invalid real economic inputs identify the aim', () => {
-  assert.throws(() => calculateAimValues([createMockAim('bad-cost', 1, 0)]), /Aim "bad-cost".*cost/);
-  assert.throws(() => calculateAimValues([createMockAim('bad-duration', 1, 1, -1)]), /Aim "bad-duration".*duration/);
+test('invalid real economic inputs identify the idea', () => {
+  assert.throws(() => calculateAimValues([createMockAim('bad-cost', 1, 0)]), /Idea "bad-cost".*cost/);
+  assert.throws(() => calculateAimValues([createMockAim('bad-duration', 1, 1, -1)]), /Idea "bad-duration".*duration/);
   assert.throws(
     () => calculateAimValues([createMockAim('infinite-duration', 1, 1, Number.POSITIVE_INFINITY)]),
-    /Aim "infinite-duration".*duration/
+    /Idea "infinite-duration".*duration/
   );
 });
 
 test('cyclic attributed costs are deterministic and count direct costs once', () => {
   const a = createMockAim('cycle-a', 10, 2, 0);
   const b = createMockAim('cycle-b', 10, 3, 0);
-  a.supportingConnections = [{ aimId: b.id, weight: 1, relativePosition: [0, 0] }];
-  b.supportingConnections = [{ aimId: a.id, weight: 1, relativePosition: [0, 0] }];
+  a.supportingConnections = [{ ideaId: b.id, weight: 1, relativePosition: [0, 0] }];
+  b.supportingConnections = [{ ideaId: a.id, weight: 1, relativePosition: [0, 0] }];
   const first = calculateAimValues([a, b]).costs;
   const second = calculateAimValues([a, b]).costs;
   assert.deepStrictEqual(first, second);

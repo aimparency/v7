@@ -21,9 +21,9 @@ export interface MockPhase {
   childPhaseIds?: string[];
 }
 
-export function seedProject(projectPath: string, data: { phases?: MockPhase[], aims?: MockAim[], meta?: { name?: string, color?: string, statuses?: any[], rootPhaseIds?: string[], dataModelVersion?: number } }) {
+export function seedProject(projectPath: string, data: { phases?: MockPhase[], ideas?: MockAim[], meta?: { name?: string, color?: string, statuses?: any[], rootPhaseIds?: string[], dataModelVersion?: number } }) {
   const bowmanPath = join(projectPath, AIMPARENCY_DIR_NAME);
-  mkdirSync(join(bowmanPath, 'aims'), { recursive: true });
+  mkdirSync(join(bowmanPath, 'ideas'), { recursive: true });
   mkdirSync(join(bowmanPath, 'phases'), { recursive: true });
 
   // Write Meta
@@ -53,11 +53,11 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
     writeFileSync(join(bowmanPath, 'phases', `${id}.json`), JSON.stringify(phase, null, 2));
   });
 
-  // Write Aims
-  data.aims?.forEach(a => {
+  // Write Ideas
+  data.ideas?.forEach(a => {
     const id = a.id || randomUUID();
     
-    const aim = {
+    const idea = {
       id,
       text: a.text,
       tags: a.tags || [],
@@ -67,7 +67,7 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
         date: Date.now()
       },
       supportingConnections: (a.incoming || []).map(childId => ({ 
-        aimId: childId, 
+        ideaId: childId, 
         weight: 1, 
         relativePosition: [0, 0] 
       })),
@@ -75,16 +75,16 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], a
       committedIn: a.committedIn || []
     };
 
-    writeFileSync(join(bowmanPath, 'aims', `${id}.json`), JSON.stringify(aim, null, 2));
+    writeFileSync(join(bowmanPath, 'ideas', `${id}.json`), JSON.stringify(idea, null, 2));
   });
 }
 
-// Creating an aim can open follow-up prompts: "Connect to Supported Aim" for
-// new phase commitments, "Connection details" for new sub-aims, and "Commit to
-// Phase" for new graph aims (possibly one after another). Waits for the Add Aim
+// Creating an idea can open follow-up prompts: "Connect to Supported Idea" for
+// new phase commitments, "Connection details" for new sub-ideas, and "Commit to
+// Phase" for new graph ideas (possibly one after another). Waits for the Add Idea
 // modal to close, then skips each prompt until none is left.
 export async function finishAimCreation(page: import('@playwright/test').Page) {
-  const addAimTitle = page.locator('.modal-panel .modal-header h2', { hasText: 'Add Aim' });
+  const addAimTitle = page.locator('.modal-panel .modal-header h2', { hasText: 'Add Idea' });
   await addAimTitle.waitFor({ state: 'hidden', timeout: 3000 });
   const followUpPrompt = page.locator('.search-modal, .modal-panel').first();
   for (let prompt = 0; prompt < 3; prompt++) {

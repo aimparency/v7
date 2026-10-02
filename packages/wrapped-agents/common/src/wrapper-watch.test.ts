@@ -150,7 +150,7 @@ test('dirty check is throttled within the interval', () => {
   }
 });
 
-// --- relaunch prompt (aim 310878de) ----------------------------------------
+// --- relaunch prompt (idea 310878de) ----------------------------------------
 
 test('buildWrapperRelaunchPrompt is actionable: lists changed files and explains relaunch', () => {
   const root = '/repo/wrapped-agents';

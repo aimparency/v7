@@ -27,10 +27,10 @@ test('SessionMemory - create and save summary', async () => {
 
   // Create mock agents
   const workerContext = `
-Working on aim f1550eb7-d02e-40bc-af94-1fb1076076bd
+Working on idea f1550eb7-d02e-40bc-af94-1fb1076076bd
 Fixed cache.db file location issue
 All 19 tests passed successfully
-Marked aim f1550eb7-d02e-40bc-af94-1fb1076076bd as done
+Marked idea f1550eb7-d02e-40bc-af94-1fb1076076bd as done
 `;
   const mockWorker = new MockAgent(workerContext) as any;
   const mockWatchdog = new MockAgent('') as any;
@@ -41,7 +41,7 @@ Marked aim f1550eb7-d02e-40bc-af94-1fb1076076bd as done
   assert.ok(summary, 'Summary should be extracted');
   assert.ok(summary!.sessionId, 'Session ID should be generated');
   assert.ok(summary!.timestamp > 0, 'Timestamp should be set');
-  assert.ok(summary!.aimsWorked.includes('f1550eb7-d02e-40bc-af94-1fb1076076bd'), 'Should extract aim ID');
+  assert.ok(summary!.ideasWorked.includes('f1550eb7-d02e-40bc-af94-1fb1076076bd'), 'Should extract idea ID');
   assert.ok(summary!.outcomes.includes('tests passed') || summary!.outcomes.includes('done'), 'Should extract outcomes');
 
   // Save summary
@@ -69,7 +69,7 @@ test('SessionMemory - load recent summaries', async () => {
       sessionId: '2024-02-20T10-00-00-abc123',
       timestamp: Date.now() - 86400000, // 1 day ago
       duration: 600000, // 10 minutes
-      aimsWorked: ['aim-1'],
+      ideasWorked: ['idea-1'],
       outcomes: 'Completed feature X',
       patterns: 'Pattern A observed',
       lessonsLearned: 'Lesson 1',
@@ -79,7 +79,7 @@ test('SessionMemory - load recent summaries', async () => {
       sessionId: '2024-02-21T10-00-00-def456',
       timestamp: Date.now() - 43200000, // 12 hours ago
       duration: 900000, // 15 minutes
-      aimsWorked: ['aim-2', 'aim-3'],
+      ideasWorked: ['idea-2', 'idea-3'],
       outcomes: 'Fixed bug Y',
       patterns: 'Pattern B noticed',
       lessonsLearned: 'Lesson 2',
@@ -108,7 +108,7 @@ test('SessionMemory - format for context', async () => {
       sessionId: 'test-1',
       timestamp: Date.now(),
       duration: 600000,
-      aimsWorked: ['aim-1', 'aim-2'],
+      ideasWorked: ['idea-1', 'idea-2'],
       outcomes: 'Completed testing',
       patterns: 'TDD works well',
       lessonsLearned: 'Write tests first',
@@ -120,18 +120,18 @@ test('SessionMemory - format for context', async () => {
 
   assert.ok(context.includes('Previous Session Insights'), 'Should include header');
   assert.ok(context.includes('Completed testing'), 'Should include outcomes');
-  assert.ok(context.includes('aim-1'), 'Should include aim IDs');
+  assert.ok(context.includes('idea-1'), 'Should include idea IDs');
   assert.ok(context.includes('TDD works well'), 'Should include patterns');
   assert.ok(context.includes('Write tests first'), 'Should include lessons');
 });
 
-test('SessionMemory - extract aim IDs from context', async () => {
+test('SessionMemory - extract idea IDs from context', async () => {
   const sessionMemory = new SessionMemory(TEST_PROJECT_PATH);
 
   const context = `
-Worked on aim f1550eb7-d02e-40bc-af94-1fb1076076bd
+Worked on idea f1550eb7-d02e-40bc-af94-1fb1076076bd
 Also fixed c4ab85c2-0497-48de-ae93-3dc7b4c2aa60
-Aim f1550eb7-d02e-40bc-af94-1fb1076076bd marked as done
+Idea f1550eb7-d02e-40bc-af94-1fb1076076bd marked as done
 `;
 
   const mockWorker = new MockAgent(context) as any;
@@ -140,9 +140,9 @@ Aim f1550eb7-d02e-40bc-af94-1fb1076076bd marked as done
   const summary = await sessionMemory.extractReflection(mockWorker, mockWatchdog);
 
   assert.ok(summary, 'Summary should be extracted');
-  assert.ok(summary!.aimsWorked.includes('f1550eb7-d02e-40bc-af94-1fb1076076bd'), 'Should extract first aim');
-  assert.ok(summary!.aimsWorked.includes('c4ab85c2-0497-48de-ae93-3dc7b4c2aa60'), 'Should extract second aim');
-  assert.equal(summary!.aimsWorked.length, 2, 'Should deduplicate aim IDs');
+  assert.ok(summary!.ideasWorked.includes('f1550eb7-d02e-40bc-af94-1fb1076076bd'), 'Should extract first idea');
+  assert.ok(summary!.ideasWorked.includes('c4ab85c2-0497-48de-ae93-3dc7b4c2aa60'), 'Should extract second idea');
+  assert.equal(summary!.ideasWorked.length, 2, 'Should deduplicate idea IDs');
 });
 
 const FRICTION_DIR = path.join(__dirname, '../.test-friction');
@@ -189,7 +189,7 @@ test('summarizeRecentFriction includes auto-propose directive for dominant retry
   assert.match(summary, /Recent System Friction/);
   assert.match(summary, /retry ceiling reached ×2/);
   assert.match(summary, /AUTO-PROPOSE ACTION/);
-  assert.match(summary, /create_aim MCP tool/);
+  assert.match(summary, /create_idea MCP tool/);
   assert.match(summary, /Fix recurring retry ceiling friction in supervisor/);
   assert.match(summary, /BACKOFF_SCHEDULE/);
 
@@ -218,7 +218,7 @@ test('summarizeRecentFriction skips malformed lines without failing', async () =
 
 test('extractReflection folds in supervisor reflection fields (approach B)', async () => {
   const sm = new SessionMemory(TEST_PROJECT_PATH);
-  const mockWorker = new MockAgent('Working on aim abc; All tests passed') as any;
+  const mockWorker = new MockAgent('Working on idea abc; All tests passed') as any;
   const mockWatchdog = new MockAgent('') as any;
 
   const summary = await sm.extractReflection(mockWorker, mockWatchdog, {
@@ -248,7 +248,7 @@ test('extractReflection without reflection leaves fields empty (backward compati
 test('formatForContext surfaces systemLimitations when present', () => {
   const summary: SessionSummary = {
     sessionId: 's1', timestamp: Date.now(), duration: 60000,
-    aimsWorked: [], outcomes: '', patterns: '', lessonsLearned: '',
+    ideasWorked: [], outcomes: '', patterns: '', lessonsLearned: '',
     systemLimitations: 'PTY sessions do not hot-reload', rawReflection: '',
   };
   const text = SessionMemory.formatForContext([summary]);
@@ -268,7 +268,7 @@ test('compressOldSessions creates meta-summary and prunes old files when over th
       sessionId: `old-${i}-${now - (12 - i) * 100000}`,
       timestamp: now - (12 - i) * 100000,
       duration: 60000,
-      aimsWorked: [`aim-${i}`],
+      ideasWorked: [`idea-${i}`],
       outcomes: `outcome-${i}`,
       patterns: `pattern-${i}`,
       lessonsLearned: `lesson-${i}`,

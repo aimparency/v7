@@ -31,7 +31,7 @@ describe('history store', () => {
       { type: 'phase', id: 'doomed', deleted: true, previous: { id: 'doomed', name: 'Doomed' } }
     ], ['phase.update', 'phase.delete'])
     // Another client's change is not part of this client's history.
-    useHistoryStore().recordChange({ origin: 'someone-else', type: 'aim', id: 'x', entity: {}, previous: null })
+    useHistoryStore().recordChange({ origin: 'someone-else', type: 'idea', id: 'x', entity: {}, previous: null })
 
     restore.mockResolvedValue({ ok: true, conflicts: [] })
     await useHistoryStore().undo()
@@ -59,7 +59,7 @@ describe('history store', () => {
   })
 
   it('refuses to undo an action whose prior state was not recorded', async () => {
-    userAction([{ type: 'aim', id: 'a', entity: { text: 'new' } }])
+    userAction([{ type: 'idea', id: 'a', entity: { text: 'new' } }])
 
     await useHistoryStore().undo()
 
@@ -79,11 +79,11 @@ describe('history store', () => {
     expect(useHistoryStore().undoStack).toHaveLength(1)
   })
 
-  it('keeps a moved aim selected when the move is undone and redone', async () => {
+  it('keeps a moved idea selected when the move is undone and redone', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
     dataStore.phases = { p: { id: 'p', name: 'P', parent: null, childPhaseIds: [], commitments: ['x', 'y'], selectedAimIndex: 0 } } as any
-    dataStore.aims = {
+    dataStore.ideas = {
       x: { id: 'x', text: 'X', supportingConnections: [], supportedAims: [], committedIn: ['p'] },
       y: { id: 'y', text: 'Y', supportingConnections: [], supportedAims: [], committedIn: ['p'] }
     } as any
@@ -93,7 +93,7 @@ describe('history store', () => {
     const setOrder = (commitments: string[]) => { dataStore.phases.p!.commitments = commitments }
 
     // Shift+J: x moves below y and stays selected.
-    userAction([{ type: 'phase', id: 'p', entity: { commitments: ['y', 'x'] }, previous: { commitments: ['x', 'y'] } }], ['aim.commitToPhase'])
+    userAction([{ type: 'phase', id: 'p', entity: { commitments: ['y', 'x'] }, previous: { commitments: ['x', 'y'] } }], ['idea.commitToPhase'])
     setOrder(['y', 'x'])
     dataStore.phases.p!.selectedAimIndex = 1
 

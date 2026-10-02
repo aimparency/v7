@@ -68,10 +68,10 @@ Manually: `touch "$(git rev-parse --git-path aimparency-continue-disabled)"`.
 On a normal Codex `Stop`, the hook returns valid JSON with
 `decision: "block"`. Its reason instructs Codex to use this graph loop:
 
-1. call `get_prioritized_aims`;
-2. orient with `get_aim_context`;
-3. implement and verify the selected actionable aim;
-4. record evidence and status with `update_aim` or `addReflection`; and
+1. call `get_prioritized_ideas`;
+2. orient with `get_idea_context`;
+3. implement and verify the selected actionable idea;
+4. record evidence and status with `update_idea` or `addReflection`; and
 5. reprioritize instead of substituting Markdown planning for graph state.
 
 Human waiting is an extreme-case, two-stage protocol. When Codex first believes
@@ -79,7 +79,7 @@ progress requires human judgment, authorization, credentials, or an
 institutionally human action, it states the blocker and ends with
 `[AIMPARENCY_REQUEST_HUMAN]`. The hook does **not** yield. It creates one more
 turn challenging Codex to step back, inspect graph hygiene and reflections,
-decompose abstract aims, dream up hypotheses, and try safe reversible work.
+decompose abstract ideas, dream up hypotheses, and try safe reversible work.
 Only if that broader search still proves the human action indispensable may
 Codex restate the exact request and end with
 `[AIMPARENCY_CONFIRM_HUMAN_BLOCK]`; the hook then yields. Markers are recognized

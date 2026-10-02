@@ -28,14 +28,14 @@ interface WatchdogInstance {
 const instances = new Map<string, WatchdogInstance>();
 const DEFAULT_KEEPALIVE_TIMEOUT = 60 * 60 * 1000; // 60 minutes
 
-// Relaunch-indicator watcher (aim 29021d9a): polls live sessions for a
+// Relaunch-indicator watcher (idea 29021d9a): polls live sessions for a
 // `runtime/relaunch-request` file and rebuilds+relaunches them. A single
 // non-overlapping pass at a time (a relaunch's verify gate can take seconds).
 let relaunchWatcher: NodeJS.Timeout | null = null;
 let relaunchPassRunning = false;
 const RELAUNCH_WATCH_INTERVAL_MS = parseInt(process.env.WATCHDOG_RELAUNCH_WATCH_INTERVAL || '4000', 10);
 
-// In-flight relaunch tracking for UI (aim a7fd4651): lets the client show
+// In-flight relaunch tracking for UI (idea a7fd4651): lets the client show
 // rebuild progress overlay + lock inputs while broker verifies + restarts
 // a session's worker + kennel supervisor after a self-edit (or manual relaunch).
 // Keyed the same as instances. Marked around the verify+stop+start window.
@@ -562,7 +562,7 @@ export const WatchdogManager = {
 
   /**
    * Begin polling live sessions for a `runtime/relaunch-request` indicator and
-   * rebuild+relaunch the ones that have it (aim 29021d9a). Idempotent; the timer
+   * rebuild+relaunch the ones that have it (idea 29021d9a). Idempotent; the timer
    * is unref'd so it never keeps the process alive on its own.
    */
   startRelaunchWatcher(intervalMs: number = RELAUNCH_WATCH_INTERVAL_MS): void {

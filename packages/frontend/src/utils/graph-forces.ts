@@ -40,7 +40,7 @@ export function normalizedFlowForceWeights(links: FlowForceLink[]) {
     const sourceTotal = incidentFlow.get(link.sourceId) ?? flow
     const targetTotal = incidentFlow.get(link.targetId) ?? flow
 
-    // Normalize at both aims, then combine the two endpoint shares
+    // Normalize at both ideas, then combine the two endpoint shares
     // symmetrically. This is flow / sqrt(sourceTotal * targetTotal), so both
     // ends use exactly the same pair strength: connection forces remain
     // equal-and-opposite and cannot introduce global drift. A thicker

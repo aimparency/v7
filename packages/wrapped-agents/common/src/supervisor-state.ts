@@ -2,8 +2,8 @@
  * Supervisor State Machine
  *
  * Manages the autonomous loop state with 3 explicit states:
- * - EXPLORING: Find work, break down aims, ideate
- * - WORKING: Push supervised session to complete aim
+ * - EXPLORING: Find work, break down ideas, ideate
+ * - WORKING: Push supervised session to complete idea
  * - WRAPPING_UP: Verify, update state/reflection, commit, and go explore again
  */
 
@@ -28,7 +28,7 @@ export interface TransitionResult {
 
 export interface StateContext {
   // Current work being tracked
-  aimText?: string
+  ideaText?: string
   task?: string
   reference?: string
   strategy?: string
@@ -173,7 +173,7 @@ export class SupervisorState {
 
       // Clear work context when returning to EXPLORING
       if (newState === 'EXPLORING') {
-        this.context.aimText = undefined
+        this.context.ideaText = undefined
         this.context.task = undefined
         this.context.reference = undefined
         this.context.strategy = undefined
@@ -213,7 +213,7 @@ export class SupervisorState {
     if (currentState === 'CIRCUIT_OPEN') {
       return {
         success: false,
-        error: 'Circuit open after consecutive ERRORs. Trigger auto-propose for supervisor improvement instead of retrying. Use create_aim or reset after fix.',
+        error: 'Circuit open after consecutive ERRORs. Trigger auto-propose for supervisor improvement instead of retrying. Use create_idea or reset after fix.',
         backoffActive: true
       }
     }
@@ -293,7 +293,7 @@ export class SupervisorState {
    * Start tracking a concrete task
    */
   startWork(message: string): void {
-    this.context.aimText = message
+    this.context.ideaText = message
     this.context.task = message
     this.context.reference = undefined
     this.context.strategy = undefined
@@ -308,7 +308,7 @@ export class SupervisorState {
   }
 
   /**
-   * Get time spent working on current aim (milliseconds)
+   * Get time spent working on current idea (milliseconds)
    */
   getWorkDuration(): number | null {
     if (!this.context.workStartedAt) return null

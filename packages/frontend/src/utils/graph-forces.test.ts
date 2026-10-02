@@ -2,17 +2,17 @@ import { describe, expect, it } from 'vitest'
 import { normalizedFlowForceWeights, surfaceMovementShares } from './graph-forces'
 
 describe('surfaceMovementShares', () => {
-  it('moves equal-size aims equally', () => {
+  it('moves equal-size ideas equally', () => {
     expect(surfaceMovementShares(10, 10)).toEqual({ from: 0.5, into: 0.5 })
   })
 
-  it('makes the smaller aim move more than the larger aim', () => {
+  it('makes the smaller idea move more than the larger idea', () => {
     const shares = surfaceMovementShares(20, 10)
     expect(shares.from).toBeCloseTo(0.2)
     expect(shares.into).toBeCloseTo(0.8)
   })
 
-  it('conserves the surface-weighted center for unequal aims', () => {
+  it('conserves the surface-weighted center for unequal ideas', () => {
     const fromRadius = 20
     const intoRadius = 10
     const movement = surfaceMovementShares(fromRadius, intoRadius)
@@ -35,7 +35,7 @@ describe('normalizedFlowForceWeights', () => {
     ])).toEqual([0.75])
   })
 
-  it('normalizes per aim while making a thicker sibling stronger', () => {
+  it('normalizes per idea while making a thicker sibling stronger', () => {
     const weights = normalizedFlowForceWeights([
       { sourceId: 'parent', targetId: 'small-child', flowValue: 1 },
       { sourceId: 'parent', targetId: 'large-child', flowValue: 4 },

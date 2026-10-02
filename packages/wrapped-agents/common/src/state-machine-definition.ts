@@ -39,7 +39,7 @@ export const startWork: Action = {
     { name: 'message', description: 'A message that motivates the worker to start working', required: true }
   ],
   examples: [
-    '{"action": {"type": "start_work", "message": "check Aimparency MCP for the next open aim and start implementing it"}}',
+    '{"action": {"type": "start_work", "message": "check Aimparency MCP for the next open idea and start implementing it"}}',
     '{"action": {"type": "start_work", "message": "start working on the next concrete task you found"}}'
   ]
 }
@@ -51,7 +51,7 @@ export const breakDown: Action = {
     { name: 'message', description: 'Free-text guidance for how the worker should break the work down', required: false }
   ],
   examples: [
-    '{"action": {"type": "break_down", "message": "use Aimparency MCP to break the current high-level aim into smaller concrete sub-aims"}}',
+    '{"action": {"type": "break_down", "message": "use Aimparency MCP to break the current high-level idea into smaller concrete sub-ideas"}}',
     '{"action": {"type": "break_down"}}'
   ]
 }
@@ -117,7 +117,7 @@ export const revisit: Action = {
 
 export const wrapUp: Action = {
   name: 'wrap_up',
-  description: 'Prompt the worker to update aim status/comment and reflection only after the current repo state has been freshly checked, then do a short deletion/reduction pass before committing.',
+  description: 'Prompt the worker to update idea status/comment and reflection only after the current repo state has been freshly checked, then do a short deletion/reduction pass before committing.',
   parameters: [
     { name: 'text', description: 'Optional extra wrap-up guidance', required: false }
   ],
@@ -232,7 +232,7 @@ export const working: State = {
 
 export const wrappingUp: State = {
   name: 'WRAPPING_UP',
-  instructions: 'You are watching a coding agent wrapping up work. Treat fresh repo state as authoritative; do not rely on inherited claims that tests passed, commits happened, or a batch is ready. If the worker is visibly waiting for input or showing a choice menu, use choice to stop automation and request human authorization; never select an option yourself. If more implementation is needed, use revisit. Otherwise guide the worker through a fresh verification of current repo state, careful batch selection, aim updates/reflection, a short deletion/reduction pass to remove dead code and simplify the diff, then commit, then return to exploring. Broad metadata-only staging or unclear mixed batches are reasons to revisit, not to commit.',
+  instructions: 'You are watching a coding agent wrapping up work. Treat fresh repo state as authoritative; do not rely on inherited claims that tests passed, commits happened, or a batch is ready. If the worker is visibly waiting for input or showing a choice menu, use choice to stop automation and request human authorization; never select an option yourself. If more implementation is needed, use revisit. Otherwise guide the worker through a fresh verification of current repo state, careful batch selection, idea updates/reflection, a short deletion/reduction pass to remove dead code and simplify the diff, then commit, then return to exploring. Broad metadata-only staging or unclear mixed batches are reasons to revisit, not to commit.',
   color: '#ffe5a3',  // Pastel yellow - completion phase
   actions: [
     { action: choice, targetState: 'WRAPPING_UP' },
@@ -258,7 +258,7 @@ export const error: State = {
 
 export const circuitOpen: State = {
   name: 'CIRCUIT_OPEN',
-  instructions: 'CIRCUIT BREAKER OPEN after repeated consecutive failures. Stop retrying to avoid ceiling. Analyze system limitations from friction log. Use auto-propose or directly call create_aim MCP to open an improvement aim for the supervisor (e.g. backoff tuning, circuit recovery logic). After applying a fix, transition out with retry or explore.',
+  instructions: 'CIRCUIT BREAKER OPEN after repeated consecutive failures. Stop retrying to avoid ceiling. Analyze system limitations from friction log. Use auto-propose or directly call create_idea MCP to open an improvement idea for the supervisor (e.g. backoff tuning, circuit recovery logic). After applying a fix, transition out with retry or explore.',
   color: '#ff9999',  // Stronger red for open circuit
   actions: [
     { action: wait, targetState: 'CIRCUIT_OPEN' },

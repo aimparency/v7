@@ -11,7 +11,7 @@ const makeAim = (id: string, text: string) => ({
   text,
   description: '',
   supportedAims: [] as string[],
-  supportingConnections: [] as Array<{ aimId: string, weight: number, relativePosition: [number, number] }>,
+  supportingConnections: [] as Array<{ ideaId: string, weight: number, relativePosition: [number, number] }>,
   status: { state: 'open', comment: '', date: 0 },
   intrinsicValue: 0,
   cost: 1,
@@ -33,14 +33,14 @@ describe('keyboard actions', () => {
     const parent = makeAim('parent', 'Parent')
     const child = makeAim('child', 'Child')
     parent.supportingConnections = [
-      { aimId: 'child', weight: 1, relativePosition: [0, 0] }
+      { ideaId: 'child', weight: 1, relativePosition: [0, 0] }
     ]
     child.supportedAims = ['parent']
 
     const dataStore = {
-      aims: { parent, child },
-      replaceAim: vi.fn((id: string, aim: any) => {
-        dataStore.aims[id as 'parent' | 'child'] = aim
+      ideas: { parent, child },
+      replaceAim: vi.fn((id: string, idea: any) => {
+        dataStore.ideas[id as 'parent' | 'child'] = idea
       }),
       recalculateValues: vi.fn(),
       updateAim: vi.fn().mockResolvedValue(undefined)
@@ -55,8 +55,8 @@ describe('keyboard actions', () => {
     await handleGraphKeydownAction({}, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
 
     expect(graphStore.selectedLink).toBe(null)
-    expect(dataStore.aims.parent.supportingConnections).toEqual([])
-    expect(dataStore.aims.child.supportedAims).toEqual([])
+    expect(dataStore.ideas.parent.supportingConnections).toEqual([])
+    expect(dataStore.ideas.child.supportedAims).toEqual([])
     expect(dataStore.updateAim).toHaveBeenCalledWith('/tmp/project', 'parent', {
       supportingConnections: []
     })
@@ -65,14 +65,14 @@ describe('keyboard actions', () => {
     })
   })
 
-  it('toggles the focused graph aim with Space in multi-select mode', async () => {
+  it('toggles the focused graph idea with Space in multi-select mode', async () => {
     const graphStore = useGraphUIStore()
     const uiStore = useUIStore()
     const dataStore = useDataStore()
-    const aim = makeAim('aim-a', 'Aim A')
-    dataStore.aims[aim.id] = aim as any
-    graphStore.setGraphSelection(aim.id)
-    uiStore.enterMultiSelect(aim.id)
+    const idea = makeAim('idea-a', 'Idea A')
+    dataStore.ideas[idea.id] = idea as any
+    graphStore.setGraphSelection(idea.id)
+    uiStore.enterMultiSelect(idea.id)
 
     const event = new KeyboardEvent('keydown', { key: ' ', cancelable: true })
     await handleGraphKeydownAction(uiStore, event, dataStore)
@@ -86,16 +86,16 @@ describe('keyboard actions', () => {
     const graphStore = useGraphUIStore()
     const uiStore = useUIStore()
     const dataStore = { deleteAim: vi.fn().mockResolvedValue(undefined) }
-    graphStore.setGraphSelection('aim-a')
+    graphStore.setGraphSelection('idea-a')
 
     await handleGraphKeydownAction(uiStore, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
 
-    expect(graphStore.pendingDeleteAimId).toBe('aim-a')
+    expect(graphStore.pendingDeleteAimId).toBe('idea-a')
     expect('pendingDeleteAimId' in uiStore).toBe(false)
 
     await handleGraphKeydownAction(uiStore, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
 
-    expect(dataStore.deleteAim).toHaveBeenCalledWith('aim-a')
+    expect(dataStore.deleteAim).toHaveBeenCalledWith('idea-a')
     expect(graphStore.pendingDeleteAimId).toBe(null)
     expect(graphStore.graphSelectedAimId).toBe(null)
   })

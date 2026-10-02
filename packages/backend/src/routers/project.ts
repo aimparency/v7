@@ -6,8 +6,8 @@ import type { Dirent } from 'fs';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { observable } from '@trpc/server/observable';
-import type { Aim, Phase, ProjectMeta } from 'shared';
-import { INITIAL_STATES, AimSchema, PhaseSchema, calculateAimValues, cosineSimilarity } from 'shared';
+import type { Idea, Phase, ProjectMeta } from 'shared';
+import { INITIAL_STATES, IdeaSchema, PhaseSchema, calculateAimValues, cosineSimilarity } from 'shared';
 import { spawn, type ChildProcess } from 'child_process';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForAim } from '../embeddings.js';
@@ -143,14 +143,14 @@ const DISCOVERY_IGNORED_DIRS = new Set([
 const CURRENT_PHASE_DATA_MODEL_VERSION = 2;
 
 type ConsistencyIssueCode =
-  | 'aim_nonexistent_phase'
-  | 'aim_missing_phase_commitment'
-  | 'phase_nonexistent_aim'
-  | 'phase_missing_aim_committed_in'
-  | 'aim_nonexistent_child'
-  | 'aim_missing_child_supported_aim'
-  | 'aim_nonexistent_parent'
-  | 'aim_missing_parent_supporting_connection'
+  | 'idea_nonexistent_phase'
+  | 'idea_missing_phase_commitment'
+  | 'phase_nonexistent_idea'
+  | 'phase_missing_idea_committed_in'
+  | 'idea_nonexistent_child'
+  | 'idea_missing_child_supported_idea'
+  | 'idea_nonexistent_parent'
+  | 'idea_missing_parent_supporting_connection'
   | 'orphaned_embedding'
   | 'legacy';
 
@@ -161,14 +161,14 @@ type ConsistencyIssue = {
 };
 
 const CONSISTENCY_ACTIONS: Record<ConsistencyIssueCode, string> = {
-  aim_nonexistent_phase: 'Remove invalid phase link',
-  aim_missing_phase_commitment: 'Add to phase commitments',
-  phase_nonexistent_aim: 'Remove invalid aim commitment',
-  phase_missing_aim_committed_in: 'Add to aim committedIn',
-  aim_nonexistent_child: 'Remove invalid child link',
-  aim_missing_child_supported_aim: 'Sync bidirectional link',
-  aim_nonexistent_parent: 'Remove invalid parent link',
-  aim_missing_parent_supporting_connection: 'Sync bidirectional link',
+  idea_nonexistent_phase: 'Remove invalid phase link',
+  idea_missing_phase_commitment: 'Add to phase commitments',
+  phase_nonexistent_idea: 'Remove invalid idea commitment',
+  phase_missing_idea_committed_in: 'Add to idea committedIn',
+  idea_nonexistent_child: 'Remove invalid child link',
+  idea_missing_child_supported_idea: 'Sync bidirectional link',
+  idea_nonexistent_parent: 'Remove invalid parent link',
+  idea_missing_parent_supporting_connection: 'Sync bidirectional link',
   orphaned_embedding: 'Delete orphaned embedding',
   legacy: 'Auto-fix'
 };
@@ -192,7 +192,7 @@ async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
 }
 
 // Vectors are stored in one JSON file, so each flush rewrites the whole store.
-// Batch the startup backfill instead of paying that per aim.
+// Batch the startup backfill instead of paying that per idea.
 const EMBEDDING_BACKFILL_FLUSH_SIZE = 25;
 const EMBEDDING_BACKFILL_MAX_PAUSE_MS = 250;
 
@@ -201,21 +201,21 @@ export const createProjectRouter = (
   delayedProcedure: BaseProcedure,
   normalizeProjectPath: (p: string) => string,
   ensureProjectStructure: (projectPath: string) => Promise<void>,
-  listAims: (projectPath: string, archived?: boolean) => Promise<Aim[]>,
+  listAims: (projectPath: string, archived?: boolean) => Promise<Idea[]>,
   listPhases: (projectPath: string, parentPhaseId?: string | null) => Promise<Phase[]>,
   readProjectMeta: (projectPath: string) => Promise<ProjectMeta>,
-  writeAim: (projectPath: string, aim: Aim) => Promise<void>,
-  indexAims: (projectPath: string, aims: Aim[]) => void,
+  writeAim: (projectPath: string, idea: Idea) => Promise<void>,
+  indexAims: (projectPath: string, ideas: Idea[]) => void,
   indexPhases: (projectPath: string, phases: Phase[]) => void,
   loadVectorStore: (projectPath: string) => Promise<Record<string, any>>,
   hasCurrentEmbedding: (value: unknown) => boolean,
   generateEmbedding: (text: string) => Promise<number[] | null>,
-  saveEmbeddings: (projectPath: string, entries: { aimId: string, vector: number[] }[]) => Promise<void>,
-  removeEmbedding: (projectPath: string, aimId: string) => Promise<void>,
+  saveEmbeddings: (projectPath: string, entries: { ideaId: string, vector: number[] }[]) => Promise<void>,
+  removeEmbedding: (projectPath: string, ideaId: string) => Promise<void>,
   migrateCommittedInField: (projectPath: string) => Promise<void>,
   cleanupCommitments: (projectPath: string, specificPhaseId?: string) => Promise<number>,
   getDb: (projectPath: string) => any,
-  readAim: (projectPath: string, aimId: string) => Promise<Aim>,
+  readAim: (projectPath: string, ideaId: string) => Promise<Idea>,
   writePhase: (projectPath: string, phase: Phase) => Promise<void>,
   ensureSearchIndex: (projectPath: string) => Promise<void>,
   migrateAimFiles: (projectPath: string) => Promise<string[]>,
@@ -256,25 +256,25 @@ export const createProjectRouter = (
     return phases.filter((phase): phase is Phase => phase !== null);
   };
 
-  const listLoopAims = async (rawProjectPath: string): Promise<Aim[]> => {
-    const aimsDir = path.join(normalizeProjectPath(rawProjectPath), 'aims');
-    if (!await fs.pathExists(aimsDir)) return [];
-    const files = (await fs.readdir(aimsDir)).filter((file) => file.endsWith('.json'));
-    const aims = await Promise.all(files.map(async (file): Promise<Aim | null> => {
+  const listLoopAims = async (rawProjectPath: string): Promise<Idea[]> => {
+    const ideasDir = path.join(normalizeProjectPath(rawProjectPath), 'ideas');
+    if (!await fs.pathExists(ideasDir)) return [];
+    const files = (await fs.readdir(ideasDir)).filter((file) => file.endsWith('.json'));
+    const ideas = await Promise.all(files.map(async (file): Promise<Idea | null> => {
       try {
-        const aim = AimSchema.parse(await fs.readJson(path.join(aimsDir, file)));
-        return aim.archived ? null : aim;
+        const idea = IdeaSchema.parse(await fs.readJson(path.join(ideasDir, file)));
+        return idea.archived ? null : idea;
       } catch {
-        // Malformed aim files are ignored here; consistency checks surface them elsewhere.
+        // Malformed idea files are ignored here; consistency checks surface them elsewhere.
         return null;
       }
     }));
-    return aims.filter((aim): aim is Aim => aim !== null);
+    return ideas.filter((idea): idea is Idea => idea !== null);
   };
 
   const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPhaseId?: string | null) => {
     const projectPath = normalizeProjectPath(rawProjectPath);
-    const [meta, phases, aims] = await Promise.all([
+    const [meta, phases, ideas] = await Promise.all([
       readLoopProjectMeta(projectPath),
       listLoopPhases(projectPath),
       listLoopAims(projectPath)
@@ -291,11 +291,11 @@ export const createProjectRouter = (
     const phase = explicitPhase ?? cursorPhase ?? activePhase ?? phases[0] ?? null;
     if (!phase) return { targetPhaseId: null, targetAimId: null };
 
-    const { priorities } = calculateAimValues(aims);
-    const aimById = new Map(aims.map((aim) => [aim.id, aim]));
+    const { priorities } = calculateAimValues(ideas);
+    const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
     const targetAim = [...(phase.commitments ?? [])]
-      .map((aimId) => aimById.get(aimId))
-      .filter((aim): aim is Aim => aim !== undefined && aim.status.state === 'open')
+      .map((ideaId) => ideaById.get(ideaId))
+      .filter((idea): idea is Idea => idea !== undefined && idea.status.state === 'open')
       .sort((left, right) => (priorities.get(right.id) ?? 0) - (priorities.get(left.id) ?? 0))[0] ?? null;
 
     return {
@@ -363,7 +363,7 @@ export const createProjectRouter = (
         id: loopId,
         name: 'Default loop',
         systemPrompt: [
-          'Continuously advance the highest-value mission through its best actionable aims.',
+          'Continuously advance the highest-value mission through its best actionable ideas.',
           'Verify and record real outcomes, then return to the graph and improve the strategy.',
           'Keep status reports brief.'
         ].join('\n'),
@@ -742,7 +742,7 @@ export const createProjectRouter = (
 
   return t.router({
     onUpdate: t.procedure.subscription(() => {
-      return observable<{ type: string, id: string, projectPath: string, entity?: Aim | Phase | ProjectMeta, deleted?: boolean, previous?: unknown, origin?: string }>((emit) => {
+      return observable<{ type: string, id: string, projectPath: string, entity?: Idea | Phase | ProjectMeta, deleted?: boolean, previous?: unknown, origin?: string }>((emit) => {
         // Listeners run inside the emitting request's context: tag the origin
         // so clients can recognize (and undo) their own changes.
         const onChange = (data: any) => emit.next({ ...data, origin: currentOrigin() });
@@ -757,7 +757,7 @@ export const createProjectRouter = (
       }))
       .query(async ({ input }: any) => {
         // Clients call getMeta first when opening a project: warm the search index
-        // and vector store now so the first aim-creation search isn't the cold one.
+        // and vector store now so the first idea-creation search isn't the cold one.
         void Promise.all([ensureSearchIndex(input.projectPath), loadVectorStore(input.projectPath)])
           .catch(error => console.warn('[Search] Warm-up failed:', error));
         return await readProjectMeta(input.projectPath);
@@ -1203,38 +1203,38 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .mutation(async ({ input }: any) => {
-        const aims = await listAims(input.projectPath);
+        const ideas = await listAims(input.projectPath);
         const phases = await listPhases(input.projectPath);
 
-        indexAims(input.projectPath, aims);
+        indexAims(input.projectPath, ideas);
         indexPhases(input.projectPath, phases);
 
         // Background embedding generation
         if (process.env.NODE_ENV !== 'test') {
           (async () => {
               const vectorStore = await loadVectorStore(input.projectPath);
-              const aimsToEmbed = aims.filter((aim: Aim) => !hasCurrentEmbedding(vectorStore[aim.id]));
+              const ideasToEmbed = ideas.filter((idea: Idea) => !hasCurrentEmbedding(vectorStore[idea.id]));
 
-              if (aimsToEmbed.length > 0) {
-                  console.log(`Starting embedding generation for ${aimsToEmbed.length} aims (skipped ${aims.length - aimsToEmbed.length} existing)...`);
+              if (ideasToEmbed.length > 0) {
+                  console.log(`Starting embedding generation for ${ideasToEmbed.length} ideas (skipped ${ideas.length - ideasToEmbed.length} existing)...`);
                   // This backfill runs right after startup, while the user is already
                   // working. Flush in batches (one vectors.json rewrite per batch, not
-                  // per aim) and yield between aims so queued requests - e.g. creating
-                  // an aim - are not stuck behind the loop.
-                  let pending: { aimId: string, vector: number[] }[] = [];
-                  for (const aim of aimsToEmbed) {
+                  // per idea) and yield between ideas so queued requests - e.g. creating
+                  // an idea - are not stuck behind the loop.
+                  let pending: { ideaId: string, vector: number[] }[] = [];
+                  for (const idea of ideasToEmbed) {
                       const startedAt = Date.now();
-                      const vector = await generateEmbedding(embeddingTextForAim(aim));
+                      const vector = await generateEmbedding(embeddingTextForAim(idea));
                       if (vector) {
-                          pending.push({ aimId: aim.id, vector });
+                          pending.push({ ideaId: idea.id, vector });
                       }
                       if (pending.length >= EMBEDDING_BACKFILL_FLUSH_SIZE) {
                           await saveEmbeddings(input.projectPath, pending);
                           pending = [];
                       }
                       // Tokenization and tensor post-processing run on the JS thread and
-                      // block it for tens of milliseconds per aim. Idle for roughly as
-                      // long as the last aim took, so the backfill uses at most half the
+                      // block it for tens of milliseconds per idea. Idle for roughly as
+                      // long as the last idea took, so the backfill uses at most half the
                       // event loop and interactive requests keep getting served.
                       const busyMs = Date.now() - startedAt;
                       await new Promise(resolve => setTimeout(resolve, Math.min(busyMs, EMBEDDING_BACKFILL_MAX_PAUSE_MS)));
@@ -1242,7 +1242,7 @@ export const createProjectRouter = (
                   await saveEmbeddings(input.projectPath, pending);
                   console.log('Embedding generation complete.');
               } else {
-                  console.log(`Embeddings up to date (checked ${aims.length} aims).`);
+                  console.log(`Embeddings up to date (checked ${ideas.length} ideas).`);
               }
           })().catch(console.error);
         }
@@ -1250,7 +1250,7 @@ export const createProjectRouter = (
         return {
           success: true,
           indexed: {
-            aims: aims.length,
+            ideas: ideas.length,
             phases: phases.length
           }
         };
@@ -1358,11 +1358,11 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .mutation(async ({ input }: any) => {
-        const aims = await listAims(input.projectPath);
-        for (const aim of aims) {
-          if (!aim.tags) {
-            aim.tags = [];
-            await writeAim(input.projectPath, aim);
+        const ideas = await listAims(input.projectPath);
+        for (const idea of ideas) {
+          if (!idea.tags) {
+            idea.tags = [];
+            await writeAim(input.projectPath, idea);
           }
         }
         return { success: true };
@@ -1373,19 +1373,19 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .mutation(async ({ input }: any) => {
-        const aims = await listAims(input.projectPath);
+        const ideas = await listAims(input.projectPath);
         let count = 0;
-        for (const aim of aims) {
-          const anyAim = aim as any;
+        for (const idea of ideas) {
+          const anyAim = idea as any;
           if (anyAim.incoming && Array.isArray(anyAim.incoming)) {
-             if (!aim.supportingConnections) aim.supportingConnections = [];
+             if (!idea.supportingConnections) idea.supportingConnections = [];
              for (const id of anyAim.incoming) {
-                if (!aim.supportingConnections.some((c: any) => c.aimId === id)) {
-                    aim.supportingConnections.push({ aimId: id, relativePosition: [0, 0], weight: 1 });
+                if (!idea.supportingConnections.some((c: any) => c.ideaId === id)) {
+                    idea.supportingConnections.push({ ideaId: id, relativePosition: [0, 0], weight: 1 });
                 }
              }
              delete anyAim.incoming;
-             await writeAim(input.projectPath, aim);
+             await writeAim(input.projectPath, idea);
              count++;
           }
         }
@@ -1406,27 +1406,27 @@ export const createProjectRouter = (
         projectPath: z.string()
       }))
       .query(async ({ input }: any) => {
-        const aims = await listAims(input.projectPath);
+        const ideas = await listAims(input.projectPath);
         const phases = await listPhases(input.projectPath);
         const issues: ConsistencyIssue[] = [];
 
-        const aimMap = new Map(aims.map((a: Aim) => [a.id, a]));
+        const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
         const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
 
-        // Check 1: Aim <-> Phase consistency
-        for (const aim of aims) {
-          for (const phaseId of aim.committedIn) {
+        // Check 1: Idea <-> Phase consistency
+        for (const idea of ideas) {
+          for (const phaseId of idea.committedIn) {
             if (!phaseMap.has(phaseId)) {
               issues.push(createConsistencyIssue(
-                'aim_nonexistent_phase',
-                `Aim ${aim.id} claims to be committed in non-existent phase ${phaseId}`
+                'idea_nonexistent_phase',
+                `Idea ${idea.id} claims to be committed in non-existent phase ${phaseId}`
               ));
             } else {
               const phase = phaseMap.get(phaseId)!;
-              if (!phase.commitments.includes(aim.id)) {
+              if (!phase.commitments.includes(idea.id)) {
                 issues.push(createConsistencyIssue(
-                  'aim_missing_phase_commitment',
-                  `Aim ${aim.id} says committed in Phase ${phaseId}, but Phase does not have it in commitments`
+                  'idea_missing_phase_commitment',
+                  `Idea ${idea.id} says committed in Phase ${phaseId}, but Phase does not have it in commitments`
                 ));
               }
             }
@@ -1434,41 +1434,41 @@ export const createProjectRouter = (
         }
 
         for (const phase of phases) {
-          for (const aimId of phase.commitments) {
-            if (!aimMap.has(aimId)) {
+          for (const ideaId of phase.commitments) {
+            if (!ideaMap.has(ideaId)) {
               issues.push(createConsistencyIssue(
-                'phase_nonexistent_aim',
-                `Phase ${phase.id} commits to non-existent aim ${aimId}`
+                'phase_nonexistent_idea',
+                `Phase ${phase.id} commits to non-existent idea ${ideaId}`
               ));
             } else {
-              const aim = aimMap.get(aimId)!;
-              if (!aim.committedIn.includes(phase.id)) {
+              const idea = ideaMap.get(ideaId)!;
+              if (!idea.committedIn.includes(phase.id)) {
                 issues.push(createConsistencyIssue(
-                  'phase_missing_aim_committed_in',
-                  `Phase ${phase.id} commits to Aim ${aimId}, but Aim does not say committed in Phase`
+                  'phase_missing_idea_committed_in',
+                  `Phase ${phase.id} commits to Idea ${ideaId}, but Idea does not say committed in Phase`
                 ));
               }
             }
           }
         }
 
-        // Check 2: Aim <-> Aim consistency (supportingConnections/supportedAims)
-        for (const aim of aims) {
+        // Check 2: Idea <-> Idea consistency (supportingConnections/supportedAims)
+        for (const idea of ideas) {
           // supportingConnections (Children)
-          if (aim.supportingConnections) {
-            for (const conn of aim.supportingConnections) {
-                const childId = conn.aimId;
-                if (!aimMap.has(childId)) {
+          if (idea.supportingConnections) {
+            for (const conn of idea.supportingConnections) {
+                const childId = conn.ideaId;
+                if (!ideaMap.has(childId)) {
                 issues.push(createConsistencyIssue(
-                  'aim_nonexistent_child',
-                  `Aim ${aim.id} has non-existent supporting connection (child) ${childId}`
+                  'idea_nonexistent_child',
+                  `Idea ${idea.id} has non-existent supporting connection (child) ${childId}`
                 ));
                 } else {
-                const child = aimMap.get(childId)!;
-                if (!child.supportedAims.includes(aim.id)) {
+                const child = ideaMap.get(childId)!;
+                if (!child.supportedAims.includes(idea.id)) {
                     issues.push(createConsistencyIssue(
-                      'aim_missing_child_supported_aim',
-                      `Aim ${aim.id} lists ${childId} as supporting, but ${childId} does not list ${aim.id} as supportedAims`
+                      'idea_missing_child_supported_idea',
+                      `Idea ${idea.id} lists ${childId} as supporting, but ${childId} does not list ${idea.id} as supportedAims`
                     ));
                 }
                 }
@@ -1476,19 +1476,19 @@ export const createProjectRouter = (
           }
 
           // supportedAims (Parents)
-          for (const parentId of aim.supportedAims) {
-            if (!aimMap.has(parentId)) {
+          for (const parentId of idea.supportedAims) {
+            if (!ideaMap.has(parentId)) {
               issues.push(createConsistencyIssue(
-                'aim_nonexistent_parent',
-                `Aim ${aim.id} has non-existent supportedAims (parent) ${parentId}`
+                'idea_nonexistent_parent',
+                `Idea ${idea.id} has non-existent supportedAims (parent) ${parentId}`
               ));
             } else {
-              const parent = aimMap.get(parentId)!;
-              const parentHasConnection = parent.supportingConnections?.some((c: any) => c.aimId === aim.id);
+              const parent = ideaMap.get(parentId)!;
+              const parentHasConnection = parent.supportingConnections?.some((c: any) => c.ideaId === idea.id);
               if (!parentHasConnection) {
                 issues.push(createConsistencyIssue(
-                  'aim_missing_parent_supporting_connection',
-                  `Aim ${aim.id} lists ${parentId} as supportedAims, but ${parentId} does not list ${aim.id} in supportingConnections`
+                  'idea_missing_parent_supporting_connection',
+                  `Idea ${idea.id} lists ${parentId} as supportedAims, but ${parentId} does not list ${idea.id} in supportingConnections`
                 ));
               }
             }
@@ -1497,11 +1497,11 @@ export const createProjectRouter = (
 
         // Check 4: Embeddings consistency
         const vectorStore = await loadVectorStore(input.projectPath);
-        for (const aimId of Object.keys(vectorStore)) {
-            if (!aimMap.has(aimId)) {
+        for (const ideaId of Object.keys(vectorStore)) {
+            if (!ideaMap.has(ideaId)) {
                 issues.push(createConsistencyIssue(
                   'orphaned_embedding',
-                  `Orphaned embedding found for Aim ${aimId}`
+                  `Orphaned embedding found for Idea ${ideaId}`
                 ));
             }
         }
@@ -1515,53 +1515,53 @@ export const createProjectRouter = (
       }))
       .mutation(async ({ input }: any) => {
         const fixes: string[] = [];
-        // Reads no longer upgrade aim files as a side effect; persist it here.
-        for (const aimId of await migrateAimFiles(input.projectPath)) {
-          fixes.push(`Upgraded legacy fields / placed connections of Aim ${aimId}`);
+        // Reads no longer upgrade idea files as a side effect; persist it here.
+        for (const ideaId of await migrateAimFiles(input.projectPath)) {
+          fixes.push(`Upgraded legacy fields / placed connections of Idea ${ideaId}`);
         }
         fixes.push(...await reconcilePhaseTree(input.projectPath));
 
-        const aims = await listAims(input.projectPath);
+        const ideas = await listAims(input.projectPath);
         const phases = await listPhases(input.projectPath);
 
-        const aimMap = new Map(aims.map((a: Aim) => [a.id, a]));
+        const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
         const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
 
-        // Fix 1: Aim <-> Phase consistency
-        for (const aim of aims) {
-          const originalCommittedIn = [...aim.committedIn];
-          aim.committedIn = aim.committedIn.filter((phaseId: string) => {
+        // Fix 1: Idea <-> Phase consistency
+        for (const idea of ideas) {
+          const originalCommittedIn = [...idea.committedIn];
+          idea.committedIn = idea.committedIn.filter((phaseId: string) => {
             const phase = phaseMap.get(phaseId);
             if (!phase) {
-              fixes.push(`Removed non-existent phase ${phaseId} from Aim ${aim.id}`);
+              fixes.push(`Removed non-existent phase ${phaseId} from Idea ${idea.id}`);
               return false;
             }
-            if (!phase.commitments.includes(aim.id)) {
-              fixes.push(`Removed phase ${phaseId} from Aim ${aim.id} (not in phase commitments)`);
+            if (!phase.commitments.includes(idea.id)) {
+              fixes.push(`Removed phase ${phaseId} from Idea ${idea.id} (not in phase commitments)`);
               return false;
             }
             return true;
           });
 
-          if (aim.committedIn.length !== originalCommittedIn.length) {
-            await writeAim(input.projectPath, aim);
+          if (idea.committedIn.length !== originalCommittedIn.length) {
+            await writeAim(input.projectPath, idea);
           }
         }
 
         for (const phase of phases) {
           const validCommitments = [];
-          for (const aimId of phase.commitments) {
-            const aim = aimMap.get(aimId);
-            if (!aim) {
-              fixes.push(`Removed non-existent aim ${aimId} from Phase ${phase.id}`);
+          for (const ideaId of phase.commitments) {
+            const idea = ideaMap.get(ideaId);
+            if (!idea) {
+              fixes.push(`Removed non-existent idea ${ideaId} from Phase ${phase.id}`);
               continue;
             }
-            validCommitments.push(aimId);
+            validCommitments.push(ideaId);
 
-            if (!aim.committedIn.includes(phase.id)) {
-              aim.committedIn.push(phase.id);
-              await writeAim(input.projectPath, aim);
-              fixes.push(`Added phase ${phase.id} to Aim ${aim.id}`);
+            if (!idea.committedIn.includes(phase.id)) {
+              idea.committedIn.push(phase.id);
+              await writeAim(input.projectPath, idea);
+              fixes.push(`Added phase ${phase.id} to Idea ${idea.id}`);
             }
           }
 
@@ -1571,52 +1571,52 @@ export const createProjectRouter = (
           }
         }
 
-        // Fix 2: Aim <-> Aim consistency
-        for (const aim of aims) {
+        // Fix 2: Idea <-> Idea consistency
+        for (const idea of ideas) {
           // supportingConnections (Children)
-          if (aim.supportingConnections) {
+          if (idea.supportingConnections) {
             const validConnections = [];
-            for (const conn of aim.supportingConnections) {
-                const childId = conn.aimId;
-                const child = aimMap.get(childId);
+            for (const conn of idea.supportingConnections) {
+                const childId = conn.ideaId;
+                const child = ideaMap.get(childId);
                 if (!child) {
-                fixes.push(`Removed non-existent child ${childId} from Aim ${aim.id}`);
+                fixes.push(`Removed non-existent child ${childId} from Idea ${idea.id}`);
                 continue;
                 }
                 validConnections.push(conn);
 
-                if (!child.supportedAims.includes(aim.id)) {
-                child.supportedAims.push(aim.id);
+                if (!child.supportedAims.includes(idea.id)) {
+                child.supportedAims.push(idea.id);
                 await writeAim(input.projectPath, child);
-                fixes.push(`Added supportedAims parent ${aim.id} to Child ${child.id}`);
+                fixes.push(`Added supportedAims parent ${idea.id} to Child ${child.id}`);
                 }
             }
-            if (validConnections.length !== aim.supportingConnections.length) {
-                aim.supportingConnections = validConnections;
-                await writeAim(input.projectPath, aim);
+            if (validConnections.length !== idea.supportingConnections.length) {
+                idea.supportingConnections = validConnections;
+                await writeAim(input.projectPath, idea);
             }
           }
 
           // supportedAims (Parents)
           const validSupportedAims = [];
-          for (const parentId of aim.supportedAims) {
-            const parent = aimMap.get(parentId);
+          for (const parentId of idea.supportedAims) {
+            const parent = ideaMap.get(parentId);
             if (!parent) {
-              fixes.push(`Removed non-existent parent ${parentId} from Aim ${aim.id}`);
+              fixes.push(`Removed non-existent parent ${parentId} from Idea ${idea.id}`);
               continue;
             }
             validSupportedAims.push(parentId);
 
             if (!parent.supportingConnections) parent.supportingConnections = [];
-            if (!parent.supportingConnections.some((c: any) => c.aimId === aim.id)) {
-              parent.supportingConnections.push({ aimId: aim.id, relativePosition: [0,0], weight: 1 });
+            if (!parent.supportingConnections.some((c: any) => c.ideaId === idea.id)) {
+              parent.supportingConnections.push({ ideaId: idea.id, relativePosition: [0,0], weight: 1 });
               await writeAim(input.projectPath, parent);
-              fixes.push(`Added supporting connection ${aim.id} to Parent ${parent.id}`);
+              fixes.push(`Added supporting connection ${idea.id} to Parent ${parent.id}`);
             }
           }
-          if (validSupportedAims.length !== aim.supportedAims.length) {
-            aim.supportedAims = validSupportedAims;
-            await writeAim(input.projectPath, aim);
+          if (validSupportedAims.length !== idea.supportedAims.length) {
+            idea.supportedAims = validSupportedAims;
+            await writeAim(input.projectPath, idea);
           }
         }
 
@@ -1633,33 +1633,33 @@ export const createProjectRouter = (
 
         // Fix 4: Embeddings consistency
         const vectorStore = await loadVectorStore(input.projectPath);
-        for (const aimId of Object.keys(vectorStore)) {
-            if (!aimMap.has(aimId)) {
-                await removeEmbedding(input.projectPath, aimId);
-                fixes.push(`Removed orphaned embedding for Aim ${aimId}`);
+        for (const ideaId of Object.keys(vectorStore)) {
+            if (!ideaMap.has(ideaId)) {
+                await removeEmbedding(input.projectPath, ideaId);
+                fixes.push(`Removed orphaned embedding for Idea ${ideaId}`);
             }
         }
 
-        // Fix 5: Cache consistency (aim_values)
+        // Fix 5: Cache consistency (idea_values)
         try {
             const db = getDb(input.projectPath);
-            const validIds = Array.from(aimMap.keys());
+            const validIds = Array.from(ideaMap.keys());
             if (validIds.length > 0) {
                 const placeholders = validIds.map(() => '?').join(',');
-                const info = db.prepare(`DELETE FROM aim_values WHERE id NOT IN (${placeholders})`).run(...validIds);
+                const info = db.prepare(`DELETE FROM idea_values WHERE id NOT IN (${placeholders})`).run(...validIds);
                 if (info.changes > 0) {
-                    fixes.push(`Removed ${info.changes} orphaned entries from aim_values cache`);
+                    fixes.push(`Removed ${info.changes} orphaned entries from idea_values cache`);
                 }
             } else {
-                // No aims, clear cache
-                const info = db.prepare('DELETE FROM aim_values').run();
+                // No ideas, clear cache
+                const info = db.prepare('DELETE FROM idea_values').run();
                 if (info.changes > 0) {
-                    fixes.push(`Cleared ${info.changes} entries from aim_values cache (no valid aims)`);
+                    fixes.push(`Cleared ${info.changes} entries from idea_values cache (no valid ideas)`);
                 }
             }
         } catch (e) {
-            console.error('Failed to clean aim_values cache:', e);
-            fixes.push('Failed to clean aim_values cache (see logs)');
+            console.error('Failed to clean idea_values cache:', e);
+            fixes.push('Failed to clean idea_values cache (see logs)');
         }
 
         return { success: true, fixes };
@@ -1667,49 +1667,49 @@ export const createProjectRouter = (
 
     // Read-only duplicate report: loads all vectors in one pass, computes
     // all-pairs cosine similarity, returns pairs above `threshold` ranked by score.
-    // Use merge_aims to act on the results.
+    // Use merge_ideas to act on the results.
     findDuplicates: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
-        threshold: z.number().min(0).max(1).optional(), // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-aim graph)
+        threshold: z.number().min(0).max(1).optional(), // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
         limit: z.number().int().positive().optional(),   // default 50
       }))
       .query(async ({ input }: any) => {
         const threshold = input.threshold ?? 0.92;
         const limit = input.limit ?? 50;
 
-        const [aims, vectorStore] = await Promise.all([
+        const [ideas, vectorStore] = await Promise.all([
           listAims(input.projectPath),
           loadVectorStore(input.projectPath),
         ]);
 
-        const aimMap = new Map<string, Aim>(aims.map((a: Aim) => [a.id, a]));
+        const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
 
-        // Build indexed list of (aimId, vector) for active aims only
+        // Build indexed list of (ideaId, vector) for active ideas only
         const indexed: Array<{ id: string; vector: number[] }> = [];
         for (const [id, vector] of Object.entries(vectorStore)) {
-          if (Array.isArray(vector) && vector.length > 0 && aimMap.has(id)) {
+          if (Array.isArray(vector) && vector.length > 0 && ideaMap.has(id)) {
             indexed.push({ id, vector: vector as number[] });
           }
         }
 
         // Ranked near-duplicate pairs (parent-child pairs excluded — see
         // duplicate-detection.ts). Mapped to the report shape.
-        const ranked = findDuplicatePairs(indexed, aimMap, threshold);
+        const ranked = findDuplicatePairs(indexed, ideaMap, threshold);
         const pairs = ranked.map((p) => ({
           score: p.score.toFixed(4),
           aId: p.aId,
-          aText: aimMap.get(p.aId)!.text,
+          aText: ideaMap.get(p.aId)!.text,
           bId: p.bId,
-          bText: aimMap.get(p.bId)!.text,
+          bText: ideaMap.get(p.bId)!.text,
         }));
         const topPairs = pairs.slice(0, limit);
 
         return {
           threshold,
           totalIndexed: indexed.length,
-          totalAims: aims.length,
-          unindexed: aims.length - indexed.length,
+          totalAims: ideas.length,
+          unindexed: ideas.length - indexed.length,
           pairsFound: pairs.length,
           pairs: topPairs,
           note: indexed.length === 0
@@ -1734,12 +1734,12 @@ export const createProjectRouter = (
       }))
       .query(async ({ input }: any) => {
         const limit = input.limit ?? 200;
-        const [aims, vectorStore] = await Promise.all([
+        const [ideas, vectorStore] = await Promise.all([
           listAims(input.projectPath),
           loadVectorStore(input.projectPath),
         ]);
-        const aimMap = new Map<string, Aim>(aims.map((a: Aim) => [a.id, a]));
-        const catchAll = aimMap.get(input.parentAimId);
+        const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
+        const catchAll = ideaMap.get(input.parentAimId);
         if (!catchAll) {
           return { error: `Catch-all parent ${input.parentAimId} not found.` };
         }
@@ -1749,23 +1749,23 @@ export const createProjectRouter = (
           return Array.isArray(v) && v.length > 0 ? (v as number[]) : undefined;
         };
 
-        // Direct children of the catch-all = aims that support it.
+        // Direct children of the catch-all = ideas that support it.
         const childIds: string[] = (catchAll.supportingConnections ?? [])
-          .map((c: any) => c.aimId)
-          .filter((id: string) => aimMap.has(id));
+          .map((c: any) => c.ideaId)
+          .filter((id: string) => ideaMap.has(id));
 
-        const isParent = (id: string) => (aimMap.get(id)?.supportingConnections?.length ?? 0) > 0;
+        const isParent = (id: string) => (ideaMap.get(id)?.supportingConnections?.length ?? 0) > 0;
 
         // Candidate sub-parents: explicit, else the catch-all's children that are parents.
         const candidateIds: string[] = (input.candidateParentIds ?? childIds.filter(isParent))
-          .filter((id: string) => aimMap.has(id));
+          .filter((id: string) => ideaMap.has(id));
 
         // A candidate's "meaning" is best represented by what it already contains: the
         // centroid of its children's embeddings. Fall back to its own title embedding
         // when it has no embedded children.
         const candidates = candidateIds.map((id: string) => {
-          const childVecs = (aimMap.get(id)?.supportingConnections ?? [])
-            .map((c: any) => vecOf(c.aimId))
+          const childVecs = (ideaMap.get(id)?.supportingConnections ?? [])
+            .map((c: any) => vecOf(c.ideaId))
             .filter((v: any): v is number[] => !!v);
           let vector: number[] | undefined;
           const firstVec = childVecs[0];
@@ -1783,7 +1783,7 @@ export const createProjectRouter = (
           } else {
             vector = vecOf(id);
           }
-          return { id, text: aimMap.get(id)!.text, vector };
+          return { id, text: ideaMap.get(id)!.text, vector };
         }).filter((c: any) => c.vector) as Array<{ id: string; text: string; vector: number[] }>;
 
         const candidateSet = new Set(candidateIds);
@@ -1806,7 +1806,7 @@ export const createProjectRouter = (
             suggestions.push({
               scoreRaw: best.score,
               leafId,
-              leafText: aimMap.get(leafId)!.text,
+              leafText: ideaMap.get(leafId)!.text,
               suggestedParentId: best.id,
               suggestedParentText: best.text,
               score: best.score.toFixed(4),
@@ -1836,15 +1836,15 @@ export const createProjectRouter = (
         };
       }),
 
-    // Read-only graph-hygiene dashboard: surfaces where the aim graph needs maintenance —
-    // floating aims, mega-parents (catch-all smell), stale cancelled/failed/human-dependent
-    // aims, collapse candidates (parents whose active children are all done), and
-    // duplicate clusters. Changes nothing; pairs with merge_aims / suggest_reparents / archiving.
+    // Read-only graph-hygiene dashboard: surfaces where the idea graph needs maintenance —
+    // floating ideas, mega-parents (catch-all smell), stale cancelled/failed/human-dependent
+    // ideas, collapse candidates (parents whose active children are all done), and
+    // duplicate clusters. Changes nothing; pairs with merge_ideas / suggest_reparents / archiving.
     graphHygiene: delayedProcedure
       .input(z.object({
         projectPath: z.string(),
         megaParentThreshold: z.number().int().positive().optional(), // default 25
-        duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-aim graph)
+        duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
         limit: z.number().int().positive().optional(),               // per-section cap, default 30
       }))
       .query(async ({ input }: any) => {
@@ -1852,32 +1852,32 @@ export const createProjectRouter = (
         const duplicateThreshold = input.duplicateThreshold ?? 0.92;
         const limit = input.limit ?? 30;
 
-        const [aims, vectorStore] = await Promise.all([
+        const [ideas, vectorStore] = await Promise.all([
           listAims(input.projectPath),
           loadVectorStore(input.projectPath),
         ]);
-        const aimMap = new Map<string, Aim>(aims.map((a: Aim) => [a.id, a]));
-        const active = aims.filter((a: Aim) => !a.archived);
+        const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
+        const active = ideas.filter((a: Idea) => !a.archived);
 
-        const childIdsOf = (a: Aim): string[] =>
-          (a.supportingConnections ?? []).map((c: any) => c.aimId).filter((id: string) => aimMap.has(id));
+        const childIdsOf = (a: Idea): string[] =>
+          (a.supportingConnections ?? []).map((c: any) => c.ideaId).filter((id: string) => ideaMap.has(id));
 
         // 1. Floating: no parents and not committed to any phase.
         const floating = active
-          .filter((a: Aim) => (a.supportedAims?.length ?? 0) === 0 && (a.committedIn?.length ?? 0) === 0)
-          .map((a: Aim) => ({ id: a.id, text: a.text, status: a.status.state }));
+          .filter((a: Idea) => (a.supportedAims?.length ?? 0) === 0 && (a.committedIn?.length ?? 0) === 0)
+          .map((a: Idea) => ({ id: a.id, text: a.text, status: a.status.state }));
 
-        // NOTE: uncommitted-open aims are deliberately NOT a section here. Every
+        // NOTE: uncommitted-open ideas are deliberately NOT a section here. Every
         // other section is a defect, so listing them made a normal state read as
         // one, and a count in a hygiene report is an implicit target to drive to
-        // zero — which here means phase-committing aims nobody intends to act on.
-        // An aim with a parent contributes through that parent; get_prioritized_aims
-        // ranks these when a phase holds no open leaf, and aim.list({uncommitted})
-        // browses them on purpose. See aim 6f9bef89.
+        // zero — which here means phase-committing ideas nobody intends to act on.
+        // An idea with a parent contributes through that parent; get_prioritized_ideas
+        // ranks these when a phase holds no open leaf, and idea.list({uncommitted})
+        // browses them on purpose. See idea 6f9bef89.
 
         // 2. Mega-parents: too many direct children (catch-all smell).
         const megaParents = active
-          .map((a: Aim) => ({ a, n: childIdsOf(a).length }))
+          .map((a: Idea) => ({ a, n: childIdsOf(a).length }))
           .filter((x) => x.n >= megaParentThreshold)
           .sort((x, y) => y.n - x.n)
           .map((x) => ({ id: x.a.id, text: x.a.text, directChildren: x.n }));
@@ -1885,13 +1885,13 @@ export const createProjectRouter = (
         // 3. Stale-status: cancelled/failed/human-dependent but not archived (clutter).
         const staleStates = new Set(['cancelled', 'failed', 'human-dependent']);
         const staleStatus = active
-          .filter((a: Aim) => staleStates.has(a.status.state))
-          .map((a: Aim) => ({ id: a.id, text: a.text, status: a.status.state }));
+          .filter((a: Idea) => staleStates.has(a.status.state))
+          .map((a: Idea) => ({ id: a.id, text: a.text, status: a.status.state }));
 
         // 4. Collapse candidates: parents whose active children are ALL done.
         const collapseCandidates = active
-          .map((a: Aim) => {
-            const kids = childIdsOf(a).map((id) => aimMap.get(id)!).filter((k) => !k.archived);
+          .map((a: Idea) => {
+            const kids = childIdsOf(a).map((id) => ideaMap.get(id)!).filter((k) => !k.archived);
             const done = kids.filter((k) => k.status.state === 'done').length;
             return { a, total: kids.length, done };
           })
@@ -1901,19 +1901,19 @@ export const createProjectRouter = (
         // 5. Duplicate clusters: all-pairs cosine above threshold, grouped via
         // union-find (parent-child pairs excluded — see duplicate-detection.ts).
         const indexedIds = active
-          .map((a: Aim) => a.id)
+          .map((a: Idea) => a.id)
           .filter((id: string) => Array.isArray(vectorStore[id]) && (vectorStore[id] as number[]).length > 0);
         const duplicateClusters = clusterDuplicates(
           indexedIds,
           (id) => vectorStore[id] as number[] | undefined,
-          aimMap,
+          ideaMap,
           duplicateThreshold,
-        ).map((c) => c.map((id) => ({ id, text: aimMap.get(id)!.text })));
+        ).map((c) => c.map((id) => ({ id, text: ideaMap.get(id)!.text })));
 
         const section = <T>(items: T[]) => ({ count: items.length, items: items.slice(0, limit) });
 
         return {
-          totalAims: aims.length,
+          totalAims: ideas.length,
           activeAims: active.length,
           thresholds: { megaParentThreshold, duplicateThreshold },
           floating: section(floating),

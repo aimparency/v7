@@ -1,7 +1,7 @@
 {
   "name": "real-world",
   "version": "1.0.0",
-  "description": "Real-world adaptors: agent that acts on prioritized aims via Composio tools",
+  "description": "Real-world adaptors: agent that acts on prioritized ideas via Composio tools",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

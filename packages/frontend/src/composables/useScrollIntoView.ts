@@ -3,7 +3,7 @@ import { type Ref } from 'vue'
 export function useScrollIntoView(
   containerRef: Ref<HTMLElement | null>,
   // Optional sink for the computed target. Lets the caller coalesce this
-  // aim-level scroll with competing phase-level scrolls instead of firing a
+  // idea-level scroll with competing phase-level scrolls instead of firing a
   // second, conflicting smooth animation. Defaults to scrolling directly.
   applyScroll?: (top: number, behavior: ScrollBehavior) => void
 ) {
@@ -54,7 +54,7 @@ export function useScrollIntoView(
          // If we scroll down enough to put the BOTTOM at maxY, the element fills the area (and more above).
          // Which one involves "less" scrolling?
          
-         // Actually, the aim says: "scroll only so far that the edge that is closer lies on the 1/5 or 4/5"
+         // Actually, the idea says: "scroll only so far that the edge that is closer lies on the 1/5 or 4/5"
          // If element is below, its TOP edge is the "closer" one to the view? No, its Top edge is further away than the bottom of the view?
          // No, "edge that is closer" refers to the edge of the element relative to the viewport movement direction?
          

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { isCodeShaped, extractCodeTokens, scoreCodePresence } from "./code-presence.js";
 
 test("isCodeShaped accepts identifiers/files and rejects prose", () => {
-  for (const t of ["loadVectorStore", "AimEditModal", "build_search_index", "trpc.aim.list", "Column.vue"]) {
+  for (const t of ["loadVectorStore", "IdeaEditModal", "build_search_index", "trpc.idea.list", "Column.vue"]) {
     assert.equal(isCodeShaped(t), true, `${t} should be code-shaped`);
   }
   for (const t of ["section", "mirror", "the", "add", "repos", "123", "e.g"]) {
@@ -13,10 +13,10 @@ test("isCodeShaped accepts identifiers/files and rejects prose", () => {
 
 test("extractCodeTokens pulls identifiers + segments and drops generic words", () => {
   const tokens = extractCodeTokens(
-    "Add a 'Linked repos' section to AimEditModal.vue mirroring openParentSearch; persist via trpc.aim.linkRepo",
+    "Add a 'Linked repos' section to IdeaEditModal.vue mirroring openParentSearch; persist via trpc.idea.linkRepo",
   );
   // identifiers and their meaningful segments are kept
-  for (const t of ["AimEditModal.vue", "AimEditModal", "openParentSearch", "trpc.aim.linkRepo", "linkRepo"]) {
+  for (const t of ["IdeaEditModal.vue", "IdeaEditModal", "openParentSearch", "trpc.idea.linkRepo", "linkRepo"]) {
     assert.ok(tokens.includes(t), `expected token ${t} in ${JSON.stringify(tokens)}`);
   }
   // prose words are dropped
@@ -29,7 +29,7 @@ test("extractCodeTokens returns nothing for vague prose", () => {
   assert.deepEqual(extractCodeTokens("Make the thing better and faster for users"), []);
 });
 
-test("scoreCodePresence: an aim whose tokens are all in code scores 1.0 and is scorable", () => {
+test("scoreCodePresence: an idea whose tokens are all in code scores 1.0 and is scorable", () => {
   const tokens = ["loadVectorStore", "cosineSimilarity", "findDuplicatePairs"];
   const present = new Set(tokens);
   const s = scoreCodePresence(tokens, present);
@@ -38,12 +38,12 @@ test("scoreCodePresence: an aim whose tokens are all in code scores 1.0 and is s
   assert.deepEqual(s.missing, []);
 });
 
-test("scoreCodePresence: a partly-present aim scores the matched fraction", () => {
-  const tokens = ["AimEditModal", "brandNewUnbuiltThing"];
-  const s = scoreCodePresence(tokens, new Set(["AimEditModal"]));
+test("scoreCodePresence: a partly-present idea scores the matched fraction", () => {
+  const tokens = ["IdeaEditModal", "brandNewUnbuiltThing"];
+  const s = scoreCodePresence(tokens, new Set(["IdeaEditModal"]));
   assert.equal(s.scorable, true);
   assert.equal(s.score, 0.5);
-  assert.deepEqual(s.matched, ["AimEditModal"]);
+  assert.deepEqual(s.matched, ["IdeaEditModal"]);
   assert.deepEqual(s.missing, ["brandNewUnbuiltThing"]);
 });
 

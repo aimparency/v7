@@ -3,7 +3,7 @@ import * as path from 'path';
 
 /**
  * Detect edits to the wrapped-agents' OWN source so the supervisor can decide to
- * rebuild + relaunch its session worker (aim 5af61b3e). The running session is
+ * rebuild + relaunch its session worker (idea 5af61b3e). The running session is
  * built/transpiled at launch (dev runs via tsx, which does NOT watch), so a
  * source file touched after the process started means the live code is stale and
  * a relaunch would pick up the change.

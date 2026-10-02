@@ -20,16 +20,16 @@ const createState = (): UIModalState => ({
   newPhaseName: '',
   phaseModalInsertPosition: 'before',
   showAimModal: false,
-  aimModalInsertPosition: 'before',
-  aimModalSource: 'columns',
+  ideaModalInsertPosition: 'before',
+  ideaModalSource: 'columns',
   showAimSearch: false,
-  aimSearchMode: 'navigate',
-  aimSearchCallback: null,
-  aimSearchInitialAimId: null,
-  aimSearchTitle: 'Search Aims',
-  aimSearchPlaceholder: 'Go to aim...',
-  aimSearchShowFilters: true,
-  aimSearchAdditionalOptions: [],
+  ideaSearchMode: 'navigate',
+  ideaSearchCallback: null,
+  ideaSearchInitialAimId: null,
+  ideaSearchTitle: 'Search Ideas',
+  ideaSearchPlaceholder: 'Go to idea...',
+  ideaSearchShowFilters: true,
+  ideaSearchAdditionalOptions: [],
   showSettingsModal: false,
   teleportCutAimId: 'x',
   teleportSource: { parentAimId: 'p' },
@@ -49,7 +49,7 @@ describe('modal helpers', () => {
     expect(state.newPhaseName).toBe('')
   })
 
-  it('toggles aim modal and search state', () => {
+  it('toggles idea modal and search state', () => {
     const state = createState()
     const callback = () => undefined
     openAimCreateModal(state)
@@ -61,12 +61,12 @@ describe('modal helpers', () => {
       additionalOptions: [{ id: 'skip', label: 'Skip' }]
     })
     expect(state.showAimSearch).toBe(true)
-    expect(state.aimSearchMode).toBe('pick')
-    expect(state.aimSearchInitialAimId).toBe('a1')
-    expect(state.aimSearchTitle).toBe('Pick Parent')
-    expect(state.aimSearchPlaceholder).toBe('Search parents...')
-    expect(state.aimSearchShowFilters).toBe(false)
-    expect(state.aimSearchAdditionalOptions).toEqual([{ id: 'skip', label: 'Skip' }])
+    expect(state.ideaSearchMode).toBe('pick')
+    expect(state.ideaSearchInitialAimId).toBe('a1')
+    expect(state.ideaSearchTitle).toBe('Pick Parent')
+    expect(state.ideaSearchPlaceholder).toBe('Search parents...')
+    expect(state.ideaSearchShowFilters).toBe(false)
+    expect(state.ideaSearchAdditionalOptions).toEqual([{ id: 'skip', label: 'Skip' }])
     closeAimSearchModal(state)
     closeAimModal(state)
     expect(state.showAimSearch).toBe(false)

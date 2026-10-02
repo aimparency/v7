@@ -18,8 +18,8 @@ afterEach(async () => {
 
 test('saveAimValues and getAimValues', () => {
   const values = new Map();
-  values.set('aim-1', { value: 10, cost: 5, doneCost: 2 });
-  values.set('aim-2', { value: 20, cost: 10, doneCost: 0 });
+  values.set('idea-1', { value: 10, cost: 5, doneCost: 2 });
+  values.set('idea-2', { value: 20, cost: 10, doneCost: 0 });
 
   saveAimValues(testProjectPath, values);
 
@@ -27,26 +27,26 @@ test('saveAimValues and getAimValues', () => {
   
   assert.equal(retrieved.size, 2);
   
-  const aim1 = retrieved.get('aim-1');
-  assert.ok(aim1);
-  assert.equal(aim1.value, 10);
-  assert.equal(aim1.cost, 5);
-  assert.equal(aim1.doneCost, 2);
+  const idea1 = retrieved.get('idea-1');
+  assert.ok(idea1);
+  assert.equal(idea1.value, 10);
+  assert.equal(idea1.cost, 5);
+  assert.equal(idea1.doneCost, 2);
 
-  const aim2 = retrieved.get('aim-2');
-  assert.ok(aim2);
-  assert.equal(aim2.value, 20);
+  const idea2 = retrieved.get('idea-2');
+  assert.ok(idea2);
+  assert.equal(idea2.value, 20);
 });
 
 test('saveAimValues replaces existing values', () => {
   const values1 = new Map();
-  values1.set('aim-1', { value: 10, cost: 5, doneCost: 0 });
+  values1.set('idea-1', { value: 10, cost: 5, doneCost: 0 });
   saveAimValues(testProjectPath, values1);
 
   const values2 = new Map();
-  values2.set('aim-1', { value: 15, cost: 6, doneCost: 1 }); // Updated
-  values2.set('aim-3', { value: 30, cost: 1, doneCost: 0 }); // New
-  // aim-2 missing, should be removed if we are doing full snapshot replace
+  values2.set('idea-1', { value: 15, cost: 6, doneCost: 1 }); // Updated
+  values2.set('idea-3', { value: 30, cost: 1, doneCost: 0 }); // New
+  // idea-2 missing, should be removed if we are doing full snapshot replace
   
   saveAimValues(testProjectPath, values2);
 
@@ -54,9 +54,9 @@ test('saveAimValues replaces existing values', () => {
   
   assert.equal(retrieved.size, 2);
   
-  const aim1 = retrieved.get('aim-1');
-  assert.equal(aim1!.value, 15);
+  const idea1 = retrieved.get('idea-1');
+  assert.equal(idea1!.value, 15);
   
-  const aim3 = retrieved.get('aim-3');
-  assert.equal(aim3!.value, 30);
+  const idea3 = retrieved.get('idea-3');
+  assert.equal(idea3!.value, 30);
 });

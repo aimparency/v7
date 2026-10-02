@@ -3,13 +3,13 @@
 // client at import) so this logic is unit-testable on its own.
 
 /**
- * Count, per aim id, how many of the given commit messages reference it. A
- * commit "references" an aim when its message contains the aim's 8-char id
+ * Count, per idea id, how many of the given commit messages reference it. A
+ * commit "references" an idea when its message contains the idea's 8-char id
  * prefix — the convention used in this repo's commit messages.
  */
-export function countAimReferences(commitMessages: string[], aimIds: string[]): Map<string, number> {
+export function countAimReferences(commitMessages: string[], ideaIds: string[]): Map<string, number> {
   const counts = new Map<string, number>();
-  const prefixes = aimIds
+  const prefixes = ideaIds
     .filter((id) => typeof id === "string" && id.length >= 8)
     .map((id) => [id, id.slice(0, 8)] as const);
   for (const msg of commitMessages) {
@@ -28,18 +28,18 @@ export interface ReconcileCandidate {
 }
 
 /**
- * Status-reconciliation core (aim 7625d5e6): surface aims that are still `open`
+ * Status-reconciliation core (idea 7625d5e6): surface ideas that are still `open`
  * yet are referenced by >= 1 git commit. Per this project's convention a commit
- * names the aim it advances (e.g. "feat(x): … (8charId)"), so an OPEN aim with
+ * names the idea it advances (e.g. "feat(x): … (8charId)"), so an OPEN idea with
  * commit references is the classic drift — work shipped but the status never got
  * flipped. Ranked by commit count desc. Read-only: a review list to confirm
- * done, not an auto-applier (a commit can touch an aim without finishing it).
+ * done, not an auto-applier (a commit can touch an idea without finishing it).
  */
 export function findReconciliationCandidates(
-  aims: Array<{ id: string; text: string; status: { state: string } }>,
+  ideas: Array<{ id: string; text: string; status: { state: string } }>,
   referenceCounts: Map<string, number>,
 ): ReconcileCandidate[] {
-  return aims
+  return ideas
     .filter((a) => a.status?.state === "open" && (referenceCounts.get(a.id) ?? 0) > 0)
     .map((a) => ({ id: a.id, text: a.text, status: a.status.state, commitCount: referenceCounts.get(a.id)! }))
     .sort((x, y) => y.commitCount - x.commitCount);

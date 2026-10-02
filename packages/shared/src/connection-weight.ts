@@ -1,7 +1,7 @@
 // Contribution-share <-> connection-weight math.
 //
 // A supporting connection's *contribution share* is how much of the supported
-// aim's (parent's) value flows through it. The value engine
+// idea's (parent's) value flows through it. The value engine
 // (value-calculation.ts) normalizes each child by the parent's total outflow:
 //
 //     share_i = weight_i / (Σ siblingWeights + effectiveLoopWeight)

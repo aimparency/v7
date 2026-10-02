@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
-import { useUIStore, type AimPath } from './stores/ui'
+import { useUIStore, type IdeaPath } from './stores/ui'
 import { useUIModalStore } from './stores/ui/modal-store'
 import { useGraphUIStore } from './stores/ui/graph-store'
 import { useProjectStore } from './stores/project-store'
 import { useWatchdogStore } from './stores/watchdog'
-import { useDataStore, type Aim } from './stores/data'
+import { useDataStore, type Idea } from './stores/data'
 import { useMapStore } from './stores/map'
 import { useHistoryStore } from './stores/history'
 import { captureSelectionAnchor } from './stores/ui/selection-anchor'
 import { trpc } from './trpc'
-import type { AimSearchAdditionalOption, AimSearchPickPayload } from './stores/ui/aim-search-types'
+import type { IdeaSearchAdditionalOption, IdeaSearchPickPayload } from './stores/ui/idea-search-types'
 import type { PhaseSearchSelection } from './stores/ui/phase-search-types'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
-import AimCreationModal from './components/AimCreationModal.vue'
+import IdeaCreationModal from './components/IdeaCreationModal.vue'
 import ConnectionDetailsModal from './components/ConnectionDetailsModal.vue'
-import AimEditModal from './components/AimEditModal.vue'
-import AimSearchModal from './components/AimSearchModal.vue'
+import IdeaEditModal from './components/IdeaEditModal.vue'
+import IdeaSearchModal from './components/IdeaSearchModal.vue'
 import PhaseSearchModal from './components/PhaseSearchModal.vue'
 import ColumnsView from './views/ColumnsView.vue'
 import GraphViewWrapper from './views/GraphViewWrapper.vue'
@@ -27,7 +27,7 @@ import LoopPanel from './components/LoopPanel.vue'
 import LoopActionsOverlay from './components/LoopActionsOverlay.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
-import AimProposalEntry from './components/AimProposalEntry.vue'
+import IdeaProposalEntry from './components/IdeaProposalEntry.vue'
 import { getRuntimeConfig } from './utils/runtime-config'
 import { hasQueryFlag, installPerfLoggingControls, perfLog } from './utils/perf-log'
 
@@ -52,22 +52,22 @@ const activeProjectName = computed(() => {
   return segments[segments.length - 1] || projectRoot
 })
 
-const handleAimSearchSelect = (payload: { type: 'aim' | 'path', data: Aim | AimPath, keepOpen?: boolean } | { type: 'option', data: AimSearchAdditionalOption, keepOpen?: boolean }) => {
-  if (modalStore.aimSearchMode === 'pick') {
-    if (modalStore.aimSearchCallback && payload.type !== 'path') {
-      modalStore.aimSearchCallback(payload as AimSearchPickPayload)
+const handleAimSearchSelect = (payload: { type: 'idea' | 'path', data: Idea | IdeaPath, keepOpen?: boolean } | { type: 'option', data: IdeaSearchAdditionalOption, keepOpen?: boolean }) => {
+  if (modalStore.ideaSearchMode === 'pick') {
+    if (modalStore.ideaSearchCallback && payload.type !== 'path') {
+      modalStore.ideaSearchCallback(payload as IdeaSearchPickPayload)
     }
   } else {
-    if (projectStore.currentView === 'graph' && payload.type === 'aim') {
-      const aim = payload.data as Aim
-      const node = mapStore.getNode(aim.id)
-      graphUIStore.setGraphSelection(aim.id)
+    if (projectStore.currentView === 'graph' && payload.type === 'idea') {
+      const idea = payload.data as Idea
+      const node = mapStore.getNode(idea.id)
+      graphUIStore.setGraphSelection(idea.id)
       graphUIStore.deselectLink()
       if (node) {
         mapStore.centerOnNode(node)
       }
     } else if (payload.type === 'path') {
-      uiStore.executeNavigation(payload.data as AimPath)
+      uiStore.executeNavigation(payload.data as IdeaPath)
     }
   }
   if (!payload.keepOpen) {
@@ -348,9 +348,9 @@ watch(() => [uiStore.navigatingAims, uiStore.activeColumn], ([navigatingAims, ac
     const hints = [
       { key: '/', action: 'search' },
       { key: 'h/l', action: 'switch columns' },
-      { key: 'j/k', action: 'navigate phases/aims' },
+      { key: 'j/k', action: 'navigate phases/ideas' },
       { key: 'i', action: 'enter edit mode' },
-      { key: 'o', action: 'create phase/aim' },
+      { key: 'o', action: 'create phase/idea' },
       { key: 'u/r', action: 'undo/redo' },
       { key: 'a', action: 'toggle loop panel' },
       { key: 'w', action: 'toggle watchdog' }
@@ -361,8 +361,8 @@ watch(() => [uiStore.navigatingAims, uiStore.activeColumn], ([navigatingAims, ac
     }
 
     if (activeColumn === 0) {
-      // Root aims column
-      hints.push({ key: 'd', action: 'delete aim' })
+      // Root ideas column
+      hints.push({ key: 'd', action: 'delete idea' })
     } else {
       // Phase columns
       hints.push({ key: 'e', action: 'edit phase' })
@@ -372,11 +372,11 @@ watch(() => [uiStore.navigatingAims, uiStore.activeColumn], ([navigatingAims, ac
   } else {
     projectStore.setKeyboardHints([
       { key: '/', action: 'search' },
-      { key: 'j/k', action: 'navigate aims' },
+      { key: 'j/k', action: 'navigate ideas' },
       { key: 'h/l', action: 'collapse/expand' },
-      { key: 'e', action: 'edit aim' },
-      { key: 'd', action: 'delete aim' },
-      { key: 'o/O', action: 'create aim below/above' },
+      { key: 'e', action: 'edit idea' },
+      { key: 'd', action: 'delete idea' },
+      { key: 'o/O', action: 'create idea below/above' },
       { key: 'u/r', action: 'undo/redo' },
       { key: 'Esc', action: 'exit edit mode' },
       { key: 'a', action: 'toggle loop panel' },
@@ -406,7 +406,7 @@ watch(() => [
   uiStore.windowSize,
   uiStore.lastSelectedSubPhaseIndexByPhase,
   uiStore.navigatingAims,
-  // Aim-level selection and expansion live in phases and the aim UI trees.
+  // Idea-level selection and expansion live in phases and the idea UI trees.
   captureSelectionAnchor(uiStore),
   uiStore.phaseAimUIStatesByPhaseId,
   uiStore.floatingAimUIStates,
@@ -478,12 +478,12 @@ onUnmounted(() => {
         <button
           class="icon-btn search-btn"
           @click="modalStore.openAimSearch()"
-          title="Search aims (/)"
+          title="Search ideas (/)"
         >🔍</button>
 
         <button
           class="view-btn"
-          title="Turn a goal into an editable aim tree"
+          title="Turn a goal into an editable idea tree"
           @click="showAimProposalEntry = true"
         >New goal</button>
 
@@ -671,22 +671,22 @@ onUnmounted(() => {
     <!-- Phase Creation Modal -->
     <PhaseCreationModal />
     
-    <!-- Aim Creation Modal -->
-    <AimCreationModal v-if="modalStore.showAimModal" />
+    <!-- Idea Creation Modal -->
+    <IdeaCreationModal v-if="modalStore.showAimModal" />
 
     <!-- Connection Details Modal (contribution % + explanation) -->
     <ConnectionDetailsModal v-if="modalStore.showConnectionDetailsModal" />
 
-    <!-- Aim Edit Modal -->
-    <AimEditModal
+    <!-- Idea Edit Modal -->
+    <IdeaEditModal
       :show="modalStore.showAimEditModal"
-      :aim-id="modalStore.aimEditModalAimId"
-      :aim-ids="modalStore.aimEditModalAimIds"
+      :idea-id="modalStore.ideaEditModalAimId"
+      :idea-ids="modalStore.ideaEditModalAimIds"
       @close="modalStore.closeAimEditModal()"
     />
 
-    <!-- Aim Search Modal -->
-    <AimSearchModal
+    <!-- Idea Search Modal -->
+    <IdeaSearchModal
       v-if="modalStore.showAimSearch"
       @select="handleAimSearchSelect"
       @close="modalStore.closeAimSearch()"
@@ -707,7 +707,7 @@ onUnmounted(() => {
     />
 
     <ProjectSettingsModal v-if="modalStore.showSettingsModal" />
-    <AimProposalEntry
+    <IdeaProposalEntry
       :show="showAimProposalEntry"
       :project-path="projectStore.projectPath"
       @close="showAimProposalEntry = false"

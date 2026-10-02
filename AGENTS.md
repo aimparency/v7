@@ -8,9 +8,9 @@
 - Verify changes with focused tests, builds, static checks, or the existing
   runtime instead of launching another server.
 
-## Aim Completion
+## Idea Completion
 
 - Use `review` when implementation and internal verification are complete but
   the feature still needs to be shown to and accepted by the user.
-- Move an aim from `review` to `done` only after explicit user confirmation.
+- Move an idea from `review` to `done` only after explicit user confirmation.
 

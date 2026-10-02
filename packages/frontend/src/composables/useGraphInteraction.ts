@@ -223,7 +223,7 @@ export function useGraphInteraction(
                 const parentNode = mapStore.connectFrom
                 const dropPosLogical = mapStore.mouse.logical  // Use already-computed logical coords
                 
-                modalStore.aimCreationCallback = async (newAimId, onConnectionConfirmed) => {
+                modalStore.ideaCreationCallback = async (newAimId, onConnectionConfirmed) => {
                      // Wait for node to exist in the graph
                      const checkNode = () => {
                          const newNode = nodeMap.get(newAimId)
@@ -250,13 +250,13 @@ export function useGraphInteraction(
                              const rSum = parentR + childR
                              const relPos: [number, number] = [deltaX/rSum, deltaY/rSum]
 
-                             trpc.aim.connectAims.mutate({
+                             trpc.idea.connectAims.mutate({
                                 projectPath: projectStore.projectPath,
                                 parentAimId: parentNode.id,
                                 childAimId: newAimId,
                                 relativePosition: relPos as [number, number]
                              }).then(async () => {
-                                 // Reload both aims to get updated incoming/outgoing arrays
+                                 // Reload both ideas to get updated incoming/outgoing arrays
                                  await dataStore.loadAims(projectStore.projectPath, [parentNode.id, newAimId])
                                  // Let Vue's watcher flush so updateGraphData runs and newNode.r reflects
                                  // the actual post-connection value (not the zero-value initial radius).
@@ -483,7 +483,7 @@ export function useGraphInteraction(
         }
         // Black-box repo nodes are read-only: you can reposition them, but never
         // start a connection FROM them (a repo is always a supporter/child and
-        // never declares that it needs another aim).
+        // never declares that it needs another idea).
         if (node.isRepo) {
             mapStore.startDragging(node)
             return
@@ -512,7 +512,7 @@ export function useGraphInteraction(
             const parent = mapStore.connectFrom as GraphNode
             const child = node
 
-            // Can't form a normal aim→aim connection onto a black-box repo node.
+            // Can't form a normal idea→idea connection onto a black-box repo node.
             // Repo links are created through the dedicated 'link a whole repo' UX,
             // not by dragging a connection onto the repo node.
             if (parent.isRepo || child.isRepo) {
@@ -533,18 +533,18 @@ export function useGraphInteraction(
             const relativePosition: [number, number] = [deltaX / rSum, deltaY / rSum]
 
             try {
-                await trpc.aim.connectAims.mutate({
+                await trpc.idea.connectAims.mutate({
                     projectPath: projectStore.projectPath,
                     parentAimId: parent.id,
                     childAimId: child.id,
                     relativePosition,
                 })
-                // Reload both aims to get updated incoming/outgoing arrays
+                // Reload both ideas to get updated incoming/outgoing arrays
                 await dataStore.loadAims(projectStore.projectPath, [parent.id, child.id])
                 // Offer contribution % + explanation for the new connection.
                 modalStore.openConnectionDetailsModal(parent.id, child.id)
             } catch (e) {
-                console.error('Failed to connect aims:', e)
+                console.error('Failed to connect ideas:', e)
             }
         }
     }
@@ -554,15 +554,15 @@ export function useGraphInteraction(
             longPressedNodeId = null
             return
         }
-        // In spin-off preview, a click toggles the aim as a root (multi-select)
+        // In spin-off preview, a click toggles the idea as a root (multi-select)
         // and recolors the graph — no selection / detail panel.
         if (graphUIStore.graphColorMode === 'spin-off') {
             if (!mapStore.cursorMoved) graphUIStore.toggleSpinOffRoot(node.id)
             return
         }
-        // A black-box repo node has no aim detail to select/track — it's an
+        // A black-box repo node has no idea detail to select/track — it's an
         // opaque modular boundary. Clicking it is a no-op for now (open/focus the
-        // linked repo is a later refinement); never select it as an aim.
+        // linked repo is a later refinement); never select it as an idea.
         if (node.isRepo) return
 
         const isCtrl = event && (event.ctrlKey || event.metaKey)
@@ -571,7 +571,7 @@ export function useGraphInteraction(
         if (isShift) {
             const selectedId = graphUIStore.graphSelectedAimId
             const existingConnection = selectedId && selectedId !== node.id
-                ? findConnectionBetween(selectedId, node.id, dataStore.aims)
+                ? findConnectionBetween(selectedId, node.id, dataStore.ideas)
                 : null
             if (existingConnection && !mapStore.cursorMoved) {
                 uiStore.clearMultiSelect()
@@ -624,7 +624,7 @@ export function useGraphInteraction(
     const onDblClick = async (e: MouseEvent) => {
         // Only handle double click on background (not if we hit a node, though this listener is on SVG so it bubbles)
         // But onNodeClick handles single clicks. Double click on node might mean something else (expand?).
-        // For now, let's implement "Create Aim" on empty space.
+        // For now, let's implement "Create Idea" on empty space.
         
         // Check if we are hovering a node? 
         // We can do a hit test or just assume if target is not a node class.
@@ -633,7 +633,7 @@ export function useGraphInteraction(
         // But dblclick happens after two clicks.
         
         // Let's rely on the fact that if we double click a node, we might want to do something else (like open details).
-        // But user asked for "double click in graph to create a free floating aim".
+        // But user asked for "double click in graph to create a free floating idea".
         
         // If we hit a node, e.target would be the circle or text.
         // We can check if e.target is the svg itself or a background group.
@@ -656,12 +656,12 @@ export function useGraphInteraction(
         }
         
         if (!hitNode) {
-            // Deselect to ensure creating floating aim
+            // Deselect to ensure creating floating idea
             graphUIStore.setGraphSelection(null)
             uiStore.deselectAim()
             uiStore.setActiveColumn(-1)
 
-            modalStore.aimCreationCallback = (id, onPositionConfirmed) => {
+            modalStore.ideaCreationCallback = (id, onPositionConfirmed) => {
                  const node = nodeMap.get(id)
                  const x = logicalMouse[0] ?? 0
                  const y = logicalMouse[1] ?? 0

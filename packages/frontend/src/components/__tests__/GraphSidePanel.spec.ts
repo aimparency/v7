@@ -8,12 +8,12 @@ import { useProjectStore } from '../../stores/project-store'
 
 vi.mock('../../trpc', () => ({
   trpc: {
-    aim: {
+    idea: {
       update: {
-        // The real endpoint returns a complete aim, not the sparse patch.
-        mutate: vi.fn().mockImplementation(async ({ aimId, aim }: any) => ({
-          id: aimId,
-          text: 'Updated aim',
+        // The real endpoint returns a complete idea, not the sparse patch.
+        mutate: vi.fn().mockImplementation(async ({ ideaId, idea }: any) => ({
+          id: ideaId,
+          text: 'Updated idea',
           status: { state: 'open' },
           supportedAims: [],
           supportingConnections: [],
@@ -21,7 +21,7 @@ vi.mock('../../trpc', () => ({
           intrinsicValue: 0,
           cost: 1,
           loopWeight: 1,
-          ...aim,
+          ...idea,
         }))
       }
     }
@@ -35,7 +35,7 @@ const makeAim = (id: string, text: string) => ({
   text,
   description: '',
   supportedAims: [] as string[],
-  supportingConnections: [] as Array<{ aimId: string, weight: number, relativePosition: [number, number], explanation?: string }>,
+  supportingConnections: [] as Array<{ ideaId: string, weight: number, relativePosition: [number, number], explanation?: string }>,
   status: { state: 'open' as const },
   intrinsicValue: 0,
   cost: 1,
@@ -53,12 +53,12 @@ describe('GraphSidePanel', () => {
     vi.clearAllMocks()
   })
 
-  it('routes quick aim metric edits through the data store update action', async () => {
+  it('routes quick idea metric edits through the data store update action', async () => {
     const graphStore = useGraphUIStore()
     const projectStore = useProjectStore()
     const dataStore = useDataStore()
     projectStore.projectPath = '/tmp/project'
-    dataStore.aims = { a1: makeAim('a1', 'Aim 1') } as any
+    dataStore.ideas = { a1: makeAim('a1', 'Idea 1') } as any
     graphStore.setGraphSelection('a1')
     const updateAim = vi.spyOn(dataStore, 'updateAim').mockResolvedValue()
 
@@ -86,16 +86,16 @@ describe('GraphSidePanel', () => {
     const parent1 = makeAim('p1', 'Parent 1')
     const child1 = makeAim('c1', 'Child 1')
     parent1.supportingConnections = [
-      { aimId: 'c1', weight: 1, relativePosition: [0, 0], explanation: 'old-1' }
+      { ideaId: 'c1', weight: 1, relativePosition: [0, 0], explanation: 'old-1' }
     ]
 
     const parent2 = makeAim('p2', 'Parent 2')
     const child2 = makeAim('c2', 'Child 2')
     parent2.supportingConnections = [
-      { aimId: 'c2', weight: 1, relativePosition: [0, 0], explanation: 'old-2' }
+      { ideaId: 'c2', weight: 1, relativePosition: [0, 0], explanation: 'old-2' }
     ]
 
-    dataStore.aims = {
+    dataStore.ideas = {
       p1: parent1,
       c1: child1,
       p2: parent2,
@@ -118,20 +118,20 @@ describe('GraphSidePanel', () => {
     graphStore.selectLink('p2', 'c2')
     await textarea.trigger('blur')
 
-    expect(trpc.aim.update.mutate).toHaveBeenCalledWith(
+    expect(trpc.idea.update.mutate).toHaveBeenCalledWith(
       expect.objectContaining({
         projectPath: '/tmp/project',
-        aimId: 'p1',
-        aim: expect.objectContaining({
+        ideaId: 'p1',
+        idea: expect.objectContaining({
           supportingConnections: expect.arrayContaining([
-            expect.objectContaining({ aimId: 'c1', explanation: 'updated explanation' })
+            expect.objectContaining({ ideaId: 'c1', explanation: 'updated explanation' })
           ])
         })
       })
     )
 
-    const updatedParent1 = dataStore.aims.p1
-    const updatedParent2 = dataStore.aims.p2
+    const updatedParent1 = dataStore.ideas.p1
+    const updatedParent2 = dataStore.ideas.p2
     if (!updatedParent1 || !updatedParent2) throw new Error('parents should exist in test setup')
 
     expect(updatedParent1.supportingConnections[0]?.explanation).toBe('updated explanation')

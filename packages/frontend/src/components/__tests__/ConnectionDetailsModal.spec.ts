@@ -8,7 +8,7 @@ import { nextTick } from 'vue'
 
 vi.mock('../../trpc', () => ({
   trpc: {
-    aim: {
+    idea: {
       update: { mutate: vi.fn().mockResolvedValue({}) }
     }
   }
@@ -32,23 +32,23 @@ describe('ConnectionDetailsModal', () => {
           connectionDetailsChildId: 'child-1'
         },
         data: {
-          aims: {
+          ideas: {
             'parent-1': {
               id: 'parent-1',
-              text: 'Parent Aim',
+              text: 'Parent Idea',
               loopWeight: 0,
               supportingConnections: [
-                { aimId: 'child-1', weight: 1, explanation: '' },
-                { aimId: 'sibling-1', weight: 1 }
+                { ideaId: 'child-1', weight: 1, explanation: '' },
+                { ideaId: 'sibling-1', weight: 1 }
               ]
             },
             'child-1': {
               id: 'child-1',
-              text: 'Child Aim'
+              text: 'Child Idea'
             },
             'sibling-1': {
               id: 'sibling-1',
-              text: 'Sibling Aim'
+              text: 'Sibling Idea'
             }
           }
         }

@@ -76,7 +76,7 @@ async askWatchdog() {
 
   // Add state-specific context
   if (currentState === 'WORKING' || currentState === 'WRAPPING_UP') {
-    promptContext.aimText = stateContext.aimText;
+    promptContext.ideaText = stateContext.ideaText;
     const workDuration = this.animatorState.getWorkDuration();
     if (workDuration !== null) {
       const minutes = Math.floor(workDuration / 60000);
@@ -181,13 +181,13 @@ Add these handler methods:
 private async handleExploringAction(action: any): Promise<void> {
   switch (action.type) {
     case 'start_work':
-      await this.executeStartWork(action.aim_id, action.aim_text, action.strategy);
-      this.animatorState.startWork(action.aim_id, action.aim_text, action.strategy);
+      await this.executeStartWork(action.idea_id, action.idea_text, action.strategy);
+      this.animatorState.startWork(action.idea_id, action.idea_text, action.strategy);
       this.animatorState.transition('WORKING', 'start_work', action);
       break;
 
     case 'break_down':
-      await this.executeBreakDown(action.aim_id);
+      await this.executeBreakDown(action.idea_id);
       break;
 
     case 'ideate':
@@ -256,16 +256,16 @@ private async handleErrorAction(action: any): Promise<void> {
 Add these execution methods:
 
 ```typescript
-private async executeStartWork(aimId: string, aimText: string, strategy: string): Promise<void> {
-  this.log(`[StateMachine] Starting work on: ${aimText}`);
+private async executeStartWork(ideaId: string, ideaText: string, strategy: string): Promise<void> {
+  this.log(`[StateMachine] Starting work on: ${ideaText}`);
 
   const prompt = `${this.instructTextWithMemory}
 
 ---
 
-Work on this aim:
-ID: ${aimId}
-Text: ${aimText}
+Work on this idea:
+ID: ${ideaId}
+Text: ${ideaText}
 Strategy: ${strategy}
 
 Begin implementation.`;
@@ -273,10 +273,10 @@ Begin implementation.`;
   await this.post(this.worker, prompt);
 }
 
-private async executeBreakDown(aimId: string): Promise<void> {
-  this.log(`[StateMachine] Breaking down aim: ${aimId}`);
+private async executeBreakDown(ideaId: string): Promise<void> {
+  this.log(`[StateMachine] Breaking down idea: ${ideaId}`);
 
-  const prompt = `Break down this aim into smaller sub-aims. Use create_aim MCP tool with supportedAims array pointing to parent: ${aimId}`;
+  const prompt = `Break down this idea into smaller sub-ideas. Use create_idea MCP tool with supportedAims array pointing to parent: ${ideaId}`;
 
   await this.post(this.worker, prompt);
 }
@@ -285,12 +285,12 @@ private async executeIdeate(ideationType: string): Promise<void> {
   this.log(`[StateMachine] Ideating: ${ideationType}`);
 
   const prompts = {
-    research: 'Do web research on relevant topics. Create aims for insights.',
-    new_aims: 'Review codebase and create aims for improvements: refactoring, tests, docs, security, performance.',
-    improvements: 'Review recent work and suggest optimizations as aims.'
+    research: 'Do web research on relevant topics. Create ideas for insights.',
+    new_ideas: 'Review codebase and create ideas for improvements: refactoring, tests, docs, security, performance.',
+    improvements: 'Review recent work and suggest optimizations as ideas.'
   };
 
-  const prompt = prompts[ideationType as keyof typeof prompts] || 'Think about improvements and create aims.';
+  const prompt = prompts[ideationType as keyof typeof prompts] || 'Think about improvements and create ideas.';
   await this.post(this.worker, prompt);
 }
 
@@ -304,7 +304,7 @@ private async executeProceed(action: any): Promise<void> {
 
     case 'motivate':
       this.log(`[StateMachine] Sending motivation`);
-      await this.post(this.worker, action.text || 'Keep working on the aim.');
+      await this.post(this.worker, action.text || 'Keep working on the idea.');
       break;
 
     case 'option_select':
@@ -323,7 +323,7 @@ private async executeVerifyComplete(notes: string): Promise<void> {
   this.log(`[StateMachine] Verify complete: ${notes}`);
 
   // Step 1: Verify
-  await this.post(this.worker, 'Use get_aim_context to verify aim is complete.');
+  await this.post(this.worker, 'Use get_idea_context to verify idea is complete.');
   await this.waitForWorkerIdle();
 
   // Step 2: Commit
@@ -406,7 +406,7 @@ async tick() {
    - Watchdog should respond with start_work, break_down, or ideate
 
 2. **Transition to WORKING:**
-   - start_work action should send INSTRUCT + aim to worker
+   - start_work action should send INSTRUCT + idea to worker
    - State should transition to WORKING
    - Next prompt should show WORKING actions only
 

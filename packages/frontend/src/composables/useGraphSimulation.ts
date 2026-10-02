@@ -33,7 +33,7 @@ export interface GraphNode {
   customColor?: string | null
   freezeCounter?: number
   loadable?: boolean
-  isRepo?: boolean // black-box linked-repo node (read-only, not a real aim)
+  isRepo?: boolean // black-box linked-repo node (read-only, not a real idea)
 }
 
 export interface GraphLink {
@@ -125,7 +125,7 @@ export function useGraphSimulation() {
     const { nodes: allRawNodes, links: allRawLinks } = dataStore.graphData
     const filter = graphUIStore.phaseFilter
 
-    // Apply phase filter: only include visible + loadable aim IDs
+    // Apply phase filter: only include visible + loadable idea IDs
     let rawNodes = allRawNodes
     let rawLinks = allRawLinks
     let visibleSet: Set<string> | null = null
@@ -136,7 +136,7 @@ export function useGraphSimulation() {
       loadableSet = new Set(filter.loadableIds)
       const allowedIds = new Set([...filter.visibleIds, ...filter.loadableIds])
       // Black-box repo nodes belong to no phase, so they'd be filtered out by id.
-      // Keep a repo edge whenever the local aim it supports (the link target) is
+      // Keep a repo edge whenever the local idea it supports (the link target) is
       // visible, and let its repo node (the source) ride along with that parent.
       const repoNodeIds = new Set(allRawNodes.filter(n => n.isRepo).map(n => n.id))
       rawLinks = allRawLinks.filter(l =>
@@ -383,7 +383,7 @@ export function useGraphSimulation() {
                 }
 
                 // 3. Dynamic zoom based on total distance
-                // Rests at the focus zoom; zooms out while the aim is far away.
+                // Rests at the focus zoom; zooms out while the idea is far away.
                 let targetScale = 1 / (1 / focus.scale + totalDist * 0.75 / LOGICAL_HALF_SIDE)
 
                 if (isNaN(targetScale) || !isFinite(targetScale)) {
@@ -468,7 +468,7 @@ export function useGraphSimulation() {
             
             vec2.scale(delta, link.relativePosition, rSum)
 
-            // Connection strength is normalized at both incident aims and
+            // Connection strength is normalized at both incident ideas and
             // combined symmetrically, so thick flows matter more without
             // breaking the equal-and-opposite pair-force invariant.
             const flowWeight = link.forceWeight

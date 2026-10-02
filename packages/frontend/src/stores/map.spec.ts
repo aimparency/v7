@@ -7,7 +7,7 @@ describe('map store camera focus', () => {
     setActivePinia(createPinia())
   })
 
-  it('does not over-zoom when centering on very close connected aims', () => {
+  it('does not over-zoom when centering on very close connected ideas', () => {
     const mapStore = useMapStore()
     mapStore.xratio = 1
     mapStore.yratio = 1
@@ -28,7 +28,7 @@ describe('map store camera focus', () => {
     expect(mapStore.offset[1]).toBeCloseTo(-5, 5)
   })
 
-  it('zooms out enough to fit distant connected aims', () => {
+  it('zooms out enough to fit distant connected ideas', () => {
     const mapStore = useMapStore()
     mapStore.xratio = 1
     mapStore.yratio = 1
@@ -49,7 +49,7 @@ describe('map store camera focus', () => {
     expect(mapStore.offset[1]).toBeCloseTo(0, 5)
   })
 
-  it('focuses an aim so its bounding square fills 1/25 of the canvas', () => {
+  it('focuses an idea so its bounding square fills 1/25 of the canvas', () => {
     const mapStore = useMapStore()
     mapStore.xratio = 16 / 9
     mapStore.yratio = 1
@@ -68,7 +68,7 @@ describe('map store camera focus', () => {
     expect(mapStore.offset[1]).toBeCloseTo(-80, 5)
   })
 
-  it('zooms out far enough mid-flight that both aims are on screen', () => {
+  it('zooms out far enough mid-flight that both ideas are on screen', () => {
     const scale = LOGICAL_HALF_SIDE / (5 * 20)
     const path = zoomPath(
       { offset: [0, 0], scale },
@@ -102,7 +102,7 @@ describe('map store camera focus', () => {
 })
 
 describe('graph overview camera', () => {
-  it('centers by aim surface and fits node radii with 1.2x breathing room', () => {
+  it('centers by idea surface and fits node radii with 1.2x breathing room', () => {
     const frame = graphOverviewFrame([
       { id: 'large', pos: [0, 0], r: 20 },
       { id: 'small', pos: [100, 0], r: 10 },
@@ -114,7 +114,7 @@ describe('graph overview camera', () => {
     expect(frame!.scale).toBeCloseTo((1000 / 90) / 1.2)
   })
 
-  it('ignores the farthest 10% of aims and recenters the retained set', () => {
+  it('ignores the farthest 10% of ideas and recenters the retained set', () => {
     const nodes = Array.from({ length: 9 }, (_, index) => ({
       id: `central-${index}`,
       pos: [index - 4, 0] as [number, number],

@@ -11,7 +11,7 @@ import {
   openPhaseEditModal as openPhaseEditModalHelper,
   openSettingsModal as openSettingsModalHelper
 } from './modal-helpers'
-import type { AimSearchModalOptions, AimSearchPickPayload } from './aim-search-types'
+import type { IdeaSearchModalOptions, IdeaSearchPickPayload } from './idea-search-types'
 import type { PhaseSearchAdditionalOption, PhaseSearchModalOptions, PhaseSearchSelection } from './phase-search-types'
 
 type RelativePosition = 'before' | 'after'
@@ -30,30 +30,30 @@ export const useUIModalStore = defineStore('ui-modal', {
     phaseModalInsertPosition: 'before' as RelativePosition,
 
     showAimModal: false,
-    aimModalInsertPosition: 'before' as RelativePosition,
-    aimModalSource: 'columns' as 'columns' | 'graph',
+    ideaModalInsertPosition: 'before' as RelativePosition,
+    ideaModalSource: 'columns' as 'columns' | 'graph',
 
     showAimEditModal: false,
-    aimEditModalAimId: null as string | null,
-    aimEditModalAimIds: [] as string[],
+    ideaEditModalAimId: null as string | null,
+    ideaEditModalAimIds: [] as string[],
 
     // Connection details (contribution % + explanation) for a freshly-created connection.
-    // parentId = supported aim, childId = supporting aim; the connection already exists.
+    // parentId = supported idea, childId = supporting idea; the connection already exists.
     showConnectionDetailsModal: false,
     connectionDetailsParentId: null as string | null,
     connectionDetailsChildId: null as string | null,
 
     showAimSearch: false,
-    aimSearchMode: 'navigate' as 'navigate' | 'pick',
-    aimSearchCallback: null as ((payload: AimSearchPickPayload) => void) | null,
-    aimCreationCallback: null as ((aimId: string, onConnectionConfirmed?: () => void) => void) | null,
+    ideaSearchMode: 'navigate' as 'navigate' | 'pick',
+    ideaSearchCallback: null as ((payload: IdeaSearchPickPayload) => void) | null,
+    ideaCreationCallback: null as ((ideaId: string, onConnectionConfirmed?: () => void) => void) | null,
     connectionDetailsCallback: null as (() => void) | null,
-    aimSearchInitialAimId: null as string | null,
-    aimSearchShowParentPaths: false,
-    aimSearchTitle: 'Search Aims',
-    aimSearchPlaceholder: 'Go to aim...',
-    aimSearchShowFilters: true,
-    aimSearchAdditionalOptions: [],
+    ideaSearchInitialAimId: null as string | null,
+    ideaSearchShowParentPaths: false,
+    ideaSearchTitle: 'Search Ideas',
+    ideaSearchPlaceholder: 'Go to idea...',
+    ideaSearchShowFilters: true,
+    ideaSearchAdditionalOptions: [],
     showPhaseSearchPrompt: false,
     phaseSearchPromptCallback: null as ((payload: PhaseSearchSelection) => void) | null,
     phaseSearchPromptTitle: 'Search Phases',
@@ -98,16 +98,16 @@ export const useUIModalStore = defineStore('ui-modal', {
 
     openAimSearch(
       mode: 'navigate' | 'pick' = 'navigate',
-      callback?: (payload: AimSearchPickPayload) => void,
+      callback?: (payload: IdeaSearchPickPayload) => void,
       initialAimId?: string,
-      options?: Partial<AimSearchModalOptions>
+      options?: Partial<IdeaSearchModalOptions>
     ) {
       openAimSearchModalHelper(this, mode, callback, initialAimId, options)
     },
 
     closeAimSearch() {
       closeAimSearchModalHelper(this)
-      this.aimSearchShowParentPaths = false
+      this.ideaSearchShowParentPaths = false
     },
 
     openPhaseSearchPrompt(
@@ -129,12 +129,12 @@ export const useUIModalStore = defineStore('ui-modal', {
       this.phaseSearchPromptAdditionalOptions = []
     },
 
-    openParentPathsModal(aimId: string) {
-      // Open search modal in path selection mode showing all paths to parent aims
-      this.aimSearchInitialAimId = aimId
-      this.aimSearchShowParentPaths = true
-      this.aimSearchMode = 'navigate'
-      this.aimSearchCallback = null
+    openParentPathsModal(ideaId: string) {
+      // Open search modal in path selection mode showing all paths to parent ideas
+      this.ideaSearchInitialAimId = ideaId
+      this.ideaSearchShowParentPaths = true
+      this.ideaSearchMode = 'navigate'
+      this.ideaSearchCallback = null
       this.showAimSearch = true
     },
 
@@ -150,16 +150,16 @@ export const useUIModalStore = defineStore('ui-modal', {
       closeSettingsModalHelper(this)
     },
 
-    openAimEditModal(aimId: string, aimIds: string[] = [aimId]) {
+    openAimEditModal(ideaId: string, ideaIds: string[] = [ideaId]) {
       this.showAimEditModal = true
-      this.aimEditModalAimId = aimId
-      this.aimEditModalAimIds = [...new Set(aimIds)]
+      this.ideaEditModalAimId = ideaId
+      this.ideaEditModalAimIds = [...new Set(ideaIds)]
     },
 
     closeAimEditModal() {
       this.showAimEditModal = false
-      this.aimEditModalAimId = null
-      this.aimEditModalAimIds = []
+      this.ideaEditModalAimId = null
+      this.ideaEditModalAimIds = []
     },
 
     openSpinOffApplyModal() {

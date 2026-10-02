@@ -17,19 +17,19 @@ export type PersistedGraphViewState = {
 export type PhaseFilter = {
   phaseId: string
   phaseName: string
-  visibleIds: string[]   // fully shown aims
-  loadableIds: string[]  // ring-only aims (parents of visible)
+  visibleIds: string[]   // fully shown ideas
+  loadableIds: string[]  // ring-only ideas (parents of visible)
 }
 
 export function findConnectionBetween(
   firstId: string,
   secondId: string,
-  aimsById: Record<string, { supportingConnections?: { aimId: string }[] }>,
+  ideasById: Record<string, { supportingConnections?: { ideaId: string }[] }>,
 ): { parentId: string; childId: string } | null {
-  if ((aimsById[firstId]?.supportingConnections ?? []).some(connection => connection.aimId === secondId)) {
+  if ((ideasById[firstId]?.supportingConnections ?? []).some(connection => connection.ideaId === secondId)) {
     return { parentId: firstId, childId: secondId }
   }
-  if ((aimsById[secondId]?.supportingConnections ?? []).some(connection => connection.aimId === firstId)) {
+  if ((ideasById[secondId]?.supportingConnections ?? []).some(connection => connection.ideaId === firstId)) {
     return { parentId: secondId, childId: firstId }
   }
   return null
@@ -85,8 +85,8 @@ export const useGraphUIStore = defineStore('ui-graph', {
       }
     },
 
-    setGraphSelection(aimId: string | null) {
-      this.graphSelectedAimId = aimId
+    setGraphSelection(ideaId: string | null) {
+      this.graphSelectedAimId = ideaId
       this.pendingDeleteAimId = null
     },
 
@@ -95,8 +95,8 @@ export const useGraphUIStore = defineStore('ui-graph', {
       this.pendingDeleteAimId = null
     },
 
-    setPendingDeleteAim(aimId: string | null) {
-      this.pendingDeleteAimId = aimId
+    setPendingDeleteAim(ideaId: string | null) {
+      this.pendingDeleteAimId = ideaId
     },
 
     selectLink(parentId: string, childId: string) {
@@ -125,13 +125,13 @@ export const useGraphUIStore = defineStore('ui-graph', {
       toggleGraphShowLabelsHelper(this)
     },
 
-    setPhaseFilter(phaseId: string, phaseName: string, commitments: string[], aimsById: Record<string, { supportedAims?: string[] }>) {
-      const visibleIds = commitments.filter(id => !!aimsById[id])
+    setPhaseFilter(phaseId: string, phaseName: string, commitments: string[], ideasById: Record<string, { supportedAims?: string[] }>) {
+      const visibleIds = commitments.filter(id => !!ideasById[id])
       const visibleSet = new Set(visibleIds)
       const loadableSet = new Set<string>()
       for (const id of visibleIds) {
-        for (const parentId of (aimsById[id]?.supportedAims ?? [])) {
-          if (!visibleSet.has(parentId) && !!aimsById[parentId]) {
+        for (const parentId of (ideasById[id]?.supportedAims ?? [])) {
+          if (!visibleSet.has(parentId) && !!ideasById[parentId]) {
             loadableSet.add(parentId)
           }
         }
@@ -139,25 +139,25 @@ export const useGraphUIStore = defineStore('ui-graph', {
       this.phaseFilter = { phaseId, phaseName, visibleIds, loadableIds: [...loadableSet] }
     },
 
-    expandLoadableAim(aimId: string, aimsById: Record<string, { supportedAims?: string[]; supportingConnections?: { aimId: string }[] }>) {
+    expandLoadableAim(ideaId: string, ideasById: Record<string, { supportedAims?: string[]; supportingConnections?: { ideaId: string }[] }>) {
       if (!this.phaseFilter) return
-      const aim = aimsById[aimId]
-      if (!aim) return
+      const idea = ideasById[ideaId]
+      if (!idea) return
 
       const visibleSet = new Set(this.phaseFilter.visibleIds)
       const loadableSet = new Set(this.phaseFilter.loadableIds)
 
       // Promote clicked node to visible
-      visibleSet.add(aimId)
-      loadableSet.delete(aimId)
+      visibleSet.add(ideaId)
+      loadableSet.delete(ideaId)
 
       // Its children become visible
-      for (const conn of (aim.supportingConnections ?? [])) {
-        if (aimsById[conn.aimId]) visibleSet.add(conn.aimId)
+      for (const conn of (idea.supportingConnections ?? [])) {
+        if (ideasById[conn.ideaId]) visibleSet.add(conn.ideaId)
       }
       // Its parents become loadable (if not already visible)
-      for (const parentId of (aim.supportedAims ?? [])) {
-        if (!visibleSet.has(parentId) && !!aimsById[parentId]) loadableSet.add(parentId)
+      for (const parentId of (idea.supportedAims ?? [])) {
+        if (!visibleSet.has(parentId) && !!ideasById[parentId]) loadableSet.add(parentId)
       }
 
       this.phaseFilter = { ...this.phaseFilter, visibleIds: [...visibleSet], loadableIds: [...loadableSet] }
@@ -167,7 +167,7 @@ export const useGraphUIStore = defineStore('ui-graph', {
       this.phaseFilter = null
     },
 
-    // Enter spin-off preview for the given root aim(s): the graph recolors nodes
+    // Enter spin-off preview for the given root idea(s): the graph recolors nodes
     // green (kept) / orange (overlap) / red (spun off) so the cut can be eyeballed
     // before committing. Remembers the prior color mode to restore on clear.
     previewSpinOff(rootIds: string[]) {
@@ -184,11 +184,11 @@ export const useGraphUIStore = defineStore('ui-graph', {
       this.spinOffPreviewPrevMode = null
     },
 
-    // Add/remove an aim as a spin-off root (click-to-toggle during preview).
-    toggleSpinOffRoot(aimId: string) {
-      this.spinOffPreviewRootIds = this.spinOffPreviewRootIds.includes(aimId)
-        ? this.spinOffPreviewRootIds.filter((id) => id !== aimId)
-        : [...this.spinOffPreviewRootIds, aimId]
+    // Add/remove an idea as a spin-off root (click-to-toggle during preview).
+    toggleSpinOffRoot(ideaId: string) {
+      this.spinOffPreviewRootIds = this.spinOffPreviewRootIds.includes(ideaId)
+        ? this.spinOffPreviewRootIds.filter((id) => id !== ideaId)
+        : [...this.spinOffPreviewRootIds, ideaId]
     }
   }
 })

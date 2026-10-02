@@ -12,8 +12,8 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
   const projectStore = useProjectStore()
   if (event.key === ' ' && uiStore.multiSelectMode) {
     event.preventDefault()
-    const aimId = graphStore.graphSelectedAimId
-    if (aimId) uiStore.toggleMultiSelect(aimId)
+    const ideaId = graphStore.graphSelectedAimId
+    if (ideaId) uiStore.toggleMultiSelect(ideaId)
   } else if (event.key === 'd') {
     event.preventDefault()
     if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
@@ -33,12 +33,12 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
         return
       }
 
-      const parent = dataStore.aims[selectedLink.parentId]
-      const child = dataStore.aims[selectedLink.childId]
+      const parent = dataStore.ideas[selectedLink.parentId]
+      const child = dataStore.ideas[selectedLink.childId]
       if (!parent || !child) return
 
-      const updatedConnections = (parent.supportingConnections || []).filter((connection: any) => connection.aimId !== child.id)
-      const updatedChildSupported = (child.supportedAims || []).filter((aimId: string) => aimId !== parent.id)
+      const updatedConnections = (parent.supportingConnections || []).filter((connection: any) => connection.ideaId !== child.id)
+      const updatedChildSupported = (child.supportedAims || []).filter((ideaId: string) => ideaId !== parent.id)
 
       dataStore.replaceAim(parent.id, { ...parent, supportingConnections: updatedConnections })
       dataStore.replaceAim(child.id, { ...child, supportedAims: updatedChildSupported })
@@ -54,15 +54,15 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
       return
     }
 
-    const aimId = graphStore.graphSelectedAimId
-    if (!aimId) return
+    const ideaId = graphStore.graphSelectedAimId
+    if (!ideaId) return
 
-    if (graphStore.pendingDeleteAimId === aimId) {
-      await dataStore.deleteAim(aimId)
+    if (graphStore.pendingDeleteAimId === ideaId) {
+      await dataStore.deleteAim(ideaId)
       graphStore.setPendingDeleteAim(null)
       graphStore.setGraphSelection(null)
     } else {
-      graphStore.setPendingDeleteAim(aimId)
+      graphStore.setPendingDeleteAim(ideaId)
     }
   } else if (event.key === 'Escape') {
     event.preventDefault()
@@ -76,11 +76,11 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
     }
   } else if (event.key === 'e' || event.key === 'Enter') {
     event.preventDefault()
-    const aimId = graphStore.graphSelectedAimId
+    const ideaId = graphStore.graphSelectedAimId
     if (uiStore.multiSelectMode && uiStore.multiSelectCount > 0) {
       modalStore.openAimEditModal(uiStore.multiSelectedAimIds[0], [...uiStore.multiSelectedAimIds])
-    } else if (aimId) {
-      modalStore.openAimEditModal(aimId, [aimId])
+    } else if (ideaId) {
+      modalStore.openAimEditModal(ideaId, [ideaId])
     }
   }
 }
@@ -265,8 +265,8 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
           if (selectedEntry?.type === 'phase') {
             uiStore.applyPhaseSelection(uiStore.activeColumn, selectableEntries.indexOf(selectedEntry))
             const selectedPhase = selectedEntry.phase
-            const aims = localDataStore.getAimsForPhase(selectedPhase.id)
-            if (aims.length > 0 && selectedPhase.selectedAimIndex === undefined) {
+            const ideas = localDataStore.getAimsForPhase(selectedPhase.id)
+            if (ideas.length > 0 && selectedPhase.selectedAimIndex === undefined) {
               selectedPhase.selectedAimIndex = 0
             }
             uiStore.navigatingAims = true
@@ -323,18 +323,18 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         if (uiStore.navigatingAims) {
           const selectedIndex = uiStore.getSelectedPhase(currentCol)
 
-          const aims = dataStore.floatingAims
-          if (!aims || selectedIndex >= aims.length) break
+          const ideas = dataStore.floatingAims
+          if (!ideas || selectedIndex >= ideas.length) break
 
-          const aimToDelete = aims[selectedIndex]
-          if (!aimToDelete) break
-          const aimState = uiStore.ensureAimUIState(uiStore.floatingAimUIStates, aimToDelete.id)
+          const ideaToDelete = ideas[selectedIndex]
+          if (!ideaToDelete) break
+          const ideaState = uiStore.ensureAimUIState(uiStore.floatingAimUIStates, ideaToDelete.id)
 
-          if (aimState.pendingDelete) {
-            await dataStore.deleteAim(aimToDelete.id)
-            aimState.pendingDelete = false
+          if (ideaState.pendingDelete) {
+            await dataStore.deleteAim(ideaToDelete.id)
+            ideaState.pendingDelete = false
           } else {
-            aimState.pendingDelete = true
+            ideaState.pendingDelete = true
           }
         }
       } else {
@@ -377,7 +377,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
         uiStore.pendingDeletePhaseId = null
       }
       const escapePath = uiStore.getSelectionPath()
-      const escapeAimState = escapePath.aimStates[escapePath.aimStates.length - 1]
+      const escapeAimState = escapePath.ideaStates[escapePath.ideaStates.length - 1]
       if (escapeAimState) escapeAimState.pendingDelete = false
       if (uiStore.navigatingAims) {
         uiStore.navigatingAims = false
@@ -394,8 +394,8 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
   const path = uiStore.getSelectionPath()
-  const currentAim = path.aims[path.aims.length - 1]
-  const currentAimState = path.aimStates[path.aimStates.length - 1]
+  const currentAim = path.ideas[path.ideas.length - 1]
+  const currentAimState = path.ideaStates[path.ideaStates.length - 1]
 
   if (event.key === 'j') {
     await uiStore.navigateDown()
@@ -475,10 +475,10 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
 
   if (creationPos !== undefined && currentAim) {
     modalStore.showAimModal = true
-    modalStore.aimModalInsertPosition = creationPos
+    modalStore.ideaModalInsertPosition = creationPos
   } else if (creationPos !== undefined && path.phase) {
     modalStore.showAimModal = true
-    modalStore.aimModalInsertPosition = creationPos
+    modalStore.ideaModalInsertPosition = creationPos
   }
 
   switch (event.key) {
@@ -532,8 +532,8 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
       if (currentAimState) {
         if (currentAimState.expanded) {
           currentAimState.expanded = false
-        } else if (path.aims.length > 1) {
-          const parentAimState = path.aimStates[path.aimStates.length - 2]
+        } else if (path.ideas.length > 1) {
+          const parentAimState = path.ideaStates[path.ideaStates.length - 2]
           if (parentAimState) {
             parentAimState.selectedIncomingIndex = undefined
           }
@@ -556,7 +556,7 @@ export async function handleAimNavigationKeysAction(uiStore: any, event: Keyboar
           selectedAimState.expanded = true
           const connections = selectedAim.supportingConnections || []
           if (connections.length > 0) {
-            dataStore.loadAims(projectStore.projectPath, connections.map((connection: any) => connection.aimId))
+            dataStore.loadAims(projectStore.projectPath, connections.map((connection: any) => connection.ideaId))
           }
         } else if (selectedAim.supportingConnections && selectedAim.supportingConnections.length > 0) {
           if (selectedAimState.selectedIncomingIndex === undefined) {

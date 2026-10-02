@@ -15,7 +15,7 @@ const { mockTrpc } = vi.hoisted(() => ({
       getMeta: { query: vi.fn().mockResolvedValue({ name: 'Test', color: '#007acc', rootPhaseIds: [] }) },
       onUpdate: { subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) }
     },
-    aim: {
+    idea: {
       list: { query: vi.fn().mockResolvedValue([]) }
     }
   }
@@ -56,9 +56,9 @@ describe('App', () => {
           GraphViewWrapper: true,
           VoiceView: true,
           PhaseCreationModal: true,
-          AimCreationModal: true,
-          AimEditModal: true,
-          AimSearchModal: true,
+          IdeaCreationModal: true,
+          IdeaEditModal: true,
+          IdeaSearchModal: true,
           PhaseSearchModal: true,
           ConsistencyModal: true,
           ProjectSettingsModal: true,
@@ -89,9 +89,9 @@ describe('App', () => {
           GraphViewWrapper: true,
           VoiceView: true,
           PhaseCreationModal: true,
-          AimCreationModal: true,
-          AimEditModal: true,
-          AimSearchModal: true,
+          IdeaCreationModal: true,
+          IdeaEditModal: true,
+          IdeaSearchModal: true,
           PhaseSearchModal: true,
           ConsistencyModal: true,
           ProjectSettingsModal: true,
@@ -138,9 +138,9 @@ describe('App', () => {
           GraphViewWrapper: true,
           VoiceView: true,
           PhaseCreationModal: true,
-          AimCreationModal: true,
-          AimEditModal: true,
-          AimSearchModal: true,
+          IdeaCreationModal: true,
+          IdeaEditModal: true,
+          IdeaSearchModal: true,
           PhaseSearchModal: true,
           ConsistencyModal: true,
           ProjectSettingsModal: true,
@@ -182,9 +182,9 @@ describe('App', () => {
           GraphViewWrapper: true,
           VoiceView: true,
           PhaseCreationModal: true,
-          AimCreationModal: true,
-          AimEditModal: true,
-          AimSearchModal: true,
+          IdeaCreationModal: true,
+          IdeaEditModal: true,
+          IdeaSearchModal: true,
           PhaseSearchModal: true,
           ConsistencyModal: true,
           ProjectSettingsModal: true,
@@ -203,7 +203,7 @@ describe('App', () => {
     expect(wrapper.text()).toContain('/workspaces')
   })
 
-  it('keeps aim search mounted after a keepOpen selection', async () => {
+  it('keeps idea search mounted after a keepOpen selection', async () => {
     const callback = vi.fn()
     const wrapper = mount(App, {
       global: {
@@ -217,11 +217,11 @@ describe('App', () => {
           GraphViewWrapper: true,
           VoiceView: true,
           PhaseCreationModal: true,
-          AimCreationModal: true,
-          AimEditModal: true,
-          AimSearchModal: {
+          IdeaCreationModal: true,
+          IdeaEditModal: true,
+          IdeaSearchModal: {
             emits: ['select', 'close'],
-            template: '<button class="emit-aim" @click="$emit(\'select\', { type: \'aim\', data: { id: \'a1\', text: \'Parent aim\', status: { state: \'open\' } }, keepOpen: true })">select aim</button>'
+            template: '<button class="emit-idea" @click="$emit(\'select\', { type: \'idea\', data: { id: \'a1\', text: \'Parent idea\', status: { state: \'open\' } }, keepOpen: true })">select idea</button>'
           },
           PhaseSearchModal: true,
           ConsistencyModal: true,
@@ -233,13 +233,13 @@ describe('App', () => {
 
     const modalStore = useUIModalStore()
     modalStore.showAimSearch = true
-    modalStore.aimSearchMode = 'pick'
-    modalStore.aimSearchCallback = callback
+    modalStore.ideaSearchMode = 'pick'
+    modalStore.ideaSearchCallback = callback
     await nextTick()
 
-    await wrapper.find('.emit-aim').trigger('click')
+    await wrapper.find('.emit-idea').trigger('click')
 
-    expect(callback).toHaveBeenCalledWith(expect.objectContaining({ type: 'aim', keepOpen: true }))
+    expect(callback).toHaveBeenCalledWith(expect.objectContaining({ type: 'idea', keepOpen: true }))
     expect(modalStore.showAimSearch).toBe(true)
   })
 
@@ -257,9 +257,9 @@ describe('App', () => {
           GraphViewWrapper: true,
           VoiceView: true,
           PhaseCreationModal: true,
-          AimCreationModal: true,
-          AimEditModal: true,
-          AimSearchModal: true,
+          IdeaCreationModal: true,
+          IdeaEditModal: true,
+          IdeaSearchModal: true,
           PhaseSearchModal: {
             emits: ['select', 'close'],
             template: '<button class="emit-phase" @click="$emit(\'select\', { type: \'phase\', data: { id: \'phase-1\', name: \'Release Prep\', parent: null }, keepOpen: true })">select phase</button>'
@@ -295,9 +295,9 @@ describe('App', () => {
           GraphViewWrapper: true,
           VoiceView: true,
           PhaseCreationModal: true,
-          AimCreationModal: true,
-          AimEditModal: true,
-          AimSearchModal: true,
+          IdeaCreationModal: true,
+          IdeaEditModal: true,
+          IdeaSearchModal: true,
           PhaseSearchModal: true,
           ConsistencyModal: true,
           ProjectSettingsModal: true,
@@ -342,9 +342,9 @@ describe('App', () => {
           GraphViewWrapper: true,
           VoiceView: true,
           PhaseCreationModal: true,
-          AimCreationModal: true,
-          AimEditModal: true,
-          AimSearchModal: true,
+          IdeaCreationModal: true,
+          IdeaEditModal: true,
+          IdeaSearchModal: true,
           PhaseSearchModal: true,
           ConsistencyModal: true,
           ProjectSettingsModal: true,

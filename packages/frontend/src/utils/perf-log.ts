@@ -91,7 +91,7 @@ function formatTraceDetails(details: Record<string, unknown>) {
   append('sel', 'selectedPhaseId')
   append('n', 'phaseCount')
   append('n', 'entries')
-  append('a', 'aimCount')
+  append('a', 'ideaCount')
   append('m', 'commitmentCount')
   append('d', 'durationMs')
   append('ac', 'activeColumn')

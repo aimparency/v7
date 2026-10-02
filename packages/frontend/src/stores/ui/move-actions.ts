@@ -3,7 +3,7 @@ import { useDataStore } from '../data'
 import { isAimInTree as isAimInTreeHelper } from './navigation-helpers'
 import { useProjectStore } from '../project-store'
 import { useUIModalStore } from './modal-store'
-import { ensureAimUIState } from './aim-ui-state'
+import { ensureAimUIState } from './idea-ui-state'
 
 function getProjectPath(): string {
   return useProjectStore().projectPath
@@ -13,13 +13,13 @@ export async function moveAimDownAction(uiStore: any) {
   const dataStore = useDataStore()
   const path = uiStore.getSelectionPath()
 
-  if (path.aims.length === 0) return
+  if (path.ideas.length === 0) return
 
-  const currentAim = path.aims[path.aims.length - 1]!
+  const currentAim = path.ideas[path.ideas.length - 1]!
 
-  if (path.aims.length > 1) {
-    const parentAim = path.aims[path.aims.length - 2]
-    const parentState = path.aimStates[path.aimStates.length - 2]
+  if (path.ideas.length > 1) {
+    const parentAim = path.ideas[path.ideas.length - 2]
+    const parentState = path.ideaStates[path.ideaStates.length - 2]
     if (parentAim && parentState?.selectedIncomingIndex !== undefined) {
       const currentIndex = parentState.selectedIncomingIndex
       const parentConnections = parentAim.supportingConnections || []
@@ -35,7 +35,7 @@ export async function moveAimDownAction(uiStore: any) {
         parentState.selectedIncomingIndex = nextIndex
 
         try {
-          await trpc.aim.connectAims.mutate({
+          await trpc.idea.connectAims.mutate({
             projectPath: getProjectPath(),
             parentAimId: parentAim.id,
             childAimId: currentAim.id,
@@ -43,9 +43,9 @@ export async function moveAimDownAction(uiStore: any) {
             childSupportedAimsIndex: currentAim.supportedAims.indexOf(parentAim.id)
           })
 
-          const updatedParent = await trpc.aim.get.query({
+          const updatedParent = await trpc.idea.get.query({
             projectPath: getProjectPath(),
-            aimId: parentAim.id
+            ideaId: parentAim.id
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
 
@@ -71,9 +71,9 @@ export async function moveAimDownAction(uiStore: any) {
       }
 
       try {
-        await trpc.aim.commitToPhase.mutate({
+        await trpc.idea.commitToPhase.mutate({
           projectPath: getProjectPath(),
-          aimId: currentAim.id,
+          ideaId: currentAim.id,
           phaseId,
           insertionIndex: nextIndex
         })
@@ -122,14 +122,14 @@ export async function moveAimDownAction(uiStore: any) {
         }
 
         try {
-          await trpc.aim.removeFromPhase.mutate({
+          await trpc.idea.removeFromPhase.mutate({
             projectPath: getProjectPath(),
-            aimId: currentAim.id,
+            ideaId: currentAim.id,
             phaseId
           })
-          await trpc.aim.commitToPhase.mutate({
+          await trpc.idea.commitToPhase.mutate({
             projectPath: getProjectPath(),
-            aimId: currentAim.id,
+            ideaId: currentAim.id,
             phaseId: nextPhaseId,
             insertionIndex: 0
           })
@@ -155,13 +155,13 @@ export async function moveAimUpAction(uiStore: any) {
   const dataStore = useDataStore()
   const path = uiStore.getSelectionPath()
 
-  if (path.aims.length === 0) return
+  if (path.ideas.length === 0) return
 
-  const currentAim = path.aims[path.aims.length - 1]!
+  const currentAim = path.ideas[path.ideas.length - 1]!
 
-  if (path.aims.length > 1) {
-    const parentAim = path.aims[path.aims.length - 2]
-    const parentState = path.aimStates[path.aimStates.length - 2]
+  if (path.ideas.length > 1) {
+    const parentAim = path.ideas[path.ideas.length - 2]
+    const parentState = path.ideaStates[path.ideaStates.length - 2]
     if (parentAim && parentState?.selectedIncomingIndex !== undefined) {
       const currentIndex = parentState.selectedIncomingIndex
       if (currentIndex > 0) {
@@ -175,7 +175,7 @@ export async function moveAimUpAction(uiStore: any) {
         parentState.selectedIncomingIndex = prevIndex
 
         try {
-          await trpc.aim.connectAims.mutate({
+          await trpc.idea.connectAims.mutate({
             projectPath: getProjectPath(),
             parentAimId: parentAim.id,
             childAimId: currentAim.id,
@@ -183,9 +183,9 @@ export async function moveAimUpAction(uiStore: any) {
             childSupportedAimsIndex: currentAim.supportedAims.indexOf(parentAim.id)
           })
 
-          const updatedParent = await trpc.aim.get.query({
+          const updatedParent = await trpc.idea.get.query({
             projectPath: getProjectPath(),
-            aimId: parentAim.id
+            ideaId: parentAim.id
           })
           dataStore.replaceAim(parentAim.id, updatedParent)
 
@@ -210,9 +210,9 @@ export async function moveAimUpAction(uiStore: any) {
       }
 
       try {
-        await trpc.aim.commitToPhase.mutate({
+        await trpc.idea.commitToPhase.mutate({
           projectPath: getProjectPath(),
-          aimId: currentAim.id,
+          ideaId: currentAim.id,
           phaseId,
           insertionIndex: prevIndex
         })
@@ -261,14 +261,14 @@ export async function moveAimUpAction(uiStore: any) {
         }
 
         try {
-          await trpc.aim.removeFromPhase.mutate({
+          await trpc.idea.removeFromPhase.mutate({
             projectPath: getProjectPath(),
-            aimId: currentAim.id,
+            ideaId: currentAim.id,
             phaseId
           })
-          await trpc.aim.commitToPhase.mutate({
+          await trpc.idea.commitToPhase.mutate({
             projectPath: getProjectPath(),
-            aimId: currentAim.id,
+            ideaId: currentAim.id,
             phaseId: prevPhaseId,
             insertionIndex: newIndex
           })
@@ -294,25 +294,25 @@ export async function moveAimOutAction(uiStore: any) {
   const dataStore = useDataStore()
   const path = uiStore.getSelectionPath()
 
-  if (path.aims.length <= 1) return
+  if (path.ideas.length <= 1) return
 
-  const currentAim = path.aims[path.aims.length - 1]!
+  const currentAim = path.ideas[path.ideas.length - 1]!
   const currentAimId = currentAim.id
-  const parentAim = path.aims[path.aims.length - 2]
+  const parentAim = path.ideas[path.ideas.length - 2]
   if (!parentAim) return
 
   const parentId = parentAim.id
   const parentConnections = parentAim.supportingConnections || []
-  const updatedConnections = parentConnections.filter((c: any) => c.aimId !== currentAimId)
+  const updatedConnections = parentConnections.filter((c: any) => c.ideaId !== currentAimId)
   const updatedSupportedAims = currentAim.supportedAims.filter((id: string) => id !== parentId)
 
   let grandparentId: string | undefined
   let newIndex: number | undefined
   let targetPhaseId: string | undefined
 
-  if (path.aims.length > 2) {
-    const grandparentAim = path.aims[path.aims.length - 3]!
-    const grandparentState = path.aimStates[path.aimStates.length - 3]!
+  if (path.ideas.length > 2) {
+    const grandparentAim = path.ideas[path.ideas.length - 3]!
+    const grandparentState = path.ideaStates[path.ideaStates.length - 3]!
     grandparentId = grandparentAim.id
     const parentIndexInGrandparent = grandparentState.selectedIncomingIndex!
     newIndex = parentIndexInGrandparent + 1
@@ -333,11 +333,11 @@ export async function moveAimOutAction(uiStore: any) {
   currentAim.supportedAims = updatedSupportedAims
 
   if (grandparentId) {
-    const gp = dataStore.aims[grandparentId]
+    const gp = dataStore.ideas[grandparentId]
     if (gp && newIndex !== undefined) {
       if (!gp.supportingConnections) gp.supportingConnections = []
-      gp.supportingConnections.splice(newIndex, 0, { aimId: currentAimId, weight: 1 } as any)
-      const gpState = path.aimStates[path.aimStates.length - 3]
+      gp.supportingConnections.splice(newIndex, 0, { ideaId: currentAimId, weight: 1 } as any)
+      const gpState = path.ideaStates[path.ideaStates.length - 3]
       if (gpState) gpState.selectedIncomingIndex = newIndex
       currentAim.supportedAims.push(grandparentId)
     }
@@ -356,19 +356,19 @@ export async function moveAimOutAction(uiStore: any) {
   }
 
   try {
-    await trpc.aim.update.mutate({
+    await trpc.idea.update.mutate({
       projectPath: getProjectPath(),
-      aimId: parentId,
-      aim: { supportingConnections: updatedConnections }
+      ideaId: parentId,
+      idea: { supportingConnections: updatedConnections }
     })
-    await trpc.aim.update.mutate({
+    await trpc.idea.update.mutate({
       projectPath: getProjectPath(),
-      aimId: currentAimId,
-      aim: { supportedAims: updatedSupportedAims }
+      ideaId: currentAimId,
+      idea: { supportedAims: updatedSupportedAims }
     })
 
     if (grandparentId) {
-      await trpc.aim.connectAims.mutate({
+      await trpc.idea.connectAims.mutate({
         projectPath: getProjectPath(),
         parentAimId: grandparentId,
         childAimId: currentAimId,
@@ -376,9 +376,9 @@ export async function moveAimOutAction(uiStore: any) {
         childSupportedAimsIndex: 0
       })
     } else if (targetPhaseId) {
-      await trpc.aim.commitToPhase.mutate({
+      await trpc.idea.commitToPhase.mutate({
         projectPath: getProjectPath(),
-        aimId: currentAimId,
+        ideaId: currentAimId,
         phaseId: targetPhaseId,
         insertionIndex: newIndex!
       })
@@ -386,17 +386,17 @@ export async function moveAimOutAction(uiStore: any) {
 
     const reloads = []
     reloads.push(
-      trpc.aim.get.query({
+      trpc.idea.get.query({
         projectPath: getProjectPath(),
-        aimId: parentId
+        ideaId: parentId
       }).then((updated: any) => dataStore.replaceAim(parentId, updated))
     )
 
     if (grandparentId) {
       reloads.push(
-        trpc.aim.get.query({
+        trpc.idea.get.query({
           projectPath: getProjectPath(),
-          aimId: grandparentId
+          ideaId: grandparentId
         }).then((updated: any) => dataStore.replaceAim(grandparentId, updated))
       )
     } else if (targetPhaseId) {
@@ -405,16 +405,16 @@ export async function moveAimOutAction(uiStore: any) {
           projectPath: getProjectPath(),
           phaseId: targetPhaseId
         }).then((updated: any) => dataStore.replacePhase(targetPhaseId, updated)),
-        trpc.aim.get.query({
+        trpc.idea.get.query({
           projectPath: getProjectPath(),
-          aimId: currentAimId
+          ideaId: currentAimId
         }).then((updated: any) => dataStore.replaceAim(currentAimId, updated))
       )
     } else {
       reloads.push(
-        trpc.aim.get.query({
+        trpc.idea.get.query({
           projectPath: getProjectPath(),
-          aimId: currentAimId
+          ideaId: currentAimId
         }).then((updated: any) => {
           dataStore.replaceAim(currentAimId, updated)
         })
@@ -431,9 +431,9 @@ export async function moveAimInAction(uiStore: any) {
   const dataStore = useDataStore()
   const path = uiStore.getSelectionPath()
 
-  if (path.aims.length === 0) return
+  if (path.ideas.length === 0) return
 
-  const currentAim = path.aims[path.aims.length - 1]!
+  const currentAim = path.ideas[path.ideas.length - 1]!
   const currentAimId = currentAim.id
 
   let previousSiblingId: string | undefined
@@ -441,9 +441,9 @@ export async function moveAimInAction(uiStore: any) {
   let oldParentId: string | undefined
   let oldPhaseId: string | undefined
 
-  if (path.aims.length > 1) {
-    const parentAim = path.aims[path.aims.length - 2]
-    const parentState = path.aimStates[path.aimStates.length - 2]
+  if (path.ideas.length > 1) {
+    const parentAim = path.ideas[path.ideas.length - 2]
+    const parentState = path.ideaStates[path.ideaStates.length - 2]
     if (!parentAim || parentState?.selectedIncomingIndex === undefined) return
 
     currentIndex = parentState.selectedIncomingIndex
@@ -451,7 +451,7 @@ export async function moveAimInAction(uiStore: any) {
 
     const parentConnections = parentAim.supportingConnections || []
     const prevConn = parentConnections[currentIndex - 1]
-    if (prevConn) previousSiblingId = prevConn.aimId
+    if (prevConn) previousSiblingId = prevConn.ideaId
     oldParentId = parentAim.id
   } else if (path.phase) {
     currentIndex = path.phase.selectedAimIndex!
@@ -467,16 +467,16 @@ export async function moveAimInAction(uiStore: any) {
   }
 
   if (!previousSiblingId) return
-  const previousSibling = dataStore.aims[previousSiblingId]
+  const previousSibling = dataStore.ideas[previousSiblingId]
   if (!previousSibling) return
 
   const prevSiblingConnections = previousSibling.supportingConnections || []
   const insertionIndex = prevSiblingConnections.length
 
   if (oldParentId) {
-    const oldParent = dataStore.aims[oldParentId]
+    const oldParent = dataStore.ideas[oldParentId]
     if (oldParent && oldParent.supportingConnections) {
-      oldParent.supportingConnections = oldParent.supportingConnections.filter((c: any) => c.aimId !== currentAimId)
+      oldParent.supportingConnections = oldParent.supportingConnections.filter((c: any) => c.ideaId !== currentAimId)
     }
     currentAim.supportedAims = currentAim.supportedAims.filter((id: string) => id !== oldParentId)
   } else if (oldPhaseId) {
@@ -496,9 +496,9 @@ export async function moveAimInAction(uiStore: any) {
 
   if (previousSibling) {
     if (!previousSibling.supportingConnections) previousSibling.supportingConnections = []
-    previousSibling.supportingConnections.splice(insertionIndex, 0, { aimId: currentAimId, weight: 1 } as any)
-    const siblingStateTree = path.aims.length > 1
-      ? path.aimStates[path.aimStates.length - 2]?.children
+    previousSibling.supportingConnections.splice(insertionIndex, 0, { ideaId: currentAimId, weight: 1 } as any)
+    const siblingStateTree = path.ideas.length > 1
+      ? path.ideaStates[path.ideaStates.length - 2]?.children
       : oldPhaseId
         ? uiStore.getPhaseAimUIStates(oldPhaseId)
         : uiStore.floatingAimUIStates
@@ -519,7 +519,7 @@ export async function moveAimInAction(uiStore: any) {
   }
 
   if (oldParentId) {
-    const oldParentState = path.aimStates[path.aimStates.length - 2]
+    const oldParentState = path.ideaStates[path.ideaStates.length - 2]
     if (oldParentState?.selectedIncomingIndex !== undefined) {
       oldParentState.selectedIncomingIndex = Math.max(0, currentIndex - 1)
     }
@@ -530,7 +530,7 @@ export async function moveAimInAction(uiStore: any) {
   }
 
   try {
-    await trpc.aim.connectAims.mutate({
+    await trpc.idea.connectAims.mutate({
       projectPath: getProjectPath(),
       parentAimId: previousSiblingId,
       childAimId: currentAimId,
@@ -539,43 +539,43 @@ export async function moveAimInAction(uiStore: any) {
     })
 
     if (oldParentId) {
-      const oldParent = dataStore.aims[oldParentId]
+      const oldParent = dataStore.ideas[oldParentId]
       if (oldParent) {
         const oldParentConnections = oldParent.supportingConnections || []
-        const updatedConnections = oldParentConnections.filter((c: any) => c.aimId !== currentAimId)
+        const updatedConnections = oldParentConnections.filter((c: any) => c.ideaId !== currentAimId)
 
-        await trpc.aim.update.mutate({
+        await trpc.idea.update.mutate({
           projectPath: getProjectPath(),
-          aimId: oldParentId,
-          aim: { supportingConnections: updatedConnections }
+          ideaId: oldParentId,
+          idea: { supportingConnections: updatedConnections }
         })
       }
-      await trpc.aim.update.mutate({
+      await trpc.idea.update.mutate({
         projectPath: getProjectPath(),
-        aimId: currentAimId,
-        aim: { supportedAims: currentAim.supportedAims.filter((id: string) => id !== oldParentId) }
+        ideaId: currentAimId,
+        idea: { supportedAims: currentAim.supportedAims.filter((id: string) => id !== oldParentId) }
       })
     } else if (oldPhaseId) {
-      await trpc.aim.removeFromPhase.mutate({
+      await trpc.idea.removeFromPhase.mutate({
         projectPath: getProjectPath(),
-        aimId: currentAimId,
+        ideaId: currentAimId,
         phaseId: oldPhaseId
       })
     }
 
     const reloads = []
     reloads.push(
-      trpc.aim.get.query({
+      trpc.idea.get.query({
         projectPath: getProjectPath(),
-        aimId: previousSiblingId
+        ideaId: previousSiblingId
       }).then((updated: any) => dataStore.replaceAim(previousSiblingId, updated))
     )
 
     if (oldParentId) {
       reloads.push(
-        trpc.aim.get.query({
+        trpc.idea.get.query({
           projectPath: getProjectPath(),
-          aimId: oldParentId
+          ideaId: oldParentId
         }).then((updated: any) => dataStore.replaceAim(oldParentId, updated))
       )
     } else if (oldPhaseId) {
@@ -607,9 +607,9 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
   let insertionIndex = 0
   let destinationParentState: any
 
-  if (path.aims.length > 1) {
-    const parentAim = path.aims[path.aims.length - 2]
-    destinationParentState = path.aimStates[path.aimStates.length - 2]
+  if (path.ideas.length > 1) {
+    const parentAim = path.ideas[path.ideas.length - 2]
+    destinationParentState = path.ideaStates[path.ideaStates.length - 2]
     if (!parentAim) return
     destinationParentAimId = parentAim.id
     insertionIndex = (destinationParentState?.selectedIncomingIndex ?? 0) + 1
@@ -623,7 +623,7 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
     return
   }
 
-  const cutAim = dataStore.aims[cutAimId]
+  const cutAim = dataStore.ideas[cutAimId]
   if (destinationParentAimId && cutAim && isAimInTreeHelper(destinationParentAimId, cutAim, dataStore)) {
     return
   }
@@ -633,49 +633,49 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
 
   try {
     if (destinationParentAimId && sourceParentAimId === destinationParentAimId) {
-      await trpc.aim.connectAims.mutate({
+      await trpc.idea.connectAims.mutate({
         projectPath: getProjectPath(),
         parentAimId: destinationParentAimId,
         childAimId: cutAimId,
         parentIncomingIndex: insertionIndex
       })
     } else if (destinationPhaseId && sourcePhaseId === destinationPhaseId) {
-      await trpc.aim.commitToPhase.mutate({
+      await trpc.idea.commitToPhase.mutate({
         projectPath: getProjectPath(),
-        aimId: cutAimId,
+        ideaId: cutAimId,
         phaseId: destinationPhaseId,
         insertionIndex
       })
     } else {
       if (sourceParentAimId) {
-        const sourceParent = dataStore.aims[sourceParentAimId]
+        const sourceParent = dataStore.ideas[sourceParentAimId]
         if (sourceParent) {
-          const updatedConnections = (sourceParent.supportingConnections || []).filter((c: any) => c.aimId !== cutAimId)
-          await trpc.aim.update.mutate({
+          const updatedConnections = (sourceParent.supportingConnections || []).filter((c: any) => c.ideaId !== cutAimId)
+          await trpc.idea.update.mutate({
             projectPath: getProjectPath(),
-            aimId: sourceParentAimId,
-            aim: { supportingConnections: updatedConnections }
+            ideaId: sourceParentAimId,
+            idea: { supportingConnections: updatedConnections }
           })
         }
       } else if (sourcePhaseId) {
-        await trpc.aim.removeFromPhase.mutate({
+        await trpc.idea.removeFromPhase.mutate({
           projectPath: getProjectPath(),
-          aimId: cutAimId,
+          ideaId: cutAimId,
           phaseId: sourcePhaseId
         })
       }
 
       if (destinationParentAimId) {
-        await trpc.aim.connectAims.mutate({
+        await trpc.idea.connectAims.mutate({
           projectPath: getProjectPath(),
           parentAimId: destinationParentAimId,
           childAimId: cutAimId,
           parentIncomingIndex: insertionIndex
         })
       } else if (destinationPhaseId) {
-        await trpc.aim.commitToPhase.mutate({
+        await trpc.idea.commitToPhase.mutate({
           projectPath: getProjectPath(),
-          aimId: cutAimId,
+          ideaId: cutAimId,
           phaseId: destinationPhaseId,
           insertionIndex
         })
@@ -683,26 +683,26 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
     }
 
     const reloads: Promise<any>[] = [
-      trpc.aim.get.query({
+      trpc.idea.get.query({
         projectPath: getProjectPath(),
-        aimId: cutAimId
+        ideaId: cutAimId
       }).then((updatedAim: any) => dataStore.replaceAim(cutAimId, updatedAim))
     ]
 
     if (sourceParentAimId) {
       reloads.push(
-        trpc.aim.get.query({
+        trpc.idea.get.query({
           projectPath: getProjectPath(),
-          aimId: sourceParentAimId
+          ideaId: sourceParentAimId
         }).then((updatedAim: any) => dataStore.replaceAim(sourceParentAimId, updatedAim))
       )
     }
 
     if (destinationParentAimId) {
       reloads.push(
-        trpc.aim.get.query({
+        trpc.idea.get.query({
           projectPath: getProjectPath(),
-          aimId: destinationParentAimId
+          ideaId: destinationParentAimId
         }).then((updatedAim: any) => dataStore.replaceAim(destinationParentAimId, updatedAim))
       )
     }
@@ -728,12 +728,12 @@ export async function pasteCutAimAction(uiStore: any, dataStore: any) {
     await Promise.all(reloads)
 
     if (destinationParentAimId) {
-      const destinationParent = dataStore.aims[destinationParentAimId]
+      const destinationParent = dataStore.ideas[destinationParentAimId]
       if (destinationParent && destinationParentState) {
         destinationParentState.expanded = true
         destinationParentState.selectedIncomingIndex = Math.max(
           0,
-          (destinationParent.supportingConnections || []).findIndex((c: any) => c.aimId === cutAimId)
+          (destinationParent.supportingConnections || []).findIndex((c: any) => c.ideaId === cutAimId)
         )
       }
     } else if (destinationPhaseId) {
@@ -764,9 +764,9 @@ export async function pasteCopiedAimAction(uiStore: any, dataStore: any) {
   let insertionIndex = 0
   let destinationParentState: any
 
-  if (path.aims.length > 1) {
-    const parentAim = path.aims[path.aims.length - 2]
-    destinationParentState = path.aimStates[path.aimStates.length - 2]
+  if (path.ideas.length > 1) {
+    const parentAim = path.ideas[path.ideas.length - 2]
+    destinationParentState = path.ideaStates[path.ideaStates.length - 2]
     if (!parentAim) return
     destinationParentAimId = parentAim.id
     insertionIndex = (destinationParentState?.selectedIncomingIndex ?? 0) + 1
@@ -777,23 +777,23 @@ export async function pasteCopiedAimAction(uiStore: any, dataStore: any) {
     return
   }
 
-  const copyAim = dataStore.aims[copyAimId]
+  const copyAim = dataStore.ideas[copyAimId]
   if (destinationParentAimId && copyAim && isAimInTreeHelper(destinationParentAimId, copyAim, dataStore)) {
     return
   }
 
   try {
     if (destinationParentAimId) {
-      await trpc.aim.connectAims.mutate({
+      await trpc.idea.connectAims.mutate({
         projectPath: getProjectPath(),
         parentAimId: destinationParentAimId,
         childAimId: copyAimId,
         parentIncomingIndex: insertionIndex
       })
     } else if (destinationPhaseId) {
-      await trpc.aim.commitToPhase.mutate({
+      await trpc.idea.commitToPhase.mutate({
         projectPath: getProjectPath(),
-        aimId: copyAimId,
+        ideaId: copyAimId,
         phaseId: destinationPhaseId,
         insertionIndex
       })
@@ -803,9 +803,9 @@ export async function pasteCopiedAimAction(uiStore: any, dataStore: any) {
 
     if (destinationParentAimId) {
       reloads.push(
-        trpc.aim.get.query({
+        trpc.idea.get.query({
           projectPath: getProjectPath(),
-          aimId: destinationParentAimId
+          ideaId: destinationParentAimId
         }).then((updatedAim: any) => dataStore.replaceAim(destinationParentAimId, updatedAim))
       )
     }
@@ -820,21 +820,21 @@ export async function pasteCopiedAimAction(uiStore: any, dataStore: any) {
     }
 
     reloads.push(
-      trpc.aim.get.query({
+      trpc.idea.get.query({
         projectPath: getProjectPath(),
-        aimId: copyAimId
+        ideaId: copyAimId
       }).then((updatedAim: any) => dataStore.replaceAim(copyAimId, updatedAim))
     )
 
     await Promise.all(reloads)
 
     if (destinationParentAimId) {
-      const destinationParent = dataStore.aims[destinationParentAimId]
+      const destinationParent = dataStore.ideas[destinationParentAimId]
       if (destinationParent && destinationParentState) {
         destinationParentState.expanded = true
         destinationParentState.selectedIncomingIndex = Math.max(
           0,
-          (destinationParent.supportingConnections || []).findIndex((c: any) => c.aimId === copyAimId)
+          (destinationParent.supportingConnections || []).findIndex((c: any) => c.ideaId === copyAimId)
         )
       }
     } else if (destinationPhaseId) {

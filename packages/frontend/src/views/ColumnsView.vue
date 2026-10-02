@@ -67,7 +67,7 @@ const onTouchEnd = (event: TouchEvent) => {
     @touchmove.passive="onTouchMove"
     @touchend.passive="onTouchEnd"
   >
-    <RootAimsColumn class="column-aims" />
+    <RootAimsColumn class="column-ideas" />
 
     <Column
       v-for="colIndex in [...Array(uiStore.maxColumn + 1).keys()]"
@@ -92,7 +92,7 @@ const onTouchEnd = (event: TouchEvent) => {
   width: 100%;
 }
 
-.column-aims,
+.column-ideas,
 .column {
   flex-basis: var(--column-width);
   flex-shrink: 0;

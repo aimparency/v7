@@ -6,7 +6,7 @@ export interface SessionSummary {
   sessionId: string;
   timestamp: number;
   duration: number;
-  aimsWorked: string[];
+  ideasWorked: string[];
   outcomes: string;
   patterns: string;
   lessonsLearned: string;
@@ -56,7 +56,7 @@ export class SessionMemory {
   /**
    * Build the session summary saved at compaction time.
    *
-   * aimsWorked / outcomes / rawReflection are heuristically extracted from the
+   * ideasWorked / outcomes / rawReflection are heuristically extracted from the
    * worker's terminal scrollback. patterns / lessonsLearned / systemLimitations
    * come from the supervisor's own reflection when it attaches them to the
    * compact decision (approach B) — far higher signal than scrollback. When the
@@ -75,7 +75,7 @@ export class SessionMemory {
         sessionId: this.sessionId,
         timestamp: this.sessionStartTime,
         duration: Date.now() - this.sessionStartTime,
-        aimsWorked: this.extractAimIds(workerContext),
+        ideasWorked: this.extractAimIds(workerContext),
         outcomes: this.extractOutcomes(workerContext),
         patterns: reflection?.patterns?.trim() ?? '',
         lessonsLearned: reflection?.lessonsLearned?.trim() ?? '',
@@ -91,18 +91,18 @@ export class SessionMemory {
   }
 
   /**
-   * Extract aim IDs from worker output
+   * Extract idea IDs from worker output
    */
   private extractAimIds(context: string): string[] {
-    const aimIds: string[] = [];
-    // Match UUID patterns (aim IDs)
+    const ideaIds: string[] = [];
+    // Match UUID patterns (idea IDs)
     const uuidRegex = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi;
     const matches = context.match(uuidRegex);
     if (matches) {
       // Deduplicate
       return Array.from(new Set(matches));
     }
-    return aimIds;
+    return ideaIds;
   }
 
   /**
@@ -119,8 +119,8 @@ export class SessionMemory {
       /completed/i,
       /implemented/i,
       /fixed/i,
-      /updated aim status/i,
-      /marked aim .* as done/i
+      /updated idea status/i,
+      /marked idea .* as done/i
     ];
 
     const relevantLines = lines.filter(line =>
@@ -218,8 +218,8 @@ export class SessionMemory {
         lines.push(`  - Outcomes: ${summary.outcomes.slice(0, 200)}`);
       }
 
-      if (summary.aimsWorked.length > 0) {
-        lines.push(`  - Aims: ${summary.aimsWorked.slice(0, 3).join(', ')}`);
+      if (summary.ideasWorked.length > 0) {
+        lines.push(`  - Ideas: ${summary.ideasWorked.slice(0, 3).join(', ')}`);
       }
 
       if (summary.patterns) {
@@ -312,14 +312,14 @@ export class SessionMemory {
         ''
       ].join('\n');
 
-      // Auto-propose improvement aim for dominant friction (implements the "Close the recursive loop" aim).
-      // When retry ceiling (or other dominant) is top, direct the loop (LLM agent) to use create_aim MCP tool
+      // Auto-propose improvement idea for dominant friction (implements the "Close the recursive loop" idea).
+      // When retry ceiling (or other dominant) is top, direct the loop (LLM agent) to use create_idea MCP tool
       // to propose a concrete fix in wrapped-agents instead of just retrying. This closes identify→apply.
       const top = ranked[0];
       if (top && top[0] === 'retry ceiling reached') {
-        summaryText += '\n\n**AUTO-PROPOSE ACTION**: Dominant friction "retry ceiling reached". Use the create_aim MCP tool to create an improvement aim under the self-reflection/system-limitation aim (b03ad58e-4518-455f-8a35-36f58eb8ee7d) or "Close the recursive loop" parent. Suggested text: "Fix recurring retry ceiling friction in supervisor by extending BACKOFF_SCHEDULE=[1,2,4,8,15] or adding circuit-breaker/reset logic after N consecutive ERRORs in supervisor-state.ts + prompts. Avoid hitting ceiling by better recovery." Cost: 2. This addresses the limitation at the source in wrapped-agents.';
+        summaryText += '\n\n**AUTO-PROPOSE ACTION**: Dominant friction "retry ceiling reached". Use the create_idea MCP tool to create an improvement idea under the self-reflection/system-limitation idea (b03ad58e-4518-455f-8a35-36f58eb8ee7d) or "Close the recursive loop" parent. Suggested text: "Fix recurring retry ceiling friction in supervisor by extending BACKOFF_SCHEDULE=[1,2,4,8,15] or adding circuit-breaker/reset logic after N consecutive ERRORs in supervisor-state.ts + prompts. Avoid hitting ceiling by better recovery." Cost: 2. This addresses the limitation at the source in wrapped-agents.';
       } else if (top) {
-        summaryText += '\n\nIf one failure dominates, use create_aim MCP tool to open a specific aim in wrapped-agents/common or kennel to fix the root cause rather than just retrying.';
+        summaryText += '\n\nIf one failure dominates, use create_idea MCP tool to open a specific idea in wrapped-agents/common or kennel to fix the root cause rather than just retrying.';
       }
 
       return summaryText;
@@ -383,7 +383,7 @@ export class SessionMemory {
         sessionId: `meta-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         timestamp: Date.now(),
         duration: toCompress.reduce((sum, s) => sum + (s.duration || 0), 0),
-        aimsWorked: Array.from(new Set(toCompress.flatMap(s => s.aimsWorked || []))),
+        ideasWorked: Array.from(new Set(toCompress.flatMap(s => s.ideasWorked || []))),
         outcomes: metaOutcomes,
         patterns: metaPatterns,
         lessonsLearned: metaLessons,

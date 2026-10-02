@@ -4,7 +4,7 @@ import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useScrollIntoView } from '../composables/useScrollIntoView'
 import { useKeepSelectedAimVisible } from '../composables/useKeepSelectedAimVisible'
-import AimsList from './AimsList.vue'
+import IdeasList from './IdeasList.vue'
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -14,43 +14,43 @@ const isActive = computed(() => uiStore.activeColumn === -1)
 
 const rootColumnRef = ref<HTMLElement | null>(null)
 
-// Handle scroll requests from child aims
+// Handle scroll requests from child ideas
 const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
 useKeepSelectedAimVisible(rootColumnRef, () => isActive.value, handleScrollRequest)
 
-const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimId: string, mods?: { ctrl: boolean; shift: boolean }) => {
+const handleAimClicked = (columnIndex: number, phaseId: string | undefined, ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isCtrl = !!(mods && mods.ctrl)
   const isShift = !!(mods && mods.shift)
   const isModeToggle = uiStore.multiSelectMode && !isShift
   if (isShift) {
     const ordered = dataStore.floatingAims.map((a: any) => a.id)
-    uiStore.selectMultiRange(aimId, ordered)
+    uiStore.selectMultiRange(ideaId, ordered)
   } else if (isCtrl || isModeToggle) {
-    uiStore.toggleMultiSelect(aimId)
+    uiStore.toggleMultiSelect(ideaId)
   } else {
     uiStore.clearMultiSelect()
   }
-  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentAim()?.id === aimId) return
-  uiStore.selectAimById(columnIndex, phaseId, aimId).catch(() => {})
+  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentAim()?.id === ideaId) return
+  uiStore.selectAimById(columnIndex, phaseId, ideaId).catch(() => {})
 }
 </script>
 
 <template>
-  <div class="root-aims-column" :class="{ 'active': isActive, 'selected': isSelected }">
+  <div class="root-ideas-column" :class="{ 'active': isActive, 'selected': isSelected }">
     <div 
       ref="rootColumnRef" 
-      class="aims-container"
+      class="ideas-container"
     >
-      <div class="info">free floating aims</div>
-      <AimsList
-        :aims="dataStore.floatingAims"
+      <div class="info">free floating ideas</div>
+      <IdeasList
+        :ideas="dataStore.floatingAims"
         phase-id=""
         :column-index="-1"
         :is-active="isActive && uiStore.navigatingAims"
         :is-selected="isSelected"
-        :selected-aim-index="uiStore.floatingAimIndex"
-        :aim-ui-states="uiStore.floatingAimUIStates"
-        @aim-clicked="(aimId, mods) => handleAimClicked(-1, undefined, aimId, mods)"
+        :selected-idea-index="uiStore.floatingAimIndex"
+        :idea-ui-states="uiStore.floatingAimUIStates"
+        @idea-clicked="(ideaId, mods) => handleAimClicked(-1, undefined, ideaId, mods)"
         @scroll-request="handleScrollRequest"
       />
     </div>
@@ -58,14 +58,14 @@ const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimI
 </template>
 
 <style scoped>
-.root-aims-column {
+.root-ideas-column {
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.aims-container {
+.ideas-container {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -75,7 +75,7 @@ const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimI
   padding: 0 0.5rem 0.5rem 0.5rem;
 }
 
-.root-aims-column.selected {
+.root-ideas-column.selected {
   outline-width: 0.15rem;
   outline-style: solid;
   outline-offset: -0.15rem;

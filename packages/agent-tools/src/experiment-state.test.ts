@@ -9,7 +9,7 @@ test('persists experiment evidence and belief updates', async () => {
   const projectPath = await mkdtemp(path.join(os.tmpdir(), 'aimparency-experiments-'));
   try {
     const created = await createExperiment(projectPath, {
-      aimIds: ['aim-1'],
+      ideaIds: ['idea-1'],
       hypothesis: 'A smaller release gets useful feedback sooner.',
       prediction: 'At least one user responds within seven days.',
       expectedCost: '2 engineering days',

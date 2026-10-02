@@ -3,12 +3,12 @@ import assert from "node:assert";
 import { registerPrompts } from "../prompts.js";
 import { MockServer } from "./test-utils.js";
 
-function setup(aimCount = 2) {
+function setup(ideaCount = 2) {
   const server = new MockServer();
   const caller = {
-    aim: {
+    idea: {
       list: {
-        query: async () => Array.from({ length: aimCount }, (_, id) => ({ id })),
+        query: async () => Array.from({ length: ideaCount }, (_, id) => ({ id })),
       },
     },
   };
@@ -31,7 +31,7 @@ test("dream is advertised as an MCP prompt", async () => {
 test("dream defaults to a non-mutating, epistemically labelled simulation", async () => {
   const result = await setup(7).getPrompt("dream", { projectPath: "/project/.bowman" });
   const text = result.messages[0].content.text;
-  assert.match(result.description, /7 aims/);
+  assert.match(result.description, /7 ideas/);
   assert.match(text, /Wildness: strange/);
   assert.match(text, /Write back accepted artifacts: false/);
   assert.match(text, /OBSERVED.*RESEARCHED.*INFERRED.*IMAGINED/);

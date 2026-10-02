@@ -50,9 +50,9 @@ const startLayouting = (from: boolean) => {
   })
 }
 
-const selectAim = (aimId: string) => {
+const selectAim = (ideaId: string) => {
   if (!mapStore.cursorMoved) {
-    graphUIStore.setGraphSelection(aimId)
+    graphUIStore.setGraphSelection(ideaId)
   }
 }
 </script>

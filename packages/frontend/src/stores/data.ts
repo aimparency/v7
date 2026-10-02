@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from 'backend'
-import type { Phase as BasePhase, Aim as BaseAim, Connection } from 'shared'
+import type { Phase as BasePhase, Idea as BaseAim, Connection } from 'shared'
 import { calculateAimValues, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
 import { trpc } from '../trpc'
 import { perfLog } from '../utils/perf-log'
@@ -22,7 +22,7 @@ const isMissingFileError = (error: unknown) => {
 }
 
 // Neutral grey for black-box linked-repo nodes — they are opaque boundaries,
-// not tinted by any internal aim's status. (Tinting by the linked repo's own
+// not tinted by any internal idea's status. (Tinting by the linked repo's own
 // meta color, when checked out, is a later refinement.)
 const REPO_NODE_COLOR = '#9e9e9e'
 
@@ -58,18 +58,18 @@ export type PhaseLevelEntry =
   | PhaseLevelPlaceholderEntry
   | PhaseLevelSeparatorEntry
 
-// Extend Aim type with UI-only properties
-export type Aim = BaseAim & {
+// Extend Idea type with UI-only properties
+export type Idea = BaseAim & {
   expanded?: boolean
   selectedIncomingIndex?: number
 }
 
-// Type for creating new aims (omits server-generated fields)
+// Type for creating new ideas (omits server-generated fields)
 // Connections can be partial since backend provides defaults
-export type AimCreationParams = Omit<BaseAim, 'id' | 'incoming' | 'committedIn' | 'calculatedValue' | 'calculatedCost' | 'calculatedDoneCost' | 'calculatedPriority' | 'supportingConnections'> & {
+export type IdeaCreationParams = Omit<BaseAim, 'id' | 'incoming' | 'committedIn' | 'calculatedValue' | 'calculatedCost' | 'calculatedDoneCost' | 'calculatedPriority' | 'supportingConnections'> & {
   supportedAims?: string[]
   supportingConnections?: Array<{
-    aimId: string
+    ideaId: string
     weight?: number
     relativePosition?: [number, number]
     explanation?: string
@@ -179,19 +179,19 @@ function toPhaseColumn(phases: Phase[], entries: PhaseLevelEntry[]): PhaseColumn
   }
 }
 
-// A floating aim has no phase commitment and no parent.
-const isFloatingAim = (aim: BaseAim) => !aim.committedIn?.length && !aim.supportedAims?.length
+// A floating idea has no phase commitment and no parent.
+const isFloatingAim = (idea: BaseAim) => !idea.committedIn?.length && !idea.supportedAims?.length
 
 export const useDataStore = defineStore('data', {
   state: () => ({
     phases: {} as Record<string, Phase>,
-    aims: {} as Record<string, Aim>,
+    ideas: {} as Record<string, Idea>,
     loading: false,
     error: null as string | null,
     migrated: false, // Track if we've run the migration
     subscription: null as { unsubscribe: () => void } | null,
     
-    // Floating aims
+    // Floating ideas
     floatingAimsIds: [] as string[],
     
     // Calculated values
@@ -207,9 +207,9 @@ export const useDataStore = defineStore('data', {
     saveTimeout: null as any,
     pendingUpdates: new Set<string>(),
     deletedAims: new Set<string>(),
-    // Monotonic per-aim request order. A response may only replace local state
-    // while it is still the newest request for that aim.
-    aimSyncRevisions: {} as Record<string, number>,
+    // Monotonic per-idea request order. A response may only replace local state
+    // while it is still the newest request for that idea.
+    ideaSyncRevisions: {} as Record<string, number>,
     // Phase reads and mutation responses use the same ordering guard.
     phaseSyncRevisions: {} as Record<string, number>,
 
@@ -245,35 +245,35 @@ export const useDataStore = defineStore('data', {
     getActualPhasesForColumn(): (level: number) => Phase[] {
       return (level) => this.phaseColumns[level]?.phases ?? []
     },
-    floatingAims(state): Aim[] {
-      return state.floatingAimsIds.map(id => state.aims[id]).filter((a): a is Aim => !!a);
+    floatingAims(state): Idea[] {
+      return state.floatingAimsIds.map(id => state.ideas[id]).filter((a): a is Idea => !!a);
     }, 
     getFloatingAimByIndex() { 
       return (index: number) => this.floatingAims[index]
     }, 
-    getAimsForPhase: (state) => (phaseId: string): Aim[] => {
+    getAimsForPhase: (state) => (phaseId: string): Idea[] => {
       const phase = state.phases[phaseId]
       if (!phase) return []
-      return phase.commitments.map(aimId => state.aims[aimId]).filter((a): a is Aim => !!a)
+      return phase.commitments.map(ideaId => state.ideas[ideaId]).filter((a): a is Idea => !!a)
     },
 
-    getAimValue: (state) => (aimId: string): number => {
-      const normalized = state.calculatedValues.get(aimId) || 0
+    getAimValue: (state) => (ideaId: string): number => {
+      const normalized = state.calculatedValues.get(ideaId) || 0
       return normalized * state.totalIntrinsicValue
     },
 
-    getAimCost: (state) => (aimId: string): number => {
-      return state.calculatedCosts.get(aimId) || 0
+    getAimCost: (state) => (ideaId: string): number => {
+      return state.calculatedCosts.get(ideaId) || 0
     },
 
-    getAimPriority: (state) => (aimId: string): number => {
-      return state.calculatedPriorities.get(aimId) || 0
+    getAimPriority: (state) => (ideaId: string): number => {
+      return state.calculatedPriorities.get(ideaId) || 0
     },
 
-    getAimProgress: (state) => (aimId: string): number => {
-      const total = state.calculatedCosts.get(aimId) || 0
+    getAimProgress: (state) => (ideaId: string): number => {
+      const total = state.calculatedCosts.get(ideaId) || 0
       if (total === 0) return 0 // should never happen
-      const done = state.calculatedDoneCosts.get(aimId) || 0
+      const done = state.calculatedDoneCosts.get(ideaId) || 0
       return done / total * 100
     },
 
@@ -282,17 +282,17 @@ export const useDataStore = defineStore('data', {
     },
 
     graphData(state) {
-      const aims = Object.values(state.aims)
+      const ideas = Object.values(state.ideas)
       const depthMap = new Map<string, number>()
       
       // Calculate depths (BFS)
       const queue: { id: string, depth: number }[] = []
       
       // Find roots (no parents)
-      aims.forEach(aim => {
-        if (!aim.supportedAims || aim.supportedAims.length === 0) {
-          depthMap.set(aim.id, 0)
-          queue.push({ id: aim.id, depth: 0 })
+      ideas.forEach(idea => {
+        if (!idea.supportedAims || idea.supportedAims.length === 0) {
+          depthMap.set(idea.id, 0)
+          queue.push({ id: idea.id, depth: 0 })
         }
       })
       
@@ -303,9 +303,9 @@ export const useDataStore = defineStore('data', {
         if(visited.has(id)) continue
         visited.add(id)
         
-        const aim = state.aims[id]
-        if (aim) {
-          const incoming = aim.incoming || []
+        const idea = state.ideas[id]
+        if (idea) {
+          const incoming = idea.incoming || []
           incoming.forEach(childId => {
             // Assign max depth if multi-parent? For tree view, depth+1 is fine.
             // If already visited, we might update depth if we want longest path?
@@ -318,12 +318,12 @@ export const useDataStore = defineStore('data', {
         }
       }
 
-      const nodes = aims.map(aim => ({
-        id: aim.id,
-        text: aim.text,
-        status: aim.status.state,
-        color: aim.color ?? undefined,
-        depth: depthMap.get(aim.id) ?? 0,
+      const nodes = ideas.map(idea => ({
+        id: idea.id,
+        text: idea.text,
+        status: idea.status.state,
+        color: idea.color ?? undefined,
+        depth: depthMap.get(idea.id) ?? 0,
         // Properties for force layout (mutable)
         x: 0, 
         y: 0, 
@@ -331,24 +331,24 @@ export const useDataStore = defineStore('data', {
         vy: 0,
         fx: null as number | null, // Fixed position
         fy: null as number | null,
-        value: state.calculatedValues.get(aim.id) || 0, // Add value here for graph
-        isRepo: false // real aim node (vs. a black-box linked-repo node, below)
+        value: state.calculatedValues.get(idea.id) || 0, // Add value here for graph
+        isRepo: false // real idea node (vs. a black-box linked-repo node, below)
       }))
 
       const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number, share: number, flowValue: number }[] = []
 
-      aims.forEach(aim => {
-        // Draw links from Parent (aim) to Child (supportingConnections)
-        if (aim.supportingConnections) {
-            aim.supportingConnections.forEach(conn => {
-            const childId = conn.aimId
+      ideas.forEach(idea => {
+        // Draw links from Parent (idea) to Child (supportingConnections)
+        if (idea.supportingConnections) {
+            idea.supportingConnections.forEach(conn => {
+            const childId = conn.ideaId
             // Verify child exists to avoid broken links
-            if (state.aims[childId]) {
-                const share = state.flowShares.get(`${aim.id}->${childId}`) || 0
-                const flowValue = state.flowValues.get(`${aim.id}->${childId}`) || 0
+            if (state.ideas[childId]) {
+                const share = state.flowShares.get(`${idea.id}->${childId}`) || 0
+                const flowValue = state.flowValues.get(`${idea.id}->${childId}`) || 0
                 links.push({
                   source: childId,
-                  target: aim.id,
+                  target: idea.id,
                   type: 'hierarchy',
                   relativePosition: [conn.relativePosition[0], conn.relativePosition[1]],
                   weight: conn.weight,
@@ -361,20 +361,20 @@ export const useDataStore = defineStore('data', {
       })
 
       // Repo-level cross-repo links: render each referenced linked repo as ONE
-      // black-box node (never its internal aims). The repo is the supporter
-      // (child) of the local aim, mirroring the supportingConnections direction
+      // black-box node (never its internal ideas). The repo is the supporter
+      // (child) of the local idea, mirroring the supportingConnections direction
       // above (source=child/supporter, target=parent/supported). Value already
       // flows into these repo sink nodes via calculateAimValues' repo expansion
       // (the sink node is keyed by the repoId), so we reuse calculatedValues and
-      // flowValues/flowShares keyed `${aimId}->${repoId}` here.
+      // flowValues/flowShares keyed `${ideaId}->${repoId}` here.
       const linkedRepos = (state.meta?.linkedRepos ?? []) as Array<{ repoId: string; name?: string }>
       const linkedRepoById = new Map(linkedRepos.map(repo => [repo.repoId, repo]))
       const repoNodeIds = new Set<string>()
-      aims.forEach(aim => {
-        if (!aim.supportingRepos) return
-        aim.supportingRepos.forEach(edge => {
+      ideas.forEach(idea => {
+        if (!idea.supportingRepos) return
+        idea.supportingRepos.forEach(edge => {
           const repoId = edge.repoId
-          // One node per distinct linked repo, however many aims lean on it.
+          // One node per distinct linked repo, however many ideas lean on it.
           if (!repoNodeIds.has(repoId)) {
             repoNodeIds.add(repoId)
             const linked = linkedRepoById.get(repoId)
@@ -382,7 +382,7 @@ export const useDataStore = defineStore('data', {
               id: repoId,
               text: linked?.name ?? `repo:${repoId.slice(0, 8)}`,
               status: 'open',
-              // Neutral grey: a black box, not tinted by an internal aim's status.
+              // Neutral grey: a black box, not tinted by an internal idea's status.
               color: REPO_NODE_COLOR,
               depth: 0,
               x: 0,
@@ -395,11 +395,11 @@ export const useDataStore = defineStore('data', {
               isRepo: true
             })
           }
-          const share = state.flowShares.get(`${aim.id}->${repoId}`) || 0
-          const flowValue = state.flowValues.get(`${aim.id}->${repoId}`) || 0
+          const share = state.flowShares.get(`${idea.id}->${repoId}`) || 0
+          const flowValue = state.flowValues.get(`${idea.id}->${repoId}`) || 0
           links.push({
             source: repoId,
-            target: aim.id,
+            target: idea.id,
             type: 'hierarchy',
             relativePosition: [edge.relativePosition?.[0] ?? 0, edge.relativePosition?.[1] ?? 0],
             weight: edge.weight ?? 1,
@@ -456,7 +456,7 @@ export const useDataStore = defineStore('data', {
         if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout)
         
         this.recalculateTimeout = setTimeout(() => {
-            const allAims = Object.values(this.aims) as Aim[];
+            const allAims = Object.values(this.ideas) as Idea[];
             const result = calculateAimValues(allAims);
             this.calculatedValues = result.values;
             this.calculatedCosts = result.costs;
@@ -535,65 +535,65 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    // Helper to replace aim while preserving UI-only properties
-    replaceAim(aimId: string, newAim: BaseAim) {
-      const oldAim = this.aims[aimId]
+    // Helper to replace idea while preserving UI-only properties
+    replaceAim(ideaId: string, newAim: BaseAim) {
+      const oldAim = this.ideas[ideaId]
       const oldExpanded = oldAim?.expanded ?? false
       const oldSelectedIndex = oldAim?.selectedIncomingIndex
 
       // NORMALIZE: Ensure supportingConnections exists if incoming is present (server backward compatibility)
       if (!newAim.supportingConnections && newAim.incoming) {
         newAim.supportingConnections = newAim.incoming.map(id => ({ 
-            aimId: id, 
+            ideaId: id, 
             weight: 1, 
             relativePosition: [0, 0] as [number, number] 
         }))
       }
 
       // Replace with new data
-      this.aims[aimId] = Object.assign({
+      this.ideas[ideaId] = Object.assign({
         expanded: false,
         selectedIncomingIndex: undefined
-      }, newAim) as Aim
+      }, newAim) as Idea
 
       // Restore validated UI state
-      this.aims[aimId].expanded = oldExpanded
+      this.ideas[ideaId].expanded = oldExpanded
 
       // Initialize calculated values from backend injection (Optimistic Display)
       if (newAim.calculatedValue !== undefined) {
-        this.calculatedValues.set(aimId, newAim.calculatedValue)
+        this.calculatedValues.set(ideaId, newAim.calculatedValue)
       }
       if (newAim.calculatedCost !== undefined) {
-        this.calculatedCosts.set(aimId, newAim.calculatedCost)
+        this.calculatedCosts.set(ideaId, newAim.calculatedCost)
       }
       if (newAim.calculatedDoneCost !== undefined) {
-        this.calculatedDoneCosts.set(aimId, newAim.calculatedDoneCost)
+        this.calculatedDoneCosts.set(ideaId, newAim.calculatedDoneCost)
       }
       if (newAim.calculatedPriority !== undefined) {
-        this.calculatedPriorities.set(aimId, newAim.calculatedPriority)
+        this.calculatedPriorities.set(ideaId, newAim.calculatedPriority)
       }
 
       if (oldSelectedIndex !== undefined && newAim.supportingConnections && newAim.supportingConnections.length > 0) {
         const maxIndex = newAim.supportingConnections.length - 1
         if (oldSelectedIndex <= maxIndex) {
-          this.aims[aimId].selectedIncomingIndex = oldSelectedIndex
+          this.ideas[ideaId].selectedIncomingIndex = oldSelectedIndex
         } else {
           // Index out of bounds - clamp to last valid index
-          console.warn(`Selection index ${oldSelectedIndex} out of bounds (max ${maxIndex}) for aim ${aimId}, clamping to ${maxIndex}`)
-          this.aims[aimId].selectedIncomingIndex = maxIndex
+          console.warn(`Selection index ${oldSelectedIndex} out of bounds (max ${maxIndex}) for idea ${ideaId}, clamping to ${maxIndex}`)
+          this.ideas[ideaId].selectedIncomingIndex = maxIndex
         }
       }
     },
 
-    beginAimSync(aimId: string): number {
-      const revision = (this.aimSyncRevisions[aimId] ?? 0) + 1
-      this.aimSyncRevisions[aimId] = revision
+    beginAimSync(ideaId: string): number {
+      const revision = (this.ideaSyncRevisions[ideaId] ?? 0) + 1
+      this.ideaSyncRevisions[ideaId] = revision
       return revision
     },
 
-    replaceAimIfCurrent(aimId: string, newAim: BaseAim, revision: number): boolean {
-      if (this.aimSyncRevisions[aimId] !== revision) return false
-      this.replaceAim(aimId, newAim)
+    replaceAimIfCurrent(ideaId: string, newAim: BaseAim, revision: number): boolean {
+      if (this.ideaSyncRevisions[ideaId] !== revision) return false
+      this.replaceAim(ideaId, newAim)
       return true
     },
 
@@ -609,18 +609,18 @@ export const useDataStore = defineStore('data', {
       return true
     },
 
-    async createFloatingAim(projectPath: string, aim: AimCreationParams): Promise<{id: string}> {
+    async createFloatingAim(projectPath: string, idea: IdeaCreationParams): Promise<{id: string}> {
       try {
-        const newAim = await trpc.aim.createFloatingAim.mutate({
+        const newAim = await trpc.idea.createFloatingAim.mutate({
           projectPath,
-          aim
+          idea
         })
 
-        this.aims[newAim.id] = newAim
+        this.ideas[newAim.id] = newAim
         
         // Add to floating list if it matches criteria (it should)
         // Add to START of list (if sorted by date desc?) or END? 
-        // list-aims default sort is probably filesystem order or date? 
+        // list-ideas default sort is probably filesystem order or date? 
         // Let's prepend for now as "newest".
         if (!this.floatingAimsIds.includes(newAim.id)) {
           this.floatingAimsIds.unshift(newAim.id);
@@ -630,30 +630,30 @@ export const useDataStore = defineStore('data', {
 
         return newAim // Returns { id: string }
       } catch (error) {
-        console.error('Failed to create aim:', error)
+        console.error('Failed to create idea:', error)
         throw error
       }
     },
 
-    async createSubAim(projectPath: string, parentAimId: string, aim: AimCreationParams, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
+    async createSubAim(projectPath: string, parentAimId: string, idea: IdeaCreationParams, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
       try {
-        const newAim = await trpc.aim.createSubAim.mutate({
+        const newAim = await trpc.idea.createSubAim.mutate({
           projectPath,
           parentAimId,
-          aim,
+          idea,
           positionInParent,
           weight
         })
 
-        // Reload parent aim to get updated connections
-        const parentAim = await trpc.aim.get.query({ projectPath, aimId: parentAimId })
+        // Reload parent idea to get updated connections
+        const parentAim = await trpc.idea.get.query({ projectPath, ideaId: parentAimId })
         if (parentAim) {
           this.replaceAim(parentAimId, parentAim)
         }
 
-        // Reload child aim to get updated supportedAims array
-        // This ensures it doesn't appear in floating aims
-        const updatedChildAim = await trpc.aim.get.query({ projectPath, aimId: newAim.id })
+        // Reload child idea to get updated supportedAims array
+        // This ensures it doesn't appear in floating ideas
+        const updatedChildAim = await trpc.idea.get.query({ projectPath, ideaId: newAim.id })
         if (updatedChildAim) {
           this.replaceAim(newAim.id, updatedChildAim)
         }
@@ -662,45 +662,45 @@ export const useDataStore = defineStore('data', {
 
         return newAim // Returns { id: string }
       } catch (error) {
-        console.error('Failed to create sub-aim:', error)
+        console.error('Failed to create sub-idea:', error)
         throw error
       }
     }, 
 
-    async createCommittedAim(projectPath: string, phaseId: string, aim: AimCreationParams, insertionIndex?: number): Promise<{id: string}> {
+    async createCommittedAim(projectPath: string, phaseId: string, idea: IdeaCreationParams, insertionIndex?: number): Promise<{id: string}> {
       try {
-        const newAim = await trpc.aim.createAimInPhase.mutate({
+        const newAim = await trpc.idea.createAimInPhase.mutate({
           projectPath,
           phaseId,
-          aim,
+          idea,
           insertionIndex
         })
 
-        this.aims[newAim.id] = newAim
+        this.ideas[newAim.id] = newAim
         this.recalculateValues();
 
         return newAim
       } catch (error) {
-        console.error('Failed to create aim in phase:', error)
+        console.error('Failed to create idea in phase:', error)
         throw error
       }
     },
 
-    async updateAim(projectPath: string, aimId: string, updates: Partial<Omit<Aim, 'id'>>): Promise<void> {
-      const revision = this.beginAimSync(aimId)
+    async updateAim(projectPath: string, ideaId: string, updates: Partial<Omit<Idea, 'id'>>): Promise<void> {
+      const revision = this.beginAimSync(ideaId)
       try {
-        const updatedAim = await trpc.aim.update.mutate({
+        const updatedAim = await trpc.idea.update.mutate({
           projectPath,
-          aimId,
-          aim: updates
+          ideaId,
+          idea: updates
         })
 
         // Update local state
-        if (this.replaceAimIfCurrent(aimId, updatedAim, revision)) {
+        if (this.replaceAimIfCurrent(ideaId, updatedAim, revision)) {
           this.recalculateValues();
         }
       } catch (error) {
-        console.error('Failed to update aim:', error)
+        console.error('Failed to update idea:', error)
         throw error
       }
     },
@@ -711,9 +711,9 @@ export const useDataStore = defineStore('data', {
       childId: string,
       updates: Pick<Connection, 'weight' | 'explanation'>
     ): Promise<void> {
-      const parent = this.aims[parentId]
-      if (!parent) throw new Error(`Parent aim ${parentId} is not loaded`)
-      const connectionIndex = parent.supportingConnections.findIndex(connection => connection.aimId === childId)
+      const parent = this.ideas[parentId]
+      if (!parent) throw new Error(`Parent idea ${parentId} is not loaded`)
+      const connectionIndex = parent.supportingConnections.findIndex(connection => connection.ideaId === childId)
       if (connectionIndex < 0) throw new Error(`Connection ${parentId} -> ${childId} does not exist`)
 
       const originalParent = parent
@@ -724,10 +724,10 @@ export const useDataStore = defineStore('data', {
       this.recalculateValues()
 
       try {
-        const updatedParent = await trpc.aim.update.mutate({
+        const updatedParent = await trpc.idea.update.mutate({
           projectPath,
-          aimId: parentId,
-          aim: { supportingConnections: updatedConnections }
+          ideaId: parentId,
+          idea: { supportingConnections: updatedConnections }
         })
         this.replaceAim(parentId, updatedParent)
         this.recalculateValues()
@@ -739,13 +739,13 @@ export const useDataStore = defineStore('data', {
     },
 
     async removeConnection(projectPath: string, parentId: string, childId: string): Promise<void> {
-      const parent = this.aims[parentId]
-      const child = this.aims[childId]
+      const parent = this.ideas[parentId]
+      const child = this.ideas[childId]
       if (!parent || !child) throw new Error(`Connection endpoints ${parentId} -> ${childId} are not loaded`)
 
       const originalParent = parent
       const originalChild = child
-      const updatedConnections = parent.supportingConnections.filter(connection => connection.aimId !== childId)
+      const updatedConnections = parent.supportingConnections.filter(connection => connection.ideaId !== childId)
       const updatedSupportedAims = child.supportedAims.filter(id => id !== parentId)
       this.replaceAim(parentId, { ...parent, supportingConnections: updatedConnections })
       this.replaceAim(childId, { ...child, supportedAims: updatedSupportedAims })
@@ -753,15 +753,15 @@ export const useDataStore = defineStore('data', {
 
       try {
         const [updatedParent, updatedChild] = await Promise.all([
-          trpc.aim.update.mutate({
+          trpc.idea.update.mutate({
             projectPath,
-            aimId: parentId,
-            aim: { supportingConnections: updatedConnections }
+            ideaId: parentId,
+            idea: { supportingConnections: updatedConnections }
           }),
-          trpc.aim.update.mutate({
+          trpc.idea.update.mutate({
             projectPath,
-            aimId: childId,
-            aim: { supportedAims: updatedSupportedAims }
+            ideaId: childId,
+            idea: { supportedAims: updatedSupportedAims }
           })
         ])
         this.replaceAim(parentId, updatedParent)
@@ -776,18 +776,18 @@ export const useDataStore = defineStore('data', {
     },
 
     async updateConnectionPosition(projectPath: string, parentId: string, childAimId: string, newRelativePosition: [number, number]) {
-      const parent = this.aims[parentId]
+      const parent = this.ideas[parentId]
       if (!parent) return
 
       const connections = parent.supportingConnections || []
-      const connectionIndex = connections.findIndex(c => c.aimId === childAimId)
+      const connectionIndex = connections.findIndex(c => c.ideaId === childAimId)
       
       if (connectionIndex !== -1) {
         // 1. Update local state immediately
         const updatedConnections = [...connections]
         const oldConn = updatedConnections[connectionIndex]!
         updatedConnections[connectionIndex] = {
-          aimId: oldConn.aimId,
+          ideaId: oldConn.ideaId,
           weight: oldConn.weight,
           relativePosition: newRelativePosition
         }
@@ -811,11 +811,11 @@ export const useDataStore = defineStore('data', {
       this.saveTimeout = null
 
       try {
-        await Promise.all(updates.map(aimId => {
-          const aim = this.aims[aimId]
-          if (!aim) return Promise.resolve()
-          return this.updateAim(projectPath, aimId, {
-            supportingConnections: aim.supportingConnections
+        await Promise.all(updates.map(ideaId => {
+          const idea = this.ideas[ideaId]
+          if (!idea) return Promise.resolve()
+          return this.updateAim(projectPath, ideaId, {
+            supportingConnections: idea.supportingConnections
           })
         }))
       } catch (e) {
@@ -823,12 +823,12 @@ export const useDataStore = defineStore('data', {
       }
     },
     
-    async commitAimToPhase(projectPath: string, aimId: string, phaseId: string, insertionIndex?: number) {
+    async commitAimToPhase(projectPath: string, ideaId: string, phaseId: string, insertionIndex?: number) {
       try {
         // Use the new backend endpoint that maintains bidirectional relationship
-        await trpc.aim.commitToPhase.mutate({
+        await trpc.idea.commitToPhase.mutate({
           projectPath,
-          aimId,
+          ideaId,
           phaseId,
           insertionIndex
         })
@@ -839,65 +839,65 @@ export const useDataStore = defineStore('data', {
           this.replacePhase(phaseId, phase)
         }
 
-        // Reload the aim to get updated committedIn field
-        const aim = await trpc.aim.get.query({ projectPath, aimId })
-        if (aim) {
-          this.replaceAim(aimId, aim)
+        // Reload the idea to get updated committedIn field
+        const idea = await trpc.idea.get.query({ projectPath, ideaId })
+        if (idea) {
+          this.replaceAim(ideaId, idea)
         }
         
-        // Remove from floating aims if present
-        const index = this.floatingAimsIds.indexOf(aimId)
+        // Remove from floating ideas if present
+        const index = this.floatingAimsIds.indexOf(ideaId)
         if (index !== -1) {
             this.floatingAimsIds.splice(index, 1)
         }
         this.recalculateValues();
       } catch (error) {
-        console.error('Failed to commit aim to phase:', error)
+        console.error('Failed to commit idea to phase:', error)
         throw error
       }
     },
     
-    removeAimLocally(aimId: string) {
-      delete this.aims[aimId]
-      this.floatingAimsIds = this.floatingAimsIds.filter((id) => id !== aimId)
+    removeAimLocally(ideaId: string) {
+      delete this.ideas[ideaId]
+      this.floatingAimsIds = this.floatingAimsIds.filter((id) => id !== ideaId)
       this.recalculateValues()
     },
 
-    syncFloatingAim(aim: BaseAim) {
-      const index = this.floatingAimsIds.indexOf(aim.id)
-      if (isFloatingAim(aim)) {
-        if (index === -1) this.floatingAimsIds.unshift(aim.id)
+    syncFloatingAim(idea: BaseAim) {
+      const index = this.floatingAimsIds.indexOf(idea.id)
+      if (isFloatingAim(idea)) {
+        if (index === -1) this.floatingAimsIds.unshift(idea.id)
       } else if (index !== -1) {
         this.floatingAimsIds.splice(index, 1)
       }
       this.recalculateValues()
     },
 
-    async deleteAimFromStore(projectPath: string, aimId: string) {
+    async deleteAimFromStore(projectPath: string, ideaId: string) {
       try {
-        await trpc.aim.delete.mutate({
+        await trpc.idea.delete.mutate({
           projectPath,
-          aimId
+          ideaId
         })
         this.recalculateValues();
       } catch (error) {
-        console.error('Failed to delete aim:', error)
+        console.error('Failed to delete idea:', error)
         throw error
       }
     },
     
-    async removeAimFromPhase(projectPath: string, aimId: string, phaseId: string) {
+    async removeAimFromPhase(projectPath: string, ideaId: string, phaseId: string) {
       try {
-        await trpc.aim.removeFromPhase.mutate({
+        await trpc.idea.removeFromPhase.mutate({
           projectPath,
-          aimId,
+          ideaId,
           phaseId
         })
 
-        // The subscription already applied the updated aim and phase.
+        // The subscription already applied the updated idea and phase.
         this.recalculateValues();
       } catch (error) {
-        console.error('Failed to remove aim from phase:', error)
+        console.error('Failed to remove idea from phase:', error)
         throw error
       }
     },
@@ -909,37 +909,37 @@ export const useDataStore = defineStore('data', {
         // 1. Try cache first; it is optional (no IndexedDB in private windows or tests)
         const cachedAims = await loadAllAimsCache(projectPath).catch(() => []);
         if (cachedAims && cachedAims.length > 0) {
-            console.log(`[DataStore] Loaded ${cachedAims.length} aims from cache`);
-            for (const aim of cachedAims) {
-                this.replaceAim(aim.id, aim);
+            console.log(`[DataStore] Loaded ${cachedAims.length} ideas from cache`);
+            for (const idea of cachedAims) {
+                this.replaceAim(idea.id, idea);
             }
             this.recalculateValues();
         }
 
         // 2. Fetch from server
-        const aims = await trpc.aim.list.query({ projectPath });
-        console.log(`[DataStore] Fetched ${aims.length} aims from server`);
+        const ideas = await trpc.idea.list.query({ projectPath });
+        console.log(`[DataStore] Fetched ${ideas.length} ideas from server`);
         
-        const serverAimIds = new Set(aims.map(a => a.id));
+        const serverAimIds = new Set(ideas.map(a => a.id));
         
-        // Remove stale aims
-        for (const id in this.aims) {
+        // Remove stale ideas
+        for (const id in this.ideas) {
             if (!serverAimIds.has(id)) {
-                delete this.aims[id];
+                delete this.ideas[id];
             }
         }
 
-        for (const aim of aims) {
-          this.replaceAim(aim.id, aim);
+        for (const idea of ideas) {
+          this.replaceAim(idea.id, idea);
         }
-        this.floatingAimsIds = aims.filter(isFloatingAim).map((aim) => aim.id);
+        this.floatingAimsIds = ideas.filter(isFloatingAim).map((idea) => idea.id);
         this.recalculateValues();
         
         // 3. Update cache
-        saveAims(projectPath, aims).catch(() => {});
+        saveAims(projectPath, ideas).catch(() => {});
         
       } catch (error) {
-        console.error('Failed to load all aims:', error);
+        console.error('Failed to load all ideas:', error);
       } finally {
         this.loading = false;
       }
@@ -971,7 +971,7 @@ export const useDataStore = defineStore('data', {
         this.subscribeToUpdates(projectPath);
 
         // The whole project is small enough to load at once (~100ms for 750
-        // aims); the subscription keeps it live afterwards.
+        // ideas); the subscription keeps it live afterwards.
         await Promise.all([this.loadAllPhases(projectPath), this.loadAllAims(projectPath)]);
 
         perfLog('data.loadProject:done', {
@@ -1026,22 +1026,22 @@ export const useDataStore = defineStore('data', {
           // Before applying: the history needs the event, not the store state.
           useHistoryStore().recordChange(data);
 
-          // Another client's reorder/insert must not move this client's aim
-          // selection (it's index-based) onto a different aim.
+          // Another client's reorder/insert must not move this client's idea
+          // selection (it's index-based) onto a different idea.
           const applyEntity = data.origin !== undefined && data.origin !== clientId
             ? (apply: () => void) => keepAimSelection(useUIStore(), apply)
             : (apply: () => void) => apply()
 
           if (data.type === 'project') {
             this.meta = data.entity ?? await trpc.project.getMeta.query({ projectPath })
-          } else if (data.type === 'aim') {
+          } else if (data.type === 'idea') {
             if (data.deleted) {
               applyEntity(() => this.removeAimLocally(data.id))
             } else if (!this.deletedAims.has(data.id)) {
               const revision = this.beginAimSync(data.id)
-              const aim = data.entity as BaseAim ?? await trpc.aim.get.query({ projectPath, aimId: data.id })
+              const idea = data.entity as BaseAim ?? await trpc.idea.get.query({ projectPath, ideaId: data.id })
               applyEntity(() => {
-                if (this.replaceAimIfCurrent(aim.id, aim, revision)) this.syncFloatingAim(aim)
+                if (this.replaceAimIfCurrent(idea.id, idea, revision)) this.syncFloatingAim(idea)
               })
             }
           } else if (data.type === 'phase') {
@@ -1073,74 +1073,74 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    // Recursive helper to delete a sub-aim and all its children
-    async deleteSubAimRecursive(projectPath: string, aimId: string, parentAimId: string) {
-      const aim = this.aims[aimId]
-      if (!aim) return
+    // Recursive helper to delete a sub-idea and all its children
+    async deleteSubAimRecursive(projectPath: string, ideaId: string, parentAimId: string) {
+      const idea = this.ideas[ideaId]
+      if (!idea) return
 
       // 1. Recursively delete all children first
-      if (aim.supportingConnections && aim.supportingConnections.length > 0) {
-        for (const conn of [...aim.supportingConnections]) {
-          await this.deleteSubAimRecursive(projectPath, conn.aimId, aimId)
+      if (idea.supportingConnections && idea.supportingConnections.length > 0) {
+        for (const conn of [...idea.supportingConnections]) {
+          await this.deleteSubAimRecursive(projectPath, conn.ideaId, ideaId)
         }
       }
 
-      // 2. Remove this aim from the parent's supportingConnections array
-      const parentAim = this.aims[parentAimId]
+      // 2. Remove this idea from the parent's supportingConnections array
+      const parentAim = this.ideas[parentAimId]
       if (parentAim && parentAim.supportingConnections) {
         const wasExpanded = parentAim.expanded
-        const updatedConnections = parentAim.supportingConnections.filter(c => c.aimId !== aimId)
+        const updatedConnections = parentAim.supportingConnections.filter(c => c.ideaId !== ideaId)
         await this.updateAim(projectPath, parentAimId, {
           supportingConnections: updatedConnections
         })
         // Restore expanded state (it's UI-only, not persisted)
-        if (wasExpanded && this.aims[parentAimId]) {
-          this.aims[parentAimId].expanded = true
+        if (wasExpanded && this.ideas[parentAimId]) {
+          this.ideas[parentAimId].expanded = true
         }
       }
 
-      // 3. Remove the parent from this aim's supportedAims array
-      const updatedSupportedAims = aim.supportedAims.filter(id => id !== parentAimId)
+      // 3. Remove the parent from this idea's supportedAims array
+      const updatedSupportedAims = idea.supportedAims.filter(id => id !== parentAimId)
 
-      // 4. If this aim has no other parents (supportedAims connections), delete it completely
+      // 4. If this idea has no other parents (supportedAims connections), delete it completely
       if (updatedSupportedAims.length === 0) {
-        await trpc.aim.delete.mutate({
+        await trpc.idea.delete.mutate({
           projectPath,
-          aimId: aimId
+          ideaId: ideaId
         })
-        delete this.aims[aimId]
+        delete this.ideas[ideaId]
       } else {
         // Still has other parents, just update the supportedAims array
-        await this.updateAim(projectPath, aimId, {
+        await this.updateAim(projectPath, ideaId, {
           supportedAims: updatedSupportedAims
         })
       }
     },
 
-    async deleteAim(aimId: string) {
+    async deleteAim(ideaId: string) {
       const uiStore = useUIStore();
       const projectStore = useProjectStore();
 
       try {
-        const aim = this.aims[aimId]
-        if (!aim) return
+        const idea = this.ideas[ideaId]
+        if (!idea) return
 
         // Get selection path to determine context
         const path = uiStore.getSelectionPath()
 
         // Determine deletion behavior based on selection path:
-        // - path.aims.length > 1: Sub-aim (remove from parent's incoming)
-        // - path.aims.length === 1 && phaseId exists: Committed aim (remove from phase)
-        // - path.aims.length === 1 && no phaseId: Floating aim (delete entirely)
+        // - path.ideas.length > 1: Sub-idea (remove from parent's incoming)
+        // - path.ideas.length === 1 && phaseId exists: Committed idea (remove from phase)
+        // - path.ideas.length === 1 && no phaseId: Floating idea (delete entirely)
 
-        if (path.aims.length > 1) {
-          // B) Sub-aim: remove from parent aim's supporting list
-          const parentAim = path.aims[path.aims.length - 2]
+        if (path.ideas.length > 1) {
+          // B) Sub-idea: remove from parent idea's supporting list
+          const parentAim = path.ideas[path.ideas.length - 2]
           if (parentAim) {
-            await this.deleteSubAimRecursive(projectStore.projectPath, aimId, parentAim.id)
+            await this.deleteSubAimRecursive(projectStore.projectPath, ideaId, parentAim.id)
 
             // Adjust parent's selectedIncomingIndex to stay in valid range
-            const updatedParentAim = this.aims[parentAim.id]
+            const updatedParentAim = this.ideas[parentAim.id]
             if (updatedParentAim && updatedParentAim.selectedIncomingIndex !== undefined && updatedParentAim.supportingConnections) {
                 if (updatedParentAim.supportingConnections.length > 0) {
                 updatedParentAim.selectedIncomingIndex = Math.min(
@@ -1153,10 +1153,10 @@ export const useDataStore = defineStore('data', {
             }
           }
         } else if (path.phase) {
-          // A) Committed aim: remove from phase
-          await trpc.aim.removeFromPhase.mutate({
+          // A) Committed idea: remove from phase
+          await trpc.idea.removeFromPhase.mutate({
             projectPath: projectStore.projectPath,
-            aimId: aimId,
+            ideaId: ideaId,
             phaseId: path.phase.id
           });
 
@@ -1166,84 +1166,84 @@ export const useDataStore = defineStore('data', {
             this.replacePhase(path.phase.id, phase)
           }
 
-          // Update aim's committedIn array
-          // TODO implement aim removal server side, then reload parent aim/phase in client
-          const updatedAim = this.aims[aimId]
+          // Update idea's committedIn array
+          // TODO implement idea removal server side, then reload parent idea/phase in client
+          const updatedAim = this.ideas[ideaId]
           if (updatedAim) {
             updatedAim.committedIn = updatedAim.committedIn?.filter(id => id !== path.phase?.id) || []
           }
         } else {
-          // C) Floating aim: delete entirely (including all sub-aims)
-          // First recursively delete all sub-aims
-          if (aim.supportingConnections && aim.supportingConnections.length > 0) {
-            for (const conn of [...aim.supportingConnections]) {
-              await this.deleteSubAimRecursive(projectStore.projectPath, conn.aimId, aimId)
+          // C) Floating idea: delete entirely (including all sub-ideas)
+          // First recursively delete all sub-ideas
+          if (idea.supportingConnections && idea.supportingConnections.length > 0) {
+            for (const conn of [...idea.supportingConnections]) {
+              await this.deleteSubAimRecursive(projectStore.projectPath, conn.ideaId, ideaId)
             }
           }
 
-          // Then delete the aim itself
-          this.deletedAims.add(aimId)
-          await trpc.aim.delete.mutate({
+          // Then delete the idea itself
+          this.deletedAims.add(ideaId)
+          await trpc.idea.delete.mutate({
             projectPath: projectStore.projectPath,
-            aimId: aimId
+            ideaId: ideaId
           });
 
-          delete this.aims[aimId]
-          this.floatingAimsIds = this.floatingAimsIds.filter(id => id !== aimId)
+          delete this.ideas[ideaId]
+          this.floatingAimsIds = this.floatingAimsIds.filter(id => id !== ideaId)
         }
 
         // Adjust selection if needed
         if (uiStore.navigatingAims) {
-          const aims = path.phase ? this.getAimsForPhase(path.phase.id) : this.floatingAims
+          const ideas = path.phase ? this.getAimsForPhase(path.phase.id) : this.floatingAims
 
-          if (aims.length === 0) {
+          if (ideas.length === 0) {
             uiStore.navigatingAims = false
           } else {
-            // Select next/previous aim at same level
+            // Select next/previous idea at same level
             if (!path.phase) {
-              uiStore.floatingAimIndex = Math.min(uiStore.floatingAimIndex, aims.length - 1)
+              uiStore.floatingAimIndex = Math.min(uiStore.floatingAimIndex, ideas.length - 1)
             } else {
               const phase = this.phases[path.phase.id]
               if (phase && phase.selectedAimIndex !== undefined) {
-                phase.selectedAimIndex = Math.min(phase.selectedAimIndex, aims.length - 1)
+                phase.selectedAimIndex = Math.min(phase.selectedAimIndex, ideas.length - 1)
               }
             }
           }
         }
         this.recalculateValues();
       } catch (error) {
-        this.deletedAims.delete(aimId);
-        console.error('Failed to delete aim:', error);
+        this.deletedAims.delete(ideaId);
+        console.error('Failed to delete idea:', error);
       }
     },
 
-    async loadAims(projectPath: string, aimIds: string[]) {
-      if (!projectPath || aimIds.length === 0) return;
+    async loadAims(projectPath: string, ideaIds: string[]) {
+      if (!projectPath || ideaIds.length === 0) return;
       const projectStore = useProjectStore()
 
       try {
-        const aims = await trpc.aim.getMany.query({
+        const ideas = await trpc.idea.getMany.query({
           projectPath,
-          aimIds
+          ideaIds
         });
         if (projectStore.projectPath !== projectPath) return;
 
-        for (const aim of aims) {
-          this.replaceAim(aim.id, aim);
+        for (const idea of ideas) {
+          this.replaceAim(idea.id, idea);
         }
         this.recalculateValues();
       } catch (error) {
         if (projectStore.projectPath !== projectPath || isMissingFileError(error)) return;
 
-        console.error('Failed to load specific aims:', error);
+        console.error('Failed to load specific ideas:', error);
       }
     },
 
-    async reorderPhaseAim(projectPath: string, phaseId: string, aimId: string, newIndex: number) {
+    async reorderPhaseAim(projectPath: string, phaseId: string, ideaId: string, newIndex: number) {
       try {
-        await trpc.aim.commitToPhase.mutate({
+        await trpc.idea.commitToPhase.mutate({
           projectPath,
-          aimId,
+          ideaId,
           phaseId,
           insertionIndex: newIndex
         });
@@ -1251,16 +1251,16 @@ export const useDataStore = defineStore('data', {
         const phase = await trpc.phase.get.query({ projectPath, phaseId });
         if (phase) this.replacePhase(phaseId, phase);
       } catch (error) {
-        console.error('Failed to reorder phase aim:', error);
+        console.error('Failed to reorder phase idea:', error);
       }
     },
 
     async reorderSubAim(projectPath: string, parentAimId: string, childAimId: string, newIndex: number) {
       try {
-        const childAim = this.aims[childAimId];
+        const childAim = this.ideas[childAimId];
         const childSupportedAimsIndex = childAim?.supportedAims.indexOf(parentAimId) ?? 0;
 
-        await trpc.aim.connectAims.mutate({
+        await trpc.idea.connectAims.mutate({
           projectPath,
           parentAimId,
           childAimId: childAimId,
@@ -1268,11 +1268,11 @@ export const useDataStore = defineStore('data', {
           childSupportedAimsIndex: childSupportedAimsIndex !== -1 ? childSupportedAimsIndex : undefined
         });
 
-        const parentAim = await trpc.aim.get.query({ projectPath, aimId: parentAimId });
+        const parentAim = await trpc.idea.get.query({ projectPath, ideaId: parentAimId });
         if (parentAim) this.replaceAim(parentAimId, parentAim);
         this.recalculateValues();
       } catch (error) {
-        console.error('Failed to reorder sub-aim:', error);
+        console.error('Failed to reorder sub-idea:', error);
       }
     },
 

@@ -234,17 +234,17 @@ function countOccurrences(text: string, query: string): number {
   return count;
 }
 
-export async function aimHistorySearch(projectPath: string, query: string, limit = 20) {
+export async function ideaHistorySearch(projectPath: string, query: string, limit = 20) {
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) throw new Error('query is required');
   const bowmanPath = normalizeBowmanPath(projectPath);
-  const aimFiles = (
-    await Promise.all(['aims', 'archived-aims'].map(async (directory) => {
-      const aimDir = path.join(bowmanPath, directory);
-      const files = await fs.readdir(aimDir).catch(() => [] as string[]);
+  const ideaFiles = (
+    await Promise.all(['ideas', 'archived-ideas'].map(async (directory) => {
+      const ideaDir = path.join(bowmanPath, directory);
+      const files = await fs.readdir(ideaDir).catch(() => [] as string[]);
       return files
         .filter((file) => file.endsWith('.json'))
-        .map((file) => path.join(aimDir, file));
+        .map((file) => path.join(ideaDir, file));
     }))
   ).flat();
   const commitText = await execFileAsync(
@@ -254,21 +254,21 @@ export async function aimHistorySearch(projectPath: string, query: string, limit
   ).then(({ stdout }) => stdout.toLowerCase()).catch(() => '');
   const queryTokens = [...new Set(normalizedQuery.split(/\s+/).filter((token) => token.length >= 3))];
 
-  const matches = await Promise.all(aimFiles.map(async (file) => {
-    const aim = await fs.readJson(file).catch(() => null) as any;
-    if (!aim?.id || !aim?.text) return null;
+  const matches = await Promise.all(ideaFiles.map(async (file) => {
+    const idea = await fs.readJson(file).catch(() => null) as any;
+    if (!idea?.id || !idea?.text) return null;
     const fields = {
-      text: String(aim.text ?? ''),
-      description: String(aim.description ?? ''),
+      text: String(idea.text ?? ''),
+      description: String(idea.description ?? ''),
       reflection: [
-        String(aim.reflection ?? ''),
-        ...(Array.isArray(aim.reflections)
-          ? aim.reflections.flatMap((entry: any) => [
+        String(idea.reflection ?? ''),
+        ...(Array.isArray(idea.reflections)
+          ? idea.reflections.flatMap((entry: any) => [
               entry?.context, entry?.outcome, entry?.effectiveness, entry?.lesson, entry?.pattern
             ].filter(Boolean).map(String))
           : [])
       ].join('\n'),
-      status: String(aim.status?.comment ?? '')
+      status: String(idea.status?.comment ?? '')
     };
     const matchedFields = Object.entries(fields)
       .filter(([, value]) => {
@@ -286,13 +286,13 @@ export async function aimHistorySearch(projectPath: string, query: string, limit
       0
     );
     const realizedCommits = Math.max(
-      countOccurrences(commitText, String(aim.id).toLowerCase()),
-      countOccurrences(commitText, String(aim.id).slice(0, 8).toLowerCase())
+      countOccurrences(commitText, String(idea.id).toLowerCase()),
+      countOccurrences(commitText, String(idea.id).slice(0, 8).toLowerCase())
     );
     return {
-      aimId: aim.id as string,
-      text: aim.text as string,
-      status: String(aim.status?.state ?? 'unknown'),
+      ideaId: idea.id as string,
+      text: idea.text as string,
+      status: String(idea.status?.state ?? 'unknown'),
       matchedFields,
       realizedCommits,
       score: exactMatches * 10 + tokenMatches + Math.log2(realizedCommits + 1)

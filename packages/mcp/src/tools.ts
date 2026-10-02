@@ -1,16 +1,16 @@
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { calculateAimValues } from "shared";
-import { AIM_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
+import { IDEA_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { execFileSync } from "child_process";
 import { createHash } from "crypto";
 import * as path from "path";
 
 // --- Realized-cost signal (c0a45822: reality→priority feedback) ---------------
-// Real git commits that reference an aim are evidence of actual output. Counting
+// Real git commits that reference an idea are evidence of actual output. Counting
 // them grounds the COST side of priority in reality WITHOUT mutating the
 // human-set intrinsicValue/cost (the chosen, non-corrupting design). Heuristic:
-// a commit "references" an aim when its message contains the aim's 8-char id
+// a commit "references" an idea when its message contains the idea's 8-char id
 // prefix — the convention used in this repo's commit messages.
 // Pure realized-commit / reconciliation helpers live in ./reconcile.ts (no MCP
 // server / tRPC client imports) so they stay unit-testable. Re-exported here to
@@ -21,15 +21,15 @@ import { extractCodeTokens, scoreCodePresence } from "./code-presence.js";
 import { CONTINUE_HOOK_AGENTS, disableContinueHook, enableContinueHook } from "./continue-hook.js";
 
 /**
- * Verification evidence expected before an aim may be 'done', tailored to the
- * aim's apparent type (inferred from text/description/tags). Keeps the soft
+ * Verification evidence expected before an idea may be 'done', tailored to the
+ * idea's apparent type (inferred from text/description/tags). Keeps the soft
  * done-gate concrete — "done = verified-done, not claimed-done" — instead of a
  * generic reminder. Exported for unit testing.
  */
 export function verificationHintForAim(
-  aim: { text?: string; description?: string; tags?: string[] } | null | undefined,
+  idea: { text?: string; description?: string; tags?: string[] } | null | undefined,
 ): string {
-  const hay = `${aim?.text ?? ""} ${aim?.description ?? ""} ${(aim?.tags ?? []).join(" ")}`.toLowerCase();
+  const hay = `${idea?.text ?? ""} ${idea?.description ?? ""} ${(idea?.tags ?? []).join(" ")}`.toLowerCase();
   const has = (re: RegExp) => re.test(hay);
   // UI/visual first: a change to something visual is best proven by seeing it run.
   if (has(/\b(ui|visual|render|screenshot|css|layout|animation|colou?rs?|button|modal|flicker|paint|style|icon|badge|dropdown|graph view)\b/))
@@ -47,8 +47,8 @@ export function verificationHintForAim(
 // `pathspec` (git pathspec args, e.g. ['--', '.', ':(exclude).bowman']) restricts
 // to commits that touched matching files. Reconciliation passes a code-only
 // pathspec so pure graph-bookkeeping commits (chore(graph)/chore(bowman) that
-// merely cite aim ids while triaging/reframing the graph) don't masquerade as
-// "this aim was implemented" — they touch only .bowman/.
+// merely cite idea ids while triaging/reframing the graph) don't masquerade as
+// "this idea was implemented" — they touch only .bowman/.
 function getRepoCommitMessages(projectPath: string, maxCommits = 2000, pathspec: string[] = []): string[] {
   try {
     const repoRoot = path.basename(projectPath) === ".bowman" ? path.dirname(projectPath) : projectPath;
@@ -85,36 +85,36 @@ function gitGrepMatches(projectPath: string, token: string): boolean {
   }
 }
 
-function formatAim(aim: any) {
-  if (aim.supportingConnections) {
-    if (aim.supportingConnections.length === 0) {
-        delete aim.supportingConnections;
+function formatAim(idea: any) {
+  if (idea.supportingConnections) {
+    if (idea.supportingConnections.length === 0) {
+        delete idea.supportingConnections;
     } else {
-        aim.supportingConnections = aim.supportingConnections.map((conn: any) => {
+        idea.supportingConnections = idea.supportingConnections.map((conn: any) => {
           const { relativePosition, ...rest } = conn;
           return rest;
         });
     }
   }
-  if (aim.supportingRepos && aim.supportingRepos.length === 0) delete aim.supportingRepos;
-  if (aim.supportedAims && aim.supportedAims.length === 0) delete aim.supportedAims;
-  if (aim.committedIn && aim.committedIn.length === 0) delete aim.committedIn;
-  if (aim.tags && aim.tags.length === 0) delete aim.tags;
+  if (idea.supportingRepos && idea.supportingRepos.length === 0) delete idea.supportingRepos;
+  if (idea.supportedAims && idea.supportedAims.length === 0) delete idea.supportedAims;
+  if (idea.committedIn && idea.committedIn.length === 0) delete idea.committedIn;
+  if (idea.tags && idea.tags.length === 0) delete idea.tags;
   
-  return aim;
+  return idea;
 }
 
-function formatAims(aims: any[]) {
-  return aims.map(formatAim);
+function formatAims(ideas: any[]) {
+  return ideas.map(formatAim);
 }
 
-// Repo-level cross-repo links are black-box edges: {repoId} and no aimId, so a
+// Repo-level cross-repo links are black-box edges: {repoId} and no ideaId, so a
 // raw supportingRepos array tells an agent nothing but a UUID. Resolve each one
 // against the linked-repo registry to a name plus a minimal health state.
 // Deliberately only three states — the richer per-edge vocabulary belongs to the
-// cancelled aim-level design; a whole-repo link is either resolvable or not.
-async function describeRepoEdges(trpcClient: any, projectPath: string, aims: any[]) {
-  if (!aims.some((a) => a?.supportingRepos?.length)) return; // no registry round-trip
+// cancelled idea-level design; a whole-repo link is either resolvable or not.
+async function describeRepoEdges(trpcClient: any, projectPath: string, ideas: any[]) {
+  if (!ideas.some((a) => a?.supportingRepos?.length)) return; // no registry round-trip
   let registry: any[] = [];
   try {
     registry = await trpcClient.linkedRepo.list.query({ projectPath });
@@ -122,9 +122,9 @@ async function describeRepoEdges(trpcClient: any, projectPath: string, aims: any
     // Registry unreadable: degrade to bare repoIds rather than failing the read.
   }
   const byId = new Map(registry.map((r: any) => [r.repoId, r]));
-  for (const aim of aims) {
-    if (!aim?.supportingRepos?.length) continue;
-    aim.supportingRepos = aim.supportingRepos.map((edge: any) => {
+  for (const idea of ideas) {
+    if (!idea?.supportingRepos?.length) continue;
+    idea.supportingRepos = idea.supportingRepos.map((edge: any) => {
       const entry = byId.get(edge.repoId);
       return {
         repoId: edge.repoId,
@@ -139,7 +139,7 @@ async function describeRepoEdges(trpcClient: any, projectPath: string, aims: any
 }
 
 type ConnectionInput = string | {
-  aimId: string;
+  ideaId: string;
   weight?: number;
   explanation?: string;
   relativePosition?: [number, number];
@@ -151,11 +151,11 @@ function connectionInputSchema(description: string) {
     description,
     items: {
       anyOf: [
-        { type: "string", description: "aim UUID" },
+        { type: "string", description: "idea UUID" },
         {
           type: "object",
           properties: {
-            aimId: { type: "string" },
+            ideaId: { type: "string" },
             weight: { type: "number" },
             explanation: { type: "string" },
             relativePosition: {
@@ -165,7 +165,7 @@ function connectionInputSchema(description: string) {
               maxItems: 2,
             },
           },
-          required: ["aimId"],
+          required: ["ideaId"],
         },
       ],
     },
@@ -173,14 +173,14 @@ function connectionInputSchema(description: string) {
 }
 
 function normalizeConnectionInput(input: ConnectionInput): {
-  aimId: string;
+  ideaId: string;
   weight?: number;
   explanation?: string;
   relativePosition?: [number, number];
 } {
-  if (typeof input === "string") return { aimId: input };
+  if (typeof input === "string") return { ideaId: input };
   return {
-    aimId: input.aimId,
+    ideaId: input.ideaId,
     weight: input.weight,
     explanation: input.explanation,
     relativePosition: input.relativePosition,
@@ -188,13 +188,13 @@ function normalizeConnectionInput(input: ConnectionInput): {
 }
 
 function connectionId(input: ConnectionInput): string {
-  return typeof input === "string" ? input : input.aimId;
+  return typeof input === "string" ? input : input.ideaId;
 }
 
 function toStoredConnection(input: ConnectionInput) {
   const conn = normalizeConnectionInput(input);
   return {
-    aimId: conn.aimId,
+    ideaId: conn.ideaId,
     weight: conn.weight ?? 1,
     relativePosition: conn.relativePosition ?? [0, 0],
     ...(conn.explanation !== undefined ? { explanation: conn.explanation } : {}),
@@ -287,7 +287,7 @@ function canonicalize(value: unknown): unknown {
   return value;
 }
 
-export function aimCreationConfirmationToken(args: Record<string, unknown>): string {
+export function ideaCreationConfirmationToken(args: Record<string, unknown>): string {
   const { confirmationToken: _confirmationToken, ...proposal } = args;
   return createHash("sha256")
     .update(JSON.stringify(canonicalize(proposal)))
@@ -301,32 +301,32 @@ export function registerTools(server: Server, trpcClient: any) {
     return {
       tools: [
         {
-          name: "get_aim",
-          description: "Get one aim's raw fields by ID. To orient before working on it, prefer get_aim_context.",
+          name: "get_idea",
+          description: "Get one idea's raw fields by ID. To orient before working on it, prefer get_idea_context.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string" }
+              ideaId: { type: "string" }
             },
-            required: ["projectPath", "aimId"],
+            required: ["projectPath", "ideaId"],
           },
         },
         {
-          name: "get_aim_context",
-          description: "Orient before acting: returns the aim, every distinct root-first mission path (paths_to_root), the backward-compatible highest-value path (path_to_root), related aims, immediate parents, and children. Cyclic/non-root branches are excluded and truncation is reported.",
+          name: "get_idea_context",
+          description: "Orient before acting: returns the idea, every distinct root-first mission path (paths_to_root), the backward-compatible highest-value path (path_to_root), related ideas, immediate parents, and children. Cyclic/non-root branches are excluded and truncation is reported.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string" }
+              ideaId: { type: "string" }
             },
-            required: ["projectPath", "aimId"],
+            required: ["projectPath", "ideaId"],
           },
         },
         {
-          name: "search_aims",
-          description: "Search aims by text/status. Empty query = most recently updated. Search before creating a new aim to avoid duplicates.",
+          name: "search_ideas",
+          description: "Search ideas by text/status. Empty query = most recently updated. Search before creating a new idea to avoid duplicates.",
           inputSchema: {
             type: "object",
             properties: {
@@ -342,8 +342,8 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
-          name: "list_phase_aims_recursive",
-          description: "Open aims under a phase as a nested tree (keeps parent path to open descendants). Pass status to override.",
+          name: "list_phase_ideas_recursive",
+          description: "Open ideas under a phase as a nested tree (keeps parent path to open descendants). Pass status to override.",
           inputSchema: {
             type: "object",
             properties: {
@@ -380,8 +380,8 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
-          name: "create_aim",
-          description: "Two-step creation: first call returns related active/cancelled aims and a confirmationToken without writing. Review that context, then repeat the identical call with confirmationToken to create. Similarity informs judgment; it does not forbid a genuinely distinct aim. Connect the aim to the mission it serves.",
+          name: "create_idea",
+          description: "Two-step creation: first call returns related active/cancelled ideas and a confirmationToken without writing. Review that context, then repeat the identical call with confirmationToken to create. Similarity informs judgment; it does not forbid a genuinely distinct idea. Connect the idea to the mission it serves.",
           inputSchema: {
             type: "object",
             properties: {
@@ -392,17 +392,17 @@ export function registerTools(server: Server, trpcClient: any) {
               status: {
                 type: "object",
                 properties: {
-                  state: { type: "string", description: AIM_STATES_DESCRIPTION },
+                  state: { type: "string", description: IDEA_STATES_DESCRIPTION },
                   comment: { type: "string" },
                   reviewedAt: { type: "number", description: "Explicit review timestamp confirming the current status and intention still hold; does not change the state-transition date." },
                 },
               },
-              supportingConnections: connectionInputSchema("Child aim UUIDs, or objects with aimId/weight/explanation/relativePosition for edge metadata."),
-              supportedAims: connectionInputSchema("Parent aim UUIDs, or objects with aimId/weight/explanation/relativePosition for the parent→new-aim edge."),
+              supportingConnections: connectionInputSchema("Child idea UUIDs, or objects with ideaId/weight/explanation/relativePosition for edge metadata."),
+              supportedAims: connectionInputSchema("Parent idea UUIDs, or objects with ideaId/weight/explanation/relativePosition for the parent→new-idea edge."),
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
               valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
               cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
-              duration: { type: "number", minimum: 0, description: "Estimated days from now until the aim's value is realized" },
+              duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
               phaseId: { type: "string" },
               confirmationToken: { type: "string", description: "Token returned by the review-only first call. Any proposal edit requires a fresh review." },
             },
@@ -410,59 +410,59 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
-          name: "update_aim",
-          description: "Update aim fields. Sparse by default. supportedAims/supportingConnections still REPLACE existing links; use add*/remove* connection fields for safer append/remove edits. reflection is a free-text note and can be set with status=done to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
+          name: "update_idea",
+          description: "Update idea fields. Sparse by default. supportedAims/supportingConnections still REPLACE existing links; use add*/remove* connection fields for safer append/remove edits. reflection is a free-text note and can be set with status=done to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string" },
+              ideaId: { type: "string" },
               text: { type: "string" },
               description: { type: "string" },
-              reflection: { type: "string", description: "Free-text note/reflection on the aim; can be updated together with status without changing other fields." },
+              reflection: { type: "string", description: "Free-text note/reflection on the idea; can be updated together with status without changing other fields." },
               tags: { type: "array", items: { type: "string" } },
               status: {
                 type: "object",
                 properties: {
-                  state: { type: "string", description: AIM_STATES_DESCRIPTION },
+                  state: { type: "string", description: IDEA_STATES_DESCRIPTION },
                   comment: { type: "string" },
                   reviewedAt: { type: "number", description: "Explicit review timestamp confirming the current status and intention still hold; does not change the state-transition date." },
                 },
               },
-              supportingConnections: connectionInputSchema("REPLACE child links. Each item may be a child UUID or { aimId, weight, explanation, relativePosition }."),
-              supportedAims: connectionInputSchema("REPLACE parent links. Each item may be a parent UUID or { aimId, weight, explanation, relativePosition }. Metadata applies to the parent→this-aim edge."),
+              supportingConnections: connectionInputSchema("REPLACE child links. Each item may be a child UUID or { ideaId, weight, explanation, relativePosition }."),
+              supportedAims: connectionInputSchema("REPLACE parent links. Each item may be a parent UUID or { ideaId, weight, explanation, relativePosition }. Metadata applies to the parent→this-idea edge."),
               addSupportingConnections: connectionInputSchema("Append/update child links without replacing other children. Each item may include weight/explanation/relativePosition."),
-              removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child aim UUIDs to unlink without replacing other children." },
-              addSupportedAims: connectionInputSchema("Append/update parent links without replacing other parents. Each item may include weight/explanation/relativePosition for the parent→this-aim edge."),
-              removeSupportedAims: { type: "array", items: { type: "string" }, description: "Parent aim UUIDs to unlink without replacing other parents." },
+              removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child idea UUIDs to unlink without replacing other children." },
+              addSupportedAims: connectionInputSchema("Append/update parent links without replacing other parents. Each item may include weight/explanation/relativePosition for the parent→this-idea edge."),
+              removeSupportedAims: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink without replacing other parents." },
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
               valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
               cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
-              duration: { type: "number", minimum: 0, description: "Estimated days from now until the aim's value is realized" },
+              duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
             },
-            required: ["projectPath", "aimId"],
+            required: ["projectPath", "ideaId"],
           },
         },
         {
-          name: "delete_aim",
-          description: "Delete aim. Prefer status=cancelled unless duplicate/error.",
+          name: "delete_idea",
+          description: "Delete idea. Prefer status=cancelled unless duplicate/error.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string" }
+              ideaId: { type: "string" }
             },
-            required: ["projectPath", "aimId"],
+            required: ["projectPath", "ideaId"],
           },
         },
         {
           name: "addReflection",
-          description: "Append a structured reflection (context, outcome, effectiveness, lesson) without changing aim status. For a simple free-text note, use update_aim.reflection.",
+          description: "Append a structured reflection (context, outcome, effectiveness, lesson) without changing idea status. For a simple free-text note, use update_idea.reflection.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string" },
+              ideaId: { type: "string" },
               reflection: {
                 type: "object",
                 properties: {
@@ -475,12 +475,12 @@ export function registerTools(server: Server, trpcClient: any) {
                 required: ["context", "outcome", "effectiveness", "lesson"]
               }
             },
-            required: ["projectPath", "aimId", "reflection"],
+            required: ["projectPath", "ideaId", "reflection"],
           },
         },
         {
           name: "create_phase",
-          description: "Create an ordered work horizon or timebox under an optional parent. Place it with order, before, or after; these are virtual MCP arguments resolved to one sibling index. If several are supplied they must agree. Sibling names must match exactly and uniquely. Then use commit_aim_to_phase to make aims discoverable and rankable.",
+          description: "Create an ordered work horizon or timebox under an optional parent. Place it with order, before, or after; these are virtual MCP arguments resolved to one sibling index. If several are supplied they must agree. Sibling names must match exactly and uniquely. Then use commit_idea_to_phase to make ideas discoverable and rankable.",
           inputSchema: {
             type: "object",
             properties: {
@@ -514,7 +514,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "delete_phase",
-          description: "Delete phase (aims remain, just uncommitted; child phases move up into its place)",
+          description: "Delete phase (ideas remain, just uncommitted; child phases move up into its place)",
           inputSchema: {
             type: "object",
             properties: {
@@ -525,35 +525,35 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
-          name: "commit_aim_to_phase",
-          description: "Commit aim to phase (insertionIndex sets order).",
+          name: "commit_idea_to_phase",
+          description: "Commit idea to phase (insertionIndex sets order).",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string" },
+              ideaId: { type: "string" },
               phaseId: { type: "string" },
               insertionIndex: { type: "number" },
             },
-            required: ["projectPath", "aimId", "phaseId"],
+            required: ["projectPath", "ideaId", "phaseId"],
           },
         },
         {
-          name: "remove_aim_from_phase",
-          description: "Remove aim from phase (aim not deleted)",
+          name: "remove_idea_from_phase",
+          description: "Remove idea from phase (idea not deleted)",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string" },
+              ideaId: { type: "string" },
               phaseId: { type: "string" },
             },
-            required: ["projectPath", "aimId", "phaseId"],
+            required: ["projectPath", "ideaId", "phaseId"],
           },
         },
         {
           name: "list_linked_repos",
-          description: "List the repos this project can link an aim to: repoId, name, and whether the repo is checked out on this machine (resolved). Call it to get the repoId that link_repo needs.",
+          description: "List the repos this project can link an idea to: repoId, name, and whether the repo is checked out on this machine (resolved). Call it to get the repoId that link_repo needs.",
           inputSchema: {
             type: "object",
             properties: {
@@ -578,30 +578,30 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "link_repo",
-          description: "Declare that a WHOLE external repo supports this aim — a black-box dependency. Targets a repo, never an aim inside it: there is no cross-repo aim link by design. Idempotent per repoId (re-linking updates weight/explanation). Value flows out of this aim into the repo, and the other repo keeps no back-reference.",
+          description: "Declare that a WHOLE external repo supports this idea — a black-box dependency. Targets a repo, never an idea inside it: there is no cross-repo idea link by design. Idempotent per repoId (re-linking updates weight/explanation). Value flows out of this idea into the repo, and the other repo keeps no back-reference.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string", description: "The LOCAL aim being supported" },
+              ideaId: { type: "string", description: "The LOCAL idea being supported" },
               repoId: { type: "string", description: "Linked repo UUID from list_linked_repos" },
-              weight: { type: "number", description: "Share of this aim's value flowing into the repo, like any child edge. Default 1." },
-              explanation: { type: "string", description: "Why that repo supports this aim" },
+              weight: { type: "number", description: "Share of this idea's value flowing into the repo, like any child edge. Default 1." },
+              explanation: { type: "string", description: "Why that repo supports this idea" },
             },
-            required: ["projectPath", "aimId", "repoId"],
+            required: ["projectPath", "ideaId", "repoId"],
           },
         },
         {
           name: "unlink_repo",
-          description: "Remove an aim→repo black-box link. Leaves the repo in the linked-repo registry.",
+          description: "Remove an idea→repo black-box link. Leaves the repo in the linked-repo registry.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              aimId: { type: "string" },
+              ideaId: { type: "string" },
               repoId: { type: "string" },
             },
-            required: ["projectPath", "aimId", "repoId"],
+            required: ["projectPath", "ideaId", "repoId"],
           },
         },
         {
@@ -616,8 +616,8 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
-          name: "get_prioritized_aims",
-          description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable aim, update aims/connections/phases as understanding changes, verify real outcomes, record the result on the aim, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open aims; if the phase contains only open containers, ranks connected uncommitted open leaves instead (an equal path — work reaches you through parents as well as phases). If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene/reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
+          name: "get_prioritized_ideas",
+          description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable idea, update ideas/connections/phases as understanding changes, verify real outcomes, record the result on the idea, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open ideas; if the phase contains only open containers, ranks connected uncommitted open leaves instead (an equal path — work reaches you through parents as well as phases). If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene/reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
           inputSchema: {
             type: "object",
             properties: {
@@ -629,8 +629,8 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
-          name: "list_aims",
-          description: "List all aims. Filter by status, phaseId, floating (no phase AND no parents — orphans to reparent), or uncommitted (not in any phase). An aim with a parent needs no phase: it already contributes through that parent, so uncommitted is a normal resting state, not a gap. Use uncommitted=true with status=open to browse that backlog; commit_aim_to_phase only what you intend to act on in the phase.",
+          name: "list_ideas",
+          description: "List all ideas. Filter by status, phaseId, floating (no phase AND no parents — orphans to reparent), or uncommitted (not in any phase). An idea with a parent needs no phase: it already contributes through that parent, so uncommitted is a normal resting state, not a gap. Use uncommitted=true with status=open to browse that backlog; commit_idea_to_phase only what you intend to act on in the phase.",
           inputSchema: {
             type: "object",
             properties: {
@@ -647,7 +647,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "check_consistency",
-          description: "Check the aim graph for structural issues: broken links, mismatched parent/child references, orphaned embeddings. Run before fix_consistency.",
+          description: "Check the idea graph for structural issues: broken links, mismatched parent/child references, orphaned embeddings. Run before fix_consistency.",
           inputSchema: {
             type: "object",
             properties: { projectPath: PROJECT_PATH_TOOL_PROPERTY },
@@ -673,8 +673,8 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
-          name: "search_aims_semantic",
-          description: "Search aims by semantic similarity (embedding-based). Requires build_search_index to have run. Useful for finding duplicates.",
+          name: "search_ideas_semantic",
+          description: "Search ideas by semantic similarity (embedding-based). Requires build_search_index to have run. Useful for finding duplicates.",
           inputSchema: {
             type: "object",
             properties: {
@@ -688,8 +688,8 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
-          name: "find_duplicate_aims",
-          description: "Scan the embedding index for near-duplicate aims (all-pairs cosine similarity). Returns ranked pairs above `threshold` (default 0.92). Run build_search_index first if results are empty. Use merge_aims to act on results.",
+          name: "find_duplicate_ideas",
+          description: "Scan the embedding index for near-duplicate ideas (all-pairs cosine similarity). Returns ranked pairs above `threshold` (default 0.92). Run build_search_index first if results are empty. Use merge_ideas to act on results.",
           inputSchema: {
             type: "object",
             properties: {
@@ -702,12 +702,12 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "suggest_reparents",
-          description: "Read-only reparent suggestions for a vague catch-all parent: for each leaf child, suggest the closest structural sub-parent by embedding cosine. Candidate sub-parents default to the catch-all's children that are themselves parents; pass candidateParentIds to override. Run build_search_index first if empty. Apply with update_aim/merge_aims.",
+          description: "Read-only reparent suggestions for a vague catch-all parent: for each leaf child, suggest the closest structural sub-parent by embedding cosine. Candidate sub-parents default to the catch-all's children that are themselves parents; pass candidateParentIds to override. Run build_search_index first if empty. Apply with update_idea/merge_ideas.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              parentAimId: { type: "string", description: "UUID of the catch-all parent aim" },
+              parentAimId: { type: "string", description: "UUID of the catch-all parent idea" },
               candidateParentIds: { type: "array", items: { type: "string" }, description: "Optional explicit candidate sub-parent UUIDs (default: the catch-all's children that have children)" },
               limit: { type: "number", description: "Max suggestions to return (default 200)" },
             },
@@ -716,7 +716,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "graph_hygiene",
-          description: "Read-only dashboard of graph DEFECTS only: floating aims (no phase AND no parents), mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent aims, collapse candidates (parents whose active children are all done), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Uncommitted aims are NOT reported here — having no phase is a normal state, not a defect; browse them with list_aims uncommitted=true. Act on results via merge_aims / suggest_reparents / update_aim.",
+          description: "Read-only dashboard of graph DEFECTS only: floating ideas (no phase AND no parents), mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent ideas, collapse candidates (parents whose active children are all done), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Uncommitted ideas are NOT reported here — having no phase is a normal state, not a defect; browse them with list_ideas uncommitted=true. Act on results via merge_ideas / suggest_reparents / update_idea.",
           inputSchema: {
             type: "object",
             properties: {
@@ -729,21 +729,21 @@ export function registerTools(server: Server, trpcClient: any) {
           },
         },
         {
-          name: "merge_aims",
-          description: "Merge source aim B into target aim A: rewires B's parents, children, and phase commitments onto A (deduplicating), copies B's reflections to A, then archives B. Use after finding duplicates via search_aims_semantic, or to collapse a redundant child into its parent. Guards against self-merge only; a direct parent-child pair is merged cleanly (the connecting edge is dropped).",
+          name: "merge_ideas",
+          description: "Merge source idea B into target idea A: rewires B's parents, children, and phase commitments onto A (deduplicating), copies B's reflections to A, then archives B. Use after finding duplicates via search_ideas_semantic, or to collapse a redundant child into its parent. Guards against self-merge only; a direct parent-child pair is merged cleanly (the connecting edge is dropped).",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              targetId: { type: "string", description: "UUID of the aim to keep (A)" },
-              sourceId: { type: "string", description: "UUID of the aim to archive (B)" },
+              targetId: { type: "string", description: "UUID of the idea to keep (A)" },
+              sourceId: { type: "string", description: "UUID of the idea to archive (B)" },
             },
             required: ["projectPath", "targetId", "sourceId"],
           },
         },
         {
           name: "reconcile_status",
-          description: "Read-only status-reconciliation pass: lists OPEN aims referenced by >= 1 CODE commit (8-char id prefix in the message; pure graph-bookkeeping commits that only touch .bowman/ are excluded so triage/reframe commits don't masquerade as implementation) — likely already implemented but never flipped to done. Ranked by commit count. Review each candidate against the code, then update_aim to done (with a reflection) if confirmed; note a parent may be only partially done, and a commit citing an aim as future work is a false positive. Needs a git repo with commits referencing aim ids.",
+          description: "Read-only status-reconciliation pass: lists OPEN ideas referenced by >= 1 CODE commit (8-char id prefix in the message; pure graph-bookkeeping commits that only touch .bowman/ are excluded so triage/reframe commits don't masquerade as implementation) — likely already implemented but never flipped to done. Ranked by commit count. Review each candidate against the code, then update_idea to done (with a reflection) if confirmed; note a parent may be only partially done, and a commit citing an idea as future work is a false positive. Needs a git repo with commits referencing idea ids.",
           inputSchema: {
             type: "object",
             properties: {
@@ -755,12 +755,12 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "reconcile_code_presence",
-          description: "Read-only reconciliation heuristic complementing reconcile_status: for OPEN aims NOT already cited by a code commit, extract code-shaped tokens (camelCase/snake_case/dotted/file names) from the aim text+description and check how many appear in the codebase via git grep. Flags aims whose tokens are mostly present (>= minScore) as likely-already-implemented. Noisier than reconcile_status — matched/missing tokens are shown as evidence; verify against the code before update_aim to done. Needs a git repo.",
+          description: "Read-only reconciliation heuristic complementing reconcile_status: for OPEN ideas NOT already cited by a code commit, extract code-shaped tokens (camelCase/snake_case/dotted/file names) from the idea text+description and check how many appear in the codebase via git grep. Flags ideas whose tokens are mostly present (>= minScore) as likely-already-implemented. Noisier than reconcile_status — matched/missing tokens are shown as evidence; verify against the code before update_idea to done. Needs a git repo.",
           inputSchema: {
             type: "object",
             properties: {
               projectPath: PROJECT_PATH_TOOL_PROPERTY,
-              minScore: { type: "number", description: "Min fraction of an aim's tokens present in code to flag it, 0–1 (default 0.6)" },
+              minScore: { type: "number", description: "Min fraction of an idea's tokens present in code to flag it, 0–1 (default 0.6)" },
               limit: { type: "number", description: "Max candidates to return (default 20)" },
             },
             required: ["projectPath"],
@@ -814,24 +814,24 @@ export function registerTools(server: Server, trpcClient: any) {
       }
 
       switch (name) {
-        case "get_aim": {
-          const aim = await trpcClient.aim.get.query({
+        case "get_idea": {
+          const idea = await trpcClient.idea.get.query({
             projectPath: args.projectPath as string,
-            aimId: args.aimId as string,
+            ideaId: args.ideaId as string,
           });
-          await describeRepoEdges(trpcClient, args.projectPath as string, [aim]);
+          await describeRepoEdges(trpcClient, args.projectPath as string, [idea]);
           return {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(formatAim(aim), null, 2),
+                text: JSON.stringify(formatAim(idea), null, 2),
               },
             ],
           };
         }
 
-        case "get_aim_context": {
-          const aimId = args.aimId as string;
+        case "get_idea_context": {
+          const ideaId = args.ideaId as string;
           const projectPath = args.projectPath as string;
           const MAX_PATH_DEPTH = 64;
           const MAX_PATHS = 100;
@@ -839,54 +839,54 @@ export function registerTools(server: Server, trpcClient: any) {
           // Load the whole graph once: it powers the value model (to choose
           // which parent to follow at branches) and lets us resolve parent/child
           // text from a map instead of N round-trips.
-          const allAims = await trpcClient.aim.list.query({ projectPath });
-          const aimMap = new Map<string, any>((allAims as any[]).map((a: any) => [a.id, a]));
+          const allAims = await trpcClient.idea.list.query({ projectPath });
+          const ideaMap = new Map<string, any>((allAims as any[]).map((a: any) => [a.id, a]));
           const { flowValues } = calculateAimValues(allAims as any);
 
-          const aim = aimMap.get(aimId) || await trpcClient.aim.get.query({ projectPath, aimId });
+          const idea = ideaMap.get(ideaId) || await trpcClient.idea.get.query({ projectPath, ideaId });
 
           // Semantic Search
-          const queryText = `${aim.text} ${aim.description || ''}`.trim();
-          const similarAims = await trpcClient.aim.searchSemantic.query({
+          const queryText = `${idea.text} ${idea.description || ''}`.trim();
+          const similarAims = await trpcClient.idea.searchSemantic.query({
             projectPath,
             query: queryText,
             limit: 6 // Request 6, filter self
           });
           const semanticContext = similarAims
-            .filter((a: any) => a.id !== aimId)
+            .filter((a: any) => a.id !== ideaId)
             .slice(0, 5)
             .map((a: any) => ({ id: a.id, text: a.text, description: a.description }));
 
-          // Immediate parents (an aim may have several)
-          const parentContext = (aim.supportedAims || [])
-            .map((id: string) => aimMap.get(id))
+          // Immediate parents (an idea may have several)
+          const parentContext = (idea.supportedAims || [])
+            .map((id: string) => ideaMap.get(id))
             .filter(Boolean)
             .map((p: any) => ({ id: p.id, text: p.text, description: p.description }));
 
           // Children
-          const childContext = (aim.supportingConnections || [])
-            .map((c: any) => aimMap.get(c.aimId))
+          const childContext = (idea.supportingConnections || [])
+            .map((c: any) => ideaMap.get(c.ideaId))
             .filter(Boolean)
             .map((c: any) => ({ id: c.id, text: c.text, description: c.description }));
 
           // Black-box repo supporters: whole external repos carrying part of
-          // this aim. They are not in aimMap (nothing inside them is loaded, by
+          // this idea. They are not in ideaMap (nothing inside them is loaded, by
           // design), so they would be invisible without this.
-          const repoCarrier = { supportingRepos: [...(aim.supportingRepos || [])] };
+          const repoCarrier = { supportingRepos: [...(idea.supportingRepos || [])] };
           await describeRepoEdges(trpcClient, projectPath, [repoCarrier]);
           const repoContext = repoCarrier.supportingRepos;
 
           // Highest-value path to root: walk up supportedAims so the agent sees
           // lineage toward the highest-value goal (e.g. "achieve ASI"). At a
           // branch (multiple parents) follow the one with the highest actual
-          // value inflow into the current aim — i.e. the parent through which
+          // value inflow into the current idea — i.e. the parent through which
           // most value flows here. Cycle-guarded and capped at MAX_PATH.
           const pathToRoot: any[] = [];
-          const visited = new Set<string>([aimId]);
-          let cursor: any = aim;
+          const visited = new Set<string>([ideaId]);
+          let cursor: any = idea;
           while (pathToRoot.length < MAX_PATH_DEPTH) {
             const parentIds = (cursor.supportedAims || []).filter(
-              (id: string) => aimMap.has(id) && !visited.has(id)
+              (id: string) => ideaMap.has(id) && !visited.has(id)
             );
             if (parentIds.length === 0) break; // reached a root (or only cycles remain)
 
@@ -898,7 +898,7 @@ export function registerTools(server: Server, trpcClient: any) {
               if (flow > bestFlow) { best = pid; bestFlow = flow; }
             }
 
-            const parent = aimMap.get(best);
+            const parent = ideaMap.get(best);
             visited.add(best);
             pathToRoot.push({
               id: parent.id,
@@ -932,7 +932,7 @@ export function registerTools(server: Server, trpcClient: any) {
             }
 
             const existingParentIds = (current.supportedAims || [])
-              .filter((id: string) => aimMap.has(id));
+              .filter((id: string) => ideaMap.has(id));
             if (existingParentIds.length === 0) {
               pathsToRoot.push([...upwardPath].reverse());
               return;
@@ -942,7 +942,7 @@ export function registerTools(server: Server, trpcClient: any) {
             for (const parentId of existingParentIds) {
               if (branchVisited.has(parentId)) continue;
               followedParent = true;
-              const parent = aimMap.get(parentId);
+              const parent = ideaMap.get(parentId);
               const flow = flowValues.get(`${parentId}->${current.id}`) ?? 0;
               walkAllParents(
                 parent,
@@ -961,14 +961,14 @@ export function registerTools(server: Server, trpcClient: any) {
               return;
             }
           };
-          walkAllParents(aim, [], new Set([aimId]));
+          walkAllParents(idea, [], new Set([ideaId]));
 
           return {
             content: [
               {
                 type: "text",
                 text: JSON.stringify({
-                    aim: { id: aim.id, text: aim.text, description: aim.description },
+                    idea: { id: idea.id, text: idea.text, description: idea.description },
                     path_to_root: pathToRoot,
                     paths_to_root: pathsToRoot,
                     paths_to_root_truncated: pathsToRootTruncated,
@@ -982,12 +982,12 @@ export function registerTools(server: Server, trpcClient: any) {
           };
         }
 
-        case "list_phase_aims_recursive": {
-            // 1. Get all aims (cache them)
-            const allAims: any[] = await trpcClient.aim.list.query({
+        case "list_phase_ideas_recursive": {
+            // 1. Get all ideas (cache them)
+            const allAims: any[] = await trpcClient.idea.list.query({
                 projectPath: args.projectPath as string,
             });
-            const aimMap = new Map(allAims.map((a: any) => [a.id, a]));
+            const ideaMap = new Map(allAims.map((a: any) => [a.id, a]));
 
             // 2. Fetch the target phase directly
             const phase = await trpcClient.phase.get.query({
@@ -1004,26 +1004,26 @@ export function registerTools(server: Server, trpcClient: any) {
                 ? (Array.isArray(args.status) ? args.status : [args.status])
                 : ['open'];
 
-            function buildTree(aimId: string): any | null {
-                if (visited.has(aimId)) return null; // Cycle detection
-                visited.add(aimId);
+            function buildTree(ideaId: string): any | null {
+                if (visited.has(ideaId)) return null; // Cycle detection
+                visited.add(ideaId);
 
-                const aim = aimMap.get(aimId);
-                if (!aim) return null;
+                const idea = ideaMap.get(ideaId);
+                if (!idea) return null;
 
-                const children = (aim.supportingConnections || [])
-                    .map((conn: any) => buildTree(typeof conn === 'string' ? conn : conn.aimId))
+                const children = (idea.supportingConnections || [])
+                    .map((conn: any) => buildTree(typeof conn === 'string' ? conn : conn.ideaId))
                     .filter((c: any) => c !== null);
 
                 const node = {
-                    id: aim.id,
-                    text: aim.text,
-                    description: aim.description,
-                    status: aim.status.state,
+                    id: idea.id,
+                    text: idea.text,
+                    description: idea.description,
+                    status: idea.status.state,
                     children: children
                 };
 
-                const isOpen = (allowedStatuses as string[]).includes(aim.status.state);
+                const isOpen = (allowedStatuses as string[]).includes(idea.status.state);
                 const hasOpenChildren = children.length > 0;
 
                 // Keep if open OR has open children (so we can see the path to the open child)
@@ -1046,8 +1046,8 @@ export function registerTools(server: Server, trpcClient: any) {
             };
         }
 
-        case "search_aims": {
-          const aims = await trpcClient.aim.search.query({
+        case "search_ideas": {
+          const ideas = await trpcClient.idea.search.query({
             projectPath: args.projectPath as string,
             query: args.query as string,
             status: args.status as string | string[] | undefined,
@@ -1060,7 +1060,7 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [
               {
                 type: "text",
-                text: JSON.stringify(formatAims(aims), null, 2),
+                text: JSON.stringify(formatAims(ideas), null, 2),
               },
             ],
           };
@@ -1097,16 +1097,16 @@ export function registerTools(server: Server, trpcClient: any) {
           };
         }
 
-        case "create_aim": {
+        case "create_idea": {
           if (args.cost !== undefined && (!Number.isFinite(args.cost) || (args.cost as number) <= 0)) {
             throw new Error("Estimated direct cost must be a finite number greater than 0.");
           }
           if (args.duration !== undefined && (!Number.isFinite(args.duration) || (args.duration as number) < 0)) {
             throw new Error("Duration must be a finite number greater than or equal to 0 days.");
           }
-          const expectedToken = aimCreationConfirmationToken(args);
+          const expectedToken = ideaCreationConfirmationToken(args);
           if (args.confirmationToken === undefined) {
-            const related = await trpcClient.aim.search.query({
+            const related = await trpcClient.idea.search.query({
               projectPath: args.projectPath as string,
               query: args.text as string,
               limit: 8,
@@ -1119,15 +1119,15 @@ export function registerTools(server: Server, trpcClient: any) {
                   reviewRequired: true,
                   confirmationToken: expectedToken,
                   instruction:
-                    "Review the related aims, especially cancelled ones and their reasons. " +
+                    "Review the related ideas, especially cancelled ones and their reasons. " +
                     "Reuse, update, connect, or merge when appropriate. If this proposal is still distinct and useful, " +
-                    "repeat the identical create_aim call with confirmationToken.",
-                  relatedAims: (related as any[]).map((aim: any) => ({
-                    id: aim.id,
-                    text: aim.text,
-                    description: aim.description,
-                    status: aim.status,
-                    score: aim.score,
+                    "repeat the identical create_idea call with confirmationToken.",
+                  relatedAims: (related as any[]).map((idea: any) => ({
+                    id: idea.id,
+                    text: idea.text,
+                    description: idea.description,
+                    status: idea.status,
+                    score: idea.score,
                   })),
                 }, null, 2),
               }],
@@ -1135,14 +1135,14 @@ export function registerTools(server: Server, trpcClient: any) {
           }
           if (args.confirmationToken !== expectedToken) {
             throw new Error(
-              "confirmationToken does not match this aim proposal. " +
-              "Call create_aim again without confirmationToken to review context for the edited proposal.",
+              "confirmationToken does not match this idea proposal. " +
+              "Call create_idea again without confirmationToken to review context for the edited proposal.",
             );
           }
 
-          const result = await trpcClient.aim.createFloatingAim.mutate({
+          const result = await trpcClient.idea.createFloatingAim.mutate({
             projectPath: args.projectPath as string,
-            aim: {
+            idea: {
               text: args.text as string,
               description: args.description as string | undefined,
               tags: args.tags as string[] | undefined,
@@ -1162,10 +1162,10 @@ export function registerTools(server: Server, trpcClient: any) {
           const children = (args.supportingConnections as ConnectionInput[]) || [];
           for (const childInput of children) {
             const child = normalizeConnectionInput(childInput);
-            await trpcClient.aim.connectAims.mutate({
+            await trpcClient.idea.connectAims.mutate({
               projectPath: args.projectPath as string,
               parentAimId: result.id,
-              childAimId: child.aimId,
+              childAimId: child.ideaId,
               relativePosition: child.relativePosition,
               weight: child.weight,
               explanation: child.explanation,
@@ -1176,9 +1176,9 @@ export function registerTools(server: Server, trpcClient: any) {
           const parents = (args.supportedAims as ConnectionInput[]) || [];
           for (const parentInput of parents) {
             const parent = normalizeConnectionInput(parentInput);
-            await trpcClient.aim.connectAims.mutate({
+            await trpcClient.idea.connectAims.mutate({
               projectPath: args.projectPath as string,
-              parentAimId: parent.aimId,
+              parentAimId: parent.ideaId,
               childAimId: result.id,
               relativePosition: parent.relativePosition,
               weight: parent.weight,
@@ -1188,9 +1188,9 @@ export function registerTools(server: Server, trpcClient: any) {
 
           // If phaseId provided, commit to phase
           if (args.phaseId) {
-            await trpcClient.aim.commitToPhase.mutate({
+            await trpcClient.idea.commitToPhase.mutate({
               projectPath: args.projectPath as string,
-              aimId: result.id,
+              ideaId: result.id,
               phaseId: args.phaseId as string,
             });
           }
@@ -1199,13 +1199,13 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [
               {
                 type: "text",
-                text: `Created aim with ID: ${result.id}${args.phaseId ? ` and committed to phase ${args.phaseId}` : ''}`,
+                text: `Created idea with ID: ${result.id}${args.phaseId ? ` and committed to phase ${args.phaseId}` : ''}`,
               },
             ],
           };
         }
 
-        case "update_aim": {
+        case "update_idea": {
           if (args.cost !== undefined && (!Number.isFinite(args.cost) || (args.cost as number) <= 0)) {
             throw new Error("Estimated direct cost must be a finite number greater than 0.");
           }
@@ -1246,7 +1246,7 @@ export function registerTools(server: Server, trpcClient: any) {
               if (typeof input === "string") continue;
               const parent = normalizeConnectionInput(input);
               parentMetadataToApply.push({
-                parentAimId: parent.aimId,
+                parentAimId: parent.ideaId,
                 relativePosition: parent.relativePosition,
                 weight: parent.weight,
                 explanation: parent.explanation,
@@ -1255,23 +1255,23 @@ export function registerTools(server: Server, trpcClient: any) {
           }
 
           if (hasConnectionDeltas) {
-            const existingAim = await trpcClient.aim.get.query({
+            const existingAim = await trpcClient.idea.get.query({
               projectPath: args.projectPath as string,
-              aimId: args.aimId as string,
+              ideaId: args.ideaId as string,
             });
 
             if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined) {
               const byChildId = new Map<string, any>();
               const baseSupportingConnections = updateData.supportingConnections ?? existingAim.supportingConnections ?? [];
               for (const conn of baseSupportingConnections) {
-                byChildId.set(conn.aimId, { ...conn });
+                byChildId.set(conn.ideaId, { ...conn });
               }
               for (const childId of (args.removeSupportingConnections as string[] | undefined) ?? []) {
                 byChildId.delete(childId);
               }
               for (const input of (args.addSupportingConnections as ConnectionInput[] | undefined) ?? []) {
                 const next = toStoredConnection(input);
-                byChildId.set(next.aimId, { ...(byChildId.get(next.aimId) ?? {}), ...next });
+                byChildId.set(next.ideaId, { ...(byChildId.get(next.ideaId) ?? {}), ...next });
               }
               updateData.supportingConnections = Array.from(byChildId.values());
             }
@@ -1283,10 +1283,10 @@ export function registerTools(server: Server, trpcClient: any) {
               }
               for (const input of (args.addSupportedAims as ConnectionInput[] | undefined) ?? []) {
                 const parent = normalizeConnectionInput(input);
-                parentIds.add(parent.aimId);
+                parentIds.add(parent.ideaId);
                 if (typeof input !== "string") {
                   parentMetadataToApply.push({
-                    parentAimId: parent.aimId,
+                    parentAimId: parent.ideaId,
                     relativePosition: parent.relativePosition,
                     weight: parent.weight,
                     explanation: parent.explanation,
@@ -1297,10 +1297,10 @@ export function registerTools(server: Server, trpcClient: any) {
             }
           }
 
-          await trpcClient.aim.update.mutate({
+          await trpcClient.idea.update.mutate({
             projectPath: args.projectPath as string,
-            aimId: args.aimId as string,
-            aim: updateData,
+            ideaId: args.ideaId as string,
+            idea: updateData,
           });
 
           for (const parent of parentMetadataToApply) {
@@ -1310,17 +1310,17 @@ export function registerTools(server: Server, trpcClient: any) {
               parent.explanation === undefined
             ) continue;
 
-            const parentAim = await trpcClient.aim.get.query({
+            const parentAim = await trpcClient.idea.get.query({
               projectPath: args.projectPath as string,
-              aimId: parent.parentAimId,
+              ideaId: parent.parentAimId,
             });
-            const childAimId = args.aimId as string;
+            const childAimId = args.ideaId as string;
             const supportingConnections = [...(parentAim.supportingConnections ?? [])];
-            const existingIndex = supportingConnections.findIndex((conn: any) => conn.aimId === childAimId);
-            const previous = existingIndex === -1 ? { aimId: childAimId } : supportingConnections[existingIndex];
+            const existingIndex = supportingConnections.findIndex((conn: any) => conn.ideaId === childAimId);
+            const previous = existingIndex === -1 ? { ideaId: childAimId } : supportingConnections[existingIndex];
             const next = {
               ...previous,
-              aimId: childAimId,
+              ideaId: childAimId,
               relativePosition: parent.relativePosition ?? previous.relativePosition ?? [0, 0],
               weight: parent.weight ?? previous.weight ?? 1,
               ...(parent.explanation !== undefined ? { explanation: parent.explanation } : {}),
@@ -1330,31 +1330,31 @@ export function registerTools(server: Server, trpcClient: any) {
             } else {
               supportingConnections[existingIndex] = next;
             }
-            await trpcClient.aim.update.mutate({
+            await trpcClient.idea.update.mutate({
               projectPath: args.projectPath as string,
-              aimId: parent.parentAimId,
-              aim: { supportingConnections },
+              ideaId: parent.parentAimId,
+              idea: { supportingConnections },
             });
           }
 
-          // Verification gate (soft): closing an aim should mean verified-done,
+          // Verification gate (soft): closing an idea should mean verified-done,
           // not claimed-done. When status is set to done without any reflection
           // recording evidence, nudge the agent to addReflection. Non-blocking
           // and best-effort — never fails the update.
           let verificationNudge = "";
           if ((args.status as any)?.state === "done") {
             try {
-              const aim = await trpcClient.aim.get.query({
+              const idea = await trpcClient.idea.get.query({
                 projectPath: args.projectPath as string,
-                aimId: args.aimId as string,
+                ideaId: args.ideaId as string,
               });
               const hasReflection =
-                (typeof aim?.reflection === "string" && aim.reflection.trim().length > 0) ||
-                (Array.isArray(aim?.reflections) && aim.reflections.length > 0);
+                (typeof idea?.reflection === "string" && idea.reflection.trim().length > 0) ||
+                (Array.isArray(idea?.reflections) && idea.reflections.length > 0);
               if (!hasReflection) {
                 verificationNudge =
-                  "\n\nReminder: marked done without a reflection. Record the verification evidence in update_aim.reflection or addReflection — " +
-                  verificationHintForAim(aim) +
+                  "\n\nReminder: marked done without a reflection. Record the verification evidence in update_idea.reflection or addReflection — " +
+                  verificationHintForAim(idea) +
                   " — so the graph reflects verified-done rather than claimed-done.";
               }
             } catch {
@@ -1366,38 +1366,38 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [
               {
                 type: "text",
-                text: `Updated aim ${args.aimId}${verificationNudge}`,
+                text: `Updated idea ${args.ideaId}${verificationNudge}`,
               },
             ],
           };
         }
 
-        case "delete_aim": {
-          await trpcClient.aim.delete.mutate({
+        case "delete_idea": {
+          await trpcClient.idea.delete.mutate({
             projectPath: args.projectPath as string,
-            aimId: args.aimId as string,
+            ideaId: args.ideaId as string,
           });
           return {
             content: [
               {
                 type: "text",
-                text: `Deleted aim ${args.aimId}`,
+                text: `Deleted idea ${args.ideaId}`,
               },
             ],
           };
         }
 
         case "addReflection": {
-          const result = await trpcClient.aim.addReflection.mutate({
+          const result = await trpcClient.idea.addReflection.mutate({
             projectPath: args.projectPath as string,
-            aimId: args.aimId as string,
+            ideaId: args.ideaId as string,
             reflection: args.reflection as any,
           });
           return {
             content: [
               {
                 type: "text",
-                text: `Added reflection to aim ${args.aimId}`,
+                text: `Added reflection to idea ${args.ideaId}`,
               },
             ],
           };
@@ -1480,10 +1480,10 @@ export function registerTools(server: Server, trpcClient: any) {
           };
         }
 
-        case "commit_aim_to_phase": {
-          await trpcClient.aim.commitToPhase.mutate({
+        case "commit_idea_to_phase": {
+          await trpcClient.idea.commitToPhase.mutate({
             projectPath: args.projectPath as string,
-            aimId: args.aimId as string,
+            ideaId: args.ideaId as string,
             phaseId: args.phaseId as string,
             insertionIndex: args.insertionIndex as number | undefined,
           });
@@ -1491,7 +1491,7 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [
               {
                 type: "text",
-                text: `Committed aim ${args.aimId} to phase ${args.phaseId}`,
+                text: `Committed idea ${args.ideaId} to phase ${args.phaseId}`,
               },
             ],
           };
@@ -1532,7 +1532,7 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [
               {
                 type: "text",
-                text: `Registered linked repo "${repo.name}" (${repo.repoId}). Use link_repo with that repoId to attach it to an aim.`,
+                text: `Registered linked repo "${repo.name}" (${repo.repoId}). Use link_repo with that repoId to attach it to an idea.`,
               },
             ],
           };
@@ -1542,7 +1542,7 @@ export function registerTools(server: Server, trpcClient: any) {
           const projectPath = args.projectPath as string;
           const repoId = args.repoId as string;
 
-          // Fail loudly on an unregistered repoId: aim.linkRepo would happily
+          // Fail loudly on an unregistered repoId: idea.linkRepo would happily
           // store an edge pointing at nothing, which renders as a nameless
           // black box and silently drains value into a dead sink.
           const repos = await trpcClient.linkedRepo.list.query({ projectPath });
@@ -1554,9 +1554,9 @@ export function registerTools(server: Server, trpcClient: any) {
             );
           }
 
-          await trpcClient.aim.linkRepo.mutate({
+          await trpcClient.idea.linkRepo.mutate({
             projectPath,
-            aimId: args.aimId as string,
+            ideaId: args.ideaId as string,
             repoId,
             weight: args.weight as number | undefined,
             explanation: args.explanation as string | undefined,
@@ -1565,39 +1565,39 @@ export function registerTools(server: Server, trpcClient: any) {
             content: [
               {
                 type: "text",
-                text: `Linked aim ${args.aimId} to repo "${repo.name}" (${repoId})${repo.resolved ? "" : " — note: that repo is not checked out on this machine, so it renders as an unresolved stub"}`,
+                text: `Linked idea ${args.ideaId} to repo "${repo.name}" (${repoId})${repo.resolved ? "" : " — note: that repo is not checked out on this machine, so it renders as an unresolved stub"}`,
               },
             ],
           };
         }
 
         case "unlink_repo": {
-          await trpcClient.aim.unlinkRepo.mutate({
+          await trpcClient.idea.unlinkRepo.mutate({
             projectPath: args.projectPath as string,
-            aimId: args.aimId as string,
+            ideaId: args.ideaId as string,
             repoId: args.repoId as string,
           });
           return {
             content: [
               {
                 type: "text",
-                text: `Unlinked repo ${args.repoId} from aim ${args.aimId}`,
+                text: `Unlinked repo ${args.repoId} from idea ${args.ideaId}`,
               },
             ],
           };
         }
 
-        case "remove_aim_from_phase": {
-          await trpcClient.aim.removeFromPhase.mutate({
+        case "remove_idea_from_phase": {
+          await trpcClient.idea.removeFromPhase.mutate({
             projectPath: args.projectPath as string,
-            aimId: args.aimId as string,
+            ideaId: args.ideaId as string,
             phaseId: args.phaseId as string,
           });
           return {
             content: [
               {
                 type: "text",
-                text: `Removed aim ${args.aimId} from phase ${args.phaseId}`,
+                text: `Removed idea ${args.ideaId} from phase ${args.phaseId}`,
               },
             ],
           };
@@ -1619,7 +1619,7 @@ export function registerTools(server: Server, trpcClient: any) {
           };
         }
 
-        case "get_prioritized_aims": {
+        case "get_prioritized_ideas": {
           // Fetch all phases once; we need them for both explicit lookup and time-based resolution.
           // parentPhaseId omitted → backend returns all phases
           const allPhases: any[] = await trpcClient.phase.list.query({
@@ -1672,30 +1672,30 @@ export function registerTools(server: Server, trpcClient: any) {
           }
 
           // Run the full-graph economic model so value flows top-down from
-          // high-value goals (e.g. ASI) into the sub-aims that support them and
-          // cost aggregates bottom-up. Ranking a single aim by its own
+          // high-value goals (e.g. ASI) into the sub-ideas that support them and
+          // cost aggregates bottom-up. Ranking a single idea by its own
           // intrinsicValue/cost ignores the graph and is near-useless when most
           // intrinsic value sits at the top.
-          const allAims = await trpcClient.aim.list.query({
+          const allAims = await trpcClient.idea.list.query({
             projectPath: args.projectPath as string,
           });
           const { priorities, values, costs, totalIntrinsic } = calculateAimValues(allAims as any);
 
-          const aimIdSet = new Set<string>(targetPhase.commitments ?? []);
+          const ideaIdSet = new Set<string>(targetPhase.commitments ?? []);
           const openInPhase = (allAims as any[]).filter(
-            (a: any) => aimIdSet.has(a.id) && a.status.state === 'open'
+            (a: any) => ideaIdSet.has(a.id) && a.status.state === 'open'
           );
-          const hasActiveChild = (aim: any) => (aim.supportingConnections ?? []).some((connection: any) => {
-            const child = (allAims as any[]).find((candidate: any) => candidate.id === connection.aimId);
+          const hasActiveChild = (idea: any) => (idea.supportingConnections ?? []).some((connection: any) => {
+            const child = (allAims as any[]).find((candidate: any) => candidate.id === connection.ideaId);
             return child && ['open', 'partially'].includes(child.status?.state);
           });
-          const openLeavesInPhase = openInPhase.filter((aim: any) => !hasActiveChild(aim));
+          const openLeavesInPhase = openInPhase.filter((idea: any) => !hasActiveChild(idea));
           const uncommittedLeaves = openLeavesInPhase.length === 0
-            ? (allAims as any[]).filter((aim: any) =>
-                aim.status?.state === 'open'
-                && (aim.committedIn ?? []).length === 0
-                && (aim.supportedAims ?? []).length > 0
-                && !hasActiveChild(aim)
+            ? (allAims as any[]).filter((idea: any) =>
+                idea.status?.state === 'open'
+                && (idea.committedIn ?? []).length === 0
+                && (idea.supportedAims ?? []).length > 0
+                && !hasActiveChild(idea)
               )
             : [];
           const rankedOpenAims = uncommittedLeaves.length > 0
@@ -1708,10 +1708,10 @@ export function registerTools(server: Server, trpcClient: any) {
               ? 'mission-containers-exploration'
               : 'phase-commitments';
 
-          // Diagnostics: how many committed aims are missing economic data
-          const allCommitted = (allAims as any[]).filter((a: any) => aimIdSet.has(a.id));
+          // Diagnostics: how many committed ideas are missing economic data
+          const allCommitted = (allAims as any[]).filter((a: any) => ideaIdSet.has(a.id));
           const missingCost = allCommitted.filter((a: any) => !a.cost || a.cost <= 0).length;
-          // An aim with effectively-zero flowed value is disconnected from any intrinsic
+          // An idea with effectively-zero flowed value is disconnected from any intrinsic
           // value source in the graph — its priority is meaningless regardless of cost.
           const missingValue = allCommitted.filter(
             (a: any) => (values.get(a.id) ?? 0) < 1e-10
@@ -1730,13 +1730,13 @@ export function registerTools(server: Server, trpcClient: any) {
             ? phaseFlowedValue / totalIntrinsic
             : 0;
 
-          // Realized-cost signal: real commits referencing each open aim = actual
-          // output. Grounds attention in reality (which ranked aims have actually
+          // Realized-cost signal: real commits referencing each open idea = actual
+          // output. Grounds attention in reality (which ranked ideas have actually
           // produced work) without mutating the human-set value model.
           const commitMessages = getRepoCommitMessages(args.projectPath as string);
           const realized = countAimReferences(commitMessages, rankedOpenAims.map((a: any) => a.id));
           const realizedSignalAvailable = commitMessages.length > 0;
-          // High-priority aims with a real cost but zero realized output are the
+          // High-priority ideas with a real cost but zero realized output are the
           // ones the loop keeps ranking yet never actually advances — surface them.
           const noRealizedOutput = realizedSignalAvailable
             ? rankedOpenAims.filter((a: any) => (a.cost ?? 0) > 0 && !(realized.get(a.id) ?? 0)).length
@@ -1786,14 +1786,14 @@ export function registerTools(server: Server, trpcClient: any) {
                     realizedSignal: realizedSignalAvailable ? "git-commit-references" : "unavailable (not a git repo / no commits)",
                     openAimsWithNoRealizedOutput: realizedSignalAvailable ? noRealizedOutput : undefined,
                     note: uncommittedLeaves.length > 0
-                      ? `No open leaf aim is committed to this phase; ranked ${uncommittedLeaves.length} connected uncommitted open leaf aim(s) instead. They are reachable through their parents — rank and work them as they are; committing them to a phase is optional.`
+                      ? `No open leaf idea is committed to this phase; ranked ${uncommittedLeaves.length} connected uncommitted open leaf idea(s) instead. They are reachable through their parents — rank and work them as they are; committing them to a phase is optional.`
                       : emptyActionableFrontier
                       ? "No open actionable leaf exists in the phase or connected uncommitted graph. Mission containers are context for exploration, not executable work."
                       : missingValue > 0
-                      ? `${missingValue} aim(s) have zero flowed value — they are disconnected from any intrinsic value source in the graph. Their priorities are unreliable.`
+                      ? `${missingValue} idea(s) have zero flowed value — they are disconnected from any intrinsic value source in the graph. Their priorities are unreliable.`
                       : missingCost > 0
-                        ? `${missingCost} aim(s) lack a cost estimate. Set via update_aim { cost: N }.`
-                        : "All committed aims have economic data.",
+                        ? `${missingCost} idea(s) lack a cost estimate. Set via update_idea { cost: N }.`
+                        : "All committed ideas have economic data.",
                   },
                   exploration: emptyActionableFrontier ? {
                     required: true,
@@ -1802,11 +1802,11 @@ export function registerTools(server: Server, trpcClient: any) {
                       "Inspect graph_hygiene and recent reflections for structural or learned opportunities.",
                       "Step back from the most recent scope and decompose a high-value abstract non-done mission into a bounded leaf.",
                       "Dream up a falsifiable hypothesis with a safe reversible experiment, explicit verification, and stop condition.",
-                      "Search before create_aim; connect genuinely new work to the mission and commit it to the active phase.",
+                      "Search before create_idea; connect genuinely new work to the mission and commit it to the active phase.",
                       "Do not manufacture low-value activity or substitute Markdown planning for graph state."
                     ]
                   } : undefined,
-                  aims: prioritized.map((a: any) => ({
+                  ideas: prioritized.map((a: any) => ({
                     id: a.id,
                     text: a.text,
                     description: a.description,
@@ -1824,8 +1824,8 @@ export function registerTools(server: Server, trpcClient: any) {
           };
         }
 
-        case "list_aims": {
-          const aims = await trpcClient.aim.list.query({
+        case "list_ideas": {
+          const ideas = await trpcClient.idea.list.query({
             projectPath: args.projectPath as string,
             status: args.status as string | string[] | undefined,
             phaseId: args.phaseId as string | undefined,
@@ -1835,7 +1835,7 @@ export function registerTools(server: Server, trpcClient: any) {
             offset: args.offset as number | undefined,
           });
           return {
-            content: [{ type: "text", text: JSON.stringify(aims.map(formatAim), null, 2) }],
+            content: [{ type: "text", text: JSON.stringify(ideas.map(formatAim), null, 2) }],
           };
         }
 
@@ -1866,8 +1866,8 @@ export function registerTools(server: Server, trpcClient: any) {
           };
         }
 
-        case "search_aims_semantic": {
-          const results = await trpcClient.aim.searchSemantic.query({
+        case "search_ideas_semantic": {
+          const results = await trpcClient.idea.searchSemantic.query({
             projectPath: args.projectPath as string,
             query: args.query as string,
             status: args.status as string | string[] | undefined,
@@ -1879,7 +1879,7 @@ export function registerTools(server: Server, trpcClient: any) {
           };
         }
 
-        case "find_duplicate_aims": {
+        case "find_duplicate_ideas": {
           const result = await trpcClient.project.findDuplicates.query({
             projectPath: args.projectPath as string,
             threshold: args.threshold as number | undefined,
@@ -1914,8 +1914,8 @@ export function registerTools(server: Server, trpcClient: any) {
           };
         }
 
-        case "merge_aims": {
-          const result = await trpcClient.aim.merge.mutate({
+        case "merge_ideas": {
+          const result = await trpcClient.idea.merge.mutate({
             projectPath: args.projectPath as string,
             targetId: args.targetId as string,
             sourceId: args.sourceId as string,
@@ -1927,12 +1927,12 @@ export function registerTools(server: Server, trpcClient: any) {
 
         case "reconcile_status": {
           const limit = (args.limit as number | undefined) ?? 30;
-          const allAims = await trpcClient.aim.list.query({
+          const allAims = await trpcClient.idea.list.query({
             projectPath: args.projectPath as string,
           });
           const openAims = (allAims as any[]).filter((a: any) => a.status?.state === "open");
-          // Code-only: a graph-bookkeeping commit that merely cites an aim id is
-          // not evidence the aim was implemented (see CODE_ONLY_PATHSPEC).
+          // Code-only: a graph-bookkeeping commit that merely cites an idea id is
+          // not evidence the idea was implemented (see CODE_ONLY_PATHSPEC).
           const commitMessages = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
           const counts = countAimReferences(commitMessages, openAims.map((a: any) => a.id));
           const candidates = findReconciliationCandidates(openAims as any[], counts);
@@ -1946,8 +1946,8 @@ export function registerTools(server: Server, trpcClient: any) {
                 note: commitMessages.length === 0
                   ? "No git commits found (not a git repo, or no history) — commit-reference reconciliation is unavailable."
                   : candidates.length === 0
-                    ? "No open aims are referenced by commits. Either the graph is in sync or commits don't cite aim ids."
-                    : "Each candidate is an OPEN aim cited by a commit — verify against the code, then update_aim to done with a reflection if implemented.",
+                    ? "No open ideas are referenced by commits. Either the graph is in sync or commits don't cite idea ids."
+                    : "Each candidate is an OPEN idea cited by a commit — verify against the code, then update_idea to done with a reflection if implemented.",
                 candidates: candidates.slice(0, limit),
               }, null, 2),
             }],
@@ -1957,22 +1957,22 @@ export function registerTools(server: Server, trpcClient: any) {
         case "reconcile_code_presence": {
           const minScore = (args.minScore as number | undefined) ?? 0.6;
           const limit = (args.limit as number | undefined) ?? 20;
-          const MAX_TOKENS_PER_AIM = 12;
+          const MAX_TOKENS_PER_IDEA = 12;
           const MAX_UNIQUE_TOKENS = 400;
 
-          const allAims = await trpcClient.aim.list.query({ projectPath: args.projectPath as string });
+          const allAims = await trpcClient.idea.list.query({ projectPath: args.projectPath as string });
           const openAims = (allAims as any[]).filter((a: any) => a.status?.state === "open");
 
-          // Aims already cited by a code commit are reconcile_status's job — skip
+          // Ideas already cited by a code commit are reconcile_status's job — skip
           // them so this heuristic focuses on its complement (no commit reference).
           const codeCommits = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
           const cited = countAimReferences(codeCommits, openAims.map((a: any) => a.id));
-          const aimsToScan = openAims.filter((a: any) => !((cited.get(a.id) ?? 0) > 0));
+          const ideasToScan = openAims.filter((a: any) => !((cited.get(a.id) ?? 0) > 0));
 
           const tokensByAim = new Map<string, string[]>();
           const uniqueTokens = new Set<string>();
-          for (const a of aimsToScan) {
-            const toks = extractCodeTokens(`${a.text}\n${a.description ?? ""}`).slice(0, MAX_TOKENS_PER_AIM);
+          for (const a of ideasToScan) {
+            const toks = extractCodeTokens(`${a.text}\n${a.description ?? ""}`).slice(0, MAX_TOKENS_PER_IDEA);
             if (toks.length >= 2) {
               tokensByAim.set(a.id, toks);
               for (const t of toks) if (uniqueTokens.size < MAX_UNIQUE_TOKENS) uniqueTokens.add(t);
@@ -1983,14 +1983,14 @@ export function registerTools(server: Server, trpcClient: any) {
           const present = new Set<string>();
           for (const tok of uniqueTokens) if (gitGrepMatches(args.projectPath as string, tok)) present.add(tok);
 
-          const aimById = new Map<string, any>(openAims.map((a: any) => [a.id, a]));
+          const ideaById = new Map<string, any>(openAims.map((a: any) => [a.id, a]));
           const candidates = [...tokensByAim.entries()]
             .map(([id, toks]) => ({ id, ...scoreCodePresence(toks, present) }))
             .filter((c) => c.scorable && c.score >= minScore && c.matched.length >= 2)
             .sort((x, y) => y.score - x.score)
             .map((c) => ({
               id: c.id,
-              text: aimById.get(c.id)?.text,
+              text: ideaById.get(c.id)?.text,
               score: Number(c.score.toFixed(2)),
               matched: c.matched,
               missing: c.missing,
@@ -2001,11 +2001,11 @@ export function registerTools(server: Server, trpcClient: any) {
               type: "text",
               text: JSON.stringify({
                 openAims: openAims.length,
-                skippedCommitCited: openAims.length - aimsToScan.length,
+                skippedCommitCited: openAims.length - ideasToScan.length,
                 scanned: tokensByAim.size,
                 minScore,
                 candidatesFound: candidates.length,
-                note: "OPEN aims whose code-shaped tokens are mostly present in the codebase — likely already implemented. Heuristic/noisy (a token can exist for unrelated reasons): verify each against the code using the matched/missing tokens, then update_aim to done if confirmed. Aims cited by a code commit are handled by reconcile_status and skipped here.",
+                note: "OPEN ideas whose code-shaped tokens are mostly present in the codebase — likely already implemented. Heuristic/noisy (a token can exist for unrelated reasons): verify each against the code using the matched/missing tokens, then update_idea to done if confirmed. Ideas cited by a code commit are handled by reconcile_status and skipped here.",
                 candidates: candidates.slice(0, limit),
               }, null, 2),
             }],
@@ -2017,7 +2017,7 @@ export function registerTools(server: Server, trpcClient: any) {
 
 ## Overview
 
-Aimparency provides lifecycle hooks for coding assistants (Codex, Claude Code, Antigravity / AGY) to enable autonomous continuation through the Aimparency MCP aim graph loop.
+Aimparency provides lifecycle hooks for coding assistants (Codex, Claude Code, Antigravity / AGY) to enable autonomous continuation through the Aimparency MCP idea graph loop.
 
 There are two separate hook mechanisms:
 - \`codex-continue-on-stop.sh\` (in \`scripts/hooks/\`): Blocks a coding assistant's stop event (Codex / Claude Code \`Stop\` or AGY \`post_invocation\`) and starts another autonomous turn driven by the Aimparency MCP graph.
@@ -2063,16 +2063,16 @@ Run the installer from the Aimparency repository:
 
 ### Graph Loop (Normal Continuation)
 When the coding assistant attempts to stop normally, the hook blocks the stop event and instructs the assistant to:
-1. Call \`get_prioritized_aims\`
-2. Orient with \`get_aim_context\`
-3. Implement and verify the selected actionable aim
-4. Record evidence and status with \`update_aim\` or \`addReflection\`
+1. Call \`get_prioritized_ideas\`
+2. Orient with \`get_idea_context\`
+3. Implement and verify the selected actionable idea
+4. Record evidence and status with \`update_idea\` or \`addReflection\`
 5. Reprioritize and continue
 
 ### Two-Stage Human-Wait Protocol
 If the assistant determines human intervention (credentials, explicit authorization, human judgment) is indispensable:
 1. The assistant states the exact blocker and ends its response with \`[AIMPARENCY_REQUEST_HUMAN]\`.
-2. The hook challenges the assistant once: stepping back to check graph hygiene, decompose abstract aims, or find safe reversible work.
+2. The hook challenges the assistant once: stepping back to check graph hygiene, decompose abstract ideas, or find safe reversible work.
 3. If human action is still strictly required, the assistant re-states the request and ends with \`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]\`. The hook then yields to the human.
 
 ### Enable / Disable

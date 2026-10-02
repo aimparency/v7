@@ -20,23 +20,23 @@ test('MCP Resources - List & Read', async () => {
   registerResources(server as any, callerProxy as any);
 
   // 1. Create Data
-  const aim = await caller.aim.createFloatingAim({
+  const idea = await caller.idea.createFloatingAim({
     projectPath: ctx.projectPath,
-    aim: { text: 'Resource Aim', status: { state: 'open', comment: '', date: Date.now() } }
+    idea: { text: 'Resource Idea', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
   // 2. List Resources (should return templates)
   const listRes = await server.listResources();
   assert.ok(listRes.resources.length > 0);
   
-  const aimTemplate = listRes.resources.find((r: any) => r.uri.startsWith('aim://{uuid}'));
-  assert.ok(aimTemplate, 'Aim template not found in list');
+  const ideaTemplate = listRes.resources.find((r: any) => r.uri.startsWith('idea://{uuid}'));
+  assert.ok(ideaTemplate, 'Idea template not found in list');
 
-  // 3. Read Aim Resource
-  // URI format: aim://{uuid}?projectPath=...
-  const aimUri = `aim://${aim.id}?projectPath=${encodeURIComponent(ctx.projectPath)}`;
-  const readAim = await server.readResource(aimUri);
+  // 3. Read Idea Resource
+  // URI format: idea://{uuid}?projectPath=...
+  const ideaUri = `idea://${idea.id}?projectPath=${encodeURIComponent(ctx.projectPath)}`;
+  const readAim = await server.readResource(ideaUri);
   
-  const aimContent = JSON.parse(readAim.contents[0].text);
-  assert.equal(aimContent.text, 'Resource Aim');
+  const ideaContent = JSON.parse(readAim.contents[0].text);
+  assert.equal(ideaContent.text, 'Resource Idea');
 });

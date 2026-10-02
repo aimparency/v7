@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { calculateAimValues } from 'shared';
-import type { Aim } from 'shared';
+import type { Idea } from 'shared';
 
 describe('calculateAimValues', () => {
   it('distributes value and aggregates costs across a simple parent-child tree', () => {
-    const aims: Aim[] = [
+    const ideas: Idea[] = [
       {
         id: 'root',
         text: 'Root',
@@ -12,8 +12,8 @@ describe('calculateAimValues', () => {
         intrinsicValue: 100,
         cost: 1,
         supportingConnections: [
-          { aimId: 'child1', weight: 1, relativePosition: [0, 0] },
-          { aimId: 'child2', weight: 1, relativePosition: [0, 0] }
+          { ideaId: 'child1', weight: 1, relativePosition: [0, 0] },
+          { ideaId: 'child2', weight: 1, relativePosition: [0, 0] }
         ],
         supportedAims: [],
         committedIn: []
@@ -40,7 +40,7 @@ describe('calculateAimValues', () => {
       } as any
     ];
 
-    const result = calculateAimValues(aims);
+    const result = calculateAimValues(ideas);
 
     expect(result.values.get('root')!).toBeGreaterThan(0);
     expect(result.values.get('child1')!).toBeGreaterThan(0);

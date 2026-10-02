@@ -9,12 +9,12 @@ describe('GraphFlowHandle', () => {
     setActivePinia(createPinia())
   })
 
-  it('freezes the opposite aim when dragging the source handle', async () => {
+  it('freezes the opposite idea when dragging the source handle', async () => {
     const wrapper = mount(GraphFlowHandle, {
       props: {
         link: {
-          source: { id: 'source-aim', pos: [0, 0] },
-          target: { id: 'target-aim', pos: [100, 0] },
+          source: { id: 'source-idea', pos: [0, 0] },
+          target: { id: 'target-idea', pos: [100, 0] },
           relativePosition: [0, 0]
         },
         sourcePos: [0, 0],
@@ -29,16 +29,16 @@ describe('GraphFlowHandle', () => {
     await handles[0]!.trigger('mousedown')
 
     expect(mapStore.layouting).toBe(true)
-    expect(mapStore.layoutCandidate?.activeAimId).toBe('source-aim')
-    expect(mapStore.layoutCandidate?.frozenAimId).toBe('target-aim')
+    expect(mapStore.layoutCandidate?.activeAimId).toBe('source-idea')
+    expect(mapStore.layoutCandidate?.frozenAimId).toBe('target-idea')
   })
 
-  it('freezes the opposite aim when dragging the target handle', async () => {
+  it('freezes the opposite idea when dragging the target handle', async () => {
     const wrapper = mount(GraphFlowHandle, {
       props: {
         link: {
-          source: { id: 'source-aim', pos: [0, 0] },
-          target: { id: 'target-aim', pos: [100, 0] },
+          source: { id: 'source-idea', pos: [0, 0] },
+          target: { id: 'target-idea', pos: [100, 0] },
           relativePosition: [0, 0]
         },
         sourcePos: [0, 0],
@@ -53,7 +53,7 @@ describe('GraphFlowHandle', () => {
     await handles[1]!.trigger('mousedown')
 
     expect(mapStore.layouting).toBe(true)
-    expect(mapStore.layoutCandidate?.activeAimId).toBe('target-aim')
-    expect(mapStore.layoutCandidate?.frozenAimId).toBe('source-aim')
+    expect(mapStore.layoutCandidate?.activeAimId).toBe('target-idea')
+    expect(mapStore.layoutCandidate?.frozenAimId).toBe('source-idea')
   })
 })

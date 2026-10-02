@@ -129,7 +129,7 @@ function handleCanvasClick(e: MouseEvent) {
   const clickedNode = hitTestNode(physX, physY)
   if (clickedNode) {
     if (clickedNode.loadable) {
-      graphUIStore.expandLoadableAim(clickedNode.id, dataStore.aims)
+      graphUIStore.expandLoadableAim(clickedNode.id, dataStore.ideas)
     } else {
       onNodeClick(clickedNode, e)
     }
@@ -152,9 +152,9 @@ function handleCanvasClick(e: MouseEvent) {
 let labelCullInterval: ReturnType<typeof setInterval> | undefined
 
 // Dev-only e2e hook: nodes are WebGL-drawn, so tests look up a node's client
-// position by aim text to drive clicks and drags.
-function getNodeClientPosition(aimText: string) {
-    const node = nodes.value.find((candidate) => candidate.text === aimText)
+// position by idea text to drive clicks and drags.
+function getNodeClientPosition(ideaText: string) {
+    const node = nodes.value.find((candidate) => candidate.text === ideaText)
     const rect = canvasRef.value?.getBoundingClientRect()
     if (!node || !rect) return null
     const [x, y] = mapStore.logicalToPhysicalCoord([node.renderPos[0], node.renderPos[1]])
@@ -222,7 +222,7 @@ const onKeydown = (e: KeyboardEvent) => {
 function handlePhaseSelect(selection: PhaseSearchSelection) {
     if (selection.type === 'phase') {
         const phase = selection.data
-        graphUIStore.setPhaseFilter(phase.id, phase.name, phase.commitments, dataStore.aims)
+        graphUIStore.setPhaseFilter(phase.id, phase.name, phase.commitments, dataStore.ideas)
     }
     showPhaseFilter.value = false
 }
@@ -268,7 +268,7 @@ const renderNodes = computed(() => {
     return result
 })
 
-// Cull aim labels to those inside the viewport and large enough to show text
+// Cull idea labels to those inside the viewport and large enough to show text
 // (matches the `node.r * node.scale > 20` template guard). Off-screen nodes
 // would otherwise each emit an empty SVG label group with event handlers,
 // which is the dominant cost for large graphs. Throttled to 500ms.
@@ -361,7 +361,7 @@ async function autoRelaxLayout() {
   }
 
   const parentCount = new Set(proposals.map(proposal => proposal.parentId)).size
-  if (!window.confirm(`Relax ${proposals.length} connections across ${parentCount} aims? This will persist their relative positions.`)) return
+  if (!window.confirm(`Relax ${proposals.length} connections across ${parentCount} ideas? This will persist their relative positions.`)) return
 
   const proposalsByParent = new Map<string, Map<string, [number, number]>>()
   for (const proposal of proposals) {
@@ -370,12 +370,12 @@ async function autoRelaxLayout() {
     proposalsByParent.set(proposal.parentId, children)
   }
   await Promise.all([...proposalsByParent].map(async ([parentId, children]) => {
-    const parent = dataStore.aims[parentId]
+    const parent = dataStore.ideas[parentId]
     if (!parent) return
     await dataStore.updateAim(projectStore.projectPath, parentId, {
       supportingConnections: parent.supportingConnections.map(connection => ({
         ...connection,
-        relativePosition: children.get(connection.aimId) ?? connection.relativePosition
+        relativePosition: children.get(connection.ideaId) ?? connection.relativePosition
       }))
     })
   }))
@@ -408,14 +408,14 @@ function getNodeTitleLines(text: string): string[] {
   return lines
 }
 
-// Toggle the spin-off preview: enter it using the currently selected aim as the
+// Toggle the spin-off preview: enter it using the currently selected idea as the
 // single root, or exit if already previewing.
 function toggleSpinOffPreview() {
   if (graphUIStore.graphColorMode === 'spin-off') {
     graphUIStore.clearSpinOffPreview()
   } else {
     // Seed with the current selection if any; otherwise start empty and let the
-    // user pick roots by clicking aims.
+    // user pick roots by clicking ideas.
     const seed = graphUIStore.graphSelectedAimId ? [graphUIStore.graphSelectedAimId] : []
     graphUIStore.previewSpinOff(seed)
   }
@@ -516,7 +516,7 @@ function toggleSpinOffPreview() {
           <line x1="4" y1="4" x2="9" y2="9"></line>
         </svg>
       </button>
-      <button class="control-btn" @click="autoRelaxLayout" title="Evenly space child aims and persist relative positions after confirmation">
+      <button class="control-btn" @click="autoRelaxLayout" title="Evenly space child ideas and persist relative positions after confirmation">
         Relax
       </button>
       <button 
@@ -539,7 +539,7 @@ function toggleSpinOffPreview() {
       <button
         class="control-btn"
         @click="recenterGraph"
-        title="Recenter camera and fit the nearest 90% of aims with 1.2× breathing room"
+        title="Recenter camera and fit the nearest 90% of ideas with 1.2× breathing room"
         aria-label="Recenter graph"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -594,7 +594,7 @@ function toggleSpinOffPreview() {
           v-if="graphUIStore.graphColorMode !== 'spin-off'"
           class="control-btn"
           @click="toggleSpinOffPreview"
-          title="Spin-off preview: click aims to toggle them as roots (green = kept, orange = both, red = spun off)"
+          title="Spin-off preview: click ideas to toggle them as roots (green = kept, orange = both, red = spun off)"
       >⎇ Spin-off</button>
 
       <!-- In spin-off mode the button splits into apply + cancel (× exits the preview). -->

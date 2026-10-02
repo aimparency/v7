@@ -1,7 +1,7 @@
 import { AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
 
-export const AIM_STATE_KEYS = INITIAL_STATES.map(s => s.key);
-export const AIM_STATES_DESCRIPTION = `Aim status: open (todo), partially (in progress), done (complete — include verification evidence in update_aim.reflection or addReflection), cancelled, failed, unclear (needs a human decision — explain in comment), human-dependent (blocked on a human action), archived. Don't leave completed or blocked work as open.`;
+export const IDEA_STATE_KEYS = INITIAL_STATES.map(s => s.key);
+export const IDEA_STATES_DESCRIPTION = `Idea status: open (todo), partially (in progress), done (complete — include verification evidence in update_idea.reflection or addReflection), cancelled, failed, unclear (needs a human decision — explain in comment), human-dependent (blocked on a human action), archived. Don't leave completed or blocked work as open.`;
 
 export const PROJECT_PATH_DESCRIPTION = `Absolute path to the .bowman dir (append /.bowman to repo root)`
 
@@ -17,4 +17,4 @@ export const PROJECT_PATH_PROMPT_ARGUMENT = {
 };
 
 export const PROJECT_PATH_PARAMETER = `projectPath=/abs/path/${AIMPARENCY_DIR_NAME}`;
-export const PROJECT_PATH_MISSING_ERROR = `projectPath query parameter is required (e.g., aim://uuid?projectPath=/path/to/project/${AIMPARENCY_DIR_NAME})`;
+export const PROJECT_PATH_MISSING_ERROR = `projectPath query parameter is required (e.g., idea://uuid?projectPath=/path/to/project/${AIMPARENCY_DIR_NAME})`;

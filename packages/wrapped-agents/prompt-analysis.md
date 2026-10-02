@@ -11,19 +11,19 @@ Currently, INSTRUCT.md tries to handle **every state at once** in a single massi
 When idle or unsure what to do:
 1. Check active phases
 2. Find open work
-3. Pick an aim
+3. Pick an idea
 ```
 
 **PLANNING (line 22 + 27):**
 ```
 4. Work on it
 ...
-7. Break down if needed: create sub-aims
+7. Break down if needed: create sub-ideas
 ```
 
 **EXECUTING (line 19):**
 ```
-4. Work on it: Implement the aim - write code, create files, run tests
+4. Work on it: Implement the idea - write code, create files, run tests
 ```
 
 **VERIFYING (line 20):**
@@ -42,14 +42,14 @@ When idle or unsure what to do:
 ```
 Go Beyond the Graph:
 - Do web research
-- Create your own aims
+- Create your own ideas
 - Refactoring, testing, documentation, security, performance
 ```
 
 **STOP CONDITIONS (lines 86-94):**
 ```
 Only consider stopping if:
-- ALL aims done
+- ALL ideas done
 - Nothing more to do
 ```
 
@@ -93,16 +93,16 @@ Agent receives ~95 lines covering:
 
 You are looking for work. Check these sources:
 
-1. Prioritized aims: get_prioritized_aims
-2. Active phases: list_phases, list_phase_aims_recursive
+1. Prioritized ideas: get_prioritized_ideas
+2. Active phases: list_phases, list_phase_ideas_recursive
 3. System needs: tests, docs, refactoring, security
 
 Available actions:
-- found_work: Found something to do (provide aim_id or description)
+- found_work: Found something to do (provide idea_id or description)
 - no_work: Nothing available (provide reason)
 
 Respond with JSON:
-{"action": "found_work", "aim_id": "...", "description": "..."}
+{"action": "found_work", "idea_id": "...", "description": "..."}
 ```
 
 **Reduction:** ~95 lines → ~15 lines
@@ -116,25 +116,25 @@ Respond with JSON:
 **Before (mixed into INSTRUCT.md):**
 ```
 [Somewhere in the 95 lines:]
-7. Break down if needed: If an aim is too large, create sub-aims
+7. Break down if needed: If an idea is too large, create sub-ideas
 ...
-Before starting work on an aim, use get_aim_context
+Before starting work on an idea, use get_idea_context
 ```
 
 **After (state machine):**
 ```
 [STATE: PLANNING]
 
-Plan work for: {aim_text}
+Plan work for: {idea_text}
 
 Steps:
-1. Get context: get_aim_context("{aim_id}")
-2. Understand parent aims if needed
-3. Break into sub-aims if complex: create_aim with supportedAims
+1. Get context: get_idea_context("{idea_id}")
+2. Understand parent ideas if needed
+3. Break into sub-ideas if complex: create_idea with supportedAims
 4. Assess tools needed
 
 Available actions:
-- create_sub_aim: Break into smaller piece (provide text, description)
+- create_sub_idea: Break into smaller piece (provide text, description)
 - ready: Plan complete, ready to execute (provide strategy)
 - blocked: Cannot proceed (provide reason)
 
@@ -153,14 +153,14 @@ Respond with JSON:
 **Before (mixed into INSTRUCT.md):**
 ```
 [Somewhere in the 95 lines:]
-4. Work on it: Implement the aim - write code, create files, run tests
+4. Work on it: Implement the idea - write code, create files, run tests
 ```
 
 **After (state machine):**
 ```
 [STATE: EXECUTING]
 
-Execute: {aim_text}
+Execute: {idea_text}
 Strategy: {planned_strategy}
 Tools: {tool_list}
 
@@ -198,7 +198,7 @@ Verify work: {work_summary}
 
 Check:
 1. Run tests if applicable
-2. Confirm aim criteria met
+2. Confirm idea criteria met
 3. Look for errors or warnings
 4. Validate output quality
 
@@ -227,7 +227,7 @@ Respond with JSON:
 ## Reflection Pattern: Learn from Your Work
 
 When to reflect:
-- After completing each aim (immediate)
+- After completing each idea (immediate)
 - End of each work session (periodic)
 - When you encounter challenges or blockers
 
@@ -257,16 +257,16 @@ Required:
 
 Optional:
 - identify_limitation: Found system weakness (provide description, severity)
-- create_improvement_aim: Create aim to fix limitation
+- create_improvement_idea: Create idea to fix limitation
 
 Available actions:
-- add_reflection: Use addReflection MCP tool (provide aimId, reflection object)
+- add_reflection: Use addReflection MCP tool (provide ideaId, reflection object)
 - identify_limitation: Log limitation (provide description, severity)
-- create_improvement_aim: Create meta-aim (provide text, addresses)
+- create_improvement_idea: Create meta-idea (provide text, addresses)
 - continue: Reflection complete, ready for next work
 
 Respond with JSON:
-{"action": "add_reflection", "aimId": "...", "reflection": {...}}
+{"action": "add_reflection", "ideaId": "...", "reflection": {...}}
 ```
 
 **Reduction:** 30 lines → ~25 lines (similar length but more structured)

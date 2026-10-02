@@ -10,8 +10,8 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { AimSchema, PhaseSchema, ProjectMetaSchema, AimStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
-import type { Aim, Phase, ProjectMeta, SystemStatus, SearchAimResult, LinkedRepo, LinkedRepoLocal } from 'shared';
+import { IdeaSchema, PhaseSchema, ProjectMetaSchema, IdeaStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
+import type { Idea, Phase, ProjectMeta, SystemStatus, SearchAimResult, LinkedRepo, LinkedRepoLocal } from 'shared';
 import { LinkedRepoRegistrySchema, LinkedRepoSchema } from 'shared';
 import {
   indexAims,
@@ -30,8 +30,8 @@ import { getSemanticGraph, invalidateSemanticCache } from './forces.js';
 import { chatWithGemini } from './voice-agent.js';
 import { calculateAimValues, planSpinOff, computeSpinOff, remapSpinOffCollisions } from 'shared';
 import { saveAimValues, getAimValues, getDb } from './db.js';
-import { createAimRouter } from './routers/aim.js';
-import { generateAimProposal } from './aim-proposal-generator.js';
+import { createAimRouter } from './routers/idea.js';
+import { generateAimProposal } from './idea-proposal-generator.js';
 import { createPhaseRouter } from './routers/phase.js';
 import { createSystemRouter } from './routers/system.js';
 import { createVoiceRouter } from './routers/voice.js';
@@ -87,8 +87,8 @@ function ensureSearchIndex(projectPath: string): Promise<void> {
   if (!build) {
     build = (async () => {
       console.log(`[Search] Building index for ${normalizedPath}...`);
-      const [aims, phases] = await Promise.all([listAims(normalizedPath), listPhases(normalizedPath)]);
-      indexAims(normalizedPath, aims);
+      const [ideas, phases] = await Promise.all([listAims(normalizedPath), listPhases(normalizedPath)]);
+      indexAims(normalizedPath, ideas);
       indexPhases(normalizedPath, phases);
     })();
     // A failed build must not stick; the next caller retries.
@@ -107,8 +107,8 @@ function triggerRecalculation(projectPath: string) {
   }
   recalculateTimers.set(projectPath, setTimeout(async () => {
     try {
-        const aims = await listAims(projectPath);
-        const result = calculateAimValues(aims);
+        const ideas = await listAims(projectPath);
+        const result = calculateAimValues(ideas);
         
         const map = new Map();
         for (const [id, value] of result.values.entries()) {
@@ -129,7 +129,7 @@ function triggerRecalculation(projectPath: string) {
 
 ee.on('change', ({ type, projectPath }) => {
     if (process.env.NODE_ENV === 'test') return;
-    if (type === 'aim' || type === 'phase') {
+    if (type === 'idea' || type === 'phase') {
         triggerRecalculation(projectPath);
     }
 });
@@ -137,8 +137,8 @@ ee.on('change', ({ type, projectPath }) => {
 // Utility functions for file operations
 async function ensureProjectStructure(rawProjectPath: string) {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  await fs.ensureDir(path.join(projectPath, 'aims'));
-  await fs.ensureDir(path.join(projectPath, 'archived-aims'));
+  await fs.ensureDir(path.join(projectPath, 'ideas'));
+  await fs.ensureDir(path.join(projectPath, 'archived-ideas'));
   await fs.ensureDir(path.join(projectPath, 'phases'));
   await fs.ensureDir(path.join(projectPath, 'runtime'));
   await fs.ensureDir(path.join(projectPath, 'runtime', 'audit'));
@@ -181,80 +181,80 @@ async function ensureProjectStructure(rawProjectPath: string) {
   }
 }
 
-async function writeAim(rawProjectPath: string, aim: Aim): Promise<void> {
+async function writeAim(rawProjectPath: string, idea: Idea): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   
-  const isArchived = aim.status.state === 'archived';
-  const targetDir = isArchived ? 'archived-aims' : 'aims';
-  const sourceDir = isArchived ? 'aims' : 'archived-aims';
+  const isArchived = idea.status.state === 'archived';
+  const targetDir = isArchived ? 'archived-ideas' : 'ideas';
+  const sourceDir = isArchived ? 'ideas' : 'archived-ideas';
   
-  const aimPath = path.join(projectPath, targetDir, `${aim.id}.json`);
-  const oldPath = path.join(projectPath, sourceDir, `${aim.id}.json`);
+  const ideaPath = path.join(projectPath, targetDir, `${idea.id}.json`);
+  const oldPath = path.join(projectPath, sourceDir, `${idea.id}.json`);
   
   // Strip calculated values before saving
-  const { calculatedValue, calculatedCost, ...aimToSave } = placeUnplacedConnections(aim);
+  const { calculatedValue, calculatedCost, ...ideaToSave } = placeUnplacedConnections(idea);
 
   // Raw prior content rides along on the change event (undo history).
-  const previous = (await readJsonOrNull(aimPath)) ?? (await readJsonOrNull(oldPath));
-  await writeJsonAtomic(aimPath, aimToSave);
+  const previous = (await readJsonOrNull(ideaPath)) ?? (await readJsonOrNull(oldPath));
+  await writeJsonAtomic(ideaPath, ideaToSave);
   
   // Clean up if it was in the other location
   if (await fs.pathExists(oldPath)) {
     await fs.remove(oldPath);
   }
 
-  ee.emit('change', { type: 'aim', id: aim.id, projectPath, entity: aimToSave, previous });
+  ee.emit('change', { type: 'idea', id: idea.id, projectPath, entity: ideaToSave, previous });
 }
 
-// Upgrades legacy fields of a raw aim record in memory. Pure: reads must not
-// write, or every aim.get/aim.list would dirty .bowman and race concurrent
+// Upgrades legacy fields of a raw idea record in memory. Pure: reads must not
+// write, or every idea.get/idea.list would dirty .bowman and race concurrent
 // writers. migrateAimFiles persists the result explicitly.
-function normalizeAimRecord(raw: any): { aim: any; changed: boolean } {
-  const aim = { ...raw };
+function normalizeAimRecord(raw: any): { idea: any; changed: boolean } {
+  const idea = { ...raw };
   let changed = false;
 
   // 'incoming' became 'supportingConnections'
-  if (Array.isArray(aim.incoming)) {
-    const existing = aim.supportingConnections ?? [];
-    const added = aim.incoming
-      .filter((incomingId: string) => !existing.some((c: any) => c.aimId === incomingId))
-      .map((incomingId: string) => ({ aimId: incomingId, relativePosition: [0, 0] as [number, number], weight: 1 }));
-    aim.supportingConnections = [...added, ...existing];
+  if (Array.isArray(idea.incoming)) {
+    const existing = idea.supportingConnections ?? [];
+    const added = idea.incoming
+      .filter((incomingId: string) => !existing.some((c: any) => c.ideaId === incomingId))
+      .map((incomingId: string) => ({ ideaId: incomingId, relativePosition: [0, 0] as [number, number], weight: 1 }));
+    idea.supportingConnections = [...added, ...existing];
     // An empty legacy array carries nothing; dropping it is not worth a rewrite
     // (the next regular save omits it anyway).
-    changed ||= aim.incoming.length > 0;
-    delete aim.incoming;
+    changed ||= idea.incoming.length > 0;
+    delete idea.incoming;
   }
 
   // 'outgoing' became 'supportedAims'
-  if (Array.isArray(aim.outgoing)) {
-    const supportedAims = [...(aim.supportedAims ?? [])];
-    for (const parentId of aim.outgoing) {
+  if (Array.isArray(idea.outgoing)) {
+    const supportedAims = [...(idea.supportedAims ?? [])];
+    for (const parentId of idea.outgoing) {
       if (!supportedAims.includes(parentId)) supportedAims.push(parentId);
     }
-    aim.supportedAims = supportedAims;
-    changed ||= aim.outgoing.length > 0;
-    delete aim.outgoing;
+    idea.supportedAims = supportedAims;
+    changed ||= idea.outgoing.length > 0;
+    delete idea.outgoing;
   }
 
-  if (!aim.supportingConnections) aim.supportingConnections = [];
-  if (!aim.supportedAims) aim.supportedAims = [];
-  if (!aim.committedIn) aim.committedIn = [];
+  if (!idea.supportingConnections) idea.supportingConnections = [];
+  if (!idea.supportedAims) idea.supportedAims = [];
+  if (!idea.committedIn) idea.committedIn = [];
 
-  return { aim, changed };
+  return { idea, changed };
 }
 
 // [0,0] is the schema default for a connection without a position; it would
 // stack the child onto its parent in the graph, so writes spread it out.
-const hasUnplacedConnection = (aim: { supportingConnections?: Array<{ relativePosition?: [number, number] }> }) =>
-  (aim.supportingConnections ?? []).some((c) => c.relativePosition?.[0] === 0 && c.relativePosition?.[1] === 0);
+const hasUnplacedConnection = (idea: { supportingConnections?: Array<{ relativePosition?: [number, number] }> }) =>
+  (idea.supportingConnections ?? []).some((c) => c.relativePosition?.[0] === 0 && c.relativePosition?.[1] === 0);
 
-function placeUnplacedConnections<T extends { supportingConnections?: any[] }>(aim: T): T {
-  if (!hasUnplacedConnection(aim)) return aim;
+function placeUnplacedConnections<T extends { supportingConnections?: any[] }>(idea: T): T {
+  if (!hasUnplacedConnection(idea)) return idea;
   return {
-    ...aim,
-    supportingConnections: aim.supportingConnections!.map((c: any) =>
+    ...idea,
+    supportingConnections: idea.supportingConnections!.map((c: any) =>
       c.relativePosition?.[0] === 0 && c.relativePosition?.[1] === 0
         ? { ...c, relativePosition: getRandomRelativePosition() }
         : c
@@ -262,76 +262,76 @@ function placeUnplacedConnections<T extends { supportingConnections?: any[] }>(a
   };
 }
 
-async function readAim(rawProjectPath: string, aimId: string): Promise<Aim> {
+async function readAim(rawProjectPath: string, ideaId: string): Promise<Idea> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   
-  // Try active aims first
-  let aimPath = path.join(projectPath, 'aims', `${aimId}.json`);
-  if (!(await fs.pathExists(aimPath))) {
-    // Try archived aims
-    aimPath = path.join(projectPath, 'archived-aims', `${aimId}.json`);
+  // Try active ideas first
+  let ideaPath = path.join(projectPath, 'ideas', `${ideaId}.json`);
+  if (!(await fs.pathExists(ideaPath))) {
+    // Try archived ideas
+    ideaPath = path.join(projectPath, 'archived-ideas', `${ideaId}.json`);
   }
   
-  return AimSchema.parse(normalizeAimRecord(await fs.readJson(aimPath)).aim);
+  return IdeaSchema.parse(normalizeAimRecord(await fs.readJson(ideaPath)).idea);
 }
 
-// Explicit, idempotent upgrade of aim files: legacy fields and unplaced
-// connections. Returns the ids of rewritten aims.
+// Explicit, idempotent upgrade of idea files: legacy fields and unplaced
+// connections. Returns the ids of rewritten ideas.
 async function migrateAimFiles(rawProjectPath: string): Promise<string[]> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const migrated: string[] = [];
-  for (const dirName of ['aims', 'archived-aims']) {
+  for (const dirName of ['ideas', 'archived-ideas']) {
     const dir = path.join(projectPath, dirName);
     if (!(await fs.pathExists(dir))) continue;
     for (const file of (await fs.readdir(dir)).filter((name) => name.endsWith('.json'))) {
       const raw = await readJsonOrNull(path.join(dir, file));
       if (!raw) continue;
-      const { aim, changed } = normalizeAimRecord(raw);
-      if (!changed && !hasUnplacedConnection(aim)) continue;
-      await writeAim(projectPath, AimSchema.parse(aim));
-      migrated.push(aim.id);
+      const { idea, changed } = normalizeAimRecord(raw);
+      if (!changed && !hasUnplacedConnection(idea)) continue;
+      await writeAim(projectPath, IdeaSchema.parse(idea));
+      migrated.push(idea.id);
     }
   }
   return migrated;
 }
 
-async function listAims(rawProjectPath: string, archived: boolean = false): Promise<Aim[]> {
+async function listAims(rawProjectPath: string, archived: boolean = false): Promise<Idea[]> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  const dirName = archived ? 'archived-aims' : 'aims';
-  const aimsDir = path.join(projectPath, dirName);
+  const dirName = archived ? 'archived-ideas' : 'ideas';
+  const ideasDir = path.join(projectPath, dirName);
   
-  if (!await fs.pathExists(aimsDir)) return [];
+  if (!await fs.pathExists(ideasDir)) return [];
   
-  const files = (await fs.readdir(aimsDir)).filter((file) => file.endsWith('.json'));
-  const results = await Promise.all(files.map(async (file): Promise<Aim | null> => {
-      const aimId = path.basename(file, '.json');
+  const files = (await fs.readdir(ideasDir)).filter((file) => file.endsWith('.json'));
+  const results = await Promise.all(files.map(async (file): Promise<Idea | null> => {
+      const ideaId = path.basename(file, '.json');
       // For listing, we can just read directly from the dir we are in to avoid double check overhead of readAim
       // BUT readAim upgrades legacy fields in memory. So we should use readAim.
-      // readAim checks 'aims' first. 
-      // If we are listing archived, readAim will check 'aims' (fail) then 'archived-aims' (success).
-      // If we are listing active, readAim will check 'aims' (success).
+      // readAim checks 'ideas' first. 
+      // If we are listing archived, readAim will check 'ideas' (fail) then 'archived-ideas' (success).
+      // If we are listing active, readAim will check 'ideas' (success).
       // So it works.
       try {
-        return await readAim(projectPath, aimId);
+        return await readAim(projectPath, ideaId);
       } catch (e) {
-        console.error(`Failed to read aim ${aimId}`, e);
+        console.error(`Failed to read idea ${ideaId}`, e);
         return null;
       }
   }));
 
-  return results.filter((aim): aim is Aim => aim !== null);
+  return results.filter((idea): idea is Idea => idea !== null);
 }
 
-function populateAimValues(projectPath: string, aims: Aim[]) {
+function populateAimValues(projectPath: string, ideas: Idea[]) {
     try {
         const values = getAimValues(projectPath);
-        for (const aim of aims) {
-            const data = values.get(aim.id);
+        for (const idea of ideas) {
+            const data = values.get(idea.id);
             if (data) {
-                aim.calculatedValue = data.value;
-                aim.calculatedCost = data.cost;
-                aim.calculatedDoneCost = data.doneCost;
-                aim.calculatedPriority = data.priority;
+                idea.calculatedValue = data.value;
+                idea.calculatedCost = data.cost;
+                idea.calculatedDoneCost = data.doneCost;
+                idea.calculatedPriority = data.priority;
             }
         }
     } catch (e) {
@@ -410,7 +410,7 @@ async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
   }
 
   // Generate a stable repo identity once, then persist so it never changes.
-  // This is the source of truth cross-repo edges reference ({repoId, aimId}).
+  // This is the source of truth cross-repo edges reference ({repoId, ideaId}).
   if (!meta.repoId) {
     meta.repoId = uuidv4();
     needsPersist = true;
@@ -636,7 +636,7 @@ async function listPhases(rawProjectPath: string, parentPhaseId?: string | null)
 
 async function cleanupCommitments(rawProjectPath: string, specificPhaseId?: string): Promise<number> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  const aims = await listAims(projectPath);
+  const ideas = await listAims(projectPath);
   let changedCount = 0;
   let validPhaseIds: Set<string> | null = null;
 
@@ -645,25 +645,25 @@ async function cleanupCommitments(rawProjectPath: string, specificPhaseId?: stri
     validPhaseIds = new Set(phases.map(p => p.id));
   }
 
-  for (const aim of aims) {
+  for (const idea of ideas) {
     let changed = false;
     if (specificPhaseId) {
-      if (aim.committedIn && aim.committedIn.includes(specificPhaseId)) {
-        aim.committedIn = aim.committedIn.filter(id => id !== specificPhaseId);
+      if (idea.committedIn && idea.committedIn.includes(specificPhaseId)) {
+        idea.committedIn = idea.committedIn.filter(id => id !== specificPhaseId);
         changed = true;
       }
     } else if (validPhaseIds) {
-       if (aim.committedIn) {
-         const originalLength = aim.committedIn.length;
-         aim.committedIn = aim.committedIn.filter(id => validPhaseIds!.has(id));
-         if (aim.committedIn.length !== originalLength) {
+       if (idea.committedIn) {
+         const originalLength = idea.committedIn.length;
+         idea.committedIn = idea.committedIn.filter(id => validPhaseIds!.has(id));
+         if (idea.committedIn.length !== originalLength) {
            changed = true;
          }
        }
     }
 
     if (changed) {
-      await writeAim(projectPath, aim);
+      await writeAim(projectPath, idea);
       changedCount++;
     }
   }
@@ -691,23 +691,23 @@ async function writeSystemStatus(rawProjectPath: string, status: SystemStatus): 
   ee.emit('change', { type: 'system', id: 'status', projectPath });
 }
 
-// Helper function to add aim to phase's commitments and aim's committedIn
-async function commitAimToPhase(projectPath: string, aimId: string, phaseId: string, insertionIndex?: number): Promise<void> {
+// Helper function to add idea to phase's commitments and idea's committedIn
+async function commitAimToPhase(projectPath: string, ideaId: string, phaseId: string, insertionIndex?: number): Promise<void> {
   // Update the phase
   const phase = await readPhase(projectPath, phaseId);
-  console.log(`commitAimToPhase: aimId=${aimId}, phaseId=${phaseId}, insertionIndex=${insertionIndex}`);
+  console.log(`commitAimToPhase: ideaId=${ideaId}, phaseId=${phaseId}, insertionIndex=${insertionIndex}`);
   
-  if (!phase.commitments.includes(aimId)) {
+  if (!phase.commitments.includes(ideaId)) {
     if (insertionIndex !== undefined && insertionIndex <= phase.commitments.length) {
-      phase.commitments.splice(insertionIndex, 0, aimId);
+      phase.commitments.splice(insertionIndex, 0, ideaId);
     } else {
-      phase.commitments.push(aimId);
+      phase.commitments.push(ideaId);
     }
     await writePhase(projectPath, phase);
   } else {
     // Reorder if index provided
     if (insertionIndex !== undefined) {
-       const currentIndex = phase.commitments.indexOf(aimId);
+       const currentIndex = phase.commitments.indexOf(ideaId);
        if (currentIndex !== -1 && currentIndex !== insertionIndex) {
            phase.commitments.splice(currentIndex, 1);
            // Insert at target index (relative to the array after removal)
@@ -723,31 +723,31 @@ async function commitAimToPhase(projectPath: string, aimId: string, phaseId: str
            const maxIndex = phase.commitments.length;
            const targetIndex = Math.min(insertionIndex, maxIndex);
            
-           phase.commitments.splice(targetIndex, 0, aimId);
+           phase.commitments.splice(targetIndex, 0, ideaId);
            await writePhase(projectPath, phase);
        }
     }
   }
   
-  // Update the aim
-  const aim = await readAim(projectPath, aimId);
-  if (!aim.committedIn.includes(phaseId)) {
-    aim.committedIn.push(phaseId);
-    await writeAim(projectPath, aim);
+  // Update the idea
+  const idea = await readAim(projectPath, ideaId);
+  if (!idea.committedIn.includes(phaseId)) {
+    idea.committedIn.push(phaseId);
+    await writeAim(projectPath, idea);
   }
 }
 
-// Helper function to remove aim from phase's commitments and aim's committedIn
-async function removeAimFromPhase(projectPath: string, aimId: string, phaseId: string): Promise<void> {
+// Helper function to remove idea from phase's commitments and idea's committedIn
+async function removeAimFromPhase(projectPath: string, ideaId: string, phaseId: string): Promise<void> {
   // Update the phase
   const phase = await readPhase(projectPath, phaseId);
-  phase.commitments = phase.commitments.filter(id => id !== aimId);
+  phase.commitments = phase.commitments.filter(id => id !== ideaId);
   await writePhase(projectPath, phase);
 
-  // Update the aim
-  const aim = await readAim(projectPath, aimId);
-  aim.committedIn = (aim.committedIn || []).filter(id => id !== phaseId);
-  await writeAim(projectPath, aim);
+  // Update the idea
+  const idea = await readAim(projectPath, ideaId);
+  idea.committedIn = (idea.committedIn || []).filter(id => id !== phaseId);
+  await writeAim(projectPath, idea);
 }
 
 // Helper to generate random relative position
@@ -757,15 +757,15 @@ function getRandomRelativePosition(): [number, number] {
   return [Math.cos(angle) * length, Math.sin(angle) * length];
 }
 
-// Helper function to connect aims (reused by connectAims and createSubAim)
+// Helper function to connect ideas (reused by connectAims and createSubAim)
 async function connectAimsInternal(projectPath: string, parentAimId: string, childAimId: string, parentIncomingIndex?: number, childSupportedAimsIndex?: number, relativePosition?: [number, number], weight: number = 1, explanation?: string): Promise<void> {
   console.log('connectAimsInternal:', { parentAimId, childAimId, parentIncomingIndex, childSupportedAimsIndex, relativePosition, weight, explanation });
   const parent = await readAim(projectPath, parentAimId);
   const child = await readAim(projectPath, childAimId);
 
-  // Update parent's supportingConnections (sub-aim goes into parent's supportingConnections)
+  // Update parent's supportingConnections (sub-idea goes into parent's supportingConnections)
   let targetParentIndex = parentIncomingIndex !== undefined ? parentIncomingIndex : parent.supportingConnections.length;
-  const currentChildIndex = parent.supportingConnections.findIndex(c => c.aimId === childAimId);
+  const currentChildIndex = parent.supportingConnections.findIndex(c => c.ideaId === childAimId);
   
   if (currentChildIndex === targetParentIndex) {
     // Already at the correct position, but update weight/explanation if changed
@@ -789,7 +789,7 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
     // Insert at target position
     const resolvedExplanation = explanation !== undefined ? explanation : prevConn?.explanation;
     const newConnection = {
-      aimId: childAimId,
+      ideaId: childAimId,
       relativePosition: relativePosition || getRandomRelativePosition(),
       weight,
       ...(resolvedExplanation !== undefined ? { explanation: resolvedExplanation } : {})
@@ -820,34 +820,34 @@ async function connectAimsInternal(projectPath: string, parentAimId: string, chi
   await writeAim(projectPath, child);
 }
 
-// Migration function to populate committedIn field for existing aims
+// Migration function to populate committedIn field for existing ideas
 async function migrateCommittedInField(projectPath: string): Promise<void> {
   const allAims = await listAims(projectPath);
   const allPhases = await listPhases(projectPath);
   
-  // Create a map of aimId -> phaseIds that commit this aim
-  const aimCommitments: Record<string, string[]> = {};
+  // Create a map of ideaId -> phaseIds that commit this idea
+  const ideaCommitments: Record<string, string[]> = {};
   
-  // Initialize all aims with empty arrays
-  for (const aim of allAims) {
-    aimCommitments[aim.id] = [];
+  // Initialize all ideas with empty arrays
+  for (const idea of allAims) {
+    ideaCommitments[idea.id] = [];
   }
   
   // Populate from phase commitments
   for (const phase of allPhases) {
-    for (const aimId of phase.commitments) {
-      if (aimCommitments[aimId]) {
-        aimCommitments[aimId].push(phase.id);
+    for (const ideaId of phase.commitments) {
+      if (ideaCommitments[ideaId]) {
+        ideaCommitments[ideaId].push(phase.id);
       }
     }
   }
   
-  // Update all aims that don't have committedIn field or have incorrect data
-  for (const aim of allAims) {
-    const expectedCommittedIn = aimCommitments[aim.id] || [];
-    if (!aim.committedIn || JSON.stringify(aim.committedIn.sort()) !== JSON.stringify(expectedCommittedIn.sort())) {
-      aim.committedIn = expectedCommittedIn;
-      await writeAim(projectPath, aim);
+  // Update all ideas that don't have committedIn field or have incorrect data
+  for (const idea of allAims) {
+    const expectedCommittedIn = ideaCommitments[idea.id] || [];
+    if (!idea.committedIn || JSON.stringify(idea.committedIn.sort()) !== JSON.stringify(expectedCommittedIn.sort())) {
+      idea.committedIn = expectedCommittedIn;
+      await writeAim(projectPath, idea);
     }
   }
 }
@@ -856,13 +856,13 @@ async function migrateCommittedInField(projectPath: string): Promise<void> {
 // Create the actual tRPC router
 // --- Spin-off helpers ---------------------------------------------------------
 
-// Remove an aim file (active or archived) and purge it from index + embeddings.
-async function deleteAimCompletely(rawProjectPath: string, aimId: string): Promise<void> {
+// Remove an idea file (active or archived) and purge it from index + embeddings.
+async function deleteAimCompletely(rawProjectPath: string, ideaId: string): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  await fs.remove(path.join(projectPath, 'aims', `${aimId}.json`));
-  await fs.remove(path.join(projectPath, 'archived-aims', `${aimId}.json`));
-  removeAimFromIndex(projectPath, aimId);
-  await removeEmbedding(projectPath, aimId);
+  await fs.remove(path.join(projectPath, 'ideas', `${ideaId}.json`));
+  await fs.remove(path.join(projectPath, 'archived-ideas', `${ideaId}.json`));
+  removeAimFromIndex(projectPath, ideaId);
+  await removeEmbedding(projectPath, ideaId);
 }
 
 const spinOffRouter = t.router({
@@ -878,7 +878,7 @@ const spinOffRouter = t.router({
       };
     }),
 
-  // Dry-run: classify aims into kept (green) / overlap (orange) / spun-off (red)
+  // Dry-run: classify ideas into kept (green) / overlap (orange) / spun-off (red)
   // for the graph preview, plus a warning if the target already has a graph.
   preview: delayedProcedure
     .input(z.object({
@@ -887,8 +887,8 @@ const spinOffRouter = t.router({
       targetPath: z.string().optional(),
     }))
     .query(async ({ input }: any) => {
-      const aims = await listAims(normalizeProjectPath(input.projectPath));
-      const plan = planSpinOff(aims, input.rootIds);
+      const ideas = await listAims(normalizeProjectPath(input.projectPath));
+      const plan = planSpinOff(ideas, input.rootIds);
       return {
         ...plan,
         counts: {
@@ -901,8 +901,8 @@ const spinOffRouter = t.router({
     }),
 
   // Execute: write the branch (roots + supporters) into a fresh .bowman at
-  // targetPath, then optionally prune the source — deleting only aims that serve
-  // the selection exclusively, keeping shared aims (overlap). Conservative.
+  // targetPath, then optionally prune the source — deleting only ideas that serve
+  // the selection exclusively, keeping shared ideas (overlap). Conservative.
   execute: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
@@ -919,14 +919,14 @@ const spinOffRouter = t.router({
       }
       const integrateIntoExisting = await bowmanExists(target);
 
-      const aims = await listAims(source);
+      const ideas = await listAims(source);
       const { plan, spinOffAims, sourceAimsToRewrite, sourceAimIdsToDelete } =
-        computeSpinOff(aims, input.rootIds, { preserveInflow: input.preserveInflow });
+        computeSpinOff(ideas, input.rootIds, { preserveInflow: input.preserveInflow });
 
       // For an existing graph, retain all target metadata and remap only ids that
       // collide. Internal branch edges follow the remap; no edge is added to an
-      // existing target aim, leaving the imported root(s) free for re-parenting.
-      let aimsToWrite = spinOffAims;
+      // existing target idea, leaving the imported root(s) free for re-parenting.
+      let ideasToWrite = spinOffAims;
       let remappedIds: Record<string, string> = {};
       if (integrateIntoExisting) {
         const targetAims = [
@@ -935,10 +935,10 @@ const spinOffRouter = t.router({
         ];
         const remapped = remapSpinOffCollisions(
           spinOffAims,
-          targetAims.map((aim) => aim.id),
+          targetAims.map((idea) => idea.id),
           uuidv4,
         );
-        aimsToWrite = remapped.aims;
+        ideasToWrite = remapped.ideas;
         remappedIds = remapped.idMap;
       }
 
@@ -954,19 +954,19 @@ const spinOffRouter = t.router({
           rootPhaseIds: [],
         });
       }
-      for (const aim of aimsToWrite) {
-        await writeAim(target, aim);
-        addAimToIndex(target, aim);
+      for (const idea of ideasToWrite) {
+        await writeAim(target, idea);
+        addAimToIndex(target, idea);
       }
       invalidateSemanticCache(target);
 
-      // Prune the source (optional): rewrite kept aims that lost edges, then
-      // delete the exclusive aims, then clean up dangling phase commitments.
+      // Prune the source (optional): rewrite kept ideas that lost edges, then
+      // delete the exclusive ideas, then clean up dangling phase commitments.
       let deletedFromSource = 0;
       if (input.removeFromSource) {
-        for (const aim of sourceAimsToRewrite) {
-          await writeAim(source, aim);
-          updateAimInIndex(source, aim);
+        for (const idea of sourceAimsToRewrite) {
+          await writeAim(source, idea);
+          updateAimInIndex(source, idea);
         }
         for (const id of sourceAimIdsToDelete) {
           await deleteAimCompletely(source, id);
@@ -978,7 +978,7 @@ const spinOffRouter = t.router({
 
       return {
         target,
-        copied: aimsToWrite.length,
+        copied: ideasToWrite.length,
         deletedFromSource,
         integratedIntoExisting: integrateIntoExisting,
         remappedIds,
@@ -996,7 +996,7 @@ const spinOffRouter = t.router({
 // and travels with the repo via git; the MACHINE-LOCAL part (where the repo is
 // checked out, and read/write access) lives here in .bowman/runtime/ (gitignored)
 // so committed absolute paths never break for collaborators. Resolving a
-// cross-repo edge {repoId, aimId} is two-stage: repoId → local map → load.
+// cross-repo edge {repoId, ideaId} is two-stage: repoId → local map → load.
 
 const LINKED_REPOS_REGISTRY_FILE = 'linked-repos.json';
 
@@ -1112,7 +1112,7 @@ const linkedRepoRouter = t.router({
     }),
 
   // Resolve a repoId to its local checkout — for the black-box node's name and
-  // health only. Aims inside the linked repo are never read (see e81b11c3).
+  // health only. Ideas inside the linked repo are never read (see e81b11c3).
   resolve: delayedProcedure
     .input(z.object({ projectPath: z.string(), repoId: z.string().uuid() }))
     .output(z.object({
@@ -1130,7 +1130,7 @@ const linkedRepoRouter = t.router({
 });
 
 const appRouter = t.router({
-  aim: createAimRouter(
+  idea: createAimRouter(
     t,
     delayedProcedure,
     readAim,

@@ -16,11 +16,11 @@ const { server, mockTrpc } = vi.hoisted(() => {
     return done
   }
   const mockTrpc = {
-    aim: {
+    idea: {
       commitToPhase: {
-        mutate: vi.fn(({ aimId, insertionIndex }: { aimId: string; insertionIndex: number }) => serially(() => {
-          server.commitments = server.commitments.filter((id) => id !== aimId)
-          server.commitments.splice(insertionIndex, 0, aimId)
+        mutate: vi.fn(({ ideaId, insertionIndex }: { ideaId: string; insertionIndex: number }) => serially(() => {
+          server.commitments = server.commitments.filter((id) => id !== ideaId)
+          server.commitments.splice(insertionIndex, 0, ideaId)
           server.push([...server.commitments])
           return { success: true }
         }))
@@ -47,11 +47,11 @@ describe('structural edits', () => {
     server.busy = Promise.resolve()
   })
 
-  it('keeps moving the same aim when J is pressed again while earlier moves are in flight', async () => {
+  it('keeps moving the same idea when J is pressed again while earlier moves are in flight', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
     for (const id of server.commitments) {
-      dataStore.aims[id] = { id, text: id, supportingConnections: [], supportedAims: [], committedIn: ['phase'] } as any
+      dataStore.ideas[id] = { id, text: id, supportingConnections: [], supportedAims: [], committedIn: ['phase'] } as any
     }
     const phase = (commitments: string[]) => ({ id: 'phase', name: 'phase', parent: null, childPhaseIds: [], commitments })
     dataStore.phases['phase'] = { ...phase([...server.commitments]), selectedAimIndex: 0 } as any

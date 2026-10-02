@@ -42,17 +42,17 @@ const actions = [
   {
     id: 'search',
     key: 'a',
-    label: () => 'Search & Insert Aim',
+    label: () => 'Search & Insert Idea',
     action: () => {
       modalStore.openAimSearch('pick', (payload) => {
-        if (payload.type !== 'aim') return
-        const aim = payload.data
-        const textToInsert = `[${aim.id}] ${aim.text}`
+        if (payload.type !== 'idea') return
+        const idea = payload.data
+        const textToInsert = `[${idea.id}] ${idea.text}`
         store.sendWorkerInput(textToInsert)
         store.triggerWorkerFocus()
       }, undefined, {
-        title: 'Insert Aim Reference',
-        placeholder: 'Search aims to insert...'
+        title: 'Insert Idea Reference',
+        placeholder: 'Search ideas to insert...'
       })
     },
     icon: '🔍'

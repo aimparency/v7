@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, onUnmounted, nextTick } from 'vue'
 import { useProjectStore } from '../stores/project-store'
-import type { AimProposal } from 'shared'
-import AimProposalReview from '../components/AimProposalReview.vue'
-import { createManualAimProposal } from '../utils/aim-proposal'
+import type { IdeaProposal } from 'shared'
+import IdeaProposalReview from '../components/IdeaProposalReview.vue'
+import { createManualAimProposal } from '../utils/idea-proposal'
 import { trpc } from '../trpc'
 
 const projectStore = useProjectStore()
@@ -14,7 +14,7 @@ const emit = defineEmits<{
 const isListening = ref(false)
 const transcript = ref('')
 const error = ref('')
-const proposal = ref<AimProposal | null>(null)
+const proposal = ref<IdeaProposal | null>(null)
 
 interface Message {
   role: 'user' | 'assistant'
@@ -96,7 +96,7 @@ const handleTranscript = async (text: string) => {
   void scrollToBottom()
   error.value = ''
   try {
-    proposal.value = await trpc.aim.proposeAimSubtree.mutate({
+    proposal.value = await trpc.idea.proposeAimSubtree.mutate({
       projectPath: projectStore.projectPath,
       transcript: text,
       existingParentIds: []
@@ -151,7 +151,7 @@ onUnmounted(() => {
         {{ error }}
       </div>
     </div>
-    <AimProposalReview
+    <IdeaProposalReview
       v-if="proposal"
       show
       :project-path="projectStore.projectPath"

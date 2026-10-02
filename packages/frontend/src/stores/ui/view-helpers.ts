@@ -34,7 +34,7 @@ export function setView(
   state: ViewState,
   view: UIViewMode,
   getCurrentAimId: () => string | null,
-  navigateToAim: (aimId: string) => void
+  navigateToAim: (ideaId: string) => void
 ): void {
   if (view === 'graph') {
     state.graphSelectedAimId = getCurrentAimId()

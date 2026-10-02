@@ -1,7 +1,7 @@
 {
   "name": "aimparency",
   "version": "1.0.0",
-  "description": "Local-first aim management system with a browser UI, background service, and agent tooling for .bowman projects.",
+  "description": "Local-first idea management system with a browser UI, background service, and agent tooling for .bowman projects.",
   "private": true,
   "workspaces": [
     "packages/*",

@@ -66,7 +66,7 @@ export async function calculateSemanticGraph(rawProjectPath: string): Promise<Se
     links.push({ source: a, target: b, distance: dist, type });
   };
 
-  // Brute force N^2 for now (fine for < 2000 aims)
+  // Brute force N^2 for now (fine for < 2000 ideas)
   for (const idA of ids) {
     const candidates: { id: string, dist: number }[] = [];
     
@@ -112,9 +112,9 @@ export async function calculateSemanticGraph(rawProjectPath: string): Promise<Se
 
 /**
  * Invalidate the semantic graph cache for a project.
- * Call this after creating/updating/deleting aims or their embeddings.
+ * Call this after creating/updating/deleting ideas or their embeddings.
  * The vector cache stays: saveEmbeddings/removeEmbedding mutate it in place, and
- * re-parsing vectors.json (megabytes) on every aim write blocked the event loop.
+ * re-parsing vectors.json (megabytes) on every idea write blocked the event loop.
  */
 export function invalidateSemanticCache(projectPath: string): void {
   semanticCache.delete(normalizeProjectPath(projectPath));

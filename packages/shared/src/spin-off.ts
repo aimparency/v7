@@ -1,21 +1,21 @@
-import type { Aim } from './types.js';
+import type { Idea } from './types.js';
 import { calculateAimValues } from './value-calculation.js';
 
 /**
- * Classification of every aim under a spin-off of one or more selected root aims.
+ * Classification of every idea under a spin-off of one or more selected root ideas.
  *
- * Direction: a child *supports* a parent (an aim's `supportingConnections` are
+ * Direction: a child *supports* a parent (an idea's `supportingConnections` are
  * its children; its `supportedAims` are its parents). "Contributes to R" means
  * "is a transitive supporter of R", i.e. lives in the sub-graph feeding into R.
  *
  *   copyIds    = roots + every transitive supporter (what goes to the spin-off)
  *   spinOffIds = RED:    copied AND removed from source — the roots plus
  *                        supporters that serve ONLY the selection
- *   overlapIds = ORANGE: copied AND kept in source — shared aims that also
+ *   overlapIds = ORANGE: copied AND kept in source — shared ideas that also
  *                        serve something outside the selection
- *   keptIds    = GREEN:  source-only — not copied (ancestors and unrelated aims)
+ *   keptIds    = GREEN:  source-only — not copied (ancestors and unrelated ideas)
  *
- * Conservative by construction: an aim is only deleted from source when every
+ * Conservative by construction: an idea is only deleted from source when every
  * goal it serves is itself being removed, so nothing shared is ever lost.
  */
 export interface SpinOffPlan {
@@ -28,17 +28,17 @@ export interface SpinOffPlan {
 
 export interface SpinOffResult {
   plan: SpinOffPlan;
-  /** Aims to write into the new .bowman: copied, connections restricted to the
+  /** Ideas to write into the new .bowman: copied, connections restricted to the
    *  copy set (seam edges dropped), phase commitments cleared. */
-  spinOffAims: Aim[];
-  /** Kept source aims whose edges to removed aims were stripped — rewrite these. */
-  sourceAimsToRewrite: Aim[];
-  /** Aim ids to delete from source (== plan.spinOffIds). */
+  spinOffAims: Idea[];
+  /** Kept source ideas whose edges to removed ideas were stripped — rewrite these. */
+  sourceAimsToRewrite: Idea[];
+  /** Idea ids to delete from source (== plan.spinOffIds). */
   sourceAimIdsToDelete: string[];
 }
 
 export interface RemappedSpinOff {
-  aims: Aim[];
+  ideas: Idea[];
   /** Only entries whose original id collided with an existing target id. */
   idMap: Record<string, string>;
 }
@@ -46,59 +46,59 @@ export interface RemappedSpinOff {
 /**
  * Make a copied branch safe to insert into an existing graph.
  *
- * Existing target aims are never changed. Colliding ids are replaced throughout
+ * Existing target ideas are never changed. Colliding ids are replaced throughout
  * the copied branch, while its internal contribution structure is preserved.
  * The copied roots are already free-floating because computeSpinOff drops seam
- * edges to aims outside the branch.
+ * edges to ideas outside the branch.
  */
 export function remapSpinOffCollisions(
-  aims: Aim[],
+  ideas: Idea[],
   occupiedIds: Iterable<string>,
   createId: () => string,
 ): RemappedSpinOff {
   const occupied = new Set(occupiedIds);
   const unavailable = new Set(occupied);
-  for (const aim of aims) unavailable.add(aim.id);
+  for (const idea of ideas) unavailable.add(idea.id);
 
   const idMap: Record<string, string> = {};
-  for (const aim of aims) {
-    if (!occupied.has(aim.id)) continue;
+  for (const idea of ideas) {
+    if (!occupied.has(idea.id)) continue;
     let replacement = createId();
     while (unavailable.has(replacement)) replacement = createId();
-    idMap[aim.id] = replacement;
+    idMap[idea.id] = replacement;
     unavailable.add(replacement);
   }
 
   const mapId = (id: string) => idMap[id] ?? id;
   return {
     idMap,
-    aims: aims.map((aim) => ({
-      ...aim,
-      id: mapId(aim.id),
-      supportedAims: (aim.supportedAims ?? []).map(mapId),
-      supportingConnections: (aim.supportingConnections ?? []).map((connection) => ({
+    ideas: ideas.map((idea) => ({
+      ...idea,
+      id: mapId(idea.id),
+      supportedAims: (idea.supportedAims ?? []).map(mapId),
+      supportingConnections: (idea.supportingConnections ?? []).map((connection) => ({
         ...connection,
-        aimId: mapId(connection.aimId),
+        ideaId: mapId(connection.ideaId),
       })),
-      ...(aim.incoming ? { incoming: aim.incoming.map(mapId) } : {}),
+      ...(idea.incoming ? { incoming: idea.incoming.map(mapId) } : {}),
       committedIn: [],
     })),
   };
 }
 
-function childIds(aim: Aim, present: Map<string, Aim>): string[] {
-  return (aim.supportingConnections ?? [])
-    .map((c) => c.aimId)
+function childIds(idea: Idea, present: Map<string, Idea>): string[] {
+  return (idea.supportingConnections ?? [])
+    .map((c) => c.ideaId)
     .filter((id) => present.has(id));
 }
 
-function parentIds(aim: Aim, present: Map<string, Aim>): string[] {
-  return (aim.supportedAims ?? []).filter((id) => present.has(id));
+function parentIds(idea: Idea, present: Map<string, Idea>): string[] {
+  return (idea.supportedAims ?? []).filter((id) => present.has(id));
 }
 
-/** Classify aims into copy / spin-off / overlap / kept buckets (no aim copying). */
-export function planSpinOff(aims: Aim[], rootIds: string[]): SpinOffPlan {
-  const byId = new Map(aims.map((a) => [a.id, a]));
+/** Classify ideas into copy / spin-off / overlap / kept buckets (no idea copying). */
+export function planSpinOff(ideas: Idea[], rootIds: string[]): SpinOffPlan {
+  const byId = new Map(ideas.map((a) => [a.id, a]));
   const roots = rootIds.filter((id) => byId.has(id));
 
   // copy = roots + all transitive supporters (descendants down supportingConnections)
@@ -113,9 +113,9 @@ export function planSpinOff(aims: Aim[], rootIds: string[]): SpinOffPlan {
     }
   }
 
-  // RED = roots, plus any copied aim every parent of which is RED (fixpoint).
-  // A parent outside the copy set is never RED, so an aim with an external
-  // parent is shared and stays in source (overlap). An aim that serves nothing
+  // RED = roots, plus any copied idea every parent of which is RED (fixpoint).
+  // A parent outside the copy set is never RED, so an idea with an external
+  // parent is shared and stays in source (overlap). An idea that serves nothing
   // (no in-set parents) only reached the copy set via the selection → RED.
   const red = new Set<string>(roots);
   let changed = true;
@@ -133,7 +133,7 @@ export function planSpinOff(aims: Aim[], rootIds: string[]): SpinOffPlan {
   }
 
   const overlapIds = [...copy].filter((id) => !red.has(id));
-  const keptIds = aims.map((a) => a.id).filter((id) => !copy.has(id));
+  const keptIds = ideas.map((a) => a.id).filter((id) => !copy.has(id));
 
   return {
     rootIds: roots,
@@ -145,7 +145,7 @@ export function planSpinOff(aims: Aim[], rootIds: string[]): SpinOffPlan {
 }
 
 export interface SpinOffOptions {
-  /** Compensate for the inflow that copied aims used to receive from non-copied
+  /** Compensate for the inflow that copied ideas used to receive from non-copied
    *  parents (the dropped seam edges) by folding that lost flow into their
    *  intrinsicValue, so the relative weighting of the exported sub-graph survives
    *  the cut. Defaults off; the value model is only consulted when enabled. */
@@ -153,13 +153,13 @@ export interface SpinOffOptions {
 }
 
 /**
- * For each copied aim, the value that flowed into it from parents *outside* the
+ * For each copied idea, the value that flowed into it from parents *outside* the
  * copy set in the original graph. Dropping those seam edges would otherwise
  * silently zero this contribution in the isolated spin-off.
  */
-function externalInflowByAim(aims: Aim[], copySet: Set<string>, byId: Map<string, Aim>): Map<string, number> {
+function externalInflowByAim(ideas: Idea[], copySet: Set<string>, byId: Map<string, Idea>): Map<string, number> {
   const inflow = new Map<string, number>();
-  const { flowValues, totalIntrinsic } = calculateAimValues(aims);
+  const { flowValues, totalIntrinsic } = calculateAimValues(ideas);
   if (totalIntrinsic <= 0) return inflow; // no value signal to preserve
 
   for (const id of copySet) {
@@ -176,42 +176,42 @@ function externalInflowByAim(aims: Aim[], copySet: Set<string>, byId: Map<string
   return inflow;
 }
 
-/** Plan a spin-off and produce the aim objects to write/delete on each side. */
-export function computeSpinOff(aims: Aim[], rootIds: string[], options: SpinOffOptions = {}): SpinOffResult {
-  const plan = planSpinOff(aims, rootIds);
-  const byId = new Map(aims.map((a) => [a.id, a]));
+/** Plan a spin-off and produce the idea objects to write/delete on each side. */
+export function computeSpinOff(ideas: Idea[], rootIds: string[], options: SpinOffOptions = {}): SpinOffResult {
+  const plan = planSpinOff(ideas, rootIds);
+  const byId = new Map(ideas.map((a) => [a.id, a]));
   const copySet = new Set(plan.copyIds);
   const redSet = new Set(plan.spinOffIds);
 
   const inflow = options.preserveInflow
-    ? externalInflowByAim(aims, copySet, byId)
+    ? externalInflowByAim(ideas, copySet, byId)
     : new Map<string, number>();
 
   // Spin-off copies: keep only edges whose other end is also copied (drop seam
   // edges to uncopied ancestors), and clear phase commitments (phases not carried).
-  // When preserving inflow, fold each aim's lost external inflow into intrinsicValue.
-  const spinOffAims: Aim[] = plan.copyIds.map((id) => {
+  // When preserving inflow, fold each idea's lost external inflow into intrinsicValue.
+  const spinOffAims: Idea[] = plan.copyIds.map((id) => {
     const a = byId.get(id)!;
     const extraIntrinsic = inflow.get(id) ?? 0;
     return {
       ...a,
       ...(extraIntrinsic > 0 ? { intrinsicValue: (a.intrinsicValue ?? 0) + extraIntrinsic } : {}),
       supportedAims: (a.supportedAims ?? []).filter((p) => copySet.has(p)),
-      supportingConnections: (a.supportingConnections ?? []).filter((c) => copySet.has(c.aimId)),
+      supportingConnections: (a.supportingConnections ?? []).filter((c) => copySet.has(c.ideaId)),
       incoming: a.incoming ? a.incoming.filter((p) => copySet.has(p)) : a.incoming,
       committedIn: [],
     };
   });
 
-  // Source rewrites: drop edges from kept aims to removed (RED) aims.
-  const sourceAimsToRewrite: Aim[] = [];
-  for (const a of aims) {
+  // Source rewrites: drop edges from kept ideas to removed (RED) ideas.
+  const sourceAimsToRewrite: Idea[] = [];
+  for (const a of ideas) {
     if (redSet.has(a.id)) continue; // deleted, no rewrite
     const supported = a.supportedAims ?? [];
     const conns = a.supportingConnections ?? [];
     const incoming = a.incoming ?? [];
     const newSupported = supported.filter((p) => !redSet.has(p));
-    const newConns = conns.filter((c) => !redSet.has(c.aimId));
+    const newConns = conns.filter((c) => !redSet.has(c.ideaId));
     const newIncoming = incoming.filter((p) => !redSet.has(p));
     if (
       newSupported.length !== supported.length ||

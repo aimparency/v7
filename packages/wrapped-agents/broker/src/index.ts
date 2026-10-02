@@ -94,7 +94,7 @@ const server = app.listen(HTTP_PORT, BIND_HOST as any, () => {
 
 console.log(`[WatchdogBroker] WebSocket Server running on ws://localhost:${WS_PORT}`);
 
-// Watch live sessions for self-edit relaunch indicators (aim 29021d9a).
+// Watch live sessions for self-edit relaunch indicators (idea 29021d9a).
 WatchdogManager.startRelaunchWatcher();
 
 // WebSocket Server

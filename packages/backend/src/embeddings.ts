@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { cosineSimilarity } from 'shared';
 import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers';
-import type { Aim } from 'shared';
+import type { Idea } from 'shared';
 import { normalizeProjectPath } from './project-path.js';
 
 // bge-small-en-v1.5: 384-dim sentence embeddings, native ONNX, 512-token window.
@@ -10,9 +10,9 @@ import { normalizeProjectPath } from './project-path.js';
 export const EMBEDDING_DIMENSION = 384;
 const MODEL_ID = 'BAAI/bge-small-en-v1.5';
 
-// bge is an asymmetric retrieval model: documents (aims) are embedded raw, while
-// short search queries get this instruction prefix so they land near matching aims.
-// Symmetric ops (duplicate detection, reparenting, neighbours) compare raw aim
+// bge is an asymmetric retrieval model: documents (ideas) are embedded raw, while
+// short search queries get this instruction prefix so they land near matching ideas.
+// Symmetric ops (duplicate detection, reparenting, neighbours) compare raw idea
 // vectors to each other and therefore must NOT use the prefix.
 const QUERY_PREFIX = 'Represent this sentence for searching relevant passages: ';
 
@@ -56,7 +56,7 @@ async function embed(text: string): Promise<number[] | null> {
 }
 
 /**
- * Embed an aim/document for storage. Used when creating or updating aims.
+ * Embed an idea/document for storage. Used when creating or updating ideas.
  * Pass the combined text from {@link embeddingTextForAim}.
  */
 export async function generateEmbedding(text: string): Promise<number[] | null> {
@@ -65,31 +65,31 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
 
 /**
  * Embed a free-text search query (asymmetric retrieval). Only for the search path,
- * never for stored aim vectors.
+ * never for stored idea vectors.
  */
 export async function generateQueryEmbedding(query: string): Promise<number[] | null> {
   return embed(QUERY_PREFIX + query);
 }
 
 /**
- * Build the text fed to the embedder for an aim: title + description + tags.
+ * Build the text fed to the embedder for an idea: title + description + tags.
  * The old hash embedder only used the title; descriptions/tags are often the
  * richest signal, so we include them.
  */
-export function embeddingTextForAim(aim: Pick<Aim, 'text' | 'description' | 'tags'>): string {
-  const parts: string[] = [aim.text];
-  if (aim.description && aim.description.trim()) {
-    parts.push(aim.description.trim());
+export function embeddingTextForAim(idea: Pick<Idea, 'text' | 'description' | 'tags'>): string {
+  const parts: string[] = [idea.text];
+  if (idea.description && idea.description.trim()) {
+    parts.push(idea.description.trim());
   }
-  if (aim.tags && aim.tags.length > 0) {
-    parts.push(aim.tags.join(', '));
+  if (idea.tags && idea.tags.length > 0) {
+    parts.push(idea.tags.join(', '));
   }
   return parts.join('\n\n');
 }
 
-// Store mappings: AimID -> Vector
+// Store mappings: IdeaID -> Vector
 export interface VectorStore {
-  [aimId: string]: number[];
+  [ideaId: string]: number[];
 }
 
 async function getVectorStorePath(projectPath: string) {
@@ -138,10 +138,10 @@ export async function loadVectorStore(rawProjectPath: string): Promise<VectorSto
     if (await fs.pathExists(storePath)) {
       try {
         const rawStore = await fs.readJson(storePath);
-        for (const [aimId, vector] of Object.entries(rawStore as Record<string, unknown>)) {
+        for (const [ideaId, vector] of Object.entries(rawStore as Record<string, unknown>)) {
           if (isStoredVector(vector)) {
             // Already rounded on write (saveEmbeddings); no need to re-round on load.
-            store[aimId] = vector;
+            store[ideaId] = vector;
           } else {
             needsRewrite = true;
           }
@@ -168,30 +168,30 @@ export async function loadVectorStore(rawProjectPath: string): Promise<VectorSto
   }
 }
 
-export async function saveEmbedding(projectPath: string, aimId: string, vector: number[]) {
-  return saveEmbeddings(projectPath, [{ aimId, vector }]);
+export async function saveEmbedding(projectPath: string, ideaId: string, vector: number[]) {
+  return saveEmbeddings(projectPath, [{ ideaId, vector }]);
 }
 
 /**
  * Persist several vectors with a single rewrite of vectors.json.
  *
  * The store is one JSON file, so every save serializes and writes all of it
- * (megabytes once a project has a few hundred aims). Saving per aim inside a
+ * (megabytes once a project has a few hundred ideas). Saving per idea inside a
  * backfill loop is quadratic and stalls the event loop in long synchronous
  * stringify bursts, which shows up as multi-second latency on unrelated
  * requests. Batch the writes instead; the in-memory cache is updated up front,
  * so searches see the new vectors before the file lands.
  */
-export async function saveEmbeddings(rawProjectPath: string, entries: { aimId: string, vector: number[] }[]) {
+export async function saveEmbeddings(rawProjectPath: string, entries: { ideaId: string, vector: number[] }[]) {
   const projectPath = normalizeProjectPath(rawProjectPath);
   if (entries.length === 0) return;
   const store = await loadVectorStore(projectPath);
   const lock = getProjectLock(projectPath);
   const release = await lock.acquire();
   try {
-    for (const { aimId, vector } of entries) {
+    for (const { ideaId, vector } of entries) {
       // Reduce precision to 6 decimals to save space (plenty for cosine similarity)
-      store[aimId] = vector.map(v => parseFloat(v.toFixed(6)));
+      store[ideaId] = vector.map(v => parseFloat(v.toFixed(6)));
       // Cache is updated by reference
     }
 
@@ -212,14 +212,14 @@ export async function saveEmbeddings(rawProjectPath: string, entries: { aimId: s
   }
 }
 
-export async function removeEmbedding(rawProjectPath: string, aimId: string) {
+export async function removeEmbedding(rawProjectPath: string, ideaId: string) {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const store = await loadVectorStore(projectPath);
-  if (store[aimId]) {
+  if (store[ideaId]) {
     const lock = getProjectLock(projectPath);
     const release = await lock.acquire();
     try {
-      delete store[aimId];
+      delete store[ideaId];
       const storePath = await getVectorStorePath(projectPath);
       const tempPath = `${storePath}.tmp`;
       await fs.writeJson(tempPath, store);

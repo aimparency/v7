@@ -37,7 +37,7 @@ export interface LayoutCandidate {
   frozenAimId?: string
 }
 
-// Fraction of the canvas area the focused aim's bounding square should cover.
+// Fraction of the canvas area the focused idea's bounding square should cover.
 const NODE_FOCUS_AREA_FILL = 1 / 25
 
 function getNodeFocusScale(node: MapNode, xratio: number, yratio: number): number {
@@ -181,7 +181,7 @@ export function graphOverviewFrame(
     .slice(0, retainedCount)
 
   // Recompute after trimming so a distant outlier cannot still pull the
-  // camera away from the 90% of aims we intend to frame.
+  // camera away from the 90% of ideas we intend to frame.
   const center = surfaceWeightedCenter(retainedNodes)
   let halfWidth = 1
   let halfHeight = 1
@@ -352,11 +352,11 @@ export const useMapStore = defineStore('map', {
         if (progress >= 1) this.anim.update = undefined
       }
     },
-    // Camera frame that focuses an aim. Shared by the fly-to animation and the
+    // Camera frame that focuses an idea. Shared by the fly-to animation and the
     // tracking auto-pan so they agree on where to rest and never fight.
     nodeFocusFrame(node: MapNode): CameraFrame {
       const scale = getNodeFocusScale(node, this.xratio, this.yratio)
-      // Center the aim in the space left of the side panel.
+      // Center the idea in the space left of the side panel.
       let shiftX = 0
       const graphUIStore = useGraphUIStore()
       if (graphUIStore.graphSelectedAimId || graphUIStore.selectedLink) {

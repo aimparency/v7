@@ -6,21 +6,21 @@ import os from 'os';
 import { calculateSemanticGraph, invalidateSemanticCache, getSemanticGraph } from './forces.js';
 import { saveEmbedding, invalidateVectorCache } from './embeddings.js';
 
-test('calculateSemanticGraph: assigns 3 nearest and 3 furthest aims for each aim', async () => {
+test('calculateSemanticGraph: assigns 3 nearest and 3 furthest ideas for each idea', async () => {
   const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
 
   try {
     // Create .bowman directory
     await fs.ensureDir(path.join(testDir, '.bowman'));
 
-    // Create a vectors.json with 10 aims
+    // Create a vectors.json with 10 ideas
     const vectors: Record<string, number[]> = {};
-    const aimIds: string[] = [];
+    const ideaIds: string[] = [];
 
     // Generate 10 different embeddings (simplified 3D vectors)
     for (let i = 0; i < 10; i++) {
-      const id = `aim-${i}`;
-      aimIds.push(id);
+      const id = `idea-${i}`;
+      ideaIds.push(id);
       // Create distinct embeddings: spread them in 3D space
       const angle = (i / 10) * Math.PI * 2;
       vectors[id] = [Math.cos(angle), Math.sin(angle), i * 0.1];
@@ -36,7 +36,7 @@ test('calculateSemanticGraph: assigns 3 nearest and 3 furthest aims for each aim
     assert.ok(typeof graph.averageDistance === 'number', 'Should have average distance');
     assert.ok(typeof graph.lastUpdated === 'number', 'Should have timestamp');
 
-    // Each aim should have 6 links (3 nearest + 3 furthest)
+    // Each idea should have 6 links (3 nearest + 3 furthest)
     const linksBySource = new Map<string, any[]>();
     for (const link of graph.links) {
       if (!linksBySource.has(link.source)) {
@@ -45,15 +45,15 @@ test('calculateSemanticGraph: assigns 3 nearest and 3 furthest aims for each aim
       linksBySource.get(link.source)!.push(link);
     }
 
-    for (const aimId of aimIds) {
-      const links = linksBySource.get(aimId) || [];
-      assert.equal(links.length, 6, `Aim ${aimId} should have exactly 6 links (3 nearest + 3 furthest)`);
+    for (const ideaId of ideaIds) {
+      const links = linksBySource.get(ideaId) || [];
+      assert.equal(links.length, 6, `Idea ${ideaId} should have exactly 6 links (3 nearest + 3 furthest)`);
 
       const nearest = links.filter(l => l.type === 'nearest');
       const furthest = links.filter(l => l.type === 'furthest');
 
-      assert.equal(nearest.length, 3, `Aim ${aimId} should have 3 nearest links`);
-      assert.equal(furthest.length, 3, `Aim ${aimId} should have 3 furthest links`);
+      assert.equal(nearest.length, 3, `Idea ${ideaId} should have 3 nearest links`);
+      assert.equal(furthest.length, 3, `Idea ${ideaId} should have 3 furthest links`);
     }
 
     // Verify cache was saved to disk
@@ -65,7 +65,7 @@ test('calculateSemanticGraph: assigns 3 nearest and 3 furthest aims for each aim
   }
 });
 
-test('calculateSemanticGraph: handles < 2 aims gracefully', async () => {
+test('calculateSemanticGraph: handles < 2 ideas gracefully', async () => {
   const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
 
   try {
@@ -80,14 +80,14 @@ test('calculateSemanticGraph: handles < 2 aims gracefully', async () => {
     assert.equal(graph.links.length, 0, 'Should have no links for empty project');
     assert.equal(graph.averageDistance, 0, 'Should have 0 average distance');
 
-    // Single aim
+    // Single idea
     await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), {
-      'aim-1': [1, 0, 0]
+      'idea-1': [1, 0, 0]
     });
 
     const graph2 = await calculateSemanticGraph(testDir);
 
-    assert.equal(graph2.links.length, 0, 'Should have no links for single aim');
+    assert.equal(graph2.links.length, 0, 'Should have no links for single idea');
 
   } finally {
     await fs.remove(testDir);
@@ -103,9 +103,9 @@ test('invalidateSemanticCache: clears memory cache', async () => {
 
     // Create initial vectors
     const vectors = {
-      'aim-1': [1, 0, 0],
-      'aim-2': [0, 1, 0],
-      'aim-3': [0, 0, 1]
+      'idea-1': [1, 0, 0],
+      'idea-2': [0, 1, 0],
+      'idea-3': [0, 0, 1]
     };
     await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), vectors);
 
@@ -116,8 +116,8 @@ test('invalidateSemanticCache: clears memory cache', async () => {
     // Modify vectors.json directly
     const newVectors = {
       ...vectors,
-      'aim-4': [1, 1, 0],
-      'aim-5': [1, 0, 1]
+      'idea-4': [1, 1, 0],
+      'idea-5': [1, 0, 1]
     };
     await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), newVectors);
 
@@ -131,54 +131,54 @@ test('invalidateSemanticCache: clears memory cache', async () => {
     invalidateVectorCache(testDir);
     invalidateSemanticCache(testDir);
 
-    // Now we should get a fresh calculation with new aims
+    // Now we should get a fresh calculation with new ideas
     const graph3 = await getSemanticGraph(testDir);
 
-    // Graph should be different (has more aims now)
+    // Graph should be different (has more ideas now)
     assert.notDeepEqual(graph1, graph3, 'Should recalculate after invalidation');
 
-    // Verify new aims are included
+    // Verify new ideas are included
     const sources = new Set(graph3.links.map(l => l.source));
-    assert.ok(sources.has('aim-4'), 'Should include newly added aim-4');
-    assert.ok(sources.has('aim-5'), 'Should include newly added aim-5');
+    assert.ok(sources.has('idea-4'), 'Should include newly added idea-4');
+    assert.ok(sources.has('idea-5'), 'Should include newly added idea-5');
 
   } finally {
     await fs.remove(testDir);
   }
 });
 
-test('semantic graph regression: cache invalidation on aim creation', async () => {
-  // This is a regression test for the bug where newly created aims
+test('semantic graph regression: cache invalidation on idea creation', async () => {
+  // This is a regression test for the bug where newly created ideas
   // didn't appear in the semantic force UI because the cache wasn't invalidated
 
   const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
 
   try {
-    // Start with 3 aims
-    await saveEmbedding(testDir, 'aim-1', [1, 0, 0]);
-    await saveEmbedding(testDir, 'aim-2', [0, 1, 0]);
-    await saveEmbedding(testDir, 'aim-3', [0, 0, 1]);
+    // Start with 3 ideas
+    await saveEmbedding(testDir, 'idea-1', [1, 0, 0]);
+    await saveEmbedding(testDir, 'idea-2', [0, 1, 0]);
+    await saveEmbedding(testDir, 'idea-3', [0, 0, 1]);
 
     // Get semantic graph (this caches it)
     const graphBefore = await getSemanticGraph(testDir);
     const sourcesBefore = new Set(graphBefore.links.map(l => l.source));
 
-    assert.equal(sourcesBefore.size, 3, 'Should have 3 aims initially');
+    assert.equal(sourcesBefore.size, 3, 'Should have 3 ideas initially');
 
-    // Simulate creating a new aim (what happens in server.ts createFloatingAim)
-    await saveEmbedding(testDir, 'aim-4-new', [1, 1, 0]);
+    // Simulate creating a new idea (what happens in server.ts createFloatingAim)
+    await saveEmbedding(testDir, 'idea-4-new', [1, 1, 0]);
     invalidateSemanticCache(testDir); // This is the fix!
 
     // Get semantic graph again
     const graphAfter = await getSemanticGraph(testDir);
     const sourcesAfter = new Set(graphAfter.links.map(l => l.source));
 
-    assert.equal(sourcesAfter.size, 4, 'Should have 4 aims after creation');
-    assert.ok(sourcesAfter.has('aim-4-new'), 'Should include the newly created aim');
+    assert.equal(sourcesAfter.size, 4, 'Should have 4 ideas after creation');
+    assert.ok(sourcesAfter.has('idea-4-new'), 'Should include the newly created idea');
 
-    // Verify the new aim has its relationships
-    const newAimLinks = graphAfter.links.filter(l => l.source === 'aim-4-new');
-    assert.equal(newAimLinks.length, 6, 'New aim should have 6 links (3 nearest + 3 furthest)');
+    // Verify the new idea has its relationships
+    const newAimLinks = graphAfter.links.filter(l => l.source === 'idea-4-new');
+    assert.equal(newAimLinks.length, 6, 'New idea should have 6 links (3 nearest + 3 furthest)');
 
   } finally {
     await fs.remove(testDir);

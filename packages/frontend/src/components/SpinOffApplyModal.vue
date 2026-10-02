@@ -24,20 +24,20 @@ const errorMessage = ref('')
 
 const rootIds = computed(() => graphUIStore.spinOffPreviewRootIds)
 
-// Slugify an aim title into a filesystem-friendly directory name.
+// Slugify an idea title into a filesystem-friendly directory name.
 const slugify = (text: string): string =>
   text.toLowerCase().trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'spin-off'
 
-// Suggest a sibling directory next to the current project, named after the first root aim.
+// Suggest a sibling directory next to the current project, named after the first root idea.
 const defaultTargetPath = (): string => {
   const projectPath = projectStore.projectPath
   const projectRoot = projectPath.replace(/\/\.bowman\/?$/, '')
   const parent = projectRoot.replace(/\/[^/]*\/?$/, '') || '~'
   const firstRoot = rootIds.value[0]
-  const slug = firstRoot ? slugify(dataStore.aims[firstRoot]?.text ?? 'spin-off') : 'spin-off'
+  const slug = firstRoot ? slugify(dataStore.ideas[firstRoot]?.text ?? 'spin-off') : 'spin-off'
   return `${parent}/${slug}`
 }
 
@@ -192,7 +192,7 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
 
     <label class="checkbox-row">
       <input type="checkbox" v-model="removeFromSource" />
-      <span>Remove spun-off aims from source graph (keeps shared aims)</span>
+      <span>Remove spun-off ideas from source graph (keeps shared ideas)</span>
     </label>
 
     <label class="checkbox-row">
@@ -206,7 +206,7 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
     </label>
 
     <p class="summary">
-      Spinning off {{ rootIds.length }} root aim{{ rootIds.length === 1 ? '' : 's' }} and their exclusive supporters.
+      Spinning off {{ rootIds.length }} root idea{{ rootIds.length === 1 ? '' : 's' }} and their exclusive supporters.
     </p>
 
     <p v-if="errorMessage" class="feedback error">{{ errorMessage }}</p>

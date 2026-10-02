@@ -9,7 +9,7 @@ const { mockTrpc } = vi.hoisted(() => ({
     phase: {
       get: { query: vi.fn() }
     },
-    aim: {
+    idea: {
       merge: { mutate: vi.fn() },
       list: { query: vi.fn() }
     }
@@ -31,24 +31,24 @@ describe('list store phase selection', () => {
     vi.clearAllMocks()
   })
 
-  it('keeps multi-select mode explicit and exits when the last aim is toggled off', () => {
+  it('keeps multi-select mode explicit and exits when the last idea is toggled off', () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
-    dataStore.aims['aim-a'] = { id: 'aim-a', text: 'A' } as any
-    dataStore.aims['aim-b'] = { id: 'aim-b', text: 'B' } as any
+    dataStore.ideas['idea-a'] = { id: 'idea-a', text: 'A' } as any
+    dataStore.ideas['idea-b'] = { id: 'idea-b', text: 'B' } as any
 
-    uiStore.enterMultiSelect('aim-a')
+    uiStore.enterMultiSelect('idea-a')
     expect(uiStore.multiSelectMode).toBe(true)
-    expect(uiStore.multiSelectedAimIds).toEqual(['aim-a'])
+    expect(uiStore.multiSelectedAimIds).toEqual(['idea-a'])
 
-    uiStore.toggleMultiSelect('aim-b')
-    expect(uiStore.multiSelectedAimIds).toEqual(['aim-a', 'aim-b'])
+    uiStore.toggleMultiSelect('idea-b')
+    expect(uiStore.multiSelectedAimIds).toEqual(['idea-a', 'idea-b'])
 
-    uiStore.toggleMultiSelect('aim-a')
+    uiStore.toggleMultiSelect('idea-a')
     expect(uiStore.multiSelectMode).toBe(true)
-    expect(uiStore.multiSelectedAimIds).toEqual(['aim-b'])
+    expect(uiStore.multiSelectedAimIds).toEqual(['idea-b'])
 
-    uiStore.toggleMultiSelect('aim-b')
+    uiStore.toggleMultiSelect('idea-b')
     expect(uiStore.multiSelectMode).toBe(false)
     expect(uiStore.multiSelectedAimIds).toEqual([])
   })
@@ -58,18 +58,18 @@ describe('list store phase selection', () => {
     const uiStore = useUIStore()
     const projectStore = useProjectStore()
     projectStore.projectPath = '/tmp/project'
-    dataStore.aims = {
+    dataStore.ideas = {
       target: { id: 'target', text: 'Target' },
       source: { id: 'source', text: 'Source' }
     } as any
     const loadAllAims = vi.spyOn(dataStore, 'loadAllAims').mockResolvedValue(undefined)
-    mockTrpc.aim.merge.mutate.mockResolvedValue({ success: true, archivedSource: 'source' })
+    mockTrpc.idea.merge.mutate.mockResolvedValue({ success: true, archivedSource: 'source' })
     uiStore.multiSelectedAimIds = ['target', 'source']
     uiStore.multiSelectMode = true
 
     const result = await uiStore.mergeSelectedInto('target')
 
-    expect(mockTrpc.aim.merge.mutate).toHaveBeenCalledWith({
+    expect(mockTrpc.idea.merge.mutate).toHaveBeenCalledWith({
       projectPath: '/tmp/project',
       targetId: 'target',
       sourceId: 'source'
@@ -84,13 +84,13 @@ describe('list store phase selection', () => {
     const uiStore = useUIStore()
     const projectStore = useProjectStore()
     projectStore.projectPath = '/tmp/project'
-    dataStore.aims = {
+    dataStore.ideas = {
       target: { id: 'target', text: 'Target' },
       source1: { id: 'source1', text: 'Source 1' },
       source2: { id: 'source2', text: 'Source 2' }
     } as any
     vi.spyOn(dataStore, 'loadAllAims').mockResolvedValue(undefined)
-    mockTrpc.aim.merge.mutate
+    mockTrpc.idea.merge.mutate
       .mockResolvedValueOnce({ success: true, archivedSource: 'source1' })
       .mockRejectedValueOnce(new Error('merge conflict'))
     uiStore.multiSelectedAimIds = ['target', 'source1', 'source2']
@@ -184,19 +184,19 @@ describe('list store phase selection', () => {
     expect(uiStore.getSelectedPhaseEntry(1)).toMatchObject({ key: 'phase:child-a' })
   })
 
-  it('moves the aim cursor over visible rows: j enters expanded children and k retraces it', async () => {
+  it('moves the idea cursor over visible rows: j enters expanded children and k retraces it', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
-    const aim = (id: string, children: string[] = []) =>
-      ({ id, text: id, supportingConnections: children.map((aimId) => ({ aimId, weight: 1, relativePosition: [1, 1] })), supportedAims: [], committedIn: [] }) as any
+    const idea = (id: string, children: string[] = []) =>
+      ({ id, text: id, supportingConnections: children.map((ideaId) => ({ ideaId, weight: 1, relativePosition: [1, 1] })), supportedAims: [], committedIn: [] }) as any
     const phase = (id: string, commitments: string[]) =>
       ({ id, name: id, parent: null, childPhaseIds: [], commitments }) as any
 
-    for (const a of [aim('parent', ['child-1', 'child-2']), aim('child-1'), aim('child-2'), aim('sibling'), aim('next-phase-aim')]) {
-      dataStore.aims[a.id] = a
+    for (const a of [idea('parent', ['child-1', 'child-2']), idea('child-1'), idea('child-2'), idea('sibling'), idea('next-phase-idea')]) {
+      dataStore.ideas[a.id] = a
     }
     dataStore.phases['phase-1'] = phase('phase-1', ['parent', 'sibling'])
-    dataStore.phases['phase-2'] = phase('phase-2', ['next-phase-aim'])
+    dataStore.phases['phase-2'] = phase('phase-2', ['next-phase-idea'])
     dataStore.meta = { rootPhaseIds: ['phase-1', 'phase-2'] }
     uiStore.activeColumn = 0
     uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
@@ -210,14 +210,14 @@ describe('list store phase selection', () => {
       await uiStore.navigateDown()
       visited.push(selected())
     }
-    expect(visited).toEqual(['parent', 'child-1', 'child-2', 'sibling', 'next-phase-aim'])
+    expect(visited).toEqual(['parent', 'child-1', 'child-2', 'sibling', 'next-phase-idea'])
 
     const back = [selected()]
     for (let step = 0; step < 4; step++) {
       await uiStore.navigateUp()
       back.push(selected())
     }
-    expect(back).toEqual(['next-phase-aim', 'sibling', 'child-2', 'child-1', 'parent'])
+    expect(back).toEqual(['next-phase-idea', 'sibling', 'child-2', 'child-1', 'parent'])
   })
 
   it('restores obvious list UI state after reload', async () => {
@@ -313,13 +313,13 @@ describe('list store phase selection', () => {
     dataStore.phases = {
       'root-a': { id: 'root-a', name: 'Root A', parent: null, childPhaseIds: [], commitments: [] },
       'root-b': { id: 'root-b', name: 'Root B', parent: null, childPhaseIds: ['child-b'], commitments: [] },
-      'child-b': { id: 'child-b', name: 'Child B', parent: 'root-b', childPhaseIds: ['grandchild-b'], commitments: ['aim-1', 'aim-2'] },
+      'child-b': { id: 'child-b', name: 'Child B', parent: 'root-b', childPhaseIds: ['grandchild-b'], commitments: ['idea-1', 'idea-2'] },
       'grandchild-b': { id: 'grandchild-b', name: 'Grandchild B', parent: 'child-b', childPhaseIds: [], commitments: [] }
     } as any
-    dataStore.aims = {
-      'aim-1': { id: 'aim-1', text: 'One', supportingConnections: [], supportedAims: [], committedIn: ['child-b'] },
-      'aim-2': { id: 'aim-2', text: 'Two', supportingConnections: [{ aimId: 'sub' }], supportedAims: [], committedIn: ['child-b'] },
-      sub: { id: 'sub', text: 'Sub', supportingConnections: [], supportedAims: ['aim-2'], committedIn: [] }
+    dataStore.ideas = {
+      'idea-1': { id: 'idea-1', text: 'One', supportingConnections: [], supportedAims: [], committedIn: ['child-b'] },
+      'idea-2': { id: 'idea-2', text: 'Two', supportingConnections: [{ ideaId: 'sub' }], supportedAims: [], committedIn: ['child-b'] },
+      sub: { id: 'sub', text: 'Sub', supportingConnections: [], supportedAims: ['idea-2'], committedIn: [] }
     } as any
   }
 
@@ -346,14 +346,14 @@ describe('list store phase selection', () => {
         windowSize: 2,
         activeColumn: 1,
         navigatingAims: true,
-        // Stale index (aims were reordered since): identity must win.
+        // Stale index (ideas were reordered since): identity must win.
         selectedAimIndexByPhaseId: { 'child-b': 0 },
         selection: {
           activeColumn: 1,
           maxColumn: 2,
           entryKeyByColumn: { 0: 'phase:root-b', 1: 'phase:child-b', 2: 'phase:grandchild-b' },
           navigatingAims: true,
-          aimPath: ['aim-2', 'sub']
+          ideaPath: ['idea-2', 'sub']
         }
       }
     }))

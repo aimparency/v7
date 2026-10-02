@@ -3,7 +3,7 @@ import { Composio } from "@composio/core";
 import { VercelProvider } from "@composio/vercel";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { stepCountIs, streamText } from "ai";
-import { appendReflection, getTopAims, wsClient } from "./aim-client.js";
+import { appendReflection, getTopAims, wsClient } from "./idea-client.js";
 
 const projectPath = process.argv[2] ?? process.cwd();
 const act = process.env.REAL_WORLD_ACT === "1";
@@ -27,19 +27,19 @@ async function main() {
   console.log(`mode: ${act ? "ACT (mutations allowed)" : "PLAN (read-only)"}`);
 
   const top = await getTopAims(projectPath, 3);
-  if (top.length === 0) throw new Error("No open aims in the active phase.");
+  if (top.length === 0) throw new Error("No open ideas in the active phase.");
   const target = top[0]!;
 
   console.log(`\nphase: ${target.phasePath.join(" > ")}`);
   for (const t of top) {
     console.log(
-      `  [${t.priority.toFixed(2)}x profitability] ${t.aim.text}` +
+      `  [${t.priority.toFixed(2)}x profitability] ${t.idea.text}` +
         ` (value ${t.flowedValue.toFixed(2)}, cost ${t.aggregatedCost.toFixed(2)})`
     );
   }
-  console.log(`\nacting on: ${target.aim.text}\n`);
+  console.log(`\nacting on: ${target.idea.text}\n`);
 
-  // LIST mode: verify the aim-graph read half of the loop without any LLM/Composio call.
+  // LIST mode: verify the idea-graph read half of the loop without any LLM/Composio call.
   if (process.env.REAL_WORLD_LIST === "1") {
     console.log("(list mode — no agent run)");
     return;
@@ -48,7 +48,7 @@ async function main() {
   const session = await composio.create(userId);
   const tools = await session.tools();
 
-  const pastLessons = (target.aim.reflections ?? [])
+  const pastLessons = (target.idea.reflections ?? [])
     .slice(-3)
     .map((r) => `- ${r.lesson}`)
     .join("\n");
@@ -58,24 +58,24 @@ async function main() {
     model,
     system: [
       "You are the real-world arm of aimparency, a goal-graph system.",
-      "You receive the single highest-priority aim from the graph's economic model",
+      "You receive the single highest-priority idea from the graph's economic model",
       "and make concrete progress on it using the available tools (email, GitHub,",
       "calendar, social, etc. via Composio).",
       act
-        ? "You MAY take mutating actions (send, post, create) when they clearly serve the aim."
+        ? "You MAY take mutating actions (send, post, create) when they clearly serve the idea."
         : "PLAN MODE: do NOT take any mutating action (no sending, posting, creating)." +
           " You may use read/search/list tools to investigate. Finish with a concrete," +
           " step-by-step plan of the real-world actions you would take, naming the exact" +
           " tools, and note any toolkit that still needs to be connected/authorized.",
       "If a needed toolkit is not connected, say so explicitly and include the auth link if one is returned.",
-      "Be economical: the aim was chosen because value/cost is high — don't burn steps on tangents.",
+      "Be economical: the idea was chosen because value/cost is high — don't burn steps on tangents.",
     ].join("\n"),
     prompt: [
-      `Aim: ${target.aim.text}`,
-      target.aim.description ? `Description: ${target.aim.description}` : "",
+      `Idea: ${target.idea.text}`,
+      target.idea.description ? `Description: ${target.idea.description}` : "",
       `Phase: ${target.phasePath.join(" > ")}`,
       pastLessons ? `Lessons from past attempts:\n${pastLessons}` : "",
-      "Make real-world progress on this aim now.",
+      "Make real-world progress on this idea now.",
     ]
       .filter(Boolean)
       .join("\n\n"),
@@ -98,11 +98,11 @@ async function main() {
   }
   console.log("\n");
 
-  // A failed run must not pollute the aim's reflections with empty lessons.
+  // A failed run must not pollute the idea's reflections with empty lessons.
   if (streamError) throw streamError;
 
-  await appendReflection(projectPath, target.aim.id, {
-    context: `real-world agent (${act ? "act" : "plan"} mode, ${modelId}) ran on this aim`,
+  await appendReflection(projectPath, target.idea.id, {
+    context: `real-world agent (${act ? "act" : "plan"} mode, ${modelId}) ran on this idea`,
     outcome: finalText.slice(0, 2000),
     effectiveness: act
       ? "see outcome — actions were taken via Composio tools"
@@ -111,7 +111,7 @@ async function main() {
       ? "review outcome and prune what didn't work"
       : "re-run with REAL_WORLD_ACT=1 to execute the plan above",
   });
-  console.log(`reflection written to aim ${target.aim.id}`);
+  console.log(`reflection written to idea ${target.idea.id}`);
 }
 
 main()

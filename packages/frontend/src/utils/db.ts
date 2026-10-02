@@ -1,7 +1,7 @@
 const DB_NAME = 'aimparency-graph';
-const DB_VERSION = 2;
-const STORE_NAME = 'aim-positions';
-const AIM_STORE_NAME = 'aim-data';
+const DB_VERSION = 3;
+const STORE_NAME = 'idea-positions';
+const IDEA_STORE_NAME = 'idea-data';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -13,11 +13,15 @@ function getDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+      // Version 3 renamed the caches from aim-* to idea-*; the old ones are dropped, not migrated.
+      for (const legacyStore of ['aim-positions', 'aim-data']) {
+        if (db.objectStoreNames.contains(legacyStore)) db.deleteObjectStore(legacyStore);
+      }
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id' });
       }
-      if (!db.objectStoreNames.contains(AIM_STORE_NAME)) {
-        db.createObjectStore(AIM_STORE_NAME, { keyPath: 'id' });
+      if (!db.objectStoreNames.contains(IDEA_STORE_NAME)) {
+        db.createObjectStore(IDEA_STORE_NAME, { keyPath: 'id' });
       }
     };
 
@@ -39,19 +43,19 @@ export interface Position {
   y: number;
 }
 
-export async function saveAims(projectPath: string, aims: any[]) {
+export async function saveAims(projectPath: string, ideas: any[]) {
   const db = await getDB();
   return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(AIM_STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(AIM_STORE_NAME);
+    const transaction = db.transaction(IDEA_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(IDEA_STORE_NAME);
 
     store.clear(); 
     
     // Store project path meta
     store.put({ id: '__META__', projectPath });
 
-    for (const aim of aims) {
-      store.put(aim);
+    for (const idea of ideas) {
+      store.put(idea);
     }
 
     transaction.oncomplete = () => resolve();
@@ -62,12 +66,12 @@ export async function saveAims(projectPath: string, aims: any[]) {
 export async function loadAllAimsCache(expectedProjectPath: string): Promise<any[]> {
   const db = await getDB();
   return new Promise((resolve, reject) => {
-    if (!db.objectStoreNames.contains(AIM_STORE_NAME)) {
+    if (!db.objectStoreNames.contains(IDEA_STORE_NAME)) {
         resolve([]);
         return;
     }
-    const transaction = db.transaction(AIM_STORE_NAME, 'readonly');
-    const store = transaction.objectStore(AIM_STORE_NAME);
+    const transaction = db.transaction(IDEA_STORE_NAME, 'readonly');
+    const store = transaction.objectStore(IDEA_STORE_NAME);
     const request = store.getAll();
 
     request.onsuccess = () => {

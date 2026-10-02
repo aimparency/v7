@@ -12,7 +12,7 @@ test.describe('Sub-phase Navigation', () => {
     tempDir = join(tmpdir(), 'aimparency-subphase-' + Date.now());
     mkdirSync(tempDir, { recursive: true });
 
-    // Seed: Phase A -> Phase B -> Phase C -> Aim Target
+    // Seed: Phase A -> Phase B -> Phase C -> Idea Target
     const rootPhaseId = randomUUID();
     const subPhaseId = randomUUID();
     const subSubPhaseId = randomUUID();
@@ -37,10 +37,10 @@ test.describe('Sub-phase Navigation', () => {
           commitments: [targetAimId]
         }
       ],
-      aims: [
+      ideas: [
         { 
           id: targetAimId, 
-          text: 'Target Aim', 
+          text: 'Target Idea', 
           committedIn: [subSubPhaseId] 
         }
       ]
@@ -66,16 +66,16 @@ test.describe('Sub-phase Navigation', () => {
     }
   });
 
-  test('Navigate to aim in sub-phase', async ({ page }) => {
+  test('Navigate to idea in sub-phase', async ({ page }) => {
     // Initial state: Root Phase should be visible.
     await expect(page.locator('.column-panel').first()).toContainText('Root Phase');
 
-    // Search for Target Aim
+    // Search for Target Idea
     await page.keyboard.type('/');
-    await page.getByPlaceholder('Go to aim...').fill('Target Aim');
+    await page.getByPlaceholder('Go to idea...').fill('Target Idea');
     
     // Wait for results
-    await expect(page.locator('.result-item').first()).toContainText('Target Aim');
+    await expect(page.locator('.result-item').first()).toContainText('Target Idea');
     
     // Select it
     await page.keyboard.press('Enter');
@@ -84,8 +84,8 @@ test.describe('Sub-phase Navigation', () => {
     await expect(page.locator('.search-modal')).toBeHidden();
 
     // Verify:
-    // 1. Target Aim is visible in the column
-    const targetAim = page.locator('.column-panel .aim-text', { hasText: 'Target Aim' });
+    // 1. Target Idea is visible in the column
+    const targetAim = page.locator('.column-panel .idea-text', { hasText: 'Target Idea' });
     await expect(targetAim).toBeVisible();
 
     // 2. Check Columns specifically

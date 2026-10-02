@@ -64,14 +64,14 @@ export function useWebGLGraphRenderer(
     const colorMode = graphUIStore.graphColorMode
     const configuredStatuses = (dataStore.getStatuses || []) as StatusColorEntry[]
 
-    // Spin-off preview: classify every aim into red (spun off) / orange (overlap)
+    // Spin-off preview: classify every idea into red (spun off) / orange (overlap)
     // once per pass; nodes not in the map are green (kept). Computed client-side
-    // from the loaded aims — same planSpinOff the backend will execute.
+    // from the loaded ideas — same planSpinOff the backend will execute.
     const spinOffBuckets = (() => {
       if (colorMode !== 'spin-off') return null
       const roots = graphUIStore.spinOffPreviewRootIds
       if (!roots.length) return null
-      const plan = planSpinOff(Object.values(dataStore.aims), roots)
+      const plan = planSpinOff(Object.values(dataStore.ideas), roots)
       const m = new Map<string, 'red' | 'orange'>()
       for (const id of plan.spinOffIds) m.set(id, 'red')
       for (const id of plan.overlapIds) m.set(id, 'orange')
@@ -112,7 +112,7 @@ export function useWebGLGraphRenderer(
       }
 
       // Determine color: status, priority, and custom are separate coloring modes.
-      // Custom mode shows the custom aim color if set, falling back to a neutral grey.
+      // Custom mode shows the custom idea color if set, falling back to a neutral grey.
       let color: [number, number, number]
       if (node.isRepo) {
         // Black-box linked-repo node: always neutral grey (its customColor),
@@ -171,11 +171,11 @@ export function useWebGLGraphRenderer(
 
   // Convert graph links to WebGL edge format with per-element movement tracking
   function convertLinks(graphLinks: GraphLink[]): EdgeData[] {
-    // The selected connection (link.source is the child/supporting aim,
-    // link.target is the parent/supported aim — see data store link build).
+    // The selected connection (link.source is the child/supporting idea,
+    // link.target is the parent/supported idea — see data store link build).
     const selectedLink = graphUIStore.selectedLink
 
-    // Connection color always matches its supporting aim (the source/child).
+    // Connection color always matches its supporting idea (the source/child).
     // Reuse the node colors computed this frame so it respects the active
     // color mode (status / priority / custom / spin-off) for free.
     const nodeColorById = new Map(cachedNodeData.map(node => [node.id, node.color]))
@@ -244,7 +244,7 @@ export function useWebGLGraphRenderer(
         state.share = share
       }
 
-      // Edge color: the supporting aim's (source) node color in the active
+      // Edge color: the supporting idea's (source) node color in the active
       // color mode, falling back to neutral gray if the node isn't found.
       const color: [number, number, number] = nodeColorById.get(link.source.id) ?? [0.5, 0.5, 0.5]
 

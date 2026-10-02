@@ -27,7 +27,7 @@ const requireCommitBeforeCompact = ref(true)
 const askForHumanOnText = ref('destructive-git, network, api-keys')
 
 // Linked repos (portable cross-repo links). Registering a sibling project here
-// is what populates meta.linkedRepos, which the aim-edit modal's 'link a whole
+// is what populates meta.linkedRepos, which the idea-edit modal's 'link a whole
 // repo' picker then reads. Register/unregister are applied immediately (their
 // own mutations); the modal's Save merges name/color/statuses and preserves
 // linkedRepos, so there's no clobber.
@@ -72,7 +72,7 @@ async function addLinkedRepo() {
     await trpc.linkedRepo.register.mutate({ projectPath: projectStore.projectPath, targetPath: selectedTargetPath.value })
     selectedTargetPath.value = ''
     await loadLinkedRepos()
-    // Refresh the store's meta so the aim-edit 'link a whole repo' picker sees it.
+    // Refresh the store's meta so the idea-edit 'link a whole repo' picker sees it.
     await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
   } catch (e) {
     console.error('Failed to register linked repo', e)
@@ -328,7 +328,7 @@ const save = async () => {
         </div>
 
         <div class="form-group">
-          <label>Aim Statuses</label>
+          <label>Idea Statuses</label>
           <div class="status-list">
             <div v-for="(status, index) in statuses" :key="index" class="status-row">
               <input 
@@ -351,7 +351,7 @@ const save = async () => {
 
         <div class="form-group">
           <label>Linked repos</label>
-          <p class="hint-text">Whole external projects this one can link to as black-box supporters. Registering a sibling project here makes it pickable from an aim's "link a whole repo".</p>
+          <p class="hint-text">Whole external projects this one can link to as black-box supporters. Registering a sibling project here makes it pickable from an idea's "link a whole repo".</p>
 
           <div v-if="linkedRepos.length > 0" class="status-list">
             <div v-for="repo in linkedRepos" :key="repo.repoId" class="linked-repo-row">

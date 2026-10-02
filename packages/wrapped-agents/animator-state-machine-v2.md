@@ -24,7 +24,7 @@ initial session state exploring.
 actions:
   - 
 
-wrapping up leads back to exploring. exploring either creates aims (loop to exploring), chooses an aim to work on
+wrapping up leads back to exploring. exploring either creates ideas (loop to exploring), chooses an idea to work on
 
 ---
 
@@ -40,8 +40,8 @@ wrapping up leads back to exploring. exploring either creates aims (loop to expl
 class AnimatorState {
   currentState: 'EXPLORING' | 'WORKING' | 'WRAPPING_UP' | 'ERROR'
   context: {
-    aimId?: string
-    aimText?: string
+    ideaId?: string
+    ideaText?: string
     strategy?: string
     workStartedAt?: number
     errorCount?: number
@@ -55,7 +55,7 @@ class AnimatorState {
 
 ## State 1: EXPLORING
 
-**Purpose:** Find work, break down aims, ideate
+**Purpose:** Find work, break down ideas, ideate
 
 **Supervisor Prompt:**
 ```
@@ -66,13 +66,13 @@ Main session context:
 
 Current situation:
 - Active phases: {phase_list}
-- Open aims count: {count}
+- Open ideas count: {count}
 - Compute budget: {credits}
 
 Actions:
-{"action": "start_work", "aim_id": "uuid", "aim_text": "...", "strategy": "..."}
-{"action": "break_down", "aim_id": "uuid"}
-{"action": "ideate", "type": "research|new_aims|improvements"}
+{"action": "start_work", "idea_id": "uuid", "idea_text": "...", "strategy": "..."}
+{"action": "break_down", "idea_id": "uuid"}
+{"action": "ideate", "type": "research|new_ideas|improvements"}
 
 Choose action as JSON:
 ```
@@ -80,17 +80,17 @@ Choose action as JSON:
 **Actions:**
 
 1. **start_work** → WORKING
-   - Supervisor chooses aim to work on
-   - Provides aim_id, aim_text, strategy
+   - Supervisor chooses idea to work on
+   - Provides idea_id, idea_text, strategy
    - Engine sends work prompt to supervised session
 
 2. **break_down** → EXPLORING (stay)
-   - Supervisor identifies complex aim
-   - Engine prompts supervised session to create sub-aims
+   - Supervisor identifies complex idea
+   - Engine prompts supervised session to create sub-ideas
    - Loops back to exploring
 
 3. **ideate** → EXPLORING (stay)
-   - Type: research, new_aims, improvements
+   - Type: research, new_ideas, improvements
    - Engine prompts supervised session accordingly
    - Loops back to exploring
 
@@ -98,13 +98,13 @@ Choose action as JSON:
 
 ## State 2: WORKING
 
-**Purpose:** Push supervised session to complete aim
+**Purpose:** Push supervised session to complete idea
 
 **Supervisor Prompt:**
 ```
 [STATE: WORKING]
 
-Aim: {aim_text}
+Idea: {idea_text}
 Elapsed: {duration}
 
 Main session context:
@@ -134,7 +134,7 @@ Choose action as JSON:
 
 When supervised session shows options like `(A) option1 (B) option2`:
 1. Supervisor session sees options in context
-2. Supervisor chooses based on aim context
+2. Supervisor chooses based on idea context
 3. Engine sends choice to supervised stdin
 4. Work continues
 
@@ -154,7 +154,7 @@ Engine pauses, alerts user, waits for human input.
 ```
 [STATE: WRAPPING_UP]
 
-Completed aim: {aim_text}
+Completed idea: {idea_text}
 
 Main session context:
 {last 50 lines of supervised session output}
@@ -172,7 +172,7 @@ Choose action as JSON:
 1. **verify** with verdict "complete" → EXPLORING
    - Supervisor judges ~80% requirements met
    - Engine prompts supervised:
-     - "Check aim context, verify basics"
+     - "Check idea context, verify basics"
      - "Create git commit for this work"
      - "Add reflection using addReflection MCP"
    - After all three complete: **Compact conversation**
@@ -185,7 +185,7 @@ Choose action as JSON:
    - Engine prompts supervised with missing items
 
 **Sequence in WRAPPING_UP (when complete):**
-1. Supervised session verifies aim context
+1. Supervised session verifies idea context
 2. Supervised session creates git commit
 3. Supervised session adds reflection
 4. Engine compacts conversation history
@@ -312,7 +312,7 @@ Respond with JSON action:
   async executeAction(action: Action) {
     switch(action.action) {
       case 'start_work':
-        await this.startWork(action.aim_id, action.strategy)
+        await this.startWork(action.idea_id, action.strategy)
         break
       case 'proceed':
         await this.proceedWork(action.type)
@@ -327,15 +327,15 @@ Respond with JSON action:
     }
   }
 
-  async startWork(aimId: string, strategy: string) {
-    // Get aim context
-    const context = await mcp.get_aim_context(aimId)
+  async startWork(ideaId: string, strategy: string) {
+    // Get idea context
+    const context = await mcp.get_idea_context(ideaId)
 
     // Send to supervised session
     const prompt = `
 ${INSTRUCT_TEXT}
 
-Work on this aim:
+Work on this idea:
 ${context}
 
 Strategy: ${strategy}
@@ -353,19 +353,19 @@ Begin implementation.
 Work is not complete yet. Missing:
 ${notes}
 
-Continue working on the aim.
+Continue working on the idea.
       `)
       return
     }
 
     // Complete: verify, commit, reflect, compact
-    await this.supervised.sendPrompt('Verify aim context - is work complete?')
+    await this.supervised.sendPrompt('Verify idea context - is work complete?')
     await this.waitForIdle()
 
     await this.supervised.sendPrompt('Create git commit for completed work. Use git add -u then git add for new files.')
     await this.waitForIdle()
 
-    await this.supervised.sendPrompt('Add reflection for completed aim using addReflection MCP tool.')
+    await this.supervised.sendPrompt('Add reflection for completed idea using addReflection MCP tool.')
     await this.waitForIdle()
 
     // Compact
@@ -386,13 +386,13 @@ ${ctx.supervisedOutput.slice(-20).join('\n')}
 
 Current project:
 - Active phases: ${ctx.activePhases.join(', ')}
-- Open aims: ${ctx.openAimsCount}
+- Open ideas: ${ctx.openAimsCount}
 - Compute budget: ${ctx.computeCredits} credits
 
 Available actions (respond with ONE as JSON):
-{"action": "start_work", "aim_id": "uuid", "aim_text": "description", "strategy": "approach"}
-{"action": "break_down", "aim_id": "uuid"}
-{"action": "ideate", "type": "research|new_aims|improvements"}
+{"action": "start_work", "idea_id": "uuid", "idea_text": "description", "strategy": "approach"}
+{"action": "break_down", "idea_id": "uuid"}
+{"action": "ideate", "type": "research|new_ideas|improvements"}
 
 Your JSON response:
 `,
@@ -400,7 +400,7 @@ Your JSON response:
   WORKING: (ctx: Context) => `
 [STATE: WORKING]
 
-Working on: ${ctx.aimText}
+Working on: ${ctx.ideaText}
 Elapsed: ${ctx.workDuration}
 
 Main session context:
@@ -418,7 +418,7 @@ Your JSON response:
   WRAPPING_UP: (ctx: Context) => `
 [STATE: WRAPPING_UP]
 
-Completed aim: ${ctx.aimText}
+Completed idea: ${ctx.ideaText}
 
 Main session context:
 ${ctx.supervisedOutput.slice(-50).join('\n')}
@@ -458,8 +458,8 @@ Your JSON response:
 | From State | Action | To State | Side Effects |
 |------------|--------|----------|--------------|
 | EXPLORING | start_work | WORKING | Send work prompt to supervised |
-| EXPLORING | break_down | EXPLORING | Prompt supervised to create sub-aims |
-| EXPLORING | ideate | EXPLORING | Prompt supervised for research/new aims |
+| EXPLORING | break_down | EXPLORING | Prompt supervised to create sub-ideas |
+| EXPLORING | ideate | EXPLORING | Prompt supervised for research/new ideas |
 | WORKING | proceed (motivate) | WORKING | Send motivational prompt |
 | WORKING | proceed (option_select) | WORKING | Send option choice to supervised stdin |
 | WORKING | proceed (none) | WORKING | No action, keep monitoring |
@@ -475,10 +475,10 @@ Your JSON response:
 
 ## Example Flow
 
-### Successful Aim Completion
+### Successful Idea Completion
 
 1. **EXPLORING**
-   - Supervisor: `{"action": "start_work", "aim_id": "abc", "aim_text": "Add tests", "strategy": "Write unit tests for auth module"}`
+   - Supervisor: `{"action": "start_work", "idea_id": "abc", "idea_text": "Add tests", "strategy": "Write unit tests for auth module"}`
    - Engine sends work prompt to supervised
    - → WORKING
 
@@ -492,7 +492,7 @@ Your JSON response:
 3. **WRAPPING_UP**
    - Supervisor: `{"action": "verify", "verdict": "complete", "notes": "Tests cover auth module, all passing"}`
    - Engine prompts supervised:
-     - Verify aim context ✓
+     - Verify idea context ✓
      - Git commit ✓
      - Add reflection ✓
    - Engine compacts conversation
@@ -538,14 +538,14 @@ Your JSON response:
 - [ ] Implement ERROR state with exponential backoff
 - [ ] Add compaction in WRAPPING_UP
 - [ ] Add logging (state transitions, actions, decisions)
-- [ ] Test with real aims
+- [ ] Test with real ideas
 - [ ] Tune prompts and timing
 
 ---
 
 ## Next Steps
 
-1. Create implementation aim for state machine
+1. Create implementation idea for state machine
 2. Start with EXPLORING → WORKING transition (simplest path)
 3. Add WRAPPING_UP state
 4. Add ERROR handling

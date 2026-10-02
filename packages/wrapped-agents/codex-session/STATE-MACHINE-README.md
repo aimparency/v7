@@ -8,7 +8,7 @@ A complete state machine foundation for structured autonomous operation.
 
 1. **animator-state.ts** - State machine class
    - Manages 4 states: EXPLORING, WORKING, WRAPPING_UP, ERROR
-   - Tracks context (aim being worked on, timing, errors)
+   - Tracks context (idea being worked on, timing, errors)
    - Records state transition history
    - Implements exponential backoff for ERROR state
 
@@ -31,9 +31,9 @@ A complete state machine foundation for structured autonomous operation.
 ## State Machine Flow
 
 ```
-EXPLORING → find work, break down aims, ideate
+EXPLORING → find work, break down ideas, ideate
     ↓ (start_work)
-WORKING → push supervised session to complete aim
+WORKING → push supervised session to complete idea
     ↓ (wrap_up)
 WRAPPING_UP → verify ~80%, commit, reflect, compact
     ↓ (verify_complete)
@@ -47,9 +47,9 @@ Any state can → ERROR (on timeout/failure)
 ## Actions by State
 
 ### EXPLORING
-- **start_work** → WORKING (begin aim implementation)
-- **break_down** → EXPLORING (decompose aim into sub-aims)
-- **ideate** → EXPLORING (research, create new aims)
+- **start_work** → WORKING (begin idea implementation)
+- **break_down** → EXPLORING (decompose idea into sub-ideas)
+- **ideate** → EXPLORING (research, create new ideas)
 - **wait** → EXPLORING (nothing to do)
 
 ### WORKING
@@ -101,7 +101,7 @@ Any state can → ERROR (on timeout/failure)
 2. Modify watchdog.ts askWatchdog() method
 3. Replace processDecision() to use state machine
 4. Add state action handlers
-5. Test with real aims
+5. Test with real ideas
 
 **Estimated effort:** 2-3 hours to integrate + test
 
@@ -112,14 +112,14 @@ Any state can → ERROR (on timeout/failure)
 const animatorState = new AnimatorState()
 
 // Start work
-animatorState.startWork('aim-123', 'Implement feature X', 'Use TDD approach')
+animatorState.startWork('idea-123', 'Implement feature X', 'Use TDD approach')
 animatorState.transition('WORKING', 'start_work')
 
 // Generate prompt for current state
 const prompt = generateSupervisorPrompt({
   state: 'WORKING',
   supervisedContext: '... last 40 lines ...',
-  aimText: 'Implement feature X',
+  ideaText: 'Implement feature X',
   workDuration: '5m 23s'
 }, 'request-id-123')
 
@@ -137,9 +137,9 @@ if (isValidAction('WORKING', action.type)) {
 2. **Test EXPLORING → WORKING flow**
 3. **Test WRAPPING_UP verification**
 4. **Test ERROR recovery**
-5. **Add MCP calls** (get_prioritized_aims, get_aim_context, etc.)
+5. **Add MCP calls** (get_prioritized_ideas, get_idea_context, etc.)
 6. **Add agent_log.json generation**
-7. **Connect to actual project data** (phases, aims count, compute budget)
+7. **Connect to actual project data** (phases, ideas count, compute budget)
 
 ## Files Modified
 

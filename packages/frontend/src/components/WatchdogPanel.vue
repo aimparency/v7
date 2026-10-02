@@ -139,19 +139,19 @@ const handleKeyDown = (e: KeyboardEvent) => {
     store.showActionsOverlay = !store.showActionsOverlay
   }
 
-  // Ctrl+Shift+A: Search Aim and Insert
+  // Ctrl+Shift+A: Search Idea and Insert
   if (e.ctrlKey && e.shiftKey && e.code === 'KeyA') {
     e.preventDefault()
     e.stopPropagation()
     modalStore.openAimSearch('pick', (payload) => {
-      if (payload.type !== 'aim') return
-      const aim = payload.data
+      if (payload.type !== 'idea') return
+      const idea = payload.data
       // Insert [ID] Title into worker terminal
-      const textToInsert = `[${aim.id}] ${aim.text}`
+      const textToInsert = `[${idea.id}] ${idea.text}`
       store.sendWorkerInput(textToInsert)
     }, undefined, {
-      title: 'Insert Aim Reference',
-      placeholder: 'Search aims to insert...'
+      title: 'Insert Idea Reference',
+      placeholder: 'Search ideas to insert...'
     })
   }
 }
@@ -220,7 +220,7 @@ watch(() => store.showActionsOverlay, (newValue) => {
 })
 
 watch(() => modalStore.showAimSearch, (isOpen, wasOpen) => {
-  // If actions overlay launched aim search, restore terminal focus only after search closes.
+  // If actions overlay launched idea search, restore terminal focus only after search closes.
   if (wasOpen && !isOpen && !store.showActionsOverlay) {
     setTimeout(() => workerTerm.value?.focus(), 80)
   }

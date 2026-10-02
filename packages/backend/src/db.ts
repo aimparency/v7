@@ -20,21 +20,22 @@ export function getDb(rawProjectPath: string): Database.Database {
   
   // Initialize schema
   db.exec(`
-    CREATE TABLE IF NOT EXISTS aim_values (
+    CREATE TABLE IF NOT EXISTS idea_values (
       id TEXT PRIMARY KEY,
       value REAL DEFAULT 0,
       cost REAL DEFAULT 0,
       done_cost REAL DEFAULT 0,
       priority REAL DEFAULT 0
     );
+    DROP TABLE IF EXISTS aim_values;
   `);
   
   // Migration: Add priority column if missing
   try {
-      db.prepare('SELECT priority FROM aim_values LIMIT 1').get();
+      db.prepare('SELECT priority FROM idea_values LIMIT 1').get();
   } catch (e) {
       try {
-        db.exec('ALTER TABLE aim_values ADD COLUMN priority REAL DEFAULT 0');
+        db.exec('ALTER TABLE idea_values ADD COLUMN priority REAL DEFAULT 0');
       } catch (e2) {
         // Ignore if already exists (race condition) or other error
       }
@@ -60,12 +61,12 @@ export function saveAimValues(projectPath: string, values: Map<string, { value: 
   const db = getDb(projectPath);
   
   const insert = db.prepare(`
-    INSERT OR REPLACE INTO aim_values (id, value, cost, done_cost, priority)
+    INSERT OR REPLACE INTO idea_values (id, value, cost, done_cost, priority)
     VALUES (@id, @value, @cost, @doneCost, @priority)
   `);
 
   const deleteMissing = db.prepare(`
-    DELETE FROM aim_values WHERE id NOT IN (${Array.from(values.keys()).map(() => '?').join(',')})
+    DELETE FROM idea_values WHERE id NOT IN (${Array.from(values.keys()).map(() => '?').join(',')})
   `);
 
   db.transaction(() => {
@@ -87,10 +88,10 @@ export function saveAimValues(projectPath: string, values: Map<string, { value: 
     // That's faster/safer than "NOT IN (?...)".
     
     // Let's try Delete All + Insert All for correctness since we have the full snapshot.
-    // But wait, 'values' map comes from `calculateAimValues` which receives `aims: Aim[]`.
-    // If `aims` is the full list, then `values` is the full list.
+    // But wait, 'values' map comes from `calculateAimValues` which receives `ideas: Idea[]`.
+    // If `ideas` is the full list, then `values` is the full list.
     
-    db.prepare('DELETE FROM aim_values').run();
+    db.prepare('DELETE FROM idea_values').run();
     
     for (const [id, data] of values.entries()) {
       insert.run({
@@ -106,7 +107,7 @@ export function saveAimValues(projectPath: string, values: Map<string, { value: 
 
 export function getAimValues(projectPath: string): Map<string, { value: number, cost: number, doneCost: number, priority: number }> {
   const db = getDb(projectPath);
-  const rows = db.prepare('SELECT id, value, cost, done_cost as doneCost, priority FROM aim_values').all() as any[];
+  const rows = db.prepare('SELECT id, value, cost, done_cost as doneCost, priority FROM idea_values').all() as any[];
   
   const map = new Map();
   for (const row of rows) {

@@ -19,9 +19,9 @@ import { applySelectionAnchor, captureSelectionAnchor, type SelectionAnchor } fr
 //
 // Each entry also remembers the selection (by identity) right before and right
 // after the action, so undo/redo put the selection back where it belongs, e.g.
-// a moved aim stays selected when its move is undone.
+// a moved idea stays selected when its move is undone.
 
-type EntityType = 'aim' | 'phase' | 'project'
+type EntityType = 'idea' | 'phase' | 'project'
 
 type EntityChange = {
   type: EntityType
@@ -79,7 +79,7 @@ function isSameValue(left: unknown, right: unknown): boolean {
 }
 
 function isTrackedType(type: string): type is EntityType {
-  return type === 'aim' || type === 'phase' || type === 'project'
+  return type === 'idea' || type === 'phase' || type === 'project'
 }
 
 export const useHistoryStore = defineStore('history', {
@@ -192,9 +192,9 @@ export const useHistoryStore = defineStore('history', {
       }))
 
       const dataStore = useDataStore()
-      // Aims deleted by this client are filtered from pushes; let restored ones back in.
+      // Ideas deleted by this client are filtered from pushes; let restored ones back in.
       for (const change of changes) {
-        if (change.type === 'aim' && change.target !== null) dataStore.deletedAims.delete(change.id)
+        if (change.type === 'idea' && change.target !== null) dataStore.deletedAims.delete(change.id)
       }
 
       restoring = true
@@ -226,8 +226,8 @@ export const useHistoryStore = defineStore('history', {
 
     describeEntity(type: string, id: string, snapshot?: unknown): string {
       const dataStore = useDataStore()
-      const value = (snapshot ?? (type === 'aim' ? dataStore.aims[id] : dataStore.phases[id])) as any
-      if (type === 'aim') return `aim "${value?.text ?? id.slice(0, 8)}"`
+      const value = (snapshot ?? (type === 'idea' ? dataStore.ideas[id] : dataStore.phases[id])) as any
+      if (type === 'idea') return `idea "${value?.text ?? id.slice(0, 8)}"`
       if (type === 'phase') return `phase "${value?.name ?? id.slice(0, 8)}"`
       return 'project settings'
     },

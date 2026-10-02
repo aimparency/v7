@@ -6,9 +6,9 @@ import { AIMPARENCY_DIR_NAME } from 'shared';
 import type { AgentType } from './manager.js';
 
 /**
- * Broker side of the self-rebuild chain (aim 5af61b3e): detect (4a96fff0) → warn
+ * Broker side of the self-rebuild chain (idea 5af61b3e): detect (4a96fff0) → warn
  * (310878de) → the worker commits and drops a relaunch INDICATOR FILE → the broker
- * here finds it and rebuilds+relaunches the session (this aim, 29021d9a).
+ * here finds it and rebuilds+relaunches the session (this idea, 29021d9a).
  *
  * Indicator contract: a file at `<project .bowman>/runtime/relaunch-request`
  * (the gitignored runtime dir). Presence alone requests a verified relaunch;

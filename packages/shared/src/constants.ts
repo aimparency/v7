@@ -9,13 +9,13 @@ export const AIMPARENCY_DIR_NAME = processEnv?.AIMPARENCY_DIR_NAME
   ? processEnv.AIMPARENCY_DIR_NAME
   : '.bowman';
 
-export interface AimState {
+export interface IdeaState {
   key: string;
   color: string;
   ongoing: boolean;
 }
 
-export const INITIAL_STATES: AimState[] = [
+export const INITIAL_STATES: IdeaState[] = [
   { key: 'open', color: '#ffcc80', ongoing: true },
   { key: 'in-progress', color: '#f6d32d', ongoing: true },
   { key: 'partially', color: '#fff176', ongoing: true },

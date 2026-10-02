@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers';
 import { cosineSimilarity } from 'shared';
-import { listAimsFromFiles } from './aim-file-tools.js';
+import { listAimsFromFiles } from './idea-file-tools.js';
 import { normalizeBowmanPath } from './loop-state.js';
 
 const MODEL_ID = 'BAAI/bge-small-en-v1.5';
@@ -64,7 +64,7 @@ function quantile(values: number[], q: number): number {
 type AssociationCandidate = {
   id: string;
   score: number;
-  aim: { id: string; text: string; description?: string; status?: unknown };
+  idea: { id: string; text: string; description?: string; status?: unknown };
 };
 
 export function selectAssociation(
@@ -81,10 +81,10 @@ export function selectAssociation(
   const threshold = quantile(eligible.map((row) => row.score), 1 - boundedChance);
   if (best.score < threshold || random() >= boundedChance) return null;
   return {
-    id: best.aim.id,
-    text: best.aim.text,
-    description: best.aim.description,
-    status: best.aim.status,
+    id: best.idea.id,
+    text: best.idea.text,
+    description: best.idea.description,
+    status: best.idea.status,
     score: Number(best.score.toFixed(4)),
     threshold: Number(threshold.toFixed(4)),
     chance: boundedChance
@@ -101,15 +101,15 @@ export async function maybeFindAssociation(
   if (boundedChance <= 0 || !stateText.trim()) return null;
   const queryVector = await embedSearchQuery(stateText);
   if (!queryVector) return null;
-  const [vectors, aims] = await Promise.all([
+  const [vectors, ideas] = await Promise.all([
     readVectorStore(projectPath),
     listAimsFromFiles(projectPath)
   ]);
-  const aimById = new Map(aims.map((aim) => [aim.id, aim]));
+  const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
   const scored = Object.entries(vectors)
     .filter(([, vector]) => vector.length === queryVector.length)
-    .map(([id, vector]) => ({ id, score: cosineSimilarity(queryVector, vector), aim: aimById.get(id) }))
-    .filter((row) => row.aim && !row.aim.archived)
+    .map(([id, vector]) => ({ id, score: cosineSimilarity(queryVector, vector), idea: ideaById.get(id) }))
+    .filter((row) => row.idea && !row.idea.archived)
     .sort((left, right) => right.score - left.score);
   return selectAssociation(scored as AssociationCandidate[], boundedChance, Math.random, excludeAimIds);
 }

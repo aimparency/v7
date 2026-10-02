@@ -4,7 +4,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { jsonSchema, streamText, stepCountIs, tool } from 'ai';
 import {
   appendLoopEvent,
-  aimHistorySearch,
+  ideaHistorySearch,
   buildCodeIndex,
   changeImpact,
   codeHeatmap,
@@ -186,26 +186,26 @@ async function evaluateStopPolicy(projectPath: string, instance: LoopInstance) {
 
   if (instance.stopPolicy === 'target_halted') {
     if (!instance.targetAimId) return null;
-    const aims = await listAimsFromFiles(projectPath);
-    const aim = aims.find((candidate) => candidate.id === instance.targetAimId);
-    if (aim?.status.state === 'halted') {
-      return { status: 'done' as const, message: `Target aim halted: ${aim.text}` };
+    const ideas = await listAimsFromFiles(projectPath);
+    const idea = ideas.find((candidate) => candidate.id === instance.targetAimId);
+    if (idea?.status.state === 'halted') {
+      return { status: 'done' as const, message: `Target idea halted: ${idea.text}` };
     }
     return null;
   }
 
   if (!instance.targetPhaseId) return null;
-  const [aims, phases] = await Promise.all([
+  const [ideas, phases] = await Promise.all([
     listAimsFromFiles(projectPath),
     listPhasesFromFiles(projectPath)
   ]);
   const phase = phases.find((candidate) => candidate.id === instance.targetPhaseId);
   if (!phase || (phase.commitments ?? []).length === 0) return null;
-  const aimById = new Map(aims.map((aim) => [aim.id, aim]));
+  const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
   const ongoingStates = new Set(['open', 'in-progress', 'partially', 'human-dependent']);
   const ongoing = (phase.commitments ?? [])
-    .map((aimId) => aimById.get(aimId))
-    .filter((aim) => aim && ongoingStates.has(aim.status.state));
+    .map((ideaId) => ideaById.get(ideaId))
+    .filter((idea) => idea && ongoingStates.has(idea.status.state));
   if (ongoing.length === 0) {
     return { status: 'done' as const, message: `Target phase done: ${phase.name}` };
   }
@@ -233,7 +233,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
   const apiKey = apiKeyFor(loop, secrets);
   if (!apiKey) throw new Error(`Missing API key for provider ${loop.provider}.`);
 
-  await markLoopPhase(projectPath, instanceId, 'orienting in aim graph');
+  await markLoopPhase(projectPath, instanceId, 'orienting in idea graph');
   const runtimeState = await readLoopRuntimeState(projectPath);
   const currentInstance = runtimeState.instances.find((candidate) => candidate.id === instanceId);
   const prioritized = await getPrioritizedAims(
@@ -242,12 +242,12 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     currentInstance?.targetPhaseId
   );
   const target = selectCycleTarget(prioritized, currentInstance?.targetAimId);
-  if (!target) throw new Error('No open prioritized aim found in the active phase.');
+  if (!target) throw new Error('No open prioritized idea found in the active phase.');
 
-  const context = await getAimContext(projectPath, target.aim.id);
+  const context = await getAimContext(projectPath, target.idea.id);
   const related = await searchAimsSemanticLite(
     projectPath,
-    `${target.aim.text} ${target.aim.description ?? ''}`,
+    `${target.idea.text} ${target.idea.description ?? ''}`,
     8
   );
   const pendingHumanMessages = await drainInbox(projectPath, instanceId);
@@ -259,13 +259,13 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     projectPath,
     stateText,
     loop.associationChance ?? 0.1,
-    [target.aim.id]
+    [target.idea.id]
   );
 
   await appendLoopEvent(projectPath, instanceId, {
     role: 'tool',
     kind: 'status',
-    content: `Selected aim: ${target.aim.text}`
+    content: `Selected idea: ${target.idea.text}`
   });
 
   const provider = createOpenAICompatible({
@@ -278,25 +278,25 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     loop.systemPrompt,
     '',
     'Loop invariant: orient to the highest-value mission, advance one actionable descendant, verify and record evidence, then return and reprioritize indefinitely.',
-    'Improve the strategy from reflections and real outcomes. Connect useful new aims; do not duplicate existing work.',
+    'Improve the strategy from reflections and real outcomes. Connect useful new ideas; do not duplicate existing work.',
     'Activity and simulated credits are not success. Prefer authoritative external outcomes and actual costs.',
-    'Decompose broad aims. Ask humans only for judgment, authorization, credentials, or institutional action.',
+    'Decompose broad ideas. Ask humans only for judgment, authorization, credentials, or institutional action.',
     '',
     `Enabled optional capability packs: ${loop.capabilities.length > 0 ? loop.capabilities.join(', ') : 'none'}.`,
     'Before editing, inspect git_status and read the relevant files. Prefer str_replace or line_replace for small edits. Use run_command for tests/typechecks. Destructive commands are refused.'
   ].join('\n');
   const promptText = [
-    `Current aim:\n${JSON.stringify({
-      id: target.aim.id,
-      text: target.aim.text,
-      description: target.aim.description,
+    `Current idea:\n${JSON.stringify({
+      id: target.idea.id,
+      text: target.idea.text,
+      description: target.idea.description,
       priority: target.priority,
       value: target.value,
       cost: target.cost,
       phase: target.phase.name
     }, null, 2)}`,
-    `Aim context:\n${JSON.stringify(context, null, 2)}`,
-    `Related aims:\n${JSON.stringify(related, null, 2)}`,
+    `Idea context:\n${JSON.stringify(context, null, 2)}`,
+    `Related ideas:\n${JSON.stringify(related, null, 2)}`,
     association ? `Association surfaced from recent loop state messages:\n${JSON.stringify(association, null, 2)}` : '',
     pendingHumanMessages.length > 0 ? `Pending human messages:\n${summarizeInbox(pendingHumanMessages)}` : ''
   ].filter(Boolean).join('\n\n');
@@ -393,8 +393,8 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           return { ok: true, evidence: evidence.content };
         }
       }),
-      get_prioritized_aims: tool({
-        description: 'Return open aims in active phase ranked by Aimparency priority.',
+      get_prioritized_ideas: tool({
+        description: 'Return open ideas in active phase ranked by Aimparency priority.',
         inputSchema: jsonSchema<{ limit?: number }>({
           type: 'object',
           properties: { limit: { type: 'number' } },
@@ -402,18 +402,18 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         }),
         execute: async ({ limit }) => getPrioritizedAims(projectPath, limit ?? 10, currentInstance?.targetPhaseId)
       }),
-      get_aim_context: tool({
-        description: 'Return an aim, parents, children, and root path context.',
-        inputSchema: jsonSchema<{ aimId: string }>({
+      get_idea_context: tool({
+        description: 'Return an idea, parents, children, and root path context.',
+        inputSchema: jsonSchema<{ ideaId: string }>({
           type: 'object',
-          properties: { aimId: { type: 'string' } },
-          required: ['aimId'],
+          properties: { ideaId: { type: 'string' } },
+          required: ['ideaId'],
           additionalProperties: false
         }),
-        execute: async ({ aimId }) => getAimContext(projectPath, aimId)
+        execute: async ({ ideaId }) => getAimContext(projectPath, ideaId)
       }),
-      search_aims_semantic: tool({
-        description: 'Find related aims. Current v1 uses lightweight text matching until embedding core is extracted.',
+      search_ideas_semantic: tool({
+        description: 'Find related ideas. Current v1 uses lightweight text matching until embedding core is extracted.',
         inputSchema: jsonSchema<{ query: string; limit?: number }>({
           type: 'object',
           properties: { query: { type: 'string' }, limit: { type: 'number' } },
@@ -423,7 +423,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         execute: async ({ query, limit }) => searchAimsSemanticLite(projectPath, query, limit ?? 8)
       }),
       graph_hygiene: tool({
-        description: 'Return graph defect signals: floating aims (no parent and no phase) and mega parents. Uncommitted aims are a normal state and are not reported here.',
+        description: 'Return graph defect signals: floating ideas (no parent and no phase) and mega parents. Uncommitted ideas are a normal state and are not reported here.',
         inputSchema: jsonSchema<Record<string, never>>({
           type: 'object',
           properties: {},
@@ -436,7 +436,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         inputSchema: jsonSchema<{
           action: 'create' | 'list' | 'update';
           experimentId?: string;
-          aimIds?: string[];
+          ideaIds?: string[];
           hypothesis?: string;
           prediction?: string;
           expectedCost?: string;
@@ -454,7 +454,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           properties: {
             action: { type: 'string', enum: ['create', 'list', 'update'] },
             experimentId: { type: 'string' },
-            aimIds: { type: 'array', items: { type: 'string' } },
+            ideaIds: { type: 'array', items: { type: 'string' } },
             hypothesis: { type: 'string' },
             prediction: { type: 'string' },
             expectedCost: { type: 'string' },
@@ -503,7 +503,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
             const missing = required.filter((field) => !input[field]?.trim());
             if (missing.length > 0) throw new Error(`Missing experiment fields: ${missing.join(', ')}`);
             return createExperiment(projectPath, {
-              aimIds: input.aimIds,
+              ideaIds: input.ideaIds,
               hypothesis: input.hypothesis!,
               prediction: input.prediction!,
               expectedCost: input.expectedCost!,
@@ -528,9 +528,9 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         }
       }),
       code_intelligence: tool({
-        description: 'Inspect code and its aim history through one compact interface: index builds local code embeddings; semantic searches by meaning; heatmap combines lexical matches and churn; symbol finds definitions/references; impact finds dependents/tests; aim-history retrieves prior intent, reflections, status notes, and realized commits.',
+        description: 'Inspect code and its idea history through one compact interface: index builds local code embeddings; semantic searches by meaning; heatmap combines lexical matches and churn; symbol finds definitions/references; impact finds dependents/tests; idea-history retrieves prior intent, reflections, status notes, and realized commits.',
         inputSchema: jsonSchema<{
-          mode: 'index' | 'semantic' | 'heatmap' | 'symbol' | 'impact' | 'aim-history';
+          mode: 'index' | 'semantic' | 'heatmap' | 'symbol' | 'impact' | 'idea-history';
           query?: string;
           limit?: number;
           maxFiles?: number;
@@ -538,7 +538,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         }>({
           type: 'object',
           properties: {
-            mode: { type: 'string', enum: ['index', 'semantic', 'heatmap', 'symbol', 'impact', 'aim-history'] },
+            mode: { type: 'string', enum: ['index', 'semantic', 'heatmap', 'symbol', 'impact', 'idea-history'] },
             query: { type: 'string' },
             limit: { type: 'number' },
             maxFiles: { type: 'number' },
@@ -553,12 +553,12 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           if (mode === 'semantic') return semanticCodeSearch(executionPath, query, limit);
           if (mode === 'heatmap') return codeHeatmap(executionPath, query, limit);
           if (mode === 'symbol') return symbolContext(executionPath, query, limit);
-          if (mode === 'aim-history') return aimHistorySearch(executionPath, query, limit);
+          if (mode === 'idea-history') return ideaHistorySearch(executionPath, query, limit);
           return changeImpact(executionPath, query, limit);
         }
       }),
-      create_aim: tool({
-        description: 'Create a child/supporting aim or newly clarified aim.',
+      create_idea: tool({
+        description: 'Create a child/supporting idea or newly clarified idea.',
         inputSchema: jsonSchema<{ text: string; description?: string; supportedAims?: string[]; phaseId?: string; cost?: number; intrinsicValue?: number; valueRationale?: string }>({
           type: 'object',
           properties: {
@@ -575,12 +575,12 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         }),
         execute: async (input) => createAim(projectPath, input)
       }),
-      update_aim: tool({
-        description: 'Update aim text/description/status/cost/value. Use human-dependent for ambiguous aims instead of asking humans too often.',
-        inputSchema: jsonSchema<{ aimId: string; text?: string; description?: string; status?: { state: string; comment?: string }; cost?: number; intrinsicValue?: number; valueRationale?: string }>({
+      update_idea: tool({
+        description: 'Update idea text/description/status/cost/value. Use human-dependent for ambiguous ideas instead of asking humans too often.',
+        inputSchema: jsonSchema<{ ideaId: string; text?: string; description?: string; status?: { state: string; comment?: string }; cost?: number; intrinsicValue?: number; valueRationale?: string }>({
           type: 'object',
           properties: {
-            aimId: { type: 'string' },
+            ideaId: { type: 'string' },
             text: { type: 'string' },
             description: { type: 'string' },
             status: {
@@ -593,26 +593,26 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
             intrinsicValue: { type: 'number' },
             valueRationale: { type: 'string', description: 'Human-authored rationale for the estimated value' }
           },
-          required: ['aimId'],
+          required: ['ideaId'],
           additionalProperties: false
         }),
-        execute: async ({ aimId, status, ...patch }) => updateAim(projectPath, aimId, {
+        execute: async ({ ideaId, status, ...patch }) => updateAim(projectPath, ideaId, {
           ...patch,
           status: status ? { state: status.state, comment: status.comment ?? '', date: Date.now() } : undefined
         })
       }),
-      commit_aim_to_phase: tool({
-        description: 'Commit an existing aim to a phase so it becomes visible to phase-based prioritization.',
-        inputSchema: jsonSchema<{ aimId: string; phaseId: string }>({
+      commit_idea_to_phase: tool({
+        description: 'Commit an existing idea to a phase so it becomes visible to phase-based prioritization.',
+        inputSchema: jsonSchema<{ ideaId: string; phaseId: string }>({
           type: 'object',
           properties: {
-            aimId: { type: 'string' },
+            ideaId: { type: 'string' },
             phaseId: { type: 'string' }
           },
-          required: ['aimId', 'phaseId'],
+          required: ['ideaId', 'phaseId'],
           additionalProperties: false
         }),
-        execute: async ({ aimId, phaseId }) => commitAimToPhase(projectPath, aimId, phaseId)
+        execute: async ({ ideaId, phaseId }) => commitAimToPhase(projectPath, ideaId, phaseId)
       }),
       list_files: tool({
         description: 'List project files using rg --files when available.',

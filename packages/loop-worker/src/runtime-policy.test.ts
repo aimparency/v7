@@ -4,11 +4,11 @@ import { selectCycleTarget, throwIfStreamFailed } from './runtime-policy.js';
 
 test('selects an explicit target even when it is below the first five priorities', () => {
   const prioritized = Array.from({ length: 8 }, (_, index) => ({
-    aim: { id: `aim-${index}` }
+    idea: { id: `idea-${index}` }
   })) as any;
-  assert.equal(selectCycleTarget(prioritized, 'aim-7')?.aim.id, 'aim-7');
-  assert.equal(selectCycleTarget(prioritized, 'completed-aim')?.aim.id, 'aim-0');
-  assert.equal(selectCycleTarget(prioritized)?.aim.id, 'aim-0');
+  assert.equal(selectCycleTarget(prioritized, 'idea-7')?.idea.id, 'idea-7');
+  assert.equal(selectCycleTarget(prioritized, 'completed-idea')?.idea.id, 'idea-0');
+  assert.equal(selectCycleTarget(prioritized)?.idea.id, 'idea-0');
 });
 
 test('turns streamed provider errors into a failed cycle', () => {

@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { selectAssociation } from './association-tools.js';
 
 const candidates = [
-  { id: 'related', score: 0.87654, aim: { id: 'related', text: 'A lateral aim', description: 'Useful context', status: { state: 'open' } } },
-  { id: 'weaker', score: 0.5, aim: { id: 'weaker', text: 'A weaker aim' } }
+  { id: 'related', score: 0.87654, idea: { id: 'related', text: 'A lateral idea', description: 'Useful context', status: { state: 'open' } } },
+  { id: 'weaker', score: 0.5, idea: { id: 'weaker', text: 'A weaker idea' } }
 ];
 
 describe('selectAssociation', () => {
@@ -25,7 +25,7 @@ describe('selectAssociation', () => {
     expect(random).not.toHaveBeenCalled();
   });
 
-  it('skips excluded aims instead of resurfacing the active aim', () => {
+  it('skips excluded ideas instead of resurfacing the active idea', () => {
     expect(selectAssociation(candidates, 1, () => 0, ['related'])).toMatchObject({
       id: 'weaker'
     });

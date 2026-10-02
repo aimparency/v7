@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import PhaseComponent from '../Phase.vue'
-import { useDataStore, type Aim, type Phase } from '../../stores/data'
+import { useDataStore, type Idea, type Phase } from '../../stores/data'
 import { useProjectStore } from '../../stores/project-store'
 import { useUIModalStore } from '../../stores/ui/modal-store'
 
@@ -20,13 +20,13 @@ const makeAim = (
   state: string,
   committedIn: string[],
   children: string[] = []
-): Aim => ({
+): Idea => ({
   id,
   text,
   archived: false,
   tags: [],
-  supportingConnections: children.map(aimId => ({
-    aimId,
+  supportingConnections: children.map(ideaId => ({
+    ideaId,
     weight: 1,
     relativePosition: [0, 0] as [number, number]
   })),
@@ -50,7 +50,7 @@ function mountPhase() {
     initialState: {
       data: {
         phases: { root, 'child-phase': childPhase },
-        aims: {
+        ideas: {
           application: makeAim('application', 'SPC application', 'partially', ['root'], ['founder-facts']),
           'founder-facts': makeAim('founder-facts', 'Confirm founder facts', 'human-dependent', []),
           direct: makeAim('direct', 'Authorize submission', 'human-dependent', ['root'])
@@ -78,7 +78,7 @@ function mountPhase() {
     props: { phase: root, isSelected: true, isActive: true },
     global: {
       plugins: [pinia],
-      stubs: { AimsList: true, ContextMenu: true }
+      stubs: { IdeasList: true, ContextMenu: true }
     }
   })
 
@@ -86,25 +86,25 @@ function mountPhase() {
 }
 
 describe('Phase priority list', () => {
-  it('opens with human-dependent direct and transitive aims and opens the selected aim', async () => {
+  it('opens with human-dependent direct and transitive ideas and opens the selected idea', async () => {
     const { wrapper, dataStore, modalStore } = mountPhase()
 
     expect(wrapper.find('.priority-panel').exists()).toBe(false)
-    expect(wrapper.find('.aims-container').exists()).toBe(true)
+    expect(wrapper.find('.ideas-container').exists()).toBe(true)
 
     await wrapper.find('.priority-toggle').trigger('click')
     await flushPromises()
 
     expect((wrapper.find('.priority-state select').element as HTMLSelectElement).value).toBe('human-dependent')
-    expect(wrapper.find('.aims-container').exists()).toBe(false)
+    expect(wrapper.find('.ideas-container').exists()).toBe(false)
 
-    const results = wrapper.findAll('.priority-aim')
+    const results = wrapper.findAll('.priority-idea')
     expect(results.map(result => result.text())).toEqual([
       expect.stringContaining('Confirm founder facts'),
       expect.stringContaining('Authorize submission')
     ])
-    expect(results[0]!.text()).toContain('via committed aim')
-    expect(results[1]!.text()).not.toContain('via committed aim')
+    expect(results[0]!.text()).toContain('via committed idea')
+    expect(results[1]!.text()).not.toContain('via committed idea')
 
     await results[0]!.trigger('click')
     expect(modalStore.openAimEditModal).toHaveBeenCalledWith('founder-facts')

@@ -1,9 +1,9 @@
-import type { Aim } from 'shared';
+import type { Idea } from 'shared';
 import { cosineSimilarity } from 'shared';
 
 // Pure core of the duplicate-detection maintenance tooling, shared by
 // project.findDuplicates (ranked pair report) and project.graphHygiene
-// (union-find clusters). Kept dependency-free (inject vectors + aimMap) so the
+// (union-find clusters). Kept dependency-free (inject vectors + ideaMap) so the
 // precision behaviour — especially the parent-child exclusion — is unit-testable
 // without disk, embeddings, or a tRPC caller.
 
@@ -11,15 +11,15 @@ import { cosineSimilarity } from 'shared';
  * A high-cosine parent<->child pair is almost always an intentional
  * summary/detail split, not an accidental duplicate to merge. Both the duplicate
  * report and the hygiene clusters exclude these; collapsing a *finished* nesting
- * is surfaced separately (merge_aims + graph_hygiene's collapseCandidates).
+ * is surfaced separately (merge_ideas + graph_hygiene's collapseCandidates).
  * Adjacency is checked from x's side via either link array (the graph keeps both
  * directions consistent, so one side suffices).
  */
-export function isDirectParentChild(aimMap: Map<string, Aim>, x: string, y: string): boolean {
-  const ax = aimMap.get(x);
+export function isDirectParentChild(ideaMap: Map<string, Idea>, x: string, y: string): boolean {
+  const ax = ideaMap.get(x);
   if (!ax) return false;
   return (ax.supportedAims ?? []).includes(y)
-    || (ax.supportingConnections ?? []).some((c: any) => c.aimId === y);
+    || (ax.supportingConnections ?? []).some((c: any) => c.ideaId === y);
 }
 
 export interface DuplicatePair { aId: string; bId: string; score: number; }
@@ -31,7 +31,7 @@ export interface DuplicatePair { aId: string; bId: string; score: number; }
  */
 export function findDuplicatePairs(
   indexed: Array<{ id: string; vector: number[] }>,
-  aimMap: Map<string, Aim>,
+  ideaMap: Map<string, Idea>,
   threshold: number,
 ): DuplicatePair[] {
   const pairs: DuplicatePair[] = [];
@@ -41,7 +41,7 @@ export function findDuplicatePairs(
       const b = indexed[j]!;
       if (a.vector.length !== b.vector.length) continue;
       const score = cosineSimilarity(a.vector, b.vector);
-      if (score >= threshold && !isDirectParentChild(aimMap, a.id, b.id)) {
+      if (score >= threshold && !isDirectParentChild(ideaMap, a.id, b.id)) {
         pairs.push({ aId: a.id, bId: b.id, score });
       }
     }
@@ -58,7 +58,7 @@ export function findDuplicatePairs(
 export function clusterDuplicates(
   indexedIds: string[],
   vectorOf: (id: string) => number[] | undefined,
-  aimMap: Map<string, Aim>,
+  ideaMap: Map<string, Idea>,
   threshold: number,
 ): string[][] {
   const uf = new Map<string, string>(indexedIds.map((id) => [id, id]));
@@ -75,7 +75,7 @@ export function clusterDuplicates(
       const vj = vectorOf(indexedIds[j]!);
       if (!vj || vi.length !== vj.length) continue;
       if (cosineSimilarity(vi, vj) >= threshold
-          && !isDirectParentChild(aimMap, indexedIds[i]!, indexedIds[j]!)) {
+          && !isDirectParentChild(ideaMap, indexedIds[i]!, indexedIds[j]!)) {
         const ri = find(indexedIds[i]!), rj = find(indexedIds[j]!);
         if (ri !== rj) uf.set(ri, rj);
       }

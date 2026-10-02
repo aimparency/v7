@@ -34,28 +34,28 @@ const selectionTravelDirection = ref<'forward' | 'backward' | 'preserve'>('prese
 // Last selection the column acted on; transient gaps never overwrite it.
 let settledSelection: { index: number; key: string; isSelected: boolean } | null = null
 
-const handleAimClicked = (columnIndex: number, phaseId: string | undefined, aimId: string, mods?: { ctrl: boolean; shift: boolean }) => {
+const handleAimClicked = (columnIndex: number, phaseId: string | undefined, ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isCtrl = !!(mods && mods.ctrl)
   const isShift = !!(mods && mods.shift)
   const isModeToggle = uiStore.multiSelectMode && !isShift
   if (isCtrl || isModeToggle) {
-    uiStore.toggleMultiSelect(aimId)
+    uiStore.toggleMultiSelect(ideaId)
   } else if (isShift) {
     if (phaseId) {
       const ordered = dataStore.getAimsForPhase(phaseId).map((a: any) => a.id)
-      if (ordered.includes(aimId)) {
-        uiStore.selectMultiRange(aimId, ordered)
+      if (ordered.includes(ideaId)) {
+        uiStore.selectMultiRange(ideaId, ordered)
       }
-      // subs: range already done in AimsList handler; no extra toggle
+      // subs: range already done in IdeasList handler; no extra toggle
     } else {
-      uiStore.toggleMultiSelect(aimId)
+      uiStore.toggleMultiSelect(ideaId)
     }
   } else {
     uiStore.clearMultiSelect()
   }
-  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentAim()?.id === aimId) return
+  if ((isCtrl || isShift || isModeToggle) && uiStore.getCurrentAim()?.id === ideaId) return
   // Always update primary nav selection (so keyboard etc still work on it)
-  uiStore.selectAimById(columnIndex, phaseId, aimId).catch(() => {})
+  uiStore.selectAimById(columnIndex, phaseId, ideaId).catch(() => {})
 }
 
 const ESTIMATED_PHASE_HEIGHT = 180
@@ -319,15 +319,15 @@ const setInitialAnchorScrollIfNeeded = async () => {
 }
 
 // Single point through which all programmatic scrolls pass so the competing
-// scroll-into-view mechanisms (phase-level here vs. the selected aim's own
+// scroll-into-view mechanisms (phase-level here vs. the selected idea's own
 // scroll-request) can no longer fire two conflicting smooth animations — the
 // "scrolls up then down" jitter on column navigation, worst when a phase is
 // taller than the viewport. Within one frame a higher-priority target wins
-// (aim > phase) and only the last surviving target is applied once via rAF.
-const SCROLL_PRIORITY = { phase: 0, aim: 1 } as const
-// How long a just-applied aim scroll suppresses a late phase realign that would
-// otherwise yank the view off the selected aim (the realign runs ~120ms later).
-const AIM_SCROLL_HOLD_MS = 300
+// (idea > phase) and only the last surviving target is applied once via rAF.
+const SCROLL_PRIORITY = { phase: 0, idea: 1 } as const
+// How long a just-applied idea scroll suppresses a late phase realign that would
+// otherwise yank the view off the selected idea (the realign runs ~120ms later).
+const IDEA_SCROLL_HOLD_MS = 300
 let lastAimScrollAt = 0
 let pendingScroll: { top: number; behavior: ScrollBehavior; priority: number } | null = null
 let pendingScrollFrame: number | null = null
@@ -335,11 +335,11 @@ let pendingScrollFrame: number | null = null
 const requestScroll = (
   top: number,
   behavior: ScrollBehavior,
-  source: 'phase' | 'aim'
+  source: 'phase' | 'idea'
 ) => {
   const container = phaseListRef.value
   if (!container) return
-  if (source === 'aim') lastAimScrollAt = performance.now()
+  if (source === 'idea') lastAimScrollAt = performance.now()
 
   const priority = SCROLL_PRIORITY[source]
   // Keep an already-queued higher-priority target; otherwise the latest wins.
@@ -364,13 +364,13 @@ const scrollSelectedEntryIntoView = async (
   isRealign = false
 ) => {
   // The deferred realign runs ~120ms after navigation. By then the selected
-  // aim has positioned itself via scroll-request (kept-in-view is the chosen
+  // idea has positioned itself via scroll-request (kept-in-view is the chosen
   // behavior for oversized phases); a phase-level realign would yank the view
   // back off it. Skip the realign in that window. The immediate, same-frame
-  // call is NOT skipped here — the coalescer already lets the aim target win
+  // call is NOT skipped here — the coalescer already lets the idea target win
   // over the phase target within the frame, and aimless placeholder entries
   // (which never set lastAimScrollAt) keep realigning normally.
-  if (isRealign && performance.now() - lastAimScrollAt < AIM_SCROLL_HOLD_MS) return
+  if (isRealign && performance.now() - lastAimScrollAt < IDEA_SCROLL_HOLD_MS) return
 
   await nextTick()
   const selectedEntry = getSelectedEntry()
@@ -456,12 +456,12 @@ const scrollSelectedEntryIntoView = async (
   }
 }
 
-// Handle scroll requests from child components (Phase/Aim emit 'scroll-request').
-// Route through the same coalescer at aim priority so it wins over — and
+// Handle scroll requests from child components (Phase/Idea emit 'scroll-request').
+// Route through the same coalescer at idea priority so it wins over — and
 // cancels — a competing phase-level scroll in the same frame.
 const { handleScrollRequest } = useScrollIntoView(
   phaseListRef,
-  (top, behavior) => requestScroll(top, behavior, 'aim')
+  (top, behavior) => requestScroll(top, behavior, 'idea')
 )
 
 useKeepSelectedAimVisible(phaseListRef, () => uiStore.activeColumn === props.columnIndex, handleScrollRequest)
@@ -647,7 +647,7 @@ onBeforeUnmount(() => {
             :is-selected="getSelectableIndex(entry.key) === selectedPhaseIndex"
             :is-active="getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex"
             @phase-clicked="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
-            @aim-clicked="(aimId, mods) => handleAimClicked(columnIndex, entry.phase.id, aimId, mods)"
+            @idea-clicked="(ideaId, mods) => handleAimClicked(columnIndex, entry.phase.id, ideaId, mods)"
             @scroll-request="handleScrollRequest"
           />
         </div>

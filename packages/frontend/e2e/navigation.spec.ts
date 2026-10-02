@@ -14,9 +14,9 @@ test.describe('Navigation Tests', () => {
 
     // Seed Data
     const phaseId = randomUUID();
-    const aim1Id = randomUUID();
-    const aim2Id = randomUUID();
-    const aim3Id = randomUUID();
+    const idea1Id = randomUUID();
+    const idea2Id = randomUUID();
+    const idea3Id = randomUUID();
     
     const parentAimId = randomUUID();
     const childAimId = randomUUID();
@@ -26,20 +26,20 @@ test.describe('Navigation Tests', () => {
         { 
           id: phaseId, 
           name: 'Nav Phase', 
-          commitments: [aim1Id, aim2Id, aim3Id, parentAimId] 
+          commitments: [idea1Id, idea2Id, idea3Id, parentAimId] 
         }
       ],
-      aims: [
-        { id: aim1Id, text: 'Aim 1', committedIn: [phaseId] },
-        { id: aim2Id, text: 'Aim 2', committedIn: [phaseId] },
-        { id: aim3Id, text: 'Aim 3', committedIn: [phaseId] },
+      ideas: [
+        { id: idea1Id, text: 'Idea 1', committedIn: [phaseId] },
+        { id: idea2Id, text: 'Idea 2', committedIn: [phaseId] },
+        { id: idea3Id, text: 'Idea 3', committedIn: [phaseId] },
         { 
           id: parentAimId, 
-          text: 'Parent Aim', 
+          text: 'Parent Idea', 
           committedIn: [phaseId],
           incoming: [childAimId]
         },
-        { id: childAimId, text: 'Child Aim', outgoing: [parentAimId] }
+        { id: childAimId, text: 'Child Idea', outgoing: [parentAimId] }
       ]
     });
 
@@ -71,87 +71,87 @@ test.describe('Navigation Tests', () => {
     // Wait, by default selectPhase selects column 0.
     await expect(page.locator('.column-panel').first()).toHaveClass(/active/);
     
-    // Aims should NOT be active yet
+    // Ideas should NOT be active yet
     const getAimItem = (text: string) => 
-      page.locator('.aim-item').filter({ 
-        has: page.locator('> .aim-content .aim-text', { hasText: text, exact: true }) 
+      page.locator('.idea-item').filter({ 
+        has: page.locator('> .idea-content .idea-text', { hasText: text, exact: true }) 
       });
 
-    await expect(getAimItem('Aim 1')).not.toHaveClass(/active/);
+    await expect(getAimItem('Idea 1')).not.toHaveClass(/active/);
 
-    // 2. Enter Aim Navigation Mode (i)
+    // 2. Enter Idea Navigation Mode (i)
     await page.keyboard.press('i');
     
-    // Verify Aim 1 is now selected (default first)
-    await expect(getAimItem('Aim 1')).toHaveClass(/active/);
+    // Verify Idea 1 is now selected (default first)
+    await expect(getAimItem('Idea 1')).toHaveClass(/active/);
     // Verify Phase Column lost the 'active' class? 
     // Actually uiStore says: column is selected AND navigatingAims is true.
     // PhaseColumn.vue: :class="{ 'active': isActive, ... }"
     // isActive prop comes from PhaseColumn usage in Root.
-    // Let's assume visual feedback works. Focus is on aims.
+    // Let's assume visual feedback works. Focus is on ideas.
 
-    // 3. Move Down (j) -> Aim 2
+    // 3. Move Down (j) -> Idea 2
     await page.keyboard.press('j');
-    await expect(getAimItem('Aim 2')).toHaveClass(/active/);
-    await expect(getAimItem('Aim 1')).not.toHaveClass(/active/);
+    await expect(getAimItem('Idea 2')).toHaveClass(/active/);
+    await expect(getAimItem('Idea 1')).not.toHaveClass(/active/);
 
-    // 4. Move Down (j) -> Aim 3
+    // 4. Move Down (j) -> Idea 3
     await page.keyboard.press('j');
-    await expect(getAimItem('Aim 3')).toHaveClass(/active/);
+    await expect(getAimItem('Idea 3')).toHaveClass(/active/);
 
-    // 5. Move Up (k) -> Aim 2
+    // 5. Move Up (k) -> Idea 2
     await page.keyboard.press('k');
-    await expect(getAimItem('Aim 2')).toHaveClass(/active/);
+    await expect(getAimItem('Idea 2')).toHaveClass(/active/);
 
-    // 6. Exit Aim Mode (Escape)
+    // 6. Exit Idea Mode (Escape)
     await page.keyboard.press('Escape');
     await page.waitForTimeout(200);
     
-    // Aims should lose focus
-    await expect(getAimItem('Aim 2')).not.toHaveClass(/active/);
+    // Ideas should lose focus
+    await expect(getAimItem('Idea 2')).not.toHaveClass(/active/);
     // Column should have focus
     await expect(page.locator('.column-panel').first()).toHaveClass(/active/);
   });
 
   test('Expansion and Hierarchy Navigation (l/h)', async ({ page }) => {
     const getAimItem = (text: string) => 
-      page.locator('.aim-item').filter({ 
-        has: page.locator('> .aim-content .aim-text', { hasText: text, exact: true }) 
+      page.locator('.idea-item').filter({ 
+        has: page.locator('> .idea-content .idea-text', { hasText: text, exact: true }) 
       });
 
-    // Enter Aim Mode
+    // Enter Idea Mode
     await page.keyboard.press('i');
 
-    // Move down to 'Parent Aim' (4th item: Aim 1, Aim 2, Aim 3, Parent)
+    // Move down to 'Parent Idea' (4th item: Idea 1, Idea 2, Idea 3, Parent)
     // Actually order depends on seedProject implementation of commitments array.
-    // We passed commitments: [aim1Id, aim2Id, aim3Id, parentAimId]
+    // We passed commitments: [idea1Id, idea2Id, idea3Id, parentAimId]
     // So 3 j's.
     await page.keyboard.press('j');
     await page.keyboard.press('j');
     await page.keyboard.press('j');
     
-    await expect(getAimItem('Parent Aim')).toHaveClass(/active/);
+    await expect(getAimItem('Parent Idea')).toHaveClass(/active/);
 
     // 1. Expand (l)
     await page.keyboard.press('l');
     await page.waitForTimeout(500); // Wait for load/expand animation
 
     // Verify Child is visible
-    await expect(getAimItem('Child Aim')).toBeVisible();
+    await expect(getAimItem('Child Idea')).toBeVisible();
 
     // 2. Step in (l again) - l enters the expanded children (j would too: j/k walk the visible rows)
     await page.keyboard.press('l');
-    await expect(getAimItem('Child Aim')).toHaveClass(/active/);
+    await expect(getAimItem('Child Idea')).toHaveClass(/active/);
 
     // 3. Step out (h) - returns selection to Parent, which stays expanded
     await page.keyboard.press('h');
     await page.waitForTimeout(200);
-    await expect(getAimItem('Parent Aim')).toHaveClass(/active/);
+    await expect(getAimItem('Parent Idea')).toHaveClass(/active/);
 
     // 4. Collapse (h again) - hides the children
     await page.keyboard.press('h');
     await page.waitForTimeout(200);
-    await expect(getAimItem('Parent Aim')).not.toHaveClass(/expanded/);
-    await expect(getAimItem('Child Aim')).not.toBeVisible();
+    await expect(getAimItem('Parent Idea')).not.toHaveClass(/expanded/);
+    await expect(getAimItem('Child Idea')).not.toBeVisible();
   });
 });

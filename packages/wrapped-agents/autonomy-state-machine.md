@@ -7,7 +7,7 @@ A tidy state machine for autonomous agent operation across all session types (Cl
 - **Minimal hardcoded logic** - LLM makes decisions, state machine provides structure
 - **JSON action responses** - Agent responds with `{"action": "...", ...}` for state transitions
 - **Universal** - Same state machine across all agent types
-- **Information streams** - Agent subscribes to RSS/feeds for context beyond aim graph
+- **Information streams** - Agent subscribes to RSS/feeds for context beyond idea graph
 - **Observable** - Each state transition logged to agent_log.json
 
 ---
@@ -76,23 +76,23 @@ Available actions:
 ```
 You are in DISCOVERING state. Find work from these sources:
 
-1. **Aim Graph**: Check prioritized aims, active phases
+1. **Idea Graph**: Check prioritized ideas, active phases
 2. **Information Streams**: Check RSS feeds, GitHub issues, docs updates
 3. **System Needs**: Check for gaps (tests, docs, refactoring, security)
 
 Use MCP tools:
-- get_prioritized_aims
-- list_phases / list_phase_aims_recursive
+- get_prioritized_ideas
+- list_phases / list_phase_ideas_recursive
 - (future: check_rss_feeds, check_github_issues)
 
 Available actions:
-- found_work: Transition to planning (provide aim_id or work description)
+- found_work: Transition to planning (provide idea_id or work description)
 - no_work: Nothing to do (provide reason)
 - subscribe: Subscribe to new information source
 ```
 
 **Valid Actions:**
-- `{"action": "found_work", "work_type": "aim|rss|system", "aim_id": "...", "description": "..."}` → PLANNING
+- `{"action": "found_work", "work_type": "idea|rss|system", "idea_id": "...", "description": "..."}` → PLANNING
 - `{"action": "no_work", "reason": "..."}` → IDLE
 - `{"action": "subscribe", "feed_url": "...", "feed_type": "rss|github|docs"}` → DISCOVERING (stay, register subscription)
 
@@ -106,26 +106,26 @@ Available actions:
 ---
 
 ### PLANNING
-**Purpose:** Break down work, create sub-aims, formulate strategy
+**Purpose:** Break down work, create sub-ideas, formulate strategy
 
 **Prompt:**
 ```
 You are in PLANNING state for work: {work_description}
 
 Your task:
-1. Understand the aim using get_aim_context
-2. Break down if complex (create sub-aims)
+1. Understand the idea using get_idea_context
+2. Break down if complex (create sub-ideas)
 3. Identify required tools and steps
 4. Assess complexity and risks
 
 Available actions:
-- create_sub_aim: Break work into smaller piece
+- create_sub_idea: Break work into smaller piece
 - ready: Plan complete, ready to execute
 - blocked: Cannot proceed (provide reason)
 ```
 
 **Valid Actions:**
-- `{"action": "create_sub_aim", "text": "...", "description": "..."}` → PLANNING (stay, create aim)
+- `{"action": "create_sub_idea", "text": "...", "description": "..."}` → PLANNING (stay, create idea)
 - `{"action": "ready", "strategy": "...", "tools": ["..."]}` → EXECUTING
 - `{"action": "blocked", "reason": "...", "escalate": true|false}` → REFLECTING
 
@@ -180,7 +180,7 @@ You are in VERIFYING state. You just completed: {work_summary}
 
 Verify the work:
 1. Run tests if applicable
-2. Check if aim criteria met
+2. Check if idea criteria met
 3. Look for errors or warnings
 4. Validate output quality
 
@@ -225,14 +225,14 @@ Use addReflection MCP tool with structured format.
 Available actions:
 - add_reflection: Record reflection (required)
 - identify_limitation: Discovered system limitation
-- create_improvement_aim: Create aim to address limitation
+- create_improvement_idea: Create idea to address limitation
 - continue: Reflection complete, ready for next work
 ```
 
 **Valid Actions:**
-- `{"action": "add_reflection", "aimId": "...", "reflection": {...}}` → REFLECTING (stay until reflection added)
+- `{"action": "add_reflection", "ideaId": "...", "reflection": {...}}` → REFLECTING (stay until reflection added)
 - `{"action": "identify_limitation", "limitation": "...", "severity": "low|medium|high"}` → REFLECTING (log limitation)
-- `{"action": "create_improvement_aim", "text": "...", "addresses_limitation": "..."}` → REFLECTING (create meta-aim)
+- `{"action": "create_improvement_idea", "text": "...", "addresses_limitation": "..."}` → REFLECTING (create meta-idea)
 - `{"action": "continue"}` → DISCOVERING
 
 **Reflection Structure:**
@@ -249,7 +249,7 @@ Available actions:
 **Self-Improvement:**
 This is where **recursive self-improvement** happens:
 - Agent identifies own limitations
-- Creates aims to address those limitations
+- Creates ideas to address those limitations
 - Builds pattern library over time
 - Learns from past mistakes
 
@@ -278,7 +278,7 @@ interface ActionDefinition {
 interface StateContext {
   currentState: string
   workDescription?: string
-  aimId?: string
+  ideaId?: string
   strategy?: string
   history: StateTransition[]
   metadata: Record<string, any>
@@ -300,7 +300,7 @@ interface StateTransition {
 3. **Send to Agent:** Post prompt to worker
 4. **Parse Response:** Extract JSON action from response
 5. **Validate:** Check action is valid for current state
-6. **Execute:** Run any action-specific logic (e.g., create_sub_aim calls MCP)
+6. **Execute:** Run any action-specific logic (e.g., create_sub_idea calls MCP)
 7. **Transition:** Move to next state
 8. **Log:** Record transition to agent_log.json
 9. **Repeat:** Wait for idle, continue loop
@@ -362,9 +362,9 @@ Respond ONLY with raw JSON action object:
 
 During DISCOVERING state:
 1. Check subscribed feeds for new items
-2. Generate aims from feed items if relevant
+2. Generate ideas from feed items if relevant
 3. Prioritize based on tags/relevance
-4. Example: New GitHub issue → create corresponding aim
+4. Example: New GitHub issue → create corresponding idea
 
 **Feed Types:**
 - **RSS/Atom** - Blog posts, docs updates, release notes
@@ -412,7 +412,7 @@ During DISCOVERING state:
   "learning": {
     "total_reflections": 47,
     "identified_limitations": 12,
-    "improvement_aims_created": 8,
+    "improvement_ideas_created": 8,
     "pattern_library_size": 23
   }
 }
@@ -441,8 +441,8 @@ During DISCOVERING state:
       "to": "PLANNING",
       "action": "found_work",
       "data": {
-        "work_type": "aim",
-        "aim_id": "uuid",
+        "work_type": "idea",
+        "idea_id": "uuid",
         "description": "Implement autonomous loop"
       },
       "timestamp": "2026-03-29T10:01:23Z"
@@ -453,15 +453,15 @@ During DISCOVERING state:
     {
       "state": "DISCOVERING",
       "timestamp": "2026-03-29T10:00:45Z",
-      "context": "Checked prioritized aims",
-      "reasoning": "Found high-priority aim in active phase",
+      "context": "Checked prioritized ideas",
+      "reasoning": "Found high-priority idea in active phase",
       "action": "found_work"
     }
   ],
 
   "tool_calls": [
     {
-      "tool": "get_prioritized_aims",
+      "tool": "get_prioritized_ideas",
       "timestamp": "2026-03-29T10:00:30Z",
       "parameters": {"limit": 10},
       "result": "success",
@@ -471,7 +471,7 @@ During DISCOVERING state:
 
   "reflections": [
     {
-      "aim_id": "uuid",
+      "idea_id": "uuid",
       "timestamp": "2026-03-29T10:15:00Z",
       "reflection": {...}
     }
@@ -482,7 +482,7 @@ During DISCOVERING state:
       "timestamp": "2026-03-29T10:10:00Z",
       "limitation": "Cannot parse unstructured user feedback",
       "severity": "medium",
-      "created_improvement_aim": "uuid"
+      "created_improvement_idea": "uuid"
     }
   ],
 
@@ -520,7 +520,7 @@ During DISCOVERING state:
 3. **Phase 3:** Create prompt templates for each state
 4. **Phase 4:** Add agent_log.json generation
 5. **Phase 5:** Implement RSS/feed subscription system
-6. **Phase 6:** Add self-improvement logic (limitation tracking → improvement aims)
+6. **Phase 6:** Add self-improvement logic (limitation tracking → improvement ideas)
 7. **Phase 7:** Generate agent.json manifest
 8. **Phase 8:** Add ERC-8004 identity integration
 

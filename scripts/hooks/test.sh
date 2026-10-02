@@ -45,7 +45,7 @@ legacy_output="$(printf '{}\n' | AIMPARANCY_ALLOW_STOP=1 "$HOOK")"
 human_request_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant_message":"Input may be required. [AIMPARENCY_REQUEST_HUMAN]"}' | "$HOOK")"
 human_confirm_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant_message":"Broader search exhausted; input is indispensable. [AIMPARENCY_CONFIRM_HUMAN_BLOCK]"}' | "$HOOK")"
 
-node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || !x.reason.includes("Aimparency MCP") || !x.reason.includes("get_prioritized_aims") || !x.reason.includes("[AIMPARENCY_REQUEST_HUMAN]")) process.exit(1)' "$default_output"
+node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || !x.reason.includes("Aimparency MCP") || !x.reason.includes("get_prioritized_ideas") || !x.reason.includes("[AIMPARENCY_REQUEST_HUMAN]")) process.exit(1)' "$default_output"
 node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || !x.reason.includes("challenge the claimed blocker") || !x.reason.includes("graph hygiene") || !x.reason.includes("[AIMPARENCY_CONFIRM_HUMAN_BLOCK]")) process.exit(1)' "$human_request_output"
 node -e 'for(const s of process.argv.slice(1)){const x=JSON.parse(s); if(x.continue!==true || x.decision==="block") process.exit(1)}' "$canonical_output" "$legacy_output" "$human_confirm_output"
 

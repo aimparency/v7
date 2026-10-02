@@ -11,7 +11,7 @@ npx playwright test e2e/navigation.spec.ts
 
 ### Run a specific test case (by title)
 ```bash
-npx playwright test -g "search finds deep nested aim"
+npx playwright test -g "search finds deep nested idea"
 ```
 
 ### Debugging

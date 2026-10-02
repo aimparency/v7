@@ -181,11 +181,11 @@ interface AgentSignals {
 export const RELAUNCH_REQUEST_REL_PATH = '.bowman/runtime/relaunch-request';
 
 /**
- * Guidance posted to the worker when it has edited its own wrapper code (aim
+ * Guidance posted to the worker when it has edited its own wrapper code (idea
  * 310878de). The running build is stale until a rebuild+relaunch, so we nudge the
  * worker — at a natural halt, once — to reach a COMMITTED stopping point so the
  * edit is durable, then trigger the relaunch itself by dropping the indicator
- * file the broker watches (producer side, aim 0d07b9dd). The broker's verify gate
+ * file the broker watches (producer side, idea 0d07b9dd). The broker's verify gate
  * (typecheck+tests) guards the actual relaunch (29021d9a).
  */
 export function buildWrapperRelaunchPrompt(changedFiles: string[], rootDir: string): string {
@@ -214,7 +214,7 @@ export function buildWrapperRelaunchPrompt(changedFiles: string[], rootDir: stri
 
 /**
  * Assemble the once-per-context-epoch instruction lead in a fixed order: the
- * INSTRUCT guide, the human's always-on project instructions (aim 2fbd88df),
+ * INSTRUCT guide, the human's always-on project instructions (idea 2fbd88df),
  * recent session memories, then the system-friction summary. Pure + exported so
  * the ordering/formatting is unit-testable without spinning up a session.
  */
@@ -333,7 +333,7 @@ export class WatchdogService {
   private projectPath?: string;
   readonly profile: AgentProfile;
 
-  // Self-edit detection (aim 5af61b3e foundation): true once the wrapped-agents
+  // Self-edit detection (idea 5af61b3e foundation): true once the wrapped-agents
   // source has changed since this process launched, meaning the running build is
   // stale and a rebuild+relaunch would pick up the edit. Latched (only flips
   // false→true) and consumed by the relaunch-prompt / broker-rebuild steps.
@@ -399,7 +399,7 @@ export class WatchdogService {
       // recurring failures (recursive self-improvement) instead of rediscovering
       // them. Best-effort: returns '' when there is nothing to report.
       const friction = await SessionMemory.summarizeRecentFriction();
-      // Human-authored, always-on project directives (aim 2fbd88df).
+      // Human-authored, always-on project directives (idea 2fbd88df).
       const projectInstructions = await readProjectInstructions(projectPath);
 
       // Call compression periodically on startup if over threshold (LLM summarization
@@ -665,7 +665,7 @@ export class WatchdogService {
       previousState: ctx.previousState,
       errorCount: ctx.errorCount,
       backoffMs: this.supervisorState.getErrorBackoffDelay(),
-      work: { aimText: ctx.aimText, task: ctx.task, strategy: ctx.strategy },
+      work: { ideaText: ctx.ideaText, task: ctx.task, strategy: ctx.strategy },
       recentTransitions,
       workerTail,
       watchdogTail,
@@ -676,7 +676,7 @@ export class WatchdogService {
       `\n===== SUPERVISOR ENTERED ERROR STATE =====\n` +
       `reason: ${reason}\n` +
       `previousState: ${record.previousState ?? 'n/a'} | errorCount: ${record.errorCount} | backoff: ${Math.round(record.backoffMs / 1000)}s\n` +
-      `aim/task: ${record.work.aimText ?? record.work.task ?? 'n/a'}\n` +
+      `idea/task: ${record.work.ideaText ?? record.work.task ?? 'n/a'}\n` +
       `recent transitions: ${recentTransitions.map(h => `${h.from}->${h.to}(${h.action})`).join(' , ') || '(none)'}\n` +
       `--- worker terminal tail ---\n${workerTail || '(empty)'}\n` +
       `--- watchdog terminal tail ---\n${watchdogTail || '(empty)'}\n` +
@@ -760,7 +760,7 @@ export class WatchdogService {
    * Throttled scan for self-edits to wrapped-agents source. Sets {@link wrapperDirty}
    * (latched) once a source file is newer than the launch baseline. Best-effort:
    * a filesystem error must never break the supervisor loop. Consumed by the
-   * relaunch-prompt (aim 310878de) and broker rebuild (aim 29021d9a) steps.
+   * relaunch-prompt (idea 310878de) and broker rebuild (idea 29021d9a) steps.
    */
   checkWrapperDirty(now = Date.now()): void {
     if (this.wrapperDirty) return; // latched — no need to keep scanning
@@ -1253,7 +1253,7 @@ export class WatchdogService {
 
     // Add state-specific context
     if (currentState === 'WORKING' || currentState === 'WRAPPING_UP') {
-      promptContext.aimText = stateContext.aimText;
+      promptContext.ideaText = stateContext.ideaText;
       const workDuration = this.supervisorState.getWorkDuration();
       if (workDuration !== null) {
         const minutes = Math.floor(workDuration / 60000);
@@ -1633,23 +1633,23 @@ Please choose one of the valid actions. Respond ONLY with ${this.currentPromptMa
       String(now.getMonth() + 1).padStart(2, '0'),
       String(now.getDate()).padStart(2, '0')
     ].join('-');
-    const relevanceCheck = `Before making changes, perform this relevance check on the aim:
-1. DATE: Is the aim time-boxed or premised on a deadline/event? Compare against today's date (${currentDate}). If the driving event/deadline has passed (hackathons, dated milestones), the aim may be moot.
+    const relevanceCheck = `Before making changes, perform this relevance check on the idea:
+1. DATE: Is the idea time-boxed or premised on a deadline/event? Compare against today's date (${currentDate}). If the driving event/deadline has passed (hackathons, dated milestones), the idea may be moot.
 2. ALREADY IMPLEMENTED: Investigate the codebase (grep/inspect) + git history. If the described work is already present, mark done with verification evidence instead of rebuilding.
-3. REASONING CHAIN (supporting connections up to root): Use get_aim_context's path_to_root. Does the chain of WHY still hold? Is a parent itself stale/abandoned/superseded? Is the aim premised on a requirement that no longer applies?
+3. REASONING CHAIN (supporting connections up to root): Use get_idea_context's path_to_root. Does the chain of WHY still hold? Is a parent itself stale/abandoned/superseded? Is the idea premised on a requirement that no longer applies?
 DECISION RULES:
 - Relevant + not implemented -> proceed to build.
 - Already implemented -> mark done + reflection (verification evidence).
 - Clearly stale/moot -> mark cancelled with a precise comment.
 - UNSURE -> set human-dependent with a comment explaining the specific doubt.`;
-    const prompt = `${this.consumeInstructLead()}Check Aimparency MCP for open aims or the current assigned aim. ${relevanceCheck} If it is not implemented, start working. ${message}`;
+    const prompt = `${this.consumeInstructLead()}Check Aimparency MCP for open ideas or the current assigned idea. ${relevanceCheck} If it is not implemented, start working. ${message}`;
     await this.post(this.worker, prompt);
     this.turnCount++;
   }
 
   private async executeBreakDown(message?: string): Promise<void> {
     this.log('[StateMachine] Breaking down work');
-    const defaultPrompt = 'Check Aimparency MCP for the current open aim, break it down into smaller concrete sub-aims or tasks, then continue with the next best step.';
+    const defaultPrompt = 'Check Aimparency MCP for the current open idea, break it down into smaller concrete sub-ideas or tasks, then continue with the next best step.';
     const prompt = message ? `${defaultPrompt} ${message}` : defaultPrompt;
     await this.post(this.worker, prompt);
     this.turnCount++;
@@ -1657,7 +1657,7 @@ DECISION RULES:
 
   private async executeIdeate(text?: string): Promise<void> {
     this.log('[StateMachine] Ideating');
-    const defaultPrompt = 'Check Aimparency MCP for open aims and look for the next concrete task to start.';
+    const defaultPrompt = 'Check Aimparency MCP for open ideas and look for the next concrete task to start.';
     const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
     await this.post(this.worker, prompt);
     this.turnCount++;
@@ -1670,7 +1670,7 @@ DECISION RULES:
   }
 
   private async executeVerify(text?: string): Promise<void> {
-    const defaultPrompt = 'verify that more than 80% of the tackled requirements have been met. If the work is good enough, prepare to update the aim via Aimparency MCP.';
+    const defaultPrompt = 'verify that more than 80% of the tackled requirements have been met. If the work is good enough, prepare to update the idea via Aimparency MCP.';
     const prompt = text ? `${defaultPrompt} ${text}` : defaultPrompt;
     this.supervisorState.updateContext({ metadata: { workSummary: text || defaultPrompt } });
     await this.post(this.worker, prompt);
@@ -1684,7 +1684,7 @@ DECISION RULES:
   }
 
   private async executeWrapUp(text?: string): Promise<void> {
-    const defaultPrompt = 'use Aimparency MCP to update aim status and comment and reflection if not done already. Before marking an aim done, record verification evidence matched to its type — code: tests/typecheck pass; UI/visual: a screenshot or interaction proof; bugfix: a repro that now passes.';
+    const defaultPrompt = 'use Aimparency MCP to update idea status and comment and reflection if not done already. Before marking an idea done, record verification evidence matched to its type — code: tests/typecheck pass; UI/visual: a screenshot or interaction proof; bugfix: a repro that now passes.';
     const prompt = text ? `${defaultPrompt}. ${text}` : defaultPrompt;
     await this.post(this.worker, prompt);
     this.turnCount++;
@@ -1696,7 +1696,7 @@ DECISION RULES:
   }
 
   private async executeExplore(text?: string): Promise<void> {
-    const prompt = text || 'check Aimparency MCP for open aims and see if there is something you can work on';
+    const prompt = text || 'check Aimparency MCP for open ideas and see if there is something you can work on';
     await this.post(this.worker, prompt);
     this.turnCount++;
   }

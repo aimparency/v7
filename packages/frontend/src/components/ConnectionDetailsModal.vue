@@ -16,18 +16,18 @@ const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
 const dataStore = useDataStore()
 
-// parent = supported aim, child = supporting aim. Connection already exists at a default weight.
+// parent = supported idea, child = supporting idea. Connection already exists at a default weight.
 const parent = computed(() =>
-  modalStore.connectionDetailsParentId ? dataStore.aims[modalStore.connectionDetailsParentId] : undefined
+  modalStore.connectionDetailsParentId ? dataStore.ideas[modalStore.connectionDetailsParentId] : undefined
 )
 const childId = computed(() => modalStore.connectionDetailsChildId)
-const child = computed(() => (childId.value ? dataStore.aims[childId.value] : undefined))
+const child = computed(() => (childId.value ? dataStore.ideas[childId.value] : undefined))
 
 const thisConn = computed(() =>
-  parent.value?.supportingConnections?.find((c: any) => c.aimId === childId.value)
+  parent.value?.supportingConnections?.find((c: any) => c.ideaId === childId.value)
 )
 const siblings = computed(() =>
-  (parent.value?.supportingConnections ?? []).filter((c: any) => c.aimId !== childId.value)
+  (parent.value?.supportingConnections ?? []).filter((c: any) => c.ideaId !== childId.value)
 )
 // S = sum of sibling weights, L = parent's loop weight. share = w / (S + L + w).
 const siblingWeightSum = computed(() => siblings.value.reduce((s: number, c: any) => s + (c.weight ?? 1), 0))
@@ -72,8 +72,8 @@ const otherContributors = computed(() => {
   const total = siblingWeightSum.value + loopWeight.value + resolvedWeight.value
   if (total <= 0) return []
   const entries = siblings.value.map((c: any) => ({
-    id: c.aimId,
-    label: dataStore.aims[c.aimId]?.text ?? c.aimId.slice(0, 8),
+    id: c.ideaId,
+    label: dataStore.ideas[c.ideaId]?.text ?? c.ideaId.slice(0, 8),
     share: (c.weight ?? 1) / total,
     isLoop: false
   }))
@@ -142,14 +142,14 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
   >
     <div class="connection-details">
       <p class="relation">
-        <span class="aim-name">{{ child?.text ?? '…' }}</span>
+        <span class="idea-name">{{ child?.text ?? '…' }}</span>
         <span class="arrow">supports</span>
-        <span class="aim-name">{{ parent?.text ?? '…' }}</span>
+        <span class="idea-name">{{ parent?.text ?? '…' }}</span>
       </p>
 
       <div v-if="sole" class="form-group">
         <label>Contribution</label>
-        <p class="sole-note">Sole supporter — 100% of this aim's value flows here.</p>
+        <p class="sole-note">Sole supporter — 100% of this idea's value flows here.</p>
       </div>
 
       <div v-else class="form-group">
@@ -163,7 +163,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
           @input="onPctInput"
         />
         <p v-if="capHintVisible" class="hint">
-          100% isn't possible while other aims also support this — capped at {{ maxPct }}%.
+          100% isn't possible while other ideas also support this — capped at {{ maxPct }}%.
         </p>
 
         <ul v-if="otherContributors.length" class="preview">
@@ -183,7 +183,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
         <textarea
           v-model="explanation"
           rows="3"
-          placeholder="Why does this aim support the other?"
+          placeholder="Why does this idea support the other?"
         ></textarea>
       </div>
     </div>
@@ -209,7 +209,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
     gap: 0.375rem;
     align-items: baseline;
 
-    & .aim-name { color: #e0e0e0; font-weight: 600; }
+    & .idea-name { color: #e0e0e0; font-weight: 600; }
     & .arrow { color: #888; font-size: 0.85rem; }
   }
 

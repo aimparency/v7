@@ -1,6 +1,6 @@
 # Aimparency MCP Server
 
-Model Context Protocol (MCP) server for Aimparency. It lets external LLM tooling interact with aims, phases, project metadata, and reflections through the local Aimparency backend.
+Model Context Protocol (MCP) server for Aimparency. It lets external LLM tooling interact with ideas, phases, project metadata, and reflections through the local Aimparency backend.
 
 This package is an optional integration. The main open source product story is still:
 
@@ -94,15 +94,15 @@ The backend normalizes repo-root paths to the matching `.bowman` directory.
 
 Resources let the LLM read current state without calling functions. All resources require `?projectPath=/path/to/project` query parameter.
 
-**Aims:**
-- `aim://<uuid>?projectPath=/path` - Single aim details
-- `aim://<uuid>/incoming?projectPath=/path` - Aims this aim depends on
-- `aim://<uuid>/outgoing?projectPath=/path` - Aims that depend on this aim
-- `aims://all?projectPath=/path` - All aims list
+**Ideas:**
+- `idea://<uuid>?projectPath=/path` - Single idea details
+- `idea://<uuid>/incoming?projectPath=/path` - Ideas this idea depends on
+- `idea://<uuid>/outgoing?projectPath=/path` - Ideas that depend on this idea
+- `ideas://all?projectPath=/path` - All ideas list
 
 **Phases:**
 - `phase://<uuid>?projectPath=/path` - Single phase details
-- `phase://<uuid>/aims?projectPath=/path` - Aims committed to phase
+- `phase://<uuid>/ideas?projectPath=/path` - Ideas committed to phase
 - `phases://all?projectPath=/path` - All phases
 - `phases://<parent-uuid>/children?projectPath=/path` - Child phases
 
@@ -111,44 +111,44 @@ Resources let the LLM read current state without calling functions. All resource
 
 **Example:**
 ```
-Read aims://all?projectPath=/home/user/my-project to see all aims
+Read ideas://all?projectPath=/home/user/my-project to see all ideas
 ```
 
 ### Tools (Actions)
 
 Tools allow the LLM to modify state. All tools require `projectPath` parameter.
 
-**Aim Operations:**
-- `create-aim` - Create new aim with text, status, relationships
-- `update-aim` - Update aim text, status, or relationships
-- `delete-aim` - Delete aim (removes from all phases)
-- `addReflection` - Add structured reflection to completed aim (context, outcome, effectiveness, lesson, pattern)
+**Idea Operations:**
+- `create-idea` - Create new idea with text, status, relationships
+- `update-idea` - Update idea text, status, or relationships
+- `delete-idea` - Delete idea (removes from all phases)
+- `addReflection` - Add structured reflection to completed idea (context, outcome, effectiveness, lesson, pattern)
 
 **Phase Operations:**
 - `create-phase` - Create new phase with name, dates, parent
 - `update-phase` - Update phase properties
-- `delete-phase` - Delete phase (uncommits aims, doesn't delete them)
+- `delete-phase` - Delete phase (uncommits ideas, doesn't delete them)
 
 **Relationship Operations:**
-- `commit-aim-to-phase` - Add aim to phase commitments
-- `remove-aim-from-phase` - Remove aim from phase
+- `commit-idea-to-phase` - Add idea to phase commitments
+- `remove-idea-from-phase` - Remove idea from phase
 
 **Project Operations:**
 - `update-project-meta` - Update project name and color
 
 **Examples:**
 ```javascript
-// Create a new aim
-create-aim({
+// Create a new idea
+create-idea({
   projectPath: "/home/user/my-project",
   text: "Implement user authentication",
   status: { state: "open", comment: "" }
 })
 
-// Add reflection after completing an aim
+// Add reflection after completing an idea
 addReflection({
   projectPath: "/home/user/my-project",
-  aimId: "some-uuid",
+  ideaId: "some-uuid",
   reflection: {
     context: "Implemented JWT authentication with refresh tokens",
     outcome: "Successfully deployed, all tests passing",
@@ -165,15 +165,15 @@ Prompts are pre-built workflows that guide the LLM through complex tasks:
 
 **Available Prompts:**
 - `dream` - Simulate possible futures, find distant synergies and tensions, optionally research reality, and return falsifiable hypotheses plus reversible experiments
-- `breakdown` - Break an aim into smaller sub-aims with dependencies
-- `analyze-dependencies` - Analyze aim relationships and suggest improvements
-- `plan-phase` - Help plan which aims to commit to a phase
+- `breakdown` - Break an idea into smaller sub-ideas with dependencies
+- `analyze-dependencies` - Analyze idea relationships and suggest improvements
+- `plan-phase` - Help plan which ideas to commit to a phase
 - `review-progress` - Review phase progress and suggest next actions
-- `hypothesis-test` - Structure an aim as a testable hypothesis
+- `hypothesis-test` - Structure an idea as a testable hypothesis
 
 **Example usage with Claude:**
 ```
-Use the "breakdown" prompt with aimId=<uuid> and projectPath=/path/to/project
+Use the "breakdown" prompt with ideaId=<uuid> and projectPath=/path/to/project
 ```
 
 ## Workflow Example: Indefinite Goal-Driven Work
@@ -182,12 +182,12 @@ The MCP server is designed to support LLMs working indefinitely on goals:
 
 1. **Start with a big goal:**
    ```
-   Create an aim for "Build recommendation engine"
+   Create an idea for "Build recommendation engine"
    ```
 
 2. **Break it down:**
    ```
-   Use the breakdown prompt to split into sub-aims
+   Use the breakdown prompt to split into sub-ideas
    ```
 
 3. **Analyze dependencies:**
@@ -197,19 +197,19 @@ The MCP server is designed to support LLMs working indefinitely on goals:
 
 4. **Plan a phase:**
    ```
-   Create a phase for "Week 1" and use plan-phase prompt to commit aims
+   Create a phase for "Week 1" and use plan-phase prompt to commit ideas
    ```
 
 5. **Work and test:**
    ```
-   Use hypothesis-test prompt to structure aims as testable hypotheses
-   Update aim statuses as work progresses
+   Use hypothesis-test prompt to structure ideas as testable hypotheses
+   Update idea statuses as work progresses
    ```
 
 6. **Review and iterate:**
    ```
    Use review-progress prompt to assess phase completion
-   Break down blocked aims further if needed
+   Break down blocked ideas further if needed
    Repeat cycle
    ```
 
@@ -246,9 +246,9 @@ Watches for changes and rebuilds automatically.
 3. Configure and restart your MCP client (Claude Code or Claude for Desktop)
 
 4. Try commands like:
-   - "List all aims in /path/to/my-project"
-   - "Create a new aim for implementing authentication"
-   - "Break down aim <uuid> into sub-aims"
+   - "List all ideas in /path/to/my-project"
+   - "Create a new idea for implementing authentication"
+   - "Break down idea <uuid> into sub-ideas"
 
 ## Troubleshooting
 
@@ -264,7 +264,7 @@ Watches for changes and rebuilds automatically.
 1. **Check backend is running:** `npm run dev` or `npm run start` from the repo root
 2. **Check logs:** Backend logs will show tRPC errors
 3. **Verify projectPath:** Must be an absolute path to a repo/workspace root or its `.bowman` directory
-4. **Verify UUIDs:** All aim/phase IDs must exist
+4. **Verify UUIDs:** All idea/phase IDs must exist
 
 ### Resource reads failing
 
@@ -272,12 +272,12 @@ Common issue: Missing `projectPath` query parameter
 
 **Wrong:**
 ```
-aim://some-uuid
+idea://some-uuid
 ```
 
 **Correct:**
 ```
-aim://some-uuid?projectPath=/absolute/path/to/project
+idea://some-uuid?projectPath=/absolute/path/to/project
 ```
 
 ### Connection errors
@@ -291,7 +291,7 @@ Error: `Failed to connect to backend`
 
 - **tRPC Subscriptions:** Real-time updates when web UI or other clients modify data
 - **Multiple Backend Support:** Connect to different backend instances
-- **Batch Operations:** Bulk create/update aims for efficiency
+- **Batch Operations:** Bulk create/update ideas for efficiency
 - **Search/Filter:** Advanced resource queries with filters
 
 ## License

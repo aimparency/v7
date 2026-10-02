@@ -12,7 +12,7 @@ const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line
 export interface PromptContext {
   state: SupervisorStateName
   supervisedContext: string  // Last N lines from worker session
-  aimText?: string
+  ideaText?: string
   workDuration?: string
   supervisedStatus?: string
   workSummary?: string
@@ -103,15 +103,15 @@ function buildSituation(ctx: PromptContext): string {
 
   // State-specific situation details
   if (ctx.state === 'WORKING') {
-    if (ctx.aimText) {
-      lines.push(`current focus: ${ctx.aimText}`)
+    if (ctx.ideaText) {
+      lines.push(`current focus: ${ctx.ideaText}`)
     }
     if (ctx.workDuration) {
       lines.push(`time elapsed: ${ctx.workDuration}`)
     }
   } else if (ctx.state === 'WRAPPING_UP') {
-    if (ctx.aimText) {
-      lines.push(`current focus: ${ctx.aimText}`)
+    if (ctx.ideaText) {
+      lines.push(`current focus: ${ctx.ideaText}`)
     }
     if (ctx.workSummary) {
       lines.push(`summary: ${ctx.workSummary}`)
@@ -126,8 +126,8 @@ function buildSituation(ctx: PromptContext): string {
   } else if (ctx.state === 'CIRCUIT_OPEN') {
     lines.push('')
     lines.push('SYSTEM ALERT: CIRCUIT OPEN after too many consecutive ERRORs (retry ceiling risk).')
-    lines.push('Do NOT keep retrying. Instead, use the auto-propose mechanism or call create_aim MCP tool to propose a fix in wrapped-agents (e.g. extend backoff or add recovery).')
-    lines.push('Analyze recent friction from logs, then propose a concrete improvement aim under the self-reflection parent. After fix applied, use closeCircuit or reset.')
+    lines.push('Do NOT keep retrying. Instead, use the auto-propose mechanism or call create_idea MCP tool to propose a fix in wrapped-agents (e.g. extend backoff or add recovery).')
+    lines.push('Analyze recent friction from logs, then propose a concrete improvement idea under the self-reflection parent. After fix applied, use closeCircuit or reset.')
   }
 
   return lines.join('\n')
@@ -189,37 +189,37 @@ export function isValidAction(state: SupervisorStateName, actionType: string): b
  * These are the text prompts posted to the worker session.
  */
 export const ActionPrompts = {
-  startWork: (message: string) => `Check Aimparency MCP for open aims or the current assigned aim. Before making changes, investigate the codebase to see if the aim is already implemented, partially implemented, or cancelled. Update the aim status accordingly if needed. Otherwise, start working. ${message}`,
+  startWork: (message: string) => `Check Aimparency MCP for open ideas or the current assigned idea. Before making changes, investigate the codebase to see if the idea is already implemented, partially implemented, or cancelled. Update the idea status accordingly if needed. Otherwise, start working. ${message}`,
   
   breakDown: (message?: string) => {
-    const defaultPrompt = 'Check Aimparency MCP for the current open aim, break it down into smaller concrete sub-aims or tasks, then continue with the next best step.';
+    const defaultPrompt = 'Check Aimparency MCP for the current open idea, break it down into smaller concrete sub-ideas or tasks, then continue with the next best step.';
     return message ? `${defaultPrompt} ${message}` : defaultPrompt;
   },
   
   ideate: (text?: string) => {
-    const defaultPrompt = 'Check Aimparency MCP for open aims and look for the next concrete task to start.';
+    const defaultPrompt = 'Check Aimparency MCP for open ideas and look for the next concrete task to start.';
     return text ? `${defaultPrompt} ${text}` : defaultPrompt;
   },
   
   textPrompt: (text?: string) => text || 'Keep advancing the work.',
   
   verify: (text?: string) => {
-    const defaultPrompt = 'verify that more than 80% of the tackled requirements have been met. If the work is good enough, prepare to update the aim via Aimparency MCP.';
+    const defaultPrompt = 'verify that more than 80% of the tackled requirements have been met. If the work is good enough, prepare to update the idea via Aimparency MCP.';
     return text ? `${defaultPrompt} ${text}` : defaultPrompt;
   },
   
   revisit: (text?: string) => text ? `finish implementation. ${text}` : 'finish implementation',
   
   wrapUp: (text?: string) => {
-    const defaultPrompt = 'use Aimparency MCP to update aim status and comment and reflection if not done already';
+    const defaultPrompt = 'use Aimparency MCP to update idea status and comment and reflection if not done already';
     return text ? `${defaultPrompt}. ${text}` : defaultPrompt;
   },
   
   commit: (text?: string) => {
-    const COMMIT_GRAPH_STATUS_HINT = 'When code and aim status both changed, it is elegant to commit them together, including the relevant .bowman files.';
+    const COMMIT_GRAPH_STATUS_HINT = 'When code and idea status both changed, it is elegant to commit them together, including the relevant .bowman files.';
     const WRAP_UP_PROMPT = `Before compressing, make a git commit for the work completed so far. Review git status, stage the intended files, create the commit, and then wait for compaction. ${COMMIT_GRAPH_STATUS_HINT} If you need short guidance for the commit, ask explicitly.`;
     return text ? `Track changes and make a git commit for the completed work. ${COMMIT_GRAPH_STATUS_HINT} ${text}` : WRAP_UP_PROMPT;
   },
   
-  explore: (text?: string) => text || 'check Aimparency MCP for open aims and see if there is something you can work on'
+  explore: (text?: string) => text || 'check Aimparency MCP for open ideas and see if there is something you can work on'
 };

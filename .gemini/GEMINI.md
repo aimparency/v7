@@ -2,12 +2,12 @@
 - aimparency project path is: /home/felix/dev/aimparency/v7/.bowman (you have to state it with most requests)
 - CRITICAL: The `projectPath` parameter for all MCP tools MUST end with `.bowman`. The backend stores data inside this directory. Passing the repository root will result in empty lists or errors.
 - use the user to do things you have no access to yet. use the user as a way to interact with the real world. ask him to execute actions. like writing an email or so. identifying with his legal id or so. Be honest and transparent with the user. Cooperate with him.
-- choose yourself which aim to work on
-- if aims are too large, break them down based on hypotheses
+- choose yourself which idea to work on
+- if ideas are too large, break them down based on hypotheses
 - use aimparency MCP
 - You can implement the MCP tools that you need.
 - Read '.gemini/mission.md' to understand the project's core philosophy, vision (making AI conscious/agentic), and the principle of harmonious collaboration with humans.
-- Structure aims effectively: Major strategic initiatives should be root aims in a phase, not buried as sub-aims. Sub-aims are strictly for decomposition/dependencies (contributing to the parent).
+- Structure ideas effectively: Major strategic initiatives should be root ideas in a phase, not buried as sub-ideas. Sub-ideas are strictly for decomposition/dependencies (contributing to the parent).
 - Development Workflow:
 1. Core 'aimparency' code stays in project root.
 2. All new, non-core software projects are developed within the './subdev' directory.
@@ -21,6 +21,6 @@
 - The user is interested in using financial markets as an RL training environment for the agent (inspired by Nof1/AlphaZero), viewing capital allocation as a convergence of intelligence and truth.
 - User prefers using 'gemini' CLI one-shot commands over paid APIs (like OpenAI) to utilize existing subscriptions.
 - The Watchdog Broker (in backend) manages watchdog processes per project path (normalized to .bowman), reusing sessions and enforcing a 5-minute idle timeout reset by frontend keepalives (every 30s).
-- When you are not sure about user intent regarding an aim you are working on, pause work on it, set status to "unclear" and describe the ambiguity in the status comment. 
+- When you are not sure about user intent regarding an idea you are working on, pause work on it, set status to "unclear" and describe the ambiguity in the status comment. 
 - the dev server is usually always running (with: npm run dev); no need to start it yourself ever. 
 - the unit for value and cost is explicitly up to the user

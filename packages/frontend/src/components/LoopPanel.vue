@@ -4,7 +4,7 @@ import { trpc } from '../trpc'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import type { AimSearchPickPayload } from '../stores/ui/aim-search-types'
+import type { IdeaSearchPickPayload } from '../stores/ui/idea-search-types'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 
 type LoopProvider = 'nvidia' | 'openrouter' | 'openai-compatible'
@@ -76,7 +76,7 @@ const instanceNameDraft = ref('')
 const instanceNameDirty = ref(false)
 const stopPolicyDraft = ref<LoopStopPolicy>('never')
 const phaseLabels = ref<Record<string, string>>({})
-const aimLabels = ref<Record<string, string>>({})
+const ideaLabels = ref<Record<string, string>>({})
 const loopLogRef = ref<HTMLDivElement>()
 const focusedLogIndex = ref(-1)
 const expandedLogIds = ref<Set<string>>(new Set())
@@ -103,11 +103,11 @@ const selectedTargetPhaseLabel = computed(() => {
 })
 const selectedTargetAimLabel = computed(() => {
   const id = selectedInstance.value?.targetAimId
-  if (!id) return 'No aim'
-  return dataStore.aims[id]?.text ?? aimLabels.value[id] ?? 'Loading aim...'
+  if (!id) return 'No idea'
+  return dataStore.ideas[id]?.text ?? ideaLabels.value[id] ?? 'Loading idea...'
 })
 const stopPolicyOptions = computed<Array<{ value: LoopStopPolicy; label: string }>>(() => [
-  ...(selectedInstance.value?.targetAimId ? [{ value: 'target_halted' as const, label: 'aim halted' }] : []),
+  ...(selectedInstance.value?.targetAimId ? [{ value: 'target_halted' as const, label: 'idea halted' }] : []),
   ...(selectedInstance.value?.targetPhaseId ? [{ value: 'phase_done' as const, label: 'phase done' }] : []),
   { value: 'never', label: 'never' },
   { value: 'asap', label: 'asap' }
@@ -123,7 +123,7 @@ const requiredSecretLabel = computed(() => {
 const resolveTargetLabels = async () => {
   if (!projectStore.projectPath) return
   const phaseIds = [...new Set(instances.value.map((instance) => instance.targetPhaseId).filter((id): id is string => Boolean(id)))]
-  const aimIds = [...new Set(instances.value.map((instance) => instance.targetAimId).filter((id): id is string => Boolean(id)))]
+  const ideaIds = [...new Set(instances.value.map((instance) => instance.targetAimId).filter((id): id is string => Boolean(id)))]
   await Promise.all([
     ...phaseIds
       .filter((id) => !dataStore.phases[id] && !phaseLabels.value[id])
@@ -133,12 +133,12 @@ const resolveTargetLabels = async () => {
           phaseLabels.value = { ...phaseLabels.value, [id]: phase.name }
         } catch {}
       }),
-    ...aimIds
-      .filter((id) => !dataStore.aims[id] && !aimLabels.value[id])
+    ...ideaIds
+      .filter((id) => !dataStore.ideas[id] && !ideaLabels.value[id])
       .map(async (id) => {
         try {
-          const aim = await trpc.aim.get.query({ projectPath: projectStore.projectPath, aimId: id })
-          aimLabels.value = { ...aimLabels.value, [id]: aim.text }
+          const idea = await trpc.idea.get.query({ projectPath: projectStore.projectPath, ideaId: id })
+          ideaLabels.value = { ...ideaLabels.value, [id]: idea.text }
         } catch {}
       })
   ])
@@ -342,14 +342,14 @@ const openPhaseTargetSearch = () => {
 }
 
 const openAimTargetSearch = () => {
-  modalStore.openAimSearch('pick', async (payload: AimSearchPickPayload) => {
+  modalStore.openAimSearch('pick', async (payload: IdeaSearchPickPayload) => {
     if (payload.type === 'option' && payload.data.id === 'none') {
       await retargetSelectedInstance({ targetAimId: null })
       modalStore.closeAimSearch()
       return
     }
-    if (payload.type !== 'aim') return
-    aimLabels.value = { ...aimLabels.value, [payload.data.id]: payload.data.text }
+    if (payload.type !== 'idea') return
+    ideaLabels.value = { ...ideaLabels.value, [payload.data.id]: payload.data.text }
     const targetPhaseId = selectedInstance.value?.targetPhaseId ?? payload.data.committedIn?.[0] ?? null
     await retargetSelectedInstance({
       targetPhaseId,
@@ -357,13 +357,13 @@ const openAimTargetSearch = () => {
     })
     modalStore.closeAimSearch()
   }, undefined, {
-    title: 'Select Loop Aim',
-    placeholder: 'Search target aim...',
+    title: 'Select Loop Idea',
+    placeholder: 'Search target idea...',
     showFilters: true,
     additionalOptions: [{
       id: 'none',
-      label: 'No aim',
-      description: 'Let the loop choose the highest-priority open aim dynamically.',
+      label: 'No idea',
+      description: 'Let the loop choose the highest-priority open idea dynamically.',
       showWhenQueryEmptyOnly: true
     }]
   })
@@ -573,7 +573,7 @@ onUnmounted(() => {
               @keydown.enter.prevent="saveInstanceName"
             >
             <button class="target-chip" @click="openPhaseTargetSearch">{{ selectedTargetPhaseLabel }}</button>
-            <button class="target-chip aim-chip" @click="openAimTargetSearch">{{ selectedTargetAimLabel }}</button>
+            <button class="target-chip idea-chip" @click="openAimTargetSearch">{{ selectedTargetAimLabel }}</button>
             <button class="primary-btn header-btn" :disabled="selectedInstance.status === 'running'" @click="startInstance">Start</button>
             <button class="action-btn header-btn" :disabled="selectedInstance.status !== 'running'" @click="stopInstance">Stop</button>
             <button class="action-btn header-btn" @click="restartInstance">Restart</button>
@@ -834,7 +834,7 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
-.aim-chip {
+.idea-chip {
   max-width: min(24rem, 36%);
 }
 

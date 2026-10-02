@@ -307,7 +307,7 @@ simulation.onTick(() => {
 
 **No changes needed** unless profiling reveals specific bottlenecks with larger graphs.
 
-The aim "Reuse spatial tree from layout engine for viewport culling" is **effectively complete** because:
+The idea "Reuse spatial tree from layout engine for viewport culling" is **effectively complete** because:
 1. The WebGL renderer successfully uses spatial acceleration (Quadtree) for culling
 2. It receives node data from the layout engine
 3. Building a separate tree is the optimal approach given different use cases

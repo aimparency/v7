@@ -19,9 +19,9 @@ test('MCP Tools - Search', async () => {
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await caller.aim.createFloatingAim({
+  await caller.idea.createFloatingAim({
     projectPath: ctx.projectPath,
-    aim: { text: 'Find Me', status: { state: 'open', comment: '', date: Date.now() } }
+    idea: { text: 'Find Me', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
   await caller.phase.create({
@@ -32,11 +32,11 @@ test('MCP Tools - Search', async () => {
   // 1. Build Index (optional now, but good to test)
   await server.callTool('build_search_index', { projectPath: ctx.projectPath });
 
-  // 2. Search Aims
-  const aimRes = await server.callTool('search_aims', { projectPath: ctx.projectPath, query: 'Find' });
-  const aims = JSON.parse(aimRes.content[0].text);
-  assert.equal(aims.length, 1);
-  assert.equal(aims[0].text, 'Find Me');
+  // 2. Search Ideas
+  const ideaRes = await server.callTool('search_ideas', { projectPath: ctx.projectPath, query: 'Find' });
+  const ideas = JSON.parse(ideaRes.content[0].text);
+  assert.equal(ideas.length, 1);
+  assert.equal(ideas[0].text, 'Find Me');
 
   // 3. Search Phases
   const phaseRes = await server.callTool('search_phases', { projectPath: ctx.projectPath, query: 'Search' });

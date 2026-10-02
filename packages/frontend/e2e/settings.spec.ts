@@ -15,7 +15,7 @@ test.describe('Project Settings Tests', () => {
       phases: [
         { name: 'Settings Phase', commitments: [] }
       ],
-      aims: []
+      ideas: []
     });
 
     await page.goto('http://localhost:4000/');
@@ -37,9 +37,9 @@ test.describe('Project Settings Tests', () => {
     }
   });
 
-  test('persist custom aim statuses', async ({ page }) => {
+  test('persist custom idea statuses', async ({ page }) => {
     // Wait for load
-    await expect(page.locator('.column-aims')).toBeVisible();
+    await expect(page.locator('.column-ideas')).toBeVisible();
 
     // Open Settings
     await page.click('button[title="Project Settings"]');

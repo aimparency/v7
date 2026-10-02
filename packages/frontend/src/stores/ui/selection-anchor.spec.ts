@@ -10,11 +10,11 @@ import { keepAimSelection } from './selection-anchor'
 describe('keepAimSelection', () => {
   beforeEach(() => setActivePinia(createPinia()))
 
-  it('keeps the same aim selected when another client inserts an aim above it', () => {
+  it('keeps the same idea selected when another client inserts an idea above it', () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
     dataStore.phases = { p: { id: 'p', name: 'P', parent: null, childPhaseIds: [], commitments: ['x', 'y'], selectedAimIndex: 1 } } as any
-    dataStore.aims = Object.fromEntries(['x', 'y', 'new'].map((id) => [id, { id, text: id, supportingConnections: [], supportedAims: [], committedIn: ['p'] }])) as any
+    dataStore.ideas = Object.fromEntries(['x', 'y', 'new'].map((id) => [id, { id, text: id, supportingConnections: [], supportedAims: [], committedIn: ['p'] }])) as any
     uiStore.selectedEntryKeyByColumn = { 0: 'phase:p' }
     uiStore.activeColumn = 0
     uiStore.navigatingAims = true

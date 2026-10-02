@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Aim, Phase } from '../stores/data'
+import type { Idea, Phase } from '../stores/data'
 import {
   collectDescendantPhaseIds,
   formatAimPriority,
@@ -14,20 +14,20 @@ const phase = (id: string, childPhaseIds: string[] = []): Phase => ({
   childPhaseIds
 })
 
-const aim = (
+const idea = (
   id: string,
   text: string,
   state: string,
   committedIn: string[],
   archived = false,
   children: string[] = []
-): Aim => ({
+): Idea => ({
   id,
   text,
   archived,
   tags: [],
-  supportingConnections: children.map(aimId => ({
-    aimId,
+  supportingConnections: children.map(ideaId => ({
+    ideaId,
     weight: 1,
     relativePosition: [0, 0] as [number, number]
   })),
@@ -59,54 +59,54 @@ describe('phase priority ranking', () => {
     ])
   })
 
-  it('filters by state and phase tree, excludes archived aims, and ranks descending', () => {
-    const aims = {
-      low: aim('low', 'Low', 'human-dependent', ['root']),
-      high: aim('high', 'High', 'human-dependent', ['grandchild']),
-      open: aim('open', 'Open', 'open', ['child']),
-      outside: aim('outside', 'Outside', 'human-dependent', ['elsewhere']),
-      archived: aim('archived', 'Archived', 'human-dependent', ['root'], true)
+  it('filters by state and phase tree, excludes archived ideas, and ranks descending', () => {
+    const ideas = {
+      low: idea('low', 'Low', 'human-dependent', ['root']),
+      high: idea('high', 'High', 'human-dependent', ['grandchild']),
+      open: idea('open', 'Open', 'open', ['child']),
+      outside: idea('outside', 'Outside', 'human-dependent', ['elsewhere']),
+      archived: idea('archived', 'Archived', 'human-dependent', ['root'], true)
     }
 
     expect(rankAimsForPhaseTree(
       'root',
       phases,
-      aims,
+      ideas,
       new Map([['low', 0.5], ['high', 3]]),
       'human-dependent'
-    ).map(result => [result.aim.id, result.phaseId, result.priority, result.directlyCommitted])).toEqual([
+    ).map(result => [result.idea.id, result.phaseId, result.priority, result.directlyCommitted])).toEqual([
       ['high', 'grandchild', 3, true],
       ['low', 'root', 0.5, true]
     ])
   })
 
-  it('includes human-dependent descendants of a committed aim transitively', () => {
-    const aims = {
-      application: aim('application', 'Application', 'partially', ['root'], false, ['facts']),
-      facts: aim('facts', 'Founder facts', 'human-dependent', [], false, ['submit']),
-      submit: aim('submit', 'Submit', 'human-dependent', [])
+  it('includes human-dependent descendants of a committed idea transitively', () => {
+    const ideas = {
+      application: idea('application', 'Application', 'partially', ['root'], false, ['facts']),
+      facts: idea('facts', 'Founder facts', 'human-dependent', [], false, ['submit']),
+      submit: idea('submit', 'Submit', 'human-dependent', [])
     }
 
     expect(rankAimsForPhaseTree(
       'root',
       phases,
-      aims,
+      ideas,
       new Map([['facts', 4], ['submit', 9]]),
       'human-dependent'
-    ).map(result => [result.aim.id, result.phaseId, result.directlyCommitted])).toEqual([
+    ).map(result => [result.idea.id, result.phaseId, result.directlyCommitted])).toEqual([
       ['submit', 'root', false],
       ['facts', 'root', false]
     ])
   })
 
-  it('handles cycles in committed aim subtrees', () => {
-    const aims = {
-      application: aim('application', 'Application', 'partially', ['root'], false, ['facts']),
-      facts: aim('facts', 'Founder facts', 'human-dependent', [], false, ['application'])
+  it('handles cycles in committed idea subtrees', () => {
+    const ideas = {
+      application: idea('application', 'Application', 'partially', ['root'], false, ['facts']),
+      facts: idea('facts', 'Founder facts', 'human-dependent', [], false, ['application'])
     }
 
     expect(rankAimsForPhaseTree(
-      'root', phases, aims, new Map(), 'human-dependent'
+      'root', phases, ideas, new Map(), 'human-dependent'
     )).toHaveLength(1)
   })
 

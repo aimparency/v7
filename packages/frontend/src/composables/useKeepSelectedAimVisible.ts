@@ -1,11 +1,11 @@
 import { nextTick, watch, type Ref } from 'vue'
 import { useUIStore } from '../stores/ui'
 
-// Keeps the selected aim of a column in view while navigating aims.
+// Keeps the selected idea of a column in view while navigating ideas.
 //
-// Aims used to request their own scroll when their `isThisAimSelected`/`isActive`
+// Ideas used to request their own scroll when their `isThisAimSelected`/`isActive`
 // props flipped. Selection moves that don't flip those props on the newly
-// selected aim (returning to a parent with k/h, reordering with J/K, stale
+// selected idea (returning to a parent with k/h, reordering with J/K, stale
 // sub-selection indices) then never scrolled. Watching the whole selection path
 // from the column covers every move with one mechanism.
 export function useKeepSelectedAimVisible(
@@ -18,11 +18,11 @@ export function useKeepSelectedAimVisible(
   const selectionKey = () => {
     if (!uiStore.navigatingAims || !isColumnActive()) return ''
     const path = uiStore.getSelectionPath()
-    if (path.aims.length === 0) return ''
+    if (path.ideas.length === 0) return ''
     return [
       path.phase?.id ?? 'floating',
       path.phase?.selectedAimIndex ?? uiStore.floatingAimIndex,
-      ...path.aims.map((aim: { id: string }, depth: number) => `${aim.id}@${path.aimStates[depth]?.selectedIncomingIndex ?? ''}`)
+      ...path.ideas.map((idea: { id: string }, depth: number) => `${idea.id}@${path.ideaStates[depth]?.selectedIncomingIndex ?? ''}`)
     ].join('/')
   }
 
@@ -31,9 +31,9 @@ export function useKeepSelectedAimVisible(
     await nextTick()
     const container = containerRef.value
     if (!container) return
-    // Every aim on the selection path carries `.active`; ancestors precede their
-    // descendants in document order, so the last match is the selected aim.
-    const activeAims = container.querySelectorAll<HTMLElement>('.aim-item.active')
+    // Every idea on the selection path carries `.active`; ancestors precede their
+    // descendants in document order, so the last match is the selected idea.
+    const activeAims = container.querySelectorAll<HTMLElement>('.idea-item.active')
     const selected = activeAims[activeAims.length - 1]
     if (selected) scrollToElement(selected)
   }, { flush: 'post' })

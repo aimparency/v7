@@ -18,7 +18,7 @@ const { mockTrpc } = vi.hoisted(() => {
           })
         }
       },
-      aim: {
+      idea: {
         list: { query: vi.fn() },
         getMany: { query: vi.fn() },
         get: { query: vi.fn() },
@@ -63,19 +63,19 @@ describe('Multi-Client Synchronization', () => {
     vi.clearAllMocks()
   })
 
-  it('updates state correctly when a floating aim is committed to a phase by another client', async () => {
+  it('updates state correctly when a floating idea is committed to a phase by another client', async () => {
     const store = useDataStore()
     const projectStore = useProjectStore()
     const projectPath = '/test/project'
     projectStore.projectPath = projectPath
 
-    // 1. Initial State: 1 Floating Aim, 1 Phase
-    const aimId = 'aim-1'
+    // 1. Initial State: 1 Floating Idea, 1 Phase
+    const ideaId = 'idea-1'
     const phaseId = 'phase-1'
     
     const initialAim = {
-      id: aimId,
-      text: 'Aim 1',
+      id: ideaId,
+      text: 'Idea 1',
       status: { state: 'open' },
       committedIn: [],
       supportedAims: [],
@@ -92,25 +92,25 @@ describe('Multi-Client Synchronization', () => {
 
     // Mock initial load responses
     mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
-    mockTrpc.aim.list.query.mockResolvedValue([initialAim])
+    mockTrpc.idea.list.query.mockResolvedValue([initialAim])
     mockTrpc.phase.list.query.mockResolvedValue([initialPhase])
     mockTrpc.phase.get.query.mockImplementation(({phaseId: id}: any) => {
         if (id === phaseId) return Promise.resolve(initialPhase)
         return Promise.resolve(null)
     })
-    mockTrpc.aim.get.query.mockImplementation(({aimId: id}: any) => {
-        if (id === aimId) return Promise.resolve(initialAim)
+    mockTrpc.idea.get.query.mockImplementation(({ideaId: id}: any) => {
+        if (id === ideaId) return Promise.resolve(initialAim)
         return Promise.resolve(null)
     })
 
     await store.loadProject(projectPath)
 
     expect(store.floatingAims.length).toBe(1)
-    expect(store.floatingAims[0]!.id).toBe(aimId)
+    expect(store.floatingAims[0]!.id).toBe(ideaId)
     expect(store.getAimsForPhase(phaseId).length).toBe(0)
 
     // 2. Simulate Remote Update: Phase updated (commitments added)
-    const updatedPhase = { ...initialPhase, commitments: [aimId] }
+    const updatedPhase = { ...initialPhase, commitments: [ideaId] }
     
     // Update mock for get (server sends updated phase)
     mockTrpc.phase.get.query.mockResolvedValue(updatedPhase)
@@ -118,20 +118,20 @@ describe('Multi-Client Synchronization', () => {
     // Trigger callback
     await subscriptionCallback({ type: 'phase', id: phaseId, projectPath })
 
-    // Check state: Aim should be in phase list?
+    // Check state: Idea should be in phase list?
     const phaseAims = store.getAimsForPhase(phaseId)
     expect(phaseAims.length).toBe(1)
-    expect(phaseAims[0]!.id).toBe(aimId)
+    expect(phaseAims[0]!.id).toBe(ideaId)
 
-    // 3. Simulate Remote Update: Aim updated (committedIn added)
+    // 3. Simulate Remote Update: Idea updated (committedIn added)
     const updatedAim = { ...initialAim, committedIn: [phaseId] }
-    mockTrpc.aim.get.query.mockResolvedValue(updatedAim)
+    mockTrpc.idea.get.query.mockResolvedValue(updatedAim)
 
     // Trigger callback
-    await subscriptionCallback({ type: 'aim', id: aimId, projectPath })
+    await subscriptionCallback({ type: 'idea', id: ideaId, projectPath })
 
     // Check: Removed from floating
-    expect(store.floatingAimsIds).not.toContain(aimId)
+    expect(store.floatingAimsIds).not.toContain(ideaId)
     expect(store.floatingAims.length).toBe(0)
     
     // And still in phase
@@ -144,60 +144,60 @@ describe('Multi-Client Synchronization', () => {
     const projectPath = '/test/project'
     projectStore.projectPath = projectPath
 
-    const aimId = 'new-aim-3'
+    const ideaId = 'new-idea-3'
     const phaseId = 'phase-3'
     const initialPhase = { id: phaseId, name: 'Phase 3', parent: null, childPhaseIds: [], commitments: [] }
-    const newAim = { id: aimId, text: 'New Aim', status: { state: 'open' }, committedIn: [phaseId], supportingConnections: [], supportedAims: [] }
+    const newAim = { id: ideaId, text: 'New Idea', status: { state: 'open' }, committedIn: [phaseId], supportingConnections: [], supportedAims: [] }
 
     mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
-    mockTrpc.aim.list.query.mockResolvedValue([])
+    mockTrpc.idea.list.query.mockResolvedValue([])
     mockTrpc.phase.list.query.mockResolvedValue([initialPhase])
 
     await store.loadProject(projectPath)
 
-    await subscriptionCallback({ type: 'aim', id: aimId, projectPath, entity: newAim })
-    await subscriptionCallback({ type: 'phase', id: phaseId, projectPath, entity: { ...initialPhase, commitments: [aimId] } })
+    await subscriptionCallback({ type: 'idea', id: ideaId, projectPath, entity: newAim })
+    await subscriptionCallback({ type: 'phase', id: phaseId, projectPath, entity: { ...initialPhase, commitments: [ideaId] } })
     await subscriptionCallback({ type: 'project', id: 'meta', projectPath, entity: { rootPhaseIds: [phaseId], name: 'Renamed' } })
 
-    expect(store.getAimsForPhase(phaseId).map((aim) => aim.id)).toEqual([aimId])
+    expect(store.getAimsForPhase(phaseId).map((idea) => idea.id)).toEqual([ideaId])
     expect(store.meta.name).toBe('Renamed')
-    expect(mockTrpc.aim.get.query).not.toHaveBeenCalled()
+    expect(mockTrpc.idea.get.query).not.toHaveBeenCalled()
     expect(mockTrpc.phase.get.query).not.toHaveBeenCalled()
     expect(mockTrpc.project.getMeta.query).toHaveBeenCalledTimes(1)
 
-    await subscriptionCallback({ type: 'aim', id: aimId, projectPath, deleted: true })
+    await subscriptionCallback({ type: 'idea', id: ideaId, projectPath, deleted: true })
     await subscriptionCallback({ type: 'phase', id: phaseId, projectPath, deleted: true })
 
-    expect(store.aims[aimId]).toBeUndefined()
+    expect(store.ideas[ideaId]).toBeUndefined()
     expect(store.phases[phaseId]).toBeUndefined()
   })
 
   it('does not let an older mutation response overwrite a newer subscription refresh', async () => {
     const store = useDataStore()
     const projectPath = '/test/project'
-    const aimId = 'aim-race'
+    const ideaId = 'idea-race'
     const initialAim = {
-      id: aimId,
+      id: ideaId,
       text: 'Initial',
       status: { state: 'open' },
       committedIn: [],
       supportedAims: [],
       supportingConnections: []
     }
-    store.replaceAim(aimId, initialAim as any)
+    store.replaceAim(ideaId, initialAim as any)
     store.subscribeToUpdates(projectPath)
 
-    let resolveMutation!: (aim: any) => void
+    let resolveMutation!: (idea: any) => void
     const mutationResponse = new Promise(resolve => { resolveMutation = resolve })
-    mockTrpc.aim.update.mutate.mockReturnValue(mutationResponse)
-    mockTrpc.aim.get.query.mockResolvedValue({ ...initialAim, text: 'Newest server state' })
+    mockTrpc.idea.update.mutate.mockReturnValue(mutationResponse)
+    mockTrpc.idea.get.query.mockResolvedValue({ ...initialAim, text: 'Newest server state' })
 
-    const mutation = store.updateAim(projectPath, aimId, { text: 'Mutation response' } as any)
-    await subscriptionCallback({ type: 'aim', id: aimId, projectPath })
+    const mutation = store.updateAim(projectPath, ideaId, { text: 'Mutation response' } as any)
+    await subscriptionCallback({ type: 'idea', id: ideaId, projectPath })
     resolveMutation({ ...initialAim, text: 'Mutation response' })
     await mutation
 
-    expect(store.aims[aimId]!.text).toBe('Newest server state')
+    expect(store.ideas[ideaId]!.text).toBe('Newest server state')
   })
 
   it('does not let an older phase mutation response overwrite a newer subscription refresh', async () => {
@@ -234,9 +234,9 @@ describe('Multi-Client Synchronization', () => {
   it('applies subscription entity payloads without query round-trips', async () => {
     const store = useDataStore()
     const projectPath = '/test/project'
-    const aim = {
-      id: 'payload-aim',
-      text: 'Payload aim',
+    const idea = {
+      id: 'payload-idea',
+      text: 'Payload idea',
       status: { state: 'open' },
       committedIn: [],
       supportedAims: [],
@@ -251,12 +251,12 @@ describe('Multi-Client Synchronization', () => {
     }
     store.subscribeToUpdates(projectPath)
 
-    await subscriptionCallback({ type: 'aim', id: aim.id, projectPath, entity: aim })
+    await subscriptionCallback({ type: 'idea', id: idea.id, projectPath, entity: idea })
     await subscriptionCallback({ type: 'phase', id: phase.id, projectPath, entity: phase })
 
-    expect(store.aims[aim.id]!.text).toBe('Payload aim')
+    expect(store.ideas[idea.id]!.text).toBe('Payload idea')
     expect(store.phases[phase.id]!.name).toBe('Payload phase')
-    expect(mockTrpc.aim.get.query).not.toHaveBeenCalled()
+    expect(mockTrpc.idea.get.query).not.toHaveBeenCalled()
     expect(mockTrpc.phase.get.query).not.toHaveBeenCalled()
   })
 })

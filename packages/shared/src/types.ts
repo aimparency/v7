@@ -1,16 +1,16 @@
 import { z } from 'zod';
 
-export const AimStatusSchema = z.object({
+export const IdeaStatusSchema = z.object({
   state: z.string(),
   comment: z.string(),
   date: z.number(), // Timestamp of the last actual state transition
   reviewedAt: z.number().optional() // Explicit confirmation that this status/intention still holds
 });
 
-export type AimStatusState = string;
+export type IdeaStatusState = string;
 
 export const ConnectionSchema = z.object({
-  aimId: z.string().uuid(),
+  ideaId: z.string().uuid(),
   relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
   weight: z.number().default(1),
   explanation: z.string().optional(),
@@ -19,13 +19,13 @@ export const ConnectionSchema = z.object({
 
 export type Connection = z.infer<typeof ConnectionSchema>;
 
-// A repo-level cross-repo link: a local aim is supported by ANOTHER repo AS A
-// WHOLE (black box), identified by repoId — NO aimId, because repo-only links
-// never target a specific external aim (see the inter-repository-links design).
+// A repo-level cross-repo link: a local idea is supported by ANOTHER repo AS A
+// WHOLE (black box), identified by repoId — NO ideaId, because repo-only links
+// never target a specific external idea (see the inter-repository-links design).
 // The other repo keeps no back-reference; value flows out into the repo node,
 // which the value engine treats as a leaf sink. Kept in its own array
-// (supportingRepos) rather than overloaded onto ConnectionSchema so aim edges
-// keep their required aimId and the consistency checker skips repo edges for
+// (supportingRepos) rather than overloaded onto ConnectionSchema so idea edges
+// keep their required ideaId and the consistency checker skips repo edges for
 // free (it only walks supportingConnections/supportedAims).
 export const RepoConnectionSchema = z.object({
   repoId: z.string().uuid(),
@@ -49,21 +49,21 @@ export const ReflectionSchema = z.object({
 
 export type Reflection = z.infer<typeof ReflectionSchema>;
 
-export const AimSchema = z.object({
+export const IdeaSchema = z.object({
   id: z.string().uuid(),
   text: z.string(),
   description: z.string().optional(),
-  reflection: z.string().optional(), // Notes on how this aim went (simple text)
+  reflection: z.string().optional(), // Notes on how this idea went (simple text)
   reflections: z.array(ReflectionSchema).default([]), // Structured periodic self-evaluations
   archived: z.boolean().default(false),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(), // Custom node color (hex); null/absent clears it. Overrides status/priority color when set
   tags: z.array(z.string()).default([]),
   supportingConnections: z.array(ConnectionSchema).default([]),
-  supportingRepos: z.array(RepoConnectionSchema).optional(), // repo-level cross-repo links (this aim is supported by a whole external repo)
+  supportingRepos: z.array(RepoConnectionSchema).optional(), // repo-level cross-repo links (this idea is supported by a whole external repo)
   incoming: z.array(z.string().uuid()).optional(), // Deprecated: use supportingConnections
   supportedAims: z.array(z.string().uuid()),
   committedIn: z.array(z.string().uuid()),
-  status: AimStatusSchema,
+  status: IdeaStatusSchema,
   intrinsicValue: z.number().finite().nonnegative().default(0), // Standalone estimated value
   valueRationale: z.string().optional(), // Human-authored explanation for the intrinsic value estimate
   cost: z.number().finite().positive().default(1), // Estimated direct present cost
@@ -89,7 +89,7 @@ export const PhaseSchema = z.object({
   name: z.string()
 });
 
-export const AimStateSchema = z.object({
+export const IdeaStateSchema = z.object({
   key: z.string().regex(/^[a-z0-9-]+$/),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   ongoing: z.boolean()
@@ -131,7 +131,7 @@ export const ProjectMetaSchema = z.object({
   linkedRepos: z.array(LinkedRepoSchema).optional(), // portable cross-repo links
   initialInstructions: z.string().optional(), // user-authored project instructions posted to the agent at the start of each conversation
   supervisorGuidancePrefix: z.string().optional(), // optional project-specific reminder prefixed to supervisor guidance
-  statuses: z.array(AimStateSchema).optional(),
+  statuses: z.array(IdeaStateSchema).optional(),
   dataModelVersion: z.number().int().positive().optional(),
   phaseCursors: z.record(z.string(), z.string()).optional(), // column level (string) → selected phase ID
   phaseActiveLevel: z.number().int().min(0).optional(),
@@ -148,12 +148,12 @@ export interface Hint {
   action: string;
 }
 
-export type Aim = z.infer<typeof AimSchema>;
+export type Idea = z.infer<typeof IdeaSchema>;
 export type Phase = z.infer<typeof PhaseSchema>;
-export type AimStatus = z.infer<typeof AimStatusSchema>;
+export type IdeaStatus = z.infer<typeof IdeaStatusSchema>;
 export type ProjectMeta = z.infer<typeof ProjectMetaSchema>;
 export type SystemStatus = z.infer<typeof SystemStatusSchema>;
-export type SearchAimResult = Aim & {
+export type SearchAimResult = Idea & {
   score?: number;
   idMatch?: {
     prefix: string;

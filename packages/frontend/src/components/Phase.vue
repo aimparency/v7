@@ -3,7 +3,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useDataStore, type Phase} from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import AimsList from './AimsList.vue'
+import IdeasList from './IdeasList.vue'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu.vue'
 import { useLongPress } from '../composables/useLongPress'
 import { perfLog } from '../utils/perf-log'
@@ -19,7 +19,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'scroll-request': [element: HTMLElement]
-  'aim-clicked': [aimId: string, modifiers?: { ctrl: boolean; shift: boolean }]
+  'idea-clicked': [ideaId: string, modifiers?: { ctrl: boolean; shift: boolean }]
   'phase-clicked': []
 }>()
 
@@ -35,7 +35,7 @@ const priorityState = ref('human-dependent')
 const prioritizedAims = computed(() => rankAimsForPhaseTree(
   props.phase.id,
   dataStore.phases,
-  dataStore.aims,
+  dataStore.ideas,
   dataStore.calculatedPriorities,
   priorityState.value
 ))
@@ -44,14 +44,14 @@ const togglePriority = () => {
   showPriority.value = !showPriority.value
 }
 
-const openPrioritizedAim = (aimId: string) => {
-  modalStore.openAimEditModal(aimId)
+const openPrioritizedAim = (ideaId: string) => {
+  modalStore.openAimEditModal(ideaId)
 }
 
-// Get aims from the store
+// Get ideas from the store
 const phaseAims = computed(() => dataStore.getAimsForPhase(props.phase.id))
 
-// Load aims and scroll on mount
+// Load ideas and scroll on mount
 onMounted(() => {
   perfLog('phase.mount', {
     phaseId: props.phase.id,
@@ -89,10 +89,10 @@ const openMenu = (event: PointerEvent) => {
 
 const longPress = useLongPress(openMenu)
 
-// Add an aim to an *empty* phase. With existing aims you just tap (or long-press)
-// an aim directly, so "enter aims"/"add aim" only makes sense when there are none.
-// Mirrors the keyboard flow: `i` enters aim mode for the phase, `o` opens the
-// create-aim modal against it.
+// Add an idea to an *empty* phase. With existing ideas you just tap (or long-press)
+// an idea directly, so "enter ideas"/"add idea" only makes sense when there are none.
+// Mirrors the keyboard flow: `i` enters idea mode for the phase, `o` opens the
+// create-idea modal against it.
 const addAimToEmptyPhase = async () => {
   await dispatchKey('i')
   await dispatchKey('o')
@@ -105,7 +105,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
     { id: 'edit', label: 'Edit phase', run: () => dispatchKey('e') }
   ]
   if (phaseAims.value.length === 0) {
-    items.push({ id: 'add-aim', label: 'Add aim', run: addAimToEmptyPhase })
+    items.push({ id: 'add-idea', label: 'Add idea', run: addAimToEmptyPhase })
   }
   items.push(
     { id: 'mark-current', label: 'Mark as current', run: () => dispatchKey('c') },
@@ -133,7 +133,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
       'selected': isSelected,
       'current': isCurrent,
       'pending-delete': isPendingDelete,
-      /* Phase is the action target when selected in this column and not in aim mode. */
+      /* Phase is the action target when selected in this column and not in idea mode. */
       'action-target': isActive && !uiStore.navigatingAims
     }"
     @click="$emit('phase-clicked')"
@@ -189,26 +189,26 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
       </label>
 
       <div class="priority-summary">
-        Direct and transitive aims across this phase and its subphases
+        Direct and transitive ideas across this phase and its subphases
       </div>
 
       <div v-if="prioritizedAims.length === 0" class="priority-empty">
-        No {{ priorityState }} aims
+        No {{ priorityState }} ideas
       </div>
       <ol v-else class="priority-list">
-        <li v-for="result in prioritizedAims" :key="result.aim.id">
+        <li v-for="result in prioritizedAims" :key="result.idea.id">
           <button
             type="button"
-            class="priority-aim"
-            :title="`Edit ${result.aim.text || 'untitled aim'}`"
-            @click="openPrioritizedAim(result.aim.id)"
+            class="priority-idea"
+            :title="`Edit ${result.idea.text || 'untitled idea'}`"
+            @click="openPrioritizedAim(result.idea.id)"
           >
             <span class="priority-rank">{{ formatAimPriority(result.priority) }}</span>
             <span class="priority-copy">
-              <span class="priority-text">{{ result.aim.text || '(untitled)' }}</span>
+              <span class="priority-text">{{ result.idea.text || '(untitled)' }}</span>
               <span class="priority-phase">
                 {{ dataStore.phases[result.phaseId]?.name || 'This phase' }}
-                {{ result.directlyCommitted ? '' : ' · via committed aim' }}
+                {{ result.directlyCommitted ? '' : ' · via committed idea' }}
               </span>
             </span>
           </button>
@@ -216,18 +216,18 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
       </ol>
     </section>
 
-    <!-- Aims List -->
-    <div v-else class="aims-container">
-      <AimsList
-        :aims="phaseAims"
+    <!-- Ideas List -->
+    <div v-else class="ideas-container">
+      <IdeasList
+        :ideas="phaseAims"
         :phase-id="phase.id"
         :column-index="0"
         :is-active="isActive && uiStore.navigatingAims"
         :is-selected="isSelected"
-        :selected-aim-index="phase.selectedAimIndex"
-        :aim-ui-states="uiStore.getPhaseAimUIStates(phase.id)"
+        :selected-idea-index="phase.selectedAimIndex"
+        :idea-ui-states="uiStore.getPhaseAimUIStates(phase.id)"
         @scroll-request="$emit('scroll-request', $event)"
-        @aim-clicked="(id, mods) => $emit('aim-clicked', id, mods)"
+        @idea-clicked="(id, mods) => $emit('idea-clicked', id, mods)"
       />
     </div>
   </div>
@@ -351,7 +351,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
   list-style: none;
 }
 
-.priority-aim {
+.priority-idea {
   display: flex;
   width: 100%;
   align-items: flex-start;
@@ -365,7 +365,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
   cursor: pointer;
 }
 
-.priority-aim:hover {
+.priority-idea:hover {
   border-color: #d2a84a;
   background: rgba(210, 168, 74, 0.1);
 }
@@ -400,7 +400,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
   white-space: nowrap;
 }
 
-.aims-container {
+.ideas-container {
   display: flex;
   flex-direction: column;
   min-height: 0;

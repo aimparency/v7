@@ -43,18 +43,18 @@ const ttsClient = new textToSpeech.TextToSpeechClient();
 // System Prompt
 const SYSTEM_PROMPT = `
 You are the Aimparency Life Strategist, a conversational voice assistant.
-Your goal is to help the user manage their aims, prioritize tasks, and achieve their goals.
+Your goal is to help the user manage their ideas, prioritize tasks, and achieve their goals.
 You have access to the user's Aimparency project via tools.
 Keep your responses concise and natural for voice interaction.
-If the user mentions an aim, you can look it up or update its status.
+If the user mentions an idea, you can look it up or update its status.
 `;
 
 const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: "function",
     function: {
-      name: "list_aims",
-      description: "List aims in the project. Can filter by status or phase.",
+      name: "list_ideas",
+      description: "List ideas in the project. Can filter by status or phase.",
       parameters: {
         type: "object",
         properties: {
@@ -67,8 +67,8 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: "function",
     function: {
-      name: "get_prioritized_aims",
-      description: "Get prioritized aims from the current active phase.",
+      name: "get_prioritized_ideas",
+      description: "Get prioritized ideas from the current active phase.",
       parameters: {
         type: "object",
         properties: {
@@ -80,12 +80,12 @@ const TOOLS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
   {
     type: "function",
     function: {
-      name: "create_aim",
-      description: "Create a new aim.",
+      name: "create_idea",
+      description: "Create a new idea.",
       parameters: {
         type: "object",
         properties: {
-          text: { type: "string", description: "Aim description" },
+          text: { type: "string", description: "Idea description" },
           phaseId: { type: "string", description: "Optional phase UUID" }
         },
         required: ["text"]
@@ -98,29 +98,29 @@ async function handleToolCall(name: string, args: any, projectPath: string) {
   console.log(`[VoiceBridge] Tool Call: ${name}`, args);
   try {
     switch (name) {
-      case 'list_aims':
-        return await trpc.aim.list.query({ projectPath, ...args });
-      case 'get_prioritized_aims': {
-        // Fetch aims with open status
-        const aims = await trpc.aim.list.query({ 
+      case 'list_ideas':
+        return await trpc.idea.list.query({ projectPath, ...args });
+      case 'get_prioritized_ideas': {
+        // Fetch ideas with open status
+        const ideas = await trpc.idea.list.query({ 
           projectPath, 
           status: 'open',
           sortBy: 'priority',
           sortOrder: 'desc',
           limit: args.limit || 5
         });
-        return aims;
+        return ideas;
       }
-      case 'create_aim': {
-        const res = await trpc.aim.createFloatingAim.mutate({ 
+      case 'create_idea': {
+        const res = await trpc.idea.createFloatingAim.mutate({ 
           projectPath, 
-          aim: { 
+          idea: { 
             text: args.text,
             status: { state: 'open' }
           } 
         });
         if (args.phaseId) {
-            await trpc.aim.commitToPhase.mutate({ projectPath, aimId: res.id, phaseId: args.phaseId });
+            await trpc.idea.commitToPhase.mutate({ projectPath, ideaId: res.id, phaseId: args.phaseId });
         }
         return res;
       }

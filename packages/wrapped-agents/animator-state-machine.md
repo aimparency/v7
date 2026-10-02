@@ -36,7 +36,7 @@
 
 ## State 1: EXPLORING
 
-**Purpose:** Explore available work, break down aims, ideate new possibilities
+**Purpose:** Explore available work, break down ideas, ideate new possibilities
 
 **Animator Prompt (to itself):**
 ```
@@ -44,73 +44,73 @@
 
 Current project context:
 - Active phases: {phase_list}
-- Open aims: {count}
+- Open ideas: {count}
 - Compute budget: {credits} credits, {funds} funds
 
 Check what work is available and decide next action.
 
 Available actions:
-1. start_work: Begin working on specific aim
+1. start_work: Begin working on specific idea
    → Transitions to WORKING
-   → Provide: aim_id, aim_text, strategy
+   → Provide: idea_id, idea_text, strategy
 
-2. break_down_aims: Decompose complex aims into sub-aims
+2. break_down_ideas: Decompose complex ideas into sub-ideas
    → Stays in EXPLORING
-   → Provide: aim_id to decompose
+   → Provide: idea_id to decompose
 
-3. ideate: Generate new aims, research, formulate hypotheses
+3. ideate: Generate new ideas, research, formulate hypotheses
    → Stays in EXPLORING
-   → Provide: ideation_type (research|new_aims|improvements|hypothesis)
+   → Provide: ideation_type (research|new_ideas|improvements|hypothesis)
 
 Respond with JSON:
-{"action": "start_work", "aim_id": "...", "aim_text": "...", "strategy": "..."}
+{"action": "start_work", "idea_id": "...", "idea_text": "...", "strategy": "..."}
 ```
 
 **Action Details:**
 
 ### start_work
-- Animator calls MCP: `get_aim_context(aim_id)`
+- Animator calls MCP: `get_idea_context(idea_id)`
 - Prepares context for main session
-- Sends INSTRUCT.md + aim context to main session
+- Sends INSTRUCT.md + idea context to main session
 - Transitions to WORKING state
-- **Provide:** `aim_id`, `aim_text`, `strategy`
+- **Provide:** `idea_id`, `idea_text`, `strategy`
 
-### break_down_aims
-- Animator prompts main session: "Break down this aim: {aim_text}. Create sub-aims using create_aim MCP tool."
-- Main session creates sub-aims
-- Stays in EXPLORING (loops back to check aims again)
-- **Provide:** `aim_id` to decompose
+### break_down_ideas
+- Animator prompts main session: "Break down this idea: {idea_text}. Create sub-ideas using create_idea MCP tool."
+- Main session creates sub-ideas
+- Stays in EXPLORING (loops back to check ideas again)
+- **Provide:** `idea_id` to decompose
 
 ### ideate
 - **research:** Prompt main session to do web research on topic
-- **new_aims:** "Look at codebase and create aims for improvements (refactoring, tests, docs, security)"
+- **new_ideas:** "Look at codebase and create ideas for improvements (refactoring, tests, docs, security)"
 - **improvements:** "Review recent work and suggest optimizations"
-- **hypothesis:** "Formulate hypotheses about system behavior, create aims to test them"
+- **hypothesis:** "Formulate hypotheses about system behavior, create ideas to test them"
 - Stays in EXPLORING
 - **Provide:** `ideation_type`
 
 **MCP Tools Used by Animator:**
 - `list_phases` - get active phases
-- `get_prioritized_aims` - find work
-- `list_phase_aims_recursive` - check phase contents
-- `get_aim_context` - understand aim before starting
+- `get_prioritized_ideas` - find work
+- `list_phase_ideas_recursive` - check phase contents
+- `get_idea_context` - understand idea before starting
 
 ---
 
 ## State 2: WORKING
 
-**Purpose:** Push main session to complete the aim
+**Purpose:** Push main session to complete the idea
 
 **Animator Prompt (to itself):**
 ```
 [STATE: WORKING]
 
-Currently working on: {aim_text}
+Currently working on: {idea_text}
 Strategy: {strategy}
 Time elapsed: {duration}
 Main session status: {idle|busy|waiting_for_input}
 
-Main session is making progress on the aim.
+Main session is making progress on the idea.
 
 Available actions:
 1. proceed: Continue working
@@ -131,7 +131,7 @@ Respond with JSON:
 Main session continues working. Animator can optionally prompt:
 
 - **motivate:** Send encouraging prompt to main session
-  - "You're making good progress on {aim_text}. Keep going!"
+  - "You're making good progress on {idea_text}. Keep going!"
   - "Tests are passing, implement the next piece"
   - Used when main session is idle but work not complete
 
@@ -148,8 +148,8 @@ Main session continues working. Animator can optionally prompt:
 
 ### wrapping_up
 Main session signals work is complete:
-- Detects phrases like "work is done", "aim completed", "ready to commit"
-- OR aim status updated to "done" via MCP
+- Detects phrases like "work is done", "idea completed", "ready to commit"
+- OR idea status updated to "done" via MCP
 - Transitions to WRAPPING-UP
 - **Provide:** `work_summary`
 
@@ -173,13 +173,13 @@ When main session needs input:
 ```
 [STATE: WRAPPING-UP]
 
-Aim completed: {aim_text}
+Idea completed: {idea_text}
 Work summary: {work_summary}
 
-Verify the aim is truly complete without overengineering.
+Verify the idea is truly complete without overengineering.
 
 Available actions:
-1. verify_and_commit: Check aim context, verify done, commit, compact
+1. verify_and_commit: Check idea context, verify done, commit, compact
    → Transitions to EXPLORING
    → Provide: verification_notes
 
@@ -196,10 +196,10 @@ Respond with JSON:
 ### verify_and_commit
 
 **Verification Steps:**
-1. Call MCP: `get_aim_context(aim_id)` to refresh context
-2. Check if aim criteria met (don't overthink, basic sanity check)
+1. Call MCP: `get_idea_context(idea_id)` to refresh context
+2. Check if idea criteria met (don't overthink, basic sanity check)
 3. Verify no obvious errors or failures
-4. Update aim status to "done" via `update_aim`
+4. Update idea status to "done" via `update_idea`
 
 **Commit Steps:**
 1. Prompt main session: "Track changes and create git commit for completed work. Use `git add -u` then `git add` for new files, then commit."
@@ -218,7 +218,7 @@ Respond with JSON:
 **Provide:** `verification_notes` (what was verified)
 
 ### incomplete
-- Work review shows aim not actually done
+- Work review shows idea not actually done
 - Missing pieces identified
 - Transition back to WORKING
 - **Provide:** `missing_items` (what's not complete)
@@ -230,7 +230,7 @@ Respond with JSON:
 | Current State | Action | Next State |
 |--------------|--------|------------|
 | EXPLORING | start_work | WORKING |
-| EXPLORING | break_down_aims | EXPLORING |
+| EXPLORING | break_down_ideas | EXPLORING |
 | EXPLORING | ideate | EXPLORING |
 | WORKING | proceed | WORKING |
 | WORKING | wrapping_up | WRAPPING-UP |
@@ -280,10 +280,10 @@ class AnimatorStateMachine {
   async executeAction(action: Action) {
     switch(action.action) {
       case 'start_work':
-        await this.startWork(action.aim_id, action.strategy)
+        await this.startWork(action.idea_id, action.strategy)
         break
-      case 'break_down_aims':
-        await this.breakDownAim(action.aim_id)
+      case 'break_down_ideas':
+        await this.breakDownAim(action.idea_id)
         break
       case 'ideate':
         await this.ideate(action.ideation_type)
@@ -303,18 +303,18 @@ class AnimatorStateMachine {
     }
   }
 
-  async startWork(aimId: string, strategy: string) {
-    // Get aim context from MCP
-    const aimContext = await mcp.get_aim_context(aimId)
+  async startWork(ideaId: string, strategy: string) {
+    // Get idea context from MCP
+    const ideaContext = await mcp.get_idea_context(ideaId)
 
-    // Send INSTRUCT.md + aim context to main session
-    const prompt = `${INSTRUCT_TEXT}\n\nWork on this aim:\n${aimContext}\n\nStrategy: ${strategy}`
+    // Send INSTRUCT.md + idea context to main session
+    const prompt = `${INSTRUCT_TEXT}\n\nWork on this idea:\n${ideaContext}\n\nStrategy: ${strategy}`
     await this.mainSession.sendPrompt(prompt)
   }
 
   async proceedWork(promptType: 'motivate' | 'option_select' | 'none') {
     if (promptType === 'motivate') {
-      await this.mainSession.sendPrompt(`Keep making progress on ${this.context.aimText}`)
+      await this.mainSession.sendPrompt(`Keep making progress on ${this.context.ideaText}`)
     } else if (promptType === 'option_select') {
       // Detect options in main session output
       const choice = await this.makeChoice() // or escalate to human
@@ -334,22 +334,22 @@ const PROMPTS = {
 
 Current project context:
 - Active phases: ${context.activePhases}
-- Open aims: ${context.openAimsCount}
+- Open ideas: ${context.openAimsCount}
 - Compute budget: ${context.computeCredits} credits
 
 Available actions:
-1. start_work: Begin working on specific aim (provide aim_id, aim_text, strategy)
-2. break_down_aims: Decompose complex aims (provide aim_id)
-3. ideate: Generate new aims/research (provide ideation_type: research|new_aims|improvements|hypothesis)
+1. start_work: Begin working on specific idea (provide idea_id, idea_text, strategy)
+2. break_down_ideas: Decompose complex ideas (provide idea_id)
+3. ideate: Generate new ideas/research (provide ideation_type: research|new_ideas|improvements|hypothesis)
 
 Respond with JSON:
-{"action": "start_work", "aim_id": "...", "aim_text": "...", "strategy": "..."}
+{"action": "start_work", "idea_id": "...", "idea_text": "...", "strategy": "..."}
 `,
 
   WORKING: (context: StateContext) => `
 [STATE: WORKING]
 
-Working on: ${context.aimText}
+Working on: ${context.ideaText}
 Time elapsed: ${context.workDuration}
 Main session: ${context.mainSessionStatus}
 
@@ -364,7 +364,7 @@ Respond with JSON:
   WRAPPING_UP: (context: StateContext) => `
 [STATE: WRAPPING-UP]
 
-Completed aim: ${context.aimText}
+Completed idea: ${context.ideaText}
 Summary: ${context.workSummary}
 
 Verify completion and commit changes.
@@ -476,8 +476,8 @@ async function handleUserInput(options: Option[]): Promise<string> {
   "currentState": "WORKING",
   "stateEnteredAt": "2026-03-29T10:00:00Z",
   "context": {
-    "aimId": "uuid",
-    "aimText": "...",
+    "ideaId": "uuid",
+    "ideaText": "...",
     "strategy": "..."
   },
   "history": [...]
@@ -504,7 +504,7 @@ async function handleUserInput(options: Option[]): Promise<string> {
 **Current:** `compactEvery` parameter (e.g., every 1 turn)
 
 **Options:**
-- **Keep current:** Compact after each aim (in WRAPPING-UP)
+- **Keep current:** Compact after each idea (in WRAPPING-UP)
 - **Configurable:** User sets compact frequency
 - **Budget-based:** Compact when token budget low
 
@@ -512,14 +512,14 @@ async function handleUserInput(options: Option[]): Promise<string> {
 
 ---
 
-### 6. **Multi-Aim Work**
-**Question:** Can animator work on multiple aims in parallel?
+### 6. **Multi-Idea Work**
+**Question:** Can animator work on multiple ideas in parallel?
 
 **Options:**
-- **Single-aim:** One aim at a time (simpler)
-- **Multi-aim:** Queue multiple aims, work in parallel sessions
+- **Single-idea:** One idea at a time (simpler)
+- **Multi-idea:** Queue multiple ideas, work in parallel sessions
 
-**Recommendation:** Start single-aim, extend to multi-aim later
+**Recommendation:** Start single-idea, extend to multi-idea later
 
 ---
 
@@ -527,11 +527,11 @@ async function handleUserInput(options: Option[]): Promise<string> {
 **Question:** How aggressive should ideation be?
 
 **Options:**
-- **Conservative:** Only create aims when explicitly needed
+- **Conservative:** Only create ideas when explicitly needed
 - **Moderate:** Suggest improvements during EXPLORING
-- **Aggressive:** Constantly generate new aims for everything
+- **Aggressive:** Constantly generate new ideas for everything
 
-**Recommendation:** Moderate - suggest improvements but don't spam aim graph
+**Recommendation:** Moderate - suggest improvements but don't spam idea graph
 
 ---
 
@@ -541,8 +541,8 @@ async function handleUserInput(options: Option[]): Promise<string> {
 **Guidance:** "without overengineering"
 
 **Options:**
-- **Minimal:** Just check aim context, mark done
-- **Basic:** Check context + run tests if test aim
+- **Minimal:** Just check idea context, mark done
+- **Basic:** Check context + run tests if test idea
 - **Thorough:** Check context + tests + manual review
 
 **Recommendation:** Basic - check context, run tests if applicable, don't overthink
@@ -604,9 +604,9 @@ Before starting implementation, confirm:
 ## Next Steps
 
 1. **Answer open questions** (above)
-2. **Create aim** for state machine implementation
+2. **Create idea** for state machine implementation
 3. **Prototype** EXPLORING state first
-4. **Test** with real aims
+4. **Test** with real ideas
 5. **Iterate** on WORKING and WRAPPING-UP states
 6. **Add** logging and observability
 7. **Tune** prompts and timing

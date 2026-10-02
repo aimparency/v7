@@ -66,13 +66,13 @@ if [[ "$AGENT" == "codex" ]]; then
   CONFIG_DIR="$TARGET/.codex"
   CONFIG_PATH="$CONFIG_DIR/hooks.json"
   DEFAULT_DESC="Continue autonomous Aimparency work when Codex tries to stop."
-  STATUS_MSG="Checking for the next Aimparency aim..."
+  STATUS_MSG="Checking for the next Aimparency idea..."
 elif [[ "$AGENT" == "claude" ]]; then
   CONFIG_DIR="$TARGET/.claude"
   CONFIG_PATH="$CONFIG_DIR/settings.json"
   # Claude Code settings have no top-level description field.
   DEFAULT_DESC=""
-  STATUS_MSG="Checking for the next Aimparency aim..."
+  STATUS_MSG="Checking for the next Aimparency idea..."
 else
   CONFIG_DIR="$TARGET/.gemini"
   CONFIG_PATH="$CONFIG_DIR/settings.json"

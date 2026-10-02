@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
-import { useDataStore, type Aim, type Phase, type AimCreationParams, type PhaseLevelPhaseEntry, type PhaseLevelPlaceholderEntry } from '../data'
-import { AIM_DEFAULTS } from '../../constants/aimDefaults'
-import type { AimStatusState } from 'shared'
+import { useDataStore, type Idea, type Phase, type IdeaCreationParams, type PhaseLevelPhaseEntry, type PhaseLevelPlaceholderEntry } from '../data'
+import { IDEA_DEFAULTS } from '../../constants/ideaDefaults'
+import type { IdeaStatusState } from 'shared'
 import {
   setWindowSize as setWindowSizeHelper,
 } from './view-helpers'
@@ -10,11 +10,11 @@ import {
   setCurrentAimIndexInState,
   findPathToAim as findPathToAimHelper,
   getVisibleAimRows,
-  type AimRow,
+  type IdeaRow,
   type SelectionPath
 } from './navigation-helpers'
 import { captureSelectionAnchor, applySelectionAnchor, type SelectionAnchor } from './selection-anchor'
-import { createAimUIState, ensureAimUIState, insertsAsFirstChild, type AimUIState, type AimUIStateTree } from './aim-ui-state'
+import { createAimUIState, ensureAimUIState, insertsAsFirstChild, type IdeaUIState, type IdeaUIStateTree } from './idea-ui-state'
 import {
   handleAimNavigationKeysAction,
   handleColumnNavigationKeysAction,
@@ -41,9 +41,9 @@ type TeleportSource = {
   phaseId?: string
 }
 
-export type AimPath = {
+export type IdeaPath = {
   phaseId?: string
-  aims: Aim[]
+  ideas: Idea[]
 }
 
 function logNav(event: string, details: Record<string, unknown> = {}) {
@@ -68,25 +68,25 @@ type PersistedListViewState = {
   selectedAimIndexByPhaseId: Record<string, number>
   selectedIncomingIndexByAimId?: Record<string, number>
   expandedAimIds?: string[]
-  floatingAimUIStates?: AimUIStateTree
-  phaseAimUIStatesByPhaseId?: Record<string, AimUIStateTree>
+  floatingAimUIStates?: IdeaUIStateTree
+  phaseAimUIStatesByPhaseId?: Record<string, IdeaUIStateTree>
   // Authoritative selection by identity; the index fields above only seed
   // remembered per-phase positions (and older saved states).
   selection?: SelectionAnchor
 }
 
-// Structural edits (J/K/H/L on aims or phases, paste) run one after another.
+// Structural edits (J/K/H/L on ideas or phases, paste) run one after another.
 // Each computes its target from the current, index-based selection and applies
 // an optimistic change; a key pressed while the previous edit's server round
 // trip is in flight would otherwise start from optimistic state that the
-// arriving push then overwrites, leaving the index on a different aim — so
-// fast repeated J/K moved other aims.
+// arriving push then overwrites, leaving the index on a different idea — so
+// fast repeated J/K moved other ideas.
 let structuralEditQueue: Promise<unknown> = Promise.resolve()
 
-// The list the aim cursor moves in; see getAimListScope.
-type AimListScope = {
-  aims: Aim[]
-  tree: AimUIStateTree
+// The list the idea cursor moves in; see getAimListScope.
+type IdeaListScope = {
+  ideas: Idea[]
+  tree: IdeaUIStateTree
   setTopIndex: (index: number) => void
 }
 
@@ -115,7 +115,7 @@ export const useListStore = defineStore('ui', {
     // autonomous loop as the active phase. Independent of browsing focus above.
     currentPhaseIdByLevel: {} as Record<string, string>, // level -> phaseId
 
-    // Root aims selection (for column -1)
+    // Root ideas selection (for column -1)
     floatingAimIndex: 0,
 
     // Viewport for column scrolling
@@ -126,7 +126,7 @@ export const useListStore = defineStore('ui', {
     pendingDeletePhaseId: null as string | null,
 
     // Multi-selection (separate from primary navigation/focus selection).
-    // Used for bulk actions like "merge aims" (current week UI feature).
+    // Used for bulk actions like "merge ideas" (current week UI feature).
     // Ctrl/Cmd+click or shift+click to populate. Primary click still drives nav selection.
     multiSelectMode: false,
     multiSelectedAimIds: [] as string[],
@@ -143,8 +143,8 @@ export const useListStore = defineStore('ui', {
     uiStatePersistTimeout: null as ReturnType<typeof setTimeout> | null,
     isRestoringUIState: false,
     restoreGeneration: 0,
-    floatingAimUIStates: {} as AimUIStateTree,
-    phaseAimUIStatesByPhaseId: {} as Record<string, AimUIStateTree>,
+    floatingAimUIStates: {} as IdeaUIStateTree,
+    phaseAimUIStatesByPhaseId: {} as Record<string, IdeaUIStateTree>,
   }),
   
   getters: {
@@ -197,7 +197,7 @@ export const useListStore = defineStore('ui', {
 
     // Multi-select helpers (for bulk actions like merge)
     multiSelectedSet: (state): Set<string> => new Set(state.multiSelectedAimIds),
-    isMultiSelected: (state) => (aimId: string): boolean => state.multiSelectedAimIds.includes(aimId),
+    isMultiSelected: (state) => (ideaId: string): boolean => state.multiSelectedAimIds.includes(ideaId),
     multiSelectCount: (state): number => state.multiSelectedAimIds.length,
   },
   
@@ -477,12 +477,12 @@ export const useListStore = defineStore('ui', {
 
           if (listViewState.expandedAimIds || listViewState.selectedIncomingIndexByAimId) {
             const expandedAimIds = new Set(listViewState.expandedAimIds ?? [])
-            for (const aim of Object.values(dataStore.aims)) {
-              if (!aim) continue
-              if (!expandedAimIds.has(aim.id) && listViewState.selectedIncomingIndexByAimId?.[aim.id] === undefined) continue
-              const state = ensureAimUIState(this.floatingAimUIStates, aim.id)
-              state.expanded = expandedAimIds.has(aim.id)
-              const selectedIncomingIndex = listViewState.selectedIncomingIndexByAimId?.[aim.id]
+            for (const idea of Object.values(dataStore.ideas)) {
+              if (!idea) continue
+              if (!expandedAimIds.has(idea.id) && listViewState.selectedIncomingIndexByAimId?.[idea.id] === undefined) continue
+              const state = ensureAimUIState(this.floatingAimUIStates, idea.id)
+              state.expanded = expandedAimIds.has(idea.id)
+              const selectedIncomingIndex = listViewState.selectedIncomingIndexByAimId?.[idea.id]
               if (selectedIncomingIndex !== undefined) {
                 state.selectedIncomingIndex = selectedIncomingIndex
               }
@@ -570,30 +570,30 @@ export const useListStore = defineStore('ui', {
       useUIModalStore().clearTeleportBuffer()
     },
 
-    // Create aim and update selection
+    // Create idea and update selection
     async createAim(
-      aimTextOrId: string,
+      ideaTextOrId: string,
       isExistingAim: boolean = false,
       description?: string,
       tags?: string[],
-      intrinsicValue: number = AIM_DEFAULTS.intrinsicValue,
-      loopWeight: number = AIM_DEFAULTS.loopWeight,
-      cost: number = AIM_DEFAULTS.cost,
+      intrinsicValue: number = IDEA_DEFAULTS.intrinsicValue,
+      loopWeight: number = IDEA_DEFAULTS.loopWeight,
+      cost: number = IDEA_DEFAULTS.cost,
       weight: number = 1,
       supportedAims: string[] = [],
-      supportingConnections: { aimId: string, weight?: number, relativePosition?: [number, number] }[] = [],
+      supportingConnections: { ideaId: string, weight?: number, relativePosition?: [number, number] }[] = [],
       color?: string | null,
-      statusState: AimStatusState = 'open',
+      statusState: IdeaStatusState = 'open',
       statusComment: string = '',
-      duration: number = AIM_DEFAULTS.duration,
-      valueRationale: string = AIM_DEFAULTS.valueRationale
+      duration: number = IDEA_DEFAULTS.duration,
+      valueRationale: string = IDEA_DEFAULTS.valueRationale
     ) {
       const dataStore = useDataStore()
       const modalStore = useUIModalStore()
       const projectStore = useProjectStore()
 
-      const aimAttributes: AimCreationParams = {
-        text: aimTextOrId,
+      const ideaAttributes: IdeaCreationParams = {
+        text: ideaTextOrId,
         description,
         tags: tags || [],
         reflections: [],
@@ -613,70 +613,70 @@ export const useListStore = defineStore('ui', {
 
       const path = this.getSelectionPath()
       let newAimId: string | undefined
-      // Parent aim when creating/linking inside a sub-aim list (implicit connection).
+      // Parent idea when creating/linking inside a sub-idea list (implicit connection).
       // Used to offer the contribution % + explanation modal afterwards.
       let implicitParentId: string | undefined
       let createdAsPhaseCommitmentWithoutImplicitSupportedAim = false
 
-      if (modalStore.aimModalSource === 'graph') {
+      if (modalStore.ideaModalSource === 'graph') {
         if (isExistingAim) {
-          newAimId = aimTextOrId
+          newAimId = ideaTextOrId
         } else {
-          const result = await dataStore.createFloatingAim(projectStore.projectPath, aimAttributes)
+          const result = await dataStore.createFloatingAim(projectStore.projectPath, ideaAttributes)
           newAimId = result.id
         }
-      } else if (path.aims.length === 0) {
+      } else if (path.ideas.length === 0) {
         if (path.phase) {
           if (isExistingAim) {
-            await trpc.aim.commitToPhase.mutate({
+            await trpc.idea.commitToPhase.mutate({
               projectPath: projectStore.projectPath,
-              aimId: aimTextOrId,
+              ideaId: ideaTextOrId,
               phaseId: path.phase.id,
               insertionIndex: 0
             })
-            newAimId = aimTextOrId
+            newAimId = ideaTextOrId
           } else {
-            const result = await dataStore.createCommittedAim(projectStore.projectPath, path.phase.id, aimAttributes, 0)
+            const result = await dataStore.createCommittedAim(projectStore.projectPath, path.phase.id, ideaAttributes, 0)
             newAimId = result.id
             createdAsPhaseCommitmentWithoutImplicitSupportedAim = true
           }
         } else if (isExistingAim) {
-          if (modalStore.aimCreationCallback) {
-            newAimId = aimTextOrId
+          if (modalStore.ideaCreationCallback) {
+            newAimId = ideaTextOrId
           } else {
             modalStore.showAimModal = false
             return
           }
         } else {
-          const result = await dataStore.createFloatingAim(projectStore.projectPath, aimAttributes)
+          const result = await dataStore.createFloatingAim(projectStore.projectPath, ideaAttributes)
           newAimId = result.id
         }
       } else {
-        const currentAim = path.aims[path.aims.length - 1]
-        const currentAimState = path.aimStates[path.aimStates.length - 1]
+        const currentAim = path.ideas[path.ideas.length - 1]
+        const currentAimState = path.ideaStates[path.ideaStates.length - 1]
         if (!currentAim) {
           modalStore.showAimModal = false
           return
         }
 
-        if (insertsAsFirstChild(currentAim, currentAimState, modalStore.aimModalInsertPosition)) {
+        if (insertsAsFirstChild(currentAim, currentAimState, modalStore.ideaModalInsertPosition)) {
           if (isExistingAim) {
-            await trpc.aim.connectAims.mutate({
+            await trpc.idea.connectAims.mutate({
               projectPath: projectStore.projectPath,
               parentAimId: currentAim.id,
-              childAimId: aimTextOrId,
+              childAimId: ideaTextOrId,
               parentIncomingIndex: 0,
               weight
             })
-            newAimId = aimTextOrId
+            newAimId = ideaTextOrId
 
-            const updatedParent = await trpc.aim.get.query({
+            const updatedParent = await trpc.idea.get.query({
               projectPath: projectStore.projectPath,
-              aimId: currentAim.id
+              ideaId: currentAim.id
             })
             dataStore.replaceAim(currentAim.id, updatedParent)
           } else {
-            const result = await dataStore.createSubAim(projectStore.projectPath, currentAim.id, aimAttributes, 0, weight)
+            const result = await dataStore.createSubAim(projectStore.projectPath, currentAim.id, ideaAttributes, 0, weight)
             newAimId = result.id
           }
 
@@ -684,32 +684,32 @@ export const useListStore = defineStore('ui', {
           if (currentAimState) {
             currentAimState.selectedIncomingIndex = 0
           }
-        } else if (path.aims.length > 1) {
-          const parentAim = path.aims[path.aims.length - 2]
-          const parentAimState = path.aimStates[path.aimStates.length - 2]
+        } else if (path.ideas.length > 1) {
+          const parentAim = path.ideas[path.ideas.length - 2]
+          const parentAimState = path.ideaStates[path.ideaStates.length - 2]
           if (parentAim) {
             let insertionIndex = parentAimState?.selectedIncomingIndex ?? 0
-            if (modalStore.aimModalInsertPosition === 'after') {
+            if (modalStore.ideaModalInsertPosition === 'after') {
               insertionIndex++
             }
 
             if (isExistingAim) {
-              await trpc.aim.connectAims.mutate({
+              await trpc.idea.connectAims.mutate({
                 projectPath: projectStore.projectPath,
                 parentAimId: parentAim.id,
-                childAimId: aimTextOrId,
+                childAimId: ideaTextOrId,
                 parentIncomingIndex: insertionIndex,
                 weight
               })
-              newAimId = aimTextOrId
+              newAimId = ideaTextOrId
 
-              const updatedParent = await trpc.aim.get.query({
+              const updatedParent = await trpc.idea.get.query({
                 projectPath: projectStore.projectPath,
-                aimId: parentAim.id
+                ideaId: parentAim.id
               })
               dataStore.replaceAim(parentAim.id, updatedParent)
             } else {
-              const result = await dataStore.createSubAim(projectStore.projectPath, parentAim.id, aimAttributes, insertionIndex, weight)
+              const result = await dataStore.createSubAim(projectStore.projectPath, parentAim.id, ideaAttributes, insertionIndex, weight)
               newAimId = result.id
             }
 
@@ -722,17 +722,17 @@ export const useListStore = defineStore('ui', {
           let insertionIndex = 0
           const phase = dataStore.phases[path.phase.id]
           if (phase && phase.selectedAimIndex !== undefined) {
-            insertionIndex = phase.selectedAimIndex + (modalStore.aimModalInsertPosition === 'after' ? 1 : 0)
+            insertionIndex = phase.selectedAimIndex + (modalStore.ideaModalInsertPosition === 'after' ? 1 : 0)
           }
 
           if (isExistingAim) {
-            await trpc.aim.commitToPhase.mutate({
+            await trpc.idea.commitToPhase.mutate({
               projectPath: projectStore.projectPath,
-              aimId: aimTextOrId,
+              ideaId: ideaTextOrId,
               phaseId: path.phase.id,
               insertionIndex
             })
-            newAimId = aimTextOrId
+            newAimId = ideaTextOrId
 
             const updatedPhase = await trpc.phase.get.query({
               projectPath: projectStore.projectPath,
@@ -740,7 +740,7 @@ export const useListStore = defineStore('ui', {
             })
             dataStore.replacePhase(path.phase.id, updatedPhase)
           } else {
-            const result = await dataStore.createCommittedAim(projectStore.projectPath, path.phase.id, aimAttributes, insertionIndex)
+            const result = await dataStore.createCommittedAim(projectStore.projectPath, path.phase.id, ideaAttributes, insertionIndex)
             newAimId = result.id
             createdAsPhaseCommitmentWithoutImplicitSupportedAim = true
           }
@@ -750,14 +750,14 @@ export const useListStore = defineStore('ui', {
             freshPhase.selectedAimIndex = insertionIndex
           }
         } else if (isExistingAim) {
-          if (modalStore.aimCreationCallback) {
-            newAimId = aimTextOrId
+          if (modalStore.ideaCreationCallback) {
+            newAimId = ideaTextOrId
           } else {
             modalStore.showAimModal = false
             return
           }
         } else {
-          const result = await dataStore.createFloatingAim(projectStore.projectPath, aimAttributes)
+          const result = await dataStore.createFloatingAim(projectStore.projectPath, ideaAttributes)
           newAimId = result.id
         }
       }
@@ -766,10 +766,10 @@ export const useListStore = defineStore('ui', {
       if (newAimId) {
         const shouldPromptForPhaseCommitment =
           !isExistingAim &&
-          modalStore.aimModalSource === 'graph' &&
+          modalStore.ideaModalSource === 'graph' &&
           projectStore.currentView === 'graph'
 
-        if (modalStore.aimCreationCallback) {
+        if (modalStore.ideaCreationCallback) {
           if (shouldPromptForPhaseCommitment) {
             connectionCallbackPromptsPhase = true
             const promptPhase = () => {
@@ -782,22 +782,22 @@ export const useListStore = defineStore('ui', {
                 additionalOptions: [{
                   id: 'skip-phase',
                   label: 'Skip (leave uncommitted)',
-                  description: 'Keep this new graph aim uncommitted to any phase.',
+                  description: 'Keep this new graph idea uncommitted to any phase.',
                   showWhenQueryEmptyOnly: true,
                   actsAsEscape: true
                 }]
               })
             }
-            modalStore.aimCreationCallback(newAimId, promptPhase)
+            modalStore.ideaCreationCallback(newAimId, promptPhase)
           } else {
-            modalStore.aimCreationCallback(newAimId)
+            modalStore.ideaCreationCallback(newAimId)
           }
-          modalStore.aimCreationCallback = null
+          modalStore.ideaCreationCallback = null
         }
 
         if (path.phase) {
-          const aims = dataStore.getAimsForPhase(path.phase.id)
-          const newAimIndex = aims.findIndex((aim: any) => aim.id === newAimId)
+          const ideas = dataStore.getAimsForPhase(path.phase.id)
+          const newAimIndex = ideas.findIndex((idea: any) => idea.id === newAimId)
           if (newAimIndex !== -1) {
             const phase = dataStore.phases[path.phase.id]
             if (phase) {
@@ -805,7 +805,7 @@ export const useListStore = defineStore('ui', {
             }
           }
         } else {
-          const newAimIndex = dataStore.floatingAims.findIndex((aim: any) => aim.id === newAimId)
+          const newAimIndex = dataStore.floatingAims.findIndex((idea: any) => idea.id === newAimId)
           if (newAimIndex !== -1) {
             this.floatingAimIndex = newAimIndex
           }
@@ -817,19 +817,19 @@ export const useListStore = defineStore('ui', {
         !!newAimId &&
         supportedAims.length === 0 &&
         createdAsPhaseCommitmentWithoutImplicitSupportedAim &&
-        modalStore.aimModalSource === 'columns' &&
+        modalStore.ideaModalSource === 'columns' &&
         projectStore.currentView === 'columns'
 
       const shouldPromptForPhaseCommitment =
         !isExistingAim &&
         !!newAimId &&
-        modalStore.aimModalSource === 'graph' &&
+        modalStore.ideaModalSource === 'graph' &&
         projectStore.currentView === 'graph' &&
         !connectionCallbackPromptsPhase
 
       modalStore.closeAimModal()
 
-      // Sub-aim list creation/linking: offer contribution % + explanation for the
+      // Sub-idea list creation/linking: offer contribution % + explanation for the
       // implicit parent->child connection. Reload the parent so its supportingConnections
       // include the freshly-created connection before the modal patches it.
       if (implicitParentId && newAimId && !shouldPromptForSupportedAim && !shouldPromptForPhaseCommitment) {
@@ -839,9 +839,9 @@ export const useListStore = defineStore('ui', {
 
       if (shouldPromptForSupportedAim && newAimId) {
         modalStore.openAimSearch('pick', async (payload) => {
-          if (payload.type !== 'aim') return
+          if (payload.type !== 'idea') return
 
-          await trpc.aim.connectAims.mutate({
+          await trpc.idea.connectAims.mutate({
             projectPath: projectStore.projectPath,
             parentAimId: payload.data.id,
             childAimId: newAimId
@@ -849,12 +849,12 @@ export const useListStore = defineStore('ui', {
 
           await dataStore.loadAims(projectStore.projectPath, [payload.data.id, newAimId])
         }, undefined, {
-          title: 'Connect to Supported Aim',
-          placeholder: 'Optional: search for a parent aim...',
+          title: 'Connect to Supported Idea',
+          placeholder: 'Optional: search for a parent idea...',
           additionalOptions: [{
             id: 'skip-parent',
-            label: 'Skip (no supported aim)',
-            description: 'Leave this new aim without a supported aim connection.',
+            label: 'Skip (no supported idea)',
+            description: 'Leave this new idea without a supported idea connection.',
             showWhenQueryEmptyOnly: true,
             actsAsEscape: true
           }]
@@ -869,7 +869,7 @@ export const useListStore = defineStore('ui', {
           additionalOptions: [{
             id: 'skip-phase',
             label: 'Skip (leave uncommitted)',
-            description: 'Keep this new graph aim uncommitted to any phase.',
+            description: 'Keep this new graph idea uncommitted to any phase.',
             showWhenQueryEmptyOnly: true,
             actsAsEscape: true
           }]
@@ -895,27 +895,27 @@ export const useListStore = defineStore('ui', {
       this.activeColumn = columnIndex
     },
 
-    getCurrentAim(): Aim | undefined {
+    getCurrentAim(): Idea | undefined {
       const path = this.getSelectionPath()
-      return path.aims[path.aims.length - 1]
+      return path.ideas[path.ideas.length - 1]
     }, 
 
-    getCurrentAimUIState(): AimUIState | undefined {
+    getCurrentAimUIState(): IdeaUIState | undefined {
       const path = this.getSelectionPath()
-      return path.aimStates[path.aimStates.length - 1]
+      return path.ideaStates[path.ideaStates.length - 1]
     },
 
-    getFloatingAimUIStates(): AimUIStateTree {
+    getFloatingAimUIStates(): IdeaUIStateTree {
       return this.floatingAimUIStates
     },
 
-    getPhaseAimUIStates(phaseId: string): AimUIStateTree {
+    getPhaseAimUIStates(phaseId: string): IdeaUIStateTree {
       this.phaseAimUIStatesByPhaseId[phaseId] ??= {}
       return this.phaseAimUIStatesByPhaseId[phaseId]
     },
 
-    ensureAimUIState(tree: AimUIStateTree, aimId: string): AimUIState {
-      return ensureAimUIState(tree, aimId)
+    ensureAimUIState(tree: IdeaUIStateTree, ideaId: string): IdeaUIState {
+      return ensureAimUIState(tree, ideaId)
     },
 
     getSelectionPath(): SelectionPath {
@@ -929,13 +929,13 @@ export const useListStore = defineStore('ui', {
       )
     },
 
-    // Helper to set current aim index (replaces setSelectedAim)
-    setCurrentAimIndex(aimIndex: number, dataStore: any) {
+    // Helper to set current idea index (replaces setSelectedAim)
+    setCurrentAimIndex(ideaIndex: number, dataStore: any) {
       setCurrentAimIndexInState(
         this.activeColumn,
         (columnIndex) => this.getSelectedPhaseId(columnIndex),
         (index) => { this.floatingAimIndex = index },
-        aimIndex,
+        ideaIndex,
         dataStore
       )
     },
@@ -1195,7 +1195,7 @@ export const useListStore = defineStore('ui', {
         if (newPhase.commitments.length > 0) {
           // Enter at the first row going down, the last visible row going up.
           const scope = this.getAimListScope(newPhase.id)
-          const rows = scope ? getVisibleAimRows(scope.aims, scope.tree, dataStore) : []
+          const rows = scope ? getVisibleAimRows(scope.ideas, scope.tree, dataStore) : []
           const row = selectLastAim ? rows[rows.length - 1] : rows[0]
           if (scope && row) this.selectAimRow(scope, row)
         }
@@ -1211,36 +1211,36 @@ export const useListStore = defineStore('ui', {
       this.applyPhaseSelection(columnIndex, phaseIndex)
     },
 
-    // Click-to-select by aim ID (finds top-level index automatically)
-    async selectAimById(columnIndex: number, phaseId: string | undefined, aimId: string) {
+    // Click-to-select by idea ID (finds top-level index automatically)
+    async selectAimById(columnIndex: number, phaseId: string | undefined, ideaId: string) {
       const dataStore = useDataStore()
       const modalStore = useUIModalStore()
 
       const currentAim = this.getCurrentAim()
-      const isAlreadySelected = currentAim?.id === aimId && this.activeColumn === columnIndex
+      const isAlreadySelected = currentAim?.id === ideaId && this.activeColumn === columnIndex
 
       if (isAlreadySelected) {
-        const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
-        const aimIndex = aims.findIndex((a: any) => a && a.id === aimId)
-        if (aimIndex !== -1) {
-          const editIds = this.multiSelectedAimIds.includes(aimId) && this.multiSelectedAimIds.length > 1
+        const ideas = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
+        const ideaIndex = ideas.findIndex((a: any) => a && a.id === ideaId)
+        if (ideaIndex !== -1) {
+          const editIds = this.multiSelectedAimIds.includes(ideaId) && this.multiSelectedAimIds.length > 1
             ? this.multiSelectedAimIds
-            : [aimId]
-          modalStore.openAimEditModal(aimId, editIds)
+            : [ideaId]
+          modalStore.openAimEditModal(ideaId, editIds)
         }
         return
       }
 
-      const aims = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
+      const ideas = phaseId ? dataStore.getAimsForPhase(phaseId) : dataStore.floatingAims
 
-      const topLevelIndex = aims.findIndex((a: any) => a && a.id === aimId)
+      const topLevelIndex = ideas.findIndex((a: any) => a && a.id === ideaId)
 
       if (topLevelIndex >= 0) {
         await this.selectAim(columnIndex, phaseId, topLevelIndex)
         return
       }
 
-      const path = findPathToAimHelper(aimId, aims, dataStore)
+      const path = findPathToAimHelper(ideaId, ideas, dataStore)
       if (!path || path.length === 0) return
 
       let stateTree = phaseId ? this.getPhaseAimUIStates(phaseId) : this.floatingAimUIStates
@@ -1248,7 +1248,7 @@ export const useListStore = defineStore('ui', {
         const step = path[i]
         const nextStep = path[i + 1]
         if (!step || !nextStep || nextStep.indexInParent === undefined) continue
-        const state = ensureAimUIState(stateTree, step.aimId)
+        const state = ensureAimUIState(stateTree, step.ideaId)
         state.expanded = true
         state.selectedIncomingIndex = nextStep.indexInParent
         stateTree = state.children
@@ -1271,8 +1271,8 @@ export const useListStore = defineStore('ui', {
       }
     },
 
-    // Click-to-select: focus an aim (set column, phase, mode, and aim)
-    async selectAim(columnIndex: number, phaseId: string | undefined, aimIndex: number) {
+    // Click-to-select: focus an idea (set column, phase, mode, and idea)
+    async selectAim(columnIndex: number, phaseId: string | undefined, ideaIndex: number) {
       const dataStore = useDataStore()
 
       this.setActiveColumn(columnIndex)
@@ -1287,7 +1287,7 @@ export const useListStore = defineStore('ui', {
       }
 
       this.navigatingAims = true
-      this.setCurrentAimIndex(aimIndex, dataStore)
+      this.setCurrentAimIndex(ideaIndex, dataStore)
     },
 
     setPendingDeletePhase(phaseId: string | null) {
@@ -1298,35 +1298,35 @@ export const useListStore = defineStore('ui', {
       this.navigatingAims = false
     },
 
-    // --- Multi-select for bulk actions (current-week feature: merge aims etc.) ---
-    toggleMultiSelect(aimId: string) {
+    // --- Multi-select for bulk actions (current-week feature: merge ideas etc.) ---
+    toggleMultiSelect(ideaId: string) {
       this.cleanMultiSelect()
       this.multiSelectMode = true
       this.pendingBulkDelete = false
-      const idx = this.multiSelectedAimIds.indexOf(aimId)
+      const idx = this.multiSelectedAimIds.indexOf(ideaId)
       if (idx >= 0) {
         this.multiSelectedAimIds.splice(idx, 1)
       } else {
-        this.multiSelectedAimIds.push(aimId)
-        this.multiAnchorId = aimId
+        this.multiSelectedAimIds.push(ideaId)
+        this.multiAnchorId = ideaId
       }
       if (this.multiSelectedAimIds.length === 0) {
         this.clearMultiSelect()
       }
     },
 
-    enterMultiSelect(aimId: string) {
+    enterMultiSelect(ideaId: string) {
       this.multiSelectMode = true
-      this.multiSelectedAimIds = [aimId]
-      this.multiAnchorId = aimId
+      this.multiSelectedAimIds = [ideaId]
+      this.multiAnchorId = ideaId
       this.pendingBulkDelete = false
     },
 
-    addToMultiSelect(aimId: string) {
+    addToMultiSelect(ideaId: string) {
       this.multiSelectMode = true
       this.pendingBulkDelete = false
-      if (!this.multiSelectedAimIds.includes(aimId)) {
-        this.multiSelectedAimIds.push(aimId)
+      if (!this.multiSelectedAimIds.includes(ideaId)) {
+        this.multiSelectedAimIds.push(ideaId)
       }
     },
 
@@ -1340,13 +1340,13 @@ export const useListStore = defineStore('ui', {
     // Auto-clear stale IDs (e.g. after merge/archive/delete or data reload)
     cleanMultiSelect() {
       const dataStore = useDataStore()
-      this.multiSelectedAimIds = this.multiSelectedAimIds.filter(id => id && dataStore.aims[id])
+      this.multiSelectedAimIds = this.multiSelectedAimIds.filter(id => id && dataStore.ideas[id])
       if (this.multiSelectedAimIds.length === 0) {
         this.clearMultiSelect()
       }
     },
 
-    // Shift-range selection within a provided ordered list of aim IDs (e.g. sibling aims in a list or phase)
+    // Shift-range selection within a provided ordered list of idea IDs (e.g. sibling ideas in a list or phase)
     selectMultiRange(targetAimId: string, orderedAimIds: string[]) {
       this.cleanMultiSelect()
       if (!orderedAimIds || orderedAimIds.length === 0) {
@@ -1375,8 +1375,8 @@ export const useListStore = defineStore('ui', {
       this.pendingBulkDelete = false
     },
 
-    setMultiAnchor(aimId: string | null) {
-      this.multiAnchorId = aimId
+    setMultiAnchor(ideaId: string | null) {
+      this.multiAnchorId = ideaId
     },
 
     async requestBulkDelete() {
@@ -1389,11 +1389,11 @@ export const useListStore = defineStore('ui', {
 
       const dataStore = useDataStore()
       const ids = [...this.multiSelectedAimIds]
-      for (const aimId of ids) {
-        if (dataStore.aims[aimId]) {
-          await dataStore.deleteAimFromStore(useProjectStore().projectPath, aimId)
-          delete dataStore.aims[aimId]
-          dataStore.floatingAimsIds = dataStore.floatingAimsIds.filter(id => id !== aimId)
+      for (const ideaId of ids) {
+        if (dataStore.ideas[ideaId]) {
+          await dataStore.deleteAimFromStore(useProjectStore().projectPath, ideaId)
+          delete dataStore.ideas[ideaId]
+          dataStore.floatingAimsIds = dataStore.floatingAimsIds.filter(id => id !== ideaId)
         }
       }
       this.clearMultiSelect()
@@ -1401,7 +1401,7 @@ export const useListStore = defineStore('ui', {
       return true
     },
 
-    // Merge all currently multi-selected (except the target) into the target aim.
+    // Merge all currently multi-selected (except the target) into the target idea.
     // Uses the existing backend merge (target keeps identity + connections + reflections; sources archived).
     async mergeSelectedInto(targetId: string) {
       const projectStore = useProjectStore()
@@ -1410,14 +1410,14 @@ export const useListStore = defineStore('ui', {
 
       const others = this.multiSelectedAimIds.filter(id => id !== targetId)
       if (others.length === 0) {
-        return { success: false, error: 'No other aims selected to merge' }
+        return { success: false, error: 'No other ideas selected to merge' }
       }
 
       const results: any[] = []
       let mergedCount = 0
       for (const sourceId of others) {
         try {
-          const res = await trpc.aim.merge.mutate({ projectPath, targetId, sourceId })
+          const res = await trpc.idea.merge.mutate({ projectPath, targetId, sourceId })
           results.push({ sourceId, ...res })
           mergedCount++
         } catch (e: any) {
@@ -1444,63 +1444,63 @@ export const useListStore = defineStore('ui', {
       }
     },
 
-    async calculateAimPaths(aimId: string): Promise<AimPath[]> {
+    async calculateAimPaths(ideaId: string): Promise<IdeaPath[]> {
       const projectStore = useProjectStore()
       const dataStore = useDataStore()
-      const paths: AimPath[] = []
+      const paths: IdeaPath[] = []
       const visited = new Set<string>()
 
-      const trace = async (currentId: string, pathAcc: Aim[]) => {
+      const trace = async (currentId: string, pathAcc: Idea[]) => {
         if (visited.has(currentId)) return
         visited.add(currentId)
 
-        let aim = dataStore.aims[currentId]
-        if (!aim) {
+        let idea = dataStore.ideas[currentId]
+        if (!idea) {
           try {
-            aim = await trpc.aim.get.query({ projectPath: projectStore.projectPath, aimId: currentId })
-            dataStore.replaceAim(aim.id, aim)
+            idea = await trpc.idea.get.query({ projectPath: projectStore.projectPath, ideaId: currentId })
+            dataStore.replaceAim(idea.id, idea)
           } catch {
-            console.error('failed to load aim', currentId)
+            console.error('failed to load idea', currentId)
             return
           }
         }
 
-        const newPath = [aim, ...pathAcc]
+        const newPath = [idea, ...pathAcc]
         let isRoot = true
 
-        if (aim.committedIn && aim.committedIn.length > 0) {
+        if (idea.committedIn && idea.committedIn.length > 0) {
           isRoot = false
-          for (const phaseId of aim.committedIn) {
-            paths.push({ phaseId, aims: newPath })
+          for (const phaseId of idea.committedIn) {
+            paths.push({ phaseId, ideas: newPath })
           }
         }
 
-        if (aim.supportedAims && aim.supportedAims.length > 0) {
+        if (idea.supportedAims && idea.supportedAims.length > 0) {
           isRoot = false
-          for (const parentId of aim.supportedAims) {
+          for (const parentId of idea.supportedAims) {
             await trace(parentId, newPath)
           }
         }
 
         if (isRoot) {
-          paths.push({ phaseId: undefined, aims: newPath })
+          paths.push({ phaseId: undefined, ideas: newPath })
         }
 
         visited.delete(currentId)
       }
 
-      await trace(aimId, [])
+      await trace(ideaId, [])
       return paths
     },
 
-    async prepareNavigation(aimId: string): Promise<AimPath[]> {
-      return await this.calculateAimPaths(aimId)
+    async prepareNavigation(ideaId: string): Promise<IdeaPath[]> {
+      return await this.calculateAimPaths(ideaId)
     },
 
-    async executeNavigation(path: AimPath) {
+    async executeNavigation(path: IdeaPath) {
       const projectStore = useProjectStore()
       const dataStore = useDataStore()
-      const rootAim = path.aims[0]
+      const rootAim = path.ideas[0]
       const phaseId = path.phaseId
 
       if (phaseId) {
@@ -1538,17 +1538,17 @@ export const useListStore = defineStore('ui', {
       }
 
       let stateTree = phaseId ? this.getPhaseAimUIStates(phaseId) : this.floatingAimUIStates
-      for (let i = 0; i < path.aims.length - 1; i++) {
-        const parentStep = path.aims[i]
+      for (let i = 0; i < path.ideas.length - 1; i++) {
+        const parentStep = path.ideas[i]
         if (!parentStep) continue
-        const parent = dataStore.aims[parentStep.id]
-        const child = path.aims[i + 1]
+        const parent = dataStore.ideas[parentStep.id]
+        const child = path.ideas[i + 1]
         if (!parent || !child) continue
 
         const parentState = ensureAimUIState(stateTree, parent.id)
         parentState.expanded = true
 
-        const childIndex = parent.supportingConnections.findIndex((c: any) => c.aimId === child.id)
+        const childIndex = parent.supportingConnections.findIndex((c: any) => c.ideaId === child.id)
         if (childIndex !== -1) {
           parentState.selectedIncomingIndex = childIndex
         }
@@ -1559,8 +1559,8 @@ export const useListStore = defineStore('ui', {
       this.ensureSelectionVisible()
     },
 
-    async navigateToAim(aimId: string) {
-      const paths = await this.prepareNavigation(aimId)
+    async navigateToAim(ideaId: string) {
+      const paths = await this.prepareNavigation(ideaId)
       const firstPath = paths[0]
       if (firstPath) {
         await this.executeNavigation(firstPath)
@@ -1576,14 +1576,14 @@ export const useListStore = defineStore('ui', {
       await handleGlobalKeydownAction(this, event, dataStore)
     },
 
-    // The list the aim cursor moves in: a phase's committed aims (the active
+    // The list the idea cursor moves in: a phase's committed ideas (the active
     // column's selected phase unless `phaseId` is given) or, in column -1, the
-    // floating aims — with its UI-state tree and top-level cursor setter.
-    getAimListScope(phaseId?: string): AimListScope | undefined {
+    // floating ideas — with its UI-state tree and top-level cursor setter.
+    getAimListScope(phaseId?: string): IdeaListScope | undefined {
       const dataStore = useDataStore()
       if (phaseId === undefined && this.activeColumn === -1) {
         return {
-          aims: dataStore.floatingAims,
+          ideas: dataStore.floatingAims,
           tree: this.getFloatingAimUIStates(),
           setTopIndex: (index: number) => { this.floatingAimIndex = index }
         }
@@ -1591,41 +1591,41 @@ export const useListStore = defineStore('ui', {
       const phase = dataStore.phases[phaseId ?? this.getSelectedPhaseId(this.activeColumn) ?? '']
       if (!phase) return undefined
       return {
-        aims: dataStore.getAimsForPhase(phase.id),
+        ideas: dataStore.getAimsForPhase(phase.id),
         tree: this.getPhaseAimUIStates(phase.id),
         setTopIndex: (index: number) => { phase.selectedAimIndex = index }
       }
     },
 
     // Points the selection chain at `row`, ending the chain there.
-    selectAimRow(scope: AimListScope, row: AimRow) {
+    selectAimRow(scope: IdeaListScope, row: IdeaRow) {
       const dataStore = useDataStore()
       const [topIndex, ...connectionIndices] = row.indexPath
       scope.setTopIndex(topIndex!)
-      let aim: Aim | undefined = scope.aims[topIndex!]
-      let state = aim ? ensureAimUIState(scope.tree, aim.id) : undefined
+      let idea: Idea | undefined = scope.ideas[topIndex!]
+      let state = idea ? ensureAimUIState(scope.tree, idea.id) : undefined
       for (const connectionIndex of connectionIndices) {
-        if (!aim || !state) return
+        if (!idea || !state) return
         state.selectedIncomingIndex = connectionIndex
-        const connection = aim.supportingConnections?.[connectionIndex]
-        aim = connection ? dataStore.aims[connection.aimId] : undefined
-        state = aim ? ensureAimUIState(state.children, aim.id) : undefined
+        const connection = idea.supportingConnections?.[connectionIndex]
+        idea = connection ? dataStore.ideas[connection.ideaId] : undefined
+        state = idea ? ensureAimUIState(state.children, idea.id) : undefined
       }
       if (state) state.selectedIncomingIndex = undefined
     },
 
-    // Moves the aim cursor one visible row (into expanded children and back
+    // Moves the idea cursor one visible row (into expanded children and back
     // out, like a vim tree view). Returns false at either end of the list.
     stepAimRow(delta: -1 | 1): boolean {
       const scope = this.getAimListScope()
       const path = this.getSelectionPath()
-      if (!scope || path.aims.length === 0) return false
+      if (!scope || path.ideas.length === 0) return false
 
       const topIndex = path.phase
         ? path.phase.selectedAimIndex ?? 0
-        : Math.max(0, Math.min(this.floatingAimIndex, scope.aims.length - 1))
-      const currentPath = [topIndex, ...path.aimStates.slice(0, -1).map((state) => state.selectedIncomingIndex!)]
-      const rows = getVisibleAimRows(scope.aims, scope.tree, useDataStore())
+        : Math.max(0, Math.min(this.floatingAimIndex, scope.ideas.length - 1))
+      const currentPath = [topIndex, ...path.ideaStates.slice(0, -1).map((state) => state.selectedIncomingIndex!)]
+      const rows = getVisibleAimRows(scope.ideas, scope.tree, useDataStore())
       const currentRow = rows.findIndex((row) =>
         row.indexPath.length === currentPath.length && row.indexPath.every((index, depth) => index === currentPath[depth])
       )
@@ -1637,7 +1637,7 @@ export const useListStore = defineStore('ui', {
 
     // Universal navigation down (j)
     async navigateDown() {
-      const previousStates = this.getSelectionPath().aimStates
+      const previousStates = this.getSelectionPath().ideaStates
       const previousAimState = previousStates[previousStates.length - 1]
       if (previousAimState) previousAimState.pendingDelete = false
       logNav('navigateDown:start', {
@@ -1654,21 +1654,21 @@ export const useListStore = defineStore('ui', {
     // Universal navigation up (k)
     async navigateUp() {
       const path = this.getSelectionPath()
-      const previousAimState = path.aimStates[path.aimStates.length - 1]
+      const previousAimState = path.ideaStates[path.ideaStates.length - 1]
       if (previousAimState) previousAimState.pendingDelete = false
       logNav('navigateUp:start', {
         activeColumn: this.activeColumn,
         navigatingAims: this.navigatingAims
       })
 
-      if (path.aims.length > 0 && !this.navigatingAims) return
+      if (path.ideas.length > 0 && !this.navigatingAims) return
       if (this.stepAimRow(-1)) return
       if (this.activeColumn >= 0) {
         await this.continueAimBoundaryPhaseMove(-1)
       }
     },
 
-    // Move aim down (J)
+    // Move idea down (J)
     // Queues a structural edit behind the ones in flight; see structuralEditQueue.
     runStructuralEdit<T>(edit: () => Promise<T>): Promise<T> {
       const run = structuralEditQueue.then(edit, edit)
@@ -1680,17 +1680,17 @@ export const useListStore = defineStore('ui', {
       await this.runStructuralEdit(() => moveAimDownAction(this))
     },
 
-    // Move aim up (K)
+    // Move idea up (K)
     async moveAimUp() {
       await this.runStructuralEdit(() => moveAimUpAction(this))
     },
 
-    // Move aim out of sub-aim list (H) - make it sibling of parent
+    // Move idea out of sub-idea list (H) - make it sibling of parent
     async moveAimOut() {
       await this.runStructuralEdit(() => moveAimOutAction(this))
     },
 
-    // Move aim in (L) - make it a sub-aim of previous sibling
+    // Move idea in (L) - make it a sub-idea of previous sibling
     async moveAimIn() {
       await this.runStructuralEdit(() => moveAimInAction(this))
     },
@@ -1698,12 +1698,12 @@ export const useListStore = defineStore('ui', {
     cutAimForTeleport() {
       const modalStore = useUIModalStore()
       const path = this.getSelectionPath()
-      const currentAim = path.aims[path.aims.length - 1]
+      const currentAim = path.ideas[path.ideas.length - 1]
       if (!currentAim) return
 
       let source: TeleportSource | null = null
-      if (path.aims.length > 1) {
-        const parentAim = path.aims[path.aims.length - 2]
+      if (path.ideas.length > 1) {
+        const parentAim = path.ideas[path.ideas.length - 2]
         if (parentAim) {
           source = { parentAimId: parentAim.id }
         }
@@ -1719,12 +1719,12 @@ export const useListStore = defineStore('ui', {
     copyAimForTeleport() {
       const modalStore = useUIModalStore()
       const path = this.getSelectionPath()
-      const currentAim = path.aims[path.aims.length - 1]
+      const currentAim = path.ideas[path.ideas.length - 1]
       if (!currentAim) return
 
       let source: TeleportSource | null = null
-      if (path.aims.length > 1) {
-        const parentAim = path.aims[path.aims.length - 2]
+      if (path.ideas.length > 1) {
+        const parentAim = path.ideas[path.ideas.length - 2]
         if (parentAim) {
           source = { parentAimId: parentAim.id }
         }
@@ -1749,7 +1749,7 @@ export const useListStore = defineStore('ui', {
       await handleColumnNavigationKeysAction(this, event, dataStore)
     },
 
-    // Aims edit mode: j/k = navigate aims, J/K = move aims, h/l = expand/collapse, H = move out, d = delete, o/O = create, x/p = cut/paste, c/p = copy/paste
+    // Ideas edit mode: j/k = navigate ideas, J/K = move ideas, h/l = expand/collapse, H = move out, d = delete, o/O = create, x/p = cut/paste, c/p = copy/paste
     async handleAimNavigationKeys(event: KeyboardEvent, dataStore: any) {
       await handleAimNavigationKeysAction(this, event, dataStore)
     },

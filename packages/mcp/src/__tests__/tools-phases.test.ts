@@ -62,33 +62,33 @@ test('MCP Tools - Phase Commitments', async () => {
     phase: { name: 'P1', from: 0, to: 1000 }
   });
 
-  const aim = await caller.aim.createFloatingAim({
+  const idea = await caller.idea.createFloatingAim({
     projectPath: ctx.projectPath,
-    aim: { text: 'Aim', status: { state: 'open', comment: '', date: Date.now() } }
+    idea: { text: 'Idea', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
   // 1. Commit
-  await server.callTool('commit_aim_to_phase', {
+  await server.callTool('commit_idea_to_phase', {
     projectPath: ctx.projectPath,
-    aimId: aim.id,
+    ideaId: idea.id,
     phaseId: phase.id
   });
 
   let fetchedPhase = await caller.phase.get({ projectPath: ctx.projectPath, phaseId: phase.id });
-  assert.ok(fetchedPhase.commitments.includes(aim.id));
+  assert.ok(fetchedPhase.commitments.includes(idea.id));
 
-  let fetchedAim = await caller.aim.get({ projectPath: ctx.projectPath, aimId: aim.id });
+  let fetchedAim = await caller.idea.get({ projectPath: ctx.projectPath, ideaId: idea.id });
   assert.ok(fetchedAim.committedIn.includes(phase.id));
 
   // 2. Remove
-  await server.callTool('remove_aim_from_phase', {
+  await server.callTool('remove_idea_from_phase', {
     projectPath: ctx.projectPath,
-    aimId: aim.id,
+    ideaId: idea.id,
     phaseId: phase.id
   });
 
   fetchedPhase = await caller.phase.get({ projectPath: ctx.projectPath, phaseId: phase.id });
-  assert.ok(!fetchedPhase.commitments.includes(aim.id));
+  assert.ok(!fetchedPhase.commitments.includes(idea.id));
 });
 
 test('MCP Tools - create_phase resolves relative placement constraints', async () => {

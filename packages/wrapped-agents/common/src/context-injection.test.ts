@@ -19,7 +19,7 @@ test('Context injection - load and format summaries', async () => {
       sessionId: '2024-02-20T10-00-00-abc123',
       timestamp: Date.now() - 86400000,
       duration: 600000,
-      aimsWorked: ['aim-1'],
+      ideasWorked: ['idea-1'],
       outcomes: 'Fixed cache.db location bug',
       patterns: 'Path normalization pattern is important',
       lessonsLearned: 'Always check cache key consistency',
@@ -29,9 +29,9 @@ test('Context injection - load and format summaries', async () => {
       sessionId: '2024-02-21T10-00-00-def456',
       timestamp: Date.now() - 43200000,
       duration: 900000,
-      aimsWorked: ['aim-2'],
+      ideasWorked: ['idea-2'],
       outcomes: 'Implemented multi-parent UI support',
-      patterns: 'Purple color scheme for parent aims',
+      patterns: 'Purple color scheme for parent ideas',
       lessonsLearned: 'Component composition works well',
       rawReflection: 'Context 2'
     }
@@ -71,7 +71,7 @@ test('Context injection - limits summary content length', async () => {
     sessionId: 'test-long',
     timestamp: Date.now(),
     duration: 600000,
-    aimsWorked: ['aim-1', 'aim-2', 'aim-3', 'aim-4', 'aim-5'],
+    ideasWorked: ['idea-1', 'idea-2', 'idea-3', 'idea-4', 'idea-5'],
     outcomes: 'A'.repeat(500), // Very long outcome
     patterns: 'B'.repeat(500),
     lessonsLearned: 'C'.repeat(500),
@@ -95,13 +95,13 @@ test('Context injection - limits summary content length', async () => {
   assert.ok(lessonLine!.length < 220, 'Lesson should be truncated');
 });
 
-test('Context injection - limits aim list to 3', async () => {
+test('Context injection - limits idea list to 3', async () => {
   const manyAimsSummary: SessionSummary = {
-    sessionId: 'test-many-aims',
+    sessionId: 'test-many-ideas',
     timestamp: Date.now(),
     duration: 600000,
-    aimsWorked: ['aim-1', 'aim-2', 'aim-3', 'aim-4', 'aim-5', 'aim-6'],
-    outcomes: 'Completed many aims',
+    ideasWorked: ['idea-1', 'idea-2', 'idea-3', 'idea-4', 'idea-5', 'idea-6'],
+    outcomes: 'Completed many ideas',
     patterns: '',
     lessonsLearned: '',
     rawReflection: 'Context'
@@ -110,12 +110,12 @@ test('Context injection - limits aim list to 3', async () => {
   const formatted = SessionMemory.formatForContext([manyAimsSummary]);
 
   const lines = formatted.split('\n');
-  const aimsLine = lines.find(l => l.includes('Aims:'));
-  assert.ok(aimsLine, 'Should have aims line');
+  const ideasLine = lines.find(l => l.includes('Ideas:'));
+  assert.ok(ideasLine, 'Should have ideas line');
 
-  // Should only include first 3 aims
-  assert.ok(aimsLine!.includes('aim-1'), 'Should include aim-1');
-  assert.ok(aimsLine!.includes('aim-2'), 'Should include aim-2');
-  assert.ok(aimsLine!.includes('aim-3'), 'Should include aim-3');
-  assert.ok(!aimsLine!.includes('aim-6'), 'Should not include aim-6');
+  // Should only include first 3 ideas
+  assert.ok(ideasLine!.includes('idea-1'), 'Should include idea-1');
+  assert.ok(ideasLine!.includes('idea-2'), 'Should include idea-2');
+  assert.ok(ideasLine!.includes('idea-3'), 'Should include idea-3');
+  assert.ok(!ideasLine!.includes('idea-6'), 'Should not include idea-6');
 });

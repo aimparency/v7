@@ -26,12 +26,12 @@ export function registerPrompts(server: Server, caller: any) {
     prompts: [
       {
         name: "dream",
-        description: "Simulate possible futures from the aim graph, discover non-obvious synergies and tensions, and wake with falsifiable hypotheses and reversible experiments",
+        description: "Simulate possible futures from the idea graph, discover non-obvious synergies and tensions, and wake with falsifiable hypotheses and reversible experiments",
         arguments: [
           PROJECT_PATH_PROMPT_ARGUMENT,
           {
             name: "focus",
-            description: "Optional question, theme, or aim UUID around which to dream",
+            description: "Optional question, theme, or idea UUID around which to dream",
             required: false,
           },
           {
@@ -77,10 +77,10 @@ export function registerPrompts(server: Server, caller: any) {
       ? requestedWildness
       : "strange";
     const writeBack = (args?.writeBack as string | undefined)?.toLowerCase() === "true";
-    const aims = await caller.aim.list.query({ projectPath });
+    const ideas = await caller.idea.list.query({ projectPath });
 
     return {
-      description: `Dream about ${focus} using ${aims.length} aims as waking memory`,
+      description: `Dream about ${focus} using ${ideas.length} ideas as waking memory`,
       messages: [
         {
           role: "user",
@@ -89,7 +89,7 @@ export function registerPrompts(server: Server, caller: any) {
             text: `Run an Aimparency dream procedure.
 
 Project: ${projectPath}
-Waking-memory size: ${aims.length} aims
+Waking-memory size: ${ideas.length} ideas
 Focus: ${focus}
 Wildness: ${wildness}
 Write back accepted artifacts: ${writeBack}
@@ -100,13 +100,13 @@ Procedure:
 
 1. SLEEP — Acquire waking memory
    - Inspect the active graph, current phases, priorities, statuses, descriptions, connection explanations, and reflections using the available Aimparency resources and read-only tools.
-   - If a focus aim UUID was supplied, inspect its neighborhood, then deliberately sample semantically distant aims too.
+   - If a focus idea UUID was supplied, inspect its neighborhood, then deliberately sample semantically distant ideas too.
    - Note unresolved tensions, bottlenecks, abandoned directions, surprising proximity, and valuable capabilities with no current application.
 
 2. DREAM — Generate and simulate
    - Produce 3-7 distinct dream seeds. At least one must combine distant graph regions; at least one must invert a core assumption; at least one must revisit a cancelled or halted direction under changed conditions.
    - For each seed, simulate a short causal trajectory: intervention → immediate effects → second-order effects → likely failure or conflict → observable outcome.
-   - Let ideas collide and transform. Do not merely paraphrase existing aims.
+   - Let ideas collide and transform. Do not merely paraphrase existing ideas.
    - Wildness controls conceptual distance, not epistemic care. Even an unbounded dream must label imagination as imagination.
 
 3. REALITY CONTACT — Research selectively
@@ -120,12 +120,12 @@ Procedure:
    - Explicitly report discarded dreams and why they dissolved on waking.
 
 5. REMEMBER — Propose or write graph changes
-   - Prefer explanatory contribution connections between existing aims when the synergy is already meaningful.
-   - Create a new aim only for a genuinely novel hypothesis or experiment. Prefix speculative titles with "Dream:" and tag them "dream" and "hypothesis". Do not mark dream artifacts done.
+   - Prefer explanatory contribution connections between existing ideas when the synergy is already meaningful.
+   - Create a new idea only for a genuinely novel hypothesis or experiment. Prefix speculative titles with "Dream:" and tag them "dream" and "hypothesis". Do not mark dream artifacts done.
    - Connection explanations must say why the contribution may exist and identify uncertainty. Do not alter contribution weights merely because a relationship is imaginative.
    - ${writeBack
       ? "Write only the 1-3 selected residues using Aimparency tools, then report every mutation. Preserve human gates and use review when implementation is complete but awaiting acceptance."
-      : "Do not mutate the graph. Return a precise proposed mutation set (aims, connections, explanations, and experiments) for human acceptance."}
+      : "Do not mutate the graph. Return a precise proposed mutation set (ideas, connections, explanations, and experiments) for human acceptance."}
 
 Finish with a compact DREAM REPORT containing: waking tensions, dream simulations, reality checks, retained residues, discarded dreams, and proposed/performed graph mutations.`,
           },

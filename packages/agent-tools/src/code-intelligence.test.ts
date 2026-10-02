@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
-  aimHistorySearch,
+  ideaHistorySearch,
   buildCodeIndex,
   changeImpact,
   codeHeatmap,
@@ -16,8 +16,8 @@ test('maps terms, symbols, and likely file impact', async () => {
   const projectPath = await mkdtemp(path.join(os.tmpdir(), 'aimparency-code-map-'));
   try {
     await mkdir(path.join(projectPath, '.bowman'));
-    await mkdir(path.join(projectPath, '.bowman', 'aims'));
-    await mkdir(path.join(projectPath, '.bowman', 'archived-aims'));
+    await mkdir(path.join(projectPath, '.bowman', 'ideas'));
+    await mkdir(path.join(projectPath, '.bowman', 'archived-ideas'));
     await mkdir(path.join(projectPath, 'src'));
     await mkdir(path.join(projectPath, 'tests'));
     await writeFile(path.join(projectPath, 'src', 'signal.ts'), [
@@ -33,14 +33,14 @@ test('maps terms, symbols, and likely file impact', async () => {
       "import { observeSignal } from '../src/signal'",
       'void observeSignal()'
     ].join('\n'));
-    await writeFile(path.join(projectPath, '.bowman', 'aims', '11111111-1111-4111-8111-111111111111.json'), JSON.stringify({
+    await writeFile(path.join(projectPath, '.bowman', 'ideas', '11111111-1111-4111-8111-111111111111.json'), JSON.stringify({
       id: '11111111-1111-4111-8111-111111111111',
       text: 'Ground priorities in economic evidence',
       description: 'Use authoritative signals instead of simulated credits.',
       reflection: 'The economic signal must remain inspectable.',
       status: { state: 'partially', comment: 'Signal ingestion is implemented.' }
     }));
-    await writeFile(path.join(projectPath, '.bowman', 'archived-aims', '22222222-2222-4222-8222-222222222222.json'), JSON.stringify({
+    await writeFile(path.join(projectPath, '.bowman', 'archived-ideas', '22222222-2222-4222-8222-222222222222.json'), JSON.stringify({
       id: '22222222-2222-4222-8222-222222222222',
       text: 'Old telemetry experiment',
       reflections: [{ lesson: 'Economic measurements need an authoritative source.' }],
@@ -68,8 +68,8 @@ test('maps terms, symbols, and likely file impact', async () => {
     assert.equal(unchanged.embedded, 0);
     assert.equal(unchanged.reused, unchanged.chunks);
 
-    const history = await aimHistorySearch(projectPath, 'economic signal');
-    assert.equal(history[0]?.aimId, '11111111-1111-4111-8111-111111111111');
+    const history = await ideaHistorySearch(projectPath, 'economic signal');
+    assert.equal(history[0]?.ideaId, '11111111-1111-4111-8111-111111111111');
     assert.ok(history[0]?.matchedFields.includes('reflection'));
     assert.ok(history.some((entry) => entry.status === 'archived'));
   } finally {

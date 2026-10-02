@@ -18,7 +18,7 @@ const beliefUpdateSchema = z.object({
 
 export const experimentSchema = z.object({
   id: z.string(),
-  aimIds: z.array(z.string()).default([]),
+  ideaIds: z.array(z.string()).default([]),
   hypothesis: z.string().min(1),
   prediction: z.string().min(1),
   expectedCost: z.string().min(1),
@@ -48,7 +48,7 @@ export type CreateExperimentInput = Pick<
   Experiment,
   'hypothesis' | 'prediction' | 'expectedCost' | 'expectedUpside' | 'successMetric' | 'stopCondition'
 > & {
-  aimIds?: string[];
+  ideaIds?: string[];
   status?: Experiment['status'];
 };
 

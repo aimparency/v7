@@ -6,14 +6,14 @@
 
 Aimparency is a local-first tool for cartographing ideas next to real repositories.
 
-It runs as a browser app on your machine, stores project state in a `.bowman` directory inside the repo or workspace you point it at, and can start local agent sessions through the broker. The current data model still uses the word `aim` in many places, but the broader point is optional ideas: things people or agents may want to realize, explore, defer, split, merge, or abandon.
+It runs as a browser app on your machine, stores project state in a `.bowman` directory inside the repo or workspace you point it at, and can start local agent sessions through the broker. The current data model still uses the word `idea` in many places, but the broader point is optional ideas: things people or agents may want to realize, explore, defer, split, merge, or abandon.
 
 The longer-term vision is bigger than a single repo planner. Aimparency is intended to become a graph for breaking ideas down into realizable steps, with project-local state by default and cross-repository references over time. That can grow from software planning into a general interface for mapping how complex projects get realized, while still keeping ownership and control inside ordinary repositories.
 
 Git is a large part of why this model is attractive:
 
 - permissions come from the repositories and workflows teams already use
-- version control comes for free because ideas, aims, phases, and code can live in the same history
+- version control comes for free because ideas, ideas, phases, and code can live in the same history
 - code changes and graph/status updates can be committed together, making it much easier to see what changed and why
 - that paired history may also become useful training material for intent, hypothesis, planning, and execution loops in future LLM systems
 
@@ -72,7 +72,7 @@ http://localhost:4000
 
 For the best first look, enter the path of this cloned `v7` repository and
 explore its own graph. The graph is not sample data: it contains the goals,
-dependencies, implementation aims, reflections, and Build Week submission path
+dependencies, implementation ideas, reflections, and Build Week submission path
 that shaped the repository itself.
 
 `4000` is the default frontend port in a fresh checkout. If you want custom ports, copy `.env.example` to `.env` and override them there.
@@ -136,7 +136,7 @@ Example:
 - repo root: `/home/user/my-repo`
 - Aimparency data directory inside it: `/home/user/my-repo/.bowman`
 
-The backend normalizes the path and creates `.bowman` if needed. That directory becomes the local storage root for ideas represented as aims, phases, metadata, and generated search artifacts.
+The backend normalizes the path and creates `.bowman` if needed. That directory becomes the local storage root for ideas represented as ideas, phases, metadata, and generated search artifacts.
 
 This keeps the workflow git-friendly:
 
@@ -153,8 +153,8 @@ Typical structure:
 ```text
 my-project/
   .bowman/
-    aims/
-    archived-aims/
+    ideas/
+    archived-ideas/
     phases/
     meta.json
     .gitignore
@@ -165,8 +165,8 @@ my-project/
 
 What each part is for:
 
-- `aims/`: active aims stored as JSON files
-- `archived-aims/`: archived aims stored as JSON files
+- `ideas/`: active ideas stored as JSON files
+- `archived-ideas/`: archived ideas stored as JSON files
 - `phases/`: phase definitions stored as JSON files
 - `meta.json`: project name, color, and available statuses
 - `.gitignore`: generated `.bowman` artifacts that should not be committed
@@ -176,12 +176,12 @@ What each part is for:
 
 Aimparency is designed so the important project state can live next to the code it describes.
 
-In the intended workflow, code edits and planning updates travel together. A commit can contain both the implementation and the corresponding aim changes, status changes, comments, or reflections. That gives you a much clearer history of intent, execution, and outcome than code diffs alone.
+In the intended workflow, code edits and planning updates travel together. A commit can contain both the implementation and the corresponding idea changes, status changes, comments, or reflections. That gives you a much clearer history of intent, execution, and outcome than code diffs alone.
 
 In normal use, these files are user-authored project state and are reasonable to commit:
 
-- `.bowman/aims/*.json`
-- `.bowman/archived-aims/*.json`
+- `.bowman/ideas/*.json`
+- `.bowman/archived-ideas/*.json`
 - `.bowman/phases/*.json`
 - `.bowman/meta.json`
 - `.bowman/.gitignore`

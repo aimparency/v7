@@ -1,12 +1,12 @@
-// Pure core of the code-presence reconciliation heuristic (aim da1291e5):
-// decide whether an OPEN aim's described work already appears in the codebase by
+// Pure core of the code-presence reconciliation heuristic (idea da1291e5):
+// decide whether an OPEN idea's described work already appears in the codebase by
 // extracting identifier-like tokens from its text and checking how many are
 // present in code. Precision-first: only code-SHAPED tokens count (camelCase,
-// snake_case, dotted calls, file names), generic prose is ignored, and an aim
+// snake_case, dotted calls, file names), generic prose is ignored, and an idea
 // needs >= 2 such tokens to be scorable at all. Kept side-effect-free (the git
 // search lives in the tool handler) so the token rules are unit-testable.
 
-// Code-ish words that are too generic to be evidence of a specific aim.
+// Code-ish words that are too generic to be evidence of a specific idea.
 const STOPWORDS = new Set([
   "true", "false", "null", "undefined", "const", "function", "return", "async",
   "await", "import", "export", "string", "number", "boolean", "object", "array",
@@ -31,8 +31,8 @@ export function isCodeShaped(token: string): boolean {
 
 /**
  * Extract the deduped set of code-shaped tokens from free text, including
- * code-shaped segments of dotted/slashed tokens (so "trpc.aim.linkRepo" also
- * yields "linkRepo", and "AimEditModal.vue" yields "AimEditModal").
+ * code-shaped segments of dotted/slashed tokens (so "trpc.idea.linkRepo" also
+ * yields "linkRepo", and "IdeaEditModal.vue" yields "IdeaEditModal").
  */
 export function extractCodeTokens(text: string): string[] {
   if (!text) return [];
@@ -57,8 +57,8 @@ export interface CodePresenceScore {
 }
 
 /**
- * Score an aim's tokens against the set found in code. `scorable` is false when
- * the aim has fewer than 2 code-shaped tokens — too vague to reason about, which
+ * Score an idea's tokens against the set found in code. `scorable` is false when
+ * the idea has fewer than 2 code-shaped tokens — too vague to reason about, which
  * is "unknown", not "implemented".
  */
 export function scoreCodePresence(tokens: string[], presentInCode: Set<string>): CodePresenceScore {

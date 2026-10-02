@@ -1,10 +1,10 @@
-import type { AimSearchAdditionalOption, AimSearchModalOptions, AimSearchPickPayload } from './aim-search-types'
+import type { IdeaSearchAdditionalOption, IdeaSearchModalOptions, IdeaSearchPickPayload } from './idea-search-types'
 
 type RelativePosition = 'before' | 'after'
 
-const DEFAULT_AIM_SEARCH_OPTIONS: AimSearchModalOptions = {
-  title: 'Search Aims',
-  placeholder: 'Go to aim...',
+const DEFAULT_IDEA_SEARCH_OPTIONS: IdeaSearchModalOptions = {
+  title: 'Search Ideas',
+  placeholder: 'Go to idea...',
   showFilters: true,
   additionalOptions: []
 }
@@ -17,16 +17,16 @@ export type UIModalState = {
   newPhaseName: string
   phaseModalInsertPosition: RelativePosition
   showAimModal: boolean
-  aimModalInsertPosition: RelativePosition
-  aimModalSource: 'columns' | 'graph'
+  ideaModalInsertPosition: RelativePosition
+  ideaModalSource: 'columns' | 'graph'
   showAimSearch: boolean
-  aimSearchMode: 'navigate' | 'pick'
-  aimSearchCallback: ((payload: AimSearchPickPayload) => void) | null
-  aimSearchInitialAimId: string | null
-  aimSearchTitle: string
-  aimSearchPlaceholder: string
-  aimSearchShowFilters: boolean
-  aimSearchAdditionalOptions: AimSearchAdditionalOption[]
+  ideaSearchMode: 'navigate' | 'pick'
+  ideaSearchCallback: ((payload: IdeaSearchPickPayload) => void) | null
+  ideaSearchInitialAimId: string | null
+  ideaSearchTitle: string
+  ideaSearchPlaceholder: string
+  ideaSearchShowFilters: boolean
+  ideaSearchAdditionalOptions: IdeaSearchAdditionalOption[]
   showSettingsModal: boolean
   teleportCutAimId: string | null
   teleportSource: { parentAimId?: string; phaseId?: string } | null
@@ -69,46 +69,46 @@ export function closePhaseModal(state: UIModalState): void {
 
 export function openAimCreateModal(state: UIModalState, source: 'columns' | 'graph' = 'columns'): void {
   state.showAimModal = true
-  state.aimModalSource = source
+  state.ideaModalSource = source
 }
 
 export function closeAimModal(state: UIModalState): void {
   state.showAimModal = false
-  state.aimModalSource = 'columns'
+  state.ideaModalSource = 'columns'
 }
 
 export function openAimSearchModal(
   state: UIModalState,
   mode: 'navigate' | 'pick',
-  callback?: ((payload: AimSearchPickPayload) => void) | null,
+  callback?: ((payload: IdeaSearchPickPayload) => void) | null,
   initialAimId?: string,
-  options?: Partial<AimSearchModalOptions>
+  options?: Partial<IdeaSearchModalOptions>
 ): void {
   const resolvedOptions = {
-    ...DEFAULT_AIM_SEARCH_OPTIONS,
+    ...DEFAULT_IDEA_SEARCH_OPTIONS,
     ...options,
-    additionalOptions: options?.additionalOptions ?? DEFAULT_AIM_SEARCH_OPTIONS.additionalOptions
+    additionalOptions: options?.additionalOptions ?? DEFAULT_IDEA_SEARCH_OPTIONS.additionalOptions
   }
 
   state.showAimSearch = true
-  state.aimSearchMode = mode
-  state.aimSearchCallback = callback || null
-  state.aimSearchInitialAimId = initialAimId || null
-  state.aimSearchTitle = resolvedOptions.title
-  state.aimSearchPlaceholder = resolvedOptions.placeholder
-  state.aimSearchShowFilters = resolvedOptions.showFilters
-  state.aimSearchAdditionalOptions = resolvedOptions.additionalOptions
+  state.ideaSearchMode = mode
+  state.ideaSearchCallback = callback || null
+  state.ideaSearchInitialAimId = initialAimId || null
+  state.ideaSearchTitle = resolvedOptions.title
+  state.ideaSearchPlaceholder = resolvedOptions.placeholder
+  state.ideaSearchShowFilters = resolvedOptions.showFilters
+  state.ideaSearchAdditionalOptions = resolvedOptions.additionalOptions
 }
 
 export function closeAimSearchModal(state: UIModalState): void {
   state.showAimSearch = false
-  state.aimSearchMode = 'navigate'
-  state.aimSearchCallback = null
-  state.aimSearchInitialAimId = null
-  state.aimSearchTitle = DEFAULT_AIM_SEARCH_OPTIONS.title
-  state.aimSearchPlaceholder = DEFAULT_AIM_SEARCH_OPTIONS.placeholder
-  state.aimSearchShowFilters = DEFAULT_AIM_SEARCH_OPTIONS.showFilters
-  state.aimSearchAdditionalOptions = []
+  state.ideaSearchMode = 'navigate'
+  state.ideaSearchCallback = null
+  state.ideaSearchInitialAimId = null
+  state.ideaSearchTitle = DEFAULT_IDEA_SEARCH_OPTIONS.title
+  state.ideaSearchPlaceholder = DEFAULT_IDEA_SEARCH_OPTIONS.placeholder
+  state.ideaSearchShowFilters = DEFAULT_IDEA_SEARCH_OPTIONS.showFilters
+  state.ideaSearchAdditionalOptions = []
 }
 
 export function openSettingsModal(state: UIModalState): void {

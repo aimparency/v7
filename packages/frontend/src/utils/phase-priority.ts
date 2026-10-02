@@ -1,7 +1,7 @@
-import type { Aim, Phase } from '../stores/data'
+import type { Idea, Phase } from '../stores/data'
 
 export type PrioritizedPhaseAim = {
-  aim: Aim
+  idea: Idea
   phaseId: string
   priority: number
   directlyCommitted: boolean
@@ -30,68 +30,68 @@ export function collectDescendantPhaseIds(
 export function rankAimsForPhaseTree(
   rootPhaseId: string,
   phases: Record<string, Phase>,
-  aims: Record<string, Aim>,
+  ideas: Record<string, Idea>,
   priorities: Map<string, number>,
   state: string
 ): PrioritizedPhaseAim[] {
   const phaseIds = collectDescendantPhaseIds(rootPhaseId, phases)
   const membership = new Map<string, { phaseId: string, directlyCommitted: boolean }>()
-  const pending: Array<{ aimId: string, phaseId: string }> = []
+  const pending: Array<{ ideaId: string, phaseId: string }> = []
 
   for (const phaseId of phaseIds) {
-    for (const aimId of phases[phaseId]?.commitments ?? []) {
-      if (!membership.has(aimId)) {
-        membership.set(aimId, { phaseId, directlyCommitted: true })
+    for (const ideaId of phases[phaseId]?.commitments ?? []) {
+      if (!membership.has(ideaId)) {
+        membership.set(ideaId, { phaseId, directlyCommitted: true })
       }
-      pending.push({ aimId, phaseId })
+      pending.push({ ideaId, phaseId })
     }
   }
 
-  // Aim payloads also carry commitment membership. Use it as a compatible
+  // Idea payloads also carry commitment membership. Use it as a compatible
   // source while phase data is being loaded incrementally or comes from older
   // cached/test fixtures without populated commitment arrays.
-  for (const aim of Object.values(aims)) {
-    const phaseId = aim.committedIn?.find(id => phaseIds.has(id))
+  for (const idea of Object.values(ideas)) {
+    const phaseId = idea.committedIn?.find(id => phaseIds.has(id))
     if (!phaseId) continue
-    if (!membership.has(aim.id)) {
-      membership.set(aim.id, { phaseId, directlyCommitted: true })
+    if (!membership.has(idea.id)) {
+      membership.set(idea.id, { phaseId, directlyCommitted: true })
     }
-    pending.push({ aimId: aim.id, phaseId })
+    pending.push({ ideaId: idea.id, phaseId })
   }
 
-  // A phase commitment includes the committed aim's contribution subtree. This
+  // A phase commitment includes the committed idea's contribution subtree. This
   // lets a deadline phase commit one coherent objective while its actionable
   // and human-dependent children remain visible without duplicate commitments.
   const expanded = new Set<string>()
   while (pending.length > 0) {
-    const { aimId, phaseId } = pending.shift()!
-    if (expanded.has(aimId)) continue
-    expanded.add(aimId)
+    const { ideaId, phaseId } = pending.shift()!
+    if (expanded.has(ideaId)) continue
+    expanded.add(ideaId)
 
-    for (const connection of aims[aimId]?.supportingConnections ?? []) {
-      const childId = connection.aimId
+    for (const connection of ideas[ideaId]?.supportingConnections ?? []) {
+      const childId = connection.ideaId
       if (!membership.has(childId)) {
         membership.set(childId, { phaseId, directlyCommitted: false })
       }
-      pending.push({ aimId: childId, phaseId })
+      pending.push({ ideaId: childId, phaseId })
     }
   }
 
-  return Object.values(aims)
-    .filter(aim => !aim.archived && aim.status.state === state)
-    .flatMap(aim => {
-      const match = membership.get(aim.id)
+  return Object.values(ideas)
+    .filter(idea => !idea.archived && idea.status.state === state)
+    .flatMap(idea => {
+      const match = membership.get(idea.id)
       if (!match) return []
       return [{
-        aim,
+        idea,
         phaseId: match.phaseId,
-        priority: priorities.get(aim.id) ?? aim.calculatedPriority ?? 0,
+        priority: priorities.get(idea.id) ?? idea.calculatedPriority ?? 0,
         directlyCommitted: match.directlyCommitted
       }]
     })
     .sort((left, right) =>
       right.priority - left.priority ||
-      left.aim.text.localeCompare(right.aim.text)
+      left.idea.text.localeCompare(right.idea.text)
     )
 }
 

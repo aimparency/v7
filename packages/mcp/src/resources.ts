@@ -4,26 +4,26 @@ import { PROJECT_PATH_PARAMETER, PROJECT_PATH_MISSING_ERROR } from "./constants.
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { AIMPARENCY_DIR_NAME } from "shared";
 
-function formatAim(aim: any) {
-  if (aim.supportingConnections) {
-    if (aim.supportingConnections.length === 0) {
-        delete aim.supportingConnections;
+function formatAim(idea: any) {
+  if (idea.supportingConnections) {
+    if (idea.supportingConnections.length === 0) {
+        delete idea.supportingConnections;
     } else {
-        aim.supportingConnections = aim.supportingConnections.map((conn: any) => {
+        idea.supportingConnections = idea.supportingConnections.map((conn: any) => {
           const { relativePosition, ...rest } = conn;
           return rest;
         });
     }
   }
-  if (aim.supportedAims && aim.supportedAims.length === 0) delete aim.supportedAims;
-  if (aim.committedIn && aim.committedIn.length === 0) delete aim.committedIn;
-  if (aim.tags && aim.tags.length === 0) delete aim.tags;
+  if (idea.supportedAims && idea.supportedAims.length === 0) delete idea.supportedAims;
+  if (idea.committedIn && idea.committedIn.length === 0) delete idea.committedIn;
+  if (idea.tags && idea.tags.length === 0) delete idea.tags;
   
-  return aim;
+  return idea;
 }
 
-function formatAims(aims: any[]) {
-  return aims.map(formatAim);
+function formatAims(ideas: any[]) {
+  return ideas.map(formatAim);
 }
 
 // Helper to parse resource URIs
@@ -45,12 +45,12 @@ export function registerResources(server: Server, caller: any) {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
       resources: [
-        { uri: `aim://{uuid}?${PROJECT_PATH_PARAMETER}`, name: "Aim", mimeType: "application/json" },
-        { uri: `aim://{uuid}/supporting_connections?${PROJECT_PATH_PARAMETER}`, name: "Aim children", mimeType: "application/json" },
-        { uri: `aim://{uuid}/supported_aims?${PROJECT_PATH_PARAMETER}`, name: "Aim parents", mimeType: "application/json" },
-        { uri: `aims://all?${PROJECT_PATH_PARAMETER}`, name: "All aims", mimeType: "application/json" },
+        { uri: `idea://{uuid}?${PROJECT_PATH_PARAMETER}`, name: "Idea", mimeType: "application/json" },
+        { uri: `idea://{uuid}/supporting_connections?${PROJECT_PATH_PARAMETER}`, name: "Idea children", mimeType: "application/json" },
+        { uri: `idea://{uuid}/supported_ideas?${PROJECT_PATH_PARAMETER}`, name: "Idea parents", mimeType: "application/json" },
+        { uri: `ideas://all?${PROJECT_PATH_PARAMETER}`, name: "All ideas", mimeType: "application/json" },
         { uri: `phase://{uuid}?${PROJECT_PATH_PARAMETER}`, name: "Phase", mimeType: "application/json" },
-        { uri: `phase://{uuid}/aims?${PROJECT_PATH_PARAMETER}`, name: "Phase aims", mimeType: "application/json" },
+        { uri: `phase://{uuid}/ideas?${PROJECT_PATH_PARAMETER}`, name: "Phase ideas", mimeType: "application/json" },
         { uri: `phases://all?${PROJECT_PATH_PARAMETER}`, name: "All phases", mimeType: "application/json" },
         { uri: `phases://{parent-uuid}/children?${PROJECT_PATH_PARAMETER}`, name: "Sub-phases", mimeType: "application/json" },
         { uri: `project://meta?${PROJECT_PATH_PARAMETER}`, name: "Project meta", mimeType: "application/json" },
@@ -63,7 +63,7 @@ export function registerResources(server: Server, caller: any) {
     const parsed = parseResourceUri(uri);
 
     try {
-      // Extract projectPath from URI query parameter (e.g., aim://uuid?projectPath=/path/to/project)
+      // Extract projectPath from URI query parameter (e.g., idea://uuid?projectPath=/path/to/project)
       const url = new URL(uri, "http://dummy");
       const projectPath = url.searchParams.get("projectPath");
 
@@ -71,26 +71,26 @@ export function registerResources(server: Server, caller: any) {
         throw new Error(PROJECT_PATH_MISSING_ERROR);
       }
 
-      if (parsed.type === "aim") {
+      if (parsed.type === "idea") {
         if (parsed.id === "all") {
-          const aims = await caller.aim.list.query({ projectPath });
+          const ideas = await caller.idea.list.query({ projectPath });
           return {
             contents: [
               {
                 uri,
                 mimeType: "application/json",
-                text: JSON.stringify(formatAims(aims), null, 2),
+                text: JSON.stringify(formatAims(ideas), null, 2),
               },
             ],
           };
         }
 
-        const aim = await caller.aim.get.query({ projectPath, aimId: parsed.id! });
+        const idea = await caller.idea.get.query({ projectPath, ideaId: parsed.id! });
 
         if (parsed.subpath === "supporting_connections") {
-          const connections = aim.supportingConnections || [];
+          const connections = idea.supportingConnections || [];
           const supportingAims = await Promise.all(
-            connections.map((conn: any) => caller.aim.get.query({ projectPath, aimId: conn.aimId }))
+            connections.map((conn: any) => caller.idea.get.query({ projectPath, ideaId: conn.ideaId }))
           );
           return {
             contents: [
@@ -103,10 +103,10 @@ export function registerResources(server: Server, caller: any) {
           };
         }
 
-        if (parsed.subpath === "supported_aims") {
-          const supported = aim.supportedAims || [];
+        if (parsed.subpath === "supported_ideas") {
+          const supported = idea.supportedAims || [];
           const supportedAims = await Promise.all(
-            supported.map((id: string) => caller.aim.get.query({ projectPath, aimId: id }))
+            supported.map((id: string) => caller.idea.get.query({ projectPath, ideaId: id }))
           );
           return {
             contents: [
@@ -124,17 +124,17 @@ export function registerResources(server: Server, caller: any) {
             {
               uri,
               mimeType: "application/json",
-              text: JSON.stringify(formatAim(aim), null, 2),
+              text: JSON.stringify(formatAim(idea), null, 2),
             },
           ],
         };
       }
 
-      if (parsed.type === "aims" && parsed.id === "all") {
+      if (parsed.type === "ideas" && parsed.id === "all") {
         const statusParam = url.searchParams.get("status");
         const phaseIdParam = url.searchParams.get("phaseId");
         
-        const aims = await caller.aim.list.query({
+        const ideas = await caller.idea.list.query({
           projectPath,
           status: statusParam ? statusParam.split(',') : undefined,
           phaseId: phaseIdParam || undefined
@@ -144,7 +144,7 @@ export function registerResources(server: Server, caller: any) {
             {
               uri,
               mimeType: "application/json",
-                              text: JSON.stringify(formatAims(aims), null, 2),            },
+                              text: JSON.stringify(formatAims(ideas), null, 2),            },
           ],
         };
       }
@@ -152,16 +152,16 @@ export function registerResources(server: Server, caller: any) {
       if (parsed.type === "phase") {
         const phase = await caller.phase.get.query({ projectPath, phaseId: parsed.id! });
 
-        if (parsed.subpath === "aims") {
-          const aims = await Promise.all(
-            phase.commitments.map((id: string) => caller.aim.get.query({ projectPath, aimId: id }))
+        if (parsed.subpath === "ideas") {
+          const ideas = await Promise.all(
+            phase.commitments.map((id: string) => caller.idea.get.query({ projectPath, ideaId: id }))
           );
           return {
             contents: [
               {
                 uri,
                 mimeType: "application/json",
-                                text: JSON.stringify(formatAims(aims), null, 2),              },
+                                text: JSON.stringify(formatAims(ideas), null, 2),              },
             ],
           };
         }
@@ -226,7 +226,7 @@ export function registerResources(server: Server, caller: any) {
           {
             uri,
             mimeType: "text/plain",
-            text: `Error reading resource: ${errorMessage}\n\nMake sure to include projectPath as a query parameter, e.g.:\naim://uuid?projectPath=/abs/path/to/project/${AIMPARENCY_DIR_NAME}`,
+            text: `Error reading resource: ${errorMessage}\n\nMake sure to include projectPath as a query parameter, e.g.:\nidea://uuid?projectPath=/abs/path/to/project/${AIMPARENCY_DIR_NAME}`,
           },
         ],
       };

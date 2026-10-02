@@ -1,4 +1,4 @@
-import type { Aim } from './types.js';
+import type { Idea } from './types.js';
 import { ANNUAL_DISCOUNT_RATE } from './constants.js';
 
 export function discountValue(
@@ -31,64 +31,64 @@ export function calculateProfitabilityIndex(
   return discountedEstimatedValue / estimatedPresentCost;
 }
 
-function validateEconomicInputs(aims: Aim[]): void {
-  for (const aim of aims) {
-    if (!Number.isFinite(aim.cost) || aim.cost <= 0) {
-      throw new Error(`Aim "${aim.id}" has invalid cost: estimated direct cost must be a finite number greater than 0`);
+function validateEconomicInputs(ideas: Idea[]): void {
+  for (const idea of ideas) {
+    if (!Number.isFinite(idea.cost) || idea.cost <= 0) {
+      throw new Error(`Idea "${idea.id}" has invalid cost: estimated direct cost must be a finite number greater than 0`);
     }
-    const duration = aim.duration ?? 1;
+    const duration = idea.duration ?? 1;
     if (!Number.isFinite(duration) || duration < 0) {
-      throw new Error(`Aim "${aim.id}" has invalid duration: days until return must be a finite number greater than or equal to 0`);
+      throw new Error(`Idea "${idea.id}" has invalid duration: days until return must be a finite number greater than or equal to 0`);
     }
-    const intrinsicValue = aim.intrinsicValue ?? 0;
+    const intrinsicValue = idea.intrinsicValue ?? 0;
     if (!Number.isFinite(intrinsicValue) || intrinsicValue < 0) {
-      throw new Error(`Aim "${aim.id}" has invalid intrinsic value: estimated direct value must be finite and non-negative`);
+      throw new Error(`Idea "${idea.id}" has invalid intrinsic value: estimated direct value must be finite and non-negative`);
     }
   }
 }
 
-// Repo-level cross-repo links: a local aim's supportingRepos edge points at a
-// WHOLE external repo (by repoId, no aimId — see RepoConnectionSchema). For
+// Repo-level cross-repo links: a local idea's supportingRepos edge points at a
+// WHOLE external repo (by repoId, no ideaId — see RepoConnectionSchema). For
 // value flow we model each referenced repo as ONE zero-intrinsic LEAF SINK node
 // (its id IS the repoId) and turn every repo edge into an ordinary
 // supportingConnection into that node, so the existing flow machinery handles it
 // on a single code path. A leaf retains all inflow (effectiveLoopWeight 1), so
 // flow is EXPORTED out of the local graph into the sink; totalIntrinsic is
-// unchanged (repo nodes carry intrinsic 0) and local aims' retained values
+// unchanged (repo nodes carry intrinsic 0) and local ideas' retained values
 // shrink by exactly the exported flow (value is conserved flow, not aggregate).
-export function expandRepoSinkNodes(aims: Aim[]): Aim[] {
+export function expandRepoSinkNodes(ideas: Idea[]): Idea[] {
   // Fast path: no repo edges ⇒ nothing to merge, return the array untouched.
-  if (!aims.some(a => a.supportingRepos && a.supportingRepos.length > 0)) {
-    return aims;
+  if (!ideas.some(a => a.supportingRepos && a.supportingRepos.length > 0)) {
+    return ideas;
   }
 
-  const localIds = new Set(aims.map(a => a.id));
+  const localIds = new Set(ideas.map(a => a.id));
   const repoIds = new Set<string>();
-  const expanded: Aim[] = [];
+  const expanded: Idea[] = [];
 
-  for (const aim of aims) {
-    if (aim.supportingRepos && aim.supportingRepos.length > 0) {
-      // Clone (don't mutate the caller's aim) and fold each repo edge into
+  for (const idea of ideas) {
+    if (idea.supportingRepos && idea.supportingRepos.length > 0) {
+      // Clone (don't mutate the caller's idea) and fold each repo edge into
       // supportingConnections, targeting the repo node whose id is the repoId.
-      const repoConnections = aim.supportingRepos.map(r => {
+      const repoConnections = idea.supportingRepos.map(r => {
         repoIds.add(r.repoId);
         return {
-          aimId: r.repoId,
+          ideaId: r.repoId,
           weight: r.weight ?? 1,
           relativePosition: (r.relativePosition ?? [0, 0]) as [number, number]
         };
       });
       expanded.push({
-        ...aim,
-        supportingConnections: [...(aim.supportingConnections ?? []), ...repoConnections]
+        ...idea,
+        supportingConnections: [...(idea.supportingConnections ?? []), ...repoConnections]
       });
     } else {
-      expanded.push(aim);
+      expanded.push(idea);
     }
   }
 
   // One leaf sink node per referenced repo. Skip a repoId that collides with a
-  // real local aim id (already a node — don't shadow it).
+  // real local idea id (already a node — don't shadow it).
   for (const repoId of repoIds) {
     if (!localIds.has(repoId)) {
       expanded.push(makeRepoSinkNode(repoId));
@@ -98,7 +98,7 @@ export function expandRepoSinkNodes(aims: Aim[]): Aim[] {
   return expanded;
 }
 
-function makeRepoSinkNode(repoId: string): Aim {
+function makeRepoSinkNode(repoId: string): Idea {
   return {
     id: repoId,
     text: `repo:${repoId}`,
@@ -116,10 +116,10 @@ function makeRepoSinkNode(repoId: string): Aim {
     tags: [],
     loopWeight: 0,
     archived: false
-  } as Aim;
+  } as Idea;
 }
 
-export function calculateAimValues(inputAims: Aim[]): {
+export function calculateAimValues(inputAims: Idea[]): {
   values: Map<string, number>, 
   totalIntrinsic: number, 
   flowShares: Map<string, number>,
@@ -131,9 +131,9 @@ export function calculateAimValues(inputAims: Aim[]): {
   validateEconomicInputs(inputAims);
   // Merge repo-link edges into zero-intrinsic leaf sink nodes before any
   // topology is built, so cross-repo flow runs on the same single code path.
-  const aims = expandRepoSinkNodes(inputAims);
+  const ideas = expandRepoSinkNodes(inputAims);
 
-  const aimMap = new Map<string, Aim>();
+  const ideaMap = new Map<string, Idea>();
   const currentValues = new Map<string, number>();
   const flowShares = new Map<string, number>();
   const flowValues = new Map<string, number>();
@@ -143,17 +143,17 @@ export function calculateAimValues(inputAims: Aim[]): {
   // Map<ParentID, List<{TargetID, Share}>>
   const flowMatrix = new Map<string, { target: string, share: number }[]>();
 
-  for (const aim of aims) {
-    aimMap.set(aim.id, aim);
-    totalIntrinsic += (aim.intrinsicValue ?? 0);
+  for (const idea of ideas) {
+    ideaMap.set(idea.id, idea);
+    totalIntrinsic += (idea.intrinsicValue ?? 0);
   }
 
-  for (const parent of aims) {
+  for (const parent of ideas) {
     // Determine weights
     const rawLoopWeight = parent.loopWeight ?? 0; // schema default is 0 (pure pass-through)
     
-    // Only count children that actually exist in the aimMap (prevent leaks)
-    const validConnections = parent.supportingConnections?.filter(c => aimMap.has(c.aimId)) || [];
+    // Only count children that actually exist in the ideaMap (prevent leaks)
+    const validConnections = parent.supportingConnections?.filter(c => ideaMap.has(c.ideaId)) || [];
     const childrenWeightSum = validConnections.reduce((sum, c) => sum + (c.weight || 1), 0);
     
     let totalWeight = rawLoopWeight + childrenWeightSum;
@@ -180,9 +180,9 @@ export function calculateAimValues(inputAims: Aim[]): {
     for (const conn of validConnections) {
         const share = (conn.weight || 1) / totalWeight;
         if (share > 0) {
-            distributions.push({ target: conn.aimId, share });
+            distributions.push({ target: conn.ideaId, share });
             // Store for UI visualization
-            flowShares.set(`${parent.id}->${conn.aimId}`, share);
+            flowShares.set(`${parent.id}->${conn.ideaId}`, share);
         }
     }
     
@@ -190,15 +190,15 @@ export function calculateAimValues(inputAims: Aim[]): {
   }
 
   // 2. Initialize Values
-  for (const aim of aims) {
-    const intrinsic = aim.intrinsicValue ?? 0;
-    currentValues.set(aim.id, totalIntrinsic > 0 ? intrinsic / totalIntrinsic : 0);
+  for (const idea of ideas) {
+    const intrinsic = idea.intrinsicValue ?? 0;
+    currentValues.set(idea.id, totalIntrinsic > 0 ? intrinsic / totalIntrinsic : 0);
   }
 
   if (totalIntrinsic === 0) {
-    const costs = distributeCostsStable(aims, aimMap, currentValues, flowValues, false);
-    const doneCosts = distributeCostsStable(aims, aimMap, currentValues, flowValues, true, costs);
-    const priorities = new Map(aims.map(aim => [aim.id, 0]));
+    const costs = distributeCostsStable(ideas, ideaMap, currentValues, flowValues, false);
+    const doneCosts = distributeCostsStable(ideas, ideaMap, currentValues, flowValues, true, costs);
+    const priorities = new Map(ideas.map(idea => [idea.id, 0]));
     return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, costs, doneCosts, priorities };
   }
 
@@ -206,19 +206,19 @@ export function calculateAimValues(inputAims: Aim[]): {
   const iterations = 100;
   // Epsilon for normalized values. Average is 1/N. 
   // Use 0.001 relative to average value for high precision.
-  const epsilon = 0.001 * (1.0 / (aims.length || 1)); 
-  // console.log(`[ValueCalc] Starting calculation. Nodes: ${aims.length}. Threshold: ${epsilon.toExponential(2)}`);
+  const epsilon = 0.001 * (1.0 / (ideas.length || 1)); 
+  // console.log(`[ValueCalc] Starting calculation. Nodes: ${ideas.length}. Threshold: ${epsilon.toExponential(2)}`);
 
   for (let iter = 0; iter < iterations; iter++) {
     const nextValues = new Map<string, number>();
 
     // A. Add Intrinsic (Inflow)
-    for (const aim of aims) {
-      nextValues.set(aim.id, (aim.intrinsicValue ?? 0) / totalIntrinsic);
+    for (const idea of ideas) {
+      nextValues.set(idea.id, (idea.intrinsicValue ?? 0) / totalIntrinsic);
     }
 
     // B. Distribute Flow from Previous Step
-    for (const parent of aims) {
+    for (const parent of ideas) {
         const parentValue = currentValues.get(parent.id) || 0;
         const distributions = flowMatrix.get(parent.id) || [];
         
@@ -243,9 +243,9 @@ export function calculateAimValues(inputAims: Aim[]): {
 
     // D. Check Convergence
     let maxChange = 0;
-    for (const aim of aims) {
-      const oldV = currentValues.get(aim.id) || 0;
-      const newV = nextValues.get(aim.id) || 0;
+    for (const idea of ideas) {
+      const oldV = currentValues.get(idea.id) || 0;
+      const newV = nextValues.get(idea.id) || 0;
       maxChange = Math.max(maxChange, Math.abs(newV - oldV));
     }
 
@@ -263,7 +263,7 @@ export function calculateAimValues(inputAims: Aim[]): {
   }
 
   // 4. Calculate Final Flow Values
-  for (const parent of aims) {
+  for (const parent of ideas) {
       const parentValue = currentValues.get(parent.id) || 0;
       const distributions = flowMatrix.get(parent.id) || [];
       for (const dist of distributions) {
@@ -272,23 +272,23 @@ export function calculateAimValues(inputAims: Aim[]): {
   }
 
   // Use the flow values (Parent->Child) to compute cost shares (Child->Parent)
-  const costs = distributeCostsStable(aims, aimMap, currentValues, flowValues, false);
-  const doneCosts = distributeCostsStable(aims, aimMap, currentValues, flowValues, true, costs);
+  const costs = distributeCostsStable(ideas, ideaMap, currentValues, flowValues, false);
+  const doneCosts = distributeCostsStable(ideas, ideaMap, currentValues, flowValues, true, costs);
 
   // Priority is the positive profitability ratio: discounted estimated
   // flowed value divided by estimated present attributed cost. Variance fields
   // remain persisted for compatibility but are informational in this model.
   const priorities = new Map<string, number>();
-  for (const aim of aims) {
-      const estimatedValue = (currentValues.get(aim.id) ?? 0) * totalIntrinsic;
-      const cost = costs.get(aim.id) ?? 0;
-      const duration = aim.duration ?? 1;
+  for (const idea of ideas) {
+      const estimatedValue = (currentValues.get(idea.id) ?? 0) * totalIntrinsic;
+      const cost = costs.get(idea.id) ?? 0;
+      const duration = idea.duration ?? 1;
       // Synthetic repo sinks deliberately have zero cost and are not persisted
-      // user aims. They do not have a meaningful profitability ratio.
+      // user ideas. They do not have a meaningful profitability ratio.
       const priority = cost > 0
         ? calculateProfitabilityIndex(discountValue(estimatedValue, duration), cost)
         : 0;
-      priorities.set(aim.id, priority);
+      priorities.set(idea.id, priority);
   }
 
   return { values: currentValues, totalIntrinsic, flowShares, flowValues, costs, doneCosts, priorities };
@@ -301,28 +301,28 @@ export function calculateAimValues(inputAims: Aim[]): {
  * proportion to their direct cost (equally if every basis is zero).
  */
 function distributeCostsStable(
-  aims: Aim[],
-  aimMap: Map<string, Aim>,
+  ideas: Idea[],
+  ideaMap: Map<string, Idea>,
   values: Map<string, number>,
   flowValues: Map<string, number>,
   isDoneCost: boolean,
   totalCosts?: Map<string, number>
 ): Map<string, number> {
   const childToParents = new Map<string, string[]>();
-  for (const parent of aims) {
+  for (const parent of ideas) {
     for (const connection of parent.supportingConnections ?? []) {
-      if (!aimMap.has(connection.aimId)) continue;
-      const parents = childToParents.get(connection.aimId) ?? [];
+      if (!ideaMap.has(connection.ideaId)) continue;
+      const parents = childToParents.get(connection.ideaId) ?? [];
       parents.push(parent.id);
-      childToParents.set(connection.aimId, parents);
+      childToParents.set(connection.ideaId, parents);
     }
   }
   const dependencies = new Map<string, { childId: string; share: number }[]>();
-  for (const parent of aims) {
+  for (const parent of ideas) {
     const deps: { childId: string; share: number }[] = [];
     for (const connection of parent.supportingConnections ?? []) {
-      const childId = connection.aimId;
-      if (!aimMap.has(childId)) continue;
+      const childId = connection.ideaId;
+      if (!ideaMap.has(childId)) continue;
       const childValue = values.get(childId) ?? 0;
       const share = childValue > 1e-8
         ? (flowValues.get(`${parent.id}->${childId}`) ?? 0) / childValue
@@ -361,14 +361,14 @@ function distributeCostsStable(
     } while (member !== id);
     components.push(component);
   };
-  for (const aim of aims) if (!indexes.has(aim.id)) visit(aim.id);
+  for (const idea of ideas) if (!indexes.has(idea.id)) visit(idea.id);
 
   const componentOf = new Map<string, number>();
   components.forEach((members, componentId) =>
     members.forEach(id => componentOf.set(id, componentId)));
   const componentDependencies = new Map<number, Map<number, number>>();
-  for (const parent of aims) {
-    // A completed aim's done cost is already its full attributed total; pulling
+  for (const parent of ideas) {
+    // A completed idea's done cost is already its full attributed total; pulling
     // completed descendants again would double count it.
     if (isDoneCost && parent.status.state === 'done') continue;
     const parentComponent = componentOf.get(parent.id)!;
@@ -382,9 +382,9 @@ function distributeCostsStable(
   }
 
   const memberBasis = (id: string): number => {
-    const aim = aimMap.get(id)!;
-    if (!isDoneCost) return aim.cost ?? 0;
-    return aim.status.state === 'done' ? (totalCosts?.get(id) ?? 0) : 0;
+    const idea = ideaMap.get(id)!;
+    if (!isDoneCost) return idea.cost ?? 0;
+    return idea.status.state === 'done' ? (totalCosts?.get(id) ?? 0) : 0;
   };
   const componentCosts = new Map<number, number>();
   const calculateComponent = (componentId: number): number => {
@@ -412,8 +412,8 @@ function distributeCostsStable(
 }
 
 function distributeCosts(
-    aims: Aim[], 
-    aimMap: Map<string, Aim>, 
+    ideas: Idea[], 
+    ideaMap: Map<string, Idea>, 
     values: Map<string, number>, 
     flowValues: Map<string, number>,
     isDoneCost: boolean,
@@ -422,10 +422,10 @@ function distributeCosts(
     const costs = new Map<string, number>();
     
     // Initialize with Intrinsic
-    for (const aim of aims) {
+    for (const idea of ideas) {
         if (isDoneCost) {
             // For Done Cost:
-            // If aim is done, its intrinsic "done cost" is its FULL Total Cost (passed in)
+            // If idea is done, its intrinsic "done cost" is its FULL Total Cost (passed in)
             // Wait, logic check:
             // If I am DONE, my DoneCost = My Total Cost.
             // But distributing up?
@@ -438,13 +438,13 @@ function distributeCosts(
             // So if I am Done, my "Intrinsic Done Contribution" is my Total Cost.
             // If I am Not Done, my "Intrinsic Done Contribution" is 0.
             
-            if (aim.status.state === 'done') {
-                costs.set(aim.id, totalCosts?.get(aim.id) || 0);
+            if (idea.status.state === 'done') {
+                costs.set(idea.id, totalCosts?.get(idea.id) || 0);
             } else {
-                costs.set(aim.id, 0);
+                costs.set(idea.id, 0);
             }
         } else {
-            costs.set(aim.id, aim.cost || 0);
+            costs.set(idea.id, idea.cost || 0);
         }
     }
 
@@ -462,16 +462,16 @@ function distributeCosts(
     
     const costDependencyMatrix = new Map<string, { childId: string, share: number }[]>();
     
-    for (const parent of aims) {
+    for (const parent of ideas) {
         const deps: { childId: string, share: number }[] = [];
         const parentId = parent.id;
         
         // Children are in supportingConnections
         if (parent.supportingConnections) {
             for (const conn of parent.supportingConnections) {
-                if (!aimMap.has(conn.aimId)) continue;
+                if (!ideaMap.has(conn.ideaId)) continue;
                 
-                const childId = conn.aimId;
+                const childId = conn.ideaId;
                 const childValue = values.get(childId) || 0;
                 
                 let share = 0;
@@ -505,12 +505,12 @@ function distributeCosts(
     // We need to know for each child, what its parents are, to normalize structural shares.
     // Invert the graph temporarily.
     const childToParents = new Map<string, string[]>();
-    for (const parent of aims) {
+    for (const parent of ideas) {
          if (parent.supportingConnections) {
             for (const conn of parent.supportingConnections) {
-                if (!aimMap.has(conn.aimId)) continue;
-                if (!childToParents.has(conn.aimId)) childToParents.set(conn.aimId, []);
-                childToParents.get(conn.aimId)!.push(parent.id);
+                if (!ideaMap.has(conn.ideaId)) continue;
+                if (!childToParents.has(conn.ideaId)) childToParents.set(conn.ideaId, []);
+                childToParents.get(conn.ideaId)!.push(parent.id);
             }
          }
     }
@@ -540,7 +540,7 @@ function distributeCosts(
         const nextCosts = new Map<string, number>();
         let maxChange = 0;
         
-        for (const parent of aims) {
+        for (const parent of ideas) {
             let aggregatedCost = 0;
             const deps = costDependencyMatrix.get(parent.id);
             if (deps) {
@@ -591,7 +591,7 @@ function distributeCosts(
 
 // Remove old functions (commented out or just omitted in replacement)
 /*
-function calculateCosts(aims: Aim[], aimMap: Map<string, Aim>): Map<string, number> {
+function calculateCosts(ideas: Idea[], ideaMap: Map<string, Idea>): Map<string, number> {
   // ...
 }
 function calculateDoneCosts(...) {

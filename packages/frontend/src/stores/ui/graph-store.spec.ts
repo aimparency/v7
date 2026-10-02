@@ -2,24 +2,24 @@ import { describe, expect, it } from 'vitest'
 import { findConnectionBetween } from './graph-store'
 
 describe('findConnectionBetween', () => {
-  const aims = {
-    parent: { supportingConnections: [{ aimId: 'child' }] },
+  const ideas = {
+    parent: { supportingConnections: [{ ideaId: 'child' }] },
     child: { supportingConnections: [] },
     unrelated: { supportingConnections: [] },
   }
 
   it('returns the stored parent-child orientation from either click order', () => {
-    expect(findConnectionBetween('parent', 'child', aims)).toEqual({
+    expect(findConnectionBetween('parent', 'child', ideas)).toEqual({
       parentId: 'parent',
       childId: 'child',
     })
-    expect(findConnectionBetween('child', 'parent', aims)).toEqual({
+    expect(findConnectionBetween('child', 'parent', ideas)).toEqual({
       parentId: 'parent',
       childId: 'child',
     })
   })
 
-  it('does not invent a connection for unrelated aims', () => {
-    expect(findConnectionBetween('parent', 'unrelated', aims)).toBeNull()
+  it('does not invent a connection for unrelated ideas', () => {
+    expect(findConnectionBetween('parent', 'unrelated', ideas)).toBeNull()
   })
 })

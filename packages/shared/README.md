@@ -6,13 +6,13 @@ It exports:
 
 - shared TypeScript types and Zod schemas
 - constants such as `AIMPARENCY_DIR_NAME`
-- value-calculation logic for aims
+- value-calculation logic for ideas
 - date/time and vector helpers
 - shared router types used by the frontend and backend
 
 ## Why It Exists
 
-This package keeps the frontend, backend, and related tools aligned on the same data model. If an aim, phase, or project-meta shape changes, the change should normally start here.
+This package keeps the frontend, backend, and related tools aligned on the same data model. If an idea, phase, or project-meta shape changes, the change should normally start here.
 
 ## Build Output
 

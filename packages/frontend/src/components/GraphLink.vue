@@ -25,7 +25,7 @@ const selected = computed(() => {
          graphUIStore.selectedLink?.childId === props.link.target.id
 })
 
-const aimSelected = computed(() => {
+const ideaSelected = computed(() => {
   const currentAimId = graphUIStore.graphSelectedAimId
   return currentAimId === props.link.source.id || 
          currentAimId === props.link.target.id
@@ -68,7 +68,7 @@ const select = () => {
     v-show="isVisible"
     :d="d" 
     class="graph-link"
-    :class="{ selected, aimSelected }"
+    :class="{ selected, ideaSelected }"
     :fill="fillColor"
     :fill-opacity="opacity"
     @click.stop="select"
@@ -93,7 +93,7 @@ const select = () => {
   stroke: #ffff;
   opacity: 0.75;
 }
-.graph-link.aimSelected {
+.graph-link.ideaSelected {
   opacity: 0.75;
 }
 </style>

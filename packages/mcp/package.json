@@ -2,7 +2,7 @@
   "name": "mcp",
   "version": "1.0.0",
   "private": true,
-  "description": "MCP server for Aimparency - allows LLMs to interact with aims and phases",
+  "description": "MCP server for Aimparency - allows LLMs to interact with ideas and phases",
   "type": "module",
   "bin": {
     "aimparency-mcp": "./build/index.js"
@@ -22,7 +22,7 @@
     "mcp",
     "aimparency",
     "goals",
-    "aims"
+    "ideas"
   ],
   "author": "Aimparency contributors",
   "license": "ISC",

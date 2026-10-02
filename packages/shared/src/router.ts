@@ -1,6 +1,6 @@
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
-import { AimSchema, PhaseSchema, ProjectMetaSchema } from './types.js';
+import { IdeaSchema, PhaseSchema, ProjectMetaSchema } from './types.js';
 
 const t = initTRPC.create();
 
@@ -8,11 +8,11 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 export const appRouter = router({
-  aim: router({
+  idea: router({
     create: publicProcedure
       .input(z.object({
         projectPath: z.string(),
-        aim: AimSchema.omit({ id: true })
+        idea: IdeaSchema.omit({ id: true })
       }))
       .mutation(async ({ input }) => {
         throw new Error('Not implemented');
@@ -21,7 +21,7 @@ export const appRouter = router({
     get: publicProcedure
       .input(z.object({
         projectPath: z.string(),
-        aimId: z.string().uuid()
+        ideaId: z.string().uuid()
       }))
       .query(async ({ input }) => {
         throw new Error('Not implemented');
@@ -43,7 +43,7 @@ export const appRouter = router({
     createFloatingAim: publicProcedure
       .input(z.object({
         projectPath: z.string(),
-        aim: z.object({
+        idea: z.object({
           text: z.string(),
           status: z.object({
             state: z.string().optional()
@@ -57,8 +57,8 @@ export const appRouter = router({
     update: publicProcedure
       .input(z.object({
         projectPath: z.string(),
-        aimId: z.string().uuid(),
-        aim: AimSchema.partial().omit({ id: true })
+        ideaId: z.string().uuid(),
+        idea: IdeaSchema.partial().omit({ id: true })
       }))
       .mutation(async ({ input }) => {
         throw new Error('Not implemented');
@@ -67,7 +67,7 @@ export const appRouter = router({
     delete: publicProcedure
       .input(z.object({
         projectPath: z.string(),
-        aimId: z.string().uuid()
+        ideaId: z.string().uuid()
       }))
       .mutation(async ({ input }) => {
         throw new Error('Not implemented');
@@ -76,7 +76,7 @@ export const appRouter = router({
     commitToPhase: publicProcedure
       .input(z.object({
         projectPath: z.string(),
-        aimId: z.string().uuid(),
+        ideaId: z.string().uuid(),
         phaseId: z.string().uuid(),
         insertionIndex: z.number().optional()
       }))
@@ -87,7 +87,7 @@ export const appRouter = router({
     removeFromPhase: publicProcedure
       .input(z.object({
         projectPath: z.string(),
-        aimId: z.string().uuid(),
+        ideaId: z.string().uuid(),
         phaseId: z.string().uuid()
       }))
       .mutation(async ({ input }) => {

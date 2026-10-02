@@ -4,7 +4,7 @@ import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { useMapStore } from '../stores/map'
-import type { Aim, Connection } from 'shared'
+import type { Idea, Connection } from 'shared'
 import { formatWithK, parseK } from '../utils/number-format'
 import NumericTextInput from './NumericTextInput.vue'
 
@@ -15,17 +15,17 @@ const mapStore = useMapStore()
 
 const selectedAim = computed(() => {
     if (!graphUIStore.graphSelectedAimId) return null
-    return dataStore.aims[graphUIStore.graphSelectedAimId] || null
+    return dataStore.ideas[graphUIStore.graphSelectedAimId] || null
 })
 
 const selectedLink = computed(() => {
     if (!graphUIStore.selectedLink) return null
     const { parentId, childId } = graphUIStore.selectedLink
-    const parent = dataStore.aims[parentId]
-    const child = dataStore.aims[childId]
+    const parent = dataStore.ideas[parentId]
+    const child = dataStore.ideas[childId]
     if (!parent || !child) return null
 
-    const connection = parent.supportingConnections?.find((c: any) => c.aimId === childId)
+    const connection = parent.supportingConnections?.find((c: any) => c.ideaId === childId)
     if (!connection) return null
 
     return {
@@ -91,10 +91,10 @@ watch(selectedAim, (newVal) => {
     }
 }, { immediate: true })
 
-const focusAim = (aimId: string) => {
-    const node = mapStore.getNode(aimId)
+const focusAim = (ideaId: string) => {
+    const node = mapStore.getNode(ideaId)
     if (node) {
-        graphUIStore.setGraphSelection(aimId)
+        graphUIStore.setGraphSelection(ideaId)
         graphUIStore.deselectLink()
         mapStore.centerOnNode(node)
     }
@@ -118,7 +118,7 @@ const onLoopWeightInput = (event: Event) => {
 
 const updateAimAttributes = async () => {
     if (!selectedAim.value) return
-    const aimId = selectedAim.value.id
+    const ideaId = selectedAim.value.id
     const updates = {
         intrinsicValue: editedIntrinsicValue.value,
         cost: editedCost.value,
@@ -126,9 +126,9 @@ const updateAimAttributes = async () => {
     }
 
     try {
-        await dataStore.updateAim(projectStore.projectPath, aimId, updates)
+        await dataStore.updateAim(projectStore.projectPath, ideaId, updates)
     } catch (e) {
-        console.error('Failed to update aim attributes', e)
+        console.error('Failed to update idea attributes', e)
     }
 }
 
@@ -140,10 +140,10 @@ const focusConnection = (parentId: string, childId: string) => {
 
 const resolveConnection = (linkRef?: { parentId: string, childId: string } | null) => {
     if (linkRef) {
-        const parent = dataStore.aims[linkRef.parentId]
-        const child = dataStore.aims[linkRef.childId]
+        const parent = dataStore.ideas[linkRef.parentId]
+        const child = dataStore.ideas[linkRef.childId]
         if (!parent || !child) return null
-        const connection = parent.supportingConnections?.find((c: any) => c.aimId === child.id)
+        const connection = parent.supportingConnections?.find((c: any) => c.ideaId === child.id)
         if (!connection) return null
         return { parent, child, connection }
     }
@@ -219,12 +219,12 @@ const removeConnection = async () => {
     }
 }
 
-const getSupportedAims = (aim: Aim) => {
-    return aim.supportedAims.map((id: string) => dataStore.aims[id]).filter(Boolean) as Aim[]
+const getSupportedAims = (idea: Idea) => {
+    return idea.supportedAims.map((id: string) => dataStore.ideas[id]).filter(Boolean) as Idea[]
 }
 
-const getSupportingAims = (aim: Aim) => {
-    return aim.supportingConnections.map((c: any) => dataStore.aims[c.aimId]).filter(Boolean) as Aim[]
+const getSupportingAims = (idea: Idea) => {
+    return idea.supportingConnections.map((c: any) => dataStore.ideas[c.ideaId]).filter(Boolean) as Idea[]
 }
 
 const vFocus = {
@@ -295,13 +295,13 @@ const isOpaque = computed(() => !hasInteracted.value)
         <div v-if="selectedLink" class="panel-content">
             <h3>Connection</h3>
             
-            <div class="aim-buttons">
-                <button class="aim-card source" @click="focusAim(selectedLink.parent.id)">
+            <div class="idea-buttons">
+                <button class="idea-card source" @click="focusAim(selectedLink.parent.id)">
                     <span class="label">From (Child)</span>
                     <span class="text">{{ selectedLink.parent.text }}</span>
                 </button>
                 <div class="arrow">↓</div>
-                <button class="aim-card target" @click="focusAim(selectedLink.child.id)">
+                <button class="idea-card target" @click="focusAim(selectedLink.child.id)">
                     <span class="label">To (Parent)</span>
                     <span class="text">{{ selectedLink.child.text }}</span>
                 </button>
@@ -337,10 +337,10 @@ const isOpaque = computed(() => !hasInteracted.value)
             </button>
         </div>
 
-        <!-- AIM SELECTED -->
+        <!-- IDEA SELECTED -->
         <div v-else-if="selectedAim" class="panel-content">
             <h3>{{ selectedAim.text }}</h3>
-            <div class="aim-status" :style="{ color: statusColor }">{{ selectedAim.status.state }}</div>
+            <div class="idea-status" :style="{ color: statusColor }">{{ selectedAim.status.state }}</div>
             
             <div class="metrics-section">
                 <h4>Value</h4>
@@ -399,17 +399,17 @@ const isOpaque = computed(() => !hasInteracted.value)
                 </div>
             </div>
             
-            <div v-if="selectedAim.description" class="aim-description">
+            <div v-if="selectedAim.description" class="idea-description">
                 {{ selectedAim.description }}
             </div>
             
             <div class="section">
-                <h4>Supported Aims (Parents)</h4>
+                <h4>Supported Ideas (Parents)</h4>
                 <div class="list">
                     <div 
                         v-for="parent in getSupportedAims(selectedAim)" 
                         :key="parent.id"
-                        class="aim-card clickable"
+                        class="idea-card clickable"
                         @click="focusConnection(parent.id, selectedAim!.id)"
                     >
                         {{ parent.text }}
@@ -419,12 +419,12 @@ const isOpaque = computed(() => !hasInteracted.value)
             </div>
 
             <div class="section">
-                <h4>Supporting Aims (Children)</h4>
+                <h4>Supporting Ideas (Children)</h4>
                 <div class="list">
                     <div 
                         v-for="child in getSupportingAims(selectedAim)" 
                         :key="child.id"
-                        class="aim-card clickable"
+                        class="idea-card clickable"
                         @click="focusConnection(selectedAim!.id, child.id)"
                     >
                         {{ child.text }}
@@ -551,7 +551,7 @@ h3 {
 
 /* Removed old .value-badge styles */
 
-.aim-description {
+.idea-description {
     font-size: 0.8rem;
     color: #aaa;
     margin-bottom: 1.5rem;
@@ -567,7 +567,7 @@ h4 {
     letter-spacing: 0.5px;
 }
 
-.aim-buttons {
+.idea-buttons {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -575,7 +575,7 @@ h4 {
     align-items: center;
 }
 
-.aim-card {
+.idea-card {
     display: block;
     width: 100%;
     padding: 0.4rem; /* Reduced from 0.8rem */
@@ -589,17 +589,17 @@ h4 {
     font-family: inherit; /* Ensure font inheritance */
 }
 
-.aim-card.clickable {
+.idea-card.clickable {
     cursor: pointer;
 }
 
-.aim-card.clickable:hover, button.aim-card:hover {
+.idea-card.clickable:hover, button.idea-card:hover {
     background: #333;
     border-color: #444;
 }
 
-/* Specific styles for connection buttons which are now aim-cards */
-button.aim-card {
+/* Specific styles for connection buttons which are now idea-cards */
+button.idea-card {
     cursor: pointer;
     display: flex;
     flex-direction: column;
@@ -609,14 +609,14 @@ button.aim-card {
     font-family: inherit;
 }
 
-.aim-card .label {
+.idea-card .label {
     font-size: 0.8em;
     color: #888;
     margin-bottom: 0.2rem;
     display: block;
 }
 
-.aim-card .text {
+.idea-card .text {
     font-weight: 500;
 }
 
@@ -712,7 +712,7 @@ textarea.input-field {
     background: rgba(255, 255, 255, 0.05);
 }
 
-.aim-status {
+.idea-status {
     font-size: 0.85rem;
     color: #888;
     text-transform: uppercase;

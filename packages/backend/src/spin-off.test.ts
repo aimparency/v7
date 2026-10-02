@@ -24,24 +24,24 @@ afterEach(async () => {
 });
 
 test('spin-off merges into an existing graph, preserves metadata, and remaps collisions', async () => {
-  const sourceRoot = await caller.aim.createFloatingAim({
+  const sourceRoot = await caller.idea.createFloatingAim({
     projectPath: source,
-    aim: { text: 'Imported branch root' },
+    idea: { text: 'Imported branch root' },
   });
   await caller.project.updateMeta({
     projectPath: target,
     meta: { name: 'Existing target', color: '#123456' },
   });
 
-  // Put an unrelated target aim at the same durable id to exercise collision handling.
-  await fs.ensureDir(path.join(target, 'aims'));
+  // Put an unrelated target idea at the same durable id to exercise collision handling.
+  await fs.ensureDir(path.join(target, 'ideas'));
   await fs.copy(
-    path.join(source, 'aims', `${sourceRoot.id}.json`),
-    path.join(target, 'aims', `${sourceRoot.id}.json`),
+    path.join(source, 'ideas', `${sourceRoot.id}.json`),
+    path.join(target, 'ideas', `${sourceRoot.id}.json`),
   );
-  const collision = await fs.readJson(path.join(target, 'aims', `${sourceRoot.id}.json`));
-  collision.text = 'Pre-existing target aim';
-  await fs.writeJson(path.join(target, 'aims', `${sourceRoot.id}.json`), collision);
+  const collision = await fs.readJson(path.join(target, 'ideas', `${sourceRoot.id}.json`));
+  collision.text = 'Pre-existing target idea';
+  await fs.writeJson(path.join(target, 'ideas', `${sourceRoot.id}.json`), collision);
 
   const result = await caller.spinOff.execute({
     projectPath: source,
@@ -58,18 +58,18 @@ test('spin-off merges into an existing graph, preserves metadata, and remaps col
 
   const targetMeta = await caller.project.getMeta({ projectPath: target });
   assert.equal(targetMeta.name, 'Existing target');
-  const original = await caller.aim.get({ projectPath: target, aimId: sourceRoot.id });
-  const imported = await caller.aim.get({ projectPath: target, aimId: importedId });
-  assert.equal(original.text, 'Pre-existing target aim');
+  const original = await caller.idea.get({ projectPath: target, ideaId: sourceRoot.id });
+  const imported = await caller.idea.get({ projectPath: target, ideaId: importedId });
+  assert.equal(original.text, 'Pre-existing target idea');
   assert.equal(imported.text, 'Imported branch root');
   assert.deepEqual(imported.supportedAims, []);
   assert.deepEqual(imported.committedIn, []);
 });
 
 test('spin-off refuses to target its source graph', async () => {
-  const root = await caller.aim.createFloatingAim({
+  const root = await caller.idea.createFloatingAim({
     projectPath: source,
-    aim: { text: 'Root' },
+    idea: { text: 'Root' },
   });
   await assert.rejects(
     () => caller.spinOff.execute({

@@ -1,14 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { planSpinOff, computeSpinOff, remapSpinOffCollisions } from './spin-off.js';
-import type { Aim, Connection } from './types.js';
+import type { Idea, Connection } from './types.js';
 
-function conn(aimId: string): Connection {
-  return { aimId, relativePosition: [0, 0], weight: 1 };
+function conn(ideaId: string): Connection {
+  return { ideaId, relativePosition: [0, 0], weight: 1 };
 }
 
-/** Build an aim. parents = supportedAims (up); children = supportingConnections (down). */
-function aim(id: string, parents: string[], children: string[], committedIn: string[] = []): Aim {
+/** Build an idea. parents = supportedAims (up); children = supportingConnections (down). */
+function idea(id: string, parents: string[], children: string[], committedIn: string[] = []): Idea {
   return {
     id,
     text: id,
@@ -31,12 +31,12 @@ function aim(id: string, parents: string[], children: string[], committedIn: str
 const sorted = (xs: string[]) => [...xs].sort();
 
 // A (top); B->A; C->B; D->A and D->B. Export root B.
-function exampleGraph(): Aim[] {
+function exampleGraph(): Idea[] {
   return [
-    aim('A', [], ['B', 'D']),
-    aim('B', ['A'], ['C', 'D']),
-    aim('C', ['B'], []),
-    aim('D', ['A', 'B'], []),
+    idea('A', [], ['B', 'D']),
+    idea('B', ['A'], ['C', 'D']),
+    idea('C', ['B'], []),
+    idea('D', ['A', 'B'], []),
   ];
 }
 
@@ -54,7 +54,7 @@ test('computeSpinOff: seam edges dropped, shared edges split, phases cleared', (
   const so = new Map(res.spinOffAims.map((a) => [a.id, a]));
   // B's seam edge B->A is dropped (A not copied); B keeps children C and D.
   assert.deepEqual(so.get('B')!.supportedAims, []);
-  assert.deepEqual(sorted(so.get('B')!.supportingConnections.map((c) => c.aimId)), ['C', 'D']);
+  assert.deepEqual(sorted(so.get('B')!.supportingConnections.map((c) => c.ideaId)), ['C', 'D']);
   // D in the spin-off keeps only D->B (D->A dropped, A not copied).
   assert.deepEqual(so.get('D')!.supportedAims, ['B']);
   // phases are not carried.
@@ -64,20 +64,20 @@ test('computeSpinOff: seam edges dropped, shared edges split, phases cleared', (
   assert.deepEqual(sorted(res.sourceAimIdsToDelete), ['B', 'C']);
   const rewrites = new Map(res.sourceAimsToRewrite.map((a) => [a.id, a]));
   // A loses its child B, keeps D.
-  assert.deepEqual(rewrites.get('A')!.supportingConnections.map((c) => c.aimId), ['D']);
+  assert.deepEqual(rewrites.get('A')!.supportingConnections.map((c) => c.ideaId), ['D']);
   // D (overlap) loses parent B in the source, keeps A.
   assert.deepEqual(rewrites.get('D')!.supportedAims, ['A']);
 });
 
-test('conservative: a supporter that also serves an outside aim is kept (overlap), not deleted', () => {
-  // A->B->C, and C also supports outside aim E. Export B.
-  const aims = [
-    aim('A', [], ['B']),
-    aim('B', ['A'], ['C']),
-    aim('C', ['B', 'E'], []),
-    aim('E', [], ['C']),
+test('conservative: a supporter that also serves an outside idea is kept (overlap), not deleted', () => {
+  // A->B->C, and C also supports outside idea E. Export B.
+  const ideas = [
+    idea('A', [], ['B']),
+    idea('B', ['A'], ['C']),
+    idea('C', ['B', 'E'], []),
+    idea('E', [], ['C']),
   ];
-  const plan = planSpinOff(aims, ['B']);
+  const plan = planSpinOff(ideas, ['B']);
   assert.deepEqual(sorted(plan.copyIds), ['B', 'C']);
   assert.deepEqual(sorted(plan.spinOffIds), ['B']); // only the root is removed
   assert.deepEqual(sorted(plan.overlapIds), ['C']); // C shared via E → kept
@@ -85,8 +85,8 @@ test('conservative: a supporter that also serves an outside aim is kept (overlap
 });
 
 test('leaf root: only the root moves', () => {
-  const aims = [aim('A', [], ['B']), aim('B', ['A'], [])];
-  const plan = planSpinOff(aims, ['B']);
+  const ideas = [idea('A', [], ['B']), idea('B', ['A'], [])];
+  const plan = planSpinOff(ideas, ['B']);
   assert.deepEqual(sorted(plan.copyIds), ['B']);
   assert.deepEqual(sorted(plan.spinOffIds), ['B']);
   assert.deepEqual(plan.overlapIds, []);
@@ -95,13 +95,13 @@ test('leaf root: only the root moves', () => {
 
 test('multiple roots: union of both branches', () => {
   // R1->(X), R2->(X,Y); X shared by both roots, Y exclusive to R2.
-  const aims = [
-    aim('R1', [], ['X']),
-    aim('R2', [], ['X', 'Y']),
-    aim('X', ['R1', 'R2'], []),
-    aim('Y', ['R2'], []),
+  const ideas = [
+    idea('R1', [], ['X']),
+    idea('R2', [], ['X', 'Y']),
+    idea('X', ['R1', 'R2'], []),
+    idea('Y', ['R2'], []),
   ];
-  const plan = planSpinOff(aims, ['R1', 'R2']);
+  const plan = planSpinOff(ideas, ['R1', 'R2']);
   assert.deepEqual(sorted(plan.copyIds), ['R1', 'R2', 'X', 'Y']);
   // X's parents are both roots (both red) → X red; Y's parent R2 red → red.
   assert.deepEqual(sorted(plan.spinOffIds), ['R1', 'R2', 'X', 'Y']);
@@ -109,20 +109,20 @@ test('multiple roots: union of both branches', () => {
   assert.deepEqual(plan.keptIds, []);
 });
 
-test('preserveInflow: external inflow folded into intrinsicValue of the seam aim', () => {
+test('preserveInflow: external inflow folded into intrinsicValue of the seam idea', () => {
   // A (intrinsic source) -> B -> C. Export B: B's inflow from A (dropped) should
   // be folded into B's intrinsicValue so C still receives weight in the spin-off.
-  const aims = [
-    { ...aim('A', [], ['B']), intrinsicValue: 10 },
-    aim('B', ['A'], ['C']),
-    aim('C', ['B'], []),
+  const ideas = [
+    { ...idea('A', [], ['B']), intrinsicValue: 10 },
+    idea('B', ['A'], ['C']),
+    idea('C', ['B'], []),
   ];
 
-  const without = computeSpinOff(aims, ['B']);
+  const without = computeSpinOff(ideas, ['B']);
   const wB = without.spinOffAims.find((a) => a.id === 'B')!;
   assert.equal(wB.intrinsicValue, 0); // default: no compensation
 
-  const withInflow = computeSpinOff(aims, ['B'], { preserveInflow: true });
+  const withInflow = computeSpinOff(ideas, ['B'], { preserveInflow: true });
   const b = withInflow.spinOffAims.find((a) => a.id === 'B')!;
   // B had no intrinsic of its own but received flow from A; that is now its intrinsic.
   assert.ok(b.intrinsicValue > 0, `expected B to gain intrinsic inflow, got ${b.intrinsicValue}`);
@@ -143,10 +143,10 @@ test('existing target collisions are remapped consistently without flattening th
   const result = remapSpinOffCollisions(copied, ['B', 'target-only'], () => generated.shift()!);
 
   assert.deepEqual(result.idMap, { B: 'new-B' });
-  const byId = new Map(result.aims.map((candidate) => [candidate.id, candidate]));
+  const byId = new Map(result.ideas.map((candidate) => [candidate.id, candidate]));
   assert.equal(byId.has('B'), false);
-  assert.deepEqual(sorted(byId.get('new-B')!.supportingConnections.map((c) => c.aimId)), ['C', 'D']);
+  assert.deepEqual(sorted(byId.get('new-B')!.supportingConnections.map((c) => c.ideaId)), ['C', 'D']);
   assert.deepEqual(byId.get('C')!.supportedAims, ['new-B']);
   assert.deepEqual(byId.get('D')!.supportedAims, ['new-B']);
-  assert.ok(result.aims.every((candidate) => candidate.committedIn.length === 0));
+  assert.ok(result.ideas.every((candidate) => candidate.committedIn.length === 0));
 });
