@@ -2,25 +2,34 @@
   "id": "44056715-d1cc-47c3-8af5-399f9ad65cbe",
   "text": "Rename \"aim\" to \"idea\" across Aimparency, with an automatic .bowman migration",
   "description": "Felix asked (2026-10-02) how much effort renaming aims→ideas throughout the project would be, explicitly \"don't start yet\". Estimate recorded: ~1–2 focused days. Scale: ~400 tracked files / ~8.7k matching lines (frontend 3.9k, backend 1.6k, mcp 0.8k, wrapped-agents 0.5k), 46 files with \"aim\" in the path; \"idea\" is nearly unused in packages, so no collisions. Mechanical codemod ~2–3h (case-preserving, exclude \"aimparency\", \"claim\", English inflections like \"aimed\"). Real cost: (1) persisted data — 765 .bowman/aims JSONs, archived-aims, cache.db, semantic-graph.json, phase refs, field names like supportedAims, plus every linked repo's .bowman → migration + legacy-read fallback; (2) external contract — MCP tool names (create_aim, get_aim_context…) referenced in hooks, CLAUDE.md, supervisor/loop prompts, agent memory → aliases or coordinated switch; (3) git history — parseAimCommitEvidence must accept old commit format forever; (4) wrapped agents share the working tree → pause them during the 400-file commit. Semantic concern: an aim has status, phase commitment and supports other aims; \"idea\" connotes uncommitted, and \"Aimparency\" would lose its referent. Cheaper alternative: UI-label-only rename (~1–2h, no migration). Decision needed from Felix: full rename, UI-only, or keep \"aim\".",
+  "reflection": "Verification: full check suite (22 build/typecheck/test steps) equals baseline (pre-existing: 2 mcp tests Project Meta/Consistency, 3 frontend type errors); new tests: shared bowman-migration (9), backend legacy-project integration, git-evidence cross-rename history. Dry run on a copy of the real v7 .bowman: 774 ideas migrated in 0.5s, 0 conflicts, no aim-named keys left, meta statuses open/implemented/…; a sampled diff shows only state done→implemented and supportedAims→supportedIdeas. Lesson: the first codemod regex missed camelCase boundaries (calculateAimValues) — check the token report for mid-word segments before trusting a dry run.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "235055b1-a308-42fc-ae4a-79e3264c79fb",
+      "relativePosition": [
+        -1.7480626344771637,
+        -1.7872540462801467
+      ],
+      "weight": 1
+    }
+  ],
   "supportedIdeas": [
     "22dd4138-d7c2-436a-8891-15568dacf338"
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Felix decided 2026-10-02: full rename to ideas, done→implemented, product name stays for now (intentree under consideration). Implemented on branch rename-aims-to-ideas (worktree ../v7-ideas, 4 commits): code rename, shared/bowman-migration with 9 tests, backend/agent-tools trigger it on first access, status history follows ideas across the rename. All checks match the pre-change baseline. Not merged: merging restarts the running stack, migrates v7/.bowman on first request and renames the MCP tools, so it waits for Felix's go.",
-    "date": 1790929623466
+    "state": "review",
+    "comment": "Merged to main (a654722..a4ef403) and this repo migrated (02fb367): ideas/, done→implemented. Verified: full suite at baseline; real-graph comparison old code vs new code identical (762 ideas, 821 connections, 361 commitments, all values/priorities, 0 consistency issues); API after migration shows the same counts. Awaiting Felix acceptance. Follow-ups: /mcp reconnect for open sessions; reinstall continue hooks in other repos; product name (intentree?) undecided.",
+    "date": 1790965996231
   },
   "intrinsicValue": 1,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Verification: full check suite (22 build/typecheck/test steps) equals baseline (pre-existing: 2 mcp tests Project Meta/Consistency, 3 frontend type errors); new tests: shared bowman-migration (9), backend legacy-project integration, git-evidence cross-rename history. Dry run on a copy of the real v7 .bowman: 774 ideas migrated in 0.5s, 0 conflicts, no aim-named keys left, meta statuses open/implemented/…; a sampled diff shows only state done→implemented and supportedAims→supportedIdeas. Lesson: the first codemod regex missed camelCase boundaries (calculateAimValues) — check the token report for mid-word segments before trusting a dry run."
+  "valueVariance": 0
 }

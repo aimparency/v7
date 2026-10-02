@@ -1,0 +1,25 @@
+{
+  "id": "3539636e-91eb-4c92-8826-6ef47daa83d9",
+  "text": "Decide how to repair 4 ideas with cost 0 that the backend cannot read",
+  "description": "verify:migration found 4 ideas whose cost is 0 while IdeaSchema requires cost > 0, so idea.get fails and every list silently skips them (pre-existing, not caused by the migration): 6bbb740c \"graph view\", 8fc387d5, b3b7e429 \"project meta settings\", e552723a. Options: (a) a data migration setting cost 0 → 1 (the schema default), (b) allow cost 0 in the schema if \"free\" is meaningful, (c) fix the four by hand. Recommendation: (a) as migration 4, since cost 0 has no meaning in the value model (division by cost).",
+  "reflections": [],
+  "archived": false,
+  "color": "#6b4434",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "235055b1-a308-42fc-ae4a-79e3264c79fb"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Needs Felix: is cost 0 ever intended, or should a migration set it to 1?",
+    "date": 1790965996998
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
