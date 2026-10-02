@@ -31,6 +31,14 @@
       "outcome": "Inspected both flagged pairs in full mission context. They were false positives: watchdog runtime reliability versus frontend watchdog UX, and list-view versus graph-canvas multi-selection. Added precise distinguishing descriptions. Rebuilt all 744 aim and 33 phase search entries. The rebuild exposed one historical-vs-successor cross-repo pair; clarified the halted aim-level design as explicitly parked and distinct from the implemented opaque repo-node sink.",
       "effectiveness": "find_duplicate_aims at threshold 0.92 now returns zero pairs, down from two initial clusters and one newly exposed historical pair. No aims were incorrectly merged or deleted. check_consistency remains valid with zero errors/issues.",
       "lesson": "Semantic hygiene should resolve ambiguity at the source before merging. Similar names can represent architectural boundaries or platform-specific implementations; precise descriptions preserve history while making automated duplicate detection more reliable."
+    },
+    {
+      "date": 1790927020728,
+      "context": "2026-10-02 continuation loop after Felix's aim→idea rename question (recorded as 44056715, unclear). get_prioritized_aims returned only the two root missions: zero open leaves.",
+      "outcome": "Broad search for reversible no-authority work found none worth doing. Status census: 458 done, 158 review, 86 human-dependent, 5 open (all roots/containers), 1 unclear. Hygiene: 1 duplicate cluster (list-view vs graph-view multi-select — intentional siblings, not merged); 79 collapse candidates mostly blocked on children in review (review→done needs Felix per AGENTS.md); 22 floating aims, mostly old done graph work. Code: 562cdb60 slice 3 blocked on 73c110aa selection-model decision. Funding: Prototype Fund scope/draft/user-research kit already exist (06423345, 1d9cecd8 in review); submission, interviews, KI4KMU PIC/video all need Felix. Experiments: v1/v3 valid nulls, v2 invalid, all in review; launching v4 would spend compute and add to the unreviewed pile. Considered a review-inbox/bulk-accept UI: AimSearchPicker already has a status filter, so 'show review aims' exists; bulk-accept is an unrequested UX decision.",
+      "effectiveness": "Search was thorough; the result is a confirmed human block, not lack of effort.",
+      "lesson": "The binding constraint is human review throughput (158 review vs 5 open), not available work. Generating more agent output into review lowers marginal value. Next agent step should follow Felix's decisions on 73c110aa and the review backlog rather than new speculative work.",
+      "pattern": "review-backlog-bottleneck"
     }
   ],
   "archived": false,
