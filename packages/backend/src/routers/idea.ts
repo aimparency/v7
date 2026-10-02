@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs-extra';
 import { createHash } from 'node:crypto';
-import { IdeaProposalSchema, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
+import { IdeaProposalSchema, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
 import { assertWritableBowman } from 'shared/bowman-migration';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForIdea } from '../embeddings.js';
@@ -42,6 +42,10 @@ export const createIdeaRouter = (
   }) => Promise<IdeaProposal>,
   ee: any
 ) => {
+  // Ideas created without a cost estimate get the project's default (meta.json defaultCost).
+  const projectDefaultCost = async (projectPath: string): Promise<number> =>
+    defaultIdeaCost(await fs.readJson(path.join(normalizeProjectPath(projectPath), 'meta.json')).catch(() => null));
+
   const resolveCreationColor = async (
     projectPath: string,
     explicitColor: string | null | undefined,
@@ -334,6 +338,7 @@ export const createIdeaRouter = (
           await fs.writeJson(journalPath, journal, { spaces: 2 });
         }
 
+        const defaultCost = await projectDefaultCost(input.projectPath);
         const connectionByParent = new Map<string, typeof flat.connections>();
         for (const connection of flat.connections) {
           const connections = connectionByParent.get(connection.parentProposalId) ?? [];
@@ -376,7 +381,7 @@ export const createIdeaRouter = (
             },
             intrinsicValue: proposed.intrinsicValue ?? 0,
             valueRationale: proposed.valueRationale,
-            cost: proposed.cost ?? 1,
+            cost: proposed.cost ?? defaultCost,
             loopWeight: 1,
             duration: 1,
             costVariance: 0,
@@ -805,7 +810,7 @@ export const createIdeaRouter = (
           status,
           intrinsicValue: input.idea.intrinsicValue ?? (isFirstIdea ? 1000 : 0),
           valueRationale: input.idea.valueRationale,
-          cost: input.idea.cost ?? 1,
+          cost: input.idea.cost ?? await projectDefaultCost(input.projectPath),
           loopWeight: input.idea.loopWeight ?? 1,
           duration: input.idea.duration ?? 1,
           costVariance: input.idea.costVariance ?? 0,
@@ -896,7 +901,7 @@ export const createIdeaRouter = (
           status,
           intrinsicValue: input.idea.intrinsicValue ?? 0,
           valueRationale: input.idea.valueRationale,
-          cost: input.idea.cost ?? 1,
+          cost: input.idea.cost ?? await projectDefaultCost(input.projectPath),
           loopWeight: input.idea.loopWeight ?? 1,
           duration: input.idea.duration ?? 1,
           costVariance: input.idea.costVariance ?? 0,
@@ -987,7 +992,7 @@ export const createIdeaRouter = (
           status,
           intrinsicValue: input.idea.intrinsicValue ?? 0,
           valueRationale: input.idea.valueRationale,
-          cost: input.idea.cost ?? 1,
+          cost: input.idea.cost ?? await projectDefaultCost(input.projectPath),
           loopWeight: input.idea.loopWeight ?? 1,
           duration: input.idea.duration ?? 1,
           costVariance: input.idea.costVariance ?? 0,

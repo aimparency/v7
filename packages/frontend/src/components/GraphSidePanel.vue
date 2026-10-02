@@ -375,7 +375,7 @@ const isOpaque = computed(() => !hasInteracted.value)
             </div>
 
             <div class="metrics-section">
-                <h4>Cost</h4>
+                <h4>Cost<template v-if="dataStore.costUnit"> ({{ dataStore.costUnit }})</template></h4>
                 <div class="metrics-row">
                     <div class="metric">
                         <span class="label">Intrinsic</span>

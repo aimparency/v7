@@ -870,7 +870,7 @@ const discardChanges = () => {
         </div>
 
         <div class="form-group" :class="{ 'mixed-field': isMixed('cost') }" @click="activateOverride('cost')">
-          <label>Estimated direct cost</label>
+          <label>Estimated direct cost<template v-if="dataStore.costUnit"> ({{ dataStore.costUnit }})</template></label>
           <input
             v-model.number="ideaCost"
             type="text"

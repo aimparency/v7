@@ -22,7 +22,7 @@ const ideaText = ref(IDEA_DEFAULTS.text)
 const ideaDescription = ref(IDEA_DEFAULTS.description)
 const ideaIntrinsicValue = ref(IDEA_DEFAULTS.intrinsicValue)
 const ideaValueRationale = ref(IDEA_DEFAULTS.valueRationale)
-const ideaCost = ref(IDEA_DEFAULTS.cost)
+const ideaCost = ref(dataStore.defaultCost)
 const ideaDuration = ref(IDEA_DEFAULTS.duration)
 const ideaLoopWeight = ref(IDEA_DEFAULTS.loopWeight)
 const ideaTags = ref<string[]>([...IDEA_DEFAULTS.tags])
@@ -291,7 +291,7 @@ onMounted(async () => {
   ideaTags.value = [...IDEA_DEFAULTS.tags]
   ideaIntrinsicValue.value = IDEA_DEFAULTS.intrinsicValue
   ideaValueRationale.value = IDEA_DEFAULTS.valueRationale
-  ideaCost.value = IDEA_DEFAULTS.cost
+  ideaCost.value = dataStore.defaultCost
   ideaDuration.value = IDEA_DEFAULTS.duration
   validationError.value = ''
   ideaLoopWeight.value = IDEA_DEFAULTS.loopWeight
@@ -466,7 +466,7 @@ onMounted(async () => {
           </div>
 
           <div class="form-group">
-            <label>Estimated direct cost</label>
+            <label>Estimated direct cost<template v-if="dataStore.costUnit"> ({{ dataStore.costUnit }})</template></label>
             <input
               ref="costInput"
               v-model.number="ideaCost"

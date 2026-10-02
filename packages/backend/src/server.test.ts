@@ -1277,3 +1277,21 @@ test('a project from a newer Aimparency can be read but not changed', async () =
   await assert.rejects(caller.project.updateMeta({ projectPath: testProjectPath, meta: { name: 'Renamed', color: '#000000' } }), /data model/);
   assert.deepStrictEqual(await fs.readJson(path.join(testProjectPath, 'meta.json')), newer, 'meta.json is untouched');
 });
+
+test('ideas created without a cost get the project default cost', async () => {
+  await caller.project.getMeta({ projectPath: testProjectPath });
+  const meta = await caller.project.updateMeta({ projectPath: testProjectPath, meta: { name: 'Costs', color: '#007acc', costUnit: 'hours', defaultCost: 3 } });
+  assert.equal(meta.costUnit, 'hours');
+  assert.equal(meta.defaultCost, 3);
+
+  const status = { state: 'open', comment: '', date: Date.now() };
+  const implicit = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'No estimate yet', status } });
+  const explicit = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Estimated', status, cost: 0.5 } });
+  assert.equal((await caller.idea.get({ projectPath: testProjectPath, ideaId: implicit.id })).cost, 3);
+  assert.equal((await caller.idea.get({ projectPath: testProjectPath, ideaId: explicit.id })).cost, 0.5);
+
+  await assert.rejects(
+    caller.project.updateMeta({ projectPath: testProjectPath, meta: { name: 'Costs', color: '#007acc', defaultCost: 0 } }),
+    /Default cost must be greater than 0/
+  );
+});

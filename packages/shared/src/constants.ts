@@ -9,6 +9,15 @@ const processEnv =
 // Bump it together with a new entry in bowman-migration.ts (Node-only).
 export const CURRENT_DATA_MODEL_VERSION = 3;
 
+// Cost of an idea created without an explicit estimate, unless the project
+// sets meta.defaultCost. Cost is always positive: everything costs something.
+export const DEFAULT_IDEA_COST = 1;
+
+export function defaultIdeaCost(meta?: { defaultCost?: unknown } | null): number {
+  const cost = meta?.defaultCost;
+  return typeof cost === 'number' && Number.isFinite(cost) && cost > 0 ? cost : DEFAULT_IDEA_COST;
+}
+
 export const AIMPARENCY_DIR_NAME = processEnv?.AIMPARENCY_DIR_NAME
   ? processEnv.AIMPARENCY_DIR_NAME
   : '.bowman';

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from 'backend'
 import type { Phase as BasePhase, Idea as BaseIdea, Connection } from 'shared'
-import { calculateIdeaValues, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
+import { calculateIdeaValues, defaultIdeaCost, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
 import { trpc } from '../trpc'
 import { perfLog } from '../utils/perf-log'
 import { useUIStore } from './ui'
@@ -280,6 +280,11 @@ export const useDataStore = defineStore('data', {
     getStatuses: (state) => {
       return state.meta?.statuses || INITIAL_STATES
     },
+
+    // Project cost settings (meta.json): what one unit of cost means, and the
+    // cost new ideas start with.
+    costUnit: (state): string => (state.meta?.costUnit ?? '').trim(),
+    defaultCost: (state): number => defaultIdeaCost(state.meta),
 
     graphData(state) {
       const ideas = Object.values(state.ideas)

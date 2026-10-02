@@ -578,7 +578,7 @@ export const useListStore = defineStore('ui', {
       tags?: string[],
       intrinsicValue: number = IDEA_DEFAULTS.intrinsicValue,
       loopWeight: number = IDEA_DEFAULTS.loopWeight,
-      cost: number = IDEA_DEFAULTS.cost,
+      cost: number = useDataStore().defaultCost,
       weight: number = 1,
       supportedIdeas: string[] = [],
       supportingConnections: { ideaId: string, weight?: number, relativePosition?: [number, number] }[] = [],

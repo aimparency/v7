@@ -1,5 +1,5 @@
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { calculateIdeaValues } from "shared";
+import { calculateIdeaValues, defaultIdeaCost } from "shared";
 import { IDEA_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { execFileSync } from "child_process";
@@ -401,7 +401,7 @@ export function registerTools(server: Server, trpcClient: any) {
               supportedIdeas: connectionInputSchema("Parent idea UUIDs, or objects with ideaId/weight/explanation/relativePosition for the parent→new-idea edge."),
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
               valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
-              cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
+              cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics); omitted = project default" },
               duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
               phaseId: { type: "string" },
               confirmationToken: { type: "string", description: "Token returned by the review-only first call. Any proposal edit requires a fresh review." },
@@ -437,7 +437,7 @@ export function registerTools(server: Server, trpcClient: any) {
               removeSupportedIdeas: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink without replacing other parents." },
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
               valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
-              cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost" },
+              cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics); omitted = project default" },
               duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
             },
             required: ["projectPath", "ideaId"],
@@ -1626,6 +1626,8 @@ export function registerTools(server: Server, trpcClient: any) {
             projectPath: args.projectPath as string,
           });
           const phaseById = new Map<string, any>(allPhases.map((p: any) => [p.id, p]));
+          // Reported once here instead of in every tool description: what cost estimates mean in this project.
+          const projectMeta: any = await trpcClient.project.getMeta.query({ projectPath: args.projectPath as string }).catch(() => null);
 
           let targetPhase: any = null;
 
@@ -1771,6 +1773,8 @@ export function registerTools(server: Server, trpcClient: any) {
                   selectionScope,
                   model: "flow-based (top-down estimated value, bottom-up estimated cost, discounted value/cost profitability ratio)",
                   economics: {
+                    costUnit: projectMeta?.costUnit || "abstract units",
+                    defaultCost: defaultIdeaCost(projectMeta),
                     phaseFlowedValue: fmt(phaseFlowedValue),
                     phaseTotalCost: fmt(phaseTotalCost),
                     phaseValueFraction: (phaseValueFraction * 100).toFixed(1) + "%",

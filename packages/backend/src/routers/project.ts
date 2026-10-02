@@ -1266,6 +1266,8 @@ export const createProjectRouter = (
           statuses: z.array(z.any()).optional(),
           initialInstructions: z.string().optional(),
           supervisorGuidancePrefix: z.string().optional(),
+          costUnit: z.string().optional(),
+          defaultCost: z.number().finite().positive('Default cost must be greater than 0').optional(),
           dataModelVersion: z.number().int().positive().optional(),
           phaseCursors: z.record(z.string(), z.string()).optional(),
           phaseActiveLevel: z.number().int().min(0).optional(),

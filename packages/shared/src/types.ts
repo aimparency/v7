@@ -131,6 +131,8 @@ export const ProjectMetaSchema = z.object({
   linkedRepos: z.array(LinkedRepoSchema).optional(), // portable cross-repo links
   initialInstructions: z.string().optional(), // user-authored project instructions posted to the agent at the start of each conversation
   supervisorGuidancePrefix: z.string().optional(), // optional project-specific reminder prefixed to supervisor guidance
+  costUnit: z.string().optional(), // what one unit of idea cost means here (e.g. "hours"); free text, empty = abstract units
+  defaultCost: z.number().finite().positive().optional(), // cost of ideas created without an explicit estimate (fallback DEFAULT_IDEA_COST)
   statuses: z.array(IdeaStateSchema).optional(),
   dataModelVersion: z.number().int().positive().optional(),
   phaseCursors: z.record(z.string(), z.string()).optional(), // column level (string) → selected phase ID

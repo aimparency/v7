@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { IdeaSchema, PhaseSchema, calculateIdeaValues, type Idea, type Phase } from 'shared';
+import { IdeaSchema, PhaseSchema, calculateIdeaValues, defaultIdeaCost, type Idea, type Phase } from 'shared';
 import { assertWritableBowman, migrateBowman } from 'shared/bowman-migration';
 import { normalizeBowmanPath, writeJsonAtomic } from './loop-state.js';
 
@@ -245,6 +245,7 @@ export async function createIdea(projectPath: string, input: {
   valueRationale?: string;
 }) {
   const now = Date.now();
+  const meta = await fs.readJson(path.join(normalizeBowmanPath(projectPath), 'meta.json')).catch(() => null);
   const idea: Idea = IdeaSchema.parse({
     id: uuidv4(),
     text: input.text,
@@ -258,7 +259,7 @@ export async function createIdea(projectPath: string, input: {
     status: { state: 'open', comment: '', date: now },
     intrinsicValue: input.intrinsicValue ?? 0,
     valueRationale: input.valueRationale,
-    cost: input.cost ?? 1,
+    cost: input.cost ?? defaultIdeaCost(meta),
     loopWeight: 0,
     duration: 1,
     costVariance: 0,

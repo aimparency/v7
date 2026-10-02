@@ -4,7 +4,7 @@ import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
-import { INITIAL_STATES } from 'shared'
+import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost } from 'shared'
 import type { AgentType } from '../stores/watchdog'
 
 const modalStore = useUIModalStore()
@@ -14,6 +14,9 @@ const name = ref('')
 const color = ref('#007acc')
 const initialInstructions = ref('')
 const supervisorGuidancePrefix = ref('')
+const costUnit = ref('')
+const defaultCost = ref(DEFAULT_IDEA_COST)
+const costSettingsError = ref('')
 const statuses = ref<Array<{ key: string, color: string }>>([])
 const loading = ref(false)
 const isUpdatingInstructions = ref(false)
@@ -193,6 +196,8 @@ onMounted(async () => {
         color.value = meta.color
         initialInstructions.value = meta.initialInstructions || ''
         supervisorGuidancePrefix.value = meta.supervisorGuidancePrefix || ''
+        costUnit.value = meta.costUnit || ''
+        defaultCost.value = defaultIdeaCost(meta)
         statuses.value = JSON.parse(JSON.stringify(meta.statuses || INITIAL_STATES))
     }
     await loadAutonomyState()
@@ -237,12 +242,19 @@ const updateInstructions = async () => {
 }
 
 const save = async () => {
+    if (!Number.isFinite(defaultCost.value) || defaultCost.value <= 0) {
+        costSettingsError.value = 'Default cost must be greater than 0: everything costs something.'
+        return
+    }
+    costSettingsError.value = ''
     try {
         await dataStore.updateProjectMeta(projectStore.projectPath, {
           name: name.value,
           color: color.value,
           initialInstructions: initialInstructions.value,
           supervisorGuidancePrefix: supervisorGuidancePrefix.value,
+          costUnit: costUnit.value.trim(),
+          defaultCost: defaultCost.value,
           statuses: statuses.value
         })
         await trpc.project.updateAutonomyPolicy.mutate({
@@ -325,6 +337,19 @@ const save = async () => {
             placeholder="Project-specific reminder for the coding agent…"
             @keydown="blockLeakage"
           ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Cost Unit</label>
+          <p class="hint-text">What one unit of idea cost means in this project, e.g. "hours" or "€". Shown next to cost fields and told to agents. Leave empty for abstract units.</p>
+          <input v-model="costUnit" type="text" placeholder="abstract units" @keydown="blockLeakage" />
+        </div>
+
+        <div class="form-group">
+          <label>Default Cost</label>
+          <p class="hint-text">Cost of new ideas until someone estimates them.</p>
+          <input v-model.number="defaultCost" type="number" min="0" step="any" @keydown="blockLeakage" />
+          <p v-if="costSettingsError" class="validation-error" role="alert">{{ costSettingsError }}</p>
         </div>
 
         <div class="form-group">
