@@ -4,3 +4,4 @@ semantic-graph.json
 
 runtime/
 secrets.json
+.migration-lock
