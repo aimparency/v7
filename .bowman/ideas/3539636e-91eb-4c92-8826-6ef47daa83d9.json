@@ -1,7 +1,7 @@
 {
   "id": "3539636e-91eb-4c92-8826-6ef47daa83d9",
-  "text": "Decide how to repair 4 ideas with cost 0 that the backend cannot read",
-  "description": "verify:migration found 4 ideas whose cost is 0 while IdeaSchema requires cost > 0, so idea.get fails and every list silently skips them (pre-existing, not caused by the migration): 6bbb740c \"graph view\", 8fc387d5, b3b7e429 \"project meta settings\", e552723a. Options: (a) a data migration setting cost 0 → 1 (the schema default), (b) allow cost 0 in the schema if \"free\" is meaningful, (c) fix the four by hand. Recommendation: (a) as migration 4, since cost 0 has no meaning in the value model (division by cost).",
+  "text": "Surface ideas with invalid cost instead of silently hiding them",
+  "description": "Four ideas were stored with cost 0 in Dec 2025 (6bbb740c \"graph view\" with 34 children, 8fc387d5 watchdog reconnect, b3b7e429 \"project meta settings\", e552723a MCP priority function), when the schema still allowed it. Commit 18d9bbb (29 Jul 2026, economic priority refactor) made cost strictly positive; its plan (meta/ECONOMIC_PRIORITY_REFACTOR_PLAN.md §6) says invalid existing files must surface as an explicit consistency/validation problem and must NOT be silently replaced. Implemented reality: readIdea throws, list endpoints catch and skip the idea (console only), and checkConsistency reads through the same path so it reports 0 issues — the ideas vanish from UI, prioritization and consistency. Fix: report unreadable idea files as consistency issues (with the validation error) and let a human set the four estimates; a migration clamping 0→1 would contradict §6.",
   "reflections": [],
   "archived": false,
   "color": "#6b4434",
@@ -13,7 +13,7 @@
   "committedIn": [],
   "status": {
     "state": "unclear",
-    "comment": "Needs Felix: is cost 0 ever intended, or should a migration set it to 1?",
+    "comment": "Root cause found. Needs Felix: confirm \"surface + set estimates by hand\" (per §6) rather than a clamping migration, and give or approve cost estimates for the 4 ideas.",
     "date": 1790965996998
   },
   "intrinsicValue": 0,

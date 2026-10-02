@@ -22,9 +22,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
-    "comment": "Merged to main (a654722..a4ef403) and this repo migrated (02fb367): ideas/, done→implemented. Verified: full suite at baseline; real-graph comparison old code vs new code identical (762 ideas, 821 connections, 361 commitments, all values/priorities, 0 consistency issues); API after migration shows the same counts. Awaiting Felix acceptance. Follow-ups: /mcp reconnect for open sessions; reinstall continue hooks in other repos; product name (intentree?) undecided.",
-    "date": 1790965996231
+    "state": "implemented",
+    "comment": "Accepted by Felix on 2026-10-02 (rename merged to main).",
+    "date": 1790969597705
   },
   "intrinsicValue": 1,
   "cost": 2,

@@ -21,9 +21,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
-    "comment": "Merged to main (d7ffc5f, 1ec7cd8); this repo recorded v3 (d855ef3). Verified: shared 47 tests incl. 8 runner tests (order, idempotence, 5 concurrent openers apply once, legacy files after upgrade, newer project read-only, failure stops at last good version, stale lock), backend 35 tests incl. read-only API test, verify:migration unchanged on fixtures v1/v2 and on the pre-migration snapshot of this repo. Awaiting Felix acceptance.",
-    "date": 1790965996621
+    "state": "implemented",
+    "comment": "Accepted by Felix on 2026-10-02 (migration system merged to main).",
+    "date": 1790969597705
   },
   "intrinsicValue": 0,
   "cost": 1,
