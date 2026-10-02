@@ -15,7 +15,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Successfully extracted all routers from server.ts into separate files in src/routers/. Created 7 router files: aim.ts, phase.ts, system.ts, voice.ts, graph.ts, market.ts, and project.ts. Backend builds successfully.",
+    "comment": "Successfully extracted all routers from server.ts into separate files in src/routers/. Created 7 router files: idea.ts, phase.ts, system.ts, voice.ts, graph.ts, market.ts, and project.ts. Backend builds successfully.",
     "date": 1769552341951
   },
   "intrinsicValue": 0,

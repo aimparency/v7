@@ -1,6 +1,6 @@
 {
   "id": "da74d69e-b275-4412-b186-0ccc7a0d0440",
-  "text": "Aim adding",
+  "text": "Idea adding",
   "description": "",
   "reflection": "Reconciled this container after checking its two children. 87a9f3b2 fixes and tests sequential connection/phase dialogs; b0ca7191 corrects floating vs uncommitted wording. Both are in review and no open implementation leaf remains.",
   "reflections": [],

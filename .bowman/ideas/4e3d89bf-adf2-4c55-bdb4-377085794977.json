@@ -1,8 +1,8 @@
 {
   "id": "4e3d89bf-adf2-4c55-bdb4-377085794977",
-  "text": "Close the recursive loop: auto-propose improvement aims from recurring system limitations",
-  "description": "The \"identify improvements → apply improvements\" half of b03ad58e. When a friction bucket dominates the recent error log (e.g. busy-timeout ×N), the loop should propose a concrete aim in the wrapped-agents package to address that limitation at the source, rather than only retrying through it. Builds on the friction summarizer. Decide: auto-create the aim vs. surface a suggestion for human confirmation (avoid graph spam).",
-  "reflection": "The batch for this aim is complete: code change to add auto-propose in friction summary, test added and passed, committed with aim JSON, typecheck+tests passed, relaunch-request created. This fulfills the auto-propose from recurring limitations like retry ceiling. Next task found: the value-creation experiment 0733cb72... now top in prioritized after committing to phase.",
+  "text": "Close the recursive loop: auto-propose improvement ideas from recurring system limitations",
+  "description": "The \"identify improvements → apply improvements\" half of b03ad58e. When a friction bucket dominates the recent error log (e.g. busy-timeout ×N), the loop should propose a concrete idea in the wrapped-agents package to address that limitation at the source, rather than only retrying through it. Builds on the friction summarizer. Decide: auto-create the idea vs. surface a suggestion for human confirmation (avoid graph spam).",
+  "reflection": "The batch for this idea is complete: code change to add auto-propose in friction summary, test added and passed, committed with idea JSON, typecheck+tests passed, relaunch-request created. This fulfills the auto-propose from recurring limitations like retry ceiling. Next task found: the value-creation experiment 0733cb72... now top in prioritized after committing to phase.",
   "reflections": [],
   "archived": false,
   "tags": [],

@@ -1,6 +1,6 @@
 {
   "id": "87a9f3b2-89d0-4f78-85d5-a25dfe72acf2",
-  "text": "enter enter enter should go through all the additional dialogs after aim creation. currently modals appear at the same time. Fix that",
+  "text": "enter enter enter should go through all the additional dialogs after idea creation. currently modals appear at the same time. Fix that",
   "description": "and enter does not (confirm and close the modal in the foreground).",
   "reflections": [],
   "archived": false,

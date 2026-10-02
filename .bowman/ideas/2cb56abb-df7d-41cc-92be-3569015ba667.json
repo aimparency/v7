@@ -6,7 +6,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Updated Aim.vue to use flex:1 for aim text, ensuring the count bubble is pushed to the right.",
+    "comment": "Updated Idea.vue to use flex:1 for idea text, ensuring the count bubble is pushed to the right.",
     "date": 1765015750519
   },
   "supportingConnections": [],

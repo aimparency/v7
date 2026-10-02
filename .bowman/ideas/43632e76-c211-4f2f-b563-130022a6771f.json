@@ -31,5 +31,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "The only concrete mobile-support child was the high-DPR WebGL blur/TAA jitter issue. DPR-aware framebuffer, camera, culling, arrow, spinner, and TAA handling are now implemented and internally verified. Broader unspecified mobile work should be represented by concrete future aims rather than keeping this vague container open."
+  "reflection": "The only concrete mobile-support child was the high-DPR WebGL blur/TAA jitter issue. DPR-aware framebuffer, camera, culling, arrow, spinner, and TAA handling are now implemented and internally verified. Broader unspecified mobile work should be represented by concrete future ideas rather than keeping this vague container open."
 }

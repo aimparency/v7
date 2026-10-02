@@ -12,7 +12,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Already implemented (status reconciliation 2026-06-15). Verified in code: the global INSTRUCT guide is posted only once per context epoch via consumeInstructLead()/instructSent in watchdog-service.ts (re-armed after /compact), and generateSupervisorPrompt() in supervisor-prompts.ts builds every per-message prompt from buildSituation() (worker session + status) plus buildActionsList(state) (the available action types) plus examples. This matches the aim exactly. Shipped in commit 5bca268; overlaps the broader supervisor-comms aim f02454a1 (also done).",
+    "comment": "Already implemented (status reconciliation 2026-06-15). Verified in code: the global INSTRUCT guide is posted only once per context epoch via consumeInstructLead()/instructSent in watchdog-service.ts (re-armed after /compact), and generateSupervisorPrompt() in supervisor-prompts.ts builds every per-message prompt from buildSituation() (worker session + status) plus buildActionsList(state) (the available action types) plus examples. This matches the idea exactly. Shipped in commit 5bca268; overlaps the broader supervisor-comms idea f02454a1 (also done).",
     "date": 1781510886465
   },
   "intrinsicValue": 0,

@@ -1,6 +1,6 @@
 {
   "id": "1c27fb5d-0a77-470e-a3f2-d5c8023d4464",
-  "text": "aim search",
+  "text": "idea search",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -32,7 +32,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "AimSearchModal.vue implemented with h/l parent-child navigation (855e26a1 done), aim-search-types.ts, modal-helpers, full test suite in AimSearchModal.spec.ts. Reconciliation pass confirmed implemented.",
+    "comment": "AimSearchModal.vue implemented with h/l parent-child navigation (855e26a1 done), idea-search-types.ts, modal-helpers, full test suite in AimSearchModal.spec.ts. Reconciliation pass confirmed implemented.",
     "date": 1780158087606
   },
   "intrinsicValue": 0,

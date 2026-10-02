@@ -8,7 +8,7 @@
       "context": "Backend `npm test` failed (5/6 files) because run-tests.mjs invoked tsx --test (node:test) on files that import from vitest.",
       "outcome": "Pointed the script at `vitest run` (vitest was already hoisted at root and passing), declared vitest as a backend devDep, and deleted the dead runner. npm test -w backend now passes 31/31.",
       "effectiveness": "Minimal, correct fix — the tests were never broken, only the runner was wrong. Declaring the dep removes reliance on accidental hoisting.",
-      "lesson": "When a wrapper script looks broken, check whether the tool is merely invoked the wrong way before assuming the tests themselves are at fault. Also: this aim sat at priority -1.0 purely from value-graph disconnection, not low worth — a reminder that priority misranks infra/tooling lacking an intrinsic-value ancestor.",
+      "lesson": "When a wrapper script looks broken, check whether the tool is merely invoked the wrong way before assuming the tests themselves are at fault. Also: this idea sat at priority -1.0 purely from value-graph disconnection, not low worth — a reminder that priority misranks infra/tooling lacking an intrinsic-value ancestor.",
       "pattern": "Same diagnosis-before-rewrite approach as the connection-feature verification; small infra fixes often just need the right invocation."
     }
   ],

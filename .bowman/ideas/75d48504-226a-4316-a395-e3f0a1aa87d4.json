@@ -5,7 +5,7 @@
   "reflections": [
     {
       "date": 1774556647258,
-      "context": "Implement fuzzy phase search to match aim search capabilities, allowing users to find phases even with typos or partial matches.",
+      "context": "Implement fuzzy phase search to match idea search capabilities, allowing users to find phases even with typos or partial matches.",
       "outcome": "Replaced FlexSearch-only phase search with Fuse.js fuzzy matching. Configured with threshold 0.4 for balanced precision/recall, allowing reasonable typos while avoiding too many false positives. All 129 unit tests pass.",
       "effectiveness": "Using a dedicated fuzzy search library was simpler than trying to tune FlexSearch's context parameters. Fuse.js provides clear threshold configuration and good documentation for fuzzy matching behavior.",
       "lesson": "When implementing fuzzy search, use a library specifically designed for it (Fuse.js) rather than trying to configure a general full-text search library (FlexSearch) to be fuzzy. The specialized library provides clearer controls and more predictable behavior.",

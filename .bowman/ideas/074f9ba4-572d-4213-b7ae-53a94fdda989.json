@@ -1,7 +1,7 @@
 {
   "id": "074f9ba4-572d-4213-b7ae-53a94fdda989",
-  "text": "Build recursive editor and explicit review UI for transient aim proposals",
-  "description": "Add a reusable frontend surface for an AimProposal that recursively edits aim text/descriptions/estimates and contribution weights, supports adding/removing children, shows an exact aim/connection mutation count with the statement that nothing has been added yet, and calls approveAimSubtree only after explicit approval. Keep proposal state transient and do not add model generation or voice behavior in this slice.",
+  "text": "Build recursive editor and explicit review UI for transient idea proposals",
+  "description": "Add a reusable frontend surface for an AimProposal that recursively edits idea text/descriptions/estimates and contribution weights, supports adding/removing children, shows an exact idea/connection mutation count with the statement that nothing has been added yet, and calls approveIdeaSubtree only after explicit approval. Keep proposal state transient and do not add model generation or voice behavior in this slice.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -27,5 +27,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Added reusable AimProposalReview and recursive AimProposalNodeEditor components. Drafts are JSON-cloned away from props, support recursive add/remove and editing of text, description, status, estimated value/cost, contribution weight/explanation, and show exact aim/connection counts. Review explicitly says nothing is in the graph yet; only the final approval calls approveAimSubtree, with retry-stable idempotency and partial-failure messaging. Verification: focused component tests 3/3, full frontend tests 202/202, frontend type-check and production build, focused backend server tests 24/24, git diff check."
+  "reflection": "Added reusable AimProposalReview and recursive AimProposalNodeEditor components. Drafts are JSON-cloned away from props, support recursive add/remove and editing of text, description, status, estimated value/cost, contribution weight/explanation, and show exact idea/connection counts. Review explicitly says nothing is in the graph yet; only the final approval calls approveIdeaSubtree, with retry-stable idempotency and partial-failure messaging. Verification: focused component tests 3/3, full frontend tests 202/202, frontend type-check and production build, focused backend server tests 24/24, git diff check."
 }

@@ -1,7 +1,7 @@
 {
   "id": "c4df7232-a3b7-4081-879c-096c2b8488e8",
-  "text": "Cross-repo aim search in the connection modal",
-  "description": "Add a repo scope selector to the aim-search modal (the universal connection-creation funnel): this repo / all / per-repo checkboxes. Fan the query out to each selected linked repo's search endpoint, merge and rank results (same embedding model ⇒ comparable cosine), and tag each result with its repo. Selecting an external result creates a cross-repo edge.",
+  "text": "Cross-repo idea search in the connection modal",
+  "description": "Add a repo scope selector to the idea-search modal (the universal connection-creation funnel): this repo / all / per-repo checkboxes. Fan the query out to each selected linked repo's search endpoint, merge and rank results (same embedding model ⇒ comparable cosine), and tag each result with its repo. Selecting an external result creates a cross-repo edge.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -49,7 +49,7 @@
   "committedIn": [],
   "status": {
     "state": "cancelled",
-    "comment": "Cancelled 2026-09-20: with black-box repo links you pick a REPO from the registry — there is no external aim to search for. Searching another repo's aims would require reading its internals, which the model forbids.",
+    "comment": "Cancelled 2026-09-20: with black-box repo links you pick a REPO from the registry — there is no external idea to search for. Searching another repo's ideas would require reading its internals, which the model forbids.",
     "date": 1789935647183
   },
   "intrinsicValue": 0,

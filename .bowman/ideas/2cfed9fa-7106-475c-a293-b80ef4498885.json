@@ -1,11 +1,11 @@
 {
   "id": "2cfed9fa-7106-475c-a293-b80ef4498885",
-  "text": "refine aim search (backend and mcp), e.g. for returning aims of a specific phase.",
+  "text": "refine idea search (backend and mcp), e.g. for returning ideas of a specific phase.",
   "description": "",
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Added phaseId and status filtering to aim search (text and semantic) in backend and MCP.",
+    "comment": "Added phaseId and status filtering to idea search (text and semantic) in backend and MCP.",
     "date": 1765015525451
   },
   "supportingConnections": [

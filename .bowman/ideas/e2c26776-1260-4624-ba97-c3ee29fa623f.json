@@ -6,8 +6,8 @@
     {
       "date": 1774556205688,
       "context": "Make Aimparency publishable as a local-first open source project by completing all repository hygiene, documentation, runtime simplification, and UX improvements needed for a clean first-run experience.",
-      "outcome": "Completed 4 of 5 major supporting aims: repository hygiene (metadata, tests, docs), repository understandability (READMEs, .bowman docs, git workflow), runtime complexity reduction (removed Python embedder, made MCP/voice optional), and local project connection UX (header visibility, project discovery). Only remaining work is end-to-end clean-clone verification on a real machine.",
-      "effectiveness": "Breaking the publishability goal into orthogonal concerns (hygiene, docs, runtime, UX, startup) allowed independent parallel progress. Each supporting aim delivered concrete value and moved closer to release-readiness.",
+      "outcome": "Completed 4 of 5 major supporting ideas: repository hygiene (metadata, tests, docs), repository understandability (READMEs, .bowman docs, git workflow), runtime complexity reduction (removed Python embedder, made MCP/voice optional), and local project connection UX (header visibility, project discovery). Only remaining work is end-to-end clean-clone verification on a real machine.",
+      "effectiveness": "Breaking the publishability goal into orthogonal concerns (hygiene, docs, runtime, UX, startup) allowed independent parallel progress. Each supporting idea delivered concrete value and moved closer to release-readiness.",
       "lesson": "Open source release preparation benefits from separating 'repository surface' work (docs, metadata, structure) from 'runtime behavior' work (startup, ports, dependencies). Most surface work can be completed and verified in sandbox environments, while runtime verification requires real-machine testing.",
       "pattern": "This follows standard release-prep methodology: fix all automatable issues first (tests, docs, structure, build), then gate final release on manual verification (clean-clone testing, first-run UX)."
     }

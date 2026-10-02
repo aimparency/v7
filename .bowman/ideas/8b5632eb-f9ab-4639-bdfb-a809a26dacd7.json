@@ -1,7 +1,7 @@
 {
   "id": "8b5632eb-f9ab-4639-bdfb-a809a26dacd7",
-  "text": "\"show git diff\" feature for aims",
-  "description": "if an aim had a status change, it should be possible to show a status change history and for each status change commit the diff of the entire repo (code) of that commit. Since aim status changes are committed along with code changes. \nUi wise... make a \"show history\" button next to the status select box in the edit aim modal. \nAnd then bring up a diff modal... \nThe diff modal shows on the top a row of status changes: \n<status A (unclickable)> date of commit (clickable) <status B (unclickable)> date of commit (clickable) <status C (unclickable)>\nline breaks if too long. \n\nthen, below, on the left side a tree of changed files. \nand on the right side the diff of the selected file. \n\nmaybe there is already an npm/vite plugin for git diff visualization? \nthen consider using this for conformity",
+  "text": "\"show git diff\" feature for ideas",
+  "description": "if an idea had a status change, it should be possible to show a status change history and for each status change commit the diff of the entire repo (code) of that commit. Since idea status changes are committed along with code changes. \nUi wise... make a \"show history\" button next to the status select box in the edit idea modal. \nAnd then bring up a diff modal... \nThe diff modal shows on the top a row of status changes: \n<status A (unclickable)> date of commit (clickable) <status B (unclickable)> date of commit (clickable) <status C (unclickable)>\nline breaks if too long. \n\nthen, below, on the left side a tree of changed files. \nand on the right side the diff of the selected file. \n\nmaybe there is already an npm/vite plugin for git diff visualization? \nthen consider using this for conformity",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -22,5 +22,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Live check on two aims (open→human-dependent; open→cancelled→open→done): chips and dates rendered, the diff loaded, no outer scrollbar after removing a flex:1 that overrode the diff area's height, and Escape/Escape closed history then the edit modal. Found and fixed during the check: grey chips for statuses without CSS variables (now project status colors), the outer scrollbar, and lost focus after closing (Escape no longer reached the edit modal). An apparent Escape failure mid-session was a hot-reload artifact and did not reproduce after a page reload. Backend tested against a temp git repo (4/4 git-evidence tests)."
+  "reflection": "Live check on two ideas (open→human-dependent; open→cancelled→open→done): chips and dates rendered, the diff loaded, no outer scrollbar after removing a flex:1 that overrode the diff area's height, and Escape/Escape closed history then the edit modal. Found and fixed during the check: grey chips for statuses without CSS variables (now project status colors), the outer scrollbar, and lost focus after closing (Escape no longer reached the edit modal). An apparent Escape failure mid-session was a hot-reload artifact and did not reproduce after a page reload. Backend tested against a temp git repo (4/4 git-evidence tests)."
 }

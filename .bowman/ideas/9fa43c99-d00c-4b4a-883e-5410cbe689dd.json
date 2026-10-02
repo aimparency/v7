@@ -1,6 +1,6 @@
 {
   "id": "9fa43c99-d00c-4b4a-883e-5410cbe689dd",
-  "text": "custom aim colors",
+  "text": "custom idea colors",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -29,7 +29,7 @@
         0.06957756404708045
       ],
       "weight": 1,
-      "explanation": "graph maintenance: reparented floating aim by semantic similarity"
+      "explanation": "graph maintenance: reparented floating idea by semantic similarity"
     },
     {
       "ideaId": "2e7239eb-cef5-4254-a7b9-74626195abd4",
@@ -46,7 +46,7 @@
         2.416239396149521
       ],
       "weight": 1,
-      "explanation": "Priority-derived graph coloring is a concrete aim-color behavior."
+      "explanation": "Priority-derived graph coloring is a concrete idea-color behavior."
     }
   ],
   "supportedIdeas": [
@@ -57,7 +57,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Custom aim colors implemented end to end: color field on the Aim schema (4a05d4ff), color picker in AimEditModal, nodes rendered in their custom color (convertNodes: custom color overrides priority/status), and arrows rendered in the supporting aim's color (667df056). graphData carries aim.color -> GraphNode.customColor -> renderer. Frontend suite 132/132, both typechecks clean. Visual rendering verified by code inspection; in-browser smoke test still recommended.",
+    "comment": "Custom idea colors implemented end to end: color field on the Idea schema (4a05d4ff), color picker in AimEditModal, nodes rendered in their custom color (convertNodes: custom color overrides priority/status), and arrows rendered in the supporting idea's color (667df056). graphData carries idea.color -> GraphNode.customColor -> renderer. Frontend suite 132/132, both typechecks clean. Visual rendering verified by code inspection; in-browser smoke test still recommended.",
     "date": 1780144871096
   },
   "intrinsicValue": 0,

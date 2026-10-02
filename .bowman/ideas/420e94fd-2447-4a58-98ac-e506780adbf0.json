@@ -1,7 +1,7 @@
 {
   "id": "420e94fd-2447-4a58-98ac-e506780adbf0",
-  "text": "when calculating the actual values of the aims, for visualization add 0.1 * average value to the display radii",
-  "description": "because otherwise aims which are not connected in any way would be invisible with radius 0. \nBut the value that will be written as info on the aims in the list for example, that value should not include the 0.1 addition. The 0.1 * average addition is just for the visualization radius in the graph *thumbs up*",
+  "text": "when calculating the actual values of the ideas, for visualization add 0.1 * average value to the display radii",
+  "description": "because otherwise ideas which are not connected in any way would be invisible with radius 0. \nBut the value that will be written as info on the ideas in the list for example, that value should not include the 0.1 addition. The 0.1 * average addition is just for the visualization radius in the graph *thumbs up*",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -10,7 +10,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Verified and cleaned up implementation in GraphView.vue. Radius calculation includes `+ 0.1` relative to average value inside the square root, ensuring visibility for zero-value aims.",
+    "comment": "Verified and cleaned up implementation in GraphView.vue. Radius calculation includes `+ 0.1` relative to average value inside the square root, ensuring visibility for zero-value ideas.",
     "date": 1765909649152
   },
   "intrinsicValue": 0,

@@ -62,8 +62,8 @@
     {
       "date": 1785587695101,
       "context": "Prepare evidence for SPC's explicit interest in how applicants generate, test, and discard ideas.",
-      "outcome": "Created idea-evolution.md from five preserved cancelled aims: autonomous will, fixed multi-agent roles, first-class plan structures, generic information ingestion, and ERC-8004 identity. Distinguished rejected implementation, demoted long-term vision, and the current falsifiable wedge. Added a 980-character candidate answer with explicit human-confirmation gates.",
-      "effectiveness": "Every cited aim file exists and records the stated cancellation rationale. The answer remains under 1,000 characters after whitespace normalization; git diff --check passes.",
+      "outcome": "Created idea-evolution.md from five preserved cancelled ideas: autonomous will, fixed multi-agent roles, first-class plan structures, generic information ingestion, and ERC-8004 identity. Distinguished rejected implementation, demoted long-term vision, and the current falsifiable wedge. Added a 980-character candidate answer with explicit human-confirmation gates.",
+      "effectiveness": "Every cited idea file exists and records the stated cancellation rationale. The answer remains under 1,000 characters after whitespace normalization; git diff --check passes.",
       "lesson": "A preserved rejection ledger is stronger evidence of exploration than a list of idea names: it shows the decision rule, why attractive complexity was refused, and what evidence could revive it.",
       "pattern": "For application questions about idea generation, reconstruct a small set of consequential rejected branches and state the shared selection method."
     },

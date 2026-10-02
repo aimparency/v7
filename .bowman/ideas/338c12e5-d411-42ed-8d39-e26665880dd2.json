@@ -1,7 +1,7 @@
 {
   "id": "338c12e5-d411-42ed-8d39-e26665880dd2",
-  "text": "First-class merge-aim operation",
-  "description": "A 'merge B into A' primitive that rewires B's supportedAims, supportingConnections and phase commitments onto A (de-duplicating), copies B's reflections to A, then archives B. This is the missing primitive that makes duplicate consolidation safe and reversible instead of manual hand-editing of connection arrays. Should be idempotent and guard against creating cycles or self-references.",
+  "text": "First-class merge-idea operation",
+  "description": "A 'merge B into A' primitive that rewires B's supportedIdeas, supportingConnections and phase commitments onto A (de-duplicating), copies B's reflections to A, then archives B. This is the missing primitive that makes duplicate consolidation safe and reversible instead of manual hand-editing of connection arrays. Should be idempotent and guard against creating cycles or self-references.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -21,7 +21,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented aim.merge tRPC mutation in backend + merge_aims MCP tool. Rewires parents, children, phase commitments (deduplicating), copies reflections, archives source. Guards against self-merge and direct parent-child cycles.",
+    "comment": "Implemented idea.merge tRPC mutation in backend + merge_ideas MCP tool. Rewires parents, children, phase commitments (deduplicating), copies reflections, archives source. Guards against self-merge and direct parent-child cycles.",
     "date": 1780158014569
   },
   "intrinsicValue": 0,

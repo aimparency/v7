@@ -1,7 +1,7 @@
 {
   "id": "b0ca7191-a484-4d5c-bd86-7fbb86efce4e",
-  "text": "rename the \"leave free floating\" in graph aim creation flow to \"leave uncommitted\". ",
-  "description": "terminology: \nno parent => root aim\nno phase => uncommmitted\nno parent, no phase => free floating",
+  "text": "rename the \"leave free floating\" in graph idea creation flow to \"leave uncommitted\". ",
+  "description": "terminology: \nno parent => root idea\nno phase => uncommmitted\nno parent, no phase => free floating",
   "reflections": [],
   "archived": false,
   "color": null,
@@ -22,5 +22,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Renamed both graph-creation phase-skip options from “leave floating” to “leave uncommitted.” Their existing descriptions already correctly state that no phase commitment is created. “No supported aim” remains the separate root/parent relation choice. Verification: list-store tests 4/4, frontend production build/type-check, repository search confirms no remaining “leave floating” labels, and git diff --check passed."
+  "reflection": "Renamed both graph-creation phase-skip options from “leave floating” to “leave uncommitted.” Their existing descriptions already correctly state that no phase commitment is created. “No supported idea” remains the separate root/parent relation choice. Verification: list-store tests 4/4, frontend production build/type-check, repository search confirms no remaining “leave floating” labels, and git diff --check passed."
 }

@@ -1,7 +1,7 @@
 {
   "id": "9c201fd6-d412-4cac-b5b0-1c59850ed0bd",
   "text": "Step 3: validation, hints, top-3 orientation + live rebalance in modal",
-  "description": "In ConnectionDetailsModal: clamp to MAX_SHARE (90%) with hint copy (\"100% isn't possible while other aims also support this — capped at 90%\"); skip the % field entirely when isSoleContributor(S,L) (weight=1, 100%); show top-3 contributing siblings by share; live \"after\" preview of rebalanced shares by re-running value-calculation.ts. S = Σ sibling weights on parent, L = parent loopWeight.",
+  "description": "In ConnectionDetailsModal: clamp to MAX_SHARE (90%) with hint copy (\"100% isn't possible while other ideas also support this — capped at 90%\"); skip the % field entirely when isSoleContributor(S,L) (weight=1, 100%); show top-3 contributing siblings by share; live \"after\" preview of rebalanced shares by re-running value-calculation.ts. S = Σ sibling weights on parent, L = parent loopWeight.",
   "reflections": [],
   "archived": false,
   "tags": [],

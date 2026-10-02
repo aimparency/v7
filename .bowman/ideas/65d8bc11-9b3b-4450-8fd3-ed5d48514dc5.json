@@ -6,7 +6,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Fixed sub-aim navigation crash by handling undefined sub-aims in recursion. Ensured sub-aims are loaded on expansion (in Aim.vue watcher and ui store handler) using new `loadAims` store action and backend `ids` filter. Verified with build.",
+    "comment": "Fixed sub-idea navigation crash by handling undefined sub-ideas in recursion. Ensured sub-ideas are loaded on expansion (in Idea.vue watcher and ui store handler) using new `loadIdeas` store action and backend `ids` filter. Verified with build.",
     "date": 1765102905150
   },
   "supportingConnections": [],

@@ -6,7 +6,7 @@
     {
       "date": 1773962133817,
       "context": "Take a first implementation step toward durable autonomy state instead of leaving the work at the architecture-note level.",
-      "outcome": "Extended ensureProjectStructure so newly initialized projects create .bowman/runtime and .bowman/runtime/audit alongside aims, archived-aims, and phases. Verified with backend build and full backend test suite.",
+      "outcome": "Extended ensureProjectStructure so newly initialized projects create .bowman/runtime and .bowman/runtime/audit alongside ideas, archived-ideas, and phases. Verified with backend build and full backend test suite.",
       "effectiveness": "This was a small but useful slice because it establishes a concrete place for future autonomy state without destabilizing current behavior.",
       "lesson": "Early autonomy work benefits from laying down project-local seams first. Small structural additions make later persistence features much cleaner.",
       "pattern": "Create the directory and ownership boundary before introducing new state files or runtime logic."

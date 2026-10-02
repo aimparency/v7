@@ -1,6 +1,6 @@
 {
   "id": "b5c6fda9-4c32-4b3a-94f0-31d0f2760040",
-  "text": "implement search for phases and aims",
+  "text": "implement search for phases and ideas",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -48,7 +48,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Implemented Aim search with both backend endpoints and frontend integration. Phase search is implemented in backend.",
+    "comment": "Implemented Idea search with both backend endpoints and frontend integration. Phase search is implemented in backend.",
     "date": 1765134196965
   },
   "intrinsicValue": 10,

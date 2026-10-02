@@ -9,7 +9,7 @@
       "outcome": "Updated the label text to 'Switch Project' and verified with App test + typecheck.",
       "effectiveness": "High for UX clarity with minimal risk.",
       "lesson": "Small label changes should still get verification to avoid accidental template regressions.",
-      "pattern": "Low-effort UI copy fixes can unblock user flow quickly when triaged from open aims."
+      "pattern": "Low-effort UI copy fixes can unblock user flow quickly when triaged from open ideas."
     }
   ],
   "archived": false,

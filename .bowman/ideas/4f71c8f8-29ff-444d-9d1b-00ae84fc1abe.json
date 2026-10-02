@@ -1,7 +1,7 @@
 {
   "id": "4f71c8f8-29ff-444d-9d1b-00ae84fc1abe",
-  "text": "Feature: filter graph aims by phase.",
-  "description": "maybe on keypress p, allow searching for a phase (\"filter for phase\"). Then, only those aims are being shown, that are committed in the selected phase or aims that support those aims. also show 1 level of supported/parent aims => show them as loadable aims (non-filled, circle only, click loads their supported and supporting aims). So the set of viewed aims and loadable aims get's calculated when confirming phase selection. Then can get expanded by clicking loadable aims (load their supported aims as loadable again).",
+  "text": "Feature: filter graph ideas by phase.",
+  "description": "maybe on keypress p, allow searching for a phase (\"filter for phase\"). Then, only those ideas are being shown, that are committed in the selected phase or ideas that support those ideas. also show 1 level of supported/parent ideas => show them as loadable ideas (non-filled, circle only, click loads their supported and supporting ideas). So the set of viewed ideas and loadable ideas get's calculated when confirming phase selection. Then can get expanded by clicking loadable ideas (load their supported ideas as loadable again).",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -21,7 +21,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "f key opens phase picker in graph view; committed aims shown as filled nodes, parent aims as ring-only outlines; phase badge with × to clear; loadable node click expands upward",
+    "comment": "f key opens phase picker in graph view; committed ideas shown as filled nodes, parent ideas as ring-only outlines; phase badge with × to clear; loadable node click expands upward",
     "date": 1780129719472
   },
   "intrinsicValue": 1,

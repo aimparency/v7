@@ -1,14 +1,14 @@
 {
   "id": "0cd5540c-c2ae-4dd2-ac0e-e11685d271dd",
   "text": "Wire the end-to-end read→act→reflect loop through a wrapped Claude session",
-  "description": "Integrate existing pieces into one closed loop: read top aim (get_prioritized_aims) → act with effector tools (aim A) → write reflection back (addReflection). Runs inside a real wrapped Claude session on a schedule, no streamText middle layer. Depends on A; feeds B.",
+  "description": "Integrate existing pieces into one closed loop: read top idea (get_prioritized_ideas) → act with effector tools (idea A) → write reflection back (addReflection). Runs inside a real wrapped Claude session on a schedule, no streamText middle layer. Depends on A; feeds B.",
   "reflections": [
     {
       "date": 1782453233259,
-      "context": "Highest-priority buildable in-phase aim per get_prioritized_aims. Verified before building.",
+      "context": "Highest-priority buildable in-phase idea per get_prioritized_ideas. Verified before building.",
       "outcome": "Confirmed the read→act→reflect closed loop is already implemented by the watchdog state machine (cited the exact prompt sites). Marked partially; the only gap is real-world effector actions (6119682f, human-dependent). Did not rebuild.",
       "effectiveness": "Evidence-based check via grep prevented rebuilding the very loop executing the check.",
-      "lesson": "Repeated finding tonight: the autonomy-loop subtree (2b76f62f cluster) is largely BUILT; nearly every 'buildable' open aim there is already realized by the watchdog. The genuine frontier is human-gated (effector credentials) or design-bearing (cooperation-engine UX), not more loop code.",
+      "lesson": "Repeated finding tonight: the autonomy-loop subtree (2b76f62f cluster) is largely BUILT; nearly every 'buildable' open idea there is already realized by the watchdog. The genuine frontier is human-gated (effector credentials) or design-bearing (cooperation-engine UX), not more loop code.",
       "pattern": "verify-before-build; autonomy-loop-already-built"
     }
   ],
@@ -32,5 +32,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Status reconciliation on 2026-07-30 used the aim’s existing implementation evidence: watchdog discovery, WORKING execution, WRAPPING_UP reflection, scheduling, and recovery are present. Its stated remainder depends on the human-gated effector layer, so `human-dependent` now reflects the actual boundary better than `partially`."
+  "reflection": "Status reconciliation on 2026-07-30 used the idea’s existing implementation evidence: watchdog discovery, WORKING execution, WRAPPING_UP reflection, scheduling, and recovery are present. Its stated remainder depends on the human-gated effector layer, so `human-dependent` now reflects the actual boundary better than `partially`."
 }

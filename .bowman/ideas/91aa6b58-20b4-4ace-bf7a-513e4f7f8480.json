@@ -1,7 +1,7 @@
 {
   "id": "91aa6b58-20b4-4ace-bf7a-513e4f7f8480",
   "text": "Step 5: integrate modal into graph drag triggers",
-  "description": "useGraphInteraction.ts: drop-on-existing-node (:469) and drag-to-create-new-aim (:253). Connect with defaultWeight first (preserve radius/relPos correction at :258-276 for the create case), then open ConnectionDetailsModal for {parent, child}. Cancel keeps the default link.",
+  "description": "useGraphInteraction.ts: drop-on-existing-node (:469) and drag-to-create-new-idea (:253). Connect with defaultWeight first (preserve radius/relPos correction at :258-276 for the create case), then open ConnectionDetailsModal for {parent, child}. Cancel keeps the default link.",
   "reflections": [],
   "archived": false,
   "tags": [],

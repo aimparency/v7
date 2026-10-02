@@ -1,11 +1,11 @@
 {
   "id": "06119986-08c5-4283-a0ab-c6af2478e327",
-  "text": "after creating an aim, it should be selected in the subaimlist or phase aim list.",
+  "text": "after creating an idea, it should be selected in the subaimlist or phase idea list.",
   "incoming": [],
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Fixed selection logic after aim creation/linking by updating selection on the fresh store object reference.",
+    "comment": "Fixed selection logic after idea creation/linking by updating selection on the fresh store object reference.",
     "date": 1764800723244
   },
   "supportingConnections": [],

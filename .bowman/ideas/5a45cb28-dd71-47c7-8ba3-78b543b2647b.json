@@ -1,7 +1,7 @@
 {
   "id": "5a45cb28-dd71-47c7-8ba3-78b543b2647b",
   "text": "Cross-repo edge data model (optional repoId on connections)",
-  "description": "Extend ConnectionSchema with an optional repoId: defined ⇒ the target aim lives in an external repo. Single code path through value-calc and rendering (no separate externalConnections array). External edges are stored only on the local supported (parent) side; supportedAims stays local-only (the external supporter keeps no back-reference). Thread repoId through create/update/connect paths and persistence.",
+  "description": "Extend ConnectionSchema with an optional repoId: defined ⇒ the target idea lives in an external repo. Single code path through value-calc and rendering (no separate externalConnections array). External edges are stored only on the local supported (parent) side; supportedIdeas stays local-only (the external supporter keeps no back-reference). Thread repoId through create/update/connect paths and persistence.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -35,7 +35,7 @@
   "committedIn": [],
   "status": {
     "state": "cancelled",
-    "comment": "Cancelled 2026-09-20: repo-level links are the final model, each linked repo stays a black box. An optional repoId on a connection exists only to target a SPECIFIC external aim, which is exactly the opacity-breaking design we are not building. Superseded by the {repoId}-only supportingRepos edge (8ae69400).",
+    "comment": "Cancelled 2026-09-20: repo-level links are the final model, each linked repo stays a black box. An optional repoId on a connection exists only to target a SPECIFIC external idea, which is exactly the opacity-breaking design we are not building. Superseded by the {repoId}-only supportingRepos edge (8ae69400).",
     "date": 1789935640000
   },
   "intrinsicValue": 0,
@@ -44,5 +44,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Cancelled, not parked: Felix confirmed repo-level-only as the standing decision (black-box repos), so the aim-level edge data model has no revival path."
+  "reflection": "Cancelled, not parked: Felix confirmed repo-level-only as the standing decision (black-box repos), so the idea-level edge data model has no revival path."
 }

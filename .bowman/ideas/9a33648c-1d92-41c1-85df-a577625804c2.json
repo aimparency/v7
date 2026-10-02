@@ -1,7 +1,7 @@
 {
   "id": "9a33648c-1d92-41c1-85df-a577625804c2",
-  "text": "Generate validated aim proposals with the selected loop model",
-  "description": "Add a read-only proposeAimSubtree backend operation that reuses the selected loop's provider/model/base URL and stored API key, sends only transcript plus compact selected-parent context, exposes no tools, generates a bounded recursive decomposition without IDs, assigns draft-local IDs server-side, and validates the final shared AimProposal. Keep generation separate from approval persistence.",
+  "text": "Generate validated idea proposals with the selected loop model",
+  "description": "Add a read-only proposeIdeaSubtree backend operation that reuses the selected loop's provider/model/base URL and stored API key, sends only transcript plus compact selected-parent context, exposes no tools, generates a bounded recursive decomposition without IDs, assigns draft-local IDs server-side, and validates the final shared AimProposal. Keep generation separate from approval persistence.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -27,5 +27,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Added aim.proposeAimSubtree and a provider-neutral generator that reuses the selected loop's provider/model/base URL plus its stored secret (NVIDIA_API_KEY, OPENROUTER_API_KEY, or LOOP_API_KEY). The model receives only the transcript and compact selected-parent titles/descriptions, has no tools, and emits an ID-free bounded tree. The server assigns deterministic draft-local IDs and validates the final shared AimProposal; existing parent/phase references are checked first. This supports Kimi through an OpenRouter or OpenAI-compatible loop configuration without Kimi-specific code. Verification: generator tests cover structure/ID assignment and shared-depth rejection; full backend tests 66/66, backend build, frontend type-check, and git diff check pass. Live inference intentionally remains unclaimed because it requires the configured provider credential."
+  "reflection": "Added idea.proposeIdeaSubtree and a provider-neutral generator that reuses the selected loop's provider/model/base URL plus its stored secret (NVIDIA_API_KEY, OPENROUTER_API_KEY, or LOOP_API_KEY). The model receives only the transcript and compact selected-parent titles/descriptions, has no tools, and emits an ID-free bounded tree. The server assigns deterministic draft-local IDs and validates the final shared AimProposal; existing parent/phase references are checked first. This supports Kimi through an OpenRouter or OpenAI-compatible loop configuration without Kimi-specific code. Verification: generator tests cover structure/ID assignment and shared-depth rejection; full backend tests 66/66, backend build, frontend type-check, and git diff check pass. Live inference intentionally remains unclaimed because it requires the configured provider credential."
 }

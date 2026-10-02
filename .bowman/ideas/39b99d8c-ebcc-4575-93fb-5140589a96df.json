@@ -1,11 +1,11 @@
 {
   "id": "39b99d8c-ebcc-4575-93fb-5140589a96df",
-  "text": "When editing aims, enter on most input fields (e.g. title, status, but not textareas) should save changes and close modal",
-  "description": "And esc on most fields except e.g. textarea (because enter is used there for newline) should close the modal. I think this works in new aim but not edit aim modal. ",
+  "text": "When editing ideas, enter on most input fields (e.g. title, status, but not textareas) should save changes and close modal",
+  "description": "And esc on most fields except e.g. textarea (because enter is used there for newline) should close the modal. I think this works in new idea but not edit idea modal. ",
   "reflections": [
     {
       "date": 1772539436954,
-      "context": "Confirm and lock in edit-aim Enter/Escape behavior, especially Enter-to-save on non-textarea fields.",
+      "context": "Confirm and lock in edit-idea Enter/Escape behavior, especially Enter-to-save on non-textarea fields.",
       "outcome": "Added focused tests in AimCreationModal.spec.ts and verified behavior via unit tests; no modal logic patch was required because implementation already matched intended behavior.",
       "effectiveness": "High: regression coverage now protects title/status select and textarea semantics.",
       "lesson": "When behavior is disputed, start by codifying expectations in UI tests before changing code.",

@@ -1,13 +1,13 @@
 {
   "id": "ef0d8f25-72d0-4ca0-8276-e69da4e6fd38",
   "text": "Prepare the Aimparency recursive proof artifact for SPC",
-  "description": "Create a concise, inspectable account of how the SPC objective, constraints, decisions, corrections, phase, human gates, and executor work were represented in the aim graph. The proof must demonstrate operational continuity and human authority without asking reviewers to admire a gimmick. Include concrete examples of Codex being directed, corrected, or blocked by human-dependent aims.",
+  "description": "Create a concise, inspectable account of how the SPC objective, constraints, decisions, corrections, phase, human gates, and executor work were represented in the idea graph. The proof must demonstrate operational continuity and human authority without asking reviewers to admire a gimmick. Include concrete examples of Codex being directed, corrected, or blocked by human-dependent ideas.",
   "reflection": "Created meta/applications/spc-founder-fellowship-2026/process-proof.md. It records the objective, dual mission, authority roles, deadline phase, human gates, the transitive-priority product correction, verification evidence, replacement-executor continuity test, and honest limits. git diff --check and all 5 phase-priority tests pass.",
   "reflections": [
     {
       "date": 1785584343167,
       "context": "Return from the executive-summary request to strengthen verification of the SPC phase's human-dependent priority feature.",
-      "outcome": "Added Phase.spec.ts, a component-level test that opens the actual priority panel, verifies the human-dependent default, descendant-phase and full-aim loading, direct and transitive labels/order, hiding the normal aim list, and opening the selected aim modal. Updated application evidence documents from five logic tests to six logic+component tests.",
+      "outcome": "Added Phase.spec.ts, a component-level test that opens the actual priority panel, verifies the human-dependent default, descendant-phase and full-idea loading, direct and transitive labels/order, hiding the normal idea list, and opening the selected idea modal. Updated application evidence documents from five logic tests to six logic+component tests.",
       "effectiveness": "Both focused test files pass (6/6), frontend vue-tsc passes, and git diff --check passes. This closes the interaction-verification gap left by utility-only tests.",
       "lesson": "A pure traversal test proves graph semantics, but the user-facing claim also requires verifying that the button invokes loading, renders the chosen state, and connects results to the editing action.",
       "pattern": "For graph-backed UI controls, test traversal logic separately and add one component test covering the complete user interaction boundary."

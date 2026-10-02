@@ -17,7 +17,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Implemented session memory compression and storage. Before watchdog compacts context, it now extracts learnings (aims worked, outcomes, patterns) and saves to .bowman/memory/sessions/{session-id}.json. Includes utilities for loading recent summaries and formatting for context injection. All tests pass. Implemented for both codex-session and claude-session watchdogs.",
+    "comment": "Implemented session memory compression and storage. Before watchdog compacts context, it now extracts learnings (ideas worked, outcomes, patterns) and saves to .bowman/memory/sessions/{session-id}.json. Includes utilities for loading recent summaries and formatting for context injection. All tests pass. Implemented for both codex-session and claude-session watchdogs.",
     "date": 1772065115177
   },
   "intrinsicValue": 0,

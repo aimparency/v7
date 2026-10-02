@@ -1,7 +1,7 @@
 {
   "id": "edde0079-1c06-4e14-9c89-793423c253cc",
-  "text": "Backend: stop writing aim files from the read path",
-  "description": "Audit finding (2026-09-28). server.ts readAim migrates legacy fields (outgoing -> supportedAims) and replaces [0,0] relativePositions with random ones, writing the file back — during every aim.get/aim.list. Reads therefore mutate the repo (noisy .bowman diffs, races with concurrent writers/agents, nondeterministic positions). Move these migrations into an explicit, idempotent migration step (project open / fix_consistency) and make readAim pure.",
+  "text": "Backend: stop writing idea files from the read path",
+  "description": "Audit finding (2026-09-28). server.ts readIdea migrates legacy fields (outgoing -> supportedIdeas) and replaces [0,0] relativePositions with random ones, writing the file back — during every idea.get/idea.list. Reads therefore mutate the repo (noisy .bowman diffs, races with concurrent writers/agents, nondeterministic positions). Move these migrations into an explicit, idempotent migration step (project open / fix_consistency) and make readIdea pure.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -13,7 +13,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "readAim is pure: normalizeAimRecord upgrades incoming/outgoing in memory only. [0,0] (schema-default) connection positions are now placed in writeAim, where writes happen anyway. migrateAimFiles persists legacy upgrades explicitly and runs first in project.fixConsistency (reported as 'Upgraded ...' fixes).",
+    "comment": "readIdea is pure: normalizeIdeaRecord upgrades incoming/outgoing in memory only. [0,0] (schema-default) connection positions are now placed in writeIdea, where writes happen anyway. migrateIdeaFiles persists legacy upgrades explicitly and runs first in project.fixConsistency (reported as 'Upgraded ...' fixes).",
     "date": 1790716738147
   },
   "intrinsicValue": 2,
@@ -22,5 +22,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Verified: backend vitest 75/75 incl. new test asserting aim.get + aim.list leave a [0,0]-linked aim file byte-identical and fixConsistency places it; legacy incoming/outgoing tests now assert the file is untouched by reads and upgraded by fixConsistency. tsc clean. Scan of .query procedures found no other aim writes. Found the same read-writes pattern for phases (readPhaseFile reconcile + silent writePhase) — filed as a separate aim."
+  "reflection": "Verified: backend vitest 75/75 incl. new test asserting idea.get + idea.list leave a [0,0]-linked idea file byte-identical and fixConsistency places it; legacy incoming/outgoing tests now assert the file is untouched by reads and upgraded by fixConsistency. tsc clean. Scan of .query procedures found no other idea writes. Found the same read-writes pattern for phases (readPhaseFile reconcile + silent writePhase) — filed as a separate idea."
 }

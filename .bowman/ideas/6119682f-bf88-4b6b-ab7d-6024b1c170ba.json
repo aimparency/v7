@@ -1,7 +1,7 @@
 {
   "id": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
   "text": "Build the real-world effector layer: give wrapped agents hands via MCP tools (Composio + native connectors)",
-  "description": "Expose real-world actions (email, GitHub, calendar, social, payments) to wrapped agents as MCP tools, so aims can produce effects beyond the codebase. Supersedes the mock 'perform-work' credit tool. Path: add Composio's MCP server + native connectors to the wrapped Claude/codex sessions.",
+  "description": "Expose real-world actions (email, GitHub, calendar, social, payments) to wrapped agents as MCP tools, so ideas can produce effects beyond the codebase. Supersedes the mock 'perform-work' credit tool. Path: add Composio's MCP server + native connectors to the wrapped Claude/codex sessions.",
   "reflections": [
     {
       "date": 1782453661923,
@@ -23,7 +23,7 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "Composio approach DROPPED as bloat (reverted in this session). Reasoning: the wrapped worker is a claude CLI with Bash — it already opens/manages PRs via `gh`, so Composio-for-GitHub was pure redundant surface + a third-party dependency. The Composio/GitHub framing came from the EXPIRED BuilderShip hackathon (sponsor), not a technical need — exactly the stale-premise case the new relevance-check aim (8197b533) targets. The effector-layer CONCEPT (real-world hands) only earns its keep for OAuth-gated SaaS with no local CLI (email/calendar/payments). Human-dependent: Felix decides if/when there's a concrete real-world surface worth it, and prefers native CLIs/targeted MCPs over a broad aggregator. GitHub effecting = use `gh` (already available).",
+    "comment": "Composio approach DROPPED as bloat (reverted in this session). Reasoning: the wrapped worker is a claude CLI with Bash — it already opens/manages PRs via `gh`, so Composio-for-GitHub was pure redundant surface + a third-party dependency. The Composio/GitHub framing came from the EXPIRED BuilderShip hackathon (sponsor), not a technical need — exactly the stale-premise case the new relevance-check idea (8197b533) targets. The effector-layer CONCEPT (real-world hands) only earns its keep for OAuth-gated SaaS with no local CLI (email/calendar/payments). Human-dependent: Felix decides if/when there's a concrete real-world surface worth it, and prefers native CLIs/targeted MCPs over a broad aggregator. GitHub effecting = use `gh` (already available).",
     "date": 1782454316939
   },
   "intrinsicValue": 12,

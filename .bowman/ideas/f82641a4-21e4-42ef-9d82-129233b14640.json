@@ -5,7 +5,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Functionality exists via 'update-aim' tool. A comment can be provided when changing status to 'done' or 'failed'.",
+    "comment": "Functionality exists via 'update-idea' tool. A comment can be provided when changing status to 'done' or 'failed'.",
     "date": 1764322145855
   },
   "supportingConnections": [],

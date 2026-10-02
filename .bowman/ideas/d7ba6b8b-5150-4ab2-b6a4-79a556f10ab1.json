@@ -1,8 +1,8 @@
 {
   "id": "d7ba6b8b-5150-4ab2-b6a4-79a556f10ab1",
   "text": "refactor side panel vs. modal - maybe use the same code? just modal vs side panel?",
-  "description": "Decision: do not reuse one complete form. Keep the graph side panel as a persistent inspect/navigate surface with narrow immediate-save edits; keep modals transactional and staged. Refactor shared typed data-store mutations first (aim metrics, then connection update/removal), and share only small presentational controls where duplication is real. See meta/ui-side-panel-modal-analysis.md.",
-  "reflection": "Kept panel and modal as separate presentation/state surfaces. Added typed data-store actions for connection detail updates and removal, including optimistic local updates and rollback on failure. Routed GraphSidePanel and ConnectionDetailsModal through the shared connection API; side-panel metrics already route through dataStore.updateAim. Updated focused tests for the store contract. Verification: 34 focused tests pass, production frontend build passes, git diff --check passes.",
+  "description": "Decision: do not reuse one complete form. Keep the graph side panel as a persistent inspect/navigate surface with narrow immediate-save edits; keep modals transactional and staged. Refactor shared typed data-store mutations first (idea metrics, then connection update/removal), and share only small presentational controls where duplication is real. See meta/ui-side-panel-modal-analysis.md.",
+  "reflection": "Kept panel and modal as separate presentation/state surfaces. Added typed data-store actions for connection detail updates and removal, including optimistic local updates and rollback on failure. Routed GraphSidePanel and ConnectionDetailsModal through the shared connection API; side-panel metrics already route through dataStore.updateIdea. Updated focused tests for the store contract. Verification: 34 focused tests pass, production frontend build passes, git diff --check passes.",
   "reflections": [],
   "archived": false,
   "tags": [],

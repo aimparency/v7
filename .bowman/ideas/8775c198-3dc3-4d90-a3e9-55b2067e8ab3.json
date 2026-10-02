@@ -1,13 +1,13 @@
 {
   "id": "8775c198-3dc3-4d90-a3e9-55b2067e8ab3",
-  "text": "show status comment only when aim expanded",
+  "text": "show status comment only when idea expanded",
   "description": "",
   "tags": [],
   "incoming": [],
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Verified that status comment is only displayed within the .aim-details block in Aim.vue, which is conditional on v-if='isExpanded'. Behavior matches requirement.",
+    "comment": "Verified that status comment is only displayed within the .idea-details block in Idea.vue, which is conditional on v-if='isExpanded'. Behavior matches requirement.",
     "date": 1765909080799
   },
   "supportingConnections": [],

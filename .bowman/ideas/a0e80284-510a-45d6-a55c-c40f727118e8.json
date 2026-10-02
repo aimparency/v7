@@ -1,7 +1,7 @@
 {
   "id": "a0e80284-510a-45d6-a55c-c40f727118e8",
-  "text": "Show phase aims ranked by priority and state",
-  "description": "Add a phase-header “show priority” control that ranks non-archived aims across the selected phase and all descendant phases by calculated economic priority. Default the state filter to human-dependent, allow every configured state, show the owning phase, and open the aim editor from a ranked result.",
+  "text": "Show phase ideas ranked by priority and state",
+  "description": "Add a phase-header “show priority” control that ranks non-archived ideas across the selected phase and all descendant phases by calculated economic priority. Default the state filter to human-dependent, allow every configured state, show the owning phase, and open the idea editor from a ranked result.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -27,5 +27,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Implemented in packages/frontend/src/components/Phase.vue with pure recursive ranking helpers in packages/frontend/src/utils/phase-priority.ts and focused tests. The control defaults to human-dependent, supports every configured state, recursively loads descendant phases, excludes archived aims, ranks by calculated priority, labels the owning phase, and opens the editor on selection. Verification: focused Vitest 3/3, frontend vue-tsc, production Vite build, and git diff --check all passed. Development server was not touched."
+  "reflection": "Implemented in packages/frontend/src/components/Phase.vue with pure recursive ranking helpers in packages/frontend/src/utils/phase-priority.ts and focused tests. The control defaults to human-dependent, supports every configured state, recursively loads descendant phases, excludes archived ideas, ranks by calculated priority, labels the owning phase, and opens the editor on selection. Verification: focused Vitest 3/3, frontend vue-tsc, production Vite build, and git diff --check all passed. Development server was not touched."
 }

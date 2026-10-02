@@ -1,6 +1,6 @@
 {
   "id": "5dd31c2d-27c0-43e0-8384-d0403e32bc47",
-  "text": "Route browser voice transcripts through the approved aim-proposal flow",
+  "text": "Route browser voice transcripts through the approved idea-proposal flow",
   "description": "Replace VoiceView's echo-placeholder path with creation of the same transient one-root AimProposal used by text entry, open the shared recursive editor/review surface, and navigate to the durable root after explicit approval. Speech capture must remain input rather than authorization.",
   "reflections": [],
   "archived": false,
@@ -27,5 +27,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Replaced VoiceView's call to the echo-placeholder backend with a transient AimProposal opened in the shared recursive review UI. Extracted createManualAimProposal so text and voice use exactly the same schema and differ only in revision provenance. Voice capture is input, never authorization; persistence still requires the explicit final approval. Successful persistence uses App's existing reload/select-root handler. Verification: focused proposal tests 7/7, full frontend tests 206/206, frontend type-check, production build, and git diff check."
+  "reflection": "Replaced VoiceView's call to the echo-placeholder backend with a transient AimProposal opened in the shared recursive review UI. Extracted createManualIdeaProposal so text and voice use exactly the same schema and differ only in revision provenance. Voice capture is input, never authorization; persistence still requires the explicit final approval. Successful persistence uses App's existing reload/select-root handler. Verification: focused proposal tests 7/7, full frontend tests 206/206, frontend type-check, production build, and git diff check."
 }

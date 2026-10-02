@@ -1,6 +1,6 @@
 {
   "id": "9c44aab0-68cd-42ba-a192-272459bea4f1",
-  "text": "mcp search should support fuzzy and semantic search too. just like aim search in UI",
+  "text": "mcp search should support fuzzy and semantic search too. just like idea search in UI",
   "description": "",
   "tags": [],
   "supportingConnections": [],
@@ -10,7 +10,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Upgraded 'aim.search' procedure to use hybrid search (Text/FlexSearch + Semantic/Embeddings), enabling advanced search capabilities for MCP tool and UI.",
+    "comment": "Upgraded 'idea.search' procedure to use hybrid search (Text/FlexSearch + Semantic/Embeddings), enabling advanced search capabilities for MCP tool and UI.",
     "date": 1768081362408
   },
   "intrinsicValue": 0,

@@ -8,8 +8,8 @@
       "context": "Add regression coverage for WatchdogPanel supervisor header semantics, especially state color styling and live/reactive state updates, while keeping implementation changes minimal unless tests revealed a gap.",
       "outcome": "Extended WatchdogPanel.spec.ts with tests for hydrated supervisor state color and reactive updates from EXPLORING to WRAPPING_UP, including both displayed text and color style. No production code changes were needed because the existing component already satisfied the behavior.",
       "effectiveness": "The test-only change filled the missing coverage without churn. Focused WatchdogPanel tests, frontend type-check, and the full frontend unit suite all pass.",
-      "lesson": "When an aim is coverage-focused, first inspect existing behavior and add tests around the stated gaps; avoid changing implementation unless the new tests fail for a real behavior issue.",
-      "pattern": "Regression aims often complete cleanly by codifying behavior that already exists, especially after nearby implementation work has already landed."
+      "lesson": "When an idea is coverage-focused, first inspect existing behavior and add tests around the stated gaps; avoid changing implementation unless the new tests fail for a real behavior issue.",
+      "pattern": "Regression ideas often complete cleanly by codifying behavior that already exists, especially after nearby implementation work has already landed."
     }
   ],
   "archived": false,

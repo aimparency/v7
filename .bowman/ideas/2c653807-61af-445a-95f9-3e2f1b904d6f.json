@@ -10,7 +10,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented graphData getter in dataStore to transform Aims/Relationships into Nodes/Links for the graph view.",
+    "comment": "Implemented graphData getter in dataStore to transform Ideas/Relationships into Nodes/Links for the graph view.",
     "date": 1765534357998
   },
   "intrinsicValue": 0,

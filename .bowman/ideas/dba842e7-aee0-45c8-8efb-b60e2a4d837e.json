@@ -8,8 +8,8 @@
       "context": "Graph-maintenance offshoot of c0629f71 (verify 47cccbd6's status). While confirming the phase refactor, checked whether this windowing/separators/placeholders spec was actually unimplemented as its 'open' status claimed.",
       "outcome": "It was fully implemented in Column.vue (three entry types, overscan virtual list, parent-boundary separators, empty-slot placeholders with create-first-child) — a stale 'open' status. Marked done.",
       "effectiveness": "Confirmed by reading the live columns-view component against each clause of the spec, not by assuming. Honest limit: this is code-evidence on a long-shipped, in-daily-use feature, not a fresh visual capture — appropriate for a drift-fix on existing UI, but I did not run the app.",
-      "lesson": "When verifying a mega-aim's status, the trailing children flagged open/partial are exactly where status drift hides — a feature can ship while its narrowest spec-aim never gets flipped. Check each trailing child against code rather than trusting the parent's rollup.",
-      "pattern": "fix-stale-status: a shipped feature whose narrowest spec-aim stayed open; verified clause-by-clause against the component before flipping."
+      "lesson": "When verifying a mega-idea's status, the trailing children flagged open/partial are exactly where status drift hides — a feature can ship while its narrowest spec-idea never gets flipped. Check each trailing child against code rather than trusting the parent's rollup.",
+      "pattern": "fix-stale-status: a shipped feature whose narrowest spec-idea stayed open; verified clause-by-clause against the component before flipping."
     }
   ],
   "archived": false,

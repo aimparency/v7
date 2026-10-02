@@ -1,7 +1,7 @@
 {
   "id": "607f6b45-2a65-4702-8b47-d83e967ed4c8",
   "text": "Show full ancestry paths for every phase search result",
-  "description": "Disambiguate repeated phase names such as Mittwoch by always rendering the phase's ancestor path beside/below its name, matching aim-search path context.",
+  "description": "Disambiguate repeated phase names such as Mittwoch by always rendering the phase's ancestor path beside/below its name, matching idea-search path context.",
   "reflections": [],
   "archived": false,
   "color": "#666666",

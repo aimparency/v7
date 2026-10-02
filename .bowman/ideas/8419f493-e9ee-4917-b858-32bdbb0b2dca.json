@@ -1,6 +1,6 @@
 {
   "id": "8419f493-e9ee-4917-b858-32bdbb0b2dca",
-  "text": "Fix real-time synchronization for floating aims so they appear automatically in the web client",
+  "text": "Fix real-time synchronization for floating ideas so they appear automatically in the web client",
   "tags": [],
   "incoming": [],
   "committedIn": [
@@ -8,7 +8,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Modified packages/frontend/src/stores/data.ts to update floatingAimsIds when a new aim event is received via WebSocket. Also fixed a missing type import in packages/backend/src/server.ts. Verified with type-check.",
+    "comment": "Modified packages/frontend/src/stores/data.ts to update floatingIdeasIds when a new idea event is received via WebSocket. Also fixed a missing type import in packages/backend/src/server.ts. Verified with type-check.",
     "date": 1765316000000
   },
   "supportingConnections": [

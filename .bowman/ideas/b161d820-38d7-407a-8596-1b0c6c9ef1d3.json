@@ -1,7 +1,7 @@
 {
   "id": "b161d820-38d7-407a-8596-1b0c6c9ef1d3",
-  "text": "the grey outline of \"active\" aims has a wider radius than the blue outline of \"selected\" aims. See what I mean? can we make the shape/size both as the blue outline? (keeping the distinct colors!)",
-  "description": "after a first refactor attempt, the selected aims are now grey! I said keep the distinct colors. gemini failed. fix it. look at git diff, if you want: 59feb68d6af1d9d321a42ae162be99c8a9b1e4f6",
+  "text": "the grey outline of \"active\" ideas has a wider radius than the blue outline of \"selected\" ideas. See what I mean? can we make the shape/size both as the blue outline? (keeping the distinct colors!)",
+  "description": "after a first refactor attempt, the selected ideas are now grey! I said keep the distinct colors. gemini failed. fix it. look at git diff, if you want: 59feb68d6af1d9d321a42ae162be99c8a9b1e4f6",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Standardized outline styles across Aims and Phases (0.15rem solid). Implemented 'active' (Blue) vs 'selected' (Grey) distinction with robust CSS nesting. Renamed 'selected-outlined' to 'active'. Ensuring selected aims are always visible (Grey) even when not navigating.",
+    "comment": "Standardized outline styles across Ideas and Phases (0.15rem solid). Implemented 'active' (Blue) vs 'selected' (Grey) distinction with robust CSS nesting. Renamed 'selected-outlined' to 'active'. Ensuring selected ideas are always visible (Grey) even when not navigating.",
     "date": 1768546992891
   },
   "intrinsicValue": 0,

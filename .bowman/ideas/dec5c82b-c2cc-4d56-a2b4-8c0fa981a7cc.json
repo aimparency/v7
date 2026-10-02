@@ -1,14 +1,14 @@
 {
   "id": "dec5c82b-c2cc-4d56-a2b4-8c0fa981a7cc",
-  "text": "AI prompts humans for aims that need human involvement",
-  "description": "Let's turn around who instructs whom:   go through all aims and find those blocked by pending human contribution. Then make sure their state is set to                      \"human-dependent\" and has a precise description of what's to do in the description field. If an aim needs human involvement         (decisions, secret key setups, ...) maybe create a supporting aim with detailed human instructions while setting both aims to       \"human-dependent\"  The Goal is that a human can easily filter for aims that need     human involvement and fix them one by one according to clear instructions that were written from the perspective of the AI.",
+  "text": "AI prompts humans for ideas that need human involvement",
+  "description": "Let's turn around who instructs whom:   go through all ideas and find those blocked by pending human contribution. Then make sure their state is set to                      \"human-dependent\" and has a precise description of what's to do in the description field. If an idea needs human involvement         (decisions, secret key setups, ...) maybe create a supporting idea with detailed human instructions while setting both ideas to       \"human-dependent\"  The Goal is that a human can easily filter for ideas that need     human involvement and fix them one by one according to clear instructions that were written from the perspective of the AI.",
   "reflections": [
     {
       "date": 1774591182813,
-      "context": "Systematically reviewed all open/partially/unclear aims across the project to identify and document those blocked by human contribution. Goal was to create clear instructions for humans to efficiently address blockers.",
-      "outcome": "Successfully organized 41 aims as human-dependent across multiple categories: API/credentials (6), testing (3), strategic/architectural decisions (8), mobile app strategy (4), and various product/feature aims. Created 2 new instruction aims with detailed decision frameworks for UX and strategic questions. All human-dependent aims now have clear descriptions explaining what human action is required.",
-      "effectiveness": "The categorization approach worked well - breaking aims into groups (credentials, decisions, physical actions) made the work systematic and comprehensive. Creating supporting instruction aims for complex decisions (rather than just marking parent aims as blocked) provides better context for human review.",
-      "lesson": "When organizing blocked work for human review, invest effort in creating detailed instruction aims that explain not just what's blocked, but what specific decision or action is needed and what the options/implications are. This reduces back-and-forth and enables faster unblocking.",
+      "context": "Systematically reviewed all open/partially/unclear ideas across the project to identify and document those blocked by human contribution. Goal was to create clear instructions for humans to efficiently address blockers.",
+      "outcome": "Successfully organized 41 ideas as human-dependent across multiple categories: API/credentials (6), testing (3), strategic/architectural decisions (8), mobile app strategy (4), and various product/feature ideas. Created 2 new instruction ideas with detailed decision frameworks for UX and strategic questions. All human-dependent ideas now have clear descriptions explaining what human action is required.",
+      "effectiveness": "The categorization approach worked well - breaking ideas into groups (credentials, decisions, physical actions) made the work systematic and comprehensive. Creating supporting instruction ideas for complex decisions (rather than just marking parent ideas as blocked) provides better context for human review.",
+      "lesson": "When organizing blocked work for human review, invest effort in creating detailed instruction ideas that explain not just what's blocked, but what specific decision or action is needed and what the options/implications are. This reduces back-and-forth and enables faster unblocking.",
       "pattern": "This mirrors effective issue triage in software projects: don't just tag issues as 'needs decision' - document the decision context, options, and constraints so the decision-maker has everything needed in one place."
     }
   ],
@@ -32,7 +32,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Completed systematic review and documentation of all human-dependent aims",
+    "comment": "Completed systematic review and documentation of all human-dependent ideas",
     "date": 1774591168854
   },
   "intrinsicValue": 0,

@@ -6,10 +6,10 @@
     {
       "date": 1774556009189,
       "context": "Make the local .bowman project connection flow intuitive for first-time open source users.",
-      "outcome": "Completed three core UX improvements: documented .bowman layout in README, added visible project path in app header, and implemented explicit local project discovery with click-to-open suggestions. One supporting aim (watchdog reconnection) remains partially complete but is polish rather than core functionality.",
-      "effectiveness": "Breaking the UX goal into specific, testable sub-aims allowed focused implementation. Each piece improved orientation independently: docs for understanding, header for runtime awareness, discovery for reducing manual path entry.",
-      "lesson": "When a parent aim has mostly-complete supporting work, mark the parent done once core functionality is delivered. Don't let polish items block completion signals.",
-      "pattern": "This follows the documentation aim pattern: verify supporting work is substantially complete, then mark parent done to keep the aim graph accurate."
+      "outcome": "Completed three core UX improvements: documented .bowman layout in README, added visible project path in app header, and implemented explicit local project discovery with click-to-open suggestions. One supporting idea (watchdog reconnection) remains partially complete but is polish rather than core functionality.",
+      "effectiveness": "Breaking the UX goal into specific, testable sub-ideas allowed focused implementation. Each piece improved orientation independently: docs for understanding, header for runtime awareness, discovery for reducing manual path entry.",
+      "lesson": "When a parent idea has mostly-complete supporting work, mark the parent done once core functionality is delivered. Don't let polish items block completion signals.",
+      "pattern": "This follows the documentation idea pattern: verify supporting work is substantially complete, then mark parent done to keep the idea graph accurate."
     }
   ],
   "archived": false,

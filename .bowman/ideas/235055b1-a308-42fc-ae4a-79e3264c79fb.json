@@ -1,7 +1,7 @@
 {
   "id": "235055b1-a308-42fc-ae4a-79e3264c79fb",
   "text": "Versioned .bowman migrations: dataModelVersion, ordered idempotent migrations, read-only guard for newer data",
-  "description": "meta.json dataModelVersion (now 3) is the storage version. shared/bowman-migration runs registered migrations above it in order under a .migration-lock shared by backend, loop worker and agent tools; migrations may declare a pending check because legacy data can return through git. Projects from a newer Aimparency open read-only (writes refused). Migration 2 = ordered phase tree (still derived lazily), 3 = aims→ideas. Frozen fixtures data-model-v1/v2, npm run verify:migration <repo> dry-runs on a copy and compares the graph. How to add one: AGENTS.md \"Data Model Changes\".",
+  "description": "meta.json dataModelVersion (now 3) is the storage version. shared/bowman-migration runs registered migrations above it in order under a .migration-lock shared by backend, loop worker and agent tools; migrations may declare a pending check because legacy data can return through git. Projects from a newer Aimparency open read-only (writes refused). Migration 2 = ordered phase tree (still derived lazily), 3 = ideas→ideas. Frozen fixtures data-model-v1/v2, npm run verify:migration <repo> dry-runs on a copy and compares the graph. How to add one: AGENTS.md \"Data Model Changes\".",
   "reflections": [],
   "archived": false,
   "color": "#6b3f38",

@@ -1,13 +1,13 @@
 {
   "id": "b113c653-1dbb-47d0-97b8-67aab75379e5",
-  "text": "implement a get aims of phase x",
+  "text": "implement a get ideas of phase x",
   "description": "",
   "tags": [],
   "incoming": [],
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented via 'list-aims' tool with 'phaseId' parameter in MCP.",
+    "comment": "Implemented via 'list-ideas' tool with 'phaseId' parameter in MCP.",
     "date": 1765401637103
   },
   "supportingConnections": [],

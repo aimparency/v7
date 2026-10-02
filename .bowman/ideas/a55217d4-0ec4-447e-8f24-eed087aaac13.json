@@ -1,6 +1,6 @@
 {
   "id": "a55217d4-0ec4-447e-8f24-eed087aaac13",
-  "text": "Aim list view: New way of moving (teleporting aims): x for cutting, p for pasting.",
+  "text": "Idea list view: New way of moving (teleporting ideas): x for cutting, p for pasting.",
   "description": "",
   "tags": [],
   "supportingConnections": [],
@@ -10,7 +10,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Implemented list-view teleport move flow: cut with x and paste with p in aim navigation. Added focused frontend unit tests for x/p same-phase reorder and cross-parent move behavior; tests pass.",
+    "comment": "Implemented list-view teleport move flow: cut with x and paste with p in idea navigation. Added focused frontend unit tests for x/p same-phase reorder and cross-parent move behavior; tests pass.",
     "date": 1771796211939
   },
   "intrinsicValue": 0,

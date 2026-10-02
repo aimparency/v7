@@ -1,6 +1,6 @@
 {
   "id": "fdf0ee47-98d1-43b8-9b0f-4d2da54f89c3",
-  "text": "Persist graph positions to .bowman/aims/*.json",
+  "text": "Persist graph positions to .bowman/ideas/*.json",
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [

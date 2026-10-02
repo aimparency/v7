@@ -6,8 +6,8 @@
     {
       "date": 1773962133804,
       "context": "Turn the broad autonomy/ASI direction into a concrete local-first runtime architecture for Aimparency, informed by automaton-style systems but grounded in Aimparency's graph and .bowman model.",
-      "outcome": "Created a written autonomy runtime note that maps aims/phases/reflections/watchdog sessions onto a durable think-act-observe loop with heartbeat, policy, identity, and audit concepts. It also identifies what Aimparency should not copy directly from cloud-first autonomy systems.",
-      "effectiveness": "This was effective because it reduced a vague ambition into a system boundary that can drive code changes. It gives a stable frame for future implementation aims without forcing premature cloud/economic assumptions.",
+      "outcome": "Created a written autonomy runtime note that maps ideas/phases/reflections/watchdog sessions onto a durable think-act-observe loop with heartbeat, policy, identity, and audit concepts. It also identifies what Aimparency should not copy directly from cloud-first autonomy systems.",
+      "effectiveness": "This was effective because it reduced a vague ambition into a system boundary that can drive code changes. It gives a stable frame for future implementation ideas without forcing premature cloud/economic assumptions.",
       "lesson": "For autonomy work, architecture notes are valuable when they sharply define what becomes durable state, what remains a worker concern, and where operator control lives.",
       "pattern": "This follows the same pattern as release work: convert broad product direction into explicit local-first architecture before making deeper implementation commitments."
     }

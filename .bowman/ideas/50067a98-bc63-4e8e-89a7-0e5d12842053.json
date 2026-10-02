@@ -1,7 +1,7 @@
 {
   "id": "50067a98-bc63-4e8e-89a7-0e5d12842053",
   "text": "Association system",
-  "description": "feed in related aims as the agent works on something. \nMaybe through hooks.",
+  "description": "feed in related ideas as the agent works on something. \nMaybe through hooks.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -21,5 +21,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Reconciled the existing association system and fixed its key relevance defect: the active aim is now excluded, so stochastic association injects lateral context rather than echoing current work. Extracted deterministic selection logic and added four tests covering ranking, probability rejection, disabled behavior, and active-aim exclusion. Agent-tools and loop-worker typechecks pass."
+  "reflection": "Reconciled the existing association system and fixed its key relevance defect: the active idea is now excluded, so stochastic association injects lateral context rather than echoing current work. Extracted deterministic selection logic and added four tests covering ranking, probability rejection, disabled behavior, and active-idea exclusion. Agent-tools and loop-worker typechecks pass."
 }

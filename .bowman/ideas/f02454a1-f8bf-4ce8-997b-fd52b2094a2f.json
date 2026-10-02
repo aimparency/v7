@@ -9,7 +9,7 @@
       "outcome": "Slimmed INSTRUCT 67% (removed tool catalog + reflection schema, added self-improvement and graph-maintenance guidance), gated it to once per context epoch (re-armed after /compact), unified the duplicated worker/supervisor idle detection into one parameterized method, and fixed the hang by whitespace-normalizing the prompt marker before matching (Claude's TUI hard-wraps the long marker line, breaking exact lastIndexOf). Cut completion grace 5000→2000ms. All tests green.",
       "effectiveness": "High. The hang root cause was confirmed directly from the user's screenshot (the marker visibly wrapped), and the token savings per turn are large since the guide is now small and sent rarely. Regression tests lock in both the wrapped-marker parse and the instruct-once behavior.",
       "lesson": "Don't duplicate detection logic across two agents — divergent debounce windows hid that the real bug was elsewhere (marker parsing, not idleness). Also: never exact-match long single-line markers against terminal output; TUIs hard-wrap and indent. Normalize whitespace, as the worker-context capture already did.",
-      "pattern": "Same class as the bge embedding fix earlier this session: a feature looked 'present' but was quietly degraded/broken; verifying against real output (screenshot, real aims) exposed the true cause."
+      "pattern": "Same class as the bge embedding fix earlier this session: a feature looked 'present' but was quietly degraded/broken; verifying against real output (screenshot, real ideas) exposed the true cause."
     }
   ],
   "archived": false,

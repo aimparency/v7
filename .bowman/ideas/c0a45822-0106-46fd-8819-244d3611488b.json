@@ -1,14 +1,14 @@
 {
   "id": "c0a45822-0106-46fd-8819-244d3611488b",
-  "text": "Close one reality→priority feedback loop: ground aim value in real outcomes, not self-report",
-  "description": "Replace the mock economy (credits in system.json) with at least one real signal flowing back into aim value/priority — e.g. test outcomes, PR merges, replies, or revenue automatically adjusting intrinsicValue/cost. Turns directed breeding into real selection pressure that doesn't route through the human.",
+  "text": "Close one reality→priority feedback loop: ground idea value in real outcomes, not self-report",
+  "description": "Replace the mock economy (credits in system.json) with at least one real signal flowing back into idea value/priority — e.g. test outcomes, PR merges, replies, or revenue automatically adjusting intrinsicValue/cost. Turns directed breeding into real selection pressure that doesn't route through the human.",
   "reflections": [
     {
       "date": 1782453099786,
       "context": "Asked to build reality→priority feedback by 'replacing the mock economy'. Investigated first.",
-      "outcome": "Found the mock economy (performWork credits) is dead and disconnected from priority — the premise was stale and there was no real→priority link at all. Asked Felix the design fork (his value model, his call); he chose the non-corrupting option. Shipped realizedCommits (git-reference count) + an openAimsWithNoRealizedOutput diagnostic in get_prioritized_aims, with intrinsicValue/cost untouched.",
+      "outcome": "Found the mock economy (performWork credits) is dead and disconnected from priority — the premise was stale and there was no real→priority link at all. Asked Felix the design fork (his value model, his call); he chose the non-corrupting option. Shipped realizedCommits (git-reference count) + an openIdeasWithNoRealizedOutput diagnostic in get_prioritized_ideas, with intrinsicValue/cost untouched.",
       "effectiveness": "Right call to investigate + ask before coding: blind-building the literal task would have polished dead code, and auto-mutating intrinsicValue would have corrupted the human-curated model. The shipped slice is real, safe, and unit-tested.",
-      "lesson": "When an aim says 'replace X', verify X is actually load-bearing first — here X was dead. And for anything touching the human value model, surface the design fork rather than guess; 'humans stay final authority' applies to the priority model itself.",
+      "lesson": "When an idea says 'replace X', verify X is actually load-bearing first — here X was dead. And for anything touching the human value model, surface the design fork rather than guess; 'humans stay final authority' applies to the priority model itself.",
       "pattern": "verify-the-premise; ask-before-touching-the-value-model"
     }
   ],

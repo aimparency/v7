@@ -1,6 +1,6 @@
 {
   "id": "c3a52342-553b-4fe0-a600-38c004be9ad2",
-  "text": "draging from an aim into an empty area should create a new supporting aim",
+  "text": "draging from an idea into an empty area should create a new supporting idea",
   "description": "",
   "tags": [],
   "supportingConnections": [],
@@ -10,7 +10,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented drag-to-create-aim logic in Graph View. Dropping a connection handle on the background opens the creation modal and links the new aim to the source.",
+    "comment": "Implemented drag-to-create-idea logic in Graph View. Dropping a connection handle on the background opens the creation modal and links the new idea to the source.",
     "date": 1768636802049
   },
   "intrinsicValue": 0,

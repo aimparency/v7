@@ -9,7 +9,7 @@
       "outcome": "Extended buildWrapperRelaunchPrompt with an ordered commit -> verify -> drop-indicator instruction and exported RELAUNCH_REQUEST_REL_PATH (.bowman/runtime/relaunch-request). The worker now self-issues the relaunch; the broker's verify gate guards it.",
       "effectiveness": "Verified-done: common `tsc --noEmit` clean and `npm test` 56/56 (1 new test asserting the prompt contains the exact indicator path + mkdir command). Confirmed by reading both sides that the producer path (worker cwd = project root, per manager.ts 'pass PROJECT ROOT') matches the consumer getProjectRelaunchRequestFile = <root>/.bowman/runtime/relaunch-request.",
       "lesson": "Cross-component contracts (here a file path) must be checked from BOTH ends in code, not assumed: producer-relative vs consumer-normalized paths only line up because the worker runs from the project root. v1 leans on the LLM to run a shell command — a deterministic 'supervisor writes indicator after seeing a new commit' would be more reliable.",
-      "pattern": "Close a multi-aim chain by verifying the seam (shared path/contract) end-to-end rather than trusting each side in isolation."
+      "pattern": "Close a multi-idea chain by verifying the seam (shared path/contract) end-to-end rather than trusting each side in isolation."
     }
   ],
   "archived": false,

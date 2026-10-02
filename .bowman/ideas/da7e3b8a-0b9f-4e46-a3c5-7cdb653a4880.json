@@ -1,7 +1,7 @@
 {
   "id": "da7e3b8a-0b9f-4e46-a3c5-7cdb653a4880",
-  "text": "when aims are too small (less than say 20 pixel radius), don't display the text",
-  "description": "For the check whether the lable get's shown we have to consider radius, half page size and zoom. Individually per aim!",
+  "text": "when ideas are too small (less than say 20 pixel radius), don't display the text",
+  "description": "For the check whether the lable get's shown we have to consider radius, half page size and zoom. Individually per idea!",
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [

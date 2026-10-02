@@ -1,6 +1,6 @@
 {
   "id": "e2846e8e-29e8-4584-b250-9e0dcfd3c787",
-  "text": "in an empty column page, entering aim edit mode and adding aims should not be possible",
+  "text": "in an empty column page, entering idea edit mode and adding ideas should not be possible",
   "description": "",
   "tags": [],
   "supportingConnections": [],
@@ -12,7 +12,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Implemented guard in aim navigation: create shortcuts o/O now require a selected aim context, preventing create modal opening on empty-column pages. Added focused regression test in packages/frontend/src/__tests__/ui-teleport.spec.ts (does not open create modal when no aim selected). Verification: npm run test:unit -w frontend -- src/__tests__/ui-teleport.spec.ts passed; full frontend tests and typecheck pass.",
+    "comment": "Implemented guard in idea navigation: create shortcuts o/O now require a selected idea context, preventing create modal opening on empty-column pages. Added focused regression test in packages/frontend/src/__tests__/ui-teleport.spec.ts (does not open create modal when no idea selected). Verification: npm run test:unit -w frontend -- src/__tests__/ui-teleport.spec.ts passed; full frontend tests and typecheck pass.",
     "date": 1771957693392
   },
   "intrinsicValue": 0,

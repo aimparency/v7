@@ -1,13 +1,13 @@
 {
   "id": "8e8d8f7a-375d-46b8-8f03-192527b59106",
-  "text": "Require contextual review before MCP aim creation",
-  "description": "Make MCP aim creation an enforced two-call review. First create_aim call performs text+semantic search across active and cancelled aims, returns compact relevant context plus a deterministic confirmation token, and writes nothing. A second identical call with that token creates the aim. Similarity is informative rather than an automatic veto: the agent may confirm a genuinely distinct aim. The token binds the exact proposal so edits require fresh context. Keep this separate and much leaner than the human-facing transient subtree approval system.",
+  "text": "Require contextual review before MCP idea creation",
+  "description": "Make MCP idea creation an enforced two-call review. First create_idea call performs text+semantic search across active and cancelled ideas, returns compact relevant context plus a deterministic confirmation token, and writes nothing. A second identical call with that token creates the idea. Similarity is informative rather than an automatic veto: the agent may confirm a genuinely distinct idea. The token binds the exact proposal so edits require fresh context. Keep this separate and much leaner than the human-facing transient subtree approval system.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
   "tags": [
     "mcp",
-    "aim-creation",
+    "idea-creation",
     "deduplication",
     "graph-hygiene"
   ],
@@ -28,5 +28,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Implemented an enforced MCP-only two-call creation gate. First create_aim call performs existing combined text+semantic search, returns up to eight related active/cancelled aims with status rationale and a deterministic token, and writes nothing. Second identical call with the token creates; changing any proposal field invalidates it. Similarity remains contextual rather than an automatic veto. This is intentionally separate from the richer human-facing subtree proposal system. Verification: focused MCP aims+phases tests 16/16 pass, including no-write preview, cancelled rationale visibility, mismatch rejection, and confirmed creation; MCP TypeScript build passes."
+  "reflection": "Implemented an enforced MCP-only two-call creation gate. First create_idea call performs existing combined text+semantic search, returns up to eight related active/cancelled ideas with status rationale and a deterministic token, and writes nothing. Second identical call with the token creates; changing any proposal field invalidates it. Similarity remains contextual rather than an automatic veto. This is intentionally separate from the richer human-facing subtree proposal system. Verification: focused MCP ideas+phases tests 16/16 pass, including no-write preview, cancelled rationale visibility, mismatch rejection, and confirmed creation; MCP TypeScript build passes."
 }

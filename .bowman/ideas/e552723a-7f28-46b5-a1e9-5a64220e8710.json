@@ -1,6 +1,6 @@
 {
   "id": "e552723a-7f28-46b5-a1e9-5a64220e8710",
-  "text": "add an mpc function: get highest priority aims for current phases",
+  "text": "add an mpc function: get highest priority ideas for current phases",
   "description": "priority = value / effort",
   "reflections": [],
   "archived": false,

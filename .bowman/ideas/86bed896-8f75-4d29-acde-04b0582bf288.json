@@ -1,7 +1,7 @@
 {
   "id": "86bed896-8f75-4d29-acde-04b0582bf288",
   "text": "add sorting",
-  "description": "sort by recently created - this will be helpful for autonomous workflows, because most recent aims are often also high priority. \n\"Work on recently added aims\"",
+  "description": "sort by recently created - this will be helpful for autonomous workflows, because most recent ideas are often also high priority. \n\"Work on recently added ideas\"",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented sorting by recency as default fallback for aim search. When no query is provided, aims are scored based on how recently their status was updated.",
+    "comment": "Implemented sorting by recency as default fallback for idea search. When no query is provided, ideas are scored based on how recently their status was updated.",
     "date": 1779288272184
   },
   "intrinsicValue": 0,

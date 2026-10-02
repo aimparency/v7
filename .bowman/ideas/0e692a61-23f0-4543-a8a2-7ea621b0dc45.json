@@ -1,13 +1,13 @@
 {
   "id": "0e692a61-23f0-4543-a8a2-7ea621b0dc45",
-  "text": "when pressing i to enter aim navigation in a phase, we also have to bring into view the selected aim. reuse the existing function.",
+  "text": "when pressing i to enter idea navigation in a phase, we also have to bring into view the selected idea. reuse the existing function.",
   "description": "",
   "tags": [],
   "incoming": [],
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented in packages/frontend/src/components/Aim.vue by watching isActive prop.",
+    "comment": "Implemented in packages/frontend/src/components/Idea.vue by watching isActive prop.",
     "date": 1765211601379
   },
   "supportingConnections": [],

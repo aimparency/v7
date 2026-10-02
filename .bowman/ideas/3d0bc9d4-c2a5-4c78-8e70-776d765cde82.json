@@ -5,8 +5,8 @@
   "reflections": [
     {
       "date": 1774555555374,
-      "context": "Implement copy/paste functionality ('c' and 'p' keys) for aims in the UI, analogous to the existing cut/paste feature but without removing the aim from its original location.",
-      "outcome": "Successfully implemented copy functionality by adding teleportCopyAimId and teleportCopySource state to modal store, creating pasteCopiedAimAction that links aims without removing them from source, and adding 'c' keyboard handler. The 'p' key now works with both cut and copied aims, prioritizing cut if both exist. All tests pass and the production build succeeds.",
+      "context": "Implement copy/paste functionality ('c' and 'p' keys) for ideas in the UI, analogous to the existing cut/paste feature but without removing the idea from its original location.",
+      "outcome": "Successfully implemented copy functionality by adding teleportCopyIdeaId and teleportCopySource state to modal store, creating pasteCopiedIdeaAction that links ideas without removing them from source, and adding 'c' keyboard handler. The 'p' key now works with both cut and copied ideas, prioritizing cut if both exist. All tests pass and the production build succeeds.",
       "effectiveness": "The implementation was straightforward by following the existing cut/paste pattern. Separating copy logic from cut logic kept the code clear and maintainable. Type-safe development caught interface mismatches immediately.",
       "lesson": "When implementing similar features, follow existing patterns closely. In this case, the copy/paste implementation mirrored cut/paste except for the removal step, making it easy to understand and maintain. Updating both runtime code and test fixtures together prevents type errors from lingering.",
       "pattern": "This follows a common pattern in UX development: implement complementary operations (cut/copy, delete/archive) as variations of the same core flow with conditional behavior based on user intent."

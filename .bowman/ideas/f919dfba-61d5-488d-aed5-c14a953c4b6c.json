@@ -1,13 +1,13 @@
 {
   "id": "f919dfba-61d5-488d-aed5-c14a953c4b6c",
-  "text": "implement a get sub aims",
+  "text": "implement a get sub ideas",
   "description": "",
   "tags": [],
   "incoming": [],
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented via 'list-aims' tool with 'parentAimId' parameter in MCP and backend support.",
+    "comment": "Implemented via 'list-ideas' tool with 'parentIdeaId' parameter in MCP and backend support.",
     "date": 1765401625091
   },
   "supportingConnections": [],

@@ -1,7 +1,7 @@
 {
   "id": "6382c4fc-6e1a-4390-b25c-9926d3b8afc6",
   "text": "Add a robust graph recenter control beside semantic force and label toggle",
-  "description": "Add a graph toolbar button beside the hold-to-align semantic-force control and T label toggle. On activation, compute a surface-weighted spatial center from visible aims, retain the nearest 90% by center distance so remote outliers do not dominate framing, recompute the surface-weighted center of the retained set, include aim radii in symmetric bounds, fit those bounds to the current viewport, then zoom out by 1.2 for breathing room. Animate the camera without changing graph positions or selection. Empty graphs are a no-op.",
+  "description": "Add a graph toolbar button beside the hold-to-align semantic-force control and T label toggle. On activation, compute a surface-weighted spatial center from visible ideas, retain the nearest 90% by center distance so remote outliers do not dominate framing, recompute the surface-weighted center of the retained set, include idea radii in symmetric bounds, fit those bounds to the current viewport, then zoom out by 1.2 for breathing room. Animate the camera without changing graph positions or selection. Empty graphs are a no-op.",
   "reflections": [],
   "archived": false,
   "color": "#666666",

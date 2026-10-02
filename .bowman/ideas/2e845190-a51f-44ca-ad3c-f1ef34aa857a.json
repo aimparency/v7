@@ -2,7 +2,7 @@
   "id": "2e845190-a51f-44ca-ad3c-f1ef34aa857a",
   "text": "keyboard shortcuts",
   "description": "",
-  "reflection": "Reconciled this broad container after checking its only supporting aim (57ae35f3): the requested shortcut exists, avoids editable-field interference, appears in keyboard hints, and is already in review. No open implementation leaf remains beneath this container.",
+  "reflection": "Reconciled this broad container after checking its only supporting idea (57ae35f3): the requested shortcut exists, avoids editable-field interference, appears in keyboard hints, and is already in review. No open implementation leaf remains beneath this container.",
   "reflections": [],
   "archived": false,
   "tags": [],

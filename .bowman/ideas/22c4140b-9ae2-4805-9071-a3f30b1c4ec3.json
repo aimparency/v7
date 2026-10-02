@@ -18,7 +18,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Implemented TDD for the reflection pattern feature. Created comprehensive tests for the addReflection tRPC endpoint in src/routers/aim-reflection.test.ts. Tests verify: (1) Adding single reflections, (2) Adding multiple reflections to same aim, (3) Reflections field initialization on aim creation, (4) Reflection persistence across multiple reads. All 4 new tests pass. Total backend test suite: 23 tests, all passing. This establishes the TDD pattern for future tRPC router additions.",
+    "comment": "Implemented TDD for the reflection pattern feature. Created comprehensive tests for the addReflection tRPC endpoint in src/routers/idea-reflection.test.ts. Tests verify: (1) Adding single reflections, (2) Adding multiple reflections to same idea, (3) Reflections field initialization on idea creation, (4) Reflection persistence across multiple reads. All 4 new tests pass. Total backend test suite: 23 tests, all passing. This establishes the TDD pattern for future tRPC router additions.",
     "date": 1772129062904
   },
   "intrinsicValue": 0,

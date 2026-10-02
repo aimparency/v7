@@ -1,7 +1,7 @@
 {
   "id": "0e766e44-fa28-4aa7-8a86-b2b1aa59dedf",
-  "text": "Archive checkbox in edit aim - available when status is a \"halted\" status.",
-  "description": "see data model. some AimStatus have halted: true like done or cancelled. non-halted aims cannot be archived directly.",
+  "text": "Archive checkbox in edit idea - available when status is a \"halted\" status.",
+  "description": "see data model. some AimStatus have halted: true like done or cancelled. non-halted ideas cannot be archived directly.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Added an 'Archive this aim' checkbox to AimEditModal, shown only when the selected status is non-ongoing (the v7 equivalent of the aim's 'halted' concept: done/cancelled/failed/unclear; ongoing = open/partially/human-dependent). canArchive computed gates visibility; a watch forces archived=false if status returns to ongoing; handleSave persists archived only when canArchive. Initialized from aim.archived on open. 3 regression tests added (hide/show on status switch, persist on save, force-false on revert); full AimEditModal spec green (13/13), typecheck clean.",
+    "comment": "Added an 'Archive this idea' checkbox to AimEditModal, shown only when the selected status is non-ongoing (the v7 equivalent of the idea's 'halted' concept: done/cancelled/failed/unclear; ongoing = open/partially/human-dependent). canArchive computed gates visibility; a watch forces archived=false if status returns to ongoing; handleSave persists archived only when canArchive. Initialized from idea.archived on open. 3 regression tests added (hide/show on status switch, persist on save, force-false on revert); full AimEditModal spec green (13/13), typecheck clean.",
     "date": 1780143748392
   },
   "intrinsicValue": 0,

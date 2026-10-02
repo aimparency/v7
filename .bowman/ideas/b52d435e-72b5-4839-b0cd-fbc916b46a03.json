@@ -1,20 +1,20 @@
 {
   "id": "b52d435e-72b5-4839-b0cd-fbc916b46a03",
   "text": "Create and submit an exceptional SPC application for Aimparency",
-  "description": "Prepare a genuinely strong South Park Commons application that is deep, credible, specific, and intellectually intriguing. This aim has two inseparable purposes: (1) make a serious attempt to secure funding, community, and support for Aimparency; and (2) serve as a worked demonstration that a durable, inspectable aim graph can preserve human direction across long-running autonomous work by replaceable AI executors (Codex is the current executor, not the source of intent). The final application must stand on ordinary selection merits and must not rely on the recursive process as a gimmick. Capture program-specific requirements, founder truth, product thesis, technical substance, real-world evidence, skeptical review, drafts, and submission confirmation. Treat claims as hypotheses until supported.",
+  "description": "Prepare a genuinely strong South Park Commons application that is deep, credible, specific, and intellectually intriguing. This idea has two inseparable purposes: (1) make a serious attempt to secure funding, community, and support for Aimparency; and (2) serve as a worked demonstration that a durable, inspectable idea graph can preserve human direction across long-running autonomous work by replaceable AI executors (Codex is the current executor, not the source of intent). The final application must stand on ordinary selection merits and must not rely on the recursive process as a gimmick. Capture program-specific requirements, founder truth, product thesis, technical substance, real-world evidence, skeptical review, drafts, and submission confirmation. Treat claims as hypotheses until supported.",
   "reflections": [
     {
       "date": 1785581626974,
-      "context": "Felix requested a deadline phase, explicit human-dependent gates, and a priority list that reveals directly or transitively phase-committed human-dependent aims.",
-      "outcome": "Created the deadline-bounded SPC phase (dac299a1-e978-48ea-8552-ee5c2d2838ae), committed the application objective, created five child aims (three human-dependent), confirmed Boardy’s 1 Aug 15:00 meeting, and extended the frontend phase priority list to traverse committed aim subtrees with indirect-membership labels.",
-      "effectiveness": "Focused phase-priority tests pass (5/5) and frontend vue-tsc type-check passes. The list defaults to human-dependent, includes subphases and transitive aim descendants, handles cycles, and labels indirect membership.",
+      "context": "Felix requested a deadline phase, explicit human-dependent gates, and a priority list that reveals directly or transitively phase-committed human-dependent ideas.",
+      "outcome": "Created the deadline-bounded SPC phase (dac299a1-e978-48ea-8552-ee5c2d2838ae), committed the application objective, created five child ideas (three human-dependent), confirmed Boardy’s 1 Aug 15:00 meeting, and extended the frontend phase priority list to traverse committed idea subtrees with indirect-membership labels.",
+      "effectiveness": "Focused phase-priority tests pass (5/5) and frontend vue-tsc type-check passes. The list defaults to human-dependent, includes subphases and transitive idea descendants, handles cycles, and labels indirect membership.",
       "lesson": "Phase commitments should represent coherent objectives; human gates beneath them must remain visible transitively so deadlines do not require duplicate phase commitments.",
       "pattern": "Commit the outcome once, traverse its contribution subtree for operational views, and encode human authority as explicit human-dependent leaves."
     },
     {
       "date": 1785583562698,
       "context": "Audit whether the SPC objective can survive executor replacement after the autonomous pre-call preparation.",
-      "outcome": "Verified the phase path, parent and five child aims, transitive human-dependent gates, and graph consistency (valid with zero errors/issues). Added a canonical application README with ordered artifacts, next-event protocol, authority boundary, narrative default, and continuity snapshot.",
+      "outcome": "Verified the phase path, parent and five child ideas, transitive human-dependent gates, and graph consistency (valid with zero errors/issues). Added a canonical application README with ordered artifacts, next-event protocol, authority boundary, narrative default, and continuity snapshot.",
       "effectiveness": "Every referenced artifact exists, the README passes git diff --check, the phase tree exposes all required states, and a replacement executor now has one deterministic entry point instead of six peer documents.",
       "lesson": "Durable graph state still benefits from a compact artifact router: the graph preserves purpose and status, while the index controls reading order and event-specific procedure.",
       "pattern": "For consequential multi-artifact work, pair graph-native state with a small canonical README that identifies authority, next event, verification snapshot, and source order."
@@ -29,16 +29,16 @@
     },
     {
       "date": 1785584175596,
-      "context": "Felix asked for reflection on the concrete aim graph followed by an executive summary for the Boardy call.",
-      "outcome": "Tracing the application upward exposed an incorrect economic edge: the dilutive SPC Fellowship aim supported a non-dilutive funding aim. Reconnected it to Achieve Economic Autonomy while retaining the autonomy-proof parent. Created a 1,008-word pre-call executive summary covering the corrected graph, core narrative, verified and unsupported claims, relationship-channel mismatch, rejection case, seven decisions, and recommended eight-week tests.",
+      "context": "Felix asked for reflection on the concrete idea graph followed by an executive summary for the Boardy call.",
+      "outcome": "Tracing the application upward exposed an incorrect economic edge: the dilutive SPC Fellowship idea supported a non-dilutive funding idea. Reconnected it to Achieve Economic Autonomy while retaining the autonomy-proof parent. Created a 1,008-word pre-call executive summary covering the corrected graph, core narrative, verified and unsupported claims, relationship-channel mismatch, rejection case, seven decisions, and recommended eight-week tests.",
       "effectiveness": "The summary passes git diff --check and is the first item in the canonical reading order. Graph context now represents the application's two true purposes—economic autonomy and human-directed AI autonomy—without misclassifying the funding instrument.",
-      "lesson": "Concrete graph reflection is valuable when it tests whether edges state true causal contribution; a polished application narrative cannot compensate for a parent aim whose economic category is false.",
+      "lesson": "Concrete graph reflection is valuable when it tests whether edges state true causal contribution; a polished application narrative cannot compensate for a parent idea whose economic category is false.",
       "pattern": "Before summarizing a consequential plan, trace each objective to its parents, challenge the semantic truth of every contribution edge, correct misclassification, then compress the resulting tensions and decisions."
     },
     {
       "date": 1785584343133,
       "context": "Return from the executive-summary request to strengthen verification of the SPC phase's human-dependent priority feature.",
-      "outcome": "Added Phase.spec.ts, a component-level test that opens the actual priority panel, verifies the human-dependent default, descendant-phase and full-aim loading, direct and transitive labels/order, hiding the normal aim list, and opening the selected aim modal. Updated application evidence documents from five logic tests to six logic+component tests.",
+      "outcome": "Added Phase.spec.ts, a component-level test that opens the actual priority panel, verifies the human-dependent default, descendant-phase and full-idea loading, direct and transitive labels/order, hiding the normal idea list, and opening the selected idea modal. Updated application evidence documents from five logic tests to six logic+component tests.",
       "effectiveness": "Both focused test files pass (6/6), frontend vue-tsc passes, and git diff --check passes. This closes the interaction-verification gap left by utility-only tests.",
       "lesson": "A pure traversal test proves graph semantics, but the user-facing claim also requires verifying that the button invokes loading, renders the chosen state, and connects results to the editing action.",
       "pattern": "For graph-backed UI controls, test traversal logic separately and add one component test covering the complete user interaction boundary."

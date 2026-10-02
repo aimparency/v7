@@ -24,7 +24,7 @@
   "committedIn": [],
   "status": {
     "state": "cancelled",
-    "comment": "Cancelled 2026-09-20: the rich per-edge health vocabulary (target-deleted, repoId-mismatch) presumes aim-level targets. A black-box repo link has exactly two states — resolved or repo-not-checked-out — already handled by the registry lookup and the neutral-grey unresolved stub.",
+    "comment": "Cancelled 2026-09-20: the rich per-edge health vocabulary (target-deleted, repoId-mismatch) presumes idea-level targets. A black-box repo link has exactly two states — resolved or repo-not-checked-out — already handled by the registry lookup and the neutral-grey unresolved stub.",
     "date": 1789935652192
   },
   "intrinsicValue": 0,
@@ -33,5 +33,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Cancelled, not parked: repo-level-only leaves nothing to diagnose beyond resolved/unresolved, which the data-model and rendering aims already cover."
+  "reflection": "Cancelled, not parked: repo-level-only leaves nothing to diagnose beyond resolved/unresolved, which the data-model and rendering ideas already cover."
 }

@@ -2,7 +2,7 @@
   "id": "c7a6e6fc-7f9b-411a-9696-c60cc10354e0",
   "text": "agent loop UI",
   "description": "",
-  "reflection": "Status reconciliation on 2026-07-30 preserved the user’s prior non-acceptance. Because the remaining scope is conceptual/product-design judgment rather than a specified engineering leaf, the aim is human-dependent instead of autonomously actionable.",
+  "reflection": "Status reconciliation on 2026-07-30 preserved the user’s prior non-acceptance. Because the remaining scope is conceptual/product-design judgment rather than a specified engineering leaf, the idea is human-dependent instead of autonomously actionable.",
   "reflections": [],
   "archived": false,
   "color": null,

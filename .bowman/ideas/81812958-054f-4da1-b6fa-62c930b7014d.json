@@ -8,7 +8,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Updated MCP description to encourage adding aims to phases. Fixed phase synchronization in frontend store to ensure new phases appear in lists across clients. Verified with type-check.",
+    "comment": "Updated MCP description to encourage adding ideas to phases. Fixed phase synchronization in frontend store to ensure new phases appear in lists across clients. Verified with type-check.",
     "date": 1765316000000
   },
   "supportingConnections": [],

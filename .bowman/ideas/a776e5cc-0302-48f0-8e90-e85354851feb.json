@@ -1,7 +1,7 @@
 {
   "id": "a776e5cc-0302-48f0-8e90-e85354851feb",
   "text": "\"everything-completed\" termination.",
-  "description": "can you add to watchdog another kind of termination: the everything completed termination (yellow). When the main-agent confirms that it has   absolutely no open aims left within all active phases, watchdog stops itself (similar to when model changes, but with different reason:   \"everyting completed\"",
+  "description": "can you add to watchdog another kind of termination: the everything completed termination (yellow). When the main-agent confirms that it has   absolutely no open ideas left within all active phases, watchdog stops itself (similar to when model changes, but with different reason:   \"everyting completed\"",
   "tags": [],
   "incoming": [],
   "committedIn": [

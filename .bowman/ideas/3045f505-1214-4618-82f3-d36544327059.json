@@ -1,7 +1,7 @@
 {
   "id": "3045f505-1214-4618-82f3-d36544327059",
   "text": "Maintain information streams for autonomous agent context",
-  "description": "Enable agent to subscribe to and consume information from external sources beyond the codebase. Agent should actively pull in context from RSS feeds, web research, documentation updates, GitHub issues, and other streams to inform decision-making during DISCOVERING state. This transforms the agent from being purely reactive (waiting for aims) to proactive (discovering work from information streams).",
+  "description": "Enable agent to subscribe to and consume information from external sources beyond the codebase. Agent should actively pull in context from RSS feeds, web research, documentation updates, GitHub issues, and other streams to inform decision-making during DISCOVERING state. This transforms the agent from being purely reactive (waiting for ideas) to proactive (discovering work from information streams).",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -34,7 +34,7 @@
   "committedIn": [],
   "status": {
     "state": "cancelled",
-    "comment": "Cancelled 24 July 2026: the proposed generic information-stream subsystem reduces neither a measured bottleneck nor a validated customer workflow. Agents can research on demand for concrete aims; revive only around a named recurring source with an external outcome metric.",
+    "comment": "Cancelled 24 July 2026: the proposed generic information-stream subsystem reduces neither a measured bottleneck nor a validated customer workflow. Agents can research on demand for concrete ideas; revive only around a named recurring source with an external outcome metric.",
     "date": 1784895246125
   },
   "intrinsicValue": 0,
@@ -43,5 +43,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Cancelled the broad container after cancelling its RSS and generic web-research children. This keeps discovery lean: graph aims state what information is needed and why, while the executing agent chooses an available research tool."
+  "reflection": "Cancelled the broad container after cancelling its RSS and generic web-research children. This keeps discovery lean: graph ideas state what information is needed and why, while the executing agent chooses an available research tool."
 }

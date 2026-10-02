@@ -1,6 +1,6 @@
 {
   "id": "51d2496e-1f46-4dbb-90c2-2069e0e042fc",
-  "text": "when removing aims, we also have to remove the entries from the cache and embedding database",
+  "text": "when removing ideas, we also have to remove the entries from the cache and embedding database",
   "description": "",
   "tags": [],
   "supportingConnections": [
@@ -19,7 +19,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented in aim.ts delete mutation: removeEmbedding() for vectors.json, removeAimFromIndex() for search, invalidateSemanticCache() for semantic-graph.json, cache.db cleaned on recalculation",
+    "comment": "Implemented in idea.ts delete mutation: removeEmbedding() for vectors.json, removeIdeaFromIndex() for search, invalidateSemanticCache() for semantic-graph.json, cache.db cleaned on recalculation",
     "date": 1771523671437
   },
   "intrinsicValue": 0,

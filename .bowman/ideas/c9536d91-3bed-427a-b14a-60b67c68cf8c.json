@@ -1,6 +1,6 @@
 {
   "id": "c9536d91-3bed-427a-b14a-60b67c68cf8c",
-  "text": "place status below description in aim edit mode",
+  "text": "place status below description in idea edit mode",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Verified layout in AimCreationModal.vue (status is correctly below description). Reverted changes to GraphSidePanel.vue. Aim complete.",
+    "comment": "Verified layout in AimCreationModal.vue (status is correctly below description). Reverted changes to GraphSidePanel.vue. Idea complete.",
     "date": 1769100298626
   },
   "intrinsicValue": 0,

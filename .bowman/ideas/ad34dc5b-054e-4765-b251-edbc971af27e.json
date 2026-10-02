@@ -1,6 +1,6 @@
 {
   "id": "ad34dc5b-054e-4765-b251-edbc971af27e",
-  "text": "show aim description between title and status when aim is expanded.",
+  "text": "show idea description between title and status when idea is expanded.",
   "tags": [],
   "supportingConnections": [
     {
@@ -18,7 +18,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented description display between title and status when aim is expanded. Verified with tests.",
+    "comment": "Implemented description display between title and status when idea is expanded. Verified with tests.",
     "date": 1764799875307
   },
   "intrinsicValue": 0,

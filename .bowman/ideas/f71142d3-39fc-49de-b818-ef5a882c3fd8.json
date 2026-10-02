@@ -1,8 +1,8 @@
 {
   "id": "f71142d3-39fc-49de-b818-ef5a882c3fd8",
-  "text": "merge aims",
-  "description": "merges multiple selected aims into one. \ncombines all connections. \nUseful e.g. when having duplicate aims or when reducing complexity (one more encompassing aim instead of too detailed ones). ",
-  "reflection": "Completed and hardened the existing multi-select merge workflow. Existing list/graph selection and range-selection UX already covered selecting multiple aims and choosing a target. Updated mergeSelectedInto so successful backend rewires trigger a complete local aim-graph refresh, merged/failed counts reflect actual outcomes, and partial failures no longer report success. Added focused success and partial-failure tests. Verification: frontend 212/212 tests and production build pass.",
+  "text": "merge ideas",
+  "description": "merges multiple selected ideas into one. \ncombines all connections. \nUseful e.g. when having duplicate ideas or when reducing complexity (one more encompassing idea instead of too detailed ones). ",
+  "reflection": "Completed and hardened the existing multi-select merge workflow. Existing list/graph selection and range-selection UX already covered selecting multiple ideas and choosing a target. Updated mergeSelectedInto so successful backend rewires trigger a complete local idea-graph refresh, merged/failed counts reflect actual outcomes, and partial failures no longer report success. Added focused success and partial-failure tests. Verification: frontend 212/212 tests and production build pass.",
   "reflections": [],
   "archived": false,
   "color": null,

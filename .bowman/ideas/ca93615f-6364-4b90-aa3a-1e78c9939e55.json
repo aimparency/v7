@@ -51,7 +51,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Completed full Watchdog integration: Multi-project backend manager, Frontend UI/Store with Socket.IO, Terminal emulation, and Relaunch capabilities. All sub-aims closed.",
+    "comment": "Completed full Watchdog integration: Multi-project backend manager, Frontend UI/Store with Socket.IO, Terminal emulation, and Relaunch capabilities. All sub-ideas closed.",
     "date": 1765544228350
   },
   "intrinsicValue": 5,

@@ -1,6 +1,6 @@
 {
   "id": "58648df0-e137-418f-a0c9-7fd6f0871452",
-  "text": "when moving aims the free floating aim list flickers - maybe adding the aim there for a split second. Fix without destorying anything else",
+  "text": "when moving ideas the free floating idea list flickers - maybe adding the idea there for a split second. Fix without destorying anything else",
   "description": "",
   "tags": [],
   "supportingConnections": [],
@@ -10,7 +10,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Modified backend commitToPhase to support reordering. Updated frontend moveAimDown/moveAimUp to use atomic commitToPhase instead of remove+commit sequence, preventing aims from momentarily appearing as floating.",
+    "comment": "Modified backend commitToPhase to support reordering. Updated frontend moveIdeaDown/moveIdeaUp to use atomic commitToPhase instead of remove+commit sequence, preventing ideas from momentarily appearing as floating.",
     "date": 1765911185504
   },
   "intrinsicValue": 0,

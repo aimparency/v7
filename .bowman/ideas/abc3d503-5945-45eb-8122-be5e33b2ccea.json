@@ -1,6 +1,6 @@
 {
   "id": "abc3d503-5945-45eb-8122-be5e33b2ccea",
-  "text": "Build a Wrapper (watchdog) around gemini that keeps accepting stuff and nudges to tackle a new aim when assistant comes to a halt. Takes some prompting where to steer stuff during the session.",
+  "text": "Build a Wrapper (watchdog) around gemini that keeps accepting stuff and nudges to tackle a new idea when assistant comes to a halt. Takes some prompting where to steer stuff during the session.",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -77,7 +77,7 @@
         -0.636117537820714
       ],
       "weight": 1,
-      "explanation": "graph maintenance: reparented floating aim by semantic similarity"
+      "explanation": "graph maintenance: reparented floating idea by semantic similarity"
     }
   ],
   "supportedIdeas": [

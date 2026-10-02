@@ -1,6 +1,6 @@
 {
   "id": "2181d80e-795a-4160-8377-77ddafb47fc4",
-  "text": "'p' on an aim should show its parents (all routes similar when selecting a search result from aim search - but all paths of all parents)",
+  "text": "'p' on an idea should show its parents (all routes similar when selecting a search result from idea search - but all paths of all parents)",
   "description": "try to reuse code for finding all paths",
   "reflections": [],
   "archived": false,
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented 'p' key handler to open AimSearchModal with the current aim selected. This calculates and displays all paths to the aim (parents), allowing navigation to any context. Reused existing path calculation logic from AimSearchModal.",
+    "comment": "Implemented 'p' key handler to open AimSearchModal with the current idea selected. This calculates and displays all paths to the idea (parents), allowing navigation to any context. Reused existing path calculation logic from AimSearchModal.",
     "date": 1768249814562
   },
   "intrinsicValue": 0,

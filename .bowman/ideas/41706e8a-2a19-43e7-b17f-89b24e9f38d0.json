@@ -9,7 +9,7 @@
       "outcome": "Verified the current implementation: packages remain in workspace (installed by npm install) but are excluded from default dev/build/start commands. They're opt-in via dev:full and build:optional scripts. This represents a deliberate middle-ground decision.",
       "effectiveness": "This approach balances contributor ergonomics (single workspace, no complex install docs) with first-run simplicity (default commands only start core services). The package.json clearly separates core vs optional via build:core and build:optional scripts.",
       "lesson": "For monorepo packaging decisions, verify the current implementation before assuming the decision is unresolved. Often the code already represents the chosen strategy and just needs documentation.",
-      "pattern": "When an 'unclear' aim has an existing working implementation that matches the design goals, mark it done with documentation of the chosen approach rather than treating it as blocked."
+      "pattern": "When an 'unclear' idea has an existing working implementation that matches the design goals, mark it done with documentation of the chosen approach rather than treating it as blocked."
     }
   ],
   "archived": false,

@@ -1,6 +1,6 @@
 {
   "id": "e266c632-dc74-4c44-8cf6-c184378cdc68",
-  "text": "enable moving aims into the next phase. If aim is at the end of a phase, moving down moves it into the next phase (if the current phase is not the last phase in the column)",
+  "text": "enable moving ideas into the next phase. If idea is at the end of a phase, moving down moves it into the next phase (if the current phase is not the last phase in the column)",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented logic in navigateDown to automatically select the next phase (and its first aim) when navigating past the last aim of the current phase.",
+    "comment": "Implemented logic in navigateDown to automatically select the next phase (and its first idea) when navigating past the last idea of the current phase.",
     "date": 1768081818638
   },
   "intrinsicValue": 0,

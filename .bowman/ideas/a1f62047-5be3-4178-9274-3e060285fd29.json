@@ -1,7 +1,7 @@
 {
   "id": "a1f62047-5be3-4178-9274-3e060285fd29",
-  "text": "Gate aim 'done' on verification evidence appropriate to the aim type",
-  "description": "For the aim graph to be a trustworthy compass, 'done' must mean verified-done, not claimed-done. Observed repeatedly that aims get closed on weak evidence: a UI-jitter aim closed by git archaeology (visual bug, never seen running), a 'session reflection' aim where the live code path was actually dead. The loop should require + record evidence matched to the aim type before status=done — code: tests/typecheck pass; UI/visual: screenshot or interaction proof; behavior/bugfix: a repro that now passes — captured in the reflection. Complements c0a45822 (grounding VALUE in outcomes) by grounding STATUS in evidence. Without it, more autonomy compounds confident-but-unverified work (drift) rather than capability — the core risk on any path to ASI.",
+  "text": "Gate idea 'done' on verification evidence appropriate to the idea type",
+  "description": "For the idea graph to be a trustworthy compass, 'done' must mean verified-done, not claimed-done. Observed repeatedly that ideas get closed on weak evidence: a UI-jitter idea closed by git archaeology (visual bug, never seen running), a 'session reflection' idea where the live code path was actually dead. The loop should require + record evidence matched to the idea type before status=done — code: tests/typecheck pass; UI/visual: screenshot or interaction proof; behavior/bugfix: a repro that now passes — captured in the reflection. Complements c0a45822 (grounding VALUE in outcomes) by grounding STATUS in evidence. Without it, more autonomy compounds confident-but-unverified work (drift) rather than capability — the core risk on any path to ASI.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -14,7 +14,7 @@
   ],
   "status": {
     "state": "cancelled",
-    "comment": "Deprioritized 2026-07-22 after Felix clarified this evidence-gate initiative was not his idea and redirected effort toward real customers, funding, talks, and human leverage. Existing generic verification guidance remains; no richer gate will be built under this aim.",
+    "comment": "Deprioritized 2026-07-22 after Felix clarified this evidence-gate initiative was not his idea and redirected effort toward real customers, funding, talks, and human leverage. Existing generic verification guidance remains; no richer gate will be built under this idea.",
     "date": 1784740628382
   },
   "intrinsicValue": 0,
@@ -23,5 +23,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Corrected attribution and priority after direct founder feedback. I had selected this agent-originated partial aim as if it represented Felix's intent. It does not. Stopped work before making code changes and redirected the loop to human-leverage actions with real external feedback."
+  "reflection": "Corrected attribution and priority after direct founder feedback. I had selected this agent-originated partial idea as if it represented Felix's intent. It does not. Stopped work before making code changes and redirected the loop to human-leverage actions with real external feedback."
 }

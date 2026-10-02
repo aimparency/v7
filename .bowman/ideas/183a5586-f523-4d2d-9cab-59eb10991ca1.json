@@ -1,12 +1,12 @@
 {
   "id": "183a5586-f523-4d2d-9cab-59eb10991ca1",
-  "text": "Implement Pagination/Infinite Scroll for Aim Lists",
+  "text": "Implement Pagination/Infinite Scroll for Idea Lists",
   "tags": [],
   "incoming": [],
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented pagination/infinite scroll for floating aims in RootAimsColumn. Updated data store to manage floating aims pagination. Phase aims now load on demand in Phase component. Verified with build.",
+    "comment": "Implemented pagination/infinite scroll for floating ideas in RootIdeasColumn. Updated data store to manage floating ideas pagination. Phase ideas now load on demand in Phase component. Verified with build.",
     "date": 1765019462815
   },
   "supportingConnections": [],

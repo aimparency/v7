@@ -1,7 +1,7 @@
 {
   "id": "700e5b01-1ca7-4ef8-a828-a05163f07bbf",
   "text": "Backend: resolve & load linked repos",
-  "description": "Resolve repoId → localPath via the machine-local registry, then load aims from the linked .bowman (reuse listAims/getMany with that projectPath). Carry a visited-set to avoid cycles across repos. Return external aims tagged with their source repoId so the frontend can treat them as read-only and tint them. Endpoints for: list linked repos, resolve a {repoId,aimId}, and search within a linked repo (for cross-repo search fan-out).",
+  "description": "Resolve repoId → localPath via the machine-local registry, then load ideas from the linked .bowman (reuse listIdeas/getMany with that projectPath). Carry a visited-set to avoid cycles across repos. Return external ideas tagged with their source repoId so the frontend can treat them as read-only and tint them. Endpoints for: list linked repos, resolve a {repoId,aimId}, and search within a linked repo (for cross-repo search fan-out).",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -26,7 +26,7 @@
   "committedIn": [],
   "status": {
     "state": "cancelled",
-    "comment": "Cancelled 2026-09-20: loading aims out of a linked .bowman is precisely what a black-box repo link must never do. The one needed piece — resolve repoId to a local path plus the target's meta name — shipped in 1585aa46 / linkedRepo.resolve. No external-aim loading, no cross-repo search fan-out.",
+    "comment": "Cancelled 2026-09-20: loading ideas out of a linked .bowman is precisely what a black-box repo link must never do. The one needed piece — resolve repoId to a local path plus the target's meta name — shipped in 1585aa46 / linkedRepo.resolve. No external-idea loading, no cross-repo search fan-out.",
     "date": 1789935642990
   },
   "intrinsicValue": 0,
@@ -35,5 +35,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Cancelled, not parked: repo-level-only is final, so external-aim loading has no revival path. The surviving resolve endpoint lives in packages/backend/src/server.ts (linkedRepo.resolve)."
+  "reflection": "Cancelled, not parked: repo-level-only is final, so external-idea loading has no revival path. The surviving resolve endpoint lives in packages/backend/src/server.ts (linkedRepo.resolve)."
 }

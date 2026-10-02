@@ -26,7 +26,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Verified working - graph updates live across clients via tRPC subscription. Connections, costs, and aim data all sync correctly.",
+    "comment": "Verified working - graph updates live across clients via tRPC subscription. Connections, costs, and idea data all sync correctly.",
     "date": 1768943799800
   },
   "intrinsicValue": 0,

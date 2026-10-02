@@ -1,7 +1,7 @@
 {
   "id": "fe8b6496-588c-4439-8a39-056dab245c4f",
   "text": "Graph maintenance tooling",
-  "description": "Tooling to keep the aim graph healthy as it accumulates cruft over long autonomous-development runs: duplicates, resolved-but-uncollapsed chains, status drift from the actual code, and vague catch-all parents. The reorganization of subtrees (e.g. the 'UI' catch-all, see 18263fc2) should become a byproduct of this tooling rather than a manual slog. Evidence motivating this: 2a9e3aba and f592b156 are byte-identical duplicates; a05ea545/891e2ee0/855e26a1 are three aims for one shipped feature; 8ae9e8da/fe0e0aaf/b3f8518f/4e50493a were all already implemented but still marked open.",
+  "description": "Tooling to keep the idea graph healthy as it accumulates cruft over long autonomous-development runs: duplicates, resolved-but-uncollapsed chains, status drift from the actual code, and vague catch-all parents. The reorganization of subtrees (e.g. the 'UI' catch-all, see 18263fc2) should become a byproduct of this tooling rather than a manual slog. Evidence motivating this: 2a9e3aba and f592b156 are byte-identical duplicates; a05ea545/891e2ee0/855e26a1 are three ideas for one shipped feature; 8ae9e8da/fe0e0aaf/b3f8518f/4e50493a were all already implemented but still marked open.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -85,7 +85,7 @@
         0.21074026881842278
       ],
       "weight": 1,
-      "explanation": "Uses cancelled and similar aims as durable graph memory to prevent noise."
+      "explanation": "Uses cancelled and similar ideas as durable graph memory to prevent noise."
     }
   ],
   "supportedIdeas": [

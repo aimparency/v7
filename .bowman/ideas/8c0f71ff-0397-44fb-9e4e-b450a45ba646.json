@@ -1,7 +1,7 @@
 {
   "id": "8c0f71ff-0397-44fb-9e4e-b450a45ba646",
   "text": "Persist structured experiments and belief updates across loop cycles",
-  "description": "For each real-world bet, persist the hypothesis, prediction, expected cost/upside, success metric, stop condition, evidence, result, belief update, economic outcome reference, and next decision. Connect this record to existing hypothesis generation and evaluation aims.",
+  "description": "For each real-world bet, persist the hypothesis, prediction, expected cost/upside, success metric, stop condition, evidence, result, belief update, economic outcome reference, and next decision. Connect this record to existing hypothesis generation and evaluation ideas.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -30,5 +30,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Added .bowman/runtime/experiments.json with validated create/list/update operations. Records aims, hypothesis, prediction, expected cost/upside, metric, stop condition, status, append-only evidence, result, confidence update, external economic reference, and next decision. Exposed one experiment action tool to limit tool-surface growth. Verification: agent-tools and loop-worker typechecks pass; focused persistence test passes."
+  "reflection": "Added .bowman/runtime/experiments.json with validated create/list/update operations. Records ideas, hypothesis, prediction, expected cost/upside, metric, stop condition, status, append-only evidence, result, confidence update, external economic reference, and next decision. Exposed one experiment action tool to limit tool-surface growth. Verification: agent-tools and loop-worker typechecks pass; focused persistence test passes."
 }

@@ -22,5 +22,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Verified: `npx playwright test --project=chromium --grep-invert graph` → 16 passed. Scope grew past the selector: `.modal`→`.modal-panel`, strict `.project-path`, post-creation follow-up prompts (new finishAimCreation helper in e2e/test-utils.ts), l/h key model changed (l expand then step in; j never descends since ≥2026-02), creation-modal search results now `.result-item` and click submits. None of these were app bugs; all were test drift. Graph spec left unchanged — split into its own aim."
+  "reflection": "Verified: `npx playwright test --project=chromium --grep-invert graph` → 16 passed. Scope grew past the selector: `.modal`→`.modal-panel`, strict `.project-path`, post-creation follow-up prompts (new finishIdeaCreation helper in e2e/test-utils.ts), l/h key model changed (l expand then step in; j never descends since ≥2026-02), creation-modal search results now `.result-item` and click submits. None of these were app bugs; all were test drift. Graph spec left unchanged — split into its own idea."
 }

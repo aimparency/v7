@@ -1,7 +1,7 @@
 {
   "id": "a119c802-f7a4-4eec-b4d7-c6242dc82aed",
   "text": "Fix e2e test failures (sorting and visibility)",
-  "description": "Playwright tests are failing due to aim insertion order (appending instead of inserting) and visibility timeouts. Investigate `createAim` logic in `ui.ts` and backend `connectAims`/`commitToPhase`.",
+  "description": "Playwright tests are failing due to idea insertion order (appending instead of inserting) and visibility timeouts. Investigate `createIdea` logic in `ui.ts` and backend `connectIdeas`/`commitToPhase`.",
   "tags": [
     "bug",
     "e2e"

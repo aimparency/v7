@@ -1,7 +1,7 @@
 {
   "id": "6bbb740c-2281-4dbb-83c8-a391e626312a",
   "text": "graph view",
-  "description": "aims make up a graph with their connections. \nit should be possible to visualize that. \nI have placed a reference in /home/felix/dev/aimparency/v7/packages/frontend/graph-ui-reference-readonly\n\nYou can heavily draw from the ui graph implementation. \nIgnore the Side panel. Ignore the data model from that reference.",
+  "description": "ideas make up a graph with their connections. \nit should be possible to visualize that. \nI have placed a reference in /home/felix/dev/aimparency/v7/packages/frontend/graph-ui-reference-readonly\n\nYou can heavily draw from the ui graph implementation. \nIgnore the Side panel. Ignore the data model from that reference.",
   "reflections": [],
   "archived": false,
   "tags": [],

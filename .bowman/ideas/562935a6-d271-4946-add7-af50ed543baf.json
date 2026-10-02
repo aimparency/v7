@@ -14,7 +14,7 @@
   "committedIn": [],
   "status": {
     "state": "cancelled",
-    "comment": "Cancelled 24 July 2026 after relevance review: autonomous goal-setting is vague and misstates Aimparency's central model. Humans and organizations supply intent; agents may propose new supporting aims, but those remain inspectable contributions to human-set missions rather than an independent goal-setting subsystem. Existing graph creation, contextual review, and loop behavior cover the useful part.",
+    "comment": "Cancelled 24 July 2026 after relevance review: autonomous goal-setting is vague and misstates Aimparency's central model. Humans and organizations supply intent; agents may propose new supporting ideas, but those remain inspectable contributions to human-set missions rather than an independent goal-setting subsystem. Existing graph creation, contextual review, and loop behavior cover the useful part.",
     "date": 1784886728422,
     "reviewedAt": 1784886728417
   },

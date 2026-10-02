@@ -1,7 +1,7 @@
 {
   "id": "70d6c137-9b3b-4c8f-87dc-7bb7041188ec",
-  "text": "create aim dialog should allow adding supported and supporting aims",
-  "description": "clicking \"add\" should bring up the normal aim search. same style as parent phase. the weight should be settable for each supported aim as it already is. maybe show % regarding total weight sum of parent next to it. and there should be an x to remove the connection. requires a seccond click to confirm (bg color red), blur cancels",
+  "text": "create idea dialog should allow adding supported and supporting ideas",
+  "description": "clicking \"add\" should bring up the normal idea search. same style as parent phase. the weight should be settable for each supported idea as it already is. maybe show % regarding total weight sum of parent next to it. and there should be an x to remove the connection. requires a seccond click to confirm (bg color red), blur cancels",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented UI in AimCreationModal for adding/removing supported (parent) and supporting (child) aims with weights. Updated backend, data store, and UI store to handle connection creation.",
+    "comment": "Implemented UI in AimCreationModal for adding/removing supported (parent) and supporting (child) ideas with weights. Updated backend, data store, and UI store to handle connection creation.",
     "date": 1768402913390
   },
   "intrinsicValue": 0,

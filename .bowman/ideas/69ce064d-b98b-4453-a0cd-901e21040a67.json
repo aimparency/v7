@@ -1,6 +1,6 @@
 {
   "id": "69ce064d-b98b-4453-a0cd-901e21040a67",
-  "text": "Automatic focus. Phase masked aim search: \"what is the aim with the highest priority aim within the scope of a phase (recursive)\"",
+  "text": "Automatic focus. Phase masked idea search: \"what is the idea with the highest priority idea within the scope of a phase (recursive)\"",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Updated MCP tool get_prioritized_aims to accept an optional phaseId. If provided, it recursively fetches aims within the phase mask and returns the highest priority aims.",
+    "comment": "Updated MCP tool get_prioritized_ideas to accept an optional phaseId. If provided, it recursively fetches ideas within the phase mask and returns the highest priority ideas.",
     "date": 1779645330549
   },
   "intrinsicValue": 0,

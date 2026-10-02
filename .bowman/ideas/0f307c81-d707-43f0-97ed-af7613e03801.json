@@ -1,7 +1,7 @@
 {
   "id": "0f307c81-d707-43f0-97ed-af7613e03801",
   "text": "Restrict wrapped-agent control sockets to an explicit network authority boundary",
-  "description": "Make wrapped-agent session servers bind to loopback by default instead of every interface, while preserving explicit BIND_HOST remote exposure. Replace wildcard Socket.IO CORS with a deterministic origin policy allowing loopback origins by default and the explicitly configured bind hostname when present; reject malformed, opaque, or unrelated browser origins. Add pure tests for loopback, configured host, ports/protocols, and hostile origins. Do not implement identity authentication in this bounded aim, do not alter backend/broker exposure, and do not launch or restart any server.",
+  "description": "Make wrapped-agent session servers bind to loopback by default instead of every interface, while preserving explicit BIND_HOST remote exposure. Replace wildcard Socket.IO CORS with a deterministic origin policy allowing loopback origins by default and the explicitly configured bind hostname when present; reject malformed, opaque, or unrelated browser origins. Add pure tests for loopback, configured host, ports/protocols, and hostile origins. Do not implement identity authentication in this bounded idea, do not alter backend/broker exposure, and do not launch or restart any server.",
   "reflections": [
     {
       "date": 1785602759114,

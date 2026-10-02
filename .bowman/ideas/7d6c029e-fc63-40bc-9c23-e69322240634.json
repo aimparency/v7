@@ -1,7 +1,7 @@
 {
   "id": "7d6c029e-fc63-40bc-9c23-e69322240634",
   "text": "Make MCP planning graph-first and phase creation reliable",
-  "description": "Improve MCP so agents naturally represent plans as aims, connections, and phases before writing auxiliary documents. Keep the guidance lean. Restore phase start/end support, ensure focused MCP tests terminate cleanly, and diagnose the observed create_phase delay with evidence. Record what additional compound planning operation would reduce round trips without hiding partial failure.",
+  "description": "Improve MCP so agents naturally represent plans as ideas, connections, and phases before writing auxiliary documents. Keep the guidance lean. Restore phase start/end support, ensure focused MCP tests terminate cleanly, and diagnose the observed create_phase delay with evidence. Record what additional compound planning operation would reduce round trips without hiding partial failure.",
   "reflections": [],
   "archived": false,
   "color": "#666666",

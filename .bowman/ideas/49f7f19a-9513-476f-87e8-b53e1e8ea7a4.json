@@ -1,6 +1,6 @@
 {
   "id": "49f7f19a-9513-476f-87e8-b53e1e8ea7a4",
-  "text": "option \"search archived aims\" for aim search",
+  "text": "option \"search archived ideas\" for idea search",
   "description": "archived search results have a different color pale lila and it \"unarchive: \" postfix. Clicking them unarchives them and then selects them, wherever they might appear.",
   "tags": [],
   "supportingConnections": [],

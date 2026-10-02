@@ -1,6 +1,6 @@
 {
   "id": "e0289c2f-8fe7-4875-a46a-21709c8d8295",
-  "text": "let's try freezing the aim whose handle is not being dragged while dragging connection handles in graph view",
+  "text": "let's try freezing the idea whose handle is not being dragged while dragging connection handles in graph view",
   "description": "",
   "tags": [],
   "supportingConnections": [],
@@ -12,7 +12,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Implemented layout-handle freeze behavior for graph view: dragging one connection handle now marks the opposite endpoint aim as frozen during layouting. Changes: packages/frontend/src/components/GraphFlowHandle.vue (activeAimId/frozenAimId metadata), packages/frontend/src/stores/map.ts (LayoutCandidate fields), packages/frontend/src/composables/useGraphSimulation.ts (skip physics updates for frozenAimId while layouting). Added focused tests in packages/frontend/src/components/__tests__/GraphFlowHandle.spec.ts verifying both handle directions map to opposite frozen aim. Verification: npm run test:unit -w frontend -- src/components/__tests__/GraphFlowHandle.spec.ts PASSED (2/2). Full frontend type-check remains failing due to existing unrelated baseline errors.",
+    "comment": "Implemented layout-handle freeze behavior for graph view: dragging one connection handle now marks the opposite endpoint idea as frozen during layouting. Changes: packages/frontend/src/components/GraphFlowHandle.vue (activeIdeaId/frozenIdeaId metadata), packages/frontend/src/stores/map.ts (LayoutCandidate fields), packages/frontend/src/composables/useGraphSimulation.ts (skip physics updates for frozenIdeaId while layouting). Added focused tests in packages/frontend/src/components/__tests__/GraphFlowHandle.spec.ts verifying both handle directions map to opposite frozen idea. Verification: npm run test:unit -w frontend -- src/components/__tests__/GraphFlowHandle.spec.ts PASSED (2/2). Full frontend type-check remains failing due to existing unrelated baseline errors.",
     "date": 1771797367927
   },
   "intrinsicValue": 0,

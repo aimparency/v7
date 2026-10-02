@@ -1,6 +1,6 @@
 {
   "id": "667df056-3263-4179-9ed5-7fb9d778f666",
-  "text": "render arrows in supporting aim color",
+  "text": "render arrows in supporting idea color",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "convertLinks in useWebGLGraphRenderer now colors each arrow by its source aim's custom color (the source of a link is the supporting/child aim), falling back to neutral gray when unset. Edge color was already wired through EdgeData -> ArrowRenderer instance buffer -> a_color shader attribute; only the hardcoded gray needed replacing.",
+    "comment": "convertLinks in useWebGLGraphRenderer now colors each arrow by its source idea's custom color (the source of a link is the supporting/child idea), falling back to neutral gray when unset. Edge color was already wired through EdgeData -> ArrowRenderer instance buffer -> a_color shader attribute; only the hardcoded gray needed replacing.",
     "date": 1780144868160
   },
   "intrinsicValue": 0,

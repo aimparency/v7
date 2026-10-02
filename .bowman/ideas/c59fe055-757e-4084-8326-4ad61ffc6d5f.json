@@ -16,7 +16,7 @@
       "context": "Fresh post-completion verification triggered by another Codex Stop continuation, without new authorization for external action.",
       "outcome": "Re-ran npm run test:hooks successfully. Inspected installer preflight/copy/permission/JSON/nested-cwd smoke-test behavior, canonical hook output and escape variables, checked-in hooks.json, README distinction and relative links, and ran git diff --check on the hook-related paths. No concrete defect was found; no code was changed.",
       "effectiveness": "The verification independently reconfirmed the portable install contract and avoided inventing unrelated work in an already very dirty shared worktree.",
-      "lesson": "Keep this aim in review pending human acceptance. Further useful mission progress still requires the previously identified real-world mandate rather than another internal hook iteration."
+      "lesson": "Keep this idea in review pending human acceptance. Further useful mission progress still requires the previously identified real-world mandate rather than another internal hook iteration."
     },
     {
       "date": 1785604165701,
@@ -27,7 +27,7 @@
     },
     {
       "date": 1785605179090,
-      "context": "User rejected a single-step human-wait marker as too easy an escape and required a strong autonomy challenge first: reconsider scope, decompose abstract aims, inspect hygiene/reflections, dream, and try new hypotheses.",
+      "context": "User rejected a single-step human-wait marker as too easy an escape and required a strong autonomy challenge first: reconsider scope, decompose abstract ideas, inspect hygiene/reflections, dream, and try new hypotheses.",
       "outcome": "Replaced the one-step marker with a two-stage protocol. [AIMPARENCY_REQUEST_HUMAN] always blocks Stop and creates a challenge turn requiring broader graph-based search and recorded attempts. Only a subsequent [AIMPARENCY_CONFIRM_HUMAN_BLOCK] in last_assistant_message yields. The normal continuation prompt now frames human waiting as an extreme case and requires stepping back before requesting it. README and portable installed script carry the same contract.",
       "effectiveness": "npm run test:hooks passes. Tests prove normal continuation advertises only the request stage, a request produces the mandatory challenge (including graph hygiene), confirmation yields valid non-blocking JSON, and a confirmation marker outside last_assistant_message cannot disable the loop. Bash syntax and git diff --check pass.",
       "lesson": "Persistence and corrigibility need productive friction: make escalation possible, but require an explicit second-pass search against scope fixation and premature helplessness before allowing the loop to wait."

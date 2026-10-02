@@ -6,7 +6,7 @@
     {
       "date": 1780105052790,
       "context": "Explanation field typed in the graph sidebar connection editor appeared to save (optimistic update worked) but was lost on reload.",
-      "outcome": "Found that the backend aim.update mutation explicitly reconstructed each supportingConnection object with only aimId, relativePosition, and weight — silently dropping explanation. Added explanation to the spread. Added a backend integration test that round-trips explanation through update and re-read.",
+      "outcome": "Found that the backend idea.update mutation explicitly reconstructed each supportingConnection object with only aimId, relativePosition, and weight — silently dropping explanation. Added explanation to the spread. Added a backend integration test that round-trips explanation through update and re-read.",
       "effectiveness": "One-line fix, root cause was immediately visible from reading the mapping code. Frontend test already covered the blur/race case; only the persistence layer was missing coverage.",
       "lesson": "Explicit field reconstruction (mapping to a new object) is dangerous — it silently drops any fields not listed. Either spread the original object first and override specific fields, or list all fields explicitly with a type check."
     }

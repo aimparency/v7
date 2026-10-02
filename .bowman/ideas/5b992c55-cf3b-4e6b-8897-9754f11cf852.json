@@ -1,14 +1,14 @@
 {
   "id": "5b992c55-cf3b-4e6b-8897-9754f11cf852",
-  "text": "Improve discoverability of uncommitted aims (so the autonomous loop finds all open work, not just phase-committed)",
-  "description": "Found via Felix's hunch: 60 of 81 open aims (74%) are not committed to any phase yet all have parents, so they were invisible to every discovery path — get_prioritized_aims only ranks phase-committed aims, and the `floating` filter requires no-phase AND no-parents. Fixed in commit ca20f0e: added an `uncommitted` filter (backend aim.list + MCP list_aims), an `uncommittedOpen` section in graph_hygiene, and pointed get_prioritized_aims/list_aims/graph_hygiene descriptions at it + commit_aim_to_phase. Remaining: triage the existing ~60 uncommitted open aims into phases (judgment per aim — left for incremental/human triage now that they're findable).",
+  "text": "Improve discoverability of uncommitted ideas (so the autonomous loop finds all open work, not just phase-committed)",
+  "description": "Found via Felix's hunch: 60 of 81 open ideas (74%) are not committed to any phase yet all have parents, so they were invisible to every discovery path — get_prioritized_ideas only ranks phase-committed ideas, and the `floating` filter requires no-phase AND no-parents. Fixed in commit ca20f0e: added an `uncommitted` filter (backend idea.list + MCP list_ideas), an `uncommittedOpen` section in graph_hygiene, and pointed get_prioritized_ideas/list_ideas/graph_hygiene descriptions at it + commit_idea_to_phase. Remaining: triage the existing ~60 uncommitted open ideas into phases (judgment per idea — left for incremental/human triage now that they're findable).",
   "reflections": [
     {
       "date": 1782451678987,
-      "context": "Felix's hunch that uncommitted aims weren't being returned by the loop's discovery tools. The prioritized-aims loop kept surfacing only vague container aims.",
-      "outcome": "Proved with data: 60/81 open aims (74%) are unphased-but-parented — invisible because get_prioritized_aims needs a phase and the floating filter needs no-parents. Added an `uncommitted` filter + graph_hygiene uncommittedOpen section + description nudges (ca20f0e, tested).",
+      "context": "Felix's hunch that uncommitted ideas weren't being returned by the loop's discovery tools. The prioritized-ideas loop kept surfacing only vague container ideas.",
+      "outcome": "Proved with data: 60/81 open ideas (74%) are unphased-but-parented — invisible because get_prioritized_ideas needs a phase and the floating filter needs no-parents. Added an `uncommitted` filter + graph_hygiene uncommittedOpen section + description nudges (ca20f0e, tested).",
       "effectiveness": "High: a single missing filter dimension was hiding three-quarters of open work from an autonomous loop whose whole premise is finding work. Cheap fix, large unblock.",
-      "lesson": "When an autonomous loop 'runs out of work', suspect the DISCOVERY query before concluding the backlog is empty. Two near-synonymous concepts (no-phase vs no-parents) were conflated in one filter, creating a blind spot exactly where most aims live.",
+      "lesson": "When an autonomous loop 'runs out of work', suspect the DISCOVERY query before concluding the backlog is empty. Two near-synonymous concepts (no-phase vs no-parents) were conflated in one filter, creating a blind spot exactly where most ideas live.",
       "pattern": "discovery-blind-spot; distrust-empty-queue"
     }
   ],
@@ -32,7 +32,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Tooling shipped in ca20f0e with tests. Backlog triage of the ~60 existing uncommitted aims is now possible via list_aims uncommitted=true / graph_hygiene uncommittedOpen.",
+    "comment": "Tooling shipped in ca20f0e with tests. Backlog triage of the ~60 existing uncommitted ideas is now possible via list_ideas uncommitted=true / graph_hygiene uncommittedOpen.",
     "date": 1782451665138
   },
   "intrinsicValue": 0,

@@ -1,6 +1,6 @@
 {
   "id": "c6cdb537-d734-47ff-94da-269cdcbadc3a",
-  "text": "pressing tab in edit aim from tag input jumps to the wrong input element...",
+  "text": "pressing tab in edit idea from tag input jumps to the wrong input element...",
   "description": "should jump to buttons i think and not to description (we reordered intentionally)",
   "tags": [],
   "supportingConnections": [],

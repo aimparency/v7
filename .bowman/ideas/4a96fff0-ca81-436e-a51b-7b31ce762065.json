@@ -6,7 +6,7 @@
     {
       "date": 1782562825336,
       "context": "Foundation for self-rebuild/relaunch (5af61b3e): the supervisor must notice when the agent edits wrapped-agents' own source so a stale running build can be rebuilt+relaunched.",
-      "outcome": "Added wrapper-watch.ts (mtime-based detection of changed wrapped-agents/*/src .ts since launch, pruning node_modules/dist/client) and WatchdogService.checkWrapperDirty() — throttled (~15s) and latched — called at the top of tick(). Exposed wrapperDirty/changedWrapperFiles/isWrapperDirty() as the seam for the relaunch-prompt and broker-rebuild aims.",
+      "outcome": "Added wrapper-watch.ts (mtime-based detection of changed wrapped-agents/*/src .ts since launch, pruning node_modules/dist/client) and WatchdogService.checkWrapperDirty() — throttled (~15s) and latched — called at the top of tick(). Exposed wrapperDirty/changedWrapperFiles/isWrapperDirty() as the seam for the relaunch-prompt and broker-rebuild ideas.",
       "effectiveness": "Verified-done: `tsc --noEmit` clean and `npm test` green at 52/52, including 6 new tests covering collection/pruning, baseline (nothing dirty at launch), single-file detection, pruned-dir exclusion, and the WatchdogService latch + throttle behavior.",
       "lesson": "common is a CommonJS package (module:commonjs) — `import.meta.url` fails type-check there; use __dirname (matches session-memory.ts). mtime-since-launch beats `git status` here because dev runs via tsx (no watch) and it catches committed-but-not-rebuilt edits too.",
       "pattern": "Keep detection a pure, separately-tested helper; integrate via a thin throttled/latched method so the supervisor tick stays cheap."

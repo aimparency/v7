@@ -1,7 +1,7 @@
 {
   "id": "be32e3a6-2240-4632-8f53-d305fe25a7fb",
   "text": "Add human-dependend state to default initial states",
-  "description": "Add \"human-dependent\" status to the default initial statuses when creating new .bowman projects.\n\n**HUMAN REVIEW REQUIRED:**\nCurrent default statuses in new projects: open, done, cancelled, partially, failed, unclear\n\n**Should we add:**\n- human-dependent (for aims blocked by human action/decision)\n-> yes\n\n**Questions:**\n1. Should this be in default statuses for all new projects?\n-> exactly\n2. Should we add any other useful default statuses?\n-> we add only human-dependent to the current list\n3. Color choice for human-dependent: #bf409f (current in this project) - acceptable?\n-> acceptable!",
+  "description": "Add \"human-dependent\" status to the default initial statuses when creating new .bowman projects.\n\n**HUMAN REVIEW REQUIRED:**\nCurrent default statuses in new projects: open, done, cancelled, partially, failed, unclear\n\n**Should we add:**\n- human-dependent (for ideas blocked by human action/decision)\n-> yes\n\n**Questions:**\n1. Should this be in default statuses for all new projects?\n-> exactly\n2. Should we add any other useful default statuses?\n-> we add only human-dependent to the current list\n3. Color choice for human-dependent: #bf409f (current in this project) - acceptable?\n-> acceptable!",
   "reflections": [],
   "archived": false,
   "tags": [],

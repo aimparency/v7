@@ -1,7 +1,7 @@
 {
   "id": "65cedba2-e098-46a7-9318-c580392d224d",
   "text": "sidepanel opacity 1 after click in graph ui",
-  "description": "I think it would be a good thing if the sidepanel opacity get's set to 1 when an aim or connection is selected. When the user starts zoom or pan the opacity is low again if not hovering.",
+  "description": "I think it would be a good thing if the sidepanel opacity get's set to 1 when an idea or connection is selected. When the user starts zoom or pan the opacity is low again if not hovering.",
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [],

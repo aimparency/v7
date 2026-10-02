@@ -1,7 +1,7 @@
 {
   "id": "461ccc84-c750-4ca5-82b2-741e41e94d9d",
   "text": "Backend: stop writing phase files from the read path",
-  "description": "readPhaseFile (server.ts) re-derives childPhaseIds from every phase file's .parent (an O(n) directory scan per phase read, so O(n^2) for listPhases) and silently rewrites the parent with writePhase(..., emitChange=false). Race: phase.update writes the old parent without the moved phase before writing the moved phase's new .parent; a read of the old parent in that window re-adds the phase and persists it, so it ends up under both parents, and clients never get a push for that write. Fix: trust stored childPhaseIds when present; derive only in memory for legacy files without childPhaseIds; move orphan/parent-mismatch repair into fixConsistency (like migrateAimFiles for aims).",
+  "description": "readPhaseFile (server.ts) re-derives childPhaseIds from every phase file's .parent (an O(n) directory scan per phase read, so O(n^2) for listPhases) and silently rewrites the parent with writePhase(..., emitChange=false). Race: phase.update writes the old parent without the moved phase before writing the moved phase's new .parent; a read of the old parent in that window re-adds the phase and persists it, so it ends up under both parents, and clients never get a push for that write. Fix: trust stored childPhaseIds when present; derive only in memory for legacy files without childPhaseIds; move orphan/parent-mismatch repair into fixConsistency (like migrateIdeaFiles for ideas).",
   "reflections": [],
   "archived": false,
   "color": "#666666",

@@ -1,6 +1,6 @@
 {
   "id": "9ce4c6ab-e213-434f-8bb7-eeabddf1f94c",
-  "text": "double click in graph to create a free floating aim",
+  "text": "double click in graph to create a free floating idea",
   "description": "double click on free surface",
   "reflections": [],
   "archived": false,
@@ -10,7 +10,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented double-click handler on graph background to create floating aims at the clicked position.",
+    "comment": "Implemented double-click handler on graph background to create floating ideas at the clicked position.",
     "date": 1768080366396
   },
   "intrinsicValue": 0,

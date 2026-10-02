@@ -1,6 +1,6 @@
 {
   "id": "1ec81038-54e4-406e-8851-d47c8a4799f1",
-  "text": "just like navigation works across phases, moving aims should also work across phases (shift + j/k)",
+  "text": "just like navigation works across phases, moving ideas should also work across phases (shift + j/k)",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented cross-phase aim moving in moveAimDown (Shift+J) and moveAimUp (Shift+K). Logic now detects phase boundaries and moves the aim to the start/end of the adjacent phase, updating selection accordingly.",
+    "comment": "Implemented cross-phase idea moving in moveIdeaDown (Shift+J) and moveIdeaUp (Shift+K). Logic now detects phase boundaries and moves the idea to the start/end of the adjacent phase, updating selection accordingly.",
     "date": 1768591830707
   },
   "intrinsicValue": 0,

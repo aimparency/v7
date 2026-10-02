@@ -1,7 +1,7 @@
 {
   "id": "e47f35d4-c805-4422-bef7-f695348baf4e",
   "text": "Freeze autonomy benchmark v3 with calibration-derived budgets",
-  "description": "Create a versioned v3 execution contract before new treatment evidence. Reuse the unchanged four v2 fixtures and unchanged capability/efficiency decision rules, but freeze gpt-5.6-sol, workspace-write-no-network, 170000 tokens and 90000 ms per run as derived by excluded pilots, alternating matched order, no retries, and eight required runs. Export a v3 protocol manifest and analyzer wrapper that reports version 2026-08-01.v3 while delegating unchanged scoring semantics to v2. Add deterministic tests for exact manifest values, v3 result versioning, and invalid incomplete evidence. Do not launch live agents in this aim.",
+  "description": "Create a versioned v3 execution contract before new treatment evidence. Reuse the unchanged four v2 fixtures and unchanged capability/efficiency decision rules, but freeze gpt-5.6-sol, workspace-write-no-network, 170000 tokens and 90000 ms per run as derived by excluded pilots, alternating matched order, no retries, and eight required runs. Export a v3 protocol manifest and analyzer wrapper that reports version 2026-08-01.v3 while delegating unchanged scoring semantics to v2. Add deterministic tests for exact manifest values, v3 result versioning, and invalid incomplete evidence. Do not launch live agents in this idea.",
   "reflections": [
     {
       "date": 1785599805083,

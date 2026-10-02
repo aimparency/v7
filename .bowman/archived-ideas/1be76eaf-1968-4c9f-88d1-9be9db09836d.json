@@ -1,7 +1,7 @@
 {
   "id": "1be76eaf-1968-4c9f-88d1-9be9db09836d",
   "text": "Bridge information→real world: give wrapped agents authorized real-world action tools so goals can leave the codebase",
-  "description": "Aimparency's core promise is helping anyone reach high-level real-world goals — e.g. build a house: contact contractors, compare quotes, schedule — not only self-development. Today the wrapped agents act only in the information/code world; the system is entirely dogfooded on itself. The frontier capability is real-world action behind human-authorized, auditable tools: email/messaging, web forms, calendar, payments. Driving ONE non-software goal end-to-end through the graph + agents would validate the general hypothesis beyond dogfooding. Credentials/authorization make parts of this human-dependent — pair tool integrations with clear human-setup aims.",
+  "description": "Aimparency's core promise is helping anyone reach high-level real-world goals — e.g. build a house: contact contractors, compare quotes, schedule — not only self-development. Today the wrapped agents act only in the information/code world; the system is entirely dogfooded on itself. The frontier capability is real-world action behind human-authorized, auditable tools: email/messaging, web forms, calendar, payments. Driving ONE non-software goal end-to-end through the graph + agents would validate the general hypothesis beyond dogfooding. Credentials/authorization make parts of this human-dependent — pair tool integrations with clear human-setup ideas.",
   "reflections": [],
   "archived": false,
   "tags": [],

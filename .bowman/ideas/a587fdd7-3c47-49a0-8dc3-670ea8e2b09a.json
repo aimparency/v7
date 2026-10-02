@@ -1,7 +1,7 @@
 {
   "id": "a587fdd7-3c47-49a0-8dc3-670ea8e2b09a",
   "text": "Calibrate autonomy benchmark resource budgets with excluded pilot runs",
-  "description": "Run a non-confirmatory calibration set over the four v2 fixtures to estimate authoritative token and wall-time distributions before any v3 preregistration. Label every record pilot-only and prohibit use in capability or efficiency scoring. Use gpt-5.6-sol, identical least-authority isolation, one stateless run per task, generous 200000-token/180000-ms capture limits, no retries, and preserve failures. Report observed max and a conservative proposed v3 per-run budget derived by a rule fixed before launch: ceiling(max observed tokens * 1.25 to nearest 10000) and ceiling(max observed wall time * 1.5 to nearest 30000), capped at 250000 tokens/240000 ms. Do not run graph-grounded treatment or a confirmatory comparison in this aim.",
+  "description": "Run a non-confirmatory calibration set over the four v2 fixtures to estimate authoritative token and wall-time distributions before any v3 preregistration. Label every record pilot-only and prohibit use in capability or efficiency scoring. Use gpt-5.6-sol, identical least-authority isolation, one stateless run per task, generous 200000-token/180000-ms capture limits, no retries, and preserve failures. Report observed max and a conservative proposed v3 per-run budget derived by a rule fixed before launch: ceiling(max observed tokens * 1.25 to nearest 10000) and ceiling(max observed wall time * 1.5 to nearest 30000), capped at 250000 tokens/240000 ms. Do not run graph-grounded treatment or a confirmatory comparison in this idea.",
   "reflections": [
     {
       "date": 1785599736094,

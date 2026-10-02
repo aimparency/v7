@@ -6,8 +6,8 @@
     {
       "date": 1774555085143,
       "context": "Prepare the repository surface for public open source release by cleaning up metadata, docs, tests, and accidental artifacts.",
-      "outcome": "Completed all repository hygiene sub-aims: audited package manifests and added LICENSE, created release checklist, fixed backend test coverage and parallelism, fenced off experimental directories, and improved documentation across core packages.",
-      "effectiveness": "Breaking the hygiene work into focused sub-aims (metadata, tests, experiments, checklist) allowed parallel progress and clear completion criteria. The release checklist provided a concrete definition of done.",
+      "outcome": "Completed all repository hygiene sub-ideas: audited package manifests and added LICENSE, created release checklist, fixed backend test coverage and parallelism, fenced off experimental directories, and improved documentation across core packages.",
+      "effectiveness": "Breaking the hygiene work into focused sub-ideas (metadata, tests, experiments, checklist) allowed parallel progress and clear completion criteria. The release checklist provided a concrete definition of done.",
       "lesson": "Repository hygiene is distinct from runtime behavior. Hygiene (docs, metadata, tests, structure) can be completed independently from startup robustness (port fallback, clean-clone verification). Separating these concerns prevents scope creep.",
       "pattern": "This matches previous release-prep experience where documentation and structural cleanup provides high confidence gains early, while runtime verification requires separate focused work."
     }
@@ -92,7 +92,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Repository hygiene complete: manifests audited, LICENSE added, experiments fenced, tests working, docs in place. Remaining release-prep work is in runtime/startup behavior aims.",
+    "comment": "Repository hygiene complete: manifests audited, LICENSE added, experiments fenced, tests working, docs in place. Remaining release-prep work is in runtime/startup behavior ideas.",
     "date": 1774555084964
   },
   "intrinsicValue": 0,

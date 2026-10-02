@@ -1,6 +1,6 @@
 {
   "id": "81293987-ba2b-45a3-ac09-d9d9dc2138a7",
-  "text": "ensure consistency should also check if we have any embeddings or cache for data (e.g. aims) that don't exist anymore",
+  "text": "ensure consistency should also check if we have any embeddings or cache for data (e.g. ideas) that don't exist anymore",
   "description": "",
   "tags": [],
   "supportingConnections": [],
@@ -10,7 +10,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented consistency checks and fixes for orphaned embeddings and aim_values cache.",
+    "comment": "Implemented consistency checks and fixes for orphaned embeddings and idea_values cache.",
     "date": 1768081233340
   },
   "intrinsicValue": 0,

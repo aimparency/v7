@@ -38,7 +38,7 @@
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "Blocked by need for browser reload testing on real machine - see supporting aim afd3e0ff",
+    "comment": "Blocked by need for browser reload testing on real machine - see supporting idea afd3e0ff",
     "date": 1774590174435
   },
   "intrinsicValue": 0,

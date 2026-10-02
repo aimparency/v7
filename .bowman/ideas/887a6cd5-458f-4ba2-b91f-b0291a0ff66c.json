@@ -1,8 +1,8 @@
 {
   "id": "887a6cd5-458f-4ba2-b91f-b0291a0ff66c",
-  "text": "Select multiple aims",
+  "text": "Select multiple ideas",
   "description": "",
-  "reflection": "Graph behavior now matches list behavior: ordinary aim and background clicks clear multi-selection; Ctrl/Cmd toggles membership; long-pressing an aim already in a multi-selection opens the bulk editor. Existing behavior for long-pressing an unselected aim remains unchanged pending user direction. Focused selection tests pass 31/31 and production frontend build passes.",
+  "reflection": "Graph behavior now matches list behavior: ordinary idea and background clicks clear multi-selection; Ctrl/Cmd toggles membership; long-pressing an idea already in a multi-selection opens the bulk editor. Existing behavior for long-pressing an unselected idea remains unchanged pending user direction. Focused selection tests pass 31/31 and production frontend build passes.",
   "reflections": [],
   "archived": false,
   "tags": [],

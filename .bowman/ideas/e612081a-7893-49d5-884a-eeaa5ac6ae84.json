@@ -1,7 +1,7 @@
 {
   "id": "e612081a-7893-49d5-884a-eeaa5ac6ae84",
-  "text": "Aim cursor: j/k walk the visible rows of the list",
-  "description": "Slice 1 of 562cdb60. getVisibleAimRows (navigation-helpers) derives the rendered rows (top-level aims plus children of expanded aims, as index paths). navigateDown/Up step one row through list-store getAimListScope/selectAimRow/stepAimRow. Crossing a phase boundary enters at the first row going down and the last visible row going up. Replaces the per-level selectedIncomingIndex juggling, goToLastChildAim, and the stale-index condition. Cursor state is still encoded as selectedAimIndex/floatingAimIndex plus the selectedIncomingIndex chain; replacing that is slice 3.",
+  "text": "Idea cursor: j/k walk the visible rows of the list",
+  "description": "Slice 1 of 562cdb60. getVisibleIdeaRows (navigation-helpers) derives the rendered rows (top-level ideas plus children of expanded ideas, as index paths). navigateDown/Up step one row through list-store getIdeaListScope/selectIdeaRow/stepIdeaRow. Crossing a phase boundary enters at the first row going down and the last visible row going up. Replaces the per-level selectedIncomingIndex juggling, goToLastChildIdea, and the stale-index condition. Cursor state is still encoded as selectedIdeaIndex/floatingIdeaIndex plus the selectedIncomingIndex chain; replacing that is slice 3.",
   "reflections": [],
   "archived": false,
   "color": "#666666",
@@ -13,7 +13,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Implemented and unit-tested; needs Felix to try j/k through expanded aims in the list view (behavior change: j now enters an expanded aim's children).",
+    "comment": "Implemented and unit-tested; needs Felix to try j/k through expanded ideas in the list view (behavior change: j now enters an expanded idea's children).",
     "date": 1790717105186
   },
   "intrinsicValue": 2,

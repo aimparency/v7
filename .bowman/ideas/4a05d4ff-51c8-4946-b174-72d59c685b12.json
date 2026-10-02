@@ -1,6 +1,6 @@
 {
   "id": "4a05d4ff-51c8-4946-b174-72d59c685b12",
-  "text": "add color to aim data model",
+  "text": "add color to idea data model",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Added optional nullable hex `color` field to AimSchema (shared/types.ts). Persists through the existing update path (input is AimSchema.partial(), handler spreads {...existingAim, ...input.aim}). A color picker + Clear button added to AimEditModal (sends null to clear). shared/dist rebuilt; backend+frontend typecheck clean; 2 regression tests added.",
+    "comment": "Added optional nullable hex `color` field to AimSchema (shared/types.ts). Persists through the existing update path (input is AimSchema.partial(), handler spreads {...existingIdea, ...input.idea}). A color picker + Clear button added to AimEditModal (sends null to clear). shared/dist rebuilt; backend+frontend typecheck clean; 2 regression tests added.",
     "date": 1780144865316
   },
   "intrinsicValue": 0,

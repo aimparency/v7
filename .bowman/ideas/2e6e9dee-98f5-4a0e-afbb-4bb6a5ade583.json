@@ -1,6 +1,6 @@
 {
   "id": "2e6e9dee-98f5-4a0e-afbb-4bb6a5ade583",
-  "text": "when entering aim title in add/edit aim modal, typing c (and maybe other shortcut letters) should not actually cause the color toggle",
+  "text": "when entering idea title in add/edit idea modal, typing c (and maybe other shortcut letters) should not actually cause the color toggle",
   "description": "",
   "reflections": [],
   "archived": false,

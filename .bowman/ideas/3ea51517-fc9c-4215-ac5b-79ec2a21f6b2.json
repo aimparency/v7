@@ -9,7 +9,7 @@
       "outcome": "Architecture fully implemented and verified: browser UI connects to local Node backend/broker services, all services support port fallback, .bowman project discovery works, current project is visible in UI, and git-friendly file-based storage is documented. Tests and builds pass.",
       "effectiveness": "High. The architecture is implemented, tested, and documented. The only remaining validation is end-to-end human testing of the startup flow on a fresh clone.",
       "lesson": "For local-first architectures, implementation and verification can be separated: runtime behavior (port fallback, connection logic, file storage) can be verified via tests and validators in sandbox, while first-run UX requires real-machine testing.",
-      "pattern": "This follows the same pattern as the parent publishability aim: technical implementation completes first, then human verification gates the final 'done' status."
+      "pattern": "This follows the same pattern as the parent publishability idea: technical implementation completes first, then human verification gates the final 'done' status."
     }
   ],
   "archived": false,
@@ -55,7 +55,7 @@
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "Blocked by need for real-machine clean-clone testing - see supporting aim ee7781d4",
+    "comment": "Blocked by need for real-machine clean-clone testing - see supporting idea ee7781d4",
     "date": 1774590174324
   },
   "intrinsicValue": 0,

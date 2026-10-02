@@ -1,8 +1,8 @@
 {
   "id": "b0f6a19a-7d09-4454-97e5-8da581f14bb1",
-  "text": "when bringing into view an aim or connection in the graph view, build a proper \"camera path\".",
+  "text": "when bringing into view an idea or connection in the graph view, build a proper \"camera path\".",
   "description": "API for camera path: \nfromRect\ntoRect\n\nThen it calculates a path. \nAt the middle (p=0.5) the bounding box of fromRect and toRect should be the target. \nSo we have 3 points. start, overview, end. \nand we have pan and zoom. \n\nOnce the path is ready, move ease out along it.",
-  "reflection": "Explicit graph focus now follows a three-keyframe camera path: current viewport, a fitted overview of the union of current and destination rectangles at p=0.5, then the fitted aim/connection destination. Node zoom caps and connection fitting remain intact; tracking/manual camera logic is unchanged. Added pure rectangle fitting/union helpers and midpoint regression coverage. Also corrected a GraphSidePanel test double to return the complete aim contract, eliminating its delayed recalculation exception. Verification: map tests 3/3, complete frontend suite 192/192, frontend production build/type-check, and git diff --check passed. Runtime visual review remains because no server was running and it was not started.",
+  "reflection": "Explicit graph focus now follows a three-keyframe camera path: current viewport, a fitted overview of the union of current and destination rectangles at p=0.5, then the fitted idea/connection destination. Node zoom caps and connection fitting remain intact; tracking/manual camera logic is unchanged. Added pure rectangle fitting/union helpers and midpoint regression coverage. Also corrected a GraphSidePanel test double to return the complete idea contract, eliminating its delayed recalculation exception. Verification: map tests 3/3, complete frontend suite 192/192, frontend production build/type-check, and git diff --check passed. Runtime visual review remains because no server was running and it was not started.",
   "reflections": [],
   "archived": false,
   "tags": [],

@@ -1,7 +1,7 @@
 {
   "id": "a69780ba-c8d7-48cc-965c-390c1eb72d42",
   "text": "costs should add up from bottomt to top",
-  "description": "so aims have \"intrinsic cost\". \nWhen A has to supporting aims B and C. A has intrinsic cost 5 A: 3 B: 2 then A has actual cost 5 + 3 + 2 = 10. \nBy the way: if an aim supports multiple parent aims, it's costs get added on each path (not splitted).",
+  "description": "so ideas have \"intrinsic cost\". \nWhen A has to supporting ideas B and C. A has intrinsic cost 5 A: 3 B: 2 then A has actual cost 5 + 3 + 2 = 10. \nBy the way: if an idea supports multiple parent ideas, it's costs get added on each path (not splitted).",
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [],

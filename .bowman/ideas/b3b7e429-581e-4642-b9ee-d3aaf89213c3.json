@@ -1,7 +1,7 @@
 {
   "id": "b3b7e429-581e-4642-b9ee-d3aaf89213c3",
   "text": "project meta settings",
-  "description": ".bowman/meta.json\nthings like aim states. \nInitialize with defaults on absence or initialization.\n\nAddition: store it in .bowman/meta.json not directly in project dir",
+  "description": ".bowman/meta.json\nthings like idea states. \nInitialize with defaults on absence or initialization.\n\nAddition: store it in .bowman/meta.json not directly in project dir",
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [

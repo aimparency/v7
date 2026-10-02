@@ -39,7 +39,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Committed (fb3a1de by Felix, refined in 8e0d832; deletion case in child aim). Tests green. Needs Felix's live Shift+J/K check across parent boundaries.",
+    "comment": "Committed (fb3a1de by Felix, refined in 8e0d832; deletion case in child idea). Tests green. Needs Felix's live Shift+J/K check across parent boundaries.",
     "date": 1790716219695
   },
   "intrinsicValue": 1,

@@ -1,6 +1,6 @@
 {
   "id": "7a1e6736-8627-4675-ac43-214df0d80026",
-  "text": "when creating aims: show the supported aims with a weight field each (input in %, then calculate the actual weight based on the other supporting aims and loop weight of the supported aim)",
+  "text": "when creating ideas: show the supported ideas with a weight field each (input in %, then calculate the actual weight based on the other supporting ideas and loop weight of the supported idea)",
   "description": "",
   "reflections": [],
   "archived": false,
@@ -21,5 +21,5 @@
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "reflection": "Cancelled during status reconciliation on 2026-07-30 because the aim’s own prior analysis identifies a newer implementation that supersedes this raw creation-form approach."
+  "reflection": "Cancelled during status reconciliation on 2026-07-30 because the idea’s own prior analysis identifies a newer implementation that supersedes this raw creation-form approach."
 }

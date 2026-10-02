@@ -1,7 +1,7 @@
 {
   "id": "7634e681-d234-48fa-ad82-876ef97460ca",
-  "text": "ideate how we can reach ASI (make AI autonomously work towards ideas by using the aim graph and the wrapped agents)",
-  "description": "ideate using aimparency. Cooperate with human to create aims. look at the stem, the largest aims. ",
+  "text": "ideate how we can reach ASI (make AI autonomously work towards ideas by using the idea graph and the wrapped agents)",
+  "description": "ideate using aimparency. Cooperate with human to create ideas. look at the stem, the largest ideas. ",
   "reflection": "On 2026-08-01, the ASI ideation branch was reframed from completed feature ideation into four falsifiable evidence tracks: graph-grounded capability versus baseline, three bounded self-improvement cycles, adversarial corrigibility, and externally accepted value.",
   "reflections": [],
   "archived": false,

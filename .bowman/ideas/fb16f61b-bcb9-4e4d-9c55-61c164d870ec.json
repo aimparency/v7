@@ -6,7 +6,7 @@
     {
       "date": 1774556055932,
       "context": "Make MCP and voice truly optional in both install and runtime flows for the open source release.",
-      "outcome": "Completed both supporting aims: voice is now hidden by default unless explicitly enabled via runtime flag, and the packaging decision resolved to keep optional packages in workspace but exclude them from default commands.",
+      "outcome": "Completed both supporting ideas: voice is now hidden by default unless explicitly enabled via runtime flag, and the packaging decision resolved to keep optional packages in workspace but exclude them from default commands.",
       "effectiveness": "Breaking this into UI-level (voice flag) and packaging-level (workspace structure) concerns allowed independent resolution. The voice flag was implemented as a runtime-config feature, while the packaging stayed as-is with clear script separation.",
       "lesson": "Optional integrations can be made truly optional at multiple layers: runtime UI visibility, build scripts, and documentation. All three need alignment for a clean first-run experience.",
       "pattern": "This follows the runtime complexity reduction pattern: simplify defaults while preserving opt-in paths for contributors who need the full feature set."

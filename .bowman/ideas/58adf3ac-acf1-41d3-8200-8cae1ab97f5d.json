@@ -1,6 +1,6 @@
 {
   "id": "58adf3ac-acf1-41d3-8200-8cae1ab97f5d",
-  "text": "sort aims by highest priority",
+  "text": "sort ideas by highest priority",
   "description": "useful in combination with limit",
   "tags": [],
   "supportingConnections": [
@@ -19,7 +19,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented 'priority' option in sortBy for list-aims. Calculates priority as intrinsicValue / cost. Updated backend and MCP schema.",
+    "comment": "Implemented 'priority' option in sortBy for list-ideas. Calculates priority as intrinsicValue / cost. Updated backend and MCP schema.",
     "date": 1766345236557
   },
   "intrinsicValue": 0,

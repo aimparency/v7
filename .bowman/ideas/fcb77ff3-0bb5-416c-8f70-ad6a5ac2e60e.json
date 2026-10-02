@@ -1,7 +1,7 @@
 {
   "id": "fcb77ff3-0bb5-416c-8f70-ad6a5ac2e60e",
   "text": "Design an AI autonomy transformation diagnostic and owner roadmap",
-  "description": "Create a sellable diagnostic that maps company mission, owner constraints, value streams, recurring decisions, dependencies, data/access boundaries, failure costs, and unit economics. Rank candidate automation loops by economic value, reversibility, evidence availability, and supervision burden. Leave the owner with a useful inspectable aim graph even if no further engagement follows.",
+  "description": "Create a sellable diagnostic that maps company mission, owner constraints, value streams, recurring decisions, dependencies, data/access boundaries, failure costs, and unit economics. Rank candidate automation loops by economic value, reversibility, evidence availability, and supervision burden. Leave the owner with a useful inspectable idea graph even if no further engagement follows.",
   "reflection": "Created meta/ai-autonomy-transformation-diagnostic.md. It operationalizes the offer with owner mandate and decision rights, authoritative economic baselines, value-stream/dependency mapping, candidate loop cards, evidence-weighted ranking, readiness gates, staged rollout, owner handoff, and Aimparency's own real margin/reuse/concentration survival metrics. It explicitly excludes synthetic revenue, mock credits, and activity metrics. Verification: git diff --check passed; required evidence, cost, reversibility, stop, reuse, and client-dependency fields are present.",
   "reflections": [],
   "archived": false,

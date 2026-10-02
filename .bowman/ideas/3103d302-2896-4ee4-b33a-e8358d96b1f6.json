@@ -1,7 +1,7 @@
 {
   "id": "3103d302-2896-4ee4-b33a-e8358d96b1f6",
   "text": "analyze the options.",
-  "description": "Modal is usually wider than the side panel. \nSide panel in mobile ui would need to fill entire width. \nUI is not trivial here. \nIs there any reason why we'd need separate/different content for side panel and edit aim / edit phase / edit connection?",
+  "description": "Modal is usually wider than the side panel. \nSide panel in mobile ui would need to fill entire width. \nUI is not trivial here. \nIs there any reason why we'd need separate/different content for side panel and edit idea / edit phase / edit connection?",
   "reflections": [],
   "archived": false,
   "tags": [],

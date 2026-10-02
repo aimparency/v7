@@ -1,7 +1,7 @@
 {
   "id": "c4ab85c2-0497-48de-ae93-3dc7b4c2aa60",
-  "text": "Multi-parent aim support: Show all paths to an aim in list view",
-  "description": "Aims can support multiple parents (synergies). Graph view already shows this well.\n\nList view needs enhancement:\n- When viewing an aim with multiple supportedAims, show all paths\n- \"This aim supports: [Aim A] [Aim B] [Aim C]\"\n- Click to navigate to each parent path\n- Visual indicator for multi-parent aims (badge/icon)\n\nAlready implemented in data model, just needs UI support.",
+  "text": "Multi-parent idea support: Show all paths to an idea in list view",
+  "description": "Ideas can support multiple parents (synergies). Graph view already shows this well.\n\nList view needs enhancement:\n- When viewing an idea with multiple supportedIdeas, show all paths\n- \"This idea supports: [Idea A] [Idea B] [Idea C]\"\n- Click to navigate to each parent path\n- Visual indicator for multi-parent ideas (badge/icon)\n\nAlready implemented in data model, just needs UI support.",
   "tags": [
     "ui",
     "multi-parent",
@@ -16,7 +16,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Implemented multi-parent aim support in list view. Added visual badge showing number of parents, expandable section listing all parent aims with click-to-navigate. Uses purple color scheme to distinguish from children (blue). All 65 frontend tests pass.",
+    "comment": "Implemented multi-parent idea support in list view. Added visual badge showing number of parents, expandable section listing all parent ideas with click-to-navigate. Uses purple color scheme to distinguish from children (blue). All 65 frontend tests pass.",
     "date": 1772064642015
   },
   "intrinsicValue": 0,

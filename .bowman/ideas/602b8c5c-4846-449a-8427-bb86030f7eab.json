@@ -5,7 +5,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Implemented 'checkConsistency' and 'fixConsistency' endpoints in backend. They handle validation and repair of bidirectional links (Aim<->Phase, Aim<->Aim). Verified with build.",
+    "comment": "Implemented 'checkConsistency' and 'fixConsistency' endpoints in backend. They handle validation and repair of bidirectional links (Idea<->Phase, Idea<->Idea). Verified with build.",
     "date": 1765018713374
   },
   "supportingConnections": [],

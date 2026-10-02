@@ -1,6 +1,6 @@
 {
   "id": "8ac03697-c34f-46c6-8b54-678418d5adb2",
-  "text": "Hypothesis: Aim-graph grounding improves autonomous long-horizon software delivery versus a stateless baseline",
+  "text": "Hypothesis: Idea-graph grounding improves autonomous long-horizon software delivery versus a stateless baseline",
   "description": "Run a controlled benchmark on a fixed set of representative repository tasks. Compare (A) the wrapped agent using Aimparency context, prioritization, durable memory, reflection, and recovery with (B) the same model/tool budget using only the task prompt and repository. Pre-register tasks and scoring. Measure verified task completion, human interventions, wall-clock time, token/tool cost, recovery from injected failure, and policy violations. Pass only if the graph-grounded condition improves verified completion or materially reduces intervention without worse safety. Preserve prompts, run records, commits, tests, and negative results.",
   "reflection": "The first controlled graph-grounding trial did not support the preregistered completion/intervention hypothesis: both conditions completed all four easy tasks with zero intervention and zero safety violations. Graph grounding showed exploratory reductions in tokens (12.38%), tools (17.65%), and wall time (5.01%), but these were not registered pass criteria. A zero-baseline analyzer bug initially returned positive; it was preserved, corrected with a regression test, and the same records re-analyzed to null without reruns.",
   "reflections": [

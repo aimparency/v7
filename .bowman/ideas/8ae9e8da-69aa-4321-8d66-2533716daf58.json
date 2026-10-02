@@ -31,7 +31,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Implemented sweep and prune collision detection and decoupled render position using 0.5px Manhattan distance threshold. Removed forced updates during drag to rely on universal threshold logic. Fixed regressions in drag/drop and initial aim sizing. Fixed TypeScript errors.",
+    "comment": "Implemented sweep and prune collision detection and decoupled render position using 0.5px Manhattan distance threshold. Removed forced updates during drag to rely on universal threshold logic. Fixed regressions in drag/drop and initial idea sizing. Fixed TypeScript errors.",
     "date": 1774813783193
   },
   "intrinsicValue": 0,

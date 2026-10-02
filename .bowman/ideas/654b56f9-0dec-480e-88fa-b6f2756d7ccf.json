@@ -1,8 +1,8 @@
 {
   "id": "654b56f9-0dec-480e-88fa-b6f2756d7ccf",
   "text": "Implement recursive compression of old session summaries in wrapped-agents to bound memory usage",
-  "description": "The compressOldSessions function in session-memory.ts has a TODO: use LLM call to compress N summaries into one meta-summary when over threshold. Currently just logs. Implement this to keep session memory bounded for long-running autonomy. Integrate call from watchdog or periodically. This improves supervisor reliability and supports cross-session learning in the ASI ideation aim.",
-  "reflection": "Completed via wiring aim 25c7b4e9 now done. The recursive compression now supports and uses LLM summarizer.",
+  "description": "The compressOldSessions function in session-memory.ts has a TODO: use LLM call to compress N summaries into one meta-summary when over threshold. Currently just logs. Implement this to keep session memory bounded for long-running autonomy. Integrate call from watchdog or periodically. This improves supervisor reliability and supports cross-session learning in the ASI ideation idea.",
+  "reflection": "Completed via wiring idea 25c7b4e9 now done. The recursive compression now supports and uses LLM summarizer.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -24,7 +24,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "LLM based compression implemented via the wiring aim. Now uses agent LLM for summaries.",
+    "comment": "LLM based compression implemented via the wiring idea. Now uses agent LLM for summaries.",
     "date": 1784019905340
   },
   "intrinsicValue": 0,

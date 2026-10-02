@@ -1,6 +1,6 @@
 {
   "id": "632f83e7-f22b-4c98-b75b-f1e517bcce98",
-  "text": "prevent shift + tab on first input field of add/edit aim and phase modal",
+  "text": "prevent shift + tab on first input field of add/edit idea and phase modal",
   "description": "focus should stay inside modal",
   "tags": [],
   "supportingConnections": [],
