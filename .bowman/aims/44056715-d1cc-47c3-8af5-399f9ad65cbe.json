@@ -1,0 +1,25 @@
+{
+  "id": "44056715-d1cc-47c3-8af5-399f9ad65cbe",
+  "text": "Decide whether to rename \"aim\" to \"idea\" across Aimparency",
+  "description": "Felix asked (2026-10-02) how much effort renaming aims→ideas throughout the project would be, explicitly \"don't start yet\". Estimate recorded: ~1–2 focused days. Scale: ~400 tracked files / ~8.7k matching lines (frontend 3.9k, backend 1.6k, mcp 0.8k, wrapped-agents 0.5k), 46 files with \"aim\" in the path; \"idea\" is nearly unused in packages, so no collisions. Mechanical codemod ~2–3h (case-preserving, exclude \"aimparency\", \"claim\", English inflections like \"aimed\"). Real cost: (1) persisted data — 765 .bowman/aims JSONs, archived-aims, cache.db, semantic-graph.json, phase refs, field names like supportedAims, plus every linked repo's .bowman → migration + legacy-read fallback; (2) external contract — MCP tool names (create_aim, get_aim_context…) referenced in hooks, CLAUDE.md, supervisor/loop prompts, agent memory → aliases or coordinated switch; (3) git history — parseAimCommitEvidence must accept old commit format forever; (4) wrapped agents share the working tree → pause them during the 400-file commit. Semantic concern: an aim has status, phase commitment and supports other aims; \"idea\" connotes uncommitted, and \"Aimparency\" would lose its referent. Cheaper alternative: UI-label-only rename (~1–2h, no migration). Decision needed from Felix: full rename, UI-only, or keep \"aim\".",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedAims": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Awaiting Felix's decision: full rename (1–2 days incl. data/MCP migration), UI-label-only rename (1–2h), or keep \"aim\". Do not start without explicit go.",
+    "date": 1790926935242
+  },
+  "intrinsicValue": 1,
+  "cost": 2,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
