@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs-extra';
 import path from 'path';
 import type { Phase, ProjectMeta } from 'shared';
+import { assertWritableBowman } from 'shared/bowman-migration';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 
 export const createPhaseRouter = (
@@ -242,6 +243,7 @@ export const createPhaseRouter = (
         }
         const phasePath = path.join(projectPath, 'phases', `${input.phaseId}.json`);
         const previous = await fs.readJson(phasePath).catch(() => null);
+        await assertWritableBowman(projectPath);
         await fs.remove(phasePath);
 
         await cleanupCommitments(input.projectPath, input.phaseId);

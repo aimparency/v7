@@ -1,0 +1,22 @@
+{
+  "id": "44444444-4444-4444-8444-444444444444",
+  "text": "Archived aim",
+  "description": "Fixture aim: Archived aim",
+  "tags": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "cancelled in fixture",
+    "date": 1700000000000
+  },
+  "supportedAims": [],
+  "supportingConnections": [],
+  "committedIn": [],
+  "intrinsicValue": 0,
+  "cost": 2,
+  "duration": 1,
+  "loopWeight": 0,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflections": [],
+  "archived": true
+}

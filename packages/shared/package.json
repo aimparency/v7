@@ -20,7 +20,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "prepare": "tsc",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test \"src/**/*.test.ts\""
   },
   "keywords": [
     "aimparency",

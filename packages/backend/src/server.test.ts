@@ -6,6 +6,7 @@ import path from 'path';
 import { appRouter } from './server';
 import { clearIndices } from './search';
 import type { Phase, ProjectMeta } from 'shared';
+import { CURRENT_DATA_MODEL_VERSION } from 'shared';
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -1248,4 +1249,31 @@ test('a pre-rename .bowman (aims/, done) is migrated on first access and read as
   assert.deepStrictEqual(ideas.find((idea) => idea.id === childId)!.supportedIdeas, [parentId]);
   assert.deepStrictEqual(meta.statuses!.map((status) => status.key), ['open', 'implemented']);
   assert.equal(await fs.pathExists(path.join(testProjectPath, 'aims')), false);
+});
+
+test('opening an unversioned project records the current data model version', async () => {
+  await fs.outputJson(path.join(testProjectPath, 'meta.json'), { name: 'Old', color: '#007acc' });
+  const meta = await caller.project.getMeta({ projectPath: testProjectPath });
+  assert.equal(meta.dataModelVersion, CURRENT_DATA_MODEL_VERSION);
+  assert.equal((await fs.readJson(path.join(testProjectPath, 'meta.json'))).dataModelVersion, CURRENT_DATA_MODEL_VERSION);
+});
+
+test('a project from a newer Aimparency can be read but not changed', async () => {
+  const ideaId = uuidv4();
+  await fs.outputJson(path.join(testProjectPath, 'ideas', `${ideaId}.json`), {
+    id: ideaId, text: 'Written by the future', tags: [], committedIn: [], supportedIdeas: [], supportingConnections: [],
+    status: { state: 'open', comment: '', date: 1 }
+  });
+  const newer = { name: 'Future', color: '#007acc', repoId: uuidv4(), dataModelVersion: CURRENT_DATA_MODEL_VERSION + 1 };
+  await fs.outputJson(path.join(testProjectPath, 'meta.json'), newer);
+
+  assert.equal((await caller.project.getMeta({ projectPath: testProjectPath })).name, 'Future');
+  assert.deepStrictEqual((await caller.idea.list({ projectPath: testProjectPath })).map((idea) => idea.id), [ideaId]);
+
+  await assert.rejects(
+    caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'New', status: { state: 'open', comment: '', date: Date.now() } } }),
+    /data model/
+  );
+  await assert.rejects(caller.project.updateMeta({ projectPath: testProjectPath, meta: { name: 'Renamed', color: '#000000' } }), /data model/);
+  assert.deepStrictEqual(await fs.readJson(path.join(testProjectPath, 'meta.json')), newer, 'meta.json is untouched');
 });

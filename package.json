@@ -38,6 +38,7 @@
     "start:fast": "node scripts/run-local-stack.mjs start:fast",
     "validate:local-runtime": "node scripts/validate-local-runtime.mjs",
     "test:hooks": "bash scripts/hooks/test.sh",
+    "verify:migration": "tsx packages/shared/scripts/verify-bowman-migration.ts",
     "stop-sessions": "npm run stop-sessions -w wrapped-agents-broker",
     "list-sessions": "npm run list-sessions -w wrapped-agents-broker",
     "build:core": "npm run build -w shared && npm run build -w agent-tools && npm run build -w loop-worker && npm run build -w backend && npm run build -w wrapped-agents-broker && npm run build -w frontend",

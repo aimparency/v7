@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs-extra';
 import { createHash } from 'node:crypto';
 import { IdeaProposalSchema, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
+import { assertWritableBowman } from 'shared/bowman-migration';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
@@ -641,6 +642,7 @@ export const createIdeaRouter = (
         const dirName = isArchived ? 'archived-ideas' : 'ideas';
         const ideaPath = path.join(projectPath, dirName, `${input.ideaId}.json`);
         const previous = await fs.readJson(ideaPath).catch(() => null);
+        await assertWritableBowman(projectPath);
         await fs.remove(ideaPath);
 
         // Remove from search index

@@ -5,6 +5,10 @@ const processEnv =
       }).process?.env
     : undefined
 
+// Version of the .bowman storage format, kept in meta.json as dataModelVersion.
+// Bump it together with a new entry in bowman-migration.ts (Node-only).
+export const CURRENT_DATA_MODEL_VERSION = 3;
+
 export const AIMPARENCY_DIR_NAME = processEnv?.AIMPARENCY_DIR_NAME
   ? processEnv.AIMPARENCY_DIR_NAME
   : '.bowman';

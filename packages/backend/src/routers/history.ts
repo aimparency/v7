@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { isDeepStrictEqual } from 'node:util';
 import type { Idea, Phase, ProjectMeta } from 'shared';
+import { assertWritableBowman } from 'shared/bowman-migration';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { addIdeaToIndex, addPhaseToIndex, removeIdeaFromIndex, removePhaseFromIndex } from '../search.js';
 import { embeddingTextForIdea, generateEmbedding, removeEmbedding, saveEmbedding } from '../embeddings.js';
@@ -56,6 +57,7 @@ export const createHistoryRouter = (
     }
 
     if (change.target === null) {
+      await assertWritableBowman(projectPath);
       for (const file of entityFiles(projectPath, change)) await fs.remove(file);
       if (change.type === 'idea') {
         removeIdeaFromIndex(projectPath, change.id);

@@ -1,6 +1,6 @@
-// Node-only: migrates a .bowman directory from the legacy "aim" layout to the
-// "idea" layout. Exported via the `shared/bowman-migration` subpath so the
-// browser bundle never pulls in node:fs.
+// Data model 3: the aim→idea rename. Registered in ../bowman-migration.ts;
+// besides the version gate it also runs whenever aims/ shows up again (an old
+// checkout or a merge can bring legacy files back after the upgrade).
 //
 // Legacy layout                       → current layout
 //   aims/<id>.json                     → ideas/<id>.json
@@ -75,21 +75,21 @@ export function migrateMetaRecord(meta: unknown): unknown {
   return migrated;
 }
 
-export interface BowmanMigrationReport {
+export interface IdeasLayoutReport {
   migratedIdeas: number;
   conflicts: string[];
   rewrittenFiles: number;
 }
 
-export function needsBowmanMigration(bowmanPath: string): Promise<boolean> {
+export function needsIdeasLayoutMigration(bowmanPath: string): Promise<boolean> {
   return Promise.all(LEGACY_DIRS.map(([legacy]) => exists(path.join(bowmanPath, legacy))))
     .then((found) => found.some(Boolean));
 }
 
-/** Migrates a legacy .bowman in place; a no-op (aside from cheap checks) on current layouts. */
-export async function migrateBowmanLayout(bowmanPath: string): Promise<BowmanMigrationReport> {
-  const report: BowmanMigrationReport = { migratedIdeas: 0, conflicts: [], rewrittenFiles: 0 };
-  if (!(await needsBowmanMigration(bowmanPath))) return report;
+/** Migrates a legacy .bowman in place; a no-op on current layouts. */
+export async function migrateIdeasLayout(bowmanPath: string): Promise<IdeasLayoutReport> {
+  const report: IdeasLayoutReport = { migratedIdeas: 0, conflicts: [], rewrittenFiles: 0 };
+  if (!(await needsIdeasLayoutMigration(bowmanPath))) return report;
 
   for (const [legacy, current] of LEGACY_DIRS) {
     await migrateIdeaDir(bowmanPath, legacy, current, report);
@@ -105,7 +105,7 @@ export async function migrateBowmanLayout(bowmanPath: string): Promise<BowmanMig
   return report;
 }
 
-async function migrateIdeaDir(bowmanPath: string, legacy: string, current: string, report: BowmanMigrationReport) {
+async function migrateIdeaDir(bowmanPath: string, legacy: string, current: string, report: IdeasLayoutReport) {
   const legacyDir = path.join(bowmanPath, legacy);
   const currentDir = path.join(bowmanPath, current);
   let entries: string[];

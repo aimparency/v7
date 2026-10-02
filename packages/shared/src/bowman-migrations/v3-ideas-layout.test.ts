@@ -4,13 +4,13 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {
-  migrateBowmanLayout,
+  migrateIdeasLayout,
   migrateIdeaRecord,
   migrateMetaRecord,
-  needsBowmanMigration,
+  needsIdeasLayoutMigration,
   renameAimIdentifier,
   renameAimKeys
-} from './bowman-migration.js';
+} from './v3-ideas-layout.js';
 
 const PARENT = '11111111-1111-4111-8111-111111111111';
 const CHILD = '22222222-2222-4222-8222-222222222222';
@@ -89,17 +89,17 @@ test('migrateMetaRecord renames the done status and never duplicates implemented
   assert.deepStrictEqual(both.statuses, [{ key: 'implemented', color: '#1f1' }]);
 });
 
-test('migrateBowmanLayout migrates a legacy .bowman end to end', async () => {
+test('migrateIdeasLayout migrates a legacy .bowman end to end', async () => {
   const bowman = await makeLegacyBowman();
-  assert.equal(await needsBowmanMigration(bowman), true);
+  assert.equal(await needsIdeasLayoutMigration(bowman), true);
 
-  const report = await migrateBowmanLayout(bowman);
+  const report = await migrateIdeasLayout(bowman);
   assert.equal(report.migratedIdeas, 3);
   assert.deepStrictEqual(report.conflicts, []);
 
   const legacyDirs = await Promise.all(['aims', 'archived-aims'].map((d) => fs.access(path.join(bowman, d)).then(() => d, () => null)));
   assert.deepStrictEqual(legacyDirs.filter(Boolean), [], 'legacy directories are removed');
-  assert.equal(await needsBowmanMigration(bowman), false);
+  assert.equal(await needsIdeasLayoutMigration(bowman), false);
 
   const parent = await readJson(path.join(bowman, 'ideas', `${PARENT}.json`));
   assert.equal(parent.status.state, 'implemented');
@@ -119,20 +119,20 @@ test('migrateBowmanLayout migrates a legacy .bowman end to end', async () => {
   assert.deepStrictEqual(await readJson(path.join(bowman, 'memory', 'sessions', 's.json')), { ideasWorked: 3 });
 });
 
-test('migrateBowmanLayout is idempotent and safe to run concurrently', async () => {
+test('migrateIdeasLayout is idempotent and safe to run concurrently', async () => {
   const bowman = await makeLegacyBowman();
-  const reports = await Promise.all([migrateBowmanLayout(bowman), migrateBowmanLayout(bowman), migrateBowmanLayout(bowman)]);
+  const reports = await Promise.all([migrateIdeasLayout(bowman), migrateIdeasLayout(bowman), migrateIdeasLayout(bowman)]);
   assert.ok(reports.every((r) => r.conflicts.length === 0));
   const ideas = (await fs.readdir(path.join(bowman, 'ideas'))).sort();
   assert.deepStrictEqual(ideas, [`${PARENT}.json`, `${CHILD}.json`]);
-  const again = await migrateBowmanLayout(bowman);
+  const again = await migrateIdeasLayout(bowman);
   assert.deepStrictEqual(again, { migratedIdeas: 0, conflicts: [], rewrittenFiles: 0 });
   assert.equal((await readJson(path.join(bowman, 'ideas', `${PARENT}.json`))).status.state, 'implemented');
 });
 
 test('a legacy file reappearing after migration (old checkout) is merged without losing either version', async () => {
   const bowman = await makeLegacyBowman();
-  await migrateBowmanLayout(bowman);
+  await migrateIdeasLayout(bowman);
   const currentFile = path.join(bowman, 'ideas', `${CHILD}.json`);
   await fs.utimes(currentFile, new Date(1000), new Date(1000));
 
@@ -142,7 +142,7 @@ test('a legacy file reappearing after migration (old checkout) is merged without
   const newIdea = legacyAim(ARCHIVED, 'open', { id: '44444444-4444-4444-8444-444444444444' });
   await fs.writeFile(path.join(bowman, 'aims', '44444444-4444-4444-8444-444444444444.json'), JSON.stringify(newIdea));
 
-  const report = await migrateBowmanLayout(bowman);
+  const report = await migrateIdeasLayout(bowman);
   assert.deepStrictEqual(report.conflicts, [`${CHILD}.json`]);
   assert.equal((await readJson(currentFile)).text, 'edited on an old checkout', 'the newer legacy edit wins');
   const backup = await readJson(path.join(bowman, 'migration-conflicts', `${CHILD}.ideas.json`));
@@ -150,12 +150,12 @@ test('a legacy file reappearing after migration (old checkout) is merged without
   assert.ok(await fs.access(path.join(bowman, 'ideas', '44444444-4444-4444-8444-444444444444.json')).then(() => true));
 });
 
-test('migrateBowmanLayout leaves an already-current .bowman untouched', async () => {
+test('migrateIdeasLayout leaves an already-current .bowman untouched', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'bowman-current-'));
   await fs.mkdir(path.join(root, 'ideas'), { recursive: true });
   const meta = { name: 'x', statuses: [{ key: 'done', color: '#0f0' }] };
   await fs.writeFile(path.join(root, 'meta.json'), JSON.stringify(meta));
-  assert.deepStrictEqual(await migrateBowmanLayout(root), { migratedIdeas: 0, conflicts: [], rewrittenFiles: 0 });
+  assert.deepStrictEqual(await migrateIdeasLayout(root), { migratedIdeas: 0, conflicts: [], rewrittenFiles: 0 });
   assert.deepStrictEqual(await readJson(path.join(root, 'meta.json')), meta, 'a current layout keeps user-chosen statuses');
 });
 
@@ -165,8 +165,8 @@ test('unexpected entries in a legacy directory never keep it alive', async () =>
   await fs.writeFile(path.join(bowman, 'ideas', 'notes.txt'), 'new');
   await fs.writeFile(path.join(bowman, 'aims', 'notes.txt'), 'old');
   await fs.writeFile(path.join(bowman, 'aims', 'broken.json'), '{ not json');
-  await migrateBowmanLayout(bowman);
-  assert.equal(await needsBowmanMigration(bowman), false);
+  await migrateIdeasLayout(bowman);
+  assert.equal(await needsIdeasLayoutMigration(bowman), false);
   assert.equal(await fs.readFile(path.join(bowman, 'ideas', 'notes.txt'), 'utf8'), 'new');
   assert.equal(await fs.readFile(path.join(bowman, 'migration-conflicts', 'notes.txt.legacy'), 'utf8'), 'old');
   assert.equal(await fs.readFile(path.join(bowman, 'ideas', 'broken.json'), 'utf8'), '{ not json');

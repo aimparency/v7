@@ -1,0 +1,23 @@
+{
+  "name": "Fixture v1",
+  "color": "#007acc",
+  "statuses": [
+    {
+      "key": "open",
+      "color": "#40abbf"
+    },
+    {
+      "key": "done",
+      "color": "#52bf40"
+    },
+    {
+      "key": "review",
+      "color": "#64b5f6",
+      "ongoing": true
+    },
+    {
+      "key": "cancelled",
+      "color": "#ffa348"
+    }
+  ]
+}

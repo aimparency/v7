@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { IdeaSchema, PhaseSchema, calculateIdeaValues, type Idea, type Phase } from 'shared';
-import { migrateBowmanLayout, needsBowmanMigration } from 'shared/bowman-migration';
+import { assertWritableBowman, migrateBowman } from 'shared/bowman-migration';
 import { normalizeBowmanPath, writeJsonAtomic } from './loop-state.js';
 
 export type PrioritizedIdea = {
@@ -13,10 +13,9 @@ export type PrioritizedIdea = {
   cost: number;
 };
 
-/** Moves a pre-rename .bowman (aims/) to the ideas/ layout before files are read or written directly. */
+/** Brings the .bowman to the current data model before its files are read or written directly. */
 export async function ensureCurrentLayout(projectPath: string): Promise<void> {
-  const bowmanPath = normalizeBowmanPath(projectPath);
-  if (await needsBowmanMigration(bowmanPath)) await migrateBowmanLayout(bowmanPath);
+  await migrateBowman(normalizeBowmanPath(projectPath));
 }
 
 function ideasDir(projectPath: string): string {
@@ -61,10 +60,12 @@ export async function listPhasesFromFiles(projectPath: string): Promise<Phase[]>
 
 export async function writeIdeaToFile(projectPath: string, idea: Idea): Promise<void> {
   await ensureCurrentLayout(projectPath);
+  await assertWritableBowman(normalizeBowmanPath(projectPath));
   await writeJsonAtomic(path.join(ideasDir(projectPath), `${idea.id}.json`), IdeaSchema.parse(idea));
 }
 
 export async function writePhaseToFile(projectPath: string, phase: Phase): Promise<void> {
+  await assertWritableBowman(normalizeBowmanPath(projectPath));
   await writeJsonAtomic(path.join(phasesDir(projectPath), `${phase.id}.json`), PhaseSchema.parse(phase));
 }
 

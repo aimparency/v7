@@ -10,10 +10,10 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { IdeaSchema, PhaseSchema, ProjectMetaSchema, IdeaStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
+import { IdeaSchema, PhaseSchema, ProjectMetaSchema, IdeaStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME, INITIAL_STATES, CURRENT_DATA_MODEL_VERSION } from 'shared';
 import type { Idea, Phase, ProjectMeta, SystemStatus, SearchIdeaResult, LinkedRepo, LinkedRepoLocal } from 'shared';
 import { LinkedRepoRegistrySchema, LinkedRepoSchema } from 'shared';
-import { migrateBowmanLayout, needsBowmanMigration } from 'shared/bowman-migration';
+import { assertWritableBowman, migrateBowman, NewerDataModelError } from 'shared/bowman-migration';
 import {
   indexIdeas,
   indexPhases,
@@ -65,8 +65,7 @@ const delayMiddleware = t.middleware(async ({ ctx, next }) => {
 // Create procedures with delay middleware
 const delayedProcedure = t.procedure.use(delayMiddleware);
 
-const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\nruntime/\nsecrets.json\n';
-const CURRENT_PHASE_DATA_MODEL_VERSION = 2;
+const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\nruntime/\nsecrets.json\n.migration-lock\n';
 const DEFAULT_AUTONOMY_POLICY = {
   version: 1,
   autonomyMode: 'supervised',
@@ -135,28 +134,35 @@ ee.on('change', ({ type, projectPath }) => {
     }
 });
 
-// Projects created before the aim→idea rename keep aims/ until first touched here.
-const runningLayoutMigrations = new Map<string, Promise<void>>();
-async function migrateLegacyLayout(projectPath: string): Promise<void> {
-  const running = runningLayoutMigrations.get(projectPath);
+// Brings an opened project to the current data model (see shared/bowman-migration).
+// Cheap once a project is current, so it runs on every structure check.
+const runningMigrations = new Map<string, Promise<void>>();
+const warnedNewerProjects = new Set<string>();
+async function migrateProject(projectPath: string): Promise<void> {
+  const running = runningMigrations.get(projectPath);
   if (running) return running;
-  if (!(await needsBowmanMigration(projectPath))) return;
-  const migration = migrateBowmanLayout(projectPath)
-    .then((report) => {
-      console.log(`[migration] ${projectPath}: moved ${report.migratedIdeas} aims to ideas, rewrote ${report.rewrittenFiles} files`);
-      if (report.conflicts.length > 0) {
-        console.warn(`[migration] ${projectPath}: kept both versions of ${report.conflicts.join(', ')} (see migration-conflicts/)`);
+  const migration = migrateBowman(projectPath)
+    .then((result) => {
+      if (result.applied.length > 0) {
+        console.log(`[migration] ${projectPath}: data model ${result.from ?? 'new'} → ${result.to ?? 'new'} (${result.applied.join('; ')})`);
+      }
+      if (result.conflicts.length > 0) {
+        console.warn(`[migration] ${projectPath}: kept both versions of ${result.conflicts.join(', ')} (see migration-conflicts/)`);
+      }
+      if (result.newerThanSupported && !warnedNewerProjects.has(projectPath)) {
+        warnedNewerProjects.add(projectPath);
+        console.warn(`[migration] ${projectPath}: data model ${result.from} is newer than ${CURRENT_DATA_MODEL_VERSION}; opened read-only`);
       }
     })
-    .finally(() => runningLayoutMigrations.delete(projectPath));
-  runningLayoutMigrations.set(projectPath, migration);
+    .finally(() => runningMigrations.delete(projectPath));
+  runningMigrations.set(projectPath, migration);
   return migration;
 }
 
 // Utility functions for file operations
 async function ensureProjectStructure(rawProjectPath: string) {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  await migrateLegacyLayout(projectPath);
+  await migrateProject(projectPath);
   await fs.ensureDir(path.join(projectPath, 'ideas'));
   await fs.ensureDir(path.join(projectPath, 'archived-ideas'));
   await fs.ensureDir(path.join(projectPath, 'phases'));
@@ -194,6 +200,10 @@ async function ensureProjectStructure(rawProjectPath: string) {
         currentContent += '\nsecrets.json';
         needsUpdate = true;
     }
+    if (!currentContent.includes('.migration-lock')) {
+        currentContent += '\n.migration-lock';
+        needsUpdate = true;
+    }
     
     if (needsUpdate) {
         await fs.writeFile(gitignorePath, currentContent);
@@ -204,6 +214,7 @@ async function ensureProjectStructure(rawProjectPath: string) {
 async function writeIdea(rawProjectPath: string, idea: Idea): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
+  await assertWritableBowman(projectPath);
   
   const isArchived = idea.status.state === 'archived';
   const targetDir = isArchived ? 'archived-ideas' : 'ideas';
@@ -290,8 +301,8 @@ async function readIdea(rawProjectPath: string, ideaId: string, afterLayoutMigra
   if (!(await fs.pathExists(ideaPath))) {
     // Try archived ideas
     ideaPath = path.join(projectPath, 'archived-ideas', `${ideaId}.json`);
-    if (!afterLayoutMigration && !(await fs.pathExists(ideaPath)) && (await needsBowmanMigration(projectPath))) {
-      await migrateLegacyLayout(projectPath);
+    if (!afterLayoutMigration && !(await fs.pathExists(ideaPath))) {
+      await migrateProject(projectPath); // may still be in the legacy layout
       return readIdea(projectPath, ideaId, true);
     }
   }
@@ -323,7 +334,7 @@ async function listIdeas(rawProjectPath: string, archived: boolean = false): Pro
   const projectPath = normalizeProjectPath(rawProjectPath);
   const dirName = archived ? 'archived-ideas' : 'ideas';
   const ideasDir = path.join(projectPath, dirName);
-  await migrateLegacyLayout(projectPath);
+  await migrateProject(projectPath);
   
   if (!await fs.pathExists(ideasDir)) return [];
   
@@ -385,6 +396,7 @@ async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
 async function writePhase(rawProjectPath: string, phase: Phase, emitChange = true): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
+  await assertWritableBowman(projectPath);
   const phasePath = path.join(projectPath, 'phases', `${phase.id}.json`);
   const previous = emitChange ? await readJsonOrNull(phasePath) : null;
   await writeJsonAtomic(phasePath, phase);
@@ -411,7 +423,7 @@ async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
       name,
       color: '#007acc',
       statuses: INITIAL_STATES,
-      dataModelVersion: CURRENT_PHASE_DATA_MODEL_VERSION,
+      dataModelVersion: CURRENT_DATA_MODEL_VERSION,
       phaseCursors: {},
       phaseActiveLevel: 0,
       rootPhaseIds: []
@@ -441,7 +453,10 @@ async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
     needsPersist = true;
   }
   if (needsPersist) {
-    await writeProjectMeta(projectPath, meta);
+    // A project from a newer Aimparency stays read-only; the repoId is then only in memory.
+    await writeProjectMeta(projectPath, meta).catch((error) => {
+      if (!(error instanceof NewerDataModelError)) throw error;
+    });
   }
 
   return meta;
@@ -450,6 +465,7 @@ async function readProjectMeta(rawProjectPath: string): Promise<ProjectMeta> {
 async function writeProjectMeta(rawProjectPath: string, meta: ProjectMeta): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
+  await assertWritableBowman(projectPath);
   const metaPath = path.join(projectPath, 'meta.json');
   const previous = await readJsonOrNull(metaPath);
   await writeJsonAtomic(metaPath, meta);
@@ -884,6 +900,7 @@ async function migrateCommittedInField(projectPath: string): Promise<void> {
 // Remove an idea file (active or archived) and purge it from index + embeddings.
 async function deleteIdeaCompletely(rawProjectPath: string, ideaId: string): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
+  await assertWritableBowman(projectPath);
   await fs.remove(path.join(projectPath, 'ideas', `${ideaId}.json`));
   await fs.remove(path.join(projectPath, 'archived-ideas', `${ideaId}.json`));
   removeIdeaFromIndex(projectPath, ideaId);

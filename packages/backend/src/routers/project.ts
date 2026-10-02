@@ -7,7 +7,8 @@ import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import { observable } from '@trpc/server/observable';
 import type { Idea, Phase, ProjectMeta } from 'shared';
-import { INITIAL_STATES, IdeaSchema, PhaseSchema, calculateIdeaValues, cosineSimilarity } from 'shared';
+import { CURRENT_DATA_MODEL_VERSION, INITIAL_STATES, IdeaSchema, PhaseSchema, calculateIdeaValues, cosineSimilarity } from 'shared';
+import { assertWritableBowman } from 'shared/bowman-migration';
 import { spawn, type ChildProcess } from 'child_process';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { embeddingTextForIdea } from '../embeddings.js';
@@ -140,7 +141,6 @@ const DISCOVERY_IGNORED_DIRS = new Set([
   '.turbo'
 ]);
 
-const CURRENT_PHASE_DATA_MODEL_VERSION = 2;
 
 type ConsistencyIssueCode =
   | 'idea_nonexistent_phase'
@@ -1281,10 +1281,13 @@ export const createProjectRouter = (
         const existing: ProjectMeta = (await fs.pathExists(metaPath))
           ? await fs.readJson(metaPath)
           : ({} as ProjectMeta);
+        await assertWritableBowman(projectPath);
+        // The storage format is the backend's business: an editor (possibly an
+        // old tab) never sets it, so it can't roll a migrated project back.
         const nextMeta = {
           ...existing,
           ...input.meta,
-          dataModelVersion: input.meta.dataModelVersion ?? CURRENT_PHASE_DATA_MODEL_VERSION
+          dataModelVersion: existing.dataModelVersion ?? CURRENT_DATA_MODEL_VERSION
         };
         await writeJsonAtomic(metaPath, nextMeta);
         return nextMeta;
