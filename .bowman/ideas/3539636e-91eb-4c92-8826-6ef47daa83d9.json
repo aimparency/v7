@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Root cause found. Needs Felix: confirm \"surface + set estimates by hand\" (per §6) rather than a clamping migration, and give or approve cost estimates for the 4 ideas.",
-    "date": 1790965996998
+    "state": "open",
+    "comment": "Felix decided 2026-10-02: cost stays strictly positive (everything costs something; default 1). The 4 hidden ideas now have cost 1 and are listed again. Remaining: unreadable idea files must show up as consistency issues with their validation error instead of being skipped silently (plan §6).",
+    "date": 1790974082856
   },
   "intrinsicValue": 0,
   "cost": 0.5,
