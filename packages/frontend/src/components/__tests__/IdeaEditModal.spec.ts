@@ -47,7 +47,7 @@ function mountEditModal(description = 'Old description', statusState = 'open', a
           }
         },
         meta: {
-          statuses: [{ key: 'open', color: '#fff', ongoing: true }, { key: 'done', color: '#0f0', ongoing: false }]
+          statuses: [{ key: 'open', color: '#fff', ongoing: true }, { key: 'implemented', color: '#0f0', ongoing: false }]
         }
       }
     }
@@ -112,7 +112,7 @@ function mountBulkEditModal() {
             text: 'Second title',
             description: 'Second description',
             tags: ['second'],
-            status: { state: 'done', comment: 'Finished' },
+            status: { state: 'implemented', comment: 'Finished' },
             archived: true,
             intrinsicValue: 2,
             cost: 2,
@@ -126,7 +126,7 @@ function mountBulkEditModal() {
         meta: {
           statuses: [
             { key: 'open', color: '#fff', ongoing: true },
-            { key: 'done', color: '#0f0', ongoing: false }
+            { key: 'implemented', color: '#0f0', ongoing: false }
           ]
         }
       }
@@ -173,7 +173,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     const statusOverride = wrapper.findAll('.mixed-activate')
       .find((button) => button.text().includes('Multiple values'))
     await statusOverride!.trigger('click')
-    await wrapper.find('select').setValue('done')
+    await wrapper.find('select').setValue('implemented')
     expect(dataStore.updateIdea).not.toHaveBeenCalled()
 
     await wrapper.find('.btn-save').trigger('click')
@@ -182,7 +182,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     for (const call of vi.mocked(dataStore.updateIdea).mock.calls) {
       expect(call[2]).not.toHaveProperty('text')
       expect(call[2]).not.toHaveProperty('description')
-      expect(call[2]).toMatchObject({ status: { state: 'done' } })
+      expect(call[2]).toMatchObject({ status: { state: 'implemented' } })
     }
   })
 
@@ -194,7 +194,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     const statusOverride = wrapper.findAll('.mixed-activate')
       .find((button) => button.text().includes('Multiple values'))
     await statusOverride!.trigger('click')
-    await wrapper.find('select').setValue('done')
+    await wrapper.find('select').setValue('implemented')
     await wrapper.find('.btn-cancel').trigger('click')
     await wrapper.vm.$nextTick()
     await wrapper.find('.btn-discard').trigger('click')
@@ -218,7 +218,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
 
     const status = wrapper.find('select')
     expect(status.exists()).toBe(true)
-    await status.setValue('done')
+    await status.setValue('implemented')
     await wrapper.vm.$nextTick()
     expect(wrapper.text()).toContain('Archive this idea')
     expect(dataStore.updateIdea).not.toHaveBeenCalled()
@@ -404,7 +404,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
             }
           },
           meta: {
-            statuses: [{ key: 'open', color: '#fff', ongoing: true }, { key: 'done', color: '#0f0', ongoing: false }]
+            statuses: [{ key: 'open', color: '#fff', ongoing: true }, { key: 'implemented', color: '#0f0', ongoing: false }]
           }
         }
       }
@@ -468,7 +468,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
             }
           },
           meta: {
-            statuses: [{ key: 'open', color: '#fff', ongoing: true }, { key: 'done', color: '#0f0', ongoing: false }]
+            statuses: [{ key: 'open', color: '#fff', ongoing: true }, { key: 'implemented', color: '#0f0', ongoing: false }]
           }
         }
       }
@@ -528,14 +528,14 @@ describe('IdeaEditModal archive checkbox', () => {
 
     expect(wrapper.find('.archive-toggle').exists()).toBe(false)
 
-    await wrapper.find('.status-select').setValue('done')
+    await wrapper.find('.status-select').setValue('implemented')
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('.archive-toggle').exists()).toBe(true)
   })
 
   it('persists the archived flag when saving from a halted status', async () => {
-    const { wrapper, dataStore } = mountEditModal('desc', 'done')
+    const { wrapper, dataStore } = mountEditModal('desc', 'implemented')
 
     await wrapper.setProps({ show: true })
     await wrapper.vm.$nextTick()
@@ -555,7 +555,7 @@ describe('IdeaEditModal archive checkbox', () => {
   })
 
   it('forces archived back to false when the status returns to an ongoing one', async () => {
-    const { wrapper, dataStore } = mountEditModal('desc', 'done', true)
+    const { wrapper, dataStore } = mountEditModal('desc', 'implemented', true)
 
     await wrapper.setProps({ show: true })
     await wrapper.vm.$nextTick()

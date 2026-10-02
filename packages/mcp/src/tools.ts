@@ -21,9 +21,9 @@ import { extractCodeTokens, scoreCodePresence } from "./code-presence.js";
 import { CONTINUE_HOOK_AGENTS, disableContinueHook, enableContinueHook } from "./continue-hook.js";
 
 /**
- * Verification evidence expected before an idea may be 'done', tailored to the
+ * Verification evidence expected before an idea may be 'implemented', tailored to the
  * idea's apparent type (inferred from text/description/tags). Keeps the soft
- * done-gate concrete — "done = verified-done, not claimed-done" — instead of a
+ * implemented-gate concrete — "implemented = verified, not claimed" — instead of a
  * generic reminder. Exported for unit testing.
  */
 export function verificationHintForIdea(
@@ -411,7 +411,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "update_idea",
-          description: "Update idea fields. Sparse by default. supportedIdeas/supportingConnections still REPLACE existing links; use add*/remove* connection fields for safer append/remove edits. reflection is a free-text note and can be set with status=done to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
+          description: "Update idea fields. Sparse by default. supportedIdeas/supportingConnections still REPLACE existing links; use add*/remove* connection fields for safer append/remove edits. reflection is a free-text note and can be set with status=implemented to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
           inputSchema: {
             type: "object",
             properties: {
@@ -716,7 +716,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "graph_hygiene",
-          description: "Read-only dashboard of graph DEFECTS only: floating ideas (no phase AND no parents), mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent ideas, collapse candidates (parents whose active children are all done), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Uncommitted ideas are NOT reported here — having no phase is a normal state, not a defect; browse them with list_ideas uncommitted=true. Act on results via merge_ideas / suggest_reparents / update_idea.",
+          description: "Read-only dashboard of graph DEFECTS only: floating ideas (no phase AND no parents), mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent ideas, collapse candidates (parents whose active children are all implemented), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Uncommitted ideas are NOT reported here — having no phase is a normal state, not a defect; browse them with list_ideas uncommitted=true. Act on results via merge_ideas / suggest_reparents / update_idea.",
           inputSchema: {
             type: "object",
             properties: {
@@ -743,7 +743,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "reconcile_status",
-          description: "Read-only status-reconciliation pass: lists OPEN ideas referenced by >= 1 CODE commit (8-char id prefix in the message; pure graph-bookkeeping commits that only touch .bowman/ are excluded so triage/reframe commits don't masquerade as implementation) — likely already implemented but never flipped to done. Ranked by commit count. Review each candidate against the code, then update_idea to done (with a reflection) if confirmed; note a parent may be only partially done, and a commit citing an idea as future work is a false positive. Needs a git repo with commits referencing idea ids.",
+          description: "Read-only status-reconciliation pass: lists OPEN ideas referenced by >= 1 CODE commit (8-char id prefix in the message; pure graph-bookkeeping commits that only touch .bowman/ are excluded so triage/reframe commits don't masquerade as implementation) — likely already implemented but never flipped to implemented. Ranked by commit count. Review each candidate against the code, then update_idea to done (with a reflection) if confirmed; note a parent may be only partially done, and a commit citing an idea as future work is a false positive. Needs a git repo with commits referencing idea ids.",
           inputSchema: {
             type: "object",
             properties: {
@@ -1338,11 +1338,11 @@ export function registerTools(server: Server, trpcClient: any) {
           }
 
           // Verification gate (soft): closing an idea should mean verified-done,
-          // not claimed-done. When status is set to done without any reflection
+          // not claimed-done. When status is set to implemented without any reflection
           // recording evidence, nudge the agent to addReflection. Non-blocking
           // and best-effort — never fails the update.
           let verificationNudge = "";
-          if ((args.status as any)?.state === "done") {
+          if ((args.status as any)?.state === "implemented") {
             try {
               const idea = await trpcClient.idea.get.query({
                 projectPath: args.projectPath as string,
@@ -1353,7 +1353,7 @@ export function registerTools(server: Server, trpcClient: any) {
                 (Array.isArray(idea?.reflections) && idea.reflections.length > 0);
               if (!hasReflection) {
                 verificationNudge =
-                  "\n\nReminder: marked done without a reflection. Record the verification evidence in update_idea.reflection or addReflection — " +
+                  "\n\nReminder: marked implemented without a reflection. Record the verification evidence in update_idea.reflection or addReflection — " +
                   verificationHintForIdea(idea) +
                   " — so the graph reflects verified-done rather than claimed-done.";
               }
@@ -2005,7 +2005,7 @@ export function registerTools(server: Server, trpcClient: any) {
                 scanned: tokensByIdea.size,
                 minScore,
                 candidatesFound: candidates.length,
-                note: "OPEN ideas whose code-shaped tokens are mostly present in the codebase — likely already implemented. Heuristic/noisy (a token can exist for unrelated reasons): verify each against the code using the matched/missing tokens, then update_idea to done if confirmed. Ideas cited by a code commit are handled by reconcile_status and skipped here.",
+                note: "OPEN ideas whose code-shaped tokens are mostly present in the codebase — likely already implemented. Heuristic/noisy (a token can exist for unrelated reasons): verify each against the code using the matched/missing tokens, then update_idea to implemented if confirmed. Ideas cited by a code commit are handled by reconcile_status and skipped here.",
                 candidates: candidates.slice(0, limit),
               }, null, 2),
             }],

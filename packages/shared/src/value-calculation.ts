@@ -370,7 +370,7 @@ function distributeCostsStable(
   for (const parent of ideas) {
     // A completed idea's done cost is already its full attributed total; pulling
     // completed descendants again would double count it.
-    if (isDoneCost && parent.status.state === 'done') continue;
+    if (isDoneCost && parent.status.state === 'implemented') continue;
     const parentComponent = componentOf.get(parent.id)!;
     for (const dependency of dependencies.get(parent.id) ?? []) {
       const childComponent = componentOf.get(dependency.childId)!;
@@ -384,7 +384,7 @@ function distributeCostsStable(
   const memberBasis = (id: string): number => {
     const idea = ideaMap.get(id)!;
     if (!isDoneCost) return idea.cost ?? 0;
-    return idea.status.state === 'done' ? (totalCosts?.get(id) ?? 0) : 0;
+    return idea.status.state === 'implemented' ? (totalCosts?.get(id) ?? 0) : 0;
   };
   const componentCosts = new Map<number, number>();
   const calculateComponent = (componentId: number): number => {
@@ -438,7 +438,7 @@ function distributeCosts(
             // So if I am Done, my "Intrinsic Done Contribution" is my Total Cost.
             // If I am Not Done, my "Intrinsic Done Contribution" is 0.
             
-            if (idea.status.state === 'done') {
+            if (idea.status.state === 'implemented') {
                 costs.set(idea.id, totalCosts?.get(idea.id) || 0);
             } else {
                 costs.set(idea.id, 0);
@@ -553,7 +553,7 @@ function distributeCosts(
             // Add Intrinsic
             let intrinsic = 0;
             if (isDoneCost) {
-                 if (parent.status.state === 'done') {
+                 if (parent.status.state === 'implemented') {
                      // If done, my cost is fixed to TotalCost (which is constant in this phase)
                      // So result is just TotalCost. aggregatedCost from children is IGNORED?
                      // Wait. If I am done, "My Done Cost" = "My Total Cost".

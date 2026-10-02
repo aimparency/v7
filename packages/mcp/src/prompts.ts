@@ -121,7 +121,7 @@ Procedure:
 
 5. REMEMBER — Propose or write graph changes
    - Prefer explanatory contribution connections between existing ideas when the synergy is already meaningful.
-   - Create a new idea only for a genuinely novel hypothesis or experiment. Prefix speculative titles with "Dream:" and tag them "dream" and "hypothesis". Do not mark dream artifacts done.
+   - Create a new idea only for a genuinely novel hypothesis or experiment. Prefix speculative titles with "Dream:" and tag them "dream" and "hypothesis". Do not mark dream artifacts implemented.
    - Connection explanations must say why the contribution may exist and identify uncertainty. Do not alter contribution weights merely because a relationship is imaginative.
    - ${writeBack
       ? "Write only the 1-3 selected residues using Aimparency tools, then report every mutation. Preserve human gates and use review when implementation is complete but awaiting acceptance."

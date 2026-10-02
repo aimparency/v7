@@ -33,7 +33,7 @@ describe('IdeaSearchModal', () => {
           createSpy: vi.fn,
           initialState: {
             data: {
-                meta: { statuses: [{key:'open', color:'#fff'}, {key:'done', color:'#0f0'}] }
+                meta: { statuses: [{key:'open', color:'#fff'}, {key:'implemented', color:'#0f0'}] }
             },
             project: {
                 projectPath: '/test',

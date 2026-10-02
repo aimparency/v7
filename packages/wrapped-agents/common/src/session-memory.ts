@@ -120,7 +120,7 @@ export class SessionMemory {
       /implemented/i,
       /fixed/i,
       /updated idea status/i,
-      /marked idea .* as done/i
+      /marked idea .* as (done|implemented)/i
     ];
 
     const relevantLines = lines.filter(line =>

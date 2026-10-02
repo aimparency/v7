@@ -20,7 +20,7 @@ export const INITIAL_STATES: IdeaState[] = [
   { key: 'in-progress', color: '#f6d32d', ongoing: true },
   { key: 'partially', color: '#fff176', ongoing: true },
   { key: 'review', color: '#64b5f6', ongoing: true },
-  { key: 'done', color: '#81c784', ongoing: false },
+  { key: 'implemented', color: '#81c784', ongoing: false },
   { key: 'halted', color: '#9e9e9e', ongoing: false },
   { key: 'cancelled', color: '#e57373', ongoing: false },
   { key: 'failed', color: '#ba68c8', ongoing: false },

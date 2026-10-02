@@ -43,12 +43,12 @@ test('MCP Tools - Ideas CRUD', async (t) => {
     projectPath: ctx.projectPath,
     ideaId: ideaId,
     text: 'Updated MCP Idea',
-    status: { state: 'done' }
+    status: { state: 'implemented' }
   });
 
   const updatedIdea = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
   assert.equal(updatedIdea.text, 'Updated MCP Idea');
-  assert.equal(updatedIdea.status.state, 'done');
+  assert.equal(updatedIdea.status.state, 'implemented');
 
   // 3. Get
   const getResult = await server.callTool('get_idea', { projectPath: ctx.projectPath, ideaId });
@@ -200,7 +200,7 @@ test('MCP Tools - update_idea nudges to verify when marking done without a refle
   const noReflection = await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId,
-    status: { state: 'done' },
+    status: { state: 'implemented' },
   });
   assert.match(noReflection.content[0].text, /verified-done/, 'nudges when done without reflection');
 
@@ -215,7 +215,7 @@ test('MCP Tools - update_idea nudges to verify when marking done without a refle
   const withReflection = await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId,
-    status: { state: 'done' },
+    status: { state: 'implemented' },
   });
   assert.doesNotMatch(withReflection.content[0].text, /verified-done/, 'no nudge once a reflection exists');
 
@@ -252,7 +252,7 @@ test('MCP Tools - done nudge surfaces the type-specific evidence hint', async ()
   const res = await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId,
-    status: { state: 'done' },
+    status: { state: 'implemented' },
   });
   assert.match(res.content[0].text, /screenshot|interaction/, 'UI idea nudge asks for a screenshot/interaction proof');
 });
@@ -268,12 +268,12 @@ test('MCP Tools - update_idea stores free-text reflection with status', async ()
   const result = await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId,
-    status: { state: 'done' },
+    status: { state: 'implemented' },
     reflection: 'Verified with the focused MCP idea test.',
   });
 
   const idea = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
-  assert.equal(idea.status.state, 'done');
+  assert.equal(idea.status.state, 'implemented');
   assert.equal(idea.reflection, 'Verified with the focused MCP idea test.');
   assert.doesNotMatch(result.content[0].text, /verified-done/, 'free-text reflection satisfies done evidence nudge');
 });

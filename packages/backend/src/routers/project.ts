@@ -257,6 +257,7 @@ export const createProjectRouter = (
   };
 
   const listLoopIdeas = async (rawProjectPath: string): Promise<Idea[]> => {
+    await ensureProjectStructure(rawProjectPath);
     const ideasDir = path.join(normalizeProjectPath(rawProjectPath), 'ideas');
     if (!await fs.pathExists(ideasDir)) return [];
     const files = (await fs.readdir(ideasDir)).filter((file) => file.endsWith('.json'));
@@ -1892,7 +1893,7 @@ export const createProjectRouter = (
         const collapseCandidates = active
           .map((a: Idea) => {
             const kids = childIdsOf(a).map((id) => ideaMap.get(id)!).filter((k) => !k.archived);
-            const done = kids.filter((k) => k.status.state === 'done').length;
+            const done = kids.filter((k) => k.status.state === 'implemented').length;
             return { a, total: kids.length, done };
           })
           .filter((x) => x.total > 0 && x.done === x.total)

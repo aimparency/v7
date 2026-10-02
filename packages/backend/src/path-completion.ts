@@ -17,7 +17,8 @@ export function resolveBowmanPath(rawPath: string): string {
 export async function bowmanExists(rawPath: string): Promise<boolean> {
   const target = resolveBowmanPath(rawPath);
   if (await fs.pathExists(path.join(target, 'meta.json'))) return true;
-  for (const dirName of ['ideas', 'archived-ideas']) {
+  // aims/ and archived-aims/ are the pre-rename layout; the backend migrates them on first use.
+  for (const dirName of ['ideas', 'archived-ideas', 'aims', 'archived-aims']) {
     const dir = path.join(target, dirName);
     if (!(await fs.pathExists(dir))) continue;
     if ((await fs.readdir(dir)).some((file) => file.endsWith('.json'))) return true;

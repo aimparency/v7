@@ -12,5 +12,5 @@
 
 - Use `review` when implementation and internal verification are complete but
   the feature still needs to be shown to and accepted by the user.
-- Move an idea from `review` to `done` only after explicit user confirmation.
+- Move an idea from `review` to `implemented` only after explicit user confirmation.
 

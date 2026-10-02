@@ -2,6 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { IdeaSchema, PhaseSchema, calculateIdeaValues, type Idea, type Phase } from 'shared';
+import { migrateBowmanLayout, needsBowmanMigration } from 'shared/bowman-migration';
 import { normalizeBowmanPath, writeJsonAtomic } from './loop-state.js';
 
 export type PrioritizedIdea = {
@@ -12,6 +13,12 @@ export type PrioritizedIdea = {
   cost: number;
 };
 
+/** Moves a pre-rename .bowman (aims/) to the ideas/ layout before files are read or written directly. */
+export async function ensureCurrentLayout(projectPath: string): Promise<void> {
+  const bowmanPath = normalizeBowmanPath(projectPath);
+  if (await needsBowmanMigration(bowmanPath)) await migrateBowmanLayout(bowmanPath);
+}
+
 function ideasDir(projectPath: string): string {
   return path.join(normalizeBowmanPath(projectPath), 'ideas');
 }
@@ -21,6 +28,7 @@ function phasesDir(projectPath: string): string {
 }
 
 export async function listIdeasFromFiles(projectPath: string, archived = false): Promise<Idea[]> {
+  await ensureCurrentLayout(projectPath);
   const dir = ideasDir(projectPath);
   const files = (await fs.pathExists(dir)) ? await fs.readdir(dir) : [];
   const ideas: Idea[] = [];
@@ -52,6 +60,7 @@ export async function listPhasesFromFiles(projectPath: string): Promise<Phase[]>
 }
 
 export async function writeIdeaToFile(projectPath: string, idea: Idea): Promise<void> {
+  await ensureCurrentLayout(projectPath);
   await writeJsonAtomic(path.join(ideasDir(projectPath), `${idea.id}.json`), IdeaSchema.parse(idea));
 }
 

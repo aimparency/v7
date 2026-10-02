@@ -38,19 +38,42 @@ describe('idea status history and commit diffs', () => {
 
     write('ideas', 'open'); commit('create');
     fs.writeFileSync(path.join(repo, 'code.ts'), 'export const x = 1\n');
-    write('ideas', 'done'); commit('implement');
-    write('ideas', 'done', 'Renamed'); commit('rename only');
+    write('ideas', 'implemented'); commit('implement');
+    write('ideas', 'implemented', 'Renamed'); commit('rename only');
     fs.rmSync(path.join(bowman, 'ideas'), { recursive: true });
     write('archived-ideas', 'archived'); commit('archive');
 
     const history = await getIdeaStatusHistory(bowman, ideaId);
     expect(history.map((change) => [change.state, change.commit.subject])).toEqual([
-      ['open', 'create'], ['done', 'implement'], ['archived', 'archive']
+      ['open', 'create'], ['implemented', 'implement'], ['archived', 'archive']
     ]);
 
     const diff = await getCommitDiff(bowman, history[1]!.commit.hash);
     expect(diff.map((file) => file.path).sort()).toEqual(['.bowman/ideas/11111111-2222-3333-4444-555555555555.json', 'code.ts']);
     expect(diff.find((file) => file.path === 'code.ts')!.patch).toContain('+export const x = 1');
+  });
+
+  it('follows an idea across the aim→idea layout migration without a spurious status change', async () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'idea-history-legacy-'));
+    git(repo, 'init', '-q')
+    const ideaId = '11111111-2222-3333-4444-666666666666';
+    const bowman = path.join(repo, '.bowman');
+    const write = (dir: string, record: object) => {
+      fs.mkdirSync(path.join(bowman, dir), { recursive: true });
+      fs.writeFileSync(path.join(bowman, dir, `${ideaId}.json`), JSON.stringify({ id: ideaId, text: 'Idea', ...record }));
+    };
+    const commit = (message: string) => { git(repo, 'add', '-A'); git(repo, 'commit', '-q', '-m', message); };
+
+    write('aims', { status: { state: 'open' } }); commit('create (legacy)');
+    write('aims', { status: { state: 'done' } }); commit('finish (legacy)');
+    fs.rmSync(path.join(bowman, 'aims'), { recursive: true });
+    write('ideas', { status: { state: 'implemented' } }); commit('migrate layout');
+    write('ideas', { status: { state: 'review' } }); commit('reopen for review');
+
+    const history = await getIdeaStatusHistory(bowman, ideaId);
+    expect(history.map((change) => [change.state, change.commit.subject])).toEqual([
+      ['open', 'create (legacy)'], ['implemented', 'finish (legacy)'], ['review', 'reopen for review']
+    ]);
   });
 
   it('rejects anything that is not a commit hash', async () => {

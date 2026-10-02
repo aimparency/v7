@@ -670,7 +670,7 @@ onMounted(async () => {
       font-weight: bold;
 
       &.open { color: var(--status-open); }
-      &.done { color: var(--status-done); }
+      &.implemented { color: var(--status-implemented); }
       &.cancelled { color: var(--status-cancelled); }
       &.partially { color: var(--status-partially); }
       &.failed { color: var(--status-failed); }

@@ -10,6 +10,10 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./dist/index.js"
+    },
+    "./bowman-migration": {
+      "types": "./src/bowman-migration.ts",
+      "import": "./dist/bowman-migration.js"
     }
   },
   "scripts": {

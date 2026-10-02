@@ -6,7 +6,7 @@ export interface StatusColorEntry {
 export const WEBGL_NODE_BRIGHTNESS = 2 / 3
 
 const FALLBACK_STATUS_HEX: Record<string, string> = {
-  done: '#007700',
+  implemented: '#007700',
   open: '#00558e',
   cancelled: '#b20000',
   failed: '#b24747',

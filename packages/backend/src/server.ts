@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { IdeaSchema, PhaseSchema, ProjectMetaSchema, IdeaStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
 import type { Idea, Phase, ProjectMeta, SystemStatus, SearchIdeaResult, LinkedRepo, LinkedRepoLocal } from 'shared';
 import { LinkedRepoRegistrySchema, LinkedRepoSchema } from 'shared';
+import { migrateBowmanLayout, needsBowmanMigration } from 'shared/bowman-migration';
 import {
   indexIdeas,
   indexPhases,
@@ -134,9 +135,28 @@ ee.on('change', ({ type, projectPath }) => {
     }
 });
 
+// Projects created before the aim→idea rename keep aims/ until first touched here.
+const runningLayoutMigrations = new Map<string, Promise<void>>();
+async function migrateLegacyLayout(projectPath: string): Promise<void> {
+  const running = runningLayoutMigrations.get(projectPath);
+  if (running) return running;
+  if (!(await needsBowmanMigration(projectPath))) return;
+  const migration = migrateBowmanLayout(projectPath)
+    .then((report) => {
+      console.log(`[migration] ${projectPath}: moved ${report.migratedIdeas} aims to ideas, rewrote ${report.rewrittenFiles} files`);
+      if (report.conflicts.length > 0) {
+        console.warn(`[migration] ${projectPath}: kept both versions of ${report.conflicts.join(', ')} (see migration-conflicts/)`);
+      }
+    })
+    .finally(() => runningLayoutMigrations.delete(projectPath));
+  runningLayoutMigrations.set(projectPath, migration);
+  return migration;
+}
+
 // Utility functions for file operations
 async function ensureProjectStructure(rawProjectPath: string) {
   const projectPath = normalizeProjectPath(rawProjectPath);
+  await migrateLegacyLayout(projectPath);
   await fs.ensureDir(path.join(projectPath, 'ideas'));
   await fs.ensureDir(path.join(projectPath, 'archived-ideas'));
   await fs.ensureDir(path.join(projectPath, 'phases'));
@@ -262,7 +282,7 @@ function placeUnplacedConnections<T extends { supportingConnections?: any[] }>(i
   };
 }
 
-async function readIdea(rawProjectPath: string, ideaId: string): Promise<Idea> {
+async function readIdea(rawProjectPath: string, ideaId: string, afterLayoutMigration = false): Promise<Idea> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   
   // Try active ideas first
@@ -270,6 +290,10 @@ async function readIdea(rawProjectPath: string, ideaId: string): Promise<Idea> {
   if (!(await fs.pathExists(ideaPath))) {
     // Try archived ideas
     ideaPath = path.join(projectPath, 'archived-ideas', `${ideaId}.json`);
+    if (!afterLayoutMigration && !(await fs.pathExists(ideaPath)) && (await needsBowmanMigration(projectPath))) {
+      await migrateLegacyLayout(projectPath);
+      return readIdea(projectPath, ideaId, true);
+    }
   }
   
   return IdeaSchema.parse(normalizeIdeaRecord(await fs.readJson(ideaPath)).idea);
@@ -299,6 +323,7 @@ async function listIdeas(rawProjectPath: string, archived: boolean = false): Pro
   const projectPath = normalizeProjectPath(rawProjectPath);
   const dirName = archived ? 'archived-ideas' : 'ideas';
   const ideasDir = path.join(projectPath, dirName);
+  await migrateLegacyLayout(projectPath);
   
   if (!await fs.pathExists(ideasDir)) return [];
   

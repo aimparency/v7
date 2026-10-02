@@ -1635,11 +1635,11 @@ Please choose one of the valid actions. Respond ONLY with ${this.currentPromptMa
     ].join('-');
     const relevanceCheck = `Before making changes, perform this relevance check on the idea:
 1. DATE: Is the idea time-boxed or premised on a deadline/event? Compare against today's date (${currentDate}). If the driving event/deadline has passed (hackathons, dated milestones), the idea may be moot.
-2. ALREADY IMPLEMENTED: Investigate the codebase (grep/inspect) + git history. If the described work is already present, mark done with verification evidence instead of rebuilding.
+2. ALREADY IMPLEMENTED: Investigate the codebase (grep/inspect) + git history. If the described work is already present, mark implemented with verification evidence instead of rebuilding.
 3. REASONING CHAIN (supporting connections up to root): Use get_idea_context's path_to_root. Does the chain of WHY still hold? Is a parent itself stale/abandoned/superseded? Is the idea premised on a requirement that no longer applies?
 DECISION RULES:
 - Relevant + not implemented -> proceed to build.
-- Already implemented -> mark done + reflection (verification evidence).
+- Already implemented -> mark implemented + reflection (verification evidence).
 - Clearly stale/moot -> mark cancelled with a precise comment.
 - UNSURE -> set human-dependent with a comment explaining the specific doubt.`;
     const prompt = `${this.consumeInstructLead()}Check Aimparency MCP for open ideas or the current assigned idea. ${relevanceCheck} If it is not implemented, start working. ${message}`;
@@ -1684,7 +1684,7 @@ DECISION RULES:
   }
 
   private async executeWrapUp(text?: string): Promise<void> {
-    const defaultPrompt = 'use Aimparency MCP to update idea status and comment and reflection if not done already. Before marking an idea done, record verification evidence matched to its type — code: tests/typecheck pass; UI/visual: a screenshot or interaction proof; bugfix: a repro that now passes.';
+    const defaultPrompt = 'use Aimparency MCP to update idea status and comment and reflection if not done already. Before marking an idea implemented, record verification evidence matched to its type — code: tests/typecheck pass; UI/visual: a screenshot or interaction proof; bugfix: a repro that now passes.';
     const prompt = text ? `${defaultPrompt}. ${text}` : defaultPrompt;
     await this.post(this.worker, prompt);
     this.turnCount++;

@@ -1,6 +1,8 @@
 import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import type { Idea } from 'shared';
+import { migrateIdeaRecord } from 'shared/bowman-migration';
 
 const execFileAsync = promisify(execFile);
 
@@ -73,7 +75,9 @@ export async function getIdeaStatusHistory(
 ): Promise<IdeaStatusChange[]> {
   const repositoryPath = await getRepositoryRoot(bowmanPath);
   const bowmanRelative = path.relative(repositoryPath, bowmanPath);
-  const ideaFiles = ['ideas', 'archived-ideas'].map((dir) => path.posix.join(bowmanRelative.split(path.sep).join('/'), dir, `${ideaId}.json`));
+  // aims/ and archived-aims/ hold the same idea in commits from before the aim→idea rename.
+  const ideaFiles = ['ideas', 'archived-ideas', 'aims', 'archived-aims']
+    .map((dir) => path.posix.join(bowmanRelative.split(path.sep).join('/'), dir, `${ideaId}.json`));
 
   const log = await gitStdout(repositoryPath, [
     'log', '--reverse', `--max-count=${Math.max(1, Math.min(limit, 1000))}`,
@@ -89,7 +93,7 @@ export async function getIdeaStatusHistory(
     let state: string | undefined;
     for (const file of ideaFiles) {
       try {
-        state = JSON.parse(await gitStdout(repositoryPath, ['show', `${commit.hash}:${file}`]))?.status?.state;
+        state = (migrateIdeaRecord(JSON.parse(await gitStdout(repositoryPath, ['show', `${commit.hash}:${file}`]))) as Idea)?.status?.state;
         break;
       } catch {
         // Not present at this path in this commit (e.g. moved to archived-ideas, or deleted).

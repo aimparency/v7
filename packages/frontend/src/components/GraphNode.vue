@@ -27,7 +27,7 @@ const fillColor = computed(() => {
   if (props.node.color) return props.node.color
   
   switch (props.node.status) {
-    case 'done': return '#007700'
+    case 'implemented': return '#007700'
     case 'open': return '#00558e'
     case 'cancelled': return '#b20000'
     case 'failed': return '#b24747'

@@ -381,7 +381,7 @@ test('list - filters ideas by status and phase', async () => {
     projectPath: testProjectPath,
     idea: {
       text: 'Done Floating Idea',
-      status: { state: 'done', comment: '', date: Date.now() }
+      status: { state: 'implemented', comment: '', date: Date.now() }
     }
   });
 
@@ -1011,7 +1011,7 @@ test('idea.update - persists edit-modal reflection and archive fields', async ()
     projectPath: testProjectPath,
     idea: {
       text: 'Reflection test',
-      status: { state: 'done', comment: '', date: Date.now() }
+      status: { state: 'implemented', comment: '', date: Date.now() }
     }
   });
 
@@ -1048,7 +1048,7 @@ test('idea.merge - preserves source knowledge and archives it consistently', asy
     idea: {
       text: 'Duplicate idea',
       tags: ['duplicate', 'canonical'],
-      status: { state: 'done', comment: '', date: Date.now() }
+      status: { state: 'implemented', comment: '', date: Date.now() }
     }
   });
   await caller.idea.update({
@@ -1222,4 +1222,30 @@ test('history.restore - restores snapshots, and refuses when an entity changed s
   assert.deepStrictEqual(await read(files.root), before.root);
   assert.deepStrictEqual(await read(files.doomed), before.doomed);
   assert.deepStrictEqual(await read(files.child), before.child);
+});
+
+test('a pre-rename .bowman (aims/, done) is migrated on first access and read as ideas', async () => {
+  const parentId = uuidv4();
+  const childId = uuidv4();
+  const legacyAim = (id: string, state: string, extra: object) => ({
+    id, text: `legacy ${state}`, tags: [], committedIn: [], status: { state, comment: '', date: 1 }, ...extra
+  });
+  await fs.outputJson(path.join(testProjectPath, 'aims', `${parentId}.json`),
+    legacyAim(parentId, 'done', { supportedAims: [], supportingConnections: [{ aimId: childId, relativePosition: [0, 0], weight: 1 }] }));
+  await fs.outputJson(path.join(testProjectPath, 'aims', `${childId}.json`),
+    legacyAim(childId, 'open', { supportedAims: [parentId], supportingConnections: [] }));
+  await fs.outputJson(path.join(testProjectPath, 'meta.json'),
+    { name: 'Legacy', color: '#007acc', statuses: [{ key: 'open', color: '#fff' }, { key: 'done', color: '#0f0' }] });
+
+  const [ideas, meta] = await Promise.all([
+    caller.idea.list({ projectPath: testProjectPath }),
+    caller.project.getMeta({ projectPath: testProjectPath })
+  ]);
+
+  const parent = ideas.find((idea) => idea.id === parentId)!;
+  assert.equal(parent.status.state, 'implemented');
+  assert.equal(parent.supportingConnections[0]!.ideaId, childId);
+  assert.deepStrictEqual(ideas.find((idea) => idea.id === childId)!.supportedIdeas, [parentId]);
+  assert.deepStrictEqual(meta.statuses!.map((status) => status.key), ['open', 'implemented']);
+  assert.equal(await fs.pathExists(path.join(testProjectPath, 'aims')), false);
 });

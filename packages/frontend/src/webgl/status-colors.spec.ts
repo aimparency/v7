@@ -21,7 +21,7 @@ describe('status colors', () => {
   it('falls back to default mapping for known statuses', () => {
     const done = hexToRgb('#007700')
     const open = hexToRgb('#00558e')
-    expect(statusToColor('done')).toEqual([done[0] * (2 / 3), done[1] * (2 / 3), done[2] * (2 / 3)])
+    expect(statusToColor('implemented')).toEqual([done[0] * (2 / 3), done[1] * (2 / 3), done[2] * (2 / 3)])
     expect(statusToColor('open')).toEqual([open[0] * (2 / 3), open[1] * (2 / 3), open[2] * (2 / 3)])
   })
 

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { countIdeaReferences, findReconciliationCandidates } from "./reconcile.js";
 
 const OPEN = (id: string, text = id) => ({ id, text, status: { state: "open" } });
-const DONE = (id: string, text = id) => ({ id, text, status: { state: "done" } });
+const DONE = (id: string, text = id) => ({ id, text, status: { state: "implemented" } });
 
 test("countIdeaReferences matches an idea by its 8-char id prefix", () => {
   const id = "8ae69400-1743-4569-b77f-0ae6f1109273";
