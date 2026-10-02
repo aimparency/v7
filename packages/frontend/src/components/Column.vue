@@ -368,7 +368,7 @@ const scrollSelectedEntryIntoView = async (
   // behavior for oversized phases); a phase-level realign would yank the view
   // back off it. Skip the realign in that window. The immediate, same-frame
   // call is NOT skipped here — the coalescer already lets the idea target win
-  // over the phase target within the frame, and aimless placeholder entries
+  // over the phase target within the frame, and idea-less placeholder entries
   // (which never set lastIdeaScrollAt) keep realigning normally.
   if (isRealign && performance.now() - lastIdeaScrollAt < IDEA_SCROLL_HOLD_MS) return
 
