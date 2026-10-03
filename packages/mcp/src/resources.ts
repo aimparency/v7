@@ -1,3 +1,4 @@
+import type { BackendClient } from "./client.js";
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { trpc } from "./client.js";
 import { PROJECT_PATH_PARAMETER, PROJECT_PATH_MISSING_ERROR } from "./constants.js";
@@ -41,7 +42,7 @@ function parseResourceUri(uri: string): { type: string; id?: string; subpath?: s
   };
 }
 
-export function registerResources(server: Server, caller: any) {
+export function registerResources(server: Server, caller: BackendClient) {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
       resources: [

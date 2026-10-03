@@ -1,6 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { registerResources } from "./resources.js";
-import { registerTools } from "./tools.js";
+import { registerTools } from "./tools/index.js";
 import { registerPrompts } from "./prompts.js";
 import { trpc } from "./client.js";
 

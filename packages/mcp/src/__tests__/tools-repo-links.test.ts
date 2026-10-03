@@ -1,7 +1,7 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import fs from 'fs-extra';
-import { registerTools } from '../tools.js';
+import { registerTools } from '../tools/index.js';
 import { MockServer, caller, createCallerProxy, createTestContext } from './test-utils.js';
 
 // Black-box repo links over MCP: an agent must be able to see and create an

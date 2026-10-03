@@ -1,6 +1,6 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { registerTools } from '../tools.js';
+import { registerTools } from '../tools/index.js';
 import { MockServer, caller, createCallerProxy, createTestContext } from './test-utils.js';
 
 let ctx: ReturnType<typeof createTestContext>;

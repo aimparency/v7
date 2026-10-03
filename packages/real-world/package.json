@@ -23,6 +23,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "backend": "^1.0.0",
     "tsx": "^4.22.4"
   }
 }

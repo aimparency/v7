@@ -1,6 +1,6 @@
 import { createTRPCClient, createWSClient, wsLink } from "@trpc/client";
 import { WebSocket } from "ws";
-import type { AppRouter } from "shared";
+import type { AppRouter } from "backend";
 
 // Backend host defaults to localhost, but in `dev:host` mode the backend binds
 // to a specific LAN/Tailscale interface — set BACKEND_WS_HOST (or BIND_HOST) so
@@ -15,3 +15,5 @@ export const wsClient = createWSClient({
 export const trpc = createTRPCClient<AppRouter>({
   links: [wsLink({ client: wsClient })],
 });
+
+export type BackendClient = typeof trpc;

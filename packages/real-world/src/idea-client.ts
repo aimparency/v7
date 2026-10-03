@@ -1,7 +1,8 @@
 import { createTRPCClient, createWSClient, wsLink } from "@trpc/client";
 import { WebSocket } from "ws";
 import { calculateIdeaValues } from "shared";
-import type { AppRouter, Idea, Phase, Reflection } from "shared";
+import type { Idea, Phase, Reflection } from "shared";
+import type { AppRouter } from "backend";
 
 export const wsClient = createWSClient({
   url: `ws://localhost:${process.env.PORT_BACKEND_WS || "3001"}`,
@@ -91,12 +92,5 @@ export async function appendReflection(
   ideaId: string,
   reflection: Omit<Reflection, "date">
 ): Promise<void> {
-  const idea = (await trpc.idea.get.query({ projectPath, ideaId })) as Idea;
-  await trpc.idea.update.mutate({
-    projectPath,
-    ideaId,
-    idea: {
-      reflections: [...(idea.reflections ?? []), { date: Date.now(), ...reflection }],
-    },
-  });
+  await trpc.idea.addReflection.mutate({ projectPath, ideaId, reflection });
 }

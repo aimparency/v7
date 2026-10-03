@@ -1,3 +1,4 @@
+import type { BackendClient } from "./client.js";
 import { GetPromptRequestSchema, ListPromptsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { PROJECT_PATH_PROMPT_ARGUMENT } from "./constants.js";
@@ -21,7 +22,7 @@ function hookTogglePrompt(name: "enable-hook" | "disable-hook", args: Record<str
   };
 }
 
-export function registerPrompts(server: Server, caller: any) {
+export function registerPrompts(server: Server, caller: BackendClient) {
   server.setRequestHandler(ListPromptsRequestSchema, async () => ({
     prompts: [
       {

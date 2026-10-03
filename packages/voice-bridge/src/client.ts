@@ -1,5 +1,5 @@
 import { createTRPCProxyClient, loggerLink, wsLink, createWSClient } from '@trpc/client';
-import type { AppRouter } from 'shared';
+import type { AppRouter } from 'backend';
 import ws from 'ws';
 
 // Use standard Node ws for server-side client
