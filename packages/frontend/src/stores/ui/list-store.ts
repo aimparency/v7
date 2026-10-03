@@ -13,8 +13,7 @@ import {
   type IdeaRow,
   type SelectionPath
 } from './navigation-helpers'
-import { captureSelectionAnchor, applySelectionAnchor, type SelectionAnchor } from './selection-anchor'
-import { createIdeaUIState, ensureIdeaUIState, insertsAsFirstChild, type IdeaUIState, type IdeaUIStateTree } from './idea-ui-state'
+import { ensureIdeaUIState, type IdeaUIState, type IdeaUIStateTree } from './idea-ui-state'
 import {
   handleIdeaNavigationKeysAction,
   handleColumnNavigationKeysAction,
@@ -33,8 +32,34 @@ import { useGraphUIStore } from './graph-store'
 import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
 import { trpc } from '../../trpc'
-import { hasQueryFlag, perfLog } from '../../utils/perf-log'
-import type { PersistedGraphViewState } from './graph-store'
+import { placeIdea } from './idea-creation'
+import {
+  PHASE_KEY_PREFIX,
+  listViewStateSnapshot,
+  persistProjectUIState,
+  persistedUIStateKey,
+  restoreCursorFromMeta,
+  restoreProjectUIState,
+  type PersistedListViewState
+} from './ui-persistence'
+import { hasQueryFlag } from '../../utils/perf-log'
+
+// A new idea from the idea modal; unset fields take the defaults.
+export type NewIdea = {
+  text: string
+  description?: string
+  tags?: string[]
+  intrinsicValue?: number
+  loopWeight?: number
+  cost?: number
+  supportedIdeas?: string[]
+  supportingConnections?: { ideaId: string, weight?: number, relativePosition?: [number, number] }[]
+  color?: string | null
+  statusState?: IdeaStatusState
+  statusComment?: string
+  duration?: number
+  valueRationale?: string
+}
 
 type TeleportSource = {
   parentIdeaId?: string
@@ -53,27 +78,7 @@ function logNav(event: string, details: Record<string, unknown> = {}) {
 
 type PhaseMoveDirection = 'forward' | 'backward' | 'preserve'
 
-const PHASE_KEY_PREFIX = 'phase:'
 
-type PersistedListViewState = {
-  activeColumn: number
-  windowStart: number
-  windowSize: number
-  selectedEntryKeyByColumn?: Record<number, string>
-  // Legacy snapshots stored the selection as index + phase id.
-  selectedPhaseIdByColumn?: Record<number, string>
-  floatingIdeaIndex: number
-  lastSelectedSubPhaseIndexByPhase: Record<string, number>
-  navigatingIdeas: boolean
-  selectedIdeaIndexByPhaseId: Record<string, number>
-  selectedIncomingIndexByIdeaId?: Record<string, number>
-  expandedIdeaIds?: string[]
-  floatingIdeaUIStates?: IdeaUIStateTree
-  phaseIdeaUIStatesByPhaseId?: Record<string, IdeaUIStateTree>
-  // Authoritative selection by identity; the index fields above only seed
-  // remembered per-phase positions (and older saved states).
-  selection?: SelectionAnchor
-}
 
 // Structural edits (J/K/H/L on ideas or phases, paste) run one after another.
 // Each computes its target from the current, index-based selection and applies
@@ -88,12 +93,6 @@ type IdeaListScope = {
   ideas: Idea[]
   tree: IdeaUIStateTree
   setTopIndex: (index: number) => void
-}
-
-type PersistedUIState = {
-  currentView?: 'columns' | 'graph' | 'voice'
-  listViewState?: PersistedListViewState
-  graphViewState?: PersistedGraphViewState
 }
 
 export const useUIStore = defineStore('ui', {
@@ -219,7 +218,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     getPersistedUIStateKey(projectPath: string) {
-      return `aimparency-ui-state:${projectPath}`
+      return persistedUIStateKey(projectPath)
     },
 
     setColumnScrollTop(columnIndex: number, top: number) {
@@ -227,42 +226,11 @@ export const useUIStore = defineStore('ui', {
     },
 
     getListViewStateSnapshot(): PersistedListViewState {
-      const dataStore = useDataStore()
-      const selectedIdeaIndexByPhaseId: Record<string, number> = {}
-
-      for (const phase of Object.values(dataStore.phases)) {
-        if (phase?.selectedIdeaIndex !== undefined) {
-          selectedIdeaIndexByPhaseId[phase.id] = phase.selectedIdeaIndex
-        }
-      }
-
-      return {
-        activeColumn: this.activeColumn,
-        windowStart: this.windowStart,
-        windowSize: this.windowSize,
-        selectedEntryKeyByColumn: { ...this.selectedEntryKeyByColumn },
-        floatingIdeaIndex: this.floatingIdeaIndex,
-        lastSelectedSubPhaseIndexByPhase: { ...this.lastSelectedSubPhaseIndexByPhase },
-        navigatingIdeas: this.navigatingIdeas,
-        selectedIdeaIndexByPhaseId,
-        floatingIdeaUIStates: this.floatingIdeaUIStates,
-        phaseIdeaUIStatesByPhaseId: this.phaseIdeaUIStatesByPhaseId,
-        selection: captureSelectionAnchor(this)
-      }
+      return listViewStateSnapshot(this)
     },
 
-    async persistProjectUIState() {
-      const projectStore = useProjectStore()
-      if (!projectStore.projectPath) return
-
-      const graphStore = useGraphUIStore()
-      const state: PersistedUIState = {
-        currentView: projectStore.currentView,
-        listViewState: this.getListViewStateSnapshot(),
-        graphViewState: graphStore.getPersistedGraphViewState()
-      }
-
-      localStorage.setItem(this.getPersistedUIStateKey(projectStore.projectPath), JSON.stringify(state))
+    async persistProjectUIState(): Promise<void> {
+      await persistProjectUIState(this)
     },
 
     scheduleProjectUIStatePersist() {
@@ -334,31 +302,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     async restoreCursorFromMeta(): Promise<boolean> {
-      const dataStore = useDataStore()
-      const meta = dataStore.meta
-      if (!meta?.phaseCursors || Object.keys(meta.phaseCursors).length === 0) return false
-
-      this.beginUIStateRestore()
-      const restoreGeneration = this.restoreGeneration
-      try {
-        const deepestLevel = await this.restoreSelectionPath(
-          meta.phaseCursors as Record<string, string>,
-          () => this.isRestoringUIState && this.restoreGeneration === restoreGeneration
-        )
-        if (deepestLevel === undefined) return true
-
-        // Startup follows the complete authoritative cursor chain. Focus the
-        // deepest populated phase level rather than restoring a stale browser
-        // column or exposing a trailing empty child column.
-        this.activeColumn = deepestLevel
-        this.maxColumn = deepestLevel
-        this.ensureSelectionVisible()
-        return true
-      } finally {
-        if (this.restoreGeneration === restoreGeneration && this.isRestoringUIState) {
-          this.endUIStateRestore()
-        }
-      }
+      return restoreCursorFromMeta(this)
     },
 
     // Rebuilds the column selection top-down from phase ids per level. Levels whose
@@ -391,139 +335,8 @@ export const useUIStore = defineStore('ui', {
       return deepestLevel
     },
 
-    async restoreProjectUIState() {
-      const restoreStartedAt = performance.now()
-      perfLog('ui.restoreProjectUIState:start', { projectPath: useProjectStore().projectPath })
-      const projectStore = useProjectStore()
-      const dataStore = useDataStore()
-      const graphStore = useGraphUIStore()
-
-      if (!projectStore.projectPath) return false
-
-      // The current phase lives in meta (set only via `c`), independent of browsing focus.
-      this.currentPhaseIdByLevel = { ...((dataStore.meta?.phaseCursors as Record<string, string>) ?? {}) }
-
-      const raw = localStorage.getItem(this.getPersistedUIStateKey(projectStore.projectPath))
-      if (!raw) {
-        return await this.restoreCursorFromMeta()
-      }
-
-      let parsed: PersistedUIState | null = null
-      try {
-        parsed = JSON.parse(raw) as PersistedUIState
-      } catch {
-        return await this.restoreCursorFromMeta()
-      }
-
-      // This browser's own saved selection wins: reopen exactly where it left
-      // off. The shared phase cursors only seed a browser without saved state.
-      if (!parsed.listViewState) {
-        if (parsed.currentView) projectStore.setCurrentView(parsed.currentView)
-        graphStore.applyPersistedGraphViewState(parsed.graphViewState)
-        return await this.restoreCursorFromMeta()
-      }
-
-      this.beginUIStateRestore()
-      const restoreGeneration = this.restoreGeneration
-      try {
-        if (parsed.currentView) {
-          projectStore.setCurrentView(parsed.currentView)
-        }
-
-        const listViewState = parsed.listViewState
-        if (listViewState) {
-          this.windowSize = listViewState.windowSize
-          this.windowStart = listViewState.windowStart
-          this.activeColumn = listViewState.activeColumn
-          this.floatingIdeaIndex = listViewState.floatingIdeaIndex
-          this.lastSelectedSubPhaseIndexByPhase = { ...listViewState.lastSelectedSubPhaseIndexByPhase }
-          this.navigatingIdeas = listViewState.navigatingIdeas
-          this.scrollTopByColumn = {}
-
-          const shouldContinue = () => this.isRestoringUIState && this.restoreGeneration === restoreGeneration
-          const restoreVisibleMax = Math.max(this.activeColumn, this.getVisibleMaxColumn())
-          const phaseIdByLevel: Record<number, string> = {}
-          const savedKeys = listViewState.selectedEntryKeyByColumn
-            ?? Object.fromEntries(Object.entries(listViewState.selectedPhaseIdByColumn ?? {}).map(([level, id]) => [level, `${PHASE_KEY_PREFIX}${id}`]))
-          for (const [level, key] of Object.entries(savedKeys)) {
-            if (Number(level) <= restoreVisibleMax && key.startsWith(PHASE_KEY_PREFIX)) {
-              phaseIdByLevel[Number(level)] = key.slice(PHASE_KEY_PREFIX.length)
-            }
-          }
-
-          this.maxColumn = this.windowStart < 0 ? -1 : 0
-          if (restoreVisibleMax >= 0) {
-            const deepestLevel = await this.restoreSelectionPath(phaseIdByLevel, shouldContinue, restoreVisibleMax)
-            if (deepestLevel === undefined) return true
-            this.maxColumn = Math.max(this.maxColumn, deepestLevel)
-          }
-          if (this.activeColumn > this.maxColumn) {
-            this.activeColumn = this.maxColumn
-          }
-
-          for (const [phaseId, selectedIdeaIndex] of Object.entries(listViewState.selectedIdeaIndexByPhaseId)) {
-            const phase = dataStore.phases[phaseId]
-            if (phase) {
-              phase.selectedIdeaIndex = selectedIdeaIndex
-            }
-          }
-
-          if (listViewState.floatingIdeaUIStates) {
-            this.floatingIdeaUIStates = listViewState.floatingIdeaUIStates
-          }
-          if (listViewState.phaseIdeaUIStatesByPhaseId) {
-            this.phaseIdeaUIStatesByPhaseId = listViewState.phaseIdeaUIStatesByPhaseId
-          }
-
-          if (listViewState.expandedIdeaIds || listViewState.selectedIncomingIndexByIdeaId) {
-            const expandedIdeaIds = new Set(listViewState.expandedIdeaIds ?? [])
-            for (const idea of Object.values(dataStore.ideas)) {
-              if (!idea) continue
-              if (!expandedIdeaIds.has(idea.id) && listViewState.selectedIncomingIndexByIdeaId?.[idea.id] === undefined) continue
-              const state = ensureIdeaUIState(this.floatingIdeaUIStates, idea.id)
-              state.expanded = expandedIdeaIds.has(idea.id)
-              const selectedIncomingIndex = listViewState.selectedIncomingIndexByIdeaId?.[idea.id]
-              if (selectedIncomingIndex !== undefined) {
-                state.selectedIncomingIndex = selectedIncomingIndex
-              }
-            }
-          }
-
-          if (this.navigatingIdeas && this.activeColumn >= 0) {
-            const activePhaseId = this.selectedPhaseIdByColumn[this.activeColumn]
-            if (activePhaseId) {
-              const phase = dataStore.phases[activePhaseId]
-              if (phase && listViewState.selectedIdeaIndexByPhaseId[activePhaseId] !== undefined) {
-                phase.selectedIdeaIndex = Math.min(
-                  listViewState.selectedIdeaIndexByPhaseId[activePhaseId]!,
-                  Math.max(0, phase.commitments.length - 1)
-                )
-              }
-            }
-          }
-
-          if (listViewState.selection) {
-            await applySelectionAnchor(this, listViewState.selection)
-          }
-
-          this.ensureSelectionVisible()
-        }
-
-        graphStore.applyPersistedGraphViewState(parsed.graphViewState)
-        perfLog('ui.restoreProjectUIState:done', {
-          projectPath: projectStore.projectPath,
-          durationMs: Math.round((performance.now() - restoreStartedAt) * 10) / 10,
-          activeColumn: this.activeColumn,
-          windowStart: this.windowStart,
-          windowSize: this.windowSize,
-          maxColumn: this.maxColumn
-        })
-        return true
-      } finally {
-        if (this.restoreGeneration === restoreGeneration && this.isRestoringUIState) {
-          this.endUIStateRestore()
-        }
-      }
+    async restoreProjectUIState(): Promise<boolean> {
+      return restoreProjectUIState(this)
     },
 
     requestColumnScroll(col: number, direction: 'bottom' | 'top') {
@@ -570,311 +383,32 @@ export const useUIStore = defineStore('ui', {
       useUIModalStore().clearTeleportBuffer()
     },
 
-    // Create idea and update selection
-    async createIdea(
-      ideaTextOrId: string,
-      isExistingIdea: boolean = false,
-      description?: string,
-      tags?: string[],
-      intrinsicValue: number = IDEA_DEFAULTS.intrinsicValue,
-      loopWeight: number = IDEA_DEFAULTS.loopWeight,
-      cost: number = useDataStore().defaultCost,
-      weight: number = 1,
-      supportedIdeas: string[] = [],
-      supportingConnections: { ideaId: string, weight?: number, relativePosition?: [number, number] }[] = [],
-      color?: string | null,
-      statusState: IdeaStatusState = 'open',
-      statusComment: string = '',
-      duration: number = IDEA_DEFAULTS.duration,
-      valueRationale: string = IDEA_DEFAULTS.valueRationale
-    ) {
-      const dataStore = useDataStore()
-      const modalStore = useUIModalStore()
-      const projectStore = useProjectStore()
-
-      const ideaAttributes: IdeaCreationParams = {
-        text: ideaTextOrId,
-        description,
-        tags: tags || [],
+    // Create a new idea where the idea modal was opened (see placeIdea).
+    async createIdea(idea: NewIdea, weight: number = 1): Promise<void> {
+      const attributes: IdeaCreationParams = {
+        text: idea.text,
+        description: idea.description,
+        tags: idea.tags || [],
         reflections: [],
-        status: { state: statusState, comment: statusComment, date: Date.now() },
-        supportingConnections,
-        supportedIdeas,
-        intrinsicValue: intrinsicValue ?? 0,
-        valueRationale: valueRationale.trim() || undefined,
-        loopWeight,
-        cost,
-        duration,
+        status: { state: idea.statusState ?? 'open', comment: idea.statusComment ?? '', date: Date.now() },
+        supportingConnections: idea.supportingConnections ?? [],
+        supportedIdeas: idea.supportedIdeas ?? [],
+        intrinsicValue: idea.intrinsicValue ?? IDEA_DEFAULTS.intrinsicValue,
+        valueRationale: (idea.valueRationale ?? IDEA_DEFAULTS.valueRationale).trim() || undefined,
+        loopWeight: idea.loopWeight ?? IDEA_DEFAULTS.loopWeight,
+        cost: idea.cost ?? useDataStore().defaultCost,
+        duration: idea.duration ?? IDEA_DEFAULTS.duration,
         costVariance: 0,
         valueVariance: 0,
         archived: false,
-        color: color || undefined
+        color: idea.color || undefined
       }
+      await placeIdea(this, undefined, attributes, weight)
+    },
 
-      const path = this.getSelectionPath()
-      let newIdeaId: string | undefined
-      // Parent idea when creating/linking inside a sub-idea list (implicit connection).
-      // Used to offer the contribution % + explanation modal afterwards.
-      let implicitParentId: string | undefined
-      let createdAsPhaseCommitmentWithoutImplicitSupportedIdea = false
-
-      if (modalStore.ideaModalSource === 'graph') {
-        if (isExistingIdea) {
-          newIdeaId = ideaTextOrId
-        } else {
-          const result = await dataStore.createFloatingIdea(projectStore.projectPath, ideaAttributes)
-          newIdeaId = result.id
-        }
-      } else if (path.ideas.length === 0) {
-        if (path.phase) {
-          if (isExistingIdea) {
-            await trpc.idea.commitToPhase.mutate({
-              projectPath: projectStore.projectPath,
-              ideaId: ideaTextOrId,
-              phaseId: path.phase.id,
-              insertionIndex: 0
-            })
-            newIdeaId = ideaTextOrId
-          } else {
-            const result = await dataStore.createCommittedIdea(projectStore.projectPath, path.phase.id, ideaAttributes, 0)
-            newIdeaId = result.id
-            createdAsPhaseCommitmentWithoutImplicitSupportedIdea = true
-          }
-        } else if (isExistingIdea) {
-          if (modalStore.ideaCreationCallback) {
-            newIdeaId = ideaTextOrId
-          } else {
-            modalStore.showIdeaModal = false
-            return
-          }
-        } else {
-          const result = await dataStore.createFloatingIdea(projectStore.projectPath, ideaAttributes)
-          newIdeaId = result.id
-        }
-      } else {
-        const currentIdea = path.ideas[path.ideas.length - 1]
-        const currentIdeaState = path.ideaStates[path.ideaStates.length - 1]
-        if (!currentIdea) {
-          modalStore.showIdeaModal = false
-          return
-        }
-
-        if (insertsAsFirstChild(currentIdea, currentIdeaState, modalStore.ideaModalInsertPosition)) {
-          if (isExistingIdea) {
-            await trpc.idea.connectIdeas.mutate({
-              projectPath: projectStore.projectPath,
-              parentIdeaId: currentIdea.id,
-              childIdeaId: ideaTextOrId,
-              parentIncomingIndex: 0,
-              weight
-            })
-            newIdeaId = ideaTextOrId
-
-            const updatedParent = await trpc.idea.get.query({
-              projectPath: projectStore.projectPath,
-              ideaId: currentIdea.id
-            })
-            dataStore.replaceIdea(currentIdea.id, updatedParent)
-          } else {
-            const result = await dataStore.createSubIdea(projectStore.projectPath, currentIdea.id, ideaAttributes, 0, weight)
-            newIdeaId = result.id
-          }
-
-          implicitParentId = currentIdea.id
-          if (currentIdeaState) {
-            currentIdeaState.selectedIncomingIndex = 0
-          }
-        } else if (path.ideas.length > 1) {
-          const parentIdea = path.ideas[path.ideas.length - 2]
-          const parentIdeaState = path.ideaStates[path.ideaStates.length - 2]
-          if (parentIdea) {
-            let insertionIndex = parentIdeaState?.selectedIncomingIndex ?? 0
-            if (modalStore.ideaModalInsertPosition === 'after') {
-              insertionIndex++
-            }
-
-            if (isExistingIdea) {
-              await trpc.idea.connectIdeas.mutate({
-                projectPath: projectStore.projectPath,
-                parentIdeaId: parentIdea.id,
-                childIdeaId: ideaTextOrId,
-                parentIncomingIndex: insertionIndex,
-                weight
-              })
-              newIdeaId = ideaTextOrId
-
-              const updatedParent = await trpc.idea.get.query({
-                projectPath: projectStore.projectPath,
-                ideaId: parentIdea.id
-              })
-              dataStore.replaceIdea(parentIdea.id, updatedParent)
-            } else {
-              const result = await dataStore.createSubIdea(projectStore.projectPath, parentIdea.id, ideaAttributes, insertionIndex, weight)
-              newIdeaId = result.id
-            }
-
-            implicitParentId = parentIdea.id
-            if (parentIdeaState) {
-              parentIdeaState.selectedIncomingIndex = insertionIndex
-            }
-          }
-        } else if (path.phase) {
-          let insertionIndex = 0
-          const phase = dataStore.phases[path.phase.id]
-          if (phase && phase.selectedIdeaIndex !== undefined) {
-            insertionIndex = phase.selectedIdeaIndex + (modalStore.ideaModalInsertPosition === 'after' ? 1 : 0)
-          }
-
-          if (isExistingIdea) {
-            await trpc.idea.commitToPhase.mutate({
-              projectPath: projectStore.projectPath,
-              ideaId: ideaTextOrId,
-              phaseId: path.phase.id,
-              insertionIndex
-            })
-            newIdeaId = ideaTextOrId
-
-            const updatedPhase = await trpc.phase.get.query({
-              projectPath: projectStore.projectPath,
-              phaseId: path.phase.id
-            })
-            dataStore.replacePhase(path.phase.id, updatedPhase)
-          } else {
-            const result = await dataStore.createCommittedIdea(projectStore.projectPath, path.phase.id, ideaAttributes, insertionIndex)
-            newIdeaId = result.id
-            createdAsPhaseCommitmentWithoutImplicitSupportedIdea = true
-          }
-
-          const freshPhase = dataStore.phases[path.phase.id]
-          if (freshPhase) {
-            freshPhase.selectedIdeaIndex = insertionIndex
-          }
-        } else if (isExistingIdea) {
-          if (modalStore.ideaCreationCallback) {
-            newIdeaId = ideaTextOrId
-          } else {
-            modalStore.showIdeaModal = false
-            return
-          }
-        } else {
-          const result = await dataStore.createFloatingIdea(projectStore.projectPath, ideaAttributes)
-          newIdeaId = result.id
-        }
-      }
-
-      let connectionCallbackPromptsPhase = false
-      if (newIdeaId) {
-        const shouldPromptForPhaseCommitment =
-          !isExistingIdea &&
-          modalStore.ideaModalSource === 'graph' &&
-          projectStore.currentView === 'graph'
-
-        if (modalStore.ideaCreationCallback) {
-          if (shouldPromptForPhaseCommitment) {
-            connectionCallbackPromptsPhase = true
-            const promptPhase = () => {
-              modalStore.openPhaseSearchPrompt(async (payload) => {
-                if (payload.type !== 'phase') return
-                await dataStore.commitIdeaToPhase(projectStore.projectPath, newIdeaId!, payload.data.id)
-              }, {
-                title: 'Commit to Phase',
-                placeholder: 'Optional: search for a phase...',
-                additionalOptions: [{
-                  id: 'skip-phase',
-                  label: 'Skip (leave uncommitted)',
-                  description: 'Keep this new graph idea uncommitted to any phase.',
-                  showWhenQueryEmptyOnly: true,
-                  actsAsEscape: true
-                }]
-              })
-            }
-            modalStore.ideaCreationCallback(newIdeaId, promptPhase)
-          } else {
-            modalStore.ideaCreationCallback(newIdeaId)
-          }
-          modalStore.ideaCreationCallback = null
-        }
-
-        if (path.phase) {
-          const ideas = dataStore.getIdeasForPhase(path.phase.id)
-          const newIdeaIndex = ideas.findIndex((idea: any) => idea.id === newIdeaId)
-          if (newIdeaIndex !== -1) {
-            const phase = dataStore.phases[path.phase.id]
-            if (phase) {
-              phase.selectedIdeaIndex = newIdeaIndex
-            }
-          }
-        } else {
-          const newIdeaIndex = dataStore.floatingIdeas.findIndex((idea: any) => idea.id === newIdeaId)
-          if (newIdeaIndex !== -1) {
-            this.floatingIdeaIndex = newIdeaIndex
-          }
-        }
-      }
-
-      const shouldPromptForSupportedIdea =
-        !isExistingIdea &&
-        !!newIdeaId &&
-        supportedIdeas.length === 0 &&
-        createdAsPhaseCommitmentWithoutImplicitSupportedIdea &&
-        modalStore.ideaModalSource === 'columns' &&
-        projectStore.currentView === 'columns'
-
-      const shouldPromptForPhaseCommitment =
-        !isExistingIdea &&
-        !!newIdeaId &&
-        modalStore.ideaModalSource === 'graph' &&
-        projectStore.currentView === 'graph' &&
-        !connectionCallbackPromptsPhase
-
-      modalStore.closeIdeaModal()
-
-      // Sub-idea list creation/linking: offer contribution % + explanation for the
-      // implicit parent->child connection. Reload the parent so its supportingConnections
-      // include the freshly-created connection before the modal patches it.
-      if (implicitParentId && newIdeaId && !shouldPromptForSupportedIdea && !shouldPromptForPhaseCommitment) {
-        await dataStore.loadIdeas(projectStore.projectPath, [implicitParentId, newIdeaId])
-        modalStore.openConnectionDetailsModal(implicitParentId, newIdeaId)
-      }
-
-      if (shouldPromptForSupportedIdea && newIdeaId) {
-        modalStore.openIdeaSearch('pick', async (payload) => {
-          if (payload.type !== 'idea') return
-
-          await trpc.idea.connectIdeas.mutate({
-            projectPath: projectStore.projectPath,
-            parentIdeaId: payload.data.id,
-            childIdeaId: newIdeaId
-          })
-
-          await dataStore.loadIdeas(projectStore.projectPath, [payload.data.id, newIdeaId])
-        }, undefined, {
-          title: 'Connect to Supported Idea',
-          placeholder: 'Optional: search for a parent idea...',
-          additionalOptions: [{
-            id: 'skip-parent',
-            label: 'Skip (no supported idea)',
-            description: 'Leave this new idea without a supported idea connection.',
-            showWhenQueryEmptyOnly: true,
-            actsAsEscape: true
-          }]
-        })
-      } else if (shouldPromptForPhaseCommitment && newIdeaId) {
-        modalStore.openPhaseSearchPrompt(async (payload) => {
-          if (payload.type !== 'phase') return
-          await dataStore.commitIdeaToPhase(projectStore.projectPath, newIdeaId, payload.data.id)
-        }, {
-          title: 'Commit to Phase',
-          placeholder: 'Optional: search for a phase...',
-          additionalOptions: [{
-            id: 'skip-phase',
-            label: 'Skip (leave uncommitted)',
-            description: 'Keep this new graph idea uncommitted to any phase.',
-            showWhenQueryEmptyOnly: true,
-            actsAsEscape: true
-          }]
-        })
-      }
+    // Link an existing idea where the idea modal was opened (see placeIdea).
+    async linkExistingIdea(ideaId: string, weight: number = 1): Promise<void> {
+      await placeIdea(this, ideaId, undefined, weight)
     },
 
     // Column tracking actions
@@ -1173,7 +707,6 @@ export const useUIStore = defineStore('ui', {
 
     async continueIdeaBoundaryPhaseMove(delta: -1 | 1) {
       const dataStore = useDataStore()
-      const projectStore = useProjectStore()
       const col = this.activeColumn
       const selectLastIdea = delta < 0
 
@@ -1498,7 +1031,6 @@ export const useUIStore = defineStore('ui', {
     },
 
     async executeNavigation(path: IdeaPath) {
-      const projectStore = useProjectStore()
       const dataStore = useDataStore()
       const rootIdea = path.ideas[0]
       const phaseId = path.phaseId

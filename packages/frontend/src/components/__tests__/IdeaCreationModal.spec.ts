@@ -97,24 +97,9 @@ describe('IdeaCreationModal', () => {
     
     await wrapper.find('.btn-primary').trigger('click')
     
-    // Check arguments passed to createIdea
-    // (text, isExisting, desc, tags, intrinsic, loop, cost, weight, supported, supporting)
     expect(uiStore.createIdea).toHaveBeenCalledWith(
-      'New Idea',
-      false,
-      '',
-      [],
-      0,
-      1,
-      1,
-      1,
-      [],
-      [],
-      null,
-      'open',
-      '',
-      1,
-      ''
+      { text: 'New Idea', description: '', tags: [], intrinsicValue: 0, loopWeight: 1, cost: 1, supportedIdeas: [], supportingConnections: [], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' },
+      1
     )
   })
 
@@ -147,7 +132,7 @@ describe('IdeaCreationModal', () => {
     await wrapper.find('.btn-primary').trigger('click')
 
     const args = uiStore.createIdea.mock.calls.at(-1)
-    expect(args?.at(-1)).toBe('Validated customer outcome')
+    expect(args?.[0].valueRationale).toBe('Validated customer outcome')
   })
 
   it('adds supported idea (parent)', async () => {
@@ -198,21 +183,8 @@ describe('IdeaCreationModal', () => {
     await wrapper.find('.btn-primary').trigger('click')
     
     expect(uiStore.createIdea).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        expect.anything(),
-        [], // Parents
-        [{ ideaId: 'c1', weight: 5 }], // Children
-        null,
-        'open',
-        '',
-        1,
-        ''
+      expect.objectContaining({ supportedIdeas: [], supportingConnections: [{ ideaId: 'c1', weight: 5 }], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' }),
+      expect.anything()
     )
   })
 
@@ -231,21 +203,8 @@ describe('IdeaCreationModal', () => {
 
     // With ambiguous perfect matches, index stays on "create new" entry.
     expect(uiStore.createIdea).toHaveBeenCalledWith(
-      'Refactor',
-      false,
-      '',
-      [],
-      0,
-      1,
-      1,
-      1,
-      [],
-      [],
-      null,
-      'open',
-      '',
-      1,
-      ''
+      { text: 'Refactor', description: '', tags: [], intrinsicValue: 0, loopWeight: 1, cost: 1, supportedIdeas: [], supportingConnections: [], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' },
+      1
     )
   })
 
@@ -267,16 +226,7 @@ describe('IdeaCreationModal', () => {
     await results[0]!.trigger('keydown', { key: 'j' })
     await results[1]!.trigger('keydown', { key: 'Enter' })
 
-    expect(uiStore.createIdea).toHaveBeenCalledWith(
-      'a1',
-      true,
-      undefined,
-      undefined,
-      0,
-      1,
-      1,
-      1
-    )
+    expect(uiStore.linkExistingIdea).toHaveBeenCalledWith('a1', 1)
   })
 
   it('tabs from the title input into the embedded search list', async () => {
@@ -386,36 +336,14 @@ describe('IdeaCreationModal', () => {
     await wrapper.find('.btn-primary').trigger('click')
 
     expect(uiStore.createIdea).toHaveBeenCalledWith(
-      'Refactor',
-      false,
-      '',
-      [],
-      0,
-      1,
-      1,
-      1,
-      [],
-      [],
-      null,
-      'open',
-      '',
-      1,
-      ''
+      { text: 'Refactor', description: '', tags: [], intrinsicValue: 0, loopWeight: 1, cost: 1, supportedIdeas: [], supportingConnections: [], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' },
+      1
     )
 
     uiStore.createIdea.mockClear()
 
     await results[2]!.trigger('click')
-    expect(uiStore.createIdea).toHaveBeenCalledWith(
-      'a2',
-      true,
-      undefined,
-      undefined,
-      0,
-      1,
-      1,
-      1
-    )
+    expect(uiStore.linkExistingIdea).toHaveBeenCalledWith('a2', 1)
   })
 
   it('allows typing j and k in the title input', async () => {

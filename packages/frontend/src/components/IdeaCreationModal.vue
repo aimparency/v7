@@ -3,9 +3,8 @@ import { ref, computed, nextTick, onMounted } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { useProjectStore } from '../stores/project-store'
 import FormModalShell from './FormModalShell.vue'
-import type { Idea, SearchIdeaResult } from 'shared'
+import type { Idea, IdeaStatusState, SearchIdeaResult } from 'shared'
 import TagInput from './TagInput.vue'
 import { IDEA_DEFAULTS } from '../constants/ideaDefaults'
 import IdeaSearchPicker from './IdeaSearchPicker.vue'
@@ -16,7 +15,6 @@ import { insertsAsFirstChild } from '../stores/ui/idea-ui-state'
 const uiStore = useUIStore()
 const dataStore = useDataStore()
 const modalStore = useUIModalStore()
-const projectStore = useProjectStore()
 
 const ideaText = ref(IDEA_DEFAULTS.text)
 const ideaDescription = ref(IDEA_DEFAULTS.description)
@@ -135,27 +133,23 @@ const createIdea = async () => {
   isSubmitting.value = true
   try {
     if (selectedSearchResult.value) {
-      // Link existing idea
-      await uiStore.createIdea(selectedSearchResult.value.id, true, undefined, undefined, 0, 1, 1, weight)
+      await uiStore.linkExistingIdea(selectedSearchResult.value.id, weight)
     } else {
-      // Create new idea with text and description
-      await uiStore.createIdea(
-        ideaText.value.trim(), 
-        false, 
-        ideaDescription.value.trim(), 
-        ideaTags.value, 
-        ideaIntrinsicValue.value, 
-        ideaLoopWeight.value,
-        ideaCost.value,
-        weight,
-        supportedIdeasList.value.map(a => a.id),
-        supportingConnectionsList.value.map(a => ({ ideaId: a.id, weight: a.weight })),
-        ideaColor.value || null,
-        selectedStatus.value as any,
-        statusComment.value.trim(),
-        ideaDuration.value,
-        ideaValueRationale.value
-      )
+      await uiStore.createIdea({
+        text: ideaText.value.trim(),
+        description: ideaDescription.value.trim(),
+        tags: ideaTags.value,
+        intrinsicValue: ideaIntrinsicValue.value,
+        loopWeight: ideaLoopWeight.value,
+        cost: ideaCost.value,
+        supportedIdeas: supportedIdeasList.value.map(a => a.id),
+        supportingConnections: supportingConnectionsList.value.map(a => ({ ideaId: a.id, weight: a.weight })),
+        color: ideaColor.value || null,
+        statusState: selectedStatus.value as IdeaStatusState,
+        statusComment: statusComment.value.trim(),
+        duration: ideaDuration.value,
+        valueRationale: ideaValueRationale.value
+      }, weight)
     }
   } catch (error) {
     console.error('Failed to create/link idea:', error)
