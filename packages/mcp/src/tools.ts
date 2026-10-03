@@ -142,7 +142,6 @@ type ConnectionInput = string | {
   ideaId: string;
   weight?: number;
   explanation?: string;
-  relativePosition?: [number, number];
 };
 
 function connectionInputSchema(description: string) {
@@ -151,20 +150,10 @@ function connectionInputSchema(description: string) {
     description,
     items: {
       anyOf: [
-        { type: "string", description: "idea UUID" },
+        { type: "string" },
         {
           type: "object",
-          properties: {
-            ideaId: { type: "string" },
-            weight: { type: "number" },
-            explanation: { type: "string" },
-            relativePosition: {
-              type: "array",
-              items: { type: "number" },
-              minItems: 2,
-              maxItems: 2,
-            },
-          },
+          properties: { ideaId: { type: "string" }, weight: { type: "number" }, explanation: { type: "string" } },
           required: ["ideaId"],
         },
       ],
@@ -172,19 +161,8 @@ function connectionInputSchema(description: string) {
   };
 }
 
-function normalizeConnectionInput(input: ConnectionInput): {
-  ideaId: string;
-  weight?: number;
-  explanation?: string;
-  relativePosition?: [number, number];
-} {
-  if (typeof input === "string") return { ideaId: input };
-  return {
-    ideaId: input.ideaId,
-    weight: input.weight,
-    explanation: input.explanation,
-    relativePosition: input.relativePosition,
-  };
+function normalizeConnectionInput(input: ConnectionInput): Exclude<ConnectionInput, string> {
+  return typeof input === "string" ? { ideaId: input } : input;
 }
 
 function connectionId(input: ConnectionInput): string {
@@ -196,7 +174,6 @@ function toStoredConnection(input: ConnectionInput) {
   return {
     ideaId: conn.ideaId,
     weight: conn.weight ?? 1,
-    relativePosition: conn.relativePosition ?? [0, 0],
     ...(conn.explanation !== undefined ? { explanation: conn.explanation } : {}),
   };
 }
@@ -394,11 +371,11 @@ export function registerTools(server: Server, trpcClient: any) {
                 properties: {
                   state: { type: "string", description: IDEA_STATES_DESCRIPTION },
                   comment: { type: "string" },
-                  reviewedAt: { type: "number", description: "Explicit review timestamp confirming the current status and intention still hold; does not change the state-transition date." },
+                  reviewedAt: { type: "number", description: "Timestamp confirming status and intention still hold (keeps the transition date)." },
                 },
               },
-              supportingConnections: connectionInputSchema("Child idea UUIDs, or objects with ideaId/weight/explanation/relativePosition for edge metadata."),
-              supportedIdeas: connectionInputSchema("Parent idea UUIDs, or objects with ideaId/weight/explanation/relativePosition for the parent→new-idea edge."),
+              supportingConnections: connectionInputSchema("Child ideas: UUIDs or { ideaId, weight, explanation }."),
+              supportedIdeas: connectionInputSchema("Parent ideas this one serves: UUIDs or { ideaId, weight, explanation } for the parent→new-idea edge."),
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
               valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
               cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics); omitted = project default" },
@@ -411,7 +388,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "update_idea",
-          description: "Update idea fields. Sparse by default. supportedIdeas/supportingConnections still REPLACE existing links; use add*/remove* connection fields for safer append/remove edits. reflection is a free-text note and can be set with status=implemented to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
+          description: "Update idea fields; only the given ones change. Links change through add*/remove*. reflection is a free-text note; set it with status=implemented to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
           inputSchema: {
             type: "object",
             properties: {
@@ -426,15 +403,13 @@ export function registerTools(server: Server, trpcClient: any) {
                 properties: {
                   state: { type: "string", description: IDEA_STATES_DESCRIPTION },
                   comment: { type: "string" },
-                  reviewedAt: { type: "number", description: "Explicit review timestamp confirming the current status and intention still hold; does not change the state-transition date." },
+                  reviewedAt: { type: "number", description: "Timestamp confirming status and intention still hold (keeps the transition date)." },
                 },
               },
-              supportingConnections: connectionInputSchema("REPLACE child links. Each item may be a child UUID or { ideaId, weight, explanation, relativePosition }."),
-              supportedIdeas: connectionInputSchema("REPLACE parent links. Each item may be a parent UUID or { ideaId, weight, explanation, relativePosition }. Metadata applies to the parent→this-idea edge."),
-              addSupportingConnections: connectionInputSchema("Append/update child links without replacing other children. Each item may include weight/explanation/relativePosition."),
-              removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child idea UUIDs to unlink without replacing other children." },
-              addSupportedIdeas: connectionInputSchema("Append/update parent links without replacing other parents. Each item may include weight/explanation/relativePosition for the parent→this-idea edge."),
-              removeSupportedIdeas: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink without replacing other parents." },
+              addSupportingConnections: connectionInputSchema("Add child links, or update weight/explanation of existing ones."),
+              removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child idea UUIDs to unlink." },
+              addSupportedIdeas: connectionInputSchema("Add parent links, or update weight/explanation of the parent→this-idea edge."),
+              removeSupportedIdeas: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink." },
               intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
               valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
               cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics); omitted = project default" },
@@ -480,7 +455,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "create_phase",
-          description: "Create an ordered work horizon or timebox under an optional parent. Place it with order, before, or after; these are virtual MCP arguments resolved to one sibling index. If several are supplied they must agree. Sibling names must match exactly and uniquely. Then use commit_idea_to_phase to make ideas discoverable and rankable.",
+          description: "Create an ordered work horizon or timebox under an optional parent. Place it with order, before, or after (combined, they must agree; sibling names must match exactly and uniquely). Then use commit_idea_to_phase to make ideas discoverable and rankable.",
           inputSchema: {
             type: "object",
             properties: {
@@ -564,7 +539,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "register_linked_repo",
-          description: "Make another locally checked-out .bowman project linkable from this one: reads its repoId+name and records the portable entry in meta plus the machine-local path. Only needed once per repo, before the first link_repo to it.",
+          description: "Make another locally checked-out Aimparency project linkable from this one (records its repoId, name and local path). Needed once per repo, before the first link_repo to it.",
           inputSchema: {
             type: "object",
             properties: {
@@ -702,7 +677,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "suggest_reparents",
-          description: "Read-only reparent suggestions for a vague catch-all parent: for each leaf child, suggest the closest structural sub-parent by embedding cosine. Candidate sub-parents default to the catch-all's children that are themselves parents; pass candidateParentIds to override. Run build_search_index first if empty. Apply with update_idea/merge_ideas.",
+          description: "Read-only: for each leaf child of a vague catch-all parent, suggests the closest sub-parent by embedding cosine (default candidates: the catch-all's children that are parents themselves; override with candidateParentIds). Run build_search_index first if empty. Apply with update_idea/merge_ideas.",
           inputSchema: {
             type: "object",
             properties: {
@@ -716,7 +691,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "graph_hygiene",
-          description: "Read-only dashboard of graph DEFECTS only: floating ideas (no phase AND no parents), mega-parents (catch-all smell, ≥ megaParentThreshold direct children), stale cancelled/failed/human-dependent ideas, collapse candidates (parents whose active children are all implemented), and duplicate clusters (cosine ≥ duplicateThreshold). Run build_search_index first for duplicate clusters. Uncommitted ideas are NOT reported here — having no phase is a normal state, not a defect; browse them with list_ideas uncommitted=true. Act on results via merge_ideas / suggest_reparents / update_idea.",
+          description: "Read-only dashboard of graph DEFECTS: floating ideas (no phase AND no parents), mega-parents (catch-all smell, >= megaParentThreshold direct children), stale cancelled/failed/human-dependent ideas, collapse candidates (all active children implemented), and duplicate clusters (cosine >= duplicateThreshold; needs build_search_index). Uncommitted ideas are NOT defects — having no phase is a normal state; browse them with list_ideas uncommitted=true. Act via merge_ideas / suggest_reparents / update_idea.",
           inputSchema: {
             type: "object",
             properties: {
@@ -743,7 +718,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "reconcile_status",
-          description: "Read-only status-reconciliation pass: lists OPEN ideas referenced by >= 1 CODE commit (8-char id prefix in the message; pure graph-bookkeeping commits that only touch .bowman/ are excluded so triage/reframe commits don't masquerade as implementation) — likely already implemented but never flipped to implemented. Ranked by commit count. Review each candidate against the code, then update_idea to done (with a reflection) if confirmed; note a parent may be only partially done, and a commit citing an idea as future work is a false positive. Needs a git repo with commits referencing idea ids.",
+          description: "Read-only: OPEN ideas cited by >= 1 code commit (8-char id prefix in the message; commits touching only .bowman/ don't count), ranked by commit count — likely implemented but never marked. Check each against the code, then update_idea to implemented with a reflection. A parent may be only partially done; a commit citing an idea as future work is a false positive. Needs a git repo.",
           inputSchema: {
             type: "object",
             properties: {
@@ -755,7 +730,7 @@ export function registerTools(server: Server, trpcClient: any) {
         },
         {
           name: "reconcile_code_presence",
-          description: "Read-only reconciliation heuristic complementing reconcile_status: for OPEN ideas NOT already cited by a code commit, extract code-shaped tokens (camelCase/snake_case/dotted/file names) from the idea text+description and check how many appear in the codebase via git grep. Flags ideas whose tokens are mostly present (>= minScore) as likely-already-implemented. Noisier than reconcile_status — matched/missing tokens are shown as evidence; verify against the code before update_idea to done. Needs a git repo.",
+          description: "Read-only, noisier complement to reconcile_status: for OPEN ideas no code commit cites, counts how many code-shaped tokens (camelCase/snake_case/dotted/file names) from text+description exist in the codebase (git grep). Ideas >= minScore are flagged as likely implemented, with matched/missing tokens as evidence. Verify against the code before update_idea to implemented. Needs a git repo.",
           inputSchema: {
             type: "object",
             properties: {
@@ -1166,7 +1141,6 @@ export function registerTools(server: Server, trpcClient: any) {
               projectPath: args.projectPath as string,
               parentIdeaId: result.id,
               childIdeaId: child.ideaId,
-              relativePosition: child.relativePosition,
               weight: child.weight,
               explanation: child.explanation,
             });
@@ -1180,7 +1154,6 @@ export function registerTools(server: Server, trpcClient: any) {
               projectPath: args.projectPath as string,
               parentIdeaId: parent.ideaId,
               childIdeaId: result.id,
-              relativePosition: parent.relativePosition,
               weight: parent.weight,
               explanation: parent.explanation,
             });
@@ -1217,38 +1190,10 @@ export function registerTools(server: Server, trpcClient: any) {
           if (args.cost !== undefined) updateData.cost = args.cost;
           if (args.duration !== undefined) updateData.duration = args.duration;
 
-          const hasConnectionDeltas =
-            args.addSupportingConnections !== undefined ||
-            args.removeSupportingConnections !== undefined ||
-            args.addSupportedIdeas !== undefined ||
-            args.removeSupportedIdeas !== undefined;
+          const parentMetadataToApply: Array<{ parentIdeaId: string; weight?: number; explanation?: string }> = [];
 
-          const parentMetadataToApply: Array<{
-            parentIdeaId: string;
-            relativePosition?: [number, number];
-            weight?: number;
-            explanation?: string;
-          }> = [];
-
-          if (args.supportingConnections !== undefined) {
-              updateData.supportingConnections = (args.supportingConnections as ConnectionInput[]).map(toStoredConnection);
-          }
-          if (args.supportedIdeas !== undefined) {
-            const supportedIdeaInputs = args.supportedIdeas as ConnectionInput[];
-            updateData.supportedIdeas = supportedIdeaInputs.map(connectionId);
-            for (const input of supportedIdeaInputs) {
-              if (typeof input === "string") continue;
-              const parent = normalizeConnectionInput(input);
-              parentMetadataToApply.push({
-                parentIdeaId: parent.ideaId,
-                relativePosition: parent.relativePosition,
-                weight: parent.weight,
-                explanation: parent.explanation,
-              });
-            }
-          }
-
-          if (hasConnectionDeltas) {
+          if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined ||
+              args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined) {
             const existingIdea = await trpcClient.idea.get.query({
               projectPath: args.projectPath as string,
               ideaId: args.ideaId as string,
@@ -1256,8 +1201,7 @@ export function registerTools(server: Server, trpcClient: any) {
 
             if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined) {
               const byChildId = new Map<string, any>();
-              const baseSupportingConnections = updateData.supportingConnections ?? existingIdea.supportingConnections ?? [];
-              for (const conn of baseSupportingConnections) {
+              for (const conn of existingIdea.supportingConnections ?? []) {
                 byChildId.set(conn.ideaId, { ...conn });
               }
               for (const childId of (args.removeSupportingConnections as string[] | undefined) ?? []) {
@@ -1271,7 +1215,7 @@ export function registerTools(server: Server, trpcClient: any) {
             }
 
             if (args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined) {
-              const parentIds = new Set<string>(updateData.supportedIdeas ?? existingIdea.supportedIdeas ?? []);
+              const parentIds = new Set<string>(existingIdea.supportedIdeas ?? []);
               for (const parentId of (args.removeSupportedIdeas as string[] | undefined) ?? []) {
                 parentIds.delete(parentId);
               }
@@ -1279,12 +1223,7 @@ export function registerTools(server: Server, trpcClient: any) {
                 const parent = normalizeConnectionInput(input);
                 parentIds.add(parent.ideaId);
                 if (typeof input !== "string") {
-                  parentMetadataToApply.push({
-                    parentIdeaId: parent.ideaId,
-                    relativePosition: parent.relativePosition,
-                    weight: parent.weight,
-                    explanation: parent.explanation,
-                  });
+                  parentMetadataToApply.push({ parentIdeaId: parent.ideaId, weight: parent.weight, explanation: parent.explanation });
                 }
               }
               updateData.supportedIdeas = Array.from(parentIds);
@@ -1298,11 +1237,7 @@ export function registerTools(server: Server, trpcClient: any) {
           });
 
           for (const parent of parentMetadataToApply) {
-            if (
-              parent.relativePosition === undefined &&
-              parent.weight === undefined &&
-              parent.explanation === undefined
-            ) continue;
+            if (parent.weight === undefined && parent.explanation === undefined) continue;
 
             const parentIdea = await trpcClient.idea.get.query({
               projectPath: args.projectPath as string,
@@ -1315,7 +1250,7 @@ export function registerTools(server: Server, trpcClient: any) {
             const next = {
               ...previous,
               ideaId: childIdeaId,
-              relativePosition: parent.relativePosition ?? previous.relativePosition ?? [0, 0],
+              relativePosition: previous.relativePosition ?? [0, 0],
               weight: parent.weight ?? previous.weight ?? 1,
               ...(parent.explanation !== undefined ? { explanation: parent.explanation } : {}),
             };
@@ -1941,7 +1876,7 @@ export function registerTools(server: Server, trpcClient: any) {
                   ? "No git commits found (not a git repo, or no history) — commit-reference reconciliation is unavailable."
                   : candidates.length === 0
                     ? "No open ideas are referenced by commits. Either the graph is in sync or commits don't cite idea ids."
-                    : "Each candidate is an OPEN idea cited by a commit — verify against the code, then update_idea to done with a reflection if implemented.",
+                    : "Each candidate is an OPEN idea cited by a commit — verify against the code, then update_idea to implemented with a reflection if confirmed.",
                 candidates: candidates.slice(0, limit),
               }, null, 2),
             }],

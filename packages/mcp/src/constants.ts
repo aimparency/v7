@@ -2,7 +2,7 @@ import { AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
 
 export const IDEA_STATES_DESCRIPTION = `Idea status: open (todo), partially (in progress), implemented (complete — include verification evidence in update_idea.reflection or addReflection), cancelled, failed, unclear (needs a human decision — explain in comment), human-dependent (blocked on a human action), archived. Don't leave completed or blocked work as open.`;
 
-export const PROJECT_PATH_DESCRIPTION = `Absolute path to the .bowman dir (append /.bowman to repo root)`
+export const PROJECT_PATH_DESCRIPTION = `Absolute path of the project root`
 
 export const PROJECT_PATH_TOOL_PROPERTY = {
   type: "string",
