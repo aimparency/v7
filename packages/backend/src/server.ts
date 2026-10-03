@@ -225,6 +225,12 @@ async function writeIdea(rawProjectPath: string, idea: Idea): Promise<void> {
   
   // Strip calculated values before saving
   const { calculatedValue, calculatedCost, ...ideaToSave } = placeUnplacedConnections(idea);
+  // Every writer passes here, so an invalid idea (e.g. cost 0) is refused
+  // instead of being stored and later hidden as unreadable.
+  const validation = IdeaSchema.safeParse(ideaToSave);
+  if (!validation.success) {
+    throw new Error(`Idea ${idea.id} was not saved: ${describeSchemaError(validation.error)}`);
+  }
 
   // Raw prior content rides along on the change event (undo history).
   const previous = (await readJsonOrNull(ideaPath)) ?? (await readJsonOrNull(oldPath));
@@ -323,32 +329,59 @@ async function migrateIdeaFiles(rawProjectPath: string): Promise<string[]> {
       if (!raw) continue;
       const { idea, changed } = normalizeIdeaRecord(raw);
       if (!changed && !hasUnplacedConnection(idea)) continue;
-      await writeIdea(projectPath, IdeaSchema.parse(idea));
+      // Unreadable ideas are reported by the consistency check, not fixed here.
+      const parsed = IdeaSchema.safeParse(idea);
+      if (!parsed.success) continue;
+      await writeIdea(projectPath, parsed.data);
       migrated.push(idea.id);
     }
   }
   return migrated;
 }
 
+// Zod issues as one readable line. Duck-typed: shared's schemas may use a
+// different zod copy than this package.
+function describeSchemaError(error: unknown): string {
+  const issues = (error as { issues?: Array<{ path: Array<string | number>; message: string }> }).issues;
+  return Array.isArray(issues)
+    ? issues.map((issue) => `${issue.path.join('.') || 'file'}: ${issue.message}`).join('; ')
+    : (error as Error).message;
+}
+
+export type UnreadableIdea = {
+  id: string;
+  file: string;
+  error: string;
+  // Whatever could still be read from the raw file, so the idea stays visible.
+  text?: string;
+  supportingIdeaIds: string[];
+};
+
 // Idea files that exist but fail to load (e.g. a value an older schema allowed).
-// listIdeas skips them, so consistency checks need them spelled out.
-async function listUnreadableIdeaFiles(rawProjectPath: string): Promise<Array<{ id: string; file: string; error: string }>> {
+// listIdeas skips them, so consistency checks and the graph need them spelled out.
+async function listUnreadableIdeaFiles(rawProjectPath: string): Promise<UnreadableIdea[]> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await migrateProject(projectPath);
-  const unreadable: Array<{ id: string; file: string; error: string }> = [];
+  const unreadable: UnreadableIdea[] = [];
   for (const dirName of ['ideas', 'archived-ideas']) {
     const dir = path.join(projectPath, dirName);
     if (!(await fs.pathExists(dir))) continue;
     for (const file of (await fs.readdir(dir)).filter((name) => name.endsWith('.json'))) {
+      let raw: any = null;
       try {
-        IdeaSchema.parse(normalizeIdeaRecord(await fs.readJson(path.join(dir, file))).idea);
+        raw = await fs.readJson(path.join(dir, file));
+        IdeaSchema.parse(normalizeIdeaRecord(raw).idea);
       } catch (error) {
-        // Duck-typed: shared's schemas may use a different zod copy than this package.
-        const issues = (error as { issues?: Array<{ path: Array<string | number>; message: string }> }).issues;
-        const reason = Array.isArray(issues)
-          ? issues.map((issue) => `${issue.path.join('.') || 'file'}: ${issue.message}`).join('; ')
-          : (error as Error).message;
-        unreadable.push({ id: path.basename(file, '.json'), file: `${dirName}/${file}`, error: reason });
+        const connections = Array.isArray(raw?.supportingConnections) ? raw.supportingConnections : [];
+        unreadable.push({
+          id: path.basename(file, '.json'),
+          file: `${dirName}/${file}`,
+          error: describeSchemaError(error),
+          text: typeof raw?.text === 'string' ? raw.text : undefined,
+          supportingIdeaIds: connections
+            .map((connection: any) => connection?.ideaId)
+            .filter((id: unknown): id is string => typeof id === 'string'),
+        });
       }
     }
   }

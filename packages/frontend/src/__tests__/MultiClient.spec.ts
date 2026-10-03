@@ -11,6 +11,7 @@ const { mockTrpc } = vi.hoisted(() => {
         repair: { mutate: vi.fn().mockResolvedValue({}) },
         getMeta: { query: vi.fn().mockResolvedValue({}) },
         checkConsistency: { query: vi.fn().mockResolvedValue({ valid: true, errors: [] }) },
+        listUnreadableIdeas: { query: vi.fn().mockResolvedValue([]) },
         onUpdate: {
           subscribe: vi.fn((input, opts) => {
             subscriptionCallback = opts.onData

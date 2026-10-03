@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from 'backend'
 import type { Phase as BasePhase, Idea as BaseIdea, Connection } from 'shared'
-import { calculateIdeaValues, defaultIdeaCost, AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared'
+import { calculateIdeaValues, defaultIdeaCost, INITIAL_STATES, toProjectRoot } from 'shared'
 import { trpc } from '../trpc'
 import { perfLog } from '../utils/perf-log'
 import { useUIStore } from './ui'
@@ -15,6 +15,7 @@ import { loadAllIdeasCache, saveIdeas } from '../utils/db'
 
 type RouterOutputs = inferRouterOutputs<AppRouter>
 type ConsistencyIssue = RouterOutputs['project']['checkConsistency']['issues'][number]
+type UnreadableIdea = RouterOutputs['project']['listUnreadableIdeas'][number]
 
 const isMissingFileError = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error)
@@ -25,6 +26,7 @@ const isMissingFileError = (error: unknown) => {
 // not tinted by any internal idea's status. (Tinting by the linked repo's own
 // meta color, when checked out, is a later refinement.)
 const REPO_NODE_COLOR = '#9e9e9e'
+const UNREADABLE_NODE_COLOR = '#f85149'
 
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
@@ -186,6 +188,8 @@ export const useDataStore = defineStore('data', {
   state: () => ({
     phases: {} as Record<string, Phase>,
     ideas: {} as Record<string, Idea>,
+    // Idea files the backend cannot load; shown as warning nodes in the graph.
+    unreadableIdeas: [] as UnreadableIdea[],
     loading: false,
     error: null as string | null,
     migrated: false, // Track if we've run the migration
@@ -337,18 +341,20 @@ export const useDataStore = defineStore('data', {
         fx: null as number | null, // Fixed position
         fy: null as number | null,
         value: state.calculatedValues.get(idea.id) || 0, // Add value here for graph
-        isRepo: false // real idea node (vs. a black-box linked-repo node, below)
+        isRepo: false, // real idea node (vs. a black-box linked-repo node, below)
+        unreadable: undefined as string | undefined // load error of a warning node (below)
       }))
 
       const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number, share: number, flowValue: number }[] = []
+      const unreadableIds = new Set(state.unreadableIdeas.map(entry => entry.id))
 
       ideas.forEach(idea => {
         // Draw links from Parent (idea) to Child (supportingConnections)
         if (idea.supportingConnections) {
             idea.supportingConnections.forEach(conn => {
             const childId = conn.ideaId
-            // Verify child exists to avoid broken links
-            if (state.ideas[childId]) {
+            // Verify child exists to avoid broken links (unreadable ones get warning nodes below)
+            if (state.ideas[childId] || unreadableIds.has(childId)) {
                 const share = state.flowShares.get(`${idea.id}->${childId}`) || 0
                 const flowValue = state.flowValues.get(`${idea.id}->${childId}`) || 0
                 links.push({
@@ -363,6 +369,31 @@ export const useDataStore = defineStore('data', {
             }
             })
         }
+      })
+
+      // Unreadable idea files stay visible as warning nodes, with the links their
+      // raw file still names, so a broken idea is never silently missing.
+      state.unreadableIdeas.forEach(entry => {
+        nodes.push({
+          id: entry.id,
+          text: `! ${entry.text ?? entry.id.slice(0, 8)}`,
+          status: 'open',
+          color: UNREADABLE_NODE_COLOR,
+          depth: 0,
+          x: 0,
+          y: 0,
+          vx: 0,
+          vy: 0,
+          fx: null as number | null,
+          fy: null as number | null,
+          value: 0,
+          isRepo: false,
+          unreadable: entry.error
+        })
+        entry.supportingIdeaIds.forEach(childId => {
+          if (!state.ideas[childId] && !unreadableIds.has(childId)) return
+          links.push({ source: childId, target: entry.id, type: 'hierarchy', relativePosition: [0, 0], weight: 1, share: 0, flowValue: 0 })
+        })
       })
 
       // Repo-level cross-repo links: render each referenced linked repo as ONE
@@ -397,7 +428,8 @@ export const useDataStore = defineStore('data', {
               fx: null as number | null,
               fy: null as number | null,
               value: state.calculatedValues.get(repoId) || 0,
-              isRepo: true
+              isRepo: true,
+              unreadable: undefined
             })
           }
           const share = state.flowShares.get(`${idea.id}->${repoId}`) || 0
@@ -922,7 +954,11 @@ export const useDataStore = defineStore('data', {
         }
 
         // 2. Fetch from server
-        const ideas = await trpc.idea.list.query({ projectPath });
+        const [ideas, unreadableIdeas] = await Promise.all([
+          trpc.idea.list.query({ projectPath }),
+          trpc.project.listUnreadableIdeas.query({ projectPath })
+        ]);
+        this.unreadableIdeas = unreadableIdeas;
         console.log(`[DataStore] Fetched ${ideas.length} ideas from server`);
         
         const serverIdeaIds = new Set(ideas.map(a => a.id));
@@ -1021,12 +1057,7 @@ export const useDataStore = defineStore('data', {
       // @ts-ignore - trpc subscription typing might differ
       this.subscription = trpc.project.onUpdate.subscribe(undefined, {
         onData: async (data: { type: string, id: string, projectPath: string, entity?: any, deleted?: boolean, previous?: unknown, origin?: string }) => {
-          // Normalize paths for comparison (handle .bowman suffix mismatch)
-          const suffix = '/' + AIMPARENCY_DIR_NAME;
-          const eventPath = data.projectPath.endsWith(suffix) ? data.projectPath.slice(0, -suffix.length) : (data.projectPath.endsWith(AIMPARENCY_DIR_NAME) ? data.projectPath.slice(0, -AIMPARENCY_DIR_NAME.length) : data.projectPath);
-          const myPath = projectPath.endsWith(suffix) ? projectPath.slice(0, -suffix.length) : (projectPath.endsWith(AIMPARENCY_DIR_NAME) ? projectPath.slice(0, -AIMPARENCY_DIR_NAME.length) : projectPath);
-          
-          if (eventPath !== myPath) return;
+          if (toProjectRoot(data.projectPath) !== toProjectRoot(projectPath)) return;
 
           // Before applying: the history needs the event, not the store state.
           useHistoryStore().recordChange(data);

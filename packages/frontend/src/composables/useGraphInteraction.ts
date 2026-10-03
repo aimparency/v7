@@ -7,7 +7,7 @@ import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { trpc } from '../trpc'
-import { type GraphNode, type GraphLink, useGraphSimulation } from './useGraphSimulation'
+import { type GraphNode, type GraphLink, isIdeaNode, useGraphSimulation } from './useGraphSimulation'
 
 export function useGraphInteraction(
     elementRef: Ref<HTMLElement | SVGSVGElement | undefined>,
@@ -465,7 +465,7 @@ export function useGraphInteraction(
             nodeLongPressTimer = window.setTimeout(() => {
                 nodeLongPressTimer = undefined
                 if (mapStore.cursorMoved) return
-                if (node.isRepo) return
+                if (!isIdeaNode(node)) return
                 if (uiStore.multiSelectMode && uiStore.isMultiSelected(node.id)) {
                     modalStore.openIdeaEditModal(node.id, [...uiStore.multiSelectedIdeaIds])
                     longPressedNodeId = node.id
@@ -481,10 +481,9 @@ export function useGraphInteraction(
                 longPressedNodeId = node.id
             }, 450)
         }
-        // Black-box repo nodes are read-only: you can reposition them, but never
-        // start a connection FROM them (a repo is always a supporter/child and
-        // never declares that it needs another idea).
-        if (node.isRepo) {
+        // Repo and unreadable-idea nodes are read-only: you can reposition them,
+        // but never start a connection FROM them.
+        if (!isIdeaNode(node)) {
             mapStore.startDragging(node)
             return
         }
@@ -515,7 +514,7 @@ export function useGraphInteraction(
             // Can't form a normal idea→idea connection onto a black-box repo node.
             // Repo links are created through the dedicated 'link a whole repo' UX,
             // not by dragging a connection onto the repo node.
-            if (parent.isRepo || child.isRepo) {
+            if (!isIdeaNode(parent) || !isIdeaNode(child)) {
                 return
             }
 
@@ -560,10 +559,10 @@ export function useGraphInteraction(
             if (!mapStore.cursorMoved) graphUIStore.toggleSpinOffRoot(node.id)
             return
         }
-        // A black-box repo node has no idea detail to select/track — it's an
-        // opaque modular boundary. Clicking it is a no-op for now (open/focus the
-        // linked repo is a later refinement); never select it as an idea.
-        if (node.isRepo) return
+        // Repo and unreadable-idea nodes have no idea detail to select or track
+        // (the label tooltip shows an unreadable idea's error); never select
+        // them as ideas.
+        if (!isIdeaNode(node)) return
 
         const isCtrl = event && (event.ctrlKey || event.metaKey)
         const isShift = event && event.shiftKey

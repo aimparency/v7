@@ -34,7 +34,11 @@ export interface GraphNode {
   freezeCounter?: number
   loadable?: boolean
   isRepo?: boolean // black-box linked-repo node (read-only, not a real idea)
+  unreadable?: string // load error of an idea file the backend cannot read (read-only warning node)
 }
+
+// A real, editable idea: not a linked-repo box or an unreadable-idea warning.
+export const isIdeaNode = (node: Pick<GraphNode, 'isRepo' | 'unreadable'>) => !node.isRepo && !node.unreadable
 
 export interface GraphLink {
   source: GraphNode
@@ -135,17 +139,15 @@ export function useGraphSimulation() {
       visibleSet = new Set(filter.visibleIds)
       loadableSet = new Set(filter.loadableIds)
       const allowedIds = new Set([...filter.visibleIds, ...filter.loadableIds])
-      // Black-box repo nodes belong to no phase, so they'd be filtered out by id.
-      // Keep a repo edge whenever the local idea it supports (the link target) is
-      // visible, and let its repo node (the source) ride along with that parent.
-      const repoNodeIds = new Set(allRawNodes.filter(n => n.isRepo).map(n => n.id))
+      // Repo and unreadable nodes belong to no phase, so they'd be filtered out
+      // by id. Keep their links to visible ideas, and let them ride along.
+      const unphasedIds = new Set(allRawNodes.filter(n => n.isRepo || n.unreadable).map(n => n.id))
+      const kept = (id: string) => allowedIds.has(id) || unphasedIds.has(id)
       rawLinks = allRawLinks.filter(l =>
-        repoNodeIds.has(l.source)
-          ? allowedIds.has(l.target)
-          : (allowedIds.has(l.source) && allowedIds.has(l.target))
+        kept(l.source) && kept(l.target) && (allowedIds.has(l.source) || allowedIds.has(l.target))
       )
-      const keptRepoIds = new Set(rawLinks.filter(l => repoNodeIds.has(l.source)).map(l => l.source))
-      rawNodes = allRawNodes.filter(n => n.isRepo ? keptRepoIds.has(n.id) : allowedIds.has(n.id))
+      const linkedIds = new Set(rawLinks.flatMap(l => [l.source, l.target]))
+      rawNodes = allRawNodes.filter(n => allowedIds.has(n.id) || (unphasedIds.has(n.id) && linkedIds.has(n.id)))
     }
 
     // Calculate Average Value for sizing
@@ -194,7 +196,8 @@ export function useGraphSimulation() {
           color,
           customColor: raw.color ?? null,
           loadable: isLoadable,
-          isRepo: raw.isRepo ?? false
+          isRepo: raw.isRepo ?? false,
+          unreadable: raw.unreadable
         }
         nodeMap.set(raw.id, existing)
       } else {
@@ -206,6 +209,7 @@ export function useGraphSimulation() {
         existing.customColor = raw.color ?? null
         existing.loadable = isLoadable
         existing.isRepo = raw.isRepo ?? false
+        existing.unreadable = raw.unreadable
         if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }
       newNodes.push(existing)

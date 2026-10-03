@@ -246,6 +246,11 @@ const transform = computed(() => {
 // only membership is throttled.
 const visibleLabelIds = ref<Set<string>>(new Set())
 
+// Ideas whose files fail to load: drawn as red "!" nodes, listed here with why.
+const unreadableIdeasSummary = computed(() =>
+  dataStore.unreadableIdeas.map((entry) => `${entry.file}: ${entry.error}`).join('\n')
+)
+
 const renderNodes = computed(() => {
     trigger.value;
     const currentIdeaId = graphUIStore.graphSelectedIdeaId
@@ -500,6 +505,11 @@ function toggleSpinOffPreview() {
 
     <GraphSidePanel v-if="graphUIStore.graphColorMode !== 'spin-off'" />
     <div class="top-controls">
+      <span
+        v-if="dataStore.unreadableIdeas.length"
+        class="unreadable-warning"
+        :title="unreadableIdeasSummary"
+      >! {{ dataStore.unreadableIdeas.length }} unreadable</span>
       <button class="control-btn" @click="dataStore.loadAllIdeas(projectStore.projectPath)" title="Reload Data">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 4v6h-6"></path>
@@ -663,6 +673,12 @@ function toggleSpinOffPreview() {
 .is-zooming .labels,
 .hide-labels .labels {
     display: none;
+}
+
+.unreadable-warning {
+  color: #f85149;
+  font-weight: bold;
+  cursor: help;
 }
 
 .top-controls {

@@ -11,6 +11,7 @@ import { CURRENT_DATA_MODEL_VERSION, INITIAL_STATES, IdeaSchema, PhaseSchema, ca
 import { assertWritableBowman } from 'shared/bowman-migration';
 import { spawn, type ChildProcess } from 'child_process';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
+import type { UnreadableIdea } from '../server.js';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { currentOrigin } from '../change-origin.js';
 import { findDuplicatePairs, clusterDuplicates } from '../duplicate-detection.js';
@@ -222,7 +223,7 @@ export const createProjectRouter = (
   ensureSearchIndex: (projectPath: string) => Promise<void>,
   migrateIdeaFiles: (projectPath: string) => Promise<string[]>,
   reconcilePhaseTree: (projectPath: string) => Promise<string[]>,
-  listUnreadableIdeaFiles: (projectPath: string) => Promise<Array<{ id: string; file: string; error: string }>>,
+  listUnreadableIdeaFiles: (projectPath: string) => Promise<UnreadableIdea[]>,
   ee: any
 ) => {
   const getWatchdogRuntimeStatePath = (rawProjectPath: string) =>
@@ -1410,6 +1411,13 @@ export const createProjectRouter = (
         return { fixedIdeas: count };
       }),
 
+    // Idea files that fail to load; the graph shows them as warning nodes.
+    listUnreadableIdeas: delayedProcedure
+      .input(z.object({
+        projectPath: z.string()
+      }))
+      .query(async ({ input }: any) => listUnreadableIdeaFiles(input.projectPath)),
+
     checkConsistency: delayedProcedure
       .input(z.object({
         projectPath: z.string()
@@ -1425,7 +1433,7 @@ export const createProjectRouter = (
         const unreadable = await listUnreadableIdeaFiles(input.projectPath);
         const unreadableIds = new Set(unreadable.map((file) => file.id));
         for (const file of unreadable) {
-          issues.push(createConsistencyIssue('idea_unreadable', `Idea ${file.id} (${file.file}) cannot be loaded and is hidden: ${file.error}`));
+          issues.push(createConsistencyIssue('idea_unreadable', `Idea ${file.id} (${file.file}) cannot be loaded: ${file.error}. Fix the file by hand.`));
         }
 
         const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));

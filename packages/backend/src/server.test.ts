@@ -1318,3 +1318,37 @@ test('an unreadable idea is reported and fixConsistency keeps every link to it',
   assert.deepStrictEqual((await fs.readJson(path.join(testProjectPath, 'phases', `${phase.id}.json`))).commitments, [child.id]);
   assert.equal(await fs.readFile(childFile, 'utf8'), unreadableContent, 'the unreadable file is not rewritten');
 });
+
+test('an invalid idea is refused on write, not stored to be hidden later', async () => {
+  const status = { state: 'open', comment: '', date: Date.now() };
+  const idea = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Idea', status } });
+  const file = path.join(testProjectPath, 'ideas', `${idea.id}.json`);
+  const stored = await fs.readJson(file);
+
+  // Undo writes raw snapshots and bypasses the input schemas of the idea router.
+  await assert.rejects(
+    caller.history.restore({
+      projectPath: testProjectPath,
+      changes: [{ type: 'idea', id: idea.id, expected: stored, target: { ...stored, cost: 0 } }]
+    }),
+    /was not saved: cost: Number must be greater than 0/
+  );
+  assert.deepStrictEqual(await fs.readJson(file), stored);
+});
+
+test('listUnreadableIdeas keeps what the broken file still says', async () => {
+  const status = { state: 'open', comment: '', date: Date.now() };
+  const parent = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Parent', status } });
+  const child = await caller.idea.createSubIdea({ projectPath: testProjectPath, parentIdeaId: parent.id, idea: { text: 'Child', status } });
+
+  const parentFile = path.join(testProjectPath, 'ideas', `${parent.id}.json`);
+  await fs.writeJson(parentFile, { ...(await fs.readJson(parentFile)), cost: 0 });
+
+  assert.deepStrictEqual(await caller.project.listUnreadableIdeas({ projectPath: testProjectPath }), [{
+    id: parent.id,
+    file: `ideas/${parent.id}.json`,
+    error: 'cost: Number must be greater than 0',
+    text: 'Parent',
+    supportingIdeaIds: [child.id]
+  }]);
+});
