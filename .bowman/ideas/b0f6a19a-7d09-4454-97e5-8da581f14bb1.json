@@ -16,7 +16,9 @@
       "weight": 1
     }
   ],
-  "supportedIdeas": [],
+  "supportedIdeas": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
   "committedIn": [],
   "status": {
     "state": "review",

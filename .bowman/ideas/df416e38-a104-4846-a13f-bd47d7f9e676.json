@@ -6,7 +6,9 @@
   "archived": false,
   "tags": [],
   "supportingConnections": [],
-  "supportedIdeas": [],
+  "supportedIdeas": [
+    "e552723a-7f28-46b5-a1e9-5a64220e8710"
+  ],
   "committedIn": [],
   "status": {
     "state": "implemented",
