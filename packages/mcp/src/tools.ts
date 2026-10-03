@@ -1769,7 +1769,7 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "check_consistency": {
-          const result = await trpcClient.project.checkConsistency.query({
+          const result = await trpcClient.graphHealth.checkConsistency.query({
             projectPath: args.projectPath as string,
           });
           return {
@@ -1778,7 +1778,7 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "fix_consistency": {
-          const result = await trpcClient.project.fixConsistency.mutate({
+          const result = await trpcClient.graphHealth.fixConsistency.mutate({
             projectPath: args.projectPath as string,
           });
           return {
@@ -1809,7 +1809,7 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "find_duplicate_ideas": {
-          const result = await trpcClient.project.findDuplicates.query({
+          const result = await trpcClient.graphHealth.findDuplicates.query({
             projectPath: args.projectPath as string,
             threshold: args.threshold as number | undefined,
             limit: args.limit as number | undefined,
@@ -1820,7 +1820,7 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "suggest_reparents": {
-          const result = await trpcClient.project.suggestReparents.query({
+          const result = await trpcClient.graphHealth.suggestReparents.query({
             projectPath: args.projectPath as string,
             parentIdeaId: args.parentIdeaId as string,
             candidateParentIds: args.candidateParentIds as string[] | undefined,
@@ -1832,7 +1832,7 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "graph_hygiene": {
-          const result = await trpcClient.project.graphHygiene.query({
+          const result = await trpcClient.graphHealth.graphHygiene.query({
             projectPath: args.projectPath as string,
             megaParentThreshold: args.megaParentThreshold as number | undefined,
             duplicateThreshold: args.duplicateThreshold as number | undefined,

@@ -150,8 +150,8 @@ async function loadAutonomyState() {
   if (!projectStore.projectPath) return
 
   const [watchdogRuntime, policy] = await Promise.all([
-    trpc.project.getWatchdogRuntimeState.query({ projectPath: projectStore.projectPath }) as Promise<WatchdogRuntimeState>,
-    trpc.project.getAutonomyPolicy.query({ projectPath: projectStore.projectPath }) as Promise<{
+    trpc.watchdog.getRuntimeState.query({ projectPath: projectStore.projectPath }) as Promise<WatchdogRuntimeState>,
+    trpc.watchdog.getAutonomyPolicy.query({ projectPath: projectStore.projectPath }) as Promise<{
       autonomyMode: 'manual' | 'supervised' | 'autonomous'
       preferredAgentType: AgentType | null
       sessionLeaseMinutes: number
@@ -257,7 +257,7 @@ const save = async () => {
           defaultCost: defaultCost.value,
           statuses: statuses.value
         })
-        await trpc.project.updateAutonomyPolicy.mutate({
+        await trpc.watchdog.updateAutonomyPolicy.mutate({
           projectPath: projectStore.projectPath,
           policy: {
             autonomyMode: autonomyMode.value,

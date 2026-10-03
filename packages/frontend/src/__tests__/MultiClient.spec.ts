@@ -7,10 +7,12 @@ import { useProjectStore } from '../stores/project-store'
 const { mockTrpc } = vi.hoisted(() => {
   return {
     mockTrpc: {
+      graphHealth: {
+        checkConsistency: { query: vi.fn().mockResolvedValue({ valid: true, errors: [] }) },
+      },
       project: {
         repair: { mutate: vi.fn().mockResolvedValue({}) },
         getMeta: { query: vi.fn().mockResolvedValue({}) },
-        checkConsistency: { query: vi.fn().mockResolvedValue({ valid: true, errors: [] }) },
         loadIdeas: { query: vi.fn().mockResolvedValue({ ideas: [], unreadable: [] }) },
         onUpdate: {
           subscribe: vi.fn((input, opts) => {

@@ -14,7 +14,7 @@ import { clientId } from '../utils/mutation-activity'
 import { loadAllIdeasCache, saveIdeas } from '../utils/db'
 
 type RouterOutputs = inferRouterOutputs<AppRouter>
-type ConsistencyIssue = RouterOutputs['project']['checkConsistency']['issues'][number]
+type ConsistencyIssue = RouterOutputs['graphHealth']['checkConsistency']['issues'][number]
 type UnreadableIdea = RouterOutputs['project']['loadIdeas']['unreadable'][number]
 
 const isMissingFileError = (error: unknown) => {
@@ -1355,7 +1355,7 @@ export const useDataStore = defineStore('data', {
         const startedAt = performance.now();
         perfLog('data.checkConsistency:start', { projectPath });
         try {
-            const result = await trpc.project.checkConsistency.query({ projectPath });
+            const result = await trpc.graphHealth.checkConsistency.query({ projectPath });
             this.consistencyErrors = result.errors;
             this.consistencyIssues = result.issues ?? result.errors.map((message) => ({
                 code: 'legacy',
@@ -1371,7 +1371,7 @@ export const useDataStore = defineStore('data', {
     async fixConsistency(projectPath: string) {
         if (!projectPath) return;
         try {
-            const result = await trpc.project.fixConsistency.mutate({ projectPath });
+            const result = await trpc.graphHealth.fixConsistency.mutate({ projectPath });
             // Reload everything after fix
             await this.loadProject(projectPath);
             this.consistencyErrors = [];

@@ -2,7 +2,7 @@ import type { Idea } from 'shared';
 import { cosineSimilarity } from 'shared';
 
 // Pure core of the duplicate-detection maintenance tooling, shared by
-// project.findDuplicates (ranked pair report) and project.graphHygiene
+// graphHealth.findDuplicates (ranked pair report) and graphHealth.graphHygiene
 // (union-find clusters). Kept dependency-free (inject vectors + ideaMap) so the
 // precision behaviour — especially the parent-child exclusion — is unit-testable
 // without disk, embeddings, or a tRPC caller.

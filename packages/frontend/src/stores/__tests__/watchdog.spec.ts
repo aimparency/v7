@@ -23,10 +23,10 @@ const { mockIo, mockTrpcWatchdog, mockTrpc } = vi.hoisted(() => ({
     }
   },
   mockTrpc: {
-    project: {
-      getWatchdogRuntimeState: { query: vi.fn() },
+    watchdog: {
+      getRuntimeState: { query: vi.fn() },
       getAutonomyPolicy: { query: vi.fn() },
-      updateWatchdogRuntimeState: { mutate: vi.fn() },
+      updateRuntimeState: { mutate: vi.fn() },
       updateAutonomyPolicy: { mutate: vi.fn() }
     }
   }
@@ -59,7 +59,7 @@ describe('watchdog store project switching', () => {
       { projectPath: '/projects/b', pid: 2, port: 4102, agentType: 'claude', lastKeepalive: Date.now() }
     ])
 
-    mockTrpc.project.getWatchdogRuntimeState.query.mockResolvedValue({
+    mockTrpc.watchdog.getRuntimeState.query.mockResolvedValue({
       updatedAt: Date.now(),
       agents: {
         claude: {
@@ -71,7 +71,7 @@ describe('watchdog store project switching', () => {
       }
     })
 
-    mockTrpc.project.getAutonomyPolicy.query.mockResolvedValue({
+    mockTrpc.watchdog.getAutonomyPolicy.query.mockResolvedValue({
       version: 1,
       autonomyMode: 'manual',
       preferredAgentType: 'claude',
@@ -87,7 +87,7 @@ describe('watchdog store project switching', () => {
     const projectStore = useProjectStore()
     const store = useWatchdogStore()
     projectStore.projectPath = '/projects/a'
-    mockTrpc.project.getWatchdogRuntimeState.query.mockResolvedValueOnce({
+    mockTrpc.watchdog.getRuntimeState.query.mockResolvedValueOnce({
       updatedAt: 3,
       agents: {
         claude: {
@@ -168,7 +168,7 @@ describe('watchdog store project switching', () => {
     const projectStore = useProjectStore()
     const store = useWatchdogStore()
 
-    mockTrpc.project.getAutonomyPolicy.query.mockResolvedValue({
+    mockTrpc.watchdog.getAutonomyPolicy.query.mockResolvedValue({
       version: 1,
       autonomyMode: 'manual',
       preferredAgentType: 'claude',

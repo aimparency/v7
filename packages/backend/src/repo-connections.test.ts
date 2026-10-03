@@ -71,7 +71,7 @@ test('consistency check ignores repo edges (no phantom non-existent-child issue)
   const ideaId = await makeIdea('idea with a black-box repo supporter');
   await caller.idea.update({ projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
 
-  const report = await caller.project.checkConsistency({ projectPath });
+  const report = await caller.graphHealth.checkConsistency({ projectPath });
   const messages = (report.issues ?? []).map((i: any) => `${i.code} ${i.message}`).join('\n');
   assert.ok(
     !messages.includes(EXTERNAL_REPO_ID),
@@ -83,7 +83,7 @@ test('fixConsistency does not prune a repo edge', async () => {
   const ideaId = await makeIdea('idea');
   await caller.idea.update({ projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
 
-  await caller.project.fixConsistency({ projectPath });
+  await caller.graphHealth.fixConsistency({ projectPath });
 
   const reloaded = await caller.idea.get({ projectPath, ideaId });
   assert.equal(reloaded.supportingRepos?.length, 1, 'fix must not strip the repo edge');

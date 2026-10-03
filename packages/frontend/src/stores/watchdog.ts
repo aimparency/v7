@@ -153,7 +153,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
 
   async function trpcWatchdogRuntimePreference(projectPath: string, preferredAgentType: AgentType) {
     try {
-      await trpc.project.updateWatchdogRuntimeState.mutate({
+      await trpc.watchdog.updateRuntimeState.mutate({
         projectPath,
         preferredAgentType
       })
@@ -610,7 +610,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     if (!projectPath) return null
 
     try {
-      const runtimeState = await trpc.project.getWatchdogRuntimeState.query({
+      const runtimeState = await trpc.watchdog.getRuntimeState.query({
         projectPath
       }) as WatchdogRuntimeState
 
@@ -656,7 +656,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     if (!projectPath) return null
 
     try {
-      const policy = await trpc.project.getAutonomyPolicy.query({
+      const policy = await trpc.watchdog.getAutonomyPolicy.query({
         projectPath
       }) as AutonomyPolicy
       autonomyPolicy.value = policy
@@ -673,7 +673,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     if (!projectPath) return null
 
     try {
-      const merged = await trpc.project.updateAutonomyPolicy.mutate({
+      const merged = await trpc.watchdog.updateAutonomyPolicy.mutate({
         projectPath,
         policy
       }) as AutonomyPolicy

@@ -25,10 +25,12 @@ vi.mock('../../trpc', () => ({
   trpc: {
     project: {
       getMeta: { query: vi.fn().mockResolvedValue(null) },
-      getWatchdogRuntimeState: { query: vi.fn().mockResolvedValue({ updatedAt: 0, agents: {} }) },
-      getAutonomyPolicy: { query: vi.fn().mockResolvedValue(policy) },
-      updateAutonomyPolicy: { mutate: vi.fn().mockResolvedValue({}) },
       discoverLocalProjects: { query: discoverMock }
+    },
+    watchdog: {
+      getRuntimeState: { query: vi.fn().mockResolvedValue({ updatedAt: 0, agents: {} }) },
+      getAutonomyPolicy: { query: vi.fn().mockResolvedValue(policy) },
+      updateAutonomyPolicy: { mutate: vi.fn().mockResolvedValue({}) }
     },
     linkedRepo: {
       list: { query: listMock },

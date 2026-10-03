@@ -620,7 +620,7 @@ test('phase reads derive legacy root and child ordering in memory; fixConsistenc
   const parentFile = path.join(phasesDir, `${rootEarlyId}.json`);
   assert.equal((await fs.readJson(parentFile) as Phase).childPhaseIds, undefined, 'reads must not write');
 
-  await caller.project.fixConsistency({ projectPath: testProjectPath });
+  await caller.graphHealth.fixConsistency({ projectPath: testProjectPath });
   assert.deepEqual((await fs.readJson(parentFile) as Phase).childPhaseIds, [childEarlyId, childLateId]);
 });
 
@@ -658,7 +658,7 @@ test('phase migration preserves canonical order while repairing missing and stal
 
   // Reads return what is stored; the repair is explicit.
   assert.deepEqual((await caller.project.getMeta({ projectPath: testProjectPath })).rootPhaseIds, [rootSecondId, staleId]);
-  await caller.project.fixConsistency({ projectPath: testProjectPath });
+  await caller.graphHealth.fixConsistency({ projectPath: testProjectPath });
 
   const meta = await caller.project.getMeta({ projectPath: testProjectPath });
   assert.deepEqual(meta.rootPhaseIds, [rootSecondId, rootFirstId]);
@@ -848,7 +848,7 @@ test('readIdea - upgrades legacy incoming array in memory; fixConsistency persis
 
   // The referenced children don't exist, so later consistency fixes drop the
   // links again; this only checks that the upgrade itself was persisted.
-  const { fixes } = await caller.project.fixConsistency({ projectPath: testProjectPath });
+  const { fixes } = await caller.graphHealth.fixConsistency({ projectPath: testProjectPath });
   assert.ok(fixes.some((fix: string) => fix.startsWith('Upgraded') && fix.includes(ideaId)));
   assert.equal((await fs.readJson(ideaFile)).incoming, undefined);
 });
@@ -884,7 +884,7 @@ test('readIdea - upgrades legacy outgoing array in memory; fixConsistency persis
   const ideaFile = path.join(testProjectPath, 'ideas', `${ideaId}.json`);
   assert.deepEqual(await fs.readJson(ideaFile), legacyIdea);
 
-  const { fixes } = await caller.project.fixConsistency({ projectPath: testProjectPath });
+  const { fixes } = await caller.graphHealth.fixConsistency({ projectPath: testProjectPath });
   assert.ok(fixes.some((fix: string) => fix.startsWith('Upgraded') && fix.includes(ideaId)));
   assert.equal((await fs.readJson(ideaFile)).outgoing, undefined);
 });
@@ -908,7 +908,7 @@ test('readIdea leaves unplaced [0,0] connections on disk; fixConsistency places 
   await caller.idea.list({ projectPath: testProjectPath });
   assert.equal(await fs.readFile(parentFile, 'utf8'), before);
 
-  await caller.project.fixConsistency({ projectPath: testProjectPath });
+  await caller.graphHealth.fixConsistency({ projectPath: testProjectPath });
   const [connection] = (await fs.readJson(parentFile)).supportingConnections;
   assert.equal(connection.ideaId, childId);
   assert.notDeepEqual(connection.relativePosition, [0, 0]);
@@ -1308,11 +1308,11 @@ test('an unreadable idea is reported and fixConsistency keeps every link to it',
   await fs.writeJson(childFile, { ...(await fs.readJson(childFile)), cost: 0 });
   const unreadableContent = await fs.readFile(childFile, 'utf8');
 
-  const check = await caller.project.checkConsistency({ projectPath: testProjectPath });
+  const check = await caller.graphHealth.checkConsistency({ projectPath: testProjectPath });
   assert.deepStrictEqual(check.issues.map((issue: any) => issue.code), ['idea_unreadable']);
   assert.match(check.issues[0]!.message, /cost: Number must be greater than 0/);
 
-  await caller.project.fixConsistency({ projectPath: testProjectPath });
+  await caller.graphHealth.fixConsistency({ projectPath: testProjectPath });
   const parentAfter = await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id });
   assert.deepStrictEqual(parentAfter.supportingConnections.map((connection) => connection.ideaId), [child.id]);
   assert.deepStrictEqual((await fs.readJson(path.join(testProjectPath, 'phases', `${phase.id}.json`))).commitments, [child.id]);
@@ -1367,8 +1367,8 @@ test('fixConsistency keeps links to archived ideas', async () => {
   const child = await caller.idea.createSubIdea({ projectPath: testProjectPath, parentIdeaId: parent.id, idea: { text: 'Child', status } });
   await caller.idea.update({ projectPath: testProjectPath, ideaId: child.id, idea: { status: { ...status, state: 'archived' } } });
 
-  assert.deepStrictEqual((await caller.project.checkConsistency({ projectPath: testProjectPath })).issues, []);
-  assert.deepStrictEqual((await caller.project.fixConsistency({ projectPath: testProjectPath })).fixes, []);
+  assert.deepStrictEqual((await caller.graphHealth.checkConsistency({ projectPath: testProjectPath })).issues, []);
+  assert.deepStrictEqual((await caller.graphHealth.fixConsistency({ projectPath: testProjectPath })).fixes, []);
   const parentAfter = await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id });
   assert.deepStrictEqual(parentAfter.supportingConnections.map((connection) => connection.ideaId), [child.id]);
 });

@@ -13,6 +13,9 @@ import { voiceRouter } from './routers/voice.js';
 import { graphRouter } from './routers/graph.js';
 import { marketRouter } from './routers/market.js';
 import { projectRouter } from './routers/project.js';
+import { loopRouter } from './routers/loop.js';
+import { watchdogRouter } from './routers/watchdog.js';
+import { graphHealthRouter } from './routers/graph-health.js';
 import { historyRouter } from './routers/history.js';
 import { spinOffRouter } from './routers/spin-off.js';
 import { linkedRepoRouter } from './routers/linked-repo.js';
@@ -25,6 +28,9 @@ const appRouter = t.router({
   graph: graphRouter,
   market: marketRouter,
   project: projectRouter,
+  loop: loopRouter,
+  watchdog: watchdogRouter,
+  graphHealth: graphHealthRouter,
   spinOff: spinOffRouter,
   linkedRepo: linkedRepoRouter,
   history: historyRouter,

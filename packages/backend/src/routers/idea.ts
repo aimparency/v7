@@ -9,7 +9,7 @@ import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
 import { getIdeaCommitEvidence, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 import { t, delayedProcedure } from '../trpc.js';
-import { emitChange, onChange } from '../change-events.js';
+import { emitChange } from '../change-events.js';
 import { readIdea, listIdeas, writeIdea, connectIdeasInternal, getRandomRelativePosition } from '../storage/ideas.js';
 import { readPhase } from '../storage/phases.js';
 import { commitIdeaToPhase, removeIdeaFromPhase } from '../storage/commitments.js';

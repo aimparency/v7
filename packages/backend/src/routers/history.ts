@@ -9,7 +9,7 @@ import { addIdeaToIndex, addPhaseToIndex, removeIdeaFromIndex, removePhaseFromIn
 import { embeddingTextForIdea, generateEmbedding, removeEmbedding, saveEmbedding } from '../embeddings.js';
 import { invalidateSemanticCache } from '../forces.js';
 import { t, delayedProcedure } from '../trpc.js';
-import { emitChange, onChange } from '../change-events.js';
+import { emitChange } from '../change-events.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { writeIdea } from '../storage/ideas.js';
 import { writePhase } from '../storage/phases.js';

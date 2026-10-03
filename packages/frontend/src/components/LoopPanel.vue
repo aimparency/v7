@@ -150,8 +150,8 @@ const hydrate = async () => {
   loading.value = true
   try {
     const [runtime, config] = await Promise.all([
-      trpc.project.getLoopRuntimeState.query({ projectPath: projectStore.projectPath }),
-      trpc.project.getLoopRuntimeConfig.query({ projectPath: projectStore.projectPath })
+      trpc.loop.getState.query({ projectPath: projectStore.projectPath }),
+      trpc.loop.getConfig.query({ projectPath: projectStore.projectPath })
     ])
     loops.value = runtime.loops
     instances.value = runtime.instances
@@ -192,7 +192,7 @@ const saveConfig = async () => {
   saving.value = true
   message.value = ''
   try {
-    await trpc.project.updateLoop.mutate({
+    await trpc.loop.update.mutate({
         projectPath: projectStore.projectPath,
         loopId: selectedLoop.value.id,
         name: loopNameDraft.value,
@@ -210,7 +210,7 @@ const saveConfig = async () => {
     if (openrouterApiKey.value) secrets.OPENROUTER_API_KEY = openrouterApiKey.value
     if (loopApiKey.value) secrets.LOOP_API_KEY = loopApiKey.value
     if (Object.keys(secrets).length > 0) {
-      secretsPresent.value = await trpc.project.updateLoopSecrets.mutate({ projectPath: projectStore.projectPath, secrets })
+      secretsPresent.value = await trpc.loop.updateSecrets.mutate({ projectPath: projectStore.projectPath, secrets })
       nvidiaApiKey.value = ''
       openrouterApiKey.value = ''
       loopApiKey.value = ''
@@ -227,7 +227,7 @@ const saveConfig = async () => {
 
 const createLoop = async () => {
   if (!projectStore.projectPath) return
-  const runtime = await trpc.project.createLoop.mutate({ projectPath: projectStore.projectPath })
+  const runtime = await trpc.loop.create.mutate({ projectPath: projectStore.projectPath })
   loops.value = runtime.loops
   instances.value = runtime.instances
   selectedLoopId.value = runtime.selectedLoopId
@@ -239,7 +239,7 @@ const createLoop = async () => {
 
 const duplicateLoop = async () => {
   if (!projectStore.projectPath || !selectedLoop.value) return
-  const runtime = await trpc.project.duplicateLoop.mutate({ projectPath: projectStore.projectPath, loopId: selectedLoop.value.id })
+  const runtime = await trpc.loop.duplicate.mutate({ projectPath: projectStore.projectPath, loopId: selectedLoop.value.id })
   loops.value = runtime.loops
   instances.value = runtime.instances
   selectedLoopId.value = runtime.selectedLoopId
@@ -260,7 +260,7 @@ const duplicateLoop = async () => {
 const deleteLoop = async () => {
   if (!projectStore.projectPath || !selectedLoop.value) return
   if (!confirm(`Delete loop "${selectedLoop.value.name}" and all its instances?`)) return
-  const runtime = await trpc.project.deleteLoop.mutate({ projectPath: projectStore.projectPath, loopId: selectedLoop.value.id })
+  const runtime = await trpc.loop.delete.mutate({ projectPath: projectStore.projectPath, loopId: selectedLoop.value.id })
   loops.value = runtime.loops
   instances.value = runtime.instances
   selectedLoopId.value = runtime.selectedLoopId
@@ -272,7 +272,7 @@ const deleteLoop = async () => {
 
 const createInstance = async () => {
   if (!projectStore.projectPath || !selectedLoopId.value) return
-  const runtime = await trpc.project.createLoopInstance.mutate({ projectPath: projectStore.projectPath, loopId: selectedLoopId.value })
+  const runtime = await trpc.loop.createInstance.mutate({ projectPath: projectStore.projectPath, loopId: selectedLoopId.value })
   loops.value = runtime.loops
   instances.value = runtime.instances
   selectedInstanceId.value = runtime.selectedInstanceId ?? null
@@ -281,7 +281,7 @@ const createInstance = async () => {
 const deleteInstance = async () => {
   if (!projectStore.projectPath || !selectedInstance.value) return
   if (!confirm(`Close instance "${selectedInstance.value.name}"?`)) return
-  const runtime = await trpc.project.deleteLoopInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
+  const runtime = await trpc.loop.deleteInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
   loops.value = runtime.loops
   instances.value = runtime.instances
   selectedInstanceId.value = null
@@ -289,7 +289,7 @@ const deleteInstance = async () => {
 
 const updateSelectedInstance = async (patch: Partial<Pick<LoopInstance, 'name' | 'targetPhaseId' | 'targetIdeaId' | 'stopPolicy'>>) => {
   if (!projectStore.projectPath || !selectedInstance.value) return
-  const runtime = await trpc.project.updateLoopInstance.mutate({
+  const runtime = await trpc.loop.updateInstance.mutate({
     projectPath: projectStore.projectPath,
     instanceId: selectedInstance.value.id,
     ...patch
@@ -371,20 +371,20 @@ const openIdeaTargetSearch = () => {
 
 const startInstance = async () => {
   if (!projectStore.projectPath || !selectedInstance.value) return
-  await trpc.project.startLoopInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
+  await trpc.loop.startInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
   await hydrate()
 }
 
 const stopInstance = async () => {
   if (!projectStore.projectPath || !selectedInstance.value) return
-  await trpc.project.stopLoopInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
+  await trpc.loop.stopInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
   await hydrate()
 }
 
 const restartInstance = async () => {
   if (!projectStore.projectPath || !selectedInstance.value) return
   if (!confirm(`Restart instance "${selectedInstance.value.name}" and erase its log?`)) return
-  const runtime = await trpc.project.restartLoopInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
+  const runtime = await trpc.loop.restartInstance.mutate({ projectPath: projectStore.projectPath, instanceId: selectedInstance.value.id })
   loops.value = runtime.loops
   instances.value = runtime.instances
   focusedLogIndex.value = -1
@@ -396,7 +396,7 @@ const sendHumanMessage = async () => {
   if (!projectStore.projectPath || !selectedInstance.value || !humanMessage.value.trim()) return
   const text = humanMessage.value.trim()
   humanMessage.value = ''
-  const runtime = await trpc.project.sendLoopHumanMessage.mutate({
+  const runtime = await trpc.loop.sendHumanMessage.mutate({
     projectPath: projectStore.projectPath,
     instanceId: selectedInstance.value.id,
     content: text,
