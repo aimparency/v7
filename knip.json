@@ -1,0 +1,32 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": [
+    "meta/**",
+    "**/fixtures/**",
+    "**/env.d.ts"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "scripts/**/*.{mjs,ts}"
+      ]
+    },
+    "packages/*": {
+      "entry": [
+        "src/**/*.{test,spec}.ts",
+        "scripts/**/*.ts",
+        "e2e/**/*.ts"
+      ]
+    },
+    "packages/wrapped-agents/*": {
+      "entry": [
+        "src/**/*.{test,spec}.ts",
+        "src/scripts/**/*.ts"
+      ]
+    }
+  },
+  "ignoreBinaries": [
+    "npm-check-updates"
+  ],
+  "ignoreExportsUsedInFile": true
+}

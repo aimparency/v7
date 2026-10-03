@@ -61,7 +61,8 @@
     "expose:mcp": "dotenv -e .env -- npm run expose -w mcp",
     "rec-install": "npm install && cd packages/shared && npm install && cd ../backend && npm install && cd ../frontend && npm install && cd ../mcp && npm install",
     "real-world": "dotenv -e .env -- npm run start -w real-world --",
-    "check": "node scripts/check.mjs"
+    "check": "node scripts/check.mjs",
+    "knip": "knip --no-progress"
   },
   "keywords": [
     "aimparency",
@@ -75,6 +76,8 @@
   "devDependencies": {
     "concurrently": "^10.0.3",
     "dotenv-cli": "^11.0.0",
+    "knip": "^5.88.1",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3"
   },
   "repository": {

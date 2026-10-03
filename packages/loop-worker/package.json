@@ -17,7 +17,6 @@
     "agent-tools": "*",
     "ai": "^6.0.219",
     "fs-extra": "^11.3.2",
-    "shared": "*",
     "zod": "^3.25.76"
   },
   "devDependencies": {

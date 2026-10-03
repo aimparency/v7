@@ -12,11 +12,6 @@ export interface Bounds {
   maxY: number
 }
 
-export interface Point {
-  x: number
-  y: number
-}
-
 export interface QuadtreeItem {
   id: string
   x: number

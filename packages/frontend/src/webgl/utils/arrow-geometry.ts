@@ -267,19 +267,6 @@ function createDegenerateGeometry(S: Vec2, T: Vec2, targetR: number): ArrowGeome
 }
 
 /**
- * Calculate bounding box for the arrow
- */
-export function calculateArrowBounds(geom: ArrowGeometry): { min: Vec2, max: Vec2 } {
-  const M = geom.arcCenter
-  const r = geom.centerRadius * (1 + geom.normalizedHalfWidth)
-
-  return {
-    min: { x: M.x - r, y: M.y - r },
-    max: { x: M.x + r, y: M.y + r }
-  }
-}
-
-/**
  * Hit test: check if a point is inside the arrow shape
  * Replicates the fragment shader logic for CPU-side hit testing
  */

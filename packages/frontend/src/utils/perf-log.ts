@@ -149,13 +149,6 @@ export function hasQueryFlag(flag: string) {
   return params.has(flag)
 }
 
-export function clearPerfLogging() {
-  if (typeof console !== 'undefined' && console.clear) {
-    console.clear()
-  }
-  resetState()
-}
-
 export function installPerfLoggingControls() {
   if (typeof window === 'undefined') return
   if (isPerfLoggingEnabled()) {
@@ -165,31 +158,4 @@ export function installPerfLoggingControls() {
 
 export function perfLog(event: string, details: Record<string, unknown> = {}) {
   record(event, { t: timestamp(), ...details })
-}
-
-export async function perfAsync<T>(
-  event: string,
-  details: Record<string, unknown>,
-  fn: () => Promise<T>
-): Promise<T> {
-  if (!isPerfLoggingEnabled()) {
-    return await fn()
-  }
-
-  const opStartedAt = now()
-  record(`${event}:start`, details)
-  try {
-    const result = await fn()
-    record(`${event}:done`, {
-      ...details,
-      durationMs: Math.round((now() - opStartedAt) * 100) / 100
-    })
-    return result
-  } catch (error) {
-    record(`${event}:error`, {
-      ...details,
-      durationMs: Math.round((now() - opStartedAt) * 100) / 100
-    })
-    throw error
-  }
 }

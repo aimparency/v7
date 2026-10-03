@@ -105,15 +105,6 @@ export function zoomPath(from: CameraFrame, to: CameraFrame, shortRatio: number,
   }
 }
 
-export function unionCameraRects(a: CameraRect, b: CameraRect): CameraRect {
-  return {
-    minX: Math.min(a.minX, b.minX),
-    minY: Math.min(a.minY, b.minY),
-    maxX: Math.max(a.maxX, b.maxX),
-    maxY: Math.max(a.maxY, b.maxY),
-  }
-}
-
 export function fitCameraRect(
   rect: CameraRect,
   xratio: number,

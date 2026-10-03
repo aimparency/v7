@@ -197,10 +197,8 @@ export const createIdeaRouter = (
                 valB = b.text.toLowerCase();
                 break;
               case 'priority':
-                const costA = (a.cost && a.cost > 0) ? a.cost : 0.1;
-                const costB = (b.cost && b.cost > 0) ? b.cost : 0.1;
-                valA = (a.intrinsicValue || 0) / costA;
-                valB = (b.intrinsicValue || 0) / costB;
+                valA = (a.intrinsicValue || 0) / a.cost;
+                valB = (b.intrinsicValue || 0) / b.cost;
                 break;
             }
 

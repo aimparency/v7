@@ -1,4 +1,4 @@
-import fs from 'fs-extra';
+import fs from 'node:fs/promises';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
@@ -31,8 +31,8 @@ async function run() {
         generatedAt: new Date().toISOString()
     };
 
-    await fs.ensureDir(ASSETS_DIR);
-    await fs.writeJson(CONFIG_FILE, config, { spaces: 2 });
+    await fs.mkdir(ASSETS_DIR, { recursive: true });
+    await fs.writeFile(CONFIG_FILE, JSON.stringify(config, null, 2) + '\n');
     
     console.log(`[MobileConfig] Generated config with IP: ${ip}`);
     console.log(`[MobileConfig] Path: ${CONFIG_FILE}`);

@@ -1206,12 +1206,6 @@ export function registerTools(server: Server, trpcClient: any) {
         }
 
         case "update_idea": {
-          if (args.cost !== undefined && (!Number.isFinite(args.cost) || (args.cost as number) <= 0)) {
-            throw new Error("Estimated direct cost must be a finite number greater than 0.");
-          }
-          if (args.duration !== undefined && (!Number.isFinite(args.duration) || (args.duration as number) < 0)) {
-            throw new Error("Duration must be a finite number greater than or equal to 0 days.");
-          }
           const updateData: any = {};
           if (args.text) updateData.text = args.text;
           if (args.description !== undefined) updateData.description = args.description;
@@ -1712,7 +1706,6 @@ export function registerTools(server: Server, trpcClient: any) {
 
           // Diagnostics: how many committed ideas are missing economic data
           const allCommitted = (allIdeas as any[]).filter((a: any) => ideaIdSet.has(a.id));
-          const missingCost = allCommitted.filter((a: any) => !a.cost || a.cost <= 0).length;
           // An idea with effectively-zero flowed value is disconnected from any intrinsic
           // value source in the graph — its priority is meaningless regardless of cost.
           const missingValue = allCommitted.filter(
@@ -1785,7 +1778,6 @@ export function registerTools(server: Server, trpcClient: any) {
                     openIdeas: openInPhase.length,
                     openLeafIdeas: openLeavesInPhase.length,
                     uncommittedLeafIdeas: uncommittedLeaves.length,
-                    missingCostEstimate: missingCost,
                     disconnectedFromValue: missingValue,
                     realizedSignal: realizedSignalAvailable ? "git-commit-references" : "unavailable (not a git repo / no commits)",
                     openIdeasWithNoRealizedOutput: realizedSignalAvailable ? noRealizedOutput : undefined,
@@ -1795,9 +1787,7 @@ export function registerTools(server: Server, trpcClient: any) {
                       ? "No open actionable leaf exists in the phase or connected uncommitted graph. Mission containers are context for exploration, not executable work."
                       : missingValue > 0
                       ? `${missingValue} idea(s) have zero flowed value — they are disconnected from any intrinsic value source in the graph. Their priorities are unreliable.`
-                      : missingCost > 0
-                        ? `${missingCost} idea(s) lack a cost estimate. Set via update_idea { cost: N }.`
-                        : "All committed ideas have economic data.",
+                      : "All committed ideas have economic data.",
                   },
                   exploration: emptyActionableFrontier ? {
                     required: true,

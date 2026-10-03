@@ -35,7 +35,6 @@
   },
   "homepage": "https://github.com/aimparency/v7/tree/main/packages/frontend#readme",
   "dependencies": {
-    "@tanstack/vue-query": "^5.92.1",
     "@trpc/client": "^11.7.2",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
@@ -44,13 +43,12 @@
     "shared": "*",
     "socket.io-client": "^4.8.1",
     "vue": "^3.5.25",
-    "vue-router": "^4.6.4",
-    "vuedraggable": "^4.1.0",
-    "ws": "^8.18.3"
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
     "@pinia/testing": "^1.0.3",
     "@playwright/test": "^1.57.0",
+    "@trpc/server": "^11.7.2",
     "@tsconfig/node22": "^22.0.5",
     "@types/jsdom": "^27.0.0",
     "@types/node": "^25.0.1",
@@ -62,9 +60,11 @@
     "jsdom": "^27.3.0",
     "npm-run-all2": "^8.0.4",
     "typescript": "~5.9.3",
+    "uuid": "^13.0.2",
     "vite": "^7.2.7",
     "vite-plugin-vue-devtools": "^8.0.5",
     "vitest": "^4.0.15",
-    "vue-tsc": "^3.1.8"
+    "vue-tsc": "^3.1.8",
+    "wrapped-agents-broker": "^1.0.0"
   }
 }

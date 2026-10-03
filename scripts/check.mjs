@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // One command for "is the repo green?": every workspace's typecheck and test
-// script, plus the hook tests, run in parallel. Workspaces are discovered from
-// the root package.json, so a new package is checked once it has the scripts.
+// script, plus the hook tests and knip (unused files, exports, dependencies),
+// run in parallel. Workspaces are discovered from the root package.json, so a
+// new package is checked once it has the scripts.
 //
 //   npm run check                      everything
-//   npm run check -- test              only tests (or: typecheck)
+//   npm run check -- test              only tests (or: typecheck, unused)
 //   npm run check -- backend frontend  only these workspaces (combinable)
 
 import { spawn } from 'node:child_process';
@@ -16,7 +17,13 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (file) => JSON.parse(readFileSync(file, 'utf8'));
 
-const KINDS = { typecheck: ['typecheck', 'type-check'], test: ['test'] };
+const KINDS = { typecheck: ['typecheck', 'type-check'], test: ['test'], unused: [] };
+
+// Repo-wide tasks, run from the root.
+const ROOT_TASKS = [
+  { kind: 'test', name: 'hooks', script: 'test:hooks' },
+  { kind: 'unused', name: 'knip', script: 'knip' },
+];
 
 function workspaces() {
   return readJson(path.join(root, 'package.json')).workspaces.flatMap((pattern) => {
@@ -41,8 +48,8 @@ function plan(args) {
       const script = KINDS[kind].find((candidate) => workspace.scripts[candidate]);
       if (script) tasks.push({ label: `${kind} ${workspace.short}`, cwd: workspace.dir, script });
     }
-    if (kind === 'test' && (names.length === 0 || names.includes('hooks'))) {
-      tasks.push({ label: 'test hooks', cwd: root, script: 'test:hooks' });
+    for (const task of ROOT_TASKS.filter((task) => task.kind === kind && (names.length === 0 || names.includes(task.name)))) {
+      tasks.push({ label: `${kind} ${task.name}`, cwd: root, script: task.script });
     }
   }
   return tasks;

@@ -8,7 +8,6 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 export const CONTINUE_HOOK_AGENTS = ["claude", "codex", "agy"] as const;
-export type ContinueHookAgent = (typeof CONTINUE_HOOK_AGENTS)[number];
 
 const HOOKS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../scripts/hooks");
 const HOOK_RELATIVE_PATH = path.join("scripts", "hooks", "codex-continue-on-stop.sh");

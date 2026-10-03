@@ -96,7 +96,7 @@ type PersistedUIState = {
   graphViewState?: PersistedGraphViewState
 }
 
-export const useListStore = defineStore('ui', {
+export const useUIStore = defineStore('ui', {
   state: () => ({
     // Navigation mode system
     navigatingIdeas: false, 
@@ -1774,5 +1774,3 @@ export const useListStore = defineStore('ui', {
     },
   }
 })
-
-export const useUIStore = useListStore
