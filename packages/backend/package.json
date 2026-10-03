@@ -17,7 +17,8 @@
     "build": "rm -rf dist && tsc",
     "start": "node dist/server.js",
     "test": "NODE_ENV=test vitest run",
-    "test:watch": "NODE_ENV=test vitest"
+    "test:watch": "NODE_ENV=test vitest",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "aimparency",

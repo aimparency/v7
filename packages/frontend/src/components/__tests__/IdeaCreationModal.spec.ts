@@ -67,11 +67,11 @@ describe('IdeaCreationModal', () => {
       }
     })
     const store = useUIStore(pinia)
-    store.getSelectionPath.mockReturnValue({
+    vi.mocked(store.getSelectionPath).mockReturnValue({
       ideas: [{ id: 'columns-parent', text: 'Columns parent' }, { id: 'columns-child', text: 'Columns child' }],
       ideaStates: [{}, {}],
       phase: null
-    })
+    } as unknown as ReturnType<typeof store.getSelectionPath>)
     return mount(IdeaCreationModal, { global: { plugins: [pinia] } })
   }
 

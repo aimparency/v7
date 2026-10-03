@@ -9,10 +9,12 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
+      "aimparency-source": "./src/index.ts",
       "import": "./dist/index.js"
     },
     "./bowman-migration": {
       "types": "./src/bowman-migration.ts",
+      "aimparency-source": "./src/bowman-migration.ts",
       "import": "./dist/bowman-migration.js"
     }
   },
@@ -20,7 +22,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "prepare": "tsc",
-    "test": "tsx --test \"src/**/*.test.ts\""
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "aimparency",

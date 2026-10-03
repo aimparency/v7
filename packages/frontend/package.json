@@ -15,7 +15,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ci": "playwright test --config playwright.config.ci.ts",
     "build-only": "vite build",
-    "type-check": "vue-tsc --build"
+    "type-check": "vue-tsc --build",
+    "test": "vitest run"
   },
   "keywords": [
     "aimparency",

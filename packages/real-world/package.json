@@ -4,7 +4,6 @@
   "description": "Real-world adaptors: agent that acts on prioritized ideas via Composio tools",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsx src/agent.ts",
     "typecheck": "tsc --noEmit"
   },
