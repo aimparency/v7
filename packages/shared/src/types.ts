@@ -161,3 +161,12 @@ export type SearchIdeaResult = Idea & {
     prefix: string;
   };
 };
+
+// Zod issues as one readable line ("cost: Number must be greater than 0").
+// Duck-typed: callers may hold an error from a different zod copy.
+export function describeSchemaError(error: unknown): string {
+  const issues = (error as { issues?: Array<{ path: Array<string | number>; message: string }> }).issues;
+  return Array.isArray(issues)
+    ? issues.map((issue) => `${issue.path.join('.') || 'file'}: ${issue.message}`).join('; ')
+    : (error as Error).message;
+}

@@ -1319,24 +1319,30 @@ test('an unreadable idea is reported and fixConsistency keeps every link to it',
   assert.equal(await fs.readFile(childFile, 'utf8'), unreadableContent, 'the unreadable file is not rewritten');
 });
 
-test('an invalid idea is refused on write, not stored to be hidden later', async () => {
+test('history.restore applies nothing when one snapshot is invalid', async () => {
   const status = { state: 'open', comment: '', date: Date.now() };
-  const idea = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Idea', status } });
-  const file = path.join(testProjectPath, 'ideas', `${idea.id}.json`);
-  const stored = await fs.readJson(file);
+  const first = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'First', status } });
+  const second = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Second', status } });
+  const firstFile = path.join(testProjectPath, 'ideas', `${first.id}.json`);
+  const secondFile = path.join(testProjectPath, 'ideas', `${second.id}.json`);
+  const [firstStored, secondStored] = [await fs.readJson(firstFile), await fs.readJson(secondFile)];
 
   // Undo writes raw snapshots and bypasses the input schemas of the idea router.
   await assert.rejects(
     caller.history.restore({
       projectPath: testProjectPath,
-      changes: [{ type: 'idea', id: idea.id, expected: stored, target: { ...stored, cost: 0 } }]
+      changes: [
+        { type: 'idea', id: first.id, expected: firstStored, target: { ...firstStored, text: 'Renamed' } },
+        { type: 'idea', id: second.id, expected: secondStored, target: { ...secondStored, cost: 0 } }
+      ]
     }),
-    /was not saved: cost: Number must be greater than 0/
+    new RegExp(`Nothing restored, invalid snapshot: idea ${second.id}: cost: Number must be greater than 0`)
   );
-  assert.deepStrictEqual(await fs.readJson(file), stored);
+  assert.deepStrictEqual(await fs.readJson(firstFile), firstStored);
+  assert.deepStrictEqual(await fs.readJson(secondFile), secondStored);
 });
 
-test('listUnreadableIdeas keeps what the broken file still says', async () => {
+test('loadIdeas returns the readable ideas and what a broken file still says', async () => {
   const status = { state: 'open', comment: '', date: Date.now() };
   const parent = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Parent', status } });
   const child = await caller.idea.createSubIdea({ projectPath: testProjectPath, parentIdeaId: parent.id, idea: { text: 'Child', status } });
@@ -1344,11 +1350,25 @@ test('listUnreadableIdeas keeps what the broken file still says', async () => {
   const parentFile = path.join(testProjectPath, 'ideas', `${parent.id}.json`);
   await fs.writeJson(parentFile, { ...(await fs.readJson(parentFile)), cost: 0 });
 
-  assert.deepStrictEqual(await caller.project.listUnreadableIdeas({ projectPath: testProjectPath }), [{
+  const { ideas, unreadable } = await caller.project.loadIdeas({ projectPath: testProjectPath });
+  assert.deepStrictEqual(ideas.map((idea) => idea.id), [child.id]);
+  assert.deepStrictEqual(unreadable, [{
     id: parent.id,
     file: `ideas/${parent.id}.json`,
     error: 'cost: Number must be greater than 0',
     text: 'Parent',
     supportingIdeaIds: [child.id]
   }]);
+});
+
+test('fixConsistency keeps links to archived ideas', async () => {
+  const status = { state: 'open', comment: '', date: Date.now() };
+  const parent = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Parent', status } });
+  const child = await caller.idea.createSubIdea({ projectPath: testProjectPath, parentIdeaId: parent.id, idea: { text: 'Child', status } });
+  await caller.idea.update({ projectPath: testProjectPath, ideaId: child.id, idea: { status: { ...status, state: 'archived' } } });
+
+  assert.deepStrictEqual((await caller.project.checkConsistency({ projectPath: testProjectPath })).issues, []);
+  assert.deepStrictEqual((await caller.project.fixConsistency({ projectPath: testProjectPath })).fixes, []);
+  const parentAfter = await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id });
+  assert.deepStrictEqual(parentAfter.supportingConnections.map((connection) => connection.ideaId), [child.id]);
 });

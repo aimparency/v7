@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { isDeepStrictEqual } from 'node:util';
 import type { Idea, Phase, ProjectMeta } from 'shared';
+import { IdeaSchema, PhaseSchema, ProjectMetaSchema, describeSchemaError } from 'shared';
 import { assertWritableBowman } from 'shared/bowman-migration';
 import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
 import { addIdeaToIndex, addPhaseToIndex, removeIdeaFromIndex, removePhaseFromIndex } from '../search.js';
@@ -102,6 +103,16 @@ export const createHistoryRouter = (
           .filter((change, index) => !isDeepStrictEqual(currents[index], change.expected ?? null))
           .map(({ type, id }) => ({ type, id }));
         if (conflicts.length > 0) return { ok: false as const, conflicts };
+
+        // Validate every target first: a write refused halfway would leave the
+        // restore half applied.
+        const schemas = { idea: IdeaSchema, phase: PhaseSchema, project: ProjectMetaSchema };
+        const invalid = changes.flatMap((change) => {
+          if (change.target === null) return [];
+          const result = schemas[change.type].safeParse(change.target);
+          return result.success ? [] : [`${change.type} ${change.id}: ${describeSchemaError(result.error)}`];
+        });
+        if (invalid.length > 0) throw new Error(`Nothing restored, invalid snapshot: ${invalid.join('; ')}`);
 
         for (let index = 0; index < changes.length; index++) {
           await applyChange(projectPath, changes[index]!, currents[index]);

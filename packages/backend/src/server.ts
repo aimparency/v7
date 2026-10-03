@@ -10,7 +10,7 @@ import { initTRPC } from '@trpc/server';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { z } from 'zod';
-import { IdeaSchema, PhaseSchema, ProjectMetaSchema, IdeaStatusSchema, SystemStatusSchema, AIMPARENCY_DIR_NAME, INITIAL_STATES, CURRENT_DATA_MODEL_VERSION } from 'shared';
+import { IdeaSchema, PhaseSchema, ProjectMetaSchema, IdeaStatusSchema, describeSchemaError, SystemStatusSchema, AIMPARENCY_DIR_NAME, INITIAL_STATES, CURRENT_DATA_MODEL_VERSION } from 'shared';
 import type { Idea, Phase, ProjectMeta, SystemStatus, SearchIdeaResult, LinkedRepo, LinkedRepoLocal } from 'shared';
 import { LinkedRepoRegistrySchema, LinkedRepoSchema } from 'shared';
 import { assertWritableBowman, migrateBowman, NewerDataModelError } from 'shared/bowman-migration';
@@ -339,15 +339,6 @@ async function migrateIdeaFiles(rawProjectPath: string): Promise<string[]> {
   return migrated;
 }
 
-// Zod issues as one readable line. Duck-typed: shared's schemas may use a
-// different zod copy than this package.
-function describeSchemaError(error: unknown): string {
-  const issues = (error as { issues?: Array<{ path: Array<string | number>; message: string }> }).issues;
-  return Array.isArray(issues)
-    ? issues.map((issue) => `${issue.path.join('.') || 'file'}: ${issue.message}`).join('; ')
-    : (error as Error).message;
-}
-
 export type UnreadableIdea = {
   id: string;
   file: string;
@@ -357,20 +348,23 @@ export type UnreadableIdea = {
   supportingIdeaIds: string[];
 };
 
-// Idea files that exist but fail to load (e.g. a value an older schema allowed).
-// listIdeas skips them, so consistency checks and the graph need them spelled out.
-async function listUnreadableIdeaFiles(rawProjectPath: string): Promise<UnreadableIdea[]> {
+// Reads every idea file of the given directories once: the ideas that load,
+// and the files that fail to (e.g. a value an older schema allowed, or edited
+// outside the backend), with whatever the raw file still says.
+async function scanIdeaFiles(rawProjectPath: string, dirNames: string[]): Promise<{ ideas: Idea[]; unreadable: UnreadableIdea[] }> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await migrateProject(projectPath);
+  const ideas: Idea[] = [];
   const unreadable: UnreadableIdea[] = [];
-  for (const dirName of ['ideas', 'archived-ideas']) {
+  for (const dirName of dirNames) {
     const dir = path.join(projectPath, dirName);
     if (!(await fs.pathExists(dir))) continue;
-    for (const file of (await fs.readdir(dir)).filter((name) => name.endsWith('.json'))) {
+    const files = (await fs.readdir(dir)).filter((name) => name.endsWith('.json'));
+    await Promise.all(files.map(async (file) => {
       let raw: any = null;
       try {
         raw = await fs.readJson(path.join(dir, file));
-        IdeaSchema.parse(normalizeIdeaRecord(raw).idea);
+        ideas.push(IdeaSchema.parse(normalizeIdeaRecord(raw).idea));
       } catch (error) {
         const connections = Array.isArray(raw?.supportingConnections) ? raw.supportingConnections : [];
         unreadable.push({
@@ -383,37 +377,13 @@ async function listUnreadableIdeaFiles(rawProjectPath: string): Promise<Unreadab
             .filter((id: unknown): id is string => typeof id === 'string'),
         });
       }
-    }
+    }));
   }
-  return unreadable;
+  return { ideas, unreadable };
 }
 
-async function listIdeas(rawProjectPath: string, archived: boolean = false): Promise<Idea[]> {
-  const projectPath = normalizeProjectPath(rawProjectPath);
-  const dirName = archived ? 'archived-ideas' : 'ideas';
-  const ideasDir = path.join(projectPath, dirName);
-  await migrateProject(projectPath);
-  
-  if (!await fs.pathExists(ideasDir)) return [];
-  
-  const files = (await fs.readdir(ideasDir)).filter((file) => file.endsWith('.json'));
-  const results = await Promise.all(files.map(async (file): Promise<Idea | null> => {
-      const ideaId = path.basename(file, '.json');
-      // For listing, we can just read directly from the dir we are in to avoid double check overhead of readIdea
-      // BUT readIdea upgrades legacy fields in memory. So we should use readIdea.
-      // readIdea checks 'ideas' first. 
-      // If we are listing archived, readIdea will check 'ideas' (fail) then 'archived-ideas' (success).
-      // If we are listing active, readIdea will check 'ideas' (success).
-      // So it works.
-      try {
-        return await readIdea(projectPath, ideaId);
-      } catch (e) {
-        console.error(`Failed to read idea ${ideaId}`, e);
-        return null;
-      }
-  }));
-
-  return results.filter((idea): idea is Idea => idea !== null);
+async function listIdeas(projectPath: string, archived: boolean = false): Promise<Idea[]> {
+  return (await scanIdeaFiles(projectPath, [archived ? 'archived-ideas' : 'ideas'])).ideas;
 }
 
 function populateIdeaValues(projectPath: string, ideas: Idea[]) {
@@ -1317,7 +1287,7 @@ const appRouter = t.router({
     ensureSearchIndex,
     migrateIdeaFiles,
     reconcilePhaseTree,
-    listUnreadableIdeaFiles,
+    scanIdeaFiles,
     ee
   ),
   spinOff: spinOffRouter,

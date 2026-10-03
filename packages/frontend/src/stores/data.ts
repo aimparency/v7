@@ -15,7 +15,7 @@ import { loadAllIdeasCache, saveIdeas } from '../utils/db'
 
 type RouterOutputs = inferRouterOutputs<AppRouter>
 type ConsistencyIssue = RouterOutputs['project']['checkConsistency']['issues'][number]
-type UnreadableIdea = RouterOutputs['project']['listUnreadableIdeas'][number]
+type UnreadableIdea = RouterOutputs['project']['loadIdeas']['unreadable'][number]
 
 const isMissingFileError = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error)
@@ -954,11 +954,8 @@ export const useDataStore = defineStore('data', {
         }
 
         // 2. Fetch from server
-        const [ideas, unreadableIdeas] = await Promise.all([
-          trpc.idea.list.query({ projectPath }),
-          trpc.project.listUnreadableIdeas.query({ projectPath })
-        ]);
-        this.unreadableIdeas = unreadableIdeas;
+        const { ideas, unreadable } = await trpc.project.loadIdeas.query({ projectPath });
+        this.unreadableIdeas = unreadable;
         console.log(`[DataStore] Fetched ${ideas.length} ideas from server`);
         
         const serverIdeaIds = new Set(ideas.map(a => a.id));

@@ -11,7 +11,7 @@ const { mockTrpc } = vi.hoisted(() => {
         repair: { mutate: vi.fn().mockResolvedValue({}) },
         getMeta: { query: vi.fn().mockResolvedValue({}) },
         checkConsistency: { query: vi.fn().mockResolvedValue({ valid: true, errors: [] }) },
-        listUnreadableIdeas: { query: vi.fn().mockResolvedValue([]) },
+        loadIdeas: { query: vi.fn().mockResolvedValue({ ideas: [], unreadable: [] }) },
         onUpdate: {
           subscribe: vi.fn((input, opts) => {
             subscriptionCallback = opts.onData
@@ -93,7 +93,7 @@ describe('Multi-Client Synchronization', () => {
 
     // Mock initial load responses
     mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
-    mockTrpc.idea.list.query.mockResolvedValue([initialIdea])
+    mockTrpc.project.loadIdeas.query.mockResolvedValue({ ideas: [initialIdea], unreadable: [] })
     mockTrpc.phase.list.query.mockResolvedValue([initialPhase])
     mockTrpc.phase.get.query.mockImplementation(({phaseId: id}: any) => {
         if (id === phaseId) return Promise.resolve(initialPhase)
@@ -151,7 +151,7 @@ describe('Multi-Client Synchronization', () => {
     const newIdea = { id: ideaId, text: 'New Idea', status: { state: 'open' }, committedIn: [phaseId], supportingConnections: [], supportedIdeas: [] }
 
     mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: [phaseId] })
-    mockTrpc.idea.list.query.mockResolvedValue([])
+    mockTrpc.project.loadIdeas.query.mockResolvedValue({ ideas: [], unreadable: [] })
     mockTrpc.phase.list.query.mockResolvedValue([initialPhase])
 
     await store.loadProject(projectPath)

@@ -223,7 +223,7 @@ export const createProjectRouter = (
   ensureSearchIndex: (projectPath: string) => Promise<void>,
   migrateIdeaFiles: (projectPath: string) => Promise<string[]>,
   reconcilePhaseTree: (projectPath: string) => Promise<string[]>,
-  listUnreadableIdeaFiles: (projectPath: string) => Promise<UnreadableIdea[]>,
+  scanIdeaFiles: (projectPath: string, dirNames: string[]) => Promise<{ ideas: Idea[]; unreadable: UnreadableIdea[] }>,
   ee: any
 ) => {
   const getWatchdogRuntimeStatePath = (rawProjectPath: string) =>
@@ -1411,26 +1411,27 @@ export const createProjectRouter = (
         return { fixedIdeas: count };
       }),
 
-    // Idea files that fail to load; the graph shows them as warning nodes.
-    listUnreadableIdeas: delayedProcedure
+    // All ideas in one read, plus the files that fail to load (the graph shows
+    // them as warning nodes).
+    loadIdeas: delayedProcedure
       .input(z.object({
         projectPath: z.string()
       }))
-      .query(async ({ input }: any) => listUnreadableIdeaFiles(input.projectPath)),
+      .query(async ({ input }: any) => scanIdeaFiles(input.projectPath, ['ideas'])),
 
     checkConsistency: delayedProcedure
       .input(z.object({
         projectPath: z.string()
       }))
       .query(async ({ input }: any) => {
-        const ideas = await listIdeas(input.projectPath);
+        // Archived ideas exist too: links to them are not dangling.
+        const { ideas, unreadable } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
         const phases = await listPhases(input.projectPath);
         const issues: ConsistencyIssue[] = [];
 
-        // Files that exist but fail to load are missing from the lists above.
+        // Files that exist but fail to load are missing from the ideas above.
         // Report them, and never treat links to them as dangling: that would
         // invite fixConsistency to delete those links (as happened on 2026-08-01).
-        const unreadable = await listUnreadableIdeaFiles(input.projectPath);
         const unreadableIds = new Set(unreadable.map((file) => file.id));
         for (const file of unreadable) {
           issues.push(createConsistencyIssue('idea_unreadable', `Idea ${file.id} (${file.file}) cannot be loaded: ${file.error}. Fix the file by hand.`));
@@ -1550,12 +1551,13 @@ export const createProjectRouter = (
         }
         fixes.push(...await reconcilePhaseTree(input.projectPath));
 
-        const ideas = await listIdeas(input.projectPath);
+        // Archived ideas exist too: links to them are not dangling.
+        const { ideas, unreadable } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
         const phases = await listPhases(input.projectPath);
 
         const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
         // Unreadable ideas still exist: keep every link to them (see checkConsistency).
-        const unreadableIds = new Set((await listUnreadableIdeaFiles(input.projectPath)).map((file) => file.id));
+        const unreadableIds = new Set(unreadable.map((file) => file.id));
         const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
 
         // Fix 1: Idea <-> Phase consistency
