@@ -12,14 +12,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Felix decided 2026-10-02: cost stays strictly positive (everything costs something; default 1). The 4 hidden ideas now have cost 1 and are listed again. Remaining: unreadable idea files must show up as consistency issues with their validation error instead of being skipped silently (plan §6).",
-    "date": 1790974082856
+    "state": "review",
+    "comment": "Implemented (5b87074): unreadable idea files are reported as idea_unreadable consistency issues with their validation error, never auto-fixed, and links/embeddings to them are kept by both check and fix. Root-cause repair (442cba8): the 2026-08-01 codex autonomy run's fixConsistency (6da3029) had deleted 40 links to the four cost-0 ideas (graph view lost 35 children, 28 left floating; 3 phase commitments; 2 parent connections); all restored exactly from 6da3029^. Awaiting Felix acceptance.",
+    "date": 1791024261853
   },
   "intrinsicValue": 0,
   "cost": 0.5,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Verification: regression test replays the scenario (child made unreadable via cost 0 → check reports only idea_unreadable with 'cost: Number must be greater than 0'; fixConsistency keeps parent connection and phase commitment, file untouched); backend 84/84, mcp at its 2 pre-existing failures; live checkConsistency on this repo valid after the restore. Each of the 40 restored links was verified to exist in 6da3029^ and to be missing afterwards (0 unexplained). Lesson: a read path that silently skips invalid records turns any 'repair dangling references' pass into data loss — invalid-but-present must stay distinct from absent."
 }
