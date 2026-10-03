@@ -1,6 +1,7 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Agent } from './agent';
+import { toBowmanPath } from './project-path';
 
 export interface SessionSummary {
   sessionId: string;
@@ -46,7 +47,7 @@ export class SessionMemory {
   }
 
   private getMemoryDir(): string {
-    return path.join(this.projectPath, '.bowman', 'memory', 'sessions');
+    return path.join(toBowmanPath(this.projectPath), 'memory', 'sessions');
   }
 
   private getSessionPath(): string {
@@ -158,7 +159,7 @@ export class SessionMemory {
    */
   static async loadRecentSummaries(projectPath: string, limit: number = 5): Promise<SessionSummary[]> {
     try {
-      const memoryDir = path.join(projectPath, '.bowman', 'memory', 'sessions');
+      const memoryDir = path.join(toBowmanPath(projectPath), 'memory', 'sessions');
 
       if (!await fs.pathExists(memoryDir)) {
         return [];
@@ -354,7 +355,7 @@ export class SessionMemory {
       const toCompress = summaries.slice(0, summaries.length - keepUncompressed);
       if (toCompress.length === 0) return;
 
-      const memoryDir = path.join(projectPath, '.bowman', 'memory', 'sessions');
+      const memoryDir = path.join(toBowmanPath(projectPath), 'memory', 'sessions');
       await fs.ensureDir(memoryDir);
 
       // Use LLM summarizer if provided (via existing agent or MCP tools to produce

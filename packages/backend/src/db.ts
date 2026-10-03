@@ -1,14 +1,12 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs-extra';
+import { normalizeProjectPath } from './project-path.js';
 
 const dbCache = new Map<string, Database.Database>();
 
 export function getDb(rawProjectPath: string): Database.Database {
-  // Normalize path to ensure it includes .bowman
-  const projectPath = rawProjectPath.endsWith('.bowman')
-    ? rawProjectPath
-    : path.join(rawProjectPath, '.bowman');
+  const projectPath = normalizeProjectPath(rawProjectPath);
 
   if (dbCache.has(projectPath)) {
     return dbCache.get(projectPath)!;
@@ -46,10 +44,7 @@ export function getDb(rawProjectPath: string): Database.Database {
 }
 
 export function closeDb(rawProjectPath: string) {
-  // Normalize path to match getDb()
-  const projectPath = rawProjectPath.endsWith('.bowman')
-    ? rawProjectPath
-    : path.join(rawProjectPath, '.bowman');
+  const projectPath = normalizeProjectPath(rawProjectPath);
 
   if (dbCache.has(projectPath)) {
     dbCache.get(projectPath)!.close();

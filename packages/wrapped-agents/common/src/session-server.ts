@@ -23,6 +23,7 @@ import {
   dispatchWatchdogToggle,
 } from './socket-control-policy';
 import { SocketControlRateLimiter } from './socket-control-rate-limit';
+import { toBowmanPath, toProjectRoot } from './project-path';
 
 /**
  * Shared session entrypoint for every wrapped agent.
@@ -208,13 +209,13 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
         i++;
       }
     } else if (!arg.startsWith('-')) {
-      projectRootPath = path.resolve(arg);
+      projectRootPath = toProjectRoot(path.resolve(arg)); // a .bowman path means its project
     }
   }
 
   const PROJECT_ROOT = projectRootPath;
   const KENNEL_PATH = path.join(packageDir, '../kennel');
-  const PROJECT_AIMPARENCY_DIR = path.join(PROJECT_ROOT, '.bowman');
+  const PROJECT_AIMPARENCY_DIR = toBowmanPath(PROJECT_ROOT);
   const WATCHDOG_RUNTIME_STATE_PATH = path.join(PROJECT_AIMPARENCY_DIR, 'runtime', 'watchdog-state.json');
 
   function readWatchdogRuntimeState(): WatchdogRuntimeState {

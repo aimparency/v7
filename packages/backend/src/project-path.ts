@@ -1,5 +1,4 @@
-import path from 'path';
-import { AIMPARENCY_DIR_NAME } from 'shared';
+import { toBowmanPath } from 'shared';
 
 /**
  * Callers pass either the repo root (`~/ideas`) or the bowman dir (`~/ideas/.bowman`).
@@ -7,7 +6,5 @@ import { AIMPARENCY_DIR_NAME } from 'shared';
  * different buckets (e.g. new ideas indexed under one key, searched under the other).
  */
 export function normalizeProjectPath(p: string): string {
-  if (!p) return p;
-  const trimmed = p.replace(/[\\/]+$/, '');
-  return trimmed.endsWith(AIMPARENCY_DIR_NAME) ? trimmed : path.join(trimmed, AIMPARENCY_DIR_NAME);
+  return toBowmanPath(p);
 }

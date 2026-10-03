@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs-extra';
-import { AIMPARENCY_DIR_NAME } from 'shared';
+import { toBowmanPath } from 'shared';
 // Type-only import: keeps this module free of manager.ts's heavy runtime deps
 // (node-pty, express) and avoids a runtime import cycle.
 import type { AgentType } from './manager.js';
@@ -25,10 +25,7 @@ const RELAUNCH_REQUEST_FILE = 'relaunch-request';
 
 // Mirrors WatchdogManager.normalizeProjectPath (kept local to avoid a cycle).
 function normalizeProjectPath(p: string): string {
-  if (!p) return p;
-  const clean = p.replace(/[\\/]$/, '');
-  if (clean.endsWith(AIMPARENCY_DIR_NAME)) return clean;
-  return path.join(clean, AIMPARENCY_DIR_NAME);
+  return toBowmanPath(p);
 }
 
 export function getProjectRelaunchRequestFile(projectPath: string): string {

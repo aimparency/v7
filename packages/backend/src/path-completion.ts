@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
-import { AIMPARENCY_DIR_NAME } from 'shared';
+import { toBowmanPath } from 'shared';
 
 export function expandHome(rawPath: string): string {
   if (rawPath === '~') return os.homedir();
@@ -11,7 +11,7 @@ export function expandHome(rawPath: string): string {
 
 export function resolveBowmanPath(rawPath: string): string {
   const expanded = expandHome(rawPath);
-  return expanded.endsWith(AIMPARENCY_DIR_NAME) ? expanded : path.join(expanded, AIMPARENCY_DIR_NAME);
+  return toBowmanPath(expanded);
 }
 
 export async function bowmanExists(rawPath: string): Promise<boolean> {

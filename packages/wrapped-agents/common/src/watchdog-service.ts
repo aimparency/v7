@@ -10,6 +10,7 @@ import type { AgentProfile } from './agent-profile';
 import { readAgentViewportLines, WATCHDOG_PARSER_LINE_COUNT } from './terminal-view';
 import { canonicalizeSupervisorAction, evaluateSupervisorDispatch, supervisorDispatchAllowed } from './supervisor-action-authority';
 import type { SupervisorDispatchDecision } from './supervisor-action-authority';
+import { toBowmanPath } from './project-path';
 
 /**
  * Configurable timing constants and behavior flags
@@ -241,7 +242,7 @@ export function composeInstructContext(parts: {
 /** Read the human's project instructions from .bowman/meta.json (best-effort). */
 async function readProjectInstructions(projectPath: string): Promise<string> {
   try {
-    const metaPath = path.join(projectPath, '.bowman', 'meta.json');
+    const metaPath = path.join(toBowmanPath(projectPath), 'meta.json');
     const meta = JSON.parse(await fs.promises.readFile(metaPath, 'utf8'));
     return typeof meta.initialInstructions === 'string' ? meta.initialInstructions : '';
   } catch {
@@ -252,7 +253,7 @@ async function readProjectInstructions(projectPath: string): Promise<string> {
 /** Read optional project-specific guidance prefixed to worker messages. */
 async function readSupervisorGuidancePrefix(projectPath: string): Promise<string> {
   try {
-    const metaPath = path.join(projectPath, '.bowman', 'meta.json');
+    const metaPath = path.join(toBowmanPath(projectPath), 'meta.json');
     const meta = JSON.parse(await fs.promises.readFile(metaPath, 'utf8'));
     return typeof meta.supervisorGuidancePrefix === 'string'
       ? meta.supervisorGuidancePrefix.trim()
@@ -1244,7 +1245,7 @@ export class WatchdogService {
     // Load compute budget from meta for awareness (if present)
     if (this.projectPath) {
       try {
-        const metaPath = path.join(this.projectPath, '.bowman', 'meta.json');
+        const metaPath = path.join(toBowmanPath(this.projectPath), 'meta.json');
         const meta = JSON.parse(await fs.promises.readFile(metaPath, 'utf8'));
         if (typeof meta.computeCredits === 'number') promptContext.computeCredits = meta.computeCredits;
         if (typeof meta.funds === 'number') promptContext.funds = meta.funds;

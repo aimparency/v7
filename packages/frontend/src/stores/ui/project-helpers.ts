@@ -1,4 +1,4 @@
-import { AIMPARENCY_DIR_NAME } from 'shared'
+import { toProjectRoot } from 'shared'
 
 export type ProjectHistoryEntry = {
   path: string
@@ -6,21 +6,9 @@ export type ProjectHistoryEntry = {
   failedToLoad: boolean
 }
 
+// The project root, whatever form the path came in (see shared/project-path).
 export function normalizeProjectPath(path: string): string {
-  const trimmedPath = path.replace(/\/+$/, '')
-  const directoryNames = new Set(['.bowman'])
-  if (AIMPARENCY_DIR_NAME) {
-    directoryNames.add(AIMPARENCY_DIR_NAME)
-  }
-
-  for (const directoryName of directoryNames) {
-    const suffix = `/${directoryName}`
-    if (trimmedPath.endsWith(suffix)) {
-      return trimmedPath.slice(0, -suffix.length)
-    }
-  }
-
-  return trimmedPath
+  return toProjectRoot(path)
 }
 
 export function upsertProjectHistory(history: ProjectHistoryEntry[], path: string, now: number): ProjectHistoryEntry[] {

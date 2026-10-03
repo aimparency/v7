@@ -58,7 +58,7 @@ export default defineConfig(({ mode }) => {
       'process.env.PORT_BROKER_HTTP': JSON.stringify(process.env.PORT_BROKER_HTTP || '5000'),
       'process.env.PORT_BROKER_WS': JSON.stringify(process.env.PORT_BROKER_WS || '5001'),
       'process.env.PORT_PROCESS_START': JSON.stringify(process.env.PORT_PROCESS_START || '7000'),
-      'process.env.AIMPARENCY_DIR_NAME': JSON.stringify(process.env.AIMPARENCY_DIR_NAME),
+      'process.env.AIMPARENCY_DIR_NAME': JSON.stringify(process.env.AIMPARENCY_DIR_NAME || '.bowman'),
     }
   }
 })

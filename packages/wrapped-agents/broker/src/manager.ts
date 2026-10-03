@@ -7,7 +7,7 @@ import fs from 'fs-extra';
 
 const execFileAsync = promisify(execFile);
 
-import { AIMPARENCY_DIR_NAME } from 'shared';
+import { toBowmanPath } from 'shared';
 import { runRelaunchPass } from './relaunch-watch.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -70,11 +70,7 @@ const PROJECT_RUNTIME_SESSIONS_FILE = 'watchdog-sessions.json';
 const AUTONOMY_POLICY_FILE = 'autonomy-policy.json';
 
 function normalizeProjectPath(p: string): string {
-  if (!p) return p;
-  // Handle potential trailing slash
-  const clean = p.replace(/[\\/]$/, '');
-  if (clean.endsWith(AIMPARENCY_DIR_NAME)) return clean;
-  return path.join(clean, AIMPARENCY_DIR_NAME);
+  return toBowmanPath(p);
 }
 
 // Persistence Helpers

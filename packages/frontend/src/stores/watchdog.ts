@@ -5,6 +5,7 @@ import { trpc } from '../trpc'
 import { trpcWatchdog } from '../trpc-watchdog'
 import { buildHttpUrl } from '../utils/runtime-config'
 import { useProjectStore } from './project-store'
+import { toProjectRoot } from 'shared'
 
 export type AgentType = 'claude' | 'gemini' | 'codex' | 'agy' | 'grok'
 
@@ -115,7 +116,7 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     lastKeepalive: number
   }
   const sessions = ref<WatchdogSession[]>([])
-  const normalizeProjectPathForSession = (p: string) => p.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
+  const normalizeProjectPathForSession = (p: string) => toProjectRoot(p)
   const getSessionsForProject = (projectPath: string) => {
     const normalizedProjectPath = normalizeProjectPathForSession(projectPath)
     return sessions.value.filter((session) =>

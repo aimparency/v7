@@ -1,5 +1,6 @@
 import fs from 'fs-extra';
 import path from 'path';
+import { toBowmanPath } from 'shared';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
@@ -86,8 +87,7 @@ export type LoopWorkerState = z.infer<typeof loopWorkerStateSchema>;
 export type LoopInboxMessage = z.infer<typeof loopInboxMessageSchema>;
 
 export function normalizeBowmanPath(rawProjectPath: string): string {
-  const clean = path.resolve(rawProjectPath).replace(/[\\/]$/, '');
-  return path.basename(clean) === '.bowman' ? clean : path.join(clean, '.bowman');
+  return toBowmanPath(path.resolve(rawProjectPath));
 }
 
 export function getLoopRuntimePath(projectPath: string): string {

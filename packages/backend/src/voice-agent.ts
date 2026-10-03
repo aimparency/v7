@@ -4,10 +4,10 @@ import { promisify } from 'util';
 const execAsync = promisify(exec);
 
 import path from 'path';
-import { AIMPARENCY_DIR_NAME } from 'shared';
+import { toBowmanPath } from 'shared';
 
 export async function chatWithGemini(transcript: string, projectPath: string) {
-  const bowmanPath = projectPath.endsWith(AIMPARENCY_DIR_NAME) ? projectPath : path.join(projectPath, AIMPARENCY_DIR_NAME);
+  const bowmanPath = toBowmanPath(projectPath);
   
   // Basic implementation placeholder
   return `Echo: ${transcript}`;
