@@ -4,28 +4,7 @@ import { trpc } from "./client.js";
 import { PROJECT_PATH_PARAMETER, PROJECT_PATH_MISSING_ERROR } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { AIMPARENCY_DIR_NAME } from "shared";
-
-function formatIdea(idea: any) {
-  if (idea.supportingConnections) {
-    if (idea.supportingConnections.length === 0) {
-        delete idea.supportingConnections;
-    } else {
-        idea.supportingConnections = idea.supportingConnections.map((conn: any) => {
-          const { relativePosition, ...rest } = conn;
-          return rest;
-        });
-    }
-  }
-  if (idea.supportedIdeas && idea.supportedIdeas.length === 0) delete idea.supportedIdeas;
-  if (idea.committedIn && idea.committedIn.length === 0) delete idea.committedIn;
-  if (idea.tags && idea.tags.length === 0) delete idea.tags;
-  
-  return idea;
-}
-
-function formatIdeas(ideas: any[]) {
-  return ideas.map(formatIdea);
-}
+import { formatIdea, formatIdeas } from "./tools/format.js";
 
 // Helper to parse resource URIs
 function parseResourceUri(uri: string): { type: string; id?: string; subpath?: string } {
@@ -91,7 +70,7 @@ export function registerResources(server: Server, caller: BackendClient) {
         if (parsed.subpath === "supporting_connections") {
           const connections = idea.supportingConnections || [];
           const supportingIdeas = await Promise.all(
-            connections.map((conn: any) => caller.idea.get.query({ projectPath, ideaId: conn.ideaId }))
+            connections.map((conn) => caller.idea.get.query({ projectPath, ideaId: conn.ideaId }))
           );
           return {
             contents: [

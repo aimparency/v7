@@ -1,4 +1,5 @@
 import { createTRPCClient, createWSClient, wsLink } from "@trpc/client";
+import type { inferRouterInputs } from "@trpc/server";
 import { WebSocket } from "ws";
 import type { AppRouter } from "backend";
 
@@ -17,3 +18,4 @@ export const trpc = createTRPCClient<AppRouter>({
 });
 
 export type BackendClient = typeof trpc;
+export type BackendInputs = inferRouterInputs<AppRouter>;

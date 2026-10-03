@@ -1,5 +1,6 @@
-import { calculateIdeaValues } from "shared";
+import { calculateIdeaValues, type Idea } from "shared";
 import { IDEA_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import type { BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
 import { formatIdea, formatIdeas, describeRepoEdges } from "./format.js";
 import { connectionInputSchema, normalizeConnectionInput, toStoredConnection, type ConnectionInput } from "./connections.js";
@@ -96,8 +97,8 @@ export const ideaTools: ToolDefinition[] = [
       // which parent to follow at branches) and lets us resolve parent/child
       // text from a map instead of N round-trips.
       const allIdeas = await trpcClient.idea.list.query({ projectPath });
-      const ideaMap = new Map<string, any>((allIdeas as any[]).map((a: any) => [a.id, a]));
-      const { flowValues } = calculateIdeaValues(allIdeas as any);
+      const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
+      const { flowValues } = calculateIdeaValues(allIdeas);
 
       const idea = ideaMap.get(ideaId) || await trpcClient.idea.get.query({ projectPath, ideaId });
 
@@ -109,21 +110,19 @@ export const ideaTools: ToolDefinition[] = [
         limit: 6 // Request 6, filter self
       });
       const semanticContext = similarIdeas
-        .filter((a: any) => a.id !== ideaId)
+        .filter((a) => a.id !== ideaId)
         .slice(0, 5)
-        .map((a: any) => ({ id: a.id, text: a.text, description: a.description }));
+        .map((a) => ({ id: a.id, text: a.text, description: a.description }));
 
       // Immediate parents (an idea may have several)
       const parentContext = (idea.supportedIdeas || [])
-        .map((id: string) => ideaMap.get(id))
-        .filter(Boolean)
-        .map((p: any) => ({ id: p.id, text: p.text, description: p.description }));
+        .flatMap((id) => ideaMap.get(id) ?? [])
+        .map((p) => ({ id: p.id, text: p.text, description: p.description }));
 
       // Children
       const childContext = (idea.supportingConnections || [])
-        .map((c: any) => ideaMap.get(c.ideaId))
-        .filter(Boolean)
-        .map((c: any) => ({ id: c.id, text: c.text, description: c.description }));
+        .flatMap((c) => ideaMap.get(c.ideaId) ?? [])
+        .map((c) => ({ id: c.id, text: c.text, description: c.description }));
 
       // Black-box repo supporters: whole external repos carrying part of
       // this idea. They are not in ideaMap (nothing inside them is loaded, by
@@ -137,12 +136,13 @@ export const ideaTools: ToolDefinition[] = [
       // branch (multiple parents) follow the one with the highest actual
       // value inflow into the current idea — i.e. the parent through which
       // most value flows here. Cycle-guarded and capped at MAX_PATH.
-      const pathToRoot: any[] = [];
+      type PathStep = { id: string; text: string; description?: string; intrinsicValue: number; valueInflow: number };
+      const pathToRoot: PathStep[] = [];
       const visited = new Set<string>([ideaId]);
-      let cursor: any = idea;
+      let cursor: Idea = idea;
       while (pathToRoot.length < MAX_PATH_DEPTH) {
-        const parentIds = (cursor.supportedIdeas || []).filter(
-          (id: string) => ideaMap.has(id) && !visited.has(id)
+        const parentIds = cursor.supportedIdeas.filter(
+          (id) => ideaMap.has(id) && !visited.has(id)
         );
         if (parentIds.length === 0) break; // reached a root (or only cycles remain)
 
@@ -154,7 +154,7 @@ export const ideaTools: ToolDefinition[] = [
           if (flow > bestFlow) { best = pid; bestFlow = flow; }
         }
 
-        const parent = ideaMap.get(best);
+        const parent = ideaMap.get(best)!;
         visited.add(best);
         pathToRoot.push({
           id: parent.id,
@@ -171,11 +171,11 @@ export const ideaTools: ToolDefinition[] = [
       // All distinct root paths. Keep a visited set per branch so a node
       // shared by several legitimate paths appears in each, while cycles
       // cannot masquerade as roots. Bounds are explicit in the response.
-      const pathsToRoot: any[][] = [];
+      const pathsToRoot: PathStep[][] = [];
       let pathsToRootTruncated = false;
       const walkAllParents = (
-        current: any,
-        upwardPath: any[],
+        current: Idea,
+        upwardPath: PathStep[],
         branchVisited: Set<string>
       ) => {
         if (pathsToRoot.length >= MAX_PATHS) {
@@ -187,8 +187,8 @@ export const ideaTools: ToolDefinition[] = [
           return;
         }
 
-        const existingParentIds = (current.supportedIdeas || [])
-          .filter((id: string) => ideaMap.has(id));
+        const existingParentIds = current.supportedIdeas
+          .filter((id) => ideaMap.has(id));
         if (existingParentIds.length === 0) {
           pathsToRoot.push([...upwardPath].reverse());
           return;
@@ -198,7 +198,7 @@ export const ideaTools: ToolDefinition[] = [
         for (const parentId of existingParentIds) {
           if (branchVisited.has(parentId)) continue;
           followedParent = true;
-          const parent = ideaMap.get(parentId);
+          const parent = ideaMap.get(parentId)!;
           const flow = flowValues.get(`${parentId}->${current.id}`) ?? 0;
           walkAllParents(
             parent,
@@ -355,7 +355,7 @@ export const ideaTools: ToolDefinition[] = [
                 "Review the related ideas, especially cancelled ones and their reasons. " +
                 "Reuse, update, connect, or merge when appropriate. If this proposal is still distinct and useful, " +
                 "repeat the identical create_idea call with confirmationToken.",
-              relatedIdeas: (related as any[]).map((idea: any) => ({
+              relatedIdeas: related.map((idea) => ({
                 id: idea.id,
                 text: idea.text,
                 description: idea.description,
@@ -379,7 +379,7 @@ export const ideaTools: ToolDefinition[] = [
           text: args.text as string,
           description: args.description as string | undefined,
           tags: args.tags as string[] | undefined,
-          status: (args.status as any) || {
+          status: (args.status as BackendInputs["idea"]["createFloatingIdea"]["idea"]["status"]) || {
             state: "open",
             comment: "",
             date: Date.now(),
@@ -468,16 +468,18 @@ export const ideaTools: ToolDefinition[] = [
       required: ["projectPath", "ideaId"],
     },
     handler: async (args, trpcClient) => {
-      const updateData: any = {};
-      if (args.text) updateData.text = args.text;
-      if (args.description !== undefined) updateData.description = args.description;
-      if (args.reflection !== undefined) updateData.reflection = args.reflection;
-      if (args.tags) updateData.tags = args.tags;
-      if (args.status) updateData.status = args.status;
-      if (args.intrinsicValue !== undefined) updateData.intrinsicValue = args.intrinsicValue;
-      if (args.valueRationale !== undefined) updateData.valueRationale = args.valueRationale;
-      if (args.cost !== undefined) updateData.cost = args.cost;
-      if (args.duration !== undefined) updateData.duration = args.duration;
+      // The backend validates these; the tool schema above already names them.
+      const fields = args as BackendInputs["idea"]["update"]["idea"];
+      const updateData: BackendInputs["idea"]["update"]["idea"] = {};
+      if (fields.text) updateData.text = fields.text;
+      if (fields.description !== undefined) updateData.description = fields.description;
+      if (fields.reflection !== undefined) updateData.reflection = fields.reflection;
+      if (fields.tags) updateData.tags = fields.tags;
+      if (fields.status) updateData.status = fields.status;
+      if (fields.intrinsicValue !== undefined) updateData.intrinsicValue = fields.intrinsicValue;
+      if (fields.valueRationale !== undefined) updateData.valueRationale = fields.valueRationale;
+      if (fields.cost !== undefined) updateData.cost = fields.cost;
+      if (fields.duration !== undefined) updateData.duration = fields.duration;
 
       const parentMetadataToApply: Array<{ parentIdeaId: string; weight?: number; explanation?: string }> = [];
 
@@ -489,7 +491,7 @@ export const ideaTools: ToolDefinition[] = [
         });
 
         if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined) {
-          const byChildId = new Map<string, any>();
+          const byChildId = new Map();
           for (const conn of existingIdea.supportingConnections ?? []) {
             byChildId.set(conn.ideaId, { ...conn });
           }
@@ -560,7 +562,7 @@ export const ideaTools: ToolDefinition[] = [
       // recording evidence, nudge the agent to addReflection. Non-blocking
       // and best-effort — never fails the update.
       let verificationNudge = "";
-      if ((args.status as any)?.state === "implemented") {
+      if ((args.status as { state?: string } | undefined)?.state === "implemented") {
         try {
           const idea = await trpcClient.idea.get.query({
             projectPath: args.projectPath as string,
@@ -642,7 +644,7 @@ export const ideaTools: ToolDefinition[] = [
       await trpcClient.idea.addReflection.mutate({
         projectPath: args.projectPath as string,
         ideaId: args.ideaId as string,
-        reflection: args.reflection as any,
+        reflection: args.reflection as BackendInputs["idea"]["addReflection"]["reflection"],
       });
       return {
         content: [

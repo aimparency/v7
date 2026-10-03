@@ -1,4 +1,5 @@
 import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import type { BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
 
 type PhasePlacementArgs = {
@@ -202,11 +203,12 @@ export const phaseTools: ToolDefinition[] = [
       required: ["projectPath", "phaseId"],
     },
     handler: async (args, trpcClient) => {
-      const updateData: any = {};
-      if (args.name !== undefined) updateData.name = args.name;
-      if (args.parent !== undefined) updateData.parent = args.parent;
-      if (args.from !== undefined) updateData.from = args.from;
-      if (args.to !== undefined) updateData.to = args.to;
+      const fields = args as BackendInputs["phase"]["update"]["phase"];
+      const updateData: BackendInputs["phase"]["update"]["phase"] = {};
+      if (fields.name !== undefined) updateData.name = fields.name;
+      if (fields.parent !== undefined) updateData.parent = fields.parent;
+      if (fields.from !== undefined) updateData.from = fields.from;
+      if (fields.to !== undefined) updateData.to = fields.to;
 
       await trpcClient.phase.update.mutate({
         projectPath: args.projectPath as string,

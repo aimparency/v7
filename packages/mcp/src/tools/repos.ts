@@ -21,7 +21,7 @@ export const repoTools: ToolDefinition[] = [
           {
             type: "text",
             text: JSON.stringify(
-              (repos as any[]).map((r: any) => ({
+              repos.map((r) => ({
                 repoId: r.repoId,
                 name: r.name,
                 ...(r.url ? { url: r.url } : {}),
@@ -88,9 +88,9 @@ export const repoTools: ToolDefinition[] = [
       // store an edge pointing at nothing, which renders as a nameless
       // black box and silently drains value into a dead sink.
       const repos = await trpcClient.linkedRepo.list.query({ projectPath });
-      const repo = (repos as any[]).find((r: any) => r.repoId === repoId);
+      const repo = repos.find((r) => r.repoId === repoId);
       if (!repo) {
-        const known = (repos as any[]).map((r: any) => `${r.repoId} (${r.name})`).join(", ") || "none";
+        const known = repos.map((r) => `${r.repoId} (${r.name})`).join(", ") || "none";
         throw new Error(
           `Repo ${repoId} is not in this project's linked-repo registry. Register it first with register_linked_repo. Known repos: ${known}`
         );

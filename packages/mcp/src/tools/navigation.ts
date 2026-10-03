@@ -1,4 +1,4 @@
-import { calculateIdeaValues, defaultIdeaCost } from "shared";
+import { calculateIdeaValues, defaultIdeaCost, type Idea, type Phase } from "shared";
 import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
 import { countIdeaReferences } from "../reconcile.js";
 import type { ToolDefinition } from "./types.js";
@@ -21,14 +21,14 @@ export const navigationTools: ToolDefinition[] = [
     handler: async (args, trpcClient) => {
       // Fetch all phases once; we need them for both explicit lookup and time-based resolution.
       // parentPhaseId omitted → backend returns all phases
-      const allPhases: any[] = await trpcClient.phase.list.query({
+      const allPhases = await trpcClient.phase.list.query({
         projectPath: args.projectPath as string,
       });
-      const phaseById = new Map<string, any>(allPhases.map((p: any) => [p.id, p]));
+      const phaseById = new Map(allPhases.map((p) => [p.id, p]));
       // Reported once here instead of in every tool description: what cost estimates mean in this project.
-      const projectMeta: any = await trpcClient.project.getMeta.query({ projectPath: args.projectPath as string }).catch(() => null);
+      const projectMeta = await trpcClient.project.getMeta.query({ projectPath: args.projectPath as string }).catch(() => null);
 
-      let targetPhase: any = null;
+      let targetPhase: Phase | null = null;
 
       if (args.phaseId) {
         targetPhase = phaseById.get(args.phaseId as string) ?? null;
@@ -39,27 +39,26 @@ export const navigationTools: ToolDefinition[] = [
         // that has open commitments. "phaseCursors" in meta.json can be stale
         // or store indices rather than UUIDs, so we don't rely on it.
         const now = Date.now();
-        const activePhases = allPhases.filter(
-          (p: any) => p.from > 0 && p.to > 0 && p.from <= now && now <= p.to
-        );
+        // Legacy: phases no longer get dates; only old ones still carry them.
+        const isDated = (phase: Phase) => (phase.from ?? 0) > 0 && (phase.to ?? 0) > 0 && phase.from! <= now && now <= phase.to!;
+        const activePhases = allPhases.filter(isDated);
 
         // Build a helper: is this phase a leaf (no children, or all children are inactive)?
-        const hasActiveChild = (phase: any): boolean =>
-          (phase.childPhaseIds ?? []).some((cid: string) => {
+        const hasActiveChild = (phase: Phase): boolean =>
+          (phase.childPhaseIds ?? []).some((cid) => {
             const child = phaseById.get(cid);
-            return child && child.from > 0 && child.to > 0 && child.from <= now && now <= child.to;
+            return !!child && isDated(child);
           });
 
         // Prefer deepest active leaf with open commitments; fall back up the tree.
-        const leaves = activePhases.filter((p: any) => !hasActiveChild(p));
+        const leaves = activePhases.filter((p) => !hasActiveChild(p));
         const candidates = leaves.length > 0 ? leaves : activePhases;
 
         // Walk up from each candidate until we find one with commitments.
-        const findWithCommitments = (phase: any): any => {
+        const findWithCommitments = (phase: Phase | undefined): Phase | null => {
           if (!phase) return null;
-          if ((phase.commitments ?? []).length > 0) return phase;
-          const parent = phaseById.get(phase.parent);
-          return findWithCommitments(parent);
+          if (phase.commitments.length > 0) return phase;
+          return findWithCommitments(phase.parent ? phaseById.get(phase.parent) : undefined);
         };
 
         for (const leaf of candidates) {
@@ -80,19 +79,19 @@ export const navigationTools: ToolDefinition[] = [
       const allIdeas = await trpcClient.idea.list.query({
         projectPath: args.projectPath as string,
       });
-      const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas as any);
+      const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas);
 
       const ideaIdSet = new Set<string>(targetPhase.commitments ?? []);
-      const openInPhase = (allIdeas as any[]).filter(
-        (a: any) => ideaIdSet.has(a.id) && a.status.state === 'open'
+      const openInPhase = allIdeas.filter(
+        (a) => ideaIdSet.has(a.id) && a.status.state === 'open'
       );
-      const hasActiveChild = (idea: any) => (idea.supportingConnections ?? []).some((connection: any) => {
-        const child = (allIdeas as any[]).find((candidate: any) => candidate.id === connection.ideaId);
+      const hasActiveChild = (idea: Idea) => idea.supportingConnections.some((connection) => {
+        const child = allIdeas.find((candidate) => candidate.id === connection.ideaId);
         return child && ['open', 'partially'].includes(child.status?.state);
       });
-      const openLeavesInPhase = openInPhase.filter((idea: any) => !hasActiveChild(idea));
+      const openLeavesInPhase = openInPhase.filter((idea) => !hasActiveChild(idea));
       const uncommittedLeaves = openLeavesInPhase.length === 0
-        ? (allIdeas as any[]).filter((idea: any) =>
+        ? allIdeas.filter((idea) =>
             idea.status?.state === 'open'
             && (idea.committedIn ?? []).length === 0
             && (idea.supportedIdeas ?? []).length > 0
@@ -110,11 +109,11 @@ export const navigationTools: ToolDefinition[] = [
           : 'phase-commitments';
 
       // Diagnostics: how many committed ideas are missing economic data
-      const allCommitted = (allIdeas as any[]).filter((a: any) => ideaIdSet.has(a.id));
+      const allCommitted = allIdeas.filter((a) => ideaIdSet.has(a.id));
       // An idea with effectively-zero flowed value is disconnected from any intrinsic
       // value source in the graph — its priority is meaningless regardless of cost.
       const missingValue = allCommitted.filter(
-        (a: any) => (values.get(a.id) ?? 0) < 1e-10
+        (a) => (values.get(a.id) ?? 0) < 1e-10
       ).length;
 
       const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(4) : (n > 0 ? "Infinity" : "-Infinity"));
@@ -134,31 +133,29 @@ export const navigationTools: ToolDefinition[] = [
       // output. Grounds attention in reality (which ranked ideas have actually
       // produced work) without mutating the human-set value model.
       const commitMessages = getRepoCommitMessages(args.projectPath as string);
-      const realized = countIdeaReferences(commitMessages, rankedOpenIdeas.map((a: any) => a.id));
+      const realized = countIdeaReferences(commitMessages, rankedOpenIdeas.map((a) => a.id));
       const realizedSignalAvailable = commitMessages.length > 0;
       // High-priority ideas with a real cost but zero realized output are the
       // ones the loop keeps ranking yet never actually advances — surface them.
       const noRealizedOutput = realizedSignalAvailable
-        ? rankedOpenIdeas.filter((a: any) => (a.cost ?? 0) > 0 && !(realized.get(a.id) ?? 0)).length
+        ? rankedOpenIdeas.filter((a) => (a.cost ?? 0) > 0 && !(realized.get(a.id) ?? 0)).length
         : 0;
 
       const prioritized = rankedOpenIdeas
-        .map((a: any) => ({
+        .map((a) => ({
           ...a,
           _priority: priorities.get(a.id) ?? 0,
           _flowedValue: (values.get(a.id) ?? 0) * totalIntrinsic,
           _aggregatedCost: costs.get(a.id) ?? 0,
           _realizedCommits: realized.get(a.id) ?? 0,
         }))
-        .sort((a: any, b: any) => b._priority - a._priority)
+        .sort((a, b) => b._priority - a._priority)
         .slice(0, (args.limit as number) || 10);
 
       // Build phase path for context
       const phasePath: string[] = [];
-      let cur: any = targetPhase;
-      while (cur) {
+      for (let cur: Phase | undefined = targetPhase; cur; cur = cur.parent ? phaseById.get(cur.parent) : undefined) {
         phasePath.unshift(cur.name);
-        cur = phaseById.get(cur.parent);
       }
 
       return {
@@ -205,7 +202,7 @@ export const navigationTools: ToolDefinition[] = [
                   "Do not manufacture low-value activity or substitute Markdown planning for graph state."
                 ]
               } : undefined,
-              ideas: prioritized.map((a: any) => ({
+              ideas: prioritized.map((a) => ({
                 id: a.id,
                 text: a.text,
                 description: a.description,
@@ -241,7 +238,7 @@ export const navigationTools: ToolDefinition[] = [
         content: [{
           type: "text",
           text: JSON.stringify({
-            path: result.path.map((p: any) => ({ id: p.id, name: p.name, parent: p.parent })),
+            path: result.path.map((p) => ({ id: p.id, name: p.name, parent: p.parent })),
             activeLevel: result.activeLevel,
             activePhase: result.activePhase ? { id: result.activePhase.id, name: result.activePhase.name } : null,
           }, null, 2),
@@ -294,10 +291,10 @@ export const navigationTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
         // 1. Get all ideas (cache them)
-        const allIdeas: any[] = await trpcClient.idea.list.query({
+        const allIdeas = await trpcClient.idea.list.query({
             projectPath: args.projectPath as string,
         });
-        const ideaMap = new Map(allIdeas.map((a: any) => [a.id, a]));
+        const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
 
         // 2. Fetch the target phase directly
         const phase = await trpcClient.phase.get.query({
@@ -309,21 +306,22 @@ export const navigationTools: ToolDefinition[] = [
         
         // 3. Traverse
         const visited = new Set<string>();
-        const result: any[] = [];
+        type TreeNode = { id: string; text: string; description?: string; status: string; children: TreeNode[] };
+        const result: TreeNode[] = [];
         const allowedStatuses = args.status 
             ? (Array.isArray(args.status) ? args.status : [args.status])
             : ['open'];
 
-        function buildTree(ideaId: string): any | null {
+        function buildTree(ideaId: string): TreeNode | null {
             if (visited.has(ideaId)) return null; // Cycle detection
             visited.add(ideaId);
 
             const idea = ideaMap.get(ideaId);
             if (!idea) return null;
 
-            const children = (idea.supportingConnections || [])
-                .map((conn: any) => buildTree(typeof conn === 'string' ? conn : conn.ideaId))
-                .filter((c: any) => c !== null);
+            const children = idea.supportingConnections
+                .map((conn) => buildTree(conn.ideaId))
+                .filter((c): c is TreeNode => c !== null);
 
             const node = {
                 id: idea.id,

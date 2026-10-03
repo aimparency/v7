@@ -145,12 +145,12 @@ export const graphHealthTools: ToolDefinition[] = [
       const allIdeas = await trpcClient.idea.list.query({
         projectPath: args.projectPath as string,
       });
-      const openIdeas = (allIdeas as any[]).filter((a: any) => a.status?.state === "open");
+      const openIdeas = allIdeas.filter((a) => a.status?.state === "open");
       // Code-only: a graph-bookkeeping commit that merely cites an idea id is
       // not evidence the idea was implemented (see CODE_ONLY_PATHSPEC).
       const commitMessages = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
-      const counts = countIdeaReferences(commitMessages, openIdeas.map((a: any) => a.id));
-      const candidates = findReconciliationCandidates(openIdeas as any[], counts);
+      const counts = countIdeaReferences(commitMessages, openIdeas.map((a) => a.id));
+      const candidates = findReconciliationCandidates(openIdeas, counts);
       return {
         content: [{
           type: "text",
@@ -188,13 +188,13 @@ export const graphHealthTools: ToolDefinition[] = [
       const MAX_UNIQUE_TOKENS = 400;
 
       const allIdeas = await trpcClient.idea.list.query({ projectPath: args.projectPath as string });
-      const openIdeas = (allIdeas as any[]).filter((a: any) => a.status?.state === "open");
+      const openIdeas = allIdeas.filter((a) => a.status?.state === "open");
 
       // Ideas already cited by a code commit are reconcile_status's job — skip
       // them so this heuristic focuses on its complement (no commit reference).
       const codeCommits = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
-      const cited = countIdeaReferences(codeCommits, openIdeas.map((a: any) => a.id));
-      const ideasToScan = openIdeas.filter((a: any) => !((cited.get(a.id) ?? 0) > 0));
+      const cited = countIdeaReferences(codeCommits, openIdeas.map((a) => a.id));
+      const ideasToScan = openIdeas.filter((a) => !((cited.get(a.id) ?? 0) > 0));
 
       const tokensByIdea = new Map<string, string[]>();
       const uniqueTokens = new Set<string>();
@@ -210,7 +210,7 @@ export const graphHealthTools: ToolDefinition[] = [
       const present = new Set<string>();
       for (const tok of uniqueTokens) if (gitGrepMatches(args.projectPath as string, tok)) present.add(tok);
 
-      const ideaById = new Map<string, any>(openIdeas.map((a: any) => [a.id, a]));
+      const ideaById = new Map(openIdeas.map((a) => [a.id, a]));
       const candidates = [...tokensByIdea.entries()]
         .map(([id, toks]) => ({ id, ...scoreCodePresence(toks, present) }))
         .filter((c) => c.scorable && c.score >= minScore && c.matched.length >= 2)
