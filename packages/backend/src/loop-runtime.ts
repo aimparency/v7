@@ -148,18 +148,6 @@ export const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPha
   };
 };
 
-const ensureLoopInstanceTarget = async (
-  rawProjectPath: string,
-  instance: z.infer<typeof loopInstanceSchema>
-) => {
-  if (instance.targetPhaseId && instance.targetIdeaId) return instance;
-  const defaults = await pickDefaultLoopTarget(rawProjectPath, instance.targetPhaseId);
-  instance.targetPhaseId = instance.targetPhaseId ?? defaults.targetPhaseId;
-  instance.targetIdeaId = instance.targetIdeaId ?? defaults.targetIdeaId;
-  instance.updatedAt = Date.now();
-  return instance;
-};
-
 export const readLoopSecrets = async (rawProjectPath: string) => {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
@@ -269,12 +257,6 @@ export const appendLoopMessage = async (
     });
     instance.updatedAt = Date.now();
   });
-};
-
-const getLoopApiKey = (provider: z.infer<typeof loopProviderSchema>, secrets: z.infer<typeof loopSecretsSchema>) => {
-  if (provider === 'nvidia') return secrets.NVIDIA_API_KEY;
-  if (provider === 'openrouter') return secrets.OPENROUTER_API_KEY;
-  return secrets.LOOP_API_KEY;
 };
 
 export const getLoopInstanceDir = (rawProjectPath: string, instanceId: string) =>

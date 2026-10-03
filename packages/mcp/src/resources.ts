@@ -1,6 +1,5 @@
 import type { BackendClient } from "./client.js";
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { trpc } from "./client.js";
 import { PROJECT_PATH_PARAMETER, PROJECT_PATH_MISSING_ERROR } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { AIMPARENCY_DIR_NAME } from "shared";

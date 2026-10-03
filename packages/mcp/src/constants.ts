@@ -1,4 +1,4 @@
-import { AIMPARENCY_DIR_NAME, INITIAL_STATES } from 'shared';
+import { AIMPARENCY_DIR_NAME } from 'shared';
 
 export const IDEA_STATES_DESCRIPTION = `Idea status: open (todo), partially (in progress), implemented (complete — include verification evidence in update_idea.reflection or addReflection), cancelled, failed, unclear (needs a human decision — explain in comment), human-dependent (blocked on a human action), archived. Don't leave completed or blocked work as open.`;
 

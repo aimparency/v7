@@ -507,7 +507,6 @@ test('phase reorder preserves canonical parent-owned order for roots and childre
     projectPath,
     phaseId: rootA.id
   });
-  const rootAFileAfterC = await fs.readJson(path.join(projectPath, 'phases', `${rootA.id}.json`)) as Phase;
   assert.deepEqual(rootAAfterC.childPhaseIds, [childC.id]);
 
   const childD = await caller.phase.create({

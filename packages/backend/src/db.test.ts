@@ -3,7 +3,7 @@ import assert from 'node:assert';
 import os from 'node:os';
 import path from 'path';
 import fs from 'fs-extra';
-import { getDb, closeDb, saveIdeaValues, getIdeaValues } from './db.js';
+import { closeDb, saveIdeaValues, getIdeaValues } from './db.js';
 
 let testProjectPath = '';
 
