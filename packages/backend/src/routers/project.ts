@@ -10,8 +10,6 @@ import type { Idea, Phase, ProjectMeta } from 'shared';
 import { CURRENT_DATA_MODEL_VERSION, INITIAL_STATES, IdeaSchema, PhaseSchema, calculateIdeaValues, cosineSimilarity } from 'shared';
 import { assertWritableBowman } from 'shared/bowman-migration';
 import { spawn, type ChildProcess } from 'child_process';
-import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
-import type { UnreadableIdea } from '../server.js';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { currentOrigin } from '../change-origin.js';
 import { findDuplicatePairs, clusterDuplicates } from '../duplicate-detection.js';
@@ -22,6 +20,18 @@ import {
   watchdogRuntimeAgentStateSchema,
   watchdogRuntimeStateSchema,
 } from '../watchdog-runtime-state.js';
+import { t, delayedProcedure } from '../trpc.js';
+import { emitChange, onChange, type ChangeEvent } from '../change-events.js';
+import { writeJsonAtomic } from '../storage/json.js';
+import { normalizeProjectPath } from '../project-path.js';
+import { ensureProjectStructure, readProjectMeta } from '../storage/project.js';
+import { listIdeas, writeIdea, readIdea, migrateIdeaFiles, scanIdeaFiles } from '../storage/ideas.js';
+import { listPhases, writePhase, reconcilePhaseTree } from '../storage/phases.js';
+import { indexIdeas, indexPhases } from '../search.js';
+import { loadVectorStore, hasCurrentEmbedding, generateEmbedding, saveEmbeddings, removeEmbedding } from '../embeddings.js';
+import { migrateCommittedInField, cleanupCommitments } from '../storage/commitments.js';
+import { getDb } from '../db.js';
+import { ensureSearchIndex } from '../search-index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -184,1789 +194,1749 @@ function createConsistencyIssue(code: ConsistencyIssueCode, message: string): Co
   };
 }
 
-async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
-  const dir = path.dirname(filePath);
-  const tempPath = path.join(
-    dir,
-    `.${path.basename(filePath)}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`
-  );
-  await fs.writeJson(tempPath, data, { spaces: 2 });
-  await fs.move(tempPath, filePath, { overwrite: true });
-}
-
 // Vectors are stored in one JSON file, so each flush rewrites the whole store.
 // Batch the startup backfill instead of paying that per idea.
 const EMBEDDING_BACKFILL_FLUSH_SIZE = 25;
 const EMBEDDING_BACKFILL_MAX_PAUSE_MS = 250;
 
-export const createProjectRouter = (
-  t: RouterBuilder,
-  delayedProcedure: BaseProcedure,
-  normalizeProjectPath: (p: string) => string,
-  ensureProjectStructure: (projectPath: string) => Promise<void>,
-  listIdeas: (projectPath: string, archived?: boolean) => Promise<Idea[]>,
-  listPhases: (projectPath: string, parentPhaseId?: string | null) => Promise<Phase[]>,
-  readProjectMeta: (projectPath: string) => Promise<ProjectMeta>,
-  writeIdea: (projectPath: string, idea: Idea) => Promise<void>,
-  indexIdeas: (projectPath: string, ideas: Idea[]) => void,
-  indexPhases: (projectPath: string, phases: Phase[]) => void,
-  loadVectorStore: (projectPath: string) => Promise<Record<string, any>>,
-  hasCurrentEmbedding: (value: unknown) => boolean,
-  generateEmbedding: (text: string) => Promise<number[] | null>,
-  saveEmbeddings: (projectPath: string, entries: { ideaId: string, vector: number[] }[]) => Promise<void>,
-  removeEmbedding: (projectPath: string, ideaId: string) => Promise<void>,
-  migrateCommittedInField: (projectPath: string) => Promise<void>,
-  cleanupCommitments: (projectPath: string, specificPhaseId?: string) => Promise<number>,
-  getDb: (projectPath: string) => any,
-  readIdea: (projectPath: string, ideaId: string) => Promise<Idea>,
-  writePhase: (projectPath: string, phase: Phase) => Promise<void>,
-  ensureSearchIndex: (projectPath: string) => Promise<void>,
-  migrateIdeaFiles: (projectPath: string) => Promise<string[]>,
-  reconcilePhaseTree: (projectPath: string) => Promise<string[]>,
-  scanIdeaFiles: (projectPath: string, dirNames: string[]) => Promise<{ ideas: Idea[]; unreadable: UnreadableIdea[] }>,
-  ee: any
-) => {
-  const getWatchdogRuntimeStatePath = (rawProjectPath: string) =>
-    path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'watchdog-state.json');
-  const getAutonomyPolicyPath = (rawProjectPath: string) =>
-    path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'autonomy-policy.json');
-  const getSecretsPath = (rawProjectPath: string) =>
-    path.join(normalizeProjectPath(rawProjectPath), 'secrets.json');
-  const getLoopConfigPath = (rawProjectPath: string) =>
-    path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loop-config.json');
-  const getLoopRuntimePath = (rawProjectPath: string) =>
-    path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loops.json');
+const getWatchdogRuntimeStatePath = (rawProjectPath: string) =>
+  path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'watchdog-state.json');
+const getAutonomyPolicyPath = (rawProjectPath: string) =>
+  path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'autonomy-policy.json');
+const getSecretsPath = (rawProjectPath: string) =>
+  path.join(normalizeProjectPath(rawProjectPath), 'secrets.json');
+const getLoopConfigPath = (rawProjectPath: string) =>
+  path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loop-config.json');
+const getLoopRuntimePath = (rawProjectPath: string) =>
+  path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loops.json');
 
-  const readLoopProjectMeta = async (rawProjectPath: string): Promise<ProjectMeta | null> => {
+const readLoopProjectMeta = async (rawProjectPath: string): Promise<ProjectMeta | null> => {
+  try {
+    return await fs.readJson(path.join(normalizeProjectPath(rawProjectPath), 'meta.json')) as ProjectMeta;
+  } catch {
+    return null;
+  }
+};
+
+const listLoopPhases = async (rawProjectPath: string): Promise<Phase[]> => {
+  const phasesDir = path.join(normalizeProjectPath(rawProjectPath), 'phases');
+  if (!await fs.pathExists(phasesDir)) return [];
+  const files = (await fs.readdir(phasesDir)).filter((file) => file.endsWith('.json'));
+  const phases = await Promise.all(files.map(async (file): Promise<Phase | null> => {
     try {
-      return await fs.readJson(path.join(normalizeProjectPath(rawProjectPath), 'meta.json')) as ProjectMeta;
+      return PhaseSchema.parse(await fs.readJson(path.join(phasesDir, file)));
     } catch {
+      // Malformed phase files are ignored here; consistency checks surface them elsewhere.
       return null;
     }
-  };
+  }));
+  return phases.filter((phase): phase is Phase => phase !== null);
+};
 
-  const listLoopPhases = async (rawProjectPath: string): Promise<Phase[]> => {
-    const phasesDir = path.join(normalizeProjectPath(rawProjectPath), 'phases');
-    if (!await fs.pathExists(phasesDir)) return [];
-    const files = (await fs.readdir(phasesDir)).filter((file) => file.endsWith('.json'));
-    const phases = await Promise.all(files.map(async (file): Promise<Phase | null> => {
-      try {
-        return PhaseSchema.parse(await fs.readJson(path.join(phasesDir, file)));
-      } catch {
-        // Malformed phase files are ignored here; consistency checks surface them elsewhere.
-        return null;
-      }
-    }));
-    return phases.filter((phase): phase is Phase => phase !== null);
-  };
-
-  const listLoopIdeas = async (rawProjectPath: string): Promise<Idea[]> => {
-    await ensureProjectStructure(rawProjectPath);
-    const ideasDir = path.join(normalizeProjectPath(rawProjectPath), 'ideas');
-    if (!await fs.pathExists(ideasDir)) return [];
-    const files = (await fs.readdir(ideasDir)).filter((file) => file.endsWith('.json'));
-    const ideas = await Promise.all(files.map(async (file): Promise<Idea | null> => {
-      try {
-        const idea = IdeaSchema.parse(await fs.readJson(path.join(ideasDir, file)));
-        return idea.archived ? null : idea;
-      } catch {
-        // Malformed idea files are ignored here; consistency checks surface them elsewhere.
-        return null;
-      }
-    }));
-    return ideas.filter((idea): idea is Idea => idea !== null);
-  };
-
-  const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPhaseId?: string | null) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    const [meta, phases, ideas] = await Promise.all([
-      readLoopProjectMeta(projectPath),
-      listLoopPhases(projectPath),
-      listLoopIdeas(projectPath)
-    ]);
-    const phaseById = new Map(phases.map((phase) => [phase.id, phase]));
-    const explicitPhase = preferredPhaseId ? phaseById.get(preferredPhaseId) : undefined;
-    const cursorLevel = meta?.phaseActiveLevel ?? 0;
-    const cursorPhaseId = meta?.phaseCursors?.[String(cursorLevel)];
-    const cursorPhase = cursorPhaseId ? phaseById.get(cursorPhaseId) : undefined;
-    const now = Date.now();
-    const activePhase = phases.find((phase) =>
-      (phase.from ?? 0) > 0 && (phase.to ?? 0) > 0 && phase.from! <= now && now <= phase.to!
-    );
-    const phase = explicitPhase ?? cursorPhase ?? activePhase ?? phases[0] ?? null;
-    if (!phase) return { targetPhaseId: null, targetIdeaId: null };
-
-    const { priorities } = calculateIdeaValues(ideas);
-    const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
-    const targetIdea = [...(phase.commitments ?? [])]
-      .map((ideaId) => ideaById.get(ideaId))
-      .filter((idea): idea is Idea => idea !== undefined && idea.status.state === 'open')
-      .sort((left, right) => (priorities.get(right.id) ?? 0) - (priorities.get(left.id) ?? 0))[0] ?? null;
-
-    return {
-      targetPhaseId: phase.id,
-      targetIdeaId: targetIdea?.id ?? null
-    };
-  };
-
-  const ensureLoopInstanceTarget = async (
-    rawProjectPath: string,
-    instance: z.infer<typeof loopInstanceSchema>
-  ) => {
-    if (instance.targetPhaseId && instance.targetIdeaId) return instance;
-    const defaults = await pickDefaultLoopTarget(rawProjectPath, instance.targetPhaseId);
-    instance.targetPhaseId = instance.targetPhaseId ?? defaults.targetPhaseId;
-    instance.targetIdeaId = instance.targetIdeaId ?? defaults.targetIdeaId;
-    instance.updatedAt = Date.now();
-    return instance;
-  };
-
-  const readLoopSecrets = async (rawProjectPath: string) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await ensureProjectStructure(projectPath);
-    const secretsPath = getSecretsPath(projectPath);
+const listLoopIdeas = async (rawProjectPath: string): Promise<Idea[]> => {
+  await ensureProjectStructure(rawProjectPath);
+  const ideasDir = path.join(normalizeProjectPath(rawProjectPath), 'ideas');
+  if (!await fs.pathExists(ideasDir)) return [];
+  const files = (await fs.readdir(ideasDir)).filter((file) => file.endsWith('.json'));
+  const ideas = await Promise.all(files.map(async (file): Promise<Idea | null> => {
     try {
-      return loopSecretsSchema.parse(await fs.readJson(secretsPath));
+      const idea = IdeaSchema.parse(await fs.readJson(path.join(ideasDir, file)));
+      return idea.archived ? null : idea;
     } catch {
-      return loopSecretsSchema.parse({});
+      // Malformed idea files are ignored here; consistency checks surface them elsewhere.
+      return null;
     }
+  }));
+  return ideas.filter((idea): idea is Idea => idea !== null);
+};
+
+const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPhaseId?: string | null) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  const [meta, phases, ideas] = await Promise.all([
+    readLoopProjectMeta(projectPath),
+    listLoopPhases(projectPath),
+    listLoopIdeas(projectPath)
+  ]);
+  const phaseById = new Map(phases.map((phase) => [phase.id, phase]));
+  const explicitPhase = preferredPhaseId ? phaseById.get(preferredPhaseId) : undefined;
+  const cursorLevel = meta?.phaseActiveLevel ?? 0;
+  const cursorPhaseId = meta?.phaseCursors?.[String(cursorLevel)];
+  const cursorPhase = cursorPhaseId ? phaseById.get(cursorPhaseId) : undefined;
+  const now = Date.now();
+  const activePhase = phases.find((phase) =>
+    (phase.from ?? 0) > 0 && (phase.to ?? 0) > 0 && phase.from! <= now && now <= phase.to!
+  );
+  const phase = explicitPhase ?? cursorPhase ?? activePhase ?? phases[0] ?? null;
+  if (!phase) return { targetPhaseId: null, targetIdeaId: null };
+
+  const { priorities } = calculateIdeaValues(ideas);
+  const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
+  const targetIdea = [...(phase.commitments ?? [])]
+    .map((ideaId) => ideaById.get(ideaId))
+    .filter((idea): idea is Idea => idea !== undefined && idea.status.state === 'open')
+    .sort((left, right) => (priorities.get(right.id) ?? 0) - (priorities.get(left.id) ?? 0))[0] ?? null;
+
+  return {
+    targetPhaseId: phase.id,
+    targetIdeaId: targetIdea?.id ?? null
   };
+};
 
-  const writeLoopSecrets = async (rawProjectPath: string, secrets: z.infer<typeof loopSecretsSchema>) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await ensureProjectStructure(projectPath);
-    await writeJsonAtomic(getSecretsPath(projectPath), loopSecretsSchema.parse(secrets));
-  };
+const ensureLoopInstanceTarget = async (
+  rawProjectPath: string,
+  instance: z.infer<typeof loopInstanceSchema>
+) => {
+  if (instance.targetPhaseId && instance.targetIdeaId) return instance;
+  const defaults = await pickDefaultLoopTarget(rawProjectPath, instance.targetPhaseId);
+  instance.targetPhaseId = instance.targetPhaseId ?? defaults.targetPhaseId;
+  instance.targetIdeaId = instance.targetIdeaId ?? defaults.targetIdeaId;
+  instance.updatedAt = Date.now();
+  return instance;
+};
 
-  const readLoopConfig = async (rawProjectPath: string) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await ensureProjectStructure(projectPath);
-    const configPath = getLoopConfigPath(projectPath);
-    try {
-      return loopConfigSchema.parse(await fs.readJson(configPath));
-    } catch {
-      const fallback = loopConfigSchema.parse({});
-      await fs.writeJson(configPath, fallback, { spaces: 2 });
-      return fallback;
-    }
-  };
+const readLoopSecrets = async (rawProjectPath: string) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  const secretsPath = getSecretsPath(projectPath);
+  try {
+    return loopSecretsSchema.parse(await fs.readJson(secretsPath));
+  } catch {
+    return loopSecretsSchema.parse({});
+  }
+};
 
-  const writeLoopConfig = async (rawProjectPath: string, config: z.infer<typeof loopConfigSchema>) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await ensureProjectStructure(projectPath);
-    await writeJsonAtomic(getLoopConfigPath(projectPath), loopConfigSchema.parse(config));
-  };
+const writeLoopSecrets = async (rawProjectPath: string, secrets: z.infer<typeof loopSecretsSchema>) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  await writeJsonAtomic(getSecretsPath(projectPath), loopSecretsSchema.parse(secrets));
+};
 
-  const makeDefaultLoopRuntimeState = () => {
-    const now = Date.now();
-    const loopId = uuidv4();
-    return loopRuntimeStateSchema.parse({
-      version: 1,
-      selectedLoopId: loopId,
-      selectedInstanceId: null,
-      loops: [{
-        id: loopId,
-        name: 'Default loop',
-        systemPrompt: [
-          'Continuously advance the highest-value mission through its best actionable ideas.',
-          'Verify and record real outcomes, then return to the graph and improve the strategy.',
-          'Keep status reports brief.'
-        ].join('\n'),
-        provider: 'nvidia',
-        model: 'z-ai/glm-5.2',
-        baseUrl: 'https://integrate.api.nvidia.com/v1',
-        intervalSeconds: 60,
-        associationChance: 0.1,
-        capabilities: ['coding', 'experiments', 'code-intelligence'],
-        createdAt: now,
-        updatedAt: now
-      }],
-      instances: []
-    });
-  };
+const readLoopConfig = async (rawProjectPath: string) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  const configPath = getLoopConfigPath(projectPath);
+  try {
+    return loopConfigSchema.parse(await fs.readJson(configPath));
+  } catch {
+    const fallback = loopConfigSchema.parse({});
+    await fs.writeJson(configPath, fallback, { spaces: 2 });
+    return fallback;
+  }
+};
 
-  const readLoopRuntimeState = async (rawProjectPath: string) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await ensureProjectStructure(projectPath);
-    const runtimePath = getLoopRuntimePath(projectPath);
-    try {
-      return loopRuntimeStateSchema.parse(await fs.readJson(runtimePath));
-    } catch {
-      const fallback = makeDefaultLoopRuntimeState();
-      await writeJsonAtomic(runtimePath, fallback);
-      return fallback;
-    }
-  };
+const writeLoopConfig = async (rawProjectPath: string, config: z.infer<typeof loopConfigSchema>) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  await writeJsonAtomic(getLoopConfigPath(projectPath), loopConfigSchema.parse(config));
+};
 
-  const writeLoopRuntimeState = async (rawProjectPath: string, state: z.infer<typeof loopRuntimeStateSchema>) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await ensureProjectStructure(projectPath);
-    await writeJsonAtomic(getLoopRuntimePath(projectPath), loopRuntimeStateSchema.parse(state));
-  };
+const makeDefaultLoopRuntimeState = () => {
+  const now = Date.now();
+  const loopId = uuidv4();
+  return loopRuntimeStateSchema.parse({
+    version: 1,
+    selectedLoopId: loopId,
+    selectedInstanceId: null,
+    loops: [{
+      id: loopId,
+      name: 'Default loop',
+      systemPrompt: [
+        'Continuously advance the highest-value mission through its best actionable ideas.',
+        'Verify and record real outcomes, then return to the graph and improve the strategy.',
+        'Keep status reports brief.'
+      ].join('\n'),
+      provider: 'nvidia',
+      model: 'z-ai/glm-5.2',
+      baseUrl: 'https://integrate.api.nvidia.com/v1',
+      intervalSeconds: 60,
+      associationChance: 0.1,
+      capabilities: ['coding', 'experiments', 'code-intelligence'],
+      createdAt: now,
+      updatedAt: now
+    }],
+    instances: []
+  });
+};
 
-  const mutateLoopRuntimeState = async (
-    rawProjectPath: string,
-    mutate: (state: z.infer<typeof loopRuntimeStateSchema>) => void
-  ) => {
-    const state = await readLoopRuntimeState(rawProjectPath);
-    mutate(state);
-    await writeLoopRuntimeState(rawProjectPath, state);
-    ee.emit('change', { type: 'loop', id: 'runtime', projectPath: normalizeProjectPath(rawProjectPath) });
-    return state;
-  };
+const readLoopRuntimeState = async (rawProjectPath: string) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  const runtimePath = getLoopRuntimePath(projectPath);
+  try {
+    return loopRuntimeStateSchema.parse(await fs.readJson(runtimePath));
+  } catch {
+    const fallback = makeDefaultLoopRuntimeState();
+    await writeJsonAtomic(runtimePath, fallback);
+    return fallback;
+  }
+};
 
-  const appendLoopMessage = async (
-    rawProjectPath: string,
-    instanceId: string,
-    message: Omit<z.infer<typeof loopMessageSchema>, 'id' | 'timestamp'>
-  ) => {
-    await mutateLoopRuntimeState(rawProjectPath, (state) => {
-      const instance = state.instances.find((candidate) => candidate.id === instanceId);
-      if (!instance) return;
-      instance.messages.push({
-        id: uuidv4(),
-        timestamp: Date.now(),
-        ...message
-      });
-      instance.updatedAt = Date.now();
-    });
-  };
+const writeLoopRuntimeState = async (rawProjectPath: string, state: z.infer<typeof loopRuntimeStateSchema>) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  await writeJsonAtomic(getLoopRuntimePath(projectPath), loopRuntimeStateSchema.parse(state));
+};
 
-  const getLoopApiKey = (provider: z.infer<typeof loopProviderSchema>, secrets: z.infer<typeof loopSecretsSchema>) => {
-    if (provider === 'nvidia') return secrets.NVIDIA_API_KEY;
-    if (provider === 'openrouter') return secrets.OPENROUTER_API_KEY;
-    return secrets.LOOP_API_KEY;
-  };
+const mutateLoopRuntimeState = async (
+  rawProjectPath: string,
+  mutate: (state: z.infer<typeof loopRuntimeStateSchema>) => void
+) => {
+  const state = await readLoopRuntimeState(rawProjectPath);
+  mutate(state);
+  await writeLoopRuntimeState(rawProjectPath, state);
+  emitChange({ type: 'loop', id: 'runtime', projectPath: normalizeProjectPath(rawProjectPath) });
+  return state;
+};
 
-  const getLoopInstanceDir = (rawProjectPath: string, instanceId: string) =>
-    path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loop-instances', instanceId);
-  const getLoopWorkerStatePath = (rawProjectPath: string, instanceId: string) =>
-    path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'state.json');
-  const getLoopInboxPath = (rawProjectPath: string, instanceId: string) =>
-    path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'inbox.jsonl');
-
-  const readLoopWorkerErrorText = async (rawProjectPath: string, instanceId: string, workerError?: string) => {
-    if (workerError?.trim()) return workerError.trim();
-    const errLogPath = path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'logs', 'err.log');
-    try {
-      const text = await fs.readFile(errLogPath, 'utf8');
-      return text.trim().split('\n').slice(-40).join('\n').trim();
-    } catch {
-      return '';
-    }
-  };
-
-  const appendLoopErrorOnce = async (
-    instance: z.infer<typeof loopInstanceSchema>,
-    content: string
-  ) => {
-    if (!content.trim()) return;
-    const latestError = [...instance.messages].reverse().find((message) => message.kind === 'error');
-    if (latestError?.content === content) return;
+const appendLoopMessage = async (
+  rawProjectPath: string,
+  instanceId: string,
+  message: Omit<z.infer<typeof loopMessageSchema>, 'id' | 'timestamp'>
+) => {
+  await mutateLoopRuntimeState(rawProjectPath, (state) => {
+    const instance = state.instances.find((candidate) => candidate.id === instanceId);
+    if (!instance) return;
     instance.messages.push({
       id: uuidv4(),
-      role: 'system',
-      kind: 'error',
-      content,
-      timestamp: Date.now()
-    });
-    if (instance.messages.length > 500) {
-      instance.messages.splice(0, instance.messages.length - 500);
-    }
-  };
-
-  const loopWorkerKey = (rawProjectPath: string, instanceId: string) =>
-    `${normalizeProjectPath(rawProjectPath)}:${instanceId}`;
-
-  const readLoopWorkerState = async (rawProjectPath: string, instanceId: string) => {
-    try {
-      return loopWorkerStateSchema.parse(await fs.readJson(getLoopWorkerStatePath(rawProjectPath, instanceId)));
-    } catch {
-      return null;
-    }
-  };
-
-  const writeLoopWorkerState = async (
-    rawProjectPath: string,
-    instanceId: string,
-    state: z.infer<typeof loopWorkerStateSchema>
-  ) => {
-    await writeJsonAtomic(getLoopWorkerStatePath(rawProjectPath, instanceId), loopWorkerStateSchema.parse(state));
-  };
-
-  const patchLoopWorkerState = async (
-    rawProjectPath: string,
-    instanceId: string,
-    patch: Partial<z.infer<typeof loopWorkerStateSchema>>
-  ) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    const existing = await readLoopWorkerState(projectPath, instanceId);
-    const next = loopWorkerStateSchema.parse({
-      instanceId,
-      projectPath,
-      status: existing?.status ?? 'idle',
-      updatedAt: Date.now(),
-      ...existing,
-      ...patch
-    });
-    await writeLoopWorkerState(projectPath, instanceId, next);
-    return next;
-  };
-
-  const isPidAlive = (pid: number | undefined) => {
-    if (!pid) return false;
-    try {
-      process.kill(pid, 0);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const killLoopWorker = async (rawProjectPath: string, instanceId: string) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    const key = loopWorkerKey(projectPath, instanceId);
-    const active = activeLoopWorkers.get(key);
-    const workerState = await readLoopWorkerState(projectPath, instanceId);
-    const pid = active?.pid ?? workerState?.pid;
-    await patchLoopWorkerState(projectPath, instanceId, { stopRequested: true, status: 'stopped' });
-    if (pid && isPidAlive(pid)) {
-      try {
-        process.kill(-pid, 'SIGTERM');
-      } catch {
-        try {
-          process.kill(pid, 'SIGTERM');
-        } catch {
-          // Already stopped.
-        }
-      }
-    }
-    activeLoopWorkers.delete(key);
-  };
-
-  const refreshLoopProcessStates = async (rawProjectPath: string) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    const state = await readLoopRuntimeState(projectPath);
-    for (const instance of state.instances) {
-      const active = activeLoopWorkers.get(loopWorkerKey(projectPath, instance.id));
-      if (active?.process.exitCode !== null && active?.process.exitCode !== undefined) {
-        activeLoopWorkers.delete(loopWorkerKey(projectPath, instance.id));
-      }
-    }
-      let changed = false;
-      for (const instance of state.instances) {
-        const workerState = await readLoopWorkerState(projectPath, instance.id);
-        if (!workerState) continue;
-        const pidAlive = isPidAlive(workerState.pid);
-        if ((workerState.status === 'running' || workerState.status === 'waiting_for_human' || workerState.status === 'waiting_for_external') && !pidAlive) {
-          instance.status = workerState.stopRequested ? 'stopped' : 'error';
-          if (instance.status === 'error') {
-            const errorText = await readLoopWorkerErrorText(projectPath, instance.id, workerState.error);
-            await appendLoopErrorOnce(instance, errorText || 'Loop worker exited without reporting an error.');
-          }
-          instance.updatedAt = Date.now();
-          changed = true;
-        } else if (instance.status !== workerState.status) {
-          instance.status = workerState.status;
-          if (instance.status === 'error') {
-            const errorText = await readLoopWorkerErrorText(projectPath, instance.id, workerState.error);
-            await appendLoopErrorOnce(instance, errorText || 'Loop worker entered error state without reporting details.');
-          }
-          instance.updatedAt = Date.now();
-          changed = true;
-        }
-      }
-      if (changed) await writeLoopRuntimeState(projectPath, state);
-      return state;
-  };
-
-  const spawnLoopWorker = async (rawProjectPath: string, instanceId: string) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    const key = loopWorkerKey(projectPath, instanceId);
-    const existing = activeLoopWorkers.get(key);
-    if (existing && isPidAlive(existing.pid)) return existing;
-
-    const workerState = await readLoopWorkerState(projectPath, instanceId);
-    if (workerState?.pid && isPidAlive(workerState.pid) && (workerState.status === 'running' || workerState.status === 'waiting_for_human' || workerState.status === 'waiting_for_external')) {
-      return { pid: workerState.pid, projectPath, instanceId } as LoopWorkerProcess;
-    }
-
-    await fs.ensureDir(getLoopInstanceDir(projectPath, instanceId));
-    const logDir = path.join(getLoopInstanceDir(projectPath, instanceId), 'logs');
-    await fs.ensureDir(logDir);
-    const out = fs.openSync(path.join(logDir, 'out.log'), 'a');
-    const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
-    const child = spawn('node', [
-      LOOP_WORKER_SCRIPT,
-      '--projectPath',
-      projectPath,
-      '--instanceId',
-      instanceId
-    ], {
-      cwd: LOOP_WORKER_DIR,
-      detached: true,
-      stdio: ['ignore', out, err],
-      env: { ...process.env }
-    });
-    child.unref();
-    const processEntry: LoopWorkerProcess = { process: child, pid: child.pid!, projectPath, instanceId };
-    activeLoopWorkers.set(key, processEntry);
-    await patchLoopWorkerState(projectPath, instanceId, {
-      status: 'running',
-      pid: child.pid!,
-      startedAt: Date.now(),
-      heartbeatAt: Date.now(),
-      stopRequested: false,
-      error: undefined
-    });
-    child.on('exit', () => {
-      const active = activeLoopWorkers.get(key);
-      if (active?.process === child) activeLoopWorkers.delete(key);
-    });
-    return processEntry;
-  };
-
-  const enqueueLoopHumanMessage = async (rawProjectPath: string, instanceId: string, content: string, replyToRequestId?: string) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    const message = loopInboxMessageSchema.parse({
-      id: uuidv4(),
-      role: 'user',
-      content,
       timestamp: Date.now(),
-      replyToRequestId
+      ...message
     });
-    await fs.ensureDir(getLoopInstanceDir(projectPath, instanceId));
-    await fs.appendFile(getLoopInboxPath(projectPath, instanceId), `${JSON.stringify(message)}\n`);
-    await appendLoopMessage(projectPath, instanceId, {
-      role: 'user',
-      kind: 'text',
-      content,
-      replyToRequestId
-    });
-    return message;
-  };
+    instance.updatedAt = Date.now();
+  });
+};
 
-  const readWatchdogRuntimeState = async (rawProjectPath: string) => {
-    const statePath = getWatchdogRuntimeStatePath(rawProjectPath);
-    if (!(await fs.pathExists(statePath))) {
-      return watchdogRuntimeStateSchema.parse({
-        updatedAt: 0,
-        preferredAgentType: null,
-        agents: {}
-      });
-    }
+const getLoopApiKey = (provider: z.infer<typeof loopProviderSchema>, secrets: z.infer<typeof loopSecretsSchema>) => {
+  if (provider === 'nvidia') return secrets.NVIDIA_API_KEY;
+  if (provider === 'openrouter') return secrets.OPENROUTER_API_KEY;
+  return secrets.LOOP_API_KEY;
+};
 
+const getLoopInstanceDir = (rawProjectPath: string, instanceId: string) =>
+  path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loop-instances', instanceId);
+const getLoopWorkerStatePath = (rawProjectPath: string, instanceId: string) =>
+  path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'state.json');
+const getLoopInboxPath = (rawProjectPath: string, instanceId: string) =>
+  path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'inbox.jsonl');
+
+const readLoopWorkerErrorText = async (rawProjectPath: string, instanceId: string, workerError?: string) => {
+  if (workerError?.trim()) return workerError.trim();
+  const errLogPath = path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'logs', 'err.log');
+  try {
+    const text = await fs.readFile(errLogPath, 'utf8');
+    return text.trim().split('\n').slice(-40).join('\n').trim();
+  } catch {
+    return '';
+  }
+};
+
+const appendLoopErrorOnce = async (
+  instance: z.infer<typeof loopInstanceSchema>,
+  content: string
+) => {
+  if (!content.trim()) return;
+  const latestError = [...instance.messages].reverse().find((message) => message.kind === 'error');
+  if (latestError?.content === content) return;
+  instance.messages.push({
+    id: uuidv4(),
+    role: 'system',
+    kind: 'error',
+    content,
+    timestamp: Date.now()
+  });
+  if (instance.messages.length > 500) {
+    instance.messages.splice(0, instance.messages.length - 500);
+  }
+};
+
+const loopWorkerKey = (rawProjectPath: string, instanceId: string) =>
+  `${normalizeProjectPath(rawProjectPath)}:${instanceId}`;
+
+const readLoopWorkerState = async (rawProjectPath: string, instanceId: string) => {
+  try {
+    return loopWorkerStateSchema.parse(await fs.readJson(getLoopWorkerStatePath(rawProjectPath, instanceId)));
+  } catch {
+    return null;
+  }
+};
+
+const writeLoopWorkerState = async (
+  rawProjectPath: string,
+  instanceId: string,
+  state: z.infer<typeof loopWorkerStateSchema>
+) => {
+  await writeJsonAtomic(getLoopWorkerStatePath(rawProjectPath, instanceId), loopWorkerStateSchema.parse(state));
+};
+
+const patchLoopWorkerState = async (
+  rawProjectPath: string,
+  instanceId: string,
+  patch: Partial<z.infer<typeof loopWorkerStateSchema>>
+) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  const existing = await readLoopWorkerState(projectPath, instanceId);
+  const next = loopWorkerStateSchema.parse({
+    instanceId,
+    projectPath,
+    status: existing?.status ?? 'idle',
+    updatedAt: Date.now(),
+    ...existing,
+    ...patch
+  });
+  await writeLoopWorkerState(projectPath, instanceId, next);
+  return next;
+};
+
+const isPidAlive = (pid: number | undefined) => {
+  if (!pid) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const killLoopWorker = async (rawProjectPath: string, instanceId: string) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  const key = loopWorkerKey(projectPath, instanceId);
+  const active = activeLoopWorkers.get(key);
+  const workerState = await readLoopWorkerState(projectPath, instanceId);
+  const pid = active?.pid ?? workerState?.pid;
+  await patchLoopWorkerState(projectPath, instanceId, { stopRequested: true, status: 'stopped' });
+  if (pid && isPidAlive(pid)) {
     try {
-      const data = await fs.readJson(statePath);
-      return watchdogRuntimeStateSchema.parse(data);
-    } catch (error) {
-      console.warn(`[ProjectRouter] Failed to read watchdog runtime state for ${rawProjectPath}:`, error);
-      return watchdogRuntimeStateSchema.parse({
-        updatedAt: 0,
-        preferredAgentType: null,
-        agents: {}
-      });
-    }
-  };
-
-  const writeWatchdogRuntimeState = async (rawProjectPath: string, state: z.infer<typeof watchdogRuntimeStateSchema>) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await ensureProjectStructure(projectPath);
-    const statePath = getWatchdogRuntimeStatePath(projectPath);
-    await fs.writeJson(statePath, state, { spaces: 2 });
-  };
-
-  const readAutonomyPolicy = async (rawProjectPath: string) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await ensureProjectStructure(projectPath);
-    const policyPath = getAutonomyPolicyPath(projectPath);
-    try {
-      const data = await fs.readJson(policyPath);
-      return autonomyPolicySchema.parse(data);
-    } catch (error) {
-      console.warn(`[ProjectRouter] Failed to read autonomy policy for ${rawProjectPath}:`, error);
-      const fallback = autonomyPolicySchema.parse({});
-      await fs.writeJson(policyPath, fallback, { spaces: 2 });
-      return fallback;
-    }
-  };
-
-  const writeAutonomyPolicy = async (rawProjectPath: string, policy: z.infer<typeof autonomyPolicySchema>) => {
-    const projectPath = normalizeProjectPath(rawProjectPath);
-    await ensureProjectStructure(projectPath);
-    const policyPath = getAutonomyPolicyPath(projectPath);
-    await fs.writeJson(policyPath, policy, { spaces: 2 });
-  };
-
-  const getDefaultDiscoveryRoots = () => {
-    const cwd = path.resolve(process.cwd());
-    const parent = path.dirname(cwd);
-    return Array.from(new Set([cwd, parent, os.homedir()].filter(Boolean)));
-  };
-
-  const discoverProjectsFromRoot = async (
-    root: string,
-    maxDepth: number,
-    seenProjectRoots: Set<string>,
-    results: Array<{ path: string, bowmanPath: string, sourceRoot: string }>
-  ) => {
-    const visit = async (dirPath: string, depth: number): Promise<void> => {
-      if (depth > maxDepth || results.length >= 50) return;
-
-      let entries: Dirent[];
+      process.kill(-pid, 'SIGTERM');
+    } catch {
       try {
-        entries = await fs.readdir(dirPath, { withFileTypes: true });
+        process.kill(pid, 'SIGTERM');
       } catch {
-        return;
+        // Already stopped.
       }
+    }
+  }
+  activeLoopWorkers.delete(key);
+};
 
-      const hasBowmanDir = entries.some((entry) => entry.isDirectory() && entry.name === '.bowman');
-      if (hasBowmanDir && !seenProjectRoots.has(dirPath)) {
-        seenProjectRoots.add(dirPath);
-        results.push({
-          path: dirPath,
-          bowmanPath: path.join(dirPath, '.bowman'),
-          sourceRoot: root
-        });
+const refreshLoopProcessStates = async (rawProjectPath: string) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  const state = await readLoopRuntimeState(projectPath);
+  for (const instance of state.instances) {
+    const active = activeLoopWorkers.get(loopWorkerKey(projectPath, instance.id));
+    if (active?.process.exitCode !== null && active?.process.exitCode !== undefined) {
+      activeLoopWorkers.delete(loopWorkerKey(projectPath, instance.id));
+    }
+  }
+    let changed = false;
+    for (const instance of state.instances) {
+      const workerState = await readLoopWorkerState(projectPath, instance.id);
+      if (!workerState) continue;
+      const pidAlive = isPidAlive(workerState.pid);
+      if ((workerState.status === 'running' || workerState.status === 'waiting_for_human' || workerState.status === 'waiting_for_external') && !pidAlive) {
+        instance.status = workerState.stopRequested ? 'stopped' : 'error';
+        if (instance.status === 'error') {
+          const errorText = await readLoopWorkerErrorText(projectPath, instance.id, workerState.error);
+          await appendLoopErrorOnce(instance, errorText || 'Loop worker exited without reporting an error.');
+        }
+        instance.updatedAt = Date.now();
+        changed = true;
+      } else if (instance.status !== workerState.status) {
+        instance.status = workerState.status;
+        if (instance.status === 'error') {
+          const errorText = await readLoopWorkerErrorText(projectPath, instance.id, workerState.error);
+          await appendLoopErrorOnce(instance, errorText || 'Loop worker entered error state without reporting details.');
+        }
+        instance.updatedAt = Date.now();
+        changed = true;
       }
+    }
+    if (changed) await writeLoopRuntimeState(projectPath, state);
+    return state;
+};
 
-      if (depth === maxDepth) return;
+const spawnLoopWorker = async (rawProjectPath: string, instanceId: string) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  const key = loopWorkerKey(projectPath, instanceId);
+  const existing = activeLoopWorkers.get(key);
+  if (existing && isPidAlive(existing.pid)) return existing;
 
-      for (const entry of entries) {
-        if (!entry.isDirectory()) continue;
-        if (entry.name === '.bowman' || DISCOVERY_IGNORED_DIRS.has(entry.name)) continue;
-        if (entry.name.startsWith('.') && depth > 0) continue;
+  const workerState = await readLoopWorkerState(projectPath, instanceId);
+  if (workerState?.pid && isPidAlive(workerState.pid) && (workerState.status === 'running' || workerState.status === 'waiting_for_human' || workerState.status === 'waiting_for_external')) {
+    return { pid: workerState.pid, projectPath, instanceId } as LoopWorkerProcess;
+  }
 
-        await visit(path.join(dirPath, entry.name), depth + 1);
-        if (results.length >= 50) return;
-      }
-    };
+  await fs.ensureDir(getLoopInstanceDir(projectPath, instanceId));
+  const logDir = path.join(getLoopInstanceDir(projectPath, instanceId), 'logs');
+  await fs.ensureDir(logDir);
+  const out = fs.openSync(path.join(logDir, 'out.log'), 'a');
+  const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
+  const child = spawn('node', [
+    LOOP_WORKER_SCRIPT,
+    '--projectPath',
+    projectPath,
+    '--instanceId',
+    instanceId
+  ], {
+    cwd: LOOP_WORKER_DIR,
+    detached: true,
+    stdio: ['ignore', out, err],
+    env: { ...process.env }
+  });
+  child.unref();
+  const processEntry: LoopWorkerProcess = { process: child, pid: child.pid!, projectPath, instanceId };
+  activeLoopWorkers.set(key, processEntry);
+  await patchLoopWorkerState(projectPath, instanceId, {
+    status: 'running',
+    pid: child.pid!,
+    startedAt: Date.now(),
+    heartbeatAt: Date.now(),
+    stopRequested: false,
+    error: undefined
+  });
+  child.on('exit', () => {
+    const active = activeLoopWorkers.get(key);
+    if (active?.process === child) activeLoopWorkers.delete(key);
+  });
+  return processEntry;
+};
 
-    await visit(root, 0);
+const enqueueLoopHumanMessage = async (rawProjectPath: string, instanceId: string, content: string, replyToRequestId?: string) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  const message = loopInboxMessageSchema.parse({
+    id: uuidv4(),
+    role: 'user',
+    content,
+    timestamp: Date.now(),
+    replyToRequestId
+  });
+  await fs.ensureDir(getLoopInstanceDir(projectPath, instanceId));
+  await fs.appendFile(getLoopInboxPath(projectPath, instanceId), `${JSON.stringify(message)}\n`);
+  await appendLoopMessage(projectPath, instanceId, {
+    role: 'user',
+    kind: 'text',
+    content,
+    replyToRequestId
+  });
+  return message;
+};
+
+const readWatchdogRuntimeState = async (rawProjectPath: string) => {
+  const statePath = getWatchdogRuntimeStatePath(rawProjectPath);
+  if (!(await fs.pathExists(statePath))) {
+    return watchdogRuntimeStateSchema.parse({
+      updatedAt: 0,
+      preferredAgentType: null,
+      agents: {}
+    });
+  }
+
+  try {
+    const data = await fs.readJson(statePath);
+    return watchdogRuntimeStateSchema.parse(data);
+  } catch (error) {
+    console.warn(`[ProjectRouter] Failed to read watchdog runtime state for ${rawProjectPath}:`, error);
+    return watchdogRuntimeStateSchema.parse({
+      updatedAt: 0,
+      preferredAgentType: null,
+      agents: {}
+    });
+  }
+};
+
+const writeWatchdogRuntimeState = async (rawProjectPath: string, state: z.infer<typeof watchdogRuntimeStateSchema>) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  const statePath = getWatchdogRuntimeStatePath(projectPath);
+  await fs.writeJson(statePath, state, { spaces: 2 });
+};
+
+const readAutonomyPolicy = async (rawProjectPath: string) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  const policyPath = getAutonomyPolicyPath(projectPath);
+  try {
+    const data = await fs.readJson(policyPath);
+    return autonomyPolicySchema.parse(data);
+  } catch (error) {
+    console.warn(`[ProjectRouter] Failed to read autonomy policy for ${rawProjectPath}:`, error);
+    const fallback = autonomyPolicySchema.parse({});
+    await fs.writeJson(policyPath, fallback, { spaces: 2 });
+    return fallback;
+  }
+};
+
+const writeAutonomyPolicy = async (rawProjectPath: string, policy: z.infer<typeof autonomyPolicySchema>) => {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await ensureProjectStructure(projectPath);
+  const policyPath = getAutonomyPolicyPath(projectPath);
+  await fs.writeJson(policyPath, policy, { spaces: 2 });
+};
+
+const getDefaultDiscoveryRoots = () => {
+  const cwd = path.resolve(process.cwd());
+  const parent = path.dirname(cwd);
+  return Array.from(new Set([cwd, parent, os.homedir()].filter(Boolean)));
+};
+
+const discoverProjectsFromRoot = async (
+  root: string,
+  maxDepth: number,
+  seenProjectRoots: Set<string>,
+  results: Array<{ path: string, bowmanPath: string, sourceRoot: string }>
+) => {
+  const visit = async (dirPath: string, depth: number): Promise<void> => {
+    if (depth > maxDepth || results.length >= 50) return;
+
+    let entries: Dirent[];
+    try {
+      entries = await fs.readdir(dirPath, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    const hasBowmanDir = entries.some((entry) => entry.isDirectory() && entry.name === '.bowman');
+    if (hasBowmanDir && !seenProjectRoots.has(dirPath)) {
+      seenProjectRoots.add(dirPath);
+      results.push({
+        path: dirPath,
+        bowmanPath: path.join(dirPath, '.bowman'),
+        sourceRoot: root
+      });
+    }
+
+    if (depth === maxDepth) return;
+
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name === '.bowman' || DISCOVERY_IGNORED_DIRS.has(entry.name)) continue;
+      if (entry.name.startsWith('.') && depth > 0) continue;
+
+      await visit(path.join(dirPath, entry.name), depth + 1);
+      if (results.length >= 50) return;
+    }
   };
 
-  return t.router({
-    onUpdate: t.procedure.subscription(() => {
-      return observable<{ type: string, id: string, projectPath: string, entity?: Idea | Phase | ProjectMeta, deleted?: boolean, previous?: unknown, origin?: string }>((emit) => {
-        // Listeners run inside the emitting request's context: tag the origin
-        // so clients can recognize (and undo) their own changes.
-        const onChange = (data: any) => emit.next({ ...data, origin: currentOrigin() });
-        ee.on('change', onChange);
-        return () => ee.off('change', onChange);
+  await visit(root, 0);
+};
+
+export const projectRouter = t.router({
+  onUpdate: t.procedure.subscription(() => {
+    return observable<ChangeEvent & { origin?: string }>((emit) =>
+      // Listeners run inside the emitting request's context: tag the origin
+      // so clients can recognize (and undo) their own changes.
+      onChange((event) => emit.next({ ...event, origin: currentOrigin() }))
+    );
+  }),
+
+  getMeta: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .query(async ({ input }) => {
+      // Clients call getMeta first when opening a project: warm the search index
+      // and vector store now so the first idea-creation search isn't the cold one.
+      void Promise.all([ensureSearchIndex(input.projectPath), loadVectorStore(input.projectPath)])
+        .catch(error => console.warn('[Search] Warm-up failed:', error));
+      return await readProjectMeta(input.projectPath);
+    }),
+
+  getWatchdogRuntimeState: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .query(async ({ input }) => {
+      return readWatchdogRuntimeState(input.projectPath);
+    }),
+
+  updateWatchdogRuntimeState: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      preferredAgentType: agentTypeSchema.nullable().optional(),
+      agentState: z.object({
+        agentType: agentTypeSchema,
+        enabled: z.boolean().optional(),
+        emergencyStopped: z.boolean().optional(),
+        stopReason: z.string().nullable().optional()
+      }).optional()
+    }))
+    .mutation(async ({ input }) => {
+      const agentType = input.agentState?.agentType as z.infer<typeof agentTypeSchema> | undefined;
+      const existing = await readWatchdogRuntimeState(input.projectPath);
+      const nextState = {
+        ...existing,
+        updatedAt: Date.now(),
+        preferredAgentType: input.preferredAgentType !== undefined
+          ? input.preferredAgentType
+          : existing.preferredAgentType ?? null,
+        agents: { ...existing.agents }
+      };
+
+      if (input.agentState && agentType) {
+        const currentAgentState = existing.agents[agentType] ?? {
+          enabled: false,
+          emergencyStopped: false,
+          stopReason: null,
+          updatedAt: 0
+        };
+        nextState.agents[agentType] = mergeWatchdogAgentControlState(
+          watchdogRuntimeAgentStateSchema.parse(currentAgentState),
+          input.agentState,
+          Date.now(),
+        );
+      }
+
+      const parsed = watchdogRuntimeStateSchema.parse(nextState);
+      await writeWatchdogRuntimeState(input.projectPath, parsed);
+      return parsed;
+    }),
+
+  getAutonomyPolicy: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .query(async ({ input }) => {
+      return readAutonomyPolicy(input.projectPath);
+    }),
+
+  updateAutonomyPolicy: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      policy: autonomyPolicySchema.partial()
+    }))
+    .mutation(async ({ input }) => {
+      const existing = await readAutonomyPolicy(input.projectPath);
+      const merged = autonomyPolicySchema.parse({
+        ...existing,
+        ...input.policy
+      });
+      await writeAutonomyPolicy(input.projectPath, merged);
+      return merged;
+    }),
+
+  getLoopRuntimeConfig: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .query(async ({ input }) => {
+      const [config, secrets] = await Promise.all([
+        readLoopConfig(input.projectPath),
+        readLoopSecrets(input.projectPath)
+      ]);
+
+      return {
+        ...config,
+        secretsPresent: {
+          NVIDIA_API_KEY: Boolean(secrets.NVIDIA_API_KEY),
+          OPENROUTER_API_KEY: Boolean(secrets.OPENROUTER_API_KEY),
+          LOOP_API_KEY: Boolean(secrets.LOOP_API_KEY)
+        }
+      };
+    }),
+
+  updateLoopRuntimeConfig: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      config: loopConfigSchema.partial()
+    }))
+    .mutation(async ({ input }) => {
+      const existing = await readLoopConfig(input.projectPath);
+      const parsed = loopConfigSchema.parse({
+        ...existing,
+        ...input.config
+      });
+      await writeLoopConfig(input.projectPath, parsed);
+      return parsed;
+    }),
+
+  updateLoopSecrets: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      secrets: z.object({
+        NVIDIA_API_KEY: z.string().optional(),
+        OPENROUTER_API_KEY: z.string().optional(),
+        LOOP_API_KEY: z.string().optional()
+      })
+    }))
+    .mutation(async ({ input }) => {
+      const existing = await readLoopSecrets(input.projectPath);
+      const next = { ...existing };
+      for (const key of ['NVIDIA_API_KEY', 'OPENROUTER_API_KEY', 'LOOP_API_KEY'] as const) {
+        if (input.secrets[key] !== undefined) {
+          const value = String(input.secrets[key]).trim();
+          if (value) next[key] = value;
+          else delete next[key];
+        }
+      }
+      await writeLoopSecrets(input.projectPath, next);
+      return {
+        NVIDIA_API_KEY: Boolean(next.NVIDIA_API_KEY),
+        OPENROUTER_API_KEY: Boolean(next.OPENROUTER_API_KEY),
+        LOOP_API_KEY: Boolean(next.LOOP_API_KEY)
+      };
+    }),
+
+  getLoopRuntimeState: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .query(async ({ input }) => {
+      return refreshLoopProcessStates(input.projectPath);
+    }),
+
+  createLoop: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      name: z.string().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const now = Date.now();
+      const loopId = uuidv4();
+      return mutateLoopRuntimeState(input.projectPath, (state) => {
+        state.loops.push({
+          id: loopId,
+          name: input.name?.trim() || 'New loop',
+          systemPrompt: 'Continuously advance the highest-value mission. Verify real outcomes, record them, and reprioritize.',
+          provider: 'nvidia',
+          model: 'z-ai/glm-5.2',
+          baseUrl: 'https://integrate.api.nvidia.com/v1',
+          intervalSeconds: 60,
+          associationChance: 0.1,
+          worktreePath: null,
+          capabilities: ['coding', 'experiments', 'code-intelligence'],
+          createdAt: now,
+          updatedAt: now
+        });
+        state.selectedLoopId = loopId;
+        state.selectedInstanceId = null;
       });
     }),
 
-    getMeta: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .query(async ({ input }: any) => {
-        // Clients call getMeta first when opening a project: warm the search index
-        // and vector store now so the first idea-creation search isn't the cold one.
-        void Promise.all([ensureSearchIndex(input.projectPath), loadVectorStore(input.projectPath)])
-          .catch(error => console.warn('[Search] Warm-up failed:', error));
-        return await readProjectMeta(input.projectPath);
-      }),
-
-    getWatchdogRuntimeState: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .query(async ({ input }: any) => {
-        return readWatchdogRuntimeState(input.projectPath);
-      }),
-
-    updateWatchdogRuntimeState: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        preferredAgentType: agentTypeSchema.nullable().optional(),
-        agentState: z.object({
-          agentType: agentTypeSchema,
-          enabled: z.boolean().optional(),
-          emergencyStopped: z.boolean().optional(),
-          stopReason: z.string().nullable().optional()
-        }).optional()
-      }))
-      .mutation(async ({ input }: any) => {
-        const agentType = input.agentState?.agentType as z.infer<typeof agentTypeSchema> | undefined;
-        const existing = await readWatchdogRuntimeState(input.projectPath);
-        const nextState = {
-          ...existing,
-          updatedAt: Date.now(),
-          preferredAgentType: input.preferredAgentType !== undefined
-            ? input.preferredAgentType
-            : existing.preferredAgentType ?? null,
-          agents: { ...existing.agents }
-        };
-
-        if (input.agentState && agentType) {
-          const currentAgentState = existing.agents[agentType] ?? {
-            enabled: false,
-            emergencyStopped: false,
-            stopReason: null,
-            updatedAt: 0
-          };
-          nextState.agents[agentType] = mergeWatchdogAgentControlState(
-            watchdogRuntimeAgentStateSchema.parse(currentAgentState),
-            input.agentState,
-            Date.now(),
-          );
+  updateLoop: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      loopId: z.string(),
+      name: z.string().optional(),
+      systemPrompt: z.string().optional(),
+      provider: loopProviderSchema.optional(),
+      model: z.string().optional(),
+      baseUrl: z.string().optional(),
+      intervalSeconds: z.number().int().min(5).max(3600).optional(),
+      associationChance: z.number().min(0).max(1).optional(),
+      worktreePath: z.string().nullable().optional(),
+      capabilities: z.array(loopCapabilitySchema).optional()
+    }))
+    .mutation(async ({ input }) => {
+      const resolvedWorktreePath = input.worktreePath?.trim()
+        ? path.resolve(input.worktreePath.trim())
+        : null;
+      if (resolvedWorktreePath) {
+        const stat = await fs.stat(resolvedWorktreePath).catch(() => null);
+        if (!stat?.isDirectory()) {
+          throw new Error(`Worktree path is not a directory: ${resolvedWorktreePath}`);
         }
-
-        const parsed = watchdogRuntimeStateSchema.parse(nextState);
-        await writeWatchdogRuntimeState(input.projectPath, parsed);
-        return parsed;
-      }),
-
-    getAutonomyPolicy: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .query(async ({ input }: any) => {
-        return readAutonomyPolicy(input.projectPath);
-      }),
-
-    updateAutonomyPolicy: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        policy: autonomyPolicySchema.partial()
-      }))
-      .mutation(async ({ input }: any) => {
-        const existing = await readAutonomyPolicy(input.projectPath);
-        const merged = autonomyPolicySchema.parse({
-          ...existing,
-          ...input.policy
-        });
-        await writeAutonomyPolicy(input.projectPath, merged);
-        return merged;
-      }),
-
-    getLoopRuntimeConfig: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .query(async ({ input }: any) => {
-        const [config, secrets] = await Promise.all([
-          readLoopConfig(input.projectPath),
-          readLoopSecrets(input.projectPath)
-        ]);
-
-        return {
-          ...config,
-          secretsPresent: {
-            NVIDIA_API_KEY: Boolean(secrets.NVIDIA_API_KEY),
-            OPENROUTER_API_KEY: Boolean(secrets.OPENROUTER_API_KEY),
-            LOOP_API_KEY: Boolean(secrets.LOOP_API_KEY)
-          }
-        };
-      }),
-
-    updateLoopRuntimeConfig: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        config: loopConfigSchema.partial()
-      }))
-      .mutation(async ({ input }: any) => {
-        const existing = await readLoopConfig(input.projectPath);
-        const parsed = loopConfigSchema.parse({
-          ...existing,
-          ...input.config
-        });
-        await writeLoopConfig(input.projectPath, parsed);
-        return parsed;
-      }),
-
-    updateLoopSecrets: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        secrets: z.object({
-          NVIDIA_API_KEY: z.string().optional(),
-          OPENROUTER_API_KEY: z.string().optional(),
-          LOOP_API_KEY: z.string().optional()
-        })
-      }))
-      .mutation(async ({ input }: any) => {
-        const existing = await readLoopSecrets(input.projectPath);
-        const next = { ...existing };
-        for (const key of ['NVIDIA_API_KEY', 'OPENROUTER_API_KEY', 'LOOP_API_KEY'] as const) {
-          if (input.secrets[key] !== undefined) {
-            const value = String(input.secrets[key]).trim();
-            if (value) next[key] = value;
-            else delete next[key];
-          }
+        const gitMarker = await fs.stat(path.join(resolvedWorktreePath, '.git')).catch(() => null);
+        if (!gitMarker) {
+          throw new Error(`Worktree path is not a Git working tree: ${resolvedWorktreePath}`);
         }
-        await writeLoopSecrets(input.projectPath, next);
-        return {
-          NVIDIA_API_KEY: Boolean(next.NVIDIA_API_KEY),
-          OPENROUTER_API_KEY: Boolean(next.OPENROUTER_API_KEY),
-          LOOP_API_KEY: Boolean(next.LOOP_API_KEY)
-        };
-      }),
+      }
+      return mutateLoopRuntimeState(input.projectPath, (state) => {
+        const loop = state.loops.find((candidate) => candidate.id === input.loopId);
+        if (!loop) return;
+        if (input.name !== undefined) loop.name = input.name;
+        if (input.systemPrompt !== undefined) loop.systemPrompt = input.systemPrompt;
+        if (input.provider !== undefined) loop.provider = input.provider;
+        if (input.model !== undefined) loop.model = input.model;
+        if (input.baseUrl !== undefined) loop.baseUrl = input.baseUrl;
+        if (input.intervalSeconds !== undefined) loop.intervalSeconds = input.intervalSeconds;
+        if (input.associationChance !== undefined) loop.associationChance = input.associationChance;
+        if (input.worktreePath !== undefined) {
+          loop.worktreePath = resolvedWorktreePath;
+        }
+        if (input.capabilities !== undefined) loop.capabilities = input.capabilities;
+        loop.updatedAt = Date.now();
+      });
+    }),
 
-    getLoopRuntimeState: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .query(async ({ input }: any) => {
-        return refreshLoopProcessStates(input.projectPath);
-      }),
+  duplicateLoop: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      loopId: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const now = Date.now();
+      const loopId = uuidv4();
+      return mutateLoopRuntimeState(input.projectPath, (state) => {
+        const source = state.loops.find((candidate) => candidate.id === input.loopId);
+        if (!source) return;
+        state.loops.push({
+          ...source,
+          id: loopId,
+          name: `${source.name} (duplicated)`,
+          createdAt: now,
+          updatedAt: now
+        });
+        state.selectedLoopId = loopId;
+        state.selectedInstanceId = null;
+      });
+    }),
 
-    createLoop: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        name: z.string().optional()
-      }))
-      .mutation(async ({ input }: any) => {
-        const now = Date.now();
-        const loopId = uuidv4();
-        return mutateLoopRuntimeState(input.projectPath, (state) => {
-          state.loops.push({
-            id: loopId,
-            name: input.name?.trim() || 'New loop',
-            systemPrompt: 'Continuously advance the highest-value mission. Verify real outcomes, record them, and reprioritize.',
-            provider: 'nvidia',
-            model: 'z-ai/glm-5.2',
-            baseUrl: 'https://integrate.api.nvidia.com/v1',
-            intervalSeconds: 60,
-            associationChance: 0.1,
-            worktreePath: null,
-            capabilities: ['coding', 'experiments', 'code-intelligence'],
-            createdAt: now,
-            updatedAt: now
-          });
-          state.selectedLoopId = loopId;
+  deleteLoop: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      loopId: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const projectPath = normalizeProjectPath(input.projectPath);
+      const runtime = await readLoopRuntimeState(projectPath);
+      for (const instance of runtime.instances.filter((candidate) => candidate.loopId === input.loopId)) {
+        await killLoopWorker(projectPath, instance.id);
+      }
+      return mutateLoopRuntimeState(projectPath, (state) => {
+        state.loops = state.loops.filter((loop) => loop.id !== input.loopId);
+        state.instances = state.instances.filter((instance) => instance.loopId !== input.loopId);
+        if (state.selectedLoopId === input.loopId) {
+          state.selectedLoopId = state.loops[0]?.id ?? null;
           state.selectedInstanceId = null;
-        });
-      }),
-
-    updateLoop: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        loopId: z.string(),
-        name: z.string().optional(),
-        systemPrompt: z.string().optional(),
-        provider: loopProviderSchema.optional(),
-        model: z.string().optional(),
-        baseUrl: z.string().optional(),
-        intervalSeconds: z.number().int().min(5).max(3600).optional(),
-        associationChance: z.number().min(0).max(1).optional(),
-        worktreePath: z.string().nullable().optional(),
-        capabilities: z.array(loopCapabilitySchema).optional()
-      }))
-      .mutation(async ({ input }: any) => {
-        const resolvedWorktreePath = input.worktreePath?.trim()
-          ? path.resolve(input.worktreePath.trim())
-          : null;
-        if (resolvedWorktreePath) {
-          const stat = await fs.stat(resolvedWorktreePath).catch(() => null);
-          if (!stat?.isDirectory()) {
-            throw new Error(`Worktree path is not a directory: ${resolvedWorktreePath}`);
-          }
-          const gitMarker = await fs.stat(path.join(resolvedWorktreePath, '.git')).catch(() => null);
-          if (!gitMarker) {
-            throw new Error(`Worktree path is not a Git working tree: ${resolvedWorktreePath}`);
-          }
         }
-        return mutateLoopRuntimeState(input.projectPath, (state) => {
-          const loop = state.loops.find((candidate) => candidate.id === input.loopId);
-          if (!loop) return;
-          if (input.name !== undefined) loop.name = input.name;
-          if (input.systemPrompt !== undefined) loop.systemPrompt = input.systemPrompt;
-          if (input.provider !== undefined) loop.provider = input.provider;
-          if (input.model !== undefined) loop.model = input.model;
-          if (input.baseUrl !== undefined) loop.baseUrl = input.baseUrl;
-          if (input.intervalSeconds !== undefined) loop.intervalSeconds = input.intervalSeconds;
-          if (input.associationChance !== undefined) loop.associationChance = input.associationChance;
-          if (input.worktreePath !== undefined) {
-            loop.worktreePath = resolvedWorktreePath;
-          }
-          if (input.capabilities !== undefined) loop.capabilities = input.capabilities;
-          loop.updatedAt = Date.now();
-        });
-      }),
+      });
+    }),
 
-    duplicateLoop: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        loopId: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const now = Date.now();
-        const loopId = uuidv4();
-        return mutateLoopRuntimeState(input.projectPath, (state) => {
-          const source = state.loops.find((candidate) => candidate.id === input.loopId);
-          if (!source) return;
-          state.loops.push({
-            ...source,
-            id: loopId,
-            name: `${source.name} (duplicated)`,
-            createdAt: now,
-            updatedAt: now
-          });
-          state.selectedLoopId = loopId;
+  createLoopInstance: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      loopId: z.string(),
+      name: z.string().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const now = Date.now();
+      const instanceId = uuidv4();
+      const target = await pickDefaultLoopTarget(input.projectPath);
+      return mutateLoopRuntimeState(input.projectPath, (state) => {
+        state.instances.push({
+          id: instanceId,
+          loopId: input.loopId,
+          name: input.name?.trim() || `Instance ${state.instances.filter((i) => i.loopId === input.loopId).length + 1}`,
+          status: 'idle',
+          targetPhaseId: target.targetPhaseId,
+          targetIdeaId: null,
+          stopPolicy: 'never',
+          currentActivity: null,
+          createdAt: now,
+          updatedAt: now,
+          messages: []
+        });
+        state.selectedLoopId = input.loopId;
+        state.selectedInstanceId = instanceId;
+      });
+    }),
+
+  updateLoopInstance: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      instanceId: z.string(),
+      name: z.string().optional(),
+      targetPhaseId: z.string().nullable().optional(),
+      targetIdeaId: z.string().nullable().optional(),
+      stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).optional()
+    }))
+    .mutation(async ({ input }) => {
+      const defaultTarget = input.targetPhaseId && input.targetIdeaId === undefined
+        ? await pickDefaultLoopTarget(input.projectPath, input.targetPhaseId)
+        : null;
+      return mutateLoopRuntimeState(input.projectPath, (state) => {
+        const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
+        if (!instance) return;
+        if (input.name !== undefined) instance.name = input.name.trim() || instance.name;
+        if (input.targetPhaseId !== undefined) {
+          instance.targetPhaseId = input.targetPhaseId;
+          if (input.targetIdeaId === undefined) instance.targetIdeaId = defaultTarget?.targetIdeaId ?? null;
+        }
+        if (input.targetIdeaId !== undefined) instance.targetIdeaId = input.targetIdeaId;
+        if (input.stopPolicy !== undefined) instance.stopPolicy = input.stopPolicy;
+        instance.updatedAt = Date.now();
+      });
+    }),
+
+  deleteLoopInstance: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      instanceId: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const projectPath = normalizeProjectPath(input.projectPath);
+      await killLoopWorker(projectPath, input.instanceId);
+      return mutateLoopRuntimeState(projectPath, (state) => {
+        state.instances = state.instances.filter((instance) => instance.id !== input.instanceId);
+        if (state.selectedInstanceId === input.instanceId) {
           state.selectedInstanceId = null;
-        });
-      }),
-
-    deleteLoop: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        loopId: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const projectPath = normalizeProjectPath(input.projectPath);
-        const runtime = await readLoopRuntimeState(projectPath);
-        for (const instance of runtime.instances.filter((candidate) => candidate.loopId === input.loopId)) {
-          await killLoopWorker(projectPath, instance.id);
         }
-        return mutateLoopRuntimeState(projectPath, (state) => {
-          state.loops = state.loops.filter((loop) => loop.id !== input.loopId);
-          state.instances = state.instances.filter((instance) => instance.loopId !== input.loopId);
-          if (state.selectedLoopId === input.loopId) {
-            state.selectedLoopId = state.loops[0]?.id ?? null;
-            state.selectedInstanceId = null;
-          }
-        });
-      }),
+      });
+    }),
 
-    createLoopInstance: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        loopId: z.string(),
-        name: z.string().optional()
-      }))
-      .mutation(async ({ input }: any) => {
-        const now = Date.now();
-        const instanceId = uuidv4();
-        const target = await pickDefaultLoopTarget(input.projectPath);
-        return mutateLoopRuntimeState(input.projectPath, (state) => {
-          state.instances.push({
-            id: instanceId,
-            loopId: input.loopId,
-            name: input.name?.trim() || `Instance ${state.instances.filter((i) => i.loopId === input.loopId).length + 1}`,
-            status: 'idle',
-            targetPhaseId: target.targetPhaseId,
-            targetIdeaId: null,
-            stopPolicy: 'never',
-            currentActivity: null,
-            createdAt: now,
-            updatedAt: now,
-            messages: []
-          });
-          state.selectedLoopId = input.loopId;
-          state.selectedInstanceId = instanceId;
-        });
-      }),
+  startLoopInstance: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      instanceId: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const projectPath = normalizeProjectPath(input.projectPath);
+      await mutateLoopRuntimeState(projectPath, (state) => {
+        const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
+        if (!instance) return;
+        instance.status = 'running';
+        instance.currentActivity = 'starting';
+        instance.updatedAt = Date.now();
+      });
+      await spawnLoopWorker(projectPath, input.instanceId);
+      return refreshLoopProcessStates(projectPath);
+    }),
 
-    updateLoopInstance: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        instanceId: z.string(),
-        name: z.string().optional(),
-        targetPhaseId: z.string().nullable().optional(),
-        targetIdeaId: z.string().nullable().optional(),
-        stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).optional()
-      }))
-      .mutation(async ({ input }: any) => {
-        const defaultTarget = input.targetPhaseId && input.targetIdeaId === undefined
-          ? await pickDefaultLoopTarget(input.projectPath, input.targetPhaseId)
-          : null;
-        return mutateLoopRuntimeState(input.projectPath, (state) => {
-          const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
-          if (!instance) return;
-          if (input.name !== undefined) instance.name = input.name.trim() || instance.name;
-          if (input.targetPhaseId !== undefined) {
-            instance.targetPhaseId = input.targetPhaseId;
-            if (input.targetIdeaId === undefined) instance.targetIdeaId = defaultTarget?.targetIdeaId ?? null;
-          }
-          if (input.targetIdeaId !== undefined) instance.targetIdeaId = input.targetIdeaId;
-          if (input.stopPolicy !== undefined) instance.stopPolicy = input.stopPolicy;
-          instance.updatedAt = Date.now();
-        });
-      }),
+  stopLoopInstance: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      instanceId: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const projectPath = normalizeProjectPath(input.projectPath);
+      await killLoopWorker(projectPath, input.instanceId);
+      return mutateLoopRuntimeState(projectPath, (state) => {
+        const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
+        if (!instance) return;
+        instance.status = 'stopped';
+        instance.currentActivity = 'stopped';
+        instance.updatedAt = Date.now();
+      });
+    }),
 
-    deleteLoopInstance: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        instanceId: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const projectPath = normalizeProjectPath(input.projectPath);
-        await killLoopWorker(projectPath, input.instanceId);
-        return mutateLoopRuntimeState(projectPath, (state) => {
-          state.instances = state.instances.filter((instance) => instance.id !== input.instanceId);
-          if (state.selectedInstanceId === input.instanceId) {
-            state.selectedInstanceId = null;
-          }
-        });
-      }),
+  restartLoopInstance: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      instanceId: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const projectPath = normalizeProjectPath(input.projectPath);
+      await killLoopWorker(projectPath, input.instanceId);
+      await fs.remove(getLoopInstanceDir(projectPath, input.instanceId));
+      await mutateLoopRuntimeState(projectPath, (state) => {
+        const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
+        if (!instance) return;
+        instance.status = 'running';
+        instance.currentActivity = 'restarting';
+        instance.messages = [];
+        instance.updatedAt = Date.now();
+      });
+      await spawnLoopWorker(projectPath, input.instanceId);
+      return refreshLoopProcessStates(projectPath);
+    }),
 
-    startLoopInstance: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        instanceId: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const projectPath = normalizeProjectPath(input.projectPath);
-        await mutateLoopRuntimeState(projectPath, (state) => {
-          const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
-          if (!instance) return;
-          instance.status = 'running';
-          instance.currentActivity = 'starting';
-          instance.updatedAt = Date.now();
-        });
-        await spawnLoopWorker(projectPath, input.instanceId);
-        return refreshLoopProcessStates(projectPath);
-      }),
+  sendLoopHumanMessage: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      instanceId: z.string(),
+      content: z.string().min(1),
+      replyToRequestId: z.string().optional()
+    }))
+    .mutation(async ({ input }) => {
+      await enqueueLoopHumanMessage(input.projectPath, input.instanceId, input.content, input.replyToRequestId);
+      return refreshLoopProcessStates(input.projectPath);
+    }),
 
-    stopLoopInstance: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        instanceId: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const projectPath = normalizeProjectPath(input.projectPath);
-        await killLoopWorker(projectPath, input.instanceId);
-        return mutateLoopRuntimeState(projectPath, (state) => {
-          const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
-          if (!instance) return;
-          instance.status = 'stopped';
-          instance.currentActivity = 'stopped';
-          instance.updatedAt = Date.now();
-        });
-      }),
+  discoverLocalProjects: delayedProcedure
+    .input(projectDiscoveryInputSchema.optional())
+    .query(async ({ input }) => {
+      const roots: string[] = Array.from(
+        new Set((input?.roots?.length ? input.roots : getDefaultDiscoveryRoots()).map((root: string) => path.resolve(root)))
+      );
+      const maxDepth = input?.maxDepth ?? 2;
+      const seenProjectRoots = new Set<string>();
+      const projects: Array<{ path: string, bowmanPath: string, sourceRoot: string }> = [];
 
-    restartLoopInstance: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        instanceId: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const projectPath = normalizeProjectPath(input.projectPath);
-        await killLoopWorker(projectPath, input.instanceId);
-        await fs.remove(getLoopInstanceDir(projectPath, input.instanceId));
-        await mutateLoopRuntimeState(projectPath, (state) => {
-          const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
-          if (!instance) return;
-          instance.status = 'running';
-          instance.currentActivity = 'restarting';
-          instance.messages = [];
-          instance.updatedAt = Date.now();
-        });
-        await spawnLoopWorker(projectPath, input.instanceId);
-        return refreshLoopProcessStates(projectPath);
-      }),
+      for (const root of roots) {
+        await discoverProjectsFromRoot(root, maxDepth, seenProjectRoots, projects);
+      }
 
-    sendLoopHumanMessage: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        instanceId: z.string(),
-        content: z.string().min(1),
-        replyToRequestId: z.string().optional()
-      }))
-      .mutation(async ({ input }: any) => {
-        await enqueueLoopHumanMessage(input.projectPath, input.instanceId, input.content, input.replyToRequestId);
-        return refreshLoopProcessStates(input.projectPath);
-      }),
+      projects.sort((left, right) => left.path.localeCompare(right.path));
 
-    discoverLocalProjects: delayedProcedure
-      .input(projectDiscoveryInputSchema.optional())
-      .query(async ({ input }: any) => {
-        const roots: string[] = Array.from(
-          new Set((input?.roots?.length ? input.roots : getDefaultDiscoveryRoots()).map((root: string) => path.resolve(root)))
-        );
-        const maxDepth = input?.maxDepth ?? 2;
-        const seenProjectRoots = new Set<string>();
-        const projects: Array<{ path: string, bowmanPath: string, sourceRoot: string }> = [];
+      return {
+        rootsScanned: roots,
+        projects
+      };
+    }),
 
-        for (const root of roots) {
-          await discoverProjectsFromRoot(root, maxDepth, seenProjectRoots, projects);
-        }
+  inspectPath: delayedProcedure
+    .input(z.object({ projectPath: z.string() }))
+    .query(async ({ input }) => {
+      const bowmanPath = resolveBowmanPath(input.projectPath);
+      return {
+        projectPath: input.projectPath,
+        bowmanPath,
+        bowmanExists: await bowmanExists(input.projectPath),
+        matches: await completeDirectoryPath(input.projectPath),
+      };
+    }),
 
-        projects.sort((left, right) => left.path.localeCompare(right.path));
+  buildSearchIndex: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const ideas = await listIdeas(input.projectPath);
+      const phases = await listPhases(input.projectPath);
 
-        return {
-          rootsScanned: roots,
-          projects
-        };
-      }),
+      indexIdeas(input.projectPath, ideas);
+      indexPhases(input.projectPath, phases);
 
-    inspectPath: delayedProcedure
-      .input(z.object({ projectPath: z.string() }))
-      .query(async ({ input }: any) => {
-        const bowmanPath = resolveBowmanPath(input.projectPath);
-        return {
-          projectPath: input.projectPath,
-          bowmanPath,
-          bowmanExists: await bowmanExists(input.projectPath),
-          matches: await completeDirectoryPath(input.projectPath),
-        };
-      }),
+      // Background embedding generation
+      if (process.env.NODE_ENV !== 'test') {
+        (async () => {
+            const vectorStore = await loadVectorStore(input.projectPath);
+            const ideasToEmbed = ideas.filter((idea: Idea) => !hasCurrentEmbedding(vectorStore[idea.id]));
 
-    buildSearchIndex: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const ideas = await listIdeas(input.projectPath);
-        const phases = await listPhases(input.projectPath);
-
-        indexIdeas(input.projectPath, ideas);
-        indexPhases(input.projectPath, phases);
-
-        // Background embedding generation
-        if (process.env.NODE_ENV !== 'test') {
-          (async () => {
-              const vectorStore = await loadVectorStore(input.projectPath);
-              const ideasToEmbed = ideas.filter((idea: Idea) => !hasCurrentEmbedding(vectorStore[idea.id]));
-
-              if (ideasToEmbed.length > 0) {
-                  console.log(`Starting embedding generation for ${ideasToEmbed.length} ideas (skipped ${ideas.length - ideasToEmbed.length} existing)...`);
-                  // This backfill runs right after startup, while the user is already
-                  // working. Flush in batches (one vectors.json rewrite per batch, not
-                  // per idea) and yield between ideas so queued requests - e.g. creating
-                  // an idea - are not stuck behind the loop.
-                  let pending: { ideaId: string, vector: number[] }[] = [];
-                  for (const idea of ideasToEmbed) {
-                      const startedAt = Date.now();
-                      const vector = await generateEmbedding(embeddingTextForIdea(idea));
-                      if (vector) {
-                          pending.push({ ideaId: idea.id, vector });
-                      }
-                      if (pending.length >= EMBEDDING_BACKFILL_FLUSH_SIZE) {
-                          await saveEmbeddings(input.projectPath, pending);
-                          pending = [];
-                      }
-                      // Tokenization and tensor post-processing run on the JS thread and
-                      // block it for tens of milliseconds per idea. Idle for roughly as
-                      // long as the last idea took, so the backfill uses at most half the
-                      // event loop and interactive requests keep getting served.
-                      const busyMs = Date.now() - startedAt;
-                      await new Promise(resolve => setTimeout(resolve, Math.min(busyMs, EMBEDDING_BACKFILL_MAX_PAUSE_MS)));
-                  }
-                  await saveEmbeddings(input.projectPath, pending);
-                  console.log('Embedding generation complete.');
-              } else {
-                  console.log(`Embeddings up to date (checked ${ideas.length} ideas).`);
-              }
-          })().catch(console.error);
-        }
-
-        return {
-          success: true,
-          indexed: {
-            ideas: ideas.length,
-            phases: phases.length
-          }
-        };
-      }),
-
-    updateMeta: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        meta: z.object({
-          name: z.string(),
-          color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-          statuses: z.array(z.any()).optional(),
-          initialInstructions: z.string().optional(),
-          supervisorGuidancePrefix: z.string().optional(),
-          costUnit: z.string().optional(),
-          defaultCost: z.number().finite().positive('Default cost must be greater than 0').optional(),
-          dataModelVersion: z.number().int().positive().optional(),
-          phaseCursors: z.record(z.string(), z.string()).optional(),
-          phaseActiveLevel: z.number().int().min(0).optional(),
-          rootPhaseIds: z.array(z.string()).optional()
-        })
-      }))
-      .mutation(async ({ input }: any) => {
-        const projectPath = normalizeProjectPath(input.projectPath);
-        await ensureProjectStructure(projectPath);
-        const metaPath = path.join(projectPath, 'meta.json');
-        // Preserve fields the editor doesn't send (repoId, linkedRepos, …) by
-        // merging onto the existing meta rather than overwriting it wholesale.
-        const existing: ProjectMeta = (await fs.pathExists(metaPath))
-          ? await fs.readJson(metaPath)
-          : ({} as ProjectMeta);
-        await assertWritableBowman(projectPath);
-        // The storage format is the backend's business: an editor (possibly an
-        // old tab) never sets it, so it can't roll a migrated project back.
-        const nextMeta = {
-          ...existing,
-          ...input.meta,
-          dataModelVersion: existing.dataModelVersion ?? CURRENT_DATA_MODEL_VERSION
-        };
-        await writeJsonAtomic(metaPath, nextMeta);
-        return nextMeta;
-      }),
-
-    injectAgentInstructions: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const projectPath = normalizeProjectPath(input.projectPath);
-        const rootDir = path.dirname(projectPath); // Project root (above .bowman)
-
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
-        const instructionsPath = path.join(__dirname, '../agent-instruction.md');
-
-        if (!(await fs.pathExists(instructionsPath))) {
-            throw new Error(`Agent instructions file not found at ${instructionsPath}`);
-        }
-
-        const agentInstructions = await fs.readFile(instructionsPath, 'utf-8');
-
-        const geminiConfig = path.join(rootDir, '.gemini/GEMINI.md');
-        const claudeConfig = path.join(rootDir, 'CLAUDE.md');
-        const cursorConfig = path.join(rootDir, '.cursorrules');
-
-        const results: string[] = [];
-
-        async function inject(filePath: string, name: string) {
-            try {
-                if (await fs.pathExists(filePath)) {
-                    let content = await fs.readFile(filePath, 'utf-8');
-                    const markerStart = '--- Context from: Aimparency ---';
-                    const markerEnd = '--- End of Context from: Aimparency ---';
-                    const block = `\n${markerStart}\n${agentInstructions}\n${markerEnd}\n`;
-
-                    const regex = new RegExp(`${markerStart.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}[\\s\\S]*?${markerEnd.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}`, 'g');
-
-                    if (regex.test(content)) {
-                        content = content.replace(regex, block.trim());
-                        results.push(`Updated ${name}`);
-                    } else {
-                        content += block;
-                        results.push(`Appended to ${name}`);
+            if (ideasToEmbed.length > 0) {
+                console.log(`Starting embedding generation for ${ideasToEmbed.length} ideas (skipped ${ideas.length - ideasToEmbed.length} existing)...`);
+                // This backfill runs right after startup, while the user is already
+                // working. Flush in batches (one vectors.json rewrite per batch, not
+                // per idea) and yield between ideas so queued requests - e.g. creating
+                // an idea - are not stuck behind the loop.
+                let pending: { ideaId: string, vector: number[] }[] = [];
+                for (const idea of ideasToEmbed) {
+                    const startedAt = Date.now();
+                    const vector = await generateEmbedding(embeddingTextForIdea(idea));
+                    if (vector) {
+                        pending.push({ ideaId: idea.id, vector });
                     }
-                    await fs.writeFile(filePath, content, 'utf-8');
+                    if (pending.length >= EMBEDDING_BACKFILL_FLUSH_SIZE) {
+                        await saveEmbeddings(input.projectPath, pending);
+                        pending = [];
+                    }
+                    // Tokenization and tensor post-processing run on the JS thread and
+                    // block it for tens of milliseconds per idea. Idle for roughly as
+                    // long as the last idea took, so the backfill uses at most half the
+                    // event loop and interactive requests keep getting served.
+                    const busyMs = Date.now() - startedAt;
+                    await new Promise(resolve => setTimeout(resolve, Math.min(busyMs, EMBEDDING_BACKFILL_MAX_PAUSE_MS)));
                 }
-            } catch (e: any) {
-                results.push(`Failed to update ${name}: ${e.message}`);
-            }
-        }
-
-        await inject(geminiConfig, 'GEMINI.md');
-        await inject(claudeConfig, 'CLAUDE.md');
-        await inject(cursorConfig, '.cursorrules');
-
-        return { results };
-      }),
-
-    migrateCommittedIn: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        await migrateCommittedInField(input.projectPath);
-        return { success: true };
-      }),
-
-    migrateTags: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const ideas = await listIdeas(input.projectPath);
-        for (const idea of ideas) {
-          if (!idea.tags) {
-            idea.tags = [];
-            await writeIdea(input.projectPath, idea);
-          }
-        }
-        return { success: true };
-      }),
-
-    migrateIncoming: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const ideas = await listIdeas(input.projectPath);
-        let count = 0;
-        for (const idea of ideas) {
-          const anyIdea = idea as any;
-          if (anyIdea.incoming && Array.isArray(anyIdea.incoming)) {
-             if (!idea.supportingConnections) idea.supportingConnections = [];
-             for (const id of anyIdea.incoming) {
-                if (!idea.supportingConnections.some((c: any) => c.ideaId === id)) {
-                    idea.supportingConnections.push({ ideaId: id, relativePosition: [0, 0], weight: 1 });
-                }
-             }
-             delete anyIdea.incoming;
-             await writeIdea(input.projectPath, idea);
-             count++;
-          }
-        }
-        return { success: true, migrated: count };
-      }),
-
-    repair: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const count = await cleanupCommitments(input.projectPath);
-        return { fixedIdeas: count };
-      }),
-
-    // All ideas in one read, plus the files that fail to load (the graph shows
-    // them as warning nodes).
-    loadIdeas: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .query(async ({ input }: any) => scanIdeaFiles(input.projectPath, ['ideas'])),
-
-    checkConsistency: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .query(async ({ input }: any) => {
-        // Archived ideas exist too: links to them are not dangling.
-        const { ideas, unreadable } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
-        const phases = await listPhases(input.projectPath);
-        const issues: ConsistencyIssue[] = [];
-
-        // Files that exist but fail to load are missing from the ideas above.
-        // Report them, and never treat links to them as dangling: that would
-        // invite fixConsistency to delete those links (as happened on 2026-08-01).
-        const unreadableIds = new Set(unreadable.map((file) => file.id));
-        for (const file of unreadable) {
-          issues.push(createConsistencyIssue('idea_unreadable', `Idea ${file.id} (${file.file}) cannot be loaded: ${file.error}. Fix the file by hand.`));
-        }
-
-        const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
-        const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
-
-        // Check 1: Idea <-> Phase consistency
-        for (const idea of ideas) {
-          for (const phaseId of idea.committedIn) {
-            if (!phaseMap.has(phaseId)) {
-              issues.push(createConsistencyIssue(
-                'idea_nonexistent_phase',
-                `Idea ${idea.id} claims to be committed in non-existent phase ${phaseId}`
-              ));
+                await saveEmbeddings(input.projectPath, pending);
+                console.log('Embedding generation complete.');
             } else {
-              const phase = phaseMap.get(phaseId)!;
-              if (!phase.commitments.includes(idea.id)) {
-                issues.push(createConsistencyIssue(
-                  'idea_missing_phase_commitment',
-                  `Idea ${idea.id} says committed in Phase ${phaseId}, but Phase does not have it in commitments`
-                ));
+                console.log(`Embeddings up to date (checked ${ideas.length} ideas).`);
+            }
+        })().catch(console.error);
+      }
+
+      return {
+        success: true,
+        indexed: {
+          ideas: ideas.length,
+          phases: phases.length
+        }
+      };
+    }),
+
+  updateMeta: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      meta: z.object({
+        name: z.string(),
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+        statuses: z.array(z.any()).optional(),
+        initialInstructions: z.string().optional(),
+        supervisorGuidancePrefix: z.string().optional(),
+        costUnit: z.string().optional(),
+        defaultCost: z.number().finite().positive('Default cost must be greater than 0').optional(),
+        dataModelVersion: z.number().int().positive().optional(),
+        phaseCursors: z.record(z.string(), z.string()).optional(),
+        phaseActiveLevel: z.number().int().min(0).optional(),
+        rootPhaseIds: z.array(z.string()).optional()
+      })
+    }))
+    .mutation(async ({ input }) => {
+      const projectPath = normalizeProjectPath(input.projectPath);
+      await ensureProjectStructure(projectPath);
+      const metaPath = path.join(projectPath, 'meta.json');
+      // Preserve fields the editor doesn't send (repoId, linkedRepos, …) by
+      // merging onto the existing meta rather than overwriting it wholesale.
+      const existing: ProjectMeta = (await fs.pathExists(metaPath))
+        ? await fs.readJson(metaPath)
+        : ({} as ProjectMeta);
+      await assertWritableBowman(projectPath);
+      // The storage format is the backend's business: an editor (possibly an
+      // old tab) never sets it, so it can't roll a migrated project back.
+      const nextMeta = {
+        ...existing,
+        ...input.meta,
+        dataModelVersion: existing.dataModelVersion ?? CURRENT_DATA_MODEL_VERSION
+      };
+      await writeJsonAtomic(metaPath, nextMeta);
+      return nextMeta;
+    }),
+
+  injectAgentInstructions: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const projectPath = normalizeProjectPath(input.projectPath);
+      const rootDir = path.dirname(projectPath); // Project root (above .bowman)
+
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      const instructionsPath = path.join(__dirname, '../agent-instruction.md');
+
+      if (!(await fs.pathExists(instructionsPath))) {
+          throw new Error(`Agent instructions file not found at ${instructionsPath}`);
+      }
+
+      const agentInstructions = await fs.readFile(instructionsPath, 'utf-8');
+
+      const geminiConfig = path.join(rootDir, '.gemini/GEMINI.md');
+      const claudeConfig = path.join(rootDir, 'CLAUDE.md');
+      const cursorConfig = path.join(rootDir, '.cursorrules');
+
+      const results: string[] = [];
+
+      async function inject(filePath: string, name: string) {
+          try {
+              if (await fs.pathExists(filePath)) {
+                  let content = await fs.readFile(filePath, 'utf-8');
+                  const markerStart = '--- Context from: Aimparency ---';
+                  const markerEnd = '--- End of Context from: Aimparency ---';
+                  const block = `\n${markerStart}\n${agentInstructions}\n${markerEnd}\n`;
+
+                  const regex = new RegExp(`${markerStart.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}[\\s\\S]*?${markerEnd.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}`, 'g');
+
+                  if (regex.test(content)) {
+                      content = content.replace(regex, block.trim());
+                      results.push(`Updated ${name}`);
+                  } else {
+                      content += block;
+                      results.push(`Appended to ${name}`);
+                  }
+                  await fs.writeFile(filePath, content, 'utf-8');
               }
-            }
+          } catch (e) {
+              results.push(`Failed to update ${name}: ${e instanceof Error ? e.message : String(e)}`);
           }
-        }
+      }
 
-        for (const phase of phases) {
-          for (const ideaId of phase.commitments) {
-            if (unreadableIds.has(ideaId)) continue;
-            if (!ideaMap.has(ideaId)) {
-              issues.push(createConsistencyIssue(
-                'phase_nonexistent_idea',
-                `Phase ${phase.id} commits to non-existent idea ${ideaId}`
-              ));
-            } else {
-              const idea = ideaMap.get(ideaId)!;
-              if (!idea.committedIn.includes(phase.id)) {
-                issues.push(createConsistencyIssue(
-                  'phase_missing_idea_committed_in',
-                  `Phase ${phase.id} commits to Idea ${ideaId}, but Idea does not say committed in Phase`
-                ));
+      await inject(geminiConfig, 'GEMINI.md');
+      await inject(claudeConfig, 'CLAUDE.md');
+      await inject(cursorConfig, '.cursorrules');
+
+      return { results };
+    }),
+
+  migrateCommittedIn: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      await migrateCommittedInField(input.projectPath);
+      return { success: true };
+    }),
+
+  migrateTags: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const ideas = await listIdeas(input.projectPath);
+      for (const idea of ideas) {
+        if (!idea.tags) {
+          idea.tags = [];
+          await writeIdea(input.projectPath, idea);
+        }
+      }
+      return { success: true };
+    }),
+
+  migrateIncoming: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const ideas = await listIdeas(input.projectPath);
+      let count = 0;
+      for (const idea of ideas) {
+        const anyIdea = idea as any;
+        if (anyIdea.incoming && Array.isArray(anyIdea.incoming)) {
+           if (!idea.supportingConnections) idea.supportingConnections = [];
+           for (const id of anyIdea.incoming) {
+              if (!idea.supportingConnections.some((c) => c.ideaId === id)) {
+                  idea.supportingConnections.push({ ideaId: id, relativePosition: [0, 0], weight: 1 });
               }
-            }
-          }
+           }
+           delete anyIdea.incoming;
+           await writeIdea(input.projectPath, idea);
+           count++;
         }
+      }
+      return { success: true, migrated: count };
+    }),
 
-        // Check 2: Idea <-> Idea consistency (supportingConnections/supportedIdeas)
-        for (const idea of ideas) {
-          // supportingConnections (Children)
-          if (idea.supportingConnections) {
-            for (const conn of idea.supportingConnections) {
-                const childId = conn.ideaId;
-                if (unreadableIds.has(childId)) continue;
-                if (!ideaMap.has(childId)) {
-                issues.push(createConsistencyIssue(
-                  'idea_nonexistent_child',
-                  `Idea ${idea.id} has non-existent supporting connection (child) ${childId}`
-                ));
-                } else {
-                const child = ideaMap.get(childId)!;
-                if (!child.supportedIdeas.includes(idea.id)) {
-                    issues.push(createConsistencyIssue(
-                      'idea_missing_child_supported_idea',
-                      `Idea ${idea.id} lists ${childId} as supporting, but ${childId} does not list ${idea.id} as supportedIdeas`
-                    ));
-                }
-                }
-            }
-          }
+  repair: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const count = await cleanupCommitments(input.projectPath);
+      return { fixedIdeas: count };
+    }),
 
-          // supportedIdeas (Parents)
-          for (const parentId of idea.supportedIdeas) {
-            if (unreadableIds.has(parentId)) continue;
-            if (!ideaMap.has(parentId)) {
-              issues.push(createConsistencyIssue(
-                'idea_nonexistent_parent',
-                `Idea ${idea.id} has non-existent supportedIdeas (parent) ${parentId}`
-              ));
-            } else {
-              const parent = ideaMap.get(parentId)!;
-              const parentHasConnection = parent.supportingConnections?.some((c: any) => c.ideaId === idea.id);
-              if (!parentHasConnection) {
-                issues.push(createConsistencyIssue(
-                  'idea_missing_parent_supporting_connection',
-                  `Idea ${idea.id} lists ${parentId} as supportedIdeas, but ${parentId} does not list ${idea.id} in supportingConnections`
-                ));
-              }
-            }
-          }
-        }
+  // All ideas in one read, plus the files that fail to load (the graph shows
+  // them as warning nodes).
+  loadIdeas: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .query(async ({ input }) => scanIdeaFiles(input.projectPath, ['ideas'])),
 
-        // Check 4: Embeddings consistency
-        const vectorStore = await loadVectorStore(input.projectPath);
-        for (const ideaId of Object.keys(vectorStore)) {
-            if (!ideaMap.has(ideaId) && !unreadableIds.has(ideaId)) {
-                issues.push(createConsistencyIssue(
-                  'orphaned_embedding',
-                  `Orphaned embedding found for Idea ${ideaId}`
-                ));
-            }
-        }
+  checkConsistency: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .query(async ({ input }) => {
+      // Archived ideas exist too: links to them are not dangling.
+      const { ideas, unreadable } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
+      const phases = await listPhases(input.projectPath);
+      const issues: ConsistencyIssue[] = [];
 
-        return { valid: issues.length === 0, errors: issues.map((issue) => issue.message), issues };
-      }),
+      // Files that exist but fail to load are missing from the ideas above.
+      // Report them, and never treat links to them as dangling: that would
+      // invite fixConsistency to delete those links (as happened on 2026-08-01).
+      const unreadableIds = new Set(unreadable.map((file) => file.id));
+      for (const file of unreadable) {
+        issues.push(createConsistencyIssue('idea_unreadable', `Idea ${file.id} (${file.file}) cannot be loaded: ${file.error}. Fix the file by hand.`));
+      }
 
-    fixConsistency: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .mutation(async ({ input }: any) => {
-        const fixes: string[] = [];
-        // Reads no longer upgrade idea files as a side effect; persist it here.
-        for (const ideaId of await migrateIdeaFiles(input.projectPath)) {
-          fixes.push(`Upgraded legacy fields / placed connections of Idea ${ideaId}`);
-        }
-        fixes.push(...await reconcilePhaseTree(input.projectPath));
+      const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
+      const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
 
-        // Archived ideas exist too: links to them are not dangling.
-        const { ideas, unreadable } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
-        const phases = await listPhases(input.projectPath);
-
-        const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
-        // Unreadable ideas still exist: keep every link to them (see checkConsistency).
-        const unreadableIds = new Set(unreadable.map((file) => file.id));
-        const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
-
-        // Fix 1: Idea <-> Phase consistency
-        for (const idea of ideas) {
-          const originalCommittedIn = [...idea.committedIn];
-          idea.committedIn = idea.committedIn.filter((phaseId: string) => {
-            const phase = phaseMap.get(phaseId);
-            if (!phase) {
-              fixes.push(`Removed non-existent phase ${phaseId} from Idea ${idea.id}`);
-              return false;
-            }
+      // Check 1: Idea <-> Phase consistency
+      for (const idea of ideas) {
+        for (const phaseId of idea.committedIn) {
+          if (!phaseMap.has(phaseId)) {
+            issues.push(createConsistencyIssue(
+              'idea_nonexistent_phase',
+              `Idea ${idea.id} claims to be committed in non-existent phase ${phaseId}`
+            ));
+          } else {
+            const phase = phaseMap.get(phaseId)!;
             if (!phase.commitments.includes(idea.id)) {
-              fixes.push(`Removed phase ${phaseId} from Idea ${idea.id} (not in phase commitments)`);
-              return false;
+              issues.push(createConsistencyIssue(
+                'idea_missing_phase_commitment',
+                `Idea ${idea.id} says committed in Phase ${phaseId}, but Phase does not have it in commitments`
+              ));
             }
-            return true;
-          });
+          }
+        }
+      }
 
-          if (idea.committedIn.length !== originalCommittedIn.length) {
-            await writeIdea(input.projectPath, idea);
+      for (const phase of phases) {
+        for (const ideaId of phase.commitments) {
+          if (unreadableIds.has(ideaId)) continue;
+          if (!ideaMap.has(ideaId)) {
+            issues.push(createConsistencyIssue(
+              'phase_nonexistent_idea',
+              `Phase ${phase.id} commits to non-existent idea ${ideaId}`
+            ));
+          } else {
+            const idea = ideaMap.get(ideaId)!;
+            if (!idea.committedIn.includes(phase.id)) {
+              issues.push(createConsistencyIssue(
+                'phase_missing_idea_committed_in',
+                `Phase ${phase.id} commits to Idea ${ideaId}, but Idea does not say committed in Phase`
+              ));
+            }
+          }
+        }
+      }
+
+      // Check 2: Idea <-> Idea consistency (supportingConnections/supportedIdeas)
+      for (const idea of ideas) {
+        // supportingConnections (Children)
+        if (idea.supportingConnections) {
+          for (const conn of idea.supportingConnections) {
+              const childId = conn.ideaId;
+              if (unreadableIds.has(childId)) continue;
+              if (!ideaMap.has(childId)) {
+              issues.push(createConsistencyIssue(
+                'idea_nonexistent_child',
+                `Idea ${idea.id} has non-existent supporting connection (child) ${childId}`
+              ));
+              } else {
+              const child = ideaMap.get(childId)!;
+              if (!child.supportedIdeas.includes(idea.id)) {
+                  issues.push(createConsistencyIssue(
+                    'idea_missing_child_supported_idea',
+                    `Idea ${idea.id} lists ${childId} as supporting, but ${childId} does not list ${idea.id} as supportedIdeas`
+                  ));
+              }
+              }
           }
         }
 
-        for (const phase of phases) {
-          const validCommitments = [];
-          for (const ideaId of phase.commitments) {
-            if (unreadableIds.has(ideaId)) {
-              validCommitments.push(ideaId);
-              continue;
-            }
-            const idea = ideaMap.get(ideaId);
-            if (!idea) {
-              fixes.push(`Removed non-existent idea ${ideaId} from Phase ${phase.id}`);
-              continue;
-            }
-            validCommitments.push(ideaId);
-
-            if (!idea.committedIn.includes(phase.id)) {
-              idea.committedIn.push(phase.id);
-              await writeIdea(input.projectPath, idea);
-              fixes.push(`Added phase ${phase.id} to Idea ${idea.id}`);
+        // supportedIdeas (Parents)
+        for (const parentId of idea.supportedIdeas) {
+          if (unreadableIds.has(parentId)) continue;
+          if (!ideaMap.has(parentId)) {
+            issues.push(createConsistencyIssue(
+              'idea_nonexistent_parent',
+              `Idea ${idea.id} has non-existent supportedIdeas (parent) ${parentId}`
+            ));
+          } else {
+            const parent = ideaMap.get(parentId)!;
+            const parentHasConnection = parent.supportingConnections?.some((c) => c.ideaId === idea.id);
+            if (!parentHasConnection) {
+              issues.push(createConsistencyIssue(
+                'idea_missing_parent_supporting_connection',
+                `Idea ${idea.id} lists ${parentId} as supportedIdeas, but ${parentId} does not list ${idea.id} in supportingConnections`
+              ));
             }
           }
+        }
+      }
 
-          if (validCommitments.length !== phase.commitments.length) {
-            phase.commitments = validCommitments;
+      // Check 4: Embeddings consistency
+      const vectorStore = await loadVectorStore(input.projectPath);
+      for (const ideaId of Object.keys(vectorStore)) {
+          if (!ideaMap.has(ideaId) && !unreadableIds.has(ideaId)) {
+              issues.push(createConsistencyIssue(
+                'orphaned_embedding',
+                `Orphaned embedding found for Idea ${ideaId}`
+              ));
+          }
+      }
+
+      return { valid: issues.length === 0, errors: issues.map((issue) => issue.message), issues };
+    }),
+
+  fixConsistency: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .mutation(async ({ input }) => {
+      const fixes: string[] = [];
+      // Reads no longer upgrade idea files as a side effect; persist it here.
+      for (const ideaId of await migrateIdeaFiles(input.projectPath)) {
+        fixes.push(`Upgraded legacy fields / placed connections of Idea ${ideaId}`);
+      }
+      fixes.push(...await reconcilePhaseTree(input.projectPath));
+
+      // Archived ideas exist too: links to them are not dangling.
+      const { ideas, unreadable } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
+      const phases = await listPhases(input.projectPath);
+
+      const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
+      // Unreadable ideas still exist: keep every link to them (see checkConsistency).
+      const unreadableIds = new Set(unreadable.map((file) => file.id));
+      const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
+
+      // Fix 1: Idea <-> Phase consistency
+      for (const idea of ideas) {
+        const originalCommittedIn = [...idea.committedIn];
+        idea.committedIn = idea.committedIn.filter((phaseId: string) => {
+          const phase = phaseMap.get(phaseId);
+          if (!phase) {
+            fixes.push(`Removed non-existent phase ${phaseId} from Idea ${idea.id}`);
+            return false;
+          }
+          if (!phase.commitments.includes(idea.id)) {
+            fixes.push(`Removed phase ${phaseId} from Idea ${idea.id} (not in phase commitments)`);
+            return false;
+          }
+          return true;
+        });
+
+        if (idea.committedIn.length !== originalCommittedIn.length) {
+          await writeIdea(input.projectPath, idea);
+        }
+      }
+
+      for (const phase of phases) {
+        const validCommitments = [];
+        for (const ideaId of phase.commitments) {
+          if (unreadableIds.has(ideaId)) {
+            validCommitments.push(ideaId);
+            continue;
+          }
+          const idea = ideaMap.get(ideaId);
+          if (!idea) {
+            fixes.push(`Removed non-existent idea ${ideaId} from Phase ${phase.id}`);
+            continue;
+          }
+          validCommitments.push(ideaId);
+
+          if (!idea.committedIn.includes(phase.id)) {
+            idea.committedIn.push(phase.id);
+            await writeIdea(input.projectPath, idea);
+            fixes.push(`Added phase ${phase.id} to Idea ${idea.id}`);
+          }
+        }
+
+        if (validCommitments.length !== phase.commitments.length) {
+          phase.commitments = validCommitments;
+          await writePhase(input.projectPath, phase);
+        }
+      }
+
+      // Fix 2: Idea <-> Idea consistency
+      for (const idea of ideas) {
+        // supportingConnections (Children)
+        if (idea.supportingConnections) {
+          const validConnections = [];
+          for (const conn of idea.supportingConnections) {
+              const childId = conn.ideaId;
+              if (unreadableIds.has(childId)) {
+              validConnections.push(conn);
+              continue;
+              }
+              const child = ideaMap.get(childId);
+              if (!child) {
+              fixes.push(`Removed non-existent child ${childId} from Idea ${idea.id}`);
+              continue;
+              }
+              validConnections.push(conn);
+
+              if (!child.supportedIdeas.includes(idea.id)) {
+              child.supportedIdeas.push(idea.id);
+              await writeIdea(input.projectPath, child);
+              fixes.push(`Added supportedIdeas parent ${idea.id} to Child ${child.id}`);
+              }
+          }
+          if (validConnections.length !== idea.supportingConnections.length) {
+              idea.supportingConnections = validConnections;
+              await writeIdea(input.projectPath, idea);
+          }
+        }
+
+        // supportedIdeas (Parents)
+        const validSupportedIdeas = [];
+        for (const parentId of idea.supportedIdeas) {
+          if (unreadableIds.has(parentId)) {
+            validSupportedIdeas.push(parentId);
+            continue;
+          }
+          const parent = ideaMap.get(parentId);
+          if (!parent) {
+            fixes.push(`Removed non-existent parent ${parentId} from Idea ${idea.id}`);
+            continue;
+          }
+          validSupportedIdeas.push(parentId);
+
+          if (!parent.supportingConnections) parent.supportingConnections = [];
+          if (!parent.supportingConnections.some((c) => c.ideaId === idea.id)) {
+            parent.supportingConnections.push({ ideaId: idea.id, relativePosition: [0,0], weight: 1 });
+            await writeIdea(input.projectPath, parent);
+            fixes.push(`Added supporting connection ${idea.id} to Parent ${parent.id}`);
+          }
+        }
+        if (validSupportedIdeas.length !== idea.supportedIdeas.length) {
+          idea.supportedIdeas = validSupportedIdeas;
+          await writeIdea(input.projectPath, idea);
+        }
+      }
+
+      // Fix 3: Phase parent consistency
+      for (const phase of phases) {
+        if (phase.parent) {
+          if (!phaseMap.has(phase.parent)) {
+            fixes.push(`Removed non-existent parent phase ${phase.parent} from Phase ${phase.id}`);
+            phase.parent = null;
             await writePhase(input.projectPath, phase);
           }
         }
+      }
 
-        // Fix 2: Idea <-> Idea consistency
-        for (const idea of ideas) {
-          // supportingConnections (Children)
-          if (idea.supportingConnections) {
-            const validConnections = [];
-            for (const conn of idea.supportingConnections) {
-                const childId = conn.ideaId;
-                if (unreadableIds.has(childId)) {
-                validConnections.push(conn);
-                continue;
-                }
-                const child = ideaMap.get(childId);
-                if (!child) {
-                fixes.push(`Removed non-existent child ${childId} from Idea ${idea.id}`);
-                continue;
-                }
-                validConnections.push(conn);
-
-                if (!child.supportedIdeas.includes(idea.id)) {
-                child.supportedIdeas.push(idea.id);
-                await writeIdea(input.projectPath, child);
-                fixes.push(`Added supportedIdeas parent ${idea.id} to Child ${child.id}`);
-                }
-            }
-            if (validConnections.length !== idea.supportingConnections.length) {
-                idea.supportingConnections = validConnections;
-                await writeIdea(input.projectPath, idea);
-            }
+      // Fix 4: Embeddings consistency
+      const vectorStore = await loadVectorStore(input.projectPath);
+      for (const ideaId of Object.keys(vectorStore)) {
+          if (!ideaMap.has(ideaId) && !unreadableIds.has(ideaId)) {
+              await removeEmbedding(input.projectPath, ideaId);
+              fixes.push(`Removed orphaned embedding for Idea ${ideaId}`);
           }
+      }
 
-          // supportedIdeas (Parents)
-          const validSupportedIdeas = [];
-          for (const parentId of idea.supportedIdeas) {
-            if (unreadableIds.has(parentId)) {
-              validSupportedIdeas.push(parentId);
-              continue;
-            }
-            const parent = ideaMap.get(parentId);
-            if (!parent) {
-              fixes.push(`Removed non-existent parent ${parentId} from Idea ${idea.id}`);
-              continue;
-            }
-            validSupportedIdeas.push(parentId);
-
-            if (!parent.supportingConnections) parent.supportingConnections = [];
-            if (!parent.supportingConnections.some((c: any) => c.ideaId === idea.id)) {
-              parent.supportingConnections.push({ ideaId: idea.id, relativePosition: [0,0], weight: 1 });
-              await writeIdea(input.projectPath, parent);
-              fixes.push(`Added supporting connection ${idea.id} to Parent ${parent.id}`);
-            }
-          }
-          if (validSupportedIdeas.length !== idea.supportedIdeas.length) {
-            idea.supportedIdeas = validSupportedIdeas;
-            await writeIdea(input.projectPath, idea);
-          }
-        }
-
-        // Fix 3: Phase parent consistency
-        for (const phase of phases) {
-          if (phase.parent) {
-            if (!phaseMap.has(phase.parent)) {
-              fixes.push(`Removed non-existent parent phase ${phase.parent} from Phase ${phase.id}`);
-              phase.parent = null;
-              await writePhase(input.projectPath, phase);
-            }
-          }
-        }
-
-        // Fix 4: Embeddings consistency
-        const vectorStore = await loadVectorStore(input.projectPath);
-        for (const ideaId of Object.keys(vectorStore)) {
-            if (!ideaMap.has(ideaId) && !unreadableIds.has(ideaId)) {
-                await removeEmbedding(input.projectPath, ideaId);
-                fixes.push(`Removed orphaned embedding for Idea ${ideaId}`);
-            }
-        }
-
-        // Fix 5: Cache consistency (idea_values)
-        try {
-            const db = getDb(input.projectPath);
-            const validIds = Array.from(ideaMap.keys());
-            if (validIds.length > 0) {
-                const placeholders = validIds.map(() => '?').join(',');
-                const info = db.prepare(`DELETE FROM idea_values WHERE id NOT IN (${placeholders})`).run(...validIds);
-                if (info.changes > 0) {
-                    fixes.push(`Removed ${info.changes} orphaned entries from idea_values cache`);
-                }
-            } else {
-                // No ideas, clear cache
-                const info = db.prepare('DELETE FROM idea_values').run();
-                if (info.changes > 0) {
-                    fixes.push(`Cleared ${info.changes} entries from idea_values cache (no valid ideas)`);
-                }
-            }
-        } catch (e) {
-            console.error('Failed to clean idea_values cache:', e);
-            fixes.push('Failed to clean idea_values cache (see logs)');
-        }
-
-        return { success: true, fixes };
-      }),
-
-    // Read-only duplicate report: loads all vectors in one pass, computes
-    // all-pairs cosine similarity, returns pairs above `threshold` ranked by score.
-    // Use merge_ideas to act on the results.
-    findDuplicates: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        threshold: z.number().min(0).max(1).optional(), // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
-        limit: z.number().int().positive().optional(),   // default 50
-      }))
-      .query(async ({ input }: any) => {
-        const threshold = input.threshold ?? 0.92;
-        const limit = input.limit ?? 50;
-
-        const [ideas, vectorStore] = await Promise.all([
-          listIdeas(input.projectPath),
-          loadVectorStore(input.projectPath),
-        ]);
-
-        const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
-
-        // Build indexed list of (ideaId, vector) for active ideas only
-        const indexed: Array<{ id: string; vector: number[] }> = [];
-        for (const [id, vector] of Object.entries(vectorStore)) {
-          if (Array.isArray(vector) && vector.length > 0 && ideaMap.has(id)) {
-            indexed.push({ id, vector: vector as number[] });
-          }
-        }
-
-        // Ranked near-duplicate pairs (parent-child pairs excluded — see
-        // duplicate-detection.ts). Mapped to the report shape.
-        const ranked = findDuplicatePairs(indexed, ideaMap, threshold);
-        const pairs = ranked.map((p) => ({
-          score: p.score.toFixed(4),
-          aId: p.aId,
-          aText: ideaMap.get(p.aId)!.text,
-          bId: p.bId,
-          bText: ideaMap.get(p.bId)!.text,
-        }));
-        const topPairs = pairs.slice(0, limit);
-
-        return {
-          threshold,
-          totalIndexed: indexed.length,
-          totalIdeas: ideas.length,
-          unindexed: ideas.length - indexed.length,
-          pairsFound: pairs.length,
-          pairs: topPairs,
-          note: indexed.length === 0
-            ? 'No embeddings found. Run build_search_index first.'
-            : pairs.length === 0
-              ? `No pairs above threshold ${threshold}. Try lowering it.`
-              : undefined,
-        };
-      }),
-
-    // Read-only reparent suggestions: for each leaf child of a vague catch-all parent,
-    // suggest the closest structural sub-parent (by embedding cosine) to move it under.
-    // Candidate sub-parents default to the catch-all's children that are themselves
-    // parents; pass candidateParentIds to override. Apply via merge/move tooling — this
-    // is an approve-a-list report, it changes nothing.
-    suggestReparents: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        parentIdeaId: z.string(),                              // the catch-all parent
-        candidateParentIds: z.array(z.string()).optional(),   // override structural sub-parents
-        limit: z.number().int().positive().optional(),        // default 200
-      }))
-      .query(async ({ input }: any) => {
-        const limit = input.limit ?? 200;
-        const [ideas, vectorStore] = await Promise.all([
-          listIdeas(input.projectPath),
-          loadVectorStore(input.projectPath),
-        ]);
-        const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
-        const catchAll = ideaMap.get(input.parentIdeaId);
-        if (!catchAll) {
-          return { error: `Catch-all parent ${input.parentIdeaId} not found.` };
-        }
-
-        const vecOf = (id: string): number[] | undefined => {
-          const v = vectorStore[id];
-          return Array.isArray(v) && v.length > 0 ? (v as number[]) : undefined;
-        };
-
-        // Direct children of the catch-all = ideas that support it.
-        const childIds: string[] = (catchAll.supportingConnections ?? [])
-          .map((c: any) => c.ideaId)
-          .filter((id: string) => ideaMap.has(id));
-
-        const isParent = (id: string) => (ideaMap.get(id)?.supportingConnections?.length ?? 0) > 0;
-
-        // Candidate sub-parents: explicit, else the catch-all's children that are parents.
-        const candidateIds: string[] = (input.candidateParentIds ?? childIds.filter(isParent))
-          .filter((id: string) => ideaMap.has(id));
-
-        // A candidate's "meaning" is best represented by what it already contains: the
-        // centroid of its children's embeddings. Fall back to its own title embedding
-        // when it has no embedded children.
-        const candidates = candidateIds.map((id: string) => {
-          const childVecs = (ideaMap.get(id)?.supportingConnections ?? [])
-            .map((c: any) => vecOf(c.ideaId))
-            .filter((v: any): v is number[] => !!v);
-          let vector: number[] | undefined;
-          const firstVec = childVecs[0];
-          if (firstVec) {
-            const dim = firstVec.length;
-            const vec = new Array<number>(dim).fill(0);
-            for (const v of childVecs) {
-              for (let i = 0; i < dim; i++) {
-                const currentVal = vec[i] ?? 0;
-                const childVal = v[i] ?? 0;
-                vec[i] = currentVal + childVal / childVecs.length;
+      // Fix 5: Cache consistency (idea_values)
+      try {
+          const db = getDb(input.projectPath);
+          const validIds = Array.from(ideaMap.keys());
+          if (validIds.length > 0) {
+              const placeholders = validIds.map(() => '?').join(',');
+              const info = db.prepare(`DELETE FROM idea_values WHERE id NOT IN (${placeholders})`).run(...validIds);
+              if (info.changes > 0) {
+                  fixes.push(`Removed ${info.changes} orphaned entries from idea_values cache`);
               }
-            }
-            vector = vec;
           } else {
-            vector = vecOf(id);
+              // No ideas, clear cache
+              const info = db.prepare('DELETE FROM idea_values').run();
+              if (info.changes > 0) {
+                  fixes.push(`Cleared ${info.changes} entries from idea_values cache (no valid ideas)`);
+              }
           }
-          return { id, text: ideaMap.get(id)!.text, vector };
-        }).filter((c: any) => c.vector) as Array<{ id: string; text: string; vector: number[] }>;
+      } catch (e) {
+          console.error('Failed to clean idea_values cache:', e);
+          fixes.push('Failed to clean idea_values cache (see logs)');
+      }
 
-        const candidateSet = new Set(candidateIds);
-        const leafIds = childIds.filter((id: string) => !candidateSet.has(id));
+      return { success: true, fixes };
+    }),
 
-        const suggestions: any[] = [];
-        let unembeddedLeaves = 0;
-        for (const leafId of leafIds) {
-          const lv = vecOf(leafId);
-          if (!lv) { unembeddedLeaves++; continue; }
-          let best: { id: string; text: string; score: number } | undefined;
-          let runnerUp: { id: string; text: string; score: number } | undefined;
-          for (const cand of candidates) {
-            if (cand.id === leafId || cand.vector.length !== lv.length) continue;
-            const score = cosineSimilarity(lv, cand.vector);
-            if (!best || score > best.score) { runnerUp = best; best = { id: cand.id, text: cand.text, score }; }
-            else if (!runnerUp || score > runnerUp.score) { runnerUp = { id: cand.id, text: cand.text, score }; }
-          }
-          if (best) {
-            suggestions.push({
-              scoreRaw: best.score,
-              leafId,
-              leafText: ideaMap.get(leafId)!.text,
-              suggestedParentId: best.id,
-              suggestedParentText: best.text,
-              score: best.score.toFixed(4),
-              margin: runnerUp ? (best.score - runnerUp.score).toFixed(4) : undefined,
-              runnerUpId: runnerUp?.id,
-              runnerUpText: runnerUp?.text,
-            });
-          }
+  // Read-only duplicate report: loads all vectors in one pass, computes
+  // all-pairs cosine similarity, returns pairs above `threshold` ranked by score.
+  // Use merge_ideas to act on the results.
+  findDuplicates: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      threshold: z.number().min(0).max(1).optional(), // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
+      limit: z.number().int().positive().optional(),   // default 50
+    }))
+    .query(async ({ input }) => {
+      const threshold = input.threshold ?? 0.92;
+      const limit = input.limit ?? 50;
+
+      const [ideas, vectorStore] = await Promise.all([
+        listIdeas(input.projectPath),
+        loadVectorStore(input.projectPath),
+      ]);
+
+      const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
+
+      // Build indexed list of (ideaId, vector) for active ideas only
+      const indexed: Array<{ id: string; vector: number[] }> = [];
+      for (const [id, vector] of Object.entries(vectorStore)) {
+        if (Array.isArray(vector) && vector.length > 0 && ideaMap.has(id)) {
+          indexed.push({ id, vector: vector as number[] });
         }
+      }
 
-        suggestions.sort((a, b) => b.scoreRaw - a.scoreRaw);
-        const top = suggestions.slice(0, limit).map(({ scoreRaw: _, ...rest }) => rest);
+      // Ranked near-duplicate pairs (parent-child pairs excluded — see
+      // duplicate-detection.ts). Mapped to the report shape.
+      const ranked = findDuplicatePairs(indexed, ideaMap, threshold);
+      const pairs = ranked.map((p) => ({
+        score: p.score.toFixed(4),
+        aId: p.aId,
+        aText: ideaMap.get(p.aId)!.text,
+        bId: p.bId,
+        bText: ideaMap.get(p.bId)!.text,
+      }));
+      const topPairs = pairs.slice(0, limit);
 
-        return {
-          catchAllParent: { id: catchAll.id, text: catchAll.text },
-          candidateParents: candidates.map((c) => ({ id: c.id, text: c.text })),
-          totalChildren: childIds.length,
-          leafCount: leafIds.length,
-          unembeddedLeaves,
-          suggestionsCount: suggestions.length,
-          suggestions: top,
-          note: candidates.length === 0
-            ? 'No candidate structural sub-parents found. Pass candidateParentIds, or ensure the catch-all has sub-parent children with embeddings (run build_search_index).'
-            : suggestions.length === 0
-              ? 'No leaf children to reparent (or none embedded). Run build_search_index first.'
-              : undefined,
-        };
-      }),
+      return {
+        threshold,
+        totalIndexed: indexed.length,
+        totalIdeas: ideas.length,
+        unindexed: ideas.length - indexed.length,
+        pairsFound: pairs.length,
+        pairs: topPairs,
+        note: indexed.length === 0
+          ? 'No embeddings found. Run build_search_index first.'
+          : pairs.length === 0
+            ? `No pairs above threshold ${threshold}. Try lowering it.`
+            : undefined,
+      };
+    }),
 
-    // Read-only graph-hygiene dashboard: surfaces where the idea graph needs maintenance —
-    // floating ideas, mega-parents (catch-all smell), stale cancelled/failed/human-dependent
-    // ideas, collapse candidates (parents whose active children are all done), and
-    // duplicate clusters. Changes nothing; pairs with merge_ideas / suggest_reparents / archiving.
-    graphHygiene: delayedProcedure
-      .input(z.object({
-        projectPath: z.string(),
-        megaParentThreshold: z.number().int().positive().optional(), // default 25
-        duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
-        limit: z.number().int().positive().optional(),               // per-section cap, default 30
-      }))
-      .query(async ({ input }: any) => {
-        const megaParentThreshold = input.megaParentThreshold ?? 25;
-        const duplicateThreshold = input.duplicateThreshold ?? 0.92;
-        const limit = input.limit ?? 30;
+  // Read-only reparent suggestions: for each leaf child of a vague catch-all parent,
+  // suggest the closest structural sub-parent (by embedding cosine) to move it under.
+  // Candidate sub-parents default to the catch-all's children that are themselves
+  // parents; pass candidateParentIds to override. Apply via merge/move tooling — this
+  // is an approve-a-list report, it changes nothing.
+  suggestReparents: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      parentIdeaId: z.string(),                              // the catch-all parent
+      candidateParentIds: z.array(z.string()).optional(),   // override structural sub-parents
+      limit: z.number().int().positive().optional(),        // default 200
+    }))
+    .query(async ({ input }) => {
+      const limit = input.limit ?? 200;
+      const [ideas, vectorStore] = await Promise.all([
+        listIdeas(input.projectPath),
+        loadVectorStore(input.projectPath),
+      ]);
+      const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
+      const catchAll = ideaMap.get(input.parentIdeaId);
+      if (!catchAll) {
+        return { error: `Catch-all parent ${input.parentIdeaId} not found.` };
+      }
 
-        const [ideas, vectorStore] = await Promise.all([
-          listIdeas(input.projectPath),
-          loadVectorStore(input.projectPath),
-        ]);
-        const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
-        const active = ideas.filter((a: Idea) => !a.archived);
+      const vecOf = (id: string): number[] | undefined => {
+        const v = vectorStore[id];
+        return Array.isArray(v) && v.length > 0 ? (v as number[]) : undefined;
+      };
 
-        const childIdsOf = (a: Idea): string[] =>
-          (a.supportingConnections ?? []).map((c: any) => c.ideaId).filter((id: string) => ideaMap.has(id));
+      // Direct children of the catch-all = ideas that support it.
+      const childIds: string[] = (catchAll.supportingConnections ?? [])
+        .map((c) => c.ideaId)
+        .filter((id: string) => ideaMap.has(id));
 
-        // 1. Floating: no parents and not committed to any phase.
-        const floating = active
-          .filter((a: Idea) => (a.supportedIdeas?.length ?? 0) === 0 && (a.committedIn?.length ?? 0) === 0)
-          .map((a: Idea) => ({ id: a.id, text: a.text, status: a.status.state }));
+      const isParent = (id: string) => (ideaMap.get(id)?.supportingConnections?.length ?? 0) > 0;
 
-        // NOTE: uncommitted-open ideas are deliberately NOT a section here. Every
-        // other section is a defect, so listing them made a normal state read as
-        // one, and a count in a hygiene report is an implicit target to drive to
-        // zero — which here means phase-committing ideas nobody intends to act on.
-        // An idea with a parent contributes through that parent; get_prioritized_ideas
-        // ranks these when a phase holds no open leaf, and idea.list({uncommitted})
-        // browses them on purpose. See idea 6f9bef89.
+      // Candidate sub-parents: explicit, else the catch-all's children that are parents.
+      const candidateIds: string[] = (input.candidateParentIds ?? childIds.filter(isParent))
+        .filter((id: string) => ideaMap.has(id));
 
-        // 2. Mega-parents: too many direct children (catch-all smell).
-        const megaParents = active
-          .map((a: Idea) => ({ a, n: childIdsOf(a).length }))
-          .filter((x) => x.n >= megaParentThreshold)
-          .sort((x, y) => y.n - x.n)
-          .map((x) => ({ id: x.a.id, text: x.a.text, directChildren: x.n }));
+      // A candidate's "meaning" is best represented by what it already contains: the
+      // centroid of its children's embeddings. Fall back to its own title embedding
+      // when it has no embedded children.
+      const candidates = candidateIds.map((id: string) => {
+        const childVecs = (ideaMap.get(id)?.supportingConnections ?? [])
+          .map((c) => vecOf(c.ideaId))
+          .filter((v): v is number[] => !!v);
+        let vector: number[] | undefined;
+        const firstVec = childVecs[0];
+        if (firstVec) {
+          const dim = firstVec.length;
+          const vec = new Array<number>(dim).fill(0);
+          for (const v of childVecs) {
+            for (let i = 0; i < dim; i++) {
+              const currentVal = vec[i] ?? 0;
+              const childVal = v[i] ?? 0;
+              vec[i] = currentVal + childVal / childVecs.length;
+            }
+          }
+          vector = vec;
+        } else {
+          vector = vecOf(id);
+        }
+        return { id, text: ideaMap.get(id)!.text, vector };
+      }).filter((c) => c.vector) as Array<{ id: string; text: string; vector: number[] }>;
 
-        // 3. Stale-status: cancelled/failed/human-dependent but not archived (clutter).
-        const staleStates = new Set(['cancelled', 'failed', 'human-dependent']);
-        const staleStatus = active
-          .filter((a: Idea) => staleStates.has(a.status.state))
-          .map((a: Idea) => ({ id: a.id, text: a.text, status: a.status.state }));
+      const candidateSet = new Set(candidateIds);
+      const leafIds = childIds.filter((id: string) => !candidateSet.has(id));
 
-        // 4. Collapse candidates: parents whose active children are ALL done.
-        const collapseCandidates = active
-          .map((a: Idea) => {
-            const kids = childIdsOf(a).map((id) => ideaMap.get(id)!).filter((k) => !k.archived);
-            const done = kids.filter((k) => k.status.state === 'implemented').length;
-            return { a, total: kids.length, done };
-          })
-          .filter((x) => x.total > 0 && x.done === x.total)
-          .map((x) => ({ id: x.a.id, text: x.a.text, doneChildren: x.done, totalChildren: x.total }));
+      const suggestions: any[] = [];
+      let unembeddedLeaves = 0;
+      for (const leafId of leafIds) {
+        const lv = vecOf(leafId);
+        if (!lv) { unembeddedLeaves++; continue; }
+        let best: { id: string; text: string; score: number } | undefined;
+        let runnerUp: { id: string; text: string; score: number } | undefined;
+        for (const cand of candidates) {
+          if (cand.id === leafId || cand.vector.length !== lv.length) continue;
+          const score = cosineSimilarity(lv, cand.vector);
+          if (!best || score > best.score) { runnerUp = best; best = { id: cand.id, text: cand.text, score }; }
+          else if (!runnerUp || score > runnerUp.score) { runnerUp = { id: cand.id, text: cand.text, score }; }
+        }
+        if (best) {
+          suggestions.push({
+            scoreRaw: best.score,
+            leafId,
+            leafText: ideaMap.get(leafId)!.text,
+            suggestedParentId: best.id,
+            suggestedParentText: best.text,
+            score: best.score.toFixed(4),
+            margin: runnerUp ? (best.score - runnerUp.score).toFixed(4) : undefined,
+            runnerUpId: runnerUp?.id,
+            runnerUpText: runnerUp?.text,
+          });
+        }
+      }
 
-        // 5. Duplicate clusters: all-pairs cosine above threshold, grouped via
-        // union-find (parent-child pairs excluded — see duplicate-detection.ts).
-        const indexedIds = active
-          .map((a: Idea) => a.id)
-          .filter((id: string) => Array.isArray(vectorStore[id]) && (vectorStore[id] as number[]).length > 0);
-        const duplicateClusters = clusterDuplicates(
-          indexedIds,
-          (id) => vectorStore[id] as number[] | undefined,
-          ideaMap,
-          duplicateThreshold,
-        ).map((c) => c.map((id) => ({ id, text: ideaMap.get(id)!.text })));
+      suggestions.sort((a, b) => b.scoreRaw - a.scoreRaw);
+      const top = suggestions.slice(0, limit).map(({ scoreRaw: _, ...rest }) => rest);
 
-        const section = <T>(items: T[]) => ({ count: items.length, items: items.slice(0, limit) });
+      return {
+        catchAllParent: { id: catchAll.id, text: catchAll.text },
+        candidateParents: candidates.map((c) => ({ id: c.id, text: c.text })),
+        totalChildren: childIds.length,
+        leafCount: leafIds.length,
+        unembeddedLeaves,
+        suggestionsCount: suggestions.length,
+        suggestions: top,
+        note: candidates.length === 0
+          ? 'No candidate structural sub-parents found. Pass candidateParentIds, or ensure the catch-all has sub-parent children with embeddings (run build_search_index).'
+          : suggestions.length === 0
+            ? 'No leaf children to reparent (or none embedded). Run build_search_index first.'
+            : undefined,
+      };
+    }),
 
-        return {
-          totalIdeas: ideas.length,
-          activeIdeas: active.length,
-          thresholds: { megaParentThreshold, duplicateThreshold },
-          floating: section(floating),
-          megaParents: section(megaParents),
-          staleStatus: section(staleStatus),
-          collapseCandidates: section(collapseCandidates),
-          duplicateClusters: section(duplicateClusters),
-        };
-      })
-  });
-};
+  // Read-only graph-hygiene dashboard: surfaces where the idea graph needs maintenance —
+  // floating ideas, mega-parents (catch-all smell), stale cancelled/failed/human-dependent
+  // ideas, collapse candidates (parents whose active children are all done), and
+  // duplicate clusters. Changes nothing; pairs with merge_ideas / suggest_reparents / archiving.
+  graphHygiene: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      megaParentThreshold: z.number().int().positive().optional(), // default 25
+      duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
+      limit: z.number().int().positive().optional(),               // per-section cap, default 30
+    }))
+    .query(async ({ input }) => {
+      const megaParentThreshold = input.megaParentThreshold ?? 25;
+      const duplicateThreshold = input.duplicateThreshold ?? 0.92;
+      const limit = input.limit ?? 30;
+
+      const [ideas, vectorStore] = await Promise.all([
+        listIdeas(input.projectPath),
+        loadVectorStore(input.projectPath),
+      ]);
+      const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
+      const active = ideas.filter((a: Idea) => !a.archived);
+
+      const childIdsOf = (a: Idea): string[] =>
+        (a.supportingConnections ?? []).map((c) => c.ideaId).filter((id: string) => ideaMap.has(id));
+
+      // 1. Floating: no parents and not committed to any phase.
+      const floating = active
+        .filter((a: Idea) => (a.supportedIdeas?.length ?? 0) === 0 && (a.committedIn?.length ?? 0) === 0)
+        .map((a: Idea) => ({ id: a.id, text: a.text, status: a.status.state }));
+
+      // NOTE: uncommitted-open ideas are deliberately NOT a section here. Every
+      // other section is a defect, so listing them made a normal state read as
+      // one, and a count in a hygiene report is an implicit target to drive to
+      // zero — which here means phase-committing ideas nobody intends to act on.
+      // An idea with a parent contributes through that parent; get_prioritized_ideas
+      // ranks these when a phase holds no open leaf, and idea.list({uncommitted})
+      // browses them on purpose. See idea 6f9bef89.
+
+      // 2. Mega-parents: too many direct children (catch-all smell).
+      const megaParents = active
+        .map((a: Idea) => ({ a, n: childIdsOf(a).length }))
+        .filter((x) => x.n >= megaParentThreshold)
+        .sort((x, y) => y.n - x.n)
+        .map((x) => ({ id: x.a.id, text: x.a.text, directChildren: x.n }));
+
+      // 3. Stale-status: cancelled/failed/human-dependent but not archived (clutter).
+      const staleStates = new Set(['cancelled', 'failed', 'human-dependent']);
+      const staleStatus = active
+        .filter((a: Idea) => staleStates.has(a.status.state))
+        .map((a: Idea) => ({ id: a.id, text: a.text, status: a.status.state }));
+
+      // 4. Collapse candidates: parents whose active children are ALL done.
+      const collapseCandidates = active
+        .map((a: Idea) => {
+          const kids = childIdsOf(a).map((id) => ideaMap.get(id)!).filter((k) => !k.archived);
+          const done = kids.filter((k) => k.status.state === 'implemented').length;
+          return { a, total: kids.length, done };
+        })
+        .filter((x) => x.total > 0 && x.done === x.total)
+        .map((x) => ({ id: x.a.id, text: x.a.text, doneChildren: x.done, totalChildren: x.total }));
+
+      // 5. Duplicate clusters: all-pairs cosine above threshold, grouped via
+      // union-find (parent-child pairs excluded — see duplicate-detection.ts).
+      const indexedIds = active
+        .map((a: Idea) => a.id)
+        .filter((id: string) => Array.isArray(vectorStore[id]) && (vectorStore[id] as number[]).length > 0);
+      const duplicateClusters = clusterDuplicates(
+        indexedIds,
+        (id) => vectorStore[id] as number[] | undefined,
+        ideaMap,
+        duplicateThreshold,
+      ).map((c) => c.map((id) => ({ id, text: ideaMap.get(id)!.text })));
+
+      const section = <T>(items: T[]) => ({ count: items.length, items: items.slice(0, limit) });
+
+      return {
+        totalIdeas: ideas.length,
+        activeIdeas: active.length,
+        thresholds: { megaParentThreshold, duplicateThreshold },
+        floating: section(floating),
+        megaParents: section(megaParents),
+        staleStatus: section(staleStatus),
+        collapseCandidates: section(collapseCandidates),
+        duplicateClusters: section(duplicateClusters),
+      };
+    })
+});

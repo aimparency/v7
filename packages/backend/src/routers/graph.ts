@@ -1,18 +1,13 @@
 import { z } from 'zod';
-import type { BaseProcedure, RouterBuilder } from './trpc-types.js';
+import { t, delayedProcedure } from '../trpc.js';
+import { getSemanticGraph } from '../forces.js';
 
-export const createGraphRouter = (
-  t: RouterBuilder,
-  delayedProcedure: BaseProcedure,
-  getSemanticGraph: (projectPath: string) => Promise<any>
-) => {
-  return t.router({
-    getSemanticForces: delayedProcedure
-      .input(z.object({
-        projectPath: z.string()
-      }))
-      .query(async ({ input }: any) => {
-        return await getSemanticGraph(input.projectPath);
-      })
-  });
-};
+export const graphRouter = t.router({
+  getSemanticForces: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .query(async ({ input }) => {
+      return await getSemanticGraph(input.projectPath);
+    })
+});
