@@ -23,7 +23,7 @@ import {
   dispatchWatchdogToggle,
 } from './socket-control-policy';
 import { SocketControlRateLimiter } from './socket-control-rate-limit';
-import { toBowmanPath, toProjectRoot } from './project-path';
+import { toBowmanPath, toProjectRoot } from 'shared';
 
 /**
  * Shared session entrypoint for every wrapped agent.

@@ -10,7 +10,7 @@ import type { AgentProfile } from './agent-profile';
 import { readAgentViewportLines, WATCHDOG_PARSER_LINE_COUNT } from './terminal-view';
 import { canonicalizeSupervisorAction, evaluateSupervisorDispatch, supervisorDispatchAllowed } from './supervisor-action-authority';
 import type { SupervisorDispatchDecision } from './supervisor-action-authority';
-import { toBowmanPath } from './project-path';
+import { toBowmanPath } from 'shared';
 
 /**
  * Configurable timing constants and behavior flags

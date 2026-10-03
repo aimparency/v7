@@ -7,7 +7,7 @@
   "scripts": {
     "type-check": "tsc --noEmit",
     "dev": "tsc --noEmit --watch",
-    "test": "tsx --test src/*.test.ts"
+    "test": "tsx --conditions=aimparency-source --test \"src/*.test.ts\""
   },
   "keywords": [
     "aimparency",
@@ -24,6 +24,7 @@
     "fs-extra": "^11.3.3",
     "node-pty": "^1.0.0",
     "open": "^11.0.0",
+    "shared": "*",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

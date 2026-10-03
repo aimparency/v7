@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Agent } from './agent';
-import { toBowmanPath } from './project-path';
+import { toBowmanPath } from 'shared';
 
 export interface SessionSummary {
   sessionId: string;

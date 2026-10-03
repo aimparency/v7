@@ -10,12 +10,12 @@
     ".": {
       "types": "./src/index.ts",
       "aimparency-source": "./src/index.ts",
-      "import": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./bowman-migration": {
       "types": "./src/bowman-migration.ts",
       "aimparency-source": "./src/bowman-migration.ts",
-      "import": "./dist/bowman-migration.js"
+      "default": "./dist/bowman-migration.js"
     }
   },
   "scripts": {
