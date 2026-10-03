@@ -192,7 +192,6 @@ export const useDataStore = defineStore('data', {
     unreadableIdeas: [] as UnreadableIdea[],
     loading: false,
     error: null as string | null,
-    migrated: false, // Track if we've run the migration
     subscription: null as { unsubscribe: () => void } | null,
     
     // Floating ideas
@@ -506,20 +505,6 @@ export const useDataStore = defineStore('data', {
         }, 50)
     },
 
-    async runMigration(projectPath: string) {
-      if (!projectPath || this.migrated) return
-
-      try {
-        await Promise.all([
-            trpc.project.migrateCommittedIn.mutate({ projectPath }),
-            trpc.project.migrateIncoming.mutate({ projectPath })
-        ])
-        this.migrated = true
-      } catch (error) {
-        console.warn('Migration failed, continuing anyway:', error)
-        this.migrated = true // Don't retry on every load
-      }
-    },
     
     async createAndSelectPhase(projectPath: string, phaseData: Omit<Phase, 'id'>, columnIndex: number) {
       if (!projectPath) return;

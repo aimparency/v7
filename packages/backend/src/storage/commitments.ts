@@ -96,35 +96,3 @@ export async function removeIdeaFromPhase(projectPath: string, ideaId: string, p
   idea.committedIn = (idea.committedIn || []).filter(id => id !== phaseId);
   await writeIdea(projectPath, idea);
 }
-
-// Migration function to populate committedIn field for existing ideas
-export async function migrateCommittedInField(projectPath: string): Promise<void> {
-  const allIdeas = await listIdeas(projectPath);
-  const allPhases = await listPhases(projectPath);
-  
-  // Create a map of ideaId -> phaseIds that commit this idea
-  const ideaCommitments: Record<string, string[]> = {};
-  
-  // Initialize all ideas with empty arrays
-  for (const idea of allIdeas) {
-    ideaCommitments[idea.id] = [];
-  }
-  
-  // Populate from phase commitments
-  for (const phase of allPhases) {
-    for (const ideaId of phase.commitments) {
-      if (ideaCommitments[ideaId]) {
-        ideaCommitments[ideaId].push(phase.id);
-      }
-    }
-  }
-  
-  // Update all ideas that don't have committedIn field or have incorrect data
-  for (const idea of allIdeas) {
-    const expectedCommittedIn = ideaCommitments[idea.id] || [];
-    if (!idea.committedIn || JSON.stringify(idea.committedIn.sort()) !== JSON.stringify(expectedCommittedIn.sort())) {
-      idea.committedIn = expectedCommittedIn;
-      await writeIdea(projectPath, idea);
-    }
-  }
-}

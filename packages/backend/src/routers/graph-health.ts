@@ -343,8 +343,7 @@ export const graphHealthRouter = t.router({
 
   // Read-only duplicate report: loads all vectors in one pass, computes
   // all-pairs cosine similarity, returns pairs above `threshold` ranked by score.
-  // Use merge_ideas to act on the results.,
-
+  // Use merge_ideas to act on the results.
   findDuplicates: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
@@ -401,8 +400,7 @@ export const graphHealthRouter = t.router({
   // suggest the closest structural sub-parent (by embedding cosine) to move it under.
   // Candidate sub-parents default to the catch-all's children that are themselves
   // parents; pass candidateParentIds to override. Apply via merge/move tooling — this
-  // is an approve-a-list report, it changes nothing.,
-
+  // is an approve-a-list report, it changes nothing.
   suggestReparents: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
@@ -517,8 +515,7 @@ export const graphHealthRouter = t.router({
   // Read-only graph-hygiene dashboard: surfaces where the idea graph needs maintenance —
   // floating ideas, mega-parents (catch-all smell), stale cancelled/failed/human-dependent
   // ideas, collapse candidates (parents whose active children are all done), and
-  // duplicate clusters. Changes nothing; pairs with merge_ideas / suggest_reparents / archiving.,
-
+  // duplicate clusters. Changes nothing; pairs with merge_ideas / suggest_reparents / archiving.
   graphHygiene: delayedProcedure
     .input(z.object({
       projectPath: z.string(),

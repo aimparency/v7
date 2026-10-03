@@ -11,7 +11,6 @@ const { mockTrpc } = vi.hoisted(() => {
         checkConsistency: { query: vi.fn().mockResolvedValue({ valid: true, errors: [] }) },
       },
       project: {
-        repair: { mutate: vi.fn().mockResolvedValue({}) },
         getMeta: { query: vi.fn().mockResolvedValue({}) },
         loadIdeas: { query: vi.fn().mockResolvedValue({ ideas: [], unreadable: [] }) },
         onUpdate: {

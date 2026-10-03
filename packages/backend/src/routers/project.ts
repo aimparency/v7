@@ -15,11 +15,10 @@ import { onChange, type ChangeEvent } from '../change-events.js';
 import { writeJsonAtomic } from '../storage/json.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { ensureProjectStructure, readProjectMeta } from '../storage/project.js';
-import { listIdeas, writeIdea, scanIdeaFiles } from '../storage/ideas.js';
+import { listIdeas, scanIdeaFiles } from '../storage/ideas.js';
 import { listPhases } from '../storage/phases.js';
 import { indexIdeas, indexPhases } from '../search.js';
 import { loadVectorStore, hasCurrentEmbedding, generateEmbedding, saveEmbeddings } from '../embeddings.js';
-import { migrateCommittedInField, cleanupCommitments } from '../storage/commitments.js';
 import { ensureSearchIndex } from '../search-index.js';
 import { t, delayedProcedure } from '../trpc.js';
 
@@ -37,8 +36,6 @@ const DISCOVERY_IGNORED_DIRS = new Set([
   '.next',
   '.turbo'
 ]);
-
-
 
 // Vectors are stored in one JSON file, so each flush rewrites the whole store.
 // Batch the startup backfill instead of paying that per idea.
@@ -91,7 +88,6 @@ const discoverProjectsFromRoot = async (
 
   await visit(root, 0);
 };
-
 
 export const projectRouter = t.router({
   onUpdate: t.procedure.subscription(() => {
@@ -299,66 +295,8 @@ export const projectRouter = t.router({
       return { results };
     }),
 
-  migrateCommittedIn: delayedProcedure
-    .input(z.object({
-      projectPath: z.string()
-    }))
-    .mutation(async ({ input }) => {
-      await migrateCommittedInField(input.projectPath);
-      return { success: true };
-    }),
-
-  migrateTags: delayedProcedure
-    .input(z.object({
-      projectPath: z.string()
-    }))
-    .mutation(async ({ input }) => {
-      const ideas = await listIdeas(input.projectPath);
-      for (const idea of ideas) {
-        if (!idea.tags) {
-          idea.tags = [];
-          await writeIdea(input.projectPath, idea);
-        }
-      }
-      return { success: true };
-    }),
-
-  migrateIncoming: delayedProcedure
-    .input(z.object({
-      projectPath: z.string()
-    }))
-    .mutation(async ({ input }) => {
-      const ideas = await listIdeas(input.projectPath);
-      let count = 0;
-      for (const idea of ideas) {
-        const anyIdea = idea as any;
-        if (anyIdea.incoming && Array.isArray(anyIdea.incoming)) {
-           if (!idea.supportingConnections) idea.supportingConnections = [];
-           for (const id of anyIdea.incoming) {
-              if (!idea.supportingConnections.some((c) => c.ideaId === id)) {
-                  idea.supportingConnections.push({ ideaId: id, relativePosition: [0, 0], weight: 1 });
-              }
-           }
-           delete anyIdea.incoming;
-           await writeIdea(input.projectPath, idea);
-           count++;
-        }
-      }
-      return { success: true, migrated: count };
-    }),
-
-  repair: delayedProcedure
-    .input(z.object({
-      projectPath: z.string()
-    }))
-    .mutation(async ({ input }) => {
-      const count = await cleanupCommitments(input.projectPath);
-      return { fixedIdeas: count };
-    }),
-
   // All ideas in one read, plus the files that fail to load (the graph shows
-  // them as warning nodes).,
-
+  // them as warning nodes).
   loadIdeas: delayedProcedure
     .input(z.object({
       projectPath: z.string()
