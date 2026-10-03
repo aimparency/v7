@@ -152,6 +152,7 @@ type ConsistencyIssueCode =
   | 'idea_nonexistent_parent'
   | 'idea_missing_parent_supporting_connection'
   | 'orphaned_embedding'
+  | 'idea_unreadable'
   | 'legacy';
 
 type ConsistencyIssue = {
@@ -170,6 +171,7 @@ const CONSISTENCY_ACTIONS: Record<ConsistencyIssueCode, string> = {
   idea_nonexistent_parent: 'Remove invalid parent link',
   idea_missing_parent_supporting_connection: 'Sync bidirectional link',
   orphaned_embedding: 'Delete orphaned embedding',
+  idea_unreadable: 'Repair the file by hand (never auto-fixed; links to it are kept)',
   legacy: 'Auto-fix'
 };
 
@@ -220,6 +222,7 @@ export const createProjectRouter = (
   ensureSearchIndex: (projectPath: string) => Promise<void>,
   migrateIdeaFiles: (projectPath: string) => Promise<string[]>,
   reconcilePhaseTree: (projectPath: string) => Promise<string[]>,
+  listUnreadableIdeaFiles: (projectPath: string) => Promise<Array<{ id: string; file: string; error: string }>>,
   ee: any
 ) => {
   const getWatchdogRuntimeStatePath = (rawProjectPath: string) =>
@@ -1416,6 +1419,15 @@ export const createProjectRouter = (
         const phases = await listPhases(input.projectPath);
         const issues: ConsistencyIssue[] = [];
 
+        // Files that exist but fail to load are missing from the lists above.
+        // Report them, and never treat links to them as dangling: that would
+        // invite fixConsistency to delete those links (as happened on 2026-08-01).
+        const unreadable = await listUnreadableIdeaFiles(input.projectPath);
+        const unreadableIds = new Set(unreadable.map((file) => file.id));
+        for (const file of unreadable) {
+          issues.push(createConsistencyIssue('idea_unreadable', `Idea ${file.id} (${file.file}) cannot be loaded and is hidden: ${file.error}`));
+        }
+
         const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
         const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
 
@@ -1441,6 +1453,7 @@ export const createProjectRouter = (
 
         for (const phase of phases) {
           for (const ideaId of phase.commitments) {
+            if (unreadableIds.has(ideaId)) continue;
             if (!ideaMap.has(ideaId)) {
               issues.push(createConsistencyIssue(
                 'phase_nonexistent_idea',
@@ -1464,6 +1477,7 @@ export const createProjectRouter = (
           if (idea.supportingConnections) {
             for (const conn of idea.supportingConnections) {
                 const childId = conn.ideaId;
+                if (unreadableIds.has(childId)) continue;
                 if (!ideaMap.has(childId)) {
                 issues.push(createConsistencyIssue(
                   'idea_nonexistent_child',
@@ -1483,6 +1497,7 @@ export const createProjectRouter = (
 
           // supportedIdeas (Parents)
           for (const parentId of idea.supportedIdeas) {
+            if (unreadableIds.has(parentId)) continue;
             if (!ideaMap.has(parentId)) {
               issues.push(createConsistencyIssue(
                 'idea_nonexistent_parent',
@@ -1504,7 +1519,7 @@ export const createProjectRouter = (
         // Check 4: Embeddings consistency
         const vectorStore = await loadVectorStore(input.projectPath);
         for (const ideaId of Object.keys(vectorStore)) {
-            if (!ideaMap.has(ideaId)) {
+            if (!ideaMap.has(ideaId) && !unreadableIds.has(ideaId)) {
                 issues.push(createConsistencyIssue(
                   'orphaned_embedding',
                   `Orphaned embedding found for Idea ${ideaId}`
@@ -1531,6 +1546,8 @@ export const createProjectRouter = (
         const phases = await listPhases(input.projectPath);
 
         const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
+        // Unreadable ideas still exist: keep every link to them (see checkConsistency).
+        const unreadableIds = new Set((await listUnreadableIdeaFiles(input.projectPath)).map((file) => file.id));
         const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
 
         // Fix 1: Idea <-> Phase consistency
@@ -1557,6 +1574,10 @@ export const createProjectRouter = (
         for (const phase of phases) {
           const validCommitments = [];
           for (const ideaId of phase.commitments) {
+            if (unreadableIds.has(ideaId)) {
+              validCommitments.push(ideaId);
+              continue;
+            }
             const idea = ideaMap.get(ideaId);
             if (!idea) {
               fixes.push(`Removed non-existent idea ${ideaId} from Phase ${phase.id}`);
@@ -1584,6 +1605,10 @@ export const createProjectRouter = (
             const validConnections = [];
             for (const conn of idea.supportingConnections) {
                 const childId = conn.ideaId;
+                if (unreadableIds.has(childId)) {
+                validConnections.push(conn);
+                continue;
+                }
                 const child = ideaMap.get(childId);
                 if (!child) {
                 fixes.push(`Removed non-existent child ${childId} from Idea ${idea.id}`);
@@ -1606,6 +1631,10 @@ export const createProjectRouter = (
           // supportedIdeas (Parents)
           const validSupportedIdeas = [];
           for (const parentId of idea.supportedIdeas) {
+            if (unreadableIds.has(parentId)) {
+              validSupportedIdeas.push(parentId);
+              continue;
+            }
             const parent = ideaMap.get(parentId);
             if (!parent) {
               fixes.push(`Removed non-existent parent ${parentId} from Idea ${idea.id}`);
@@ -1640,7 +1669,7 @@ export const createProjectRouter = (
         // Fix 4: Embeddings consistency
         const vectorStore = await loadVectorStore(input.projectPath);
         for (const ideaId of Object.keys(vectorStore)) {
-            if (!ideaMap.has(ideaId)) {
+            if (!ideaMap.has(ideaId) && !unreadableIds.has(ideaId)) {
                 await removeEmbedding(input.projectPath, ideaId);
                 fixes.push(`Removed orphaned embedding for Idea ${ideaId}`);
             }

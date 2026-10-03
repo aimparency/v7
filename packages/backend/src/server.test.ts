@@ -1295,3 +1295,26 @@ test('ideas created without a cost get the project default cost', async () => {
     /Default cost must be greater than 0/
   );
 });
+
+test('an unreadable idea is reported and fixConsistency keeps every link to it', async () => {
+  const status = { state: 'open', comment: '', date: Date.now() };
+  const phase = await caller.phase.create({ projectPath: testProjectPath, phase: { name: 'Phase', parent: null, commitments: [] } });
+  const parent = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Parent', status } });
+  const child = await caller.idea.createSubIdea({ projectPath: testProjectPath, parentIdeaId: parent.id, idea: { text: 'Child', status } });
+  await caller.idea.commitToPhase({ projectPath: testProjectPath, ideaId: child.id, phaseId: phase.id });
+
+  // A value that an older schema allowed: the child can no longer be loaded.
+  const childFile = path.join(testProjectPath, 'ideas', `${child.id}.json`);
+  await fs.writeJson(childFile, { ...(await fs.readJson(childFile)), cost: 0 });
+  const unreadableContent = await fs.readFile(childFile, 'utf8');
+
+  const check = await caller.project.checkConsistency({ projectPath: testProjectPath });
+  assert.deepStrictEqual(check.issues.map((issue: any) => issue.code), ['idea_unreadable']);
+  assert.match(check.issues[0]!.message, /cost: Number must be greater than 0/);
+
+  await caller.project.fixConsistency({ projectPath: testProjectPath });
+  const parentAfter = await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id });
+  assert.deepStrictEqual(parentAfter.supportingConnections.map((connection) => connection.ideaId), [child.id]);
+  assert.deepStrictEqual((await fs.readJson(path.join(testProjectPath, 'phases', `${phase.id}.json`))).commitments, [child.id]);
+  assert.equal(await fs.readFile(childFile, 'utf8'), unreadableContent, 'the unreadable file is not rewritten');
+});

@@ -330,6 +330,31 @@ async function migrateIdeaFiles(rawProjectPath: string): Promise<string[]> {
   return migrated;
 }
 
+// Idea files that exist but fail to load (e.g. a value an older schema allowed).
+// listIdeas skips them, so consistency checks need them spelled out.
+async function listUnreadableIdeaFiles(rawProjectPath: string): Promise<Array<{ id: string; file: string; error: string }>> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  await migrateProject(projectPath);
+  const unreadable: Array<{ id: string; file: string; error: string }> = [];
+  for (const dirName of ['ideas', 'archived-ideas']) {
+    const dir = path.join(projectPath, dirName);
+    if (!(await fs.pathExists(dir))) continue;
+    for (const file of (await fs.readdir(dir)).filter((name) => name.endsWith('.json'))) {
+      try {
+        IdeaSchema.parse(normalizeIdeaRecord(await fs.readJson(path.join(dir, file))).idea);
+      } catch (error) {
+        // Duck-typed: shared's schemas may use a different zod copy than this package.
+        const issues = (error as { issues?: Array<{ path: Array<string | number>; message: string }> }).issues;
+        const reason = Array.isArray(issues)
+          ? issues.map((issue) => `${issue.path.join('.') || 'file'}: ${issue.message}`).join('; ')
+          : (error as Error).message;
+        unreadable.push({ id: path.basename(file, '.json'), file: `${dirName}/${file}`, error: reason });
+      }
+    }
+  }
+  return unreadable;
+}
+
 async function listIdeas(rawProjectPath: string, archived: boolean = false): Promise<Idea[]> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const dirName = archived ? 'archived-ideas' : 'ideas';
@@ -1259,6 +1284,7 @@ const appRouter = t.router({
     ensureSearchIndex,
     migrateIdeaFiles,
     reconcilePhaseTree,
+    listUnreadableIdeaFiles,
     ee
   ),
   spinOff: spinOffRouter,
