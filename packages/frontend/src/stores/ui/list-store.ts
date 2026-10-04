@@ -109,7 +109,7 @@ export const useUIStore = defineStore('ui', {
     // selected index and phase id are derived from it so they can never disagree.
     selectedEntryKeyByColumn: {} as Record<number, string>,
 
-    // The explicit "current" phase path (root → marked phase → first child each level down).
+    // The explicit "current" phase path (root → marked phase).
     // Set only via `c` (markPhaseAsCurrent); persisted to meta.phaseCursors and read by the
     // autonomous loop as the active phase. Independent of browsing focus above.
     currentPhaseIdByLevel: {} as Record<string, string>, // level -> phaseId
@@ -256,8 +256,8 @@ export const useUIStore = defineStore('ui', {
       }
     },
 
-    // Mark a phase as the current/active phase: build the path root → phaseId (recursive up
-    // via parents) and phaseId → leaf (recursive down picking the first child each level).
+    // Mark a phase as the current/active phase: build the path root → phaseId via parents.
+    // The path ends at the marked phase even when it has children.
     // Persists to meta.phaseCursors (what the autonomous loop reads as the active phase).
     async markPhaseAsCurrent(phaseId: string) {
       const dataStore = useDataStore()
@@ -276,20 +276,8 @@ export const useUIStore = defineStore('ui', {
       upChain.reverse() // root … phaseId
       const markedLevel = upChain.length - 1
 
-      // Recursive down: follow the first child phase at each level until a leaf.
-      const downChain: string[] = []
-      let node = phaseId
-      while (node && !seen.has(`down:${node}`)) {
-        seen.add(`down:${node}`)
-        const firstChild = dataStore.phases[node]?.childPhaseIds?.[0]
-        if (!firstChild || seen.has(firstChild)) break
-        seen.add(firstChild)
-        downChain.push(firstChild)
-        node = firstChild
-      }
-
       const cursors: Record<string, string> = {}
-      ;[...upChain, ...downChain].forEach((id, level) => { cursors[String(level)] = id })
+      upChain.forEach((id, level) => { cursors[String(level)] = id })
       this.currentPhaseIdByLevel = cursors
 
       if (projectStore.projectPath) {

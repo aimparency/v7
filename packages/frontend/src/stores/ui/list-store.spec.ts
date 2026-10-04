@@ -7,7 +7,8 @@ const { mockTrpc } = vi.hoisted(() => ({
       getMeta: { query: vi.fn() }
     },
     phase: {
-      get: { query: vi.fn() }
+      get: { query: vi.fn() },
+      setCursor: { mutate: vi.fn() }
     },
     idea: {
       merge: { mutate: vi.fn() },
@@ -308,7 +309,7 @@ describe('list store phase selection', () => {
     dataStore.meta = {
       rootPhaseIds: ['root-a', 'root-b'],
       phaseCursors: { '0': 'root-b', '1': 'child-b', '2': 'grandchild-b' },
-      phaseActiveLevel: 0
+      phaseActiveLevel: 2
     } as any
     dataStore.phases = {
       'root-a': { id: 'root-a', name: 'Root A', parent: null, childPhaseIds: [], commitments: [] },
@@ -333,6 +334,32 @@ describe('list store phase selection', () => {
     expect(uiStore.selectedPhaseIdByColumn).toMatchObject({ 0: 'root-b', 1: 'child-b', 2: 'grandchild-b' })
     expect(uiStore.activeColumn).toBe(2)
     expect(uiStore.maxColumn).toBe(2)
+  })
+
+  it('marks a non-leaf phase as current without extending the path to a leaf', async () => {
+    seedCursorProject()
+    mockTrpc.phase.setCursor.mutate.mockResolvedValue({ success: true })
+    const uiStore = useUIStore()
+
+    await uiStore.markPhaseAsCurrent('child-b')
+
+    expect(uiStore.currentPhaseIdByLevel).toEqual({ 0: 'root-b', 1: 'child-b' })
+    expect(mockTrpc.phase.setCursor.mutate).toHaveBeenCalledWith({
+      projectPath: '/tmp/project',
+      cursors: { 0: 'root-b', 1: 'child-b' },
+      activeLevel: 1
+    })
+  })
+
+  it('ignores stored cursor levels below the marked phase', async () => {
+    seedCursorProject()
+    useDataStore().meta!.phaseActiveLevel = 1
+    const uiStore = useUIStore()
+
+    await uiStore.restoreProjectUIState()
+
+    expect(uiStore.currentPhaseIdByLevel).toEqual({ 0: 'root-b', 1: 'child-b' })
+    expect(uiStore.activeColumn).toBe(1)
   })
 
   it('restores this browser\'s own selection by identity over the cursor chain', async () => {

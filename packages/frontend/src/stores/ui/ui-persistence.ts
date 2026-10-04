@@ -1,3 +1,4 @@
+import { currentPhaseCursors } from 'shared'
 import { useDataStore } from '../data'
 import { useProjectStore } from '../project-store'
 import { useGraphUIStore, type PersistedGraphViewState } from './graph-store'
@@ -85,14 +86,14 @@ export async function persistProjectUIState(ui: UIStore): Promise<void> {
 
 export async function restoreCursorFromMeta(ui: UIStore): Promise<boolean> {
   const dataStore = useDataStore()
-  const meta = dataStore.meta
-  if (!meta?.phaseCursors || Object.keys(meta.phaseCursors).length === 0) return false
+  const cursors = currentPhaseCursors(dataStore.meta)
+  if (Object.keys(cursors).length === 0) return false
 
   ui.beginUIStateRestore()
   const restoreGeneration = ui.restoreGeneration
   try {
     const deepestLevel = await ui.restoreSelectionPath(
-      meta.phaseCursors as Record<string, string>,
+      cursors,
       () => ui.isRestoringUIState && ui.restoreGeneration === restoreGeneration
     )
     if (deepestLevel === undefined) return true
@@ -121,7 +122,7 @@ export async function restoreProjectUIState(ui: UIStore): Promise<boolean> {
   if (!projectStore.projectPath) return false
 
   // The current phase lives in meta (set only via `c`), independent of browsing focus.
-  ui.currentPhaseIdByLevel = { ...((dataStore.meta?.phaseCursors as Record<string, string>) ?? {}) }
+  ui.currentPhaseIdByLevel = currentPhaseCursors(dataStore.meta)
 
   const raw = localStorage.getItem(persistedUIStateKey(projectStore.projectPath))
   if (!raw) {

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs-extra';
 import path from 'path';
-import type { Phase } from 'shared';
+import { currentPhaseCursors, type Phase } from 'shared';
 import { assertWritableBowman } from 'shared/bowman-migration';
 import { t, delayedProcedure } from '../trpc.js';
 import { emitChange } from '../change-events.js';
@@ -282,7 +282,7 @@ export const phaseRouter = t.router({
     }))
     .query(async ({ input }) => {
       const meta = await readMeta(input.projectPath);
-      const cursors: Record<string, string> = meta.phaseCursors ?? {};
+      const cursors = currentPhaseCursors(meta);
       const activeLevel: number = meta.phaseActiveLevel ?? 0;
 
       const levels = Object.keys(cursors)
@@ -305,7 +305,7 @@ export const phaseRouter = t.router({
       return {
         path,
         activeLevel,
-        activePhase: path[activeLevel] ?? path[path.length - 1] ?? null
+        activePhase: path[path.length - 1] ?? null
       };
     })
 });
