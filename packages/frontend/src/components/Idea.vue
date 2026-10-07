@@ -448,10 +448,14 @@ onMounted(() => {
     gap: 0.5rem;
   }
 
+  /* As tall as the title's first line, so the arrow is centred on it. */
   .connection-edit-button {
     flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    height: calc(var(--font-size-ui) * 1.4);
     padding: 0;
-    font-size: 1.2rem;
+    font-size: var(--font-size-title);
     line-height: 1;
     color: #888;
     background: transparent;
