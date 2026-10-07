@@ -274,7 +274,7 @@ export function useGraphInteraction(
                                  if (correctedLink) correctedLink.relativePosition = correctedRelPos
                                  // Persist the corrected relative position
                                  await (dataStore as any).updateConnectionPosition(projectStore.projectPath, parentNode.id, newIdeaId, correctedRelPos)
-                                 // Offer contribution % + explanation for the new connection.
+                                 // Offer contribution % + hypothesis for the new connection.
                                  modalStore.openConnectionDetailsModal(parentNode.id, newIdeaId, onConnectionConfirmed)
                              }).catch(err => {
                                  console.error('Graph: Connection failed', err)
@@ -540,7 +540,7 @@ export function useGraphInteraction(
                 })
                 // Reload both ideas to get updated incoming/outgoing arrays
                 await dataStore.loadIdeas(projectStore.projectPath, [parent.id, child.id])
-                // Offer contribution % + explanation for the new connection.
+                // Offer contribution % + hypothesis for the new connection.
                 modalStore.openConnectionDetailsModal(parent.id, child.id)
             } catch (e) {
                 console.error('Failed to connect ideas:', e)

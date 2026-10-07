@@ -193,8 +193,8 @@ export function getRandomRelativePosition(): [number, number] {
 }
 
 // Helper function to connect ideas (reused by connectIdeas and createSubIdea)
-export async function connectIdeasInternal(projectPath: string, parentIdeaId: string, childIdeaId: string, parentIncomingIndex?: number, childSupportedIdeasIndex?: number, relativePosition?: [number, number], weight: number = 1, explanation?: string): Promise<void> {
-  console.log('connectIdeasInternal:', { parentIdeaId, childIdeaId, parentIncomingIndex, childSupportedIdeasIndex, relativePosition, weight, explanation });
+export async function connectIdeasInternal(projectPath: string, parentIdeaId: string, childIdeaId: string, parentIncomingIndex?: number, childSupportedIdeasIndex?: number, relativePosition?: [number, number], weight: number = 1, hypothesis?: string): Promise<void> {
+  console.log('connectIdeasInternal:', { parentIdeaId, childIdeaId, parentIncomingIndex, childSupportedIdeasIndex, relativePosition, weight, hypothesis });
   const parent = await readIdea(projectPath, parentIdeaId);
   const child = await readIdea(projectPath, childIdeaId);
 
@@ -203,16 +203,16 @@ export async function connectIdeasInternal(projectPath: string, parentIdeaId: st
   const currentChildIndex = parent.supportingConnections.findIndex(c => c.ideaId === childIdeaId);
   
   if (currentChildIndex === targetParentIndex) {
-    // Already at the correct position, but update weight/explanation if changed
+    // Already at the correct position, but update weight/hypothesis if changed
     const existing = currentChildIndex !== -1 ? parent.supportingConnections[currentChildIndex] : undefined;
     if (existing) {
       let changed = false;
       if (existing.weight !== weight) { existing.weight = weight; changed = true; }
-      if (explanation !== undefined && existing.explanation !== explanation) { existing.explanation = explanation; changed = true; }
+      if (hypothesis !== undefined && existing.hypothesis !== hypothesis) { existing.hypothesis = hypothesis; changed = true; }
       if (changed) await writeIdea(projectPath, parent);
     }
   } else {
-    // Preserve an existing explanation across reorder if none is supplied
+    // Preserve an existing hypothesis (unless a new one is supplied) and evaluation across reorder
     const prevConn = currentChildIndex !== -1 ? parent.supportingConnections[currentChildIndex] : undefined;
     // Remove from current position if present
     if (currentChildIndex !== -1) {
@@ -222,12 +222,13 @@ export async function connectIdeasInternal(projectPath: string, parentIdeaId: st
       targetParentIndex = Math.min(targetParentIndex, maxIndex);
     }
     // Insert at target position
-    const resolvedExplanation = explanation !== undefined ? explanation : prevConn?.explanation;
+    const resolvedHypothesis = hypothesis !== undefined ? hypothesis : prevConn?.hypothesis;
     const newConnection = {
       ideaId: childIdeaId,
       relativePosition: relativePosition || getRandomRelativePosition(),
       weight,
-      ...(resolvedExplanation !== undefined ? { explanation: resolvedExplanation } : {})
+      ...(resolvedHypothesis !== undefined ? { hypothesis: resolvedHypothesis } : {}),
+      ...(prevConn?.evaluation !== undefined ? { evaluation: prevConn.evaluation } : {})
     };
 
     parent.supportingConnections.splice(targetParentIndex, 0, newConnection);

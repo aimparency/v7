@@ -217,7 +217,7 @@ test('approveIdeaSubtree persists the approved structure once and safely replays
       text: 'Improve festival operations',
       children: [{
         weight: 2,
-        explanation: 'Reduces repetitive coordination',
+        hypothesis: 'Reduces repetitive coordination',
         child: {
           proposalId: 'child',
           text: 'Automate volunteer reminders',
@@ -260,7 +260,7 @@ test('approveIdeaSubtree persists the approved structure once and safely replays
   assert.deepEqual(root.supportedIdeas, [parent.id]);
   assert.equal(root.supportingConnections[0].ideaId, child.id);
   assert.equal(root.supportingConnections[0].weight, 2);
-  assert.equal(root.supportingConnections[0].explanation, 'Reduces repetitive coordination');
+  assert.equal(root.supportingConnections[0].hypothesis, 'Reduces repetitive coordination');
   assert.deepEqual(child.supportedIdeas, [root.id]);
 
   const updatedParent = await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id });
@@ -954,7 +954,7 @@ test('connectIdeas - connects with relative position', async () => {
   assert.deepEqual(updatedParent.supportingConnections[0].relativePosition, relativePosition);
 });
 
-test('idea.update - persists explanation on supportingConnections', async () => {
+test('idea.update - persists hypothesis and evaluation on supportingConnections', async () => {
   const parentResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Parent', status: { state: 'open', comment: '', date: Date.now() } }
@@ -976,12 +976,13 @@ test('idea.update - persists explanation on supportingConnections', async () => 
     projectPath: testProjectPath,
     ideaId: parentResult.id,
     idea: {
-      supportingConnections: [{ ...conn, explanation: 'because it helps' }]
+      supportingConnections: [{ ...conn, hypothesis: 'because it helps', evaluation: 'it did' }]
     }
   });
 
   const after = await caller.idea.get({ projectPath: testProjectPath, ideaId: parentResult.id });
-  assert.strictEqual(after.supportingConnections[0]!.explanation, 'because it helps');
+  assert.strictEqual(after.supportingConnections[0]!.hypothesis, 'because it helps');
+  assert.strictEqual(after.supportingConnections[0]!.evaluation, 'it did');
 });
 
 test('idea.update - persists custom color', async () => {

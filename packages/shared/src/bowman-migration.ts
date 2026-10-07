@@ -17,6 +17,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { CURRENT_DATA_MODEL_VERSION } from './constants.js';
 import { migrateIdeasLayout, needsIdeasLayoutMigration } from './bowman-migrations/v3-ideas-layout.js';
+import { migrateConnectionHypothesis, needsConnectionHypothesisMigration } from './bowman-migrations/v4-connection-hypothesis.js';
 
 export {
   IMPLEMENTED_STATE,
@@ -49,6 +50,12 @@ export const BOWMAN_MIGRATIONS: BowmanMigration[] = [
     name: 'aims to ideas',
     pending: needsIdeasLayoutMigration,
     run: migrateIdeasLayout
+  },
+  {
+    version: 4,
+    name: 'connection hypothesis and evaluation',
+    pending: needsConnectionHypothesisMigration,
+    run: migrateConnectionHypothesis
   }
 ];
 

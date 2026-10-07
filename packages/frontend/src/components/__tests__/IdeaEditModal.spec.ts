@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import IdeaEditModal from '../IdeaEditModal.vue'
 import { useDataStore } from '../../stores/data'
 import { useProjectStore } from '../../stores/project-store'
 import { useUIModalStore } from '../../stores/ui/modal-store'
+import { trpc } from '../../trpc'
 
 vi.mock('../../trpc', () => ({
   trpc: {
@@ -691,5 +692,40 @@ describe('IdeaEditModal custom color', () => {
       'idea-1',
       expect.objectContaining({ color: null })
     )
+  })
+
+  it('asks to evaluate the not yet evaluated parent connections when moved into a status that prompts evaluation', async () => {
+    const { wrapper, dataStore } = mountEditModal()
+    const modalStore = useUIModalStore()
+    dataStore.meta = {
+      statuses: [{ key: 'open', color: '#ffffff', ongoing: true }, { key: 'implemented', color: '#00ff00', ongoing: false, promptsEvaluation: true }]
+    }
+    dataStore.ideas['idea-1']!.supportedIdeas = ['parent-a', 'parent-b']
+    dataStore.ideas['parent-a'] = { id: 'parent-a', text: 'A', supportingConnections: [{ ideaId: 'idea-1', weight: 1, hypothesis: 'helps' }] } as any
+    dataStore.ideas['parent-b'] = { id: 'parent-b', text: 'B', supportingConnections: [{ ideaId: 'idea-1', weight: 1, evaluation: 'already judged' }] } as any
+    vi.mocked(trpc.idea.list.query).mockResolvedValueOnce([dataStore.ideas['parent-a'], dataStore.ideas['parent-b']] as any)
+
+    await wrapper.setProps({ show: true })
+    await flushPromises()
+    await wrapper.find('select').setValue('implemented')
+    await wrapper.find('input[placeholder="Idea title..."]').trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(modalStore.promptConnectionEvaluations).toHaveBeenCalledWith([{ parentId: 'parent-a', childId: 'idea-1' }])
+  })
+
+  it('does not ask for evaluations when the status does not prompt them', async () => {
+    const { wrapper, dataStore } = mountEditModal('Old description', 'implemented')
+    const modalStore = useUIModalStore()
+    dataStore.ideas['idea-1']!.supportedIdeas = ['parent-a']
+    dataStore.ideas['parent-a'] = { id: 'parent-a', text: 'A', supportingConnections: [{ ideaId: 'idea-1', weight: 1 }] } as any
+
+    await wrapper.setProps({ show: true })
+    await wrapper.vm.$nextTick()
+    await wrapper.find('select').setValue('open')
+    await wrapper.find('input[placeholder="Idea title..."]').trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(modalStore.promptConnectionEvaluations).not.toHaveBeenCalled()
   })
 })

@@ -17,7 +17,7 @@ const supervisorGuidancePrefix = ref('')
 const costUnit = ref('')
 const defaultCost = ref(DEFAULT_IDEA_COST)
 const costSettingsError = ref('')
-const statuses = ref<Array<{ key: string, color: string }>>([])
+const statuses = ref<Array<{ key: string, color: string, promptsEvaluation?: boolean }>>([])
 const loading = ref(false)
 const isUpdatingInstructions = ref(false)
 const updateResults = ref<string[]>([])
@@ -255,7 +255,8 @@ const save = async () => {
           supervisorGuidancePrefix: supervisorGuidancePrefix.value,
           costUnit: costUnit.value.trim(),
           defaultCost: defaultCost.value,
-          statuses: statuses.value
+          // Explicit booleans: an absent flag would let the v4 migration re-apply its defaults.
+          statuses: statuses.value.map((status) => ({ ...status, promptsEvaluation: !!status.promptsEvaluation }))
         })
         await trpc.watchdog.updateAutonomyPolicy.mutate({
           projectPath: projectStore.projectPath,
@@ -368,6 +369,10 @@ const save = async () => {
                 class="status-key-input"
                 @input="status.key = status.key.toLowerCase().replace(/\s+/g, '-')"
               />
+              <label class="status-flag" title="Entering this status asks to evaluate the idea's parent connections">
+                <input v-model="status.promptsEvaluation" type="checkbox" />
+                evaluate
+              </label>
               <button @click="removeStatus(index)" class="delete-btn" title="Remove Status">×</button>
             </div>
           </div>
@@ -636,6 +641,14 @@ const save = async () => {
 
       .status-key-input {
         flex: 1;
+      }
+
+      .status-flag {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #bbb;
+        white-space: nowrap;
       }
 
       .delete-btn {

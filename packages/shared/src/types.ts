@@ -13,8 +13,8 @@ export const ConnectionSchema = z.object({
   ideaId: z.string().uuid(),
   relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
   weight: z.number().default(1),
-  explanation: z.string().optional(),
-  reflection: z.string().optional() // How did this connection work out?
+  hypothesis: z.string().optional(), // Why the child is expected to contribute to the parent
+  evaluation: z.string().optional() // How that turned out, once the child is settled
 });
 
 export type Connection = z.infer<typeof ConnectionSchema>;
@@ -31,8 +31,8 @@ export const RepoConnectionSchema = z.object({
   repoId: z.string().uuid(),
   relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
   weight: z.number().default(1),
-  explanation: z.string().optional(),
-  reflection: z.string().optional() // How did this cross-repo link work out?
+  hypothesis: z.string().optional(),
+  evaluation: z.string().optional()
 });
 
 export type RepoConnection = z.infer<typeof RepoConnectionSchema>;
@@ -92,7 +92,8 @@ export const PhaseSchema = z.object({
 export const IdeaStateSchema = z.object({
   key: z.string().regex(/^[a-z0-9-]+$/),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  ongoing: z.boolean()
+  ongoing: z.boolean(),
+  promptsEvaluation: z.boolean().optional() // Entering this status asks to evaluate the idea's parent connections
 });
 
 // Portable linked-repo entry — committed in meta.json so the link travels with

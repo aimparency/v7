@@ -1,6 +1,6 @@
-import { calculateIdeaValues, type Idea } from "shared";
+import { calculateIdeaValues, INITIAL_STATES, type Idea } from "shared";
 import { IDEA_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
-import type { BackendInputs } from "../client.js";
+import type { BackendClient, BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
 import { formatIdea, formatIdeas, describeRepoEdges } from "./format.js";
 import { connectionInputSchema, normalizeConnectionInput, toStoredConnection, type ConnectionInput } from "./connections.js";
@@ -25,6 +25,28 @@ export function verificationHintForIdea(
   if (has(/\b(refactor|implement|backend|api|tool|schema|mcp|endpoint|function|module|migration|test|type-?check)\b/))
     return "tests + typecheck passing — cite exactly what you ran";
   return "what you ran/checked to confirm it actually works — tests, a repro, or a screenshot";
+}
+
+/**
+ * Entering a status configured with promptsEvaluation settles the idea: ask to
+ * evaluate each parent connection's hypothesis that has no evaluation yet.
+ */
+async function evaluationNudgeFor(trpcClient: BackendClient, projectPath: string, ideaId: string, state: string): Promise<string> {
+  const meta = await trpcClient.project.getMeta.query({ projectPath }).catch(() => null);
+  const statuses = meta?.statuses ?? INITIAL_STATES;
+  if (!statuses.find((status) => status.key === state)?.promptsEvaluation) return "";
+
+  const idea = await trpcClient.idea.get.query({ projectPath, ideaId });
+  const lines: string[] = [];
+  for (const parentId of idea?.supportedIdeas ?? []) {
+    const parent = await trpcClient.idea.get.query({ projectPath, ideaId: parentId }).catch(() => null);
+    const connection = parent?.supportingConnections?.find((c) => c.ideaId === ideaId);
+    if (!parent || !connection || connection.evaluation?.trim()) continue;
+    const hypothesis = connection.hypothesis?.trim() ? ` — hypothesis: "${connection.hypothesis.trim()}"` : " — no hypothesis recorded";
+    lines.push(`- ${parent.text} (${parentId})${hypothesis}`);
+  }
+  if (lines.length === 0) return "";
+  return `\n\n'${state}' settles this idea: evaluate how it actually contributed to each parent, via update_idea addSupportedIdeas: [{ ideaId: <parent>, evaluation: "..." }]:\n${lines.join("\n")}`;
 }
 
 function canonicalize(value: unknown): unknown {
@@ -319,8 +341,8 @@ export const ideaTools: ToolDefinition[] = [
             reviewedAt: { type: "number", description: "Timestamp confirming status and intention still hold (keeps the transition date)." },
           },
         },
-        supportingConnections: connectionInputSchema("Child ideas: UUIDs or { ideaId, weight, explanation }."),
-        supportedIdeas: connectionInputSchema("Parent ideas this one serves: UUIDs or { ideaId, weight, explanation } for the parent→new-idea edge."),
+        supportingConnections: connectionInputSchema("Child ideas: UUIDs or { ideaId, weight, hypothesis }."),
+        supportedIdeas: connectionInputSchema("Parent ideas this one serves: UUIDs or { ideaId, weight, hypothesis } for the parent→new-idea edge."),
         intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
         valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
         cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics); omitted = project default" },
@@ -400,7 +422,7 @@ export const ideaTools: ToolDefinition[] = [
           parentIdeaId: result.id,
           childIdeaId: child.ideaId,
           weight: child.weight,
-          explanation: child.explanation,
+          hypothesis: child.hypothesis,
         });
       }
 
@@ -413,7 +435,7 @@ export const ideaTools: ToolDefinition[] = [
           parentIdeaId: parent.ideaId,
           childIdeaId: result.id,
           weight: parent.weight,
-          explanation: parent.explanation,
+          hypothesis: parent.hypothesis,
         });
       }
 
@@ -456,9 +478,9 @@ export const ideaTools: ToolDefinition[] = [
             reviewedAt: { type: "number", description: "Timestamp confirming status and intention still hold (keeps the transition date)." },
           },
         },
-        addSupportingConnections: connectionInputSchema("Add child links, or update weight/explanation of existing ones."),
+        addSupportingConnections: connectionInputSchema("Add child links, or update weight/hypothesis/evaluation of existing ones."),
         removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child idea UUIDs to unlink." },
-        addSupportedIdeas: connectionInputSchema("Add parent links, or update weight/explanation of the parent→this-idea edge."),
+        addSupportedIdeas: connectionInputSchema("Add parent links, or update weight/hypothesis/evaluation of the parent→this-idea edge (evaluate it once this idea is settled)."),
         removeSupportedIdeas: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink." },
         intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
         valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
@@ -481,7 +503,7 @@ export const ideaTools: ToolDefinition[] = [
       if (fields.cost !== undefined) updateData.cost = fields.cost;
       if (fields.duration !== undefined) updateData.duration = fields.duration;
 
-      const parentMetadataToApply: Array<{ parentIdeaId: string; weight?: number; explanation?: string }> = [];
+      const parentMetadataToApply: Array<{ parentIdeaId: string; weight?: number; hypothesis?: string; evaluation?: string }> = [];
 
       if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined ||
           args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined) {
@@ -500,7 +522,7 @@ export const ideaTools: ToolDefinition[] = [
           }
           for (const input of (args.addSupportingConnections as ConnectionInput[] | undefined) ?? []) {
             const next = toStoredConnection(input);
-            byChildId.set(next.ideaId, { ...(byChildId.get(next.ideaId) ?? {}), ...next });
+            byChildId.set(next.ideaId, { weight: 1, ...(byChildId.get(next.ideaId) ?? {}), ...next });
           }
           updateData.supportingConnections = Array.from(byChildId.values());
         }
@@ -514,7 +536,7 @@ export const ideaTools: ToolDefinition[] = [
             const parent = normalizeConnectionInput(input);
             parentIds.add(parent.ideaId);
             if (typeof input !== "string") {
-              parentMetadataToApply.push({ parentIdeaId: parent.ideaId, weight: parent.weight, explanation: parent.explanation });
+              parentMetadataToApply.push({ parentIdeaId: parent.ideaId, weight: parent.weight, hypothesis: parent.hypothesis, evaluation: parent.evaluation });
             }
           }
           updateData.supportedIdeas = Array.from(parentIds);
@@ -528,7 +550,7 @@ export const ideaTools: ToolDefinition[] = [
       });
 
       for (const parent of parentMetadataToApply) {
-        if (parent.weight === undefined && parent.explanation === undefined) continue;
+        if (parent.weight === undefined && parent.hypothesis === undefined && parent.evaluation === undefined) continue;
 
         const parentIdea = await trpcClient.idea.get.query({
           projectPath: args.projectPath as string,
@@ -543,7 +565,8 @@ export const ideaTools: ToolDefinition[] = [
           ideaId: childIdeaId,
           relativePosition: previous?.relativePosition ?? [0, 0] as [number, number],
           weight: parent.weight ?? previous?.weight ?? 1,
-          ...(parent.explanation !== undefined ? { explanation: parent.explanation } : {}),
+          ...(parent.hypothesis !== undefined ? { hypothesis: parent.hypothesis } : {}),
+          ...(parent.evaluation !== undefined ? { evaluation: parent.evaluation } : {}),
         };
         if (existingIndex === -1) {
           supportingConnections.push(next);
@@ -582,11 +605,16 @@ export const ideaTools: ToolDefinition[] = [
         }
       }
 
+      const newState = (args.status as { state?: string } | undefined)?.state;
+      const evaluationNudge = newState
+        ? await evaluationNudgeFor(trpcClient, args.projectPath as string, args.ideaId as string, newState).catch(() => "")
+        : "";
+
       return {
         content: [
           {
             type: "text",
-            text: `Updated idea ${args.ideaId}${verificationNudge}`,
+            text: `Updated idea ${args.ideaId}${verificationNudge}${evaluationNudge}`,
           },
         ],
       };

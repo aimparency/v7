@@ -45,8 +45,10 @@ const statusColor = computed(() => {
 })
 
 // Editing state
-const isEditingExplanation = ref(false)
-const editedExplanation = ref('')
+type ConnectionTextField = 'hypothesis' | 'evaluation'
+const editingTextField = ref<ConnectionTextField | null>(null)
+const editedHypothesis = ref('')
+const editedEvaluation = ref('')
 const editedWeight = ref(1)
 const isConfirmingDelete = ref(false)
 const editingConnectionRef = ref<{ parentId: string, childId: string } | null>(null)
@@ -61,14 +63,15 @@ const editedCostStr = ref('0')
 const editedLoopWeightStr = ref('0')
 
 const syncEditedConnectionFields = (link: NonNullable<typeof selectedLink.value>) => {
-    editedExplanation.value = link.connection.explanation || ''
+    editedHypothesis.value = link.connection.hypothesis || ''
+    editedEvaluation.value = link.connection.evaluation || ''
     editedWeight.value = link.connection.weight
     isConfirmingDelete.value = false
 }
 
 watch(selectedLink, (newVal) => {
     if (newVal) {
-        if (!isEditingExplanation.value) {
+        if (!editingTextField.value) {
             syncEditedConnectionFields(newVal)
             editingConnectionRef.value = {
                 parentId: newVal.parent.id,
@@ -152,14 +155,14 @@ const resolveConnection = (linkRef?: { parentId: string, childId: string } | nul
     return selectedLink.value
 }
 
-const startEditingExplanation = () => {
+const startEditingTextField = (field: ConnectionTextField) => {
     if (!selectedLink.value) return
     editingConnectionRef.value = {
         parentId: selectedLink.value.parent.id,
         childId: selectedLink.value.child.id
     }
-    editedExplanation.value = selectedLink.value.connection.explanation || ''
-    isEditingExplanation.value = true
+    syncEditedConnectionFields(selectedLink.value)
+    editingTextField.value = field
 }
 
 const updateConnection = async (options?: { linkRef?: { parentId: string, childId: string } | null, closeEditor?: boolean }) => {
@@ -170,7 +173,7 @@ const updateConnection = async (options?: { linkRef?: { parentId: string, childI
     const closeEditor = options?.closeEditor ?? false
     
     if (closeEditor) {
-        isEditingExplanation.value = false
+        editingTextField.value = null
         editingConnectionRef.value = null
     }
 
@@ -178,7 +181,8 @@ const updateConnection = async (options?: { linkRef?: { parentId: string, childI
     try {
         await dataStore.updateConnectionDetails(projectStore.projectPath, parent.id, child.id, {
             weight: editedWeight.value,
-            explanation: editedExplanation.value
+            hypothesis: editedHypothesis.value.trim() || undefined,
+            evaluation: editedEvaluation.value.trim() || undefined
         })
     } catch (e) {
         console.error('Failed to update connection', e)
@@ -189,7 +193,7 @@ const updateConnection = async (options?: { linkRef?: { parentId: string, childI
     }
 }
 
-const saveEditedExplanation = async () => {
+const saveEditedTextField = async () => {
     await updateConnection({
         linkRef: editingConnectionRef.value,
         closeEditor: true
@@ -313,15 +317,30 @@ const isOpaque = computed(() => !hasInteracted.value)
             </div>
 
             <div class="field-group">
-                <label>Explanation</label>
-                <div v-if="!isEditingExplanation" class="explanation-view" @click="startEditingExplanation">
-                    {{ selectedLink.connection.explanation || 'Add explanation...' }}
+                <label>Hypothesis</label>
+                <div v-if="editingTextField !== 'hypothesis'" class="hypothesis-view" @click="startEditingTextField('hypothesis')">
+                    {{ selectedLink.connection.hypothesis || 'Add hypothesis...' }}
                 </div>
                 <textarea 
                     v-else 
-                    v-model="editedExplanation" 
-                    @blur="saveEditedExplanation" 
-                    placeholder="Why does it support?"
+                    v-model="editedHypothesis" 
+                    @blur="saveEditedTextField" 
+                    placeholder="Why should it contribute?"
+                    class="input-field"
+                    v-focus
+                ></textarea>
+            </div>
+
+            <div class="field-group">
+                <label>Evaluation</label>
+                <div v-if="editingTextField !== 'evaluation'" class="hypothesis-view evaluation-view" @click="startEditingTextField('evaluation')">
+                    {{ selectedLink.connection.evaluation || 'Add evaluation...' }}
+                </div>
+                <textarea 
+                    v-else 
+                    v-model="editedEvaluation" 
+                    @blur="saveEditedTextField" 
+                    placeholder="How did it actually contribute?"
                     class="input-field"
                     v-focus
                 ></textarea>
@@ -652,7 +671,7 @@ textarea.input-field {
     resize: vertical;
 }
 
-.explanation-view {
+.hypothesis-view {
     padding: 0.5rem;
     background: #252525;
     border: 1px solid #444;

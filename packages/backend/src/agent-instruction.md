@@ -9,7 +9,7 @@ Aimparency organizes work into **Ideas** (goals/tasks) and **Phases** (time-boxe
 3.  **Execution:** Implement the necessary changes.
 4.  **Update:** Use `update_idea` to mark the idea as `implemented` and provide a comment explaining what was done.
 5.  **Clarification:** When something is ambigous or unclear, set the idea's status to unclear, asking for clarification in the status comment, so that the user can provide clarification. 
-6.  **Breakdown:** When ideas are too complex or high level, make an effort to break them down. Do research online and think. Store evaluatable explanations (hypothesis) at the idea connection. 
+6.  **Breakdown:** When ideas are too complex or high level, make an effort to break them down. Do research online and think. Store an evaluatable hypothesis on the idea connection, and its evaluation once the child idea is settled. 
 
 ## Crucial Rules
 -   **ProjectPath:** Always use the provided `projectPath` (usually ending in `.bowman`).

@@ -35,7 +35,7 @@ const makeIdea = (id: string, text: string) => ({
   text,
   description: '',
   supportedIdeas: [] as string[],
-  supportingConnections: [] as Array<{ ideaId: string, weight: number, relativePosition: [number, number], explanation?: string }>,
+  supportingConnections: [] as Array<{ ideaId: string, weight: number, relativePosition: [number, number], hypothesis?: string }>,
   status: { state: 'open' as const },
   intrinsicValue: 0,
   cost: 1,
@@ -76,7 +76,7 @@ describe('GraphSidePanel', () => {
     })
   })
 
-  it('persists explanation to the originally edited connection when selection changes before blur', async () => {
+  it('persists hypothesis to the originally edited connection when selection changes before blur', async () => {
     const graphStore = useGraphUIStore()
     const projectStore = useProjectStore()
     const dataStore = useDataStore()
@@ -86,13 +86,13 @@ describe('GraphSidePanel', () => {
     const parent1 = makeIdea('p1', 'Parent 1')
     const child1 = makeIdea('c1', 'Child 1')
     parent1.supportingConnections = [
-      { ideaId: 'c1', weight: 1, relativePosition: [0, 0], explanation: 'old-1' }
+      { ideaId: 'c1', weight: 1, relativePosition: [0, 0], hypothesis: 'old-1' }
     ]
 
     const parent2 = makeIdea('p2', 'Parent 2')
     const child2 = makeIdea('c2', 'Child 2')
     parent2.supportingConnections = [
-      { ideaId: 'c2', weight: 1, relativePosition: [0, 0], explanation: 'old-2' }
+      { ideaId: 'c2', weight: 1, relativePosition: [0, 0], hypothesis: 'old-2' }
     ]
 
     dataStore.ideas = {
@@ -110,10 +110,10 @@ describe('GraphSidePanel', () => {
       }
     })
 
-    await wrapper.find('.explanation-view').trigger('click')
+    await wrapper.find('.hypothesis-view').trigger('click')
 
     const textarea = wrapper.find('textarea')
-    await textarea.setValue('updated explanation')
+    await textarea.setValue('updated hypothesis')
 
     graphStore.selectLink('p2', 'c2')
     await textarea.trigger('blur')
@@ -124,7 +124,7 @@ describe('GraphSidePanel', () => {
         ideaId: 'p1',
         idea: expect.objectContaining({
           supportingConnections: expect.arrayContaining([
-            expect.objectContaining({ ideaId: 'c1', explanation: 'updated explanation' })
+            expect.objectContaining({ ideaId: 'c1', hypothesis: 'updated hypothesis' })
           ])
         })
       })
@@ -134,7 +134,7 @@ describe('GraphSidePanel', () => {
     const updatedParent2 = dataStore.ideas.p2
     if (!updatedParent1 || !updatedParent2) throw new Error('parents should exist in test setup')
 
-    expect(updatedParent1.supportingConnections[0]?.explanation).toBe('updated explanation')
-    expect(updatedParent2.supportingConnections[0]?.explanation).toBe('old-2')
+    expect(updatedParent1.supportingConnections[0]?.hypothesis).toBe('updated hypothesis')
+    expect(updatedParent2.supportingConnections[0]?.hypothesis).toBe('old-2')
   })
 })

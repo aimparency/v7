@@ -23,7 +23,7 @@ const proposal = (): IdeaProposal => ({
     text: 'Improve operations',
     children: [{
       weight: 2,
-      explanation: 'Saves coordination time',
+      hypothesis: 'Saves coordination time',
       child: {
         proposalId: 'child',
         text: 'Automate reminders',

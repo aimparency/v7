@@ -60,7 +60,7 @@ test('register -> link -> read -> unlink round-trip over MCP', async () => {
     ideaId,
     repoId,
     weight: 2,
-    explanation: 'that project does the actual work',
+    hypothesis: 'that project does the actual work',
   });
 
   // Stored as a {repoId}-only edge — no ideaId reaches into the other repo.
@@ -75,7 +75,7 @@ test('register -> link -> read -> unlink round-trip over MCP', async () => {
     (await server.callTool('get_idea', { projectPath: ctx.projectPath, ideaId })).content[0].text
   );
   assert.deepEqual(fetched.supportingRepos, [
-    { repoId, name: 'Ways of Will', weight: 2, explanation: 'that project does the actual work', health: 'resolved' },
+    { repoId, name: 'Ways of Will', weight: 2, hypothesis: 'that project does the actual work', health: 'resolved' },
   ]);
 
   // get_idea_context surfaces repo supporters separately from idea children.

@@ -25,7 +25,7 @@ export async function placeIdea(
   const path = ui.getSelectionPath()
   let newIdeaId: string | undefined
   // Parent idea when creating/linking inside a sub-idea list (implicit connection).
-  // Used to offer the contribution % + explanation modal afterwards.
+  // Used to offer the contribution % + hypothesis modal afterwards.
   let implicitParentId: string | undefined
   let createdAsPhaseCommitmentWithoutImplicitSupportedIdea = false
 
@@ -240,7 +240,7 @@ export async function placeIdea(
 
   modalStore.closeIdeaModal()
 
-  // Sub-idea list creation/linking: offer contribution % + explanation for the
+  // Sub-idea list creation/linking: offer contribution % + hypothesis for the
   // implicit parent->child connection. Reload the parent so its supportingConnections
   // include the freshly-created connection before the modal patches it.
   if (implicitParentId && newIdeaId && !shouldPromptForSupportedIdea && !shouldPromptForPhaseCommitment) {

@@ -38,7 +38,7 @@ describe('ConnectionDetailsModal', () => {
               text: 'Parent Idea',
               loopWeight: 0,
               supportingConnections: [
-                { ideaId: 'child-1', weight: 1, explanation: '' },
+                { ideaId: 'child-1', weight: 1, hypothesis: '' },
                 { ideaId: 'sibling-1', weight: 1 }
               ]
             },
@@ -102,7 +102,7 @@ describe('ConnectionDetailsModal', () => {
       expect.any(String),
       'parent-1',
       'child-1',
-      expect.objectContaining({ weight: expect.any(Number), explanation: '' })
+      { weight: expect.any(Number), hypothesis: undefined, evaluation: undefined }
     )
     expect(modalStore.closeConnectionDetailsModal).toHaveBeenCalled()
 
@@ -139,6 +139,38 @@ describe('ConnectionDetailsModal', () => {
     expect(dataStore.replaceIdea).not.toHaveBeenCalled()
     expect(modalStore.closeConnectionDetailsModal).not.toHaveBeenCalled()
 
+    wrapper.unmount()
+    div.remove()
+  })
+
+  it('hides the evaluation field until the connection is being evaluated', () => {
+    const wrapper = mount(ConnectionDetailsModal, { global: { plugins: [pinia] } })
+    expect(wrapper.findAll('textarea')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('in evaluation mode focuses the evaluation and saves it with the hypothesis', async () => {
+    modalStore.connectionDetailsEvaluate = true
+    dataStore.ideas['parent-1'].supportingConnections[0].hypothesis = 'should speed things up'
+    const div = document.createElement('div')
+    document.body.appendChild(div)
+    const wrapper = mount(ConnectionDetailsModal, { global: { plugins: [pinia] }, attachTo: div })
+    await nextTick()
+    await nextTick()
+
+    const [hypothesis, evaluation] = wrapper.findAll('textarea')
+    expect((hypothesis!.element as HTMLTextAreaElement).value).toBe('should speed things up')
+    expect(document.activeElement).toBe(evaluation!.element)
+
+    await evaluation!.setValue('  it did, mostly  ')
+    await wrapper.findAll('button').find((button) => button.text() === 'Save')!.trigger('click')
+
+    expect(dataStore.updateConnectionDetails).toHaveBeenCalledWith(
+      expect.any(String),
+      'parent-1',
+      'child-1',
+      { weight: expect.any(Number), hypothesis: 'should speed things up', evaluation: 'it did, mostly' }
+    )
     wrapper.unmount()
     div.remove()
   })

@@ -37,11 +37,13 @@ export const useUIModalStore = defineStore('ui-modal', {
     ideaEditModalIdeaId: null as string | null,
     ideaEditModalIdeaIds: [] as string[],
 
-    // Connection details (contribution % + explanation) for a freshly-created connection.
+    // Connection details (contribution % + hypothesis) for a freshly-created connection.
     // parentId = supported idea, childId = supporting idea; the connection already exists.
     showConnectionDetailsModal: false,
     connectionDetailsParentId: null as string | null,
     connectionDetailsChildId: null as string | null,
+    // Opened to evaluate the connection's hypothesis (the child was settled).
+    connectionDetailsEvaluate: false,
 
     showIdeaSearch: false,
     ideaSearchMode: 'navigate' as 'navigate' | 'pick',
@@ -170,17 +172,27 @@ export const useUIModalStore = defineStore('ui-modal', {
       this.showSpinOffApplyModal = false
     },
 
-    openConnectionDetailsModal(parentId: string, childId: string, callback?: () => void) {
+    openConnectionDetailsModal(parentId: string, childId: string, callback?: () => void, { evaluate = false } = {}) {
       this.connectionDetailsParentId = parentId
       this.connectionDetailsChildId = childId
+      this.connectionDetailsEvaluate = evaluate
       this.showConnectionDetailsModal = true
       this.connectionDetailsCallback = callback || null
+    },
+
+    // Asks for an evaluation of each connection in turn; closing one (saved or
+    // skipped with Escape) opens the next.
+    promptConnectionEvaluations(connections: Array<{ parentId: string; childId: string }>) {
+      const [next, ...rest] = connections
+      if (!next) return
+      this.openConnectionDetailsModal(next.parentId, next.childId, () => this.promptConnectionEvaluations(rest), { evaluate: true })
     },
 
     closeConnectionDetailsModal() {
       this.showConnectionDetailsModal = false
       this.connectionDetailsParentId = null
       this.connectionDetailsChildId = null
+      this.connectionDetailsEvaluate = false
       if (this.connectionDetailsCallback) {
         const cb = this.connectionDetailsCallback
         this.connectionDetailsCallback = null

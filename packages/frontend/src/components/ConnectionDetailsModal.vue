@@ -35,7 +35,11 @@ const loopWeight = computed(() => parent.value?.loopWeight ?? 0)
 const sole = computed(() => isSoleContributor(siblingWeightSum.value, loopWeight.value))
 
 const sharePct = ref(0)
-const explanation = ref('')
+const hypothesis = ref('')
+const evaluation = ref('')
+const evaluating = computed(() => modalStore.connectionDetailsEvaluate)
+// Evaluation belongs to settled children: shown when asked for or already written.
+const showEvaluation = computed(() => evaluating.value || !!thisConn.value?.evaluation)
 const capHintVisible = ref(false)
 
 const maxPct = Math.round(MAX_SHARE * 100)
@@ -45,7 +49,8 @@ watch(
   thisConn,
   (conn) => {
     if (!conn) return
-    explanation.value = conn.explanation ?? ''
+    hypothesis.value = conn.hypothesis ?? ''
+    evaluation.value = conn.evaluation ?? ''
     sharePct.value = sole.value
       ? 100
       : Math.round(weightToShare(conn.weight ?? 1, siblingWeightSum.value, loopWeight.value) * 100)
@@ -93,7 +98,8 @@ const confirm = async () => {
   }
   const save = dataStore.updateConnectionDetails(projectStore.projectPath, p.id, cid, {
     weight: resolvedWeight.value,
-    explanation: explanation.value
+    hypothesis: hypothesis.value.trim() || undefined,
+    evaluation: evaluation.value.trim() || undefined
   })
   modalStore.closeConnectionDetailsModal()
   try {
@@ -104,6 +110,7 @@ const confirm = async () => {
 }
 
 const pctInput = ref<HTMLInputElement>()
+const evaluationInput = ref<HTMLTextAreaElement>()
 
 const handleWindowKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
@@ -119,7 +126,9 @@ const handleWindowKeydown = (event: KeyboardEvent) => {
 onMounted(async () => {
   window.addEventListener('keydown', handleWindowKeydown)
   await nextTick()
-  if (pctInput.value) {
+  if (evaluating.value && evaluationInput.value) {
+    evaluationInput.value.focus()
+  } else if (pctInput.value) {
     pctInput.value.focus()
     pctInput.value.select()
   }
@@ -136,7 +145,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
 <template>
   <FormModalShell
     :show="true"
-    title="Connection details"
+    :title="evaluating ? 'Evaluate connection' : 'Connection details'"
     width="min(90vw, 32rem)"
     @request-close="cancel"
   >
@@ -179,17 +188,27 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
       </div>
 
       <div class="form-group">
-        <label>Explanation (optional)</label>
+        <label>Hypothesis (optional)</label>
         <textarea
-          v-model="explanation"
+          v-model="hypothesis"
           rows="3"
-          placeholder="Why does this idea support the other?"
+          placeholder="Why should this idea contribute to the other?"
+        ></textarea>
+      </div>
+
+      <div v-if="showEvaluation" class="form-group">
+        <label>Evaluation</label>
+        <textarea
+          ref="evaluationInput"
+          v-model="evaluation"
+          rows="3"
+          placeholder="How did it actually contribute?"
         ></textarea>
       </div>
     </div>
 
     <template #footer>
-      <button class="btn" @click="cancel">Cancel</button>
+      <button class="btn" @click="cancel">{{ evaluating ? 'Skip' : 'Cancel' }}</button>
       <button class="btn btn-primary" @click="confirm">Save</button>
     </template>
   </FormModalShell>

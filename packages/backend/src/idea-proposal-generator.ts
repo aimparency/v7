@@ -14,7 +14,7 @@ type GeneratedIdea = {
   children: Array<{
     child: GeneratedIdea;
     weight: number;
-    explanation?: string;
+    hypothesis?: string;
   }>;
   intrinsicValue?: number;
   valueRationale?: string;
@@ -30,7 +30,7 @@ const GeneratedIdeaSchema: z.ZodType<GeneratedIdea> = z.lazy(() => z.object({
   children: z.array(z.object({
     child: GeneratedIdeaSchema,
     weight: z.number().finite().positive(),
-    explanation: z.string().trim().max(1_000).optional()
+    hypothesis: z.string().trim().max(1_000).optional()
   })).max(10),
   intrinsicValue: z.number().finite().nonnegative().optional(),
   valueRationale: z.string().optional(),

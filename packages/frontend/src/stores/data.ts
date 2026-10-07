@@ -74,7 +74,7 @@ export type IdeaCreationParams = Omit<BaseIdea, 'id' | 'incoming' | 'committedIn
     ideaId: string
     weight?: number
     relativePosition?: [number, number]
-    explanation?: string
+    hypothesis?: string
   }>
 }
 
@@ -731,7 +731,7 @@ export const useDataStore = defineStore('data', {
       projectPath: string,
       parentId: string,
       childId: string,
-      updates: Pick<Connection, 'weight' | 'explanation'>
+      updates: Pick<Connection, 'weight' | 'hypothesis' | 'evaluation'>
     ): Promise<void> {
       const parent = this.ideas[parentId]
       if (!parent) throw new Error(`Parent idea ${parentId} is not loaded`)
@@ -808,11 +808,8 @@ export const useDataStore = defineStore('data', {
         // 1. Update local state immediately
         const updatedConnections = [...connections]
         const oldConn = updatedConnections[connectionIndex]!
-        updatedConnections[connectionIndex] = {
-          ideaId: oldConn.ideaId,
-          weight: oldConn.weight,
-          relativePosition: newRelativePosition
-        }
+        // Keep hypothesis/evaluation: only the position changes.
+        updatedConnections[connectionIndex] = { ...oldConn, relativePosition: newRelativePosition }
         parent.supportingConnections = updatedConnections
 
         // 2. Queue for persistence

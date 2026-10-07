@@ -289,8 +289,8 @@ test('MCP Tools - create_idea accepts edge metadata for parent and child links',
   const ideaId = idOf(await createIdea(server, {
     projectPath: ctx.projectPath,
     text: 'Middle',
-    supportedIdeas: [{ ideaId: parentId, weight: 2, explanation: 'parent rationale' }],
-    supportingConnections: [{ ideaId: childId, weight: 3, explanation: 'child rationale' }],
+    supportedIdeas: [{ ideaId: parentId, weight: 2, hypothesis: 'parent rationale' }],
+    supportingConnections: [{ ideaId: childId, weight: 3, hypothesis: 'child rationale' }],
   }));
 
   const parent = await caller.idea.get({ projectPath: ctx.projectPath, ideaId: parentId });
@@ -298,9 +298,9 @@ test('MCP Tools - create_idea accepts edge metadata for parent and child links',
   const child = await caller.idea.get({ projectPath: ctx.projectPath, ideaId: childId });
 
   assert.equal(parent.supportingConnections.find((c: any) => c.ideaId === ideaId)?.weight, 2);
-  assert.equal(parent.supportingConnections.find((c: any) => c.ideaId === ideaId)?.explanation, 'parent rationale');
+  assert.equal(parent.supportingConnections.find((c: any) => c.ideaId === ideaId)?.hypothesis, 'parent rationale');
   assert.equal(middle.supportingConnections.find((c: any) => c.ideaId === childId)?.weight, 3);
-  assert.equal(middle.supportingConnections.find((c: any) => c.ideaId === childId)?.explanation, 'child rationale');
+  assert.equal(middle.supportingConnections.find((c: any) => c.ideaId === childId)?.hypothesis, 'child rationale');
   assert.ok(middle.supportedIdeas.includes(parentId));
   assert.ok(child.supportedIdeas.includes(ideaId));
 });
@@ -323,15 +323,15 @@ test('MCP Tools - update_idea supports append and remove connection deltas', asy
   await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId,
-    addSupportedIdeas: [{ ideaId: parentId, weight: 4, explanation: 'added parent edge' }],
-    addSupportingConnections: [{ ideaId: child2Id, weight: 5, explanation: 'added child edge' }],
+    addSupportedIdeas: [{ ideaId: parentId, weight: 4, hypothesis: 'added parent edge' }],
+    addSupportingConnections: [{ ideaId: child2Id, weight: 5, hypothesis: 'added child edge' }],
   });
 
   let parent = await caller.idea.get({ projectPath: ctx.projectPath, ideaId: parentId });
   let target = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
   assert.ok(target.supportedIdeas.includes(parentId));
   assert.equal(parent.supportingConnections.find((c: any) => c.ideaId === ideaId)?.weight, 4);
-  assert.equal(parent.supportingConnections.find((c: any) => c.ideaId === ideaId)?.explanation, 'added parent edge');
+  assert.equal(parent.supportingConnections.find((c: any) => c.ideaId === ideaId)?.hypothesis, 'added parent edge');
   assert.deepEqual(
     target.supportingConnections.map((c: any) => c.ideaId).sort(),
     [child1Id, child2Id].sort(),
@@ -528,4 +528,73 @@ test('MCP Tools - list_phase_ideas_recursive', async () => {
   const tree = JSON.parse(result.content[0].text);
   assert.equal(tree.length, 1);
   assert.equal(tree[0].children.length, 1);
+});
+
+test('MCP Tools - settling an idea asks to evaluate its parent connections; evaluating keeps the weight', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+  const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
+  const parentId = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'Parent' }));
+  const childId = idOf(await createIdea(server, {
+    projectPath: ctx.projectPath,
+    text: 'Child',
+    supportedIdeas: [{ ideaId: parentId, weight: 3, hypothesis: 'should unblock the parent' }],
+  }));
+  const edge = async () => (await caller.idea.get({ projectPath: ctx.projectPath, ideaId: parentId }))
+    .supportingConnections.find((c: any) => c.ideaId === childId);
+
+  const settled = await server.callTool('update_idea', {
+    projectPath: ctx.projectPath,
+    ideaId: childId,
+    status: { state: 'implemented', comment: '' },
+    reflection: 'verified',
+  });
+  assert.match(settled.content[0].text, /evaluate how it actually contributed/);
+  assert.match(settled.content[0].text, /hypothesis: "should unblock the parent"/);
+
+  await server.callTool('update_idea', {
+    projectPath: ctx.projectPath,
+    ideaId: childId,
+    addSupportedIdeas: [{ ideaId: parentId, evaluation: 'it did, partly' }],
+  });
+  assert.deepEqual(
+    { weight: (await edge()).weight, hypothesis: (await edge()).hypothesis, evaluation: (await edge()).evaluation },
+    { weight: 3, hypothesis: 'should unblock the parent', evaluation: 'it did, partly' },
+  );
+
+  const again = await server.callTool('update_idea', {
+    projectPath: ctx.projectPath,
+    ideaId: childId,
+    status: { state: 'implemented', comment: 'still' },
+  });
+  assert.doesNotMatch(again.content[0].text, /evaluate how it actually contributed/, 'evaluated connections are not asked again');
+
+  const reopened = await server.callTool('update_idea', {
+    projectPath: ctx.projectPath,
+    ideaId: childId,
+    status: { state: 'open', comment: '' },
+  });
+  assert.doesNotMatch(reopened.content[0].text, /evaluate/, 'open does not prompt evaluation');
+});
+
+test('MCP Tools - updating a child edge\'s hypothesis keeps its weight', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+  const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
+  const childId = idOf(await createIdea(server, { projectPath: ctx.projectPath, text: 'Child' }));
+  const parentId = idOf(await createIdea(server, {
+    projectPath: ctx.projectPath,
+    text: 'Parent',
+    supportingConnections: [{ ideaId: childId, weight: 7 }],
+  }));
+
+  await server.callTool('update_idea', {
+    projectPath: ctx.projectPath,
+    ideaId: parentId,
+    addSupportingConnections: [{ ideaId: childId, hypothesis: 'now with a reason' }],
+  });
+  const connection = (await caller.idea.get({ projectPath: ctx.projectPath, ideaId: parentId }))
+    .supportingConnections.find((c: any) => c.ideaId === childId);
+  assert.equal(connection.weight, 7);
+  assert.equal(connection.hypothesis, 'now with a reason');
 });

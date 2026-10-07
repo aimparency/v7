@@ -68,7 +68,7 @@ export const repoTools: ToolDefinition[] = [
   },
   {
     name: "link_repo",
-    description: "Declare that a WHOLE external repo supports this idea — a black-box dependency. Targets a repo, never an idea inside it: there is no cross-repo idea link by design. Idempotent per repoId (re-linking updates weight/explanation). Value flows out of this idea into the repo, and the other repo keeps no back-reference.",
+    description: "Declare that a WHOLE external repo supports this idea — a black-box dependency. Targets a repo, never an idea inside it: there is no cross-repo idea link by design. Idempotent per repoId (re-linking updates weight/hypothesis). Value flows out of this idea into the repo, and the other repo keeps no back-reference.",
     inputSchema: {
       type: "object",
       properties: {
@@ -76,7 +76,7 @@ export const repoTools: ToolDefinition[] = [
         ideaId: { type: "string", description: "The LOCAL idea being supported" },
         repoId: { type: "string", description: "Linked repo UUID from list_linked_repos" },
         weight: { type: "number", description: "Share of this idea's value flowing into the repo, like any child edge. Default 1." },
-        explanation: { type: "string", description: "Why that repo supports this idea" },
+        hypothesis: { type: "string", description: "Why that repo supports this idea" },
       },
       required: ["projectPath", "ideaId", "repoId"],
     },
@@ -101,7 +101,7 @@ export const repoTools: ToolDefinition[] = [
         ideaId: args.ideaId as string,
         repoId,
         weight: args.weight as number | undefined,
-        explanation: args.explanation as string | undefined,
+        hypothesis: args.hypothesis as string | undefined,
       });
       return {
         content: [

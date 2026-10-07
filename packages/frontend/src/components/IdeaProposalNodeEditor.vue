@@ -90,7 +90,7 @@ const removeChild = (child: ProposedIdea) => {
           </label>
           <label>
             Why it contributes
-            <input v-model="connection.explanation" :readonly="readonly" maxlength="1000">
+            <input v-model="connection.hypothesis" :readonly="readonly" maxlength="1000">
           </label>
         </div>
         <IdeaProposalNodeEditor

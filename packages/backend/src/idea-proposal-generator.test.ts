@@ -14,7 +14,7 @@ describe('buildIdeaProposalFromGenerated', () => {
           text: 'Reliable festival operations',
           children: [{
             weight: 2,
-            explanation: 'Prevents missed shifts',
+            hypothesis: 'Prevents missed shifts',
             child: {
               text: 'Coordinate volunteers',
               children: []

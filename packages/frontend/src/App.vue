@@ -674,8 +674,12 @@ onUnmounted(() => {
     <!-- Idea Creation Modal -->
     <IdeaCreationModal v-if="modalStore.showIdeaModal" />
 
-    <!-- Connection Details Modal (contribution % + explanation) -->
-    <ConnectionDetailsModal v-if="modalStore.showConnectionDetailsModal" />
+    <!-- Connection Details Modal (contribution %, hypothesis, evaluation) -->
+    <!-- Keyed by connection so a chain of evaluation prompts remounts (and refocuses) per connection. -->
+    <ConnectionDetailsModal
+      v-if="modalStore.showConnectionDetailsModal"
+      :key="`${modalStore.connectionDetailsParentId}>${modalStore.connectionDetailsChildId}`"
+    />
 
     <!-- Idea Edit Modal -->
     <IdeaEditModal

@@ -33,14 +33,17 @@ test('the registry ends at the current data model version, in order', () => {
   assert.equal(versions[versions.length - 1], CURRENT_DATA_MODEL_VERSION);
 });
 
-for (const fixture of ['data-model-v1', 'data-model-v2']) {
+for (const fixture of ['data-model-v1', 'data-model-v2', 'data-model-v3']) {
   test(`${fixture} migrates to the current version with an unchanged graph`, async () => {
     const bowman = await copyFixture(fixture);
     const before = await readGraphSignature(bowman);
 
     const result = await migrateBowman(bowman);
     assert.equal(result.to, CURRENT_DATA_MODEL_VERSION);
-    assert.ok(result.applied.some((step) => step.startsWith('3:')), 'the ideas layout migration ran');
+    if (fixture !== 'data-model-v3') {
+      assert.ok(result.applied.some((step) => step.startsWith('3:')), 'the ideas layout migration ran');
+    }
+    assert.ok(result.applied.some((step) => step.startsWith('4:')), 'the connection hypothesis migration ran');
     assert.deepStrictEqual(result.conflicts, []);
 
     assert.deepStrictEqual(diffGraphSignatures(before, await readGraphSignature(bowman)), []);
@@ -108,13 +111,13 @@ test('migrations run in version order, each recorded, and a failure stops at the
   const calls: string[] = [];
   const migrations: BowmanMigration[] = [
     ...BOWMAN_MIGRATIONS,
-    { version: 5, name: 'breaks', run: async () => { calls.push('5'); throw new Error('boom'); } },
-    { version: 4, name: 'adds a file', run: async (dir) => { calls.push('4'); await fs.writeFile(path.join(dir, 'v4.txt'), 'ok'); } }
+    { version: CURRENT_DATA_MODEL_VERSION + 2, name: 'breaks', run: async () => { calls.push('breaks'); throw new Error('boom'); } },
+    { version: CURRENT_DATA_MODEL_VERSION + 1, name: 'adds a file', run: async (dir) => { calls.push('adds'); await fs.writeFile(path.join(dir, 'next.txt'), 'ok'); } }
   ];
 
-  await assert.rejects(migrateBowman(bowman, { migrations, latest: 5 }), /boom/);
-  assert.deepStrictEqual(calls, ['4', '5']);
-  assert.equal(await readDataModelVersion(bowman), 4, 'version 4 was recorded before 5 failed');
+  await assert.rejects(migrateBowman(bowman, { migrations, latest: CURRENT_DATA_MODEL_VERSION + 2 }), /boom/);
+  assert.deepStrictEqual(calls, ['adds', 'breaks']);
+  assert.equal(await readDataModelVersion(bowman), CURRENT_DATA_MODEL_VERSION + 1, 'the good step was recorded before the next one failed');
   assert.equal(await exists(path.join(bowman, '.migration-lock')), false, 'the lock is released after a failure');
 });
 

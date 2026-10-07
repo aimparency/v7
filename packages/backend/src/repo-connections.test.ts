@@ -106,12 +106,12 @@ test('linkRepo attaches a {repoId}-only edge with a defaulted position', async (
 test('linkRepo is idempotent on repoId (upsert, not duplicate)', async () => {
   const ideaId = await makeIdea('idea');
   await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 1 });
-  await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 5, explanation: 'leans harder now' });
+  await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 5, hypothesis: 'leans harder now' });
 
   const reloaded = await caller.idea.get({ projectPath, ideaId });
   assert.equal(reloaded.supportingRepos?.length, 1, 'no duplicate edge for the same repo');
   assert.equal(reloaded.supportingRepos![0].weight, 5, 'weight updated on re-link');
-  assert.equal(reloaded.supportingRepos![0].explanation, 'leans harder now');
+  assert.equal(reloaded.supportingRepos![0].hypothesis, 'leans harder now');
 });
 
 test('linkRepo preserves an existing edge to a different repo', async () => {

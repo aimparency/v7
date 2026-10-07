@@ -21,7 +21,7 @@ export type ProposedIdea = {
 export type ProposedConnection = {
   child: ProposedIdea;
   weight: number;
-  explanation?: string;
+  hypothesis?: string;
 };
 
 export const ProposedIdeaSchema: z.ZodType<ProposedIdea> = z.lazy(() => z.object({
@@ -36,7 +36,7 @@ export const ProposedIdeaSchema: z.ZodType<ProposedIdea> = z.lazy(() => z.object
   children: z.array(z.object({
     child: ProposedIdeaSchema,
     weight: z.number().finite().positive(),
-    explanation: z.string().trim().max(1_000).optional(),
+    hypothesis: z.string().trim().max(1_000).optional(),
   })),
   intrinsicValue: z.number().finite().nonnegative().optional(),
   valueRationale: z.string().optional(),
@@ -99,7 +99,7 @@ export type FlatProposedConnection = {
   parentProposalId: string;
   childProposalId: string;
   weight: number;
-  explanation?: string;
+  hypothesis?: string;
 };
 
 export function flattenIdeaProposal(root: ProposedIdea): {
@@ -117,7 +117,7 @@ export function flattenIdeaProposal(root: ProposedIdea): {
         parentProposalId: idea.proposalId,
         childProposalId: connection.child.proposalId,
         weight: connection.weight,
-        ...(connection.explanation ? { explanation: connection.explanation } : {}),
+        ...(connection.hypothesis ? { hypothesis: connection.hypothesis } : {}),
       });
       visit(connection.child);
     }

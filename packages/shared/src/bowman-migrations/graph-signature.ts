@@ -9,7 +9,7 @@ import path from 'node:path';
 export interface GraphSignature {
   active: string[];
   archived: string[];
-  /** parent>child weight explanation relativePosition */
+  /** parent>child weight hypothesis relativePosition */
   connections: string[];
   /** child<parent */
   parentLinks: string[];
@@ -37,7 +37,7 @@ export async function readGraphSignature(bowmanPath: string): Promise<GraphSigna
         signature.states.push(`${record.id}=${record.status?.state === 'done' ? 'implemented' : record.status?.state}`);
         for (const connection of record.supportingConnections ?? []) {
           const child = connection.ideaId ?? connection.aimId;
-          signature.connections.push(`${record.id}>${child} ${connection.weight} ${connection.explanation ?? ''} ${JSON.stringify(connection.relativePosition)}`);
+          signature.connections.push(`${record.id}>${child} ${connection.weight} ${connection.hypothesis ?? connection.explanation ?? ''} ${JSON.stringify(connection.relativePosition)}`);
         }
         for (const parent of record.supportedIdeas ?? record.supportedAims ?? []) signature.parentLinks.push(`${record.id}<${parent}`);
         for (const phase of record.committedIn ?? []) signature.committedIn.push(`${phase}:${record.id}`);

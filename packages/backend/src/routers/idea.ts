@@ -343,7 +343,7 @@ export const ideaRouter = t.router({
             ideaId: durableId(connection.childProposalId),
             relativePosition: getRandomRelativePosition(),
             weight: connection.weight,
-            ...(connection.explanation ? { explanation: connection.explanation } : {})
+            ...(connection.hypothesis ? { hypothesis: connection.hypothesis } : {})
           })),
           supportedIdeas,
           committedIn: isRoot && proposal.phaseId ? [proposal.phaseId] : [],
@@ -427,7 +427,8 @@ export const ideaRouter = t.router({
           ideaId: z.string().uuid(),
           relativePosition: z.tuple([z.number(), z.number()]).optional(),
           weight: z.number().optional(),
-          explanation: z.string().optional()
+          hypothesis: z.string().optional(),
+          evaluation: z.string().optional()
         })).optional(),
         // Repo-level cross-repo links (idea → whole external repo). No ideaId,
         // no reciprocal back-reference, so the parent/child consistency loops
@@ -436,7 +437,8 @@ export const ideaRouter = t.router({
           repoId: z.string().uuid(),
           relativePosition: z.tuple([z.number(), z.number()]).optional(),
           weight: z.number().optional(),
-          explanation: z.string().optional()
+          hypothesis: z.string().optional(),
+          evaluation: z.string().optional()
         })).optional(),
         intrinsicValue: z.number().finite().nonnegative().optional(),
         valueRationale: z.string().optional(),
@@ -538,7 +540,8 @@ export const ideaRouter = t.router({
               ideaId: c.ideaId,
               relativePosition: c.relativePosition || [0,0],
               weight: c.weight || 1,
-              ...(c.explanation !== undefined ? { explanation: c.explanation } : {})
+              ...(c.hypothesis !== undefined ? { hypothesis: c.hypothesis } : {}),
+              ...(c.evaluation !== undefined ? { evaluation: c.evaluation } : {})
           }));
       }
 
@@ -548,7 +551,8 @@ export const ideaRouter = t.router({
               repoId: c.repoId,
               relativePosition: c.relativePosition || [0,0],
               weight: c.weight || 1,
-              ...(c.explanation !== undefined ? { explanation: c.explanation } : {})
+              ...(c.hypothesis !== undefined ? { hypothesis: c.hypothesis } : {}),
+              ...(c.evaluation !== undefined ? { evaluation: c.evaluation } : {})
           }));
       }
 
@@ -668,16 +672,16 @@ export const ideaRouter = t.router({
       childSupportedIdeasIndex: z.number().optional(),
       relativePosition: z.tuple([z.number(), z.number()]).optional(),
       weight: z.number().optional(),
-      explanation: z.string().optional()
+      hypothesis: z.string().optional()
     }))
     .mutation(async ({ input }) => {
-      await connectIdeasInternal(input.projectPath, input.parentIdeaId, input.childIdeaId, input.parentIncomingIndex, input.childSupportedIdeasIndex, input.relativePosition, input.weight, input.explanation);
+      await connectIdeasInternal(input.projectPath, input.parentIdeaId, input.childIdeaId, input.parentIncomingIndex, input.childSupportedIdeasIndex, input.relativePosition, input.weight, input.hypothesis);
     }),
 
   // Repo-level cross-repo link: attach a {repoId} edge (no ideaId) to an idea's
   // supportingRepos — the idea is supported by a WHOLE external repo, a black
   // box. Idempotent on repoId: re-linking updates the existing edge's
-  // weight/position/explanation instead of duplicating. The external repo
+  // weight/position/hypothesis instead of duplicating. The external repo
   // keeps no back-reference (by design — you declare what supports you, never
   // that another repo needs you), so there is no reciprocal write.
   linkRepo: delayedProcedure
@@ -687,7 +691,7 @@ export const ideaRouter = t.router({
       repoId: z.string().uuid(),
       relativePosition: z.tuple([z.number(), z.number()]).optional(),
       weight: z.number().optional(),
-      explanation: z.string().optional()
+      hypothesis: z.string().optional()
     }))
     .mutation(async ({ input }) => {
       const idea = await readIdea(input.projectPath, input.ideaId);
@@ -697,7 +701,7 @@ export const ideaRouter = t.router({
         repoId: input.repoId,
         relativePosition: input.relativePosition || getRandomRelativePosition(),
         weight: input.weight ?? 1,
-        ...(input.explanation !== undefined ? { explanation: input.explanation } : {})
+        ...(input.hypothesis !== undefined ? { hypothesis: input.hypothesis } : {})
       };
       const supportingRepos = idx >= 0
         ? existing.map((r, i) => (i === idx ? { ...r, ...edge } : r))
@@ -746,7 +750,7 @@ export const ideaRouter = t.router({
            ideaId: z.string(),
            weight: z.number().optional(),
            relativePosition: z.tuple([z.number(), z.number()]).optional(),
-           explanation: z.string().optional()
+           hypothesis: z.string().optional()
         })).optional(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
       })
@@ -812,7 +816,7 @@ export const ideaRouter = t.router({
 
       if (input.idea.supportingConnections) {
           for (const conn of input.idea.supportingConnections) {
-              await connectIdeasInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
+              await connectIdeasInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.hypothesis);
           }
       }
 
@@ -843,13 +847,13 @@ export const ideaRouter = t.router({
            ideaId: z.string(),
            weight: z.number().optional(),
            relativePosition: z.tuple([z.number(), z.number()]).optional(),
-           explanation: z.string().optional()
+           hypothesis: z.string().optional()
         })).optional(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
       }),
       positionInParent: z.number().optional(),
       weight: z.number().optional(),
-      explanation: z.string().optional()
+      hypothesis: z.string().optional()
     }))
     .mutation(async ({ input }) => {
       const childIdeaId = uuidv4();
@@ -892,7 +896,7 @@ export const ideaRouter = t.router({
         });
       }
 
-      await connectIdeasInternal(input.projectPath, input.parentIdeaId, childIdeaId, input.positionInParent, 0, undefined, input.weight, input.explanation);
+      await connectIdeasInternal(input.projectPath, input.parentIdeaId, childIdeaId, input.positionInParent, 0, undefined, input.weight, input.hypothesis);
 
       if (input.idea.supportedIdeas) {
           for (const parentId of input.idea.supportedIdeas) {
@@ -904,7 +908,7 @@ export const ideaRouter = t.router({
 
       if (input.idea.supportingConnections) {
           for (const conn of input.idea.supportingConnections) {
-              await connectIdeasInternal(input.projectPath, childIdeaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
+              await connectIdeasInternal(input.projectPath, childIdeaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.hypothesis);
           }
       }
 
@@ -935,7 +939,7 @@ export const ideaRouter = t.router({
            ideaId: z.string(),
            weight: z.number().optional(),
            relativePosition: z.tuple([z.number(), z.number()]).optional(),
-           explanation: z.string().optional()
+           hypothesis: z.string().optional()
         })).optional(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
       }),
@@ -996,7 +1000,7 @@ export const ideaRouter = t.router({
 
       if (input.idea.supportingConnections) {
           for (const conn of input.idea.supportingConnections) {
-              await connectIdeasInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.explanation);
+              await connectIdeasInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.hypothesis);
           }
       }
 

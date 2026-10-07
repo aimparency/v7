@@ -26,7 +26,7 @@ test('validates and flattens an editable proposal tree deterministically', () =>
       intrinsicValue: 10,
       children: [{
         weight: 2,
-        explanation: 'Revenue tests the mission in reality',
+        hypothesis: 'Revenue tests the mission in reality',
         child: {
           proposalId: 'paid-diagnostic',
           text: 'Sell one paid diagnostic',
@@ -48,7 +48,7 @@ test('validates and flattens an editable proposal tree deterministically', () =>
       parentProposalId: 'root',
       childProposalId: 'paid-diagnostic',
       weight: 2,
-      explanation: 'Revenue tests the mission in reality',
+      hypothesis: 'Revenue tests the mission in reality',
     },
     {
       parentProposalId: 'paid-diagnostic',

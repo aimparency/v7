@@ -7,7 +7,7 @@ const processEnv =
 
 // Version of the .bowman storage format, kept in meta.json as dataModelVersion.
 // Bump it together with a new entry in bowman-migration.ts (Node-only).
-export const CURRENT_DATA_MODEL_VERSION = 3;
+export const CURRENT_DATA_MODEL_VERSION = 4;
 
 // Cost of an idea created without an explicit estimate, unless the project
 // sets meta.defaultCost. Cost is always positive: everything costs something.
@@ -26,6 +26,7 @@ export interface IdeaState {
   key: string;
   color: string;
   ongoing: boolean;
+  promptsEvaluation?: boolean;
 }
 
 export const INITIAL_STATES: IdeaState[] = [
@@ -33,10 +34,10 @@ export const INITIAL_STATES: IdeaState[] = [
   { key: 'in-progress', color: '#f6d32d', ongoing: true },
   { key: 'partially', color: '#fff176', ongoing: true },
   { key: 'review', color: '#64b5f6', ongoing: true },
-  { key: 'implemented', color: '#81c784', ongoing: false },
+  { key: 'implemented', color: '#81c784', ongoing: false, promptsEvaluation: true },
   { key: 'halted', color: '#9e9e9e', ongoing: false },
-  { key: 'cancelled', color: '#e57373', ongoing: false },
-  { key: 'failed', color: '#ba68c8', ongoing: false },
+  { key: 'cancelled', color: '#e57373', ongoing: false, promptsEvaluation: true },
+  { key: 'failed', color: '#ba68c8', ongoing: false, promptsEvaluation: true },
   { key: 'unclear', color: '#90a4ae', ongoing: false },
   { key: 'human-dependent', color: '#bf409f', ongoing: true }
 ];

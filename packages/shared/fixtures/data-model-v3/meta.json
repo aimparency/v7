@@ -1,0 +1,29 @@
+{
+  "name": "Fixture v2",
+  "color": "#007acc",
+  "statuses": [
+    {
+      "key": "open",
+      "color": "#40abbf"
+    },
+    {
+      "key": "implemented",
+      "color": "#52bf40"
+    },
+    {
+      "key": "review",
+      "color": "#64b5f6",
+      "ongoing": true
+    },
+    {
+      "key": "cancelled",
+      "color": "#ffa348"
+    }
+  ],
+  "dataModelVersion": 3,
+  "rootPhaseIds": [
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+  ],
+  "phaseCursors": {},
+  "phaseActiveLevel": 0
+}

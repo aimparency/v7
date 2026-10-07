@@ -17,6 +17,7 @@
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { exists, listJsonFiles, readOrNull, rewriteJson, sameJson, writeAtomic } from './json-files.js';
 
 const LEGACY_DIRS: Array<[legacy: string, current: string]> = [
   ['aims', 'ideas'],
@@ -152,71 +153,10 @@ async function migrateIdeaDir(bowmanPath: string, legacy: string, current: strin
   await fs.rmdir(legacyDir).catch(() => {}); // stays if something unexpected remains
 }
 
-async function rewriteJson(file: string, transform: (value: unknown) => unknown): Promise<boolean> {
-  const raw = await readOrNull(file);
-  if (raw === null) return false;
-  let next: string;
-  try {
-    next = `${JSON.stringify(transform(JSON.parse(raw)), null, 2)}\n`;
-  } catch {
-    return false;
-  }
-  if (sameJson(raw, next)) return false;
-  await writeAtomic(file, next);
-  return true;
-}
-
-async function listJsonFiles(dir: string): Promise<string[]> {
-  let entries: import('node:fs').Dirent[];
-  try {
-    entries = await fs.readdir(dir, { withFileTypes: true });
-  } catch {
-    return [];
-  }
-  const files: string[] = [];
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...(await listJsonFiles(full)));
-    else if (entry.name.endsWith('.json')) files.push(full);
-  }
-  return files;
-}
-
-function sameJson(a: string, b: string): boolean {
-  try {
-    return JSON.stringify(JSON.parse(a)) === JSON.stringify(JSON.parse(b));
-  } catch {
-    return a === b;
-  }
-}
-
 // Moves an entry the migrator can't interpret; if the target name is taken it
 // goes to migration-conflicts/ so the legacy directory can always be removed.
 async function moveAside(bowmanPath: string, from: string, to: string) {
   const target = (await exists(to)) ? path.join(bowmanPath, CONFLICT_DIR, `${path.basename(from)}.legacy`) : to;
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.rename(from, target).catch(() => {});
-}
-
-async function writeAtomic(file: string, content: string) {
-  const temp = path.join(path.dirname(file), `.${path.basename(file)}.migrate-${process.pid}-${Math.random().toString(16).slice(2)}`);
-  await fs.writeFile(temp, content);
-  await fs.rename(temp, file);
-}
-
-async function readOrNull(file: string): Promise<string | null> {
-  try {
-    return await fs.readFile(file, 'utf8');
-  } catch {
-    return null;
-  }
-}
-
-async function exists(p: string): Promise<boolean> {
-  try {
-    await fs.access(p);
-    return true;
-  } catch {
-    return false;
-  }
 }

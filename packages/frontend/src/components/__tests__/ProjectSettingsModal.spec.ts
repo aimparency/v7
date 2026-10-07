@@ -44,19 +44,20 @@ const SELF_BOWMAN = '/test/project/.bowman'
 const SIBLING = { path: '/test/sibling', bowmanPath: '/test/sibling/.bowman', sourceRoot: '/test' }
 const SELF = { path: '/test/project', bowmanPath: SELF_BOWMAN, sourceRoot: '/test' }
 
-function mountModal() {
+function mountModal(statuses: unknown[] = []) {
+  const meta = { name: 'P', color: '#007acc', statuses }
   const pinia = createTestingPinia({
     createSpy: vi.fn,
     initialState: {
       'ui-modal': { showSettingsModal: true },
       'ui-project': { projectPath: SELF_BOWMAN },
-      data: { meta: { name: 'P', color: '#007acc', statuses: [] } }
+      data: { meta }
     }
   })
   const wrapper = mount(ProjectSettingsModal, { global: { plugins: [pinia] } })
   const dataStore = useDataStore(pinia)
   const projectStore = useProjectStore(pinia)
-  dataStore.meta = { name: 'P', color: '#007acc', statuses: [] } as any
+  dataStore.meta = meta as any
   projectStore.projectPath = SELF_BOWMAN
   return { wrapper, dataStore }
 }
@@ -142,6 +143,31 @@ describe('ProjectSettingsModal linked repos', () => {
         supervisorGuidancePrefix: 'You can improve this system.'
       })
     )
+  })
+
+  it('saves each status\'s prompts-evaluation flag as an explicit boolean', async () => {
+    listMock.mockResolvedValue([])
+    discoverMock.mockResolvedValue({ projects: [], rootsScanned: [] })
+    const statuses = [
+      { key: 'implemented', color: '#00ff00', ongoing: false, promptsEvaluation: true },
+      { key: 'open', color: '#ffffff', ongoing: true }
+    ]
+    const { wrapper, dataStore } = mountModal(statuses)
+    await flushPromises()
+
+    const [implemented, open] = wrapper.findAll('.status-flag input')
+    expect((implemented!.element as HTMLInputElement).checked).toBe(true)
+    await implemented!.setValue(false)
+    await open!.setValue(true)
+    await wrapper.find('.btn-primary').trigger('click')
+    await flushPromises()
+
+    expect(dataStore.updateProjectMeta).toHaveBeenCalledWith(SELF_BOWMAN, expect.objectContaining({
+      statuses: [
+        expect.objectContaining({ key: 'implemented', promptsEvaluation: false }),
+        expect.objectContaining({ key: 'open', promptsEvaluation: true })
+      ]
+    }))
   })
 
   it('unregisters a repo after a confirm click', async () => {

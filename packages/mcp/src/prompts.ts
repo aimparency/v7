@@ -100,7 +100,7 @@ A dream is a counterfactual simulation over the idea graph. It is not graph hygi
 Procedure:
 
 1. SLEEP — Acquire waking memory
-   - Inspect the active graph, current phases, priorities, statuses, descriptions, connection explanations, and reflections using the available Aimparency resources and read-only tools.
+   - Inspect the active graph, current phases, priorities, statuses, descriptions, connection hypotheses, and reflections using the available Aimparency resources and read-only tools.
    - If a focus idea UUID was supplied, inspect its neighborhood, then deliberately sample semantically distant ideas too.
    - Note unresolved tensions, bottlenecks, abandoned directions, surprising proximity, and valuable capabilities with no current application.
 
@@ -123,10 +123,10 @@ Procedure:
 5. REMEMBER — Propose or write graph changes
    - Prefer explanatory contribution connections between existing ideas when the synergy is already meaningful.
    - Create a new idea only for a genuinely novel hypothesis or experiment. Prefix speculative titles with "Dream:" and tag them "dream" and "hypothesis". Do not mark dream artifacts implemented.
-   - Connection explanations must say why the contribution may exist and identify uncertainty. Do not alter contribution weights merely because a relationship is imaginative.
+   - Connection hypotheses must say why the contribution may exist and identify uncertainty. Do not alter contribution weights merely because a relationship is imaginative.
    - ${writeBack
       ? "Write only the 1-3 selected residues using Aimparency tools, then report every mutation. Preserve human gates and use review when implementation is complete but awaiting acceptance."
-      : "Do not mutate the graph. Return a precise proposed mutation set (ideas, connections, explanations, and experiments) for human acceptance."}
+      : "Do not mutate the graph. Return a precise proposed mutation set (ideas, connections, hypotheses, and experiments) for human acceptance."}
 
 Finish with a compact DREAM REPORT containing: waking tensions, dream simulations, reality checks, retained residues, discarded dreams, and proposed/performed graph mutations.`,
           },

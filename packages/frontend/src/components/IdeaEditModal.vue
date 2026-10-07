@@ -484,6 +484,25 @@ const handleTagNext = () => {
   submitBtn.value?.focus()
 }
 
+const promptsEvaluation = (state: string) =>
+  !!statuses.value.find((status: { key: string; promptsEvaluation?: boolean }) => status.key === state)?.promptsEvaluation
+
+// A settled idea (moved into a status that prompts evaluation) asks for an
+// evaluation of each parent connection's hypothesis not evaluated yet.
+const promptEvaluations = async (settledIdeas: Array<{ ideaId: string; parentIds: string[] }>) => {
+  const parentIds = [...new Set(settledIdeas.flatMap((settled) => settled.parentIds))]
+  if (parentIds.length === 0) return
+  await dataStore.loadIdeas(projectStore.projectPath, parentIds)
+  modalStore.promptConnectionEvaluations(settledIdeas.flatMap(({ ideaId, parentIds }) =>
+    parentIds
+      .filter((parentId) => {
+        const connection = dataStore.ideas[parentId]?.supportingConnections?.find((c) => c.ideaId === ideaId)
+        return connection && !connection.evaluation?.trim()
+      })
+      .map((parentId) => ({ parentId, childId: ideaId }))
+  ))
+}
+
 const handleSave = async () => {
   if (!idea.value || !projectStore.projectPath) return
   if ((!isMixed('cost') || overriddenFields.value.has('cost')) &&
@@ -499,6 +518,7 @@ const handleSave = async () => {
   validationError.value = ''
 
   const shouldWrite = (field: BulkField) => !isBulk.value || !mixedFields.value.has(field) || overriddenFields.value.has(field)
+  const settledIdeas: Array<{ ideaId: string; parentIds: string[] }> = []
   for (const target of editingIdeas.value) {
     const updates: any = {}
     if (!isBulk.value) updates.text = ideaText.value
@@ -520,11 +540,15 @@ const handleSave = async () => {
       }
     }
     if (!isBulk.value) updates.supportedIdeas = supportedIdeasList.value.map((entry) => entry.id)
+    if (updates.status && updates.status.state !== target.status.state && promptsEvaluation(updates.status.state)) {
+      settledIdeas.push({ ideaId: target.id, parentIds: updates.supportedIdeas ?? target.supportedIdeas ?? [] })
+    }
     await dataStore.updateIdea(projectStore.projectPath, target.id, updates)
   }
 
   if (isBulk.value) {
     emit('close')
+    await promptEvaluations(settledIdeas)
     return
   }
   const currentCommittedPhaseIds = committedPhasesList.value.map((phase) => phase.id)
@@ -558,6 +582,7 @@ const handleSave = async () => {
   }
 
   emit('close')
+  await promptEvaluations(settledIdeas)
 }
 
 const handleCancel = () => {
