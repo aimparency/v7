@@ -221,6 +221,29 @@ describe('list store phase selection', () => {
     expect(back).toEqual(['next-phase-idea', 'sibling', 'child-2', 'child-1', 'parent'])
   })
 
+  it('clicking an expanded idea makes it the action target, not its previously selected child', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const idea = (id: string, children: string[] = []) =>
+      ({ id, text: id, supportingConnections: children.map((ideaId) => ({ ideaId, weight: 1, relativePosition: [1, 1] })), supportedIdeas: [], committedIn: [] }) as any
+
+    for (const a of [idea('parent', ['child-1', 'child-2']), idea('child-1'), idea('child-2'), idea('sibling')]) {
+      dataStore.ideas[a.id] = a
+    }
+    dataStore.phases['phase-1'] = { id: 'phase-1', name: 'phase-1', parent: null, childPhaseIds: [], commitments: ['parent', 'sibling'] } as any
+    dataStore.meta = { rootPhaseIds: ['phase-1'] }
+    uiStore.activeColumn = 0
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
+    uiStore.navigatingIdeas = true
+
+    await uiStore.selectIdeaById(0, 'phase-1', 'child-2')
+    expect(uiStore.getCurrentIdea()?.id).toBe('child-2')
+
+    await uiStore.selectIdeaById(0, 'phase-1', 'sibling')
+    await uiStore.selectIdeaById(0, 'phase-1', 'parent')
+    expect(uiStore.getSelectionPath().ideas.map((a) => a.id)).toEqual(['parent'])
+  })
+
   it('restores obvious list UI state after reload', async () => {
     setActivePinia(createPinia())
     const initialDataStore = useDataStore()
@@ -457,5 +480,31 @@ describe('list store phase selection', () => {
     expect(uiStore.activeColumn).toBe(1)
     expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-c')
     expect(uiStore.getSelectedPhase(1)).toBe(2)
+  })
+
+  it('the floating column navigates like a phase column: l expands, Esc focuses the column, l there moves to column 0 even without phases', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    dataStore.ideas['root'] = { id: 'root', text: 'Root', supportingConnections: [{ ideaId: 'child', weight: 1 }] } as any
+    dataStore.ideas['child'] = { id: 'child', text: 'Child', supportingConnections: [] } as any
+    dataStore.floatingIdeasIds = ['root']
+    uiStore.activeColumn = -1
+    uiStore.floatingIdeaIndex = 0
+    uiStore.navigatingIdeas = true
+    const press = (key: string) => uiStore.handleGlobalKeydown({ key, preventDefault: vi.fn() } as any, dataStore)
+
+    await press('l')
+    expect(uiStore.floatingIdeaUIStates['root']?.expanded).toBe(true)
+    await press('l')
+    expect(uiStore.getSelectionPath().ideas.map((idea) => idea.id)).toEqual(['root', 'child'])
+    // child is a leaf: l stays in the idea tree
+    await press('l')
+    expect(uiStore.activeColumn).toBe(-1)
+    expect(uiStore.navigatingIdeas).toBe(true)
+
+    await press('Escape')
+    expect(uiStore.navigatingIdeas).toBe(false)
+    await press('l')
+    expect(uiStore.activeColumn).toBe(0)
   })
 })

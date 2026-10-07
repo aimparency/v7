@@ -111,12 +111,13 @@ export async function navigateColumnForward(uiStore: any, dataStore: any) {
   uiStore.pendingDeletePhaseId = null
 
   if (col === -1) {
+    // Column 0 is always reachable, even without root phases: its empty state is
+    // where the first phase gets created (o).
     uiStore.ensureColumnSelection(0)
-    const rootEntries = dataStore.getSelectableColumnEntries(0)
-    if (rootEntries.length > 0) {
-      uiStore.ensureMaxColumn(0)
-      uiStore.setActiveColumn(0)
-      uiStore.ensureSelectionVisible()
+    uiStore.ensureMaxColumn(0)
+    uiStore.setActiveColumn(0)
+    uiStore.ensureSelectionVisible()
+    if (dataStore.getSelectableColumnEntries(0).length > 0) {
       await uiStore.resolveSelectionPath(0, 'preserve', Math.min(uiStore.maxColumn, uiStore.getVisibleMaxColumn()))
     }
     return
@@ -543,12 +544,6 @@ export async function handleIdeaNavigationKeysAction(uiStore: any, event: Keyboa
     }
     case 'l': {
       event.preventDefault()
-      if (uiStore.activeColumn === -1) {
-        uiStore.navigatingIdeas = false
-        await handleColumnNavigationKeysAction(uiStore, event, dataStore)
-        return
-      }
-
       const selectedIdea = uiStore.getCurrentIdea()
       const selectedIdeaState = uiStore.getCurrentIdeaUIState()
       if (selectedIdea && selectedIdeaState) {

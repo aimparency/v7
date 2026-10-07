@@ -258,6 +258,14 @@ onMounted(() => {
         @pointerleave="longPress.onPointerLeave"
         @contextmenu.prevent
       >
+        <button
+          v-if="parentIdeaId"
+          type="button"
+          class="connection-edit-button"
+          title="Edit contribution to parent"
+          aria-label="Edit contribution to parent"
+          @click.stop="editParentConnection"
+        >↖</button>
         <div class="idea-main">
           <div class="idea-text" :class="{ 'untitled': !idea.text }">
             {{ idea.text || '(untitled)' }}
@@ -285,14 +293,6 @@ onMounted(() => {
             <div class="stat-bottom value">{{ intrinsicValue }}</div>
           </div>
         </div>
-        <button
-          v-if="parentIdeaId"
-          type="button"
-          class="connection-edit-button"
-          title="Edit contribution to parent"
-          aria-label="Edit contribution to parent"
-          @click.stop="editParentConnection"
-        >↗</button>
       </div>
       
       <div v-if="isExpanded" class="idea-details">
@@ -450,16 +450,16 @@ onMounted(() => {
 
   .connection-edit-button {
     flex: 0 0 auto;
-    padding: 0.1rem 0.35rem;
-    color: #999;
+    padding: 0;
+    font-size: 1.2rem;
+    line-height: 1;
+    color: #888;
     background: transparent;
-    border: 1px solid #555;
-    border-radius: 0.2rem;
+    border: none;
     cursor: pointer;
 
     &:hover {
       color: #fff;
-      border-color: #888;
     }
   }
 

@@ -741,74 +741,42 @@ export const useUIStore = defineStore('ui', {
       const isAlreadySelected = currentIdea?.id === ideaId && this.activeColumn === columnIndex
 
       if (isAlreadySelected) {
-        const ideas = phaseId ? dataStore.getIdeasForPhase(phaseId) : dataStore.floatingIdeas
-        const ideaIndex = ideas.findIndex((a: any) => a && a.id === ideaId)
-        if (ideaIndex !== -1) {
-          const editIds = this.multiSelectedIdeaIds.includes(ideaId) && this.multiSelectedIdeaIds.length > 1
-            ? this.multiSelectedIdeaIds
-            : [ideaId]
-          modalStore.openIdeaEditModal(ideaId, editIds)
-        }
+        const editIds = this.multiSelectedIdeaIds.includes(ideaId) && this.multiSelectedIdeaIds.length > 1
+          ? this.multiSelectedIdeaIds
+          : [ideaId]
+        modalStore.openIdeaEditModal(ideaId, editIds)
         return
       }
 
       const ideas = phaseId ? dataStore.getIdeasForPhase(phaseId) : dataStore.floatingIdeas
-
-      const topLevelIndex = ideas.findIndex((a: any) => a && a.id === ideaId)
-
-      if (topLevelIndex >= 0) {
-        await this.selectIdea(columnIndex, phaseId, topLevelIndex)
-        return
-      }
-
       const path = findPathToIdeaHelper(ideaId, ideas, dataStore)
       if (!path || path.length === 0) return
 
-      let stateTree = phaseId ? this.getPhaseIdeaUIStates(phaseId) : this.floatingIdeaUIStates
-      for (let i = 0; i < path.length - 1; i++) {
-        const step = path[i]
-        const nextStep = path[i + 1]
-        if (!step || !nextStep || nextStep.indexInParent === undefined) continue
+      this.setActiveColumn(columnIndex)
+
+      if (phaseId && columnIndex >= 0) {
+        const entries = dataStore.getSelectableColumnEntries(columnIndex)
+        const phaseIndex = entries.findIndex((entry) => entry.type === 'phase' && entry.phase.id === phaseId)
+        if (phaseIndex !== -1) {
+          this.applyPhaseSelection(columnIndex, phaseIndex)
+        }
+      }
+
+      const scope = this.getIdeaListScope(phaseId)
+      if (!scope) return
+
+      // Expand the ancestors, then end the chain at the clicked idea — a stale
+      // selectedIncomingIndex on it would keep its old child as the action target.
+      let stateTree = scope.tree
+      for (const step of path.slice(0, -1)) {
         const state = ensureIdeaUIState(stateTree, step.ideaId)
         state.expanded = true
-        state.selectedIncomingIndex = nextStep.indexInParent
         stateTree = state.children
       }
-
-      const topLevel = path[0]
-      this.setActiveColumn(columnIndex)
-
-      if (phaseId && columnIndex >= 0) {
-        const entries = dataStore.getSelectableColumnEntries(columnIndex)
-        const phaseIndex = entries.findIndex((entry) => entry.type === 'phase' && entry.phase.id === phaseId)
-        if (phaseIndex !== -1) {
-          this.applyPhaseSelection(columnIndex, phaseIndex)
-        }
-      }
+      const indexPath = [path[0]!.topLevelIndex, ...path.slice(1).map((step) => step.indexInParent!)]
+      this.selectIdeaRow(scope, { ideaId, indexPath })
 
       this.navigatingIdeas = true
-      if (topLevel) {
-        this.setCurrentIdeaIndex(topLevel.topLevelIndex, dataStore)
-      }
-    },
-
-    // Click-to-select: focus an idea (set column, phase, mode, and idea)
-    async selectIdea(columnIndex: number, phaseId: string | undefined, ideaIndex: number) {
-      const dataStore = useDataStore()
-
-      this.setActiveColumn(columnIndex)
-
-      if (phaseId && columnIndex >= 0) {
-        const entries = dataStore.getSelectableColumnEntries(columnIndex)
-        const phaseIndex = entries.findIndex((entry) => entry.type === 'phase' && entry.phase.id === phaseId)
-
-        if (phaseIndex !== -1) {
-          this.applyPhaseSelection(columnIndex, phaseIndex)
-        }
-      }
-
-      this.navigatingIdeas = true
-      this.setCurrentIdeaIndex(ideaIndex, dataStore)
     },
 
     setPendingDeletePhase(phaseId: string | null) {
