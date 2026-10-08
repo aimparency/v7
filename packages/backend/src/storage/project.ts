@@ -6,7 +6,7 @@ import type { ProjectMeta, SystemStatus } from 'shared';
 import { assertWritableBowman, migrateBowman, NewerDataModelError } from 'shared/bowman-migration';
 import { normalizeProjectPath } from '../project-path.js';
 import { emitChange } from '../change-events.js';
-import { readJsonOrNull, writeJsonAtomic } from './json.js';
+import { readJsonOrNull, withFileLock, writeJsonAtomic } from './json.js';
 import { deriveLegacySiblingIds } from './phase-files.js';
 
 const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\nruntime/\nsecrets.json\n.migration-lock\n';
@@ -162,6 +162,16 @@ export async function writeProjectMeta(rawProjectPath: string, meta: ProjectMeta
   const previous = await readJsonOrNull(metaPath);
   await writeJsonAtomic(metaPath, meta);
   emitChange({ type: 'project', id: 'meta', projectPath, entity: meta, previous });
+}
+
+// Read-modify-write of meta.json under its lock (see updatePhase).
+export async function updateProjectMeta(rawProjectPath: string, update: (meta: ProjectMeta) => ProjectMeta): Promise<ProjectMeta> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  return withFileLock(path.join(projectPath, 'meta.json'), async () => {
+    const meta = update(await readProjectMeta(projectPath));
+    await writeProjectMeta(projectPath, meta);
+    return meta;
+  });
 }
 
 export async function readSystemStatus(rawProjectPath: string): Promise<SystemStatus> {

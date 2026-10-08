@@ -53,3 +53,30 @@ test('concurrent commit and removal in one phase do not lose each other', async 
   const phase = await caller.phase.get({ projectPath, phaseId });
   assert.deepStrictEqual([...phase.commitments].sort(), [stays.id, joins.id].sort());
 });
+
+test('concurrent phase creates keep every sibling, under a parent and at the root', async () => {
+  const parentId = (await caller.phase.create({ projectPath, phase: { name: '2026', parent: null, commitments: [] } })).id;
+  const create = (name: string, parent: string | null) => caller.phase.create({ projectPath, phase: { name, parent, commitments: [] } });
+
+  const children = await Promise.all(['Oktober', 'November', 'Dezember'].map((name) => create(name, parentId)));
+  const roots = await Promise.all(['2027', '2028'].map((name) => create(name, null)));
+
+  const parent = await caller.phase.get({ projectPath, phaseId: parentId });
+  assert.deepStrictEqual([...parent.childPhaseIds!].sort(), children.map((phase) => phase.id).sort());
+  const rootIds = (await caller.phase.list({ projectPath, parentPhaseId: null })).map((phase) => phase.id);
+  assert.deepStrictEqual([...rootIds].sort(), [parentId, ...roots.map((phase) => phase.id)].sort());
+});
+
+test('renaming a phase while an idea is committed to it keeps the commitment', async () => {
+  const phaseId = (await caller.phase.create({ projectPath, phase: { name: 'Oktober', parent: null, commitments: [] } })).id;
+  const idea = await caller.idea.createFloatingIdea({ projectPath, idea: { text: 'joins' } });
+
+  await Promise.all([
+    caller.phase.update({ projectPath, phaseId, phase: { name: 'October' } }),
+    caller.idea.commitToPhase({ projectPath, ideaId: idea.id, phaseId })
+  ]);
+
+  const phase = await caller.phase.get({ projectPath, phaseId });
+  assert.strictEqual(phase.name, 'October');
+  assert.deepStrictEqual(phase.commitments, [idea.id]);
+});

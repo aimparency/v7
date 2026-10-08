@@ -4,7 +4,7 @@ import type { Phase } from 'shared';
 import { assertWritableBowman } from 'shared/bowman-migration';
 import { normalizeProjectPath } from '../project-path.js';
 import { emitChange } from '../change-events.js';
-import { readJsonOrNull, writeJsonAtomic } from './json.js';
+import { readJsonOrNull, withFileLock, writeJsonAtomic } from './json.js';
 import { compareLegacyPhaseOrder, deriveLegacySiblingIds, normalizePhase } from './phase-files.js';
 import { ensureProjectStructure, readProjectMeta, writeProjectMeta } from './project.js';
 
@@ -54,6 +54,17 @@ export async function writePhase(rawProjectPath: string, phase: Phase): Promise<
   const previous = await readJsonOrNull(phasePath);
   await writeJsonAtomic(phasePath, phase);
   emitChange({ type: 'phase', id: phase.id, projectPath, entity: phase, previous });
+}
+
+// Read-modify-write of one phase file under its lock, so concurrent updates of
+// the same phase apply one after another. Returning null skips the write.
+export async function updatePhase(rawProjectPath: string, phaseId: string, update: (phase: Phase) => Phase | null): Promise<Phase | null> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  return withFileLock(path.join(projectPath, 'phases', `${phaseId}.json`), async () => {
+    const phase = update(await readPhase(projectPath, phaseId));
+    if (phase) await writePhase(projectPath, phase);
+    return phase;
+  });
 }
 
 // Explicit repair of the phase tree: every stored child list (and the root

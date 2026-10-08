@@ -7,7 +7,7 @@ import { normalizeProjectPath } from '../project-path.js';
 import { emitChange } from '../change-events.js';
 import { removeIdeaFromIndex } from '../search.js';
 import { removeEmbedding } from '../embeddings.js';
-import { readJsonOrNull, writeJsonAtomic } from './json.js';
+import { readJsonOrNull, withFileLock, writeJsonAtomic } from './json.js';
 import { ensureProjectStructure, migrateProject } from './project.js';
 
 export async function writeIdea(rawProjectPath: string, idea: Idea): Promise<void> {
@@ -117,6 +117,16 @@ export async function readIdea(rawProjectPath: string, ideaId: string, afterLayo
 
 // Explicit, idempotent upgrade of idea files: legacy fields and unplaced
 // connections. Returns the ids of rewritten ideas.
+// Read-modify-write of one idea file under its lock (see updatePhase).
+export async function updateIdea(rawProjectPath: string, ideaId: string, update: (idea: Idea) => Idea | null): Promise<Idea | null> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  return withFileLock(path.join(projectPath, 'ideas', `${ideaId}.json`), async () => {
+    const idea = update(await readIdea(projectPath, ideaId));
+    if (idea) await writeIdea(projectPath, idea);
+    return idea;
+  });
+}
+
 export async function migrateIdeaFiles(rawProjectPath: string): Promise<string[]> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const migrated: string[] = [];

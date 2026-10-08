@@ -6,15 +6,19 @@ import { currentPhaseCursors, type Phase } from 'shared';
 import { assertWritableBowman } from 'shared/bowman-migration';
 import { t, delayedProcedure } from '../trpc.js';
 import { emitChange } from '../change-events.js';
-import { readPhase, listPhases, writePhase } from '../storage/phases.js';
-import { readProjectMeta, writeProjectMeta } from '../storage/project.js';
+import { readPhase, listPhases, writePhase, updatePhase } from '../storage/phases.js';
+import { readProjectMeta, updateProjectMeta } from '../storage/project.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { cleanupCommitments } from '../storage/commitments.js';
 import { addPhaseToIndex, updatePhaseInIndex, removePhaseFromIndex, searchPhases } from '../search.js';
 import { ensureSearchIndex } from '../search-index.js';
 
-const readMeta = readProjectMeta;
-const writeMeta = writeProjectMeta;
+// Updates the ordered list a phase lives in: its parent's childPhaseIds, or
+// meta.rootPhaseIds for root phases. Locked, so concurrent edits don't drop ids.
+const updateSiblingIds = (projectPath: string, parentId: string | null, update: (siblingIds: string[]) => string[]) =>
+  parentId
+    ? updatePhase(projectPath, parentId, (parent) => ({ ...parent, childPhaseIds: update(parent.childPhaseIds ?? []) }))
+    : updateProjectMeta(projectPath, (meta) => ({ ...meta, rootPhaseIds: update(meta.rootPhaseIds ?? []) }));
 
 const phaseAncestorNames = (phase: Phase, phasesById: Map<string, Phase>) => {
   const names: string[] = [];
@@ -44,19 +48,6 @@ export const phaseRouter = t.router({
       })
     }))
     .mutation(async ({ input }) => {
-      const parentOwner = input.phase.parent
-        ? await readPhase(input.projectPath, input.phase.parent)
-        : null;
-      const rootOwner = input.phase.parent
-        ? null
-        : await readMeta(input.projectPath);
-      let targetOrder = input.phase.order;
-      if (targetOrder === undefined) {
-        targetOrder = input.phase.parent
-          ? (parentOwner?.childPhaseIds ?? []).length
-          : (rootOwner?.rootPhaseIds ?? []).length;
-      }
-
       const phaseId = uuidv4();
       const phase: Phase = {
         id: phaseId,
@@ -69,16 +60,12 @@ export const phaseRouter = t.router({
       };
 
       await writePhase(input.projectPath, phase);
-      if (phase.parent && parentOwner) {
-        const childPhaseIds = [...(parentOwner.childPhaseIds ?? [])];
-        childPhaseIds.splice(targetOrder, 0, phaseId);
-        await writePhase(input.projectPath, { ...parentOwner, childPhaseIds });
-      } else if (rootOwner) {
-        const rootPhaseIds = [...(rootOwner.rootPhaseIds ?? [])];
-        rootPhaseIds.splice(targetOrder, 0, phaseId);
-        rootOwner.rootPhaseIds = rootPhaseIds;
-        await writeMeta(input.projectPath, rootOwner);
-      }
+      await updateSiblingIds(input.projectPath, phase.parent, (siblingIds) => {
+        // A fresh meta derives its root list from the phase files, which already include this one.
+        const updated = siblingIds.filter((id) => id !== phaseId);
+        updated.splice(input.phase.order ?? updated.length, 0, phaseId);
+        return updated;
+      });
       addPhaseToIndex(input.projectPath, phase);
       return { id: phaseId };
     }),
@@ -118,49 +105,28 @@ export const phaseRouter = t.router({
       insertionIndex: z.number().int().nonnegative().optional()
     }))
     .mutation(async ({ input }) => {
-      const existingPhase = await readPhase(input.projectPath, input.phaseId);
-      const insertAt = (siblingIds: string[]) => {
-        const index = Math.min(input.insertionIndex ?? siblingIds.length, siblingIds.length);
-        return [...siblingIds.slice(0, index), input.phaseId, ...siblingIds.slice(index)];
-      };
-      const oldParentId = existingPhase.parent ?? null;
+      const oldParentId = (await readPhase(input.projectPath, input.phaseId)).parent ?? null;
+      const newParentId = input.phase.parent;
 
-      const updatedPhase: Phase = {
-          ...existingPhase,
-          ...(input.phase.name !== undefined ? { name: input.phase.name } : {}),
-          ...(input.phase.from !== undefined ? { from: input.phase.from } : {}),
-          ...(input.phase.to !== undefined ? { to: input.phase.to } : {}),
-          ...(input.phase.parent !== undefined ? { parent: input.phase.parent } : {}),
-          ...(input.phase.commitments !== undefined ? { commitments: input.phase.commitments } : {})
-      };
-
-      if (input.phase.parent !== undefined && input.phase.parent !== oldParentId) {
-        if (oldParentId) {
-          const oldParent = await readPhase(input.projectPath, oldParentId);
-          await writePhase(input.projectPath, {
-            ...oldParent,
-            childPhaseIds: (oldParent.childPhaseIds ?? []).filter((id) => id !== input.phaseId)
-          });
-        } else {
-          const meta = await readMeta(input.projectPath);
-          meta.rootPhaseIds = (meta.rootPhaseIds ?? []).filter((id: string) => id !== input.phaseId);
-          await writeMeta(input.projectPath, meta);
-        }
-
-        if (updatedPhase.parent) {
-          const newParent = await readPhase(input.projectPath, updatedPhase.parent);
-          await writePhase(input.projectPath, {
-            ...newParent,
-            childPhaseIds: insertAt(newParent.childPhaseIds ?? [])
-          });
-        } else {
-          const meta = await readMeta(input.projectPath);
-          meta.rootPhaseIds = insertAt(meta.rootPhaseIds ?? []);
-          await writeMeta(input.projectPath, meta);
-        }
+      if (newParentId !== undefined && newParentId !== oldParentId) {
+        await updateSiblingIds(input.projectPath, oldParentId, (siblingIds) => siblingIds.filter((id) => id !== input.phaseId));
+        await updateSiblingIds(input.projectPath, newParentId, (siblingIds) => {
+          const updated = siblingIds.filter((id) => id !== input.phaseId);
+          updated.splice(Math.min(input.insertionIndex ?? updated.length, updated.length), 0, input.phaseId);
+          return updated;
+        });
       }
 
-      await writePhase(input.projectPath, updatedPhase);
+      // Only the given fields change, applied to the current file, so a
+      // concurrent commitment isn't overwritten with a stale list.
+      const updatedPhase = (await updatePhase(input.projectPath, input.phaseId, (existingPhase) => ({
+        ...existingPhase,
+        ...(input.phase.name !== undefined ? { name: input.phase.name } : {}),
+        ...(input.phase.from !== undefined ? { from: input.phase.from } : {}),
+        ...(input.phase.to !== undefined ? { to: input.phase.to } : {}),
+        ...(newParentId !== undefined ? { parent: newParentId } : {}),
+        ...(input.phase.commitments !== undefined ? { commitments: input.phase.commitments } : {})
+      })))!;
       updatePhaseInIndex(input.projectPath, updatedPhase);
       return updatedPhase;
     }),
@@ -173,28 +139,15 @@ export const phaseRouter = t.router({
     }))
     .mutation(async ({ input }) => {
       const phase = await readPhase(input.projectPath, input.phaseId);
-      const parentId = phase.parent ?? null;
-      const siblingIds = parentId
-        ? [...((await readPhase(input.projectPath, parentId)).childPhaseIds ?? [])]
-        : [...((await readMeta(input.projectPath)).rootPhaseIds ?? [])];
-      const currentIndex = siblingIds.indexOf(input.phaseId);
-
-      if (currentIndex === -1) {
-        throw new Error(`Phase ${input.phaseId} not found in sibling list`);
-      }
-
-      siblingIds.splice(currentIndex, 1);
-      const targetIndex = Math.min(input.newIndex, siblingIds.length);
-      siblingIds.splice(targetIndex, 0, input.phaseId);
-
-      if (parentId) {
-        const parent = await readPhase(input.projectPath, parentId);
-        await writePhase(input.projectPath, { ...parent, childPhaseIds: siblingIds });
-      } else {
-        const meta = await readMeta(input.projectPath);
-        meta.rootPhaseIds = siblingIds;
-        await writeMeta(input.projectPath, meta);
-      }
+      await updateSiblingIds(input.projectPath, phase.parent ?? null, (siblingIds) => {
+        const currentIndex = siblingIds.indexOf(input.phaseId);
+        if (currentIndex === -1) {
+          throw new Error(`Phase ${input.phaseId} not found in sibling list`);
+        }
+        const updated = siblingIds.filter((id) => id !== input.phaseId);
+        updated.splice(Math.min(input.newIndex, updated.length), 0, input.phaseId);
+        return updated;
+      });
       return { success: true };
     }),
 
@@ -216,20 +169,9 @@ export const phaseRouter = t.router({
         return withoutPhase;
       };
       for (const childId of childPhaseIds) {
-        const child = await readPhase(input.projectPath, childId).catch(() => null);
-        if (child) await writePhase(input.projectPath, { ...child, parent: phase.parent ?? null });
+        await updatePhase(input.projectPath, childId, (child) => ({ ...child, parent: phase.parent ?? null })).catch(() => null);
       }
-      if (phase.parent) {
-        const parent = await readPhase(input.projectPath, phase.parent);
-        await writePhase(input.projectPath, {
-          ...parent,
-          childPhaseIds: spliceChildren(parent.childPhaseIds ?? [])
-        });
-      } else {
-        const meta = await readMeta(input.projectPath);
-        meta.rootPhaseIds = spliceChildren(meta.rootPhaseIds ?? []);
-        await writeMeta(input.projectPath, meta);
-      }
+      await updateSiblingIds(input.projectPath, phase.parent ?? null, spliceChildren);
       const phasePath = path.join(projectPath, 'phases', `${input.phaseId}.json`);
       const previous = await fs.readJson(phasePath).catch(() => null);
       await assertWritableBowman(projectPath);
@@ -269,10 +211,7 @@ export const phaseRouter = t.router({
       activeLevel: z.number().int().min(0)
     }))
     .mutation(async ({ input }) => {
-      const meta = await readMeta(input.projectPath);
-      meta.phaseCursors = input.cursors;
-      meta.phaseActiveLevel = input.activeLevel;
-      await writeMeta(input.projectPath, meta);
+      await updateProjectMeta(input.projectPath, (meta) => ({ ...meta, phaseCursors: input.cursors, phaseActiveLevel: input.activeLevel }));
       return { success: true };
     }),
 
@@ -281,7 +220,7 @@ export const phaseRouter = t.router({
       projectPath: z.string()
     }))
     .query(async ({ input }) => {
-      const meta = await readMeta(input.projectPath);
+      const meta = await readProjectMeta(input.projectPath);
       const cursors = currentPhaseCursors(meta);
       const activeLevel: number = meta.phaseActiveLevel ?? 0;
 

@@ -1,6 +1,6 @@
 import type { Idea } from 'shared';
 import { readIdea, writeIdea, deleteIdeaCompletely } from './ideas.js';
-import { readPhase, writePhase } from './phases.js';
+import { updatePhase } from './phases.js';
 import { removeIdeaFromPhase } from './commitments.js';
 
 // Where an idea sits in a view: under a parent idea or committed in a phase.
@@ -102,8 +102,7 @@ export async function deleteIdeas(projectPath: string, rootIds: string[], option
   for (const idea of survivors.values()) await writeIdea(projectPath, idea);
   for (const phaseId of phaseIds) {
     try {
-      const phase = await readPhase(projectPath, phaseId);
-      await writePhase(projectPath, { ...phase, commitments: phase.commitments.filter((id) => !doomed.has(id)) });
+      await updatePhase(projectPath, phaseId, (phase) => ({ ...phase, commitments: phase.commitments.filter((id) => !doomed.has(id)) }));
     } catch (error) {
       console.warn(`Failed to clean phase ${phaseId} while deleting ideas: ${error}`);
     }
