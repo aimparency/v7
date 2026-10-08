@@ -7,6 +7,10 @@
 //   npm run check                      everything
 //   npm run check -- test              only tests (or: typecheck, unused)
 //   npm run check -- backend frontend  only these workspaces (combinable)
+//
+// Parallelism follows free memory as well as cores, since the dev stack usually
+// runs alongside: CHECK_CONCURRENCY overrides the job count, VITEST_MAX_WORKERS
+// the workers per vitest job (default 2).
 
 import { spawn } from 'node:child_process';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -59,7 +63,10 @@ function run(task) {
   const started = Date.now();
   return new Promise((resolve) => {
     // CI=1 keeps watch-capable runners (vitest) in run-once mode.
-    const child = spawn('npm', ['run', task.script], { cwd: task.cwd, env: { ...process.env, CI: '1', FORCE_COLOR: '0' } });
+    const child = spawn('npm', ['run', task.script], {
+      cwd: task.cwd,
+      env: { VITEST_MAX_WORKERS: '2', ...process.env, CI: '1', FORCE_COLOR: '0' }
+    });
     let output = '';
     child.stdout.on('data', (chunk) => { output += chunk; });
     child.stderr.on('data', (chunk) => { output += chunk; });
@@ -85,7 +92,14 @@ if (tasks.length === 0) {
   console.error('Nothing to check: no matching workspace scripts.');
   process.exit(1);
 }
-const results = await runAll(tasks, Math.max(2, Math.floor(os.availableParallelism() / 2)));
+// A job (vue-tsc, or vitest with its workers) peaks around 1.5 GB.
+const JOB_MEMORY_BYTES = 1.5 * 1024 ** 3;
+const concurrency = Number(process.env.CHECK_CONCURRENCY) || Math.max(1, Math.min(
+  Math.floor(os.availableParallelism() / 2),
+  Math.floor(os.freemem() / JOB_MEMORY_BYTES)
+));
+console.log(`${tasks.length} tasks, ${concurrency} at a time (${(os.freemem() / 1024 ** 3).toFixed(1)} GB free)`);
+const results = await runAll(tasks, concurrency);
 const failed = results.filter((result) => !result.ok);
 for (const result of failed) {
   console.log(`\n── ${result.label} (npm run ${result.script}) ──\n${result.output.trimEnd().split('\n').slice(-60).join('\n')}`);
