@@ -2,6 +2,7 @@
   "id": "fe8b6496-588c-4439-8a39-056dab245c4f",
   "text": "Graph maintenance tooling",
   "description": "Tooling to keep the idea graph healthy as it accumulates cruft over long autonomous-development runs: duplicates, resolved-but-uncollapsed chains, status drift from the actual code, and vague catch-all parents. The reorganization of subtrees (e.g. the 'UI' catch-all, see 18263fc2) should become a byproduct of this tooling rather than a manual slog. Evidence motivating this: 2a9e3aba and f592b156 are byte-identical duplicates; a05ea545/891e2ee0/855e26a1 are three ideas for one shipped feature; 8ae9e8da/fe0e0aaf/b3f8518f/4e50493a were all already implemented but still marked open.",
+  "reflection": "Status reconciliation on 2026-07-30 found the tooling essentially complete and all direct children done or review. Recurring use of the tools is operation, not unfinished implementation.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -86,6 +87,15 @@
       ],
       "weight": 1,
       "hypothesis": "Uses cancelled and similar ideas as durable graph memory to prevent noise."
+    },
+    {
+      "ideaId": "a785234d-7e30-4bfb-a153-c13b5ba46f80",
+      "relativePosition": [
+        -2.483407173197356,
+        0.2875566241836835
+      ],
+      "weight": 1,
+      "hypothesis": "Prevents a class of committedIn/commitments inconsistencies at the source instead of repairing them afterwards."
     }
   ],
   "supportedIdeas": [
@@ -102,6 +112,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Status reconciliation on 2026-07-30 found the tooling essentially complete and all direct children done or review. Recurring use of the tools is operation, not unfinished implementation."
+  "valueVariance": 0
 }
