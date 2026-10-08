@@ -14,6 +14,7 @@ const OUTER_MARGIN_FACTOR = 2
 const FLOW_FORCE = 0.5
 const GLOBAL_FORCE = 0.14
 const BASE_SEMANTIC_STIFFNESS = 0.75
+const MIN_NODE_RADIUS = 40
 
 type Box = [number, number, number, number]
 
@@ -170,8 +171,9 @@ export function useGraphSimulation() {
     rawNodes.forEach(raw => {
       let existing = nodeMap.get(raw.id)
       const val = raw.value || 0
-      // Area ∝ value; the small floor keeps value-less ideas visible and clickable.
-      const radius = Math.sqrt((val / (avgValue || 1)) + 0.02) * 150
+      // Area ∝ value; the radius floor keeps value-less ideas clickable without
+      // inflating the others.
+      const radius = Math.max(Math.sqrt(val / (avgValue || 1)) * 150, MIN_NODE_RADIUS)
       
       let color: string | undefined = undefined
       if (graphUIStore.graphColorMode === 'priority') {
