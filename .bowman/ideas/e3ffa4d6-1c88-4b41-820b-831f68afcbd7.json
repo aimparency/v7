@@ -29,7 +29,7 @@
         0.7613566286125549
       ],
       "weight": 1,
-      "explanation": "Prevents the backend from deleting the validated audit that session startup can now restore."
+      "hypothesis": "Prevents the backend from deleting the validated audit that session startup can now restore."
     }
   ],
   "supportedIdeas": [

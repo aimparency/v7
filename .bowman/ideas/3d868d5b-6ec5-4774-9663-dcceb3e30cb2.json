@@ -110,7 +110,7 @@
         -1.60016078852884
       ],
       "weight": 1.0434782608695652,
-      "explanation": "i sometimes feel the urge to say something like \"work directly on main\" - throughout the project. And need a place to configure this. maybe even a separate file next to the meta.json. something that get's posted when a new worker session starts. Same for the watchdog session maybe? There is already a prompt there, i think"
+      "hypothesis": "i sometimes feel the urge to say something like \"work directly on main\" - throughout the project. And need a place to configure this. maybe even a separate file next to the meta.json. something that get's posted when a new worker session starts. Same for the watchdog session maybe? There is already a prompt there, i think"
     },
     {
       "ideaId": "2d0ab64b-228e-49d2-80fc-2e43e6c5a893",
@@ -143,7 +143,7 @@
         2.4842871736933763
       ],
       "weight": 1,
-      "explanation": "Moonshot engine makes human intent the strategic layer for increasingly capable AI."
+      "hypothesis": "Moonshot engine makes human intent the strategic layer for increasingly capable AI."
     },
     {
       "ideaId": "99134ce5-3c20-4c7d-ad1d-c462a5db4b41",
@@ -160,16 +160,16 @@
         -2.4617195281764914
       ],
       "weight": 1,
-      "explanation": "Tests whether human authority survives adversarial and ambiguous operating conditions."
+      "hypothesis": "Tests whether human authority survives adversarial and ambiguous operating conditions."
     },
     {
       "ideaId": "1733c488-68b0-47cc-8439-c8c5c0476a87",
       "relativePosition": [
-        1.995361070769566,
-        1.5061653950537206
+        -6.334546490904315,
+        0.8225346729056211
       ],
       "weight": 1,
-      "explanation": "Makes human authority explicit and machine-enforceable in cooperative execution."
+      "hypothesis": "Makes human authority explicit and machine-enforceable in cooperative execution."
     },
     {
       "ideaId": "fc891a0b-8aaa-4cf2-9e8c-fc43dd315910",
@@ -178,7 +178,7 @@
         1.6809522863186546
       ],
       "weight": 0.8,
-      "explanation": "Improves the inspectable human side of the cooperation boundary."
+      "hypothesis": "Improves the inspectable human side of the cooperation boundary."
     },
     {
       "ideaId": "0f307c81-d707-43f0-97ed-af7613e03801",
@@ -187,7 +187,7 @@
         1.2283462412173005
       ],
       "weight": 0.7,
-      "explanation": "Keeps human control local or explicitly exposed by the operator."
+      "hypothesis": "Keeps human control local or explicitly exposed by the operator."
     },
     {
       "ideaId": "c59fe055-757e-4084-8326-4ad61ffc6d5f",
@@ -196,7 +196,7 @@
         2.0040010151562266
       ],
       "weight": 0.8,
-      "explanation": "Improves reproducible human-governed autonomous cooperation in any Aimparency repository."
+      "hypothesis": "Improves reproducible human-governed autonomous cooperation in any Aimparency repository."
     }
   ],
   "supportedIdeas": [

@@ -29,7 +29,7 @@
         -2.0191561479826796
       ],
       "weight": 1,
-      "explanation": "Gives the human a visible explanation when the supervisor requests authorization."
+      "hypothesis": "Gives the human a visible explanation when the supervisor requests authorization."
     }
   ],
   "supportedIdeas": [

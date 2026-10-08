@@ -29,7 +29,7 @@
         0.9397174145137912
       ],
       "weight": 1,
-      "explanation": "Integrates its verified authority decisions into actual disposable execution."
+      "hypothesis": "Integrates its verified authority decisions into actual disposable execution."
     },
     {
       "ideaId": "f3231c4c-0d4b-45d4-a651-d849189c7398",
@@ -38,7 +38,7 @@
         2.4833493868994325
       ],
       "weight": 1,
-      "explanation": "Exercises its deterministic policy decisions at the live adapter boundary."
+      "hypothesis": "Exercises its deterministic policy decisions at the live adapter boundary."
     },
     {
       "ideaId": "0f27a55e-50a6-4e8f-bd3f-781fc53bee89",
@@ -47,7 +47,7 @@
         0.41190569190859005
       ],
       "weight": 1,
-      "explanation": "Executes only after its deterministic policy returns execute."
+      "hypothesis": "Executes only after its deterministic policy returns execute."
     },
     {
       "ideaId": "29da921a-6bd9-423e-92ab-ef052a43892b",
@@ -56,7 +56,7 @@
         -1.2554288067683022
       ],
       "weight": 1,
-      "explanation": "Moves deterministic authority enforcement from evaluation-only code into the real wrapped-agent dispatch path."
+      "hypothesis": "Moves deterministic authority enforcement from evaluation-only code into the real wrapped-agent dispatch path."
     },
     {
       "ideaId": "e9838c4f-9d0f-4e32-8fbd-e61051d4bcee",
@@ -65,7 +65,7 @@
         -2.1124942248193808
       ],
       "weight": 1,
-      "explanation": "Applies the rule that tool/model output is not an authority-bearing instruction."
+      "hypothesis": "Applies the rule that tool/model output is not an authority-bearing instruction."
     }
   ],
   "supportedIdeas": [

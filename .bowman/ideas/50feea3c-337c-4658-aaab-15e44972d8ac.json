@@ -29,7 +29,7 @@
         -0.6160204605846987
       ],
       "weight": 1,
-      "explanation": "Uses the verified v2 isolation and evidence adapter."
+      "hypothesis": "Uses the verified v2 isolation and evidence adapter."
     },
     {
       "ideaId": "37c6c71f-0c5a-4052-95e4-8515e83b6ad8",
@@ -38,7 +38,7 @@
         -0.42488328101091405
       ],
       "weight": 1,
-      "explanation": "Hardens the v2 adapter evidence boundary."
+      "hypothesis": "Hardens the v2 adapter evidence boundary."
     },
     {
       "ideaId": "d629e231-065c-4d02-a8a9-ef05b464f123",
@@ -47,7 +47,7 @@
         2.4984131305024144
       ],
       "weight": 1,
-      "explanation": "Uses the verified isolated multi-file adapter."
+      "hypothesis": "Uses the verified isolated multi-file adapter."
     }
   ],
   "supportedIdeas": [

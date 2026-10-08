@@ -60,7 +60,7 @@
         1.5188129903241931
       ],
       "weight": 0.5,
-      "explanation": "Historical grant attempt belongs under the non-dilutive-funding strategy; its completed negative result is useful evidence but not a current primary path."
+      "hypothesis": "Historical grant attempt belongs under the non-dilutive-funding strategy; its completed negative result is useful evidence but not a current primary path."
     }
   ],
   "supportedIdeas": [

@@ -22,7 +22,7 @@
         0.2503777617381863
       ],
       "weight": 1,
-      "explanation": "Extends lean MCP tool-surface guidance from generic autonomy to graph-first planning."
+      "hypothesis": "Extends lean MCP tool-surface guidance from generic autonomy to graph-first planning."
     },
     {
       "ideaId": "8e8d8f7a-375d-46b8-8f03-192527b59106",
@@ -31,7 +31,7 @@
         2.206557516206149
       ],
       "weight": 1,
-      "explanation": "Makes deduplication and prior graph decisions unavoidable at idea creation time."
+      "hypothesis": "Makes deduplication and prior graph decisions unavoidable at idea creation time."
     },
     {
       "ideaId": "6f9bef89-69cb-4354-9f6c-98e93156c445",

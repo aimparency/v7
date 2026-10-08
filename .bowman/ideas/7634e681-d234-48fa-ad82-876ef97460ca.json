@@ -71,7 +71,7 @@
         -2.460348834633602
       ],
       "weight": 1,
-      "explanation": "Tests whether Aimparency's graph and wrapped-agent loop create measurable capability gains."
+      "hypothesis": "Tests whether Aimparency's graph and wrapped-agent loop create measurable capability gains."
     },
     {
       "ideaId": "13d74766-60e4-4c0d-9cb4-810b93f985f9",
@@ -80,7 +80,7 @@
         1.9187606682344645
       ],
       "weight": 1,
-      "explanation": "Turns self-improvement from a feature claim into repeated measured capability gains."
+      "hypothesis": "Turns self-improvement from a feature claim into repeated measured capability gains."
     },
     {
       "ideaId": "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
@@ -89,7 +89,7 @@
         2.499972238606519
       ],
       "weight": 1,
-      "explanation": "Produces stricter evidence about graph-grounded autonomous software delivery."
+      "hypothesis": "Produces stricter evidence about graph-grounded autonomous software delivery."
     },
     {
       "ideaId": "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
@@ -98,7 +98,7 @@
         -0.28029852424384893
       ],
       "weight": 1,
-      "explanation": "Produces controlled capability and efficiency evidence for autonomous software delivery."
+      "hypothesis": "Produces controlled capability and efficiency evidence for autonomous software delivery."
     },
     {
       "ideaId": "d629e231-065c-4d02-a8a9-ef05b464f123",
@@ -107,7 +107,7 @@
         -0.10048688339709384
       ],
       "weight": 1,
-      "explanation": "Provides controlled evidence about graph-grounded autonomous execution."
+      "hypothesis": "Provides controlled evidence about graph-grounded autonomous execution."
     }
   ],
   "supportedIdeas": [

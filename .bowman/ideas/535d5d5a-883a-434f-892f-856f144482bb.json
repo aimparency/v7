@@ -21,6 +21,33 @@
         -1.0623759161505575
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "6e1b0b0e-b51a-4cfe-a9f3-5e4d85b457d5",
+      "relativePosition": [
+        1.2087771379852499,
+        -2.1883459120267497
+      ],
+      "weight": 1,
+      "hypothesis": "Makes the value model's depth bias a deliberate, readable parameter instead of a side effect of normalization."
+    },
+    {
+      "ideaId": "bb8150a8-2439-4d1a-a2ae-ec8620eb2ceb",
+      "relativePosition": [
+        2.46096367877116,
+        0.4400656448407656
+      ],
+      "weight": 1,
+      "hypothesis": "Gives self weight the meaning it is meant to have, without inflating ideas that keep a share."
+    },
+    {
+      "ideaId": "0b3a90cb-cf0a-488e-843a-c0683ac2ad89",
+      "relativePosition": [
+        1.360332818985242,
+        -2.0974972280295545
+      ],
+      "weight": 1,
+      "hypothesis": "A name that says what the weight means makes the value model easier to reason about."
     }
   ],
   "supportedIdeas": [

@@ -2,11 +2,22 @@
   "id": "2e7239eb-cef5-4254-a7b9-74626195abd4",
   "text": "assign colors similar (but slightly different) to parent per default.",
   "description": "no parent => grey color \n\nslightly different means => when creating more and more sub children the trees further from the root will have similar but distinct colors from the root node. \n\nuse hsv based colors to look good with white fg text",
+  "reflection": "Added centralized HSV color derivation in backend/src/idea-color.ts. Explicit creation colors win; roots default to neutral #666666; children derive deterministic dark, white-text-safe hue variations from their first parent's custom color, with sibling index producing distinct defaults. Applied across floating, sub-idea, and phase creation routes. Added unit and route-level tests. Verification: backend test subset passes 22/22, backend TypeScript build passes, git diff --check passes.",
   "reflections": [],
   "archived": false,
   "color": null,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "91c5737b-8069-4aac-b3d8-1efb6eeed9ea",
+      "relativePosition": [
+        2.499524277928706,
+        0.04876867893414925
+      ],
+      "weight": 1,
+      "hypothesis": "Extends parent-derived colors from newly created ideas to the existing graph."
+    }
+  ],
   "supportedIdeas": [
     "9fa43c99-d00c-4b4a-883e-5410cbe689dd"
   ],
@@ -23,6 +34,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Added centralized HSV color derivation in backend/src/idea-color.ts. Explicit creation colors win; roots default to neutral #666666; children derive deterministic dark, white-text-safe hue variations from their first parent's custom color, with sibling index producing distinct defaults. Applied across floating, sub-idea, and phase creation routes. Added unit and route-level tests. Verification: backend test subset passes 22/22, backend TypeScript build passes, git diff --check passes."
+  "valueVariance": 0
 }

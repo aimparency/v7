@@ -29,7 +29,7 @@
         1.2360527168250455
       ],
       "weight": 1,
-      "explanation": "First warm operator conversation."
+      "hypothesis": "First warm operator conversation."
     },
     {
       "ideaId": "493d4f17-9781-4dff-a32c-2916e298f0bb",
@@ -38,7 +38,7 @@
         2.1368540882898364
       ],
       "weight": 1,
-      "explanation": "Second warm operator conversation."
+      "hypothesis": "Second warm operator conversation."
     },
     {
       "ideaId": "bc43297c-ca7c-4861-9111-d79ba6f95851",
@@ -47,7 +47,7 @@
         2.4922230040615654
       ],
       "weight": 1,
-      "explanation": "Provides the first operator-validation case and disconfirming evidence."
+      "hypothesis": "Provides the first operator-validation case and disconfirming evidence."
     }
   ],
   "supportedIdeas": [

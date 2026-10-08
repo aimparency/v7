@@ -1,0 +1,25 @@
+{
+  "id": "60e39167-f69d-47ee-9c8c-6cd3bb525dc0",
+  "text": "Minimum node radius for value-less ideas instead of a size constant",
+  "description": "Node radius = 150·√(value/avg + 0.02); the constant was lowered from 0.1 so areas stay close to value. Side effect: zero-value ideas have radius 21 (≈15% of average) and are harder to click or drop connections on. A floor on the radius would only affect tiny ideas, while the constant changes every size.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1791450720795
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

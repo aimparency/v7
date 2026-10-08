@@ -34,7 +34,7 @@
         1.2231705333868712
       ],
       "weight": 1,
-      "explanation": "Finds and qualifies the first real paid pilot."
+      "hypothesis": "Finds and qualifies the first real paid pilot."
     },
     {
       "ideaId": "bc43297c-ca7c-4861-9111-d79ba6f95851",
@@ -43,7 +43,7 @@
         2.498332252790953
       ],
       "weight": 1,
-      "explanation": "Selects the bounded workflow for the first paid transformation pilot."
+      "hypothesis": "Selects the bounded workflow for the first paid transformation pilot."
     },
     {
       "ideaId": "5bd2c07e-babe-479e-a68d-ae3cfafe32ab",

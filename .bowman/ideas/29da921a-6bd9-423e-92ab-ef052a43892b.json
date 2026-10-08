@@ -29,7 +29,7 @@
         0.25618618281617017
       ],
       "weight": 1,
-      "explanation": "Closes the remaining payload injection channel inside allowlisted production dispatch actions."
+      "hypothesis": "Closes the remaining payload injection channel inside allowlisted production dispatch actions."
     },
     {
       "ideaId": "a9fd2cb1-33a9-4b23-8da8-be13607df281",
@@ -38,7 +38,7 @@
         0.9212221693085465
       ],
       "weight": 1,
-      "explanation": "Makes production dispatch enforcement inspectable with its machine-readable decisions."
+      "hypothesis": "Makes production dispatch enforcement inspectable with its machine-readable decisions."
     },
     {
       "ideaId": "5e981ca1-9a74-4c23-ab2a-fbc29a4f0d50",
@@ -47,7 +47,7 @@
         -1.0874081112317175
       ],
       "weight": 1,
-      "explanation": "Aligns the stochastic supervisor contract with its enforced terminal-input escalation behavior."
+      "hypothesis": "Aligns the stochastic supervisor contract with its enforced terminal-input escalation behavior."
     },
     {
       "ideaId": "a2cf7c9b-a0cb-4e51-9132-5ead864f6a02",
@@ -56,7 +56,7 @@
         -2.4425791518879825
       ],
       "weight": 1,
-      "explanation": "Closes a lower-level capability bypass that could evade the supervisor dispatch boundary."
+      "hypothesis": "Closes a lower-level capability bypass that could evade the supervisor dispatch boundary."
     },
     {
       "ideaId": "0f307c81-d707-43f0-97ed-af7613e03801",
@@ -65,7 +65,7 @@
         1.7400820711006462
       ],
       "weight": 1,
-      "explanation": "Protects the direct socket path that otherwise bypasses supervisor dispatch authorization."
+      "hypothesis": "Protects the direct socket path that otherwise bypasses supervisor dispatch authorization."
     },
     {
       "ideaId": "e10e8e8f-f6ff-476f-b2a4-cd47001aeb01",
@@ -74,7 +74,7 @@
         1.4425258475893612
       ],
       "weight": 0.8,
-      "explanation": "Applies last-pre-effect authorization principles to human control socket inputs."
+      "hypothesis": "Applies last-pre-effect authorization principles to human control socket inputs."
     }
   ],
   "supportedIdeas": [

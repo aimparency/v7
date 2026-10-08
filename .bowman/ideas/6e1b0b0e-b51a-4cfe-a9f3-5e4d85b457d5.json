@@ -1,0 +1,25 @@
+{
+  "id": "6e1b0b0e-b51a-4cfe-a9f3-5e4d85b457d5",
+  "text": "Make the per-hop discount of value flow explicit and tunable",
+  "description": "Pouring 100% intrinsic each step and normalizing makes value = ½·intrinsic + ½·(passed on): an implicit 50% discount per hop (chain of 5 gives 0.5/0.25/0.125/0.063/0.063; splitting an idea into sub-ideas halves their value). It is also what keeps closed cycles finite. Proposal: same loop, but pour (1−d)·intrinsic and pass d·value, no normalization needed; d = 0.5 reproduces today exactly. A named constant (e.g. 0.8–0.9) keeps cycle support with a much milder depth bias. Later d could become a per-connection confidence derived from the hypothesis evaluation.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "535d5d5a-883a-434f-892f-856f144482bb"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1791450718310
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

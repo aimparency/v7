@@ -70,7 +70,7 @@
         -2.152128531464167
       ],
       "weight": 1,
-      "explanation": "graph maintenance: reparented floating idea by semantic similarity"
+      "hypothesis": "graph maintenance: reparented floating idea by semantic similarity"
     },
     {
       "ideaId": "607f6b45-2a65-4702-8b47-d83e967ed4c8",
@@ -87,7 +87,7 @@
         -1.074446555179562
       ],
       "weight": 1,
-      "explanation": "Phase reordering across parent boundaries is part of the ordered hierarchical phase navigation refactor."
+      "hypothesis": "Phase reordering across parent boundaries is part of the ordered hierarchical phase navigation refactor."
     },
     {
       "ideaId": "4e50493a-94ca-4bb7-aefb-c78ed3107f62",
@@ -96,7 +96,7 @@
         -1.449601728653813
       ],
       "weight": 1,
-      "explanation": "Idea movement across parent-owned phase ranges depends on the ordered hierarchical phase model."
+      "hypothesis": "Idea movement across parent-owned phase ranges depends on the ordered hierarchical phase model."
     },
     {
       "ideaId": "e33ca34b-b3d4-4b98-bcad-0c0aaf8db644",
@@ -105,7 +105,7 @@
         -2.4594522773416085
       ],
       "weight": 1,
-      "explanation": "Empty-phase traversal implements navigation across the ordered phase sequence."
+      "hypothesis": "Empty-phase traversal implements navigation across the ordered phase sequence."
     },
     {
       "ideaId": "e266c632-dc74-4c44-8cf6-c184378cdc68",
@@ -114,7 +114,7 @@
         2.2728958083471977
       ],
       "weight": 1,
-      "explanation": "Moving focus into the next phase implements traversal across the ordered phase sequence."
+      "hypothesis": "Moving focus into the next phase implements traversal across the ordered phase sequence."
     },
     {
       "ideaId": "1ec81038-54e4-406e-8851-d47c8a4799f1",
@@ -123,7 +123,7 @@
         -1.2460584652208275
       ],
       "weight": 1,
-      "explanation": "Moving ideas across phases implements cross-boundary behavior in the ordered phase hierarchy."
+      "hypothesis": "Moving ideas across phases implements cross-boundary behavior in the ordered phase hierarchy."
     },
     {
       "ideaId": "7a1c2e24-4a04-4962-b34d-cab94db1b590",
@@ -132,7 +132,7 @@
         -0.005646865571339337
       ],
       "weight": 1,
-      "explanation": "Reusable parent-phase selection supports editing the hierarchical phase structure."
+      "hypothesis": "Reusable parent-phase selection supports editing the hierarchical phase structure."
     },
     {
       "ideaId": "75d48504-226a-4316-a395-e3f0a1aa87d4",
@@ -141,7 +141,7 @@
         -0.45416161153787116
       ],
       "weight": 1,
-      "explanation": "Fuzzy phase lookup supports selecting nodes in the hierarchical phase structure."
+      "hypothesis": "Fuzzy phase lookup supports selecting nodes in the hierarchical phase structure."
     },
     {
       "ideaId": "171748db-95ff-4dba-b32a-1c72c25fd48f",
@@ -150,7 +150,7 @@
         2.3341833881266147
       ],
       "weight": 1,
-      "explanation": "Fixes a loading correctness bug in the concatenated child-phase columns introduced by the phase-system refactor."
+      "hypothesis": "Fixes a loading correctness bug in the concatenated child-phase columns introduced by the phase-system refactor."
     },
     {
       "ideaId": "10b68653-57be-4cdd-a41b-1a4bf405a6da",
@@ -159,7 +159,7 @@
         1.228126261197415
       ],
       "weight": 1,
-      "explanation": "Simplifies the phase-column navigation model built by the phase-system refactor."
+      "hypothesis": "Simplifies the phase-column navigation model built by the phase-system refactor."
     }
   ],
   "supportedIdeas": [

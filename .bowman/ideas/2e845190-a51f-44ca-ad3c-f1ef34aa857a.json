@@ -14,7 +14,7 @@
         -2.191970910800352
       ],
       "weight": 1,
-      "explanation": ""
+      "hypothesis": ""
     },
     {
       "ideaId": "db5d5014-30b7-4362-b84f-57983f38fc8b",
@@ -23,7 +23,7 @@
         -2.4676164909359604
       ],
       "weight": 1,
-      "explanation": "Vim-style l/h/Escape list traversal is keyboard navigation behavior."
+      "hypothesis": "Vim-style l/h/Escape list traversal is keyboard navigation behavior."
     },
     {
       "ideaId": "f50a5919-91f5-4ce7-a0db-ff4919a8893a",
@@ -32,7 +32,7 @@
         -1.4449548481163774
       ],
       "weight": 1,
-      "explanation": "Cross-phase j/k focus traversal is keyboard navigation behavior."
+      "hypothesis": "Cross-phase j/k focus traversal is keyboard navigation behavior."
     },
     {
       "ideaId": "03e895c0-7f2e-4fb5-a427-078a235c3b7f",
@@ -41,7 +41,7 @@
         -2.4998258050852646
       ],
       "weight": 1,
-      "explanation": "Boundary j/k scrolling is keyboard navigation behavior."
+      "hypothesis": "Boundary j/k scrolling is keyboard navigation behavior."
     },
     {
       "ideaId": "2e6e9dee-98f5-4a0e-afbb-4bb6a5ade583",
@@ -50,7 +50,7 @@
         -2.4313720290765226
       ],
       "weight": 1,
-      "explanation": "Suppressing global shortcuts inside text input is keyboard shortcut scoping."
+      "hypothesis": "Suppressing global shortcuts inside text input is keyboard shortcut scoping."
     },
     {
       "ideaId": "033c340d-0c82-4f37-9a0a-987d80b89108",
@@ -59,7 +59,7 @@
         -2.487804729447787
       ],
       "weight": 1,
-      "explanation": "Project and numeric navigation keys are explicit keyboard shortcuts."
+      "hypothesis": "Project and numeric navigation keys are explicit keyboard shortcuts."
     },
     {
       "ideaId": "2a9e3aba-e9a5-4238-bd34-ef2d3384b41e",
@@ -68,7 +68,7 @@
         -0.5758611672966397
       ],
       "weight": 1,
-      "explanation": "Escape ownership and propagation are modal keyboard shortcut behavior."
+      "hypothesis": "Escape ownership and propagation are modal keyboard shortcut behavior."
     }
   ],
   "supportedIdeas": [

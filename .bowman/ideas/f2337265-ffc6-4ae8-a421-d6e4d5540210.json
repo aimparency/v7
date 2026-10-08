@@ -250,7 +250,7 @@
         2.0275148857259384
       ],
       "weight": 1,
-      "explanation": "Idea/phase modal keyboard flow belongs to the list-view interaction surface."
+      "hypothesis": "Idea/phase modal keyboard flow belongs to the list-view interaction surface."
     },
     {
       "ideaId": "b3d98c5b-8ba0-4910-9745-d778795e9c51",
@@ -259,7 +259,7 @@
         -2.1424432134560742
       ],
       "weight": 1,
-      "explanation": "Bulk idea actions are part of list selection and manipulation."
+      "hypothesis": "Bulk idea actions are part of list selection and manipulation."
     },
     {
       "ideaId": "2e845190-a51f-44ca-ad3c-f1ef34aa857a",
@@ -268,7 +268,7 @@
         1.4677334635200567
       ],
       "weight": 1,
-      "explanation": "Keyboard shortcuts primarily structure list-view navigation and action."
+      "hypothesis": "Keyboard shortcuts primarily structure list-view navigation and action."
     },
     {
       "ideaId": "c9536d91-3bed-427a-b14a-60b67c68cf8c",
@@ -277,7 +277,7 @@
         -1.801358909434774
       ],
       "weight": 1,
-      "explanation": "Grouped under the structural list/modal interaction area."
+      "hypothesis": "Grouped under the structural list/modal interaction area."
     },
     {
       "ideaId": "f5ea4b4f-f777-4b03-a9bb-c94538edd78c",
@@ -286,7 +286,7 @@
         1.3166364704976186
       ],
       "weight": 1,
-      "explanation": "Grouped under the structural list/modal interaction area."
+      "hypothesis": "Grouped under the structural list/modal interaction area."
     },
     {
       "ideaId": "c63419f1-5d5f-4320-93fb-f12d01940037",
@@ -295,7 +295,7 @@
         -0.7187199853705656
       ],
       "weight": 1,
-      "explanation": "Grouped under the structural list/modal interaction area."
+      "hypothesis": "Grouped under the structural list/modal interaction area."
     },
     {
       "ideaId": "2181d80e-795a-4160-8377-77ddafb47fc4",
@@ -304,7 +304,7 @@
         -2.4996792163580897
       ],
       "weight": 1,
-      "explanation": "Grouped under the structural list/modal interaction area."
+      "hypothesis": "Grouped under the structural list/modal interaction area."
     },
     {
       "ideaId": "b161d820-38d7-407a-8596-1b0c6c9ef1d3",
@@ -313,7 +313,7 @@
         -0.37862087986897364
       ],
       "weight": 1,
-      "explanation": "Grouped under the structural list/modal interaction area."
+      "hypothesis": "Grouped under the structural list/modal interaction area."
     },
     {
       "ideaId": "155226ac-22fa-4c39-95dc-e34183b84347",
@@ -322,7 +322,7 @@
         1.9455645889123376
       ],
       "weight": 1,
-      "explanation": "Grouped under the structural list/modal interaction area."
+      "hypothesis": "Grouped under the structural list/modal interaction area."
     },
     {
       "ideaId": "1e554f38-33ae-42d4-88e6-4a4b071a20d0",
@@ -331,7 +331,7 @@
         0.03193457119407375
       ],
       "weight": 1,
-      "explanation": "Connection creation behavior is also used by list sub-idea creation."
+      "hypothesis": "Connection creation behavior is also used by list sub-idea creation."
     },
     {
       "ideaId": "abe82e32-65d3-4d08-b78d-2942431b2105",
@@ -340,7 +340,7 @@
         -1.026640904703878
       ],
       "weight": 1,
-      "explanation": "Grouped under the structural list/modal interaction area."
+      "hypothesis": "Grouped under the structural list/modal interaction area."
     },
     {
       "ideaId": "eb645cb0-b894-4f85-b9bd-0c4a2ac2757b",

@@ -14,7 +14,7 @@
         -1.2436419629236843
       ],
       "weight": 1,
-      "explanation": ""
+      "hypothesis": ""
     },
     {
       "ideaId": "892b30ca-b7da-49c2-afd7-b3d18109811f",
@@ -23,7 +23,7 @@
         1.3526115211315501
       ],
       "weight": 0.9850746268656718,
-      "explanation": ""
+      "hypothesis": ""
     }
   ],
   "supportedIdeas": [

@@ -28,7 +28,7 @@
         -1.1569516336156735
       ],
       "weight": 1,
-      "explanation": "Validates and uses the isolated authoritative adapter."
+      "hypothesis": "Validates and uses the isolated authoritative adapter."
     },
     {
       "ideaId": "50feea3c-337c-4658-aaab-15e44972d8ac",
@@ -37,7 +37,7 @@
         2.094392160751984
       ],
       "weight": 1,
-      "explanation": "Reuses the verified least-authority launcher and authoritative telemetry design."
+      "hypothesis": "Reuses the verified least-authority launcher and authoritative telemetry design."
     },
     {
       "ideaId": "37c6c71f-0c5a-4052-95e4-8515e83b6ad8",
@@ -46,7 +46,7 @@
         -1.3749409708790794
       ],
       "weight": 1,
-      "explanation": "Keeps v1 and v2 budget diagnostics consistent."
+      "hypothesis": "Keeps v1 and v2 budget diagnostics consistent."
     }
   ],
   "supportedIdeas": [

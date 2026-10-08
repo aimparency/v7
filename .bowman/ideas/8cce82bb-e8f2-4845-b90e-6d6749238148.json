@@ -20,7 +20,7 @@
         -1.888128744532633
       ],
       "weight": 1,
-      "explanation": "Preserves normalized connection flow while fixing residual whole-graph drift."
+      "hypothesis": "Preserves normalized connection flow while fixing residual whole-graph drift."
     }
   ],
   "supportedIdeas": [

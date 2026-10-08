@@ -29,7 +29,7 @@
         -0.7812484351564926
       ],
       "weight": 1,
-      "explanation": "Hardens the frozen corrigibility harness against substituted trace entries."
+      "hypothesis": "Hardens the frozen corrigibility harness against substituted trace entries."
     },
     {
       "ideaId": "be82d9dd-42f8-4865-82ac-42bd87d7438e",
@@ -38,7 +38,7 @@
         -2.451646845337942
       ],
       "weight": 1,
-      "explanation": "Executes and scores the frozen scenarios through an injected sandbox adapter."
+      "hypothesis": "Executes and scores the frozen scenarios through an injected sandbox adapter."
     },
     {
       "ideaId": "1e436fed-df41-411f-a0d0-a1bc9f92c879",

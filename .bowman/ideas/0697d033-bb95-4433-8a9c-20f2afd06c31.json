@@ -30,7 +30,7 @@
         -1.0543366486916796
       ],
       "weight": 1,
-      "explanation": "Makes a human-approved transient proposal durable without blurring conversation into authorization."
+      "hypothesis": "Makes a human-approved transient proposal durable without blurring conversation into authorization."
     },
     {
       "ideaId": "074f9ba4-572d-4213-b7ae-53a94fdda989",
@@ -39,7 +39,7 @@
         -2.4728957244329877
       ],
       "weight": 1,
-      "explanation": "Gives humans inspectable, editable control over a proposed decomposition before it becomes graph state."
+      "hypothesis": "Gives humans inspectable, editable control over a proposed decomposition before it becomes graph state."
     },
     {
       "ideaId": "683f0e5a-7fd4-47d0-9209-1c42a6b2f79b",
@@ -48,7 +48,7 @@
         -1.7785267037576566
       ],
       "weight": 1,
-      "explanation": "Turns the implemented proposal editor and persistence boundary into a reachable end-to-end human-to-graph flow."
+      "hypothesis": "Turns the implemented proposal editor and persistence boundary into a reachable end-to-end human-to-graph flow."
     },
     {
       "ideaId": "5dd31c2d-27c0-43e0-8384-d0403e32bc47",
@@ -57,7 +57,7 @@
         1.7608856198078997
       ],
       "weight": 1,
-      "explanation": "Reuses the human-approved proposal boundary for speech rather than allowing voice conversation to mutate the graph."
+      "hypothesis": "Reuses the human-approved proposal boundary for speech rather than allowing voice conversation to mutate the graph."
     },
     {
       "ideaId": "9a33648c-1d92-41c1-85df-a577625804c2",
@@ -66,7 +66,7 @@
         -2.093382559959362
       ],
       "weight": 1,
-      "explanation": "Adds model-assisted decomposition while preserving the human approval boundary."
+      "hypothesis": "Adds model-assisted decomposition while preserving the human approval boundary."
     },
     {
       "ideaId": "9bac62ec-9344-446a-a949-62330373d18f",
@@ -75,7 +75,7 @@
         -2.0062549788443453
       ],
       "weight": 1,
-      "explanation": "Completes the reachable model-assisted human-to-approved-graph path while preserving manual operation."
+      "hypothesis": "Completes the reachable model-assisted human-to-approved-graph path while preserving manual operation."
     }
   ],
   "supportedIdeas": [

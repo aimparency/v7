@@ -13,6 +13,15 @@
         3.734436958871222
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "22f996dd-9601-4e42-ae67-ed6d2c4df790",
+      "relativePosition": [
+        -2.475545226634369,
+        0.34882062852960916
+      ],
+      "weight": 1,
+      "hypothesis": "Shows how an idea's value splits between its parents at a glance."
     }
   ],
   "supportedIdeas": [

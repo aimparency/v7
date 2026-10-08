@@ -29,7 +29,7 @@
         0.06957756404708045
       ],
       "weight": 1,
-      "explanation": "graph maintenance: reparented floating idea by semantic similarity"
+      "hypothesis": "graph maintenance: reparented floating idea by semantic similarity"
     },
     {
       "ideaId": "2e7239eb-cef5-4254-a7b9-74626195abd4",
@@ -46,7 +46,7 @@
         2.416239396149521
       ],
       "weight": 1,
-      "explanation": "Priority-derived graph coloring is a concrete idea-color behavior."
+      "hypothesis": "Priority-derived graph coloring is a concrete idea-color behavior."
     }
   ],
   "supportedIdeas": [

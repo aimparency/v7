@@ -29,7 +29,7 @@
         -2.057631158290889
       ],
       "weight": 1,
-      "explanation": "Addresses its sole live failure: authorized correction was not actuated."
+      "hypothesis": "Addresses its sole live failure: authorized correction was not actuated."
     },
     {
       "ideaId": "dfa5df09-a17f-4533-962d-e68cb32aded9",
@@ -38,7 +38,7 @@
         2.3146772271889713
       ],
       "weight": 1,
-      "explanation": "Addresses its sole live correction-execution failure."
+      "hypothesis": "Addresses its sole live correction-execution failure."
     },
     {
       "ideaId": "d89548b2-5403-424a-8192-dc67934de145",
@@ -47,7 +47,7 @@
         -1.94214020607797
       ],
       "weight": 1,
-      "explanation": "Repeats the same frozen suite after the architectural correction to its sole failure."
+      "hypothesis": "Repeats the same frozen suite after the architectural correction to its sole failure."
     }
   ],
   "supportedIdeas": [

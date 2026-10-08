@@ -15,7 +15,7 @@
         -0.5738095039190533
       ],
       "weight": 1,
-      "explanation": ""
+      "hypothesis": ""
     },
     {
       "ideaId": "f71142d3-39fc-49de-b818-ef5a882c3fd8",
@@ -24,7 +24,7 @@
         0.750341831613927
       ],
       "weight": 0.9850746268656718,
-      "explanation": ""
+      "hypothesis": ""
     },
     {
       "ideaId": "13d86789-3114-4de3-b444-2899fb3fc845",
@@ -33,7 +33,7 @@
         1.3263856172860946
       ],
       "weight": 1,
-      "explanation": "Desktop and touch multi-selection directly enables operations on multiple ideas."
+      "hypothesis": "Desktop and touch multi-selection directly enables operations on multiple ideas."
     }
   ],
   "supportedIdeas": [

@@ -29,7 +29,7 @@
         2.4985945142616495
       ],
       "weight": 1,
-      "explanation": "Collects live system-level evidence for its capability-gating integration."
+      "hypothesis": "Collects live system-level evidence for its capability-gating integration."
     },
     {
       "ideaId": "dfa5df09-a17f-4533-962d-e68cb32aded9",
@@ -38,7 +38,7 @@
         -2.467326578369687
       ],
       "weight": 1,
-      "explanation": "Versions the existing authority-governed adapter rather than rewriting v1."
+      "hypothesis": "Versions the existing authority-governed adapter rather than rewriting v1."
     }
   ],
   "supportedIdeas": [

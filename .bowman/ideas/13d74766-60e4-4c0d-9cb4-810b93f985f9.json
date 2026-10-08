@@ -21,7 +21,7 @@
         -0.3936328246248081
       ],
       "weight": 1,
-      "explanation": "Provides the first measured diagnose-change-regression cycle."
+      "hypothesis": "Provides the first measured diagnose-change-regression cycle."
     },
     {
       "ideaId": "88135653-1ca4-4f15-bdc7-15266cf3a523",
@@ -30,7 +30,7 @@
         -0.058335310127022096
       ],
       "weight": 1,
-      "explanation": "Provides the second measured diagnose-change-regression cycle."
+      "hypothesis": "Provides the second measured diagnose-change-regression cycle."
     },
     {
       "ideaId": "6ed472d3-9211-46b6-a613-efb199b77b97",
@@ -39,7 +39,7 @@
         0.8456720772123814
       ],
       "weight": 1,
-      "explanation": "Provides the third measured cycle and is explicitly generated from the first cycle's recorded reflection."
+      "hypothesis": "Provides the third measured cycle and is explicitly generated from the first cycle's recorded reflection."
     },
     {
       "ideaId": "b7cfdee0-4ce0-4f54-a8f0-9322c0f96c41",
@@ -48,7 +48,7 @@
         -1.501735205632232
       ],
       "weight": 1,
-      "explanation": "Adds another measured recursive self-improvement cycle."
+      "hypothesis": "Adds another measured recursive self-improvement cycle."
     }
   ],
   "supportedIdeas": [

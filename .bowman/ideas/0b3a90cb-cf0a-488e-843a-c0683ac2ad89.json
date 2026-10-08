@@ -1,0 +1,25 @@
+{
+  "id": "0b3a90cb-cf0a-488e-843a-c0683ac2ad89",
+  "text": "Rename loopWeight to selfWeight",
+  "description": "\"Self weight\" describes the intended meaning (share an idea delivers through its own work). Stored field → needs a data model migration (BOWMAN_MIGRATIONS, bump CURRENT_DATA_MODEL_VERSION, frozen fixture), plus UI labels, MCP tools and the connection-% math. Best done after the value-model decision on how self weight is applied.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "535d5d5a-883a-434f-892f-856f144482bb"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1791450719999
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

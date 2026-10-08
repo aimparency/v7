@@ -29,7 +29,7 @@
         2.2945552489834777
       ],
       "weight": 1,
-      "explanation": "Pre-registers and analyzes the controlled comparison required by the parent hypothesis."
+      "hypothesis": "Pre-registers and analyzes the controlled comparison required by the parent hypothesis."
     },
     {
       "ideaId": "8b0fa07c-d4f7-48d9-bc57-8e18c58d90d0",
@@ -38,7 +38,7 @@
         -2.4476629354486232
       ],
       "weight": 1,
-      "explanation": "Enables collection of controlled paired empirical evidence."
+      "hypothesis": "Enables collection of controlled paired empirical evidence."
     },
     {
       "ideaId": "02e512d5-f6e9-4fc6-91f9-61a4a8118d8b",
@@ -55,7 +55,7 @@
         -1.5554461983570893
       ],
       "weight": 1,
-      "explanation": "Supplies the missing empirical evidence for the graph-grounding hypothesis."
+      "hypothesis": "Supplies the missing empirical evidence for the graph-grounding hypothesis."
     },
     {
       "ideaId": "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
@@ -64,7 +64,7 @@
         2.121365374461077
       ],
       "weight": 1,
-      "explanation": "Builds on the valid null v1 experiment and its observed ceiling effect."
+      "hypothesis": "Builds on the valid null v1 experiment and its observed ceiling effect."
     }
   ],
   "supportedIdeas": [

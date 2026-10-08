@@ -37,7 +37,7 @@
         -2.4553551319535294
       ],
       "weight": 1,
-      "explanation": "Adds event-level fail-closed validation inside the newly restricted network boundary."
+      "hypothesis": "Adds event-level fail-closed validation inside the newly restricted network boundary."
     },
     {
       "ideaId": "ae9f711b-037a-4fbf-b594-4740c7f72e30",
@@ -46,7 +46,7 @@
         0.5288817186531989
       ],
       "weight": 0.8,
-      "explanation": "Hardens the network control surface against resource-exhaustion floods."
+      "hypothesis": "Hardens the network control surface against resource-exhaustion floods."
     }
   ],
   "supportedIdeas": [

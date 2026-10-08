@@ -30,7 +30,7 @@
         -2.4981597565206206
       ],
       "weight": 1,
-      "explanation": "Improves the benchmark analyzer whose test exposed the limitation."
+      "hypothesis": "Improves the benchmark analyzer whose test exposed the limitation."
     },
     {
       "ideaId": "6ed472d3-9211-46b6-a613-efb199b77b97",
@@ -39,7 +39,7 @@
         1.3973541428776635
       ],
       "weight": 1,
-      "explanation": "Hardens benchmark evidence integrity and budget enforcement."
+      "hypothesis": "Hardens benchmark evidence integrity and budget enforcement."
     },
     {
       "ideaId": "8b0fa07c-d4f7-48d9-bc57-8e18c58d90d0",
@@ -48,7 +48,7 @@
         -2.1131610065125743
       ],
       "weight": 1,
-      "explanation": "Executes the frozen protocol and feeds its analyzer."
+      "hypothesis": "Executes the frozen protocol and feeds its analyzer."
     },
     {
       "ideaId": "b7cfdee0-4ce0-4f54-a8f0-9322c0f96c41",
@@ -57,7 +57,7 @@
         0.6475742599909001
       ],
       "weight": 1,
-      "explanation": "Hardens the frozen autonomy benchmark analyzer."
+      "hypothesis": "Hardens the frozen autonomy benchmark analyzer."
     }
   ],
   "supportedIdeas": [

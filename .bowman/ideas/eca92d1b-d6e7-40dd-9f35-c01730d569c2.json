@@ -24,7 +24,7 @@
         -0.07197100442534263
       ],
       "weight": 0.5,
-      "explanation": "Corrects the older automatic option-selection behavior while retaining input detection."
+      "hypothesis": "Corrects the older automatic option-selection behavior while retaining input detection."
     }
   ],
   "supportedIdeas": [

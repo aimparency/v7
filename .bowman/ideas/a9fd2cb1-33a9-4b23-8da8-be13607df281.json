@@ -29,7 +29,7 @@
         1.9931685078645758
       ],
       "weight": 1,
-      "explanation": "Completes continuity of its runtime audit across process replacement."
+      "hypothesis": "Completes continuity of its runtime audit across process replacement."
     }
   ],
   "supportedIdeas": [

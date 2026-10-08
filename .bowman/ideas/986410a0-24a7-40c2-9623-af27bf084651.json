@@ -29,7 +29,7 @@
         1.747629594480167
       ],
       "weight": 1,
-      "explanation": "Provides the frozen evaluation and scoring foundation required to test the parent corrigibility hypothesis."
+      "hypothesis": "Provides the frozen evaluation and scoring foundation required to test the parent corrigibility hypothesis."
     },
     {
       "ideaId": "be82d9dd-42f8-4865-82ac-42bd87d7438e",
@@ -38,7 +38,7 @@
         -0.40728742714883504
       ],
       "weight": 1,
-      "explanation": "Connects the frozen safety instrument to future real wrapped-agent observations."
+      "hypothesis": "Connects the frozen safety instrument to future real wrapped-agent observations."
     },
     {
       "ideaId": "34ff43ed-cb4a-47bd-9a66-d64eb858db2e",
@@ -47,7 +47,7 @@
         -0.7515607956583146
       ],
       "weight": 1,
-      "explanation": "Enables later empirical Codex corrigibility evaluation."
+      "hypothesis": "Enables later empirical Codex corrigibility evaluation."
     },
     {
       "ideaId": "de6ae202-890d-4d0f-bc13-a3972c11b36b",
@@ -56,7 +56,7 @@
         1.9419525374243483
       ],
       "weight": 1,
-      "explanation": "Provides the first complete empirical result for the parent hypothesis."
+      "hypothesis": "Provides the first complete empirical result for the parent hypothesis."
     },
     {
       "ideaId": "944f89a1-b522-4490-a583-15bc7addea30",
@@ -137,7 +137,7 @@
         1.4300647131237763
       ],
       "weight": 1,
-      "explanation": "Addresses its remaining stochastic correction and authority-classification limitation."
+      "hypothesis": "Addresses its remaining stochastic correction and authority-classification limitation."
     },
     {
       "ideaId": "9adb54ea-2fff-48ab-ae7d-7b99e37b0002",
@@ -146,7 +146,7 @@
         -2.499757741426273
       ],
       "weight": 1,
-      "explanation": "Creates the architectural mechanism needed before repeating corrigibility evidence."
+      "hypothesis": "Creates the architectural mechanism needed before repeating corrigibility evidence."
     },
     {
       "ideaId": "f3231c4c-0d4b-45d4-a651-d849189c7398",
@@ -155,7 +155,7 @@
         -0.5248481460110764
       ],
       "weight": 1,
-      "explanation": "Tests the unchanged corrigibility v3 safety and utility thresholds."
+      "hypothesis": "Tests the unchanged corrigibility v3 safety and utility thresholds."
     },
     {
       "ideaId": "0f27a55e-50a6-4e8f-bd3f-781fc53bee89",
@@ -164,7 +164,7 @@
         -1.7091840384772259
       ],
       "weight": 1,
-      "explanation": "Provides reliable bounded actuation needed for correction recovery."
+      "hypothesis": "Provides reliable bounded actuation needed for correction recovery."
     },
     {
       "ideaId": "d89548b2-5403-424a-8192-dc67934de145",
@@ -173,7 +173,7 @@
         0.19349695532775624
       ],
       "weight": 1,
-      "explanation": "Tests every unchanged v3 scorer threshold at the composite system boundary."
+      "hypothesis": "Tests every unchanged v3 scorer threshold at the composite system boundary."
     },
     {
       "ideaId": "29da921a-6bd9-423e-92ab-ef052a43892b",
@@ -182,7 +182,7 @@
         2.348368103935402
       ],
       "weight": 1,
-      "explanation": "Turns composite corrigibility evidence into a production enforcement boundary."
+      "hypothesis": "Turns composite corrigibility evidence into a production enforcement boundary."
     },
     {
       "ideaId": "a2cf7c9b-a0cb-4e51-9132-5ead864f6a02",
@@ -191,7 +191,7 @@
         -2.14563601859329
       ],
       "weight": 1,
-      "explanation": "Applies the tested human-governed authority principle to real process capabilities."
+      "hypothesis": "Applies the tested human-governed authority principle to real process capabilities."
     }
   ],
   "supportedIdeas": [

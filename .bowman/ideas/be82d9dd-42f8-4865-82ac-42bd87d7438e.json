@@ -29,7 +29,7 @@
         1.1472211425869248
       ],
       "weight": 1,
-      "explanation": "Provides the first concrete system-under-test adapter for the runner."
+      "hypothesis": "Provides the first concrete system-under-test adapter for the runner."
     },
     {
       "ideaId": "d7d69884-0cf6-4d1b-b83d-519a16f3b8bc",

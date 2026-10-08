@@ -1,0 +1,25 @@
+{
+  "id": "bb8150a8-2439-4d1a-a2ae-ec8620eb2ceb",
+  "text": "Self weight should keep its share instead of feeding it back into the idea",
+  "description": "Self weight (loopWeight) means: share of an idea's value delivered by its own work rather than its sub-ideas. Today it is a self-loop in the flow iteration, so the retained share is fed back and raises the idea's value (v = ½(in + l·v)). Example: goal splits evenly into big (passes everything on) and small (self weight 1, one child) — small ends up worth 0.167 vs big 0.125, and sends 1.5× less instead of 2× less to the shared child. Model the retained share as absorbed (kept, not recirculated). Leaf retention is the same mechanism and should be treated consistently.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "535d5d5a-883a-434f-892f-856f144482bb"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1791450719188
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

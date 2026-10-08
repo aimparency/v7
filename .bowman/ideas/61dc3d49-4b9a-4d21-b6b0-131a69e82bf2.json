@@ -17,7 +17,7 @@
         1.4204003478511116
       ],
       "weight": 1,
-      "explanation": "Makes the existing indefinite continuation behavior portable, explicit, and testable."
+      "hypothesis": "Makes the existing indefinite continuation behavior portable, explicit, and testable."
     }
   ],
   "supportedIdeas": [

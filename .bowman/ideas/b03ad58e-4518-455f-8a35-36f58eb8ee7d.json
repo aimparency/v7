@@ -44,7 +44,7 @@
         -0.5403011154854356
       ],
       "weight": 1,
-      "explanation": "Evaluates whether the implemented reflection loop causes useful improvements."
+      "hypothesis": "Evaluates whether the implemented reflection loop causes useful improvements."
     }
   ],
   "supportedIdeas": [

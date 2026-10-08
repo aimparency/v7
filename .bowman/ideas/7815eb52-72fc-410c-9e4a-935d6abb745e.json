@@ -32,7 +32,7 @@
         2.3687399962887055
       ],
       "weight": 1,
-      "explanation": "Corrects the convergence regression while preserving connection-size-dependent force."
+      "hypothesis": "Corrects the convergence regression while preserving connection-size-dependent force."
     }
   ],
   "supportedIdeas": [

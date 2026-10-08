@@ -16,7 +16,7 @@
         2.388866125632768
       ],
       "weight": 0.5,
-      "explanation": "Forecasting tournaments may sharpen judgment, but their path to operating revenue is indirect."
+      "hypothesis": "Forecasting tournaments may sharpen judgment, but their path to operating revenue is indirect."
     },
     {
       "ideaId": "297ad708-41ef-409e-a045-ff8dff0209ff",
@@ -25,7 +25,7 @@
         2.208433739586721
       ],
       "weight": 2,
-      "explanation": "Human cooperation is a major route from autonomous capability to trusted real-economy work."
+      "hypothesis": "Human cooperation is a major route from autonomous capability to trusted real-economy work."
     },
     {
       "ideaId": "7dfd41bf-3244-4a39-87d8-89fe285671d6",
@@ -34,7 +34,7 @@
         -1.0900370449924843
       ],
       "weight": 1.5,
-      "explanation": "Authoritative financial visibility is necessary to tell whether autonomy is economically sustainable."
+      "hypothesis": "Authoritative financial visibility is necessary to tell whether autonomy is economically sustainable."
     },
     {
       "ideaId": "365e78d0-ed64-47d7-9902-b575d493c6e4",
@@ -43,7 +43,7 @@
         1.766726295323816
       ],
       "weight": 1.5,
-      "explanation": "Real payment access matters once revenue exists, but should not outrank creating value people choose to pay for."
+      "hypothesis": "Real payment access matters once revenue exists, but should not outrank creating value people choose to pay for."
     },
     {
       "ideaId": "22a8c239-ac3d-40d6-8668-ec443a456977",
@@ -52,7 +52,7 @@
         -3.3023316901074047
       ],
       "weight": 1,
-      "explanation": "Local-first open source supports adoption and trust, with an indirect contribution to economic survival."
+      "hypothesis": "Local-first open source supports adoption and trust, with an indirect contribution to economic survival."
     },
     {
       "ideaId": "69ce064d-b98b-4453-a0cd-901e21040a67",
@@ -61,7 +61,7 @@
         -1.8432860051978566
       ],
       "weight": 0.5,
-      "explanation": "Automatic prioritization is useful enabling infrastructure, but the completed feature is not itself market validation."
+      "hypothesis": "Automatic prioritization is useful enabling infrastructure, but the completed feature is not itself market validation."
     },
     {
       "ideaId": "5ebd58db-d352-4fe2-bd73-15ad620a2978",
@@ -70,7 +70,7 @@
         2.40119754541242
       ],
       "weight": 3,
-      "explanation": "Creating substantial user benefit is a primary route to durable willingness to collaborate and pay."
+      "hypothesis": "Creating substantial user benefit is a primary route to durable willingness to collaborate and pay."
     },
     {
       "ideaId": "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
@@ -79,7 +79,7 @@
         4.527351567322584
       ],
       "weight": 1.5,
-      "explanation": "Non-dilutive funding extends runway, while remaining secondary to recurring externally valued work."
+      "hypothesis": "Non-dilutive funding extends runway, while remaining secondary to recurring externally valued work."
     },
     {
       "ideaId": "0622adb1-e79d-483c-b894-199d92ca199d",
@@ -96,7 +96,7 @@
         2.4229418003311975
       ],
       "weight": 2,
-      "explanation": "The near-term funding milestone materially extends runway but combines revenue and grants rather than proving durable autonomy alone."
+      "hypothesis": "The near-term funding milestone materially extends runway but combines revenue and grants rather than proving durable autonomy alone."
     },
     {
       "ideaId": "9548e95a-a911-41a5-b404-0cc289633acd",
@@ -105,7 +105,7 @@
         -2.4956351650630113
       ],
       "weight": 4,
-      "explanation": "A real AI-transformation business is the strongest current path to repeatable revenue and grounded autonomy."
+      "hypothesis": "A real AI-transformation business is the strongest current path to repeatable revenue and grounded autonomy."
     },
     {
       "ideaId": "1a401004-2c03-45e7-96a9-a2c15e7c0b2d",
@@ -114,7 +114,7 @@
         -2.49840207060805
       ],
       "weight": 1.5,
-      "explanation": "Reducing single-client dependence protects continuity once the first market foothold exists."
+      "hypothesis": "Reducing single-client dependence protects continuity once the first market foothold exists."
     },
     {
       "ideaId": "c0a45822-0106-46fd-8819-244d3611488b",
@@ -123,7 +123,7 @@
         1.8885222227411624
       ],
       "weight": 3,
-      "explanation": "Closing the reality-to-priority loop is essential for adapting from actual economic outcomes."
+      "hypothesis": "Closing the reality-to-priority loop is essential for adapting from actual economic outcomes."
     },
     {
       "ideaId": "1171de2f-a08e-4bb3-bf2a-7d279e4cb066",
@@ -132,7 +132,7 @@
         -2.150615264412915
       ],
       "weight": 2,
-      "explanation": "Authoritative external signals keep economic decisions grounded without duplicating source systems."
+      "hypothesis": "Authoritative external signals keep economic decisions grounded without duplicating source systems."
     },
     {
       "ideaId": "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
@@ -141,7 +141,7 @@
         -2.339514772265172
       ],
       "weight": 2,
-      "explanation": "A calibrated priority model turns real evidence into coherent allocation decisions."
+      "hypothesis": "A calibrated priority model turns real evidence into coherent allocation decisions."
     },
     {
       "ideaId": "7f2bae54-03a6-481f-8de7-114fba05c112",
@@ -150,7 +150,7 @@
         2.3197075776617275
       ],
       "weight": 4,
-      "explanation": "Accepted value for a real beneficiary is the most direct falsifiable proof that autonomous work matters."
+      "hypothesis": "Accepted value for a real beneficiary is the most direct falsifiable proof that autonomous work matters."
     },
     {
       "ideaId": "b52d435e-72b5-4839-b0cd-fbc916b46a03",
@@ -159,7 +159,7 @@
         -2.1826625463477054
       ],
       "weight": 1,
-      "explanation": "The SPC application is a dilutive funding and company-building attempt that could extend runway, external validation, and the path to sustainable economic autonomy; it is not non-dilutive funding."
+      "hypothesis": "The SPC application is a dilutive funding and company-building attempt that could extend runway, external validation, and the path to sustainable economic autonomy; it is not non-dilutive funding."
     },
     {
       "ideaId": "93e0d4c2-eed1-4d42-8d12-a82c1b291d6b",
@@ -168,7 +168,7 @@
         -2.35642388682957
       ],
       "weight": 1,
-      "explanation": "Closes the first real revenue-to-compute reinvestment loop."
+      "hypothesis": "Closes the first real revenue-to-compute reinvestment loop."
     }
   ],
   "supportedIdeas": [

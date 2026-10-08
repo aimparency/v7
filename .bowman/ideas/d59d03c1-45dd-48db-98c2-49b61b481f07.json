@@ -156,7 +156,7 @@
         1.0984841988728784
       ],
       "weight": 1,
-      "explanation": "Client/server synchronization architecture groups this refactor and its completed sync slices."
+      "hypothesis": "Client/server synchronization architecture groups this refactor and its completed sync slices."
     }
   ],
   "supportedIdeas": [

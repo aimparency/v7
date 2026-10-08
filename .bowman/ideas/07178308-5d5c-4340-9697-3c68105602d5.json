@@ -21,7 +21,7 @@
         2.198338530671584
       ],
       "weight": 1,
-      "explanation": "Two-week operator validation produces the revenue wedge."
+      "hypothesis": "Two-week operator validation produces the revenue wedge."
     },
     {
       "ideaId": "7f2bae54-03a6-481f-8de7-114fba05c112",
@@ -30,7 +30,7 @@
         -2.4808492923885224
       ],
       "weight": 1,
-      "explanation": "A real beneficiary turns the moonshot into evidence."
+      "hypothesis": "A real beneficiary turns the moonshot into evidence."
     },
     {
       "ideaId": "6c611056-04f7-4009-90f1-32c1a5da8de4",
@@ -39,7 +39,7 @@
         1.1724091292407228
       ],
       "weight": 1,
-      "explanation": "Strategy-agent interoperability is the scalable future architecture."
+      "hypothesis": "Strategy-agent interoperability is the scalable future architecture."
     },
     {
       "ideaId": "f1bc585d-77c3-4d01-8cb1-e6e69a22ba7c",
@@ -48,7 +48,7 @@
         1.8256209728580564
       ],
       "weight": 1,
-      "explanation": "Week 1 moonshot deliverable."
+      "hypothesis": "Week 1 moonshot deliverable."
     },
     {
       "ideaId": "7d6c029e-fc63-40bc-9c23-e69322240634",
@@ -57,7 +57,7 @@
         0.6037417437639621
       ],
       "weight": 1,
-      "explanation": "Makes the one-month operating plan native to Aimparency."
+      "hypothesis": "Makes the one-month operating plan native to Aimparency."
     }
   ],
   "supportedIdeas": [

@@ -1,0 +1,25 @@
+{
+  "id": "91c5737b-8069-4aac-b3d8-1efb6eeed9ea",
+  "text": "One-off: give existing grey sub-trees branch colors",
+  "description": "New sub-ideas inherit their parent's color (±5% HSV, random hue below grey parents), but most existing ideas are #666666 because drag-create and MCP create_idea used to skip the parent. A one-off pass (top-down, same deriveChildIdeaColor) would color existing branches. Must leave user-picked colors alone and only touch ideas still at the default grey; per project, on request.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "2e7239eb-cef5-4254-a7b9-74626195abd4"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1791450729746
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

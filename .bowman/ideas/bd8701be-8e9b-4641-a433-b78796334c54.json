@@ -35,7 +35,7 @@
         0.39397983672908954
       ],
       "weight": 1,
-      "explanation": "Corrects the defect exposed by this live experiment."
+      "hypothesis": "Corrects the defect exposed by this live experiment."
     },
     {
       "ideaId": "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
@@ -44,7 +44,7 @@
         0.9426162315433272
       ],
       "weight": 1,
-      "explanation": "Uses the preserved exploratory efficiency signal only as a newly preregistered v2 criterion."
+      "hypothesis": "Uses the preserved exploratory efficiency signal only as a newly preregistered v2 criterion."
     }
   ],
   "supportedIdeas": [

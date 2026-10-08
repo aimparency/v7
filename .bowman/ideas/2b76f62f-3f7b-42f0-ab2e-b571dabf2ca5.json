@@ -107,7 +107,7 @@
         -0.3344703636698596
       ],
       "weight": 1,
-      "explanation": "graph maintenance: reparented floating idea by semantic similarity"
+      "hypothesis": "graph maintenance: reparented floating idea by semantic similarity"
     },
     {
       "ideaId": "a1f62047-5be3-4178-9274-3e060285fd29",
@@ -140,7 +140,7 @@
         -0.26918459598880246
       ],
       "weight": 1,
-      "explanation": "Provides an evidence gate for the autonomous execution capability."
+      "hypothesis": "Provides an evidence gate for the autonomous execution capability."
     }
   ],
   "supportedIdeas": [
