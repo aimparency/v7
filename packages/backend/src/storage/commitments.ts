@@ -1,4 +1,6 @@
+import path from 'path';
 import { normalizeProjectPath } from '../project-path.js';
+import { withFileLock } from './json.js';
 import { listIdeas, readIdea, writeIdea } from './ideas.js';
 import { listPhases, readPhase, writePhase } from './phases.js';
 
@@ -38,61 +40,55 @@ export async function cleanupCommitments(rawProjectPath: string, specificPhaseId
   return changedCount;
 }
 
-// Helper function to add idea to phase's commitments and idea's committedIn
-export async function commitIdeaToPhase(projectPath: string, ideaId: string, phaseId: string, insertionIndex?: number): Promise<void> {
-  // Update the phase
-  const phase = await readPhase(projectPath, phaseId);
-  console.log(`commitIdeaToPhase: ideaId=${ideaId}, phaseId=${phaseId}, insertionIndex=${insertionIndex}`);
-  
-  if (!phase.commitments.includes(ideaId)) {
-    if (insertionIndex !== undefined && insertionIndex <= phase.commitments.length) {
-      phase.commitments.splice(insertionIndex, 0, ideaId);
-    } else {
-      phase.commitments.push(ideaId);
-    }
-    await writePhase(projectPath, phase);
-  } else {
-    // Reorder if index provided
-    if (insertionIndex !== undefined) {
-       const currentIndex = phase.commitments.indexOf(ideaId);
-       if (currentIndex !== -1 && currentIndex !== insertionIndex) {
-           phase.commitments.splice(currentIndex, 1);
-           // Insert at target index (relative to the array after removal)
-           // If insertionIndex was calculated based on the original array,
-           // and we are moving DOWN (insertion > current), we might need to adjust?
-           // Frontend sends `currentIndex + 1` for move down.
-           // [A, B]. Move A(0) to 1.
-           // Remove A -> [B]. Insert at 1 -> [B, A]. Correct.
-           // [A, B]. Move B(1) to 0.
-           // Remove B -> [A]. Insert at 0 -> [B, A]. Correct.
-           
-           // Ensure index is within bounds of the *new* array (length - 1 + 1 = length)
-           const maxIndex = phase.commitments.length;
-           const targetIndex = Math.min(insertionIndex, maxIndex);
-           
-           phase.commitments.splice(targetIndex, 0, ideaId);
-           await writePhase(projectPath, phase);
-       }
-    }
-  }
-  
-  // Update the idea
-  const idea = await readIdea(projectPath, ideaId);
-  if (!idea.committedIn.includes(phaseId)) {
-    idea.committedIn.push(phaseId);
-    await writeIdea(projectPath, idea);
-  }
+function phaseLockKey(projectPath: string, phaseId: string): string {
+  return path.join(normalizeProjectPath(projectPath), 'phases', `${phaseId}.json`);
 }
 
-// Helper function to remove idea from phase's commitments and idea's committedIn
-export async function removeIdeaFromPhase(projectPath: string, ideaId: string, phaseId: string): Promise<void> {
-  // Update the phase
-  const phase = await readPhase(projectPath, phaseId);
-  phase.commitments = phase.commitments.filter(id => id !== ideaId);
-  await writePhase(projectPath, phase);
+function ideaLockKey(projectPath: string, ideaId: string): string {
+  return path.join(normalizeProjectPath(projectPath), 'ideas', `${ideaId}.json`);
+}
 
-  // Update the idea
-  const idea = await readIdea(projectPath, ideaId);
-  idea.committedIn = (idea.committedIn || []).filter(id => id !== phaseId);
-  await writeIdea(projectPath, idea);
+// Adds idea to phase's commitments (or moves it to insertionIndex) and phase to idea's committedIn
+export async function commitIdeaToPhase(projectPath: string, ideaId: string, phaseId: string, insertionIndex?: number): Promise<void> {
+  await withFileLock(phaseLockKey(projectPath, phaseId), async () => {
+    const phase = await readPhase(projectPath, phaseId);
+    const currentIndex = phase.commitments.indexOf(ideaId);
+    if (currentIndex === -1) {
+      if (insertionIndex !== undefined && insertionIndex <= phase.commitments.length) {
+        phase.commitments.splice(insertionIndex, 0, ideaId);
+      } else {
+        phase.commitments.push(ideaId);
+      }
+    } else if (insertionIndex !== undefined && currentIndex !== insertionIndex) {
+      // insertionIndex is relative to the array after removal (frontend sends currentIndex + 1 for move down).
+      phase.commitments.splice(currentIndex, 1);
+      phase.commitments.splice(Math.min(insertionIndex, phase.commitments.length), 0, ideaId);
+    } else {
+      return;
+    }
+    await writePhase(projectPath, phase);
+  });
+
+  await withFileLock(ideaLockKey(projectPath, ideaId), async () => {
+    const idea = await readIdea(projectPath, ideaId);
+    if (!idea.committedIn.includes(phaseId)) {
+      idea.committedIn.push(phaseId);
+      await writeIdea(projectPath, idea);
+    }
+  });
+}
+
+// Removes idea from phase's commitments and phase from idea's committedIn
+export async function removeIdeaFromPhase(projectPath: string, ideaId: string, phaseId: string): Promise<void> {
+  await withFileLock(phaseLockKey(projectPath, phaseId), async () => {
+    const phase = await readPhase(projectPath, phaseId);
+    phase.commitments = phase.commitments.filter(id => id !== ideaId);
+    await writePhase(projectPath, phase);
+  });
+
+  await withFileLock(ideaLockKey(projectPath, ideaId), async () => {
+    const idea = await readIdea(projectPath, ideaId);
+    idea.committedIn = (idea.committedIn || []).filter(id => id !== phaseId);
+    await writeIdea(projectPath, idea);
+  });
 }
