@@ -122,45 +122,23 @@ test('calculateIdeaValues distributes costs weighted by value share', () => {
 });
 
 test('repo-link edge exports flow into a leaf sink, leaving totalIntrinsic unchanged', () => {
-  // Boundary fixture with a control. A and B each carry intrinsic 100, but ONLY
-  // A leans on a WHOLE external repo R (a single black-box sink). A exports its
-  // flow into R; B keeps to itself. Value is conserved flow, so A's retained
-  // value shrinks by exactly what it exports, while B (the control) keeps its
-  // full intrinsic. R carries no intrinsic, so totalIntrinsic stays = the local
-  // intrinsics (200) — the repo node adds boundary, not value.
+  // A and B each carry intrinsic 100, but only A leans on a whole external repo
+  // (a single black-box sink). A hands everything on to the sink; B keeps its own.
   const REPO_ID = '11111111-1111-4111-8111-111111111111';
   const ideaA = createMockIdea('A', 100, 1);
-  ideaA.loopWeight = 0; // send everything downstream into the repo, retain nothing structurally
   ideaA.supportingRepos = [{ repoId: REPO_ID, weight: 1, relativePosition: [0, 0] }];
   const ideaB = createMockIdea('B', 100, 1); // control: no repo link
 
   const result = calculateIdeaValues([ideaA, ideaB]);
 
-  // Repo node carries no intrinsic ⇒ the total is just A + B's intrinsics.
-  assert.strictEqual(result.totalIntrinsic, 200, 'totalIntrinsic must stay = local intrinsics');
-
-  // A sink node exists in the value map, keyed by the repoId.
-  const repoFraction = result.values.get(REPO_ID);
-  assert.ok(repoFraction !== undefined, 'a sink node should be created for the linked repo');
-
-  // Steady state (each leaf retains via its self-loop): A and its sink split
-  // A's mass evenly, while B retains its own — fractions 0.25 / 0.5 / 0.25.
-  const aFraction = result.values.get('A')!;
-  const bFraction = result.values.get('B')!;
-  assert.ok(Math.abs(aFraction - 0.25) < 0.01, `A should retain ~0.25, got ${aFraction}`);
-  assert.ok(Math.abs(bFraction - 0.5) < 0.01, `B (control) should retain ~0.5, got ${bFraction}`);
-  assert.ok(Math.abs(repoFraction! - 0.25) < 0.01, `sink should hold ~0.25, got ${repoFraction}`);
-
-  // Concretely (×200): A keeps 50 of its 100 — half EXPORTED into the repo sink
-  // (also 50) — while the control B keeps its full 100. Fractions partition 1.
-  assert.ok(aFraction * 200 < 100, 'A must retain less than its full intrinsic (flow exported)');
-  assert.ok(Math.abs(bFraction * 200 - 100) < 0.5, 'B (no repo link) must keep its full intrinsic');
-  assert.ok(repoFraction! * 200 > 0, 'the repo sink must hold exported value');
-  assert.ok(Math.abs(aFraction + bFraction + repoFraction! - 1) < 1e-9, 'fractions partition the conserved flow');
-
-  // The export shows up as a parent→repo flow edge for the renderer to size.
-  const exportedFlow = result.flowValues.get(`A->${REPO_ID}`);
-  assert.ok(exportedFlow !== undefined && exportedFlow > 0, 'a parent→repo flow edge should exist');
+  // The repo node carries no intrinsic value: the total is just A's and B's.
+  assert.strictEqual(result.totalIntrinsic, 200);
+  const realized = (id: string) => result.realizedValues.get(id)! * 200;
+  assert.ok(Math.abs(realized('A')) < 1e-9, 'A exports all of its value');
+  assert.ok(Math.abs(realized(REPO_ID) - 100) < 1e-9, 'the sink realizes what A exports');
+  assert.ok(Math.abs(realized('B') - 100) < 1e-9, 'B (no repo link) keeps its own');
+  assert.ok(Math.abs(result.values.get('A')! * 200 - 100) < 1e-9, 'A still has its value at stake');
+  assert.ok(result.flowValues.get(`A->${REPO_ID}`)! > 0, 'a parent→repo flow edge should exist');
 });
 
 test('economic helpers use annual discounting and a positive ratio', () => {
@@ -199,7 +177,7 @@ test('invalid real economic inputs identify the idea', () => {
   );
 });
 
-test('cyclic attributed costs are deterministic and count direct costs once', () => {
+test('a closed cycle acts as one idea: each member costs the cycle once', () => {
   const a = createMockIdea('cycle-a', 10, 2, 0);
   const b = createMockIdea('cycle-b', 10, 3, 0);
   a.supportingConnections = [{ ideaId: b.id, weight: 1, relativePosition: [0, 0] }];
@@ -207,8 +185,8 @@ test('cyclic attributed costs are deterministic and count direct costs once', ()
   const first = calculateIdeaValues([a, b]).costs;
   const second = calculateIdeaValues([a, b]).costs;
   assert.deepStrictEqual(first, second);
-  assert.ok(Math.abs(first.get(a.id)! - 2) < 1e-10);
-  assert.ok(Math.abs(first.get(b.id)! - 3) < 1e-10);
+  assert.ok(Math.abs(first.get(a.id)! - 5) < 1e-10);
+  assert.ok(Math.abs(first.get(b.id)! - 5) < 1e-10);
 });
 
 function connect(parent: Idea, child: Idea, weight = 1) {
@@ -236,8 +214,7 @@ test('intermediate ideas pass their full cost up a chain, not a normalization mu
 
 test('attribution shares split an idea between its parents by the value each sends', () => {
   // goal splits evenly into big and small; big and small both feed shared.
-  // big sends shared all of its value, small only half (small keeps a self weight,
-  // which also feeds back into small, so small ends up sending a bit more than half of big).
+  // big sends shared all of its value, small only half (small keeps a self weight).
   const goal = createMockIdea('goal', 100, 1);
   const big = createMockIdea('big', 0, 1);
   const small = createMockIdea('small', 0, 1);
@@ -256,7 +233,7 @@ test('attribution shares split an idea between its parents by the value each sen
   // Scale-free: the shares keep the ratio of the flows themselves.
   const flowRatio = flowValues.get('big->shared')! / flowValues.get('small->shared')!;
   assert.ok(Math.abs(fromBig / fromSmall - flowRatio) < 1e-6);
-  assert.ok(fromBig > fromSmall);
+  assert.ok(Math.abs(fromBig / fromSmall - 2) < 1e-6);
 });
 
 test('an idea with intrinsic value of its own attributes only the rest to its parents', () => {
@@ -269,3 +246,52 @@ test('an idea with intrinsic value of its own attributes only the rest to its pa
   const share = attributionShares.get('goal->child')!;
   assert.ok(share > 0 && share < 1, `share ${share}`);
 });
+
+// Hand-computed examples, mirrored in math/examples.py. Nodes: i = intrinsic
+// value, c = direct cost (1), s = self weight (0). Edges: [idea, idea it builds on, weight].
+type Spec = Record<string, { i?: number, c?: number, s?: number }>;
+type Quantity = 'values' | 'realizedValues' | 'costs' | 'priorities';
+
+const examples: [string, Spec, [string, string, number?][], Partial<Record<Quantity, Record<string, number>>>][] = [
+  ['self weight splits value', { A: { i: 2, s: 5 }, B: {} }, [['A', 'B', 5]],
+    { realizedValues: { A: 1, B: 1 }, values: { A: 2, B: 1 }, costs: { A: 2, B: 1 }, priorities: { A: 1, B: 1 } }],
+  ['pass-through chain', { R: { i: 1 }, A: {}, B: {} }, [['R', 'A'], ['A', 'B']],
+    { realizedValues: { R: 0, A: 0, B: 1 }, values: { R: 1, A: 1, B: 1 }, costs: { R: 3, A: 2, B: 1 }, priorities: { R: 1 / 3, A: 1 / 2, B: 1 } }],
+  ['weights split value', { R: { i: 3 }, A: {}, B: {} }, [['R', 'A', 1], ['R', 'B', 2]],
+    { realizedValues: { A: 1, B: 2 }, values: { R: 3, A: 1, B: 2 }, costs: { R: 3 }, priorities: { R: 1, A: 1, B: 2 } }],
+  ['diamond shares its base', { R: { i: 4 }, A: {}, B: {}, C: {} }, [['R', 'A'], ['R', 'B'], ['A', 'C'], ['B', 'C']],
+    { values: { R: 4, A: 2, C: 4 }, costs: { R: 4, A: 1.5, B: 1.5, C: 1 }, priorities: { R: 1, A: 4 / 3, C: 4 } }],
+  ['unequal parents share by value', { R1: { i: 3 }, R2: { i: 1 }, C: {} }, [['R1', 'C'], ['R2', 'C']],
+    { values: { R1: 3, R2: 1, C: 4 }, costs: { R1: 1.75, R2: 1.25, C: 1 } }],
+  ['intrinsic value below', { R: { i: 2 }, C: { i: 2 } }, [['R', 'C']],
+    { values: { R: 2, C: 4 }, costs: { R: 1.5, C: 1 } }],
+  ['leaky cycle', { R: { i: 1 }, A: {}, B: { s: 1 } }, [['R', 'A'], ['A', 'B'], ['B', 'A']],
+    { realizedValues: { R: 0, A: 0, B: 1 }, values: { R: 1, A: 1, B: 1 }, costs: { R: 3, A: 2, B: 1.5 }, priorities: { R: 1 / 3, A: 1 / 2, B: 2 / 3 } }],
+  ['closed cycle', { R: { i: 1 }, A: {}, B: {} }, [['R', 'A'], ['A', 'B'], ['B', 'A']],
+    { realizedValues: { A: 0.5, B: 0.5 }, values: { R: 1, A: 1, B: 1 }, costs: { R: 3, A: 2, B: 2 }, priorities: { R: 1 / 3, A: 1 / 2 } }],
+  ['root with self weight', { R: { i: 3, s: 1 }, A: {}, B: {} }, [['R', 'A'], ['R', 'B']],
+    { realizedValues: { R: 1, A: 1, B: 1 }, values: { R: 3, A: 1 }, costs: { R: 3 }, priorities: { R: 1, A: 1 } }],
+  ['unreached ideas still aggregate cost', { R: { i: 1 }, X: {}, Y: { c: 2 } }, [['X', 'Y']],
+    { values: { X: 0 }, costs: { X: 3, Y: 2 }, priorities: { X: 0, Y: 0 } }],
+];
+
+for (const [name, spec, edges, expected] of examples) {
+  test(`example: ${name}`, () => {
+    const ideas = Object.entries(spec).map(([id, { i = 0, c = 1, s = 0 }]) => {
+      const idea = createMockIdea(id, i, c, 0); // duration 0: no discounting
+      idea.loopWeight = s;
+      return idea;
+    });
+    const byId = new Map(ideas.map(idea => [idea.id, idea]));
+    for (const [parent, child, weight] of edges) connect(byId.get(parent)!, byId.get(child)!, weight);
+    const result = calculateIdeaValues(ideas);
+    for (const [quantity, nodes] of Object.entries(expected) as [Quantity, Record<string, number>][]) {
+      // values are fractions of the total intrinsic value; compare in its units
+      const scale = quantity === 'values' || quantity === 'realizedValues' ? result.totalIntrinsic : 1;
+      for (const [id, want] of Object.entries(nodes)) {
+        const got = result[quantity].get(id)! * scale;
+        assert.ok(Math.abs(got - want) < 1e-9, `${quantity}[${id}] = ${got}, expected ${want}`);
+      }
+    }
+  });
+}

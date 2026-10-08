@@ -52,10 +52,10 @@ function validateEconomicInputs(ideas: Idea[]): void {
 // value flow we model each referenced repo as ONE zero-intrinsic LEAF SINK node
 // (its id IS the repoId) and turn every repo edge into an ordinary
 // supportingConnection into that node, so the existing flow machinery handles it
-// on a single code path. A leaf retains all inflow (effectiveLoopWeight 1), so
-// flow is EXPORTED out of the local graph into the sink; totalIntrinsic is
-// unchanged (repo nodes carry intrinsic 0) and local ideas' retained values
-// shrink by exactly the exported flow (value is conserved flow, not aggregate).
+// on a single code path. A leaf realizes all of its inflow, so flow is EXPORTED
+// out of the local graph into the sink; totalIntrinsic is unchanged (repo nodes
+// carry intrinsic 0) and local ideas' realized values shrink by exactly the
+// exported flow.
 export function expandRepoSinkNodes(ideas: Idea[]): Idea[] {
   // Fast path: no repo edges ⇒ nothing to merge, return the array untouched.
   if (!ideas.some(a => a.supportingRepos && a.supportingRepos.length > 0)) {
@@ -119,9 +119,34 @@ function makeRepoSinkNode(repoId: string): Idea {
   } as Idea;
 }
 
+
+/**
+ * Value flows top down, cost per unit of value is aggregated bottom up, both
+ * along the same shares (derivation and checks: math/README.md).
+ *
+ * Every idea hands `weight / (loopWeight + Σ weights)` of the value reaching it
+ * to each idea it builds on and realizes the rest, its self share, itself. A
+ * leaf realizes everything. Intrinsic value is poured in where it is set.
+ *
+ *   top down    t = intrinsic + Σ_parents share · t_parent   value passing through
+ *   bottom up   κ = cost / t + Σ_children share · κ_child     cost per unit of it
+ *
+ * values      aggregated value: what is at stake in an idea (t, with value that
+ *             circles a cycle counted once). Normalized by totalIntrinsic.
+ * realizedValues  self share · t: realized at the idea; sums to 1.
+ * costs       aggregated cost κ · aggregated value: the idea's own cost plus
+ *             its share of what it builds on, split by the value each parent sends.
+ * priorities  aggregated value / aggregated cost = 1/κ (discounted by duration).
+ *
+ * Cycles are solved as one block. A closed cycle (nobody in it keeps anything,
+ * no connection leaves it) holds whatever enters it, spread by its stationary
+ * distribution, and acts as a single leaf. Ideas no value reaches get their
+ * costs from the same calculation with value poured into their topmost ideas.
+ */
 export function calculateIdeaValues(inputIdeas: Idea[]): {
-  values: Map<string, number>, 
-  totalIntrinsic: number, 
+  values: Map<string, number>,
+  realizedValues: Map<string, number>,
+  totalIntrinsic: number,
   flowShares: Map<string, number>,
   flowValues: Map<string, number>,
   attributionShares: Map<string, number>,
@@ -133,320 +158,299 @@ export function calculateIdeaValues(inputIdeas: Idea[]): {
   // Merge repo-link edges into zero-intrinsic leaf sink nodes before any
   // topology is built, so cross-repo flow runs on the same single code path.
   const ideas = expandRepoSinkNodes(inputIdeas);
+  const graph = buildFlowGraph(ideas);
+  const intrinsic = ideas.map(idea => idea.intrinsicValue ?? 0);
+  const totalIntrinsic = intrinsic.reduce((sum, value) => sum + value, 0);
+  const cost = ideas.map(idea => idea.cost ?? 0);
+  const implemented = ideas.map(idea => idea.status.state === 'implemented');
 
-  const ideaMap = new Map<string, Idea>();
-  const currentValues = new Map<string, number>();
+  const flow = solveValueFlow(graph, intrinsic);
+  const unitCost = solveUnitCosts(graph, flow, cost);
+  const doneUnitCost = solveUnitCosts(graph, flow, cost, implemented, unitCost);
+
+  // Unreached ideas carry no value to share costs by: pour value into the
+  // topmost of them and share by connection weights alone.
+  const unreached = flow.reach.map(reach => reach <= 0);
+  let structural = { flow, unitCost, doneUnitCost };
+  if (unreached.some(Boolean)) {
+    const hasParent = graph.components.map(() => false);
+    graph.children.forEach((edges, parent) => edges.forEach(({ child }) => {
+      if (graph.componentOf[child] !== graph.componentOf[parent]) hasParent[graph.componentOf[child]!] = true;
+    }));
+    const poured = ideas.map((_, x) => unreached[x] && !hasParent[graph.componentOf[x]!] ? 1 : 0);
+    const structuralFlow = solveValueFlow(graph, poured);
+    const structuralUnitCost = solveUnitCosts(graph, structuralFlow, cost);
+    structural = {
+      flow: structuralFlow,
+      unitCost: structuralUnitCost,
+      doneUnitCost: solveUnitCosts(graph, structuralFlow, cost, implemented, structuralUnitCost)
+    };
+  }
+
+  const normalize = (value: number) => totalIntrinsic > 0 ? value / totalIntrinsic : 0;
+  const values = new Map<string, number>();
+  const realizedValues = new Map<string, number>();
+  const costs = new Map<string, number>();
+  const doneCosts = new Map<string, number>();
+  const priorities = new Map<string, number>();
   const flowShares = new Map<string, number>();
   const flowValues = new Map<string, number>();
-  let totalIntrinsic = 0;
+  ideas.forEach((idea, x) => {
+    values.set(idea.id, normalize(flow.reach[x]!));
+    realizedValues.set(idea.id, normalize(flow.realized[x]!));
+    const basis = unreached[x] ? structural : { flow, unitCost, doneUnitCost };
+    const reach = basis.flow.reach[x]!;
+    costs.set(idea.id, reach > 0 ? basis.unitCost[x]! * reach : cost[x]!);
+    doneCosts.set(idea.id, reach > 0 ? basis.doneUnitCost[x]! * reach : implemented[x] ? cost[x]! : 0);
+    // Synthetic repo sinks have zero cost and no meaningful ratio.
+    priorities.set(idea.id, unreached[x] || unitCost[x]! <= 0
+      ? 0
+      : calculateProfitabilityIndex(discountValue(flow.reach[x]!, idea.duration ?? 1), costs.get(idea.id)!));
+    graph.children[x]!.forEach(({ child, share }, k) => {
+      const key = `${idea.id}->${ideas[child]!.id}`;
+      flowShares.set(key, share);
+      flowValues.set(key, normalize(flow.edgeFlows[x]![k]!));
+    });
+  });
 
-  // 1. Initialize and Pre-calculate Topology
-  // Map<ParentID, List<{TargetID, Share}>>
-  const flowMatrix = new Map<string, { target: string, share: number }[]>();
+  const attributionShares = calculateAttributionShares(ideas, graph, flow, structural.flow);
+  return { values, realizedValues, totalIntrinsic, flowShares, flowValues, attributionShares, costs, doneCosts, priorities };
+}
 
+interface FlowGraph {
+  /** Ideas each idea builds on, with the share of its value it hands them. */
+  children: { child: number, share: number }[][];
+  /** Share of the value reaching an idea that it realizes itself. */
+  keep: number[];
+  /** Strongly connected components, sinks first (Tarjan order). */
+  components: number[][];
+  componentOf: number[];
+  /** Components that nobody in them leaves: value entering stays forever. */
+  closed: boolean[];
+}
+
+function buildFlowGraph(ideas: Idea[]): FlowGraph {
+  const indexOf = new Map(ideas.map((idea, x) => [idea.id, x]));
+  const children: FlowGraph['children'] = [];
+  const keep: number[] = [];
   for (const idea of ideas) {
-    ideaMap.set(idea.id, idea);
-    totalIntrinsic += (idea.intrinsicValue ?? 0);
+    let selfWeight = idea.loopWeight ?? 0;
+    const weights = new Map<number, number>();
+    for (const connection of idea.supportingConnections ?? []) {
+      const child = indexOf.get(connection.ideaId);
+      if (child === undefined) continue;
+      if (child === indexOf.get(idea.id)) selfWeight += connection.weight || 1;
+      else weights.set(child, (weights.get(child) ?? 0) + (connection.weight || 1));
+    }
+    const total = selfWeight + [...weights.values()].reduce((sum, weight) => sum + weight, 0);
+    keep.push(total > 0 ? selfWeight / total : 1);
+    children.push([...weights].map(([child, weight]) => ({ child, share: weight / total })));
   }
+  const components = stronglyConnectedComponents(children.map(edges => edges.map(edge => edge.child)));
+  const componentOf: number[] = [];
+  components.forEach((members, k) => members.forEach(x => { componentOf[x] = k; }));
+  const closed = components.map((members, k) => members.length > 1 && members.every(x =>
+    keep[x] === 0 && children[x]!.every(({ child }) => componentOf[child] === k)));
+  return { children, keep, components, componentOf, closed };
+}
 
-  for (const parent of ideas) {
-    // Determine weights
-    const rawLoopWeight = parent.loopWeight ?? 0; // schema default is 0 (pure pass-through)
-    
-    // Only count children that actually exist in the ideaMap (prevent leaks)
-    const validConnections = parent.supportingConnections?.filter(c => ideaMap.has(c.ideaId)) || [];
-    const childrenWeightSum = validConnections.reduce((sum, c) => sum + (c.weight || 1), 0);
-    
-    let totalWeight = rawLoopWeight + childrenWeightSum;
-    
-    // Leaf Retention Logic: If no outgoing flow (children=0) and loop is 0,
-    // force effective loop to 1 to prevent value destruction at leafs.
-    let effectiveLoopWeight = rawLoopWeight;
-    if (totalWeight === 0) {
-        totalWeight = 1;
-        effectiveLoopWeight = 1;
+interface ValueFlow {
+  /** Value passing through each idea, per pass (finite stand-in in closed cycles). */
+  through: number[];
+  /** Value passing through each idea at least once: the aggregated value. */
+  reach: number[];
+  realized: number[];
+  /** Value passed along each graph.children edge. */
+  edgeFlows: number[][];
+  /** Value entering each closed component. */
+  closedMass: Map<number, number>;
+}
+
+function solveValueFlow(graph: FlowGraph, intrinsic: number[]): ValueFlow {
+  const n = graph.keep.length;
+  const inflow = [...intrinsic];
+  const through = new Array<number>(n).fill(0);
+  const reach = new Array<number>(n).fill(0);
+  const realized = new Array<number>(n).fill(0);
+  const closedMass = new Map<number, number>();
+  // Parents before children: reverse Tarjan order.
+  for (let k = graph.components.length - 1; k >= 0; k--) {
+    const members = graph.components[k]!;
+    if (members.length === 1) {
+      const x = members[0]!;
+      through[x] = reach[x] = inflow[x]!;
+      realized[x] = graph.keep[x]! * inflow[x]!;
+    } else if (graph.closed[k]) {
+      const mass = members.reduce((sum, x) => sum + inflow[x]!, 0);
+      const stationary = stationaryDistribution(graph, members);
+      closedMass.set(k, mass);
+      members.forEach((x, m) => {
+        reach[x] = mass;
+        realized[x] = through[x] = mass * stationary[m]!;
+      });
+    } else {
+      // N = (I − Q)⁻¹ counts visits inside the cycle; reach divides out returns.
+      const visits = invert(identityMinus(graph, members));
+      members.forEach((x, j) => {
+        through[x] = members.reduce((sum, y, i) => sum + inflow[y]! * visits[i]![j]!, 0);
+        reach[x] = through[x]! / visits[j]![j]!;
+        realized[x] = graph.keep[x]! * through[x]!;
+      });
     }
-
-    const distributions: { target: string, share: number }[] = [];
-
-    // Loop Flow (Self-Retention)
-    if (effectiveLoopWeight > 0) {
-        const share = effectiveLoopWeight / totalWeight;
-        if (share > 0) {
-            distributions.push({ target: parent.id, share });
-        }
-    }
-
-    // Children Flow
-    for (const conn of validConnections) {
-        const share = (conn.weight || 1) / totalWeight;
-        if (share > 0) {
-            distributions.push({ target: conn.ideaId, share });
-            // Store for UI visualization
-            flowShares.set(`${parent.id}->${conn.ideaId}`, share);
-        }
-    }
-    
-    flowMatrix.set(parent.id, distributions);
-  }
-
-  // 2. Initialize Values
-  for (const idea of ideas) {
-    const intrinsic = idea.intrinsicValue ?? 0;
-    currentValues.set(idea.id, totalIntrinsic > 0 ? intrinsic / totalIntrinsic : 0);
-  }
-
-  if (totalIntrinsic === 0) {
-    const attributionShares = calculateAttributionShares(ideas, ideaMap, flowValues, totalIntrinsic);
-    const costs = distributeCostsStable(ideas, ideaMap, attributionShares, false);
-    const doneCosts = distributeCostsStable(ideas, ideaMap, attributionShares, true, costs);
-    const priorities = new Map(ideas.map(idea => [idea.id, 0]));
-    return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, attributionShares, costs, doneCosts, priorities };
-  }
-
-  // 3. Iterate
-  const iterations = 100;
-  // Epsilon for normalized values. Average is 1/N. 
-  // Use 0.001 relative to average value for high precision.
-  const epsilon = 0.001 * (1.0 / (ideas.length || 1)); 
-  // console.log(`[ValueCalc] Starting calculation. Nodes: ${ideas.length}. Threshold: ${epsilon.toExponential(2)}`);
-
-  for (let iter = 0; iter < iterations; iter++) {
-    const nextValues = new Map<string, number>();
-
-    // A. Add Intrinsic (Inflow)
-    for (const idea of ideas) {
-      nextValues.set(idea.id, (idea.intrinsicValue ?? 0) / totalIntrinsic);
-    }
-
-    // B. Distribute Flow from Previous Step
-    for (const parent of ideas) {
-        const parentValue = currentValues.get(parent.id) || 0;
-        const distributions = flowMatrix.get(parent.id) || [];
-        
-        for (const dist of distributions) {
-            const flow = parentValue * dist.share;
-            nextValues.set(dist.target, (nextValues.get(dist.target) || 0) + flow);
-        }
-    }
-
-    // C. Normalize
-    let currentSum = 0;
-    for (const val of nextValues.values()) {
-      currentSum += val;
-    }
-
-    if (currentSum > 0) {
-      const scale = 1.0 / currentSum;
-      for (const [id, val] of nextValues) {
-        nextValues.set(id, val * scale);
+    for (const x of members) {
+      for (const { child, share } of graph.children[x]!) {
+        if (graph.componentOf[child] !== k) inflow[child] = inflow[child]! + through[x]! * share;
       }
     }
-
-    // D. Check Convergence
-    let maxChange = 0;
-    for (const idea of ideas) {
-      const oldV = currentValues.get(idea.id) || 0;
-      const newV = nextValues.get(idea.id) || 0;
-      maxChange = Math.max(maxChange, Math.abs(newV - oldV));
-    }
-
-    // Update
-    for (const [id, val] of nextValues) {
-      currentValues.set(id, val);
-    }
-
-    if (maxChange < epsilon) {
-      // console.log(`[ValueCalc] Converged in ${iter + 1} iterations. Max Change: ${maxChange.toExponential(2)}`);
-      break;
-    } else if (iter === iterations - 1) {
-      // console.warn(`[ValueCalc] Reached max iterations (${iterations}). Final Max Change: ${maxChange.toExponential(2)}`);
-    }
   }
-
-  // 4. Calculate Final Flow Values
-  for (const parent of ideas) {
-      const parentValue = currentValues.get(parent.id) || 0;
-      const distributions = flowMatrix.get(parent.id) || [];
-      for (const dist of distributions) {
-          flowValues.set(`${parent.id}->${dist.target}`, parentValue * dist.share);
-      }
-  }
-
-  // Each parent carries the share of a child's cost that matches its share of the child's value.
-  const attributionShares = calculateAttributionShares(ideas, ideaMap, flowValues, totalIntrinsic);
-  const costs = distributeCostsStable(ideas, ideaMap, attributionShares, false);
-  const doneCosts = distributeCostsStable(ideas, ideaMap, attributionShares, true, costs);
-
-  // Priority is the positive profitability ratio: discounted estimated
-  // flowed value divided by estimated present attributed cost. Variance fields
-  // remain persisted for compatibility but are informational in this model.
-  const priorities = new Map<string, number>();
-  for (const idea of ideas) {
-      const estimatedValue = (currentValues.get(idea.id) ?? 0) * totalIntrinsic;
-      const cost = costs.get(idea.id) ?? 0;
-      const duration = idea.duration ?? 1;
-      // Synthetic repo sinks deliberately have zero cost and are not persisted
-      // user ideas. They do not have a meaningful profitability ratio.
-      const priority = cost > 0
-        ? calculateProfitabilityIndex(discountValue(estimatedValue, duration), cost)
-        : 0;
-      priorities.set(idea.id, priority);
-  }
-
-  return { values: currentValues, totalIntrinsic, flowShares, flowValues, attributionShares, costs, doneCosts, priorities };
+  const edgeFlows = graph.children.map((edges, x) => edges.map(({ share }) => through[x]! * share));
+  return { through, reach, realized, edgeFlows, closedMass };
 }
 
 /**
- * Share of each child's value that comes from each parent, keyed `${parentId}->${childId}`.
- *
- * Flow values are recorded before the per-step normalization, so they cannot be
- * compared with the (normalized) values directly. They can be compared with the
- * child's other inputs, which share their scale: the intrinsic value poured into
- * the child and the flows from its other parents. Self-retention (self weight,
- * leaf retention) is not an input from anyone, so it stays out. Shares of all
- * parents sum to 1, minus the part the child's own intrinsic value accounts for.
- * Without any value signal, parents share a child equally.
+ * κ = basis / t + Σ share · κ_child, children first. With `fixed`, the marked
+ * ideas take `fixedValue` instead (done cost: an implemented idea counts its
+ * whole aggregated cost as done). Unreached ideas get Infinity.
+ */
+function solveUnitCosts(
+  graph: FlowGraph,
+  flow: ValueFlow,
+  cost: number[],
+  fixed?: boolean[],
+  fixedValue?: number[]
+): number[] {
+  const unit = new Array<number>(graph.keep.length).fill(Infinity);
+  const basisOf = (x: number) => fixed ? 0 : cost[x]!;
+  graph.components.forEach((members, k) => {
+    if (graph.closed[k]) {
+      const mass = flow.closedMass.get(k)!;
+      const total = members.reduce((sum, x) => sum + (fixed?.[x] ? cost[x]! : basisOf(x)), 0);
+      members.forEach(x => { unit[x] = mass > 0 ? total / mass : Infinity; });
+      return;
+    }
+    if (flow.through[members[0]!]! <= 0) return;
+    const outside = (x: number) => graph.children[x]!.reduce((sum, { child, share }) =>
+      graph.componentOf[child] === k || !Number.isFinite(unit[child]!) ? sum : sum + share * unit[child]!, 0);
+    const matrix = identityMinus(graph, members);
+    const rhs = members.map((x, i) => {
+      if (fixed?.[x]) {
+        matrix[i] = members.map((_, j) => (i === j ? 1 : 0));
+        return fixedValue![x]!;
+      }
+      return basisOf(x) / flow.through[x]! + outside(x);
+    });
+    solve(matrix, rhs).forEach((value, i) => { unit[members[i]!] = value; });
+  });
+  return unit;
+}
+
+/**
+ * Share of each child's value that comes from each parent, keyed `${parentId}->${childId}`:
+ * the parent's flow over everything entering the child (intrinsic value and all
+ * parents' flows). Shares of all parents sum to 1, minus the part the child's own
+ * intrinsic value accounts for. Unreached children are shared by connection weights.
  */
 function calculateAttributionShares(
   ideas: Idea[],
-  ideaMap: Map<string, Idea>,
-  flowValues: Map<string, number>,
-  totalIntrinsic: number
+  graph: FlowGraph,
+  flow: ValueFlow,
+  structuralFlow: ValueFlow
 ): Map<string, number> {
-  const parentsByChild = new Map<string, string[]>();
-  for (const parent of ideas) {
-    for (const connection of parent.supportingConnections ?? []) {
-      if (!ideaMap.has(connection.ideaId) || connection.ideaId === parent.id) continue;
-      const parents = parentsByChild.get(connection.ideaId) ?? [];
-      parents.push(parent.id);
-      parentsByChild.set(connection.ideaId, parents);
-    }
-  }
-
+  const entering = ideas.map(idea => idea.intrinsicValue ?? 0);
+  const structuralEntering = new Array<number>(ideas.length).fill(0);
+  graph.children.forEach((edges, x) => edges.forEach(({ child }, k) => {
+    entering[child] = entering[child]! + flow.edgeFlows[x]![k]!;
+    structuralEntering[child] = structuralEntering[child]! + structuralFlow.edgeFlows[x]![k]!;
+  }));
   const shares = new Map<string, number>();
-  for (const [childId, parentIds] of parentsByChild) {
-    const intrinsic = totalIntrinsic > 0 ? (ideaMap.get(childId)!.intrinsicValue ?? 0) / totalIntrinsic : 0;
-    const inputs = parentIds.reduce((sum, parentId) => sum + (flowValues.get(`${parentId}->${childId}`) ?? 0), intrinsic);
-    for (const parentId of parentIds) {
-      shares.set(`${parentId}->${childId}`, inputs > 1e-12
-        ? (flowValues.get(`${parentId}->${childId}`) ?? 0) / inputs
-        : 1 / parentIds.length);
-    }
-  }
+  graph.children.forEach((edges, x) => edges.forEach(({ child }, k) => {
+    const share = entering[child]! > 0
+      ? flow.edgeFlows[x]![k]! / entering[child]!
+      : structuralEntering[child]! > 0 ? structuralFlow.edgeFlows[x]![k]! / structuralEntering[child]! : 0;
+    shares.set(`${ideas[x]!.id}->${ideas[child]!.id}`, share);
+  }));
   return shares;
 }
 
-/**
- * Deterministic attributed-cost propagation. Strongly connected components are
- * collapsed before costs move from children to parents, preventing cycle
- * amplification. A cyclic component's result is allocated to its members in
- * proportion to their direct cost (equally if every basis is zero).
- */
-function distributeCostsStable(
-  ideas: Idea[],
-  ideaMap: Map<string, Idea>,
-  attributionShares: Map<string, number>,
-  isDoneCost: boolean,
-  totalCosts?: Map<string, number>
-): Map<string, number> {
-  const dependencies = new Map<string, { childId: string; share: number }[]>();
-  for (const parent of ideas) {
-    const deps: { childId: string; share: number }[] = [];
-    for (const connection of parent.supportingConnections ?? []) {
-      const childId = connection.ideaId;
-      if (!ideaMap.has(childId)) continue;
-      const share = attributionShares.get(`${parent.id}->${childId}`) ?? 0;
-      if (share > 0) deps.push({ childId, share });
-    }
-    dependencies.set(parent.id, deps);
-  }
+function stationaryDistribution(graph: FlowGraph, members: number[]): number[] {
+  // πᵀ(I − Q) = 0 with Σπ = 1: transpose, and swap one equation for the sum.
+  const matrix = identityMinus(graph, members);
+  const transposed = members.map((_, i) => members.map((_, j) => matrix[j]![i]!));
+  transposed[0] = members.map(() => 1);
+  return solve(transposed, members.map((_, i) => (i === 0 ? 1 : 0)));
+}
 
+function identityMinus(graph: FlowGraph, members: number[]): number[][] {
+  const position = new Map(members.map((x, i) => [x, i]));
+  return members.map((x, i) => {
+    const row = members.map((_, j): number => (i === j ? 1 : 0));
+    for (const { child, share } of graph.children[x]!) {
+      const j = position.get(child);
+      if (j !== undefined) row[j] = row[j]! - share;
+    }
+    return row;
+  });
+}
+
+/** Gaussian elimination with partial pivoting. Cycles are small, so dense is fine. */
+function solve(matrix: number[][], rhs: number[]): number[] {
+  const m = rhs.length;
+  const a = matrix.map((row, i) => [...row, rhs[i]!]);
+  for (let col = 0; col < m; col++) {
+    let pivot = col;
+    for (let row = col + 1; row < m; row++) {
+      if (Math.abs(a[row]![col]!) > Math.abs(a[pivot]![col]!)) pivot = row;
+    }
+    [a[col], a[pivot]] = [a[pivot]!, a[col]!];
+    for (let row = col + 1; row < m; row++) {
+      const factor = a[row]![col]! / a[col]![col]!;
+      for (let k = col; k <= m; k++) a[row]![k] = a[row]![k]! - factor * a[col]![k]!;
+    }
+  }
+  const x = new Array<number>(m).fill(0);
+  for (let row = m - 1; row >= 0; row--) {
+    let sum = a[row]![m]!;
+    for (let k = row + 1; k < m; k++) sum -= a[row]![k]! * x[k]!;
+    x[row] = sum / a[row]![row]!;
+  }
+  return x;
+}
+
+function invert(matrix: number[][]): number[][] {
+  const columns = matrix.map((_, j) => solve(matrix, matrix.map((_, i) => (i === j ? 1 : 0))));
+  return matrix.map((_, i) => columns.map(column => column[i]!));
+}
+
+/** Tarjan: components come out sinks first (a component after everything it reaches). */
+function stronglyConnectedComponents(adjacency: number[][]): number[][] {
   let nextIndex = 0;
-  const indexes = new Map<string, number>();
-  const lowLinks = new Map<string, number>();
-  const stack: string[] = [];
-  const onStack = new Set<string>();
-  const components: string[][] = [];
-  const visit = (id: string): void => {
-    indexes.set(id, nextIndex);
-    lowLinks.set(id, nextIndex++);
-    stack.push(id);
-    onStack.add(id);
-    for (const { childId } of dependencies.get(id) ?? []) {
-      if (!indexes.has(childId)) {
-        visit(childId);
-        lowLinks.set(id, Math.min(lowLinks.get(id)!, lowLinks.get(childId)!));
-      } else if (onStack.has(childId)) {
-        lowLinks.set(id, Math.min(lowLinks.get(id)!, indexes.get(childId)!));
+  const index: number[] = [];
+  const lowLink: number[] = [];
+  const stack: number[] = [];
+  const onStack: boolean[] = [];
+  const components: number[][] = [];
+  const visit = (x: number): void => {
+    index[x] = lowLink[x] = nextIndex++;
+    stack.push(x);
+    onStack[x] = true;
+    for (const y of adjacency[x]!) {
+      if (index[y] === undefined) {
+        visit(y);
+        lowLink[x] = Math.min(lowLink[x]!, lowLink[y]!);
+      } else if (onStack[y]) {
+        lowLink[x] = Math.min(lowLink[x]!, index[y]!);
       }
     }
-    if (lowLinks.get(id) !== indexes.get(id)) return;
-    const component: string[] = [];
-    let member: string;
+    if (lowLink[x] !== index[x]) return;
+    const component: number[] = [];
+    let member: number;
     do {
       member = stack.pop()!;
-      onStack.delete(member);
+      onStack[member] = false;
       component.push(member);
-    } while (member !== id);
+    } while (member !== x);
     components.push(component);
   };
-  for (const idea of ideas) if (!indexes.has(idea.id)) visit(idea.id);
-
-  const componentOf = new Map<string, number>();
-  components.forEach((members, componentId) =>
-    members.forEach(id => componentOf.set(id, componentId)));
-  const componentDependencies = new Map<number, Map<number, number>>();
-  for (const parent of ideas) {
-    // A completed idea's done cost is already its full attributed total; pulling
-    // completed descendants again would double count it.
-    if (isDoneCost && parent.status.state === 'implemented') continue;
-    const parentComponent = componentOf.get(parent.id)!;
-    for (const dependency of dependencies.get(parent.id) ?? []) {
-      const childComponent = componentOf.get(dependency.childId)!;
-      if (parentComponent === childComponent) continue;
-      const outgoing = componentDependencies.get(parentComponent) ?? new Map<number, number>();
-      outgoing.set(childComponent, (outgoing.get(childComponent) ?? 0) + dependency.share);
-      componentDependencies.set(parentComponent, outgoing);
-    }
-  }
-
-  const memberBasis = (id: string): number => {
-    const idea = ideaMap.get(id)!;
-    if (!isDoneCost) return idea.cost ?? 0;
-    return idea.status.state === 'implemented' ? (totalCosts?.get(id) ?? 0) : 0;
-  };
-  const componentCosts = new Map<number, number>();
-  const calculateComponent = (componentId: number): number => {
-    const cached = componentCosts.get(componentId);
-    if (cached !== undefined) return cached;
-    let cost = components[componentId]!.reduce((sum, id) => sum + memberBasis(id), 0);
-    for (const [childComponent, share] of componentDependencies.get(componentId) ?? []) {
-      cost += calculateComponent(childComponent) * share;
-    }
-    componentCosts.set(componentId, cost);
-    return cost;
-  };
-
-  const costs = new Map<string, number>();
-  components.forEach((members, componentId) => {
-    const componentCost = calculateComponent(componentId);
-    const bases = members.map(memberBasis);
-    const basisTotal = bases.reduce((sum, value) => sum + value, 0);
-    members.forEach((id, memberIndex) => {
-      const allocation = basisTotal > 0 ? bases[memberIndex]! / basisTotal : 1 / members.length;
-      costs.set(id, componentCost * allocation);
-    });
-  });
-  return costs;
+  adjacency.forEach((_, x) => { if (index[x] === undefined) visit(x); });
+  return components;
 }
-
-// Remove old functions (commented out or just omitted in replacement)
-/*
-function calculateCosts(ideas: Idea[], ideaMap: Map<string, Idea>): Map<string, number> {
-  // ...
-}
-function calculateDoneCosts(...) {
-  // ...
-} 
-*/

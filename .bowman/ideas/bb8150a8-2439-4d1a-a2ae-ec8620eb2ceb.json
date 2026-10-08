@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1791450719188
+    "state": "review",
+    "comment": "Value calculation rewritten (packages/shared/src/value-calculation.ts): the self share is realized at the idea and leaves the flow, with no normalization. Aggregated value t = i + Qᵀt, cost per unit value κ = c/t + Qκ, priority 1/κ. Derivation and checks in math/README.md. Needs Felix to look at the graph.",
+    "date": 1791491401840
   },
   "intrinsicValue": 0,
   "cost": 1,

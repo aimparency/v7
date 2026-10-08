@@ -5,7 +5,7 @@ packages/frontend/public/runtime-config.json
 
 packages/embedder/venv/
 packages/embedder/.cache/
-packages/embedder/__pycache__/
+__pycache__/
 **/vectors.json
 **/dist/
 **/build/
