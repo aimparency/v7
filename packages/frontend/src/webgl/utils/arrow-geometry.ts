@@ -41,14 +41,32 @@ export interface ArrowGeometry {
 
 export interface ArrowStyle {
   curvature: number       // How far M is from midpoint (as factor of |S-T|)
-  widthFactor: number     // Multiplier for share-based width (like SVG's 1.2)
   roundSourceCap: boolean // Extend and round the source side (used by drag previews)
 }
 
 const DEFAULT_STYLE: ArrowStyle = {
   curvature: 0.5,         // M is at |S-T| * 0.5 from midpoint
-  widthFactor: 1.2,       // Match SVG: width = widthFactor * targetR * share
   roundSourceCap: false
+}
+
+// Thinnest arrow, relative to the source diameter, so small flows stay visible.
+const MIN_WIDTH_RATIO = 0.05
+
+/**
+ * Base width of a connection arrow, in world units: the diameter a node would
+ * have if it held only the value delivered through this connection. Nodes show
+ * value as area (r ∝ √value), so the width scales with the square root of the
+ * delivered fraction (flow into the child / the child's value). Equal flows
+ * thus look equal everywhere, and an arrow carrying all of an idea's value is
+ * exactly as wide as the idea. Ideas without value fall back to the weight share.
+ */
+export function connectionArrowWidth(link: {
+  source: { r: number, value: number }
+  flowValue: number
+  share: number
+}): number {
+  const delivered = link.source.value > 0 ? link.flowValue / link.source.value : link.share
+  return 2 * link.source.r * Math.min(1, Math.max(MIN_WIDTH_RATIO, Math.sqrt(delivered)))
 }
 
 /**
@@ -93,12 +111,12 @@ function circleCircleIntersection(
 
 /**
  * Calculate arrow geometry from source and target nodes
- * @param share - The contribution share (0-1), determines arrow width like SVG
+ * @param width - Arrow width at its base, in world units
  */
 export function calculateArrowGeometry(
   source: NodeGeometry,
   target: NodeGeometry,
-  share: number = 0.5,
+  width: number,
   style: Partial<ArrowStyle> = {}
 ): ArrowGeometry {
   const s = { ...DEFAULT_STYLE, ...style }
@@ -140,8 +158,7 @@ export function calculateArrowGeometry(
   const msY = S.y - M.y
   const centerRadius = Math.sqrt(msX * msX + msY * msY)
 
-  // Arrow width based on share (matching SVG: width = widthFactor * targetR * share)
-  const halfWidth = s.widthFactor * target.r * share / 2
+  const halfWidth = width / 2
 
   // Normalized half-width (for normalized distance checks in shader)
   const normalizedHalfWidth = halfWidth / centerRadius

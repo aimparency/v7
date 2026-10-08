@@ -9,7 +9,7 @@ import { WebGLGraphRenderer, type NodeData } from '../webgl/WebGLGraphRenderer'
 import { ArrowRenderer, type EdgeData } from '../webgl/ArrowRenderer'
 import { SelectionSpinnerRenderer } from '../webgl/SelectionSpinnerRenderer'
 import { TAAPass } from '../webgl/TAAPass'
-import { calculateArrowGeometry } from '../webgl/utils/arrow-geometry'
+import { calculateArrowGeometry, connectionArrowWidth } from '../webgl/utils/arrow-geometry'
 import { applyBrightness, cssColorToRgb, statusToColor, type StatusColorEntry } from '../webgl/status-colors'
 import { planSpinOff } from 'shared'
 import { useGraphUIStore } from '../stores/ui/graph-store'
@@ -164,7 +164,7 @@ export function useWebGLGraphRenderer(
     targetY: number
     sourceR: number
     targetR: number
-    share: number
+    width: number
     state: number
   }
   const edgeStateMap = new Map<string, EdgeState>()
@@ -187,14 +187,14 @@ export function useWebGLGraphRenderer(
       const targetY = link.target.renderPos[1]
       const sourceR = link.source.r
       const targetR = link.target.r
-      const share = link.share ?? 0.5
+      const width = connectionArrowWidth(link)
 
       const edgeKey = `${link.source.id}->${link.target.id}`
 
       // Get or create state for this edge
       let state = edgeStateMap.get(edgeKey)
       if (!state) {
-        state = { sourceX, sourceY, targetX, targetY, sourceR, targetR, share, state: 0 }
+        state = { sourceX, sourceY, targetX, targetY, sourceR, targetR, width, state: 0 }
         edgeStateMap.set(edgeKey, state)
       }
 
@@ -230,8 +230,7 @@ export function useWebGLGraphRenderer(
         r: targetR
       }
 
-      // Calculate arrow geometry with share-based width
-      const geometry = calculateArrowGeometry(sourceNode, targetNode, share)
+      const geometry = calculateArrowGeometry(sourceNode, targetNode, width)
 
       // Update cached positions (after using old pos if needed)
       if (!useOldPos) {
@@ -241,12 +240,15 @@ export function useWebGLGraphRenderer(
         state.targetY = targetY
         state.sourceR = sourceR
         state.targetR = targetR
-        state.share = share
+        state.width = width
       }
 
       // Edge color: the supporting idea's (source) node color in the active
-      // color mode, falling back to neutral gray if the node isn't found.
-      const color: [number, number, number] = nodeColorById.get(link.source.id) ?? [0.5, 0.5, 0.5]
+      // color mode (neutral gray if the node isn't found), lifted 5% toward
+      // white so arrows read as lighter than the nodes they leave.
+      const [r, g, b] = nodeColorById.get(link.source.id) ?? [0.5, 0.5, 0.5]
+      const lift = (c: number) => 1 - (1 - c) * 0.95
+      const color: [number, number, number] = [lift(r), lift(g), lift(b)]
 
       const currentIdeaId = graphUIStore.graphSelectedIdeaId
       const selected = (!!selectedLink &&
@@ -259,7 +261,7 @@ export function useWebGLGraphRenderer(
         sourceId: link.source.id,
         targetId: link.target.id,
         color,
-        opacity: 0.6,
+        opacity: 0.4,
         geometry,
         moving: state.state > 0,
         selected
@@ -287,8 +289,8 @@ export function useWebGLGraphRenderer(
             y: target.pos[1],
             r: target.r
           },
-          0.5,
-          { widthFactor: 1, roundSourceCap: true }
+          target.r * 0.5,
+          { roundSourceCap: true }
         ),
         moving: true,
         selected: false

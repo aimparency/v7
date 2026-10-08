@@ -14,6 +14,7 @@ import {
 import nodeVertexShaderSource from './shaders/node.vert.glsl?raw'
 import nodeFragmentShaderSource from './shaders/node.frag.glsl?raw'
 import { canvasPixelRatio } from './pixel-ratio'
+import { GRAPH_BACKGROUND } from './background'
 
 export interface NodeData {
   id: string
@@ -75,7 +76,7 @@ export class WebGLGraphRenderer {
   constructor(canvas: HTMLCanvasElement, options: RendererOptions = {}) {
     this.canvas = canvas
     this.options = {
-      backgroundColor: options.backgroundColor || [0.12, 0.12, 0.12, 1.0]
+      backgroundColor: options.backgroundColor || GRAPH_BACKGROUND
     }
   }
 

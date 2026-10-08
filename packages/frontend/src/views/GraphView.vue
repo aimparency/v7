@@ -15,7 +15,7 @@ import * as vec2 from '../utils/vec2'
 import { useGraphSimulation } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
-import { calculateArrowGeometry, hitTestArrow } from '../webgl/utils/arrow-geometry'
+import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
 import { proposeRelaxedConnections } from '../utils/auto-relax'
 
 const dataStore = useDataStore()
@@ -72,7 +72,7 @@ function hitTestLink(physX: number, physY: number) {
       r: link.target.r
     }
 
-    const geom = calculateArrowGeometry(sourceNode, targetNode, link.share ?? 0.5)
+    const geom = calculateArrowGeometry(sourceNode, targetNode, connectionArrowWidth(link))
 
     if (hitTestArrow(geom, point, i === links.value.length - 1)) {
       return link
@@ -634,7 +634,7 @@ function toggleSpinOffPreview() {
 .graph-view {
   width: 100%;
   height: 100%;
-  background: #1e1e1e;
+  background: #131313; /* GRAPH_BACKGROUND in webgl/background.ts */
   overflow: hidden;
   position: relative;
 }

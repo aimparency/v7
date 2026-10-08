@@ -169,7 +169,8 @@ export function useGraphSimulation() {
     rawNodes.forEach(raw => {
       let existing = nodeMap.get(raw.id)
       const val = raw.value || 0
-      const radius = Math.sqrt((val / (avgValue || 1)) + 0.1) * 150
+      // Area ∝ value; the small floor keeps value-less ideas visible and clickable.
+      const radius = Math.sqrt((val / (avgValue || 1)) + 0.02) * 150
       
       let color: string | undefined = undefined
       if (graphUIStore.graphColorMode === 'priority') {

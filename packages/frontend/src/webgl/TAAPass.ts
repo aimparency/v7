@@ -7,6 +7,7 @@
  */
 
 import taaVertexShaderSource from './shaders/taa.vert.glsl?raw'
+import { GRAPH_BACKGROUND } from './background'
 import taaFragmentShaderSource from './shaders/taa.frag.glsl?raw'
 
 export class TAAPass {
@@ -215,7 +216,7 @@ export class TAAPass {
     gl.viewport(0, 0, this.fbWidth, this.fbHeight)
 
     // Clear both attachments
-    gl.clearColor(0.12, 0.12, 0.12, 1.0)
+    gl.clearColor(...GRAPH_BACKGROUND)
     gl.clear(gl.COLOR_BUFFER_BIT)
   }
 
