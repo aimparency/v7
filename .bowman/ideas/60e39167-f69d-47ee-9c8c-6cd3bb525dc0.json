@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1791450720795
+    "state": "review",
+    "comment": "useGraphSimulation.ts: radius = max(150·√(value/avg), MIN_NODE_RADIUS=40). Zero-value ideas go from 21px to 40px; ideas at or above (40/150)² ≈ 7% of the average value are now exactly proportional (the +0.02 had inflated all of them). npm run check 25/25. Not visually checked in the running app; the floor value 40 is a judgment call worth a look.",
+    "date": 1791492256784
   },
   "intrinsicValue": 0,
   "cost": 1,

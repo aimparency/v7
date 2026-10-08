@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1791450718310
+    "state": "unclear",
+    "comment": "The problem this describes (implicit ½ per-hop discount from normalization) is gone with the value-calculation rewrite (bb8150a8, commit 0ac8beb): no normalization, d is effectively 1. math/README.md 'Decisions' lists a tunable t = i + d·Qᵀt as optional 'if it's ever wanted'. Needs Felix to decide: cancel, or keep as a future knob.",
+    "date": 1791492279132
   },
   "intrinsicValue": 0,
   "cost": 1,
