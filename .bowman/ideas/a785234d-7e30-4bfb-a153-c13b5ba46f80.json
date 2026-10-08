@@ -13,7 +13,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Commit 335a09f. Regression tests in packages/backend/src/commitments.test.ts (6 concurrent creates; concurrent commit+remove) failed before and pass after; npm run check 25/25. Lock is in-process only (MCP server writing the same project is not covered). Other phase read-modify-writes (routers/phase.ts, idea removal) are unlocked.",
+    "comment": "335a09f locked commitIdeaToPhase/removeIdeaFromPhase. c6ab941 generalizes: updatePhase/updateProjectMeta/updateIdea (storage/) do read-change-write under a per-file lock; phase create/update/reorder/delete, setCursor, commitments and idea-removal use them. Tests in packages/backend/src/commitments.test.ts: concurrent creates in a phase, commit+remove, concurrent phase creates under a parent and at the root, rename+commit (all failed before, pass after); backend 100/100, npm run check 25/25. Still in-process only; other writeProjectMeta callers (8, e.g. linked repos) and idea connect paths are not yet locked.",
     "date": 1791492162038
   },
   "intrinsicValue": 0,
