@@ -23,18 +23,14 @@ describe('calculateArrowGeometry source cap', () => {
 })
 
 describe('connectionArrowWidth', () => {
-  const link = (value: number, flowValue: number, share = 0.5) => ({ source: { r: 10, value }, flowValue, share })
+  const link = (attributionShare: number) => ({ source: { r: 10 }, attributionShare })
 
   it('is as wide as a node holding the delivered value', () => {
-    expect(connectionArrowWidth(link(100, 100))).toBe(20)
-    expect(connectionArrowWidth(link(100, 25))).toBe(10)
-  })
-
-  it('falls back to the weight share for ideas without value', () => {
-    expect(connectionArrowWidth(link(0, 0, 0.25))).toBe(10)
+    expect(connectionArrowWidth(link(1))).toBe(20)
+    expect(connectionArrowWidth(link(0.25))).toBe(10)
   })
 
   it('stays visible for tiny contributions', () => {
-    expect(connectionArrowWidth(link(100, 0))).toBe(1)
+    expect(connectionArrowWidth(link(0))).toBe(1)
   })
 })

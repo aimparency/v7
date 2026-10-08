@@ -124,6 +124,7 @@ export function calculateIdeaValues(inputIdeas: Idea[]): {
   totalIntrinsic: number, 
   flowShares: Map<string, number>,
   flowValues: Map<string, number>,
+  attributionShares: Map<string, number>,
   costs: Map<string, number>,
   doneCosts: Map<string, number>,
   priorities: Map<string, number>
@@ -196,10 +197,11 @@ export function calculateIdeaValues(inputIdeas: Idea[]): {
   }
 
   if (totalIntrinsic === 0) {
-    const costs = distributeCostsStable(ideas, ideaMap, currentValues, flowValues, false);
-    const doneCosts = distributeCostsStable(ideas, ideaMap, currentValues, flowValues, true, costs);
+    const attributionShares = calculateAttributionShares(ideas, ideaMap, flowValues, totalIntrinsic);
+    const costs = distributeCostsStable(ideas, ideaMap, attributionShares, false);
+    const doneCosts = distributeCostsStable(ideas, ideaMap, attributionShares, true, costs);
     const priorities = new Map(ideas.map(idea => [idea.id, 0]));
-    return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, costs, doneCosts, priorities };
+    return { values: currentValues, totalIntrinsic: 0, flowShares, flowValues, attributionShares, costs, doneCosts, priorities };
   }
 
   // 3. Iterate
@@ -271,9 +273,10 @@ export function calculateIdeaValues(inputIdeas: Idea[]): {
       }
   }
 
-  // Use the flow values (Parent->Child) to compute cost shares (Child->Parent)
-  const costs = distributeCostsStable(ideas, ideaMap, currentValues, flowValues, false);
-  const doneCosts = distributeCostsStable(ideas, ideaMap, currentValues, flowValues, true, costs);
+  // Each parent carries the share of a child's cost that matches its share of the child's value.
+  const attributionShares = calculateAttributionShares(ideas, ideaMap, flowValues, totalIntrinsic);
+  const costs = distributeCostsStable(ideas, ideaMap, attributionShares, false);
+  const doneCosts = distributeCostsStable(ideas, ideaMap, attributionShares, true, costs);
 
   // Priority is the positive profitability ratio: discounted estimated
   // flowed value divided by estimated present attributed cost. Variance fields
@@ -291,7 +294,47 @@ export function calculateIdeaValues(inputIdeas: Idea[]): {
       priorities.set(idea.id, priority);
   }
 
-  return { values: currentValues, totalIntrinsic, flowShares, flowValues, costs, doneCosts, priorities };
+  return { values: currentValues, totalIntrinsic, flowShares, flowValues, attributionShares, costs, doneCosts, priorities };
+}
+
+/**
+ * Share of each child's value that comes from each parent, keyed `${parentId}->${childId}`.
+ *
+ * Flow values are recorded before the per-step normalization, so they cannot be
+ * compared with the (normalized) values directly. They can be compared with the
+ * child's other inputs, which share their scale: the intrinsic value poured into
+ * the child and the flows from its other parents. Self-retention (self weight,
+ * leaf retention) is not an input from anyone, so it stays out. Shares of all
+ * parents sum to 1, minus the part the child's own intrinsic value accounts for.
+ * Without any value signal, parents share a child equally.
+ */
+function calculateAttributionShares(
+  ideas: Idea[],
+  ideaMap: Map<string, Idea>,
+  flowValues: Map<string, number>,
+  totalIntrinsic: number
+): Map<string, number> {
+  const parentsByChild = new Map<string, string[]>();
+  for (const parent of ideas) {
+    for (const connection of parent.supportingConnections ?? []) {
+      if (!ideaMap.has(connection.ideaId) || connection.ideaId === parent.id) continue;
+      const parents = parentsByChild.get(connection.ideaId) ?? [];
+      parents.push(parent.id);
+      parentsByChild.set(connection.ideaId, parents);
+    }
+  }
+
+  const shares = new Map<string, number>();
+  for (const [childId, parentIds] of parentsByChild) {
+    const intrinsic = totalIntrinsic > 0 ? (ideaMap.get(childId)!.intrinsicValue ?? 0) / totalIntrinsic : 0;
+    const inputs = parentIds.reduce((sum, parentId) => sum + (flowValues.get(`${parentId}->${childId}`) ?? 0), intrinsic);
+    for (const parentId of parentIds) {
+      shares.set(`${parentId}->${childId}`, inputs > 1e-12
+        ? (flowValues.get(`${parentId}->${childId}`) ?? 0) / inputs
+        : 1 / parentIds.length);
+    }
+  }
+  return shares;
 }
 
 /**
@@ -303,30 +346,17 @@ export function calculateIdeaValues(inputIdeas: Idea[]): {
 function distributeCostsStable(
   ideas: Idea[],
   ideaMap: Map<string, Idea>,
-  values: Map<string, number>,
-  flowValues: Map<string, number>,
+  attributionShares: Map<string, number>,
   isDoneCost: boolean,
   totalCosts?: Map<string, number>
 ): Map<string, number> {
-  const childToParents = new Map<string, string[]>();
-  for (const parent of ideas) {
-    for (const connection of parent.supportingConnections ?? []) {
-      if (!ideaMap.has(connection.ideaId)) continue;
-      const parents = childToParents.get(connection.ideaId) ?? [];
-      parents.push(parent.id);
-      childToParents.set(connection.ideaId, parents);
-    }
-  }
   const dependencies = new Map<string, { childId: string; share: number }[]>();
   for (const parent of ideas) {
     const deps: { childId: string; share: number }[] = [];
     for (const connection of parent.supportingConnections ?? []) {
       const childId = connection.ideaId;
       if (!ideaMap.has(childId)) continue;
-      const childValue = values.get(childId) ?? 0;
-      const share = childValue > 1e-8
-        ? (flowValues.get(`${parent.id}->${childId}`) ?? 0) / childValue
-        : 1 / (childToParents.get(childId)?.length ?? 1);
+      const share = attributionShares.get(`${parent.id}->${childId}`) ?? 0;
       if (share > 0) deps.push({ childId, share });
     }
     dependencies.set(parent.id, deps);

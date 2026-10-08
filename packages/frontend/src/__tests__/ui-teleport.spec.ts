@@ -33,6 +33,7 @@ vi.mock('shared', async (importOriginal) => {
       priorities: new Map(),
       flowShares: new Map(),
       flowValues: new Map(),
+      attributionShares: new Map(),
       totalIntrinsic: 0
     }))
   }

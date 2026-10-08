@@ -207,6 +207,7 @@ export const useDataStore = defineStore('data', {
     calculatedPriorities: new Map<string, number>(),
     flowShares: new Map<string, number>(),
     flowValues: new Map<string, number>(),
+    attributionShares: new Map<string, number>(),
     totalIntrinsicValue: 0,
 
     // Persistence Debounce
@@ -347,7 +348,7 @@ export const useDataStore = defineStore('data', {
         unreadable: undefined as string | undefined // load error of a warning node (below)
       }))
 
-      const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number, share: number, flowValue: number }[] = []
+      const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number, share: number, flowValue: number, attributionShare: number }[] = []
       const unreadableIds = new Set(state.unreadableIdeas.map(entry => entry.id))
 
       ideas.forEach(idea => {
@@ -366,7 +367,8 @@ export const useDataStore = defineStore('data', {
                   relativePosition: [conn.relativePosition[0], conn.relativePosition[1]],
                   weight: conn.weight,
                   share,
-                  flowValue
+                  flowValue,
+                  attributionShare: state.attributionShares.get(`${idea.id}->${childId}`) || 0
                 })
             }
             })
@@ -394,7 +396,7 @@ export const useDataStore = defineStore('data', {
         })
         entry.supportingIdeaIds.forEach(childId => {
           if (!state.ideas[childId] && !unreadableIds.has(childId)) return
-          links.push({ source: childId, target: entry.id, type: 'hierarchy', relativePosition: [0, 0], weight: 1, share: 0, flowValue: 0 })
+          links.push({ source: childId, target: entry.id, type: 'hierarchy', relativePosition: [0, 0], weight: 1, share: 0, flowValue: 0, attributionShare: 0 })
         })
       })
 
@@ -443,7 +445,8 @@ export const useDataStore = defineStore('data', {
             relativePosition: [edge.relativePosition?.[0] ?? 0, edge.relativePosition?.[1] ?? 0],
             weight: edge.weight ?? 1,
             share,
-            flowValue
+            flowValue,
+            attributionShare: state.attributionShares.get(`${idea.id}->${repoId}`) || 0
           })
         })
       })
@@ -503,6 +506,7 @@ export const useDataStore = defineStore('data', {
             this.calculatedPriorities = result.priorities;
             this.flowShares = result.flowShares;
             this.flowValues = result.flowValues;
+            this.attributionShares = result.attributionShares;
             this.totalIntrinsicValue = result.totalIntrinsic;
             this.recalculateTimeout = null;
         }, 50)

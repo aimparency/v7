@@ -47,6 +47,7 @@ export interface GraphLink {
   weight: number
   share: number
   flowValue: number
+  attributionShare: number // share of the source's value that comes from the target
   forceWeight: number
 }
 
@@ -237,6 +238,7 @@ export function useGraphSimulation() {
           weight: l.weight || 1,
           share: l.share || 0,
           flowValue: l.flowValue || 0,
+          attributionShare: l.attributionShare || 0,
           forceWeight: 0.5
         })
       }

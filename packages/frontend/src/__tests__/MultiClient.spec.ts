@@ -54,7 +54,7 @@ vi.mock('shared', async (importOriginal) => {
   return {
     ...actual,
     calculateIdeaValues: vi.fn(() => ({ 
-        values: new Map(), costs: new Map(), doneCosts: new Map(), flowShares: new Map(), flowValues: new Map(), totalIntrinsic: 0 
+        values: new Map(), costs: new Map(), doneCosts: new Map(), flowShares: new Map(), flowValues: new Map(), attributionShares: new Map(), totalIntrinsic: 0 
     }))
   }
 })

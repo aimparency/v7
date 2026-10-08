@@ -210,3 +210,62 @@ test('cyclic attributed costs are deterministic and count direct costs once', ()
   assert.ok(Math.abs(first.get(a.id)! - 2) < 1e-10);
   assert.ok(Math.abs(first.get(b.id)! - 3) < 1e-10);
 });
+
+function connect(parent: Idea, child: Idea, weight = 1) {
+  parent.supportingConnections.push({ ideaId: child.id, weight, relativePosition: [0, 0] });
+  child.supportedIdeas.push(parent.id);
+}
+
+test('intermediate ideas pass their full cost up a chain, not a normalization multiple', () => {
+  // root -> mid -> leaf, each costing 10. Every idea is the only way to get its
+  // parent done, so each parent carries its whole sub-chain exactly once.
+  const root = createMockIdea('root', 100, 10);
+  const mid = createMockIdea('mid', 0, 10);
+  const leaf = createMockIdea('leaf', 0, 10);
+  connect(root, mid);
+  connect(mid, leaf);
+
+  const { costs, attributionShares } = calculateIdeaValues([root, mid, leaf]);
+
+  assert.ok(Math.abs(attributionShares.get('root->mid')! - 1) < 1e-6);
+  assert.ok(Math.abs(attributionShares.get('mid->leaf')! - 1) < 1e-6);
+  assert.ok(Math.abs(costs.get('leaf')! - 10) < 1e-6);
+  assert.ok(Math.abs(costs.get('mid')! - 20) < 1e-6);
+  assert.ok(Math.abs(costs.get('root')! - 30) < 1e-6);
+});
+
+test('attribution shares split an idea between its parents by the value each sends', () => {
+  // goal splits evenly into big and small; big and small both feed shared.
+  // big sends shared all of its value, small only half (small keeps a self weight,
+  // which also feeds back into small, so small ends up sending a bit more than half of big).
+  const goal = createMockIdea('goal', 100, 1);
+  const big = createMockIdea('big', 0, 1);
+  const small = createMockIdea('small', 0, 1);
+  const shared = createMockIdea('shared', 0, 1);
+  connect(goal, big);
+  connect(goal, small);
+  connect(big, shared);
+  connect(small, shared);
+  small.loopWeight = 1;
+
+  const { attributionShares, flowValues } = calculateIdeaValues([goal, big, small, shared]);
+
+  const fromBig = attributionShares.get('big->shared')!;
+  const fromSmall = attributionShares.get('small->shared')!;
+  assert.ok(Math.abs(fromBig + fromSmall - 1) < 1e-6, `shares sum to ${fromBig + fromSmall}`);
+  // Scale-free: the shares keep the ratio of the flows themselves.
+  const flowRatio = flowValues.get('big->shared')! / flowValues.get('small->shared')!;
+  assert.ok(Math.abs(fromBig / fromSmall - flowRatio) < 1e-6);
+  assert.ok(fromBig > fromSmall);
+});
+
+test('an idea with intrinsic value of its own attributes only the rest to its parents', () => {
+  const goal = createMockIdea('goal', 100, 1);
+  const child = createMockIdea('child', 100, 1);
+  connect(goal, child);
+
+  const { attributionShares } = calculateIdeaValues([goal, child]);
+
+  const share = attributionShares.get('goal->child')!;
+  assert.ok(share > 0 && share < 1, `share ${share}`);
+});

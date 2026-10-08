@@ -56,17 +56,15 @@ const MIN_WIDTH_RATIO = 0.05
  * Base width of a connection arrow, in world units: the diameter a node would
  * have if it held only the value delivered through this connection. Nodes show
  * value as area (r ∝ √value), so the width scales with the square root of the
- * delivered fraction (flow into the child / the child's value). Equal flows
- * thus look equal everywhere, and an arrow carrying all of an idea's value is
- * exactly as wide as the idea. Ideas without value fall back to the weight share.
+ * delivered fraction (the attribution share: how much of the source idea's
+ * value comes from this target). An arrow carrying all of an idea's value is
+ * exactly as wide as the idea.
  */
 export function connectionArrowWidth(link: {
-  source: { r: number, value: number }
-  flowValue: number
-  share: number
+  source: { r: number }
+  attributionShare: number
 }): number {
-  const delivered = link.source.value > 0 ? link.flowValue / link.source.value : link.share
-  return 2 * link.source.r * Math.min(1, Math.max(MIN_WIDTH_RATIO, Math.sqrt(delivered)))
+  return 2 * link.source.r * Math.min(1, Math.max(MIN_WIDTH_RATIO, Math.sqrt(link.attributionShare)))
 }
 
 /**
