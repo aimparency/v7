@@ -194,7 +194,6 @@ export function getRandomRelativePosition(): [number, number] {
 
 // Helper function to connect ideas (reused by connectIdeas and createSubIdea)
 export async function connectIdeasInternal(projectPath: string, parentIdeaId: string, childIdeaId: string, parentIncomingIndex?: number, childSupportedIdeasIndex?: number, relativePosition?: [number, number], weight: number = 1, hypothesis?: string): Promise<void> {
-  console.log('connectIdeasInternal:', { parentIdeaId, childIdeaId, parentIncomingIndex, childSupportedIdeasIndex, relativePosition, weight, hypothesis });
   const parent = await readIdea(projectPath, parentIdeaId);
   const child = await readIdea(projectPath, childIdeaId);
 
@@ -252,16 +251,21 @@ export async function connectIdeasInternal(projectPath: string, parentIdeaId: st
       child.supportedIdeas.push(parentIdeaId);
     }
   }
-  console.log(parent, child)
   await writeIdea(projectPath, child);
 }
 
 // Remove an idea file (active or archived) and purge it from index + embeddings.
+// References to it from other ideas and phases are the caller's job.
 export async function deleteIdeaCompletely(rawProjectPath: string, ideaId: string): Promise<void> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await assertWritableBowman(projectPath);
-  await fs.remove(path.join(projectPath, 'ideas', `${ideaId}.json`));
-  await fs.remove(path.join(projectPath, 'archived-ideas', `${ideaId}.json`));
+  let previous: unknown = null;
+  for (const dirName of ['ideas', 'archived-ideas']) {
+    const ideaPath = path.join(projectPath, dirName, `${ideaId}.json`);
+    previous ??= await readJsonOrNull(ideaPath);
+    await fs.remove(ideaPath);
+  }
   removeIdeaFromIndex(projectPath, ideaId);
   await removeEmbedding(projectPath, ideaId);
+  emitChange({ type: 'idea', id: ideaId, projectPath, deleted: true, previous });
 }

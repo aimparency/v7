@@ -4,14 +4,13 @@ import path from 'path';
 import fs from 'fs-extra';
 import { createHash } from 'node:crypto';
 import { IdeaProposalSchema, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
-import { assertWritableBowman } from 'shared/bowman-migration';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
 import { getIdeaCommitEvidence, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 import { t, delayedProcedure } from '../trpc.js';
-import { emitChange } from '../change-events.js';
 import { readIdea, listIdeas, writeIdea, connectIdeasInternal, getRandomRelativePosition } from '../storage/ideas.js';
 import { readPhase } from '../storage/phases.js';
+import { deleteIdeas, detachIdea, disconnectIdeas } from '../storage/idea-removal.js';
 import { commitIdeaToPhase, removeIdeaFromPhase } from '../storage/commitments.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { addIdeaToIndex, updateIdeaInIndex, removeIdeaFromIndex, searchIdeas } from '../search.js';
@@ -32,7 +31,7 @@ const resolveCreationColor = async (
   if (explicitColor) return explicitColor;
   if (!parentId) return defaultIdeaColor();
   const parent = await readIdea(projectPath, parentId);
-  return defaultIdeaColor(parent.color ?? '#666666', parent.supportingConnections.length);
+  return defaultIdeaColor(parent.color ?? defaultIdeaColor());
 };
 
 type ApprovalJournal = {
@@ -580,63 +579,44 @@ export const ideaRouter = t.router({
       return updatedIdea;
     }),
 
+  // With cascade, descendants that nothing else anchors (no surviving parent,
+  // no phase commitment) are deleted too. dryRun only reports what would go.
   delete: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
-      ideaId: z.string().uuid()
+      ideaIds: z.array(z.string().uuid()).min(1),
+      cascade: z.boolean().default(false),
+      dryRun: z.boolean().default(false)
     }))
     .mutation(async ({ input }) => {
-      // First remove the idea from all phases where it's committed
-      const idea = await readIdea(input.projectPath, input.ideaId);
-      for (const phaseId of idea.committedIn) {
-        await removeIdeaFromPhase(input.projectPath, input.ideaId, phaseId);
-      }
+      const deletedIds = await deleteIdeas(input.projectPath, input.ideaIds, input);
+      if (!input.dryRun && process.env.NODE_ENV !== 'test') invalidateSemanticCache(input.projectPath);
+      return { deletedIds };
+    }),
 
-      // Clean up parent connections (supportedIdeas)
-      for (const parentId of idea.supportedIdeas || []) {
-          try {
-              const parent = await readIdea(input.projectPath, parentId);
-              if (parent.supportingConnections) {
-                  parent.supportingConnections = parent.supportingConnections.filter((c) => c.ideaId !== input.ideaId);
-                  await writeIdea(input.projectPath, parent);
-              }
-          } catch (e) {
-              console.warn(`Failed to cleanup parent ${parentId} for deleted idea ${input.ideaId}: ${e}`);
-          }
-      }
+  disconnect: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      parentIdeaId: z.string().uuid(),
+      childIdeaId: z.string().uuid()
+    }))
+    .mutation(async ({ input }) => {
+      await disconnectIdeas(input.projectPath, input.parentIdeaId, input.childIdeaId);
+      return { success: true };
+    }),
 
-      // Clean up child connections (supportingConnections)
-      for (const conn of idea.supportingConnections || []) {
-          try {
-              const child = await readIdea(input.projectPath, conn.ideaId);
-              if (child.supportedIdeas) {
-                  child.supportedIdeas = child.supportedIdeas.filter((id: string) => id !== input.ideaId);
-                  await writeIdea(input.projectPath, child);
-              }
-          } catch (e) {
-              console.warn(`Failed to cleanup child ${conn.ideaId} for deleted idea ${input.ideaId}: ${e}`);
-          }
-      }
-
-      // Then delete the idea file
-      const projectPath = normalizeProjectPath(input.projectPath);
-      const isArchived = idea.status.state === 'archived';
-      const dirName = isArchived ? 'archived-ideas' : 'ideas';
-      const ideaPath = path.join(projectPath, dirName, `${input.ideaId}.json`);
-      const previous = await fs.readJson(ideaPath).catch(() => null);
-      await assertWritableBowman(projectPath);
-      await fs.remove(ideaPath);
-
-      // Remove from search index
-      removeIdeaFromIndex(input.projectPath, input.ideaId);
-
-      if (process.env.NODE_ENV !== 'test') {
-        await removeEmbedding(input.projectPath, input.ideaId);
-        invalidateSemanticCache(input.projectPath);
-      }
-
-      emitChange({ type: 'idea', id: input.ideaId, projectPath: input.projectPath, deleted: true, previous });
-
+  // Removes the idea from one parent or phase; the idea itself stays.
+  detach: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      ideaId: z.string().uuid(),
+      from: z.union([
+        z.object({ parentId: z.string().uuid() }),
+        z.object({ phaseId: z.string().uuid() })
+      ])
+    }))
+    .mutation(async ({ input }) => {
+      await detachIdea(input.projectPath, input.ideaId, input.from);
       return { success: true };
     }),
 
@@ -753,7 +733,10 @@ export const ideaRouter = t.router({
            hypothesis: z.string().optional()
         })).optional(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
-      })
+      }),
+      // Parent the caller will connect right after creation (graph drag, MCP):
+      // the default color derives from it.
+      inheritColorFrom: z.string().optional()
     }))
     .mutation(async ({ input }) => {
       const ideaId = uuidv4();
@@ -774,7 +757,7 @@ export const ideaRouter = t.router({
         : 0;
       const isFirstIdea = existingIdeas === 0;
 
-      const primaryParentId = input.idea.supportedIdeas?.[0];
+      const primaryParentId = input.inheritColorFrom ?? input.idea.supportedIdeas?.[0];
       const idea: Idea = {
         id: ideaId,
         text: input.idea.text,

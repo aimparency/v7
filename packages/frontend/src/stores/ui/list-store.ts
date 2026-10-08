@@ -29,6 +29,7 @@ import {
   pasteCopiedIdeaAction
 } from './move-actions'
 import { useGraphUIStore } from './graph-store'
+import { deleteIdeasAsking } from './idea-removal'
 import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
 import { trpc } from '../../trpc'
@@ -876,17 +877,9 @@ export const useUIStore = defineStore('ui', {
         return false
       }
 
-      const dataStore = useDataStore()
-      const ids = [...this.multiSelectedIdeaIds]
-      for (const ideaId of ids) {
-        if (dataStore.ideas[ideaId]) {
-          await dataStore.deleteIdeaFromStore(useProjectStore().projectPath, ideaId)
-          delete dataStore.ideas[ideaId]
-          dataStore.floatingIdeasIds = dataStore.floatingIdeasIds.filter(id => id !== ideaId)
-        }
-      }
+      this.pendingBulkDelete = false
+      if (!await deleteIdeasAsking(useDataStore(), useProjectStore().projectPath, [...this.multiSelectedIdeaIds])) return false
       this.clearMultiSelect()
-      dataStore.recalculateValues()
       return true
     },
 

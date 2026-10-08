@@ -356,15 +356,10 @@ export async function moveIdeaOutAction(uiStore: any) {
   }
 
   try {
-    await trpc.idea.update.mutate({
+    await trpc.idea.disconnect.mutate({
       projectPath: getProjectPath(),
-      ideaId: parentId,
-      idea: { supportingConnections: updatedConnections }
-    })
-    await trpc.idea.update.mutate({
-      projectPath: getProjectPath(),
-      ideaId: currentIdeaId,
-      idea: { supportedIdeas: updatedSupportedIdeas }
+      parentIdeaId: parentId,
+      childIdeaId: currentIdeaId
     })
 
     if (grandparentId) {
@@ -539,21 +534,10 @@ export async function moveIdeaInAction(uiStore: any) {
     })
 
     if (oldParentId) {
-      const oldParent = dataStore.ideas[oldParentId]
-      if (oldParent) {
-        const oldParentConnections = oldParent.supportingConnections || []
-        const updatedConnections = oldParentConnections.filter((c: any) => c.ideaId !== currentIdeaId)
-
-        await trpc.idea.update.mutate({
-          projectPath: getProjectPath(),
-          ideaId: oldParentId,
-          idea: { supportingConnections: updatedConnections }
-        })
-      }
-      await trpc.idea.update.mutate({
+      await trpc.idea.disconnect.mutate({
         projectPath: getProjectPath(),
-        ideaId: currentIdeaId,
-        idea: { supportedIdeas: currentIdea.supportedIdeas.filter((id: string) => id !== oldParentId) }
+        parentIdeaId: oldParentId,
+        childIdeaId: currentIdeaId
       })
     } else if (oldPhaseId) {
       await trpc.idea.removeFromPhase.mutate({
@@ -648,15 +632,11 @@ export async function pasteCutIdeaAction(uiStore: any, dataStore: any) {
       })
     } else {
       if (sourceParentIdeaId) {
-        const sourceParent = dataStore.ideas[sourceParentIdeaId]
-        if (sourceParent) {
-          const updatedConnections = (sourceParent.supportingConnections || []).filter((c: any) => c.ideaId !== cutIdeaId)
-          await trpc.idea.update.mutate({
-            projectPath: getProjectPath(),
-            ideaId: sourceParentIdeaId,
-            idea: { supportingConnections: updatedConnections }
-          })
-        }
+        await trpc.idea.disconnect.mutate({
+          projectPath: getProjectPath(),
+          parentIdeaId: sourceParentIdeaId,
+          childIdeaId: cutIdeaId
+        })
       } else if (sourcePhaseId) {
         await trpc.idea.removeFromPhase.mutate({
           projectPath: getProjectPath(),

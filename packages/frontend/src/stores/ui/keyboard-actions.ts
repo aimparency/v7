@@ -5,6 +5,8 @@ import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
 import { hasQueryFlag } from '../../utils/perf-log'
 import { useHistoryStore } from '../history'
+import type { SelectionPath } from './navigation-helpers'
+import { deleteIdeasAsking, removeIdeaFromList } from './idea-removal'
 
 export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const graphStore = useGraphUIStore()
@@ -33,24 +35,8 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
         return
       }
 
-      const parent = dataStore.ideas[selectedLink.parentId]
-      const child = dataStore.ideas[selectedLink.childId]
-      if (!parent || !child) return
-
-      const updatedConnections = (parent.supportingConnections || []).filter((connection: any) => connection.ideaId !== child.id)
-      const updatedChildSupported = (child.supportedIdeas || []).filter((ideaId: string) => ideaId !== parent.id)
-
-      dataStore.replaceIdea(parent.id, { ...parent, supportingConnections: updatedConnections })
-      dataStore.replaceIdea(child.id, { ...child, supportedIdeas: updatedChildSupported })
-      dataStore.recalculateValues()
       graphStore.deselectLink()
-
-      await dataStore.updateIdea(projectStore.projectPath, parent.id, {
-        supportingConnections: updatedConnections
-      })
-      await dataStore.updateIdea(projectStore.projectPath, child.id, {
-        supportedIdeas: updatedChildSupported
-      })
+      await dataStore.removeConnection(projectStore.projectPath, selectedLink.parentId, selectedLink.childId)
       return
     }
 
@@ -58,9 +44,8 @@ export async function handleGraphKeydownAction(uiStore: any, event: KeyboardEven
     if (!ideaId) return
 
     if (graphStore.pendingDeleteIdeaId === ideaId) {
-      await dataStore.deleteIdea(ideaId)
       graphStore.setPendingDeleteIdea(null)
-      graphStore.setGraphSelection(null)
+      if (await deleteIdeasAsking(dataStore, projectStore.projectPath, [ideaId])) graphStore.setGraphSelection(null)
     } else {
       graphStore.setPendingDeleteIdea(ideaId)
     }
@@ -320,55 +305,38 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       event.preventDefault()
       const currentCol = uiStore.activeColumn
 
-      if (currentCol === -1) {
-        if (uiStore.navigatingIdeas) {
-          const selectedIndex = uiStore.getSelectedPhase(currentCol)
+      // In the floating list 'd' is an idea key, handled while navigating ideas.
+      if (currentCol === -1) break
 
-          const ideas = dataStore.floatingIdeas
-          if (!ideas || selectedIndex >= ideas.length) break
+      const selectedPhaseId = uiStore.getSelectedPhaseId(currentCol)
+      if (!selectedPhaseId) break
 
-          const ideaToDelete = ideas[selectedIndex]
-          if (!ideaToDelete) break
-          const ideaState = uiStore.ensureIdeaUIState(uiStore.floatingIdeaUIStates, ideaToDelete.id)
+      const selectedPhase = await trpc.phase.get.query({
+        projectPath: projectStore.projectPath,
+        phaseId: selectedPhaseId
+      })
 
-          if (ideaState.pendingDelete) {
-            await dataStore.deleteIdea(ideaToDelete.id)
-            ideaState.pendingDelete = false
-          } else {
-            ideaState.pendingDelete = true
-          }
+      if (!selectedPhase) break
+
+      if (uiStore.pendingDeletePhaseId === selectedPhase.id) {
+        // The deleted phase's key disappears from the column, so capture its
+        // position to select the entry that takes its place.
+        const deletedIndex = uiStore.getSelectedPhase(currentCol)
+        await dataStore.deletePhase(selectedPhase.id)
+        uiStore.pendingDeletePhaseId = null
+
+        uiStore.ensureColumnSelection(currentCol)
+        const selectableEntries = dataStore.getSelectableColumnEntries(currentCol)
+        const newIndex = Math.min(deletedIndex, Math.max(0, selectableEntries.length - 1))
+
+        if (selectableEntries.length > 0) {
+          await uiStore.selectPhase(currentCol, newIndex)
+        } else {
+          uiStore.applyPhaseSelection(currentCol, 0)
+          uiStore.setMaxColumn(currentCol)
         }
       } else {
-        const selectedPhaseId = uiStore.getSelectedPhaseId(currentCol)
-        if (!selectedPhaseId) break
-
-        const selectedPhase = await trpc.phase.get.query({
-          projectPath: projectStore.projectPath,
-          phaseId: selectedPhaseId
-        })
-
-        if (!selectedPhase) break
-
-        if (uiStore.pendingDeletePhaseId === selectedPhase.id) {
-          // The deleted phase's key disappears from the column, so capture its
-          // position to select the entry that takes its place.
-          const deletedIndex = uiStore.getSelectedPhase(currentCol)
-          await dataStore.deletePhase(selectedPhase.id)
-          uiStore.pendingDeletePhaseId = null
-
-          uiStore.ensureColumnSelection(currentCol)
-          const selectableEntries = dataStore.getSelectableColumnEntries(currentCol)
-          const newIndex = Math.min(deletedIndex, Math.max(0, selectableEntries.length - 1))
-
-          if (selectableEntries.length > 0) {
-            await uiStore.selectPhase(currentCol, newIndex)
-          } else {
-            uiStore.applyPhaseSelection(currentCol, 0)
-            uiStore.setMaxColumn(currentCol)
-          }
-        } else {
-          uiStore.setPendingDeletePhase(selectedPhase.id)
-        }
+        uiStore.setPendingDeletePhase(selectedPhase.id)
       }
       break
     }
@@ -388,6 +356,41 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       event.preventDefault()
       uiStore.setView(projectStore.currentView === 'columns' ? 'graph' : 'columns')
       break
+  }
+}
+
+// 'dd' in a list takes the selected idea out of the list it is shown in (its
+// parent or phase), asking first if that would leave it unanchored. The
+// selection then moves to the successor, or the new last entry.
+async function removeSelectedIdea(uiStore: any, dataStore: any, projectPath: string, path: SelectionPath) {
+  const idea = path.ideas[path.ideas.length - 1]!
+  const parent = path.ideas[path.ideas.length - 2]
+  const parentState = path.ideaStates[path.ideaStates.length - 2]
+  const from = parent
+    ? { context: { parentId: parent.id }, label: parent.text || '(untitled)' }
+    : path.phase
+      ? { context: { phaseId: path.phase.id }, label: path.phase.name }
+      : null
+  if (!await removeIdeaFromList(dataStore, projectPath, idea, from)) return
+
+  // Counted without the removed idea: the change events may not have arrived yet.
+  if (parent && parentState) {
+    const remaining = (dataStore.ideas[parent.id]?.supportingConnections ?? [])
+      .filter((connection: { ideaId: string }) => connection.ideaId !== idea.id).length
+    parentState.selectedIncomingIndex = remaining > 0
+      ? Math.min(parentState.selectedIncomingIndex ?? 0, remaining - 1)
+      : undefined
+    return
+  }
+  const siblings = (path.phase ? dataStore.getIdeasForPhase(path.phase.id) : dataStore.floatingIdeas)
+    .filter((sibling: { id: string }) => sibling.id !== idea.id)
+  if (siblings.length === 0) {
+    uiStore.navigatingIdeas = false
+  } else if (path.phase) {
+    const phase = dataStore.phases[path.phase.id]
+    if (phase?.selectedIdeaIndex !== undefined) phase.selectedIdeaIndex = Math.min(phase.selectedIdeaIndex, siblings.length - 1)
+  } else {
+    uiStore.floatingIdeaIndex = Math.min(uiStore.floatingIdeaIndex, siblings.length - 1)
   }
 }
 
@@ -519,7 +522,7 @@ export async function handleIdeaNavigationKeysAction(uiStore: any, event: Keyboa
         await uiStore.requestBulkDelete()
       } else if (currentIdea) {
         if (currentIdeaState?.pendingDelete) {
-          await dataStore.deleteIdea(currentIdea.id)
+          await removeSelectedIdea(uiStore, dataStore, projectStore.projectPath, path)
           currentIdeaState.pendingDelete = false
         } else {
           if (currentIdeaState) currentIdeaState.pendingDelete = true
@@ -564,6 +567,20 @@ export async function handleIdeaNavigationKeysAction(uiStore: any, event: Keyboa
   }
 }
 
+// u / r, plus the conventional Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z (Cmd on macOS).
+function historyActionFor(event: KeyboardEvent): 'undo' | 'redo' | undefined {
+  if (event.altKey) return undefined
+  if (event.ctrlKey || event.metaKey) {
+    const key = event.key.toLowerCase()
+    if (key === 'z') return event.shiftKey ? 'redo' : 'undo'
+    if (key === 'y') return 'redo'
+    return undefined
+  }
+  if (event.key === 'u') return 'undo'
+  if (event.key === 'r') return 'redo'
+  return undefined
+}
+
 export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEvent, dataStore: any) {
   const modalStore = useUIModalStore()
   const projectStore = useProjectStore()
@@ -587,9 +604,19 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
     })
   }
 
-  if (event.ctrlKey || event.metaKey) return
-
   if (modalStore.showPhaseModal || modalStore.showIdeaModal || modalStore.showIdeaSearch || modalStore.showPhaseSearchPrompt || modalStore.showIdeaEditModal || modalStore.showSettingsModal) {
+    return
+  }
+
+  const historyAction = historyActionFor(event)
+  if (historyAction) {
+    event.preventDefault()
+    const historyStore = useHistoryStore()
+    await (historyAction === 'undo' ? historyStore.undo() : historyStore.redo())
+    // The restored state may have removed or re-added the selected entries.
+    if (projectStore.currentView === 'columns' && uiStore.activeColumn >= 0) {
+      uiStore.ensureColumnSelection(uiStore.activeColumn)
+    }
     return
   }
 
@@ -600,17 +627,6 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
   if (event.key === '/') {
     event.preventDefault()
     modalStore.openIdeaSearch()
-    return
-  }
-
-  if (event.key === 'u' || event.key === 'r') {
-    event.preventDefault()
-    const historyStore = useHistoryStore()
-    await (event.key === 'u' ? historyStore.undo() : historyStore.redo())
-    // The restored state may have removed or re-added the selected entries.
-    if (projectStore.currentView === 'columns' && uiStore.activeColumn >= 0) {
-      uiStore.ensureColumnSelection(uiStore.activeColumn)
-    }
     return
   }
 

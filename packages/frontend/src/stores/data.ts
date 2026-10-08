@@ -61,6 +61,9 @@ export type PhaseLevelEntry =
   | PhaseLevelSeparatorEntry
 
 // Extend Idea type with UI-only properties
+// Where an idea is shown in a list: under a parent idea or committed in a phase.
+export type IdeaContext = { parentId: string } | { phaseId: string }
+
 export type Idea = BaseIdea & {
   expanded?: boolean
   selectedIncomingIndex?: number
@@ -631,11 +634,12 @@ export const useDataStore = defineStore('data', {
       return true
     },
 
-    async createFloatingIdea(projectPath: string, idea: IdeaCreationParams): Promise<{id: string}> {
+    async createFloatingIdea(projectPath: string, idea: IdeaCreationParams, inheritColorFrom?: string): Promise<{id: string}> {
       try {
         const newIdea = await trpc.idea.createFloatingIdea.mutate({
           projectPath,
-          idea
+          idea,
+          inheritColorFrom
         })
 
         this.ideas[newIdea.id] = newIdea
@@ -774,21 +778,8 @@ export const useDataStore = defineStore('data', {
       this.recalculateValues()
 
       try {
-        const [updatedParent, updatedChild] = await Promise.all([
-          trpc.idea.update.mutate({
-            projectPath,
-            ideaId: parentId,
-            idea: { supportingConnections: updatedConnections }
-          }),
-          trpc.idea.update.mutate({
-            projectPath,
-            ideaId: childId,
-            idea: { supportedIdeas: updatedSupportedIdeas }
-          })
-        ])
-        this.replaceIdea(parentId, updatedParent)
-        this.replaceIdea(childId, updatedChild)
-        this.recalculateValues()
+        // The change events bring the persisted state of both ideas.
+        await trpc.idea.disconnect.mutate({ projectPath, parentIdeaId: parentId, childIdeaId: childId })
       } catch (error) {
         this.replaceIdea(parentId, originalParent)
         this.replaceIdea(childId, originalChild)
@@ -892,16 +883,30 @@ export const useDataStore = defineStore('data', {
       this.recalculateValues()
     },
 
-    async deleteIdeaFromStore(projectPath: string, ideaId: string) {
-      try {
-        await trpc.idea.delete.mutate({
-          projectPath,
-          ideaId
-        })
-        this.recalculateValues();
-      } catch (error) {
-        console.error('Failed to delete idea:', error)
-        throw error
+    // With cascade, descendants that no other parent or phase anchors go too.
+    async deleteIdeas(projectPath: string, ideaIds: string[], { cascade }: { cascade: boolean }): Promise<string[]> {
+      const { deletedIds } = await trpc.idea.delete.mutate({ projectPath, ideaIds, cascade })
+      this.forgetDeletedIdeas(deletedIds)
+      return deletedIds
+    },
+
+    // What a cascading delete of these ideas would take, without deleting.
+    async previewCascadingDelete(projectPath: string, ideaIds: string[]): Promise<string[]> {
+      const { deletedIds } = await trpc.idea.delete.mutate({ projectPath, ideaIds, cascade: true, dryRun: true })
+      return deletedIds
+    },
+
+    // Takes the idea out of one parent or phase; it stays, floating if nothing else anchors it.
+    async detachIdea(projectPath: string, ideaId: string, from: IdeaContext): Promise<void> {
+      await trpc.idea.detach.mutate({ projectPath, ideaId, from })
+    },
+
+    // The change events remove them too; doing it now keeps the caller's
+    // selection logic working on the new state and drops late update events.
+    forgetDeletedIdeas(ideaIds: string[]) {
+      for (const ideaId of ideaIds) {
+        this.deletedIdeas.add(ideaId)
+        this.removeIdeaLocally(ideaId)
       }
     },
     
@@ -1085,150 +1090,6 @@ export const useDataStore = defineStore('data', {
         });
       } catch (error) {
         console.error('Failed to delete phase:', error);
-      }
-    },
-
-    // Recursive helper to delete a sub-idea and all its children
-    async deleteSubIdeaRecursive(projectPath: string, ideaId: string, parentIdeaId: string) {
-      const idea = this.ideas[ideaId]
-      if (!idea) return
-
-      // 1. Recursively delete all children first
-      if (idea.supportingConnections && idea.supportingConnections.length > 0) {
-        for (const conn of [...idea.supportingConnections]) {
-          await this.deleteSubIdeaRecursive(projectPath, conn.ideaId, ideaId)
-        }
-      }
-
-      // 2. Remove this idea from the parent's supportingConnections array
-      const parentIdea = this.ideas[parentIdeaId]
-      if (parentIdea && parentIdea.supportingConnections) {
-        const wasExpanded = parentIdea.expanded
-        const updatedConnections = parentIdea.supportingConnections.filter(c => c.ideaId !== ideaId)
-        await this.updateIdea(projectPath, parentIdeaId, {
-          supportingConnections: updatedConnections
-        })
-        // Restore expanded state (it's UI-only, not persisted)
-        if (wasExpanded && this.ideas[parentIdeaId]) {
-          this.ideas[parentIdeaId].expanded = true
-        }
-      }
-
-      // 3. Remove the parent from this idea's supportedIdeas array
-      const updatedSupportedIdeas = idea.supportedIdeas.filter(id => id !== parentIdeaId)
-
-      // 4. If this idea has no other parents (supportedIdeas connections), delete it completely
-      if (updatedSupportedIdeas.length === 0) {
-        await trpc.idea.delete.mutate({
-          projectPath,
-          ideaId: ideaId
-        })
-        delete this.ideas[ideaId]
-      } else {
-        // Still has other parents, just update the supportedIdeas array
-        await this.updateIdea(projectPath, ideaId, {
-          supportedIdeas: updatedSupportedIdeas
-        })
-      }
-    },
-
-    async deleteIdea(ideaId: string) {
-      const uiStore = useUIStore();
-      const projectStore = useProjectStore();
-
-      try {
-        const idea = this.ideas[ideaId]
-        if (!idea) return
-
-        // Get selection path to determine context
-        const path = uiStore.getSelectionPath()
-
-        // Determine deletion behavior based on selection path:
-        // - path.ideas.length > 1: Sub-idea (remove from parent's incoming)
-        // - path.ideas.length === 1 && phaseId exists: Committed idea (remove from phase)
-        // - path.ideas.length === 1 && no phaseId: Floating idea (delete entirely)
-
-        if (path.ideas.length > 1) {
-          // B) Sub-idea: remove from parent idea's supporting list
-          const parentIdea = path.ideas[path.ideas.length - 2]
-          if (parentIdea) {
-            await this.deleteSubIdeaRecursive(projectStore.projectPath, ideaId, parentIdea.id)
-
-            // Adjust parent's selectedIncomingIndex to stay in valid range
-            const updatedParentIdea = this.ideas[parentIdea.id]
-            if (updatedParentIdea && updatedParentIdea.selectedIncomingIndex !== undefined && updatedParentIdea.supportingConnections) {
-                if (updatedParentIdea.supportingConnections.length > 0) {
-                updatedParentIdea.selectedIncomingIndex = Math.min(
-                    updatedParentIdea.selectedIncomingIndex,
-                    updatedParentIdea.supportingConnections.length - 1
-                )
-                } else {
-                updatedParentIdea.selectedIncomingIndex = undefined
-                }
-            }
-          }
-        } else if (path.phase) {
-          // A) Committed idea: remove from phase
-          await trpc.idea.removeFromPhase.mutate({
-            projectPath: projectStore.projectPath,
-            ideaId: ideaId,
-            phaseId: path.phase.id
-          });
-
-          // Reload the specific phase to get updated commitments
-          const phase = await trpc.phase.get.query({ projectPath: projectStore.projectPath, phaseId: path.phase.id })
-          if (phase) {
-            this.replacePhase(path.phase.id, phase)
-          }
-
-          // Update idea's committedIn array
-          // TODO implement idea removal server side, then reload parent idea/phase in client
-          const updatedIdea = this.ideas[ideaId]
-          if (updatedIdea) {
-            updatedIdea.committedIn = updatedIdea.committedIn?.filter(id => id !== path.phase?.id) || []
-          }
-        } else {
-          // C) Floating idea: delete entirely (including all sub-ideas)
-          // First recursively delete all sub-ideas
-          if (idea.supportingConnections && idea.supportingConnections.length > 0) {
-            for (const conn of [...idea.supportingConnections]) {
-              await this.deleteSubIdeaRecursive(projectStore.projectPath, conn.ideaId, ideaId)
-            }
-          }
-
-          // Then delete the idea itself
-          this.deletedIdeas.add(ideaId)
-          await trpc.idea.delete.mutate({
-            projectPath: projectStore.projectPath,
-            ideaId: ideaId
-          });
-
-          delete this.ideas[ideaId]
-          this.floatingIdeasIds = this.floatingIdeasIds.filter(id => id !== ideaId)
-        }
-
-        // Adjust selection if needed
-        if (uiStore.navigatingIdeas) {
-          const ideas = path.phase ? this.getIdeasForPhase(path.phase.id) : this.floatingIdeas
-
-          if (ideas.length === 0) {
-            uiStore.navigatingIdeas = false
-          } else {
-            // Select next/previous idea at same level
-            if (!path.phase) {
-              uiStore.floatingIdeaIndex = Math.min(uiStore.floatingIdeaIndex, ideas.length - 1)
-            } else {
-              const phase = this.phases[path.phase.id]
-              if (phase && phase.selectedIdeaIndex !== undefined) {
-                phase.selectedIdeaIndex = Math.min(phase.selectedIdeaIndex, ideas.length - 1)
-              }
-            }
-          }
-        }
-        this.recalculateValues();
-      } catch (error) {
-        this.deletedIdeas.delete(ideaId);
-        console.error('Failed to delete idea:', error);
       }
     },
 

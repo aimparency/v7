@@ -7,6 +7,7 @@ const { mockTrpc } = vi.hoisted(() => ({
       getMany: { query: vi.fn() },
       get: { query: vi.fn() },
       update: { mutate: vi.fn() },
+      disconnect: { mutate: vi.fn() },
       commitToPhase: { mutate: vi.fn() },
       connectIdeas: { mutate: vi.fn() },
       removeFromPhase: { mutate: vi.fn() }
@@ -170,7 +171,7 @@ describe('UI teleport cut/paste', () => {
     parentBState.expanded = true
     parentBState.selectedIncomingIndex = 0
 
-    mockTrpc.idea.update.mutate.mockResolvedValue({})
+    mockTrpc.idea.disconnect.mutate.mockResolvedValue({})
     mockTrpc.idea.connectIdeas.mutate.mockResolvedValue({})
     mockTrpc.idea.get.query.mockImplementation(({ ideaId }: any) => {
       if (ideaId === 'parent-a') {
@@ -196,7 +197,11 @@ describe('UI teleport cut/paste', () => {
 
     await uiStore.pasteCutIdea(dataStore)
 
-    expect(mockTrpc.idea.update.mutate).toHaveBeenCalled()
+    expect(mockTrpc.idea.disconnect.mutate).toHaveBeenCalledWith({
+      projectPath: '/tmp/project',
+      parentIdeaId: 'parent-a',
+      childIdeaId: 'child'
+    })
     expect(mockTrpc.idea.connectIdeas.mutate).toHaveBeenCalledWith({
       projectPath: '/tmp/project',
       parentIdeaId: 'parent-b',

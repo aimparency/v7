@@ -395,6 +395,7 @@ export const ideaTools: ToolDefinition[] = [
         );
       }
 
+      const parents = (args.supportedIdeas as ConnectionInput[]) || [];
       const result = await trpcClient.idea.createFloatingIdea.mutate({
         projectPath: args.projectPath as string,
         idea: {
@@ -411,6 +412,7 @@ export const ideaTools: ToolDefinition[] = [
           cost: args.cost as number | undefined,
           duration: args.duration as number | undefined,
         },
+        inheritColorFrom: parents[0] && normalizeConnectionInput(parents[0]).ideaId,
       });
 
       // Handle supportingConnections (children)
@@ -427,7 +429,6 @@ export const ideaTools: ToolDefinition[] = [
       }
 
       // Handle supportedIdeas (parents)
-      const parents = (args.supportedIdeas as ConnectionInput[]) || [];
       for (const parentInput of parents) {
         const parent = normalizeConnectionInput(parentInput);
         await trpcClient.idea.connectIdeas.mutate({
@@ -622,25 +623,27 @@ export const ideaTools: ToolDefinition[] = [
   },
   {
     name: "delete_idea",
-    description: "Delete idea. Prefer status=cancelled unless duplicate/error.",
+    description: "Delete idea. Prefer status=cancelled unless duplicate/error. cascade=true also deletes descendants that no other parent or phase anchors.",
     inputSchema: {
       type: "object",
       properties: {
         projectPath: PROJECT_PATH_TOOL_PROPERTY,
-        ideaId: { type: "string" }
+        ideaId: { type: "string" },
+        cascade: { type: "boolean" }
       },
       required: ["projectPath", "ideaId"],
     },
     handler: async (args, trpcClient) => {
-      await trpcClient.idea.delete.mutate({
+      const { deletedIds } = await trpcClient.idea.delete.mutate({
         projectPath: args.projectPath as string,
-        ideaId: args.ideaId as string,
+        ideaIds: [args.ideaId as string],
+        cascade: args.cascade === true,
       });
       return {
         content: [
           {
             type: "text",
-            text: `Deleted idea ${args.ideaId}`,
+            text: `Deleted ${deletedIds.length} idea(s): ${deletedIds.join(", ")}`,
           },
         ],
       };

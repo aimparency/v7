@@ -33,7 +33,7 @@ export async function placeIdea(
     if (isExistingIdea) {
       newIdeaId = existingIdeaId!
     } else {
-      const result = await dataStore.createFloatingIdea(projectStore.projectPath, ideaAttributes!)
+      const result = await dataStore.createFloatingIdea(projectStore.projectPath, ideaAttributes!, modalStore.ideaCreationParentId ?? undefined)
       newIdeaId = result.id
     }
   } else if (path.ideas.length === 0) {
@@ -204,6 +204,7 @@ export async function placeIdea(
         modalStore.ideaCreationCallback(newIdeaId)
       }
       modalStore.ideaCreationCallback = null
+      modalStore.ideaCreationParentId = null
     }
 
     if (path.phase) {

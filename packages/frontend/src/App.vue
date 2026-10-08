@@ -15,6 +15,7 @@ import type { PhaseSearchSelection } from './stores/ui/phase-search-types'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import IdeaCreationModal from './components/IdeaCreationModal.vue'
 import ConnectionDetailsModal from './components/ConnectionDetailsModal.vue'
+import IdeaRemovalDialog from './components/IdeaRemovalDialog.vue'
 import IdeaEditModal from './components/IdeaEditModal.vue'
 import IdeaSearchModal from './components/IdeaSearchModal.vue'
 import PhaseSearchModal from './components/PhaseSearchModal.vue'
@@ -680,6 +681,8 @@ onUnmounted(() => {
       v-if="modalStore.showConnectionDetailsModal"
       :key="`${modalStore.connectionDetailsParentId}>${modalStore.connectionDetailsChildId}`"
     />
+
+    <IdeaRemovalDialog v-if="modalStore.ideaRemoval" :request="modalStore.ideaRemoval" />
 
     <!-- Idea Edit Modal -->
     <IdeaEditModal

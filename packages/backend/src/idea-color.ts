@@ -37,17 +37,26 @@ function hsvToHex({ h, s, v }: Hsv): string {
   return `#${channel(r)}${channel(g)}${channel(b)}`
 }
 
-export function deriveChildIdeaColor(parentColor: string, siblingIndex: number): string {
+// Keeps node fills in a band where the light node text stays readable.
+const clampSaturation = (s: number) => Math.min(0.72, Math.max(0.4, s))
+const clampValue = (v: number) => Math.min(0.56, Math.max(0.38, v))
+
+// A child takes its parent's color shifted by up to ±deviation of each HSV range,
+// so branches of the graph stay similarly colored. Grey parents have no hue to
+// inherit; their children start a new branch with a random hue.
+export function deriveChildIdeaColor(parentColor: string, deviation = 0.05, random = Math.random): string {
   const parent = hexToHsv(parentColor)
-  const direction = siblingIndex % 2 === 0 ? 1 : -1
-  const step = 9 + Math.floor(siblingIndex / 2) * 4
+  const jitter = () => (random() * 2 - 1) * deviation
+  if (parent.s < 0.15) {
+    return hsvToHex({ h: random() * 360, s: 0.56, v: clampValue(parent.v) })
+  }
   return hsvToHex({
-    h: (parent.h + direction * step + 360) % 360,
-    s: Math.min(0.72, Math.max(0.48, parent.s + 0.04)),
-    v: Math.min(0.56, Math.max(0.42, parent.v - 0.025))
+    h: (parent.h + jitter() * 360 + 360) % 360,
+    s: clampSaturation(parent.s + jitter()),
+    v: clampValue(parent.v + jitter())
   })
 }
 
-export function defaultIdeaColor(parentColor?: string, siblingIndex = 0): string {
-  return parentColor ? deriveChildIdeaColor(parentColor, siblingIndex) : ROOT_IDEA_COLOR
+export function defaultIdeaColor(parentColor?: string): string {
+  return parentColor ? deriveChildIdeaColor(parentColor) : ROOT_IDEA_COLOR
 }

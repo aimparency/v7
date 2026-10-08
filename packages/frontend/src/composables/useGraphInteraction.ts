@@ -223,6 +223,7 @@ export function useGraphInteraction(
                 const parentNode = mapStore.connectFrom
                 const dropPosLogical = mapStore.mouse.logical  // Use already-computed logical coords
                 
+                modalStore.ideaCreationParentId = parentNode.id
                 modalStore.ideaCreationCallback = async (newIdeaId, onConnectionConfirmed) => {
                      // Wait for node to exist in the graph
                      const checkNode = () => {
@@ -660,6 +661,7 @@ export function useGraphInteraction(
             uiStore.deselectIdea()
             uiStore.setActiveColumn(-1)
 
+            modalStore.ideaCreationParentId = null
             modalStore.ideaCreationCallback = (id, onPositionConfirmed) => {
                  const node = nodeMap.get(id)
                  const x = logicalMouse[0] ?? 0

@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { handleColumnNavigationKeysAction, handleGraphKeydownAction, navigateColumnForward } from './keyboard-actions'
+import { handleColumnNavigationKeysAction, handleGlobalKeydownAction, handleGraphKeydownAction, handleIdeaNavigationKeysAction, navigateColumnForward } from './keyboard-actions'
 import { useGraphUIStore } from './graph-store'
+import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
 import { useDataStore } from '../data'
 import { useUIStore } from './list-store'
+import { useHistoryStore } from '../history'
 
 const makeIdea = (id: string, text: string) => ({
   id,
@@ -30,39 +32,38 @@ describe('keyboard actions', () => {
     const projectStore = useProjectStore()
     projectStore.projectPath = '/tmp/project'
 
-    const parent = makeIdea('parent', 'Parent')
-    const child = makeIdea('child', 'Child')
-    parent.supportingConnections = [
-      { ideaId: 'child', weight: 1, relativePosition: [0, 0] }
-    ]
-    child.supportedIdeas = ['parent']
-
-    const dataStore = {
-      ideas: { parent, child },
-      replaceIdea: vi.fn((id: string, idea: any) => {
-        dataStore.ideas[id as 'parent' | 'child'] = idea
-      }),
-      recalculateValues: vi.fn(),
-      updateIdea: vi.fn().mockResolvedValue(undefined)
-    }
+    const dataStore = { removeConnection: vi.fn().mockResolvedValue(undefined) }
 
     graphStore.selectLink('parent', 'child')
 
     await handleGraphKeydownAction({}, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
     expect(graphStore.pendingDeleteLink).toEqual({ parentId: 'parent', childId: 'child' })
-    expect(dataStore.updateIdea).not.toHaveBeenCalled()
+    expect(dataStore.removeConnection).not.toHaveBeenCalled()
 
     await handleGraphKeydownAction({}, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
 
     expect(graphStore.selectedLink).toBe(null)
-    expect(dataStore.ideas.parent.supportingConnections).toEqual([])
-    expect(dataStore.ideas.child.supportedIdeas).toEqual([])
-    expect(dataStore.updateIdea).toHaveBeenCalledWith('/tmp/project', 'parent', {
-      supportingConnections: []
-    })
-    expect(dataStore.updateIdea).toHaveBeenCalledWith('/tmp/project', 'child', {
-      supportedIdeas: []
-    })
+    expect(dataStore.removeConnection).toHaveBeenCalledWith('/tmp/project', 'parent', 'child')
+  })
+
+  it.each([
+    [{ key: 'u' }, 'undo'],
+    [{ key: 'r' }, 'redo'],
+    [{ key: 'z', ctrlKey: true }, 'undo'],
+    [{ key: 'y', ctrlKey: true }, 'redo'],
+    [{ key: 'Z', ctrlKey: true, shiftKey: true }, 'redo'],
+    [{ key: 'z', metaKey: true }, 'undo']
+  ] as const)('maps %o to %s', async (init, action) => {
+    const historyStore = useHistoryStore()
+    const undo = vi.spyOn(historyStore, 'undo').mockResolvedValue(undefined as any)
+    const redo = vi.spyOn(historyStore, 'redo').mockResolvedValue(undefined as any)
+    const event = new KeyboardEvent('keydown', { ...init, cancelable: true })
+
+    await handleGlobalKeydownAction(useUIStore(), event, useDataStore())
+
+    expect(event.defaultPrevented).toBe(true)
+    expect(action === 'undo' ? undo : redo).toHaveBeenCalledOnce()
+    expect(action === 'undo' ? redo : undo).not.toHaveBeenCalled()
   })
 
   it('toggles the focused graph idea with Space in multi-select mode', async () => {
@@ -85,7 +86,11 @@ describe('keyboard actions', () => {
   it('keeps graph delete confirmation in graph UI state', async () => {
     const graphStore = useGraphUIStore()
     const uiStore = useUIStore()
-    const dataStore = { deleteIdea: vi.fn().mockResolvedValue(undefined) }
+    const dataStore = {
+      previewCascadingDelete: vi.fn().mockResolvedValue(['idea-a']),
+      deleteIdeas: vi.fn().mockResolvedValue(['idea-a'])
+    }
+    useProjectStore().projectPath = '/tmp/project'
     graphStore.setGraphSelection('idea-a')
 
     await handleGraphKeydownAction(uiStore, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
@@ -95,7 +100,7 @@ describe('keyboard actions', () => {
 
     await handleGraphKeydownAction(uiStore, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
 
-    expect(dataStore.deleteIdea).toHaveBeenCalledWith('idea-a')
+    expect(dataStore.deleteIdeas).toHaveBeenCalledWith('/tmp/project', ['idea-a'], { cascade: false })
     expect(graphStore.pendingDeleteIdeaId).toBe(null)
     expect(graphStore.graphSelectedIdeaId).toBe(null)
   })
@@ -291,5 +296,127 @@ describe('keyboard actions', () => {
     expect(dataStore.phases['root-b']?.childPhaseIds).toEqual([])
     expect(uiStore.selectedPhaseIdByColumn[0]).toBe('root-a')
     expect(uiStore.selectedPhaseIdByColumn[1]).toBe('child-b')
+  })
+
+  describe('dd in a list removes the idea from the list it is shown in', () => {
+    const press = (uiStore: any, dataStore: any) =>
+      handleIdeaNavigationKeysAction(uiStore, new KeyboardEvent('keydown', { key: 'd' }), dataStore)
+
+    const listStores = (path: any) => {
+      const dataStore = {
+        ideas: {} as Record<string, any>,
+        phases: {} as Record<string, any>,
+        floatingIdeas: [] as any[],
+        getIdeasForPhase: vi.fn(() => []),
+        previewCascadingDelete: vi.fn(async (_projectPath: string, ideaIds: string[]) => ideaIds),
+        detachIdea: vi.fn().mockResolvedValue(undefined),
+        deleteIdeas: vi.fn().mockResolvedValue([])
+      }
+      const uiStore = { getSelectionPath: () => path, multiSelectMode: false, navigatingIdeas: true, floatingIdeaIndex: 0 }
+      return { dataStore, uiStore }
+    }
+
+    // Answers the removal dialog as soon as it opens.
+    const answerDialog = (choice: 'keep' | 'cascade' | null) => {
+      const modalStore = useUIModalStore()
+      modalStore.$subscribe(() => {
+        if (modalStore.ideaRemoval) queueMicrotask(() => modalStore.answerIdeaRemoval(choice))
+      })
+      return modalStore
+    }
+
+    beforeEach(() => {
+      useProjectStore().projectPath = '/tmp/project'
+    })
+
+    it('detaches an idea that another parent keeps, without asking, and selects the successor', async () => {
+      const parent = makeIdea('parent', 'Parent')
+      parent.supportingConnections = ['first', 'removed', 'last'].map((ideaId) => ({ ideaId, weight: 1, relativePosition: [0, 0] as [number, number] }))
+      const removed = makeIdea('removed', 'Removed')
+      removed.supportedIdeas = ['parent', 'other-parent']
+      const parentState = { pendingDelete: false, selectedIncomingIndex: 2 }
+      const { dataStore, uiStore } = listStores({
+        phase: undefined,
+        ideas: [parent, removed],
+        ideaStates: [parentState, { pendingDelete: false }]
+      })
+      dataStore.ideas.parent = parent
+      const modalStore = useUIModalStore()
+
+      await press(uiStore, dataStore)
+      expect(dataStore.detachIdea).not.toHaveBeenCalled()
+      await press(uiStore, dataStore)
+
+      expect(modalStore.ideaRemoval).toBe(null)
+      expect(dataStore.detachIdea).toHaveBeenCalledWith('/tmp/project', 'removed', { parentId: 'parent' })
+      expect(parentState.selectedIncomingIndex).toBe(1)
+    })
+
+    it('asks before taking the last anchor; r keeps the idea floating', async () => {
+      const phase = { id: 'phase', name: 'April', selectedIdeaIndex: 0, commitments: ['idea'] }
+      const idea = makeIdea('idea', 'Idea')
+      idea.committedIn = ['phase']
+      const { dataStore, uiStore } = listStores({ phase, ideas: [idea], ideaStates: [{ pendingDelete: true }] })
+      dataStore.phases.phase = phase
+      const modalStore = answerDialog('keep')
+      const opened = vi.spyOn(modalStore, 'askIdeaRemoval')
+
+      await press(uiStore, dataStore)
+
+      expect(opened).toHaveBeenCalledWith({ ideaIds: ['idea'], fromLabel: 'April', cascadeIds: ['idea'] })
+      expect(dataStore.detachIdea).toHaveBeenCalledWith('/tmp/project', 'idea', { phaseId: 'phase' })
+      expect(dataStore.deleteIdeas).not.toHaveBeenCalled()
+      expect(uiStore.navigatingIdeas).toBe(false)
+    })
+
+    it('x deletes the last-anchored idea with its unanchored subtree', async () => {
+      const parent = makeIdea('parent', 'Parent')
+      const idea = makeIdea('idea', 'Idea')
+      idea.supportedIdeas = ['parent']
+      const { dataStore, uiStore } = listStores({
+        phase: undefined,
+        ideas: [parent, idea],
+        ideaStates: [{ pendingDelete: false }, { pendingDelete: true }]
+      })
+      dataStore.previewCascadingDelete.mockResolvedValue(['idea', 'child'])
+      answerDialog('cascade')
+
+      await press(uiStore, dataStore)
+
+      expect(dataStore.deleteIdeas).toHaveBeenCalledWith('/tmp/project', ['idea'], { cascade: true })
+      expect(dataStore.detachIdea).not.toHaveBeenCalled()
+    })
+
+    it('Esc cancels and leaves everything as it was', async () => {
+      const parent = makeIdea('parent', 'Parent')
+      const idea = makeIdea('idea', 'Idea')
+      idea.supportedIdeas = ['parent']
+      const parentState = { pendingDelete: false, selectedIncomingIndex: 0 }
+      const { dataStore, uiStore } = listStores({
+        phase: undefined,
+        ideas: [parent, idea],
+        ideaStates: [parentState, { pendingDelete: true }]
+      })
+      answerDialog(null)
+
+      await press(uiStore, dataStore)
+
+      expect(dataStore.detachIdea).not.toHaveBeenCalled()
+      expect(dataStore.deleteIdeas).not.toHaveBeenCalled()
+      expect(parentState.selectedIncomingIndex).toBe(0)
+    })
+
+    it('deletes a floating idea without sub-ideas directly', async () => {
+      const { dataStore, uiStore } = listStores({
+        phase: undefined,
+        ideas: [makeIdea('idea', 'Idea')],
+        ideaStates: [{ pendingDelete: true }]
+      })
+
+      await press(uiStore, dataStore)
+
+      expect(useUIModalStore().ideaRemoval).toBe(null)
+      expect(dataStore.deleteIdeas).toHaveBeenCalledWith('/tmp/project', ['idea'], { cascade: false })
+    })
   })
 })

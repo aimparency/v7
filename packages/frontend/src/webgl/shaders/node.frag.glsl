@@ -35,12 +35,9 @@ void main() {
     }
     outColor = vec4(v_color, 0.85);
   } else {
-    // Normal node fill with a very slight radial gradient: darker toward the
-    // middle, brighter toward the rim. Additive offset (cheap, and the channel
-    // clamping near the gamut edges gives a subtle hue shift that looks nice).
-    vec2 rel = v_uv - vec2(0.0, -0.25); // offset center upward
-    float d2 = dot(rel, rel);           // squared distance from that center
-    vec3 shaded = clamp(v_color + (d2 - 0.76) * 0.045, 0.0, 1.0);
+    // Normal node fill with a faint vertical gradient: slightly lighter at the
+    // top, slightly darker at the bottom (v_uv.y points down on screen).
+    vec3 shaded = clamp(v_color - v_uv.y * 0.02, 0.0, 1.0);
     outColor = vec4(shaded, 1.0);
   }
 

@@ -20,6 +20,21 @@ type TeleportSource = {
   phaseId?: string
 }
 
+// 'keep' is the conservative answer: take the idea out of its list (it stays
+// floating), or without a list delete only the ideas themselves.
+// 'cascade' deletes them together with their unanchored subtrees.
+export type IdeaRemovalChoice = 'keep' | 'cascade'
+export type IdeaRemovalRequest = {
+  ideaIds: string[]
+  // Name of the parent or phase the idea is removed from, if any.
+  fromLabel?: string
+  // What 'cascade' would delete, roots included.
+  cascadeIds: string[]
+}
+
+// Not reactive: the pending promise of the open removal dialog.
+let resolveIdeaRemovalDialog: ((choice: IdeaRemovalChoice | null) => void) | null = null
+
 export const useUIModalStore = defineStore('ui-modal', {
   state: () => ({
     showPhaseModal: false,
@@ -49,6 +64,8 @@ export const useUIModalStore = defineStore('ui-modal', {
     ideaSearchMode: 'navigate' as 'navigate' | 'pick',
     ideaSearchCallback: null as ((payload: IdeaSearchPickPayload) => void) | null,
     ideaCreationCallback: null as ((ideaId: string, onConnectionConfirmed?: () => void) => void) | null,
+    // Parent the creation callback connects the new idea to; its color is inherited.
+    ideaCreationParentId: null as string | null,
     connectionDetailsCallback: null as (() => void) | null,
     ideaSearchInitialIdeaId: null as string | null,
     ideaSearchShowParentPaths: false,
@@ -62,6 +79,8 @@ export const useUIModalStore = defineStore('ui-modal', {
     phaseSearchPromptPlaceholder: 'Search phases...',
     phaseSearchPromptAdditionalOptions: [] as PhaseSearchAdditionalOption[],
     showSettingsModal: false,
+
+    ideaRemoval: null as IdeaRemovalRequest | null,
 
     // Spin-off apply: target-path chooser dialog opened from the spin-off split button.
     showSpinOffApplyModal: false,
@@ -186,6 +205,20 @@ export const useUIModalStore = defineStore('ui-modal', {
       const [next, ...rest] = connections
       if (!next) return
       this.openConnectionDetailsModal(next.parentId, next.childId, () => this.promptConnectionEvaluations(rest), { evaluate: true })
+    },
+
+    // Opens the removal dialog; resolves with the choice, or null when cancelled.
+    askIdeaRemoval(request: IdeaRemovalRequest): Promise<IdeaRemovalChoice | null> {
+      resolveIdeaRemovalDialog?.(null)
+      this.ideaRemoval = request
+      return new Promise((resolve) => { resolveIdeaRemovalDialog = resolve })
+    },
+
+    answerIdeaRemoval(choice: IdeaRemovalChoice | null) {
+      const resolve = resolveIdeaRemovalDialog
+      resolveIdeaRemovalDialog = null
+      this.ideaRemoval = null
+      resolve?.(choice)
     },
 
     closeConnectionDetailsModal() {
