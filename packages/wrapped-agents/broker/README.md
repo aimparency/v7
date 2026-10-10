@@ -27,8 +27,8 @@ Spawned watchdog sessions then listen on their own dynamic ports.
 From the repo root:
 
 ```bash
-npm run dev:broker
-npm run start:broker
+npm run dev      # whole stack, servers from source via tsx
+npm run start    # build bundles, then run them
 npm run list-sessions
 npm run stop-sessions
 ```

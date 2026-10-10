@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
 import type { Dirent } from 'fs';
-import { fileURLToPath } from 'url';
+import { packageRoot } from 'shared/node-entry';
 import { observable } from '@trpc/server/observable';
 import type { Idea, ProjectMeta } from 'shared';
 import { CURRENT_DATA_MODEL_VERSION } from 'shared';
@@ -248,9 +248,7 @@ export const projectRouter = t.router({
       const projectPath = normalizeProjectPath(input.projectPath);
       const rootDir = path.dirname(projectPath); // Project root (above .bowman)
 
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = path.dirname(__filename);
-      const instructionsPath = path.join(__dirname, '../agent-instruction.md');
+      const instructionsPath = path.join(packageRoot(import.meta.url), 'src', 'agent-instruction.md');
 
       if (!(await fs.pathExists(instructionsPath))) {
           throw new Error(`Agent instructions file not found at ${instructionsPath}`);

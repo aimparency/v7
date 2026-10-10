@@ -1,8 +1,20 @@
 import fs from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
+import concurrently from 'concurrently';
+
+// One launcher for the local stack. Dev runs every server from TypeScript source
+// through tsx (no watchers, no build step); start builds bundles and runs those.
+//
+//   node scripts/run-local-stack.mjs dev|start [--full] [--host] [--delay] [--no-build] [--dry-run]
+//
+//   --full      also the broker client, MCP over SSE and the voice bridge
+//   --host      bind to LAN_BIND_HOST (or the tailscale IP) and serve MCP over SSE
+//   --delay     DEV_DELAY=true: the backend slows responses (frontend e2e tests)
+//   --no-build  start: run the existing bundles without rebuilding
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,22 +22,15 @@ const repoRoot = path.resolve(__dirname, '..');
 const frontendPublicDir = path.join(repoRoot, 'packages', 'frontend', 'public');
 const runtimeConfigPath = path.join(frontendPublicDir, 'runtime-config.json');
 
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const envFile = path.join(repoRoot, '.env');
+if (existsSync(envFile)) {
+  // Never overrides variables that are already set, so explicit PORT_* still win.
+  process.loadEnvFile(envFile);
+}
 
-const modes = {
-  dev: {
-    preflight: [[npmCommand, ['run', 'dev:mobile:config']]],
-    script: 'dev:stack',
-  },
-  start: {
-    preflight: [[npmCommand, ['run', 'build:core']]],
-    script: 'start:stack',
-  },
-  'start:fast': {
-    preflight: [],
-    script: 'start:stack',
-  },
-};
+const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const args = process.argv.slice(2);
+const flags = new Set(args.filter((arg) => arg.startsWith('--')));
 
 const preferredPorts = {
   frontendPort: parsePort(process.env.PORT_FRONTEND, 4000),
@@ -130,9 +135,9 @@ function createEnv(resolvedPorts) {
   };
 }
 
-function runCommand(command, args, env) {
+function runCommand(command, commandArgs, env) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const child = spawn(command, commandArgs, {
       cwd: repoRoot,
       env,
       stdio: 'inherit',
@@ -141,12 +146,12 @@ function runCommand(command, args, env) {
 
     child.on('exit', (code, signal) => {
       if (signal) {
-        reject(new Error(`${command} ${args.join(' ')} exited via signal ${signal}`));
+        reject(new Error(`${command} ${commandArgs.join(' ')} exited via signal ${signal}`));
         return;
       }
 
       if (code !== 0) {
-        reject(new Error(`${command} ${args.join(' ')} exited with code ${code}`));
+        reject(new Error(`${command} ${commandArgs.join(' ')} exited with code ${code}`));
         return;
       }
 
@@ -157,13 +162,61 @@ function runCommand(command, args, env) {
   });
 }
 
-async function main() {
-  const mode = process.argv[2] ?? 'start';
-  const dryRun = process.argv.includes('--dry-run');
-  const config = modes[mode];
+function resolveBindHost() {
+  if (process.env.LAN_BIND_HOST) {
+    return process.env.LAN_BIND_HOST;
+  }
+  try {
+    return execFileSync('tailscale', ['ip', '-4'], { encoding: 'utf8' }).split('\n')[0].trim() || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
-  if (!config) {
-    console.error(`Unknown mode "${mode}". Expected one of: ${Object.keys(modes).join(', ')}`);
+// Each command runs directly in its package (no npm/dotenv wrapper processes).
+function stackCommands(mode, env) {
+  const dev = mode === 'dev';
+  const full = flags.has('--full');
+  const command = (name, prefixColor, dir, devCommand, startCommand) => ({
+    name,
+    prefixColor,
+    cwd: path.join(repoRoot, 'packages', dir),
+    command: dev ? devCommand : startCommand,
+    env,
+  });
+
+  const commands = [
+    command('BACK', 'blue', 'backend', 'tsx watch src/server.ts', 'node dist/server.js'),
+    command('BROK', 'yellow', 'wrapped-agents/broker', 'tsx watch src/index.ts', 'node dist/index.js'),
+    command('FRNT', 'green', 'frontend', 'vite', 'vite preview'),
+  ];
+  if (full || flags.has('--host')) {
+    commands.push(command('MCPS', 'magenta', 'mcp', 'tsx watch src/sse.ts', 'node build/sse.js'));
+  }
+  if (full) {
+    // In start mode the broker serves the built client itself.
+    if (dev) {
+      commands.push(command('CLNT', 'white', 'wrapped-agents/client', `vite --port ${env.PORT_BROKER_CLIENT || 5005}`));
+    }
+    commands.push(command('VOICE', 'gray', 'voice-bridge', 'tsx watch src/index.ts', 'node dist/index.js'));
+  }
+  return commands;
+}
+
+function preflight(mode) {
+  if (mode === 'dev') {
+    return [['tsx', ['packages/mobile/scripts/generate-config.ts']]];
+  }
+  if (flags.has('--no-build')) {
+    return [];
+  }
+  return [[npmCommand, ['run', flags.has('--full') ? 'build:optional' : 'build:core']]];
+}
+
+async function main() {
+  const mode = args.find((arg) => !arg.startsWith('--')) ?? 'start';
+  if (mode !== 'dev' && mode !== 'start') {
+    console.error(`Unknown mode "${mode}". Expected dev or start.`);
     process.exit(1);
   }
 
@@ -171,17 +224,34 @@ async function main() {
   await writeRuntimeConfig(resolvedPorts);
   logPortSummary(resolvedPorts);
 
-  if (dryRun) {
+  const env = createEnv(resolvedPorts);
+  // Binaries (tsx, vite) resolve from the hoisted root node_modules.
+  env.PATH = [path.join(repoRoot, 'node_modules', '.bin'), env.PATH].join(path.delimiter);
+  if (flags.has('--delay')) {
+    env.DEV_DELAY = 'true';
+  }
+  if (flags.has('--host')) {
+    env.BIND_HOST = resolveBindHost();
+    if (!env.BIND_HOST) {
+      console.error('[local-runtime] No BIND_HOST: set LAN_BIND_HOST in .env or start Tailscale');
+      process.exit(1);
+    }
+    console.log(`[local-runtime] hosting on http://${env.BIND_HOST}:${resolvedPorts.frontendPort}`);
+  }
+
+  const commands = stackCommands(mode, env);
+  if (flags.has('--dry-run')) {
+    for (const { name, cwd, command } of commands) {
+      console.log(`[local-runtime] ${name}: (${path.relative(repoRoot, cwd)}) ${command}`);
+    }
     return;
   }
 
-  const env = createEnv(resolvedPorts);
-
-  for (const [command, args] of config.preflight) {
-    await runCommand(command, args, env);
+  for (const [command, commandArgs] of preflight(mode)) {
+    await runCommand(command, commandArgs, env);
   }
 
-  await runCommand(npmCommand, ['run', config.script], env);
+  await concurrently(commands, { prefix: 'name' }).result;
 }
 
 main().catch((error) => {

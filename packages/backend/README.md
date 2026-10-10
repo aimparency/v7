@@ -27,8 +27,8 @@ The frontend talks to the backend over WebSocket tRPC. The backend is the packag
 From the repo root:
 
 ```bash
-npm run dev:backend
-npm run start:backend
+npm run dev      # whole stack, servers from source via tsx
+npm run start    # build bundles, then run them
 npm run test -w backend
 ```
 

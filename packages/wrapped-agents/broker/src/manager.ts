@@ -8,6 +8,7 @@ import fs from 'fs-extra';
 const execFileAsync = promisify(execFile);
 
 import { toBowmanPath } from 'shared';
+import { nodeEntryArgs } from 'shared/node-entry';
 import { runRelaunchPass } from './relaunch-watch.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -283,7 +284,7 @@ export interface VerifyResult {
  * test never reaches a running session. The linchpin of the safe self-redeploy
  * loop: if this returns ok=false, the caller must NOT stop/restart the session
  * — the current (working) code keeps running. Steps run sequentially and bail
- * on the first failure. Sessions are run via tsx directly from source, so this
+ * on the first failure. In dev, sessions run via tsx directly from source, so this
  * is the only thing standing between a bad self-edit and a crash-looping boot.
  */
 export async function verifyWrappedAgents(): Promise<VerifyResult> {
@@ -361,12 +362,12 @@ export const WatchdogManager = {
     const startPort = parseInt(process.env.PORT_PROCESS_START || '7000');
     const port = await findAvailablePort(startPort);
 
-    // Path to Worker entry point - dynamic based on agent type.
-    // Run TypeScript source directly via tsx (no build step / dist artifact).
-    const workerScript = path.join(WRAPPER_DIR, `${agentType}-session/src/index.ts`);
+    // Worker entry in the broker's own mode: source via tsx in dev, the bundle under `npm start`.
+    const sessionDir = path.join(WRAPPER_DIR, `${agentType}-session`);
+    const workerArgs = nodeEntryArgs(import.meta.url, path.join(sessionDir, 'src', 'index.ts'), path.join(sessionDir, 'dist', 'index.js'));
 
     console.log(`[WatchdogBroker] Spawning ${agentType} worker on port ${port} for ${projectPath}`);
-    console.log(`[WatchdogBroker] Script: ${workerScript}`);
+    console.log(`[WatchdogBroker] Entry: ${workerArgs.join(' ')}`);
 
     // Ensure we pass the PROJECT ROOT to the watchdog, not the .bowman dir
     const projectRoot = path.dirname(projectPath);
@@ -377,10 +378,9 @@ export const WatchdogManager = {
     const out = fs.openSync(path.join(logDir, 'out.log'), 'a');
     const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
 
-    // `--import tsx` registers the tsx loader so node can run the .ts entry.
     // cwd is WRAPPER_DIR (inside the monorepo) so `tsx` resolves from the
     // hoisted root node_modules; PROJECT ROOT is passed via argv, not cwd.
-    const child = spawn('node', ['--import', 'tsx', workerScript, '--port', String(port), projectRoot], {
+    const child = spawn('node', [...workerArgs, '--port', String(port), projectRoot], {
       cwd: WRAPPER_DIR,
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'], // Use pipes to capture output

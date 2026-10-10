@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import fs from 'fs-extra';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import type { Idea } from 'shared';
 import { calculateIdeaValues } from 'shared';
+import { nodeEntryArgs, packageRoot } from 'shared/node-entry';
 import { spawn, type ChildProcess } from 'child_process';
 import { emitChange } from './change-events.js';
 import { writeJsonAtomic } from './storage/json.js';
@@ -16,11 +16,8 @@ import { listPhases } from './storage/phases.js';
 // Background loops: their definitions and instances (runtime/loops.json),
 // config and secrets, and the loop-worker processes that run them.
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-export const REPO_ROOT = path.resolve(__dirname, '../../../..');
-export const LOOP_WORKER_DIR = path.join(REPO_ROOT, 'packages', 'loop-worker');
-export const LOOP_WORKER_SCRIPT = path.join(LOOP_WORKER_DIR, 'dist', 'index.js');
+const REPO_ROOT = path.resolve(packageRoot(import.meta.url), '../..');
+const LOOP_WORKER_DIR = path.join(REPO_ROOT, 'packages', 'loop-worker');
 
 export const loopProviderSchema = z.enum(['nvidia', 'openrouter', 'openai-compatible']);
 export const loopCapabilitySchema = z.enum(['coding', 'experiments', 'code-intelligence']);
@@ -418,7 +415,7 @@ export const spawnLoopWorker = async (rawProjectPath: string, instanceId: string
   const out = fs.openSync(path.join(logDir, 'out.log'), 'a');
   const err = fs.openSync(path.join(logDir, 'err.log'), 'a');
   const child = spawn('node', [
-    LOOP_WORKER_SCRIPT,
+    ...nodeEntryArgs(import.meta.url, path.join(LOOP_WORKER_DIR, 'src', 'index.ts'), path.join(LOOP_WORKER_DIR, 'dist', 'index.js')),
     '--projectPath',
     projectPath,
     '--instanceId',

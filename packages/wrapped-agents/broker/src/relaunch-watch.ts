@@ -16,8 +16,10 @@ import type { AgentType } from './manager.js';
  * an operator recovering from already-red tests). The watcher CONSUMES (deletes)
  * the file before relaunching so a failing or overlapping pass can't loop.
  *
- * "Rebuild" is implicit: sessions run from source via tsx, so a process restart
- * loads the new code; relaunch() gates that on a typecheck+test verify pass.
+ * "Rebuild" is implicit in dev: sessions run from source via tsx, so a process
+ * restart loads the new code; relaunch() gates that on a typecheck+test verify
+ * pass. Under `npm start` sessions run from their bundles, so a relaunch restarts
+ * the already-built code until the next build.
  */
 
 const RUNTIME_DIR_NAME = 'runtime';

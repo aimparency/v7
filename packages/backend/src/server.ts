@@ -3,7 +3,6 @@ import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { warmupEmbedder } from './embeddings.js';
 import { t, createContext } from './trpc.js';
 import './value-recalculation.js'; // recalculates idea values after changes
 import { ideaRouter } from './routers/idea.js';
@@ -68,9 +67,6 @@ export function startServer() {
   server.listen(HTTP_PORT, BIND_HOST, () => {
     console.log(`HTTP Server running on http://${BIND_HOST || 'localhost'}:${HTTP_PORT}`);
   });
-
-  // Load the embedding model up front so the first search/index doesn't pay the cold-load cost.
-  warmupEmbedder().then(() => console.log('Embedding model ready'));
 
   console.log(`WebSocket Server running on ws://localhost:${WS_PORT}`);
 

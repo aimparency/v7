@@ -31,7 +31,6 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
-        shared: fileURLToPath(new URL('../../packages/shared/src/index.ts', import.meta.url)),
         backend: fileURLToPath(new URL('../../packages/backend/src/index.ts', import.meta.url)),
       },
     },

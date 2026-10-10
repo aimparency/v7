@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import fs from 'fs-extra';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { packageRoot } from 'shared/node-entry';
 import { t, delayedProcedure } from '../trpc.js';
 
 export const marketRouter = t.router({
@@ -15,10 +15,7 @@ export const marketRouter = t.router({
       })
     }))
     .mutation(async ({ input }) => {
-      // Find root dir by going up from this file's location
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = path.dirname(__filename);
-      const ROOT_DIR = path.resolve(__dirname, '../../..');
+      const ROOT_DIR = path.resolve(packageRoot(import.meta.url), '../..');
       const configPath = path.join(ROOT_DIR, 'subdev/market-alpha/config.json');
       let current = {};
       if (await fs.pathExists(configPath)) {

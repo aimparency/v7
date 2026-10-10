@@ -221,15 +221,20 @@ The MCP server is designed to support LLMs working indefinitely on goals:
 npm run build -w mcp
 ```
 
-This compiles TypeScript into `packages/mcp/build` and makes the entrypoint executable.
+This bundles the server with tsdown into `packages/mcp/build` (executable `build/index.js`).
 
 ### Development Mode
 
-```bash
-npm run dev -w mcp
+No build is needed while developing: run the server from source through tsx.
+This repo's `.mcp.json` does exactly that:
+
+```json
+"command": "node",
+"args": ["--import", "tsx", "/absolute/path/to/aimparency/v7/packages/mcp/src/index.ts"]
 ```
 
-Watches for changes and rebuilds automatically.
+The MCP client loads the code when it connects, so reconnect it (e.g. `/mcp` in
+Claude Code) to pick up changes. `npm run dev -w mcp` runs a restarting stdio server for manual testing.
 
 ### Testing
 
@@ -238,14 +243,9 @@ Watches for changes and rebuilds automatically.
    npm run dev
    ```
 
-2. In another terminal, build the MCP package if needed:
-   ```bash
-   npm run build -w mcp
-   ```
+2. Configure and restart your MCP client (Claude Code or Claude for Desktop)
 
-3. Configure and restart your MCP client (Claude Code or Claude for Desktop)
-
-4. Try commands like:
+3. Try commands like:
    - "List all ideas in /path/to/my-project"
    - "Create a new idea for implementing authentication"
    - "Break down idea <uuid> into sub-ideas"

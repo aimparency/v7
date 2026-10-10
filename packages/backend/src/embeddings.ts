@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { cosineSimilarity } from 'shared';
-import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers';
+import type { FeatureExtractionPipeline } from '@huggingface/transformers';
 import type { Idea } from 'shared';
 import { normalizeProjectPath } from './project-path.js';
 
@@ -20,25 +20,17 @@ let extractorPromise: Promise<FeatureExtractionPipeline> | null = null;
 
 function getExtractor(): Promise<FeatureExtractionPipeline> {
   if (!extractorPromise) {
-    extractorPromise = pipeline('feature-extraction', MODEL_ID).catch(error => {
+    // Loaded on first use: the runtime and model cost ~250 MB and ~1 s, which a
+    // session that never searches shouldn't pay.
+    extractorPromise = import('@huggingface/transformers').then(({ pipeline }) =>
+      pipeline('feature-extraction', MODEL_ID)
+    ).catch(error => {
       // Reset so a later call can retry (e.g. transient download failure).
       extractorPromise = null;
       throw error;
     });
   }
   return extractorPromise;
-}
-
-/**
- * Load the embedding model once, up front. Call at backend startup so the first
- * search/index request doesn't pay the cold-load cost. Safe to call repeatedly.
- */
-export async function warmupEmbedder(): Promise<void> {
-  try {
-    await getExtractor();
-  } catch (error) {
-    console.warn('Embedding model warmup failed (will retry on demand):', error);
-  }
 }
 
 async function embed(text: string): Promise<number[] | null> {

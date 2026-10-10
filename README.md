@@ -77,7 +77,7 @@ that shaped the repository itself.
 
 `4000` is the default frontend port in a fresh checkout. If you want custom ports, copy `.env.example` to `.env` and override them there.
 
-`npm run dev` starts the core local stack: frontend, backend, broker, and wrapped-agent session servers.
+`npm run dev` starts the core local stack from source (no build step): frontend, backend, and broker. The broker spawns wrapped-agent sessions on demand. `npm run start` builds bundles and runs those instead.
 
 If you need optional integrations too, use:
 

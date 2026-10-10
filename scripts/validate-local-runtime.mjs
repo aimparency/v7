@@ -122,7 +122,7 @@ function createScenarioEnv(overrides = {}) {
 async function runScenario(name, setupEnv, expectedPredicate) {
   await removeRuntimeConfigIfPresent();
 
-  const result = await runNodeScript(['scripts/run-local-stack.mjs', 'start:fast', '--dry-run'], setupEnv);
+  const result = await runNodeScript(['scripts/run-local-stack.mjs', 'start', '--no-build', '--dry-run'], setupEnv);
 
   console.log(`\n[scenario:${name}] exit=${result.code}${result.signal ? ` signal=${result.signal}` : ''}`);
   if (result.stdout.trim()) {
