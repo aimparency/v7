@@ -3,7 +3,7 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { CURRENT_DATA_MODEL_VERSION, INITIAL_STATES } from 'shared';
 import type { ProjectMeta, SystemStatus } from 'shared';
-import { assertWritableBowman, migrateBowman, NewerDataModelError } from 'shared/bowman-migration';
+import { assertWritableBowman, migrateBowman, NewerDataModelError, readDataModelVersion } from 'shared/bowman-migration';
 import { normalizeProjectPath } from '../project-path.js';
 import { emitChange } from '../change-events.js';
 import { readJsonOrNull, withFileLock, writeJsonAtomic } from './json.js';
@@ -22,14 +22,23 @@ const DEFAULT_AUTONOMY_POLICY = {
 };
 
 // Brings an opened project to the current data model (see shared/bowman-migration).
-// Cheap once a project is current, so it runs on every structure check.
+// The full check scans every idea file for legacy data (~300ms on a large
+// project), so it runs once per project; later calls only compare the recorded
+// version. A new client connection re-arms it (forgetProjectChecks), since git
+// can bring legacy files back meanwhile; force re-runs it right away.
 const runningMigrations = new Map<string, Promise<void>>();
+const checkedProjects = new Set<string>();
 const warnedNewerProjects = new Set<string>();
-export async function migrateProject(projectPath: string): Promise<void> {
+export function forgetProjectChecks(): void {
+  checkedProjects.clear();
+}
+export async function migrateProject(projectPath: string, { force = false } = {}): Promise<void> {
   const running = runningMigrations.get(projectPath);
   if (running) return running;
+  if (!force && checkedProjects.has(projectPath) && (await readDataModelVersion(projectPath)) === CURRENT_DATA_MODEL_VERSION) return;
   const migration = migrateBowman(projectPath)
     .then((result) => {
+      checkedProjects.add(projectPath);
       if (result.applied.length > 0) {
         console.log(`[migration] ${projectPath}: data model ${result.from ?? 'new'} → ${result.to ?? 'new'} (${result.applied.join('; ')})`);
       }

@@ -107,7 +107,7 @@ export async function readIdea(rawProjectPath: string, ideaId: string, afterLayo
     // Try archived ideas
     ideaPath = path.join(projectPath, 'archived-ideas', `${ideaId}.json`);
     if (!afterLayoutMigration && !(await fs.pathExists(ideaPath))) {
-      await migrateProject(projectPath); // may still be in the legacy layout
+      await migrateProject(projectPath, { force: true }); // may still be in the legacy layout
       return readIdea(projectPath, ideaId, true);
     }
   }

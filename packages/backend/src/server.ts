@@ -18,6 +18,7 @@ import { graphHealthRouter } from './routers/graph-health.js';
 import { historyRouter } from './routers/history.js';
 import { spinOffRouter } from './routers/spin-off.js';
 import { linkedRepoRouter } from './routers/linked-repo.js';
+import { forgetProjectChecks } from './storage/project.js';
 
 const appRouter = t.router({
   idea: ideaRouter,
@@ -58,6 +59,7 @@ export function startServer() {
   });
 
   wss.on('connection', (ws) => {
+    forgetProjectChecks(); // a (re)opened client gets a fresh migration check
     console.log(`WebSocket connection established (${wss.clients.size})`);
     ws.once('close', () => {
       console.log(`WebSocket connection closed (${wss.clients.size})`);
