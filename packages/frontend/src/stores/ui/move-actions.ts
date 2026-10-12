@@ -9,6 +9,17 @@ function getProjectPath(): string {
   return useProjectStore().projectPath
 }
 
+type IdeaContext = { parentId: string } | { phaseId: string }
+
+// One server round trip per move (idea.move); the touched ideas and phases come
+// back as stored and replace the local copies.
+async function moveOnServer(ideaId: string, move: { from?: IdeaContext; to?: IdeaContext; index?: number }) {
+  const dataStore = useDataStore()
+  const { ideas, phases } = await trpc.idea.move.mutate({ projectPath: getProjectPath(), ideaId, ...move })
+  for (const idea of ideas) dataStore.replaceIdea(idea.id, idea)
+  for (const phase of phases) dataStore.replacePhase(phase.id, phase)
+}
+
 export async function moveIdeaDownAction(uiStore: any) {
   const dataStore = useDataStore()
   const path = uiStore.getSelectionPath()
@@ -35,20 +46,8 @@ export async function moveIdeaDownAction(uiStore: any) {
         parentState.selectedIncomingIndex = nextIndex
 
         try {
-          await trpc.idea.connectIdeas.mutate({
-            projectPath: getProjectPath(),
-            parentIdeaId: parentIdea.id,
-            childIdeaId: currentIdea.id,
-            parentIncomingIndex: nextIndex,
-            childSupportedIdeasIndex: currentIdea.supportedIdeas.indexOf(parentIdea.id)
-          })
-
-          const updatedParent = await trpc.idea.get.query({
-            projectPath: getProjectPath(),
-            ideaId: parentIdea.id
-          })
-          dataStore.replaceIdea(parentIdea.id, updatedParent)
-
+          const parent = { parentId: parentIdea.id }
+          await moveOnServer(currentIdea.id, { from: parent, to: parent, index: nextIndex })
           parentState.selectedIncomingIndex = nextIndex
         } catch (e) {
           console.error('Move failed', e)
@@ -71,18 +70,7 @@ export async function moveIdeaDownAction(uiStore: any) {
       }
 
       try {
-        await trpc.idea.commitToPhase.mutate({
-          projectPath: getProjectPath(),
-          ideaId: currentIdea.id,
-          phaseId,
-          insertionIndex: nextIndex
-        })
-
-        const updatedPhase = await trpc.phase.get.query({
-          projectPath: getProjectPath(),
-          phaseId
-        })
-        dataStore.replacePhase(phaseId, updatedPhase)
+        await moveOnServer(currentIdea.id, { from: { phaseId }, to: { phaseId }, index: nextIndex })
 
         const reloadedPhase = dataStore.phases[phaseId]
         if (reloadedPhase) {
@@ -122,24 +110,7 @@ export async function moveIdeaDownAction(uiStore: any) {
         }
 
         try {
-          await trpc.idea.removeFromPhase.mutate({
-            projectPath: getProjectPath(),
-            ideaId: currentIdea.id,
-            phaseId
-          })
-          await trpc.idea.commitToPhase.mutate({
-            projectPath: getProjectPath(),
-            ideaId: currentIdea.id,
-            phaseId: nextPhaseId,
-            insertionIndex: 0
-          })
-
-          const [updatedOld, updatedNew] = await Promise.all([
-            trpc.phase.get.query({ projectPath: getProjectPath(), phaseId }),
-            trpc.phase.get.query({ projectPath: getProjectPath(), phaseId: nextPhaseId })
-          ])
-          dataStore.replacePhase(phaseId, updatedOld)
-          dataStore.replacePhase(nextPhaseId, updatedNew)
+          await moveOnServer(currentIdea.id, { from: { phaseId }, to: { phaseId: nextPhaseId }, index: 0 })
 
           const reloadedNew = dataStore.phases[nextPhaseId]
           if (reloadedNew) reloadedNew.selectedIdeaIndex = 0
@@ -175,20 +146,8 @@ export async function moveIdeaUpAction(uiStore: any) {
         parentState.selectedIncomingIndex = prevIndex
 
         try {
-          await trpc.idea.connectIdeas.mutate({
-            projectPath: getProjectPath(),
-            parentIdeaId: parentIdea.id,
-            childIdeaId: currentIdea.id,
-            parentIncomingIndex: prevIndex,
-            childSupportedIdeasIndex: currentIdea.supportedIdeas.indexOf(parentIdea.id)
-          })
-
-          const updatedParent = await trpc.idea.get.query({
-            projectPath: getProjectPath(),
-            ideaId: parentIdea.id
-          })
-          dataStore.replaceIdea(parentIdea.id, updatedParent)
-
+          const parent = { parentId: parentIdea.id }
+          await moveOnServer(currentIdea.id, { from: parent, to: parent, index: prevIndex })
           parentState.selectedIncomingIndex = prevIndex
         } catch (e) {
           console.error('Move failed', e)
@@ -210,18 +169,7 @@ export async function moveIdeaUpAction(uiStore: any) {
       }
 
       try {
-        await trpc.idea.commitToPhase.mutate({
-          projectPath: getProjectPath(),
-          ideaId: currentIdea.id,
-          phaseId,
-          insertionIndex: prevIndex
-        })
-
-        const updatedPhase = await trpc.phase.get.query({
-          projectPath: getProjectPath(),
-          phaseId
-        })
-        dataStore.replacePhase(phaseId, updatedPhase)
+        await moveOnServer(currentIdea.id, { from: { phaseId }, to: { phaseId }, index: prevIndex })
 
         const reloadedPhase = dataStore.phases[phaseId]
         if (reloadedPhase) {
@@ -261,24 +209,7 @@ export async function moveIdeaUpAction(uiStore: any) {
         }
 
         try {
-          await trpc.idea.removeFromPhase.mutate({
-            projectPath: getProjectPath(),
-            ideaId: currentIdea.id,
-            phaseId
-          })
-          await trpc.idea.commitToPhase.mutate({
-            projectPath: getProjectPath(),
-            ideaId: currentIdea.id,
-            phaseId: prevPhaseId,
-            insertionIndex: newIndex
-          })
-
-          const [updatedOld, updatedNew] = await Promise.all([
-            trpc.phase.get.query({ projectPath: getProjectPath(), phaseId }),
-            trpc.phase.get.query({ projectPath: getProjectPath(), phaseId: prevPhaseId })
-          ])
-          dataStore.replacePhase(phaseId, updatedOld)
-          dataStore.replacePhase(prevPhaseId, updatedNew)
+          await moveOnServer(currentIdea.id, { from: { phaseId }, to: { phaseId: prevPhaseId }, index: newIndex })
 
           const reloadedPrev = dataStore.phases[prevPhaseId]
           if (reloadedPrev) reloadedPrev.selectedIdeaIndex = reloadedPrev.commitments.length - 1
@@ -356,67 +287,8 @@ export async function moveIdeaOutAction(uiStore: any) {
   }
 
   try {
-    await trpc.idea.disconnect.mutate({
-      projectPath: getProjectPath(),
-      parentIdeaId: parentId,
-      childIdeaId: currentIdeaId
-    })
-
-    if (grandparentId) {
-      await trpc.idea.connectIdeas.mutate({
-        projectPath: getProjectPath(),
-        parentIdeaId: grandparentId,
-        childIdeaId: currentIdeaId,
-        parentIncomingIndex: newIndex!,
-        childSupportedIdeasIndex: 0
-      })
-    } else if (targetPhaseId) {
-      await trpc.idea.commitToPhase.mutate({
-        projectPath: getProjectPath(),
-        ideaId: currentIdeaId,
-        phaseId: targetPhaseId,
-        insertionIndex: newIndex!
-      })
-    }
-
-    const reloads = []
-    reloads.push(
-      trpc.idea.get.query({
-        projectPath: getProjectPath(),
-        ideaId: parentId
-      }).then((updated: any) => dataStore.replaceIdea(parentId, updated))
-    )
-
-    if (grandparentId) {
-      reloads.push(
-        trpc.idea.get.query({
-          projectPath: getProjectPath(),
-          ideaId: grandparentId
-        }).then((updated: any) => dataStore.replaceIdea(grandparentId, updated))
-      )
-    } else if (targetPhaseId) {
-      reloads.push(
-        trpc.phase.get.query({
-          projectPath: getProjectPath(),
-          phaseId: targetPhaseId
-        }).then((updated: any) => dataStore.replacePhase(targetPhaseId, updated)),
-        trpc.idea.get.query({
-          projectPath: getProjectPath(),
-          ideaId: currentIdeaId
-        }).then((updated: any) => dataStore.replaceIdea(currentIdeaId, updated))
-      )
-    } else {
-      reloads.push(
-        trpc.idea.get.query({
-          projectPath: getProjectPath(),
-          ideaId: currentIdeaId
-        }).then((updated: any) => {
-          dataStore.replaceIdea(currentIdeaId, updated)
-        })
-      )
-    }
-
-    await Promise.all(reloads)
+    const to = grandparentId ? { parentId: grandparentId } : targetPhaseId ? { phaseId: targetPhaseId } : undefined
+    await moveOnServer(currentIdeaId, { from: { parentId }, to, index: newIndex })
   } catch (e) {
     console.error('Move failed', e)
   }
@@ -525,53 +397,8 @@ export async function moveIdeaInAction(uiStore: any) {
   }
 
   try {
-    await trpc.idea.connectIdeas.mutate({
-      projectPath: getProjectPath(),
-      parentIdeaId: previousSiblingId,
-      childIdeaId: currentIdeaId,
-      parentIncomingIndex: insertionIndex,
-      childSupportedIdeasIndex: 0
-    })
-
-    if (oldParentId) {
-      await trpc.idea.disconnect.mutate({
-        projectPath: getProjectPath(),
-        parentIdeaId: oldParentId,
-        childIdeaId: currentIdeaId
-      })
-    } else if (oldPhaseId) {
-      await trpc.idea.removeFromPhase.mutate({
-        projectPath: getProjectPath(),
-        ideaId: currentIdeaId,
-        phaseId: oldPhaseId
-      })
-    }
-
-    const reloads = []
-    reloads.push(
-      trpc.idea.get.query({
-        projectPath: getProjectPath(),
-        ideaId: previousSiblingId
-      }).then((updated: any) => dataStore.replaceIdea(previousSiblingId, updated))
-    )
-
-    if (oldParentId) {
-      reloads.push(
-        trpc.idea.get.query({
-          projectPath: getProjectPath(),
-          ideaId: oldParentId
-        }).then((updated: any) => dataStore.replaceIdea(oldParentId, updated))
-      )
-    } else if (oldPhaseId) {
-      reloads.push(
-        trpc.phase.get.query({
-          projectPath: getProjectPath(),
-          phaseId: oldPhaseId
-        }).then((updated: any) => dataStore.replacePhase(oldPhaseId, updated))
-      )
-    }
-
-    await Promise.all(reloads)
+    const from = oldParentId ? { parentId: oldParentId } : oldPhaseId ? { phaseId: oldPhaseId } : undefined
+    await moveOnServer(currentIdeaId, { from, to: { parentId: previousSiblingId }, index: insertionIndex })
   } catch (e) {
     console.error('Move failed', e)
   }
@@ -616,96 +443,9 @@ export async function pasteCutIdeaAction(uiStore: any, dataStore: any) {
   const sourcePhaseId = source?.phaseId
 
   try {
-    if (destinationParentIdeaId && sourceParentIdeaId === destinationParentIdeaId) {
-      await trpc.idea.connectIdeas.mutate({
-        projectPath: getProjectPath(),
-        parentIdeaId: destinationParentIdeaId,
-        childIdeaId: cutIdeaId,
-        parentIncomingIndex: insertionIndex
-      })
-    } else if (destinationPhaseId && sourcePhaseId === destinationPhaseId) {
-      await trpc.idea.commitToPhase.mutate({
-        projectPath: getProjectPath(),
-        ideaId: cutIdeaId,
-        phaseId: destinationPhaseId,
-        insertionIndex
-      })
-    } else {
-      if (sourceParentIdeaId) {
-        await trpc.idea.disconnect.mutate({
-          projectPath: getProjectPath(),
-          parentIdeaId: sourceParentIdeaId,
-          childIdeaId: cutIdeaId
-        })
-      } else if (sourcePhaseId) {
-        await trpc.idea.removeFromPhase.mutate({
-          projectPath: getProjectPath(),
-          ideaId: cutIdeaId,
-          phaseId: sourcePhaseId
-        })
-      }
-
-      if (destinationParentIdeaId) {
-        await trpc.idea.connectIdeas.mutate({
-          projectPath: getProjectPath(),
-          parentIdeaId: destinationParentIdeaId,
-          childIdeaId: cutIdeaId,
-          parentIncomingIndex: insertionIndex
-        })
-      } else if (destinationPhaseId) {
-        await trpc.idea.commitToPhase.mutate({
-          projectPath: getProjectPath(),
-          ideaId: cutIdeaId,
-          phaseId: destinationPhaseId,
-          insertionIndex
-        })
-      }
-    }
-
-    const reloads: Promise<any>[] = [
-      trpc.idea.get.query({
-        projectPath: getProjectPath(),
-        ideaId: cutIdeaId
-      }).then((updatedIdea: any) => dataStore.replaceIdea(cutIdeaId, updatedIdea))
-    ]
-
-    if (sourceParentIdeaId) {
-      reloads.push(
-        trpc.idea.get.query({
-          projectPath: getProjectPath(),
-          ideaId: sourceParentIdeaId
-        }).then((updatedIdea: any) => dataStore.replaceIdea(sourceParentIdeaId, updatedIdea))
-      )
-    }
-
-    if (destinationParentIdeaId) {
-      reloads.push(
-        trpc.idea.get.query({
-          projectPath: getProjectPath(),
-          ideaId: destinationParentIdeaId
-        }).then((updatedIdea: any) => dataStore.replaceIdea(destinationParentIdeaId, updatedIdea))
-      )
-    }
-
-    if (sourcePhaseId) {
-      reloads.push(
-        trpc.phase.get.query({
-          projectPath: getProjectPath(),
-          phaseId: sourcePhaseId
-        }).then((updatedPhase: any) => dataStore.replacePhase(sourcePhaseId, updatedPhase))
-      )
-    }
-
-    if (destinationPhaseId) {
-      reloads.push(
-        trpc.phase.get.query({
-          projectPath: getProjectPath(),
-          phaseId: destinationPhaseId
-        }).then((updatedPhase: any) => dataStore.replacePhase(destinationPhaseId, updatedPhase))
-      )
-    }
-
-    await Promise.all(reloads)
+    const from = sourceParentIdeaId ? { parentId: sourceParentIdeaId } : sourcePhaseId ? { phaseId: sourcePhaseId } : undefined
+    const to = destinationParentIdeaId ? { parentId: destinationParentIdeaId } : destinationPhaseId ? { phaseId: destinationPhaseId } : undefined
+    await moveOnServer(cutIdeaId, { from, to, index: insertionIndex })
 
     if (destinationParentIdeaId) {
       const destinationParent = dataStore.ideas[destinationParentIdeaId]
@@ -763,50 +503,8 @@ export async function pasteCopiedIdeaAction(uiStore: any, dataStore: any) {
   }
 
   try {
-    if (destinationParentIdeaId) {
-      await trpc.idea.connectIdeas.mutate({
-        projectPath: getProjectPath(),
-        parentIdeaId: destinationParentIdeaId,
-        childIdeaId: copyIdeaId,
-        parentIncomingIndex: insertionIndex
-      })
-    } else if (destinationPhaseId) {
-      await trpc.idea.commitToPhase.mutate({
-        projectPath: getProjectPath(),
-        ideaId: copyIdeaId,
-        phaseId: destinationPhaseId,
-        insertionIndex
-      })
-    }
-
-    const reloads: Promise<any>[] = []
-
-    if (destinationParentIdeaId) {
-      reloads.push(
-        trpc.idea.get.query({
-          projectPath: getProjectPath(),
-          ideaId: destinationParentIdeaId
-        }).then((updatedIdea: any) => dataStore.replaceIdea(destinationParentIdeaId, updatedIdea))
-      )
-    }
-
-    if (destinationPhaseId) {
-      reloads.push(
-        trpc.phase.get.query({
-          projectPath: getProjectPath(),
-          phaseId: destinationPhaseId
-        }).then((updatedPhase: any) => dataStore.replacePhase(destinationPhaseId, updatedPhase))
-      )
-    }
-
-    reloads.push(
-      trpc.idea.get.query({
-        projectPath: getProjectPath(),
-        ideaId: copyIdeaId
-      }).then((updatedIdea: any) => dataStore.replaceIdea(copyIdeaId, updatedIdea))
-    )
-
-    await Promise.all(reloads)
+    const to = destinationParentIdeaId ? { parentId: destinationParentIdeaId } : { phaseId: destinationPhaseId! }
+    await moveOnServer(copyIdeaId, { to, index: insertionIndex })
 
     if (destinationParentIdeaId) {
       const destinationParent = dataStore.ideas[destinationParentIdeaId]

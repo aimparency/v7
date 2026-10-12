@@ -12,6 +12,7 @@ import { readIdea, listIdeas, writeIdea, connectIdeasInternal, getRandomRelative
 import { readPhase } from '../storage/phases.js';
 import { deleteIdeas, detachIdea, disconnectIdeas } from '../storage/idea-removal.js';
 import { commitIdeaToPhase, removeIdeaFromPhase } from '../storage/commitments.js';
+import { moveIdea } from '../storage/idea-move.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { addIdeaToIndex, updateIdeaInIndex, removeIdeaFromIndex, searchIdeas } from '../search.js';
 import { generateEmbedding, generateQueryEmbedding, saveEmbedding, removeEmbedding, searchVectors } from '../embeddings.js';
@@ -49,6 +50,12 @@ const approvalJournalPath = (projectPath: string, idempotencyKey: string) => {
   const safeKey = createHash('sha256').update(idempotencyKey).digest('hex');
   return path.join(normalizeProjectPath(projectPath), 'runtime', 'idea-proposal-approvals', `${safeKey}.json`);
 };
+
+// Where an idea sits in a view: under a parent idea or committed in a phase.
+const ideaContextSchema = z.union([
+  z.object({ parentId: z.string().uuid() }),
+  z.object({ phaseId: z.string().uuid() })
+]);
 
 export const ideaRouter = t.router({
   commitEvidence: delayedProcedure
@@ -610,14 +617,25 @@ export const ideaRouter = t.router({
     .input(z.object({
       projectPath: z.string(),
       ideaId: z.string().uuid(),
-      from: z.union([
-        z.object({ parentId: z.string().uuid() }),
-        z.object({ phaseId: z.string().uuid() })
-      ])
+      from: ideaContextSchema
     }))
     .mutation(async ({ input }) => {
       await detachIdea(input.projectPath, input.ideaId, input.from);
       return { success: true };
+    }),
+
+  // Cut/paste and keyboard moves in one round trip; see moveIdea. Returns the
+  // touched ideas and phases so the client needs no reload.
+  move: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      ideaId: z.string().uuid(),
+      from: ideaContextSchema.optional(),
+      to: ideaContextSchema.optional(),
+      index: z.number().int().min(0).optional()
+    }))
+    .mutation(async ({ input }) => {
+      return await moveIdea(input.projectPath, input.ideaId, input);
     }),
 
   commitToPhase: delayedProcedure

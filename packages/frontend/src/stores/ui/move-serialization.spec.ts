@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 
 // A tiny server that handles one mutation at a time (10ms each) and, like the
 // real backend, pushes the changed phase to the client before the mutation
-// resolves. phase.get returns the current server order.
+// resolves. idea.move returns the phase in its current server order.
 const { server, mockTrpc } = vi.hoisted(() => {
   const server = {
     commitments: [] as string[],
@@ -17,17 +17,17 @@ const { server, mockTrpc } = vi.hoisted(() => {
   }
   const mockTrpc = {
     idea: {
-      commitToPhase: {
-        mutate: vi.fn(({ ideaId, insertionIndex }: { ideaId: string; insertionIndex: number }) => serially(() => {
+      move: {
+        mutate: vi.fn(({ ideaId, index }: { ideaId: string; index: number }) => serially(() => {
           server.commitments = server.commitments.filter((id) => id !== ideaId)
-          server.commitments.splice(insertionIndex, 0, ideaId)
+          server.commitments.splice(index, 0, ideaId)
           server.push([...server.commitments])
-          return { success: true }
+          return {
+            ideas: [],
+            phases: [{ id: 'phase', name: 'phase', parent: null, childPhaseIds: [], commitments: [...server.commitments] }]
+          }
         }))
       }
-    },
-    phase: {
-      get: { query: vi.fn(async () => ({ id: 'phase', name: 'phase', parent: null, childPhaseIds: [], commitments: [...server.commitments] })) }
     }
   }
   return { server, mockTrpc }

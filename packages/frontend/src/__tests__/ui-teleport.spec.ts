@@ -7,10 +7,7 @@ const { mockTrpc } = vi.hoisted(() => ({
       getMany: { query: vi.fn() },
       get: { query: vi.fn() },
       update: { mutate: vi.fn() },
-      disconnect: { mutate: vi.fn() },
-      commitToPhase: { mutate: vi.fn() },
-      connectIdeas: { mutate: vi.fn() },
-      removeFromPhase: { mutate: vi.fn() }
+      move: { mutate: vi.fn() }
     },
     phase: {
       get: { query: vi.fn() }
@@ -95,14 +92,9 @@ describe('UI teleport cut/paste', () => {
     dataStore.ideas['idea-1'] = baseIdea('idea-1', 'A1') as any
     dataStore.ideas['idea-2'] = baseIdea('idea-2', 'A2') as any
 
-    mockTrpc.idea.get.query.mockResolvedValue(baseIdea('idea-2', 'A2'))
-    mockTrpc.phase.get.query.mockResolvedValue({
-      id: 'phase-1',
-      name: 'P1',
-      from: 0,
-      to: 1,
-      parent: null,
-      commitments: ['idea-1', 'idea-2']
+    mockTrpc.idea.move.mutate.mockResolvedValue({
+      ideas: [baseIdea('idea-2', 'A2')],
+      phases: [{ id: 'phase-1', name: 'P1', from: 0, to: 1, parent: null, commitments: ['idea-1', 'idea-2'] }]
     })
 
     await uiStore.handleIdeaNavigationKeys(keyEvent('x'), dataStore)
@@ -115,11 +107,12 @@ describe('UI teleport cut/paste', () => {
     selectedPhase.selectedIdeaIndex = 0
     await uiStore.handleIdeaNavigationKeys(keyEvent('p'), dataStore)
 
-    expect(mockTrpc.idea.commitToPhase.mutate).toHaveBeenCalledWith({
+    expect(mockTrpc.idea.move.mutate).toHaveBeenCalledWith({
       projectPath: '/tmp/project',
       ideaId: 'idea-2',
-      phaseId: 'phase-1',
-      insertionIndex: 1
+      from: { phaseId: 'phase-1' },
+      to: { phaseId: 'phase-1' },
+      index: 1
     })
     expect(modalStore.teleportCutIdeaId).toBeNull()
     expect(modalStore.movingIdeaId).toBeNull()
@@ -172,43 +165,33 @@ describe('UI teleport cut/paste', () => {
     parentBState.expanded = true
     parentBState.selectedIncomingIndex = 0
 
-    mockTrpc.idea.disconnect.mutate.mockResolvedValue({})
-    mockTrpc.idea.connectIdeas.mutate.mockResolvedValue({})
-    mockTrpc.idea.get.query.mockImplementation(({ ideaId }: any) => {
-      if (ideaId === 'parent-a') {
-        return Promise.resolve({
-          ...parentA,
-          supportingConnections: []
-        })
-      }
-      if (ideaId === 'parent-b') {
-        return Promise.resolve({
+    mockTrpc.idea.move.mutate.mockResolvedValue({
+      ideas: [
+        { ...parentA, supportingConnections: [] },
+        {
           ...parentB,
           supportingConnections: [
             { ideaId: 'target', weight: 1, relativePosition: [0, 0] },
             { ideaId: 'child', weight: 1, relativePosition: [0, 0] }
           ]
-        })
-      }
-      return Promise.resolve({
-        ...child,
-        supportedIdeas: ['parent-b']
-      })
+        },
+        { ...child, supportedIdeas: ['parent-b'] }
+      ],
+      phases: []
     })
 
     await uiStore.pasteCutIdea(dataStore)
 
-    expect(mockTrpc.idea.disconnect.mutate).toHaveBeenCalledWith({
+    expect(mockTrpc.idea.move.mutate).toHaveBeenCalledTimes(1)
+    expect(mockTrpc.idea.move.mutate).toHaveBeenCalledWith({
       projectPath: '/tmp/project',
-      parentIdeaId: 'parent-a',
-      childIdeaId: 'child'
+      ideaId: 'child',
+      from: { parentId: 'parent-a' },
+      to: { parentId: 'parent-b' },
+      index: 1
     })
-    expect(mockTrpc.idea.connectIdeas.mutate).toHaveBeenCalledWith({
-      projectPath: '/tmp/project',
-      parentIdeaId: 'parent-b',
-      childIdeaId: 'child',
-      parentIncomingIndex: 1
-    })
+    expect(dataStore.ideas['parent-b']!.supportingConnections.map((c: any) => c.ideaId)).toEqual(['target', 'child'])
+    expect(parentBState.selectedIncomingIndex).toBe(1)
     expect(modalStore.teleportCutIdeaId).toBeNull()
   })
 
