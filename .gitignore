@@ -3,8 +3,6 @@ node_modules/
 .kilocode/
 packages/frontend/public/runtime-config.json
 
-packages/embedder/venv/
-packages/embedder/.cache/
 __pycache__/
 **/vectors.json
 **/dist/

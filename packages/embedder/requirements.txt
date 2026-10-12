@@ -1,4 +1,0 @@
-# Lightweight embedding using ONNX runtime
-fastembed
-Flask
-gunicorn

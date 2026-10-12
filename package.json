@@ -4,7 +4,6 @@
   "description": "Local-first idea management system with a browser UI, background service, and agent tooling for .bowman projects.",
   "private": true,
   "scripts": {
-    "dev:embedder": "bash packages/embedder/start.sh",
     "dev:mobile:config": "tsx packages/mobile/scripts/generate-config.ts",
     "dev:full": "node scripts/run-local-stack.mjs dev --full",
     "dev": "node scripts/run-local-stack.mjs dev",

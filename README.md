@@ -211,7 +211,6 @@ If you use one Aimparency instance with multiple repos or workspaces, each targe
 - Frontend package notes: `packages/frontend/README.md`
 - Backend package notes: `packages/backend/README.md`
 - Broker package notes: `packages/wrapped-agents/broker/README.md`
-- Transitional embedder notes: `packages/embedder/README.md`
 - Experimental mobile notes: `packages/mobile/README.md`
 
 ## Troubleshooting
@@ -235,6 +234,5 @@ Common local startup failures are usually one of these:
 
 - `subdev/` contains related experiments and side projects; it is not part of the main onboarding path. See `subdev/README.md`.
 - `packages/wrapped-agents/client` is a dev-only broker inspector, not the main product UI.
-- `packages/embedder` is a legacy Python implementation kept for reference and experimentation; the default backend now generates embeddings in-process.
 - `packages/mobile` is an experimental Android voice client, not part of the main local-first release path.
 - Top-level folders such as `education/`, `ideas/`, `thoughts/`, `q-and-a/`, `real-world-entry/`, and `scheduled-claude/` contain notes, experiments, or archived exploration rather than the core shipped product.
