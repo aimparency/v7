@@ -49,6 +49,15 @@
         -2.4191726643370925
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "fa2b7a67-7ef1-4950-b0ce-23685117fd3d",
+      "relativePosition": [
+        -0.23866124421372825,
+        -2.488582088360831
+      ],
+      "weight": 1,
+      "hypothesis": "One dev runtime path (source via tsx) and a real bundle for start removes the stale-dist and build-vs-dev mismatches that made clean-clone startup unreliable."
     }
   ],
   "supportedIdeas": [

@@ -1,0 +1,29 @@
+{
+  "id": "fa2b7a67-7ef1-4950-b0ce-23685117fd3d",
+  "text": "Lean dev stack: run from source via tsx, bundle start builds with tsdown",
+  "description": "Dev stack used 2.6 GB PSS, ~2 GB of it tooling (8 tsc watchers, ~28 npm/dotenv wrappers). Dev now runs backend/broker/frontend from source with no watchers; `npm start` builds tsdown bundles. Workspace packages resolve to source everywhere (fixes stale shared/dist in mcp/loop-worker/sessions); embedder loads lazily. Commit: build: run dev from source via tsx, bundle start builds with tsdown.",
+  "reflections": [],
+  "archived": false,
+  "color": "#666666",
+  "tags": [
+    "infrastructure",
+    "performance"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "0e5cce7e-7090-444f-92a6-706f02340b46"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Implemented and verified: npm run check 25/25, build:optional green, MCP bundle + source answer initialize (35 tools), validate:local-runtime PASS. Pending Felix: restart npm run dev and measure, spawn a session + loop worker, semantic search, one npm start run.",
+    "date": 1791666387265
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "After restart (2026-10-10): dev stack 8 processes, ~800 MB PSS / 1.2 GB RSS (was 36 processes, 2.6 GB PSS / 4.7 GB RSS). Backend at 460 MB PSS includes the lazily loaded embedder — create_idea's related-idea search triggered it, confirming lazy load works. Idle backend without embedder measured ~164 MB RSS. Still open: spawn a wrapped session + loop worker from the new stack; one full `npm start`."
+}
